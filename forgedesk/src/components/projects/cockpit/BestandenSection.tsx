@@ -103,7 +103,7 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
           <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
             <PhFiles size={16} weight="duotone" />
           </span>
-          <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+          <h3 className="font-heading text-[15px] font-bold text-foreground">
             Bestanden<span className="text-[#F15025]">.</span>
           </h3>
           {documenten.length > 0 && (
@@ -130,9 +130,9 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
             <PhUpload size={26} weight="duotone" className="transition-transform group-hover:scale-110 group-hover:-translate-y-0.5" />
           </span>
           <div>
-            <p className="text-[13px] font-semibold text-[#1A1A1A]">Eerste bestand uploaden</p>
+            <p className="text-[13px] font-semibold text-foreground">Eerste bestand uploaden</p>
             <p
-              className="text-[12px] text-[#9B9B95] mt-0.5"
+              className="text-[12px] text-muted-foreground mt-0.5"
               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
             >
               sleep of klik om te kiezen
@@ -162,14 +162,14 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
                   </span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{doc.naam}</p>
-                  <p className="font-mono text-[11px] text-[#9B9B95]">
+                  <p className="text-[13px] font-semibold text-foreground truncate">{doc.naam}</p>
+                  <p className="font-mono text-[11px] text-muted-foreground">
                     {formatFileSize(doc.grootte)} · {formatDate(doc.created_at)}
                   </p>
                 </div>
-                <Eye className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 text-[#9B9B95] transition-all flex-shrink-0" />
+                <Eye className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 text-muted-foreground transition-all flex-shrink-0" />
                 <button
-                  className="opacity-0 group-hover:opacity-100 text-[#9B9B95] hover:text-[#C03A18] transition-all p-1 rounded"
+                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-[#C03A18] transition-all p-1 rounded"
                   onClick={(e) => { e.stopPropagation(); onDelete(doc.id, doc.naam) }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

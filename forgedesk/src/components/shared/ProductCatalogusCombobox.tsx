@@ -135,7 +135,7 @@ export function ProductCatalogusCombobox({
               onMouseEnter={() => setHighlighted(idx)}
               onClick={() => commitSelect(p)}
               className={cn(
-                'w-full text-left px-2 py-1.5 rounded-md text-[13px] hover:bg-[#F3F2F0] transition-colors',
+                'w-full text-left px-2 py-1.5 rounded-md text-[13px] hover:bg-background transition-colors',
                 highlighted === idx && 'bg-[#1A535C]/[0.06] text-[#1A535C]'
               )}
             >
@@ -147,7 +147,7 @@ export function ProductCatalogusCombobox({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => commitVrijeNaam(query)}
-              className="w-full text-left px-2 py-1.5 rounded-md text-[12px] text-muted-foreground hover:bg-[#F3F2F0] transition-colors"
+              className="w-full text-left px-2 py-1.5 rounded-md text-[12px] text-muted-foreground hover:bg-background transition-colors"
             >
               Gebruik &lsquo;{query}&rsquo; als vrije naam
             </button>

@@ -187,7 +187,7 @@ export function TemplateEditor({ triggerTaskNaam, open, onClose, onSaved }: Temp
             <div className="space-y-4">
               {placeholders.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-wide text-[#9B9B95]">
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                     Beschikbare variabelen (klik om in te voegen)
                   </Label>
                   <div className="flex flex-wrap gap-1.5">
@@ -196,7 +196,7 @@ export function TemplateEditor({ triggerTaskNaam, open, onClose, onSaved }: Temp
                         key={key}
                         type="button"
                         onClick={() => insertPlaceholder(key)}
-                        className="inline-flex items-center rounded-md border border-[#E2E2DD] bg-white px-2 py-1 text-xs font-mono text-[#1A535C] hover:border-[#1A535C] hover:bg-[#F8F7F4] transition-colors"
+                        className="inline-flex items-center rounded-md border border-border bg-white px-2 py-1 text-xs font-mono text-[#1A535C] hover:border-[#1A535C] hover:bg-background transition-colors"
                       >
                         {`{{${key}}}`}
                       </button>
@@ -228,24 +228,24 @@ export function TemplateEditor({ triggerTaskNaam, open, onClose, onSaved }: Temp
                   rows={12}
                   className="font-mono text-xs leading-relaxed"
                 />
-                <p className="text-xs text-[#9B9B95]">
+                <p className="text-xs text-muted-foreground">
                   Minimaal {MIN_BODY_LENGTH} tekens. {body.trim().length} tekens nu.
                 </p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wide text-[#9B9B95]">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                 Voorbeeld (met dummy-data)
               </Label>
-              <div className="rounded-lg border border-[#E2E2DD] bg-white overflow-hidden">
-                <div className="border-b border-[#E2E2DD] bg-[#F8F7F4] px-4 py-2.5">
-                  <p className="text-[11px] uppercase tracking-wide text-[#9B9B95]">Onderwerp</p>
-                  <p className="text-sm font-medium text-[#1A1A1A] mt-0.5">{previewOnderwerp || <span className="italic text-[#9B9B95]">leeg</span>}</p>
+              <div className="rounded-lg border border-border bg-white overflow-hidden">
+                <div className="border-b border-border bg-background px-4 py-2.5">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Onderwerp</p>
+                  <p className="text-sm font-medium text-foreground mt-0.5">{previewOnderwerp || <span className="italic text-muted-foreground">leeg</span>}</p>
                 </div>
                 <div className="px-4 py-3">
-                  <pre className="whitespace-pre-wrap font-sans text-sm text-[#1A1A1A] leading-relaxed">
-                    {previewBody || <span className="italic text-[#9B9B95]">leeg</span>}
+                  <pre className="whitespace-pre-wrap font-sans text-sm text-foreground leading-relaxed">
+                    {previewBody || <span className="italic text-muted-foreground">leeg</span>}
                   </pre>
                 </div>
               </div>

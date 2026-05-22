@@ -122,7 +122,7 @@ export function ProjectCreate() {
   }
 
   return (
-    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full bg-[#F8F7F5]">
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full bg-background">
       <div className="relative max-w-2xl mx-auto px-4 pt-5 md:pt-12 pb-[calc(8.5rem+env(safe-area-inset-bottom))] md:pb-12 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-3 md:gap-4 mb-5 md:mb-6">
@@ -167,7 +167,7 @@ export function ProjectCreate() {
                   onChange={(e) => setNaam(e.target.value)}
                   placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
                   className="h-10 rounded-lg text-[14px]"
-                  style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
+                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }}
                   required
                 />
               </div>
@@ -181,7 +181,7 @@ export function ProjectCreate() {
                   onChange={(e) => setBeschrijving(e.target.value)}
                   placeholder="Korte omschrijving..."
                   className="h-10 rounded-lg text-[14px]"
-                  style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
+                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }}
                 />
               </div>
             </div>
@@ -191,7 +191,7 @@ export function ProjectCreate() {
               <div>
                 <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Status</Label>
                 <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
-                  <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
+                  <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -211,7 +211,7 @@ export function ProjectCreate() {
                   value={startDatum}
                   onChange={(e) => setStartDatum(e.target.value)}
                   className="h-10 rounded-lg font-mono text-[13px]"
-                  style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
+                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }}
                 />
               </div>
               <div>
@@ -221,7 +221,7 @@ export function ProjectCreate() {
                   value={eindDatum}
                   onChange={(e) => setEindDatum(e.target.value)}
                   className="h-10 rounded-lg font-mono text-[13px]"
-                  style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
+                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }}
                 />
               </div>
             </div>
@@ -278,7 +278,7 @@ export function ProjectCreate() {
 
       {/* Sticky bottom action bar — mobile only, sits above MobileBottomNav (h-14 + safe-area) */}
       <div
-        className="md:hidden fixed inset-x-0 z-30 bg-white/95 backdrop-blur-xl border-t border-[#EBEBEB] px-4 py-3 flex items-center gap-2 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
+        className="md:hidden fixed inset-x-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 flex items-center gap-2 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
         style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}
       >
         <button

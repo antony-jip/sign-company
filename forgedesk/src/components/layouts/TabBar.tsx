@@ -24,7 +24,7 @@ function TabItem({
         'tab-bar-item group relative flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold tracking-[-0.01em] transition-colors duration-150 whitespace-nowrap max-w-[200px] min-w-[80px] select-none rounded-md',
         isActive
           ? 'bg-[#1A535C]/[0.07] text-[#1A535C]'
-          : 'text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04]'
+          : 'text-muted-foreground hover:text-foreground hover:bg-black/[0.04]'
       )}
       onClick={onActivate}
       onContextMenu={onContextMenu}
@@ -152,16 +152,12 @@ export function TabBar() {
   return (
     <>
       <div
-        className="tab-bar flex items-center gap-0.5 px-2 py-1"
-        style={{
-          background: 'linear-gradient(180deg, #FCFCFA 0%, #F8F7F5 100%)',
-          borderBottom: '1px solid #E6E4DE',
-        }}
+        className="tab-bar flex items-center gap-0.5 px-2 py-1 bg-card border-b border-border"
       >
         {/* Scroll left */}
         {showScrollButtons && (
           <button
-            className="flex-shrink-0 w-5 h-5 rounded text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] flex items-center justify-center transition-colors"
+            className="flex-shrink-0 w-5 h-5 rounded text-muted-foreground hover:text-foreground hover:bg-black/[0.04] flex items-center justify-center transition-colors"
             onClick={() => scroll('left')}
           >
             <ChevronLeft className="w-3.5 h-3.5" />
@@ -193,7 +189,7 @@ export function TabBar() {
           ))}
 
           <button
-            className="flex-shrink-0 w-6 h-6 rounded-md text-[#9B9B95] hover:text-[#F15025] hover:bg-[#F15025]/[0.08] flex items-center justify-center transition-colors ml-0.5"
+            className="flex-shrink-0 w-6 h-6 rounded-md text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.08] flex items-center justify-center transition-colors ml-0.5"
             onClick={newTab}
             title="Nieuw tabblad (Cmd+T)"
           >
@@ -204,7 +200,7 @@ export function TabBar() {
         {/* Scroll right */}
         {showScrollButtons && (
           <button
-            className="flex-shrink-0 w-5 h-5 rounded text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] flex items-center justify-center transition-colors"
+            className="flex-shrink-0 w-5 h-5 rounded text-muted-foreground hover:text-foreground hover:bg-black/[0.04] flex items-center justify-center transition-colors"
             onClick={() => scroll('right')}
           >
             <ChevronRight className="w-3.5 h-3.5" />

@@ -50,7 +50,7 @@ export function MedewerkerFilterCombobox({
         <button
           type="button"
           className={cn(
-            'h-7 inline-flex items-center gap-1.5 rounded-md border border-[#E0DED8] bg-white px-2 text-[13px] text-[#6B6B66] hover:border-[#1A535C]/40 focus:outline-none focus:border-[#1A535C]/40 transition-colors',
+            'h-7 inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-2 text-[13px] text-foreground/70 hover:border-[#1A535C]/40 focus:outline-none focus:border-[#1A535C]/40 transition-colors',
             className
           )}
         >
@@ -66,16 +66,16 @@ export function MedewerkerFilterCombobox({
             </>
           ) : (
             <>
-              <Users className="h-3.5 w-3.5 text-[#9B9B95]" />
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{allLabel}</span>
             </>
           )}
-          <ChevronDown className="h-3 w-3 text-[#9B9B95]" />
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-2">
         <div className="relative mb-2">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95]" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             autoFocus
             value={query}
@@ -89,16 +89,16 @@ export function MedewerkerFilterCombobox({
             type="button"
             onClick={() => { onChange(''); setOpen(false) }}
             className={cn(
-              'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-[#F3F2F0] transition-colors',
+              'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-background transition-colors',
               value === '' && 'bg-[#1A535C]/[0.06] text-[#1A535C] font-semibold'
             )}
           >
-            <Users className="h-4 w-4 text-[#9B9B95]" />
+            <Users className="h-4 w-4 text-muted-foreground" />
             <span className="flex-1">{allLabel}</span>
             {value === '' && <Check className="h-3.5 w-3.5 text-[#1A535C]" />}
           </button>
           {filtered.length === 0 && query && (
-            <div className="px-2 py-6 text-center text-[12px] text-[#9B9B95]">Geen resultaat</div>
+            <div className="px-2 py-6 text-center text-[12px] text-muted-foreground">Geen resultaat</div>
           )}
           {filtered.map((m) => {
             const idx = actief.findIndex((x) => x.id === m.id)
@@ -109,7 +109,7 @@ export function MedewerkerFilterCombobox({
                 type="button"
                 onClick={() => { onChange(m.naam); setOpen(false) }}
                 className={cn(
-                  'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-[#F3F2F0] transition-colors',
+                  'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-background transition-colors',
                   isSelected && 'bg-[#1A535C]/[0.06] text-[#1A535C] font-semibold'
                 )}
               >

@@ -136,7 +136,7 @@ export function PortaalFeedItemTekening({
                 <div key={f.id}>
                   <div
                     className="flex items-center gap-2 py-2 px-3 rounded-lg"
-                    style={{ backgroundColor: '#F5F5F0', border: '0.5px solid #E8E6E1' }}
+                    style={{ backgroundColor: 'hsl(var(--muted))', border: '0.5px solid #E8E6E1' }}
                   >
                     <FileText className="w-4 h-4 flex-shrink-0" style={{ color: '#C03A18' }} />
                     <span className="truncate flex-1 text-sm" style={{ color: '#191919' }}>{f.bestandsnaam}</span>
@@ -158,7 +158,7 @@ export function PortaalFeedItemTekening({
                     <a
                       href={f.url}
                       download={f.bestandsnaam}
-                      className="p-1 rounded hover:bg-[#F4F2EE] transition-colors"
+                      className="p-1 rounded hover:bg-muted transition-colors"
                       title="Download"
                     >
                       <Download className="w-3.5 h-3.5" style={{ color: '#A0A098' }} />
@@ -178,7 +178,7 @@ export function PortaalFeedItemTekening({
                   href={f.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-[#F8F7F5] transition-colors"
+                  className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-background transition-colors"
                   style={{ fontSize: 13, color: '#1A535C' }}
                 >
                   <FileText className="w-3.5 h-3.5 flex-shrink-0" />
@@ -217,7 +217,7 @@ export function PortaalFeedItemTekening({
                 <button
                   onClick={() => setConfirmAction(null)}
                   disabled={loading}
-                  className="px-3 py-2 rounded-lg text-sm hover:bg-[#F8F7F5]"
+                  className="px-3 py-2 rounded-lg text-sm hover:bg-background"
                   style={{ color: '#5A5A55' }}
                 >
                   Annuleren
@@ -237,8 +237,8 @@ export function PortaalFeedItemTekening({
                     setConfirmAction('revisie')
                     onVragenStellen()
                   }}
-                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#F4F2EE]"
-                  style={{ backgroundColor: '#FAF9F7', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
+                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted"
+                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
                 >
                   Revisie
                 </button>

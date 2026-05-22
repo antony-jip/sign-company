@@ -40,7 +40,7 @@ export function PortaalKlantReactie({
       className="ml-6 rounded-r-lg py-3 px-4"
       style={{
         borderLeft: '3px solid #F15025',
-        backgroundColor: '#FAFAF8',
+        backgroundColor: 'hsl(var(--background))',
       }}
     >
       <div className="flex items-center gap-2 mb-1">

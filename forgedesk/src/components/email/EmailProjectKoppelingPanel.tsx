@@ -159,14 +159,14 @@ export function EmailProjectKoppelingPanel({
         disabled={saving}
         className={cn(
           'w-full flex items-center gap-2 px-2 py-2 rounded-md text-left disabled:opacity-50 transition-colors duration-150',
-          active ? 'bg-[#1A535C]/[0.06]' : 'hover:bg-[#F0EFEC]',
+          active ? 'bg-[#1A535C]/[0.06]' : 'hover:bg-muted',
         )}
       >
-        <Briefcase className={cn('h-3.5 w-3.5 flex-shrink-0', active ? 'text-[#1A535C]' : 'text-[#9B9B95]')} />
+        <Briefcase className={cn('h-3.5 w-3.5 flex-shrink-0', active ? 'text-[#1A535C]' : 'text-muted-foreground')} />
         <div className="min-w-0 flex-1">
-          <div className="text-[12px] font-medium text-[#1A1A1A] truncate">{p.naam}</div>
+          <div className="text-[12px] font-medium text-foreground truncate">{p.naam}</div>
           {p.project_nummer && (
-            <div className="text-[10px] text-[#9B9B95] font-mono">{p.project_nummer}</div>
+            <div className="text-[10px] text-muted-foreground font-mono">{p.project_nummer}</div>
           )}
         </div>
         {active && <Check className="h-3.5 w-3.5 text-[#1A535C] flex-shrink-0" />}
@@ -188,12 +188,12 @@ export function EmailProjectKoppelingPanel({
   return (
     <div className="bg-white rounded-xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
       <div className="flex items-center justify-between mb-2.5">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Project</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</span>
         {(linkedProject || pickerOpen) && (
           <button
             type="button"
             onClick={() => setPickerOpen((v) => !v)}
-            className="text-[11px] text-[#9B9B95] hover:text-[#1A535C] transition-colors duration-150"
+            className="text-[11px] text-muted-foreground hover:text-[#1A535C] transition-colors duration-150"
           >
             {pickerOpen ? 'Sluiten' : 'Wijzigen'}
           </button>
@@ -201,7 +201,7 @@ export function EmailProjectKoppelingPanel({
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-[12px] text-[#9B9B95]">
+        <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           Laden.
         </div>
@@ -214,20 +214,20 @@ export function EmailProjectKoppelingPanel({
             <button
               type="button"
               onClick={() => navigate(`/projecten/${linkedProject.id}`)}
-              className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#1A535C] truncate text-left transition-colors duration-150 block w-full"
+              className="text-[13px] font-medium text-foreground hover:text-[#1A535C] truncate text-left transition-colors duration-150 block w-full"
               title={linkedProject.naam}
             >
               {linkedProject.naam}
             </button>
             {linkedProject.project_nummer && (
-              <p className="text-[11px] text-[#9B9B95] font-mono">{linkedProject.project_nummer}</p>
+              <p className="text-[11px] text-muted-foreground font-mono">{linkedProject.project_nummer}</p>
             )}
           </div>
           <button
             type="button"
             onClick={handleOntkoppel}
             disabled={saving}
-            className="p-1.5 rounded-md hover:bg-[#F0EFEC] text-[#9B9B95] hover:text-[#C0451A] disabled:opacity-50 transition-colors duration-150"
+            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-[#C0451A] disabled:opacity-50 transition-colors duration-150"
             title="Ontkoppel"
           >
             <X className="h-3.5 w-3.5" />
@@ -237,7 +237,7 @@ export function EmailProjectKoppelingPanel({
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-[#EBEBEB] text-[12px] text-[#1A535C] font-medium hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.03] transition-colors duration-150"
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-border text-[12px] text-[#1A535C] font-medium hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.03] transition-colors duration-150"
         >
           <Briefcase className="h-3.5 w-3.5" />
           Koppel aan project
@@ -245,36 +245,36 @@ export function EmailProjectKoppelingPanel({
       )}
 
       {pickerOpen && (
-        <div ref={pickerRef} className="mt-3 border-t border-[#F0EFEC] pt-3">
-          <div className="flex items-center gap-2 h-8 px-2.5 bg-[#F8F7F5] rounded-md focus-within:ring-2 focus-within:ring-[#1A535C]/20 transition-shadow">
-            <Search className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
+        <div ref={pickerRef} className="mt-3 border-t border-border pt-3">
+          <div className="flex items-center gap-2 h-8 px-2.5 bg-background rounded-md focus-within:ring-2 focus-within:ring-[#1A535C]/20 transition-shadow">
+            <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
             <input
               autoFocus
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Zoek project."
-              className="flex-1 bg-transparent text-[12px] text-[#1A1A1A] outline-none placeholder:text-[#9B9B95]"
+              className="flex-1 bg-transparent text-[12px] text-foreground outline-none placeholder:text-muted-foreground"
             />
             {query && (
-              <button onClick={() => setQuery('')} className="p-0.5 hover:bg-[#EBEBEB] rounded">
-                <X className="h-3 w-3 text-[#9B9B95]" />
+              <button onClick={() => setQuery('')} className="p-0.5 hover:bg-border rounded">
+                <X className="h-3 w-3 text-muted-foreground" />
               </button>
             )}
           </div>
           <div className="mt-1 max-h-[260px] overflow-y-auto -mx-1">
             {searching && suggestieItems.length === 0 && restItems.length === 0 ? (
-              <div className="flex items-center gap-2 px-2 py-3 text-[12px] text-[#9B9B95]">
+              <div className="flex items-center gap-2 px-2 py-3 text-[12px] text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Zoeken.
               </div>
             ) : suggestieItems.length === 0 && restItems.length === 0 ? (
-              <p className="px-2 py-3 text-[12px] text-[#9B9B95]">Geen projecten gevonden.</p>
+              <p className="px-2 py-3 text-[12px] text-muted-foreground">Geen projecten gevonden.</p>
             ) : (
               <>
                 {suggestieItems.length > 0 && (
                   <>
-                    <p className="px-2 pt-1 pb-1 text-[10px] text-[#9B9B95] uppercase tracking-[0.08em]">
+                    <p className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground uppercase tracking-[0.08em]">
                       Voorgesteld op basis van afzender
                     </p>
                     {suggestieItems.map((p) => renderProjectRow(p))}
@@ -283,8 +283,8 @@ export function EmailProjectKoppelingPanel({
                 {restItems.length > 0 && (
                   <>
                     <p className={cn(
-                      'px-2 pb-1 text-[10px] text-[#9B9B95] uppercase tracking-[0.08em]',
-                      suggestieItems.length > 0 ? 'pt-3 mt-1 border-t border-[#F0EFEC]' : 'pt-1',
+                      'px-2 pb-1 text-[10px] text-muted-foreground uppercase tracking-[0.08em]',
+                      suggestieItems.length > 0 ? 'pt-3 mt-1 border-t border-border' : 'pt-1',
                     )}>
                       {query.trim().length > 0 ? 'Zoekresultaten' : 'Andere actieve projecten'}
                     </p>

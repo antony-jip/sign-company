@@ -28,7 +28,7 @@ interface EmailFocusKaartProps {
 
 export function EmailFocusKaart({ onUitzetten }: EmailFocusKaartProps) {
   return (
-    <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-[#F8F7F5]">
+    <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-background">
       <ParticleField />
       <motion.div
         variants={container}

@@ -86,12 +86,12 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
           <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
             <PhPulse size={16} weight="duotone" />
           </span>
-          <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+          <h3 className="font-heading text-[15px] font-bold text-foreground">
             Activiteit<span className="text-[#F15025]">.</span>
           </h3>
         </div>
         <p
-          className="text-[12px] text-[#9B9B95] py-3 text-center"
+          className="text-[12px] text-muted-foreground py-3 text-center"
           style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
         >
           nog geen activiteit
@@ -108,13 +108,13 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
       >
         <div className="flex items-center gap-2">
           {collapsed
-            ? <ChevronRight className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A1A1A] transition-colors" />
-            : <ChevronDown className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A1A1A] transition-colors" />
+            ? <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
           }
           <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
             <PhPulse size={16} weight="duotone" />
           </span>
-          <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+          <h3 className="font-heading text-[15px] font-bold text-foreground">
             Activiteit<span className="text-[#F15025]">.</span>
           </h3>
           <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
@@ -154,23 +154,23 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
                 <Icon size={14} weight="duotone" color={color} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] text-[#4A4A46] leading-snug">
+                <p className="text-[13px] text-foreground/80 leading-snug">
                   {event.medewerker && event.bron === 'audit' ? (
                     <>
-                      <span className="font-semibold text-[#1A1A1A]">{event.medewerker.split(' ')[0]}</span>
+                      <span className="font-semibold text-foreground">{event.medewerker.split(' ')[0]}</span>
                       {' heeft '}
                       <span className="[&_*]:font-mono">{event.tekst}</span>
                     </>
                   ) : event.medewerker ? (
                     <>
-                      <span className="font-semibold text-[#1A1A1A]">{event.medewerker.split(' ')[0]}</span>
+                      <span className="font-semibold text-foreground">{event.medewerker.split(' ')[0]}</span>
                       {' '}{event.tekst}
                     </>
                   ) : (
                     event.tekst
                   )}
                 </p>
-                <p className="font-mono text-[11px] text-[#9B9B95] mt-0.5">
+                <p className="font-mono text-[11px] text-muted-foreground mt-0.5">
                   {formatRelativeTime(event.datum)}
                 </p>
               </div>

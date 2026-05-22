@@ -110,9 +110,9 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
           <span className="doen-duo-icon mb-3 inline-flex" style={{ '--duo-sec': '#1A535C', '--duo-sec-opacity': 0.5 } as React.CSSProperties}>
             <PhFolderSimple size={42} weight="duotone" />
           </span>
-          <p className="text-sm font-semibold text-[#1A1A1A]">Geen activiteiten</p>
+          <p className="text-sm font-semibold text-foreground">Geen activiteiten</p>
           <p
-            className="text-xs text-[#9B9B95] mt-1"
+            className="text-xs text-muted-foreground mt-1"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             importeer historie via Klanten · Importeren
@@ -164,7 +164,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
               <PhFolderSimple size={16} weight="duotone" />
             </span>
             Activiteiten <span className="text-[#F15025]">.</span>{' '}
-            <span className="text-[#9B9B95] font-mono text-[12px]">{filteredItems.length}</span>
+            <span className="text-muted-foreground font-mono text-[12px]">{filteredItems.length}</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">

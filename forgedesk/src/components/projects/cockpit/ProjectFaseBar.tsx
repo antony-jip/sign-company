@@ -52,11 +52,11 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
   return (
     <div className="rounded-2xl p-7 bg-white border border-[rgba(26,83,92,0.08)]">
       <div className="flex items-baseline justify-between mb-8">
-        <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+        <h3 className="font-heading text-[15px] font-bold text-foreground">
           Voortgang<span className="text-[#F15025]">.</span>
         </h3>
         <span
-          className="text-[12px] text-[#9B9B95]"
+          className="text-[12px] text-muted-foreground"
           style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
         >
           fase {currentIdx + 1} van {FASES.length} · {currentFase.label.toLowerCase()}
@@ -163,7 +163,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     <span
                       className={cn(
                         'font-heading font-bold text-[15px] tracking-[-0.01em] transition-colors duration-200',
-                        isActive ? 'text-[#1A1A1A]' : isPast || isFinalCompleted ? 'text-[#1A535C]' : 'text-[rgba(26,83,92,0.45)] group-hover:text-[#1A535C]',
+                        isActive ? 'text-foreground' : isPast || isFinalCompleted ? 'text-[#1A535C]' : 'text-[rgba(26,83,92,0.45)] group-hover:text-[#1A535C]',
                       )}
                     >
                       {fase.label}<span className="text-[#F15025]">.</span>
@@ -171,7 +171,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     <span
                       className={cn(
                         'text-[9.5px] uppercase tracking-[0.16em] font-semibold transition-colors duration-200 text-center max-w-[110px] leading-[1.4]',
-                        isActive ? 'text-[#6B6B66]' : isPast || isFinalCompleted ? 'text-[#9B9B95]' : 'text-[rgba(26,83,92,0.30)] group-hover:text-[#9B9B95]',
+                        isActive ? 'text-foreground/70' : isPast || isFinalCompleted ? 'text-muted-foreground' : 'text-[rgba(26,83,92,0.30)] group-hover:text-muted-foreground',
                       )}
                     >
                       {fase.caption}
@@ -225,27 +225,27 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
           <div className="flex items-center gap-4 lg:flex-shrink-0 lg:border-l lg:border-[rgba(26,83,92,0.1)] lg:pl-6 pt-3 lg:pt-0 border-t lg:border-t-0 border-[rgba(26,83,92,0.08)]">
             {totaalBedrag !== undefined && totaalBedrag > 0 && (
               <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] uppercase tracking-widest text-[#9B9B95] font-semibold">
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                   Bedrag
                 </span>
-                <span className="font-mono text-[15px] tabular-nums font-bold text-[#1A1A1A]">
+                <span className="font-mono text-[15px] tabular-nums font-bold text-foreground">
                   €{formatAmount(totaalBedrag)}
                 </span>
               </div>
             )}
             {deadlineInfo && (
               <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] uppercase tracking-widest text-[#9B9B95] font-semibold">
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                   Deadline
                 </span>
                 <span className="flex items-center gap-1.5 font-mono text-[13px] font-semibold">
                   <span className="doen-duo-icon" style={{ '--duo-sec': deadlineInfo.overdue ? '#C03A18' : '#1A535C' } as React.CSSProperties}>
                     <PhCalendar size={13} weight="duotone" />
                   </span>
-                  <span className="text-[#1A1A1A]">{deadlineInfo.label}</span>
+                  <span className="text-foreground">{deadlineInfo.label}</span>
                   {deadlineInfo.daysLeft !== null && (
                     <span
-                      className={deadlineInfo.overdue ? 'text-[#C03A18] font-bold' : 'text-[#9B9B95] font-normal'}
+                      className={deadlineInfo.overdue ? 'text-[#C03A18] font-bold' : 'text-muted-foreground font-normal'}
                     >
                       {deadlineInfo.overdue ? `${Math.abs(deadlineInfo.daysLeft)}d over` : `${deadlineInfo.daysLeft}d`}
                     </span>

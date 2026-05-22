@@ -91,7 +91,7 @@ function MedewerkerToggleRow({
           'h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors',
           value === ''
             ? 'bg-[#1A535C] text-white'
-            : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#EBEBEB]',
+            : 'bg-background text-foreground/70 hover:bg-border',
         )}
       >
         Iedereen
@@ -127,7 +127,7 @@ function MedewerkerToggleRow({
                 'inline-flex items-center justify-center h-7 px-1.5 rounded-full text-[11px] transition-colors gap-0.5',
                 overflowSelected
                   ? 'bg-[#1A535C] text-white'
-                  : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#EBEBEB]',
+                  : 'bg-background text-foreground/70 hover:bg-border',
               )}
               title="Meer medewerkers"
             >
@@ -150,7 +150,7 @@ function MedewerkerToggleRow({
                       }}
                       className={cn(
                         'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[12px] transition-colors',
-                        isActive ? 'bg-[#F8F7F5] font-semibold text-[#1A535C]' : 'hover:bg-[#F8F7F5] text-[#1A1A1A]',
+                        isActive ? 'bg-background font-semibold text-[#1A535C]' : 'hover:bg-background text-foreground',
                       )}
                     >
                       <span
@@ -272,12 +272,12 @@ function DezeWeekCard() {
     >
       <header className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-baseline gap-2 min-w-0">
-          <h2 className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+          <h2 className="font-heading text-[14px] font-bold text-foreground">
             {weekOffset === 0 ? 'Deze week' : weekOffset === -1 ? 'Vorige week' : weekOffset === 1 ? 'Volgende week' : `Week ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
             <span className="text-[#F15025]">.</span>
           </h2>
           <span
-            className="text-[14px] text-[#9B9B95] truncate"
+            className="text-[14px] text-muted-foreground truncate"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             · week {getISOWeek(weekStart)}
@@ -287,17 +287,17 @@ function DezeWeekCard() {
           <button
             type="button"
             onClick={() => setWeekOffset(o => o - 1)}
-            className="p-1 rounded-md hover:bg-[#F8F7F5] transition-colors"
+            className="p-1 rounded-md hover:bg-background transition-colors"
             aria-label="Vorige week"
           >
-            <ChevronLeft className="w-3.5 h-3.5 text-[#6B6B66]" />
+            <ChevronLeft className="w-3.5 h-3.5 text-foreground/70" />
           </button>
           <button
             type="button"
             onClick={() => setWeekOffset(0)}
             className={cn(
               'text-[11px] font-mono uppercase tracking-wider px-1.5 transition-colors',
-              weekOffset === 0 ? 'text-[#9B9B95] cursor-default' : 'text-[#1A535C] hover:underline',
+              weekOffset === 0 ? 'text-muted-foreground cursor-default' : 'text-[#1A535C] hover:underline',
             )}
             title="Naar deze week"
           >
@@ -306,10 +306,10 @@ function DezeWeekCard() {
           <button
             type="button"
             onClick={() => setWeekOffset(o => o + 1)}
-            className="p-1 rounded-md hover:bg-[#F8F7F5] transition-colors"
+            className="p-1 rounded-md hover:bg-background transition-colors"
             aria-label="Volgende week"
           >
-            <ChevronRight className="w-3.5 h-3.5 text-[#6B6B66]" />
+            <ChevronRight className="w-3.5 h-3.5 text-foreground/70" />
           </button>
         </div>
       </header>
@@ -330,11 +330,11 @@ function DezeWeekCard() {
           const hasActivity = items.some(it => ((it.date.getDay() + 6) % 7) === i)
           return (
             <div key={i} className="flex flex-col items-center gap-1">
-              <span className="text-[10px] uppercase text-[#9B9B95]">{d}</span>
+              <span className="text-[10px] uppercase text-muted-foreground">{d}</span>
               <span
                 className={cn(
                   'text-[13px] font-mono rounded-md w-7 h-7 flex items-center justify-center',
-                  isToday ? 'bg-[#1A535C] text-white font-semibold' : 'text-[#1A1A1A]',
+                  isToday ? 'bg-[#1A535C] text-white font-semibold' : 'text-foreground',
                 )}
               >
                 {date.getDate()}
@@ -350,7 +350,7 @@ function DezeWeekCard() {
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-[#9B9B95] py-2">Geen afspraken deze week.</p>
+        <p className="text-sm text-muted-foreground py-2">Geen afspraken deze week.</p>
       ) : (
         <ul className="space-y-3 max-h-[280px] overflow-y-auto pr-1 -mr-2">
           {items.map(item => {
@@ -360,20 +360,20 @@ function DezeWeekCard() {
                 <button
                   type="button"
                   onClick={() => navigate(item.href)}
-                  className="w-full flex items-start gap-3 text-left hover:bg-[#F8F7F5] rounded-md -mx-2 px-2 py-1 transition-colors"
+                  className="w-full flex items-start gap-3 text-left hover:bg-background rounded-md -mx-2 px-2 py-1 transition-colors"
                 >
                   <span className="w-10 pt-0.5 flex-shrink-0 leading-tight">
-                    <span className="block text-[10px] uppercase text-[#9B9B95] font-semibold">
+                    <span className="block text-[10px] uppercase text-muted-foreground font-semibold">
                       {DAY_LABELS[dayIdx]}
                     </span>
-                    <span className="block font-mono text-[11px] text-[#6B6B66]">
+                    <span className="block font-mono text-[11px] text-foreground/70">
                       {item.tijd ?? '·'}
                     </span>
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-[13px] text-[#1A1A1A] truncate">{item.titel}</span>
+                    <span className="block text-[13px] text-foreground truncate">{item.titel}</span>
                     {item.sub && (
-                      <span className="block text-[11px] text-[#9B9B95] truncate">{item.sub}</span>
+                      <span className="block text-[11px] text-muted-foreground truncate">{item.sub}</span>
                     )}
                   </span>
                   <span
@@ -513,22 +513,22 @@ function TeamCard() {
       }}
     >
       <header className="flex items-baseline justify-between mb-4">
-        <h2 className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+        <h2 className="font-heading text-[14px] font-bold text-foreground">
           Gedaan<span className="text-[#F15025]">.</span>
           <span
-            className="text-[#9B9B95] ml-2 font-normal"
+            className="text-muted-foreground ml-2 font-normal"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             · team-log
           </span>
         </h2>
-        <span className="text-[11px] font-mono text-[#9B9B95]">
+        <span className="text-[11px] font-mono text-muted-foreground">
           {stats.actief} actief
         </span>
       </header>
 
       {activiteit.length === 0 ? (
-        <p className="text-sm text-[#9B9B95] py-2">Nog geen activiteit deze week.</p>
+        <p className="text-sm text-muted-foreground py-2">Nog geen activiteit deze week.</p>
       ) : (
         <ul className="space-y-3 max-h-[200px] overflow-y-auto pr-1 -mr-2">
           {activiteit.map(item => (
@@ -536,7 +536,7 @@ function TeamCard() {
               <button
                 type="button"
                 onClick={() => navigate(item.href)}
-                className="w-full flex items-center gap-3 text-left hover:bg-[#F8F7F5] rounded-md -mx-2 px-2 py-1 transition-colors"
+                className="w-full flex items-center gap-3 text-left hover:bg-background rounded-md -mx-2 px-2 py-1 transition-colors"
               >
                 {item.medewerker ? (
                   <Avatar medewerker={item.medewerker} medewerkers={medewerkers} size={26} />
@@ -549,12 +549,12 @@ function TeamCard() {
                   </span>
                 )}
                 <span className="flex-1 min-w-0">
-                  <span className="block text-[12px] text-[#1A1A1A] truncate">
+                  <span className="block text-[12px] text-foreground truncate">
                     <span className="font-medium">{item.medewerker?.naam.split(' ')[0] || '·'}</span>
                   </span>
-                  <span className="block text-[11px] text-[#9B9B95] truncate">{item.tekst}</span>
+                  <span className="block text-[11px] text-muted-foreground truncate">{item.tekst}</span>
                 </span>
-                <span className="text-[10px] font-mono text-[#9B9B95] flex-shrink-0">
+                <span className="text-[10px] font-mono text-muted-foreground flex-shrink-0">
                   {item.tijd}
                 </span>
               </button>

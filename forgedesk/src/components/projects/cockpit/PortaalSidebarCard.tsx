@@ -109,10 +109,10 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
 
   if (!portaal) {
     return (
-      <div className="border border-[#E6E4E0] bg-[#FAFAF8] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
+      <div className="border border-border bg-background shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-3">
-          <div className="h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#E6E4E0]">
-            <Send className="h-4 w-4 text-[#9B9B95]" />
+          <div className="h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-muted">
+            <Send className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-sm font-semibold text-foreground">Portaal</span>
@@ -142,7 +142,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
   const previewTijd = laatsteItem ? formatTime(laatsteItem.created_at) : ''
 
   return (
-    <div className="border border-[#E6E4E0] bg-[#FAFAF8] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
+    <div className="border border-border bg-background shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
       <PortaalSidebarHeader
         expanded={expanded}
         setExpanded={setExpanded}
@@ -157,7 +157,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
       />
 
       {expanded && (
-        <div className="border-t border-[#E6E4E0]">
+        <div className="border-t border-border">
           <PortaalSidebarTimeline
             items={items}
             voortgang={voortgang}

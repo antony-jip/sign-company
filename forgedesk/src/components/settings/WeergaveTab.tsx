@@ -445,7 +445,7 @@ export function WeergaveTab() {
         {/* Auto-collapse Sidebar */}
         <div className="flex items-center justify-between py-4 first:pt-0">
           <div className="flex items-start gap-3">
-            <PanelLeft className="w-4 h-4 text-[#9B9B95] mt-0.5 flex-shrink-0" />
+            <PanelLeft className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-foreground">
                 Sidebar automatisch inklappen
@@ -472,7 +472,7 @@ export function WeergaveTab() {
         {/* Email snelknop */}
         <div className="flex items-center justify-between py-4">
           <div className="flex items-start gap-3">
-            <Mail className="w-4 h-4 text-[#9B9B95] mt-0.5 flex-shrink-0" />
+            <Mail className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-foreground">
                 Email snelknop
@@ -494,7 +494,7 @@ export function WeergaveTab() {
         {/* Snelkoppelingen aan/uit */}
         <div className="flex items-center justify-between py-4 last:pb-0">
           <div className="flex items-start gap-3">
-            <Plus className="w-4 h-4 text-[#9B9B95] mt-0.5 flex-shrink-0" />
+            <Plus className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-foreground">
                 Snelkoppelingen (+)
@@ -634,10 +634,10 @@ export function WeergaveTab() {
       <CardContent className="space-y-5">
         {/* Aan-count summary */}
         <div className="flex items-baseline justify-between pb-3 border-b border-[rgba(26,83,92,0.1)]">
-          <span className="text-[13px] text-[#6B6B66]">
+          <span className="text-[13px] text-foreground/70">
             <span className="font-mono font-bold text-[#1A535C] tabular-nums">{sidebarItems.length}</span>
-            <span className="text-[#C0BDB8]"> / </span>
-            <span className="font-mono tabular-nums text-[#9B9B95]">{ALL_SIDEBAR_ITEMS.length}</span>
+            <span className="text-muted-foreground/70"> / </span>
+            <span className="font-mono tabular-nums text-muted-foreground">{ALL_SIDEBAR_ITEMS.length}</span>
             <span className="ml-1.5">items zichtbaar</span>
           </span>
           {sidebarItems.length < ALL_SIDEBAR_ITEMS.length && (
@@ -659,10 +659,10 @@ export function WeergaveTab() {
           return (
             <div key={section}>
               <div className="flex items-baseline gap-2 mb-2.5">
-                <h4 className="text-[11px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+                <h4 className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70">
                   {section}
                 </h4>
-                <span className="text-[10px] font-mono tabular-nums text-[#9B9B95]">
+                <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
                   · {aanInSection}/{sectionItems.length}
                 </span>
               </div>
@@ -677,8 +677,8 @@ export function WeergaveTab() {
                       className={cn(
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 border',
                         isOn
-                          ? 'bg-white text-[#1A1A1A] border-[rgba(26,83,92,0.18)] shadow-[0_1px_2px_rgba(20,62,71,0.06)] hover:border-[rgba(26,83,92,0.3)]'
-                          : 'bg-transparent text-[#9B9B95] border-[rgba(26,83,92,0.12)] border-dashed hover:text-[#6B6B66] hover:bg-white/50 hover:border-[rgba(26,83,92,0.2)]',
+                          ? 'bg-white text-foreground border-[rgba(26,83,92,0.18)] shadow-[0_1px_2px_rgba(20,62,71,0.06)] hover:border-[rgba(26,83,92,0.3)]'
+                          : 'bg-transparent text-muted-foreground border-[rgba(26,83,92,0.12)] border-dashed hover:text-foreground/70 hover:bg-white/50 hover:border-[rgba(26,83,92,0.2)]',
                       )}
                       aria-pressed={isOn}
                     >
@@ -699,12 +699,12 @@ export function WeergaveTab() {
 
         {/* Instellingen (altijd aan) — kleine fixed-footer */}
         <div className="flex items-center gap-2 pt-2 border-t border-[rgba(26,83,92,0.08)]">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium bg-[rgba(26,83,92,0.05)] text-[#6B6B66] border border-[rgba(26,83,92,0.08)]">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium bg-[rgba(26,83,92,0.05)] text-foreground/70 border border-[rgba(26,83,92,0.08)]">
             <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-[#9B9B95] flex-shrink-0" />
             Instellingen
           </span>
           <span
-            className="text-[12px] text-[#9B9B95]"
+            className="text-[12px] text-muted-foreground"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             · altijd zichtbaar
@@ -713,7 +713,7 @@ export function WeergaveTab() {
 
         {/* Notice: alleen voor sidebar-modus */}
         <p
-          className="text-[12px] text-[#9B9B95]"
+          className="text-[12px] text-muted-foreground"
           style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
         >
           · deze instellingen gelden alleen voor de zijbalk-navigatie. Met top-navigatie als layout zijn alle items altijd zichtbaar.
@@ -721,7 +721,7 @@ export function WeergaveTab() {
 
         {/* Save action */}
         <div className="flex items-center justify-between pt-2 border-t border-[rgba(26,83,92,0.08)]">
-          <span className="text-[12px] text-[#9B9B95]">
+          <span className="text-[12px] text-muted-foreground">
             {hasUnsavedNavChanges
               ? <span className="text-[#F15025] font-semibold">Onopgeslagen wijzigingen</span>
               : 'Alle wijzigingen opgeslagen'}

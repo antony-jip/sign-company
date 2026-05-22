@@ -66,7 +66,7 @@ export function IngeplandeBerichtenLijst() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center text-[13px] text-[#9B9B95]">
+      <div className="flex-1 flex items-center justify-center text-[13px] text-muted-foreground">
         Laden...
       </div>
     )
@@ -75,9 +75,9 @@ export function IngeplandeBerichtenLijst() {
   if (berichten.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-        <Clock className="h-10 w-10 text-[#B0ADA8] mb-3" />
-        <p className="text-[14px] text-[#6B6B66] font-medium">Geen ingeplande berichten</p>
-        <p className="text-[12px] text-[#9B9B95] mt-1">Plan een email in vanuit Nieuw bericht of een Reply</p>
+        <Clock className="h-10 w-10 text-muted-foreground/80 mb-3" />
+        <p className="text-[14px] text-foreground/70 font-medium">Geen ingeplande berichten</p>
+        <p className="text-[12px] text-muted-foreground mt-1">Plan een email in vanuit Nieuw bericht of een Reply</p>
       </div>
     )
   }
@@ -85,7 +85,7 @@ export function IngeplandeBerichtenLijst() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="px-6 py-4">
-        <h2 className="font-heading text-[18px] font-bold text-[#1A1A1A] tracking-[-0.01em] mb-4">Ingeplande berichten</h2>
+        <h2 className="font-heading text-[18px] font-bold text-foreground tracking-[-0.01em] mb-4">Ingeplande berichten</h2>
         <div className="space-y-2">
           {berichten.map(b => {
             const isWachtend = b.status === 'wachtend'
@@ -94,7 +94,7 @@ export function IngeplandeBerichtenLijst() {
               <div
                 key={b.id}
                 className={cn(
-                  'border border-[#EBEBEB] rounded-xl px-4 py-3 bg-white',
+                  'border border-border rounded-xl px-4 py-3 bg-white',
                   !isWachtend && 'opacity-60',
                 )}
               >
@@ -109,17 +109,17 @@ export function IngeplandeBerichtenLijst() {
                         <span className={cn(
                           'text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded',
                           b.status === 'verzonden' && 'bg-emerald-100 text-emerald-700',
-                          b.status === 'geannuleerd' && 'bg-[#F0EFEC] text-[#9B9B95]',
+                          b.status === 'geannuleerd' && 'bg-muted text-muted-foreground',
                           b.status === 'mislukt' && 'bg-red-100 text-red-700',
                         )}>
                           {STATUS_LABEL[b.status]}
                         </span>
                       )}
                     </div>
-                    <p className="text-[13px] font-medium text-[#1A1A1A] truncate">
+                    <p className="text-[13px] font-medium text-foreground truncate">
                       Aan: {b.ontvanger}
                     </p>
-                    <p className="text-[13px] text-[#6B6B66] truncate">{b.onderwerp}</p>
+                    <p className="text-[13px] text-foreground/70 truncate">{b.onderwerp}</p>
                     {b.foutmelding && (
                       <div className="mt-2 flex items-start gap-1.5 text-[11px] text-red-700">
                         <AlertCircle className="h-3 w-3 flex-shrink-0 mt-0.5" />

@@ -56,8 +56,8 @@ function AfzenderLabel({ item }: { item: PortaalItem }) {
   return (
     <div className="flex items-center gap-1.5 mb-1.5">
       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isKlant ? 'bg-[#F15025]' : 'border-[1.5px] border-[#1A535C]'}`} />
-      <span className="text-[11px] text-[#9B9B95]">
-        {isKlant ? <span className="font-medium text-[#1A1A1A]">{naam}</span> : naam}
+      <span className="text-[11px] text-muted-foreground">
+        {isKlant ? <span className="font-medium text-foreground">{naam}</span> : naam}
         {' '}· {relativeDate(item.created_at)} {formatTime(item.created_at)}
       </span>
       {!isKlant && item.bekeken_op && (
@@ -79,14 +79,14 @@ function OfferteKaart({ item }: { item: PortaalItem }) {
   return (
     <div className="max-w-[400px]">
       <AfzenderLabel item={item} />
-      <div className="rounded-xl overflow-hidden bg-[#FFFFFF] shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+      <div className="rounded-xl overflow-hidden bg-card shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
         <div className="h-1 bg-[#F15025]" />
         <div className="p-4">
         <p className="text-[11px] font-mono uppercase tracking-wide text-[#F15025]/70">Offerte</p>
-        <p className="text-sm font-medium text-[#1A1A1A] mt-1">{item.titel}</p>
+        <p className="text-sm font-medium text-foreground mt-1">{item.titel}</p>
         {item.bedrag != null && (
           <div className="flex items-center justify-between mt-1">
-            <span className="text-lg font-mono font-semibold text-[#1A1A1A]">{currencyFmt.format(item.bedrag)}</span>
+            <span className="text-lg font-mono font-semibold text-foreground">{currencyFmt.format(item.bedrag)}</span>
             <span className="text-sm flex items-center gap-1" style={{ color: st.color }}>
               {st.label}<span className="text-[#F15025]">.</span>
             </span>
@@ -99,9 +99,9 @@ function OfferteKaart({ item }: { item: PortaalItem }) {
         )}
         {/* Actieknoppen — disabled in interne view */}
         {item.status !== 'goedgekeurd' && item.status !== 'betaald' && (
-          <div className="flex gap-2 mt-3 pt-3 border-t border-[#EBEBEB]/40">
-            <span className="flex-1 text-center text-sm font-medium py-2 bg-[#F8F7F5] rounded-md text-[#9B9B95] cursor-default" title="Zichtbaar voor klant">Goedkeuren</span>
-            <span className="flex-1 text-center text-sm font-medium py-2 bg-[#F8F7F5] rounded-md text-[#9B9B95] cursor-default" title="Zichtbaar voor klant">Vragen stellen</span>
+          <div className="flex gap-2 mt-3 pt-3 border-t border-border/40">
+            <span className="flex-1 text-center text-sm font-medium py-2 bg-background rounded-md text-muted-foreground cursor-default" title="Zichtbaar voor klant">Goedkeuren</span>
+            <span className="flex-1 text-center text-sm font-medium py-2 bg-background rounded-md text-muted-foreground cursor-default" title="Zichtbaar voor klant">Vragen stellen</span>
           </div>
         )}
         </div>
@@ -115,22 +115,22 @@ function FactuurKaart({ item }: { item: PortaalItem }) {
   return (
     <div className="max-w-[400px]">
       <AfzenderLabel item={item} />
-      <div className="rounded-xl overflow-hidden bg-[#FFFFFF] shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+      <div className="rounded-xl overflow-hidden bg-card shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
         <div className="h-1 bg-[#2D6B48]" />
         <div className="p-4">
         <p className="text-[11px] font-mono uppercase tracking-wide text-[#2D6B48]/70">Factuur</p>
-        <p className="text-sm font-medium text-[#1A1A1A] mt-1">{item.titel}</p>
+        <p className="text-sm font-medium text-foreground mt-1">{item.titel}</p>
         {item.bedrag != null && (
           <div className="flex items-center justify-between mt-1">
-            <span className="text-lg font-mono font-semibold text-[#1A1A1A]">{currencyFmt.format(item.bedrag)}</span>
+            <span className="text-lg font-mono font-semibold text-foreground">{currencyFmt.format(item.bedrag)}</span>
             <span className="text-sm flex items-center gap-1" style={{ color: st.color }}>
               {st.label}<span className="text-[#F15025]">.</span>
             </span>
           </div>
         )}
         {item.status !== 'betaald' && item.mollie_payment_url && (
-          <div className="mt-3 pt-3 border-t border-[#EBEBEB]/40">
-            <span className="block text-center text-sm font-medium py-2 bg-[#F8F7F5] rounded-md text-[#9B9B95] cursor-default" title="Zichtbaar voor klant">Betalen</span>
+          <div className="mt-3 pt-3 border-t border-border/40">
+            <span className="block text-center text-sm font-medium py-2 bg-background rounded-md text-muted-foreground cursor-default" title="Zichtbaar voor klant">Betalen</span>
           </div>
         )}
         </div>
@@ -148,14 +148,14 @@ function TekeningKaart({ item }: { item: PortaalItem }) {
   return (
     <div className="max-w-[400px]">
       <AfzenderLabel item={item} />
-      <div className="rounded-xl overflow-hidden bg-[#FFFFFF] shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+      <div className="rounded-xl overflow-hidden bg-card shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
         <div className="h-1 bg-[#1A535C]" />
         <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-mono uppercase tracking-wide text-[#1A535C]/70">Tekening</p>
-            <p className="text-sm font-medium text-[#1A1A1A] mt-1">{item.titel}</p>
-            {item.omschrijving && <p className="text-xs text-[#6B6B66] mt-0.5">{item.omschrijving}</p>}
+            <p className="text-sm font-medium text-foreground mt-1">{item.titel}</p>
+            {item.omschrijving && <p className="text-xs text-foreground/70 mt-0.5">{item.omschrijving}</p>}
             <span className="text-sm flex items-center gap-1 mt-1.5" style={{ color: st.color }}>
               {st.label}<span className="text-[#F15025]">.</span>
             </span>
@@ -170,13 +170,13 @@ function TekeningKaart({ item }: { item: PortaalItem }) {
             />
           )}
           {!thumbFile && hasFiles && (
-            <div className="w-16 h-16 rounded-md bg-[#F8F7F5] flex items-center justify-center flex-shrink-0">
-              <FileText className="h-6 w-6 text-[#9B9B95]" />
+            <div className="w-16 h-16 rounded-md bg-background flex items-center justify-center flex-shrink-0">
+              <FileText className="h-6 w-6 text-muted-foreground" />
             </div>
           )}
         </div>
         {hasFiles && (
-          <p className="text-xs text-[#9B9B95] mt-2 flex items-center gap-1">
+          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
             <Paperclip className="h-3 w-3" />
             {item.bestanden.length} bestand{item.bestanden.length !== 1 ? 'en' : ''}
           </p>
@@ -197,8 +197,8 @@ function TekstBubbel({ item }: { item: PortaalItem }) {
       <div className={`max-w-[75%] ${isKlant ? '' : 'ml-auto'}`}>
         <div className={`px-4 py-2.5 text-sm leading-relaxed ${
           isKlant
-            ? 'bg-[#FFFFFF] text-[#1A1A1A] rounded-2xl rounded-bl-sm shadow-[0_1px_3px_rgba(0,0,0,0.04)]'
-            : 'bg-[#1A535C]/[0.07] text-[#1A1A1A] rounded-2xl rounded-br-sm'
+            ? 'bg-card text-foreground rounded-2xl rounded-bl-sm shadow-[0_1px_3px_rgba(0,0,0,0.04)]'
+            : 'bg-[#1A535C]/[0.07] text-foreground rounded-2xl rounded-br-sm'
         }`}>
           {item.bericht_tekst || item.titel}
         </div>
@@ -223,9 +223,9 @@ function FotoBubbel({ item }: { item: PortaalItem }) {
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className={`inline-flex items-center gap-2 px-4 py-2.5 bg-[#FFFFFF] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${isKlant ? 'rounded-bl-sm' : 'rounded-br-sm'}`}>
-            <ImageIcon className="h-4 w-4 text-[#9B9B95]" />
-            <span className="text-sm text-[#6B6B66]">{item.titel || 'Afbeelding'}</span>
+          <div className={`inline-flex items-center gap-2 px-4 py-2.5 bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${isKlant ? 'rounded-bl-sm' : 'rounded-br-sm'}`}>
+            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-foreground/70">{item.titel || 'Afbeelding'}</span>
           </div>
         )}
       </div>
@@ -255,8 +255,8 @@ function FeedItem({ item }: { item: PortaalItem }) {
             <span className="text-[11px] font-semibold" style={{ color: r.type === 'goedkeuring' ? '#3A7D52' : r.type === 'revisie' ? '#C0451A' : '#5A5A55' }}>
               {r.type === 'goedkeuring' ? 'Goedgekeurd' : r.type === 'revisie' ? 'Revisie' : 'Reactie'}
             </span>
-            <span className="text-[11px] text-[#9B9B95]">· {r.klant_naam || 'Klant'}</span>
-            <span className="text-[10px] font-mono text-[#C0BDB8] ml-auto">{formatTime(r.created_at)}</span>
+            <span className="text-[11px] text-muted-foreground">· {r.klant_naam || 'Klant'}</span>
+            <span className="text-[10px] font-mono text-muted-foreground/70 ml-auto">{formatTime(r.created_at)}</span>
           </div>
           {r.bericht && <p className="text-xs text-[#3A3A35] mt-0.5">{r.bericht}</p>}
           {r.foto_url && (
@@ -287,8 +287,8 @@ function Feed({ items, feedEndRef }: { items: PortaalItem[]; feedEndRef: React.R
   if (items.length === 0) {
     return (
       <div className="py-8 text-center">
-        <p className="text-sm font-medium text-[#1A1A1A]">Nog niets gedeeld</p>
-        <p className="text-xs text-[#9B9B95] mt-1.5 leading-relaxed max-w-[280px] mx-auto">
+        <p className="text-sm font-medium text-foreground">Nog niets gedeeld</p>
+        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-[280px] mx-auto">
           Deel offertes, tekeningen, foto's of facturen met je klant via het portaal. Je klant kan reageren en goedkeuren.
         </p>
       </div>
@@ -455,55 +455,55 @@ function InputBar({
   if (!isActief) return null
 
   return (
-    <div className="border-t border-[#EBEBEB] px-4 py-4 relative" ref={popoverRef}>
+    <div className="border-t border-border px-4 py-4 relative" ref={popoverRef}>
       <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleSendFoto(f); e.target.value = '' }} />
       <input ref={tekeningInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setTekeningFile(f); setTekeningTitel(f.name.replace(/\.[^/.]+$/, '')); setTekeningPopoverOpen(true) }; e.target.value = '' }} />
 
       {/* Popovers */}
       {tekeningPopoverOpen && tekeningFile && (
-        <div className="absolute left-3 bottom-full mb-2 w-72 bg-[#FFFFFF] border border-[#EBEBEB] rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#EBEBEB]"><p className="text-xs font-semibold text-[#1A1A1A]">Tekening delen</p><button onClick={() => { setTekeningPopoverOpen(false); setTekeningFile(null) }} className="text-[#9B9B95] hover:text-[#1A1A1A]"><X className="h-3.5 w-3.5" /></button></div>
+        <div className="absolute left-3 bottom-full mb-2 w-72 bg-card border border-border rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border"><p className="text-xs font-semibold text-foreground">Tekening delen</p><button onClick={() => { setTekeningPopoverOpen(false); setTekeningFile(null) }} className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button></div>
           <div className="px-4 py-3 space-y-3">
-            <p className="text-xs text-[#9B9B95] truncate">{tekeningFile.name}</p>
-            <input type="text" value={tekeningTitel} onChange={(e) => setTekeningTitel(e.target.value)} placeholder="Titel" className="w-full text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1A535C]/20" />
+            <p className="text-xs text-muted-foreground truncate">{tekeningFile.name}</p>
+            <input type="text" value={tekeningTitel} onChange={(e) => setTekeningTitel(e.target.value)} placeholder="Titel" className="w-full text-sm px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1A535C]/20" />
             <button onClick={handleSendTekening} disabled={isSending} className="w-full text-sm font-medium py-2 rounded-lg bg-[#1A535C] text-white hover:bg-[#164850] disabled:opacity-40 transition-colors">Delen</button>
           </div>
         </div>
       )}
       {activePopover === 'offerte' && (
-        <div className="absolute left-3 bottom-full mb-2 w-72 bg-[#FFFFFF] border border-[#EBEBEB] rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#EBEBEB]"><p className="text-xs font-semibold text-[#1A1A1A]">Offerte delen</p><button onClick={() => setActivePopover(null)} className="text-[#9B9B95] hover:text-[#1A1A1A]"><X className="h-3.5 w-3.5" /></button></div>
+        <div className="absolute left-3 bottom-full mb-2 w-72 bg-card border border-border rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border"><p className="text-xs font-semibold text-foreground">Offerte delen</p><button onClick={() => setActivePopover(null)} className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button></div>
           <div className="max-h-52 overflow-y-auto py-1">
-            {offertes.length === 0 ? <p className="text-xs text-[#9B9B95] text-center py-6">Geen offertes gevonden</p> : offertes.map((o) => (
-              <button key={o.id} onClick={() => handleSendOfferte(o)} disabled={isSending} className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#F8F7F5] transition-colors text-left">
-                <div className="min-w-0"><p className="text-sm font-medium text-[#1A1A1A] truncate">{o.titel}</p><p className="text-[10px] text-[#9B9B95] font-mono">{o.nummer}</p></div>
-                <span className="text-sm font-semibold font-mono text-[#1A1A1A] ml-3 flex-shrink-0">{currencyFmt.format(o.totaal)}</span>
+            {offertes.length === 0 ? <p className="text-xs text-muted-foreground text-center py-6">Geen offertes gevonden</p> : offertes.map((o) => (
+              <button key={o.id} onClick={() => handleSendOfferte(o)} disabled={isSending} className="w-full flex items-center justify-between px-4 py-3 hover:bg-background transition-colors text-left">
+                <div className="min-w-0"><p className="text-sm font-medium text-foreground truncate">{o.titel}</p><p className="text-[10px] text-muted-foreground font-mono">{o.nummer}</p></div>
+                <span className="text-sm font-semibold font-mono text-foreground ml-3 flex-shrink-0">{currencyFmt.format(o.totaal)}</span>
               </button>
             ))}
           </div>
         </div>
       )}
       {activePopover === 'factuur' && (
-        <div className="absolute left-3 bottom-full mb-2 w-72 bg-[#FFFFFF] border border-[#EBEBEB] rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#EBEBEB]"><p className="text-xs font-semibold text-[#1A1A1A]">Factuur delen</p><button onClick={() => setActivePopover(null)} className="text-[#9B9B95] hover:text-[#1A1A1A]"><X className="h-3.5 w-3.5" /></button></div>
+        <div className="absolute left-3 bottom-full mb-2 w-72 bg-card border border-border rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border"><p className="text-xs font-semibold text-foreground">Factuur delen</p><button onClick={() => setActivePopover(null)} className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button></div>
           <div className="max-h-52 overflow-y-auto py-1">
-            {facturen.length === 0 ? <p className="text-xs text-[#9B9B95] text-center py-6">Geen facturen gevonden</p> : facturen.map((f) => (
-              <button key={f.id} onClick={() => handleSendFactuur(f)} disabled={isSending} className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#F8F7F5] transition-colors text-left">
-                <div className="min-w-0"><p className="text-sm font-medium font-mono text-[#1A1A1A]">{f.nummer}</p><p className="text-[10px] text-[#9B9B95]">{new Date(f.factuurdatum).toLocaleDateString('nl-NL')}</p></div>
-                <span className="text-sm font-semibold font-mono text-[#1A1A1A] ml-3 flex-shrink-0">{currencyFmt.format(f.totaal)}</span>
+            {facturen.length === 0 ? <p className="text-xs text-muted-foreground text-center py-6">Geen facturen gevonden</p> : facturen.map((f) => (
+              <button key={f.id} onClick={() => handleSendFactuur(f)} disabled={isSending} className="w-full flex items-center justify-between px-4 py-3 hover:bg-background transition-colors text-left">
+                <div className="min-w-0"><p className="text-sm font-medium font-mono text-foreground">{f.nummer}</p><p className="text-[10px] text-muted-foreground">{new Date(f.factuurdatum).toLocaleDateString('nl-NL')}</p></div>
+                <span className="text-sm font-semibold font-mono text-foreground ml-3 flex-shrink-0">{currencyFmt.format(f.totaal)}</span>
               </button>
             ))}
           </div>
         </div>
       )}
       {activePopover === 'opdrachtbevestiging' && (
-        <div className="absolute left-3 bottom-full mb-2 w-72 bg-[#FFFFFF] border border-[#EBEBEB] rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#EBEBEB]"><p className="text-xs font-semibold text-[#1A1A1A]">Opdrachtbevestiging delen</p><button onClick={() => setActivePopover(null)} className="text-[#9B9B95] hover:text-[#1A1A1A]"><X className="h-3.5 w-3.5" /></button></div>
+        <div className="absolute left-3 bottom-full mb-2 w-72 bg-card border border-border rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border"><p className="text-xs font-semibold text-foreground">Opdrachtbevestiging delen</p><button onClick={() => setActivePopover(null)} className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button></div>
           <div className="max-h-52 overflow-y-auto py-1">
-            {offertes.length === 0 ? <p className="text-xs text-[#9B9B95] text-center py-6">Geen offertes gevonden</p> : offertes.map((o) => (
-              <button key={o.id} onClick={() => handleSendOpdrachtbevestiging(o)} disabled={isSending} className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#F8F7F5] transition-colors text-left">
-                <div className="min-w-0"><p className="text-sm font-medium text-[#1A1A1A] truncate">{o.titel}</p><p className="text-[10px] text-[#9B9B95] font-mono">{o.nummer}</p></div>
-                <span className="text-sm font-semibold font-mono text-[#1A1A1A] ml-3 flex-shrink-0">{currencyFmt.format(o.totaal)}</span>
+            {offertes.length === 0 ? <p className="text-xs text-muted-foreground text-center py-6">Geen offertes gevonden</p> : offertes.map((o) => (
+              <button key={o.id} onClick={() => handleSendOpdrachtbevestiging(o)} disabled={isSending} className="w-full flex items-center justify-between px-4 py-3 hover:bg-background transition-colors text-left">
+                <div className="min-w-0"><p className="text-sm font-medium text-foreground truncate">{o.titel}</p><p className="text-[10px] text-muted-foreground font-mono">{o.nummer}</p></div>
+                <span className="text-sm font-semibold font-mono text-foreground ml-3 flex-shrink-0">{currencyFmt.format(o.totaal)}</span>
               </button>
             ))}
           </div>
@@ -511,9 +511,9 @@ function InputBar({
       )}
 
       {/* Input area with toolbar */}
-      <div className="bg-[#FFFFFF] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-within:shadow-[0_0_0_2px_rgba(26,83,92,0.10)] transition-all overflow-hidden">
+      <div className="bg-card rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-within:shadow-[0_0_0_2px_rgba(26,83,92,0.10)] transition-all overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center gap-0.5 px-3 py-2 border-b border-[#EBEBEB]/40">
+        <div className="flex items-center gap-0.5 px-3 py-2 border-b border-border/40">
           {[
             { cmd: 'bold', icon: <Bold className="h-3.5 w-3.5" />, title: 'Vet' },
             { cmd: 'italic', icon: <Italic className="h-3.5 w-3.5" />, title: 'Cursief' },
@@ -533,13 +533,13 @@ function InputBar({
                   document.execCommand(btn.cmd)
                 }
               }}
-              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
             >
               {btn.icon}
             </button>
           ))}
-          <div className="w-px h-4 bg-[#EBEBEB] mx-1" />
-          <button onClick={() => fotoInputRef.current?.click()} disabled={isSending} title="Afbeelding" className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40">
+          <div className="w-px h-4 bg-border mx-1" />
+          <button onClick={() => fotoInputRef.current?.click()} disabled={isSending} title="Afbeelding" className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40">
             <Paperclip className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -556,7 +556,7 @@ function InputBar({
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendBericht() }
           }}
           data-placeholder="Bericht..."
-          className="min-h-[60px] max-h-[140px] overflow-y-auto px-4 py-3 text-sm text-[#1A1A1A] focus:outline-none leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-[#9B9B95]/40"
+          className="min-h-[60px] max-h-[140px] overflow-y-auto px-4 py-3 text-sm text-foreground focus:outline-none leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40"
         />
       </div>
 
@@ -575,7 +575,7 @@ function InputBar({
               onClick={btn.onClick}
               disabled={isSending}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all disabled:opacity-40"
-              style={{ backgroundColor: '#F8F7F5', color: '#6B6B66', border: '0.5px solid #EBEBEB' }}
+              style={{ backgroundColor: 'hsl(var(--background))', color: '#6B6B66', border: '0.5px solid #EBEBEB' }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F0EEEA'; e.currentTarget.style.color = '#1A1A1A' }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#F8F7F5'; e.currentTarget.style.color = '#6B6B66' }}
             >
@@ -805,7 +805,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
 
       {/* Content — alleen bij actief portaal */}
       {portaal && !collapsed && (
-        <div className="bg-[#F8F7F5] rounded-b-xl px-5 py-4">
+        <div className="bg-background rounded-b-xl px-5 py-4">
           <Feed items={items} feedEndRef={feedEndRef} />
 
           {user?.id && (

@@ -56,7 +56,7 @@ async function fileToBase64(file: File): Promise<string> {
 function getFileIcon(mimeType: string) {
   if (mimeType.startsWith('image/')) return <ImageIcon className="h-3.5 w-3.5 text-[#3A6B8C]" />
   if (mimeType === 'application/pdf') return <FileText className="h-3.5 w-3.5 text-[#C03A18]" />
-  return <File className="h-3.5 w-3.5 text-[#6B6B66]" />
+  return <File className="h-3.5 w-3.5 text-foreground/70" />
 }
 
 function formatBytes(bytes: number): string {
@@ -88,12 +88,12 @@ function EmailChipsInput({ value, onChange, placeholder }: EmailChipsInputProps)
   return (
     <div className="flex-1 flex flex-wrap items-center gap-1.5 min-w-0">
       {value.map((email, i) => (
-        <span key={`${email}-${i}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#F0EFEC] text-[12px] text-[#1A1A1A]">
+        <span key={`${email}-${i}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-[12px] text-foreground">
           {email}
           <button
             type="button"
             onClick={() => onChange(value.filter((_, idx) => idx !== i))}
-            className="text-[#9B9B95] hover:text-[#C03A18] transition-colors"
+            className="text-muted-foreground hover:text-[#C03A18] transition-colors"
             aria-label={`${email} verwijderen`}
           >
             <X className="h-2.5 w-2.5" />
@@ -123,7 +123,7 @@ function EmailChipsInput({ value, onChange, placeholder }: EmailChipsInputProps)
           }
         }}
         placeholder={value.length === 0 ? placeholder : ''}
-        className="flex-1 min-w-[100px] bg-transparent border-0 outline-none text-[13px] text-[#1A1A1A] placeholder:text-[#9B9B95]"
+        className="flex-1 min-w-[100px] bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground"
       />
     </div>
   )
@@ -399,20 +399,20 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   return (
     <div
       ref={containerRef}
-      className="bg-white rounded-2xl border border-[#EBEBEB] shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden"
+      className="bg-white rounded-2xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[#F0EFEC]">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Mail</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Mail</span>
           {defaultNaam && (
-            <span className="text-[12px] text-[#6B6B66]">naar {defaultNaam}</span>
+            <span className="text-[12px] text-foreground/70">naar {defaultNaam}</span>
           )}
         </div>
         <button
           type="button"
           onClick={() => onOpenChange(false)}
-          className="h-7 w-7 rounded-md flex items-center justify-center text-[#9B9B95] hover:bg-[#F0EFEC] hover:text-[#1A1A1A] transition-colors"
+          className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           aria-label="Mail-composer sluiten"
         >
           <X className="h-4 w-4" />
@@ -421,14 +421,14 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
 
       {/* Body */}
       <div className="px-5 py-4 space-y-3">
-        <div className="flex items-start gap-3 border-b border-[#F0EFEC] pb-2">
-          <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95] w-24 flex-shrink-0 pt-1">Aan</label>
+        <div className="flex items-start gap-3 border-b border-border pb-2">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground w-24 flex-shrink-0 pt-1">Aan</label>
           <EmailChipsInput value={toEmails} onChange={setToEmails} placeholder="naam@bedrijf.nl" />
           {!showCcBcc && (
             <button
               type="button"
               onClick={() => setShowCcBcc(true)}
-              className="text-[11px] text-[#9B9B95] hover:text-[#1A535C] transition-colors flex-shrink-0 pt-1"
+              className="text-[11px] text-muted-foreground hover:text-[#1A535C] transition-colors flex-shrink-0 pt-1"
             >
               Cc Bcc
             </button>
@@ -437,29 +437,29 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
 
         {showCcBcc && (
           <>
-            <div className="flex items-start gap-3 border-b border-[#F0EFEC] pb-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95] w-24 flex-shrink-0 pt-1">Cc</label>
+            <div className="flex items-start gap-3 border-b border-border pb-2">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground w-24 flex-shrink-0 pt-1">Cc</label>
               <EmailChipsInput value={ccEmails} onChange={setCcEmails} placeholder="cc@bedrijf.nl" />
             </div>
-            <div className="flex items-start gap-3 border-b border-[#F0EFEC] pb-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95] w-24 flex-shrink-0 pt-1">Bcc</label>
+            <div className="flex items-start gap-3 border-b border-border pb-2">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground w-24 flex-shrink-0 pt-1">Bcc</label>
               <EmailChipsInput value={bccEmails} onChange={setBccEmails} placeholder="bcc@bedrijf.nl" />
             </div>
           </>
         )}
 
-        <div className="flex items-center gap-3 border-b border-[#F0EFEC] pb-2">
-          <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95] w-24 flex-shrink-0">Onderwerp</label>
+        <div className="flex items-center gap-3 border-b border-border pb-2">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground w-24 flex-shrink-0">Onderwerp</label>
           <input
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[13px] font-medium text-[#1A1A1A] placeholder:text-[#9B9B95]"
+            className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[13px] font-medium text-foreground placeholder:text-muted-foreground"
           />
         </div>
 
         {/* Body-blok: textarea + handtekening visueel als één 'mailbox' */}
-        <div className="rounded-xl border border-[#EBEBEB] focus-within:border-[#F15025]/50 focus-within:ring-2 focus-within:ring-[#F15025]/15 transition-all p-3 space-y-2">
+        <div className="rounded-xl border border-border focus-within:border-[#F15025]/50 focus-within:ring-2 focus-within:ring-[#F15025]/15 transition-all p-3 space-y-2">
           <textarea
             ref={textareaRef}
             value={body}
@@ -467,7 +467,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             onKeyDown={handleKeyDown}
             placeholder="Typ je bericht..."
             rows={3}
-            className="w-full bg-transparent border-0 outline-none text-[13px] text-[#1A1A1A] placeholder:text-[#9B9B95] resize-none leading-relaxed focus:ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0 p-0 overflow-hidden"
+            className="w-full bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground resize-none leading-relaxed focus:ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0 p-0 overflow-hidden"
             style={{ boxShadow: 'none' }}
           />
 
@@ -487,24 +487,24 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             {bijlagen.map((b) => {
               const isImage = b.mimeType.startsWith('image/')
               return (
-                <div key={b.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[#EBEBEB] bg-[#FAFAF8]">
+                <div key={b.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border bg-background">
                   {isImage ? (
                     <img
                       src={`data:${b.mimeType};base64,${b.base64}`}
                       alt={b.filename}
-                      className="h-8 w-8 object-cover rounded flex-shrink-0 border border-[#F0EFEC]"
+                      className="h-8 w-8 object-cover rounded flex-shrink-0 border border-border"
                     />
                   ) : (
-                    <div className="h-8 w-8 flex items-center justify-center bg-white rounded flex-shrink-0 border border-[#F0EFEC]">
+                    <div className="h-8 w-8 flex items-center justify-center bg-white rounded flex-shrink-0 border border-border">
                       {getFileIcon(b.mimeType)}
                     </div>
                   )}
-                  <span className="text-[12px] text-[#1A1A1A] truncate flex-1">{b.filename}</span>
-                  <span className="text-[10px] font-mono tabular-nums text-[#9B9B95]">{formatBytes(b.size)}</span>
+                  <span className="text-[12px] text-foreground truncate flex-1">{b.filename}</span>
+                  <span className="text-[10px] font-mono tabular-nums text-muted-foreground">{formatBytes(b.size)}</span>
                   <button
                     type="button"
                     onClick={() => setBijlagen((prev) => prev.filter((x) => x.id !== b.id))}
-                    className="text-[#A0A098] hover:text-[#C03A18] transition-colors"
+                    className="text-muted-foreground hover:text-[#C03A18] transition-colors"
                     aria-label="Bijlage verwijderen"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -525,26 +525,26 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       </div>
 
       {/* Toolbar + verstuur */}
-      <div className="flex items-center justify-between px-3 py-2 border-t border-[#F0EFEC] bg-[#FAFAF8]">
+      <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-background">
         <div className="flex items-center gap-0.5">
-          <button type="button" onClick={() => wrapSelection('**', '**')} title="Bold" className="h-8 w-8 rounded-md flex items-center justify-center text-[#6B6B66] hover:bg-white hover:text-[#1A1A1A] transition-colors">
+          <button type="button" onClick={() => wrapSelection('**', '**')} title="Bold" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
             <Bold className="h-3.5 w-3.5" />
           </button>
-          <button type="button" onClick={() => wrapSelection('_', '_')} title="Cursief" className="h-8 w-8 rounded-md flex items-center justify-center text-[#6B6B66] hover:bg-white hover:text-[#1A1A1A] transition-colors">
+          <button type="button" onClick={() => wrapSelection('_', '_')} title="Cursief" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
             <Italic className="h-3.5 w-3.5" />
           </button>
-          <button type="button" onClick={() => wrapSelection('__', '__')} title="Onderstreept" className="h-8 w-8 rounded-md flex items-center justify-center text-[#6B6B66] hover:bg-white hover:text-[#1A1A1A] transition-colors">
+          <button type="button" onClick={() => wrapSelection('__', '__')} title="Onderstreept" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
             <Underline className="h-3.5 w-3.5" />
           </button>
-          <div className="w-px h-5 bg-[#EBEBEB] mx-1" />
-          <button type="button" onClick={insertList} title="Lijst" className="h-8 w-8 rounded-md flex items-center justify-center text-[#6B6B66] hover:bg-white hover:text-[#1A1A1A] transition-colors">
+          <div className="w-px h-5 bg-border mx-1" />
+          <button type="button" onClick={insertList} title="Lijst" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
             <List className="h-3.5 w-3.5" />
           </button>
-          <button type="button" onClick={insertLink} title="Link toevoegen" className="h-8 w-8 rounded-md flex items-center justify-center text-[#6B6B66] hover:bg-white hover:text-[#1A1A1A] transition-colors">
+          <button type="button" onClick={insertLink} title="Link toevoegen" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
             <LinkIcon className="h-3.5 w-3.5" />
           </button>
-          <div className="w-px h-5 bg-[#EBEBEB] mx-1" />
-          <button type="button" onClick={() => fileInputRef.current?.click()} title="Bijlage toevoegen" className="h-8 w-8 rounded-md flex items-center justify-center text-[#6B6B66] hover:bg-white hover:text-[#1A1A1A] transition-colors">
+          <div className="w-px h-5 bg-border mx-1" />
+          <button type="button" onClick={() => fileInputRef.current?.click()} title="Bijlage toevoegen" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
             <Paperclip className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -553,20 +553,20 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
           <button
             type="button"
             onClick={() => setOpvolgen((v) => !v)}
-            className="inline-flex items-center gap-2 text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors px-2"
+            className="inline-flex items-center gap-2 text-[12px] text-foreground/70 hover:text-foreground transition-colors px-2"
             title="Markeer als 'wacht op reactie' voor opvolging"
           >
             <span className={cn("relative inline-block h-4 w-7 rounded-full transition-colors", opvolgen ? "bg-[#1A535C]" : "bg-[#D4D2CC]")}>
               <span className={cn("absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all", opvolgen ? "left-3.5" : "left-0.5")} />
             </span>
             Opvolgen
-            <span className="text-[10px] font-mono text-[#B0ADA8]">⌘+Enter</span>
+            <span className="text-[10px] font-mono text-muted-foreground/80">⌘+Enter</span>
           </button>
           <button
             type="button"
             disabled
             title="Inplannen (binnenkort)"
-            className="h-9 w-9 rounded-lg border border-[#EBEBEB] bg-white flex items-center justify-center text-[#9B9B95] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-9 w-9 rounded-lg border border-border bg-white flex items-center justify-center text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Clock className="h-4 w-4" />
           </button>

@@ -788,18 +788,18 @@ export function VisualizerLayout() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#F8F7F5]/80 backdrop-blur-sm border-b border-[#EBEBEB] px-8 py-3 flex-shrink-0">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-8 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px]">Visualizer<span className="text-[#F15025]">.</span></h1>
-              <span className="text-xs font-mono text-[#9B9B95]">Nano Banana Gemini + Claude</span>
+              <h1 className="text-xl font-bold text-foreground tracking-[-0.3px]">Visualizer<span className="text-[#F15025]">.</span></h1>
+              <span className="text-xs font-mono text-muted-foreground">Nano Banana Gemini + Claude</span>
             </div>
-            <p className="text-[13px] text-[#6B6B66] mt-0.5">Upload een foto, beschrijf wat je wilt zien — Claude verfijnt je prompt, Gemini genereert het beeld</p>
+            <p className="text-[13px] text-foreground/70 mt-0.5">Upload een foto, beschrijf wat je wilt zien — Claude verfijnt je prompt, Gemini genereert het beeld</p>
           </div>
           <button
             onClick={() => setShowCreditsPakket(true)}
-            className="text-sm font-mono font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex-shrink-0 bg-[#F8F7F5] border border-[#EBEBEB] text-[#1A1A1A] hover:border-[#1A535C]/30"
+            className="text-sm font-mono font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex-shrink-0 bg-background border border-border text-foreground hover:border-[#1A535C]/30"
           >
             <span className="font-mono">{creditSaldo}</span> credits{creditSaldo < 5 && <span className="text-[#F15025] ml-1">— bijkopen</span>}
           </button>
@@ -812,27 +812,27 @@ export function VisualizerLayout() {
 
       {/* How it works */}
       <div className="flex items-center gap-3 text-[13px]">
-        <div className="flex items-center gap-2 bg-[#FFFFFF] rounded-lg px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center gap-2 bg-card rounded-lg px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           <Upload className="h-4 w-4 text-[#1A535C]" />
-          <span className="text-[#1A1A1A] font-medium">Upload</span>
-          <span className="text-[#9B9B95]">foto + beschrijving</span>
+          <span className="text-foreground font-medium">Upload</span>
+          <span className="text-muted-foreground">foto + beschrijving</span>
         </div>
         <RotateCcw className="h-3 w-3 text-[#EBEBEB] rotate-180 flex-shrink-0" />
-        <div className="flex items-center gap-2 bg-[#FFFFFF] rounded-lg px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center gap-2 bg-card rounded-lg px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           <Sparkles className="h-4 w-4 text-[#1A535C]" />
-          <span className="text-[#1A1A1A] font-medium">Claude</span>
-          <span className="text-[#9B9B95]">verfijnt je prompt</span>
+          <span className="text-foreground font-medium">Claude</span>
+          <span className="text-muted-foreground">verfijnt je prompt</span>
         </div>
         <RotateCcw className="h-3 w-3 text-[#EBEBEB] rotate-180 flex-shrink-0" />
-        <div className="flex items-center gap-2 bg-[#FFFFFF] rounded-lg px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center gap-2 bg-card rounded-lg px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           <ImageIcon className="h-4 w-4 text-[#F15025]" />
-          <span className="text-[#1A1A1A] font-medium">Gemini</span>
-          <span className="text-[#9B9B95]">genereert het beeld</span>
+          <span className="text-foreground font-medium">Gemini</span>
+          <span className="text-muted-foreground">genereert het beeld</span>
         </div>
       </div>
 
       {/* Generator form */}
-      <div className="bg-[#FFFFFF] rounded-xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="bg-card rounded-xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <div className="grid grid-cols-[1fr_1fr_1.5fr] gap-6">
           {/* Col 1: Foto */}
           <div>
@@ -991,7 +991,7 @@ export function VisualizerLayout() {
       {/* ═══ Library ═══ */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Bibliotheek</h2>
+          <h2 className="text-xs font-semibold text-foreground uppercase tracking-wider">Bibliotheek</h2>
           <div className="flex items-center gap-1.5">
             {(['alle', 'gekoppeld', 'los'] as const).map((val) => (
               <button
@@ -1000,8 +1000,8 @@ export function VisualizerLayout() {
                 className={cn(
                   'px-3 py-1 text-xs font-medium rounded-md transition-colors',
                   filterKoppeling === val
-                    ? 'text-[#1A1A1A] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
-                    : 'text-[#9B9B95] hover:text-[#6B6B66]',
+                    ? 'text-foreground bg-card shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+                    : 'text-muted-foreground hover:text-foreground/70',
                 )}
               >
                 {val === 'alle' ? 'Alle' : val === 'gekoppeld' ? 'Aan project' : 'Losse mockups'}
@@ -1032,7 +1032,7 @@ export function VisualizerLayout() {
               return (
                 <div
                   key={v.id}
-                  className="group relative rounded-xl overflow-hidden bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all"
+                  className="group relative rounded-xl overflow-hidden bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all"
                 >
                   <div className="aspect-[16/10] cursor-pointer overflow-hidden"
                     onClick={() => setLightboxIndex(index)}>
@@ -1071,14 +1071,14 @@ export function VisualizerLayout() {
                       {shareDropdownId === v.id && (
                         <>
                           <div className="fixed inset-0 z-40" onClick={() => setShareDropdownId(null)} />
-                          <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-[#FFFFFF] rounded-lg border border-[#EBEBEB] shadow-[0_4px_16px_rgba(0,0,0,0.12)] overflow-hidden">
+                          <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-card rounded-lg border border-border shadow-[0_4px_16px_rgba(0,0,0,0.12)] overflow-hidden">
                             {v.project_id && (
-                              <button onClick={() => handleShareViaPortaal(v)} className="w-full text-left px-3 py-2 text-xs hover:bg-[#F8F7F5] transition-colors flex items-center gap-2">
+                              <button onClick={() => handleShareViaPortaal(v)} className="w-full text-left px-3 py-2 text-xs hover:bg-background transition-colors flex items-center gap-2">
                                 <Send className="h-3 w-3 text-[#1A535C]" />
                                 Via portaal
                               </button>
                             )}
-                            <button onClick={() => handleOpenShareEmail(v)} className="w-full text-left px-3 py-2 text-xs hover:bg-[#F8F7F5] transition-colors flex items-center gap-2">
+                            <button onClick={() => handleOpenShareEmail(v)} className="w-full text-left px-3 py-2 text-xs hover:bg-background transition-colors flex items-center gap-2">
                               <Mail className="h-3 w-3 text-[#F15025]" />
                               Via email
                             </button>
@@ -1121,30 +1121,30 @@ export function VisualizerLayout() {
       {/* Inline email compose voor delen */}
       {shareEmailVis && (
         <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShareEmailVis(null)}>
-          <div className="bg-[#FFFFFF] rounded-xl w-full max-w-lg shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[#EBEBEB]/60">
-              <h3 className="text-sm font-semibold text-[#1A1A1A]">Visualisatie delen via email</h3>
-              <button onClick={() => setShareEmailVis(null)} className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"><X className="h-4 w-4" /></button>
+          <div className="bg-card rounded-xl w-full max-w-lg shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border/60">
+              <h3 className="text-sm font-semibold text-foreground">Visualisatie delen via email</h3>
+              <button onClick={() => setShareEmailVis(null)} className="text-muted-foreground hover:text-foreground transition-colors"><X className="h-4 w-4" /></button>
             </div>
             <div className="p-5 space-y-3">
               {/* Preview */}
               <img src={shareEmailVis.resultaat_url} alt="" className="w-full max-h-48 object-cover rounded-lg" />
 
               <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">Aan</span>
-                <input value={shareEmailTo} onChange={(e) => setShareEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+                <span className="text-xs font-medium text-muted-foreground w-16 flex-shrink-0">Aan</span>
+                <input value={shareEmailTo} onChange={(e) => setShareEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
               </div>
-              <input value={shareEmailSubject} onChange={(e) => setShareEmailSubject(e.target.value)} placeholder="Onderwerp..." className="w-full text-sm font-medium px-3 py-2 border border-[#EBEBEB] rounded-lg focus:outline-none focus:border-[#1A535C]/40 transition-colors" />
+              <input value={shareEmailSubject} onChange={(e) => setShareEmailSubject(e.target.value)} placeholder="Onderwerp..." className="w-full text-sm font-medium px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-[#1A535C]/40 transition-colors" />
               <textarea
                 value={shareEmailBody}
                 onChange={(e) => setShareEmailBody(e.target.value)}
                 rows={4}
-                className="w-full text-sm px-3 py-3 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors resize-y leading-relaxed"
+                className="w-full text-sm px-3 py-3 border border-border rounded-lg bg-background focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors resize-y leading-relaxed"
                 placeholder="Bericht..."
               />
             </div>
-            <div className="flex items-center justify-between px-5 py-3 border-t border-[#EBEBEB]/60 bg-[#F8F7F5]/50">
-              <button onClick={() => setShareEmailVis(null)} className="text-sm text-[#9B9B95] hover:text-[#6B6B66] transition-colors">Annuleren</button>
+            <div className="flex items-center justify-between px-5 py-3 border-t border-border/60 bg-background/50">
+              <button onClick={() => setShareEmailVis(null)} className="text-sm text-muted-foreground hover:text-foreground/70 transition-colors">Annuleren</button>
               <button
                 onClick={handleSendShareEmail}
                 disabled={!shareEmailTo.trim() || isSendingShareEmail}

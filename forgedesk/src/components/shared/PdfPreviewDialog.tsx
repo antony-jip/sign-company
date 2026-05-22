@@ -92,15 +92,15 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf }: Pdf
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[92vh] flex flex-col p-0 gap-0 rounded-2xl border-none shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] bg-[#F8F7F5]">
+      <DialogContent className="max-w-5xl h-[92vh] flex flex-col p-0 gap-0 rounded-2xl border-none shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] bg-background">
         {/* Header */}
         <DialogHeader className="px-8 pt-6 pb-0 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-[16px] font-bold text-[#1A1A1A] tracking-[-0.3px]">
+              <DialogTitle className="text-[16px] font-bold text-foreground tracking-[-0.3px]">
                 {title}
               </DialogTitle>
-              <DialogDescription className="text-[12px] text-[#9B9B95] mt-0.5">
+              <DialogDescription className="text-[12px] text-muted-foreground mt-0.5">
                 {numPages > 0 ? `${numPages} pagina${numPages !== 1 ? "'s" : ''}` : 'PDF preview'}
               </DialogDescription>
             </div>
@@ -132,41 +132,41 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf }: Pdf
               <button
                 onClick={prevPage}
                 disabled={currentPage <= 1}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[#F8F7F5] transition-colors disabled:opacity-20"
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background transition-colors disabled:opacity-20"
               >
-                <ChevronLeft className="h-4 w-4 text-[#1A1A1A]" />
+                <ChevronLeft className="h-4 w-4 text-foreground" />
               </button>
-              <span className="text-[12px] font-mono text-[#1A1A1A] min-w-[60px] text-center tabular-nums">
+              <span className="text-[12px] font-mono text-foreground min-w-[60px] text-center tabular-nums">
                 {currentPage} / {numPages}
               </span>
               <button
                 onClick={nextPage}
                 disabled={currentPage >= numPages}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[#F8F7F5] transition-colors disabled:opacity-20"
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background transition-colors disabled:opacity-20"
               >
-                <ChevronRight className="h-4 w-4 text-[#1A1A1A]" />
+                <ChevronRight className="h-4 w-4 text-foreground" />
               </button>
             </div>
 
-            <div className="w-px h-5 bg-[#EBEBEB]" />
+            <div className="w-px h-5 bg-border" />
 
             <div className="flex items-center gap-1 bg-white rounded-lg px-1 py-1 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
               <button
                 onClick={zoomOut}
                 disabled={scale <= 0.4}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[#F8F7F5] transition-colors disabled:opacity-20"
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background transition-colors disabled:opacity-20"
               >
-                <ZoomOut className="h-3.5 w-3.5 text-[#1A1A1A]" />
+                <ZoomOut className="h-3.5 w-3.5 text-foreground" />
               </button>
-              <span className="text-[12px] font-mono text-[#6B6B66] min-w-[42px] text-center tabular-nums">
+              <span className="text-[12px] font-mono text-foreground/70 min-w-[42px] text-center tabular-nums">
                 {Math.round(scale * 100)}%
               </span>
               <button
                 onClick={zoomIn}
                 disabled={scale >= 3}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[#F8F7F5] transition-colors disabled:opacity-20"
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background transition-colors disabled:opacity-20"
               >
-                <ZoomIn className="h-3.5 w-3.5 text-[#1A1A1A]" />
+                <ZoomIn className="h-3.5 w-3.5 text-foreground" />
               </button>
             </div>
           </div>
@@ -177,7 +177,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf }: Pdf
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-full gap-3">
               <Loader2 className="h-6 w-6 animate-spin text-[#1A535C]" />
-              <span className="text-[13px] text-[#9B9B95]">PDF laden...</span>
+              <span className="text-[13px] text-muted-foreground">PDF laden...</span>
             </div>
           )}
 
@@ -215,7 +215,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf }: Pdf
                   className="shadow-[0_2px_8px_rgba(0,0,0,0.06)] rounded-sm"
                   loading={
                     <div className="flex items-center justify-center py-20">
-                      <Loader2 className="h-5 w-5 animate-spin text-[#9B9B95]" />
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     </div>
                   }
                 />

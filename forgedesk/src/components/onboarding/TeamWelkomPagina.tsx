@@ -127,7 +127,7 @@ export function TeamWelkomPagina() {
   }
 
   return (
-    <div className="relative min-h-screen p-6 bg-[#F8F7F5] overflow-hidden">
+    <div className="relative min-h-screen p-6 bg-background overflow-hidden">
       <ParticleField />
       <div className="relative z-10 w-full max-w-2xl mx-auto pt-10 pb-16">
         <div className="mb-10">

@@ -30,7 +30,7 @@ export function PortaalSidebarTimeline({
     <>
       {/* Progress bar if there are approvable items */}
       {voortgang.totaal > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-[#FAFAF8] border-b border-[#E6E4E0]">
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-background border-b border-border">
           <div className="flex items-center gap-2 flex-1">
             <span className="text-[11px] text-muted-foreground">Voortgang</span>
             <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden max-w-[200px]">
@@ -47,7 +47,7 @@ export function PortaalSidebarTimeline({
       )}
 
       {/* Chat timeline */}
-      <div className="max-h-[400px] overflow-y-auto px-4 py-3 space-y-1 bg-[#FAFAF8]">
+      <div className="max-h-[400px] overflow-y-auto px-4 py-3 space-y-1 bg-background">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <div className="h-12 w-12 rounded-2xl bg-mod-projecten-light flex items-center justify-center mb-3">
@@ -63,11 +63,11 @@ export function PortaalSidebarTimeline({
             <div key={group.date}>
               {/* Date separator */}
               <div className="flex items-center gap-3 py-3">
-                <div className="flex-1 h-px bg-[#E6E4E0]" />
+                <div className="flex-1 h-px bg-muted" />
                 <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wide">
                   {formatDate(group.items[0].created_at)}
                 </span>
-                <div className="flex-1 h-px bg-[#E6E4E0]" />
+                <div className="flex-1 h-px bg-muted" />
               </div>
               {/* Items */}
               <div className="space-y-3">

@@ -128,8 +128,8 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
     <>
       {/* Uren */}
       {showUren && (
-        <div className="bg-white rounded-xl border border-[#F0EFEC] p-4">
-          <h3 className="text-[13px] font-bold text-[#1A1A1A] mb-2">Uren gewerkt</h3>
+        <div className="bg-white rounded-xl border border-border p-4">
+          <h3 className="text-[13px] font-bold text-foreground mb-2">Uren gewerkt</h3>
           <Input
             type="number"
             min={0}
@@ -145,8 +145,8 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
 
       {/* Opmerkingen */}
       {showOpmerkingen && (
-        <div className="bg-white rounded-xl border border-[#F0EFEC] p-4">
-          <h3 className="text-[13px] font-bold text-[#1A1A1A] mb-2">Opmerkingen monteur</h3>
+        <div className="bg-white rounded-xl border border-border p-4">
+          <h3 className="text-[13px] font-bold text-foreground mb-2">Opmerkingen monteur</h3>
           <Textarea
             value={monteurOpmerkingen}
             onChange={(e) => onOpmerkingenChange(e.target.value)}
@@ -160,17 +160,17 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
 
       {/* Foto's — prominent voor mobiel */}
       {showFotos && (
-        <div className="bg-white rounded-xl border border-[#F0EFEC] p-4 space-y-4" ref={containerRef}>
+        <div className="bg-white rounded-xl border border-border p-4 space-y-4" ref={containerRef}>
           <div className="flex items-center justify-between">
-            <h3 className="text-[13px] font-bold text-[#1A1A1A] flex items-center gap-2">
+            <h3 className="text-[13px] font-bold text-foreground flex items-center gap-2">
               <Camera className="h-4 w-4" /> Foto's
-              {fotos.length > 0 && <span className="text-[11px] font-mono text-[#9B9B95]">{fotos.length}</span>}
-              {readOnly && <Lock className="h-3 w-3 text-[#9B9B95]" />}
+              {fotos.length > 0 && <span className="text-[11px] font-mono text-muted-foreground">{fotos.length}</span>}
+              {readOnly && <Lock className="h-3 w-3 text-muted-foreground" />}
             </h3>
             {fotos.length > 0 && onDownloadFotos && (
               <button
                 onClick={onDownloadFotos}
-                className="hidden md:flex items-center gap-1.5 text-[12px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] transition-colors"
+                className="hidden md:flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-foreground transition-colors"
               >
                 <Download className="h-3.5 w-3.5" />
                 Download alle
@@ -201,14 +201,14 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
           {/* Voor foto's */}
           {voorFotos.length > 0 && (
             <div>
-              <div className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-widest mb-2">Voor</div>
+              <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Voor</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {voorFotos.map((foto) => (
-                  <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-[#F0EFEC]">
+                  <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-border">
                     {foto.url ? (
                       <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
                     ) : (
-                      <div className="w-full aspect-[4/3] bg-[#F8F7F5] flex items-center justify-center text-[11px] text-[#9B9B95]">Foto niet beschikbaar</div>
+                      <div className="w-full aspect-[4/3] bg-background flex items-center justify-center text-[11px] text-muted-foreground">Foto niet beschikbaar</div>
                     )}
                     {!readOnly && (
                       <button
@@ -227,14 +227,14 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
           {/* Na foto's */}
           {naFotos.length > 0 && (
             <div>
-              <div className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-widest mb-2">Na</div>
+              <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Na</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {naFotos.map((foto) => (
-                  <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-[#F0EFEC]">
+                  <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-border">
                     {foto.url ? (
                       <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
                     ) : (
-                      <div className="w-full aspect-[4/3] bg-[#F8F7F5] flex items-center justify-center text-[11px] text-[#9B9B95]">Foto niet beschikbaar</div>
+                      <div className="w-full aspect-[4/3] bg-background flex items-center justify-center text-[11px] text-muted-foreground">Foto niet beschikbaar</div>
                     )}
                     {!readOnly && (
                       <button
@@ -253,14 +253,14 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
           {/* Overig foto's */}
           {overigFotos.length > 0 && (
             <div>
-              <div className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-widest mb-2">Overig</div>
+              <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Overig</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {overigFotos.map((foto) => (
-                  <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-[#F0EFEC]">
+                  <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-border">
                     {foto.url ? (
                       <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
                     ) : (
-                      <div className="w-full aspect-[4/3] bg-[#F8F7F5] flex items-center justify-center text-[11px] text-[#9B9B95]">Foto niet beschikbaar</div>
+                      <div className="w-full aspect-[4/3] bg-background flex items-center justify-center text-[11px] text-muted-foreground">Foto niet beschikbaar</div>
                     )}
                     {!readOnly && (
                       <button
@@ -277,21 +277,21 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
           )}
 
           {fotos.length === 0 && readOnly && (
-            <p className="text-sm text-[#9B9B95] italic">Geen foto's toegevoegd</p>
+            <p className="text-sm text-muted-foreground italic">Geen foto's toegevoegd</p>
           )}
         </div>
       )}
 
       {/* Handtekening klant */}
       {showHandtekening && (
-        <div className="bg-white rounded-xl border border-[#F0EFEC] p-4 space-y-3">
-          <h3 className="text-[13px] font-bold text-[#1A1A1A] flex items-center gap-2">
+        <div className="bg-white rounded-xl border border-border p-4 space-y-3">
+          <h3 className="text-[13px] font-bold text-foreground flex items-center gap-2">
             <Pen className="h-4 w-4" /> Handtekening klant
-            {readOnly && <Lock className="h-3 w-3 text-[#9B9B95]" />}
+            {readOnly && <Lock className="h-3 w-3 text-muted-foreground" />}
           </h3>
 
           <div>
-            <Label className="text-[12px] text-[#6B6B66]">Naam</Label>
+            <Label className="text-[12px] text-foreground/70">Naam</Label>
             <Input
               value={klantNaamGetekend}
               onChange={(e) => onKlantNaamChange(e.target.value)}
@@ -303,13 +303,13 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
 
           {readOnly && handtekeningData ? (
             <div>
-              <img src={handtekeningData} alt="Handtekening" className="border rounded-xl bg-[#F8F7F5] w-full max-w-[400px]" />
+              <img src={handtekeningData} alt="Handtekening" className="border rounded-xl bg-background w-full max-w-[400px]" />
             </div>
           ) : readOnly && !handtekeningData ? (
-            <p className="text-sm text-[#9B9B95] italic">Nog niet ondertekend</p>
+            <p className="text-sm text-muted-foreground italic">Nog niet ondertekend</p>
           ) : handtekeningData && !isEditingSignature ? (
             <div className="space-y-2">
-              <img src={handtekeningData} alt="Handtekening" className="border rounded-xl bg-[#F8F7F5] w-full max-w-[400px]" />
+              <img src={handtekeningData} alt="Handtekening" className="border rounded-xl bg-background w-full max-w-[400px]" />
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="h-10 px-4 text-[13px]" onClick={() => setIsEditingSignature(true)}>
                   <Pen className="h-3.5 w-3.5 mr-1.5" /> Bewerken
@@ -326,7 +326,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
                 ref={canvasRef}
                 width={600}
                 height={200}
-                className="border rounded-xl bg-[#F8F7F5] cursor-crosshair touch-none w-full"
+                className="border rounded-xl bg-background cursor-crosshair touch-none w-full"
                 style={{ maxWidth: '100%', height: 'auto', aspectRatio: '3/1' }}
                 onMouseDown={startDraw}
                 onMouseMove={draw}
@@ -361,7 +361,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
 
       {/* Afronden knop — prominent onderaan */}
       {onAfronden && status !== 'afgerond' && !readOnly && (
-        <div className="bg-white rounded-xl border border-[#F0EFEC] p-4">
+        <div className="bg-white rounded-xl border border-border p-4">
           <button
             onClick={onAfronden}
             disabled={isSaving}
@@ -370,7 +370,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
             <ClipboardCheck className="h-5 w-5" />
             {isSaving ? 'Bezig met opslaan...' : 'Werkbon afronden'}
           </button>
-          <p className="text-[11px] text-[#9B9B95] text-center mt-2">Slaat alles op inclusief foto's en handtekening</p>
+          <p className="text-[11px] text-muted-foreground text-center mt-2">Slaat alles op inclusief foto's en handtekening</p>
         </div>
       )}
 
@@ -378,8 +378,8 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
       <Dialog open={fullscreenSignature} onOpenChange={setFullscreenSignature}>
         <DialogContent className="max-w-[100vw] max-h-[100dvh] w-screen h-[100dvh] p-0 rounded-none border-none">
           <div className="flex flex-col h-full bg-white">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#F0EFEC]">
-              <h3 className="text-[15px] font-bold text-[#1A1A1A]">Ondertekenen</h3>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h3 className="text-[15px] font-bold text-foreground">Ondertekenen</h3>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="h-10" onClick={() => {
                   clearCanvas(fullscreenCanvasRef.current)
@@ -396,7 +396,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
                 ref={fullscreenCanvasRef}
                 width={1200}
                 height={600}
-                className="border-2 border-dashed border-[#C0BDB8] rounded-2xl bg-[#F8F7F5] cursor-crosshair touch-none w-full h-full"
+                className="border-2 border-dashed border-[#C0BDB8] rounded-2xl bg-background cursor-crosshair touch-none w-full h-full"
                 style={{ maxWidth: '100%', maxHeight: '100%' }}
                 onMouseDown={startDraw}
                 onMouseMove={draw}
@@ -407,7 +407,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
                 onTouchEnd={endDraw}
               />
             </div>
-            <div className="px-4 py-3 border-t border-[#F0EFEC] text-center text-[12px] text-[#9B9B95]">
+            <div className="px-4 py-3 border-t border-border text-center text-[12px] text-muted-foreground">
               Teken met je vinger op het scherm
             </div>
           </div>

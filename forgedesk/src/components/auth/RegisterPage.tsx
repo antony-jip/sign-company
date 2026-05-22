@@ -82,7 +82,7 @@ export function RegisterPage() {
   return (
     <DoenAuthShell>
       <DoenAuthHeader rightSlot={
-        <p className="text-[13px] text-[#6B6B66] hidden sm:block">
+        <p className="text-[13px] text-foreground/70 hidden sm:block">
           Al een account?{' '}
           <Link to="/login" className="text-[#1A535C] font-semibold hover:underline underline-offset-4">
             Inloggen
@@ -118,7 +118,7 @@ export function RegisterPage() {
 
           <motion.p
             variants={item}
-            className="mt-6 text-[16px] sm:text-[17px] text-[#5A5A55] leading-[1.6] max-w-[460px]"
+            className="mt-6 text-[16px] sm:text-[17px] text-foreground/70 leading-[1.6] max-w-[460px]"
           >
             Klant, offerte, planning, factuur. Alles op één plek.
             Geen losse mapjes, geen WhatsApp-chaos, geen vrijdagavond admin.
@@ -129,16 +129,16 @@ export function RegisterPage() {
               <span className="font-heading text-[26px] sm:text-[28px] font-extrabold tracking-tight text-[#1A535C] leading-none tabular-nums">
                 €<CountUp target={79} duration={900} delay={400} />
               </span>
-              <span className="text-[13px] text-[#5A5A55] font-medium">/maand</span>
+              <span className="text-[13px] text-foreground/70 font-medium">/maand</span>
             </div>
-            <p className="mt-2.5 text-[13px] text-[#5A5A55] leading-[1.55]">
+            <p className="mt-2.5 text-[13px] text-foreground/70 leading-[1.55]">
               Tot <span className="font-semibold text-[#191919]">10 gebruikers</span> inbegrepen
               <span className="mx-2 text-[#F15025]">·</span>
               30 dagen gratis
               <span className="mx-2 text-[#F15025]">·</span>
               geen creditcard
             </p>
-            <p className="mt-1.5 text-[12px] text-[#9B9B95]">
+            <p className="mt-1.5 text-[12px] text-muted-foreground">
               Meer gebruikers? Staffel op maat. Even mailen, dan regelen we het.
             </p>
           </motion.div>
@@ -155,24 +155,24 @@ export function RegisterPage() {
             <h2 className="font-heading text-[22px] font-extrabold text-[#191919] tracking-[-0.02em] mb-1">
               Aan de slag<span style={{ color: '#F15025' }}>.</span>
             </h2>
-            <p className="text-[13.5px] text-[#5A5A55] mb-6">
+            <p className="text-[13.5px] text-foreground/70 mb-6">
               Maak een account. Kost je een minuut.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div className="space-y-1.5">
-                <Label htmlFor="register-email" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A5A55]">
+                <Label htmlFor="register-email" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground/70">
                   E-mailadres
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-[#C0BDB8] pointer-events-none" aria-hidden />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-muted-foreground/70 pointer-events-none" aria-hidden />
                   <Input
                     id="register-email"
                     type="email"
                     placeholder="naam@bedrijf.nl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-11 rounded-xl border-[#EBEBEB] bg-[#F8F7F5] text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all"
+                    className="pl-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all"
                     disabled={isLoading}
                     autoComplete="email"
                     autoFocus
@@ -181,25 +181,25 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="register-password" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A5A55]">
+                <Label htmlFor="register-password" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground/70">
                   Wachtwoord
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-[#C0BDB8] pointer-events-none" aria-hidden />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-muted-foreground/70 pointer-events-none" aria-hidden />
                   <Input
                     id="register-password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Minimaal 10 tekens, sterk"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-12 h-11 rounded-xl border-[#EBEBEB] bg-[#F8F7F5] text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all"
+                    className="pl-10 pr-12 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all"
                     disabled={isLoading}
                     autoComplete="new-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-[#C0BDB8] hover:text-[#5A5A55] transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-muted-foreground/70 hover:text-foreground/70 transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30"
                     tabIndex={-1}
                     aria-label={showPassword ? 'Wachtwoord verbergen' : 'Wachtwoord tonen'}
                   >
@@ -210,18 +210,18 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="confirm-password" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A5A55]">
+                <Label htmlFor="confirm-password" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground/70">
                   Wachtwoord bevestigen
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-[#C0BDB8] pointer-events-none" aria-hidden />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-muted-foreground/70 pointer-events-none" aria-hidden />
                   <Input
                     id="confirm-password"
                     type="password"
                     placeholder="Herhaal je wachtwoord"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`pl-10 pr-10 h-11 rounded-xl border-[#EBEBEB] bg-[#F8F7F5] text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all ${!passwordsMatch ? 'border-[#C03A18] focus-visible:ring-[#C03A18]/20' : ''}`}
+                    className={`pl-10 pr-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all ${!passwordsMatch ? 'border-[#C03A18] focus-visible:ring-[#C03A18]/20' : ''}`}
                     disabled={isLoading}
                     autoComplete="new-password"
                     aria-invalid={!passwordsMatch}
@@ -256,12 +256,12 @@ export function RegisterPage() {
                 )}
               </Button>
 
-              <p className="text-[11px] text-[#9B9B95] text-center pt-1">
+              <p className="text-[11px] text-muted-foreground text-center pt-1">
                 Door aan te melden ga je akkoord met onze voorwaarden.
               </p>
             </form>
 
-            <p className="text-center text-[12px] text-[#9B9B95] mt-5 sm:hidden">
+            <p className="text-center text-[12px] text-muted-foreground mt-5 sm:hidden">
               Al een account?{' '}
               <Link to="/login" className="text-[#1A535C] font-semibold hover:underline">
                 Inloggen
@@ -283,7 +283,7 @@ export function RegisterPage() {
           <h2 className="font-heading text-[28px] sm:text-[36px] lg:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919]">
             Klant tot factuur. In één flow<span style={{ color: '#F15025' }}>.</span>
           </h2>
-          <p className="mt-3 text-[15px] sm:text-[16px] text-[#5A5A55] max-w-[520px] mx-auto leading-[1.6]">
+          <p className="mt-3 text-[15px] sm:text-[16px] text-foreground/70 max-w-[520px] mx-auto leading-[1.6]">
             Niets meer overtypen tussen 8 systemen. Eén klant, één project, één plek waar alles samenkomt.
           </p>
         </div>
@@ -332,7 +332,7 @@ export function RegisterPage() {
           <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919]">
             Eenvoudig overzetten uit ieder pakket<span style={{ color: '#F15025' }}>.</span>
           </h2>
-          <p className="mt-3 text-[14px] sm:text-[15px] text-[#5A5A55] max-w-[520px] mx-auto leading-[1.6]">
+          <p className="mt-3 text-[14px] sm:text-[15px] text-foreground/70 max-w-[520px] mx-auto leading-[1.6]">
             Werk je nu met een ander pakket of in Excel? Twee opties. Kies wat bij je past. Je data komt netjes mee.
           </p>
         </div>
@@ -363,7 +363,7 @@ export function RegisterPage() {
           />
         </div>
 
-        <p className="mt-8 text-center text-[12px] text-[#9B9B95]">
+        <p className="mt-8 text-center text-[12px] text-muted-foreground">
           Onbekend exportformaat? Mail{' '}
           <a href="mailto:hello@doen.team" className="text-[#1A535C] font-semibold hover:underline underline-offset-4">
             hello@doen.team
@@ -377,7 +377,7 @@ export function RegisterPage() {
         <h2 className="font-heading text-[30px] sm:text-[42px] lg:text-[52px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919]">
           Beginnen kost je niks<span style={{ color: '#F15025' }}>.</span>
         </h2>
-        <p className="mt-5 text-[15px] sm:text-[17px] text-[#5A5A55] leading-[1.6] max-w-[560px] mx-auto">
+        <p className="mt-5 text-[15px] sm:text-[17px] text-foreground/70 leading-[1.6] max-w-[560px] mx-auto">
           30 dagen volledig gratis. Geen creditcard. Geen verplichting na de proef.
           Past het niet? Stoppen kan altijd, in 1 klik.
         </p>
@@ -388,7 +388,7 @@ export function RegisterPage() {
           Begin gratis
           <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
         </a>
-        <p className="mt-4 text-[12px] text-[#9B9B95] uppercase tracking-[0.14em]">
+        <p className="mt-4 text-[12px] text-muted-foreground uppercase tracking-[0.14em]">
           30 dagen gratis · Geen creditcard · Maandelijks opzegbaar
         </p>
       </section>
@@ -414,12 +414,12 @@ function MigrationOption({
   return (
     <div
       className={`relative bg-white rounded-2xl p-7 sm:p-8 border ${
-        highlight ? 'border-[#1A535C]/30' : 'border-[#EBEBEB]'
+        highlight ? 'border-[#1A535C]/30' : 'border-border'
       } shadow-[0_2px_24px_-8px_rgba(26,83,92,0.08)] flex flex-col`}
     >
       <div className="flex items-start justify-between gap-3 mb-4">
         <p
-          className="font-mono text-[11px] font-bold tracking-[0.18em] uppercase text-[#9B9B95]"
+          className="font-mono text-[11px] font-bold tracking-[0.18em] uppercase text-muted-foreground"
           style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
         >
           {kicker}
@@ -441,7 +441,7 @@ function MigrationOption({
       </h3>
       <ul className="space-y-3">
         {steps.map((step, i) => (
-          <li key={i} className="flex gap-3 text-[13.5px] text-[#5A5A55] leading-[1.55]">
+          <li key={i} className="flex gap-3 text-[13.5px] text-foreground/70 leading-[1.55]">
             <span
               className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full mt-0.5 text-white text-[10px] font-bold"
               style={{ background: highlight ? '#1A535C' : '#1A535C99', fontFamily: '"DM Mono", ui-monospace, monospace' }}
@@ -470,7 +470,7 @@ function ConversionCard({
   return (
     <div
       className={`relative bg-white rounded-2xl p-6 sm:p-7 border ${
-        highlight ? 'border-[#F15025]/30' : 'border-[#EBEBEB]'
+        highlight ? 'border-[#F15025]/30' : 'border-border'
       } shadow-[0_2px_24px_-8px_rgba(26,83,92,0.08)]`}
     >
       {highlight && (
@@ -482,7 +482,7 @@ function ConversionCard({
         </span>
       )}
       <p
-        className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-3 text-[#9B9B95]"
+        className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-3 text-muted-foreground"
         style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
       >
         {kicker}
@@ -490,7 +490,7 @@ function ConversionCard({
       <h3 className="font-heading text-[20px] sm:text-[22px] font-extrabold tracking-tight text-[#191919] leading-tight">
         {title}
       </h3>
-      <p className="mt-3 text-[14px] text-[#5A5A55] leading-[1.55]">{body}</p>
+      <p className="mt-3 text-[14px] text-foreground/70 leading-[1.55]">{body}</p>
     </div>
   )
 }
@@ -499,7 +499,7 @@ function ConversionCard({
 
 export function DoenAuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen flex flex-col bg-[#F8F7F5] overflow-hidden">
+    <div className="relative min-h-screen flex flex-col bg-background overflow-hidden">
       <style>{`
         @keyframes doen-dot-pulse {
           0%, 100% { transform: scale(1); opacity: 1; }
@@ -647,7 +647,7 @@ export function DoenFormCard({
   accentColor?: string
 }) {
   return (
-    <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl p-6 sm:p-7 shadow-[0_4px_40px_-12px_rgba(26,83,92,0.18)] border border-white/60 max-w-[440px] lg:ml-auto">
+    <div className="relative bg-card/95 backdrop-blur-sm rounded-2xl p-6 sm:p-7 shadow-[0_4px_40px_-12px_rgba(26,83,92,0.18)] border border-white/60 max-w-[440px] lg:ml-auto">
       <div
         className="absolute top-0 left-6 right-6 h-px"
         style={{
@@ -664,10 +664,10 @@ export function DoenAuthFooter() {
   return (
     <footer className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-10 pb-7 pt-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <p className="text-[11px] text-[#9B9B95]">
+        <p className="text-[11px] text-muted-foreground">
           © {new Date().getFullYear()} doen<span style={{ color: '#F15025' }}>.</span> Gemaakt voor doeners.
         </p>
-        <p className="text-[11px] text-[#9B9B95] tracking-[0.12em] uppercase">
+        <p className="text-[11px] text-muted-foreground tracking-[0.12em] uppercase">
           Slim gedaan<span style={{ color: '#F15025' }}>.</span>
         </p>
       </div>

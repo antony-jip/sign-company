@@ -61,7 +61,7 @@ export function ConfirmDialog() {
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) handleClose(false) }}>
-      <DialogContent className="max-w-sm bg-[#FEFDFB]">
+      <DialogContent className="max-w-sm bg-background">
         <DialogHeader>
           <DialogTitle>{state.title || 'Bevestigen'}</DialogTitle>
           <DialogDescription>{state.message}</DialogDescription>

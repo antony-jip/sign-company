@@ -95,14 +95,14 @@ const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; te
 }
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'text-[#C03A18]', hoog: 'text-[#8A6A2A]', medium: 'text-[#3A5A9A]', laag: 'text-[#B0ADA8]',
+  kritiek: 'text-[#C03A18]', hoog: 'text-[#8A6A2A]', medium: 'text-[#3A5A9A]', laag: 'text-muted-foreground/80',
 }
 
 const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
   kritiek: 'border-[#E04A28] hover:border-[#C03A18]',
   hoog: 'border-[#C49A30] hover:border-[#8A6A2A]',
   medium: 'border-[#4A7AC7] hover:border-[#3A5A9A]',
-  laag: 'border-[#B0ADA8] hover:border-[#6B6B66]',
+  laag: 'border-border hover:border-[#6B6B66]',
 }
 
 // Deterministic project color from name
@@ -1162,16 +1162,16 @@ export function TasksLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-122px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-white">
+      <div className="flex flex-col h-[calc(100dvh-122px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-card">
         {/* Sticky toolbar skeleton */}
-        <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#E6E4DE] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
+        <div className="sticky top-0 z-20 bg-card border-b border-border shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
           <div className="flex items-baseline gap-2">
-            <h1 className="text-[17px] font-bold text-[#1A1A1A] tracking-[-0.3px]">
+            <h1 className="text-[17px] font-bold text-foreground tracking-[-0.3px]">
               Taken<span className="text-[#F15025]">.</span>
             </h1>
             <Skeleton className="h-3 w-10" />
           </div>
-          <span className="w-px h-5 bg-[#EBEBEB]" />
+          <span className="w-px h-5 bg-border" />
           <div className="flex items-center gap-1">
             <Skeleton className="h-6 w-12 rounded-md" />
             <Skeleton className="h-6 w-16 rounded-md" />
@@ -1186,10 +1186,10 @@ export function TasksLayout() {
         </div>
 
         {/* Day headers skeleton */}
-        <div className="flex border-b-2 border-[#F0EFEC] bg-[#FAFAF9] flex-shrink-0">
+        <div className="flex border-b-2 border-border bg-background flex-shrink-0">
           <div className="w-14 flex-shrink-0" />
           {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="flex-1 min-w-0 text-center py-3 border-l border-[#EBEBEB]/30">
+            <div key={i} className="flex-1 min-w-0 text-center py-3 border-l border-border/30">
               <div className="flex items-center justify-center gap-1.5">
                 <Skeleton className="h-3 w-6" />
                 <Skeleton className="h-4 w-4" />
@@ -1199,10 +1199,10 @@ export function TasksLayout() {
         </div>
 
         {/* Calendar grid skeleton */}
-        <div className="flex-1 overflow-hidden bg-[#FFFFFF]">
+        <div className="flex-1 overflow-hidden bg-card">
           <div className="flex h-full">
             {/* Time gutter */}
-            <div className="w-14 flex-shrink-0 border-r border-[#E6E4DE] py-3 space-y-12">
+            <div className="w-14 flex-shrink-0 border-r border-border py-3 space-y-12">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="px-2 flex justify-end">
                   <Skeleton className="h-2.5 w-6" />
@@ -1211,7 +1211,7 @@ export function TasksLayout() {
             </div>
             {/* Day columns with placeholder task cards */}
             {Array.from({ length: 7 }).map((_, colIdx) => (
-              <div key={colIdx} className="flex-1 min-w-0 border-l border-[#EBEBEB]/30 p-2 space-y-2">
+              <div key={colIdx} className="flex-1 min-w-0 border-l border-border/30 p-2 space-y-2">
                 {colIdx % 2 === 0 && <Skeleton className="h-12 w-full rounded-md" />}
                 {colIdx === 1 && <Skeleton className="h-16 w-full rounded-md" />}
                 {colIdx === 3 && <Skeleton className="h-10 w-full rounded-md" />}
@@ -1229,19 +1229,19 @@ export function TasksLayout() {
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100dvh-122px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-white">
+      <div className="flex flex-col h-[calc(100dvh-122px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-card">
         {/* === Sticky toolbar — 1 rij === */}
-        <div className="sticky top-0 z-20 bg-white/75 backdrop-blur-xl border-b border-[#E6E4DE] shadow-[0_1px_8px_-2px_rgba(0,0,0,0.05)] px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
+        <div className="sticky top-0 z-20 bg-card/75 backdrop-blur-xl border-b border-border shadow-[0_1px_8px_-2px_rgba(0,0,0,0.05)] px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           {/* Titel + counter */}
           <div className="flex items-baseline gap-2">
-            <h1 className="text-[17px] font-bold text-[#1A1A1A] tracking-[-0.3px]">
+            <h1 className="text-[17px] font-bold text-foreground tracking-[-0.3px]">
               Taken<span className="text-[#F15025]">.</span>
             </h1>
             <span
-              className="text-[12px] text-[#9B9B95] tabular-nums"
+              className="text-[12px] text-muted-foreground tabular-nums"
               title={`${klaartaken} van ${totalTaken} taken voltooid`}
             >
-              {klaartaken}<span className="text-[#C4C2BD]">/{totalTaken}</span>
+              {klaartaken}<span className="text-muted-foreground/80">/{totalTaken}</span>
             </span>
           </div>
 
@@ -1251,16 +1251,16 @@ export function TasksLayout() {
               <button key={key} onClick={() => setTaskFilter(key)} className={cn(
                 'text-[13px] py-1 transition-colors whitespace-nowrap',
                 taskFilter === key
-                  ? 'text-[#1A1A1A] font-semibold'
-                  : 'text-[#9B9B95] hover:text-[#1A1A1A]'
+                  ? 'text-foreground font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
               )}>{label}</button>
             ))}
-            <span className="w-px h-3.5 bg-[#E6E4DE]" />
+            <span className="w-px h-3.5 bg-border" />
             <button onClick={() => setShowMontage(!showMontage)} className={cn(
               'text-[13px] py-1 transition-colors whitespace-nowrap flex items-center gap-1.5',
               showMontage
-                ? 'text-[#1A1A1A] font-semibold'
-                : 'text-[#9B9B95] hover:text-[#1A1A1A]'
+                ? 'text-foreground font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
             )}><Wrench className="w-3.5 h-3.5" />Montage</button>
           </div>
 
@@ -1280,7 +1280,7 @@ export function TasksLayout() {
                   'h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0',
                   mijnActief
                     ? 'bg-[#1A535C]/[0.12] text-[#1A535C] ring-2 ring-[#1A535C]/30'
-                    : 'border border-[#E0DED8] text-[#6B6B66] hover:border-[#1A535C]/40 hover:text-[#1A535C]'
+                    : 'border border-border text-foreground/70 hover:border-[#1A535C]/40 hover:text-[#1A535C]'
                 )}
               >
                 {getLaneInitials(currentMedewerker.naam)}
@@ -1307,8 +1307,8 @@ export function TasksLayout() {
               <button key={v} onClick={() => setViewMode(v)} className={cn(
                 'text-[13px] py-1 transition-colors',
                 viewMode === v
-                  ? 'text-[#1A1A1A] font-semibold'
-                  : 'text-[#9B9B95] hover:text-[#1A1A1A]'
+                  ? 'text-foreground font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
               )}>{label}</button>
             ))}
           </div>
@@ -1316,25 +1316,25 @@ export function TasksLayout() {
           {/* Date nav */}
           <div className="flex items-center gap-0.5">
             <button
-              className="p-1 rounded-full hover:bg-[#F4F2EE] transition-all"
+              className="p-1 rounded-full hover:bg-muted transition-all"
               onClick={() => viewMode === 'maand' ? setMonthOffset((m) => m - 1) : setWeekOffset((w) => w - 1)}
               title="Vorige"
             >
-              <ChevronLeft className="w-4 h-4 text-[#6B6B66]" />
+              <ChevronLeft className="w-4 h-4 text-foreground/70" />
             </button>
             <button
-              className="text-[13px] px-2 py-1 font-semibold text-[#1A1A1A] min-w-[140px] text-center hover:text-[#1A535C] transition-colors"
+              className="text-[13px] px-2 py-1 font-semibold text-foreground min-w-[140px] text-center hover:text-[#1A535C] transition-colors"
               onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
               title="Spring naar vandaag"
             >
               {viewMode === 'maand' ? monthLabel : weekLabel}
             </button>
             <button
-              className="p-1 rounded-full hover:bg-[#F4F2EE] transition-all"
+              className="p-1 rounded-full hover:bg-muted transition-all"
               onClick={() => viewMode === 'maand' ? setMonthOffset((m) => m + 1) : setWeekOffset((w) => w + 1)}
               title="Volgende"
             >
-              <ChevronRight className="w-4 h-4 text-[#6B6B66]" />
+              <ChevronRight className="w-4 h-4 text-foreground/70" />
             </button>
           </div>
           {!(viewMode === 'maand' ? monthOffset === 0 : isCurrentWeek) && (
@@ -1348,8 +1348,8 @@ export function TasksLayout() {
 
           {/* Zoom — twee subtiele text-knoppen */}
           <div className="flex items-center gap-1">
-            <button onClick={() => handleZoom(-4)} className="px-1 text-[11px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors" title="Kleiner">A</button>
-            <button onClick={() => handleZoom(4)} className="px-1 text-[13px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors font-medium" title="Groter">A</button>
+            <button onClick={() => handleZoom(-4)} className="px-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors" title="Kleiner">A</button>
+            <button onClick={() => handleZoom(4)} className="px-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors font-medium" title="Groter">A</button>
           </div>
         </div>
 
@@ -1370,7 +1370,7 @@ export function TasksLayout() {
         {/* Ongepland verborgen — taken zonder deadline worden niet getoond */}
 
         {/* === DAY HEADERS === */}
-        <div className="sticky top-[52px] z-10 flex border-b border-[#E6E4DE] bg-white flex-shrink-0">
+        <div className="sticky top-[52px] z-10 flex border-b border-border bg-card flex-shrink-0">
           <div className="w-14 flex-shrink-0" />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today)
@@ -1382,14 +1382,14 @@ export function TasksLayout() {
               <div
                 key={i}
                 className={cn(
-                  'flex-1 min-w-0 text-center py-4 border-l border-[#E6E4DE] transition-colors',
+                  'flex-1 min-w-0 text-center py-4 border-l border-border transition-colors',
                   isToday && 'bg-[#1A535C]/[0.04]'
                 )}
               >
                 <div className="flex flex-col items-center gap-1">
                   <span className={cn(
                     'text-[11px] font-semibold tracking-[0.06em] uppercase',
-                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#C4C2BD]' : 'text-[#9B9B95]'
+                    isToday ? 'text-[#1A535C]' : isPast ? 'text-muted-foreground/80' : 'text-muted-foreground'
                   )}>
                     {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
                   </span>
@@ -1398,15 +1398,15 @@ export function TasksLayout() {
                       'tabular-nums font-bold',
                       isToday
                         ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[13px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
-                        : isPast ? 'text-[#C4C2BD] text-[16px]'
-                        : 'text-[#1A1A1A] text-[16px]'
+                        : isPast ? 'text-muted-foreground/80 text-[16px]'
+                        : 'text-foreground text-[16px]'
                     )}>
                       {day.getDate()}
                     </span>
                     {isPast && dayTasks.length > 0 ? (
                       <button
                         onClick={() => togglePastDay(dayKey)}
-                        className="inline-flex items-center gap-0.5 text-[10px] font-medium text-[#9B9B95] hover:text-[#1A535C] transition-colors px-1 py-0.5 rounded hover:bg-[#1A535C]/[0.06]"
+                        className="inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground hover:text-[#1A535C] transition-colors px-1 py-0.5 rounded hover:bg-[#1A535C]/[0.06]"
                         title={isExpanded ? 'Verberg verlopen taken' : 'Toon verlopen taken'}
                       >
                         <span className="font-mono">{dayTasks.length}</span>
@@ -1414,7 +1414,7 @@ export function TasksLayout() {
                       </button>
                     ) : (
                       dayTasks.length > 0 && !isToday && (
-                        <span className="text-[10px] font-mono text-[#9B9B95]">{dayTasks.length}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground">{dayTasks.length}</span>
                       )
                     )}
                   </div>
@@ -1425,22 +1425,22 @@ export function TasksLayout() {
         </div>
 
         {/* === CALENDAR GRID — DOEN === */}
-        <div ref={scrollRef} onMouseDown={handleGridMouseDown} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[#FFFFFF]">
+        <div ref={scrollRef} onMouseDown={handleGridMouseDown} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-card">
           {weekTotal === 0 && !isLoading && (
             <div className="sticky top-24 z-10 flex flex-col items-center pointer-events-none mx-auto max-w-md text-center">
               <div className="w-12 h-12 rounded-full bg-[#1A535C]/[0.08] flex items-center justify-center mb-3">
                 <CalendarIcon className="w-5 h-5 text-[#1A535C]" />
               </div>
-              <p className="text-[15px] font-semibold text-[#1A1A1A]">Geen taken deze week</p>
-              <p className="text-[12px] text-[#6B6B66] mt-1 max-w-[280px]">Klik op een tijdslot om er een in te plannen, of sleep een taak hierheen.</p>
+              <p className="text-[15px] font-semibold text-foreground">Geen taken deze week</p>
+              <p className="text-[12px] text-foreground/70 mt-1 max-w-[280px]">Klik op een tijdslot om er een in te plannen, of sleep een taak hierheen.</p>
             </div>
           )}
           <div className="flex" style={{ minHeight: HOURS.length * HOUR_HEIGHT }}>
             {/* Time gutter */}
-            <div className="w-14 flex-shrink-0 relative border-r border-[#E6E4DE]">
+            <div className="w-14 flex-shrink-0 relative border-r border-border">
               {HOURS.map((hour) => (
                 <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative">
-                  <span className="absolute -top-2.5 right-3 text-[11px] text-[#9B9B95] font-mono tabular-nums font-medium">
+                  <span className="absolute -top-2.5 right-3 text-[11px] text-muted-foreground font-mono tabular-nums font-medium">
                     {String(hour).padStart(2, '0')}
                   </span>
                 </div>
@@ -1523,14 +1523,14 @@ export function TasksLayout() {
         return (
         <div className="flex-1 flex flex-col min-h-0 pt-3">
           <div
-            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-[#EBE9E4] border-t border-[#EBE9E4]"
+            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-border border-t border-border"
             style={{ gridTemplateRows: `auto repeat(${visibleWeeks}, minmax(0, 1fr))` }}
           >
             {/* Day headers — werkweek */}
             {DAY_LABELS.slice(0, 5).map((d) => (
               <div
                 key={d}
-                className="bg-white text-center py-4 text-[13px] font-semibold tracking-[0.02em] text-[#5A5A55] border-b border-[#E6E4DE]"
+                className="bg-card text-center py-4 text-[13px] font-semibold tracking-[0.02em] text-foreground/70 border-b border-border"
               >
                 {d.charAt(0).toUpperCase() + d.slice(1)}
               </div>
@@ -1549,7 +1549,7 @@ export function TasksLayout() {
                   key={i}
                   className={cn(
                     'group/cell relative p-2 transition-colors flex flex-col min-h-0',
-                    !isCurrentMonth ? 'bg-[#FAFAF8] text-[#C4C2BD]' : 'bg-white',
+                    !isCurrentMonth ? 'bg-background text-muted-foreground/80' : 'bg-card',
                     isToday && '[background:linear-gradient(180deg,rgba(26,83,92,0.06)_0%,rgba(26,83,92,0)_55%)]',
                     isDropHere && '[background:linear-gradient(180deg,rgba(241,80,37,0.10)_0%,rgba(241,80,37,0.03)_100%)] shadow-[inset_0_2px_0_#F15025]'
                   )}
@@ -1582,7 +1582,7 @@ export function TasksLayout() {
                 >
                   <div className="flex items-baseline justify-end gap-1 mb-1 flex-shrink-0 h-6">
                     {!isCurrentMonth && day.getDate() === 1 && (
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-[#C4C2BD]">
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
                         {MONTH_NAMES[day.getMonth()]}
                       </span>
                     )}
@@ -1590,9 +1590,9 @@ export function TasksLayout() {
                       'text-[14px] font-semibold tabular-nums',
                       isToday
                         ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[11px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
-                        : isPastInMonth ? 'text-[#9B9B95]'
-                        : isCurrentMonth ? 'text-[#1A1A1A]'
-                        : 'text-[#C4C2BD]'
+                        : isPastInMonth ? 'text-muted-foreground'
+                        : isCurrentMonth ? 'text-foreground'
+                        : 'text-muted-foreground/80'
                     )}>
                       {day.getDate()}
                     </span>
@@ -1603,7 +1603,7 @@ export function TasksLayout() {
                       value={monthAddTitle}
                       onChange={(e) => setMonthAddTitle(e.target.value)}
                       placeholder="Taak..."
-                      className="w-full text-[11px] px-2 py-1 rounded-md border border-[#1A535C]/30 bg-white focus:outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 text-[#1A1A1A] placeholder:text-[#B0ADA8] mb-1 flex-shrink-0"
+                      className="w-full text-[11px] px-2 py-1 rounded-md border border-[#1A535C]/30 bg-card focus:outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 text-foreground placeholder:text-muted-foreground/80 mb-1 flex-shrink-0"
                       onKeyDown={async (e) => {
                         if (e.key === 'Enter' && monthAddTitle.trim()) {
                           await handleQuickAdd(monthAddTitle.trim(), 'medium', toDateStr(day), '')
@@ -1686,13 +1686,13 @@ export function TasksLayout() {
         {viewMode === 'swimlane' && (
         /* === SWIMLANE VIEW — overzicht per toegewezen persoon voor de week
            v1: geen drag & drop (week/maand houden D&D); doel is overzicht + bulk-selectie. */
-        <div className="flex-1 overflow-y-auto bg-[#FFFFFF]">
+        <div className="flex-1 overflow-y-auto bg-card">
           <div className="min-w-[720px]">
             <div
-              className="sticky top-0 z-10 flex border-b border-[#E6E4DE] bg-white"
+              className="sticky top-0 z-10 flex border-b border-border bg-card"
               style={{ gridTemplateColumns: '180px repeat(5, 1fr)' }}
             >
-              <div className="w-[180px] flex-shrink-0 px-4 py-4 text-[11px] font-semibold tracking-[0.06em] uppercase text-[#9B9B95]">
+              <div className="w-[180px] flex-shrink-0 px-4 py-4 text-[11px] font-semibold tracking-[0.06em] uppercase text-muted-foreground">
                 Medewerker
               </div>
               {weekDays.map((day, i) => {
@@ -1705,14 +1705,14 @@ export function TasksLayout() {
                   <div
                     key={i}
                     className={cn(
-                      'flex-1 min-w-0 text-center py-4 border-l border-[#E6E4DE]',
+                      'flex-1 min-w-0 text-center py-4 border-l border-border',
                       isToday && 'bg-[#1A535C]/[0.04]'
                     )}
                   >
                     <div className="flex flex-col items-center gap-1">
                       <span className={cn(
                         'text-[11px] font-semibold tracking-[0.06em] uppercase',
-                        isToday ? 'text-[#1A535C]' : 'text-[#9B9B95]'
+                        isToday ? 'text-[#1A535C]' : 'text-muted-foreground'
                       )}>
                         {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
                       </span>
@@ -1729,7 +1729,7 @@ export function TasksLayout() {
                           'tabular-nums font-bold',
                           isToday
                             ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[13px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
-                            : 'text-[#1A1A1A] text-[16px]'
+                            : 'text-foreground text-[16px]'
                         )}>
                           {day.getDate()}
                         </span>
@@ -1740,7 +1740,7 @@ export function TasksLayout() {
               })}
             </div>
             {swimlaneLanes.length === 0 ? (
-              <div className="px-6 py-12 text-center text-[13px] text-[#9B9B95]">
+              <div className="px-6 py-12 text-center text-[13px] text-muted-foreground">
                 Geen taken voor deze week.
               </div>
             ) : (
@@ -1750,8 +1750,8 @@ export function TasksLayout() {
                 const laneTaskIds = [...lane.tasksByDay.values()].flat().map((t) => t.id)
                 const allLaneSelected = laneTaskIds.length > 0 && laneTaskIds.every((id) => selectedTaskIds.has(id))
                 return (
-                  <div key={lane.key} className="flex border-b border-[#E6E4DE] hover:bg-[#FAFAF9]/40 transition-colors">
-                    <div className="w-[180px] flex-shrink-0 flex items-center gap-2 px-3 py-3 border-r border-[#E6E4DE]">
+                  <div key={lane.key} className="flex border-b border-border hover:bg-background/40 transition-colors">
+                    <div className="w-[180px] flex-shrink-0 flex items-center gap-2 px-3 py-3 border-r border-border">
                       <Checkbox
                         checked={allLaneSelected}
                         disabled={laneTaskIds.length === 0}
@@ -1764,7 +1764,7 @@ export function TasksLayout() {
                         onClick={() => toggleAssigneeCollapsed(lane.key)}
                         className="flex-1 flex items-center gap-2 text-left min-w-0"
                       >
-                        <ChevronRight className={cn('w-3 h-3 text-[#9B9B95] transition-transform flex-shrink-0', !isCollapsed && 'rotate-90')} />
+                        <ChevronRight className={cn('w-3 h-3 text-muted-foreground transition-transform flex-shrink-0', !isCollapsed && 'rotate-90')} />
                         {isUnassigned ? (
                           <span className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold bg-[#FDE8E2] text-[#C03A18] flex-shrink-0">
                             ?
@@ -1779,11 +1779,11 @@ export function TasksLayout() {
                         )}
                         <span className={cn(
                           'text-[13px] font-semibold truncate',
-                          isUnassigned ? 'text-[#C03A18]' : 'text-[#1A1A1A]'
+                          isUnassigned ? 'text-[#C03A18]' : 'text-foreground'
                         )}>
                           {lane.label}
                         </span>
-                        <span className="ml-auto text-[11px] font-mono text-[#9B9B95] tabular-nums flex-shrink-0">
+                        <span className="ml-auto text-[11px] font-mono text-muted-foreground tabular-nums flex-shrink-0">
                           {lane.total}
                         </span>
                       </button>
@@ -1796,7 +1796,7 @@ export function TasksLayout() {
                         <div
                           key={dayIdx}
                           className={cn(
-                            'flex-1 min-w-0 border-l border-[#E6E4DE] p-1.5 min-h-[56px]',
+                            'flex-1 min-w-0 border-l border-border p-1.5 min-h-[56px]',
                             isToday && 'bg-[#1A535C]/[0.02]'
                           )}
                         >
@@ -1851,7 +1851,7 @@ export function TasksLayout() {
                             <div className="h-full" />
                           )}
                           {isCollapsed && cellTasks.length > 0 && (
-                            <div className="text-[10px] font-mono text-[#B0ADA8] text-center pt-1">
+                            <div className="text-[10px] font-mono text-muted-foreground/80 text-center pt-1">
                               {cellTasks.length}
                             </div>
                           )}
@@ -1870,11 +1870,11 @@ export function TasksLayout() {
       {/* === FLOATING ACTION BUTTON — DOEN === */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
         {fabOpen && (
-          <div className="w-80 rounded-2xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.06] p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="w-80 rounded-2xl bg-card shadow-[0_4px_24px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.06] p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-[#1A1A1A]">Snel toevoegen</span>
-              <button className="p-1 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => setFabOpen(false)}>
-                <X className="w-3.5 h-3.5 text-[#9B9B95]" />
+              <span className="text-sm font-semibold text-foreground">Snel toevoegen</span>
+              <button className="p-1 rounded-lg hover:bg-muted transition-all" onClick={() => setFabOpen(false)}>
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             </div>
             <Input
@@ -1921,7 +1921,7 @@ export function TasksLayout() {
                   {projecten.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.naam}
-                      {p.klant_naam ? <span className="text-[#9B9B95] ml-2">· {p.klant_naam}</span> : null}
+                      {p.klant_naam ? <span className="text-muted-foreground ml-2">· {p.klant_naam}</span> : null}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -2055,11 +2055,11 @@ function NietVergetenStrip() {
   }, [open])
 
   return (
-    <div className="px-6 py-2 bg-[#FAFAF9] border-b border-[#EBEBEB]/40">
+    <div className="px-6 py-2 bg-background border-b border-border/40">
       <button onClick={toggle} className="flex items-center gap-1.5 group w-full">
-        <ChevronRight className={cn('w-3 h-3 text-[#9B9B95] transition-transform duration-200', open && 'rotate-90')} />
-        <span className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Niet vergeten</span>
-        {items.length > 0 && <span className="text-[10px] text-[#9B9B95] font-mono">{items.length}</span>}
+        <ChevronRight className={cn('w-3 h-3 text-muted-foreground transition-transform duration-200', open && 'rotate-90')} />
+        <span className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider">Niet vergeten</span>
+        {items.length > 0 && <span className="text-[10px] text-muted-foreground font-mono">{items.length}</span>}
       </button>
       {open && (
         <div className="mt-2 bg-[#FFF9E6]/60 rounded-md px-3 py-2 border border-[#F5E6A3]/30">
@@ -2078,8 +2078,8 @@ function NietVergetenStrip() {
                   className="flex items-center gap-2 group/item py-0.5 cursor-grab active:cursor-grabbing"
                 >
                   <GripVertical className="w-2.5 h-2.5 text-[#C4A060]/30 flex-shrink-0" />
-                  <span className="text-[12px] text-[#6B6B66] flex-1">{item}</span>
-                  <button onClick={() => remove(idx)} className="text-[#9B9B95] hover:text-[#C03A18] opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5">
+                  <span className="text-[12px] text-foreground/70 flex-1">{item}</span>
+                  <button onClick={() => remove(idx)} className="text-muted-foreground hover:text-[#C03A18] opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5">
                     <X className="w-3 h-3" />
                   </button>
                 </li>
@@ -2091,7 +2091,7 @@ function NietVergetenStrip() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Typ iets om te onthouden..."
-              className="flex-1 text-[12px] bg-transparent border-none outline-none placeholder:text-[#C4A060]/50 text-[#6B6B66]"
+              className="flex-1 text-[12px] bg-transparent border-none outline-none placeholder:text-[#C4A060]/50 text-foreground/70"
             />
             {input.trim() && (
               <button type="submit" className="text-[10px] font-medium text-[#8A7A4A] hover:text-[#6B5A2A] transition-colors">
@@ -2281,7 +2281,7 @@ function DayColumn({
 
   return (
     <div className={cn(
-      'flex-1 min-w-0 border-l border-[#E6E4DE] relative',
+      'flex-1 min-w-0 border-l border-border relative',
       isToday && 'bg-[#1A535C]/[0.015]'
     )}>
       {/* Hour grid lines + drop zones */}
@@ -2299,7 +2299,7 @@ function DayColumn({
             key={hour}
             style={{ height: HOUR_HEIGHT }}
             className={cn(
-              'group/hour border-b border-[#E6E4DE] transition-all duration-200 relative',
+              'group/hour border-b border-border transition-all duration-200 relative',
               isDropHere && 'bg-[#1A535C]/[0.06]'
             )}
             onDragOver={(e) => handleDragOver(e, hour)}
@@ -2332,7 +2332,7 @@ function DayColumn({
                   value={hourAddTitle}
                   onChange={(e) => setHourAddTitle(e.target.value)}
                   placeholder={`Taak om ${String(hour).padStart(2, '0')}:00...`}
-                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 bg-white shadow-lg focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/20 text-[#1A1A1A] placeholder:text-[#B0ADA8] transition-all"
+                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 bg-card shadow-lg focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/20 text-foreground placeholder:text-muted-foreground/80 transition-all"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && hourAddTitle.trim()) {
                       onQuickAddAtTime(hour, hourAddTitle.trim())
@@ -2509,7 +2509,7 @@ function DayColumn({
                 value={addTitle}
                 onChange={(e) => setAddTitle(e.target.value)}
                 placeholder="Taak..."
-                className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 bg-white focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/20 text-[#1A1A1A] placeholder:text-[#B0ADA8] transition-all"
+                className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 bg-card focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/20 text-foreground placeholder:text-muted-foreground/80 transition-all"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && addTitle.trim()) {
                     onQuickAdd(addTitle.trim())
@@ -2523,7 +2523,7 @@ function DayColumn({
           ) : (
             <button
               onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-[#B0ADA8]/40 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all duration-200"
+              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground/80/40 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all duration-200"
             >
               <Plus className="w-3 h-3" />
             </button>
@@ -2635,7 +2635,7 @@ function TaskCard({
             <Check className="w-2 h-2 text-white" strokeWidth={4} />
           </div>
         ) : (
-          <div className="w-3.5 h-3.5 rounded-full border-[1.5px] border-[#B0ADA8]/55 flex items-center justify-center transition-[transform,border-color] duration-200 group-hover/check:border-[#1A535C] group-hover/check:scale-110 group-active/check:scale-95">
+          <div className="w-3.5 h-3.5 rounded-full border-[1.5px] border-border/55 flex items-center justify-center transition-[transform,border-color] duration-200 group-hover/check:border-[#1A535C] group-hover/check:scale-110 group-active/check:scale-95">
             <span
               className="block rounded-full w-[3px] h-[3px] opacity-55 transition-all duration-200 ease-out group-hover/check:w-[7px] group-hover/check:h-[7px] group-hover/check:opacity-100"
               style={{ backgroundColor: pc.dot }}
@@ -2660,7 +2660,7 @@ function TaskCard({
           {/* Delete — hover only, ruimte + grotere hit area */}
           <button
             onClick={handleDeleteClick}
-            className="ml-auto p-1.5 -mr-1 rounded-md text-transparent group-hover:text-[#9B9B95] hover:!text-[#C03A18] hover:bg-[#C03A18]/8 transition-all flex-shrink-0"
+            className="ml-auto p-1.5 -mr-1 rounded-md text-transparent group-hover:text-muted-foreground hover:!text-[#C03A18] hover:bg-[#C03A18]/8 transition-all flex-shrink-0"
             title="Verwijderen"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -2688,7 +2688,7 @@ function TaskCard({
           onMouseDown={(e) => { onResizeStart(e) }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="w-8 h-1 rounded-full bg-transparent group-hover:bg-[#B0ADA8]/30 group-hover/resize:bg-[#1A535C]/50 transition-colors mb-0.5" />
+          <div className="w-8 h-1 rounded-full bg-transparent group-hover:bg-border/30 group-hover/resize:bg-[#1A535C]/50 transition-colors mb-0.5" />
         </div>
       )}
 
@@ -2734,7 +2734,7 @@ function EditTaskDialog({
     ? new Date(formData.deadline).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
     : 'Geen deadline'
 
-  const pillBase = 'h-7 px-2.5 inline-flex items-center gap-1.5 rounded-full border border-[#E0DED8] bg-white text-xs font-medium text-[#1A1A1A] hover:border-[#B0ADA8] hover:bg-[#F8F7F5] transition-colors'
+  const pillBase = 'h-7 px-2.5 inline-flex items-center gap-1.5 rounded-full border border-border bg-card text-xs font-medium text-foreground hover:border-border hover:bg-background transition-colors'
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -2748,7 +2748,7 @@ function EditTaskDialog({
             value={formData.titel}
             onChange={(e) => updateField('titel', e.target.value)}
             placeholder="Titel van de taak"
-            className="border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-[#1A1A1A] placeholder:text-[#9B9B95] placeholder:font-medium focus-visible:ring-0 tracking-[-0.3px] flex-1 min-w-0"
+            className="border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-foreground placeholder:text-muted-foreground placeholder:font-medium focus-visible:ring-0 tracking-[-0.3px] flex-1 min-w-0"
           />
           {formData.project_id && (
             <button
@@ -2789,8 +2789,8 @@ function EditTaskDialog({
             onChange={(v) => updateField('deadline', v)}
             trigger={
               <button type="button" className={pillBase}>
-                <CalendarIcon className="w-3 h-3 text-[#6B6B66]" />
-                <span className={cn(!formData.deadline && 'text-[#9B9B95]')}>{displayDeadline}</span>
+                <CalendarIcon className="w-3 h-3 text-foreground/70" />
+                <span className={cn(!formData.deadline && 'text-muted-foreground')}>{displayDeadline}</span>
               </button>
             }
           />
@@ -2799,7 +2799,7 @@ function EditTaskDialog({
           {medewerkers.length > 0 ? (
             <Select value={formData.toegewezen_aan || 'none'} onValueChange={(v) => updateField('toegewezen_aan', v === 'none' ? '' : v)}>
               <SelectTrigger className={cn(pillBase, 'w-auto focus:ring-0 [&>svg]:hidden max-w-[160px]')}>
-                <User2 className="w-3 h-3 text-[#6B6B66]" />
+                <User2 className="w-3 h-3 text-foreground/70" />
                 <SelectValue placeholder="Niet toegewezen" />
               </SelectTrigger>
               <SelectContent>
@@ -2811,12 +2811,12 @@ function EditTaskDialog({
             </Select>
           ) : (
             <div className={cn(pillBase, 'cursor-text')}>
-              <User2 className="w-3 h-3 text-[#6B6B66]" />
+              <User2 className="w-3 h-3 text-foreground/70" />
               <input
                 value={formData.toegewezen_aan}
                 onChange={(e) => updateField('toegewezen_aan', e.target.value)}
                 placeholder="Niet toegewezen"
-                className="bg-transparent border-0 outline-none text-xs font-medium text-[#1A1A1A] placeholder:text-[#9B9B95] w-28"
+                className="bg-transparent border-0 outline-none text-xs font-medium text-foreground placeholder:text-muted-foreground w-28"
               />
             </div>
           )}
@@ -2825,15 +2825,15 @@ function EditTaskDialog({
 
         {/* Project — altijd zichtbaar, geen type-toggle meer */}
         <div className="px-7 pb-4 space-y-1.5">
-          <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Project</Label>
+          <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</Label>
           <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
-            <SelectTrigger className="h-9 text-sm border-[#E0DED8] bg-[#F8F7F5]"><SelectValue placeholder="Geen project" /></SelectTrigger>
+            <SelectTrigger className="h-9 text-sm border-border bg-background"><SelectValue placeholder="Geen project" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="geen">Geen project</SelectItem>
               {projecten.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.naam}
-                  {p.klant_naam ? <span className="text-[#9B9B95] ml-2">· {p.klant_naam}</span> : null}
+                  {p.klant_naam ? <span className="text-muted-foreground ml-2">· {p.klant_naam}</span> : null}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -2842,22 +2842,22 @@ function EditTaskDialog({
 
         {/* Briefing — dominant field, auto-grow tot 400px, daarna scroll */}
         <div className="px-7 pb-5 space-y-2">
-          <Label className="text-xs uppercase tracking-[0.05em] text-[#9B9B95] font-semibold block">Briefing</Label>
+          <Label className="text-xs uppercase tracking-[0.05em] text-muted-foreground font-semibold block">Briefing</Label>
           <Textarea
             ref={beschrijvingRef}
             value={formData.beschrijving}
             onChange={(e) => updateField('beschrijving', e.target.value)}
             placeholder="Briefing toevoegen…"
             data-gramm="false"
-            className="border-0 shadow-none px-3 py-2.5 min-h-[180px] max-h-[400px] resize-none overflow-y-auto bg-[#F8F7F5] hover:bg-[#F0EFEC] focus:bg-white rounded-lg text-sm leading-relaxed text-[#1A1A1A] placeholder:text-[#6B6B66] focus-visible:ring-1 focus-visible:ring-[#1A535C]/20 transition-colors"
+            className="border-0 shadow-none px-3 py-2.5 min-h-[180px] max-h-[400px] resize-none overflow-y-auto bg-background hover:bg-muted focus:bg-card rounded-lg text-sm leading-relaxed text-foreground placeholder:text-foreground/70 focus-visible:ring-1 focus-visible:ring-[#1A535C]/20 transition-colors"
           />
         </div>
 
         {/* Bijlagen — compacte inline rij */}
         <div className="px-7 pb-5">
           <div className="flex items-center flex-wrap gap-3">
-            <Label className="text-xs uppercase tracking-[0.05em] text-[#9B9B95] font-semibold m-0">Bijlagen</Label>
-            <label className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-dashed border-[#C4C2BD] bg-transparent text-xs font-medium text-[#6B6B66] hover:border-[#1A535C] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors cursor-pointer">
+            <Label className="text-xs uppercase tracking-[0.05em] text-muted-foreground font-semibold m-0">Bijlagen</Label>
+            <label className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-dashed border-border bg-transparent text-xs font-medium text-foreground/70 hover:border-[#1A535C] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors cursor-pointer">
               <Plus className="h-3.5 w-3.5" />
               Toevoegen
               <input
@@ -2882,7 +2882,7 @@ function EditTaskDialog({
               />
             </label>
             {formData.bijlagen.length === 0 ? (
-              <span className="text-xs italic text-[#9B9B95]">geen bijlagen</span>
+              <span className="text-xs italic text-muted-foreground">geen bijlagen</span>
             ) : (
               formData.bijlagen.map((url, i) => {
                 const isImage = url.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)
@@ -2897,18 +2897,18 @@ function EditTaskDialog({
                   <div key={i} className="group relative">
                     {isImage ? (
                       <a href={url} target="_blank" rel="noopener noreferrer" title={filename}>
-                        <img src={url} alt="" className="h-14 w-14 rounded-lg object-cover border border-[#E0DED8] hover:border-[#1A535C] transition-colors" />
+                        <img src={url} alt="" className="h-14 w-14 rounded-lg object-cover border border-border hover:border-[#1A535C] transition-colors" />
                       </a>
                     ) : (
-                      <a href={url} target="_blank" rel="noopener noreferrer" title={filename} className="h-14 px-3 rounded-lg border border-[#E0DED8] bg-white flex items-center gap-2 hover:border-[#1A535C] transition-colors">
-                        <DocIcon className="h-4 w-4 text-[#6B6B66] flex-shrink-0" />
-                        <span className="text-xs text-[#1A1A1A] truncate max-w-[160px]">{filename}</span>
+                      <a href={url} target="_blank" rel="noopener noreferrer" title={filename} className="h-14 px-3 rounded-lg border border-border bg-card flex items-center gap-2 hover:border-[#1A535C] transition-colors">
+                        <DocIcon className="h-4 w-4 text-foreground/70 flex-shrink-0" />
+                        <span className="text-xs text-foreground truncate max-w-[160px]">{filename}</span>
                       </a>
                     )}
                     <button
                       type="button"
                       onClick={() => updateField('bijlagen', formData.bijlagen.filter((_, j) => j !== i) as string[])}
-                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-white border border-[#E0DED8] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:border-[#C03A18] hover:text-[#C03A18] text-[#6B6B66] shadow-sm"
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-card border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:border-[#C03A18] hover:text-[#C03A18] text-foreground/70 shadow-sm"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -2926,12 +2926,12 @@ function EditTaskDialog({
         )}
         </div>
 
-        <DialogFooter className="px-7 py-4 border-t border-[#EBEBEB] bg-[#F8F7F5]/60 flex items-center sm:justify-between gap-2">
+        <DialogFooter className="px-7 py-4 border-t border-border bg-background/60 flex items-center sm:justify-between gap-2">
           {editingTaakId && onDelete ? (
             <button
               type="button"
               onClick={onDelete}
-              className="inline-flex items-center gap-1.5 text-[12px] text-[#9B9B95] hover:text-[#C03A18] transition-colors"
+              className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-[#C03A18] transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Verwijderen

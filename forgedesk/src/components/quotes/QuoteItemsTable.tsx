@@ -1236,7 +1236,7 @@ export function QuoteItemsTable({
                         draggable
                         onDragStart={(e) => handleRegelDragStart(e, item.id, regel.id)}
                         onDragEnd={handleRegelDragEnd}
-                        className="text-[#9B9B95]/0 hover:text-[#6B6B66] flex-shrink-0 group-hover:text-[#9B9B95]/70 transition-colors p-0.5 cursor-grab active:cursor-grabbing"
+                        className="text-muted-foreground/0 hover:text-foreground/70 flex-shrink-0 group-hover:text-muted-foreground/70 transition-colors p-0.5 cursor-grab active:cursor-grabbing"
                         title="Sleep om volgorde te wijzigen"
                         type="button"
                       >
@@ -1248,7 +1248,7 @@ export function QuoteItemsTable({
                         value={regel.label}
                         onChange={(e) => updateDetailRegelField(item.id, regel.id, 'label', e.target.value)}
                         placeholder="LABEL"
-                        className="w-32 flex-shrink-0 h-7 text-[11px] uppercase tracking-wider font-semibold text-[#9B9B95] bg-transparent border-transparent hover:bg-[rgba(26,83,92,0.04)] focus-visible:bg-[rgba(26,83,92,0.06)] focus-visible:ring-0 focus-visible:border-transparent shadow-none px-2 placeholder:text-[#9B9B95]/50 placeholder:font-semibold placeholder:tracking-wider"
+                        className="w-32 flex-shrink-0 h-7 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground bg-transparent border-transparent hover:bg-[rgba(26,83,92,0.04)] focus-visible:bg-[rgba(26,83,92,0.06)] focus-visible:ring-0 focus-visible:border-transparent shadow-none px-2 placeholder:text-muted-foreground/50 placeholder:font-semibold placeholder:tracking-wider"
                       />
 
                       {/* Waarde — with autofill for omschrijving/materiaal/lay-out/montage */}
@@ -1273,14 +1273,14 @@ export function QuoteItemsTable({
                       <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => duplicateDetailRegel(item.id, regel.id)}
-                          className="text-[#9B9B95] hover:text-[#1A535C] p-1 rounded transition-colors"
+                          className="text-muted-foreground hover:text-[#1A535C] p-1 rounded transition-colors"
                           title="Dupliceer rij"
                         >
                           <Copy className="h-3 w-3" />
                         </button>
                         <button
                           onClick={() => removeDetailRegel(item.id, regel.id)}
-                          className="text-[#9B9B95] hover:text-[#C44830] p-1 rounded transition-colors"
+                          className="text-muted-foreground hover:text-[#C44830] p-1 rounded transition-colors"
                           title="Verwijder rij"
                         >
                           <Trash2 className="h-3 w-3" />

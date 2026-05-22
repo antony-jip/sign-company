@@ -204,25 +204,25 @@ export function VandaagBlok() {
     >
       <header className="flex items-baseline justify-between gap-4 mb-5">
         <div className="flex items-baseline gap-3 min-w-0">
-          <h2 className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+          <h2 className="font-heading text-[14px] font-bold text-foreground">
             Vandaag<span className="text-[#F15025]">.</span>
           </h2>
           <span
-            className="text-[14px] text-[#9B9B95] truncate"
+            className="text-[14px] text-muted-foreground truncate"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             · wat staat er klaar
           </span>
         </div>
         {counts && (
-          <span className="font-mono text-[12px] text-[#9B9B95] flex-shrink-0">
+          <span className="font-mono text-[12px] text-muted-foreground flex-shrink-0">
             {counts}
           </span>
         )}
       </header>
 
       {items.length === 0 ? (
-        <p className="text-sm text-[#9B9B95] py-3">Niets ingepland voor vandaag.</p>
+        <p className="text-sm text-muted-foreground py-3">Niets ingepland voor vandaag.</p>
       ) : (
         <ul className="-mx-2">
           {items.map(item => {
@@ -267,17 +267,17 @@ export function VandaagBlok() {
                   <span
                     className={cn(
                       'font-mono text-[12px] w-10 flex-shrink-0 tabular-nums',
-                      item.tijd ? 'text-[#1A1A1A] font-semibold' : 'text-transparent',
+                      item.tijd ? 'text-foreground font-semibold' : 'text-transparent',
                     )}
                   >
                     {item.tijd ?? '00:00'}
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-[13.5px] font-medium text-[#1A1A1A] truncate leading-[1.25]">
+                    <span className="block text-[13.5px] font-medium text-foreground truncate leading-[1.25]">
                       {item.titel}
                     </span>
                     {item.context && (
-                      <span className="block text-[11px] text-[#9B9B95] truncate leading-tight mt-[2px]">
+                      <span className="block text-[11px] text-muted-foreground truncate leading-tight mt-[2px]">
                         {item.context}
                       </span>
                     )}
@@ -287,7 +287,7 @@ export function VandaagBlok() {
                       <Avatar medewerker={item.toegewezenAan} medewerkers={medewerkers} />
                     )}
                   </span>
-                  <ArrowRight className="h-3.5 w-3.5 text-[#9B9B95] opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all flex-shrink-0" />
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all flex-shrink-0" />
                 </button>
               </li>
             )

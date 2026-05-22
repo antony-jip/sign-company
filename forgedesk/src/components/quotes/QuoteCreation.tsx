@@ -1964,7 +1964,7 @@ export function QuoteCreation() {
   // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
   // ────────────────────────────────────────────────────────────────────
   return (
-    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F8F7F5' }}>
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: 'hsl(var(--background))' }}>
     <div className="relative pb-6 px-4 md:px-6 pt-0">
       {/* ──── HEADER BAR ──── */}
       <QuoteHeader
@@ -2118,10 +2118,10 @@ export function QuoteCreation() {
           {/* ── Introductietekst ── */}
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
-              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+              <h3 className="font-heading text-[15px] font-bold text-foreground">
                 Introductietekst<span className="text-[#F15025]">.</span>
                 <span
-                  className="ml-2 text-[12px] text-[#9B9B95] font-normal"
+                  className="ml-2 text-[12px] text-muted-foreground font-normal"
                   style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                 >
                   optioneel
@@ -2137,7 +2137,7 @@ export function QuoteCreation() {
                 <button
                   key={tmpl.label}
                   onClick={() => setIntroTekst(tmpl.tekst)}
-                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] bg-white hover:bg-[rgba(26,83,92,0.05)] hover:border-[rgba(26,83,92,0.22)] text-[#6B6B66] hover:text-[#1A535C] transition-colors"
+                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] bg-white hover:bg-[rgba(26,83,92,0.05)] hover:border-[rgba(26,83,92,0.22)] text-foreground/70 hover:text-[#1A535C] transition-colors"
                 >
                   {tmpl.label}
                 </button>
@@ -2155,7 +2155,7 @@ export function QuoteCreation() {
           {/* ── Items ── */}
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-4">
-              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A] flex items-center">
+              <h3 className="font-heading text-[15px] font-bold text-foreground flex items-center">
                 <span>
                   Offerte-items<span className="text-[#F15025]">.</span>
                 </span>
@@ -2204,10 +2204,10 @@ export function QuoteCreation() {
           {/* ── Afsluittekst ── */}
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
-              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+              <h3 className="font-heading text-[15px] font-bold text-foreground">
                 Afsluittekst<span className="text-[#F15025]">.</span>
                 <span
-                  className="ml-2 text-[12px] text-[#9B9B95] font-normal"
+                  className="ml-2 text-[12px] text-muted-foreground font-normal"
                   style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                 >
                   optioneel
@@ -2223,7 +2223,7 @@ export function QuoteCreation() {
                 <button
                   key={tmpl.label}
                   onClick={() => setOutroTekst(tmpl.tekst)}
-                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] bg-white hover:bg-[rgba(26,83,92,0.05)] hover:border-[rgba(26,83,92,0.22)] text-[#6B6B66] hover:text-[#1A535C] transition-colors"
+                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] bg-white hover:bg-[rgba(26,83,92,0.05)] hover:border-[rgba(26,83,92,0.22)] text-foreground/70 hover:text-[#1A535C] transition-colors"
                 >
                   {tmpl.label}
                 </button>
@@ -2241,14 +2241,14 @@ export function QuoteCreation() {
           {/* ── Notities & Voorwaarden ── */}
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
-              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+              <h3 className="font-heading text-[15px] font-bold text-foreground">
                 Notities &amp; voorwaarden<span className="text-[#F15025]">.</span>
               </h3>
             </div>
             <div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">Notities</label>
+                  <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Notities</label>
                   <Textarea
                     value={notities}
                     onChange={(e) => setNotities(e.target.value)}
@@ -2258,7 +2258,7 @@ export function QuoteCreation() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">Voorwaarden</label>
+                  <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Voorwaarden</label>
                   <Textarea
                     value={voorwaarden}
                     onChange={(e) => setVoorwaarden(e.target.value)}
@@ -2278,10 +2278,10 @@ export function QuoteCreation() {
               <div className="doen-slate-surface rounded-2xl overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-[rgba(26,83,92,0.08)]">
-                  <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+                  <h3 className="font-heading text-[15px] font-bold text-foreground">
                     Email versturen<span className="text-[#F15025]">.</span>
                   </h3>
-                  <button onClick={() => email.setShowEmailCompose(false)} className="text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-white/60 transition-colors h-7 w-7 rounded-md flex items-center justify-center">
+                  <button onClick={() => email.setShowEmailCompose(false)} className="text-muted-foreground hover:text-foreground hover:bg-white/60 transition-colors h-7 w-7 rounded-md flex items-center justify-center">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -2290,15 +2290,15 @@ export function QuoteCreation() {
                   {/* Email velden */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66] w-12 flex-shrink-0">Aan</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">Aan</span>
                       <input value={email.emailTo} onChange={(e) => email.setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66] w-12 flex-shrink-0">CC</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">CC</span>
                       <input value={email.emailCc} onChange={(e) => email.setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66] w-12 flex-shrink-0">BCC</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">BCC</span>
                       <input value={email.emailBcc} onChange={(e) => email.setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
                     </div>
                   </div>
@@ -2309,7 +2309,7 @@ export function QuoteCreation() {
                   {/* Bericht */}
                   <div className="border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus-within:border-[#1A535C] focus-within:ring-[3px] focus-within:ring-[rgba(26,83,92,0.12)] transition-colors overflow-hidden">
                     {/* Toolbar */}
-                    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-[#EBEBEB]/30">
+                    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border/30">
                       {[
                         { cmd: 'bold', icon: <Bold className="h-3.5 w-3.5" />, title: 'Vet' },
                         { cmd: 'italic', icon: <Italic className="h-3.5 w-3.5" />, title: 'Cursief' },
@@ -2330,7 +2330,7 @@ export function QuoteCreation() {
                               document.execCommand(btn.cmd)
                             }
                           }}
-                          className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-[#EBEBEB]/40 text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"
+                          className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-border/40 text-muted-foreground hover:text-foreground transition-colors"
                         >
                           {btn.icon}
                         </button>
@@ -2353,13 +2353,13 @@ export function QuoteCreation() {
                   {/* Bijlagen */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {email.emailBijlagen.map((bijlage: { naam: string; grootte: number }, idx: number) => (
-                      <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-[#F8F7F5] rounded-lg text-sm">
+                      <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-lg text-sm">
                         <FileText className="h-3.5 w-3.5 text-[#C03A18]" />
-                        <span className="text-[#1A1A1A] font-mono text-xs">{bijlage.naam}</span>
+                        <span className="text-foreground font-mono text-xs">{bijlage.naam}</span>
                         {idx > 0 && <button onClick={() => {
                           email.setEmailBijlagen((prev: { naam: string; grootte: number }[]) => prev.filter((_: { naam: string; grootte: number }, i: number) => i !== idx))
                           email.setEmailExtraBijlagen((prev) => prev.filter((_, i) => i !== idx - 1))
-                        }} className="text-[#9B9B95] hover:text-[#C03A18] transition-colors"><X className="h-3 w-3" /></button>}
+                        }} className="text-muted-foreground hover:text-[#C03A18] transition-colors"><X className="h-3 w-3" /></button>}
                       </div>
                     ))}
                     <button onClick={email.handleAddBijlage} className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#1A535C] hover:underline">
@@ -2376,7 +2376,7 @@ export function QuoteCreation() {
                     return (
                       <div className={cn(
                         'flex items-center gap-1.5 text-xs',
-                        teGroot ? 'text-[#F15025]' : 'text-[#9B9B95]'
+                        teGroot ? 'text-[#F15025]' : 'text-muted-foreground'
                       )}>
                         {teGroot && <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />}
                         <span className="font-mono tabular-nums">{formatBytes(totaalBytes)} / {formatBytes(MAX_BIJLAGEN_BYTES)}</span>
@@ -2389,11 +2389,11 @@ export function QuoteCreation() {
                   })()}
 
                   {/* Inplannen */}
-                  <div className="border-t border-[#EBEBEB]/40 pt-3">
+                  <div className="border-t border-border/40 pt-3">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={email.emailScheduled} onChange={(e) => email.setEmailScheduled(e.target.checked)} className="h-3.5 w-3.5 rounded border-[#EBEBEB] text-[#1A535C] focus:ring-[#1A535C]/30" />
-                      <CalendarClock className="h-3.5 w-3.5 text-[#9B9B95]" />
-                      <span className="text-xs text-[#6B6B66]">Inplannen</span>
+                      <input type="checkbox" checked={email.emailScheduled} onChange={(e) => email.setEmailScheduled(e.target.checked)} className="h-3.5 w-3.5 rounded border-border text-[#1A535C] focus:ring-[#1A535C]/30" />
+                      <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs text-foreground/70">Inplannen</span>
                     </label>
                     {email.emailScheduled && (
                       <div className="mt-2 flex flex-wrap items-center gap-2 ml-6">
@@ -2405,19 +2405,19 @@ export function QuoteCreation() {
                             { label: 'Morgen 10:00', datum: morgenStr, tijd: '10:00' },
                             { label: 'Morgen 14:00', datum: morgenStr, tijd: '14:00' },
                           ].map((opt) => (
-                            <button key={opt.label} onClick={() => { email.setEmailScheduleDate(opt.datum); email.setEmailScheduleTime(opt.tijd) }} className="text-xs px-2.5 py-1 border border-[#EBEBEB] rounded-md hover:bg-[#F8F7F5] text-[#6B6B66] transition-colors">{opt.label}</button>
+                            <button key={opt.label} onClick={() => { email.setEmailScheduleDate(opt.datum); email.setEmailScheduleTime(opt.tijd) }} className="text-xs px-2.5 py-1 border border-border rounded-md hover:bg-background text-foreground/70 transition-colors">{opt.label}</button>
                           ))
                         })()}
-                        <input type="date" value={email.emailScheduleDate} onChange={(e) => email.setEmailScheduleDate(e.target.value)} className="text-xs px-2 py-1 border border-[#EBEBEB] rounded-md w-32" />
-                        <input type="time" value={email.emailScheduleTime} onChange={(e) => email.setEmailScheduleTime(e.target.value)} className="text-xs px-2 py-1 border border-[#EBEBEB] rounded-md w-20" />
+                        <input type="date" value={email.emailScheduleDate} onChange={(e) => email.setEmailScheduleDate(e.target.value)} className="text-xs px-2 py-1 border border-border rounded-md w-32" />
+                        <input type="time" value={email.emailScheduleTime} onChange={(e) => email.setEmailScheduleTime(e.target.value)} className="text-xs px-2 py-1 border border-border rounded-md w-20" />
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between px-5 py-3 border-t border-[#EBEBEB]/60 bg-[#F8F7F5]/50">
-                  <button onClick={() => email.setShowEmailCompose(false)} className="text-sm text-[#9B9B95] hover:text-[#6B6B66] transition-colors">Annuleren</button>
+                <div className="flex items-center justify-between px-5 py-3 border-t border-border/60 bg-background/50">
+                  <button onClick={() => email.setShowEmailCompose(false)} className="text-sm text-muted-foreground hover:text-foreground/70 transition-colors">Annuleren</button>
                   <button
                     onClick={handleSendEmailInline}
                     disabled={!email.emailTo.trim() || !email.emailSubject.trim() || email.isSendingEmail || email.emailExtraBijlagen.reduce((s, b) => s + b.grootte, 0) > MAX_BIJLAGEN_BYTES}

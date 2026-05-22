@@ -145,7 +145,7 @@ export function AbonnementTab() {
       )}
 
       {/* Pricing card */}
-      <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #E6E4E0' }}>
+      <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid hsl(var(--border))' }}>
         <div className="h-1.5" style={{ background: 'linear-gradient(90deg, #F15025, #1A535C)' }} />
         <div className="p-8">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
@@ -160,14 +160,14 @@ export function AbonnementTab() {
                 <span className="text-[15px]" style={{ color: '#9B9B95' }}>/ maand</span>
               </div>
 
-              <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#F8F7F5' }}>
+              <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: 'hsl(var(--background))' }}>
                 <Users className="h-4 w-4" style={{ color: '#1A535C' }} />
                 <span className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>
                   Tot <strong>10 gebruikers</strong> inbegrepen
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#F8F7F5' }}>
+              <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: 'hsl(var(--background))' }}>
                 <Plus className="h-4 w-4" style={{ color: '#1A535C' }} />
                 <span className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>
                   Meer gebruikers? <strong>Staffel op maat</strong>

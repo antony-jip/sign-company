@@ -168,7 +168,7 @@ export function RegelTemplateEditor({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="ml-2 p-1 rounded-md text-[#9B9B95] hover:text-[#1A535C] hover:bg-[rgba(26,83,92,0.06)] transition-colors"
+          className="ml-2 p-1 rounded-md text-muted-foreground hover:text-[#1A535C] hover:bg-[rgba(26,83,92,0.06)] transition-colors"
           title="Standaard rij-labels instellen"
         >
           <Settings className="h-3.5 w-3.5" />
@@ -176,10 +176,10 @@ export function RegelTemplateEditor({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-96 p-0">
         <div className="px-4 pt-3 pb-2 border-b border-border/60">
-          <h4 className="font-heading text-[13px] font-bold text-[#1A1A1A]">
+          <h4 className="font-heading text-[13px] font-bold text-foreground">
             Rij-labels<span className="text-[#F15025]">.</span>
           </h4>
-          <p className="text-[11px] text-[#9B9B95] mt-0.5">
+          <p className="text-[11px] text-muted-foreground mt-0.5">
             Velden die elk nieuw offerte-item standaard krijgt.
           </p>
         </div>
@@ -188,18 +188,18 @@ export function RegelTemplateEditor({
         {templates.length > 0 && (
           <div className="px-3 py-2 border-b border-border/60 space-y-1">
             <div className="flex items-center justify-between gap-1.5 pl-1 pb-1">
-              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-[#9B9B95] font-semibold">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                 <FileText className="h-3 w-3" />
                 Templates
               </div>
-              <span className="text-[10px] text-[#9B9B95]">
+              <span className="text-[10px] text-muted-foreground">
                 Klik om toe te passen
               </span>
             </div>
             {templates.map((t) => (
               <div
                 key={t.naam}
-                className="flex items-center gap-1.5 group rounded-md border border-[#EBEBEB] hover:border-[rgba(26,83,92,0.25)] hover:bg-[rgba(26,83,92,0.03)] transition-colors"
+                className="flex items-center gap-1.5 group rounded-md border border-border hover:border-[rgba(26,83,92,0.25)] hover:bg-[rgba(26,83,92,0.03)] transition-colors"
               >
                 <button
                   type="button"
@@ -208,15 +208,15 @@ export function RegelTemplateEditor({
                   title={`Toepassen: ${t.labels.join(' · ')}`}
                 >
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-[#1A1A1A] truncate">
+                    <span className="text-xs font-semibold text-foreground truncate">
                       {t.naam}
                     </span>
-                    <span className="text-[10px] text-[#9B9B95] font-normal flex-shrink-0">
+                    <span className="text-[10px] text-muted-foreground font-normal flex-shrink-0">
                       {t.labels.length} velden
                     </span>
                     <ArrowRight className="h-3 w-3 text-[#F15025] opacity-0 group-hover:opacity-100 transition-opacity ml-auto flex-shrink-0" />
                   </div>
-                  <div className="text-[10px] text-[#9B9B95] truncate mt-0.5">
+                  <div className="text-[10px] text-muted-foreground truncate mt-0.5">
                     {t.labels.join(' · ')}
                   </div>
                 </button>
@@ -227,7 +227,7 @@ export function RegelTemplateEditor({
                       e.stopPropagation()
                       handleLoadIntoEditor(t)
                     }}
-                    className="text-[#9B9B95] hover:text-[#1A535C] p-1 rounded transition-colors"
+                    className="text-muted-foreground hover:text-[#1A535C] p-1 rounded transition-colors"
                     title="Bewerk in editor"
                   >
                     <Pencil className="h-3 w-3" />
@@ -238,7 +238,7 @@ export function RegelTemplateEditor({
                       e.stopPropagation()
                       deleteTemplate(t.naam)
                     }}
-                    className="text-[#9B9B95] hover:text-[#C44830] p-1 rounded transition-colors"
+                    className="text-muted-foreground hover:text-[#C44830] p-1 rounded transition-colors"
                     title="Verwijder template"
                   >
                     <X className="h-3 w-3" />
@@ -251,7 +251,7 @@ export function RegelTemplateEditor({
 
         {/* Editor */}
         <div className="px-3 py-2 space-y-1 max-h-72 overflow-y-auto">
-          <div className="text-[10px] uppercase tracking-wider text-[#9B9B95] font-semibold pl-1 pb-0.5">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold pl-1 pb-0.5">
             Labels
           </div>
           {editLabels.map((label, idx) => (
@@ -319,7 +319,7 @@ export function RegelTemplateEditor({
         {/* Save-as-template */}
         {showSaveAs ? (
           <div className="px-3 py-2 border-t border-border/60 bg-[rgba(26,83,92,0.03)] space-y-1.5">
-            <div className="text-[10px] uppercase tracking-wider text-[#9B9B95] font-semibold pl-1">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold pl-1">
               Opslaan als template
             </div>
             <div className="flex items-center gap-1.5">
@@ -368,7 +368,7 @@ export function RegelTemplateEditor({
             variant="ghost"
             size="sm"
             onClick={() => setShowSaveAs((v) => !v)}
-            className="h-7 px-2 text-xs text-[#6B6B66] hover:text-[#1A1A1A]"
+            className="h-7 px-2 text-xs text-foreground/70 hover:text-foreground"
           >
             <Save className="h-3 w-3 mr-1" />
             Bewaar als template

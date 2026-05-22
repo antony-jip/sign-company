@@ -1454,7 +1454,7 @@ export function EmailLayout() {
           'w-full py-3 px-4 flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors',
           isActive
             ? 'bg-[#1A535C]/[0.08] text-[#1A535C] font-medium'
-            : 'text-[#6B6B66] hover:bg-[#F8F7F5] hover:text-[#1A1A1A]',
+            : 'text-foreground/70 hover:bg-background hover:text-foreground',
         )}
       >
         <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
@@ -1465,7 +1465,7 @@ export function EmailLayout() {
           </span>
         )}
         {count > 0 && folder.id !== 'inbox' && (
-          <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center text-[#9B9B95]">
+          <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center text-muted-foreground">
             {count}
           </span>
         )}
@@ -1477,7 +1477,7 @@ export function EmailLayout() {
   const sidebarInner = (
     <>
       {/* Mobile-only account header */}
-      <div className="md:hidden flex items-center gap-3 px-4 py-4 border-b border-[#EBEBEB]">
+      <div className="md:hidden flex items-center gap-3 px-4 py-4 border-b border-border">
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: userAvatarStyle.bg, color: userAvatarStyle.text }}
@@ -1485,8 +1485,8 @@ export function EmailLayout() {
           <span className="text-[14px] font-bold">{userInitial}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-semibold text-[#1A1A1A] truncate">{userName}</p>
-          <p className="text-[12px] text-[#6B6B66] truncate">{user?.email}</p>
+          <p className="text-[14px] font-semibold text-foreground truncate">{userName}</p>
+          <p className="text-[12px] text-foreground/70 truncate">{user?.email}</p>
         </div>
       </div>
 
@@ -1504,7 +1504,7 @@ export function EmailLayout() {
         {/* Mobile: primary group → divider → secondary group (incl gepland) */}
         <div className="md:hidden space-y-0">
           {folderTabs.filter(f => PRIMARY_FOLDER_IDS.has(f.id)).map(renderMobileFolderBtn)}
-          <div className="my-2 border-t border-[#EBEBEB]/60" />
+          <div className="my-2 border-t border-border/60" />
           {folderTabs.filter(f => !PRIMARY_FOLDER_IDS.has(f.id)).map(renderMobileFolderBtn)}
           <button
             onClick={() => handleFolderChange('gepland')}
@@ -1512,7 +1512,7 @@ export function EmailLayout() {
               'w-full py-3 px-4 flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors',
               selectedFolder === 'gepland'
                 ? 'bg-[#1A535C]/[0.08] text-[#1A535C] font-medium'
-                : 'text-[#6B6B66] hover:bg-[#F8F7F5] hover:text-[#1A1A1A]',
+                : 'text-foreground/70 hover:bg-background hover:text-foreground',
             )}
           >
             <Clock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-[#1A535C]')} />
@@ -1539,7 +1539,7 @@ export function EmailLayout() {
                     : 'text-[#3A3A36] font-medium hover:bg-black/[0.04]',
                 )}
               >
-                <Icon className={cn('h-[17px] w-[17px] flex-shrink-0', isActive ? 'text-[#1A535C]' : 'text-[#9B9B95]')} />
+                <Icon className={cn('h-[17px] w-[17px] flex-shrink-0', isActive ? 'text-[#1A535C]' : 'text-muted-foreground')} />
                 <span className="flex-1 text-left truncate">{folder.label}</span>
                 {showNewBadge && (
                   <span className="text-[10px] font-semibold text-[#F15025] tracking-wide">
@@ -1549,7 +1549,7 @@ export function EmailLayout() {
                 {count > 0 && folder.id !== 'inbox' && (
                   <span className={cn(
                     'text-[11px] font-medium tabular-nums px-1.5 min-w-[20px] h-[18px] rounded-full inline-flex items-center justify-center',
-                    isActive ? 'bg-[#1A535C]/[0.14] text-[#1A535C]' : 'bg-black/[0.06] text-[#6B6B66]',
+                    isActive ? 'bg-[#1A535C]/[0.14] text-[#1A535C]' : 'bg-black/[0.06] text-foreground/70',
                   )}>
                     {count}
                   </span>
@@ -1569,20 +1569,20 @@ export function EmailLayout() {
                 : 'text-[#3A3A36] font-medium hover:bg-black/[0.04]',
             )}
           >
-            <Clock className={cn('h-[17px] w-[17px] flex-shrink-0', selectedFolder === 'gepland' ? 'text-[#1A535C]' : 'text-[#9B9B95]')} />
+            <Clock className={cn('h-[17px] w-[17px] flex-shrink-0', selectedFolder === 'gepland' ? 'text-[#1A535C]' : 'text-muted-foreground')} />
             <span className="flex-1 text-left truncate">Ingeplande berichten</span>
           </button>
         </div>
       </nav>
 
-      <div className="p-4 md:px-4 md:py-3 border-t border-[#EBEBEB] space-y-2.5">
+      <div className="p-4 md:px-4 md:py-3 border-t border-border space-y-2.5">
         <button
           type="button"
           role="switch"
           aria-checked={focusModus}
           aria-label="Focus modus aan/uit"
           onClick={() => setFocusModus(!focusModus)}
-          className="w-full flex items-center gap-2 text-[12px] md:text-[11px] text-[#9B9B95] md:text-[#B0ADA8] hover:text-[#1A1A1A] transition-colors"
+          className="w-full flex items-center gap-2 text-[12px] md:text-[11px] text-muted-foreground md:text-muted-foreground/80 hover:text-foreground transition-colors"
         >
           <Moon className="h-3 w-3" />
           <span className="flex-1 text-left">Focus modus</span>
@@ -1600,7 +1600,7 @@ export function EmailLayout() {
             />
           </span>
         </button>
-        <div className="flex items-center gap-2 text-[12px] md:text-[11px] text-[#9B9B95] md:text-[#B0ADA8]">
+        <div className="flex items-center gap-2 text-[12px] md:text-[11px] text-muted-foreground md:text-muted-foreground/80">
           <Mail className="h-3 w-3" />
           <span>doen<span className="text-[#F15025]">.</span> mail</span>
         </div>
@@ -1624,7 +1624,7 @@ export function EmailLayout() {
 
   // ─── UNIFIED 3-COLUMN LAYOUT ───
   return (
-    <div className={cn('h-full flex flex-col overflow-hidden antialiased', viewMode === 'idle' || focusModus ? 'bg-[#F8F7F5]' : 'bg-white')}>
+    <div className={cn('h-full flex flex-col overflow-hidden antialiased', viewMode === 'idle' || focusModus ? 'bg-background' : 'bg-white')}>
       {focusModus ? (
         <EmailFocusKaart onUitzetten={() => setFocusModus(false)} />
       ) : (
@@ -1710,7 +1710,7 @@ export function EmailLayout() {
               'tap-press w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
               focusModus
                 ? 'bg-gradient-to-b from-[#2A2A2A] to-[#141414] text-white shadow-[0_3px_10px_-2px_rgba(0,0,0,0.30),0_0_0_0.5px_rgba(255,255,255,0.06)_inset]'
-                : 'text-[#8FA0A4] hover:text-[#1A1A1A] hover:bg-black/[0.05]',
+                : 'text-[#8FA0A4] hover:text-foreground hover:bg-black/[0.05]',
             )}
           >
             <Moon className="h-[19px] w-[19px]" strokeWidth={focusModus ? 2.2 : 1.8} />
@@ -1732,7 +1732,7 @@ export function EmailLayout() {
           )}
           <div
             className={cn(
-              'md:hidden fixed inset-y-0 left-0 z-50 w-[80vw] max-w-[300px] bg-white border-r border-[#EBEBEB] flex flex-col transform transition-transform duration-300 ease-in-out',
+              'md:hidden fixed inset-y-0 left-0 z-50 w-[80vw] max-w-[300px] bg-white border-r border-border flex flex-col transform transition-transform duration-300 ease-in-out',
               folderDrawerOpen ? 'translate-x-0' : '-translate-x-full',
             )}
           >
@@ -1763,7 +1763,7 @@ export function EmailLayout() {
       <div
         className={cn(
           'bg-white flex-col min-w-0 relative',
-          'md:flex-shrink-0 md:border-r md:border-[#EBEBEB] md:flex',
+          'md:flex-shrink-0 md:border-r md:border-border md:flex',
           viewMode === 'idle' ? 'flex flex-1' : 'hidden',
         )}
         style={isDesktop ? { width: listWidth } : undefined}
@@ -1777,9 +1777,9 @@ export function EmailLayout() {
       {/* Email list (idle view) */}
       {selectedFolder !== 'gepland' && (<>
         {/* Sticky header + toolbar — desktop only */}
-        <div className="sticky top-0 z-20 bg-white border-b border-[#EBEBEB] flex-shrink-0 hidden md:block">
-          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[#EBEBEB]/60">
-            <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-[#1A1A1A] leading-none">
+        <div className="sticky top-0 z-20 bg-white border-b border-border flex-shrink-0 hidden md:block">
+          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border/60">
+            <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
               {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}
             </h1>
             <button
@@ -1804,21 +1804,21 @@ export function EmailLayout() {
 
             {hasChecked ? (
               <div className="flex items-center gap-0.5">
-                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] rounded-lg" onClick={handleBulkArchive}>
+                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg" onClick={handleBulkArchive}>
                   <Archive className="h-3.5 w-3.5" /> Archief
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] rounded-lg" onClick={handleBulkDelete}>
+                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg" onClick={handleBulkDelete}>
                   <Trash2 className="h-3.5 w-3.5" /> Verwijder
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] rounded-lg" onClick={handleBulkMarkRead}>
+                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg" onClick={handleBulkMarkRead}>
                   <CheckCheck className="h-3.5 w-3.5" /> Gelezen
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] rounded-lg" onClick={handleBulkMarkUnread}>
+                <Button variant="ghost" size="sm" className="h-8 text-[12px] text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg" onClick={handleBulkMarkUnread}>
                   Ongelezen
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-0.5 bg-[#F8F7F5] rounded-lg p-0.5 min-w-0 overflow-x-auto scrollbar-none">
+              <div className="flex items-center gap-0.5 bg-background rounded-lg p-0.5 min-w-0 overflow-x-auto scrollbar-none">
                 {filtersList.map(f => {
                   const isActiveFilter = filter === f.id
                   return (
@@ -1828,8 +1828,8 @@ export function EmailLayout() {
                       className={cn(
                         'px-2 py-1 rounded-md text-[11.5px] transition-all duration-150 whitespace-nowrap',
                         isActiveFilter
-                          ? 'bg-white text-[#1A1A1A] font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                          : 'text-[#9B9B95] hover:text-[#6B6B66]',
+                          ? 'bg-white text-foreground font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                          : 'text-muted-foreground hover:text-foreground/70',
                       )}
                     >
                       {f.label}
@@ -1846,7 +1846,7 @@ export function EmailLayout() {
 
             {lastSyncAt && (
               <span
-                className="text-[11px] text-[#9B9B95] tabular-nums whitespace-nowrap hidden lg:inline"
+                className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap hidden lg:inline"
                 title={new Date(lastSyncAt).toLocaleString('nl-NL')}
               >
                 {formatRelativeSync(lastSyncAt, nowTick)}
@@ -1856,7 +1856,7 @@ export function EmailLayout() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60 rounded-[10px] transition-colors duration-150"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground/70 hover:bg-muted/60 rounded-[10px] transition-colors duration-150"
               onClick={() => setListStyle(s => s === 'inline' ? 'stacked' : 'inline')}
               title={listStyle === 'inline' ? 'Compacte weergave' : 'Ruime weergave'}
               aria-label={listStyle === 'inline' ? 'Compacte weergave' : 'Ruime weergave'}
@@ -1866,7 +1866,7 @@ export function EmailLayout() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60 rounded-[10px] transition-colors duration-150"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground/70 hover:bg-muted/60 rounded-[10px] transition-colors duration-150"
               onClick={() => handleRefresh(selectedFolder)}
               disabled={isRefreshing}
             >
@@ -1877,9 +1877,9 @@ export function EmailLayout() {
         </div>
 
         {/* Search bar — desktop only; mobile uses de topbar pill. */}
-        <div className="hidden md:block px-4 py-2 border-b border-[#EBEBEB] bg-white">
-          <div className="flex items-center gap-2 h-9 px-3 bg-[#F8F7F5] rounded-lg focus-within:ring-2 focus-within:ring-[#1A535C]/20 transition-shadow">
-            <Search className="h-4 w-4 text-[#9B9B95] flex-shrink-0" />
+        <div className="hidden md:block px-4 py-2 border-b border-border bg-white">
+          <div className="flex items-center gap-2 h-9 px-3 bg-background rounded-lg focus-within:ring-2 focus-within:ring-[#1A535C]/20 transition-shadow">
+            <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <input
               ref={searchInputRef}
               type="text"
@@ -1888,11 +1888,11 @@ export function EmailLayout() {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
               placeholder="Zoek in emails..."
-              className="flex-1 bg-transparent text-[14px] text-[#1A1A1A] outline-none placeholder:text-[#9B9B95]"
+              className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
             />
             {searchInput && (
-              <button onClick={() => { setSearchInput(''); setSearchQuery('') }} className="p-1 hover:bg-[#EBEBEB] rounded">
-                <X className="h-3.5 w-3.5 text-[#9B9B95]" />
+              <button onClick={() => { setSearchInput(''); setSearchQuery('') }} className="p-1 hover:bg-border rounded">
+                <X className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             )}
           </div>
@@ -1908,10 +1908,10 @@ export function EmailLayout() {
                     searchInputRef.current?.focus()
                   }}
                   title={op.example}
-                  className="px-2 py-0.5 rounded-md bg-[#F0EFEC] hover:bg-[#1A535C]/[0.08] text-[11px] text-[#6B6B66] hover:text-[#1A535C] transition-colors duration-150 inline-flex items-center gap-1"
+                  className="px-2 py-0.5 rounded-md bg-muted hover:bg-[#1A535C]/[0.08] text-[11px] text-foreground/70 hover:text-[#1A535C] transition-colors duration-150 inline-flex items-center gap-1"
                 >
                   <span className="font-mono">{op.key}</span>
-                  <span className="text-[#9B9B95]">{op.description}</span>
+                  <span className="text-muted-foreground">{op.description}</span>
                 </button>
               ))}
             </div>
@@ -1951,7 +1951,7 @@ export function EmailLayout() {
               scroll. Virtualizer rendert echte headers absolute, dus deze
               overlay vult de gap. */}
           {activeGroup && (
-            <div className="sticky top-0 z-10 px-4 pt-3 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-[#6B6B66] bg-white/85 backdrop-blur-xl border-b border-black/[0.05] -mb-[36px]">
+            <div className="sticky top-0 z-10 px-4 pt-3 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-foreground/70 bg-card/85 backdrop-blur-xl border-b border-black/[0.05] -mb-[36px]">
               {activeGroup === 'Vandaag' ? (
                 <>
                   <span className="md:hidden">Eerder vandaag</span>
@@ -1982,13 +1982,13 @@ export function EmailLayout() {
             </div>
           ) : threadedEmails.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-8">
-              <div className="w-14 h-14 rounded-2xl bg-[#F0EFEC] flex items-center justify-center mb-5">
-                <Inbox className="h-6 w-6 text-[#B0ADA8]" />
+              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-5">
+                <Inbox className="h-6 w-6 text-muted-foreground/80" />
               </div>
-              <h3 className="font-heading text-[16px] font-bold text-[#1A1A1A] tracking-[-0.01em] mb-1.5">
+              <h3 className="font-heading text-[16px] font-bold text-foreground tracking-[-0.01em] mb-1.5">
                 {searchQuery ? 'Geen resultaten' : filter !== 'alle' ? 'Geen emails met dit filter' : 'Inbox is leeg'}
               </h3>
-              <p className="text-[13px] text-[#6B6B66] max-w-[260px] leading-relaxed">
+              <p className="text-[13px] text-foreground/70 max-w-[260px] leading-relaxed">
                 {searchQuery
                   ? `Geen emails gevonden voor "${searchQuery}"`
                   : filter !== 'alle'
@@ -2023,7 +2023,7 @@ export function EmailLayout() {
                       }}
                     >
                       {it.type === 'header-pinned' ? (
-                        <div className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-[#6B6B66]">
+                        <div className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-foreground/70">
                           Vastgepind
                         </div>
                       ) : it.type === 'header-group' ? (() => {
@@ -2031,7 +2031,7 @@ export function EmailLayout() {
                         const allGroupChecked = groupIds.length > 0 && groupIds.every(id => checkedEmails.has(id))
                         const someGroupChecked = !allGroupChecked && groupIds.some(id => checkedEmails.has(id))
                         return (
-                          <div className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-[#6B6B66] flex items-center gap-2">
+                          <div className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-foreground/70 flex items-center gap-2">
                             <input
                               type="checkbox"
                               checked={allGroupChecked}
@@ -2076,13 +2076,13 @@ export function EmailLayout() {
               {isLoadingMore && (
                 <div className="flex items-center justify-center py-5">
                   <Loader2 className="h-4 w-4 animate-spin text-[#1A535C]/40 mr-2" />
-                  <span className="text-[12px] text-[#B0ADA8]">Meer laden...</span>
+                  <span className="text-[12px] text-muted-foreground/80">Meer laden...</span>
                 </div>
               )}
               {threadedEmails.length < imapTotal && !isLoadingMore && (
                 <button
                   onClick={() => loadMoreEmails(selectedFolder)}
-                  className="w-full py-4 text-[12px] text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors duration-150"
+                  className="w-full py-4 text-[12px] text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors duration-150"
                 >
                   Meer laden ({threadedEmails.length} van {imapTotal})
                 </button>
@@ -2096,16 +2096,16 @@ export function EmailLayout() {
           <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8 w-[360px]">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="font-heading text-[18px] font-bold text-[#1A1A1A] tracking-[-0.01em]">Sneltoetsen</h3>
-              <button onClick={() => setShowShortcuts(false)} className="p-1.5 hover:bg-[#F0EFEC] rounded-lg transition-colors duration-150">
-                <X className="h-4 w-4 text-[#9B9B95]" />
+              <h3 className="font-heading text-[18px] font-bold text-foreground tracking-[-0.01em]">Sneltoetsen</h3>
+              <button onClick={() => setShowShortcuts(false)} className="p-1.5 hover:bg-muted rounded-lg transition-colors duration-150">
+                <X className="h-4 w-4 text-muted-foreground" />
               </button>
             </div>
             <div className="space-y-3">
               {KEYBOARD_SHORTCUTS.map(s => (
                 <div key={s.key} className="flex items-center justify-between">
-                  <span className="text-[14px] text-[#6B6B66]">{s.action}</span>
-                  <kbd className="px-2.5 py-1 bg-[#F0EFEC] rounded-lg text-[12px] font-mono text-[#6B6B66]">{s.key}</kbd>
+                  <span className="text-[14px] text-foreground/70">{s.action}</span>
+                  <kbd className="px-2.5 py-1 bg-muted rounded-lg text-[12px] font-mono text-foreground/70">{s.key}</kbd>
                 </div>
               ))}
             </div>
@@ -2181,14 +2181,14 @@ export function EmailLayout() {
 
         {/* Empty state — desktop only, getoond wanneer geen mail is geselecteerd */}
         {viewMode === 'idle' && (
-          <div className="hidden md:flex flex-1 flex-col items-center justify-center text-center px-8 bg-[#FAFAF8]">
+          <div className="hidden md:flex flex-1 flex-col items-center justify-center text-center px-8 bg-background">
             <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-              <Mail className="h-6 w-6 text-[#B0ADA8]" />
+              <Mail className="h-6 w-6 text-muted-foreground/80" />
             </div>
-            <h3 className="font-heading text-[16px] font-bold text-[#1A1A1A] tracking-[-0.01em] mb-1.5">
+            <h3 className="font-heading text-[16px] font-bold text-foreground tracking-[-0.01em] mb-1.5">
               Geen mail geselecteerd
             </h3>
-            <p className="text-[13px] text-[#6B6B66] max-w-[260px] leading-relaxed">
+            <p className="text-[13px] text-foreground/70 max-w-[260px] leading-relaxed">
               Klik een email in de lijst om hem te lezen.
             </p>
           </div>

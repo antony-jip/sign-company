@@ -150,11 +150,11 @@ export function BedrijfTab() {
       {subTab === 'algemeen' && (
         <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
           <div className="space-y-1">
-            <h2 className="text-[20px] font-bold tracking-[-0.3px] text-[#1A1A1A]">
+            <h2 className="text-[20px] font-bold tracking-[-0.3px] text-foreground">
               Bedrijfsgegevens<span className="text-[#F15025]">.</span>
             </h2>
             <p
-              className="text-[14px] text-[#6B6B66]"
+              className="text-[14px] text-foreground/70"
               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
             >
               logo, naam, adres en email-kleur
@@ -162,20 +162,20 @@ export function BedrijfTab() {
           </div>
           <div className="space-y-6">
             {bedrijfsnaam && (
-              <h3 className="text-[16px] font-semibold text-[#6B6B66]">
+              <h3 className="text-[16px] font-semibold text-foreground/70">
                 {bedrijfsnaam}
               </h3>
             )}
 
             <div className="flex items-center gap-6">
               <div
-                className="relative w-32 h-20 rounded-lg bg-[#F4F2EE] dark:bg-muted border-2 border-dashed border-[#E6E4E0] dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-[#1A535C]/50 transition-colors"
+                className="relative w-32 h-20 rounded-lg bg-muted dark:bg-muted border-2 border-dashed border-border dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-[#1A535C]/50 transition-colors"
                 onClick={handleLogoClick}
               >
                 {logoPreview ? (
                   <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
                 ) : (
-                  <div className="flex flex-col items-center text-[#A0A098]">
+                  <div className="flex flex-col items-center text-muted-foreground">
                     <Upload className="w-6 h-6" />
                     <span className="text-2xs mt-1">Logo</span>
                   </div>
@@ -184,7 +184,7 @@ export function BedrijfTab() {
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground dark:text-white">Bedrijfslogo</p>
-                <p className="text-xs text-[#A0A098] mt-1">Upload uw bedrijfslogo. PNG of SVG aanbevolen.</p>
+                <p className="text-xs text-muted-foreground mt-1">Upload uw bedrijfslogo. PNG of SVG aanbevolen.</p>
                 {logoPreview && (
                   <button
                     type="button"
@@ -194,50 +194,50 @@ export function BedrijfTab() {
                     Logo verwijderen
                   </button>
                 )}
-                <p className="text-[10px] text-[#9B9B95] mt-2">Als je een logo hebt, wordt de bedrijfsnaam niet in de email header getoond.</p>
+                <p className="text-[10px] text-muted-foreground mt-2">Als je een logo hebt, wordt de bedrijfsnaam niet in de email header getoond.</p>
               </div>
             </div>
 
-            <div className="border-t border-[#E6E4E0] dark:border-border" style={{ margin: '24px 0', borderWidth: '0.5px' }} />
+            <div className="border-t border-border dark:border-border" style={{ margin: '24px 0', borderWidth: '0.5px' }} />
 
             <div className="space-y-1.5">
-              <label htmlFor="bedrijfsnaam" className="text-[11px] text-[#A0A098] block">Bedrijfsnaam</label>
-              <Input id="bedrijfsnaam" value={bedrijfsnaam} onChange={(e) => setBedrijfsnaam(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
+              <label htmlFor="bedrijfsnaam" className="text-[11px] text-muted-foreground block">Bedrijfsnaam</label>
+              <Input id="bedrijfsnaam" value={bedrijfsnaam} onChange={(e) => setBedrijfsnaam(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-[#1A535C]" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[11px] text-[#A0A098] block">E-mail kleur</label>
+              <label className="text-[11px] text-muted-foreground block">E-mail kleur</label>
               <div className="flex items-center gap-3">
                 <input
                   type="color"
                   value={emailKleur}
                   onChange={(e) => setEmailKleur(e.target.value)}
-                  className="w-10 h-10 rounded-lg border border-[#E6E4E0] cursor-pointer p-0.5"
+                  className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5"
                 />
                 <Input
                   value={emailKleur}
                   onChange={(e) => setEmailKleur(e.target.value)}
-                  className="w-28 font-mono text-sm bg-[#F4F2EE] border-[#E6E4E0] rounded-lg"
+                  className="w-28 font-mono text-sm bg-muted border-border rounded-lg"
                   placeholder="#1A535C"
                 />
                 <div className="flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-semibold text-white" style={{ backgroundColor: emailKleur }}>
                   Voorbeeld
                 </div>
               </div>
-              <p className="text-[10px] text-[#9B9B95]">Kleur voor de email header en knoppen in verzonden emails</p>
+              <p className="text-[10px] text-muted-foreground">Kleur voor de email header en knoppen in verzonden emails</p>
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="adres" className="text-[11px] text-[#A0A098] block">Adres</label>
-              <Input id="adres" value={adres} onChange={(e) => setAdres(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
+              <label htmlFor="adres" className="text-[11px] text-muted-foreground block">Adres</label>
+              <Input id="adres" value={adres} onChange={(e) => setAdres(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-[#1A535C]" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label htmlFor="postcode" className="text-[11px] text-[#A0A098] block">Postcode</label>
-                <Input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C] font-mono" />
+                <label htmlFor="postcode" className="text-[11px] text-muted-foreground block">Postcode</label>
+                <Input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-[#1A535C] font-mono" />
               </div>
               <div className="space-y-1.5">
-                <label htmlFor="stad" className="text-[11px] text-[#A0A098] block">Stad</label>
-                <Input id="stad" value={stad} onChange={(e) => setStad(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
+                <label htmlFor="stad" className="text-[11px] text-muted-foreground block">Stad</label>
+                <Input id="stad" value={stad} onChange={(e) => setStad(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-[#1A535C]" />
               </div>
             </div>
           </div>
@@ -248,11 +248,11 @@ export function BedrijfTab() {
       {subTab === 'contact' && (
         <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
           <div className="space-y-1">
-            <h2 className="text-[20px] font-bold tracking-[-0.3px] text-[#1A1A1A]">
+            <h2 className="text-[20px] font-bold tracking-[-0.3px] text-foreground">
               Contactgegevens<span className="text-[#F15025]">.</span>
             </h2>
             <p
-              className="text-[14px] text-[#6B6B66]"
+              className="text-[14px] text-foreground/70"
               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
             >
               telefoon, e-mail en website
@@ -260,15 +260,15 @@ export function BedrijfTab() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="bedrijfs-telefoon" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Telefoon</Label>
+              <Label htmlFor="bedrijfs-telefoon" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Telefoon</Label>
               <Input id="bedrijfs-telefoon" type="tel" value={bedrijfsTelefoon} onChange={(e) => setBedrijfsTelefoon(e.target.value)} placeholder="+31 (0)20 1234567" className="bg-white" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="bedrijfs-email" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">E-mail</Label>
+              <Label htmlFor="bedrijfs-email" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">E-mail</Label>
               <Input id="bedrijfs-email" type="email" value={bedrijfsEmail} onChange={(e) => setBedrijfsEmail(e.target.value)} placeholder="info@bedrijf.nl" className="bg-white" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="bedrijfs-website" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Website</Label>
+              <Label htmlFor="bedrijfs-website" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Website</Label>
               <Input id="bedrijfs-website" value={bedrijfsWebsite} onChange={(e) => setBedrijfsWebsite(e.target.value)} placeholder="www.bedrijf.nl" className="bg-white" />
             </div>
           </div>
@@ -279,11 +279,11 @@ export function BedrijfTab() {
       {subTab === 'financieel' && (
         <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
           <div className="space-y-1">
-            <h2 className="text-[20px] font-bold tracking-[-0.3px] text-[#1A1A1A]">
+            <h2 className="text-[20px] font-bold tracking-[-0.3px] text-foreground">
               Juridisch &amp; financieel<span className="text-[#F15025]">.</span>
             </h2>
             <p
-              className="text-[14px] text-[#6B6B66]"
+              className="text-[14px] text-foreground/70"
               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
             >
               wordt op facturen en offertes weergegeven
@@ -291,15 +291,15 @@ export function BedrijfTab() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="kvk" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">KvK Nummer</Label>
+              <Label htmlFor="kvk" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">KvK Nummer</Label>
               <Input id="kvk" value={kvkNummer} onChange={(e) => setKvkNummer(e.target.value)} placeholder="12345678" className="font-mono bg-white" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="btw" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">BTW Nummer</Label>
+              <Label htmlFor="btw" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">BTW Nummer</Label>
               <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder="NL123456789B01" className="font-mono bg-white" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="iban" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">IBAN</Label>
+              <Label htmlFor="iban" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">IBAN</Label>
               <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL00 BANK 0123 4567 89" className="font-mono bg-white" />
             </div>
           </div>

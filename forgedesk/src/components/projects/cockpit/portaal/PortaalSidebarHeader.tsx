@@ -27,7 +27,7 @@ export function PortaalSidebarHeader({
 }: PortaalSidebarHeaderProps) {
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#FAFAF8] transition-colors select-none"
+      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-background transition-colors select-none"
       onClick={() => setExpanded(!expanded)}
     >
       {/* Left accent dot */}

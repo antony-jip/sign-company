@@ -406,16 +406,16 @@ export function InkoopfacturenLayout() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
-            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
               Inkoopfacturen<span className="text-[#F15025]">.</span>
             </h1>
-            <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+            <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {filtered.length === facturen.length ? (
-                <span className="font-medium text-[#6B6B66]">{facturen.length}</span>
+                <span className="font-medium text-foreground/70">{facturen.length}</span>
               ) : (
                 <>
-                  <span className="font-medium text-[#6B6B66]">{filtered.length}</span>
-                  <span className="text-[#C0BDB8]">/</span>{facturen.length}
+                  <span className="font-medium text-foreground/70">{filtered.length}</span>
+                  <span className="text-muted-foreground/70">/</span>{facturen.length}
                 </>
               )}
             </span>
@@ -425,7 +425,7 @@ export function InkoopfacturenLayout() {
               <button
                 onClick={handleSync}
                 disabled={isSyncing || !!extractProgress}
-                className="inline-flex items-center gap-2 text-[13px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-2 text-[13px] font-medium text-foreground/70 hover:text-foreground hover:bg-white px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all disabled:opacity-50"
               >
                 <RefreshCw className={cn('w-4 h-4', (isSyncing || !!extractProgress) && 'animate-spin')} />
                 {isSyncing ? 'Ophalen...' : extractProgress ? `Extraheren ${extractProgress.current}/${extractProgress.total}...` : 'Synchroniseer'}
@@ -465,20 +465,20 @@ export function InkoopfacturenLayout() {
                       className={cn('w-1.5 h-1.5 rounded-full', tile.pulse && 'doen-pulse')}
                       style={{ backgroundColor: tile.dot }}
                     />
-                    <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                    <span className="font-heading text-[14px] font-bold text-foreground">
                       {tile.label}<span className="text-[#F15025]">.</span>
                     </span>
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className={cn(
-                    'font-heading font-bold leading-none text-[#1A1A1A] tabular-nums',
+                    'font-heading font-bold leading-none text-foreground tabular-nums',
                     tile.isMoney ? 'text-[22px] font-mono' : 'text-[28px]'
                   )}>
                     {display}
                   </span>
                   <span
-                    className="text-[13px] text-[#9B9B95] truncate"
+                    className="text-[13px] text-muted-foreground truncate"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     · {tile.sub}
@@ -494,13 +494,13 @@ export function InkoopfacturenLayout() {
       <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center gap-5">
           <div className="relative max-w-[280px] flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Zoek op leverancier, nummer..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#C44830] focus:ring-2 focus:ring-[#C44830]/10 transition-all"
+              className="w-full pl-9 pr-4 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#C44830] focus:ring-2 focus:ring-[#C44830]/10 transition-all"
             />
           </div>
 
@@ -515,17 +515,17 @@ export function InkoopfacturenLayout() {
           )}
 
           <div className="hidden sm:flex items-center gap-1 ml-auto">
-            <button onClick={handleExportCSV} className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all">
+            <button onClick={handleExportCSV} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all">
               <Download className="w-3.5 h-3.5" /> CSV
             </button>
-            <button onClick={handleExportExcel} className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all">
+            <button onClick={handleExportExcel} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all">
               <FileText className="w-3.5 h-3.5" /> Excel
             </button>
           </div>
         </div>
 
         {/* Filter tabs */}
-        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
+        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border">
           <div className="flex items-center gap-1 flex-wrap flex-1">
             {FILTER_OPTIONS.map((option) => {
               const count = statusCounts[option.value] || 0
@@ -538,7 +538,7 @@ export function InkoopfacturenLayout() {
                     'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
                     isActive
                       ? 'text-[#C44830] font-semibold bg-[#C44830]/[0.07]'
-                      : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                      : 'text-muted-foreground hover:text-foreground/70'
                   )}
                 >
                   {option.label}
@@ -558,8 +558,8 @@ export function InkoopfacturenLayout() {
       >
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
-              <tr className="border-b-2 border-[#F0EFEC]">
+            <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
+              <tr className="border-b-2 border-border">
                 <th className="py-3.5 pl-5 pr-3 w-10">
                   <Checkbox
                     checked={filtered.length > 0 && selectedIds.size === filtered.length}
@@ -567,19 +567,19 @@ export function InkoopfacturenLayout() {
                   />
                 </th>
                 <th className="text-left py-3.5 pr-4">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Datum</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Datum</span>
                 </th>
                 <th className="text-left py-3.5 pr-4">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Leverancier</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Leverancier</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 hidden md:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Nummer</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Nummer</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[110px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Bedrag</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Bedrag</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 w-[150px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</span>
                 </th>
               </tr>
             </thead>
@@ -598,27 +598,27 @@ export function InkoopfacturenLayout() {
                         <div className="w-16 h-16 rounded-2xl bg-[#FDE8E2] flex items-center justify-center mb-5">
                           <FileText className="w-7 h-7 text-[#C44830]" />
                         </div>
-                        <h3 className="text-[16px] font-bold text-[#1A1A1A] mb-2">
+                        <h3 className="text-[16px] font-bold text-foreground mb-2">
                           {inboxConfig ? 'Inbox is gekoppeld' : 'Automatisch inkoopfacturen verwerken'}
                         </h3>
-                        <p className="text-[13px] text-[#9B9B95] max-w-md mb-6">
+                        <p className="text-[13px] text-muted-foreground max-w-md mb-6">
                           {inboxConfig
                             ? 'Je inbox wordt elke 15 minuten gecheckt. Klik op Synchroniseer om nu te checken.'
                             : 'Koppel een Gmail inbox en ontvang automatisch inkoopfacturen. AI leest de PDF en extraheert alle gegevens · je hoeft alleen nog goed te keuren.'}
                         </p>
                         {!inboxConfig && (
-                          <div className="bg-[#FAFAF8] rounded-xl border border-[#F0EFEC] p-5 max-w-sm w-full text-left space-y-3 mb-6">
+                          <div className="bg-background rounded-xl border border-border p-5 max-w-sm w-full text-left space-y-3 mb-6">
                             <div className="flex gap-3 text-[13px]">
                               <span className="w-6 h-6 rounded-full bg-[#C44830] text-white flex items-center justify-center text-[11px] font-bold shrink-0">1</span>
-                              <span className="text-[#4A4A46]">Maak een Gmail account aan voor je facturen (bijv. factuur@bedrijf.nl)</span>
+                              <span className="text-foreground/80">Maak een Gmail account aan voor je facturen (bijv. factuur@bedrijf.nl)</span>
                             </div>
                             <div className="flex gap-3 text-[13px]">
                               <span className="w-6 h-6 rounded-full bg-[#C44830] text-white flex items-center justify-center text-[11px] font-bold shrink-0">2</span>
-                              <span className="text-[#4A4A46]">Genereer een app-wachtwoord via Google Account instellingen</span>
+                              <span className="text-foreground/80">Genereer een app-wachtwoord via Google Account instellingen</span>
                             </div>
                             <div className="flex gap-3 text-[13px]">
                               <span className="w-6 h-6 rounded-full bg-[#C44830] text-white flex items-center justify-center text-[11px] font-bold shrink-0">3</span>
-                              <span className="text-[#4A4A46]">Koppel de inbox in Instellingen en druk op Synchroniseer</span>
+                              <span className="text-foreground/80">Koppel de inbox in Instellingen en druk op Synchroniseer</span>
                             </div>
                           </div>
                         )}
@@ -648,7 +648,7 @@ export function InkoopfacturenLayout() {
                       onClick={() => openLightbox(factuur, idx)}
                       style={{ animationDelay: `${idx * 25}ms` }}
                       className={cn(
-                        'border-b border-[#F0EFEC] last:border-0 hover:bg-[#F8F7F4] cursor-pointer transition-colors doen-row group',
+                        'border-b border-border last:border-0 hover:bg-background cursor-pointer transition-colors doen-row group',
                         attention && !selectedIds.has(factuur.id) && 'bg-[rgba(241,80,37,0.025)]',
                         selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.03]',
                         isDimmed && 'opacity-45'
@@ -665,22 +665,22 @@ export function InkoopfacturenLayout() {
                         />
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="text-[13px] text-[#4A4A46]">
+                        <span className="text-[13px] text-foreground/80">
                           {formatDatum(factuur.factuur_datum || factuur.created_at)}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="text-[13px] font-medium text-[#1A1A1A]">
+                        <span className="text-[13px] font-medium text-foreground">
                           {factuur.leverancier_naam || factuur.email_van || '-'}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4 hidden md:table-cell">
-                        <span className="text-[13px] font-mono text-[#4A4A46]">
+                        <span className="text-[13px] font-mono text-foreground/80">
                           {factuur.factuur_nummer || '-'}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4 text-right">
-                        <span className="font-mono tabular-nums text-sm text-[#4A4A46]">
+                        <span className="font-mono tabular-nums text-sm text-foreground/80">
                           {formatCurrency(factuur.totaal)}
                         </span>
                       </td>
@@ -721,21 +721,21 @@ export function InkoopfacturenLayout() {
             </div>
 
             {/* Sidebar rechts — sluit aan op PDF hoogte */}
-            <div className="w-[360px] bg-white flex flex-col border-l border-[#F0EFEC]">
+            <div className="w-[360px] bg-white flex flex-col border-l border-border">
 
             {/* Nav + Close */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-[#F0EFEC]">
+            <div className="flex items-center justify-between px-6 py-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <button onClick={() => navigateLightbox('prev')} disabled={lightbox.index <= 0} className="w-8 h-8 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center disabled:opacity-20 transition-colors">
-                  <ChevronLeft className="w-4 h-4 text-[#6B6B66]" />
+                <button onClick={() => navigateLightbox('prev')} disabled={lightbox.index <= 0} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center disabled:opacity-20 transition-colors">
+                  <ChevronLeft className="w-4 h-4 text-foreground/70" />
                 </button>
-                <span className="text-[12px] font-mono text-[#9B9B95] min-w-[32px] text-center">{lightbox.index + 1}/{filtered.length}</span>
-                <button onClick={() => navigateLightbox('next')} disabled={lightbox.index >= filtered.length - 1} className="w-8 h-8 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center disabled:opacity-20 transition-colors">
-                  <ChevronRight className="w-4 h-4 text-[#6B6B66]" />
+                <span className="text-[12px] font-mono text-muted-foreground min-w-[32px] text-center">{lightbox.index + 1}/{filtered.length}</span>
+                <button onClick={() => navigateLightbox('next')} disabled={lightbox.index >= filtered.length - 1} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center disabled:opacity-20 transition-colors">
+                  <ChevronRight className="w-4 h-4 text-foreground/70" />
                 </button>
               </div>
-              <button onClick={() => setLightbox(null)} className="w-8 h-8 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center transition-colors">
-                <X className="w-4 h-4 text-[#9B9B95]" />
+              <button onClick={() => setLightbox(null)} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors">
+                <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
 
@@ -744,27 +744,27 @@ export function InkoopfacturenLayout() {
 
               {/* Leverancier */}
               <div>
-                <h3 className="text-[18px] font-bold text-[#1A1A1A] leading-tight">
+                <h3 className="text-[18px] font-bold text-foreground leading-tight">
                   {lightbox.factuur.leverancier_naam || lightbox.factuur.email_van || 'Factuur'}<span className="text-[#F15025]">.</span>
                 </h3>
                 {lightbox.factuur.factuur_nummer && (
-                  <p className="text-[13px] font-mono text-[#9B9B95] mt-1">#{lightbox.factuur.factuur_nummer}</p>
+                  <p className="text-[13px] font-mono text-muted-foreground mt-1">#{lightbox.factuur.factuur_nummer}</p>
                 )}
               </div>
 
               {/* Bedragen card */}
-              <div className="rounded-xl bg-[#FAFAF8] border border-[#F0EFEC] p-4">
-                <div className="flex justify-between text-[13px] text-[#9B9B95]">
+              <div className="rounded-xl bg-background border border-border p-4">
+                <div className="flex justify-between text-[13px] text-muted-foreground">
                   <span>Subtotaal</span>
-                  <span className="font-mono text-[#4A4A46]">{formatCurrency(lightbox.factuur.subtotaal)}</span>
+                  <span className="font-mono text-foreground/80">{formatCurrency(lightbox.factuur.subtotaal)}</span>
                 </div>
-                <div className="flex justify-between text-[13px] text-[#9B9B95] mt-1.5">
+                <div className="flex justify-between text-[13px] text-muted-foreground mt-1.5">
                   <span>BTW</span>
-                  <span className="font-mono text-[#4A4A46]">{formatCurrency(lightbox.factuur.btw_bedrag)}</span>
+                  <span className="font-mono text-foreground/80">{formatCurrency(lightbox.factuur.btw_bedrag)}</span>
                 </div>
-                <div className="flex justify-between mt-3 pt-3 border-t border-[#E6E4E0]">
-                  <span className="text-[15px] font-semibold text-[#1A1A1A]">Totaal</span>
-                  <span className="text-[17px] font-bold font-mono text-[#1A1A1A]">{formatCurrency(lightbox.factuur.totaal)}</span>
+                <div className="flex justify-between mt-3 pt-3 border-t border-border">
+                  <span className="text-[15px] font-semibold text-foreground">Totaal</span>
+                  <span className="text-[17px] font-bold font-mono text-foreground">{formatCurrency(lightbox.factuur.totaal)}</span>
                 </div>
               </div>
 
@@ -772,20 +772,20 @@ export function InkoopfacturenLayout() {
               <div className="space-y-2.5">
                 {lightbox.factuur.factuur_datum && (
                   <div className="flex justify-between text-[13px]">
-                    <span className="text-[#9B9B95]">Factuurdatum</span>
-                    <span className="text-[#4A4A46]">{formatDatum(lightbox.factuur.factuur_datum)}</span>
+                    <span className="text-muted-foreground">Factuurdatum</span>
+                    <span className="text-foreground/80">{formatDatum(lightbox.factuur.factuur_datum)}</span>
                   </div>
                 )}
                 {lightbox.factuur.vervaldatum && (
                   <div className="flex justify-between text-[13px]">
-                    <span className="text-[#9B9B95]">Vervaldatum</span>
-                    <span className="text-[#4A4A46]">{formatDatum(lightbox.factuur.vervaldatum)}</span>
+                    <span className="text-muted-foreground">Vervaldatum</span>
+                    <span className="text-foreground/80">{formatDatum(lightbox.factuur.vervaldatum)}</span>
                   </div>
                 )}
                 {lightbox.factuur.email_van && (
                   <div className="flex justify-between text-[13px]">
-                    <span className="text-[#9B9B95]">Van</span>
-                    <span className="text-[#4A4A46] truncate ml-4">{lightbox.factuur.email_van}</span>
+                    <span className="text-muted-foreground">Van</span>
+                    <span className="text-foreground/80 truncate ml-4">{lightbox.factuur.email_van}</span>
                   </div>
                 )}
               </div>
@@ -808,19 +808,19 @@ export function InkoopfacturenLayout() {
               {/* Notitie */}
               {lightbox.factuur.status !== 'goedgekeurd' && lightbox.factuur.status !== 'afgewezen' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] mb-2 block">Notitie</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 block">Notitie</label>
                   <Textarea
                     placeholder="Reden voor afwijzing..."
                     value={lightboxReden}
                     onChange={e => setLightboxReden(e.target.value)}
                     rows={3}
-                    className="text-[13px] bg-[#FAFAF8] border-[#F0EFEC] resize-none rounded-xl"
+                    className="text-[13px] bg-background border-border resize-none rounded-xl"
                   />
                 </div>
               )}
 
               {lightbox.factuur.status === 'afgewezen' && lightbox.factuur.afgewezen_reden && (
-                <div className="text-[12px] p-3 rounded-xl bg-[#F5F5F3] text-[#5A5A55]">
+                <div className="text-[12px] p-3 rounded-xl bg-[#F5F5F3] text-foreground/70">
                   Afgewezen: {lightbox.factuur.afgewezen_reden}
                 </div>
               )}
@@ -828,7 +828,7 @@ export function InkoopfacturenLayout() {
 
             {/* Footer */}
             {lightbox.factuur.status !== 'goedgekeurd' && lightbox.factuur.status !== 'afgewezen' ? (
-              <div className="px-6 py-5 border-t border-[#F0EFEC] space-y-2.5">
+              <div className="px-6 py-5 border-t border-border space-y-2.5">
                 <Button
                   onClick={handleLightboxApprove}
                   disabled={lightboxSaving}
@@ -876,14 +876,14 @@ export function InkoopfacturenLayout() {
                     )}
                   </Button>
                 ) : (
-                  <button onClick={() => setLightbox(null)} className="w-full text-[13px] text-[#9B9B95] hover:text-[#6B6B66] py-2 transition-colors">
+                  <button onClick={() => setLightbox(null)} className="w-full text-[13px] text-muted-foreground hover:text-foreground/70 py-2 transition-colors">
                     Sluiten
                   </button>
                 )}
               </div>
             ) : (
-              <div className="px-6 py-5 border-t border-[#F0EFEC]">
-                <button onClick={() => setLightbox(null)} className="w-full text-[13px] text-[#9B9B95] hover:text-[#6B6B66] py-2 transition-colors">
+              <div className="px-6 py-5 border-t border-border">
+                <button onClick={() => setLightbox(null)} className="w-full text-[13px] text-muted-foreground hover:text-foreground/70 py-2 transition-colors">
                   Sluiten
                 </button>
               </div>

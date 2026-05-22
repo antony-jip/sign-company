@@ -573,7 +573,7 @@ export function ForgieTab() {
       {/* DAAN AI INSTELLINGEN                        */}
       {/* ═══════════════════════════════════════════ */}
       <div className="pt-2">
-        <h3 className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#A0A098] flex items-center gap-2 mb-4">
+        <h3 className="text-[10px] font-semibold uppercase tracking-[1.5px] text-muted-foreground flex items-center gap-2 mb-4">
           <Bot className="w-4 h-4" />
           Instellingen
         </h3>
@@ -588,7 +588,7 @@ export function ForgieTab() {
                 <Bot className="w-4 h-4 text-[#1A535C] dark:text-[#2A7A86]" />
                 <span className="font-medium">Daan inschakelen</span>
               </Label>
-              <p className="text-xs text-[#A0A098] ml-6">
+              <p className="text-xs text-muted-foreground ml-6">
                 Schakel Daan in of uit. Wanneer uitgeschakeld verdwijnt de chat-assistent.
               </p>
             </div>
@@ -615,7 +615,7 @@ export function ForgieTab() {
             onChange={e => setBedrijfscontext(e.target.value)}
             placeholder="Bijv: Wij zijn een signbedrijf in Enkhuizen, gespecialiseerd in lichtreclames en gevelbelettering. We werken met 4 monteurs."
             rows={4}
-            className="resize-none bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] focus-visible:ring-[#1A535C]"
+            className="resize-none bg-muted dark:bg-muted border-border focus-visible:ring-[#1A535C]"
           />
           <div className="flex items-center justify-between">
             <span className={`text-xs ${bedrijfscontext.length > 500 ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
@@ -763,12 +763,12 @@ export function ForgieTab() {
 
       {/* API Status */}
       {!visInstellingen.fal_api_key_geconfigureerd && (
-        <div className="bg-[#F4F2EE] dark:bg-muted border border-[#E6E4E0] dark:border-border rounded-lg p-3 flex items-start gap-2">
+        <div className="bg-muted dark:bg-muted border border-border dark:border-border rounded-lg p-3 flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-[#F15025] mt-0.5" />
           <div className="text-sm">
             <p className="font-medium text-foreground dark:text-white">fal.ai API key niet geconfigureerd</p>
             <p className="text-muted-foreground mt-1">
-              Voeg <code className="bg-[#E6E4E0] dark:bg-border px-1 rounded">FAL_AI_API_KEY</code> toe aan je Vercel Environment Variables om de visualizer te activeren.
+              Voeg <code className="bg-muted dark:bg-border px-1 rounded">FAL_AI_API_KEY</code> toe aan je Vercel Environment Variables om de visualizer te activeren.
             </p>
           </div>
         </div>

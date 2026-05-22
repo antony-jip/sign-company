@@ -192,15 +192,15 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
     }
   }, [taakForm, user, medewerkers])
 
-  const inputCls = "w-full px-3 py-2 text-[13px] bg-white rounded-[8px] outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors duration-150 placeholder:text-[#B0ADA8]"
-  const labelCls = "text-[10px] font-semibold uppercase tracking-[0.06em] text-[#9B9B95] block mb-1"
+  const inputCls = "w-full px-3 py-2 text-[13px] bg-white rounded-[8px] outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground/80"
+  const labelCls = "text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground block mb-1"
 
   // Breedte morpht per view voor smooth animation
   const widthClass = view === 'menu' ? 'w-[240px]' : view === 'koppel' ? 'w-[380px]' : 'w-[340px]'
 
   return (
     <div ref={containerRef} className="relative">
-      <div className="w-px h-5 bg-[#EBEBEB] mx-2 hidden md:inline-block" />
+      <div className="w-px h-5 bg-border mx-2 hidden md:inline-block" />
       <Button
         variant="ghost"
         size="icon"
@@ -215,13 +215,13 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
       {open && (
         <div
           className={cn(
-            'absolute top-full right-0 mt-1.5 bg-white/95 backdrop-blur-xl rounded-[14px] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.20),0_0_0_0.5px_rgba(0,0,0,0.06)] z-50 overflow-hidden transition-[width] duration-200 ease-out',
+            'absolute top-full right-0 mt-1.5 bg-card/95 backdrop-blur-xl rounded-[14px] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.20),0_0_0_0.5px_rgba(0,0,0,0.06)] z-50 overflow-hidden transition-[width] duration-200 ease-out',
             widthClass,
           )}
         >
           {view === 'menu' ? (
             <div className="py-1.5">
-              <p className="px-3.5 pt-1.5 pb-1 text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Acties</p>
+              <p className="px-3.5 pt-1.5 pb-1 text-[10px] uppercase tracking-[0.08em] text-muted-foreground font-semibold">Acties</p>
               <MenuItem icon={<UserPlus className="h-3.5 w-3.5" />} label="Klant aanmaken" onClick={() => setView('klant')} />
               <MenuItem icon={<FolderPlus className="h-3.5 w-3.5" />} label="Project aanmaken" onClick={() => { setOpen(false); onOpenProjectDialog() }} />
               <MenuItem icon={<ListPlus className="h-3.5 w-3.5" />} label="Taak aanmaken" onClick={() => setView('taak')} />
@@ -240,7 +240,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
               {klantStep === 'search' ? (
                 <div className="space-y-2.5">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95] pointer-events-none" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                     <input
                       ref={klantInputRef}
                       value={klantSearch}
@@ -263,20 +263,20 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                             setKlantForm(f => ({ ...f, contactpersoon: senderName, email: senderEmail, telefoon: '' }))
                             setKlantStep('add-to-existing')
                           }}
-                          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-[8px] text-left hover:bg-[#F8F7F5] transition-colors duration-150 active:scale-[0.99]"
+                          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-[8px] text-left hover:bg-background transition-colors duration-150 active:scale-[0.99]"
                         >
                           <div className="w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0 text-[12px] font-bold" style={{ background: style.bg, color: style.text }}>
                             {displayName[0]?.toUpperCase()}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-[12px] font-semibold text-[#1A1A1A] truncate">{displayName}</p>
-                            <p className="text-[11px] text-[#9B9B95] truncate">{k.email || k.contactpersoon}</p>
+                            <p className="text-[12px] font-semibold text-foreground truncate">{displayName}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{k.email || k.contactpersoon}</p>
                           </div>
                           <UserPlus className="h-3.5 w-3.5 text-[#1A535C] flex-shrink-0" />
                         </button>
                       )
                     }) : (
-                      <p className="text-[11px] text-[#9B9B95] px-3 py-3 text-center">Geen klanten gevonden</p>
+                      <p className="text-[11px] text-muted-foreground px-3 py-3 text-center">Geen klanten gevonden</p>
                     )}
                   </div>
 
@@ -386,7 +386,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                           onClick={() => setTaakForm(f => ({ ...f, deadline: val }))}
                           className={cn(
                             'flex-1 py-1.5 rounded-[8px] text-[11px] font-medium transition-all',
-                            active ? 'bg-[#1A535C]/[0.10] text-[#1A535C]' : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]',
+                            active ? 'bg-[#1A535C]/[0.10] text-[#1A535C]' : 'bg-background text-foreground/70 hover:bg-muted',
                           )}
                         >{label}</button>
                       )
@@ -406,7 +406,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                             onClick={() => setTaakForm(f => ({ ...f, toegewezen_aan: selected ? '' : mw.naam }))}
                             className={cn(
                               'inline-flex items-center gap-1 px-2 py-1 rounded-[8px] text-[11px] font-medium border transition-all',
-                              selected ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]' : 'border-transparent bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]',
+                              selected ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]' : 'border-transparent bg-background text-foreground/70 hover:bg-muted',
                             )}
                           >
                             {mw.naam.split(' ')[0]}
@@ -439,7 +439,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                   senderEmail={senderEmail}
                 />
               ) : (
-                <p className="text-[12px] text-[#9B9B95] py-4 text-center">Geen thread beschikbaar om te koppelen.</p>
+                <p className="text-[12px] text-muted-foreground py-4 text-center">Geen thread beschikbaar om te koppelen.</p>
               )}
             </FormFrame>
           ) : null}
@@ -454,7 +454,7 @@ function MenuItem({ icon, label, onClick }: { icon: React.ReactNode; label: stri
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
+      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-foreground hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
     >
       <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#1A535C]/[0.08] text-[#1A535C]">
         {icon}
@@ -471,16 +471,16 @@ function FormFrame({ title, onBack, onClose, children }: { title: string; onBack
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1 px-2 py-1 rounded-[8px] text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-black/[0.04] transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded-[8px] text-[12px] text-foreground/70 hover:text-foreground hover:bg-black/[0.04] transition-colors"
         >
           <ArrowLeft className="h-3 w-3" />
           Terug
         </button>
-        <h3 className="text-[13px] font-semibold text-[#1A1A1A]">{title}</h3>
+        <h3 className="text-[13px] font-semibold text-foreground">{title}</h3>
         <button
           type="button"
           onClick={onClose}
-          className="h-7 w-7 flex items-center justify-center rounded-[8px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] transition-colors"
+          className="h-7 w-7 flex items-center justify-center rounded-[8px] text-muted-foreground hover:text-foreground hover:bg-black/[0.04] transition-colors"
           aria-label="Sluiten"
         >
           <X className="h-3.5 w-3.5" />

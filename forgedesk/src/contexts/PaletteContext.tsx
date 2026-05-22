@@ -118,27 +118,41 @@ function applyAppTheme(theme: AppTheme, accent: AccentPalette) {
 }
 
 export function PaletteProvider({ children }: { children: ReactNode }) {
-  // Geforceerd: altijd normaal thema, altijd petrol accent
-  const appThemeId = 'normaal'
+  // Theme: persist in localStorage, default volgt OS-voorkeur (prefers-color-scheme).
+  // Accent blijft hardcoded petrol — alleen licht/donker is toggle-baar.
+  const [appThemeId, setAppThemeIdState] = useState<string>(() => {
+    try {
+      const stored = localStorage.getItem(THEME_STORAGE_KEY)
+      if (stored === 'dark' || stored === 'normaal') return stored
+    } catch { /* no-op */ }
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      return 'dark'
+    }
+    return 'normaal'
+  })
   const accentId = 'petrol'
 
-  const appTheme = APP_THEMES[0] // normaal
+  const appTheme = APP_THEMES.find(t => t.id === appThemeId) ?? APP_THEMES[0]
   const accent = ACCENT_PALETTES[0] // petrol
 
-  // Opruimen bij init
-  useEffect(() => {
-    localStorage.removeItem(THEME_STORAGE_KEY)
-    localStorage.removeItem(ACCENT_STORAGE_KEY)
-    document.documentElement.classList.remove('dark')
-    document.documentElement.classList.add('light')
-  }, [])
-
-  const setAppThemeId = useCallback((_id: string) => {
-    // no-op — thema is vast
+  const setAppThemeId = useCallback((id: string) => {
+    setAppThemeIdState(id)
+    try { localStorage.setItem(THEME_STORAGE_KEY, id) } catch { /* no-op */ }
   }, [])
 
   const setAccentId = useCallback((_id: string) => {
     // no-op — accent is vast
+  }, [])
+
+  // Volg systeem-voorkeur live wanneer gebruiker geen handmatige keuze heeft gemaakt.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const stored = (() => { try { return localStorage.getItem(THEME_STORAGE_KEY) } catch { return null } })()
+    if (stored === 'dark' || stored === 'normaal') return // user-override, geen sync
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = (e: MediaQueryListEvent) => setAppThemeIdState(e.matches ? 'dark' : 'normaal')
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
   }, [])
 
   useEffect(() => {

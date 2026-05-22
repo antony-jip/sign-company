@@ -26,7 +26,7 @@ export function PortaalActiviteitenLog({ portaalId }: { portaalId: string }) {
   if (items.length === 0) return null
 
   return (
-    <div className="px-4 py-2 border-t border-[#E6E4E0] bg-[#FAFAF8]">
+    <div className="px-4 py-2 border-t border-border bg-background">
       <p className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wide mb-1.5">Activiteit</p>
       {items.map((a, i) => (
         <div key={i} className="flex justify-between text-[11px] py-0.5">

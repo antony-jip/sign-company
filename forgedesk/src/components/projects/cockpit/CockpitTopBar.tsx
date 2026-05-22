@@ -64,7 +64,7 @@ export function CockpitTopBar({
   }, [geschiedenisOpen])
 
   return (
-    <div className="bg-[#FFFFFE] border-b border-[hsl(35,15%,87%)]">
+    <div className="bg-card border-b border-[hsl(35,15%,87%)]">
       {/* Status color bar */}
       <div className={`h-[3px] w-full ${getStatusBadgeClass(project.status)} transition-colors duration-500`} style={{ border: 'none' }} />
 
@@ -162,7 +162,7 @@ export function CockpitTopBar({
               <Clock className="h-3.5 w-3.5" />
             </Button>
             {geschiedenisOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-80 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-xl shadow-lg z-50 overflow-hidden">
+              <div className="absolute right-0 top-full mt-1.5 w-80 bg-card border border-[hsl(35,15%,87%)] rounded-xl shadow-lg z-50 overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-[hsl(35,15%,87%)] bg-[hsl(35,15%,97%)]">
                   <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Clock className="h-3 w-3" />

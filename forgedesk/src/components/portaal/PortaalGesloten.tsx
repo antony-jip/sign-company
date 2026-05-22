@@ -9,7 +9,7 @@ interface PortaalGeslotenProps {
 
 export function PortaalGesloten({ bedrijfsnaam, telefoon, email, logoUrl }: PortaalGeslotenProps) {
   return (
-    <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center space-y-6">
         {logoUrl && (
           <img src={logoUrl} alt={bedrijfsnaam} className="h-10 w-auto mx-auto object-contain" />

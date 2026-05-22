@@ -99,11 +99,11 @@ function MontageCard({
       <button
         type="button"
         onClick={onToggleExpand}
-        className="w-full text-left p-4 active:bg-[#F8F7F5] transition-colors"
+        className="w-full text-left p-4 active:bg-background transition-colors"
         aria-expanded={expanded}
       >
         <div className="flex items-center justify-between gap-2 mb-2">
-          <span className="text-[13px] font-medium text-[#1A1A1A] tabular-nums">
+          <span className="text-[13px] font-medium text-foreground tabular-nums">
             {afspraak.start_tijd}–{afspraak.eind_tijd}
           </span>
           <span
@@ -114,9 +114,9 @@ function MontageCard({
             {cfg.label}
           </span>
         </div>
-        <h3 className="text-[16px] font-semibold text-[#1A1A1A] leading-snug">{afspraak.titel}</h3>
+        <h3 className="text-[16px] font-semibold text-foreground leading-snug">{afspraak.titel}</h3>
         {afspraak.klant_naam && (
-          <p className="mt-0.5 text-[13px] text-[#6B6B66]">{afspraak.klant_naam}</p>
+          <p className="mt-0.5 text-[13px] text-foreground/70">{afspraak.klant_naam}</p>
         )}
 
         {(afspraak.locatie || telefoon) && (
@@ -127,7 +127,7 @@ function MontageCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#F0EFEC] px-2.5 py-1 text-[12px] text-[#1A535C] hover:bg-[#E6E5E1] active:scale-95 transition-all max-w-full"
+                className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-[#1A535C] hover:bg-muted active:scale-95 transition-all max-w-full"
               >
                 <MapPin className="h-3 w-3 flex-shrink-0" />
                 <span className="truncate">{afspraak.locatie}</span>
@@ -137,7 +137,7 @@ function MontageCard({
               <a
                 href={`tel:${telefoon}`}
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#F0EFEC] px-2.5 py-1 text-[12px] text-[#1A535C] hover:bg-[#E6E5E1] active:scale-95 transition-all"
+                className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-[#1A535C] hover:bg-muted active:scale-95 transition-all"
               >
                 <Phone className="h-3 w-3 flex-shrink-0" />
                 {telefoon}
@@ -177,7 +177,7 @@ function MontageCard({
                   href={b.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#F0EFEC] px-2.5 py-1 text-[12px] text-[#1A535C] hover:bg-[#E6E5E1] active:scale-95 transition-all max-w-full"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-[#1A535C] hover:bg-muted active:scale-95 transition-all max-w-full"
                 >
                   <Paperclip className="h-3 w-3 flex-shrink-0" />
                   <span className="truncate">{b.naam}</span>
@@ -219,8 +219,8 @@ function MontageCard({
                     isActive
                       ? 'cursor-default'
                       : canEdit
-                        ? 'bg-[#F0EFEC] text-[#6B6B66] hover:bg-[#E6E5E1] active:scale-95'
-                        : 'bg-[#F8F7F5] text-[#B0ADA8] cursor-not-allowed',
+                        ? 'bg-muted text-foreground/70 hover:bg-muted active:scale-95'
+                        : 'bg-background text-muted-foreground/80 cursor-not-allowed',
                   )}
                   style={isActive ? { color: sCfg.text, backgroundColor: sCfg.bg } : undefined}
                 >
@@ -231,7 +231,7 @@ function MontageCard({
           </div>
 
           {!canEdit && (
-            <p className="text-[11px] text-[#9B9B95] italic">Alleen te wijzigen door toegewezen monteur.</p>
+            <p className="text-[11px] text-muted-foreground italic">Alleen te wijzigen door toegewezen monteur.</p>
           )}
         </div>
       )}
@@ -355,16 +355,16 @@ export function MontagePlanningLayoutMobile() {
   )
 
   return (
-    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
-      <header className="px-5 pt-5 pb-4 bg-white border-b border-[#EBEBEB]">
-        <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-[#1A1A1A]">
+    <div className="h-full flex flex-col bg-background -m-3 sm:-m-4 md:-m-6">
+      <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
+        <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
           Planning<span className="text-[#F15025]">.</span>
         </h1>
-        <p className="mt-1 text-[14px] text-[#6B6B66] capitalize">
+        <p className="mt-1 text-[14px] text-foreground/70 capitalize">
           {formatFullWeekdayDate(selectedDate)}
         </p>
         {currentMedewerker && (
-          <div className="mt-3 inline-flex h-8 p-0.5 rounded-full bg-[#F0EFEC]" role="tablist">
+          <div className="mt-3 inline-flex h-8 p-0.5 rounded-full bg-muted" role="tablist">
             <button
               type="button"
               role="tab"
@@ -373,8 +373,8 @@ export function MontagePlanningLayoutMobile() {
               className={cn(
                 'h-7 px-4 rounded-full text-[12px] font-medium transition-colors',
                 scope === 'mijn'
-                  ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                  : 'text-[#6B6B66]',
+                  ? 'bg-white text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                  : 'text-foreground/70',
               )}
             >
               Mijn dag
@@ -387,8 +387,8 @@ export function MontagePlanningLayoutMobile() {
               className={cn(
                 'h-7 px-4 rounded-full text-[12px] font-medium transition-colors',
                 scope === 'iedereen'
-                  ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                  : 'text-[#6B6B66]',
+                  ? 'bg-white text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                  : 'text-foreground/70',
               )}
             >
               Iedereen
@@ -397,12 +397,12 @@ export function MontagePlanningLayoutMobile() {
         )}
       </header>
 
-      <div className="px-5 py-3 flex items-center gap-2 bg-white border-b border-[#EBEBEB]">
+      <div className="px-5 py-3 flex items-center gap-2 bg-white border-b border-border">
         <button
           type="button"
           onClick={() => setSelectedDate((d) => addDays(d, -1))}
           aria-label="Vorige dag"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[#F0EFEC] text-[#6B6B66] hover:bg-[#E6E5E1] hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -421,7 +421,7 @@ export function MontagePlanningLayoutMobile() {
           type="button"
           onClick={() => setSelectedDate((d) => addDays(d, 1))}
           aria-label="Volgende dag"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[#F0EFEC] text-[#6B6B66] hover:bg-[#E6E5E1] hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -430,19 +430,19 @@ export function MontagePlanningLayoutMobile() {
       <div className="flex-1 overflow-y-auto pt-4 pb-[calc(4rem+env(safe-area-inset-bottom))]">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-5 w-5 animate-spin text-[#9B9B95]" />
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : toegewezen.length === 0 && ongetoewezen.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-            <div className="w-20 h-20 rounded-full bg-white border border-[#EBEBEB] flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-              <CalendarCheck className="h-9 w-9 text-[#B0ADA8]" strokeWidth={1.5} />
+            <div className="w-20 h-20 rounded-full bg-white border border-border flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+              <CalendarCheck className="h-9 w-9 text-muted-foreground/80" strokeWidth={1.5} />
             </div>
-            <p className="text-[15px] font-medium text-[#6B6B66]">
+            <p className="text-[15px] font-medium text-foreground/70">
               Geen montages voor {isToday ? 'vandaag' : 'deze dag'}<span className="text-[#F15025]">.</span>
             </p>
             {scope === 'mijn' && (
-              <p className="mt-1.5 text-[13px] text-[#9B9B95] max-w-[260px] leading-relaxed">
-                Wissel naar <span className="font-medium text-[#6B6B66]">Iedereen</span> om alle montages te zien.
+              <p className="mt-1.5 text-[13px] text-muted-foreground max-w-[260px] leading-relaxed">
+                Wissel naar <span className="font-medium text-foreground/70">Iedereen</span> om alle montages te zien.
               </p>
             )}
           </div>
@@ -451,7 +451,7 @@ export function MontagePlanningLayoutMobile() {
             {toegewezen.map(renderCard)}
             {ongetoewezen.length > 0 && (
               <>
-                <h2 className="px-5 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wider text-[#9B9B95]">
+                <h2 className="px-5 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Niet toegewezen
                 </h2>
                 {ongetoewezen.map(renderCard)}

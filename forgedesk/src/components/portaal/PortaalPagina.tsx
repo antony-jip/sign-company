@@ -203,7 +203,7 @@ export function PortaalPagina() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#9B9B95]" />
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -212,8 +212,8 @@ export function PortaalPagina() {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-[#9B9B95] mx-auto" />
-          <p className="text-[#6B6B66]">{error || 'Portaal niet gevonden'}</p>
+          <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto" />
+          <p className="text-foreground/70">{error || 'Portaal niet gevonden'}</p>
         </div>
       </div>
     )
@@ -253,8 +253,8 @@ export function PortaalPagina() {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-[#9B9B95] mx-auto" />
-          <p className="text-[#6B6B66]">Portaal kon niet geladen worden</p>
+          <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto" />
+          <p className="text-foreground/70">Portaal kon niet geladen worden</p>
         </div>
       </div>
     )
@@ -288,7 +288,7 @@ export function PortaalPagina() {
 
       {/* Project bar */}
       {project && (
-        <div className="flex-shrink-0 border-b" style={{ borderColor: '#E8E6E1', backgroundColor: '#fff' }}>
+        <div className="flex-shrink-0 border-b" style={{ borderColor: '#E8E6E1', backgroundColor: 'hsl(var(--card))' }}>
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
             <h1
               className="text-base font-bold"
@@ -321,7 +321,7 @@ export function PortaalPagina() {
             {portaal.instructie_tekst && (
               <div
                 className="rounded-[10px] px-5 py-4 mb-4"
-                style={{ backgroundColor: '#fff', border: '0.5px solid #E8E6E1' }}
+                style={{ backgroundColor: 'hsl(var(--card))', border: '0.5px solid #E8E6E1' }}
               >
                 <p className="whitespace-pre-wrap" style={{ fontSize: 13, color: '#5A5A55', lineHeight: 1.6 }}>
                   {portaal.instructie_tekst}
@@ -359,7 +359,7 @@ export function PortaalPagina() {
       {!klantNaam && rawItems.length > 0 && (
         <div
           className="fixed bottom-0 left-0 right-0 py-3 px-4 flex items-center justify-center gap-3"
-          style={{ backgroundColor: '#fff', borderTop: '0.5px solid #E8E6E1', boxShadow: '0 -2px 12px rgba(0,0,0,0.04)' }}
+          style={{ backgroundColor: 'hsl(var(--card))', borderTop: '0.5px solid #E8E6E1', boxShadow: '0 -2px 12px rgba(0,0,0,0.04)' }}
         >
           <span className="text-sm" style={{ color: '#5A5A55' }}>Uw naam:</span>
           <input

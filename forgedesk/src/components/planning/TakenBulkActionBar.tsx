@@ -124,13 +124,13 @@ export function TakenBulkActionBar({
           </button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-60 p-3">
-          <div className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider mb-2">Nieuwe deadline</div>
+          <div className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider mb-2">Nieuwe deadline</div>
           <div className="flex flex-col gap-1 mb-3">
-            <button onClick={() => submitMove(toDateStr(today))} className="text-left text-[13px] px-2 py-1.5 rounded-md hover:bg-[#F3F2F0] transition-colors">Vandaag</button>
-            <button onClick={() => submitMove(toDateStr(tomorrow))} className="text-left text-[13px] px-2 py-1.5 rounded-md hover:bg-[#F3F2F0] transition-colors">Morgen</button>
-            <button onClick={() => submitMove(toDateStr(nextWeek))} className="text-left text-[13px] px-2 py-1.5 rounded-md hover:bg-[#F3F2F0] transition-colors">Volgende week</button>
+            <button onClick={() => submitMove(toDateStr(today))} className="text-left text-[13px] px-2 py-1.5 rounded-md hover:bg-background transition-colors">Vandaag</button>
+            <button onClick={() => submitMove(toDateStr(tomorrow))} className="text-left text-[13px] px-2 py-1.5 rounded-md hover:bg-background transition-colors">Morgen</button>
+            <button onClick={() => submitMove(toDateStr(nextWeek))} className="text-left text-[13px] px-2 py-1.5 rounded-md hover:bg-background transition-colors">Volgende week</button>
           </div>
-          <div className="pt-2 border-t border-[#F0EFEC]">
+          <div className="pt-2 border-t border-border">
             <DatePicker
               value={moveDate}
               onChange={setMoveDate}
@@ -160,7 +160,7 @@ export function TakenBulkActionBar({
         </PopoverTrigger>
         <PopoverContent align="end" className="w-64 p-2">
           <div className="relative mb-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95]" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               autoFocus
               value={assignQuery}
@@ -172,21 +172,21 @@ export function TakenBulkActionBar({
           <div className="max-h-[240px] overflow-y-auto -mx-1 px-1">
             <button
               onClick={() => submitAssign('')}
-              className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-[#F3F2F0] transition-colors"
+              className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-background transition-colors"
             >
-              <Users className="h-4 w-4 text-[#9B9B95]" />
+              <Users className="h-4 w-4 text-muted-foreground" />
               <span>Niet toegewezen</span>
             </button>
             {filteredMedewerkers.length === 0 && assignQuery && (
-              <div className="px-2 py-6 text-center text-[12px] text-[#9B9B95]">Geen resultaat</div>
+              <div className="px-2 py-6 text-center text-[12px] text-muted-foreground">Geen resultaat</div>
             )}
             {filteredMedewerkers.map((m) => (
               <button
                 key={m.id}
                 onClick={() => submitAssign(m.naam)}
-                className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-[#F3F2F0] transition-colors"
+                className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-background transition-colors"
               >
-                <span className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 bg-[#F0EFEC] text-[#6B6B66]">
+                <span className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 bg-muted text-foreground/70">
                   {m.naam.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
                 </span>
                 <span className="flex-1 truncate">{m.naam}</span>
@@ -210,7 +210,7 @@ export function TakenBulkActionBar({
             <button
               key={opt.value}
               onClick={() => submitStatus(opt.value)}
-              className="w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-[#F3F2F0] transition-colors"
+              className="w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-background transition-colors"
             >
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: opt.dot }} />
               <span>{opt.label}</span>

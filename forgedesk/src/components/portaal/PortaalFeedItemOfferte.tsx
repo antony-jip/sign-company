@@ -180,7 +180,7 @@ export function PortaalFeedItemOfferte({
                 <button
                   onClick={() => setConfirmOpen(false)}
                   disabled={loading}
-                  className="px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[#F8F7F5]"
+                  className="px-3 py-2 rounded-lg text-sm transition-colors hover:bg-background"
                   style={{ color: '#5A5A55' }}
                 >
                   Annuleren
@@ -197,8 +197,8 @@ export function PortaalFeedItemOfferte({
                 </button>
                 <button
                   onClick={onVragenStellen}
-                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-[#F4F2EE]"
-                  style={{ backgroundColor: '#FAF9F7', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
+                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
+                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
                 >
                   Vragen stellen
                 </button>

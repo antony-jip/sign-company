@@ -768,7 +768,7 @@ export function OnboardingWizard() {
 
   if (!isLoaded) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center bg-[#F8F7F5] overflow-hidden">
+      <div className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden">
         <ParticleField />
         <Loader2 className="relative z-10 w-6 h-6 animate-spin text-muted-hex" />
       </div>
@@ -776,7 +776,7 @@ export function OnboardingWizard() {
   }
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-[#F8F7F5] overflow-hidden">
+    <div className="relative min-h-screen flex flex-col bg-background overflow-hidden">
       <ParticleField />
 
       <div className="relative z-10 flex items-center justify-between px-6 pt-6 pb-4">

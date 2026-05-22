@@ -50,9 +50,9 @@ export function AanDeSlagSectie() {
         onClick={() => setForceUitgevouwen(true)}
         className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-white shadow-[0_2px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.05)] transition-shadow text-left"
       >
-        <span className="text-[14px] text-[#1A1A1A]">
+        <span className="text-[14px] text-foreground">
           Aan de slag<span className="text-[#F15025]">.</span>{' '}
-          <span className="text-[#6B6B66]">{status.klaarCount} van 6 klaar.</span>
+          <span className="text-foreground/70">{status.klaarCount} van 6 klaar.</span>
         </span>
         <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#1A535C]">
           Uitvouwen
@@ -100,7 +100,7 @@ export function AanDeSlagSectie() {
       </div>
 
       <div className="px-7 py-7 sm:px-9 sm:py-8">
-        <p className="text-[11px] uppercase tracking-wider text-[#9B9B95] mb-5">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-5">
           Stel je account in
         </p>
 
@@ -115,8 +115,8 @@ export function AanDeSlagSectie() {
                 onClick={() => navigate(tegel.route)}
                 className={`group text-left rounded-lg px-4 py-4 transition-all border ${
                   klaar
-                    ? 'bg-[#F8F7F5] border-transparent'
-                    : 'bg-white border-[#EBEBEB] hover:border-[#1A535C]/40 hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)]'
+                    ? 'bg-background border-transparent'
+                    : 'bg-white border-border hover:border-[#1A535C]/40 hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)]'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
@@ -137,12 +137,12 @@ export function AanDeSlagSectie() {
                 </div>
                 <p
                   className={`text-[13.5px] font-semibold leading-snug ${
-                    klaar ? 'text-[#9B9B95] line-through decoration-[#9B9B95]/40' : 'text-[#1A1A1A]'
+                    klaar ? 'text-muted-foreground line-through decoration-[#9B9B95]/40' : 'text-foreground'
                   }`}
                 >
                   {tegel.titel}
                 </p>
-                <p className={`text-[12px] mt-1 leading-snug ${klaar ? 'text-[#9B9B95]' : 'text-[#6B6B66]'}`}>
+                <p className={`text-[12px] mt-1 leading-snug ${klaar ? 'text-muted-foreground' : 'text-foreground/70'}`}>
                   {tegel.uitleg}
                 </p>
               </button>
@@ -151,16 +151,16 @@ export function AanDeSlagSectie() {
         </div>
 
         <div className="mt-6 flex items-center gap-3">
-          <span className="text-[11px] uppercase tracking-wider text-[#9B9B95]">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
             Voortgang
           </span>
-          <div className="flex-1 h-[3px] bg-[#EBEBEB] rounded-full overflow-hidden">
+          <div className="flex-1 h-[3px] bg-border rounded-full overflow-hidden">
             <div
               className="h-full bg-[#F15025] transition-all duration-500 ease-out"
               style={{ width: `${(status.klaarCount / 6) * 100}%` }}
             />
           </div>
-          <span className="text-[12px] font-mono text-[#6B6B66] tabular-nums">
+          <span className="text-[12px] font-mono text-foreground/70 tabular-nums">
             {status.klaarCount} / 6
           </span>
         </div>

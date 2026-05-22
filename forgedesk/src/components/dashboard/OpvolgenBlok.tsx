@@ -51,25 +51,25 @@ export function OpvolgenBlok() {
     >
       <header className="flex items-baseline justify-between gap-4 mb-5">
         <div className="flex items-baseline gap-3 min-w-0">
-          <h2 className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+          <h2 className="font-heading text-[14px] font-bold text-foreground">
             Opvolgen<span className="text-[#F15025]">.</span>
           </h2>
           <span
-            className="text-[14px] text-[#9B9B95] truncate"
+            className="text-[14px] text-muted-foreground truncate"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             · wacht op antwoord
           </span>
         </div>
         {items.length > 0 && (
-          <span className="font-mono text-[12px] text-[#9B9B95] flex-shrink-0">
+          <span className="font-mono text-[12px] text-muted-foreground flex-shrink-0">
             {formatCurrency(totaalBedrag)} in de pijplijn
           </span>
         )}
       </header>
 
       {items.length === 0 ? (
-        <p className="text-sm text-[#9B9B95] py-2">Geen offertes wachten op reactie.</p>
+        <p className="text-sm text-muted-foreground py-2">Geen offertes wachten op reactie.</p>
       ) : (
         <ul className="divide-y divide-[#EBEBEB]">
           {items.map(item => {
@@ -82,17 +82,17 @@ export function OpvolgenBlok() {
                 <button
                   type="button"
                   onClick={() => navigate(`/offertes/${item.id}`)}
-                  className="group w-full flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-[#F8F7F5] transition-colors text-left focus-visible:outline-none focus-visible:bg-[#F8F7F5]"
+                  className="group w-full flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-background transition-colors text-left focus-visible:outline-none focus-visible:bg-background"
                 >
                   <span className="flex-1 min-w-0">
-                    <span className="block text-sm text-[#1A1A1A] font-medium truncate">
+                    <span className="block text-sm text-foreground font-medium truncate">
                       {item.klantNaam}
                     </span>
-                    <span className="block text-[11px] font-mono text-[#9B9B95] truncate">
+                    <span className="block text-[11px] font-mono text-muted-foreground truncate">
                       {item.nummer}
                     </span>
                   </span>
-                  <span className="font-mono text-sm text-[#1A1A1A] w-24 text-right flex-shrink-0">
+                  <span className="font-mono text-sm text-foreground w-24 text-right flex-shrink-0">
                     {formatCurrency(item.bedrag)}
                   </span>
                   <span
@@ -102,7 +102,7 @@ export function OpvolgenBlok() {
                     {item.dagen} dagen
                     <span style={{ color: urgent ? '#F15025' : ageColor }}>.</span>
                   </span>
-                  <ArrowRight className="h-3.5 w-3.5 text-[#9B9B95] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                 </button>
               </li>
             )

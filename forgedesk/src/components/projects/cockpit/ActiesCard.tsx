@@ -38,11 +38,11 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
     <div className="doen-slate-surface rounded-2xl p-5">
       {/* Header */}
       <div className="flex items-baseline justify-between mb-4">
-        <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+        <h3 className="font-heading text-[15px] font-bold text-foreground">
           Acties<span className="text-[#F15025]">.</span>
         </h3>
         <span
-          className="text-[12px] text-[#9B9B95]"
+          className="text-[12px] text-muted-foreground"
           style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
         >
           wat is de volgende stap?
@@ -85,10 +85,10 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
                 </div>
 
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="text-[14px] font-bold text-[#1A1A1A] leading-tight tracking-[-0.01em] truncate">
+                  <p className="text-[14px] font-bold text-foreground leading-tight tracking-[-0.01em] truncate">
                     {tile.label}
                   </p>
-                  <p className="text-[11.5px] text-[#6B6B66] mt-0.5 leading-tight truncate">
+                  <p className="text-[11.5px] text-foreground/70 mt-0.5 leading-tight truncate">
                     {tile.sublabel}
                   </p>
                 </div>
@@ -109,7 +109,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
       <div className="mt-4 pt-3 border-t border-[rgba(26,83,92,0.08)] flex items-center justify-center gap-4">
         <button
           onClick={onPakbon}
-          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B6B66] hover:text-[#1A535C] transition-colors px-2 py-1 rounded-md"
+          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-[#1A535C] transition-colors px-2 py-1 rounded-md"
         >
           <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
             <PhPackage size={14} weight="duotone" />
@@ -117,11 +117,11 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
           Pakbon
         </button>
 
-        <span aria-hidden className="text-[10px] text-[#C0BDB8] font-mono">·</span>
+        <span aria-hidden className="text-[10px] text-muted-foreground/70 font-mono">·</span>
 
         <button
           onClick={onBevestiging}
-          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B6B66] hover:text-[#1A535C] transition-colors px-2 py-1 rounded-md"
+          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-[#1A535C] transition-colors px-2 py-1 rounded-md"
         >
           <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
             <PhHandshake size={14} weight="duotone" />

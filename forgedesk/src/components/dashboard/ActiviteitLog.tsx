@@ -105,11 +105,11 @@ export function ActiviteitLog() {
     >
       <header className="flex items-baseline justify-between gap-4 mb-3">
         <div className="flex items-baseline gap-3 min-w-0">
-          <h2 className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+          <h2 className="font-heading text-[14px] font-bold text-foreground">
             Activiteit<span className="text-[#F15025]">.</span>
           </h2>
           <span
-            className="text-[14px] text-[#9B9B95]"
+            className="text-[14px] text-muted-foreground"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             · portaal-logs
@@ -118,7 +118,7 @@ export function ActiviteitLog() {
       </header>
 
       {events.length === 0 ? (
-        <p className="text-sm text-[#9B9B95] py-2">Nog geen activiteit.</p>
+        <p className="text-sm text-muted-foreground py-2">Nog geen activiteit.</p>
       ) : (
         <ul className="space-y-1 max-h-[220px] overflow-y-auto pr-1 -mr-2">
           {events.map(e => {
@@ -129,7 +129,7 @@ export function ActiviteitLog() {
                 <button
                   type="button"
                   onClick={() => navigate(e.href)}
-                  className="group w-full flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg hover:bg-[#F8F7F5] transition-colors text-left focus-visible:outline-none focus-visible:bg-[#F8F7F5]"
+                  className="group w-full flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg hover:bg-background transition-colors text-left focus-visible:outline-none focus-visible:bg-background"
                 >
                   <span
                     className="inline-flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0"
@@ -139,14 +139,14 @@ export function ActiviteitLog() {
                     <Icon className="h-3.5 w-3.5" style={{ color: style.color }} />
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-[13px] font-medium text-[#1A1A1A] truncate">
+                    <span className="block text-[13px] font-medium text-foreground truncate">
                       {style.label}
                     </span>
-                    <span className="block text-[12px] text-[#6B6B66] truncate">
+                    <span className="block text-[12px] text-foreground/70 truncate">
                       {e.klant}
                     </span>
                   </span>
-                  <span className="text-[11px] font-mono text-[#9B9B95] flex-shrink-0">
+                  <span className="text-[11px] font-mono text-muted-foreground flex-shrink-0">
                     {formatDistanceToNow(e.date, { addSuffix: false, locale: nl })}
                   </span>
                 </button>

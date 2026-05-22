@@ -224,7 +224,7 @@ export function WerkbonnenLayout() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
-                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
                     Werkbonnen<span className="text-[#F15025]">.</span>
                   </h1>
                   <Skeleton className="h-4 w-12" />
@@ -255,7 +255,7 @@ export function WerkbonnenLayout() {
                   <Skeleton className="h-8 w-16 rounded-lg" />
                 </div>
               </div>
-              <div className="flex items-center gap-2 pt-4 border-t border-[#F0EFEC]">
+              <div className="flex items-center gap-2 pt-4 border-t border-border">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Skeleton key={i} className="h-7 w-20 rounded-lg" />
                 ))}
@@ -264,7 +264,7 @@ export function WerkbonnenLayout() {
             {/* Table skeleton */}
             <div className="doen-slate-surface rounded-2xl" style={{ clipPath: 'inset(0 round 16px)' }}>
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-[#F0EFEC] last:border-b-0">
+                <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border last:border-b-0">
                   <Skeleton className="h-4 w-4 rounded" />
                   <div className="flex-1 min-w-0 space-y-2">
                     <Skeleton className="h-4 w-2/5" />
@@ -292,16 +292,16 @@ export function WerkbonnenLayout() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
-            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
               Werkbonnen<span className="text-[#F15025]">.</span>
             </h1>
-            <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+            <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {gefilterd.length === werkbonnen.length ? (
-                <span className="font-medium text-[#6B6B66]">{werkbonnen.length}</span>
+                <span className="font-medium text-foreground/70">{werkbonnen.length}</span>
               ) : (
                 <>
-                  <span className="font-medium text-[#6B6B66]">{gefilterd.length}</span>
-                  <span className="text-[#C0BDB8]">/</span>{werkbonnen.length}
+                  <span className="font-medium text-foreground/70">{gefilterd.length}</span>
+                  <span className="text-muted-foreground/70">/</span>{werkbonnen.length}
                 </>
               )}
             </span>
@@ -341,17 +341,17 @@ export function WerkbonnenLayout() {
                     <span className={cn('doen-duo-icon flex-shrink-0', tile.pulse && 'doen-pulse')}>
                       <TileIcon size={18} weight="duotone" />
                     </span>
-                    <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                    <span className="font-heading text-[14px] font-bold text-foreground">
                       {tile.label}<span className="text-[#F15025]">.</span>
                     </span>
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-heading font-bold text-[28px] leading-none text-[#1A1A1A] tabular-nums">
+                  <span className="font-heading font-bold text-[28px] leading-none text-foreground tabular-nums">
                     {tile.count}
                   </span>
                   <span
-                    className="text-[13px] text-[#9B9B95] truncate"
+                    className="text-[13px] text-muted-foreground truncate"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     · {tile.sub}
@@ -368,22 +368,22 @@ export function WerkbonnenLayout() {
         <div className="flex items-center gap-5">
           {/* Search with keyboard hint */}
           <div className="relative max-w-[280px] flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Zoek op nummer, klant, project..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-12 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+              className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
             />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#9B9B95] bg-[#F0EFEC] rounded border border-[#E5E4E0]">/</kbd>
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
           </div>
 
           {/* Export */}
           <div className="hidden sm:flex items-center gap-1 ml-auto">
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
             >
               <Download className="w-3.5 h-3.5" />
               CSV
@@ -392,7 +392,7 @@ export function WerkbonnenLayout() {
         </div>
 
         {/* Filter tabs */}
-        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
+        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border">
           <div className="flex items-center gap-1 flex-1 flex-nowrap md:flex-wrap overflow-x-auto">
             {(['alle', 'vandaag', 'concept', 'definitief', 'afgerond'] as const).map((status) => {
               const labels: Record<string, string> = { alle: 'Alle', vandaag: 'Vandaag', concept: 'Open', definitief: 'In uitvoering', afgerond: 'Afgetekend' }
@@ -406,7 +406,7 @@ export function WerkbonnenLayout() {
                     'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
                     isActive
                       ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
-                      : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                      : 'text-muted-foreground hover:text-foreground/70'
                   )}
                 >
                   {labels[status]}
@@ -422,7 +422,7 @@ export function WerkbonnenLayout() {
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-4 px-5 py-3 bg-[#1A535C]/[0.06] rounded-xl ring-1 ring-[#1A535C]/10">
-          <span className="text-sm text-[#1A1A1A] font-medium">
+          <span className="text-sm text-foreground font-medium">
             <span className="font-mono font-bold text-[#1A535C]">{selectedIds.size}</span> geselecteerd
           </span>
           <button
@@ -441,7 +441,7 @@ export function WerkbonnenLayout() {
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
-            className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors p-1 rounded-md hover:bg-white/60"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-white/60"
           >
             <X className="w-4 h-4" />
           </button>
@@ -463,8 +463,8 @@ export function WerkbonnenLayout() {
           style={{ clipPath: 'inset(0 round 16px)' }}
         >
             <table className="w-full table-fixed">
-              <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
-                <tr className="border-b-2 border-[#F0EFEC]">
+              <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
+                <tr className="border-b-2 border-border">
                   <th className="w-[44px] py-3.5 pl-5 pr-0">
                     <Checkbox
                       checked={gefilterd.length > 0 && selectedIds.size === gefilterd.length}
@@ -472,22 +472,22 @@ export function WerkbonnenLayout() {
                     />
                   </th>
                   <th className="text-left py-3.5 pl-2 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Nummer</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Nummer</span>
                   </th>
                   <th className="text-left py-3.5 pr-4 w-[160px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Klant</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Klant</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Offerte / Project</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Offerte / Project</span>
                   </th>
                   <th className="text-right py-3.5 pr-4 w-[90px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Datum</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Datum</span>
                   </th>
                   <th className="text-left py-3.5 pr-4 w-[150px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</span>
                   </th>
                   <th className="text-center py-3.5 pr-4 w-[70px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Items</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Items</span>
                   </th>
                   <th className="w-[80px] py-3.5 pr-4" />
                 </tr>
@@ -504,9 +504,9 @@ export function WerkbonnenLayout() {
                     <tr
                       key={wb.id}
                       className={cn(
-                        'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                        'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
                         attention && !selectedIds.has(wb.id) && 'bg-[rgba(241,80,37,0.025)]',
-                        'hover:bg-[#F8F7F4]',
+                        'hover:bg-background',
                         selectedIds.has(wb.id) && 'bg-[#1A535C]/[0.03]',
                       )}
                       style={{ animationDelay: `${i * 25}ms` }}
@@ -525,9 +525,9 @@ export function WerkbonnenLayout() {
                       <td className="py-3.5 pl-2 pr-4">
                         <div className="min-w-0">
                           <div className="flex items-baseline gap-2.5">
-                            <span className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] transition-colors">{wb.werkbon_nummer}</span>
+                            <span className="text-[15px] font-semibold text-foreground group-hover:text-[#1A535C] transition-colors">{wb.werkbon_nummer}</span>
                           </div>
-                          {wb.titel && <p className="text-[11px] text-[#C0BDB8] truncate max-w-[240px] mt-0.5">{wb.titel}</p>}
+                          {wb.titel && <p className="text-[11px] text-muted-foreground/70 truncate max-w-[240px] mt-0.5">{wb.titel}</p>}
                         </div>
                       </td>
                       <td className="py-3.5 pr-4">
@@ -539,7 +539,7 @@ export function WerkbonnenLayout() {
                               'bg-[#E8F2EC] text-[#3A7D52]',
                               'bg-[#E8EEF9] text-[#3A5A9A]',
                               'bg-[#F5F2E8] text-[#8A7A4A]',
-                              'bg-[#F0EFEC] text-[#6B6B66]',
+                              'bg-muted text-foreground/70',
                               'bg-[#EDE8F4] text-[#6A5A8A]',
                             ]
                             return (
@@ -548,14 +548,14 @@ export function WerkbonnenLayout() {
                               </span>
                             )
                           })()}
-                          <span className="text-[13px] text-[#4A4A46] truncate block leading-tight">{getKlantNaam(wb.klant_id)}</span>
+                          <span className="text-[13px] text-foreground/80 truncate block leading-tight">{getKlantNaam(wb.klant_id)}</span>
                         </div>
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="text-[13px] text-[#6B6B66] truncate block">{ref}</span>
+                        <span className="text-[13px] text-foreground/70 truncate block">{ref}</span>
                       </td>
                       <td className="py-3.5 pr-4 text-right">
-                        <span className="text-[12px] font-mono tabular-nums text-[#B0ADA8]">
+                        <span className="text-[12px] font-mono tabular-nums text-muted-foreground/80">
                           {new Date(wb.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                         </span>
                       </td>
@@ -569,17 +569,17 @@ export function WerkbonnenLayout() {
                         </span>
                       </td>
                       <td className="py-3.5 pr-4 text-center">
-                        <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-[#F8F7F5] text-[#6B6B66]">
+                        <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-background text-foreground/70">
                           {itemCounts[wb.id] || 0}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-0.5">
                           <button
-                            className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+                            className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
                             onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}
                           >
-                            <Eye className="w-3.5 h-3.5 text-[#9B9B95]" />
+                            <Eye className="w-3.5 h-3.5 text-muted-foreground" />
                           </button>
                           <button
                             className="p-1.5 rounded-lg hover:bg-[#FDE8E4] transition-all opacity-0 group-hover:opacity-100"

@@ -299,7 +299,7 @@ export function PortaalSidebarActions({
   if (!isActief) return null
 
   return (
-    <div className="border-t border-[#E6E4E0] bg-white">
+    <div className="border-t border-border bg-white">
       {/* Hidden file input */}
       <input
         ref={fotoInputRef}
@@ -331,7 +331,7 @@ export function PortaalSidebarActions({
 
       {/* Quick action bar with labels */}
       <div className="relative" ref={popoverRef}>
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#E6E4E0]">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
           <button
             onClick={() => fotoInputRef.current?.click()}
             disabled={isSending}
@@ -380,8 +380,8 @@ export function PortaalSidebarActions({
 
         {/* Tekening popover */}
         {tekeningPopoverOpen && tekeningFile && (
-          <div className="absolute left-4 bottom-full mb-2 w-72 bg-[#FAFAF8] border border-[#E6E4E0] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#E6E4E0] bg-[#FAFAF8]">
+          <div className="absolute left-4 bottom-full mb-2 w-72 bg-background border border-border rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2.5 border-b border-border bg-background">
               <p className="text-[11px] font-semibold text-foreground">Tekening delen</p>
               <button
                 onClick={() => {
@@ -401,7 +401,7 @@ export function PortaalSidebarActions({
                 value={tekeningTitel}
                 onChange={(e) => setTekeningTitel(e.target.value)}
                 placeholder="Titel"
-                className="w-full text-[12px] px-2.5 py-1.5 border border-[#E6E4E0] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-mod-klanten-border"
+                className="w-full text-[12px] px-2.5 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-mod-klanten-border"
               />
               <button
                 onClick={handleSendTekening}
@@ -416,8 +416,8 @@ export function PortaalSidebarActions({
 
         {/* Offerte picker popover */}
         {activePopover === 'offerte' && (
-          <div className="absolute left-4 bottom-full mb-2 w-72 bg-[#FAFAF8] border border-[#E6E4E0] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#E6E4E0] bg-[#FAFAF8]">
+          <div className="absolute left-4 bottom-full mb-2 w-72 bg-background border border-border rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2.5 border-b border-border bg-background">
               <p className="text-[11px] font-semibold text-foreground">Offerte delen</p>
               <button onClick={() => setActivePopover(null)} className="text-muted-foreground/50 hover:text-foreground">
                 <X className="h-3.5 w-3.5" />
@@ -431,7 +431,7 @@ export function PortaalSidebarActions({
                   key={o.id}
                   onClick={() => handleSendOfferte(o)}
                   disabled={isSending}
-                  className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-[#F4F2EE] transition-colors text-left group"
+                  className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted transition-colors text-left group"
                 >
                   <div className="min-w-0">
                     <p className="text-[12px] font-medium text-foreground truncate">{o.titel}</p>
@@ -451,8 +451,8 @@ export function PortaalSidebarActions({
 
         {/* Factuur picker popover */}
         {activePopover === 'factuur' && (
-          <div className="absolute left-4 bottom-full mb-2 w-72 bg-[#FAFAF8] border border-[#E6E4E0] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#E6E4E0] bg-[#FAFAF8]">
+          <div className="absolute left-4 bottom-full mb-2 w-72 bg-background border border-border rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2.5 border-b border-border bg-background">
               <p className="text-[11px] font-semibold text-foreground">Factuur delen</p>
               <button onClick={() => setActivePopover(null)} className="text-muted-foreground/50 hover:text-foreground">
                 <X className="h-3.5 w-3.5" />
@@ -466,7 +466,7 @@ export function PortaalSidebarActions({
                   key={f.id}
                   onClick={() => handleSendFactuur(f)}
                   disabled={isSending}
-                  className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-[#F4F2EE] transition-colors text-left group"
+                  className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted transition-colors text-left group"
                 >
                   <div className="min-w-0">
                     <p className="text-[12px] font-medium font-mono text-foreground">{f.nummer}</p>
@@ -491,7 +491,7 @@ export function PortaalSidebarActions({
           type="checkbox"
           checked={notificeerKlant}
           onChange={(e) => setNotificeerKlant(e.target.checked)}
-          className="h-3.5 w-3.5 rounded border-[#E6E4E0] text-petrol focus:ring-petrol/50"
+          className="h-3.5 w-3.5 rounded border-border text-petrol focus:ring-petrol/50"
         />
         <Mail className="h-3 w-3 text-muted-foreground/50" />
         <span className="text-[11px] text-muted-foreground">Notificeer klant per email</span>
@@ -510,7 +510,7 @@ export function PortaalSidebarActions({
           }}
           placeholder="Typ een bericht naar je klant..."
           rows={1}
-          className="flex-1 text-[13px] border border-[#E6E4E0] rounded-xl px-3.5 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-petrol/50 focus:border-petrol transition-all bg-[#FAFAF8] min-h-[40px] max-h-[120px]"
+          className="flex-1 text-[13px] border border-border rounded-xl px-3.5 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-petrol/50 focus:border-petrol transition-all bg-background min-h-[40px] max-h-[120px]"
           style={{ height: 'auto' }}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement

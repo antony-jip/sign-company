@@ -216,16 +216,16 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
       {/* Preview panel */}
       {(preview || loading) && (
         <div className="mb-2 w-[320px] bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] overflow-hidden">
-          <div className="px-3 py-2 border-b border-[#EBEBEB] flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#9B9B95]" />
-            <span className="text-xs font-medium text-[#1A1A1A]">AI Suggestie</span>
+          <div className="px-3 py-2 border-b border-border flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-foreground">AI Suggestie</span>
           </div>
           {!heeftSchrijfstijl && !loading && (
-            <div className="px-3 py-1.5 bg-[#F8F7F5] border-b border-[#EBEBEB] flex items-center gap-1.5">
-              <Pen className="w-3 h-3 text-[#9B9B95] shrink-0" />
-              <span className="text-[11px] text-[#6B6B66]">
+            <div className="px-3 py-1.5 bg-background border-b border-border flex items-center gap-1.5">
+              <Pen className="w-3 h-3 text-muted-foreground shrink-0" />
+              <span className="text-[11px] text-foreground/70">
                 Tip · stel je schrijfstijl in via{' '}
-                <Link to="/instellingen?tab=daan" className="underline hover:text-[#1A1A1A]">Instellingen</Link>
+                <Link to="/instellingen?tab=daan" className="underline hover:text-foreground">Instellingen</Link>
                 {' '}voor resultaten die meer als jou klinken
               </span>
             </div>
@@ -234,14 +234,14 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
             {loading ? (
               <div className="flex items-center gap-2 py-3 justify-center">
                 <Loader2 className="w-4 h-4 animate-spin text-[#F15025]" />
-                <span className="text-sm text-[#6B6B66]">Bezig met herschrijven...</span>
+                <span className="text-sm text-foreground/70">Bezig met herschrijven...</span>
               </div>
             ) : (
-              <p className="text-sm text-[#1A1A1A] whitespace-pre-wrap leading-relaxed">{preview}</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{preview}</p>
             )}
           </div>
           {preview && !loading && (
-            <div className="px-3 py-2 border-t border-[#EBEBEB] flex items-center gap-1.5">
+            <div className="px-3 py-2 border-t border-border flex items-center gap-1.5">
               <button
                 onClick={handleAccept}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F15025] text-white text-xs font-medium hover:bg-[#F15025]/90 transition-colors"
@@ -251,21 +251,21 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
               </button>
               <button
                 onClick={handleRetry}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[#1A1A1A] text-xs font-medium hover:bg-[#F8F7F5] transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-foreground text-xs font-medium hover:bg-background transition-colors"
               >
                 <RefreshCw className="w-3 h-3" />
                 Opnieuw
               </button>
               <button
                 onClick={() => { setShowActions(true); setPreview(null) }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[#1A1A1A] text-xs font-medium hover:bg-[#F8F7F5] transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-foreground text-xs font-medium hover:bg-background transition-colors"
               >
                 <Wand2 className="w-3 h-3" />
                 Ander
               </button>
               <button
                 onClick={hideToolbar}
-                className="ml-auto flex items-center justify-center w-7 h-7 rounded-lg text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
+                className="ml-auto flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -288,7 +288,7 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
                   onChange={e => setCustomInstruction(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleCustomSubmit(); if (e.key === 'Escape') setShowCustomInput(false) }}
                   placeholder="Bijv: maak het vriendelijker..."
-                  className="flex-1 text-sm bg-transparent border-none outline-none text-[#1A1A1A] placeholder:text-[#9B9B95]"
+                  className="flex-1 text-sm bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground"
                 />
                 <button
                   onClick={handleCustomSubmit}
@@ -339,18 +339,18 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
                     <button
                       key={action.id}
                       onClick={() => handleAction(action.id)}
-                      className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-xs text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
+                      className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-xs text-foreground hover:bg-background transition-colors"
                     >
-                      <Icon className="w-3.5 h-3.5 text-[#9B9B95]" />
+                      <Icon className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="font-medium leading-tight">{action.label}</span>
                     </button>
                   )
                 })}
                 <button
                   onClick={() => { setShowCustomInput(true); setShowActions(false) }}
-                  className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-xs text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
+                  className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-xs text-foreground hover:bg-background transition-colors"
                 >
-                  <MessageSquarePlus className="w-3.5 h-3.5 text-[#9B9B95]" />
+                  <MessageSquarePlus className="w-3.5 h-3.5 text-muted-foreground" />
                   <span className="font-medium leading-tight">Eigen</span>
                 </button>
               </div>
@@ -361,7 +361,7 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
           {!showActions && !showCustomInput && (
             <button
               onClick={() => setShowActions(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] text-xs font-medium text-[#1A1A1A] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all group"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] text-xs font-medium text-foreground hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all group"
               title={
                 toneActive
                   ? 'AI herschrijven · jouw schrijfstijl actief'
@@ -372,7 +372,7 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
             >
               <Sparkles className="w-3.5 h-3.5 text-[#F15025] group-hover:scale-110 transition-transform" />
               <span>AI herschrijven</span>
-              <Pen className={cn('w-3 h-3 transition-colors', toneActive ? 'text-[#1A535C]' : 'text-[#9B9B95]/50')} />
+              <Pen className={cn('w-3 h-3 transition-colors', toneActive ? 'text-[#1A535C]' : 'text-muted-foreground/50')} />
             </button>
           )}
         </>

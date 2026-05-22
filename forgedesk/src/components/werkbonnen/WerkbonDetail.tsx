@@ -717,7 +717,7 @@ export function WerkbonDetail() {
   }
 
   return (
-    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F8F7F5' }}>
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: 'hsl(var(--background))' }}>
     <div className="max-w-6xl mx-auto px-4 md:px-6 py-5 pb-32">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
@@ -741,18 +741,18 @@ export function WerkbonDetail() {
           {!isNew && (
             <>
               <div className="hidden md:contents">
-                <button onClick={handlePrint} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Printen">
-                  <Printer className="h-4 w-4 text-[#6B6B66]" />
+                <button onClick={handlePrint} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-muted" style={{ border: '1px solid hsl(var(--border))' }} title="Printen">
+                  <Printer className="h-4 w-4 text-foreground/70" />
                 </button>
-                <button onClick={handleDownloadPDF} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Download PDF">
-                  <FileText className="h-4 w-4 text-[#6B6B66]" />
+                <button onClick={handleDownloadPDF} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-muted" style={{ border: '1px solid hsl(var(--border))' }} title="Download PDF">
+                  <FileText className="h-4 w-4 text-foreground/70" />
                 </button>
-                <button onClick={handleShare} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Deel via WhatsApp">
-                  <Share2 className="h-3.5 w-3.5 text-[#6B6B66]" />
+                <button onClick={handleShare} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-muted" style={{ border: '1px solid hsl(var(--border))' }} title="Deel via WhatsApp">
+                  <Share2 className="h-3.5 w-3.5 text-foreground/70" />
                 </button>
               </div>
               <Select value={status} onValueChange={(v) => { setStatus(v as Werkbon['status']); setDirty(true) }}>
-                <SelectTrigger className="w-[120px] h-8 text-[12px] rounded-lg" style={{ border: '1px solid #EBEBEB' }}>
+                <SelectTrigger className="w-[120px] h-8 text-[12px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -829,10 +829,10 @@ export function WerkbonDetail() {
               <button
                 onClick={handleItemToevoegen}
                 className="w-full py-8 text-center rounded-xl border-2 border-dashed hover:border-[#F15025]/30 transition-colors group"
-                style={{ borderColor: '#EBEBEB', backgroundColor: '#FFFFFF' }}
+                style={{ borderColor: '#EBEBEB', backgroundColor: 'hsl(var(--card))' }}
               >
                 <ClipboardCheck className="h-6 w-6 mx-auto mb-2 text-[#F15025] opacity-30 group-hover:opacity-60 transition-opacity" />
-                <p className="text-[13px] text-[#9B9B95] group-hover:text-[#F15025] transition-colors">
+                <p className="text-[13px] text-muted-foreground group-hover:text-[#F15025] transition-colors">
                   Voeg een item toe
                 </p>
               </button>

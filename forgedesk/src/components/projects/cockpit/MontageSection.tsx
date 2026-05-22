@@ -36,7 +36,7 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Montage</h3>
+        <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Montage</h3>
         <button
           onClick={onInplannen}
           className="text-[12px] text-[#1A535C] hover:underline transition-colors"
@@ -47,7 +47,7 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
 
       {montageAfspraken.length === 0 ? (
         <div className="py-6 text-center">
-          <p className="text-sm text-[#9B9B95]">Nog niet gepland</p>
+          <p className="text-sm text-muted-foreground">Nog niet gepland</p>
           <button
             onClick={onInplannen}
             className="text-sm text-[#1A535C] hover:underline mt-1"
@@ -62,17 +62,17 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
             const StatusIcon = st.icon
 
             return (
-              <div key={m.id} className="py-3 border-b border-[#EBEBEB] last:border-0 space-y-1.5">
+              <div key={m.id} className="py-3 border-b border-border last:border-0 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-[#1A1A1A] truncate">{m.titel}</p>
-                  <span className="text-xs text-[#6B6B66] flex-shrink-0">
+                  <p className="text-sm font-medium text-foreground truncate">{m.titel}</p>
+                  <span className="text-xs text-foreground/70 flex-shrink-0">
                     {st.label}<span className="text-[#F15025]">.</span>
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] text-[#6B6B66]">
-                  <CalendarDays className="h-3 w-3 flex-shrink-0 text-[#9B9B95]" />
-                  <span className="font-mono text-[#1A1A1A]">
+                <div className="flex items-center gap-1.5 text-[11px] text-foreground/70">
+                  <CalendarDays className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+                  <span className="font-mono text-foreground">
                     {new Date(m.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
                     {' '}
                     {m.start_tijd}–{m.eind_tijd}
@@ -80,8 +80,8 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
                 </div>
 
                 {m.locatie && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-[#6B6B66]">
-                    <MapPin className="h-3 w-3 flex-shrink-0 text-[#9B9B95]" />
+                  <div className="flex items-center gap-1.5 text-[11px] text-foreground/70">
+                    <MapPin className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
                     <span className="truncate">{m.locatie}</span>
                   </div>
                 )}

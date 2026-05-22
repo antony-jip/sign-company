@@ -317,7 +317,7 @@ function renderBold(text: string): ReactNode {
   const parts = text.split(/\*\*(.+?)\*\*/g)
   if (parts.length === 1) return text
   return parts.map((part, i) =>
-    i % 2 === 1 ? <strong key={i} className="font-semibold text-[#1A1A1A]">{part}</strong> : part
+    i % 2 === 1 ? <strong key={i} className="font-semibold text-foreground">{part}</strong> : part
   )
 }
 
@@ -526,13 +526,13 @@ export function KennisbankPage() {
       <div className="max-w-5xl mx-auto px-4">
         {/* Search — pulled up into hero overlap */}
         <div className="relative max-w-2xl mx-auto -mt-6 mb-8 z-10">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-[#9B9B95]" />
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-muted-foreground" />
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); setActiveCategory(null) }}
             placeholder="Zoek op onderwerp, module of functie..."
             className="w-full h-13 pl-12 pr-5 text-[15px] rounded-2xl outline-none transition-all focus:ring-2 focus:ring-[#1A535C]/20 focus:shadow-[0_4px_20px_rgba(26,83,92,0.1)]"
-            style={{ backgroundColor: '#FFFFFF', border: '1px solid #E6E4E0', boxShadow: '0 4px 16px rgba(130,100,60,0.08)' }}
+            style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', boxShadow: '0 4px 16px rgba(130,100,60,0.08)' }}
           />
         </div>
 
@@ -542,9 +542,9 @@ export function KennisbankPage() {
             onClick={() => { setActiveCategory(null); setSearch('') }}
             className={cn(
               'h-9 px-5 rounded-full text-[12px] font-bold transition-all duration-200',
-              !activeCategory && !search ? 'text-white shadow-md' : 'hover:bg-[#F4F2EE]'
+              !activeCategory && !search ? 'text-white shadow-md' : 'hover:bg-muted'
             )}
-            style={!activeCategory && !search ? { backgroundColor: '#1A535C' } : { color: '#6B6B66', border: '1px solid #E6E4E0' }}
+            style={!activeCategory && !search ? { backgroundColor: '#1A535C' } : { color: '#6B6B66', border: '1px solid hsl(var(--border))' }}
           >
             Alles
           </button>
@@ -554,9 +554,9 @@ export function KennisbankPage() {
               onClick={() => { setActiveCategory(activeCategory === cat.id ? null : cat.id); setSearch('') }}
               className={cn(
                 'h-9 px-5 rounded-full text-[12px] font-bold transition-all duration-200 inline-flex items-center gap-1.5',
-                activeCategory === cat.id ? 'text-white shadow-md' : 'hover:bg-[#F4F2EE]'
+                activeCategory === cat.id ? 'text-white shadow-md' : 'hover:bg-muted'
               )}
-              style={activeCategory === cat.id ? { backgroundColor: cat.color } : { color: '#6B6B66', border: '1px solid #E6E4E0' }}
+              style={activeCategory === cat.id ? { backgroundColor: cat.color } : { color: '#6B6B66', border: '1px solid hsl(var(--border))' }}
             >
               <cat.icon className="h-3.5 w-3.5" />
               {cat.label}
@@ -598,7 +598,7 @@ export function KennisbankPage() {
                   key={article.id}
                   onClick={() => setActiveArticle(article)}
                   className="group text-left rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_12px_40px_rgba(130,100,60,0.12)] animate-stagger-item"
-                  style={{ border: '1px solid #E6E4E0', animationDelay: `${idx * 40}ms` }}
+                  style={{ border: '1px solid hsl(var(--border))', animationDelay: `${idx * 40}ms` }}
                 >
                   {/* Color top bar */}
                   <div className="h-1" style={{ background: `linear-gradient(90deg, ${catColor}, ${catColor}60)` }} />

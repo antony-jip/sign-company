@@ -96,7 +96,7 @@ export function OfferteOpvolgTimeline({ offerteId, verstuurdOp, schemaId: _schem
   }
 
   return (
-    <div className="rounded-xl border border-[#E6E4E0] bg-[#FAFAF8] p-3.5 space-y-3">
+    <div className="rounded-xl border border-border bg-background p-3.5 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-bold uppercase tracking-wider text-[#1A5C5E]">
@@ -121,7 +121,7 @@ export function OfferteOpvolgTimeline({ offerteId, verstuurdOp, schemaId: _schem
 
       {/* Timeline */}
       <div className="relative pl-4 space-y-3">
-        <div className="absolute left-[7px] top-1 bottom-1 w-px bg-[#E6E4E0]" />
+        <div className="absolute left-[7px] top-1 bottom-1 w-px bg-muted" />
         {stappen.map((stap) => {
           const logEntry = logByStapId.get(stap.id)
           const isExecuted = logEntry?.resultaat === 'verstuurd'
@@ -138,13 +138,13 @@ export function OfferteOpvolgTimeline({ offerteId, verstuurdOp, schemaId: _schem
                     ✓
                   </span>
                 ) : isSkipped ? (
-                  <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#E6E4E0] text-[#A0A098] text-[9px]">
+                  <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-muted-foreground text-[9px]">
                     —
                   </span>
                 ) : (
                   <span className={cn(
                     'flex h-3.5 w-3.5 items-center justify-center rounded-full border-2',
-                    isPast && actief ? 'border-[#F15025] bg-[#FDE8E2]' : 'border-[#E6E4E0] bg-[#FEFDFB]'
+                    isPast && actief ? 'border-[#F15025] bg-[#FDE8E2]' : 'border-border bg-background'
                   )} />
                 )}
               </div>
@@ -181,7 +181,7 @@ export function OfferteOpvolgTimeline({ offerteId, verstuurdOp, schemaId: _schem
 
       {/* Verzendwijze badge */}
       {_schemaId && (
-        <Badge variant="outline" className="text-[10px] border-[#E6E4E0] text-muted-foreground">
+        <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">
           Schema actief
         </Badge>
       )}
@@ -200,7 +200,7 @@ export function OfferteOpvolgTimelineWithVerzendwijze({ verzendwijze, ...props }
     <div className="space-y-2">
       <OfferteOpvolgTimeline {...props} />
       {verzendwijze && (
-        <Badge variant="outline" className="text-[10px] border-[#E6E4E0] text-[#1A5C5E]">
+        <Badge variant="outline" className="text-[10px] border-border text-[#1A5C5E]">
           {verzendwijzeLabels[verzendwijze] || verzendwijze}
         </Badge>
       )}

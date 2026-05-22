@@ -100,11 +100,11 @@ Antwoord ALLEEN met de briefing, niets anders.`
           <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
             <PhFileText size={16} weight="duotone" />
           </span>
-          <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+          <h3 className="font-heading text-[15px] font-bold text-foreground">
             Briefing<span className="text-[#F15025]">.</span>
           </h3>
           <span
-            className="text-[12px] text-[#9B9B95] hidden sm:inline"
+            className="text-[12px] text-muted-foreground hidden sm:inline"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             · wat moet er gebeuren
@@ -113,7 +113,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
 
         <div className="flex items-center gap-3">
           {isSaving && (
-            <span className="flex items-center gap-1.5 text-[11px] text-[#9B9B95]">
+            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
               Opslaan…
             </span>
@@ -123,7 +123,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
             <button
               disabled={isGenerating}
               onClick={handleDaan}
-              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#6B6B66] hover:text-[#1A1A1A] bg-white border border-[rgba(26,83,92,0.1)] hover:border-[rgba(26,83,92,0.22)] transition-all rounded-lg px-2.5 py-1.5 shadow-[0_1px_2px_rgba(20,62,71,0.04)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.08)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-foreground/70 hover:text-foreground bg-white border border-[rgba(26,83,92,0.1)] hover:border-[rgba(26,83,92,0.22)] transition-all rounded-lg px-2.5 py-1.5 shadow-[0_1px_2px_rgba(20,62,71,0.04)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.08)] disabled:opacity-50"
             >
               {isGenerating ? (
                 <Loader2 className="h-3 w-3 animate-spin" />

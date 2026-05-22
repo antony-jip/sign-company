@@ -121,7 +121,7 @@ export function PortaalReactieFormInline({
   return (
     <div
       className="ml-6 rounded-lg p-4 space-y-3"
-      style={{ backgroundColor: '#FAF9F7', border: '0.5px solid #E8E6E1' }}
+      style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1' }}
     >
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium" style={{ color: '#5A5A55' }}>

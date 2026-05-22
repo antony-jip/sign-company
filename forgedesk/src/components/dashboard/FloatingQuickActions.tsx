@@ -189,7 +189,7 @@ export function FloatingQuickActions() {
                         fontSize: 11,
                         fontWeight: 500,
                         color: '#191919',
-                        backgroundColor: '#FFFFFF',
+                        backgroundColor: 'hsl(var(--card))',
                         border: '0.5px solid #E6E4E0',
                         borderRadius: 6,
                         padding: '4px 10px',

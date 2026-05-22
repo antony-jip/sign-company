@@ -141,13 +141,13 @@ export function ChangelogPage() {
           <div className="flex items-center gap-1 p-1 rounded-xl" style={{ backgroundColor: '#F4F2EE' }}>
             <button
               onClick={() => setTab('changelog')}
-              className={cn('h-9 px-5 rounded-lg text-[13px] font-semibold transition-all', tab === 'changelog' ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-[#6B6B66]')}
+              className={cn('h-9 px-5 rounded-lg text-[13px] font-semibold transition-all', tab === 'changelog' ? 'bg-white text-foreground shadow-sm' : 'text-foreground/70')}
             >
               Changelog
             </button>
             <button
               onClick={() => setTab('features')}
-              className={cn('h-9 px-5 rounded-lg text-[13px] font-semibold transition-all', tab === 'features' ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-[#6B6B66]')}
+              className={cn('h-9 px-5 rounded-lg text-[13px] font-semibold transition-all', tab === 'features' ? 'bg-white text-foreground shadow-sm' : 'text-foreground/70')}
             >
               Alle features
             </button>
@@ -156,7 +156,7 @@ export function ChangelogPage() {
           <a
             href="mailto:hello@doen.team"
             className="inline-flex items-center gap-2 h-9 px-4 rounded-xl text-[12px] font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{ backgroundColor: '#F8F7F5', border: '1px solid #E6E4E0', color: '#6B6B66' }}
+            style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', color: '#6B6B66' }}
           >
             <MessageCircle className="h-3.5 w-3.5" />
             Suggestie? hello@doen.team
@@ -168,14 +168,14 @@ export function ChangelogPage() {
       {tab === 'features' && (
         <div>
           <p className="text-[14px] mb-6" style={{ color: '#6B6B66' }}>
-            Alles wat er nu in Doen. zit. <strong className="text-[#1A1A1A]">{APP_FEATURES.length} features</strong>, gebouwd voor creatieve maakbedrijven.
+            Alles wat er nu in Doen. zit. <strong className="text-foreground">{APP_FEATURES.length} features</strong>, gebouwd voor creatieve maakbedrijven.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {APP_FEATURES.map((f, idx) => (
               <div
                 key={f.naam}
                 className="rounded-xl p-4 transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm animate-stagger-item"
-                style={{ backgroundColor: '#FFFFFF', border: '1px solid #E6E4E0', animationDelay: `${idx * 30}ms` }}
+                style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', animationDelay: `${idx * 30}ms` }}
               >
                 <div className="flex items-center gap-2.5 mb-1.5">
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: f.kleur }} />
@@ -221,7 +221,7 @@ export function ChangelogPage() {
                   {/* Features */}
                   <div className="space-y-2">
                     {entry.features.map(f => (
-                      <div key={f.titel} className="rounded-lg p-3" style={{ backgroundColor: '#F8F7F5' }}>
+                      <div key={f.titel} className="rounded-lg p-3" style={{ backgroundColor: 'hsl(var(--background))' }}>
                         <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>{f.titel}</span>
                         <span className="text-[12px] ml-2" style={{ color: '#6B6B66' }}>{f.beschrijving}</span>
                       </div>

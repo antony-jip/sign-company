@@ -148,7 +148,7 @@ export function PortaalTab() {
       </Card>
 
       {!settings.portaal_module_actief && (
-        <div className="flex items-center gap-2 rounded-md border border-[#E6E4E0] bg-[#F4F2EE] px-4 py-3 text-sm text-foreground dark:border-border dark:bg-muted dark:text-muted-foreground">
+        <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-4 py-3 text-sm text-foreground dark:border-border dark:bg-muted dark:text-muted-foreground">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           Het klantportaal is uitgeschakeld. Schakel het in om de onderstaande instellingen te gebruiken.
         </div>
@@ -293,7 +293,7 @@ export function PortaalTab() {
             </p>
 
             {emailGekoppeld === false && (
-              <div className="flex items-center gap-2 rounded-md border border-[#E6E4E0] bg-[#F4F2EE] px-3 py-2.5 text-sm text-foreground dark:border-border dark:bg-muted dark:text-muted-foreground">
+              <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2.5 text-sm text-foreground dark:border-border dark:bg-muted dark:text-muted-foreground">
                 <AlertTriangle className="h-4 w-4 shrink-0 text-[#F15025]" />
                 <span>
                   Geen email account gekoppeld.{' '}

@@ -221,7 +221,7 @@ export function InkoopfactuurDetail() {
       </div>
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
-        <button onClick={() => navigate('/inkoopfacturen')} className="text-[#9B9B95] hover:text-[#4A4A46]">
+        <button onClick={() => navigate('/inkoopfacturen')} className="text-muted-foreground hover:text-foreground/80">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-bold tracking-[-0.3px]">
@@ -248,7 +248,7 @@ export function InkoopfactuurDetail() {
           {pdfUrl ? (
             <iframe src={pdfUrl} className="w-full h-[700px]" title="PDF preview" />
           ) : (
-            <div className="flex items-center justify-center h-[700px] text-[13px] text-[#9B9B95]">
+            <div className="flex items-center justify-center h-[700px] text-[13px] text-muted-foreground">
               PDF niet beschikbaar
             </div>
           )}
@@ -321,7 +321,7 @@ export function InkoopfactuurDetail() {
               )}
             </div>
             {regels.length === 0 ? (
-              <p className="text-[12px] text-[#9B9B95]">Geen regels geextraheerd</p>
+              <p className="text-[12px] text-muted-foreground">Geen regels geextraheerd</p>
             ) : (
               <div className="space-y-2">
                 {regels.map((regel, i) => (
@@ -364,7 +364,7 @@ export function InkoopfactuurDetail() {
                       {new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(regel.regel_totaal)}
                     </span>
                     {!isAfgerond && (
-                      <button onClick={() => removeRegel(i)} className="text-[#9B9B95] hover:text-[#C03A18]">
+                      <button onClick={() => removeRegel(i)} className="text-muted-foreground hover:text-[#C03A18]">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
@@ -404,7 +404,7 @@ export function InkoopfactuurDetail() {
             </div>
           )}
           {factuur.status === 'afgewezen' && (
-            <div className="text-[12px] text-[#5A5A55] bg-[#EEEEED] px-4 py-3 rounded-lg">
+            <div className="text-[12px] text-foreground/70 bg-muted px-4 py-3 rounded-lg">
               Afgewezen: {factuur.afgewezen_reden || '-'}
             </div>
           )}

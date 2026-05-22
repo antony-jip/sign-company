@@ -16,12 +16,12 @@ export function PlanningMockup() {
   ]
 
   return (
-    <div className="w-full h-full bg-[#FAFAF8] rounded-lg overflow-hidden text-[7px]">
+    <div className="w-full h-full bg-background rounded-lg overflow-hidden text-[7px]">
       {/* Header */}
-      <div className="grid grid-cols-[28px_repeat(5,1fr)] border-b border-[#E6E4E0]">
+      <div className="grid grid-cols-[28px_repeat(5,1fr)] border-b border-border">
         <div className="p-1" />
         {days.map(d => (
-          <div key={d} className="p-1.5 text-center font-bold uppercase tracking-[0.08em] text-[#5A5A55] border-l border-[#E6E4E0]">
+          <div key={d} className="p-1.5 text-center font-bold uppercase tracking-[0.08em] text-foreground/70 border-l border-border">
             {d}
           </div>
         ))}
@@ -31,16 +31,16 @@ export function PlanningMockup() {
         {/* Hour labels */}
         <div className="flex flex-col">
           {hours.map(h => (
-            <div key={h} className="h-[22px] px-1 flex items-start text-[6px] text-[#A0A098] font-mono border-b border-[#E6E4E0]/50">
+            <div key={h} className="h-[22px] px-1 flex items-start text-[6px] text-muted-foreground font-mono border-b border-border/50">
               {h}:00
             </div>
           ))}
         </div>
         {/* Day columns */}
         {days.map((_, di) => (
-          <div key={di} className="relative border-l border-[#E6E4E0]">
+          <div key={di} className="relative border-l border-border">
             {hours.map((_, hi) => (
-              <div key={hi} className="h-[22px] border-b border-[#E6E4E0]/30" />
+              <div key={hi} className="h-[22px] border-b border-border/30" />
             ))}
             {/* Tasks */}
             {tasks.filter(t => t.day === di).map((t, i) => (
@@ -80,25 +80,25 @@ export function WerkbonnenMockup() {
   return (
     <div className="w-full h-full bg-white rounded-lg overflow-hidden text-[7px]">
       {/* Search bar */}
-      <div className="px-3 py-2 border-b border-[#E6E4E0]">
-        <div className="bg-[#F4F2EE] rounded-md px-2 py-1 text-[7px] text-[#A0A098]">Zoeken...</div>
+      <div className="px-3 py-2 border-b border-border">
+        <div className="bg-muted rounded-md px-2 py-1 text-[7px] text-muted-foreground">Zoeken...</div>
       </div>
       {/* Table header */}
-      <div className="grid grid-cols-[50px_1fr_70px_45px] px-3 py-1.5 bg-[#F4F2EE] border-b border-[#E6E4E0]">
-        <span className="font-bold uppercase tracking-[0.08em] text-[#5A5A55]">#</span>
-        <span className="font-bold uppercase tracking-[0.08em] text-[#5A5A55]">Klant</span>
-        <span className="font-bold uppercase tracking-[0.08em] text-[#5A5A55]">Status</span>
-        <span className="font-bold uppercase tracking-[0.08em] text-[#5A5A55] text-right">Datum</span>
+      <div className="grid grid-cols-[50px_1fr_70px_45px] px-3 py-1.5 bg-muted border-b border-border">
+        <span className="font-bold uppercase tracking-[0.08em] text-foreground/70">#</span>
+        <span className="font-bold uppercase tracking-[0.08em] text-foreground/70">Klant</span>
+        <span className="font-bold uppercase tracking-[0.08em] text-foreground/70">Status</span>
+        <span className="font-bold uppercase tracking-[0.08em] text-foreground/70 text-right">Datum</span>
       </div>
       {/* Rows */}
       {rows.map((r, i) => (
-        <div key={i} className="grid grid-cols-[50px_1fr_70px_45px] px-3 py-2 border-b border-[#E6E4E0]/50 items-center hover:bg-[#F4F2EE]/50">
+        <div key={i} className="grid grid-cols-[50px_1fr_70px_45px] px-3 py-2 border-b border-border/50 items-center hover:bg-muted/50">
           <span className="font-mono font-medium text-[#1A535C]">{r.nr}</span>
           <span className="text-ink/80">{r.klant}</span>
           <span className="px-1.5 py-0.5 rounded-full text-[6px] font-bold inline-block w-fit" style={{ backgroundColor: r.statusBg, color: r.statusColor }}>
             {r.status}<span style={{ color: '#F15025' }}>.</span>
           </span>
-          <span className="text-[#A0A098] text-right font-mono">{r.datum}</span>
+          <span className="text-muted-foreground text-right font-mono">{r.datum}</span>
         </div>
       ))}
     </div>
@@ -108,7 +108,7 @@ export function WerkbonnenMockup() {
 // ─── KLANTPORTAAL: Chat-achtige tijdlijn ───
 export function KlantportaalMockup() {
   return (
-    <div className="w-full h-full bg-[#FAFAF8] rounded-lg overflow-hidden text-[7px] flex flex-col">
+    <div className="w-full h-full bg-background rounded-lg overflow-hidden text-[7px] flex flex-col">
       {/* Header */}
       <div className="bg-[#1A535C] px-3 py-2 text-white flex items-baseline gap-1">
         <span className="font-bold text-[9px]">Klantportaal</span>
@@ -117,23 +117,23 @@ export function KlantportaalMockup() {
       {/* Chat timeline */}
       <div className="flex-1 p-3 space-y-2 overflow-hidden">
         {/* Date separator */}
-        <div className="flex items-center gap-2 text-[6px] text-[#A0A098]">
-          <div className="flex-1 h-px bg-[#E6E4E0]" />
+        <div className="flex items-center gap-2 text-[6px] text-muted-foreground">
+          <div className="flex-1 h-px bg-muted" />
           <span>21 maart</span>
-          <div className="flex-1 h-px bg-[#E6E4E0]" />
+          <div className="flex-1 h-px bg-muted" />
         </div>
         {/* Company message (right) */}
         <div className="flex justify-end">
           <div className="bg-[#E2F0F0] rounded-xl rounded-tr-sm px-2.5 py-1.5 max-w-[70%]">
             <p className="text-[7px]">Uw offerte is verstuurd. U kunt deze bekijken via de link.</p>
-            <span className="text-[5px] text-[#A0A098] mt-0.5 block">14:32</span>
+            <span className="text-[5px] text-muted-foreground mt-0.5 block">14:32</span>
           </div>
         </div>
         {/* Client message (left) */}
         <div className="flex justify-start">
-          <div className="bg-[#F4F2EE] rounded-xl rounded-tl-sm px-2.5 py-1.5 max-w-[70%]">
+          <div className="bg-muted rounded-xl rounded-tl-sm px-2.5 py-1.5 max-w-[70%]">
             <p className="text-[7px]">Ziet er goed uit, akkoord.</p>
-            <span className="text-[5px] text-[#A0A098] mt-0.5 block">15:10</span>
+            <span className="text-[5px] text-muted-foreground mt-0.5 block">15:10</span>
           </div>
         </div>
         {/* Invoice card */}
@@ -180,7 +180,7 @@ export function OffertesMockup() {
   ]
 
   return (
-    <div className="w-full h-full bg-[#FAFAF8] rounded-lg overflow-hidden text-[7px] p-2">
+    <div className="w-full h-full bg-background rounded-lg overflow-hidden text-[7px] p-2">
       <div className="flex gap-1.5 h-full">
         {columns.map((col, ci) => (
           <div key={ci} className="flex-1 rounded-lg p-1.5" style={{ backgroundColor: col.bg + '40' }}>
@@ -188,7 +188,7 @@ export function OffertesMockup() {
             <div className="flex items-center gap-1 mb-1.5 px-0.5">
               <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: col.color }} />
               <span className="font-bold uppercase tracking-[0.06em] text-[6px]" style={{ color: col.color }}>{col.label}</span>
-              <span className="text-[6px] text-[#A0A098] ml-auto">{col.cards.length}</span>
+              <span className="text-[6px] text-muted-foreground ml-auto">{col.cards.length}</span>
             </div>
             {/* Cards */}
             <div className="space-y-1">
@@ -221,7 +221,7 @@ export function FacturenMockup() {
   return (
     <div className="w-full h-full bg-white rounded-lg overflow-hidden text-[7px]">
       {/* Stats bar */}
-      <div className="flex gap-2 p-2 border-b border-[#E6E4E0]">
+      <div className="flex gap-2 p-2 border-b border-border">
         <div className="flex-1 rounded-md px-2 py-1.5" style={{ background: 'linear-gradient(160deg, #E4F0EA, #E4F0EA80)' }}>
           <span className="text-[6px] uppercase tracking-[0.08em] font-bold text-[#2D6B48]/60">Betaald</span>
           <p className="font-mono text-[9px] font-bold text-[#2D6B48]">&euro;14.200</p>
@@ -232,14 +232,14 @@ export function FacturenMockup() {
         </div>
       </div>
       {/* Table */}
-      <div className="grid grid-cols-[40px_1fr_55px_60px] px-2 py-1.5 bg-[#F4F2EE] border-b border-[#E6E4E0]">
-        <span className="font-bold uppercase tracking-[0.08em] text-[#5A5A55]">Nr</span>
-        <span className="font-bold uppercase tracking-[0.08em] text-[#5A5A55]">Klant</span>
-        <span className="font-bold uppercase tracking-[0.08em] text-[#5A5A55] text-right">Bedrag</span>
-        <span className="font-bold uppercase tracking-[0.08em] text-[#5A5A55] text-right">Status</span>
+      <div className="grid grid-cols-[40px_1fr_55px_60px] px-2 py-1.5 bg-muted border-b border-border">
+        <span className="font-bold uppercase tracking-[0.08em] text-foreground/70">Nr</span>
+        <span className="font-bold uppercase tracking-[0.08em] text-foreground/70">Klant</span>
+        <span className="font-bold uppercase tracking-[0.08em] text-foreground/70 text-right">Bedrag</span>
+        <span className="font-bold uppercase tracking-[0.08em] text-foreground/70 text-right">Status</span>
       </div>
       {rows.map((r, i) => (
-        <div key={i} className="grid grid-cols-[40px_1fr_55px_60px] px-2 py-2 border-b border-[#E6E4E0]/50 items-center">
+        <div key={i} className="grid grid-cols-[40px_1fr_55px_60px] px-2 py-2 border-b border-border/50 items-center">
           <span className="font-mono font-medium text-[#1A535C]">{r.nr}</span>
           <span className="text-ink/80">{r.klant}</span>
           <span className="font-mono font-bold text-ink text-right">{r.bedrag}</span>
@@ -257,9 +257,9 @@ export function FacturenMockup() {
 // ─── DAAN AI: Chat interface met metrics ───
 export function DaanAIMockup() {
   return (
-    <div className="w-full h-full bg-[#FAFAF8] rounded-lg overflow-hidden text-[7px] flex flex-col">
+    <div className="w-full h-full bg-background rounded-lg overflow-hidden text-[7px] flex flex-col">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-[#E6E4E0] flex items-center gap-1.5">
+      <div className="px-3 py-2 border-b border-border flex items-center gap-1.5">
         <div className="w-4 h-4 rounded-full bg-[#6A5A8A]/10 flex items-center justify-center">
           <span className="text-[6px] font-bold text-[#6A5A8A]">AI</span>
         </div>
@@ -299,9 +299,9 @@ export function DaanAIMockup() {
         </div>
       </div>
       {/* Input */}
-      <div className="px-2.5 py-2 border-t border-[#E6E4E0]">
-        <div className="flex items-center gap-1.5 bg-white rounded-lg border border-[#E6E4E0] px-2 py-1.5">
-          <span className="text-[7px] text-[#A0A098] flex-1">Vraag iets aan Daan...</span>
+      <div className="px-2.5 py-2 border-t border-border">
+        <div className="flex items-center gap-1.5 bg-white rounded-lg border border-border px-2 py-1.5">
+          <span className="text-[7px] text-muted-foreground flex-1">Vraag iets aan Daan...</span>
           <div className="w-4 h-4 rounded-md bg-[#6A5A8A] flex items-center justify-center">
             <span className="text-white text-[6px]">&rarr;</span>
           </div>

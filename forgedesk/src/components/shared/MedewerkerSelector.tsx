@@ -184,8 +184,8 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
 
   const triggerBaseClasses =
     trigger === 'input'
-      ? 'h-9 w-full justify-between rounded-md border border-[#E0DED8] bg-white px-3 text-[13px]'
-      : 'h-7 rounded-md border border-[#E0DED8] bg-white px-2 text-[13px]'
+      ? 'h-9 w-full justify-between rounded-md border border-border bg-white px-3 text-[13px]'
+      : 'h-7 rounded-md border border-border bg-white px-2 text-[13px]'
 
   const renderTriggerContent = () => {
     if (mode === 'single') {
@@ -205,10 +205,10 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
       if (orphanSingleValue) {
         return (
           <>
-            <span className="h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold bg-[#F0EFEC] text-[#9B9B95] shrink-0">
+            <span className="h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold bg-muted text-muted-foreground shrink-0">
               {getInitials(orphanSingleValue)}
             </span>
-            <span className="truncate max-w-[120px] text-[#9B9B95] italic" title="Niet meer actief">
+            <span className="truncate max-w-[120px] text-muted-foreground italic" title="Niet meer actief">
               {orphanSingleValue}
             </span>
           </>
@@ -216,7 +216,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
       }
       return (
         <>
-          <Users className="h-3.5 w-3.5 text-[#9B9B95] shrink-0" />
+          <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <span>{allLabel ?? placeholder ?? 'Niet toegewezen'}</span>
         </>
       )
@@ -226,7 +226,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
     if (totalSelected === 0) {
       return (
         <>
-          <Users className="h-3.5 w-3.5 text-[#9B9B95] shrink-0" />
+          <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <span>{placeholder ?? 'Toewijzen…'}</span>
         </>
       )
@@ -248,7 +248,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
           ))}
         </div>
         {overflow > 0 && (
-          <span className="text-[11px] font-mono tabular-nums text-[#6B6B66]">+{overflow}</span>
+          <span className="text-[11px] font-mono tabular-nums text-foreground/70">+{overflow}</span>
         )}
       </>
     )
@@ -260,7 +260,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
     if (mode === 'multi') {
       const totalSelected = selectedMulti.length + orphanMultiValues.length
       if (totalSelected === 0) {
-        return <UserPlus className="w-3.5 h-3.5 text-[#C0BDB8] group-hover:text-[#9B9B95] transition-colors" />
+        return <UserPlus className="w-3.5 h-3.5 text-muted-foreground/70 group-hover:text-muted-foreground transition-colors" />
       }
       const avatarSlice = selectedMulti.slice(0, 3)
       const overflow = totalSelected - avatarSlice.length
@@ -277,7 +277,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
             </span>
           ))}
           {overflow > 0 && (
-            <span className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-mono font-medium bg-[#F0EFEC] text-[#6B6B66] ring-2 ring-white">
+            <span className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-mono font-medium bg-muted text-foreground/70 ring-2 ring-white">
               +{overflow}
             </span>
           )}
@@ -299,13 +299,13 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
       return (
         <span
           title={`${orphanSingleValue} (niet meer actief)`}
-          className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-[#F0EFEC] text-[#9B9B95] uppercase ring-2 ring-white"
+          className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-muted text-muted-foreground uppercase ring-2 ring-white"
         >
           {getInitials(orphanSingleValue)}
         </span>
       )
     }
-    return <UserPlus className="w-3.5 h-3.5 text-[#C0BDB8] group-hover:text-[#9B9B95] transition-colors" />
+    return <UserPlus className="w-3.5 h-3.5 text-muted-foreground/70 group-hover:text-muted-foreground transition-colors" />
   }
 
   return (
@@ -317,7 +317,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
             type="button"
             disabled={disabled}
             className={cn(
-              'flex items-center gap-1 group rounded-lg px-1 py-0.5 hover:bg-[#F8F7F5] transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+              'flex items-center gap-1 group rounded-lg px-1 py-0.5 hover:bg-background transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
               className
             )}
           >
@@ -336,13 +336,13 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
             )}
           >
             {renderTriggerContent()}
-            <ChevronDown className="h-3 w-3 text-[#9B9B95] shrink-0 ml-auto" />
+            <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0 ml-auto" />
           </button>
         )}
       </PopoverTrigger>
       <PopoverContent align={popoverAlign} className="w-64 p-2" style={contentWidthStyle}>
         <div className="relative mb-2">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95]" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             autoFocus
             value={query}
@@ -354,18 +354,18 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
         </div>
         <div ref={listRef} className="max-h-[260px] overflow-y-auto -mx-1 px-1">
           {isLoading && pool.length === 0 && (
-            <div className="px-2 py-6 text-center text-[12px] text-[#9B9B95]">Laden…</div>
+            <div className="px-2 py-6 text-center text-[12px] text-muted-foreground">Laden…</div>
           )}
           {mode === 'single' && allLabel !== undefined && (
             <button
               type="button"
               onClick={() => { props.onChange(null); setOpen(false) }}
               className={cn(
-                'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-[#F3F2F0] transition-colors',
+                'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-background transition-colors',
                 props.value === null && 'bg-[#1A535C]/[0.06] text-[#1A535C] font-semibold'
               )}
             >
-              <Users className="h-4 w-4 text-[#9B9B95]" />
+              <Users className="h-4 w-4 text-muted-foreground" />
               <span className="flex-1">{allLabel}</span>
               {props.value === null && <Check className="h-3.5 w-3.5 text-[#1A535C]" />}
             </button>
@@ -374,14 +374,14 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
             <button
               type="button"
               onClick={handleClearAll}
-              className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] text-[#9B9B95] text-left hover:bg-[#F3F2F0] transition-colors"
+              className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] text-muted-foreground text-left hover:bg-background transition-colors"
             >
               <X className="h-3.5 w-3.5" />
               <span className="flex-1">Deselecteer alles</span>
             </button>
           )}
           {filtered.length === 0 && query && (
-            <div className="px-2 py-6 text-center text-[12px] text-[#9B9B95]">Geen resultaat</div>
+            <div className="px-2 py-6 text-center text-[12px] text-muted-foreground">Geen resultaat</div>
           )}
           {filtered.map((m, i) => {
             const selected = isSelected(m)
@@ -394,7 +394,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
                 onClick={() => handleToggle(m)}
                 className={cn(
                   'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left transition-colors',
-                  active && 'bg-[#F3F2F0]',
+                  active && 'bg-background',
                   selected && 'bg-[#1A535C]/[0.06] text-[#1A535C] font-semibold'
                 )}
               >
@@ -410,16 +410,16 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
             )
           })}
           {orphanMultiValues.length > 0 && mode === 'multi' && (
-            <div className="mt-1 pt-1 border-t border-[#F0EFEC]">
+            <div className="mt-1 pt-1 border-t border-border">
               {orphanMultiValues.map((v) => (
                 <button
                   key={`orphan-${v}`}
                   type="button"
                   onClick={() => props.onChange((props.value as string[]).filter((x) => x !== v))}
-                  className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] text-left text-[#9B9B95] italic hover:bg-[#F3F2F0] transition-colors"
+                  className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] text-left text-muted-foreground italic hover:bg-background transition-colors"
                   title="Niet meer actief — klik om te verwijderen"
                 >
-                  <span className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold bg-[#F0EFEC] text-[#9B9B95] flex-shrink-0">
+                  <span className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold bg-muted text-muted-foreground flex-shrink-0">
                     {getInitials(v)}
                   </span>
                   <span className="flex-1 truncate">{v}</span>

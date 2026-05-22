@@ -119,13 +119,13 @@ export function DatePicker({
       type="button"
       disabled={disabled}
       className={cn(
-        'flex h-10 w-full items-center justify-between rounded-md border border-[#E6E4E0] bg-[#FAFAF8] px-3.5 py-2.5 text-[13px] ring-offset-background transition-all duration-150 hover:border-text-tertiary/50 focus-visible:outline-none focus-visible:border-[#1A535C] focus-visible:ring-2 focus-visible:ring-[rgba(26,83,92,0.12)] focus-visible:shadow-[0_0_0_2px_rgba(26,83,92,0.12)] disabled:cursor-not-allowed disabled:opacity-50',
-        !displayValue && 'text-[#9B9B95]',
+        'flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3.5 py-2.5 text-[13px] ring-offset-background transition-all duration-150 hover:border-text-tertiary/50 focus-visible:outline-none focus-visible:border-[#1A535C] focus-visible:ring-2 focus-visible:ring-[rgba(26,83,92,0.12)] focus-visible:shadow-[0_0_0_2px_rgba(26,83,92,0.12)] disabled:cursor-not-allowed disabled:opacity-50',
+        !displayValue && 'text-muted-foreground',
         asInput && className,
       )}
     >
       <span className="truncate">{displayValue || placeholder}</span>
-      <CalendarIcon className="h-4 w-4 text-[#9B9B95] flex-shrink-0 ml-2" />
+      <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
     </button>
   )
 
@@ -135,15 +135,15 @@ export function DatePicker({
       <PopoverContent
         align={align}
         side={side}
-        className={cn('w-[268px] p-3 rounded-xl border-[#E0DED8] shadow-lg', contentClassName)}
+        className={cn('w-[268px] p-3 rounded-xl border-border shadow-lg', contentClassName)}
       >
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[13px] font-semibold text-[#1A1A1A] capitalize">{monthLabel}</span>
+          <span className="text-[13px] font-semibold text-foreground capitalize">{monthLabel}</span>
           <div className="flex items-center gap-0.5">
             <button
               type="button"
               onClick={() => setViewMonth(addMonths(viewMonth, -1))}
-              className="h-7 w-7 inline-flex items-center justify-center rounded-md text-[#6B6B66] hover:bg-[#F3F2F0] transition-colors"
+              className="h-7 w-7 inline-flex items-center justify-center rounded-md text-foreground/70 hover:bg-background transition-colors"
               aria-label="Vorige maand"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
@@ -151,14 +151,14 @@ export function DatePicker({
             <button
               type="button"
               onClick={handleToday}
-              className="h-7 px-2 inline-flex items-center text-[11px] font-medium rounded-md text-[#6B6B66] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors"
+              className="h-7 px-2 inline-flex items-center text-[11px] font-medium rounded-md text-foreground/70 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors"
             >
               Vandaag
             </button>
             <button
               type="button"
               onClick={() => setViewMonth(addMonths(viewMonth, 1))}
-              className="h-7 w-7 inline-flex items-center justify-center rounded-md text-[#6B6B66] hover:bg-[#F3F2F0] transition-colors"
+              className="h-7 w-7 inline-flex items-center justify-center rounded-md text-foreground/70 hover:bg-background transition-colors"
               aria-label="Volgende maand"
             >
               <ChevronRight className="h-3.5 w-3.5" />
@@ -170,7 +170,7 @@ export function DatePicker({
           {weekDayLabels.map((label, i) => (
             <div
               key={i}
-              className="text-[10px] font-medium text-[#9B9B95] uppercase text-center py-1"
+              className="text-[10px] font-medium text-muted-foreground uppercase text-center py-1"
             >
               {label}
             </div>
@@ -196,10 +196,10 @@ export function DatePicker({
                     : isSelected
                       ? 'bg-[#1A535C] text-white font-semibold hover:bg-[#1A535C]/90'
                       : !inMonth
-                        ? 'text-[#C5C2BD] hover:bg-[#F8F7F5]'
+                        ? 'text-[#C5C2BD] hover:bg-background'
                         : isToday
                           ? 'text-[#1A535C] font-semibold ring-1 ring-inset ring-[#1A535C]/30 hover:bg-[#1A535C]/[0.06]'
-                          : 'text-[#1A1A1A] hover:bg-[#F3F2F0]',
+                          : 'text-foreground hover:bg-background',
                 )}
               >
                 {format(d, 'd')}

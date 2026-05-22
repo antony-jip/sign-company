@@ -30,11 +30,11 @@ export function SubTabNav({ tabs, active, onChange, variant = 'pill' }: SubTabNa
               className={cn(
                 'relative flex items-center gap-1.5 px-3 py-2 -mb-px text-[13px] font-semibold transition-colors whitespace-nowrap',
                 isActive
-                  ? 'text-[#1A1A1A]'
-                  : 'text-[#9B9B95] hover:text-[#6B6B66]',
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:text-foreground/70',
               )}
             >
-              <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-[#1A535C]' : 'text-[#9B9B95]')} />
+              <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-[#1A535C]' : 'text-muted-foreground')} />
               {tab.label}
               {isActive && (
                 <span
@@ -61,11 +61,11 @@ export function SubTabNav({ tabs, active, onChange, variant = 'pill' }: SubTabNa
             className={cn(
               'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold transition-all whitespace-nowrap',
               isActive
-                ? 'bg-[#FFFFFF] text-[#1A1A1A] shadow-[0_1px_3px_rgba(20,62,71,0.08),0_0_0_1px_rgba(26,83,92,0.06)]'
-                : 'text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white/50'
+                ? 'bg-card text-foreground shadow-[0_1px_3px_rgba(20,62,71,0.08),0_0_0_1px_rgba(26,83,92,0.06)]'
+                : 'text-foreground/70 hover:text-foreground hover:bg-white/50'
             )}
           >
-            <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-[#1A535C]' : 'text-[#9B9B95]')} />
+            <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-[#1A535C]' : 'text-muted-foreground')} />
             {tab.label}
             {isActive && <span className="text-[#F15025] ml-0.5">.</span>}
           </button>

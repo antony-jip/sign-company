@@ -61,7 +61,7 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
   }, [project, offertes, facturen, taken, tijdregistraties])
 
   return (
-    <div className="flex items-center bg-[#FFFFFE] border-b border-sand overflow-x-auto">
+    <div className="flex items-center bg-card border-b border-sand overflow-x-auto">
       <PulseItem
         value={formatCurrency(metrics.waarde)}
         label="waarde"

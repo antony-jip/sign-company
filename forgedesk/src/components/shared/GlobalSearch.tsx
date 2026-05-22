@@ -297,10 +297,10 @@ function getStatusBadgeColor(status?: string): string {
     case 'actief': case 'bezig': case 'onderweg': case 'definitief': return 'bg-[#E5ECF6] text-[#2A5580]'
     case 'goedgekeurd': case 'klaar': case 'betaald': case 'opgeleverd': return 'bg-[#E2F0F0] text-[#1A535C]'
     case 'afgerond': case 'gefactureerd': case 'te-factureren': return 'bg-[#E4F0EA] text-[#2D6B48]'
-    case 'concept': case 'todo': case 'gepland': case 'verlopen': return 'bg-[#EEEEED] text-[#5A5A55]'
+    case 'concept': case 'todo': case 'gepland': case 'verlopen': return 'bg-muted text-foreground/70'
     case 'verzonden': case 'verstuurd': case 'afgewezen': case 'wijziging_gevraagd': return 'bg-[#FDE8E2] text-[#C03A18]'
     case 'bekeken': case 'review': case 'in-review': case 'gecrediteerd': return 'bg-[#EEE8F5] text-[#5A4A78]'
-    default: return 'bg-[#EEEEED] text-[#5A5A55]'
+    default: return 'bg-muted text-foreground/70'
   }
 }
 
@@ -446,7 +446,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
           'rounded-lg',
           focused
             ? 'border-[#1A535C]/25 bg-white shadow-[0_2px_12px_rgba(20,62,71,0.08)]'
-            : 'border-[#E6E4E0] bg-[#F4F2EE] hover:bg-[#EFECE5] hover:border-[#DCD9D2]'
+            : 'border-border bg-muted hover:bg-[#EFECE5] hover:border-[#DCD9D2]'
         )}
       >
         <Search className={cn('text-muted-foreground flex-shrink-0', compact ? 'w-3.5 h-3.5 ml-2.5' : 'w-4 h-4 ml-3')} />
@@ -479,7 +479,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
             <X className={cn(compact ? 'w-3 h-3' : 'w-3.5 h-3.5')} />
           </button>
         ) : (
-          <kbd className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono text-[#9B9B95] border border-[#D4D2CE]/60 bg-white/50', compact ? 'mr-2' : 'mr-2.5')}>
+          <kbd className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono text-muted-foreground border border-[#D4D2CE]/60 bg-white/50', compact ? 'mr-2' : 'mr-2.5')}>
             <span className="text-[11px]">⌘</span>K
           </kbd>
         )}

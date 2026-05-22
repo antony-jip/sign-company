@@ -210,7 +210,7 @@ export function FinancialLayout() {
     return (
       <div className="flex flex-col items-center justify-center py-24">
         <Loader2 className="w-8 h-8 animate-spin text-[#1A535C] mb-4" />
-        <p className="text-[#9B9B95]">Financieel laden...</p>
+        <p className="text-muted-foreground">Financieel laden...</p>
       </div>
     )
   }
@@ -222,11 +222,11 @@ export function FinancialLayout() {
 
       {/* Page Header — DOEN inline style */}
       <div className="flex items-baseline gap-4">
-        <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+        <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
           Financieel<span className="text-[#F15025]">.</span>
         </h1>
         <span
-          className="text-[13px] text-[#9B9B95]"
+          className="text-[13px] text-muted-foreground"
           style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
         >
           omzet, openstaand, inkoop · {currentYear}
@@ -254,18 +254,18 @@ export function FinancialLayout() {
                       className={cn('w-1.5 h-1.5 rounded-full', stat.pulse && 'doen-pulse')}
                       style={{ backgroundColor: stat.dot }}
                     />
-                    <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                    <span className="font-heading text-[14px] font-bold text-foreground">
                       {stat.label}<span className="text-[#F15025]">.</span>
                     </span>
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="font-mono font-bold text-[22px] leading-none text-[#1A1A1A] tabular-nums">
+                  <span className="font-mono font-bold text-[22px] leading-none text-foreground tabular-nums">
                     {stat.value}
                   </span>
                 </div>
                 <span
-                  className="block mt-1 text-[12px] text-[#9B9B95] truncate"
+                  className="block mt-1 text-[12px] text-muted-foreground truncate"
                   style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                 >
                   · {stat.sub}
@@ -279,12 +279,12 @@ export function FinancialLayout() {
             {/* Bar Chart - Monthly Revenue */}
             <Card className="lg:col-span-2 doen-slate-surface border-0 shadow-none">
               <CardHeader>
-                <CardTitle className="text-lg text-[#1A1A1A]">Maandelijks Overzicht {currentYear}</CardTitle>
+                <CardTitle className="text-lg text-foreground">Maandelijks Overzicht {currentYear}</CardTitle>
               </CardHeader>
               <CardContent>
                 {facturen.length === 0 ? (
                   <div className="h-[350px] flex items-center justify-center">
-                    <p className="text-sm text-[#9B9B95]">
+                    <p className="text-sm text-muted-foreground">
                       Nog geen facturen. Maak je eerste factuur aan om het overzicht te zien
                     </p>
                   </div>
@@ -332,13 +332,13 @@ export function FinancialLayout() {
             {/* Pie Chart - Factuur status verdeling */}
             <Card className="doen-slate-surface border-0 shadow-none">
               <CardHeader>
-                <CardTitle className="text-lg text-[#1A1A1A]">Factuurstatus</CardTitle>
+                <CardTitle className="text-lg text-foreground">Factuurstatus</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[350px]">
                   {pieData.length === 0 ? (
                     <div className="h-full flex items-center justify-center">
-                      <p className="text-sm text-[#9B9B95]">Geen factuurdata</p>
+                      <p className="text-sm text-muted-foreground">Geen factuurdata</p>
                     </div>
                   ) : (
                   <ResponsiveContainer width="100%" height="100%">
@@ -368,7 +368,7 @@ export function FinancialLayout() {
                         verticalAlign="bottom"
                         height={36}
                         formatter={(value) => (
-                          <span className="text-sm text-[#6B6B66]">{value}</span>
+                          <span className="text-sm text-foreground/70">{value}</span>
                         )}
                       />
                     </PieChart>
@@ -383,7 +383,7 @@ export function FinancialLayout() {
           <Card className="doen-slate-surface border-0 shadow-none">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2 text-[#1A1A1A]">
+                <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                   <FileText className="w-5 h-5" />
                   Openstaande Offertes
                 </CardTitle>
@@ -392,35 +392,35 @@ export function FinancialLayout() {
             </CardHeader>
             <CardContent>
               {openstaandeOffertes.length === 0 ? (
-                <p className="text-sm text-[#9B9B95] text-center py-8">
+                <p className="text-sm text-muted-foreground text-center py-8">
                   Geen openstaande offertes
                 </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b-2 border-[#F0EFEC]">
-                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Nummer</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Klant</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Titel</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Totaal</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Geldig tot</th>
+                      <tr className="border-b-2 border-border">
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Nummer</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Klant</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Titel</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Totaal</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Geldig tot</th>
                       </tr>
                     </thead>
                     <tbody>
                       {openstaandeOffertes.slice(0, 10).map((offerte) => (
                         <tr
                           key={offerte.id}
-                          className="border-b border-[#F0EFEC] hover:bg-[#F8F7F4] transition-colors"
+                          className="border-b border-border hover:bg-background transition-colors"
                         >
-                          <td className="py-3 px-4 font-mono text-[12px] text-[#9B9B95]">
+                          <td className="py-3 px-4 font-mono text-[12px] text-muted-foreground">
                             {offerte.nummer}
                           </td>
-                          <td className="py-3 px-4 font-medium text-[#1A1A1A] text-[13px]">
+                          <td className="py-3 px-4 font-medium text-foreground text-[13px]">
                             {offerte.klant_naam}
                           </td>
-                          <td className="py-3 px-4 text-[#6B6B66] text-[13px]">
+                          <td className="py-3 px-4 text-foreground/70 text-[13px]">
                             {offerte.titel}
                           </td>
                           <td className="py-3 px-4">
@@ -428,10 +428,10 @@ export function FinancialLayout() {
                               {offerte.status.charAt(0).toUpperCase() + offerte.status.slice(1)}
                             </Badge>
                           </td>
-                          <td className="py-3 px-4 text-right font-semibold font-mono text-[13px] text-[#1A1A1A]">
+                          <td className="py-3 px-4 text-right font-semibold font-mono text-[13px] text-foreground">
                             {formatCurrency(offerte.totaal)}
                           </td>
-                          <td className="py-3 px-4 text-[#9B9B95] text-[13px]">
+                          <td className="py-3 px-4 text-muted-foreground text-[13px]">
                             {offerte.geldig_tot ? new Date(offerte.geldig_tot).toLocaleDateString('nl-NL') : '—'}
                           </td>
                         </tr>
@@ -439,7 +439,7 @@ export function FinancialLayout() {
                     </tbody>
                   </table>
                   {openstaandeOffertes.length > 10 && (
-                    <p className="text-center text-[12px] text-[#9B9B95] py-3">
+                    <p className="text-center text-[12px] text-muted-foreground py-3">
                       en {openstaandeOffertes.length - 10} meer...
                     </p>
                   )}

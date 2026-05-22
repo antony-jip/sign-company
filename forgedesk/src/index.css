@@ -154,35 +154,36 @@
   }
 
   .dark {
-    --background: 220 10% 8%;           /* #131518 koel donker */
-    --foreground: 30 10% 90%;           /* #E9E6E1 warm wit */
-    --card: 220 8% 11%;                 /* #1A1C20 */
-    --card-foreground: 30 10% 90%;
-    --sidebar-background: 220 10% 7%;
-    --sidebar-foreground: 30 10% 90%;
-    --sidebar-border: 220 8% 18%;
-    --primary: 14 88% 55%;              /* #F15025 Flame als primary! */
+    /* Deep-petrol dark theme — matched aan brand (#1A535C = hsl 187 56% 23%) */
+    --background: 190 35% 5%;            /* #08161A deepest petrol-black */
+    --foreground: 190 8% 90%;            /* #E1E7E8 koel off-white */
+    --card: 190 30% 8%;                  /* #0E2025 lifted petrol-surface */
+    --card-foreground: 190 8% 90%;
+    --sidebar-background: 190 40% 4%;    /* #061216 deepest */
+    --sidebar-foreground: 190 8% 90%;
+    --sidebar-border: 190 25% 14%;
+    --primary: 14 88% 55%;               /* #F15025 Flame als primary */
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 8% 14%;            /* #222428 */
-    --secondary-foreground: 30 10% 70%;
-    --muted: 220 8% 14%;
-    --muted-foreground: 220 5% 50%;
-    --accent: 14 88% 55%;               /* Flame */
+    --secondary: 190 25% 12%;            /* #15282D subtle surface */
+    --secondary-foreground: 190 8% 75%;
+    --muted: 190 25% 12%;
+    --muted-foreground: 190 8% 58%;      /* #8AA0A4 leesbaar */
+    --accent: 14 88% 55%;                /* Flame */
     --accent-foreground: 0 0% 100%;
-    --border: 220 8% 18%;               /* #2A2D32 */
-    --input: 220 8% 18%;
+    --border: 190 25% 16%;               /* #1F343A petrol-hairline */
+    --input: 190 25% 16%;
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --popover: 220 8% 11%;
-    --popover-foreground: 30 10% 90%;
-    --ring: 14 88% 55%;                 /* Flame ring */
+    --popover: 190 30% 8%;
+    --popover-foreground: 190 8% 90%;
+    --ring: 187 56% 35%;                 /* petrol ring */
 
     /* Semantic UI tokens — dark */
-    --border-subtle: 220 8% 20%;
-    --text-placeholder: 220 5% 40%;
-    --text-tertiary: 220 5% 48%;
-    --bg-hover: 220 8% 12%;
-    --bg-subtle: 220 10% 8%;
+    --border-subtle: 190 25% 18%;
+    --text-placeholder: 190 8% 40%;
+    --text-tertiary: 190 8% 50%;
+    --bg-hover: 190 25% 14%;
+    --bg-subtle: 190 35% 5%;
 
     --sidebar-primary: 14 88% 55%;      /* Flame */
     --wm-sidebar-bg: 220 10% 6%;

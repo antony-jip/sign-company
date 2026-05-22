@@ -63,7 +63,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
     }
   }
 
-  const selectClass = 'h-9 px-3 py-1.5 text-[13px] border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20 focus:border-[#1A535C] text-[#4A4A46] appearance-none'
+  const selectClass = 'h-9 px-3 py-1.5 text-[13px] border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20 focus:border-[#1A535C] text-foreground/80 appearance-none'
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,7 +75,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
             onChange={e => setTitel(e.target.value)}
             placeholder="Wat moet er gedaan worden?"
             autoFocus
-            className="w-full h-11 px-4 text-[15px] border border-[#EBEBEB] rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20 focus:border-[#1A535C] placeholder:text-[#B0ADA8]"
+            className="w-full h-11 px-4 text-[15px] border border-border rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20 focus:border-[#1A535C] placeholder:text-muted-foreground/80"
           />
 
           <div className="grid grid-cols-2 gap-3">
@@ -106,7 +106,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
 
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95] pointer-events-none" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <input
                 type="date"
                 value={deadline}

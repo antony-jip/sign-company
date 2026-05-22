@@ -47,7 +47,7 @@ export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = fals
   // Inline mode — collapsible card
   if (inline) {
     return (
-      <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
+      <div className="border border-[hsl(35,15%,87%)] bg-card shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
         {/* Header — always visible, clickable to toggle */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -136,7 +136,7 @@ export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = fals
       {/* Expanded panel */}
       <div
         className={cn(
-          'flex-shrink-0 bg-[#FFFFFE] border-r border-[hsl(35,15%,87%)] overflow-hidden transition-all duration-300 ease-out flex flex-col',
+          'flex-shrink-0 bg-card border-r border-[hsl(35,15%,87%)] overflow-hidden transition-all duration-300 ease-out flex flex-col',
           isOpen ? 'w-[370px] opacity-100' : 'w-0 opacity-0 pointer-events-none'
         )}
         style={{ transitionProperty: 'width, opacity' }}

@@ -420,15 +420,15 @@ export function EmailContextSidebar({
   if (mode === 'idle') {
     return (
       <div className={cn(
-        'border-l border-[#EBEBEB] bg-[#F8F7F5] flex flex-col overflow-y-auto',
+        'border-l border-border bg-background flex flex-col overflow-y-auto',
         floating ? 'h-full w-[320px]' : 'w-[280px] flex-shrink-0 hidden xl:flex',
       )}>
         {onClose && (
-          <div className="sticky top-0 z-10 flex items-center justify-end px-3 py-2 border-b border-[#EBEBEB] bg-[#F8F7F5]/95 backdrop-blur-sm">
+          <div className="sticky top-0 z-10 flex items-center justify-end px-3 py-2 border-b border-border bg-background/95 backdrop-blur-sm">
             <button
               type="button"
               onClick={onClose}
-              className="h-7 w-7 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-white transition-colors"
+              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white transition-colors"
               title="Sluiten"
             >
               <X className="h-3.5 w-3.5" />
@@ -439,7 +439,7 @@ export function EmailContextSidebar({
 
           {/* ── Daan — Inbox analyseren ── */}
           <div>
-            <h3 className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium mb-2.5">Daan</h3>
+            <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-2.5">Daan</h3>
             {!analysisResult ? (
               <button
                 onClick={handleAnalyzeInbox}
@@ -454,10 +454,10 @@ export function EmailContextSidebar({
                   }
                 </div>
                 <div className="text-left min-w-0">
-                  <p className="text-[13px] font-medium text-[#1A1A1A] group-hover:text-[#1A535C] transition-colors duration-150">
+                  <p className="text-[13px] font-medium text-foreground group-hover:text-[#1A535C] transition-colors duration-150">
                     {analysisLoading ? 'Analyseren...' : 'Inbox analyseren'}
                   </p>
-                  <p className="text-[11px] text-[#9B9B95]">Categoriseer je emails</p>
+                  <p className="text-[11px] text-muted-foreground">Categoriseer je emails</p>
                 </div>
               </button>
             ) : (
@@ -468,9 +468,9 @@ export function EmailContextSidebar({
                       <cat.icon className="h-3.5 w-3.5" style={{ color: cat.color }} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-medium text-[#1A1A1A]">{cat.label}</p>
+                      <p className="text-[12px] font-medium text-foreground">{cat.label}</p>
                       {cat.subjects.length > 0 && (
-                        <p className="text-[11px] text-[#9B9B95] truncate mt-0.5">{cat.subjects[0]}</p>
+                        <p className="text-[11px] text-muted-foreground truncate mt-0.5">{cat.subjects[0]}</p>
                       )}
                     </div>
                     <span className="text-[13px] font-mono font-semibold flex-shrink-0" style={{ color: cat.color }}>
@@ -480,7 +480,7 @@ export function EmailContextSidebar({
                 ))}
                 <button
                   onClick={() => setAnalysisResult(null)}
-                  className="w-full text-center text-[11px] text-[#9B9B95] hover:text-[#6B6B66] transition-colors duration-150 pt-1"
+                  className="w-full text-center text-[11px] text-muted-foreground hover:text-foreground/70 transition-colors duration-150 pt-1"
                 >
                   Opnieuw analyseren
                 </button>
@@ -490,7 +490,7 @@ export function EmailContextSidebar({
 
           {/* ── Quick actions ── */}
           <div>
-            <h3 className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium mb-2.5">Snel</h3>
+            <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-2.5">Snel</h3>
             <div className="space-y-1.5">
               <button
                 onClick={() => onCompose?.()}
@@ -500,7 +500,7 @@ export function EmailContextSidebar({
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#F15025]/10">
                   <Pencil className="h-3.5 w-3.5 text-[#F15025]" />
                 </div>
-                <span className="text-[12px] font-medium text-[#6B6B66] group-hover:text-[#1A1A1A] transition-colors duration-150">Nieuw bericht</span>
+                <span className="text-[12px] font-medium text-foreground/70 group-hover:text-foreground transition-colors duration-150">Nieuw bericht</span>
               </button>
               {!showIdleTaakForm ? (
                 <button
@@ -511,20 +511,20 @@ export function EmailContextSidebar({
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#1A535C]/10">
                     <ListPlus className="h-3.5 w-3.5 text-[#1A535C]" />
                   </div>
-                  <span className="text-[12px] font-medium text-[#6B6B66] group-hover:text-[#1A1A1A] transition-colors duration-150">Taak aanmaken</span>
+                  <span className="text-[12px] font-medium text-foreground/70 group-hover:text-foreground transition-colors duration-150">Taak aanmaken</span>
                 </button>
               ) : (
                 <div className="bg-white rounded-xl p-3.5 space-y-2" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium">Nieuwe taak</span>
-                    <button onClick={() => setShowIdleTaakForm(false)} className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors duration-150">
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Nieuwe taak</span>
+                    <button onClick={() => setShowIdleTaakForm(false)} className="text-muted-foreground hover:text-foreground transition-colors duration-150">
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                   <input
                     value={idleTaakForm.titel}
                     onChange={e => setIdleTaakForm(f => ({ ...f, titel: e.target.value }))}
-                    className="w-full px-3 py-2 text-[13px] bg-[#F8F7F5] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors duration-150 placeholder:text-[#9B9B95]"
+                    className="w-full px-3 py-2 text-[13px] bg-background rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground"
                     placeholder="Taak titel..."
                     autoFocus
                   />
@@ -554,18 +554,18 @@ export function EmailContextSidebar({
   // wrappers zodat klant/taak als centered modals verschijnen ipv sidebar-panels.
   function renderInlinePanelContent(panel: 'klant' | 'taak') {
     if (panel === 'klant' || panel === 'taak') {
-      const inputCls = "w-full px-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors duration-150 placeholder:text-[#9B9B95]"
+      const inputCls = "w-full px-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground"
       const configs = {
         klant: {
           onSave: klantSearchMode ? undefined : handleSaveKlant,
           content: klantSearchMode ? (
             <>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95]" />
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <input
                   value={klantForm.bedrijfsnaam}
                   onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
-                  className="w-full pl-9 pr-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors duration-150 placeholder:text-[#9B9B95]"
+                  className="w-full pl-9 pr-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground"
                   placeholder="Zoek klant..."
                   autoFocus
                 />
@@ -575,7 +575,7 @@ export function EmailContextSidebar({
                   <div className="flex items-center gap-2 p-2 bg-[#1A535C]/[0.04] rounded-lg">
                     <Building2 className="h-3.5 w-3.5 text-[#1A535C]" />
                     <span className="text-[12px] font-medium text-[#1A535C] truncate">{addToExistingKlant.bedrijfsnaam}</span>
-                    <button onClick={() => setAddToExistingKlant(null)} className="ml-auto text-[#9B9B95] hover:text-[#1A1A1A]"><X className="h-3 w-3" /></button>
+                    <button onClick={() => setAddToExistingKlant(null)} className="ml-auto text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
                   </div>
                   <input value={klantForm.contactpersoon} onChange={e => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
                     className={inputCls} placeholder="Naam contactpersoon *" autoFocus />
@@ -597,14 +597,14 @@ export function EmailContextSidebar({
                         <div key={k.id} className="flex items-center gap-1 px-1">
                           <button
                             onClick={() => handleSelectKlant(k)}
-                            className="flex-1 flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-[#F8F7F5] transition-colors duration-150"
+                            className="flex-1 flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-background transition-colors duration-150"
                           >
                             <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-bold" style={{ background: style.bg, color: style.text }}>
                               {(k.bedrijfsnaam || k.contactpersoon)?.[0]?.toUpperCase()}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-[12px] font-medium text-[#1A1A1A] truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
-                              <p className="text-[11px] text-[#9B9B95] truncate">{k.email}</p>
+                              <p className="text-[12px] font-medium text-foreground truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
+                              <p className="text-[11px] text-muted-foreground truncate">{k.email}</p>
                             </div>
                           </button>
                           <button
@@ -617,7 +617,7 @@ export function EmailContextSidebar({
                         </div>
                       )
                     }) : (
-                      <p className="text-[11px] text-[#9B9B95] px-3 py-2">Geen resultaten</p>
+                      <p className="text-[11px] text-muted-foreground px-3 py-2">Geen resultaten</p>
                     )}
                   </div>
                   <button
@@ -634,7 +634,7 @@ export function EmailContextSidebar({
             <>
               <button
                 onClick={() => setKlantSearchMode(true)}
-                className="flex items-center gap-1 text-[11px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors duration-150 mb-1"
+                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors duration-150 mb-1"
               >
                 <ArrowLeft className="h-3 w-3" />
                 Terug naar zoeken
@@ -660,7 +660,7 @@ export function EmailContextSidebar({
               <textarea value={taakForm.beschrijving} onChange={e => setTaakForm(f => ({ ...f, beschrijving: e.target.value }))}
                 className={`${inputCls} resize-none h-16`} placeholder="Beschrijving" />
               <div>
-                <label className="text-[10px] text-[#9B9B95] block mb-1">Inplannen op</label>
+                <label className="text-[10px] text-muted-foreground block mb-1">Inplannen op</label>
                 <input type="date" value={taakForm.deadline} onChange={e => setTaakForm(f => ({ ...f, deadline: e.target.value }))}
                   className={inputCls} />
                 <div className="flex gap-1.5 mt-1.5">
@@ -673,7 +673,7 @@ export function EmailContextSidebar({
                     const val = d.toISOString().split('T')[0]
                     return (
                       <button key={days} type="button" onClick={() => setTaakForm(f => ({ ...f, deadline: val }))}
-                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-all ${taakForm.deadline === val ? 'bg-[#1A535C]/[0.08] text-[#1A535C]' : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'}`}
+                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-all ${taakForm.deadline === val ? 'bg-[#1A535C]/[0.08] text-[#1A535C]' : 'bg-background text-foreground/70 hover:bg-muted'}`}
                       >{label}</button>
                     )
                   })}
@@ -681,18 +681,18 @@ export function EmailContextSidebar({
               </div>
               {medewerkers.length > 0 && (
                 <div>
-                  <label className="text-[10px] text-[#9B9B95] block mb-1">Toewijzen aan</label>
+                  <label className="text-[10px] text-muted-foreground block mb-1">Toewijzen aan</label>
                   <div className="flex flex-wrap gap-1.5">
                     {medewerkers.map((mw) => {
                       const selected = taakForm.toegewezen_aan === mw.naam
                       const c = mw.naam.charCodeAt(0) % 5
-                      const colors = ['bg-[#E8F2EC] text-[#3A7D52]', 'bg-[#E8EEF9] text-[#3A5A9A]', 'bg-[#F5F2E8] text-[#8A7A4A]', 'bg-[#F0EFEC] text-[#6B6B66]', 'bg-[#EDE8F4] text-[#6A5A8A]']
+                      const colors = ['bg-[#E8F2EC] text-[#3A7D52]', 'bg-[#E8EEF9] text-[#3A5A9A]', 'bg-[#F5F2E8] text-[#8A7A4A]', 'bg-muted text-foreground/70', 'bg-[#EDE8F4] text-[#6A5A8A]']
                       return (
                         <button
                           key={mw.id}
                           type="button"
                           onClick={() => setTaakForm(f => ({ ...f, toegewezen_aan: selected ? '' : mw.naam }))}
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all border ${selected ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]' : 'border-transparent bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'}`}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all border ${selected ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]' : 'border-transparent bg-background text-foreground/70 hover:bg-muted'}`}
                         >
                           <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold uppercase ${colors[c]}`}>
                             {mw.naam.charAt(0)}
@@ -729,15 +729,15 @@ export function EmailContextSidebar({
   // ════════════════════════════════════════════
   return (
     <div className={cn(
-      'border-l border-[#EBEBEB] bg-[#F8F7F5] overflow-y-auto flex flex-col',
+      'border-l border-border bg-background overflow-y-auto flex flex-col',
       floating ? 'h-full w-[320px]' : 'w-[280px] flex-shrink-0 hidden xl:flex',
     )}>
       {onClose && (
-        <div className="sticky top-0 z-10 flex items-center justify-end px-3 py-2 border-b border-[#EBEBEB] bg-[#F8F7F5]/95 backdrop-blur-sm">
+        <div className="sticky top-0 z-10 flex items-center justify-end px-3 py-2 border-b border-border bg-background/95 backdrop-blur-sm">
           <button
             type="button"
             onClick={onClose}
-            className="h-7 w-7 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-white transition-colors"
+            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white transition-colors"
             title="Sluiten"
           >
             <X className="h-3.5 w-3.5" />
@@ -749,8 +749,8 @@ export function EmailContextSidebar({
         {/* ── CONTACT SECTION ── */}
         {klantLoading ? (
           <div className="flex items-center gap-2 py-3">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#9B9B95]" />
-            <span className="text-[12px] text-[#9B9B95]">Contact zoeken...</span>
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            <span className="text-[12px] text-muted-foreground">Contact zoeken...</span>
           </div>
         ) : linkedKlant ? (
           <div className="bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -764,40 +764,40 @@ export function EmailContextSidebar({
                   onClick={() => navigate(`/klanten/${linkedKlant.id}`)}
                   className="group flex items-center gap-1"
                 >
-                  <p className="text-[14px] font-bold text-[#1A1A1A] group-hover:text-[#1A535C] transition-colors truncate">
+                  <p className="text-[14px] font-bold text-foreground group-hover:text-[#1A535C] transition-colors truncate">
                     {linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}
                   </p>
-                  <ExternalLink className="h-3 w-3 text-[#9B9B95] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                 </button>
                 {linkedKlant.bedrijfsnaam && linkedKlant.contactpersoon && (
-                  <p className="text-[12px] text-[#6B6B66] truncate">{linkedKlant.contactpersoon}</p>
+                  <p className="text-[12px] text-foreground/70 truncate">{linkedKlant.contactpersoon}</p>
                 )}
               </div>
             </div>
 
-            <div className="mt-3 pt-3 border-t border-[#F0EFEC] space-y-2">
+            <div className="mt-3 pt-3 border-t border-border space-y-2">
               {linkedKlant.email && (
                 <div className="flex items-center gap-2.5">
-                  <Mail className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
-                  <p className="text-[12px] text-[#6B6B66] truncate">{linkedKlant.email}</p>
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <p className="text-[12px] text-foreground/70 truncate">{linkedKlant.email}</p>
                 </div>
               )}
               {linkedKlant.telefoon && (
                 <div className="flex items-center gap-2.5">
-                  <Phone className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
-                  <p className="text-[12px] font-mono text-[#6B6B66]">{linkedKlant.telefoon}</p>
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <p className="text-[12px] font-mono text-foreground/70">{linkedKlant.telefoon}</p>
                 </div>
               )}
               {(linkedKlant.adres || linkedKlant.stad) && (
                 <div className="flex items-start gap-2.5">
-                  <Building2 className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0 mt-0.5" />
-                  <p className="text-[12px] text-[#6B6B66]">{[linkedKlant.adres, linkedKlant.postcode, linkedKlant.stad].filter(Boolean).join(', ')}</p>
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <p className="text-[12px] text-foreground/70">{[linkedKlant.adres, linkedKlant.postcode, linkedKlant.stad].filter(Boolean).join(', ')}</p>
                 </div>
               )}
             </div>
 
             {(projectCount > 0 || offerteCount > 0) && (
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#F0EFEC]">
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
                 {projectCount > 0 && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-[#1A535C] bg-[#1A535C]/[0.06]">
                     <span className="font-mono font-bold">{projectCount}</span>
@@ -822,13 +822,13 @@ export function EmailContextSidebar({
                 {avatarInitial}
               </div>
               <div className="min-w-0 flex-1 pt-0.5">
-                {personName && <p className="text-[13px] font-medium text-[#1A1A1A] truncate">{personName}</p>}
-                <p className="text-[12px] text-[#9B9B95] truncate">{contactEmail}</p>
+                {personName && <p className="text-[13px] font-medium text-foreground truncate">{personName}</p>}
+                <p className="text-[12px] text-muted-foreground truncate">{contactEmail}</p>
               </div>
             </div>
             <button
               onClick={() => openPanel('klant')}
-              className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-[#EBEBEB] text-[12px] text-[#1A535C] font-medium hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.03] transition-colors duration-150"
+              className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-border text-[12px] text-[#1A535C] font-medium hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.03] transition-colors duration-150"
             >
               <UserPlus className="h-3.5 w-3.5" />
               Contact toevoegen
@@ -836,7 +836,7 @@ export function EmailContextSidebar({
           </div>
         ) : !hasContact ? (
           <div className="text-center py-4">
-            <p className="text-[12px] text-[#9B9B95]">
+            <p className="text-[12px] text-muted-foreground">
               {mode === 'compose' ? 'Vul een ontvanger in' : 'Geen contactinfo'}
             </p>
           </div>
@@ -864,27 +864,27 @@ export function EmailContextSidebar({
         {/* ── QUICK ACTIONS — schone tekst-links met subtiele iconen ── */}
         {activePanel === 'none' && (
           <div>
-            <h3 className="text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold mb-2">Acties</h3>
+            <h3 className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground font-semibold mb-2">Acties</h3>
             <div className="space-y-0.5">
               <button
                 onClick={() => openPanel('klant')}
-                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-[#1A1A1A] hover:bg-white hover:text-[#1A535C] transition-colors"
+                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-foreground hover:bg-white hover:text-[#1A535C] transition-colors"
               >
-                <UserPlus className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A535C] transition-colors" />
+                <UserPlus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-[#1A535C] transition-colors" />
                 <span className="flex-1 text-left">Klant aanmaken</span>
               </button>
               <button
                 onClick={() => openPanel('project')}
-                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-[#1A1A1A] hover:bg-white hover:text-[#1A535C] transition-colors"
+                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-foreground hover:bg-white hover:text-[#1A535C] transition-colors"
               >
-                <FolderPlus className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A535C] transition-colors" />
+                <FolderPlus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-[#1A535C] transition-colors" />
                 <span className="flex-1 text-left">Project aanmaken</span>
               </button>
               <button
                 onClick={() => openPanel('taak')}
-                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-[#1A1A1A] hover:bg-white hover:text-[#1A535C] transition-colors"
+                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-foreground hover:bg-white hover:text-[#1A535C] transition-colors"
               >
-                <ListPlus className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A535C] transition-colors" />
+                <ListPlus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-[#1A535C] transition-colors" />
                 <span className="flex-1 text-left">Taak aanmaken</span>
               </button>
             </div>
@@ -896,7 +896,7 @@ export function EmailContextSidebar({
           <DialogContent className="max-w-md bg-white rounded-2xl p-0">
             <div className="px-6 pt-6 pb-5">
               <DialogHeader className="mb-4">
-                <DialogTitle className="text-[20px] font-bold tracking-tight text-[#1A1A1A]">
+                <DialogTitle className="text-[20px] font-bold tracking-tight text-foreground">
                   {klantSearchMode ? <>Contact koppelen<span className="text-[#F15025]">.</span></> : <>Nieuw contact<span className="text-[#F15025]">.</span></>}
                 </DialogTitle>
               </DialogHeader>
@@ -912,7 +912,7 @@ export function EmailContextSidebar({
           <DialogContent className="max-w-md bg-white rounded-2xl p-0">
             <div className="px-6 pt-6 pb-5">
               <DialogHeader className="mb-4">
-                <DialogTitle className="text-[20px] font-bold tracking-tight text-[#1A1A1A]">
+                <DialogTitle className="text-[20px] font-bold tracking-tight text-foreground">
                   Nieuwe taak<span className="text-[#F15025]">.</span>
                 </DialogTitle>
               </DialogHeader>
@@ -928,45 +928,45 @@ export function EmailContextSidebar({
           <DialogContent className="max-w-2xl bg-white rounded-2xl p-0">
             <div className="px-8 pt-7 pb-6">
               <DialogHeader className="mb-5">
-                <DialogTitle className="text-[22px] font-bold tracking-tight text-[#1A1A1A]">
+                <DialogTitle className="text-[22px] font-bold tracking-tight text-foreground">
                   Nieuw project<span className="text-[#F15025]">.</span>
                 </DialogTitle>
-                <p className="text-[13px] text-[#9B9B95] mt-1">Vul de gegevens in om te starten</p>
+                <p className="text-[13px] text-muted-foreground mt-1">Vul de gegevens in om te starten</p>
               </DialogHeader>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">
+                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-muted-foreground">
                       Projectnaam *
                     </label>
                     <input
                       value={projectForm.naam}
                       onChange={e => setProjectForm(f => ({ ...f, naam: e.target.value }))}
                       placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
-                      className="w-full h-10 px-3 text-[14px] bg-[#FAFAF8] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors placeholder:text-[#9B9B95]"
+                      className="w-full h-10 px-3 text-[14px] bg-background rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors placeholder:text-muted-foreground"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">
+                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-muted-foreground">
                       Beschrijving
                     </label>
                     <input
                       value={projectForm.beschrijving}
                       onChange={e => setProjectForm(f => ({ ...f, beschrijving: e.target.value }))}
                       placeholder="Korte omschrijving..."
-                      className="w-full h-10 px-3 text-[14px] bg-[#FAFAF8] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors placeholder:text-[#9B9B95]"
+                      className="w-full h-10 px-3 text-[14px] bg-background rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors placeholder:text-muted-foreground"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">Status</label>
+                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-muted-foreground">Status</label>
                     <select
                       value={projectForm.status}
                       onChange={e => setProjectForm(f => ({ ...f, status: e.target.value as typeof projectForm.status }))}
-                      className="w-full h-10 px-3 text-[13px] bg-[#FAFAF8] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors"
+                      className="w-full h-10 px-3 text-[13px] bg-background rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors"
                     >
                       <option value="gepland">Gepland</option>
                       <option value="actief">Actief</option>
@@ -978,27 +978,27 @@ export function EmailContextSidebar({
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">Startdatum</label>
+                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-muted-foreground">Startdatum</label>
                     <input
                       type="date"
                       value={projectForm.start_datum}
                       onChange={e => setProjectForm(f => ({ ...f, start_datum: e.target.value }))}
-                      className="w-full h-10 px-3 text-[13px] font-mono bg-[#FAFAF8] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors"
+                      className="w-full h-10 px-3 text-[13px] font-mono bg-background rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">Einddatum</label>
+                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-muted-foreground">Einddatum</label>
                     <input
                       type="date"
                       value={projectForm.eind_datum}
                       onChange={e => setProjectForm(f => ({ ...f, eind_datum: e.target.value }))}
-                      className="w-full h-10 px-3 text-[13px] font-mono bg-[#FAFAF8] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors"
+                      className="w-full h-10 px-3 text-[13px] font-mono bg-background rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">Klant & contact</label>
+                  <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-muted-foreground">Klant & contact</label>
                   <KlantContactSelector
                     klantId={projectForm.klant_id}
                     onKlantChange={(id) => setProjectForm(f => ({ ...f, klant_id: id, contactpersoon_id: '', vestiging_id: '' }))}
@@ -1015,7 +1015,7 @@ export function EmailContextSidebar({
                   <button
                     type="button"
                     onClick={() => setActivePanel('none')}
-                    className="h-10 px-5 text-[13px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:bg-[#F8F7F5] transition-colors"
+                    className="h-10 px-5 text-[13px] font-medium rounded-lg border border-border text-foreground/70 hover:bg-background transition-colors"
                   >
                     Annuleren
                   </button>

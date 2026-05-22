@@ -95,34 +95,34 @@ export function WerkbonnenLayoutMobile() {
   }, [werkbonnen, filter, search, klantById, projectById, offerteById])
 
   return (
-    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
-      <header className="px-5 pt-5 pb-4 bg-white border-b border-[#EBEBEB]">
-        <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-[#1A1A1A]">
+    <div className="h-full flex flex-col bg-background -m-3 sm:-m-4 md:-m-6">
+      <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
+        <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
           Werkbonnen<span className="text-[#F15025]">.</span>
         </h1>
         {!loading && (
-          <p className="mt-1 text-[14px] text-[#6B6B66] tabular-nums">
-            <span className="font-medium text-[#1A1A1A]">{filteredWerkbonnen.length}</span>
-            <span className="text-[#9B9B95]"> / {werkbonnen.length}</span>
+          <p className="mt-1 text-[14px] text-foreground/70 tabular-nums">
+            <span className="font-medium text-foreground">{filteredWerkbonnen.length}</span>
+            <span className="text-muted-foreground"> / {werkbonnen.length}</span>
           </p>
         )}
       </header>
 
-      <div className="px-4 pt-3 pb-2 bg-white border-b border-[#EBEBEB] space-y-3">
+      <div className="px-4 pt-3 pb-2 bg-white border-b border-border space-y-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Zoek op nummer, klant, project..."
-            className="w-full h-10 pl-9 pr-9 rounded-lg bg-[#F8F7F5] border border-[#EBEBEB] focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[14px] text-[#1A1A1A] placeholder:text-[#9B9B95] transition-all"
+            className="w-full h-10 pl-9 pr-9 rounded-lg bg-background border border-border focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[14px] text-foreground placeholder:text-muted-foreground transition-all"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-full text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Wis zoekterm"
             >
               <X className="h-3.5 w-3.5" />
@@ -143,11 +143,11 @@ export function WerkbonnenLayoutMobile() {
                   'flex-shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors',
                   isActive
                     ? 'bg-[#1A535C] text-white'
-                    : 'bg-[#F0EFEC] text-[#6B6B66] active:bg-[#E6E5E1]',
+                    : 'bg-muted text-foreground/70 active:bg-muted',
                 )}
               >
                 {p.label}
-                <span className={cn('tabular-nums', isActive ? 'text-white/70' : 'text-[#9B9B95]')}>{cnt}</span>
+                <span className={cn('tabular-nums', isActive ? 'text-white/70' : 'text-muted-foreground')}>{cnt}</span>
               </button>
             )
           })}
@@ -157,14 +157,14 @@ export function WerkbonnenLayoutMobile() {
       <div className="flex-1 overflow-y-auto pb-[calc(4rem+env(safe-area-inset-bottom))]">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-5 w-5 animate-spin text-[#9B9B95]" />
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : filteredWerkbonnen.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-            <div className="w-20 h-20 rounded-full bg-white border border-[#EBEBEB] flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-              <ReceiptText className="h-9 w-9 text-[#B0ADA8]" strokeWidth={1.5} />
+            <div className="w-20 h-20 rounded-full bg-white border border-border flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+              <ReceiptText className="h-9 w-9 text-muted-foreground/80" strokeWidth={1.5} />
             </div>
-            <p className="text-[15px] font-medium text-[#6B6B66]">
+            <p className="text-[15px] font-medium text-foreground/70">
               {search.trim() || filter !== 'alle' ? 'Geen werkbonnen gevonden' : 'Geen werkbonnen'}
               <span className="text-[#F15025]">.</span>
             </p>
@@ -197,10 +197,10 @@ export function WerkbonnenLayoutMobile() {
                   <button
                     type="button"
                     onClick={() => navigate(`/werkbonnen/${wb.id}`)}
-                    className="w-full text-left px-5 py-3.5 active:bg-[#F8F7F5] transition-colors"
+                    className="w-full text-left px-5 py-3.5 active:bg-background transition-colors"
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-[12px] font-mono font-semibold text-[#6B6B66] tabular-nums">
+                      <span className="text-[12px] font-mono font-semibold text-foreground/70 tabular-nums">
                         {wb.werkbon_nummer || 'concept'}
                       </span>
                       <span
@@ -211,18 +211,18 @@ export function WerkbonnenLayoutMobile() {
                         {cfg.label}
                       </span>
                     </div>
-                    <h3 className="text-[15px] font-medium text-[#1A1A1A] leading-snug truncate">
+                    <h3 className="text-[15px] font-medium text-foreground leading-snug truncate">
                       {wb.titel || klantNaam}
                     </h3>
                     {(subtitle || datum) && (
-                      <p className="mt-0.5 text-[13px] text-[#6B6B66] truncate">
+                      <p className="mt-0.5 text-[13px] text-foreground/70 truncate">
                         {subtitle}
-                        {subtitle && datum && <span className="text-[#C0BDB8]"> · </span>}
+                        {subtitle && datum && <span className="text-muted-foreground/70"> · </span>}
                         {datum && <span className="tabular-nums">{datum}</span>}
                       </p>
                     )}
                     {locationLabel && mapsHref && (
-                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#F0EFEC] px-2.5 py-1 text-[12px] text-[#1A535C] max-w-full">
+                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-[#1A535C] max-w-full">
                         <MapPin className="h-3 w-3 flex-shrink-0" />
                         <a
                           href={mapsHref}

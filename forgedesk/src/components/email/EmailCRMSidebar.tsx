@@ -38,10 +38,10 @@ export function extractCompanyName(senderName: string, email: string): string {
 export type InlinePanel = 'none' | 'klant' | 'offerte' | 'project' | 'taak'
 
 export const reminderOptions = [
-  { value: '1h', label: 'Over 1 uur', pastel: 'bg-[#F0EFEC] hover:bg-[#F0EFEC]/80' },
-  { value: '1d', label: 'Morgen 9:00', pastel: 'bg-[#F0EFEC] hover:bg-[#F0EFEC]/80' },
-  { value: '2d', label: 'Over 2 dagen', pastel: 'bg-[#F0EFEC] hover:bg-[#F0EFEC]/80' },
-  { value: '1w', label: 'Over 1 week', pastel: 'bg-[#F0EFEC] hover:bg-[#F0EFEC]/80' },
+  { value: '1h', label: 'Over 1 uur', pastel: 'bg-muted hover:bg-muted/80' },
+  { value: '1d', label: 'Morgen 9:00', pastel: 'bg-muted hover:bg-muted/80' },
+  { value: '2d', label: 'Over 2 dagen', pastel: 'bg-muted hover:bg-muted/80' },
+  { value: '1w', label: 'Over 1 week', pastel: 'bg-muted hover:bg-muted/80' },
 ]
 
 export const CRMSidebar = memo(function CRMSidebar({
@@ -283,11 +283,11 @@ export const CRMSidebar = memo(function CRMSidebar({
           <>
             {/* Search input */}
             <div className="relative">
-              <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#B0ADA8]" />
+              <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/80" />
               <input
                 value={klantForm.bedrijfsnaam}
                 onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
-                className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-[#F8F7F5] border border-[#F0EFEC] rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-[#B0ADA8]"
+                className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80"
                 placeholder="Zoek klant op naam of email..."
                 autoFocus
               />
@@ -298,25 +298,25 @@ export const CRMSidebar = memo(function CRMSidebar({
                 <button
                   key={k.id}
                   onClick={() => handleSelectKlant(k)}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[6px] text-left hover:bg-[#F0EFEC]/50 transition-colors group"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[6px] text-left hover:bg-muted/50 transition-colors group"
                 >
                   <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white" style={{ background: moduleColors.klant }}>
                     {(k.bedrijfsnaam || k.contactpersoon)?.[0]?.toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-medium text-[#6B6B66] truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
-                    <p className="text-[10px] text-[#9B9B95] truncate">{k.bedrijfsnaam ? k.contactpersoon : k.email}</p>
+                    <p className="text-[12px] font-medium text-foreground/70 truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{k.bedrijfsnaam ? k.contactpersoon : k.email}</p>
                   </div>
-                  <ChevronRight className="h-3 w-3 text-[#B0ADA8] group-hover:text-[#6B6B66] flex-shrink-0" />
+                  <ChevronRight className="h-3 w-3 text-muted-foreground/80 group-hover:text-foreground/70 flex-shrink-0" />
                 </button>
               )) : (
-                <p className="text-[11px] text-[#9B9B95] px-2 py-2">Geen klanten gevonden</p>
+                <p className="text-[11px] text-muted-foreground px-2 py-2">Geen klanten gevonden</p>
               )}
             </div>
             {/* Switch to create mode */}
             <button
               onClick={() => setKlantSearchMode(false)}
-              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] border border-dashed border-[#F0EFEC] text-[12px] text-[#9B9B95] hover:border-[#1A535C]/30 hover:text-[#1A535C] transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] border border-dashed border-border text-[12px] text-muted-foreground hover:border-[#1A535C]/30 hover:text-[#1A535C] transition-colors"
             >
               <Plus className="h-3.5 w-3.5" />
               Nieuw contact aanmaken
@@ -327,7 +327,7 @@ export const CRMSidebar = memo(function CRMSidebar({
             {/* Back to search */}
             <button
               onClick={() => setKlantSearchMode(true)}
-              className="flex items-center gap-1 text-[11px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors mb-1"
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors mb-1"
             >
               <ArrowLeft className="h-3 w-3" />
               Terug naar zoeken
@@ -339,9 +339,9 @@ export const CRMSidebar = memo(function CRMSidebar({
               { key: 'telefoon' as const, placeholder: 'Telefoon', icon: Phone },
             ].map(({ key, placeholder, icon: Icon }) => (
               <div key={key} className="relative">
-                <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#B0ADA8]" />
+                <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/80" />
                 <input value={klantForm[key]} onChange={e => setKlantForm(f => ({ ...f, [key]: e.target.value }))}
-                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-[#F8F7F5] border border-[#F0EFEC] rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-[#B0ADA8]"
+                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80"
                   placeholder={placeholder} />
               </div>
             ))}
@@ -361,10 +361,10 @@ export const CRMSidebar = memo(function CRMSidebar({
               </div>
             )}
             <input value={offerteForm.titel} onChange={e => setOfferteForm(f => ({ ...f, titel: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-[#F8F7F5] border border-[#F0EFEC] rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-[#B0ADA8]"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80"
               placeholder="Titel *" />
             <textarea value={offerteForm.notities} onChange={e => setOfferteForm(f => ({ ...f, notities: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-[#F8F7F5] border border-[#F0EFEC] rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-[#B0ADA8] resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
               placeholder="Notities" />
           </>
         ),
@@ -382,10 +382,10 @@ export const CRMSidebar = memo(function CRMSidebar({
               </div>
             )}
             <input value={projectForm.naam} onChange={e => setProjectForm(f => ({ ...f, naam: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-[#F8F7F5] border border-[#F0EFEC] rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-[#B0ADA8]"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80"
               placeholder="Projectnaam *" />
             <textarea value={projectForm.beschrijving} onChange={e => setProjectForm(f => ({ ...f, beschrijving: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-[#F8F7F5] border border-[#F0EFEC] rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-[#B0ADA8] resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
               placeholder="Beschrijving" />
           </>
         ),
@@ -403,10 +403,10 @@ export const CRMSidebar = memo(function CRMSidebar({
               </div>
             )}
             <input value={taakForm.titel} onChange={e => setTaakForm(f => ({ ...f, titel: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-[#F8F7F5] border border-[#F0EFEC] rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-[#B0ADA8]"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80"
               placeholder="Taak titel *" />
             <textarea value={taakForm.beschrijving} onChange={e => setTaakForm(f => ({ ...f, beschrijving: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-[#F8F7F5] border border-[#F0EFEC] rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-[#B0ADA8] resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
               placeholder="Beschrijving" />
           </>
         ),
@@ -415,13 +415,13 @@ export const CRMSidebar = memo(function CRMSidebar({
 
     const cfg = panelConfig[activePanel]
     return (
-      <div className="bg-white rounded-[10px] border border-[#F0EFEC] overflow-hidden" style={{ boxShadow: `0 2px 12px -2px ${cfg.accent}15` }}>
+      <div className="bg-white rounded-[10px] border border-border overflow-hidden" style={{ boxShadow: `0 2px 12px -2px ${cfg.accent}15` }}>
         <div className="flex items-center justify-between px-3.5 py-2.5" style={{ background: `${cfg.accent}0C`, borderBottom: `1px solid ${cfg.accent}15` }}>
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.accent }} />
-            <h4 className="text-[12px] font-semibold text-[#6B6B66]">{cfg.title}</h4>
+            <h4 className="text-[12px] font-semibold text-foreground/70">{cfg.title}</h4>
           </div>
-          <button onClick={() => setActivePanel('none')} className="text-[#B0ADA8] hover:text-[#6B6B66] transition-colors">
+          <button onClick={() => setActivePanel('none')} className="text-muted-foreground/80 hover:text-foreground/70 transition-colors">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -441,7 +441,7 @@ export const CRMSidebar = memo(function CRMSidebar({
   }
 
   return (
-    <div className="w-[300px] border-l border-[#F0EFEC] bg-[#F8F7F5] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
+    <div className="w-[300px] border-l border-border bg-background flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
       <div className="p-5 space-y-4 flex-1">
 
         {/* ── Contact header ── */}
@@ -451,29 +451,29 @@ export const CRMSidebar = memo(function CRMSidebar({
               <span className="text-base font-bold text-white">{senderName[0]?.toUpperCase()}</span>
             </div>
             <div className="min-w-0 flex-1 pt-0.5">
-              <p className="text-[14px] font-semibold text-[#1A1A1A] leading-tight truncate">{personName}</p>
+              <p className="text-[14px] font-semibold text-foreground leading-tight truncate">{personName}</p>
               {companyGuess && (
-                <p className="text-[12px] text-[#6B6B66] truncate mt-0.5 font-medium">{companyGuess}</p>
+                <p className="text-[12px] text-foreground/70 truncate mt-0.5 font-medium">{companyGuess}</p>
               )}
-              <p className="text-[11px] text-[#9B9B95] truncate mt-1">{senderEmail}</p>
+              <p className="text-[11px] text-muted-foreground truncate mt-1">{senderEmail}</p>
             </div>
           </div>
-          <div className="mt-3.5 pt-3 border-t border-[#F0EFEC] space-y-2">
+          <div className="mt-3.5 pt-3 border-t border-border space-y-2">
             {email.aan && (
-              <div className="flex items-center gap-2.5 text-[11px] text-[#9B9B95]">
-                <Send className="h-3 w-3 flex-shrink-0 text-[#B0ADA8]" />
+              <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
+                <Send className="h-3 w-3 flex-shrink-0 text-muted-foreground/80" />
                 <span className="truncate">Aan: {email.aan}</span>
               </div>
             )}
             {emailDate && (
-              <div className="flex items-center gap-2.5 text-[11px] text-[#9B9B95]">
-                <Calendar className="h-3 w-3 flex-shrink-0 text-[#B0ADA8]" />
+              <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
+                <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/80" />
                 <span>{emailDate.date}, {emailDate.time}</span>
               </div>
             )}
             {email.bijlagen > 0 && (
-              <div className="flex items-center gap-2.5 text-[11px] text-[#9B9B95]">
-                <Paperclip className="h-3 w-3 flex-shrink-0 text-[#B0ADA8]" />
+              <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
+                <Paperclip className="h-3 w-3 flex-shrink-0 text-muted-foreground/80" />
                 <span>{email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}</span>
               </div>
             )}
@@ -482,7 +482,7 @@ export const CRMSidebar = memo(function CRMSidebar({
 
         {/* ── Linked klant ── */}
         {klantLoading ? (
-          <div className="flex items-center gap-2 text-[11px] text-[#9B9B95] px-1 py-1">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-1 py-1">
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>Klant zoeken...</span>
           </div>
@@ -497,28 +497,28 @@ export const CRMSidebar = memo(function CRMSidebar({
                 <Building2 className="h-4 w-4" style={{ color: moduleColors.klant }} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}</p>
-                <p className="text-[11px] text-[#9B9B95] truncate">{linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}</p>
+                <p className="text-[13px] font-semibold text-foreground truncate">{linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}</p>
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={cn(
                   'px-2 py-0.5 rounded-full text-[9px] font-semibold',
                   linkedKlant.status === 'actief' ? 'bg-[#E8F2EC] text-[#3A7D52]' :
-                  linkedKlant.status === 'prospect' ? 'bg-[#F5F2E8] text-[#8A7A4A]' : 'bg-[#F0EFEC] text-[#6B6B66]'
+                  linkedKlant.status === 'prospect' ? 'bg-[#F5F2E8] text-[#8A7A4A]' : 'bg-muted text-foreground/70'
                 )}>{linkedKlant.status || 'actief'}</span>
-                <ChevronRight className="h-3 w-3 text-[#B0ADA8] group-hover:text-[#6B6B66] transition-colors" />
+                <ChevronRight className="h-3 w-3 text-muted-foreground/80 group-hover:text-foreground/70 transition-colors" />
               </div>
             </div>
             {linkedKlant.telefoon && (
-              <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-[#F0EFEC]">
-                <Phone className="h-3 w-3 text-[#B0ADA8]" />
-                <span className="text-[11px] text-[#9B9B95]">{linkedKlant.telefoon}</span>
+              <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-border">
+                <Phone className="h-3 w-3 text-muted-foreground/80" />
+                <span className="text-[11px] text-muted-foreground">{linkedKlant.telefoon}</span>
               </div>
             )}
           </button>
         ) : activePanel !== 'klant' ? (
           <button onClick={() => openPanel('klant')}
-            className="w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-dashed border-[#F0EFEC] text-[12px] font-medium text-[#9B9B95] hover:border-[#1A535C]/20 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-all duration-200">
+            className="w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-dashed border-border text-[12px] font-medium text-muted-foreground hover:border-[#1A535C]/20 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-all duration-200">
             <UserPlus className="h-3.5 w-3.5" />
             Contact koppelen
           </button>
@@ -528,36 +528,36 @@ export const CRMSidebar = memo(function CRMSidebar({
         {email.labels && email.labels.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-0.5">
             {email.labels.map(label => (
-              <span key={label} className="px-2.5 py-0.5 bg-[#F0EFEC] text-[#6B6B66] rounded-full text-[10px] font-semibold border border-[#F0EFEC]">{label}</span>
+              <span key={label} className="px-2.5 py-0.5 bg-muted text-foreground/70 rounded-full text-[10px] font-semibold border border-border">{label}</span>
             ))}
           </div>
         )}
 
         {/* ── Eerdere emails ── */}
         <div className="rounded-xl border border-black/[0.03] overflow-hidden" style={{ background: '#FFFFFF', boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)' }}>
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[#F0EFEC]">
-            <Mail className="h-3.5 w-3.5 text-[#B0ADA8]" />
-            <h4 className="text-[12px] font-semibold text-[#6B6B66]">Eerdere emails</h4>
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
+            <Mail className="h-3.5 w-3.5 text-muted-foreground/80" />
+            <h4 className="text-[12px] font-semibold text-foreground/70">Eerdere emails</h4>
             {previousEmails.length > 0 && (
-              <span className="ml-auto text-[10px] font-semibold text-[#6B6B66] font-mono tabular-nums bg-[#F0EFEC] px-2 py-0.5 rounded-full border border-[#F0EFEC]">{previousEmails.length}</span>
+              <span className="ml-auto text-[10px] font-semibold text-foreground/70 font-mono tabular-nums bg-muted px-2 py-0.5 rounded-full border border-border">{previousEmails.length}</span>
             )}
           </div>
           <div className="p-2">
             {previousEmails.length === 0 ? (
-              <p className="text-[11px] text-[#9B9B95] px-2 py-3 text-center italic">Geen eerdere emails gevonden</p>
+              <p className="text-[11px] text-muted-foreground px-2 py-3 text-center italic">Geen eerdere emails gevonden</p>
             ) : (
               <div className="space-y-0.5">
                 {previousEmails.map(e => (
                   <button
                     key={e.id}
                     onClick={() => onSelectEmail?.(e)}
-                    className="w-full px-3 py-2.5 rounded-lg hover:bg-[#F0EFEC]/50 transition-all duration-150 text-left group"
+                    className="w-full px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-all duration-150 text-left group"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-medium text-[#6B6B66] group-hover:text-[#4A4A46] truncate flex-1 transition-colors">{e.onderwerp || '(geen onderwerp)'}</p>
-                      <span className="text-[9px] text-[#B0ADA8] tabular-nums flex-shrink-0">{formatShortDate(e.datum)}</span>
+                      <p className="text-[11px] font-medium text-foreground/70 group-hover:text-foreground/80 truncate flex-1 transition-colors">{e.onderwerp || '(geen onderwerp)'}</p>
+                      <span className="text-[9px] text-muted-foreground/80 tabular-nums flex-shrink-0">{formatShortDate(e.datum)}</span>
                     </div>
-                    <p className="text-[10px] text-[#B0ADA8] truncate mt-0.5">
+                    <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">
                       {e.inhoud?.replace(/<[^>]*>/g, '').slice(0, 60) || '...'}
                     </p>
                   </button>
@@ -569,11 +569,11 @@ export const CRMSidebar = memo(function CRMSidebar({
 
         {/* ── Opvolg-herinnering ── */}
         <div className="rounded-xl border border-black/[0.03] overflow-hidden" style={{ background: '#FFFFFF', boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)' }}>
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[#F0EFEC]">
-            <Bell className="h-3.5 w-3.5 text-[#B0ADA8]" />
-            <h4 className="text-[12px] font-semibold text-[#6B6B66]">Herinnering</h4>
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
+            <Bell className="h-3.5 w-3.5 text-muted-foreground/80" />
+            <h4 className="text-[12px] font-semibold text-foreground/70">Herinnering</h4>
             {reminder && (
-              <button onClick={() => { setReminder(null); toast('Herinnering verwijderd') }} className="ml-auto text-[#B0ADA8] hover:text-[#6B6B66] transition-colors" title="Verwijder herinnering">
+              <button onClick={() => { setReminder(null); toast('Herinnering verwijderd') }} className="ml-auto text-muted-foreground/80 hover:text-foreground/70 transition-colors" title="Verwijder herinnering">
                 <BellOff className="h-3 w-3" />
               </button>
             )}
@@ -590,7 +590,7 @@ export const CRMSidebar = memo(function CRMSidebar({
                   <button
                     key={opt.value}
                     onClick={() => setFollowUpReminder(opt.value)}
-                    className={cn('px-2.5 py-2 rounded-lg text-[11px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] transition-all duration-150 text-center', opt.pastel)}
+                    className={cn('px-2.5 py-2 rounded-lg text-[11px] font-medium text-foreground/70 hover:text-foreground transition-all duration-150 text-center', opt.pastel)}
                   >
                     {opt.label}
                   </button>
@@ -606,22 +606,22 @@ export const CRMSidebar = memo(function CRMSidebar({
         {/* ── Quick action buttons ── */}
         {activePanel === 'none' && (
           <div className="space-y-1.5">
-            <h3 className="text-[10px] font-bold text-[#B0ADA8] uppercase tracking-[0.08em] px-1 mb-2">Snel aanmaken</h3>
+            <h3 className="text-[10px] font-bold text-muted-foreground/80 uppercase tracking-[0.08em] px-1 mb-2">Snel aanmaken</h3>
             {([
               { panel: 'offerte' as const, icon: FileText, label: 'Offerte', desc: linkedKlant ? `voor ${klantDisplayName}` : 'offerte opmaken', accent: moduleColors.offerte },
               { panel: 'project' as const, icon: FolderPlus, label: 'Project', desc: linkedKlant ? `voor ${klantDisplayName}` : 'project starten', accent: moduleColors.project },
               { panel: 'taak' as const, icon: CheckCircle2, label: 'Taak', desc: 'opvolging plannen', accent: moduleColors.taak },
             ]).map(({ panel, icon: Icon, label, desc, accent }) => (
               <button key={panel} onClick={() => openPanel(panel)}
-                className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl hover:bg-[#F0EFEC]/50 transition-all duration-150 group text-left">
+                className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl hover:bg-muted/50 transition-all duration-150 group text-left">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${accent}18`, boxShadow: `0 1px 4px ${accent}15` }}>
                   <Icon className="h-4 w-4" style={{ color: accent }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-semibold text-[#6B6B66] group-hover:text-[#1A1A1A] transition-colors">{label}</p>
-                  <p className="text-[10px] text-[#9B9B95] truncate">{desc}</p>
+                  <p className="text-[12px] font-semibold text-foreground/70 group-hover:text-foreground transition-colors">{label}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{desc}</p>
                 </div>
-                <Plus className="h-3.5 w-3.5 text-[#B0ADA8] group-hover:text-[#6B6B66] transition-colors flex-shrink-0" />
+                <Plus className="h-3.5 w-3.5 text-muted-foreground/80 group-hover:text-foreground/70 transition-colors flex-shrink-0" />
               </button>
             ))}
           </div>

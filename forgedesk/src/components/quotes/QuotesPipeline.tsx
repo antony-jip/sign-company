@@ -196,7 +196,7 @@ function getDagenOpenHint(offerte: Offerte): { text: string; className: string }
   if (!sentDate) return null
   const dagen = Math.floor((Date.now() - new Date(sentDate).getTime()) / 86400000)
   if (dagen < 5) return null
-  if (dagen <= 7) return { text: `${dagen} dagen open`, className: 'text-[11px] text-[#6B6B66]' }
+  if (dagen <= 7) return { text: `${dagen} dagen open`, className: 'text-[11px] text-foreground/70' }
   if (dagen <= 14) return { text: `${dagen} dagen · overweeg opvolging`, className: 'text-[11px] text-[#C03A18]' }
   return { text: `${dagen} dagen open`, className: 'text-[11px] text-[#C03A18] font-medium' }
 }
@@ -742,14 +742,14 @@ export function QuotesPipeline() {
 
   if (isLoading) {
     return (
-      <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
+      <div className="h-full flex flex-col bg-background -m-3 sm:-m-4 md:-m-6">
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
             {/* Header */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
-                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
                     Offertes<span className="text-[#F15025]">.</span>
                   </h1>
                   <Skeleton className="h-4 w-12" />
@@ -764,7 +764,7 @@ export function QuotesPipeline() {
               </div>
             </div>
             {/* Toolbar */}
-            <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] space-y-4">
+            <div className="bg-card rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] space-y-4">
               <div className="flex items-center gap-5">
                 <Skeleton className="h-9 w-[280px] rounded-lg" />
                 <Skeleton className="h-9 w-20 rounded-lg" />
@@ -774,16 +774,16 @@ export function QuotesPipeline() {
                   <Skeleton className="h-8 w-16 rounded-lg" />
                 </div>
               </div>
-              <div className="flex items-center gap-2 pt-4 border-t border-[#F0EFEC]">
+              <div className="flex items-center gap-2 pt-4 border-t border-border">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Skeleton key={i} className="h-7 w-20 rounded-lg" />
                 ))}
               </div>
             </div>
             {/* List view (default) — table on md+, cards on mobile */}
-            <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+            <div className="hidden md:block bg-card rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-[#F0EFEC] last:border-b-0">
+                <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border last:border-b-0">
                   <Skeleton className="h-4 w-4 rounded" />
                   <div className="flex-1 min-w-0 space-y-2">
                     <Skeleton className="h-4 w-2/5" />
@@ -798,7 +798,7 @@ export function QuotesPipeline() {
             </div>
             <div className="md:hidden space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl p-4 ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.04)] space-y-2.5">
+                <div key={i} className="bg-card rounded-xl p-4 ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.04)] space-y-2.5">
                   <div className="flex items-center justify-between">
                     <Skeleton className="h-4 w-3/5" />
                     <Skeleton className="h-4 w-16" />
@@ -832,7 +832,7 @@ export function QuotesPipeline() {
     <button
       onClick={() => handleListSort(column)}
       className={cn(
-        'flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] hover:text-[#1A1A1A] transition-colors',
+        'flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors',
         align === 'right' && 'ml-auto',
       )}
     >
@@ -855,16 +855,16 @@ export function QuotesPipeline() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-4">
-                <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+                <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
                   Offertes<span className="text-[#F15025]">.</span>
                 </h1>
-                <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+                <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
                   {filteredOffertes.length === offertes.length ? (
-                    <span className="font-medium text-[#6B6B66]">{offertes.length}</span>
+                    <span className="font-medium text-foreground/70">{offertes.length}</span>
                   ) : (
                     <>
-                      <span className="font-medium text-[#6B6B66]">{filteredOffertes.length}</span>
-                      <span className="text-[#C0BDB8]">/</span>{offertes.length}
+                      <span className="font-medium text-foreground/70">{filteredOffertes.length}</span>
+                      <span className="text-muted-foreground/70">/</span>{offertes.length}
                     </>
                   )}
                 </span>
@@ -904,17 +904,17 @@ export function QuotesPipeline() {
                         <span className={cn('doen-duo-icon flex-shrink-0', tile.key === 'wacht_op_reactie' && 'doen-pulse')}>
                           <TileIcon size={18} weight="duotone" />
                         </span>
-                        <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                        <span className="font-heading text-[14px] font-bold text-foreground">
                           {tile.label}<span className="text-[#F15025]">.</span>
                         </span>
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="font-heading font-bold text-[28px] leading-none text-[#1A1A1A] tabular-nums">
+                      <span className="font-heading font-bold text-[28px] leading-none text-foreground tabular-nums">
                         {tile.count}
                       </span>
                       <span
-                        className="text-[13px] text-[#9B9B95] truncate"
+                        className="text-[13px] text-muted-foreground truncate"
                         style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                       >
                         · {tile.sub}
@@ -929,19 +929,19 @@ export function QuotesPipeline() {
             <div className="flex items-center gap-5 flex-wrap text-[12.5px]">
               <span className="inline-flex items-center gap-1.5 text-[#3A5A9A]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
-                <span className="text-[#6B6B66]">Pipeline</span>
+                <span className="text-foreground/70">Pipeline</span>
                 <span className="font-mono font-medium">{formatEur(financialSummary.pipelineTotaal)}</span>
               </span>
               <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
                 <span className="font-mono font-medium">{kpis.conversionRate}%</span>
-                <span className="text-[#6B6B66]">conversie</span>
+                <span className="text-foreground/70">conversie</span>
               </span>
               {kpis.overdueFollowUps > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-[#C0451A]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
                   <span className="font-mono font-medium">{kpis.overdueFollowUps}</span>
-                  <span className="text-[#6B6B66]">achterstallige follow-up</span>
+                  <span className="text-foreground/70">achterstallige follow-up</span>
                 </span>
               )}
             </div>
@@ -952,29 +952,29 @@ export function QuotesPipeline() {
               <div className="flex items-center gap-5">
                 {/* Search */}
                 <div className="relative max-w-[280px] flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="Zoek op nummer, titel of klant..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-12 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+                    className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
                   />
-                  <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#9B9B95] bg-[#F0EFEC] rounded border border-[#E5E4E0]">/</kbd>
+                  <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
                 </div>
 
                 {/* View mode toggle */}
-                <div className="flex items-center bg-[#F8F7F5] rounded-lg p-0.5 border border-[#EBEBEB]">
+                <div className="flex items-center bg-background rounded-lg p-0.5 border border-border">
                   <button
                     onClick={() => setViewMode('lijst')}
-                    className={cn('p-1.5 rounded-md transition-all', viewMode === 'lijst' ? 'bg-white shadow-sm text-[#1A1A1A]' : 'text-[#9B9B95] hover:text-[#6B6B66]')}
+                    className={cn('p-1.5 rounded-md transition-all', viewMode === 'lijst' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground/70')}
                     title="Lijstweergave"
                   >
                     <List className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setViewMode('pipeline')}
-                    className={cn('p-1.5 rounded-md transition-all', viewMode === 'pipeline' ? 'bg-white shadow-sm text-[#1A1A1A]' : 'text-[#9B9B95] hover:text-[#6B6B66]')}
+                    className={cn('p-1.5 rounded-md transition-all', viewMode === 'pipeline' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground/70')}
                     title="Kanban"
                   >
                     <LayoutGrid className="w-3.5 h-3.5" />
@@ -993,7 +993,7 @@ export function QuotesPipeline() {
                       }))
                       exportCSV(`offertes-${new Date().toISOString().split('T')[0]}`, headers, rows)
                     }}
-                    className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+                    className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
                   >
                     <Download className="w-3.5 h-3.5" />
                     CSV
@@ -1008,7 +1008,7 @@ export function QuotesPipeline() {
                       }))
                       exportExcel(`offertes-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Offertes')
                     }}
-                    className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+                    className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     Excel
@@ -1017,7 +1017,7 @@ export function QuotesPipeline() {
               </div>
 
               {/* Status filter tabs */}
-              <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
+              <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border">
                 <div className="flex items-center gap-1 flex-1 flex-nowrap md:flex-wrap overflow-x-auto">
                   {statusOpties.map(optie => {
                     const count = optie.value === 'alle'
@@ -1035,7 +1035,7 @@ export function QuotesPipeline() {
                           'relative text-[13px] font-medium px-3 py-1.5 rounded-lg transition-all',
                           isActive
                             ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
-                            : 'text-[#9B9B95] hover:text-[#6B6B66]',
+                            : 'text-muted-foreground hover:text-foreground/70',
                         )}
                       >
                         {optie.label}
@@ -1077,8 +1077,8 @@ export function QuotesPipeline() {
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: col.dot }} />
                         <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: col.text }}>{col.label}<span className="text-[#F15025]">.</span></span>
                       </div>
-                      <p className="text-[18px] font-bold font-mono tabular-nums text-[#1A1A1A]">{formatEur(data.totaal)}</p>
-                      <p className="text-[11px] text-[#9B9B95] mt-0.5">{data.count} {data.count === 1 ? 'offerte' : 'offertes'}</p>
+                      <p className="text-[18px] font-bold font-mono tabular-nums text-foreground">{formatEur(data.totaal)}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{data.count} {data.count === 1 ? 'offerte' : 'offertes'}</p>
                     </div>
                   )
                 })}
@@ -1087,18 +1087,18 @@ export function QuotesPipeline() {
               {/* Sales summary */}
               <div className="doen-slate-surface rounded-2xl px-6 py-4 flex flex-wrap items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-[#9B9B95]" />
-                  <span className="text-[13px] text-[#6B6B66]">Pipeline</span>
-                  <span className="text-[13px] font-bold font-mono text-[#1A1A1A]">{formatEur(salesSummary.pipelineValue)}</span>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-[13px] text-foreground/70">Pipeline</span>
+                  <span className="text-[13px] font-bold font-mono text-foreground">{formatEur(salesSummary.pipelineValue)}</span>
                 </div>
-                <div className="w-px h-4 bg-[#EBEBEB] hidden sm:block" />
+                <div className="w-px h-4 bg-border hidden sm:block" />
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] text-[#6B6B66]">Verstuurd</span>
-                  <span className="text-[13px] font-bold font-mono text-[#1A1A1A]">{formatEur(salesSummary.verstuurdValue)}</span>
+                  <span className="text-[13px] text-foreground/70">Verstuurd</span>
+                  <span className="text-[13px] font-bold font-mono text-foreground">{formatEur(salesSummary.verstuurdValue)}</span>
                 </div>
-                <div className="w-px h-4 bg-[#EBEBEB] hidden sm:block" />
+                <div className="w-px h-4 bg-border hidden sm:block" />
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] text-[#6B6B66]">Akkoord</span>
+                  <span className="text-[13px] text-foreground/70">Akkoord</span>
                   <span className="text-[13px] font-bold font-mono text-[#2D6B48]">{formatEur(salesSummary.akkoordValue)}</span>
                 </div>
               </div>
@@ -1113,7 +1113,7 @@ export function QuotesPipeline() {
                     <div
                       key={col.key}
                       className={cn(
-                        'rounded-2xl bg-[#F8F7F5] ring-1 flex flex-col overflow-hidden transition-all duration-150',
+                        'rounded-2xl bg-background ring-1 flex flex-col overflow-hidden transition-all duration-150',
                         isDragOver ? 'ring-[#1A535C] shadow-lg scale-[1.01]' : 'ring-black/[0.03]',
                       )}
                       onDragOver={e => handleDragOver(e, col.key)}
@@ -1121,7 +1121,7 @@ export function QuotesPipeline() {
                       onDrop={e => handleDrop(e, col.key)}
                     >
                       {/* Column header */}
-                      <div className="px-4 py-3.5 border-b border-[#EBEBEB]">
+                      <div className="px-4 py-3.5 border-b border-border">
                         <div className="flex items-center gap-2 mb-1">
                           <div className={cn('w-2 h-2 rounded-full', col.accent)} />
                           {editingKolomKey === col.key ? (
@@ -1134,29 +1134,29 @@ export function QuotesPipeline() {
                                 if (e.key === 'Enter') { e.preventDefault(); saveKolomLabel(col.key, editingKolomLabel) }
                                 if (e.key === 'Escape') { e.preventDefault(); setEditingKolomKey(null) }
                               }}
-                              className="font-bold text-[13px] text-[#1A1A1A] bg-white border border-[#EBEBEB] rounded-md px-1.5 py-0.5 flex-1 min-w-0 focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
+                              className="font-bold text-[13px] text-foreground bg-card border border-border rounded-md px-1.5 py-0.5 flex-1 min-w-0 focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
                               placeholder={DEFAULT_STATUS_COLUMNS.concat(CLOSED_STATUS_COLUMNS).find(c => c.key === col.key)?.label || ''}
                             />
                           ) : (
                             <button
                               type="button"
                               onClick={() => { setEditingKolomLabel(col.label); setEditingKolomKey(col.key) }}
-                              className="font-bold text-[13px] text-[#1A1A1A] hover:text-[#1A535C] transition-colors text-left"
+                              className="font-bold text-[13px] text-foreground hover:text-[#1A535C] transition-colors text-left"
                               title="Klik om kolomnaam aan te passen"
                             >
                               {col.label}<span className="text-[#F15025]">.</span>
                             </button>
                           )}
-                          <span className="ml-auto text-[11px] font-mono font-semibold text-[#9B9B95] bg-[#EBEBEB] px-2 py-0.5 rounded-md">{colOffertes.length}</span>
+                          <span className="ml-auto text-[11px] font-mono font-semibold text-muted-foreground bg-border px-2 py-0.5 rounded-md">{colOffertes.length}</span>
                         </div>
-                        <p className="text-[11px] text-[#9B9B95] font-mono tabular-nums pl-4">{formatEur(colTotal)}</p>
+                        <p className="text-[11px] text-muted-foreground font-mono tabular-nums pl-4">{formatEur(colTotal)}</p>
                       </div>
 
                       {/* Cards */}
                       <div className="flex-1 p-3 space-y-2.5 overflow-y-auto min-h-[100px]">
                         {colOffertes.length === 0 && (
                           <div className="flex flex-col items-center justify-center py-10 text-center">
-                            <p className="text-[12px] text-[#C0BDB8]">Geen offertes</p>
+                            <p className="text-[12px] text-muted-foreground/70">Geen offertes</p>
                           </div>
                         )}
                         {colOffertes.map(offerte => {
@@ -1173,7 +1173,7 @@ export function QuotesPipeline() {
                                 {isPaused && (
                                   <button
                                     onClick={e => { e.preventDefault(); e.stopPropagation(); handleToggleOpvolging(offerte) }}
-                                    className="p-1 rounded-full bg-white/55 backdrop-blur-lg ring-1 ring-black/5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white/85 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.18)] transition-all duration-200"
+                                    className="p-1 rounded-full bg-card/55 backdrop-blur-lg ring-1 ring-black/5 text-foreground/70 hover:text-foreground hover:bg-card/85 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.18)] transition-all duration-200"
                                     title="Opvolging hervatten"
                                   >
                                     <Pause className="h-3 w-3" />
@@ -1181,7 +1181,7 @@ export function QuotesPipeline() {
                                 )}
                                 <button
                                   onClick={e => { e.preventDefault(); e.stopPropagation(); handleDeleteOfferte(offerte) }}
-                                  className="p-1 rounded-full bg-white/55 backdrop-blur-lg ring-1 ring-black/5 text-[#9B9B95] hover:text-[#C03A18] hover:bg-white/85 hover:ring-[#C03A18]/20 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.18)] transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                  className="p-1 rounded-full bg-card/55 backdrop-blur-lg ring-1 ring-black/5 text-muted-foreground hover:text-[#C03A18] hover:bg-card/85 hover:ring-[#C03A18]/20 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.18)] transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100"
                                   title="Offerte verwijderen"
                                 >
                                   <X className="h-3 w-3" />
@@ -1192,7 +1192,7 @@ export function QuotesPipeline() {
                                 onDragStart={e => handleDragStart(e, offerte.id)}
                                 onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                                 className={cn(
-                                  'bg-white rounded-xl p-3.5 space-y-2 shadow-[0_1px_2px_rgba(15,15,15,0.04)] hover:shadow-[0_10px_28px_-12px_rgba(15,15,15,0.18),0_2px_6px_-2px_rgba(15,15,15,0.04)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer active:cursor-grabbing active:translate-y-0',
+                                  'bg-card rounded-xl p-3.5 space-y-2 shadow-[0_1px_2px_rgba(15,15,15,0.04)] hover:shadow-[0_10px_28px_-12px_rgba(15,15,15,0.18),0_2px_6px_-2px_rgba(15,15,15,0.04)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer active:cursor-grabbing active:translate-y-0',
                                   needsFollowUp ? 'ring-1 ring-[#F15025]/35' : 'ring-1 ring-black/[0.04]',
                                   isPaused && 'opacity-55 saturate-50',
                                 )}
@@ -1221,26 +1221,26 @@ export function QuotesPipeline() {
                                       return (
                                         <span className="inline-flex items-center gap-0.5">
                                           <span className={cn('w-1.5 h-1.5 rounded-full', dotColor)} />
-                                          <span className="text-[10px] font-mono text-[#9B9B95]">{sentDays}d</span>
+                                          <span className="text-[10px] font-mono text-muted-foreground">{sentDays}d</span>
                                         </span>
                                       )
                                     })()}
                                   </div>
                                 </div>
                                 {/* Client */}
-                                <p className="text-[12px] text-[#6B6B66] truncate">{offerte.klant_naam || 'Onbekende klant'}</p>
+                                <p className="text-[12px] text-foreground/70 truncate">{offerte.klant_naam || 'Onbekende klant'}</p>
                                 {/* Amount + date */}
-                                <div className="flex items-center justify-between pt-2 border-t border-[#F0EFEC]">
-                                  <span className="text-[14px] font-bold font-mono tabular-nums text-[#1A1A1A]">{formatEur(offerte.totaal)}</span>
+                                <div className="flex items-center justify-between pt-2 border-t border-border">
+                                  <span className="text-[14px] font-bold font-mono tabular-nums text-foreground">{formatEur(offerte.totaal)}</span>
                                   <div className="flex items-center gap-1.5">
                                     {OPEN_STATUSES.includes(offerte.status) && (
                                       <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-md font-mono tabular-nums', getDaysColor(daysOpen))}>{daysOpen}d</span>
                                     )}
-                                    <span className="text-[10px] text-[#C0BDB8]">{relativeDate(offerte.created_at)}</span>
+                                    <span className="text-[10px] text-muted-foreground/70">{relativeDate(offerte.created_at)}</span>
                                   </div>
                                 </div>
                                 {pogingen > 0 && offerte.laatste_contact && (
-                                  <p className="text-[10px] text-[#9B9B95]">{pogingen} {pogingen === 1 ? 'poging' : 'pogingen'}, laatst {new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'short' }).format(new Date(offerte.laatste_contact))}</p>
+                                  <p className="text-[10px] text-muted-foreground">{pogingen} {pogingen === 1 ? 'poging' : 'pogingen'}, laatst {new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'short' }).format(new Date(offerte.laatste_contact))}</p>
                                 )}
                                 {expiryStatus === 'expired' && (
                                   <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#FDE8E2] text-[#C03A18]">Verlopen</span>
@@ -1253,7 +1253,7 @@ export function QuotesPipeline() {
                                     <button
                                       onClick={e => { e.preventDefault(); e.stopPropagation(); handleOpenMail(offerte) }}
                                       disabled={openingActieId === offerte.id}
-                                      className="p-1.5 rounded-md text-[#6B6B66] hover:bg-[#F4F2EE] hover:text-[#F15025] transition-colors disabled:opacity-50"
+                                      className="p-1.5 rounded-md text-foreground/70 hover:bg-muted hover:text-[#F15025] transition-colors disabled:opacity-50"
                                       title="Mail versturen"
                                     >
                                       {openingActieId === offerte.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
@@ -1261,14 +1261,14 @@ export function QuotesPipeline() {
                                     <button
                                       onClick={e => { e.preventDefault(); e.stopPropagation(); handleOpenPortaal(offerte) }}
                                       disabled={openingActieId === offerte.id}
-                                      className="p-1.5 rounded-md text-[#6B6B66] hover:bg-[#F4F2EE] hover:text-[#1A535C] transition-colors disabled:opacity-50"
+                                      className="p-1.5 rounded-md text-foreground/70 hover:bg-muted hover:text-[#1A535C] transition-colors disabled:opacity-50"
                                       title="Portaal herinnering"
                                     >
                                       <Bell className="h-3.5 w-3.5" />
                                     </button>
                                     <button
                                       onClick={e => { e.preventDefault(); e.stopPropagation(); handleOpenTaak(offerte) }}
-                                      className="p-1.5 rounded-md text-[#6B6B66] hover:bg-[#F4F2EE] hover:text-[#2D6B48] transition-colors"
+                                      className="p-1.5 rounded-md text-foreground/70 hover:bg-muted hover:text-[#2D6B48] transition-colors"
                                       title="Taak aanmaken"
                                     >
                                       <CheckCircle2 className="h-3.5 w-3.5" />
@@ -1297,13 +1297,13 @@ export function QuotesPipeline() {
                   <span className="text-[10px] text-[#1A535C]/50 ml-2">van {filteredOffertes.length}</span>
                 </div>
               </div>
-              <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] px-2.5 py-1 rounded-md hover:bg-white/40 transition-all">
+              <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
                 {selectedIds.size === filteredOffertes.length ? 'Deselecteer alles' : 'Selecteer alles'}
               </button>
               <div className="flex-1" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#1A535C]/10 text-[#1A535C] hover:shadow-sm transition-all">
+                  <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-[#1A535C]/10 text-[#1A535C] hover:shadow-sm transition-all">
                     <ArrowUpDown className="w-3 h-3" /> Status wijzigen <ChevronDown className="w-3 h-3 opacity-50" />
                   </button>
                 </DropdownMenuTrigger>
@@ -1318,11 +1318,11 @@ export function QuotesPipeline() {
               </DropdownMenu>
               <button
                 onClick={() => setBulkDeleteDialogOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all"
+                className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all"
               >
                 <Trash2 className="w-3 h-3" /> Verwijderen
               </button>
-              <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all">
+              <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-card/40 transition-all">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -1362,11 +1362,11 @@ export function QuotesPipeline() {
                           onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                         >
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[14px] font-semibold text-[#1A1A1A] truncate">{offerte.titel || offerte.nummer}</span>
-                            <span className="text-[14px] font-bold font-mono tabular-nums text-[#1A1A1A]">{formatEur(offerte.totaal)}</span>
+                            <span className="text-[14px] font-semibold text-foreground truncate">{offerte.titel || offerte.nummer}</span>
+                            <span className="text-[14px] font-bold font-mono tabular-nums text-foreground">{formatEur(offerte.totaal)}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[12px] text-[#6B6B66]">{offerte.klant_naam || 'Onbekend'}</span>
+                            <span className="text-[12px] text-foreground/70">{offerte.klant_naam || 'Onbekend'}</span>
                             <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium rounded-md px-2 py-0.5"
                               style={{ backgroundColor: STATUS_BADGE_STYLES[offerte.status]?.bg ?? '#EEEEED', color: STATUS_BADGE_STYLES[offerte.status]?.text ?? '#5A5A55' }}
                             >
@@ -1374,7 +1374,7 @@ export function QuotesPipeline() {
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-1.5">
-                            <span className="text-[10px] font-mono text-[#C0BDB8]">{offerte.nummer}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground/70">{offerte.nummer}</span>
                             {expiryStatus === 'expired' && <span className="text-[10px] font-medium text-[#C03A18]">Verlopen</span>}
                           </div>
                         </div>
@@ -1389,8 +1389,8 @@ export function QuotesPipeline() {
                   >
                     <div className="overflow-x-auto">
                       <table className="w-full">
-                        <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
-                          <tr className="border-b-2 border-[#F0EFEC]">
+                        <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
+                          <tr className="border-b-2 border-border">
                             <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                               <Checkbox
                                 checked={sortedListOffertes.length > 0 && selectedIds.size === sortedListOffertes.length}
@@ -1399,7 +1399,7 @@ export function QuotesPipeline() {
                             </th>
                             <th className="text-left py-3.5 pr-4"><SortHeader column="nummer" label="Offerte" /></th>
                             <th className="text-left py-3.5 pr-4 w-[160px] hidden lg:table-cell"><SortHeader column="klant_naam" label="Klant" /></th>
-                            <th className="text-left py-3.5 pr-4 w-[150px]"><span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</span></th>
+                            <th className="text-left py-3.5 pr-4 w-[150px]"><span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</span></th>
                             <th className="text-right py-3.5 pr-4 w-[110px] hidden xl:table-cell"><SortHeader column="totaal" label="Bedrag" align="right" /></th>
                             <th className="text-right py-3.5 pr-4 w-[80px] hidden md:table-cell"><SortHeader column="created_at" label="Datum" align="right" /></th>
                             <th className="text-right py-3.5 pr-4 w-[70px] hidden lg:table-cell"><SortHeader column="days_open" label="Dagen" align="right" /></th>
@@ -1417,9 +1417,9 @@ export function QuotesPipeline() {
                               <tr
                                 key={offerte.id}
                                 className={cn(
-                                  'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                                  'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
                                   attention && !selectedIds.has(offerte.id) && 'bg-[rgba(241,80,37,0.025)]',
-                                  'hover:bg-[#F8F7F4]',
+                                  'hover:bg-background',
                                   selectedIds.has(offerte.id) && 'bg-[#1A535C]/[0.03]',
                                 )}
                                 style={{ animationDelay: `${i * 25}ms` }}
@@ -1439,12 +1439,12 @@ export function QuotesPipeline() {
                                       <Link
                                         to={`/offertes/${offerte.id}/bewerken`}
                                         onClick={e => e.stopPropagation()}
-                                        className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
+                                        className="text-[15px] font-semibold text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
                                       >
                                         {offerte.titel || offerte.nummer}
                                       </Link>
                                       {offerte.nummer && (
-                                        <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 tabular-nums bg-[#F8F7F5] px-1.5 py-0.5 rounded">{offerte.nummer}</span>
+                                        <span className="text-[10px] text-muted-foreground/80 font-mono flex-shrink-0 tabular-nums bg-background px-1.5 py-0.5 rounded">{offerte.nummer}</span>
                                       )}
                                     </div>
                                   </div>
@@ -1459,7 +1459,7 @@ export function QuotesPipeline() {
                                         'bg-[#E8F2EC] text-[#3A7D52]',
                                         'bg-[#E8EEF9] text-[#3A5A9A]',
                                         'bg-[#F5F2E8] text-[#8A7A4A]',
-                                        'bg-[#F0EFEC] text-[#6B6B66]',
+                                        'bg-muted text-foreground/70',
                                         'bg-[#EDE8F4] text-[#6A5A8A]',
                                       ]
                                       return (
@@ -1469,7 +1469,7 @@ export function QuotesPipeline() {
                                       )
                                     })()}
                                     <div className="min-w-0">
-                                      <span className="text-[13px] text-[#4A4A46] truncate block leading-tight">{offerte.klant_naam || 'Onbekend'}</span>
+                                      <span className="text-[13px] text-foreground/80 truncate block leading-tight">{offerte.klant_naam || 'Onbekend'}</span>
                                     </div>
                                   </div>
                                 </td>
@@ -1487,7 +1487,7 @@ export function QuotesPipeline() {
                                           )}
                                           {STATUS_LABELS[offerte.status] || offerte.status}<span className="text-[#F15025]">.</span>
                                         </span>
-                                        <ChevronDown className="w-3 h-3 text-[#C0BDB8] opacity-0 group-hover/status:opacity-100 transition-opacity -ml-0.5" />
+                                        <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity -ml-0.5" />
                                       </button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="start" className="w-44">
@@ -1508,13 +1508,13 @@ export function QuotesPipeline() {
                                 {/* Bedrag */}
                                 <td className="py-3.5 pr-4 text-right hidden xl:table-cell">
                                   {(() => {
-                                    if (offerte.totaal <= 0) return <span className="text-xs text-[#C0BDB8]">&mdash;</span>
+                                    if (offerte.totaal <= 0) return <span className="text-xs text-muted-foreground/70">&mdash;</span>
                                     return (
                                       <span className={cn(
                                         'font-mono tabular-nums',
                                         offerte.totaal >= 10000
-                                          ? 'text-[15px] font-bold text-[#1A1A1A]'
-                                          : 'text-sm text-[#4A4A46]'
+                                          ? 'text-[15px] font-bold text-foreground'
+                                          : 'text-sm text-foreground/80'
                                       )}>
                                         {formatEur(offerte.totaal)}
                                       </span>
@@ -1523,7 +1523,7 @@ export function QuotesPipeline() {
                                 </td>
                                 {/* Datum */}
                                 <td className="py-3.5 pr-4 text-right hidden md:table-cell">
-                                  <span className="text-[12px] font-mono tabular-nums text-[#B0ADA8]">
+                                  <span className="text-[12px] font-mono tabular-nums text-muted-foreground/80">
                                     {new Date(offerte.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                                   </span>
                                 </td>
@@ -1539,7 +1539,7 @@ export function QuotesPipeline() {
                                           'inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
                                           urgent ? 'bg-[#FDE8E4] text-[#C03A18]' :
                                           warning ? 'bg-[#FEF3E8] text-[#D4621A]' :
-                                          'text-[#9B9B95]'
+                                          'text-muted-foreground'
                                         )}
                                       >
                                         {days}d
@@ -1550,7 +1550,7 @@ export function QuotesPipeline() {
                                 {/* Geldig tot */}
                                 <td className="py-3.5 pr-4 text-right hidden md:table-cell">
                                   <div className="flex items-center gap-1.5 justify-end">
-                                    <span className="text-[12px] font-mono tabular-nums text-[#B0ADA8]">{formatDate(offerte.geldig_tot)}</span>
+                                    <span className="text-[12px] font-mono tabular-nums text-muted-foreground/80">{formatDate(offerte.geldig_tot)}</span>
                                     {expiryStatus === 'expired' && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18]" />}
                                     {expiryStatus === 'soon' && <span className="w-1.5 h-1.5 rounded-full bg-[#F15025]" />}
                                   </div>
@@ -1558,13 +1558,13 @@ export function QuotesPipeline() {
                                 {/* Actions */}
                                 <td className="py-3.5 pr-4">
                                   <div className="flex items-center gap-0.5 justify-end">
-                                    <Link to={`/offertes/${offerte.id}/preview`} onClick={e => e.stopPropagation()} className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100" title="Preview">
-                                      <Eye className="w-3.5 h-3.5 text-[#9B9B95]" />
+                                    <Link to={`/offertes/${offerte.id}/preview`} onClick={e => e.stopPropagation()} className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100" title="Preview">
+                                      <Eye className="w-3.5 h-3.5 text-muted-foreground" />
                                     </Link>
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
-                                        <button onClick={e => e.stopPropagation()} className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100">
-                                          <MoreHorizontal className="w-3.5 h-3.5 text-[#9B9B95]" />
+                                        <button onClick={e => e.stopPropagation()} className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100">
+                                          <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
                                         </button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end" className="w-48">
@@ -1645,16 +1645,16 @@ export function QuotesPipeline() {
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
-              <label className="text-[12px] font-medium text-[#6B6B66]">Persoonlijk bericht (optioneel)</label>
+              <label className="text-[12px] font-medium text-foreground/70">Persoonlijk bericht (optioneel)</label>
               <textarea
                 value={portaalBericht}
                 onChange={(e) => setPortaalBericht(e.target.value)}
                 rows={3}
                 placeholder="Bijv. Heeft u onze offerte al kunnen bekijken? Ik hoor graag uw reactie."
-                className="w-full rounded-lg border border-[#EBEBEB] bg-[#F8F7F5] px-3 py-2 text-sm text-[#1A1A1A] placeholder:text-[#C0BDB8] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 resize-none"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 resize-none"
               />
             </div>
-            <p className="text-[11px] text-[#9B9B95]">Geen bericht? Dan wordt de standaard-tekst gebruikt.</p>
+            <p className="text-[11px] text-muted-foreground">Geen bericht? Dan wordt de standaard-tekst gebruikt.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPortaalOfferte(null)} disabled={portaalSending}>Annuleren</Button>
@@ -1676,27 +1676,27 @@ export function QuotesPipeline() {
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
-              <label className="text-[12px] font-medium text-[#6B6B66]">Titel</label>
+              <label className="text-[12px] font-medium text-foreground/70">Titel</label>
               <input
                 type="text"
                 value={taakTitel}
                 onChange={(e) => setTaakTitel(e.target.value)}
-                className="w-full rounded-lg border border-[#EBEBEB] bg-[#F8F7F5] px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[12px] font-medium text-[#6B6B66]">Deadline</label>
+              <label className="text-[12px] font-medium text-foreground/70">Deadline</label>
               <input
                 type="date"
                 value={taakDeadline}
                 onChange={(e) => setTaakDeadline(e.target.value)}
-                className="w-full rounded-lg border border-[#EBEBEB] bg-[#F8F7F5] px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[12px] font-medium text-[#6B6B66]">Toegewezen aan</label>
+              <label className="text-[12px] font-medium text-foreground/70">Toegewezen aan</label>
               <Select value={taakToegewezen} onValueChange={setTaakToegewezen}>
-                <SelectTrigger className="w-full bg-[#F8F7F5] border-[#EBEBEB]">
+                <SelectTrigger className="w-full bg-background border-border">
                   <SelectValue placeholder="Selecteer medewerker..." />
                 </SelectTrigger>
                 <SelectContent>

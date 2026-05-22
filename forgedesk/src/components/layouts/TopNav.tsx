@@ -17,6 +17,7 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
+import { DarkModeToggle } from '@/components/shared/DarkModeToggle'
 
 interface NavItem {
   label: string
@@ -135,8 +136,7 @@ export function TopNav() {
     <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
       {/* ── Row 1: Utility bar ── */}
       <div
-        className="relative flex items-center h-[50px] px-5 md:px-6"
-        style={{ background: 'linear-gradient(180deg, #FCFCFA 0%, #F8F7F5 100%)' }}
+        className="relative flex items-center h-[50px] px-5 md:px-6 bg-card border-b border-border/40"
       >
         {/* Subtle Flame warmth from right (notifications/avatar zone) */}
         <div
@@ -146,7 +146,8 @@ export function TopNav() {
 
         {/* Logo */}
         <NavLink to="/" className="relative flex items-center mr-5 flex-shrink-0 opacity-95 hover:opacity-100 transition-opacity">
-          <img src="/logos/doen-logo.svg" alt="doen." className="h-[22px]" />
+          <img src="/logos/doen-logo.svg" alt="doen." className="h-[22px] dark:hidden" />
+          <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-[22px] hidden dark:block" />
         </NavLink>
 
         {/* Quick-add — mobile only */}
@@ -155,24 +156,24 @@ export function TopNav() {
             onClick={() => setQuickAddOpen(!quickAddOpen)}
             className={cn(
               'h-6 px-2 rounded-md flex items-center gap-1.5 transition-all duration-200 text-[11px] font-medium',
-              'bg-black/[0.04] text-[#6B6B66] hover:bg-black/[0.06] hover:text-[#1A1A1A]',
-              quickAddOpen && 'bg-black/[0.06] text-[#1A1A1A]',
+              'bg-black/[0.04] text-foreground/70 hover:bg-black/[0.06] hover:text-foreground',
+              quickAddOpen && 'bg-black/[0.06] text-foreground',
             )}
           >
             <Plus className={cn('w-3 h-3 transition-transform duration-200', quickAddOpen && 'rotate-45')} />
             <span className="hidden sm:inline">Nieuw</span>
           </button>
           {quickAddOpen && (
-            <div className="absolute left-0 top-full mt-2 w-52 bg-[#FFFFFF] border border-[#EBEBEB] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 overflow-hidden">
-              <div className="px-3 py-2 border-b border-[#EBEBEB]/40">
-                <span className="text-[10px] font-semibold text-[#9B9B95] uppercase tracking-wider">Snel aanmaken</span>
+            <div className="absolute left-0 top-full mt-2 w-52 bg-card border border-border rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 overflow-hidden">
+              <div className="px-3 py-2 border-b border-border/40">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Snel aanmaken</span>
               </div>
               <div className="py-1">
                 {quickAddItems.map((item) => (
                   <button
                     key={item.path}
                     onClick={() => { setQuickAddOpen(false); navigate(item.path) }}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 text-[13px] text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-[13px] text-foreground hover:bg-background transition-colors"
                   >
                     <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `${item.color}15` }}>
                       <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} />
@@ -192,9 +193,9 @@ export function TopNav() {
 
         {/* Mobile search */}
         {mobileSearchOpen && (
-          <div className="absolute inset-x-0 top-0 h-[50px] z-40 bg-[#F8F7F5] flex items-center gap-2 px-4 md:hidden">
+          <div className="absolute inset-x-0 top-0 h-[50px] z-40 bg-background flex items-center gap-2 px-4 md:hidden">
             <GlobalSearch className="flex flex-1" />
-            <button onClick={() => setMobileSearchOpen(false)} className="w-7 h-7 rounded-md flex items-center justify-center text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04]">
+            <button onClick={() => setMobileSearchOpen(false)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.04]">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -204,7 +205,7 @@ export function TopNav() {
         <div className="relative flex items-center gap-0.5 ml-auto md:ml-0">
           <button
             onClick={() => setMobileSearchOpen(true)}
-            className="w-7 h-7 rounded-md md:hidden flex items-center justify-center text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] transition-all"
+            className="w-7 h-7 rounded-md md:hidden flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.04] transition-all"
           >
             <Search className="w-3.5 h-3.5" />
           </button>
@@ -221,8 +222,13 @@ export function TopNav() {
           >
             {stickyHeader
               ? <Pin className="w-3.5 h-3.5 text-[#1A535C]" />
-              : <PinOff className="w-3.5 h-3.5 text-[#9B9B95]" />}
+              : <PinOff className="w-3.5 h-3.5 text-muted-foreground" />}
           </button>
+
+          <div className="hidden md:block w-px h-4 bg-[#E5E4E0] mx-2" />
+
+          {/* Dark-mode toggle — desktop */}
+          <DarkModeToggle className="hidden md:inline-flex" />
 
           <div className="hidden md:block w-px h-4 bg-[#E5E4E0] mx-2" />
 
@@ -246,9 +252,9 @@ export function TopNav() {
                 <span className="text-[11px] font-bold text-white">{userInitial}</span>
               </div>
               <div className="hidden xl:block text-left min-w-0">
-                <p className="text-[11px] font-medium text-[#1A1A1A] truncate max-w-[90px] leading-tight">{userName}</p>
+                <p className="text-[11px] font-medium text-foreground truncate max-w-[90px] leading-tight">{userName}</p>
               </div>
-              <ChevronDown className={cn('w-2.5 h-2.5 text-[#9B9B95] transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
+              <ChevronDown className={cn('w-2.5 h-2.5 text-muted-foreground transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
             </button>
 
             {userMenuOpen && (
@@ -262,27 +268,27 @@ export function TopNav() {
                 }}
               >
                 <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid #EBEBEB' }}>
-                  <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{userName}</p>
-                  <p className="text-[11px] text-[#9B9B95] truncate mt-0.5">{user?.email}</p>
+                  <p className="text-[13px] font-semibold text-foreground truncate">{userName}</p>
+                  <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
                 </div>
                 <div className="py-1">
                   <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen') }}
-                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200">
-                    <Settings className="w-4 h-4 text-[#9B9B95]" /> Profiel
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200">
+                    <Settings className="w-4 h-4 text-muted-foreground" /> Profiel
                   </button>
                   <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen?tab=abonnement') }}
-                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200">
-                    <CreditCard className="w-4 h-4 text-[#9B9B95]" /> Abonnement
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200">
+                    <CreditCard className="w-4 h-4 text-muted-foreground" /> Abonnement
                   </button>
                   <button onClick={() => { setUserMenuOpen(false); navigate('/kennisbank') }}
-                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200">
-                    <BookOpen className="w-4 h-4 text-[#9B9B95]" /> Kennisbank
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200">
+                    <BookOpen className="w-4 h-4 text-muted-foreground" /> Kennisbank
                   </button>
                 </div>
                 <div className="py-1" style={{ borderTop: '0.5px solid #EBEBEB' }}>
                   <button onClick={() => { setUserMenuOpen(false); setLayoutMode('sidebar') }}
-                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200">
-                    <Monitor className="w-4 h-4 text-[#9B9B95]" /> Zijbalk navigatie
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200">
+                    <Monitor className="w-4 h-4 text-muted-foreground" /> Zijbalk navigatie
                   </button>
                 </div>
                 <div className="py-1" style={{ borderTop: '0.5px solid #EBEBEB' }}>
@@ -296,7 +302,7 @@ export function TopNav() {
           </div>
 
           {/* Mobile hamburger */}
-          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] lg:hidden order-2 md:order-none"
+          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-black/[0.04] lg:hidden order-2 md:order-none"
             onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>
@@ -309,7 +315,7 @@ export function TopNav() {
       {/* ── Row 2: Navigation tabs — desktop ── */}
       <nav
         ref={navRef}
-        className="hidden lg:flex items-stretch relative h-10 px-2 bg-[#F8F7F5] overflow-x-auto scrollbar-none"
+        className="hidden lg:flex items-stretch relative h-10 px-2 bg-background overflow-x-auto scrollbar-none"
         style={{ boxShadow: '0 1px 0 #EBEBEB, 0 6px 14px -6px rgba(20, 30, 40, 0.04)' }}
       >
         {/* Sliding indicator */}
@@ -331,8 +337,8 @@ export function TopNav() {
               className={cn(
                 'group/tab relative flex flex-1 items-center justify-center text-[13px] font-semibold tracking-[-0.01em] transition-all duration-200 whitespace-nowrap',
                 isActive
-                  ? 'text-[#1A1A1A]'
-                  : 'text-[#6B6B66] hover:text-[#1A1A1A]',
+                  ? 'text-foreground'
+                  : 'text-foreground/70 hover:text-foreground',
               )}
             >
               <span

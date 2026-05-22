@@ -600,11 +600,11 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               {/* Day separator */}
               {showDay && (
                 <div className="flex items-center gap-3 py-3">
-                  <div className="flex-1 h-px" style={{ backgroundColor: '#EBEBEB' }} />
+                  <div className="flex-1 h-px" style={{ backgroundColor: 'hsl(var(--border))' }} />
                   <span className="text-[10px] uppercase tracking-widest" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
                     {dayLabel(item.created_at)}
                   </span>
-                  <div className="flex-1 h-px" style={{ backgroundColor: '#EBEBEB' }} />
+                  <div className="flex-1 h-px" style={{ backgroundColor: 'hsl(var(--border))' }} />
                 </div>
               )}
 
@@ -617,7 +617,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                       isIntern
                         ? { backgroundColor: '#F5F2E8', borderLeft: '3px solid #8A7A4A' }
                         : isKlant
-                          ? { backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }
+                          ? { backgroundColor: 'hsl(var(--card))', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }
                           : { backgroundColor: 'rgba(26,83,92,0.07)' }
                     }
                   >
@@ -664,7 +664,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 const st = STATUS_STYLE[item.status] || { color: '#9B9B95', label: item.status }
                 const typeColor = item.type === 'offerte' ? '#F15025' : item.type === 'factuur' ? '#2D6B48' : '#1A535C'
                 return (
-                  <div className="rounded-xl p-5" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+                  <div className="rounded-xl p-5" style={{ backgroundColor: 'hsl(var(--card))', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: typeColor, fontFamily: "'DM Mono', monospace" }}>
@@ -692,7 +692,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition-opacity hover:opacity-70"
-                            style={{ backgroundColor: '#F8F7F5' }}
+                            style={{ backgroundColor: 'hsl(var(--background))' }}
                           >
                             <FileText className="h-3.5 w-3.5" style={{ color: '#9B9B95' }} />
                             <span className="flex-1 truncate" style={{ color: '#1A1A1A' }}>{b.bestandsnaam}</span>
@@ -772,7 +772,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 setSelectedFactuurId('')
               }}
               className="text-[11px] rounded-lg px-2 py-1 border-0 outline-none"
-              style={{ backgroundColor: '#F8F7F5', color: '#6B6B66' }}
+              style={{ backgroundColor: 'hsl(var(--background))', color: '#6B6B66' }}
             >
               <option value="bericht">Bericht</option>
               <option value="notitie_intern">Interne notitie</option>
@@ -804,7 +804,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder={inputType === 'notitie_intern' ? 'Interne notitie...' : 'Typ een bericht...'}
                 className="flex-1 resize-none rounded-xl px-3.5 py-2.5 text-sm border-0 outline-none"
-                style={{ backgroundColor: '#F8F7F5', color: '#1A1A1A', minHeight: 40, maxHeight: 120 }}
+                style={{ backgroundColor: 'hsl(var(--background))', color: '#1A1A1A', minHeight: 40, maxHeight: 120 }}
                 rows={1}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
               />
@@ -833,7 +833,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Bijschrift (optioneel)"
                 className="rounded-lg px-3 py-2 text-sm border-0 outline-none"
-                style={{ backgroundColor: '#F5F5F0', color: '#3A3A35' }}
+                style={{ backgroundColor: 'hsl(var(--muted))', color: '#3A3A35' }}
               />
               <button
                 onClick={handleSend}
@@ -852,7 +852,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 value={selectedOfferteId}
                 onChange={(e) => setSelectedOfferteId(e.target.value)}
                 className="flex-1 rounded-lg px-3 py-2 text-sm border-0 outline-none"
-                style={{ backgroundColor: '#F5F5F0', color: '#3A3A35' }}
+                style={{ backgroundColor: 'hsl(var(--muted))', color: '#3A3A35' }}
               >
                 <option value="">Kies offerte...</option>
                 {offertes.map(o => (
@@ -876,7 +876,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 value={selectedFactuurId}
                 onChange={(e) => setSelectedFactuurId(e.target.value)}
                 className="flex-1 rounded-lg px-3 py-2 text-sm border-0 outline-none"
-                style={{ backgroundColor: '#F5F5F0', color: '#3A3A35' }}
+                style={{ backgroundColor: 'hsl(var(--muted))', color: '#3A3A35' }}
               >
                 <option value="">Kies factuur...</option>
                 {facturen.map(f => (
@@ -901,7 +901,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 onChange={(e) => setTekeningTitel(e.target.value)}
                 placeholder="Titel tekening"
                 className="rounded-lg px-3 py-2 text-sm border-0 outline-none"
-                style={{ backgroundColor: '#F5F5F0', color: '#3A3A35' }}
+                style={{ backgroundColor: 'hsl(var(--muted))', color: '#3A3A35' }}
               />
               <input
                 type="file"

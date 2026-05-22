@@ -181,7 +181,7 @@ export function ForgieChatWidget() {
           {/* Chat area */}
           <div
             className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
-            style={{ backgroundColor: '#FFFFFF' }}
+            style={{ backgroundColor: 'hsl(var(--card))' }}
           >
             {/* Welcome / suggestions */}
             {messages.length === 0 && !loading && (
@@ -318,7 +318,7 @@ export function ForgieChatWidget() {
           </div>
 
           {/* Input area */}
-          <div className="flex-shrink-0 p-3" style={{ borderTop: '0.5px solid #E6E4E0', backgroundColor: '#FFFFFF' }}>
+          <div className="flex-shrink-0 p-3" style={{ borderTop: '0.5px solid #E6E4E0', backgroundColor: 'hsl(var(--card))' }}>
             <div className="flex items-center gap-2">
               <input
                 ref={inputRef}

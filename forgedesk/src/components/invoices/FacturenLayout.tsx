@@ -1461,13 +1461,13 @@ export function FacturenLayout() {
       <div className="flex items-center gap-1 mb-4">
         <button
           onClick={() => { setTopTab('facturen'); setSearchParams({}) }}
-          className={`px-4 py-2 rounded-lg text-[14px] font-semibold transition-all ${topTab === 'facturen' ? 'bg-[#1A535C]/[0.07] text-[#1A535C]' : 'text-[#9B9B95] hover:text-[#6B6B66]'}`}
+          className={`px-4 py-2 rounded-lg text-[14px] font-semibold transition-all ${topTab === 'facturen' ? 'bg-[#1A535C]/[0.07] text-[#1A535C]' : 'text-muted-foreground hover:text-foreground/70'}`}
         >
           Facturen
         </button>
         <button
           onClick={() => { setTopTab('inkoop'); setSearchParams({ tab: 'inkoop' }) }}
-          className={`px-4 py-2 rounded-lg text-[14px] font-semibold transition-all ${topTab === 'inkoop' ? 'bg-[#C44830]/[0.07] text-[#C44830]' : 'text-[#9B9B95] hover:text-[#6B6B66]'}`}
+          className={`px-4 py-2 rounded-lg text-[14px] font-semibold transition-all ${topTab === 'inkoop' ? 'bg-[#C44830]/[0.07] text-[#C44830]' : 'text-muted-foreground hover:text-foreground/70'}`}
         >
           Inkoopfacturen
         </button>
@@ -1481,16 +1481,16 @@ export function FacturenLayout() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
-            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
               Facturen<span className="text-[#F15025]">.</span>
             </h1>
-            <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+            <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {filteredFacturen.length === facturen.length ? (
-                <span className="font-medium text-[#6B6B66]">{facturen.length}</span>
+                <span className="font-medium text-foreground/70">{facturen.length}</span>
               ) : (
                 <>
-                  <span className="font-medium text-[#6B6B66]">{filteredFacturen.length}</span>
-                  <span className="text-[#C0BDB8]">/</span>{facturen.length}
+                  <span className="font-medium text-foreground/70">{filteredFacturen.length}</span>
+                  <span className="text-muted-foreground/70">/</span>{facturen.length}
                 </>
               )}
             </span>
@@ -1498,7 +1498,7 @@ export function FacturenLayout() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setOfferteDialogOpen(true)}
-              className="hidden sm:inline-flex items-center gap-2 text-[13px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all"
+              className="hidden sm:inline-flex items-center gap-2 text-[13px] font-medium text-foreground/70 hover:text-foreground hover:bg-card px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all"
             >
               <FileInput className="w-4 h-4" />
               Vanuit offerte
@@ -1540,20 +1540,20 @@ export function FacturenLayout() {
                       className={cn('w-1.5 h-1.5 rounded-full', tile.pulse && 'doen-pulse')}
                       style={{ backgroundColor: tile.dot }}
                     />
-                    <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                    <span className="font-heading text-[14px] font-bold text-foreground">
                       {tile.label}<span className="text-[#F15025]">.</span>
                     </span>
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className={cn(
-                    'font-heading font-bold leading-none text-[#1A1A1A] tabular-nums',
+                    'font-heading font-bold leading-none text-foreground tabular-nums',
                     tile.isMoney ? 'text-[22px] font-mono' : 'text-[28px]'
                   )}>
                     {display}
                   </span>
                   <span
-                    className="text-[13px] text-[#9B9B95] truncate"
+                    className="text-[13px] text-muted-foreground truncate"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     · {tile.sub}
@@ -1569,7 +1569,7 @@ export function FacturenLayout() {
           <span className="inline-flex items-center gap-1.5 text-[#8A7A4A]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
             <span className="font-mono font-medium">{statistics.gemiddeldeBetaaltermijn}</span>
-            <span className="text-[#6B6B66]">gem. betaaltermijn (dgn)</span>
+            <span className="text-foreground/70">gem. betaaltermijn (dgn)</span>
           </span>
         </div>
       </div>
@@ -1579,15 +1579,15 @@ export function FacturenLayout() {
         <div className="flex items-center gap-5">
           {/* Search with keyboard hint */}
           <div className="relative max-w-[280px] flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Zoek op nummer, titel of klant..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-12 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+              className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
             />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#9B9B95] bg-[#F0EFEC] rounded border border-[#E5E4E0]">/</kbd>
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
           </div>
 
           {/* Sort buttons */}
@@ -1600,7 +1600,7 @@ export function FacturenLayout() {
                   'px-2 py-1.5 rounded-lg text-xs transition-colors',
                   sortField === option.value
                     ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
-                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
+                    : 'text-muted-foreground hover:text-foreground/70 hover:bg-background'
                 )}
               >
                 {option.label}
@@ -1617,14 +1617,14 @@ export function FacturenLayout() {
           <div className="hidden sm:flex items-center gap-1 ml-auto">
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
             >
               <Download className="w-3.5 h-3.5" />
               CSV
             </button>
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
             >
               <FileText className="w-3.5 h-3.5" />
               Excel
@@ -1633,7 +1633,7 @@ export function FacturenLayout() {
         </div>
 
         {/* Filter tabs */}
-        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
+        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border">
           <div className="flex items-center gap-1 flex-1 flex-nowrap md:flex-wrap overflow-x-auto">
             {FILTER_OPTIONS.map((option) => {
               const count = statusCounts[option.value] || 0
@@ -1646,7 +1646,7 @@ export function FacturenLayout() {
                     'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
                     isActive
                       ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
-                      : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                      : 'text-muted-foreground hover:text-foreground/70'
                   )}
                 >
                   {option.label}
@@ -1765,14 +1765,14 @@ export function FacturenLayout() {
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[15px] font-semibold text-[#1A1A1A]">{factuur.nummer}</span>
+                    <span className="text-[15px] font-semibold text-foreground">{factuur.nummer}</span>
                     {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
-                      <span className="text-[10px] text-[#B0ADA8] font-mono bg-[#F8F7F5] px-1.5 py-0.5 rounded font-semibold">
+                      <span className="text-[10px] text-muted-foreground/80 font-mono bg-background px-1.5 py-0.5 rounded font-semibold">
                         {TYPE_CONFIG[factuur.factuur_type].label}
                       </span>
                     )}
                   </div>
-                  <p className="text-[12px] text-[#9B9B95] truncate mt-0.5">
+                  <p className="text-[12px] text-muted-foreground truncate mt-0.5">
                     {factuur.klant_naam || 'Onbekende klant'}
                   </p>
                 </div>
@@ -1786,16 +1786,16 @@ export function FacturenLayout() {
                   {config.label}<span className="text-[#F15025]">.</span>
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[12px] text-[#9B9B95]">
+              <div className="flex items-center justify-between text-[12px] text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono tabular-nums text-[#B0ADA8]">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}</span>
+                  <span className="font-mono tabular-nums text-muted-foreground/80">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}</span>
                   {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && mobileDagenOpen > 0 && (
                     <span
                       className={cn(
                         'text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
                         mobileDagenOpen > 90 ? 'bg-[#FDE8E4] text-[#C03A18]' :
                         mobileDagenOpen > 30 ? 'bg-[#FEF3E8] text-[#D4621A]' :
-                        'text-[#9B9B95]'
+                        'text-muted-foreground'
                       )}
                     >
                       {mobileDagenOpen}d
@@ -1804,11 +1804,11 @@ export function FacturenLayout() {
                 </div>
                 <div className="flex items-center gap-2">
                   {openstaand > 0 && openstaand < factuur.totaal && (
-                    <span className="text-[10px] text-[#C0BDB8]">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
+                    <span className="text-[10px] text-muted-foreground/70">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
                   )}
                   <span className={cn(
                     'font-mono tabular-nums',
-                    factuur.totaal >= 10000 ? 'text-[15px] font-bold text-[#1A1A1A]' : 'text-sm text-[#4A4A46]'
+                    factuur.totaal >= 10000 ? 'text-[15px] font-bold text-foreground' : 'text-sm text-foreground/80'
                   )}>{formatCurrency(factuur.totaal)}</span>
                 </div>
               </div>
@@ -1824,8 +1824,8 @@ export function FacturenLayout() {
       >
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
-              <tr className="border-b-2 border-[#F0EFEC]">
+            <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
+              <tr className="border-b-2 border-border">
                 <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                   <Checkbox
                     checked={filteredFacturen.length > 0 && selectedIds.size === filteredFacturen.length}
@@ -1834,34 +1834,34 @@ export function FacturenLayout() {
                   />
                 </th>
                 <th className="text-left py-3.5 pr-4">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Nummer</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Nummer</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 w-[160px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Klant</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Klant</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 hidden md:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Titel</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Titel</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[80px] hidden sm:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Datum</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Datum</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[70px] hidden xl:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Open</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Open</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[90px] hidden lg:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Vervaldatum</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Vervaldatum</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[110px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Bedrag</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Bedrag</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 w-[150px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[70px] hidden lg:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Verlopen</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Verlopen</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 hidden lg:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Online</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Online</span>
                 </th>
                 <th className="text-center py-3.5 px-2 w-10 hidden md:table-cell" aria-label="Bijlagen" />
                 <th className="w-10 py-3.5 pr-4 hidden md:table-cell" />
@@ -1903,9 +1903,9 @@ export function FacturenLayout() {
                   <tr
                     key={factuur.id}
                     className={cn(
-                      'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                      'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
                       attention && !selectedIds.has(factuur.id) && 'bg-[rgba(241,80,37,0.025)]',
-                      'hover:bg-[#F8F7F4]',
+                      'hover:bg-background',
                       selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.03]'
                     )}
                   >
@@ -1924,12 +1924,12 @@ export function FacturenLayout() {
                       <div className="flex items-baseline gap-2.5">
                         <button
                           onClick={() => setViewingFactuur(factuur)}
-                          className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all"
+                          className="text-[15px] font-semibold text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all"
                         >
                           {factuur.nummer}
                         </button>
                         {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
-                          <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 bg-[#F8F7F5] px-1.5 py-0.5 rounded font-semibold">
+                          <span className="text-[10px] text-muted-foreground/80 font-mono flex-shrink-0 bg-background px-1.5 py-0.5 rounded font-semibold">
                             {TYPE_CONFIG[factuur.factuur_type].label}
                           </span>
                         )}
@@ -1944,7 +1944,7 @@ export function FacturenLayout() {
                             'bg-[#E8F2EC] text-[#3A7D52]',
                             'bg-[#E8EEF9] text-[#3A5A9A]',
                             'bg-[#F5F2E8] text-[#8A7A4A]',
-                            'bg-[#F0EFEC] text-[#6B6B66]',
+                            'bg-muted text-foreground/70',
                             'bg-[#EDE8F4] text-[#6A5A8A]',
                           ]
                           return (
@@ -1956,7 +1956,7 @@ export function FacturenLayout() {
                         <div className="min-w-0">
                           <a
                             href={`/klanten/${factuur.klant_id}`}
-                            className="text-[13px] text-[#4A4A46] truncate block leading-tight hover:text-[#1A535C] transition-colors"
+                            className="text-[13px] text-foreground/80 truncate block leading-tight hover:text-[#1A535C] transition-colors"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {factuur.klant_naam || 'Onbekende klant'}
@@ -1965,12 +1965,12 @@ export function FacturenLayout() {
                       </div>
                     </td>
                     <td className="py-3.5 pr-4 max-w-[220px] hidden md:table-cell">
-                      <span className="text-[13px] text-[#6B6B66] truncate block">
+                      <span className="text-[13px] text-foreground/70 truncate block">
                         {factuur.titel}
                       </span>
                     </td>
                     <td className="py-3.5 pr-4 text-right hidden sm:table-cell">
-                      <span className="text-[12px] font-mono tabular-nums text-[#B0ADA8]">
+                      <span className="text-[12px] font-mono tabular-nums text-muted-foreground/80">
                         {new Date(factuur.factuurdatum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                       </span>
                     </td>
@@ -1985,7 +1985,7 @@ export function FacturenLayout() {
                               'inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
                               urgent ? 'bg-[#FDE8E4] text-[#C03A18]' :
                               warning ? 'bg-[#FEF3E8] text-[#D4621A]' :
-                              'text-[#9B9B95]'
+                              'text-muted-foreground'
                             )}
                           >
                             {days}d
@@ -2000,7 +2000,7 @@ export function FacturenLayout() {
                             'text-[12px] font-mono tabular-nums',
                             isOverdue
                               ? 'text-[#C03A18] font-medium'
-                              : 'text-[#B0ADA8]'
+                              : 'text-muted-foreground/80'
                           )}
                         >
                           {new Date(factuur.vervaldatum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
@@ -2012,13 +2012,13 @@ export function FacturenLayout() {
                     </td>
                     <td className="py-3.5 pr-4 text-right">
                       {(() => {
-                        if (factuur.totaal <= 0) return <span className="text-xs text-[#C0BDB8]">&mdash;</span>
+                        if (factuur.totaal <= 0) return <span className="text-xs text-muted-foreground/70">&mdash;</span>
                         return (
                           <span className={cn(
                             'font-mono tabular-nums',
                             factuur.totaal >= 10000
-                              ? 'text-[15px] font-bold text-[#1A1A1A]'
-                              : 'text-sm text-[#4A4A46]'
+                              ? 'text-[15px] font-bold text-foreground'
+                              : 'text-sm text-foreground/80'
                           )}>
                             {formatCurrency(factuur.totaal)}
                           </span>
@@ -2060,7 +2060,7 @@ export function FacturenLayout() {
                             <span className="text-[11px] text-[#1A535C] font-semibold">Bekeken</span>
                           </div>
                         ) : factuur.betaal_link ? (
-                          <span className="text-[11px] text-[#C0BDB8]">—</span>
+                          <span className="text-[11px] text-muted-foreground/70">—</span>
                         ) : null}
                         {exactConnected && (
                           <span
@@ -2087,7 +2087,7 @@ export function FacturenLayout() {
                       {(bijlageCounts.get(factuur.id) ?? 0) > 0 && (
                         <button
                           onClick={() => setViewingFactuur(factuur)}
-                          className="inline-flex items-center gap-1 text-[11px] text-[#6B6B66] hover:text-[#1A535C] transition-colors"
+                          className="inline-flex items-center gap-1 text-[11px] text-foreground/70 hover:text-[#1A535C] transition-colors"
                           title={`${bijlageCounts.get(factuur.id)} bijlage(n)`}
                         >
                           <Paperclip className="h-3.5 w-3.5" />
@@ -2099,10 +2099,10 @@ export function FacturenLayout() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+                            className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreHorizontal className="w-3.5 h-3.5 text-[#9B9B95]" />
+                            <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
@@ -2215,7 +2215,7 @@ export function FacturenLayout() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Klant</p>
+                  <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Klant</p>
                   <a
                     href={`/klanten/${viewingFactuur.klant_id}`}
                     className="text-sm font-medium text-accent dark:text-wm-light hover:underline"
@@ -2224,7 +2224,7 @@ export function FacturenLayout() {
                   </a>
                 </div>
                 <div>
-                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Status</p>
+                  <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Status</p>
                   <Badge
                     variant="secondary"
                     className={cn(
@@ -2236,20 +2236,20 @@ export function FacturenLayout() {
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Titel</p>
+                  <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Titel</p>
                   <p className="text-sm">{viewingFactuur.titel}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Factuurdatum</p>
+                  <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Factuurdatum</p>
                   <p className="text-sm font-mono">{formatDate(viewingFactuur.factuurdatum)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Vervaldatum</p>
+                  <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Vervaldatum</p>
                   <p className="text-sm font-mono">{formatDate(viewingFactuur.vervaldatum)}</p>
                 </div>
                 {viewingFactuur.betaaldatum && (
                   <div>
-                    <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Betaaldatum</p>
+                    <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Betaaldatum</p>
                     <p className="text-sm font-mono">{formatDate(viewingFactuur.betaaldatum)}</p>
                   </div>
                 )}
@@ -2307,7 +2307,7 @@ export function FacturenLayout() {
                 <>
                   <Separator />
                   <div>
-                    <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Notities</p>
+                    <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Notities</p>
                     <p className="text-sm text-foreground/80">{viewingFactuur.notities}</p>
                   </div>
                 </>
@@ -2315,7 +2315,7 @@ export function FacturenLayout() {
 
               {viewingFactuur.voorwaarden && (
                 <div>
-                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Betalingsvoorwaarden</p>
+                  <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Betalingsvoorwaarden</p>
                   <p className="text-sm text-foreground/80">{viewingFactuur.voorwaarden}</p>
                 </div>
               )}
@@ -2560,13 +2560,13 @@ export function FacturenLayout() {
                 <div className="rounded-xl border border-border overflow-hidden">
                   <table className="w-full">
                     <thead>
-                      <tr className="" style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' }}>
-                        <th className="px-3 py-2 text-left text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Beschrijving</th>
-                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-[#A0A098] w-20" style={{ letterSpacing: '0.8px' }}>Aantal</th>
-                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-[#A0A098] w-28" style={{ letterSpacing: '0.8px' }}>Prijs</th>
-                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-[#A0A098] w-20" style={{ letterSpacing: '0.8px' }}>BTW %</th>
-                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-[#A0A098] w-24" style={{ letterSpacing: '0.8px' }}>Korting %</th>
-                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-[#A0A098] w-28" style={{ letterSpacing: '0.8px' }}>Totaal</th>
+                      <tr className="" style={{ borderBottom: '0.5px solid hsl(var(--border))', backgroundColor: 'hsl(var(--muted))' }}>
+                        <th className="px-3 py-2 text-left text-[10px] font-medium uppercase text-muted-foreground" style={{ letterSpacing: '0.8px' }}>Beschrijving</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-muted-foreground w-20" style={{ letterSpacing: '0.8px' }}>Aantal</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-muted-foreground w-28" style={{ letterSpacing: '0.8px' }}>Prijs</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-muted-foreground w-20" style={{ letterSpacing: '0.8px' }}>BTW %</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-muted-foreground w-24" style={{ letterSpacing: '0.8px' }}>Korting %</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-muted-foreground w-28" style={{ letterSpacing: '0.8px' }}>Totaal</th>
                         <th className="px-3 py-2 w-10" />
                       </tr>
                     </thead>

@@ -187,16 +187,16 @@ export const EmailListItem = memo(function EmailListItem({
         onMouseLeave={handleMouseLeave}
         className={cn(
           'group relative flex items-center gap-2.5 pl-3 pr-3 h-[46px] cursor-pointer select-none',
-          'border-b border-[#EBEBEB]/55',
+          'border-b border-border/55',
           'transition-all duration-150 ease-out',
           isActive
             ? 'bg-[#1A535C]/[0.06]'
             : isChecked
               ? 'bg-[#1A535C]/[0.03]'
               : isUnread
-                ? 'bg-white hover:bg-[#FAFAF8] active:bg-[#1A535C]/[0.05]'
-                : 'hover:bg-[#F8F7F5] active:bg-[#1A535C]/[0.05]',
-          isFocused && !isActive && 'bg-[#FAFAF8]',
+                ? 'bg-white hover:bg-background active:bg-[#1A535C]/[0.05]'
+                : 'hover:bg-background active:bg-[#1A535C]/[0.05]',
+          isFocused && !isActive && 'bg-background',
         )}
       >
         {/* Unread indicator — subtle left accent */}
@@ -234,12 +234,12 @@ export const EmailListItem = memo(function EmailListItem({
           <span className={cn(
             'truncate leading-none tracking-[-0.005em] transition-colors duration-200',
             stackedSizes.text,
-            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#4A4A46]',
+            isUnread ? 'font-semibold text-foreground' : 'font-normal text-foreground/80',
           )}>
             {senderName}
           </span>
           {email.threadCount && email.threadCount > 1 && (
-            <span className="text-[10px] font-mono tabular-nums flex-shrink-0 text-[#6B6B66] bg-[#F0EFEC] rounded px-1 py-px font-medium">
+            <span className="text-[10px] font-mono tabular-nums flex-shrink-0 text-foreground/70 bg-muted rounded px-1 py-px font-medium">
               {email.threadCount}
             </span>
           )}
@@ -256,14 +256,14 @@ export const EmailListItem = memo(function EmailListItem({
           ))}
           <span className={cn(
             'tracking-[-0.005em] transition-colors duration-200',
-            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#2A2A26]',
+            isUnread ? 'font-semibold text-foreground' : 'font-normal text-[#2A2A26]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
           {preview && (
             <span className={cn(
               'font-normal hidden md:inline ml-2 transition-colors duration-200',
-              isUnread ? 'text-[#7A7975]' : 'text-[#9B9B95]',
+              isUnread ? 'text-[#7A7975]' : 'text-muted-foreground',
             )}>
               {preview}
             </span>
@@ -293,7 +293,7 @@ export const EmailListItem = memo(function EmailListItem({
               onClick={handlePinClick}
               className={cn(
                 'h-7 w-7 flex items-center justify-center rounded-lg transition-colors duration-100',
-                email.pinned ? 'text-[#1A535C] hover:bg-[#1A535C]/10' : 'text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06]',
+                email.pinned ? 'text-[#1A535C] hover:bg-[#1A535C]/10' : 'text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06]',
               )}
               title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
             >
@@ -303,7 +303,7 @@ export const EmailListItem = memo(function EmailListItem({
               <button
                 type="button"
                 onClick={handleArchiveClick}
-                className="h-7 w-7 flex items-center justify-center rounded-lg text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-100"
+                className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-100"
                 title="Archiveren (e)"
               >
                 <Archive className="h-3.5 w-3.5" />
@@ -313,7 +313,7 @@ export const EmailListItem = memo(function EmailListItem({
               <button
                 type="button"
                 onClick={handleToggleReadClick}
-                className="h-7 w-7 flex items-center justify-center rounded-lg text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-100"
+                className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-100"
                 title={isUnread ? 'Markeer als gelezen' : 'Markeer als ongelezen'}
               >
                 {isUnread ? <MailOpen className="h-3.5 w-3.5" /> : <Mail className="h-3.5 w-3.5" />}
@@ -323,7 +323,7 @@ export const EmailListItem = memo(function EmailListItem({
               <button
                 type="button"
                 onClick={handleDeleteClick}
-                className="h-7 w-7 flex items-center justify-center rounded-lg text-[#9B9B95] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-100"
+                className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-100"
                 title="Verwijderen (#)"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -348,11 +348,11 @@ export const EmailListItem = memo(function EmailListItem({
       onTouchEnd={handleTouchEnd}
       className={cn(
         'group relative flex items-start gap-3 px-4 py-4 cursor-pointer transition-colors duration-100 ease-out select-none',
-        'border-b border-[#EBEBEB]/55 last:border-b-0',
+        'border-b border-border/55 last:border-b-0',
         isActive
           ? 'bg-[#1A535C]/[0.05]'
-          : 'hover:bg-[#F8F7F5] active:bg-[#F0EFEC]/60 md:active:bg-[#1A535C]/[0.05]',
-        isFocused && !isActive && 'bg-[#F0EFEC]/30',
+          : 'hover:bg-background active:bg-muted/60 md:active:bg-[#1A535C]/[0.05]',
+        isFocused && !isActive && 'bg-muted/30',
         !isActive && (isUnread ? 'bg-white' : 'bg-white md:bg-transparent'),
         swipeX > SWIPE_THRESHOLD && 'bg-emerald-100',
         swipeX < -SWIPE_THRESHOLD && 'bg-red-100',
@@ -400,19 +400,19 @@ export const EmailListItem = memo(function EmailListItem({
         <div className="flex items-center gap-1.5 mb-1 min-w-0">
           <span className={cn(
             'truncate text-[13px] leading-none transition-colors duration-200',
-            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-medium text-[#4A4A46]',
+            isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/80',
           )}>
             {senderName}
           </span>
           <span className="text-[#C5C2BD] text-[11px] flex-shrink-0 leading-none">·</span>
-          <span className="text-[12px] font-mono tabular-nums text-[#9B9B95] flex-shrink-0 leading-none">
+          <span className="text-[12px] font-mono tabular-nums text-muted-foreground flex-shrink-0 leading-none">
             {formatShortDate(email.datum)}
           </span>
           {email.bijlagen > 0 && (
             <Paperclip className="h-3 w-3 text-[#C5C2BD] flex-shrink-0" />
           )}
           {email.threadCount && email.threadCount > 1 && (
-            <span className="text-[10px] font-mono tabular-nums font-semibold text-[#6B6B66] bg-[#F0EFEC] rounded px-1 py-px leading-none flex-shrink-0">
+            <span className="text-[10px] font-mono tabular-nums font-semibold text-foreground/70 bg-muted rounded px-1 py-px leading-none flex-shrink-0">
               {email.threadCount}
             </span>
           )}
@@ -432,7 +432,7 @@ export const EmailListItem = memo(function EmailListItem({
           ))}
           <span className={cn(
             'truncate text-[14.5px] leading-snug tracking-[-0.005em] transition-colors duration-200',
-            isUnread ? 'font-bold text-[#1A1A1A]' : 'font-semibold text-[#3A3A36]',
+            isUnread ? 'font-bold text-foreground' : 'font-semibold text-[#3A3A36]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
@@ -440,7 +440,7 @@ export const EmailListItem = memo(function EmailListItem({
 
         {/* Regel 3: preview (altijd zichtbaar voor consistente row-hoogte) */}
         {!compact && (
-          <p className="truncate text-[13px] leading-snug text-[#9B9B95] min-h-[18px]">
+          <p className="truncate text-[13px] leading-snug text-muted-foreground min-h-[18px]">
             {preview || <span className="text-[#C5C2BD]">…</span>}
           </p>
         )}
@@ -452,7 +452,7 @@ export const EmailListItem = memo(function EmailListItem({
         title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
         className={cn(
           'flex-shrink-0 p-1 rounded transition-all duration-150',
-          'opacity-0 group-hover:opacity-100 hover:bg-[#F0EFEC]',
+          'opacity-0 group-hover:opacity-100 hover:bg-muted',
         )}
       >
         <Pin
@@ -460,7 +460,7 @@ export const EmailListItem = memo(function EmailListItem({
             'h-4 w-4 transition-colors',
             email.pinned
               ? 'fill-[#1A535C] text-[#1A535C] -rotate-45'
-              : 'text-[#B0ADA8] hover:text-[#1A535C]',
+              : 'text-muted-foreground/80 hover:text-[#1A535C]',
           )}
         />
       </button>
@@ -486,7 +486,7 @@ export const EmailListItem = memo(function EmailListItem({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onWisWacht(email.id) }}
-            className="text-[#9B9B95] hover:text-[#C0451A] hover:underline"
+            className="text-muted-foreground hover:text-[#C0451A] hover:underline"
           >
             Niet meer opvolgen
           </button>
@@ -494,13 +494,13 @@ export const EmailListItem = memo(function EmailListItem({
       </div>
     )}
     {salesMode === 'beantwoord' && email.beantwoord_door_email_id && onTerugNaarWacht && (
-      <div className="flex items-center gap-2 px-4 pb-2 -mt-1 text-[11px] text-[#9B9B95]">
+      <div className="flex items-center gap-2 px-4 pb-2 -mt-1 text-[11px] text-muted-foreground">
         <span>Match via inkomende mail</span>
         <span className="text-[#D4D2CE]">·</span>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onTerugNaarWacht(email.id, email.beantwoord_door_email_id!) }}
-          className="text-[#9B9B95] hover:text-[#C0451A] hover:underline"
+          className="text-muted-foreground hover:text-[#C0451A] hover:underline"
         >
           Dit was niet de reactie
         </button>

@@ -205,7 +205,7 @@ export function Sidebar() {
         <span
           className={cn(
             'relative z-10 text-center leading-tight transition-all duration-300',
-            active ? 'text-[#1A1A1A] font-semibold' : 'text-[#9B9B95] font-medium group-hover/rail:text-[#1A1A1A]',
+            active ? 'text-foreground font-semibold' : 'text-muted-foreground font-medium group-hover/rail:text-foreground',
           )}
           style={{ fontSize: '9px' }}
         >
@@ -267,7 +267,7 @@ export function Sidebar() {
         {/* Label */}
         <span className={cn(
           'relative z-10 truncate transition-all duration-300 tracking-[-0.01em]',
-          active ? 'text-[#1A1A1A] font-semibold' : 'text-[#6B6B66] font-medium group-hover/nav:text-[#1A1A1A]',
+          active ? 'text-foreground font-semibold' : 'text-foreground/70 font-medium group-hover/nav:text-foreground',
         )}>
           {item.label}
         </span>
@@ -350,14 +350,14 @@ export function Sidebar() {
             collapsed ? (
               <button
                 onClick={toggleSidebar}
-                className="w-9 h-8 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] transition-all duration-300 mt-2"
+                className="w-9 h-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground hover:bg-black/[0.04] transition-all duration-300 mt-2"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 onClick={toggleSidebar}
-                className="flex items-center gap-2 h-8 px-4 mx-2 rounded-[10px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] transition-all duration-300 mt-2"
+                className="flex items-center gap-2 h-8 px-4 mx-2 rounded-[10px] text-muted-foreground hover:text-foreground hover:bg-black/[0.04] transition-all duration-300 mt-2"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span className="text-[12px] font-medium">Inklappen</span>
@@ -384,8 +384,8 @@ export function Sidebar() {
                 </div>
                 {!collapsed && (
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[#1A1A1A] text-[13px] font-medium truncate leading-tight">{userName}</p>
-                    <p className="text-[#9B9B95] text-[10px] truncate leading-tight mt-0.5">{user.email}</p>
+                    <p className="text-foreground text-[13px] font-medium truncate leading-tight">{userName}</p>
+                    <p className="text-muted-foreground text-[10px] truncate leading-tight mt-0.5">{user.email}</p>
                   </div>
                 )}
               </button>
@@ -405,30 +405,30 @@ export function Sidebar() {
                   }}
                 >
                   <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid #EBEBEB' }}>
-                    <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{userName}</p>
-                    <p className="text-[11px] text-[#9B9B95] truncate mt-0.5">{user.email}</p>
+                    <p className="text-[13px] font-semibold text-foreground truncate">{userName}</p>
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
                   </div>
 
                   <div className="py-1">
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200"
                     >
                       <PhSliders size={16} weight="duotone" color="#9B9B95" />
                       Profiel
                     </button>
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen?tab=abonnement') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200"
                     >
-                      <CreditCard className="w-4 h-4 text-[#9B9B95]" />
+                      <CreditCard className="w-4 h-4 text-muted-foreground" />
                       Abonnement
                     </button>
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/kennisbank') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200"
                     >
-                      <BookOpen className="w-4 h-4 text-[#9B9B95]" />
+                      <BookOpen className="w-4 h-4 text-muted-foreground" />
                       Kennisbank
                     </button>
                   </div>
@@ -436,9 +436,9 @@ export function Sidebar() {
                   <div className="py-1" style={{ borderTop: '0.5px solid #EBEBEB' }}>
                     <button
                       onClick={() => { setUserPopoverOpen(false); setLayoutMode('topnav') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200"
                     >
-                      <PanelTop className="w-4 h-4 text-[#9B9B95]" />
+                      <PanelTop className="w-4 h-4 text-muted-foreground" />
                       Top navigatie
                     </button>
                   </div>

@@ -107,9 +107,9 @@ function SliderWithInput({ label, unit, min, max, value, onChange }: {
               const n = parseInt(e.target.value)
               if (!Number.isNaN(n)) onChange(clamp(n))
             }}
-            className="w-12 h-6 text-[11px] font-mono text-right px-1.5 bg-[#F8F7F5] border border-[#EBEBEB] rounded-md focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-12 h-6 text-[11px] font-mono text-right px-1.5 bg-background border border-border rounded-md focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
-          <span className="text-[10px] text-[#9B9B95] font-mono w-4">{unit}</span>
+          <span className="text-[10px] text-muted-foreground font-mono w-4">{unit}</span>
         </div>
       </div>
       <input
@@ -162,7 +162,7 @@ function TekeningPreview({ style, logoUrl }: { style: DocumentStyle; logoUrl: st
   const rightCol = sampleVelden.filter((_, i) => i % 2 === 1)
 
   return (
-    <div className="rounded-xl border border-[#EBEBEB] bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+    <div className="rounded-xl border border-border bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       {/* Landscape A4 — aspect ratio 297:210 */}
       <div className="relative bg-white" style={{ aspectRatio: '297 / 210' }}>
         {/* Logo */}
@@ -194,7 +194,7 @@ function TekeningPreview({ style, logoUrl }: { style: DocumentStyle; logoUrl: st
                     <span className="font-bold uppercase tracking-wide" style={{ color: baseHex, minWidth: '30%' }}>
                       {spec.label}
                     </span>
-                    <span className="text-[#1A1A1A]">{spec.value}</span>
+                    <span className="text-foreground">{spec.value}</span>
                   </div>
                 ))}
               </div>
@@ -203,22 +203,22 @@ function TekeningPreview({ style, logoUrl }: { style: DocumentStyle; logoUrl: st
         </div>
 
         {/* Separator */}
-        <div className="absolute left-[3%] right-[3%] h-px bg-[#EBEBEB]" style={{ top: '24%' }} />
+        <div className="absolute left-[3%] right-[3%] h-px bg-border" style={{ top: '24%' }} />
 
         {/* Tekening placeholder */}
         <div
           className="absolute left-[3%] right-[3%] bottom-[3%] border border-dashed border-[#D4D4D4] bg-[#FAFAFA] flex items-center justify-center"
           style={{ top: '27%' }}
         >
-          <div className="text-center text-[#9B9B95]" style={{ fontSize: '8px' }}>
+          <div className="text-center text-muted-foreground" style={{ fontSize: '8px' }}>
             <div className="mb-0.5">📐</div>
             <div>Hier komt de geüploade tekening</div>
           </div>
         </div>
       </div>
-      <div className="px-3 py-2 border-t border-[#EBEBEB] bg-[#FAFAF8] flex items-center justify-between">
-        <span className="text-[10px] text-[#9B9B95]">Landscape A4 · Tekening-pagina</span>
-        <span className="text-[10px] text-[#9B9B95]">Achter de offerte</span>
+      <div className="px-3 py-2 border-t border-border bg-background flex items-center justify-between">
+        <span className="text-[10px] text-muted-foreground">Landscape A4 · Tekening-pagina</span>
+        <span className="text-[10px] text-muted-foreground">Achter de offerte</span>
       </div>
     </div>
   )
@@ -249,8 +249,8 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
     : 'relative'
 
   const pageClass = fullscreen
-    ? 'relative w-[595px] h-[842px] bg-[#FFFFFF] shadow-2xl overflow-hidden'
-    : 'relative w-full aspect-[210/297] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-[#EBEBEB] overflow-hidden rounded-lg'
+    ? 'relative w-[595px] h-[842px] bg-card shadow-2xl overflow-hidden'
+    : 'relative w-full aspect-[210/297] bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-border overflow-hidden rounded-lg'
 
   return (
     <div className={containerClass}>
@@ -293,7 +293,7 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
                 right: `${(Math.max(0, style.marge_rechts + (style.briefpapier_safe_zone_rechts ?? 0)) / 210) * 100}%`,
               }}
             >
-              <span className="absolute -top-3 left-1 text-[8px] uppercase tracking-wider font-medium text-[#1A535C]/70 bg-white/80 px-1 rounded">
+              <span className="absolute -top-3 left-1 text-[8px] uppercase tracking-wider font-medium text-[#1A535C]/70 bg-card/80 px-1 rounded">
                 Content
               </span>
             </div>
@@ -1089,16 +1089,16 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
           {subTab === 'briefpapier' && (
           <>
           <Section title="Briefpapier" icon={Image}>
-            <p className="text-xs text-[#9B9B95]">
+            <p className="text-xs text-muted-foreground">
               Upload je eigen briefpapier als achtergrond voor offertes, facturen en andere documenten. Logo, naam en adres op het briefpapier worden dan niet dubbel getekend.
             </p>
 
             <div className="mt-3 rounded-lg bg-[#1A535C]/[0.04] border border-[#1A535C]/15 p-3 space-y-1.5">
               <p className="text-[11px] font-semibold text-[#1A535C] uppercase tracking-wider">Tip voor scherp resultaat</p>
-              <p className="text-[11px] text-[#6B6B66] leading-relaxed">
+              <p className="text-[11px] text-foreground/70 leading-relaxed">
                 Upload bij voorkeur een <strong>JPG</strong> op <strong>3× de uiteindelijke grootte</strong>. Voor A4 betekent dat ongeveer <strong>2480 × 3508 px</strong>. Zo blijft het briefpapier scherp bij printen en zoomen.
               </p>
-              <p className="text-[11px] text-[#6B6B66] leading-relaxed">
+              <p className="text-[11px] text-foreground/70 leading-relaxed">
                 <strong>Pagina 1</strong> krijgt het briefpapier met je logo en adres, <strong>Pagina 2+</strong> kan een compactere versie krijgen voor vervolgpagina's.
               </p>
             </div>
@@ -1107,12 +1107,12 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
               {/* Briefpapier (pagina 1) */}
               <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#1A1A1A] uppercase tracking-wider">Pagina 1</label>
+                <label className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Pagina 1</label>
                 {style.briefpapier_url ? (
-                  <div className="relative group rounded-lg overflow-hidden border border-[#EBEBEB] bg-[#F8F7F5]">
+                  <div className="relative group rounded-lg overflow-hidden border border-border bg-background">
                     <img src={style.briefpapier_url} alt="Briefpapier" className="w-full aspect-[210/297] object-cover" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                      <button onClick={() => briefpapierInputRef.current?.click()} disabled={uploadingBriefpapier} className="px-3 py-1.5 text-xs font-medium bg-white rounded-md shadow-sm hover:bg-[#F8F7F5] transition-colors">
+                      <button onClick={() => briefpapierInputRef.current?.click()} disabled={uploadingBriefpapier} className="px-3 py-1.5 text-xs font-medium bg-white rounded-md shadow-sm hover:bg-background transition-colors">
                         {uploadingBriefpapier ? 'Uploaden...' : 'Wijzigen'}
                       </button>
                       <button onClick={() => updateStyle({ briefpapier_url: '', briefpapier_modus: 'geen' })} className="px-3 py-1.5 text-xs font-medium bg-white text-[#C0451A] rounded-md shadow-sm hover:bg-[#FDE8E4] transition-colors">
@@ -1124,11 +1124,11 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   <button
                     onClick={() => briefpapierInputRef.current?.click()}
                     disabled={uploadingBriefpapier}
-                    className="w-full aspect-[210/297] rounded-lg border-2 border-dashed border-[#EBEBEB] hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.02] transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
+                    className="w-full aspect-[210/297] rounded-lg border-2 border-dashed border-border hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.02] transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Upload className="h-6 w-6 text-[#9B9B95]" />
-                    <span className="text-xs text-[#9B9B95]">{uploadingBriefpapier ? 'Uploaden...' : 'Briefpapier uploaden'}</span>
-                    <span className="text-[10px] text-[#9B9B95]/60">JPG aanbevolen · max 10MB</span>
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">{uploadingBriefpapier ? 'Uploaden...' : 'Briefpapier uploaden'}</span>
+                    <span className="text-[10px] text-muted-foreground/60">JPG aanbevolen · max 10MB</span>
                   </button>
                 )}
                 <input ref={briefpapierInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleBriefpapierUpload} className="hidden" />
@@ -1136,12 +1136,12 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
 
               {/* Vervolgpapier (pagina 2+) */}
               <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#1A1A1A] uppercase tracking-wider">Pagina 2+</label>
+                <label className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Pagina 2+</label>
                 {style.vervolgpapier_url ? (
-                  <div className="relative group rounded-lg overflow-hidden border border-[#EBEBEB] bg-[#F8F7F5]">
+                  <div className="relative group rounded-lg overflow-hidden border border-border bg-background">
                     <img src={style.vervolgpapier_url} alt="Vervolgpapier" className="w-full aspect-[210/297] object-cover" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                      <button onClick={() => vervolgpapierInputRef.current?.click()} disabled={uploadingVervolgpapier} className="px-3 py-1.5 text-xs font-medium bg-white rounded-md shadow-sm hover:bg-[#F8F7F5] transition-colors">
+                      <button onClick={() => vervolgpapierInputRef.current?.click()} disabled={uploadingVervolgpapier} className="px-3 py-1.5 text-xs font-medium bg-white rounded-md shadow-sm hover:bg-background transition-colors">
                         {uploadingVervolgpapier ? 'Uploaden...' : 'Wijzigen'}
                       </button>
                       <button onClick={() => updateStyle({ vervolgpapier_url: '' })} className="px-3 py-1.5 text-xs font-medium bg-white text-[#C0451A] rounded-md shadow-sm hover:bg-[#FDE8E4] transition-colors">
@@ -1153,11 +1153,11 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   <button
                     onClick={() => vervolgpapierInputRef.current?.click()}
                     disabled={uploadingVervolgpapier}
-                    className="w-full aspect-[210/297] rounded-lg border-2 border-dashed border-[#EBEBEB] hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.02] transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
+                    className="w-full aspect-[210/297] rounded-lg border-2 border-dashed border-border hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.02] transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Upload className="h-6 w-6 text-[#9B9B95]" />
-                    <span className="text-xs text-[#9B9B95]">{uploadingVervolgpapier ? 'Uploaden...' : 'Vervolgpapier uploaden'}</span>
-                    <span className="text-[10px] text-[#9B9B95]/60">JPG aanbevolen · compactere header</span>
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">{uploadingVervolgpapier ? 'Uploaden...' : 'Vervolgpapier uploaden'}</span>
+                    <span className="text-[10px] text-muted-foreground/60">JPG aanbevolen · compactere header</span>
                   </button>
                 )}
                 <input ref={vervolgpapierInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleVervolgpapierUpload} className="hidden" />
@@ -1167,12 +1167,12 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
             {/* Modus selectie */}
             {style.briefpapier_url && (
               <div className="space-y-1.5 pt-4">
-                <label className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Toepassing</label>
+                <label className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider">Toepassing</label>
                 <Select
                   value={style.briefpapier_modus}
                   onValueChange={(v) => updateStyle({ briefpapier_modus: v as BriefpapierModus })}
                 >
-                  <SelectTrigger className="h-9 border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30">
+                  <SelectTrigger className="h-9 border-border bg-background focus:bg-white focus:border-[#1A535C]/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1189,10 +1189,10 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
 
             {/* Layout-opties — alleen als briefpapier actief */}
             {style.briefpapier_url && style.briefpapier_modus !== 'geen' && (
-              <div className="space-y-4 pt-5 mt-4 border-t border-[#EBEBEB]">
+              <div className="space-y-4 pt-5 mt-4 border-t border-border">
                 <div>
-                  <p className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider mb-1">Veilige zone</p>
-                  <p className="text-[11px] text-[#9B9B95] mb-3">
+                  <p className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider mb-1">Veilige zone</p>
+                  <p className="text-[11px] text-muted-foreground mb-3">
                     Extra ruimte zodat content niet over kop- of voettekst van het briefpapier loopt. Negatieve waarden bij links/rechts trekken de content juist verder naar buiten, handig om uit te lijnen met je logo.
                   </p>
                   <div className="grid grid-cols-2 gap-4">
@@ -1233,8 +1233,8 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
 
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <Label className="text-[12px] font-medium text-[#1A1A1A]">Eigen branding tonen</Label>
-                    <p className="text-[11px] text-[#9B9B95] mt-0.5">
+                    <Label className="text-[12px] font-medium text-foreground">Eigen branding tonen</Label>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
                       Standaard worden logo, naam en footer verborgen wanneer briefpapier actief is. Zet aan om ze er toch overheen te tekenen.
                     </p>
                   </div>
@@ -1250,7 +1250,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
 
           {/* Balkenkleuren — alleen relevant binnen briefpapier-context */}
           <Section title="Balkenkleuren" icon={Palette}>
-            <p className="text-[11px] text-[#9B9B95] -mt-1 mb-3">
+            <p className="text-[11px] text-muted-foreground -mt-1 mb-3">
               Stem de gekleurde balken in het document af op je briefpapier.
             </p>
             <div className="grid grid-cols-2 gap-4">
@@ -1283,7 +1283,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
 
           {/* Lettertype */}
           <Section title="Lettertype" icon={Type}>
-            <p className="text-[11px] text-[#9B9B95] -mt-1 mb-3">
+            <p className="text-[11px] text-muted-foreground -mt-1 mb-3">
               Kies hoe de tekst eruit ziet op je documenten.
             </p>
             <div className="grid grid-cols-2 gap-4">
@@ -1327,19 +1327,19 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
           {subTab === 'tekeningen' && (
           <>
           <Section title="Tekeningen & bijlagen" icon={Image}>
-            <p className="text-xs text-[#9B9B95]">
+            <p className="text-xs text-muted-foreground">
               Upload je een afbeelding of PDF bij een offerte-item (via <em>Tekening / Bijlage</em>), dan wordt die automatisch toegevoegd als <strong>aparte landscape A4-pagina</strong> achter de offerte. De pagina krijgt geen briefpapier-achtergrond zodat de tekening volledig zichtbaar blijft.
             </p>
 
             <div className="space-y-5 mt-4">
               {/* Logo positie */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Logo positie</label>
+                <label className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider">Logo positie</label>
                 <Select
                   value={style.tekening_logo_positie ?? 'linksboven'}
                   onValueChange={(v) => updateStyle({ tekening_logo_positie: v as 'linksboven' | 'rechtsboven' | 'geen' })}
                 >
-                  <SelectTrigger className="h-9 border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30">
+                  <SelectTrigger className="h-9 border-border bg-background focus:bg-white focus:border-[#1A535C]/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1352,12 +1352,12 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
 
               {/* Specs-balk kleur modus */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Specs-balk kleur</label>
+                <label className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider">Specs-balk kleur</label>
                 <Select
                   value={style.tekening_specs_kleur_modus ?? 'brand'}
                   onValueChange={(v) => updateStyle({ tekening_specs_kleur_modus: v as 'brand' | 'neutraal' | 'eigen' })}
                 >
-                  <SelectTrigger className="h-9 border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30">
+                  <SelectTrigger className="h-9 border-border bg-background focus:bg-white focus:border-[#1A535C]/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

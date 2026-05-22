@@ -49,7 +49,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
       {/* Progress bar */}
       {taken.length > 0 && (
         <div className="mb-3">
-          <div className="h-1 rounded-full bg-[#EBEBEB] overflow-hidden">
+          <div className="h-1 rounded-full bg-border overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
@@ -71,7 +71,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
             <div
               key={taak.id}
               className={cn(
-                'flex items-center gap-2.5 px-2 py-2.5 rounded-lg hover:bg-[#F8F7F5] transition-all group cursor-pointer',
+                'flex items-center gap-2.5 px-2 py-2.5 rounded-lg hover:bg-background transition-all group cursor-pointer',
                 isDone && 'opacity-35'
               )}
               onClick={() => onTaskClick?.(taak)}
@@ -85,7 +85,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
                   'flex-shrink-0 rounded-md border-[1.5px] transition-all flex items-center justify-center',
                   isDone
                     ? 'bg-[#1A535C] border-[#1A535C] text-white'
-                    : 'border-[#EBEBEB] hover:border-[#1A535C] hover:bg-[#E2F0F0]/30'
+                    : 'border-border hover:border-[#1A535C] hover:bg-[#E2F0F0]/30'
                 )}
                 style={{ width: 20, height: 20 }}
               >
@@ -93,8 +93,8 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
               </button>
 
               <span className={cn(
-                'flex-1 text-[13px] font-medium text-[#1A1A1A] truncate min-w-0',
-                isDone && 'line-through !text-[#9B9B95]'
+                'flex-1 text-[13px] font-medium text-foreground truncate min-w-0',
+                isDone && 'line-through !text-muted-foreground'
               )}>
                 {taak.titel}
               </span>
@@ -108,7 +108,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
               {taak.deadline && (
                 <span className={cn(
                   'text-[10px] font-mono flex-shrink-0',
-                  isOverdue ? 'text-[#C0451A] font-semibold' : 'text-[#9B9B95]'
+                  isOverdue ? 'text-[#C0451A] font-semibold' : 'text-muted-foreground'
                 )}>
                   {formatDeadline(taak.deadline)}
                 </span>
@@ -126,7 +126,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
           )
         })}
         {taken.length === 0 && (
-          <div className="text-center py-6 text-[#9B9B95] text-[12px]">
+          <div className="text-center py-6 text-muted-foreground text-[12px]">
             Nog geen taken
           </div>
         )}

@@ -656,7 +656,7 @@ export function ProjectsList() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
-                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
                     Projecten<span className="text-[#F15025]">.</span>
                   </h1>
                   <Skeleton className="h-4 w-12" />
@@ -674,7 +674,7 @@ export function ProjectsList() {
               </div>
             </div>
             {/* Toolbar card */}
-            <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] space-y-4">
+            <div className="bg-card rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] space-y-4">
               <div className="flex items-center gap-5">
                 <Skeleton className="h-9 w-[280px] rounded-lg" />
                 <div className="hidden sm:flex items-center gap-1 ml-auto">
@@ -682,16 +682,16 @@ export function ProjectsList() {
                   <Skeleton className="h-8 w-16 rounded-lg" />
                 </div>
               </div>
-              <div className="flex items-center gap-2 pt-4 border-t border-[#F0EFEC]">
+              <div className="flex items-center gap-2 pt-4 border-t border-border">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Skeleton key={i} className="h-7 w-16 rounded-lg" />
                 ))}
               </div>
             </div>
             {/* Table — match desktop row layout */}
-            <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+            <div className="hidden md:block bg-card rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-[#F0EFEC] last:border-b-0">
+                <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border last:border-b-0">
                   <Skeleton className="h-4 w-4 rounded" />
                   <div className="flex-1 min-w-0 space-y-2">
                     <Skeleton className="h-4 w-2/5" />
@@ -706,7 +706,7 @@ export function ProjectsList() {
             {/* Mobile card stack */}
             <div className="md:hidden space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] space-y-3">
+                <div key={i} className="bg-card rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <Skeleton className="h-4 w-3/5" />
@@ -774,16 +774,16 @@ export function ProjectsList() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-4">
-                <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+                <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
                   Projecten<span className="text-[#F15025]">.</span>
                 </h1>
-                <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+                <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
                   {gefilterdeProjecten.length === projecten.length ? (
-                    <span className="font-medium text-[#6B6B66]">{projecten.length}</span>
+                    <span className="font-medium text-foreground/70">{projecten.length}</span>
                   ) : (
                     <>
-                      <span className="font-medium text-[#6B6B66]">{gefilterdeProjecten.length}</span>
-                      <span className="text-[#C0BDB8]">/</span>{projecten.length}
+                      <span className="font-medium text-foreground/70">{gefilterdeProjecten.length}</span>
+                      <span className="text-muted-foreground/70">/</span>{projecten.length}
                     </>
                   )}
                 </span>
@@ -791,7 +791,7 @@ export function ProjectsList() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowImportDialog(true)}
-                  className="hidden md:inline-flex items-center gap-1.5 text-[13px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-black/[0.04] px-2.5 py-1.5 rounded-md transition-all duration-200"
+                  className="hidden md:inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground/70 hover:text-foreground hover:bg-black/[0.04] px-2.5 py-1.5 rounded-md transition-all duration-200"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   Importeer
@@ -836,17 +836,17 @@ export function ProjectsList() {
                         <span className={cn('doen-duo-icon flex-shrink-0', tile.key === 'actief' && 'doen-pulse')}>
                           <TileIcon size={18} weight="duotone" />
                         </span>
-                        <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                        <span className="font-heading text-[14px] font-bold text-foreground">
                           {tile.label}<span className="text-[#F15025]">.</span>
                         </span>
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="font-heading font-bold text-[28px] leading-none text-[#1A1A1A] tabular-nums">
+                      <span className="font-heading font-bold text-[28px] leading-none text-foreground tabular-nums">
                         {tile.count}
                       </span>
                       <span
-                        className="text-[13px] text-[#9B9B95] truncate"
+                        className="text-[13px] text-muted-foreground truncate"
                         style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                       >
                         · {tile.sub}
@@ -870,16 +870,16 @@ export function ProjectsList() {
             <div className="flex items-center gap-5">
               {/* Search with keyboard hint */}
               <div className="relative max-w-[280px] flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   ref={zoekInputRef}
                   type="text"
                   placeholder="Zoek project of klant..."
                   value={zoekterm}
                   onChange={(e) => setZoekterm(e.target.value)}
-                  className="w-full pl-9 pr-12 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+                  className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
                 />
-                <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#9B9B95] bg-[#F0EFEC] rounded border border-[#E5E4E0]">/</kbd>
+                <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
               </div>
 
               {/* Export buttons */}
@@ -897,7 +897,7 @@ export function ProjectsList() {
                     }))
                     exportCSV(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows)
                   }}
-                  className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
                 >
                   <Download className="w-3.5 h-3.5" />
                   CSV
@@ -915,7 +915,7 @@ export function ProjectsList() {
                     }))
                     exportExcel(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Projecten')
                   }}
-                  className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   Excel
@@ -924,7 +924,7 @@ export function ProjectsList() {
             </div>
 
             {/* Filters — primary status tabs, secondary age sub-filter */}
-            <div className="mt-4 pt-4 border-t border-[#F0EFEC] space-y-3">
+            <div className="mt-4 pt-4 border-t border-border space-y-3">
               {/* Status tabs (primary) */}
               <div className="flex items-center gap-1 flex-nowrap md:flex-wrap overflow-x-auto">
                 {statusOpties.map((optie) => {
@@ -941,7 +941,7 @@ export function ProjectsList() {
                         'relative px-3 py-1.5 rounded-lg text-[13px] transition-all duration-150',
                         isActive
                           ? 'font-semibold text-[#1A535C] bg-[#1A535C]/[0.07]'
-                          : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
+                          : 'text-muted-foreground hover:text-foreground/70 hover:bg-background'
                       )}
                     >
                       {optie.label}
@@ -956,7 +956,7 @@ export function ProjectsList() {
               <div className="hidden lg:flex items-center gap-5">
                 <div className="flex items-center gap-1.5">
                   <span
-                    className="text-[12px] text-[#9B9B95] mr-1"
+                    className="text-[12px] text-muted-foreground mr-1"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     open sinds ·
@@ -978,7 +978,7 @@ export function ProjectsList() {
                           'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors',
                           isActive
                             ? 'text-[#1A535C] font-bold'
-                            : 'text-[#B0ADA8] hover:text-[#6B6B66]'
+                            : 'text-muted-foreground/80 hover:text-foreground/70'
                         )}
                       >
                         {optie.label}
@@ -988,7 +988,7 @@ export function ProjectsList() {
                 </div>
                 <div className="flex items-center gap-1.5 ml-auto">
                   <span
-                    className="text-[12px] text-[#9B9B95] mr-1"
+                    className="text-[12px] text-muted-foreground mr-1"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     groep ·
@@ -1007,7 +1007,7 @@ export function ProjectsList() {
                           'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors',
                           isActive
                             ? 'text-[#1A535C] font-bold'
-                            : 'text-[#B0ADA8] hover:text-[#6B6B66]'
+                            : 'text-muted-foreground/80 hover:text-foreground/70'
                         )}
                       >
                         {optie.label}
@@ -1022,7 +1022,7 @@ export function ProjectsList() {
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
             <div className="flex items-center gap-4 px-5 py-3 bg-[#1A535C]/[0.06] rounded-xl ring-1 ring-[#1A535C]/10">
-              <span className="text-sm text-[#1A1A1A] font-medium">
+              <span className="text-sm text-foreground font-medium">
                 <span className="font-mono font-bold text-[#1A535C]">{selectedIds.size}</span> geselecteerd
               </span>
               <button
@@ -1034,7 +1034,7 @@ export function ProjectsList() {
               <div className="flex-1" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A535C] bg-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all">
+                  <button className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A535C] bg-card px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all">
                     Status wijzigen
                     <ChevronDown className="w-3 h-3" />
                   </button>
@@ -1054,14 +1054,14 @@ export function ProjectsList() {
               </DropdownMenu>
               <button
                 onClick={() => setBulkDeleteDialogOpen(true)}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#C03A18] bg-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#C03A18] bg-card px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all"
               >
                 <Trash2 className="w-3 h-3" />
                 Verwijderen
               </button>
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors p-1 rounded-md hover:bg-white/60"
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-card/60"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1116,17 +1116,17 @@ export function ProjectsList() {
                     >
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="min-w-0 flex-1">
-                          <p className="text-[15px] font-semibold text-[#1A1A1A] truncate">{project.naam}</p>
-                          {klantNaam && <p className="text-xs text-[#9B9B95] mt-0.5 truncate">{klantNaam}</p>}
+                          <p className="text-[15px] font-semibold text-foreground truncate">{project.naam}</p>
+                          {klantNaam && <p className="text-xs text-muted-foreground mt-0.5 truncate">{klantNaam}</p>}
                         </div>
                         <span
                           className="text-xs font-semibold flex-shrink-0 px-2.5 py-1 rounded-full"
-                          style={{ color: getStatusTextColor(project.status), backgroundColor: statusBg[project.status] || '#F0EFEC' }}
+                          style={{ color: getStatusTextColor(project.status), backgroundColor: statusBg[project.status] || 'hsl(var(--muted))' }}
                         >
                           {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-[#9B9B95]">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span className="font-mono">{project.project_nummer || ''}</span>
                         <div className="flex items-center gap-3">
                           {(() => {
@@ -1136,7 +1136,7 @@ export function ProjectsList() {
                             return <span className="font-mono text-[11px] font-medium" style={{ color }}>{dagen}d</span>
                           })()}
                           {bedrag > 0 && (
-                            <span className="font-mono font-medium text-[#1A1A1A]">{formatCurrency(bedrag)}</span>
+                            <span className="font-mono font-medium text-foreground">{formatCurrency(bedrag)}</span>
                           )}
                         </div>
                       </div>
@@ -1156,8 +1156,8 @@ export function ProjectsList() {
                 }}
               >
                 <table className="w-full">
-                  <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
-                    <tr className="border-b-2 border-[#F0EFEC]">
+                  <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
+                    <tr className="border-b-2 border-border">
                       <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                         <Checkbox
                           checked={selectedIds.size > 0 && selectedIds.size === gefilterdeProjecten.length}
@@ -1182,7 +1182,7 @@ export function ProjectsList() {
                           >
                             <button
                               onClick={() => handleSort('naam')}
-                              className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] hover:text-[#6B6B66] transition-colors"
+                              className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground/70 transition-colors"
                             >
                               Project
                               {sortField === 'naam' ? (
@@ -1206,7 +1206,7 @@ export function ProjectsList() {
                               dragColRef.current = null
                             }}
                           >
-                            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Klant</span>
+                            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Klant</span>
                           </th>
                         )
                         if (idx === 0) {
@@ -1217,12 +1217,12 @@ export function ProjectsList() {
                         return [cell]
                       })}
                       <th className="text-left py-3.5 pr-4 w-[150px]">
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</span>
                       </th>
                       <th className="text-right py-3.5 pr-4 w-[110px] hidden xl:table-cell">
                         <button
                           onClick={() => handleSort('bedrag')}
-                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] hover:text-[#6B6B66] transition-colors ml-auto"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground/70 transition-colors ml-auto"
                         >
                           Bedrag
                           {sortField === 'bedrag' ? (
@@ -1235,7 +1235,7 @@ export function ProjectsList() {
                       <th className="text-right py-3.5 pr-4 w-[80px] hidden lg:table-cell">
                         <button
                           onClick={() => handleSort('created_at')}
-                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] hover:text-[#6B6B66] transition-colors ml-auto"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground/70 transition-colors ml-auto"
                         >
                           Datum
                           {sortField === 'created_at' ? (
@@ -1246,7 +1246,7 @@ export function ProjectsList() {
                         </button>
                       </th>
                       <th className="text-left py-3.5 pr-4 w-[120px] hidden xl:table-cell">
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Team</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Team</span>
                       </th>
                       <th className="py-3.5 pr-5 w-[44px]"></th>
                     </tr>
@@ -1271,16 +1271,16 @@ export function ProjectsList() {
                                   <span className="font-heading text-[12px] font-bold text-[#3A6770] uppercase tracking-wider">
                                     {projectGroupLabel(currentGroupKey)}
                                   </span>
-                                  <span className="font-mono text-[11px] text-[#9B9B95] tabular-nums">{groupCount}</span>
+                                  <span className="font-mono text-[11px] text-muted-foreground tabular-nums">{groupCount}</span>
                                 </span>
                               </td>
                             </tr>
                           )}
                         <tr
                           className={cn(
-                            'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                            'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
                             needsAttention(project) && !selectedIds.has(project.id) && 'bg-[rgba(241,80,37,0.025)]',
-                            'hover:bg-[#F8F7F4]',
+                            'hover:bg-background',
                             selectedIds.has(project.id) && 'bg-[#1A535C]/[0.03]'
                           )}
                           style={{ animationDelay: `${i * 25}ms` }}
@@ -1306,17 +1306,17 @@ export function ProjectsList() {
                                   <div className="flex items-baseline gap-2.5">
                                     <Link
                                       to={`/projecten/${project.id}`}
-                                      className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
+                                      className="text-[15px] font-semibold text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       {project.naam}
                                     </Link>
                                     {project.project_nummer && (
-                                      <span className="text-[11px] text-[#C0BDB8] font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
+                                      <span className="text-[11px] text-muted-foreground/70 font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
                                     )}
                                   </div>
                                   {project.beschrijving && (
-                                    <p className="text-[11px] text-[#C0BDB8] truncate max-w-[320px] mt-0.5">
+                                    <p className="text-[11px] text-muted-foreground/70 truncate max-w-[320px] mt-0.5">
                                       {project.beschrijving}
                                     </p>
                                   )}
@@ -1331,7 +1331,7 @@ export function ProjectsList() {
                                       'bg-[#E8F2EC] text-[#3A7D52]',
                                       'bg-[#E8EEF9] text-[#3A5A9A]',
                                       'bg-[#F5F2E8] text-[#8A7A4A]',
-                                      'bg-[#F0EFEC] text-[#6B6B66]',
+                                      'bg-muted text-foreground/70',
                                       'bg-[#EDE8F4] text-[#6A5A8A]',
                                     ]
                                     return (
@@ -1341,9 +1341,9 @@ export function ProjectsList() {
                                     )
                                   })()}
                                   <div className="min-w-0">
-                                    <span className="text-[13px] text-[#4A4A46] truncate block leading-tight">{klantNaam}</span>
+                                    <span className="text-[13px] text-foreground/80 truncate block leading-tight">{klantNaam}</span>
                                     {(project.vestiging_naam || contactpersoon) && (
-                                      <span className="text-[11px] text-[#C0BDB8] truncate block">
+                                      <span className="text-[11px] text-muted-foreground/70 truncate block">
                                         {project.vestiging_naam || contactpersoon}
                                       </span>
                                     )}
@@ -1361,10 +1361,10 @@ export function ProjectsList() {
                                       setPhotoUploadKlantId(project.klant_id)
                                       photoInputRef.current?.click()
                                     }}
-                                    className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+                                    className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
                                     title="Foto's toevoegen"
                                   >
-                                    <Camera className="w-3.5 h-3.5 text-[#9B9B95]" />
+                                    <Camera className="w-3.5 h-3.5 text-muted-foreground" />
                                   </button>
                                   <button
                                     onClick={(e) => {
@@ -1372,18 +1372,18 @@ export function ProjectsList() {
                                       setQuickTaakProjectId(project.id)
                                       setTimeout(() => quickTaakInputRef.current?.focus(), 100)
                                     }}
-                                    className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+                                    className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
                                     title="Taak toevoegen"
                                   >
-                                    <ListPlus className="w-3.5 h-3.5 text-[#9B9B95]" />
+                                    <ListPlus className="w-3.5 h-3.5 text-muted-foreground" />
                                   </button>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <button
                                         onClick={(e) => e.stopPropagation()}
-                                        className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+                                        className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
                                       >
-                                        <MoreHorizontal className="w-3.5 h-3.5 text-[#9B9B95]" />
+                                        <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
                                       </button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="start" className="w-48">
@@ -1447,7 +1447,7 @@ export function ProjectsList() {
                           <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <button className="text-left group/status inline-flex items-center gap-2 hover:bg-[#F0EFEC]/60 rounded-md px-1.5 py-1 -mx-1.5 -my-1 transition-colors">
+                                <button className="text-left group/status inline-flex items-center gap-2 hover:bg-muted/60 rounded-md px-1.5 py-1 -mx-1.5 -my-1 transition-colors">
                                   <span
                                     className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', project.status === 'actief' && 'doen-pulse')}
                                     style={{ backgroundColor: statusHex(project.status) }}
@@ -1458,7 +1458,7 @@ export function ProjectsList() {
                                   >
                                     {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
                                   </span>
-                                  <ChevronDown className="w-3 h-3 text-[#C0BDB8] opacity-0 group-hover/status:opacity-100 transition-opacity" />
+                                  <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" className="w-44">
@@ -1479,12 +1479,12 @@ export function ProjectsList() {
                                     return (
                                       <React.Fragment key={s.value}>
                                         {isSuggested && idx === firstSuggestedIdx && (
-                                          <div className="px-2 pt-1.5 pb-1 text-[10px] uppercase tracking-wider text-[#9B9B95] font-semibold">
+                                          <div className="px-2 pt-1.5 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                                             Volgende stap
                                           </div>
                                         )}
                                         {!isSuggested && !isCurrent && firstOtherIdx === idx && (
-                                          <div className="px-2 pt-1.5 pb-1 text-[10px] uppercase tracking-wider text-[#9B9B95] font-semibold border-t border-[#F0EFEC] mt-1">
+                                          <div className="px-2 pt-1.5 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-t border-border mt-1">
                                             Andere
                                           </div>
                                         )}
@@ -1498,7 +1498,7 @@ export function ProjectsList() {
                                           className={cn(
                                             'flex items-center gap-2 text-xs',
                                             isCurrent && 'font-semibold',
-                                            isSuggested && 'text-[#1A1A1A]'
+                                            isSuggested && 'text-foreground'
                                           )}
                                         >
                                           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: statusHex(s.value) }} />
@@ -1517,14 +1517,14 @@ export function ProjectsList() {
                           <td className="py-3.5 pr-4 text-right hidden xl:table-cell">
                             {(() => {
                               const bedrag = getProjectBedrag(project.id)
-                              if (bedrag <= 0) return <span className="text-xs text-[#C0BDB8]">&mdash;</span>
+                              if (bedrag <= 0) return <span className="text-xs text-muted-foreground/70">&mdash;</span>
                               const formatted = formatCurrency(bedrag)
                               return (
                                 <span className={cn(
                                   'font-mono tabular-nums',
                                   bedrag >= 10000
-                                    ? 'text-[15px] font-bold text-[#1A1A1A]'
-                                    : 'text-sm text-[#4A4A46]'
+                                    ? 'text-[15px] font-bold text-foreground'
+                                    : 'text-sm text-foreground/80'
                                 )}>
                                   {formatted}
                                 </span>
@@ -1539,7 +1539,7 @@ export function ProjectsList() {
                               onChange={(d) => handleDatumChange(project.id, d)}
                               align="end"
                               trigger={
-                                <button className="text-[12px] font-mono tabular-nums text-[#B0ADA8] hover:text-[#6B6B66] transition-colors">
+                                <button className="text-[12px] font-mono tabular-nums text-muted-foreground/80 hover:text-foreground/70 transition-colors">
                                   {new Date(project.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                                 </button>
                               }
@@ -1563,7 +1563,7 @@ export function ProjectsList() {
                           <td className="py-3.5 pr-5 align-middle" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => handleDeleteProject(project)}
-                              className="h-7 w-7 rounded-md flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-[#C0BDB8] hover:bg-[#FDE8E4] hover:text-[#C03A18]"
+                              className="h-7 w-7 rounded-md flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground/70 hover:bg-[#FDE8E4] hover:text-[#C03A18]"
                               title="Project verwijderen"
                               aria-label={`Verwijder ${project.naam || 'project'}`}
                             >
@@ -1635,17 +1635,17 @@ export function ProjectsList() {
               placeholder="Wat moet er gebeuren?"
               value={quickTaakTitel}
               onChange={(e) => setQuickTaakTitel(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+              className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
               autoFocus
             />
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] mb-1.5 block">Deadline</label>
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5 block">Deadline</label>
               <div className="flex items-center gap-2">
                 <input
                   type="date"
                   value={quickTaakDeadline}
                   onChange={(e) => setQuickTaakDeadline(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+                  className="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
                 />
                 <div className="flex gap-1">
                   {[
@@ -1664,7 +1664,7 @@ export function ProjectsList() {
                           'px-2 py-1.5 rounded-md text-[11px] font-medium transition-all',
                           quickTaakDeadline === val
                             ? 'bg-[#1A535C]/[0.08] text-[#1A535C] font-semibold'
-                            : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'
+                            : 'bg-background text-foreground/70 hover:bg-muted'
                         )}
                       >
                         {label}
@@ -1675,7 +1675,7 @@ export function ProjectsList() {
               </div>
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] mb-1.5 block">Toewijzen aan</label>
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5 block">Toewijzen aan</label>
               <div className="flex flex-wrap gap-1.5">
                 {medewerkers.filter((m) => m.status === 'actief').map((mw) => {
                   const selected = quickTaakToegewezen === mw.naam
@@ -1684,7 +1684,7 @@ export function ProjectsList() {
                     'bg-[#E8F2EC] text-[#3A7D52]',
                     'bg-[#E8EEF9] text-[#3A5A9A]',
                     'bg-[#F5F2E8] text-[#8A7A4A]',
-                    'bg-[#F0EFEC] text-[#6B6B66]',
+                    'bg-muted text-foreground/70',
                     'bg-[#EDE8F4] text-[#6A5A8A]',
                   ]
                   return (
@@ -1696,7 +1696,7 @@ export function ProjectsList() {
                         'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium transition-all border',
                         selected
                           ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]'
-                          : 'border-transparent bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'
+                          : 'border-transparent bg-background text-foreground/70 hover:bg-muted'
                       )}
                     >
                       <span className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold uppercase flex-shrink-0', colors[c])}>

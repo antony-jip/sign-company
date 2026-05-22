@@ -61,14 +61,14 @@ export function Header() {
 
   return (
     <header
-      className="h-11 flex items-center justify-between px-5 flex-shrink-0 z-10 transition-all duration-200 relative bg-[#FFFFFF] border-b border-[#EBEBEB]"
+      className="h-11 flex items-center justify-between px-5 flex-shrink-0 z-10 transition-all duration-200 relative bg-card border-b border-border"
       style={{ boxShadow: scrolled ? '0 1px 3px rgba(0,0,0,0.04)' : 'none' }}
     >
       {/* Mobile search overlay */}
       {mobileSearchOpen && (
-        <div className="absolute inset-x-0 top-0 h-11 z-20 flex items-center gap-2 px-3 md:hidden bg-[#FFFFFF] border-b border-[#EBEBEB]">
+        <div className="absolute inset-x-0 top-0 h-11 z-20 flex items-center gap-2 px-3 md:hidden bg-card border-b border-border">
           <GlobalSearch className="flex flex-1" compact />
-          <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg text-[#9B9B95] hover:text-[#1A1A1A]" onClick={() => setMobileSearchOpen(false)}>
+          <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground" onClick={() => setMobileSearchOpen(false)}>
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -76,13 +76,13 @@ export function Header() {
 
       {/* Left: Breadcrumb */}
       <div className="flex items-center gap-1.5 min-w-0">
-        <span className="text-[13px] font-semibold text-[#1A1A1A]">
+        <span className="text-[13px] font-semibold text-foreground">
           {moduleName}<span className="text-[#F15025]">.</span>
         </span>
         {subPage && (
           <>
             <span className="text-[13px] text-[#EBEBEB] mx-0.5">/</span>
-            <span className="text-[13px] font-normal text-[#9B9B95] truncate">
+            <span className="text-[13px] font-normal text-muted-foreground truncate">
               {subPage}
             </span>
           </>
@@ -100,7 +100,7 @@ export function Header() {
         <Button
           variant="ghost"
           size="icon"
-          className="w-8 h-8 md:hidden rounded-lg text-[#9B9B95] hover:text-[#1A1A1A]"
+          className="w-8 h-8 md:hidden rounded-lg text-muted-foreground hover:text-foreground"
           onClick={() => setMobileSearchOpen(true)}
           aria-label="Zoeken"
         >

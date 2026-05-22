@@ -963,7 +963,7 @@ export function ClientProfile() {
                     <PhFolderSimple size={48} weight="duotone" />
                   </span>
                   <p
-                    className="text-[#9B9B95]"
+                    className="text-muted-foreground"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     geen projecten voor deze klant
@@ -1105,7 +1105,7 @@ export function ClientProfile() {
                     <PhFileText size={48} weight="duotone" />
                   </span>
                   <p
-                    className="text-[#9B9B95]"
+                    className="text-muted-foreground"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     geen offertes voor deze klant
@@ -1321,7 +1321,7 @@ export function ClientProfile() {
                       <PhEnvelope size={48} weight="duotone" />
                     </span>
                     <p
-                      className="text-[#9B9B95]"
+                      className="text-muted-foreground"
                       style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                     >
                       geen emailcommunicatie gevonden

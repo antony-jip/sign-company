@@ -94,7 +94,7 @@ export function WelkomPagina() {
   }, [user])
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-6 bg-[#F8F7F5] overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center p-6 bg-background overflow-hidden">
       <ParticleField />
       <motion.div
         variants={container}

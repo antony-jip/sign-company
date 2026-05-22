@@ -161,7 +161,7 @@ function ProjectNode({
           style={{
             width: 128,
             height: 96,
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'hsl(var(--card))',
             border: `1.5px solid ${PETROL}`,
             boxShadow: '0 2px 10px rgba(26,83,92,0.06), 0 12px 32px rgba(26,83,92,0.08)',
           }}
@@ -227,7 +227,7 @@ function PortaalNode({
         style={{
           width: 72,
           height: 92,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'hsl(var(--card))',
           border: `2px solid ${PETROL}`,
           boxShadow: '0 6px 20px rgba(26,83,92,0.15)',
           scale: scaleIn,

@@ -5,7 +5,7 @@ const MAILTO_HREF =
 
 export function ImportHulpBanner() {
   return (
-    <div className="rounded-2xl border border-border/60 bg-[#F4F2EE]/50 p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+    <div className="rounded-2xl border border-border/60 bg-muted/50 p-6 flex flex-col sm:flex-row sm:items-center gap-4">
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-semibold text-foreground">Kom je er niet uit?</h3>
         <p className="text-sm text-muted-foreground mt-1">

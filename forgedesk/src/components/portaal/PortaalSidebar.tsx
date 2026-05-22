@@ -69,7 +69,7 @@ export function PortaalSidebar({
 
   if (isMobiel) {
     return (
-      <div className="rounded-[10px] border" style={{ borderColor: '#E8E6E1', backgroundColor: '#fff' }}>
+      <div className="rounded-[10px] border" style={{ borderColor: '#E8E6E1', backgroundColor: 'hsl(var(--card))' }}>
         <button
           onClick={() => setOpen(o => !o)}
           className="w-full flex items-center justify-between px-4 py-3 text-left"

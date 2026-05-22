@@ -278,9 +278,9 @@ export function ClientsLayout() {
         <DropdownMenuTrigger asChild>
           <button
             onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+            className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
           >
-            <MoreHorizontal className="w-3.5 h-3.5 text-[#9B9B95]" />
+            <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
@@ -341,16 +341,16 @@ export function ClientsLayout() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
-            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
               Klanten<span className="text-[#F15025]">.</span>
             </h1>
-            <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+            <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {filteredKlanten.length === klanten.length ? (
-                <span className="font-medium text-[#6B6B66]">{klanten.length}</span>
+                <span className="font-medium text-foreground/70">{klanten.length}</span>
               ) : (
                 <>
-                  <span className="font-medium text-[#6B6B66]">{filteredKlanten.length}</span>
-                  <span className="text-[#C0BDB8]">/</span>{klanten.length}
+                  <span className="font-medium text-foreground/70">{filteredKlanten.length}</span>
+                  <span className="text-muted-foreground/70">/</span>{klanten.length}
                 </>
               )}
             </span>
@@ -390,17 +390,17 @@ export function ClientsLayout() {
                     <span className={cn('doen-duo-icon flex-shrink-0', tile.key === 'actief' && 'doen-pulse')}>
                       <TileIcon size={18} weight="duotone" />
                     </span>
-                    <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                    <span className="font-heading text-[14px] font-bold text-foreground">
                       {tile.label}<span className="text-[#F15025]">.</span>
                     </span>
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-heading font-bold text-[28px] leading-none text-[#1A1A1A] tabular-nums">
+                  <span className="font-heading font-bold text-[28px] leading-none text-foreground tabular-nums">
                     {tile.count}
                   </span>
                   <span
-                    className="text-[13px] text-[#9B9B95] truncate"
+                    className="text-[13px] text-muted-foreground truncate"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     · {tile.sub}
@@ -417,29 +417,29 @@ export function ClientsLayout() {
         <div className="flex items-center gap-5">
           {/* Search with keyboard hint */}
           <div className="relative max-w-[280px] flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Zoek op naam, email, stad, tag..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-12 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+              className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
             />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#9B9B95] bg-[#F0EFEC] rounded border border-[#E5E4E0]">/</kbd>
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
           </div>
 
           {/* View toggle */}
-          <div className="flex items-center bg-[#F8F7F5] rounded-lg p-0.5 border border-[#EBEBEB]">
+          <div className="flex items-center bg-background rounded-lg p-0.5 border border-border">
             <button
               onClick={() => setViewMode('grid')}
-              className={cn('p-1.5 rounded-md transition-all', viewMode === 'grid' ? 'bg-white shadow-sm text-[#1A1A1A]' : 'text-[#9B9B95] hover:text-[#6B6B66]')}
+              className={cn('p-1.5 rounded-md transition-all', viewMode === 'grid' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground/70')}
               title="Rasterweergave"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={cn('p-1.5 rounded-md transition-all', viewMode === 'list' ? 'bg-white shadow-sm text-[#1A1A1A]' : 'text-[#9B9B95] hover:text-[#6B6B66]')}
+              className={cn('p-1.5 rounded-md transition-all', viewMode === 'list' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground/70')}
               title="Lijstweergave"
             >
               <List className="w-3.5 h-3.5" />
@@ -461,7 +461,7 @@ export function ClientsLayout() {
                   'px-2 py-1.5 rounded-lg text-xs transition-colors',
                   sortField === field
                     ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
-                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
+                    : 'text-muted-foreground hover:text-foreground/70 hover:bg-background'
                 )}
               >
                 {label}
@@ -476,21 +476,21 @@ export function ClientsLayout() {
           <div className="hidden sm:flex items-center gap-1 ml-auto">
             <button
               onClick={() => navigate('/klanten/importeren')}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
             >
               <Upload className="w-3.5 h-3.5" />
               Import
             </button>
             <button
               onClick={() => exportCSV(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows())}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
             >
               <Download className="w-3.5 h-3.5" />
               CSV
             </button>
             <button
               onClick={() => exportExcel(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows(), 'Klanten')}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
             >
               <FileText className="w-3.5 h-3.5" />
               Excel
@@ -499,7 +499,7 @@ export function ClientsLayout() {
         </div>
 
         {/* Filter tabs */}
-        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
+        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border">
           <div className="flex items-center gap-1 flex-1 flex-nowrap md:flex-wrap overflow-x-auto">
             {(['alle', 'actief', 'inactief', 'prospect', 'met-aandacht'] as StatusFilter[]).map((f) => {
               const labels: Record<StatusFilter, string> = {
@@ -525,7 +525,7 @@ export function ClientsLayout() {
                     'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
                     isActive
                       ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
-                      : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                      : 'text-muted-foreground hover:text-foreground/70'
                   )}
                 >
                   {labels[f]}
@@ -554,7 +554,7 @@ export function ClientsLayout() {
                 'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
                 labelFilter === opt.value
                   ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
-                  : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                  : 'text-muted-foreground hover:text-foreground/70'
               )}
             >
               {opt.label}
@@ -578,7 +578,7 @@ export function ClientsLayout() {
                 'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all flex items-center gap-1.5',
                 klantStatusFilter === opt.value
                   ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
-                  : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                  : 'text-muted-foreground hover:text-foreground/70'
               )}
             >
               {opt.color && (
@@ -613,18 +613,18 @@ export function ClientsLayout() {
               <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{selectedIds.size}</span>
               <span className="text-sm font-semibold text-[#1A535C]">{selectedIds.size} klant{selectedIds.size === 1 ? '' : 'en'} geselecteerd</span>
             </div>
-            <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] px-2.5 py-1 rounded-md hover:bg-white/40 transition-all">
+            <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
               {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
             </button>
             <div className="flex-1" />
             <button
               onClick={handleBulkDelete}
-              className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all"
+              className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all"
             >
               <Trash2 className="w-3 h-3" />
               Verwijder ({selectedIds.size})
             </button>
-            <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all">
+            <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-card/40 transition-all">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -652,18 +652,18 @@ export function ClientsLayout() {
               <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{selectedIds.size}</span>
               <span className="text-sm font-semibold text-[#1A535C]">{selectedIds.size} klant{selectedIds.size === 1 ? '' : 'en'} geselecteerd</span>
             </div>
-            <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] px-2.5 py-1 rounded-md hover:bg-white/40 transition-all">
+            <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
               {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
             </button>
             <div className="flex-1" />
             <button
               onClick={handleBulkDelete}
-              className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all"
+              className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all"
             >
               <Trash2 className="w-3 h-3" />
               Verwijder ({selectedIds.size})
             </button>
-            <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all">
+            <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-card/40 transition-all">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -674,8 +674,8 @@ export function ClientsLayout() {
           style={{ clipPath: 'inset(0 round 16px)' }}
         >
             <table className="w-full table-fixed">
-              <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
-                <tr className="border-b-2 border-[#F0EFEC]">
+              <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
+                <tr className="border-b-2 border-border">
                   <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                     <Checkbox
                       checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
@@ -684,19 +684,19 @@ export function ClientsLayout() {
                     />
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Bedrijfsnaam</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Bedrijfsnaam</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Email</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Email</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Telefoon</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Telefoon</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Stad</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Stad</span>
                   </th>
                   <th className="text-center py-3.5 pr-4 w-[80px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Projecten</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Projecten</span>
                   </th>
                   <th className="w-10 py-3.5 pr-4" />
                 </tr>
@@ -708,9 +708,9 @@ export function ClientsLayout() {
                   <tr
                     key={klant.id}
                     className={cn(
-                      'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                      'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
                       klantNeedsAttention(klant) && !selectedIds.has(klant.id) && 'bg-[rgba(241,80,37,0.025)]',
-                      'hover:bg-[#F8F7F4]',
+                      'hover:bg-background',
                       selectedIds.has(klant.id) && 'bg-[#1A535C]/[0.03]'
                     )}
                     style={{ animationDelay: `${i * 25}ms` }}
@@ -735,7 +735,7 @@ export function ClientsLayout() {
                             'bg-[#E8F2EC] text-[#3A7D52]',
                             'bg-[#E8EEF9] text-[#3A5A9A]',
                             'bg-[#F5F2E8] text-[#8A7A4A]',
-                            'bg-[#F0EFEC] text-[#6B6B66]',
+                            'bg-muted text-foreground/70',
                             'bg-[#EDE8F4] text-[#6A5A8A]',
                           ]
                           return (
@@ -745,7 +745,7 @@ export function ClientsLayout() {
                           )
                         })()}
                         <div className="min-w-0">
-                          <span className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] truncate block transition-colors">
+                          <span className="text-[15px] font-semibold text-foreground group-hover:text-[#1A535C] truncate block transition-colors">
                             {klant.bedrijfsnaam}
                           </span>
                           {(klant.klant_labels || []).length > 0 && (
@@ -771,22 +771,22 @@ export function ClientsLayout() {
                       </div>
                     </td>
                     <td className="py-3.5 pr-4">
-                      <span className="text-[13px] text-[#9B9B95] truncate block">
+                      <span className="text-[13px] text-muted-foreground truncate block">
                         {klant.email}
                       </span>
                     </td>
                     <td className="py-3.5 pr-4">
-                      <span className="text-[13px] text-[#9B9B95] font-mono">
+                      <span className="text-[13px] text-muted-foreground font-mono">
                         {klant.telefoon}
                       </span>
                     </td>
                     <td className="py-3.5 pr-4">
-                      <span className="text-[13px] text-[#6B6B66]">
+                      <span className="text-[13px] text-foreground/70">
                         {klant.stad}
                       </span>
                     </td>
                     <td className="py-3.5 pr-4 text-center">
-                      <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-[#F8F7F5] text-[#6B6B66]">
+                      <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-background text-foreground/70">
                         {projectCounts[klant.id] || 0}
                       </span>
                     </td>

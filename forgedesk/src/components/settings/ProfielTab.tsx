@@ -123,16 +123,16 @@ export function ProfielTab() {
           </div>
           <div className="min-w-0 flex-1 pt-1">
             <p
-              className="text-[14px] text-[#6B6B66]"
+              className="text-[14px] text-foreground/70"
               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
             >
               {greeting}<span className="text-[#F15025]">·</span>
             </p>
-            <h2 className="text-[24px] font-extrabold tracking-[-0.3px] text-[#1A1A1A] mt-0.5 truncate">
+            <h2 className="text-[24px] font-extrabold tracking-[-0.3px] text-foreground mt-0.5 truncate">
               {volledigeNaam || 'Jouw naam'}<span className="text-[#F15025]">.</span>
             </h2>
-            <p className="text-[13px] text-[#6B6B66] truncate">
-              {functie || 'Voeg je functie toe'} <span className="text-[#C0BDB8]">·</span> {email}
+            <p className="text-[13px] text-foreground/70 truncate">
+              {functie || 'Voeg je functie toe'} <span className="text-muted-foreground/70">·</span> {email}
             </p>
           </div>
         </div>
@@ -140,7 +140,7 @@ export function ProfielTab() {
         {/* Completeness bar */}
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#6B6B66]">Profiel</span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70">Profiel</span>
             <span className="text-[13px] font-mono tabular-nums text-[#1A535C] font-semibold">
               {completionPct}%
             </span>
@@ -162,26 +162,26 @@ export function ProfielTab() {
         <div className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="voornaam" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Voornaam</Label>
+              <Label htmlFor="voornaam" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Voornaam</Label>
               <Input id="voornaam" value={voornaam} onChange={(e) => setVoornaam(e.target.value)} className="bg-white" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="achternaam" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Achternaam</Label>
+              <Label htmlFor="achternaam" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Achternaam</Label>
               <Input id="achternaam" value={achternaam} onChange={(e) => setAchternaam(e.target.value)} className="bg-white" />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="functie" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Functie</Label>
+            <Label htmlFor="functie" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Functie</Label>
             <Input id="functie" value={functie} onChange={(e) => setFunctie(e.target.value)} placeholder="Bijv. Eigenaar, Projectleider, Verkoper" className="bg-white" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Email</Label>
-              <Input id="email" value={email} readOnly disabled className="bg-[#F8F7F5] text-[#6B6B66] cursor-not-allowed" />
-              <p className="text-[12px] text-[#9B9B95]">Email kan niet worden gewijzigd</p>
+              <Label htmlFor="email" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Email</Label>
+              <Input id="email" value={email} readOnly disabled className="bg-background text-foreground/70 cursor-not-allowed" />
+              <p className="text-[12px] text-muted-foreground">Email kan niet worden gewijzigd</p>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="telefoon" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Telefoon</Label>
+              <Label htmlFor="telefoon" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Telefoon</Label>
               <Input id="telefoon" value={telefoon} onChange={(e) => setTelefoon(e.target.value)} className="bg-white" />
             </div>
           </div>
@@ -189,7 +189,7 @@ export function ProfielTab() {
 
         <div className="flex items-center justify-between pt-4 border-t border-[rgba(26,83,92,0.08)]">
           <p
-            className="text-[12px] text-[#9B9B95]"
+            className="text-[12px] text-muted-foreground"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             wijzigingen zijn direct zichtbaar in jouw verzonden offertes en emails.
@@ -211,7 +211,7 @@ export function ProfielTab() {
           <span className="doen-duo-icon">
             <PhSparkle size={16} weight="duotone" />
           </span>
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70">
             Hoe anderen je zien
           </span>
         </div>
@@ -237,31 +237,31 @@ export function ProfielTab() {
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-bold text-[#1A1A1A] truncate">
+              <p className="text-[15px] font-bold text-foreground truncate">
                 {volledigeNaam || 'Jouw naam'}<span className="text-[#F15025]">.</span>
               </p>
               {functie && (
-                <p className="text-[12px] text-[#6B6B66] truncate">{functie}</p>
+                <p className="text-[12px] text-foreground/70 truncate">{functie}</p>
               )}
             </div>
           </div>
 
           <div className="relative space-y-2 text-[12.5px]">
-            <div className="flex items-center gap-2 text-[#4A4A46]">
+            <div className="flex items-center gap-2 text-foreground/80">
               <span className="doen-duo-icon flex-shrink-0">
                 <PhEnvelope size={16} weight="duotone" />
               </span>
               <span className="truncate font-mono">{email || 'jouw@email.nl'}</span>
             </div>
             {telefoon ? (
-              <div className="flex items-center gap-2 text-[#4A4A46]">
+              <div className="flex items-center gap-2 text-foreground/80">
                 <span className="doen-duo-icon flex-shrink-0">
                   <PhPhone size={16} weight="duotone" />
                 </span>
                 <span className="truncate font-mono">{telefoon}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-[#C0BDB8]">
+              <div className="flex items-center gap-2 text-muted-foreground/70">
                 <span className="doen-duo-icon flex-shrink-0" style={{ '--duo-sec': '#C0BDB8' } as React.CSSProperties}>
                   <PhPhone size={16} weight="duotone" />
                 </span>
@@ -275,7 +275,7 @@ export function ProfielTab() {
               <PhIdCard size={14} weight="duotone" />
             </span>
             <p
-              className="text-[11px] text-[#9B9B95]"
+              className="text-[11px] text-muted-foreground"
               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
             >
               afzender · offertes, facturen en mails
@@ -285,7 +285,7 @@ export function ProfielTab() {
 
         {/* Checklist */}
         <div className="doen-slate-surface rounded-2xl p-4 space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#6B6B66] mb-2">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70 mb-2">
             Voltooien
           </p>
           {completionFields.map(f => {
@@ -305,7 +305,7 @@ export function ProfielTab() {
                 ) : (
                   <span className="w-[18px] h-[18px] rounded-full bg-[#E5E4E0] flex-shrink-0" />
                 )}
-                <span className={done ? 'text-[#4A4A46] line-through decoration-[#C0BDB8]' : 'text-[#1A1A1A] font-medium'}>
+                <span className={done ? 'text-foreground/80 line-through decoration-[#C0BDB8]' : 'text-foreground font-medium'}>
                   {labels[f.key]}
                 </span>
               </div>

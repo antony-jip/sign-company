@@ -96,13 +96,13 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
       >
         <div className="mx-auto h-1 w-10 rounded-full bg-[#D4D2CE] mb-5" />
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-[18px] font-bold text-[#1A1A1A]">
+          <h2 className="text-[18px] font-bold text-foreground">
             Nieuwe taak<span className="text-[#F15025]">.</span>
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="h-10 w-10 -mr-2 flex items-center justify-center rounded-full text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] active:bg-[#E6E5E1] transition-colors"
+            className="h-10 w-10 -mr-2 flex items-center justify-center rounded-full text-foreground/70 hover:text-foreground hover:bg-muted active:bg-muted transition-colors"
             aria-label="Sluiten"
           >
             <X className="h-4 w-4" />
@@ -114,20 +114,20 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
             value={titel}
             onChange={(e) => setTitel(e.target.value)}
             placeholder="Wat moet er gebeuren?"
-            className="w-full h-11 px-3 rounded-lg bg-[#F8F7F5] border border-[#EBEBEB] focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[15px] text-[#1A1A1A] placeholder:text-[#9B9B95] transition-all"
+            className="w-full h-11 px-3 rounded-lg bg-background border border-border focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[15px] text-foreground placeholder:text-muted-foreground transition-all"
           />
           <div className="flex gap-2">
             <DatePicker
               value={datum}
               onChange={setDatum}
               asInput
-              className="flex-1 h-11 px-3 rounded-lg bg-[#F8F7F5] border-[#EBEBEB] text-[14px]"
+              className="flex-1 h-11 px-3 rounded-lg bg-background border-border text-[14px]"
             />
             <input
               type="time"
               value={tijd}
               onChange={(e) => setTijd(e.target.value)}
-              className="w-32 h-11 px-3 rounded-lg bg-[#F8F7F5] border border-[#EBEBEB] focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[14px] text-[#1A1A1A] transition-all"
+              className="w-32 h-11 px-3 rounded-lg bg-background border border-border focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[14px] text-foreground transition-all"
             />
           </div>
           <button

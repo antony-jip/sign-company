@@ -19,7 +19,7 @@ export function PasswordStrengthMeter({ check, hasInput }: Props) {
           <div
             key={level}
             className={`h-1 flex-1 rounded-full transition-all ${
-              level <= filledBars ? check.strength.barColor : 'bg-[#EEEEED]'
+              level <= filledBars ? check.strength.barColor : 'bg-muted'
             }`}
           />
         ))}
@@ -29,7 +29,7 @@ export function PasswordStrengthMeter({ check, hasInput }: Props) {
           {check.strength.loading ? 'Beoordelen…' : check.strength.label}
         </p>
         {!check.strength.loading && check.strength.score < PASSWORD_MIN_ZXCVBN_SCORE && (
-          <p className="text-[11px] text-[#9B9B95]">Minimaal "Sterk" vereist</p>
+          <p className="text-[11px] text-muted-foreground">Minimaal "Sterk" vereist</p>
         )}
       </div>
 
@@ -39,9 +39,9 @@ export function PasswordStrengthMeter({ check, hasInput }: Props) {
             {req.satisfied ? (
               <Check className="h-3 w-3 text-[#2D6B48] flex-shrink-0" />
             ) : (
-              <X className="h-3 w-3 text-[#B0ADA8] flex-shrink-0" />
+              <X className="h-3 w-3 text-muted-foreground/80 flex-shrink-0" />
             )}
-            <span className={req.satisfied ? 'text-[#6B6B66]' : 'text-[#9B9B95]'}>
+            <span className={req.satisfied ? 'text-foreground/70' : 'text-muted-foreground'}>
               {req.label}
             </span>
           </li>
@@ -52,7 +52,7 @@ export function PasswordStrengthMeter({ check, hasInput }: Props) {
         <p className="text-[11px] text-[#C03A18] pt-1">{check.strength.warning}</p>
       )}
       {check.strength.suggestions.length > 0 && check.strength.score < PASSWORD_MIN_ZXCVBN_SCORE && (
-        <p className="text-[11px] text-[#9B9B95]">
+        <p className="text-[11px] text-muted-foreground">
           Tip: {check.strength.suggestions[0]}
         </p>
       )}

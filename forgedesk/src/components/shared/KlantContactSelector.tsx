@@ -269,7 +269,7 @@ export function KlantContactSelector({
     }
   }
 
-  const inputStyle = { backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }
+  const inputStyle = { backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }
 
   return (
     <div className="space-y-3">
@@ -280,7 +280,7 @@ export function KlantContactSelector({
         </Label>
 
         {selectedKlant ? (
-          <div className="rounded-lg p-3 flex items-center gap-2.5" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
+          <div className="rounded-lg p-3 flex items-center gap-2.5" style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }}>
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1A535C] to-[#1A535C]/70 flex items-center justify-center flex-shrink-0">
               <span className="text-white font-bold text-[10px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
             </div>
@@ -292,7 +292,7 @@ export function KlantContactSelector({
               </div>
             </div>
             <button
-              className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[#F4F2EE]"
+              className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:bg-muted"
               onClick={handleClearKlant}
             >
               <X className="h-3.5 w-3.5" style={{ color: '#A0A098' }} />
@@ -346,7 +346,7 @@ export function KlantContactSelector({
                   filtered.map((klant) => (
                     <button
                       key={klant.id}
-                      className="w-full text-left px-3 py-2 hover:bg-[#F4F2EE] transition-colors border-b last:border-0"
+                      className="w-full text-left px-3 py-2 hover:bg-muted transition-colors border-b last:border-0"
                       style={{ borderColor: '#E6E4E0' }}
                       onClick={() => handleSelectKlant(klant)}
                     >
@@ -364,7 +364,7 @@ export function KlantContactSelector({
 
             {/* Nieuw bedrijf formulier (inline) */}
             {showNieuwBedrijf && (
-              <div className="mt-2 rounded-lg p-4 space-y-3" style={{ border: '0.5px solid #E6E4E0', backgroundColor: '#FAFAF8' }}>
+              <div className="mt-2 rounded-lg p-4 space-y-3" style={{ border: '0.5px solid #E6E4E0', backgroundColor: 'hsl(var(--background))' }}>
                 <div className="flex items-center gap-2 mb-1">
                   <Building2 className="h-4 w-4" style={{ color: '#1A535C' }} />
                   <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Nieuw bedrijf</span>
@@ -458,7 +458,7 @@ export function KlantContactSelector({
                   value={contactpersoonId || '__none__'}
                   onValueChange={(v) => onContactpersoonChange(v === '__none__' ? '' : v)}
                 >
-                  <SelectTrigger className="h-10 text-[13px] rounded-lg border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white hover:bg-white transition-colors">
+                  <SelectTrigger className="h-10 text-[13px] rounded-lg border-border bg-background focus:bg-white hover:bg-white transition-colors">
                     <span className="truncate text-left">{triggerLabel}</span>
                   </SelectTrigger>
                   <SelectContent>
@@ -466,7 +466,7 @@ export function KlantContactSelector({
                       <SelectItem
                         value="__none__"
                         textValue={`Hoofdadres ${selectedKlant.email}`}
-                        className="py-1.5 focus:bg-[#F8F7F5] focus:text-[#1A1A1A]"
+                        className="py-1.5 focus:bg-background focus:text-foreground"
                       >
                         <div className="flex flex-col leading-tight">
                           <span className="text-[13px]">Hoofdadres</span>
@@ -479,7 +479,7 @@ export function KlantContactSelector({
                         key={cp.id}
                         value={cp.id}
                         textValue={`${cp.naam} ${cp.email || ''}`}
-                        className="py-1.5 focus:bg-[#F8F7F5] focus:text-[#1A1A1A]"
+                        className="py-1.5 focus:bg-background focus:text-foreground"
                       >
                         <div className="flex flex-col leading-tight">
                           <span className="text-[13px]">{cp.naam}</span>
@@ -537,7 +537,7 @@ export function KlantContactSelector({
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); setExpandedContacts(true) }}
-                    className="w-full flex items-center justify-center gap-1.5 text-[11px] py-1.5 rounded-lg transition-colors hover:bg-[#FAFAF8]"
+                    className="w-full flex items-center justify-center gap-1.5 text-[11px] py-1.5 rounded-lg transition-colors hover:bg-background"
                     style={{ color: '#5A5A55' }}
                   >
                     <ChevronDown className="h-3.5 w-3.5" />
@@ -551,14 +551,14 @@ export function KlantContactSelector({
           {!showNieuwContact ? (
             <button
               onClick={() => setShowNieuwContact(true)}
-              className="w-full flex items-center gap-2 text-[11px] py-2 px-3 rounded-lg transition-colors hover:bg-[#FAFAF8]"
+              className="w-full flex items-center gap-2 text-[11px] py-2 px-3 rounded-lg transition-colors hover:bg-background"
               style={{ border: '1px dashed #E6E4E0', color: '#A0A098' }}
             >
               <UserPlus className="h-3.5 w-3.5" />
               Nieuwe contactpersoon toevoegen
             </button>
           ) : (
-            <div className="rounded-lg p-3 space-y-2" style={{ border: '0.5px solid #E6E4E0', backgroundColor: '#FAFAF8' }}>
+            <div className="rounded-lg p-3 space-y-2" style={{ border: '0.5px solid #E6E4E0', backgroundColor: 'hsl(var(--background))' }}>
               <p className="text-[12px] font-semibold flex items-center gap-1.5" style={{ color: '#191919' }}>
                 <UserPlus className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />
                 Nieuwe contactpersoon

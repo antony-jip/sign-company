@@ -149,13 +149,13 @@ export function CustomerSelector({
   }, [selectedKlant, dbContacten])
 
   return (
-      <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F8F7F5' }}>
+      <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: 'hsl(var(--background))' }}>
         <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
             <button
               className="h-10 w-10 rounded-xl flex items-center justify-center transition-colors"
-              style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}
+              style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
               onClick={() => {
                 const from = (locationState as { from?: string })?.from
                 navigate(from || '/offertes')
@@ -174,7 +174,7 @@ export function CustomerSelector({
 
         <div className="space-y-4">
           {/* Step 1: Klant + Contactpersoon — merged */}
-          <div className="rounded-xl" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
+          <div className="rounded-xl" style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}>
             <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
             <div className="flex items-center gap-3 px-5 pt-4 pb-1">
               <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
@@ -189,17 +189,17 @@ export function CustomerSelector({
                   <div className="relative">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: '#9B9B95' }} />
-                      <Input value={klantSearch} onChange={(e) => { setKlantSearch(e.target.value); setShowKlantResults(true); setShowNieuwBedrijf(false) }} onFocus={() => setShowKlantResults(true)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
+                      <Input value={klantSearch} onChange={(e) => { setKlantSearch(e.target.value); setShowKlantResults(true); setShowNieuwBedrijf(false) }} onFocus={() => setShowKlantResults(true)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-10 rounded-lg text-[13px]" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
                     </div>
                     {showKlantResults && !showNieuwBedrijf && (
-                      <div className="absolute z-50 w-full mt-1 rounded-lg border bg-[#FEFDFB] shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '1px solid #EBEBEB' }}>
+                      <div className="absolute z-50 w-full mt-1 rounded-lg border bg-background shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '1px solid hsl(var(--border))' }}>
                         <button className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[#E2F0F0]/50 transition-colors border-b" style={{ borderColor: '#EBEBEB' }} onClick={() => { setShowNieuwBedrijf(true); setNbData((p) => ({ ...p, bedrijfsnaam: klantSearch })) }}>
                           <Plus className="w-4 h-4" /><span className="text-[13px] font-medium">Nieuw bedrijf toevoegen{klantSearch.trim() ? `: "${klantSearch.trim()}"` : ''}</span>
                         </button>
                         {filteredKlanten.length === 0 ? (
                           <div className="py-4 text-center text-[13px]" style={{ color: '#9B9B95' }}>Geen klanten gevonden</div>
                         ) : filteredKlanten.map((klant) => (
-                          <button key={klant.id} className="w-full text-left px-3 py-2 hover:bg-[#F4F2EE] transition-colors border-b last:border-0" style={{ borderColor: '#EBEBEB' }} onClick={() => { setSelectedKlantId(klant.id); setKlantSearch(''); setShowKlantResults(false) }}>
+                          <button key={klant.id} className="w-full text-left px-3 py-2 hover:bg-muted transition-colors border-b last:border-0" style={{ borderColor: '#EBEBEB' }} onClick={() => { setSelectedKlantId(klant.id); setKlantSearch(''); setShowKlantResults(false) }}>
                             <p className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>{klant.bedrijfsnaam}</p>
                             <div className="flex items-center gap-2">
                               {klant.contactpersoon && <span className="text-[11px]" style={{ color: '#6B6B66' }}>{klant.contactpersoon}</span>}
@@ -210,25 +210,25 @@ export function CustomerSelector({
                       </div>
                     )}
                     {showNieuwBedrijf && (
-                      <div className="mt-2 rounded-lg p-4 space-y-3" style={{ border: '1px solid #EBEBEB', backgroundColor: '#F8F7F5' }}>
+                      <div className="mt-2 rounded-lg p-4 space-y-3" style={{ border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--background))' }}>
                         <div className="flex items-center gap-2 mb-1"><Building2 className="h-4 w-4" style={{ color: '#1A535C' }} /><span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Nieuw bedrijf</span></div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <Input value={nbData.bedrijfsnaam} onChange={(e) => setNbData({ ...nbData, bedrijfsnaam: e.target.value })} placeholder="Bedrijfsnaam *" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} autoFocus />
-                          <Input value={nbData.stad} onChange={(e) => setNbData({ ...nbData, stad: e.target.value })} placeholder="Stad" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                          <Input value={nbData.bedrijfsnaam} onChange={(e) => setNbData({ ...nbData, bedrijfsnaam: e.target.value })} placeholder="Bedrijfsnaam *" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} autoFocus />
+                          <Input value={nbData.stad} onChange={(e) => setNbData({ ...nbData, stad: e.target.value })} placeholder="Stad" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
                         </div>
                         <button onClick={() => setShowNbUitgebreid(!showNbUitgebreid)} className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#9B9B95' }}>
                           {showNbUitgebreid ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}{showNbUitgebreid ? 'Minder gegevens' : 'Meer gegevens (adres, btw, etc.)'}
                         </button>
                         {showNbUitgebreid && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <Input value={nbData.contactpersoon} onChange={(e) => setNbData({ ...nbData, contactpersoon: e.target.value })} placeholder="Contactpersoon" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.email} onChange={(e) => setNbData({ ...nbData, email: e.target.value })} placeholder="E-mail" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.telefoon} onChange={(e) => setNbData({ ...nbData, telefoon: e.target.value })} placeholder="Telefoon" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.adres} onChange={(e) => setNbData({ ...nbData, adres: e.target.value })} placeholder="Adres" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.postcode} onChange={(e) => setNbData({ ...nbData, postcode: e.target.value })} placeholder="Postcode" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.website} onChange={(e) => setNbData({ ...nbData, website: e.target.value })} placeholder="Website" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.debiteurennummer} onChange={(e) => setNbData({ ...nbData, debiteurennummer: e.target.value })} placeholder="Debiteurennummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.btw_nummer} onChange={(e) => setNbData({ ...nbData, btw_nummer: e.target.value })} placeholder="BTW-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                            <Input value={nbData.contactpersoon} onChange={(e) => setNbData({ ...nbData, contactpersoon: e.target.value })} placeholder="Contactpersoon" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
+                            <Input value={nbData.email} onChange={(e) => setNbData({ ...nbData, email: e.target.value })} placeholder="E-mail" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
+                            <Input value={nbData.telefoon} onChange={(e) => setNbData({ ...nbData, telefoon: e.target.value })} placeholder="Telefoon" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
+                            <Input value={nbData.adres} onChange={(e) => setNbData({ ...nbData, adres: e.target.value })} placeholder="Adres" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
+                            <Input value={nbData.postcode} onChange={(e) => setNbData({ ...nbData, postcode: e.target.value })} placeholder="Postcode" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
+                            <Input value={nbData.website} onChange={(e) => setNbData({ ...nbData, website: e.target.value })} placeholder="Website" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
+                            <Input value={nbData.debiteurennummer} onChange={(e) => setNbData({ ...nbData, debiteurennummer: e.target.value })} placeholder="Debiteurennummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
+                            <Input value={nbData.btw_nummer} onChange={(e) => setNbData({ ...nbData, btw_nummer: e.target.value })} placeholder="BTW-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
                           </div>
                         )}
                         <div className="flex items-center gap-2 pt-1">
@@ -241,7 +241,7 @@ export function CustomerSelector({
                 )}
               </div>
               {selectedKlant && (
-                <div className="rounded-lg p-3" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}>
+                <div className="rounded-lg p-3" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}>
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-[10px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
@@ -253,7 +253,7 @@ export function CustomerSelector({
                         {selectedKlant.telefoon && <span className="flex items-center gap-1 text-[11px] font-mono" style={{ color: '#6B6B66' }}><Phone className="h-3 w-3" />{selectedKlant.telefoon}</span>}
                       </div>
                     </div>
-                    <button className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[#F4F2EE]" onClick={() => { setSelectedKlantId(''); setSelectedProjectId(''); setContactpersoon(''); setSelectedContactId('') }}>
+                    <button className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:bg-muted" onClick={() => { setSelectedKlantId(''); setSelectedProjectId(''); setContactpersoon(''); setSelectedContactId('') }}>
                       <X className="h-3.5 w-3.5" style={{ color: '#9B9B95' }} />
                     </button>
                   </div>
@@ -264,7 +264,7 @@ export function CustomerSelector({
                   <Label className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5" style={{ color: '#9B9B95' }}>Project <span className="text-[11px] font-normal normal-case tracking-normal">(optioneel)</span></Label>
                   {klantProjecten.length > 0 ? (
                     <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                      <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
+                      <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="geen"><span style={{ color: '#9B9B95' }}>Geen project</span></SelectItem>
                         {klantProjecten.map((project) => (
@@ -306,16 +306,16 @@ export function CustomerSelector({
                     </div>
                   )}
                   {!contact.showNewContact ? (
-                    <button onClick={() => contact.setShowNewContact(true)} className="w-full flex items-center gap-2 text-[11px] py-2 px-3 rounded-lg transition-colors hover:bg-[#F8F7F5]" style={{ border: '1px dashed #EBEBEB', color: '#9B9B95' }}>
+                    <button onClick={() => contact.setShowNewContact(true)} className="w-full flex items-center gap-2 text-[11px] py-2 px-3 rounded-lg transition-colors hover:bg-background" style={{ border: '1px dashed #EBEBEB', color: '#9B9B95' }}>
                       <UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon toevoegen
                     </button>
                   ) : (
-                    <div className="rounded-lg p-3.5 space-y-2" style={{ border: '1px solid #EBEBEB', backgroundColor: '#F8F7F5' }}>
+                    <div className="rounded-lg p-3.5 space-y-2" style={{ border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--background))' }}>
                       <p className="text-[12px] font-semibold flex items-center gap-1.5" style={{ color: '#1A1A1A' }}><UserPlus className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />Nieuwe contactpersoon</p>
-                      <Input value={contact.newContactNaam} onChange={(e) => contact.setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} autoFocus />
-                      <Input value={contact.newContactFunctie} onChange={(e) => contact.setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                      <Input value={contact.newContactEmail} onChange={(e) => contact.setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                      <Input value={contact.newContactTelefoon} onChange={(e) => contact.setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                      <Input value={contact.newContactNaam} onChange={(e) => contact.setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} autoFocus />
+                      <Input value={contact.newContactFunctie} onChange={(e) => contact.setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
+                      <Input value={contact.newContactEmail} onChange={(e) => contact.setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
+                      <Input value={contact.newContactTelefoon} onChange={(e) => contact.setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }} />
                       <div className="flex items-center gap-2 pt-1">
                         <button onClick={contact.handleAddContact} disabled={!contact.newContactNaam.trim()} className="h-7 px-3 text-[11px] font-semibold rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1" style={{ backgroundColor: '#1A535C' }}><Plus className="h-3 w-3" />Toevoegen</button>
                         <button onClick={() => { contact.setShowNewContact(false); contact.setNewContactNaam(''); contact.setNewContactFunctie(''); contact.setNewContactEmail(''); contact.setNewContactTelefoon('') }} className="h-7 px-3 text-[11px] font-medium rounded-lg" style={{ color: '#6B6B66' }}>Annuleren</button>
@@ -325,7 +325,7 @@ export function CustomerSelector({
                   {!contact.showNewContact && (
                     <div className="space-y-1 pt-2" style={{ borderTop: '0.5px solid #EBEBEB' }}>
                       <Label className="text-[11px]" style={{ color: '#9B9B95' }}>Of typ een naam</Label>
-                      <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-[13px] rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
+                      <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-[13px] rounded-lg" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
                     </div>
                   )}
                 </div>
@@ -334,7 +334,7 @@ export function CustomerSelector({
           </div>
 
           {/* Step 2: Offerte details + items — merged */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}>
             <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #3A6B8C, #3A6B8C60)' }} />
             <div className="flex items-center gap-3 px-5 pt-4 pb-1">
               <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#3A6B8C' }}>2</div>
@@ -346,16 +346,16 @@ export function CustomerSelector({
             <div className="px-5 pb-5 pt-3 space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="offerte-titel" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Titel</Label>
-                <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="text-[14px] h-10 rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} autoFocus />
+                <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="text-[14px] h-10 rounded-lg" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} autoFocus />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="offerte-nummer" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Nummer</Label>
-                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: '#EBEBEB', border: '1px solid #EBEBEB', color: '#6B6B66' }} />
+                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: 'hsl(var(--border))', border: '1px solid hsl(var(--border))', color: '#6B6B66' }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="geldig-tot" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Geldig tot</Label>
-                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
+                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
                 </div>
               </div>
             </div>

@@ -207,7 +207,7 @@ export function PortaalAlerts() {
               key={alert.id}
               className="relative rounded-[10px] px-4 py-3"
               style={{
-                backgroundColor: '#FAFAF8',
+                backgroundColor: 'hsl(var(--background))',
                 border: '0.5px solid #E8E6E1',
                 borderLeft: `3px solid ${accentColor}`,
               }}

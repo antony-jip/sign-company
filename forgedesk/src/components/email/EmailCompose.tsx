@@ -495,13 +495,13 @@ export function EmailCompose({
   return (
     <div className="flex flex-col h-full bg-white min-w-0 [&:focus-visible]:shadow-none">
         {/* Panel header — title + back affordance, matches list-header pattern */}
-        <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-[#EBEBEB]/60 flex-shrink-0">
-          <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-[#1A1A1A] leading-none">
+        <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-border/60 flex-shrink-0">
+          <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
             Nieuw bericht<span className="text-[#F15025]">.</span>
           </h1>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors duration-150"
+            className="inline-flex items-center gap-1.5 text-[13px] text-foreground/70 hover:text-foreground transition-colors duration-150"
             onClick={() => onOpenChange(false)}
             title="Sluiten en terug naar inbox"
           >
@@ -515,7 +515,7 @@ export function EmailCompose({
           <div className="px-6">
             {/* Aan field */}
             <div className="relative">
-              <div className="flex items-center border-b border-[#EBEBEB] py-3 focus-within:border-[#1A535C] transition-colors duration-150">
+              <div className="flex items-center border-b border-border py-3 focus-within:border-[#1A535C] transition-colors duration-150">
                 <input
                   ref={toInputRef}
                   type="email"
@@ -530,13 +530,13 @@ export function EmailCompose({
                       .then((mail) => setHintMail(mail ? { id: mail.id, datum: mail.datum } : null))
                       .catch(() => setHintMail(null))
                   }}
-                  className="flex-1 bg-transparent text-[14px] text-[#1A1A1A] outline-none placeholder:text-[#9B9B95] min-w-0"
+                  className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
                   placeholder="Aan..."
                 />
                 {!showCcBcc && (
                   <button
                     onClick={() => setShowCcBcc(true)}
-                    className="text-[12px] text-[#9B9B95] hover:text-[#1A535C] flex-shrink-0 ml-3 transition-colors duration-150"
+                    className="text-[12px] text-muted-foreground hover:text-[#1A535C] flex-shrink-0 ml-3 transition-colors duration-150"
                   >
                     CC / BCC
                   </button>
@@ -552,14 +552,14 @@ export function EmailCompose({
                         <button
                           key={`k-${k.id}`}
                           onClick={() => handleSelectSuggestion(item)}
-                          className="w-full text-left px-3.5 py-2.5 hover:bg-[#F8F7F5] flex items-center gap-2.5 transition-colors"
+                          className="w-full text-left px-3.5 py-2.5 hover:bg-background flex items-center gap-2.5 transition-colors"
                         >
                           <div className="w-7 h-7 rounded-lg bg-[#1A535C]/8 flex items-center justify-center flex-shrink-0">
                             <span className="text-[10px] font-semibold text-[#1A535C]">{getInitials(k.bedrijfsnaam || k.contactpersoon || '')}</span>
                           </div>
                           <div className="min-w-0">
-                            <div className="text-[13px] font-medium text-[#1A1A1A] truncate">{k.bedrijfsnaam || k.contactpersoon}</div>
-                            <div className="text-[11px] text-[#9B9B95] truncate">{k.email}</div>
+                            <div className="text-[13px] font-medium text-foreground truncate">{k.bedrijfsnaam || k.contactpersoon}</div>
+                            <div className="text-[11px] text-muted-foreground truncate">{k.email}</div>
                           </div>
                         </button>
                       )
@@ -568,17 +568,17 @@ export function EmailCompose({
                       <button
                         key={`cp-${item.klantId}-${item.cp.id}-${idx}`}
                         onClick={() => handleSelectSuggestion(item)}
-                        className="w-full text-left px-3.5 py-2.5 hover:bg-[#F8F7F5] flex items-center gap-2.5 transition-colors"
+                        className="w-full text-left px-3.5 py-2.5 hover:bg-background flex items-center gap-2.5 transition-colors"
                       >
                         <div className="w-7 h-7 rounded-full bg-[#F15025]/8 flex items-center justify-center flex-shrink-0">
                           <span className="text-[10px] font-semibold text-[#F15025]">{getInitials(item.cp.naam || '')}</span>
                         </div>
                         <div className="min-w-0">
-                          <div className="text-[13px] font-medium text-[#1A1A1A] truncate">
+                          <div className="text-[13px] font-medium text-foreground truncate">
                             {item.cp.naam}
-                            <span className="ml-1.5 text-[11px] font-normal text-[#9B9B95]">bij {item.klantNaam}</span>
+                            <span className="ml-1.5 text-[11px] font-normal text-muted-foreground">bij {item.klantNaam}</span>
                           </div>
-                          <div className="text-[11px] text-[#9B9B95] truncate">{item.cp.email}</div>
+                          <div className="text-[11px] text-muted-foreground truncate">{item.cp.email}</div>
                         </div>
                       </button>
                     )
@@ -590,21 +590,21 @@ export function EmailCompose({
             {/* CC/BCC */}
             {showCcBcc && (
               <>
-                <div className="flex items-center border-b border-[#EBEBEB] py-3 focus-within:border-[#1A535C] transition-colors duration-150">
+                <div className="flex items-center border-b border-border py-3 focus-within:border-[#1A535C] transition-colors duration-150">
                   <input
                     type="email"
                     value={cc}
                     onChange={(e) => setCc(e.target.value)}
-                    className="flex-1 bg-transparent text-[14px] text-[#1A1A1A] outline-none placeholder:text-[#9B9B95] min-w-0"
+                    className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
                     placeholder="CC..."
                   />
                 </div>
-                <div className="flex items-center border-b border-[#EBEBEB] py-3 focus-within:border-[#1A535C] transition-colors duration-150">
+                <div className="flex items-center border-b border-border py-3 focus-within:border-[#1A535C] transition-colors duration-150">
                   <input
                     type="email"
                     value={bcc}
                     onChange={(e) => setBcc(e.target.value)}
-                    className="flex-1 bg-transparent text-[14px] text-[#1A1A1A] outline-none placeholder:text-[#9B9B95] min-w-0"
+                    className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
                     placeholder="BCC..."
                   />
                 </div>
@@ -631,11 +631,11 @@ export function EmailCompose({
             })()}
 
             {/* Onderwerp */}
-            <div className="border-b border-[#EBEBEB] py-3 focus-within:border-[#1A535C] transition-colors duration-150">
+            <div className="border-b border-border py-3 focus-within:border-[#1A535C] transition-colors duration-150">
               <input
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full bg-transparent text-[14px] text-[#1A1A1A] outline-none placeholder:text-[#9B9B95]"
+                className="w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
                 placeholder="Onderwerp..."
               />
             </div>
@@ -645,7 +645,7 @@ export function EmailCompose({
               <div className="relative">
                 <button
                   onClick={() => setShowTemplateMenu(!showTemplateMenu)}
-                  className="text-[12px] text-[#9B9B95] hover:text-[#6B6B66] transition-colors"
+                  className="text-[12px] text-muted-foreground hover:text-foreground/70 transition-colors"
                 >
                   Template
                 </button>
@@ -658,19 +658,19 @@ export function EmailCompose({
                           <button
                             key={tmpl.id}
                             onClick={() => handleTemplateSelect(tmpl.id)}
-                            className="w-full text-left px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors truncate"
+                            className="w-full text-left px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-colors truncate"
                           >
                             {tmpl.naam}
                           </button>
                         ))
                       ) : (
-                        <p className="px-4 py-3 text-[12px] text-[#9B9B95]">Geen templates — maak er een aan in Instellingen</p>
+                        <p className="px-4 py-3 text-[12px] text-muted-foreground">Geen templates — maak er een aan in Instellingen</p>
                       )}
-                      <div className="border-t border-[#EBEBEB] mt-1 pt-1">
+                      <div className="border-t border-border mt-1 pt-1">
                         {!showSaveTemplate ? (
                           <button
                             onClick={() => setShowSaveTemplate(true)}
-                            className="w-full text-left px-4 py-2.5 text-[13px] text-[#1A535C] hover:bg-[#F8F7F5] transition-colors"
+                            className="w-full text-left px-4 py-2.5 text-[13px] text-[#1A535C] hover:bg-background transition-colors"
                           >
                             + Huidig bericht opslaan als template
                           </button>
@@ -681,7 +681,7 @@ export function EmailCompose({
                               value={newTemplateName}
                               onChange={e => setNewTemplateName(e.target.value)}
                               placeholder="Naam van template..."
-                              className="w-full px-2.5 py-1.5 text-[13px] bg-[#F8F7F5] rounded-lg border border-[#EBEBEB] outline-none focus:border-[#1A535C]"
+                              className="w-full px-2.5 py-1.5 text-[13px] bg-background rounded-lg border border-border outline-none focus:border-[#1A535C]"
                               autoFocus
                               onKeyDown={e => { if (e.key === 'Enter') handleSaveAsTemplate() }}
                             />
@@ -699,7 +699,7 @@ export function EmailCompose({
                             onOpenChange(false)
                             navigate('/instellingen?tab=email&sub=templates')
                           }}
-                          className="w-full text-left px-4 py-2.5 text-[13px] text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5] transition-colors flex items-center gap-2"
+                          className="w-full text-left px-4 py-2.5 text-[13px] text-muted-foreground hover:text-foreground/70 hover:bg-background transition-colors flex items-center gap-2"
                         >
                           <Settings className="h-3 w-3" />
                           Templates beheren
@@ -713,7 +713,7 @@ export function EmailCompose({
               <div className="relative">
                 <button
                   onClick={() => setShowMergeFields(!showMergeFields)}
-                  className="text-[12px] text-[#9B9B95] hover:text-[#6B6B66] transition-colors"
+                  className="text-[12px] text-muted-foreground hover:text-foreground/70 transition-colors"
                 >
                   Veld invoegen
                 </button>
@@ -725,7 +725,7 @@ export function EmailCompose({
                         <button
                           key={field.id}
                           onClick={() => handleMergeFieldInsert(field.value)}
-                          className="w-full text-left px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
+                          className="w-full text-left px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-colors"
                         >
                           {field.label}
                         </button>
@@ -751,7 +751,7 @@ export function EmailCompose({
               contentEditable
               suppressContentEditableWarning
               className={cn(
-                'min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-[#1A1A1A] border-none outline-none ring-0 [&_img]:max-w-[200px]',
+                'min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 [&_img]:max-w-[200px]',
                 isDragging && 'ring-2 ring-[#1A535C]/20 ring-inset rounded-xl bg-[#1A535C]/[0.02]',
               )}
               data-placeholder="Schrijf je bericht..."
@@ -776,7 +776,7 @@ export function EmailCompose({
                 {attachments.map((file, i) => {
                   const previewUrl = imagePreviewUrls.get(file)
                   return (
-                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#F8F7F5] text-[14px] group">
+                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background text-[14px] group">
                       {previewUrl ? (
                         <img src={previewUrl} alt={file.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
                       ) : (
@@ -784,13 +784,13 @@ export function EmailCompose({
                           {getFileExt(file.name)}
                         </div>
                       )}
-                      <span className="text-[#6B6B66] max-w-[150px] truncate text-[13px]">{file.name}</span>
-                      <span className="text-[#9B9B95] text-[11px]">{formatFileSize(file.size)}</span>
+                      <span className="text-foreground/70 max-w-[150px] truncate text-[13px]">{file.name}</span>
+                      <span className="text-muted-foreground text-[11px]">{formatFileSize(file.size)}</span>
                       <button
                         onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <X className="h-3 w-3 text-[#9B9B95] hover:text-[#1A1A1A]" />
+                        <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                       </button>
                     </div>
                   )
@@ -801,16 +801,16 @@ export function EmailCompose({
         </div>
 
         {/* Bottom bar — formatting + send */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 px-3 md:px-6 py-2.5 border-t border-[#EBEBEB] flex-shrink-0">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 px-3 md:px-6 py-2.5 border-t border-border flex-shrink-0">
           <div className="flex items-center gap-0.5">
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => execCommand('bold')} title="Vet"><Bold className="h-4 w-4" /></button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => execCommand('italic')} title="Cursief"><Italic className="h-4 w-4" /></button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => execCommand('underline')} title="Onderstrepen"><Underline className="h-4 w-4" /></button>
-            <div className="w-px h-4 bg-[#EBEBEB] mx-1.5" />
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => execCommand('insertUnorderedList')} title="Lijst"><List className="h-4 w-4" /></button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} title="Link"><Link2 className="h-4 w-4" /></button>
-            <div className="w-px h-4 bg-[#EBEBEB] mx-1.5" />
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => fileInputRef.current?.click()} title="Bijlage">
+            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => execCommand('bold')} title="Vet"><Bold className="h-4 w-4" /></button>
+            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => execCommand('italic')} title="Cursief"><Italic className="h-4 w-4" /></button>
+            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => execCommand('underline')} title="Onderstrepen"><Underline className="h-4 w-4" /></button>
+            <div className="w-px h-4 bg-border mx-1.5" />
+            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => execCommand('insertUnorderedList')} title="Lijst"><List className="h-4 w-4" /></button>
+            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} title="Link"><Link2 className="h-4 w-4" /></button>
+            <div className="w-px h-4 bg-border mx-1.5" />
+            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => fileInputRef.current?.click()} title="Bijlage">
               <Paperclip className="h-4 w-4" />
             </button>
             <input
@@ -828,13 +828,13 @@ export function EmailCompose({
               <Switch checked={wachtOpReactie} onCheckedChange={setWachtOpReactie} />
               <span>Opvolgen</span>
             </label>
-            <span className="text-[11px] text-[#9B9B95] font-mono hidden sm:block">
+            <span className="text-[11px] text-muted-foreground font-mono hidden sm:block">
               {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter
             </span>
             {/* Schedule button */}
             <div className="relative">
               <button
-                className="h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.08] transition-colors duration-150 disabled:opacity-50"
+                className="h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.08] transition-colors duration-150 disabled:opacity-50"
                 onClick={() => setShowScheduleMenu(s => !s)}
                 disabled={isSending}
                 title="Inplannen"
@@ -845,7 +845,7 @@ export function EmailCompose({
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => { setShowScheduleMenu(false); setShowCustomSchedule(false) }} />
                   <div className="absolute bottom-full right-0 mb-2 w-[220px] bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.10)] z-50 py-1.5 overflow-hidden">
-                    <p className="px-3.5 py-1.5 text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium">Inplannen</p>
+                    <p className="px-3.5 py-1.5 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Inplannen</p>
                     {[
                       { label: 'Over 1 uur', getDate: () => { const d = new Date(); d.setHours(d.getHours() + 1); return d } },
                       { label: 'Vanmiddag 14:00', getDate: () => { const d = new Date(); d.setHours(14, 0, 0, 0); if (d <= new Date()) d.setDate(d.getDate() + 1); return d } },
@@ -855,15 +855,15 @@ export function EmailCompose({
                       <button
                         key={opt.label}
                         onClick={() => handleScheduleSend(opt.getDate().toISOString(), opt.label)}
-                        className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors duration-150 flex items-center justify-between"
+                        className="w-full px-3.5 py-2.5 text-left text-[13px] text-foreground hover:bg-background transition-colors duration-150 flex items-center justify-between"
                       >
                         <span>{opt.label}</span>
-                        <span className="text-[11px] text-[#9B9B95] font-mono">
+                        <span className="text-[11px] text-muted-foreground font-mono">
                           {opt.getDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </button>
                     ))}
-                    <div className="border-t border-[#EBEBEB] mt-1 pt-1">
+                    <div className="border-t border-border mt-1 pt-1">
                       {!showCustomSchedule ? (
                         <button
                           onClick={() => {
@@ -873,7 +873,7 @@ export function EmailCompose({
                             tomorrow.setDate(tomorrow.getDate() + 1)
                             setCustomScheduleDate(tomorrow.toISOString().split('T')[0])
                           }}
-                          className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A535C] hover:bg-[#F8F7F5] transition-colors duration-150 flex items-center gap-2"
+                          className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A535C] hover:bg-background transition-colors duration-150 flex items-center gap-2"
                         >
                           <Clock className="h-3.5 w-3.5" />
                           Kies datum en tijd...
@@ -885,13 +885,13 @@ export function EmailCompose({
                             value={customScheduleDate}
                             onChange={e => setCustomScheduleDate(e.target.value)}
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full px-2.5 py-1.5 text-[13px] text-[#1A1A1A] bg-[#F8F7F5] rounded-lg border border-[#EBEBEB] outline-none focus:border-[#1A535C] transition-colors font-mono"
+                            className="w-full px-2.5 py-1.5 text-[13px] text-foreground bg-background rounded-lg border border-border outline-none focus:border-[#1A535C] transition-colors font-mono"
                           />
                           <input
                             type="time"
                             value={customScheduleTime}
                             onChange={e => setCustomScheduleTime(e.target.value)}
-                            className="w-full px-2.5 py-1.5 text-[13px] text-[#1A1A1A] bg-[#F8F7F5] rounded-lg border border-[#EBEBEB] outline-none focus:border-[#1A535C] transition-colors font-mono"
+                            className="w-full px-2.5 py-1.5 text-[13px] text-foreground bg-background rounded-lg border border-border outline-none focus:border-[#1A535C] transition-colors font-mono"
                           />
                           <button
                             onClick={() => {

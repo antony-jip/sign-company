@@ -458,8 +458,8 @@ export function ActiviteitFeed({
   return (
     <div className="p-5">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px]">Activiteit</h3>
-        <span className="text-[10px] text-[#B0ADA8] font-mono tabular-nums">{allEvents.length}</span>
+        <h3 className="text-[13px] font-bold text-foreground tracking-[-0.2px]">Activiteit</h3>
+        <span className="text-[10px] text-muted-foreground/80 font-mono tabular-nums">{allEvents.length}</span>
       </div>
 
       {/* Filter chips */}
@@ -472,7 +472,7 @@ export function ActiviteitFeed({
               className={`text-[10px] px-2.5 py-1 rounded-lg transition-all duration-150 ${
                 activeFilter === key
                   ? 'bg-[#1A535C] text-white font-medium'
-                  : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]'
+                  : 'text-muted-foreground hover:text-foreground/70 hover:bg-muted'
               }`}
             >
               {filterLabels[key]}
@@ -482,17 +482,17 @@ export function ActiviteitFeed({
       )}
 
       {filteredEvents.length === 0 ? (
-        <p className="text-[12px] text-[#B0ADA8] py-5 text-center">Nog geen activiteit</p>
+        <p className="text-[12px] text-muted-foreground/80 py-5 text-center">Nog geen activiteit</p>
       ) : (
         <div>
           {groupedEvents.map((group) => (
             <div key={group.date}>
               {/* Date header */}
               <div className="flex items-center gap-2 py-2">
-                <span className="text-[10px] font-semibold text-[#B0ADA8] uppercase tracking-[0.08em]">
+                <span className="text-[10px] font-semibold text-muted-foreground/80 uppercase tracking-[0.08em]">
                   {formatDate(group.events[0].datum)}
                 </span>
-                <div className="flex-1 h-px bg-[#EBEBEB]" />
+                <div className="flex-1 h-px bg-border" />
               </div>
 
               {/* Events for this date */}
@@ -505,7 +505,7 @@ export function ActiviteitFeed({
                   return (
                     <div
                       key={event.id}
-                      className="flex items-start gap-2.5 py-2 -mx-1.5 px-1.5 rounded-lg hover:bg-[#F8F7F5] transition-colors duration-100"
+                      className="flex items-start gap-2.5 py-2 -mx-1.5 px-1.5 rounded-lg hover:bg-background transition-colors duration-100"
                     >
                       {/* Icon or Avatar */}
                       <div className="flex-shrink-0 mt-0.5">
@@ -532,9 +532,9 @@ export function ActiviteitFeed({
 
                       {/* Content */}
                       <div className="min-w-0 flex-1">
-                        <p className="text-[12px] text-[#4A4A46] leading-snug">
+                        <p className="text-[12px] text-foreground/80 leading-snug">
                           {event.medewerker && (
-                            <span className="font-semibold text-[#1A1A1A]">{event.medewerker.split(' ')[0]} </span>
+                            <span className="font-semibold text-foreground">{event.medewerker.split(' ')[0]} </span>
                           )}
                           {event.medewerker
                             ? event.bron === 'audit'
@@ -544,7 +544,7 @@ export function ActiviteitFeed({
                           }
                         </p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] text-[#B0ADA8]">{formatTime(event.datum)}</span>
+                          <span className="text-[10px] text-muted-foreground/80">{formatTime(event.datum)}</span>
                           {!event.medewerker && (
                             <span className={`inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0 rounded ${config.bg} ${config.color}`}>
                               <Icon className="h-2.5 w-2.5" />

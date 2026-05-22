@@ -281,15 +281,15 @@ export function QuoteSidebar({
                       <>
                         {selectedKlant ? (
                           <div className="doen-slate-surface rounded-2xl overflow-hidden">
-                            <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-white/50 transition-colors" style={{ borderBottom: '1px solid rgba(26,83,92,0.08)' }}>
+                            <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-card/50 transition-colors" style={{ borderBottom: '1px solid rgba(26,83,92,0.08)' }}>
                               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(58,107,140,0.2)]" style={{ background: 'linear-gradient(135deg, #3A6B8C 0%, #2A5580 50%, #F15025 200%)' }}>
                                 <span className="text-white font-extrabold text-[12px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                               </div>
                               <div className="flex-1 text-left min-w-0">
-                                <p className="text-[13.5px] font-bold truncate text-[#1A1A1A]">{selectedKlant.bedrijfsnaam}</p>
-                                <p className="text-[11px] truncate text-[#9B9B95]">{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
+                                <p className="text-[13.5px] font-bold truncate text-foreground">{selectedKlant.bedrijfsnaam}</p>
+                                <p className="text-[11px] truncate text-muted-foreground">{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
                               </div>
-                              {klantPanelOpen ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0 text-[#9B9B95]" /> : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-[#9B9B95]" />}
+                              {klantPanelOpen ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />}
                             </button>
 
                             {klantPanelOpen && (
@@ -310,7 +310,7 @@ export function QuoteSidebar({
                                   <div className="space-y-1">
                                     <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Contactpersoon</label>
                                     <Select value={selectedContactId} onValueChange={(val) => contact.handleSelectContact(val)}>
-                                      <SelectTrigger className="h-8 text-[12px] rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}><SelectValue placeholder="Selecteer..." /></SelectTrigger>
+                                      <SelectTrigger className="h-8 text-[12px] rounded-lg" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}><SelectValue placeholder="Selecteer..." /></SelectTrigger>
                                       <SelectContent>
                                         {selectedKlant.contactpersonen.map((cp) => (
                                           <SelectItem key={cp.id} value={cp.id}>
@@ -324,22 +324,22 @@ export function QuoteSidebar({
                                 )}
 
                                 {(selectedKlant.debiteurennummer || selectedKlant.btw_nummer) && (
-                                  <div className="text-[11px] font-mono space-y-0.5 pt-2" style={{ color: '#6B6B66', borderTop: '0.5px solid #EBEBEB' }}>
+                                  <div className="text-[11px] font-mono space-y-0.5 pt-2" style={{ color: '#6B6B66', borderTop: '0.5px solid hsl(var(--border))' }}>
                                     {selectedKlant.debiteurennummer && <p>Deb.nr: {selectedKlant.debiteurennummer}</p>}
                                     {selectedKlant.btw_nummer && <p>BTW: {selectedKlant.btw_nummer}</p>}
                                   </div>
                                 )}
 
-                                <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: '0.5px solid #EBEBEB' }}>
+                                <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: '0.5px solid hsl(var(--border))' }}>
                                   {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: '#E2F0E8', color: '#2D6B48' }}><Phone className="h-3 w-3" />Bellen</a>}
                                   {selectedKlant.email && <a href="#" onClick={(e) => { e.preventDefault(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(selectedKlant.email)}`, label: 'Nieuwe email', id: `/email/compose-${selectedKlant.email}` }) }} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}><Mail className="h-3 w-3" />Email</a>}
-                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: '#EBEBEB', color: '#6B6B66' }}><ExternalLink className="h-3 w-3" />Profiel</Link>
+                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: 'hsl(var(--border))', color: '#6B6B66' }}><ExternalLink className="h-3 w-3" />Profiel</Link>
                                 </div>
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div className="rounded-xl p-5 text-center" style={{ border: '1.5px dashed #EBEBEB', backgroundColor: '#F8F7F5' }}>
+                          <div className="rounded-xl p-5 text-center" style={{ border: '1.5px dashed hsl(var(--border))', backgroundColor: 'hsl(var(--background))' }}>
                             <Building2 className="h-7 w-7 mx-auto mb-1.5" style={{ color: '#9B9B95' }} />
                             <p className="text-[12px]" style={{ color: '#9B9B95' }}>Geen klant geselecteerd</p>
                             <button className="mt-2 h-7 px-3 text-[11px] font-semibold rounded-lg text-white transition-all hover:opacity-90" style={{ backgroundColor: '#1A535C' }} onClick={() => setShowKlantSelector(true)}>Klant kiezen</button>
@@ -376,13 +376,13 @@ export function QuoteSidebar({
                               {linkedFactuur && (
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <Receipt className="h-3.5 w-3.5 text-[#9B9B95]" />
-                                    <span className="text-[12.5px] font-semibold text-[#1A1A1A]">{linkedFactuur.nummer}</span>
+                                    <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <span className="text-[12.5px] font-semibold text-foreground">{linkedFactuur.nummer}</span>
                                   </div>
                                   <Badge className={cn('text-[10px] font-semibold',
                                     linkedFactuur.status === 'betaald' && 'bg-[#E8F2EC] text-[#2D6B48] border-[#2D6B48]/20',
                                     linkedFactuur.status === 'verzonden' && 'bg-[#E8EEF9] text-[#3A5A9A] border-[#3A5A9A]/20',
-                                    linkedFactuur.status === 'concept' && 'bg-[#F0EFEC] text-[#6B6B66] border-[#6B6B66]/15',
+                                    linkedFactuur.status === 'concept' && 'bg-muted text-foreground/70 border-[#6B6B66]/15',
                                     linkedFactuur.status === 'vervallen' && 'bg-[#FDE8E2] text-[#C03A18] border-[#C03A18]/20',
                                     linkedFactuur.status === 'gecrediteerd' && 'bg-[#FEF3E8] text-[#D4621A] border-[#D4621A]/20',
                                   )}>
@@ -391,7 +391,7 @@ export function QuoteSidebar({
                                 </div>
                               )}
                               {linkedFactuur && linkedFactuur.status !== 'betaald' && linkedFactuur.betaald_bedrag > 0 && (
-                                <div className="flex items-center justify-between text-[12px] text-[#6B6B66]">
+                                <div className="flex items-center justify-between text-[12px] text-foreground/70">
                                   <span>Betaald</span>
                                   <span className="font-mono font-semibold text-[#2D6B48]">{formatCurrency(linkedFactuur.betaald_bedrag)}</span>
                                 </div>
@@ -524,13 +524,13 @@ export function QuoteSidebar({
 
                         <div className="p-4 space-y-3">
                           <div className="grid grid-cols-2 gap-2">
-                            <div className="rounded-lg bg-white border border-[rgba(26,83,92,0.08)] p-2.5">
-                              <p className="text-[10px] uppercase tracking-widest text-[#9B9B95] font-semibold">Subtotaal</p>
-                              <p className="text-[13.5px] font-bold font-mono text-[#1A1A1A] mt-0.5 tabular-nums">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
+                            <div className="rounded-lg bg-card border border-[rgba(26,83,92,0.08)] p-2.5">
+                              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Subtotaal</p>
+                              <p className="text-[13.5px] font-bold font-mono text-foreground mt-0.5 tabular-nums">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
                             </div>
-                            <div className="rounded-lg bg-white border border-[rgba(26,83,92,0.08)] p-2.5">
-                              <p className="text-[10px] uppercase tracking-widest text-[#9B9B95] font-semibold">BTW</p>
-                              <p className="text-[13.5px] font-bold font-mono text-[#1A1A1A] mt-0.5 tabular-nums">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
+                            <div className="rounded-lg bg-card border border-[rgba(26,83,92,0.08)] p-2.5">
+                              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">BTW</p>
+                              <p className="text-[13.5px] font-bold font-mono text-foreground mt-0.5 tabular-nums">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
                             </div>
                           </div>
                           {afrondingskorting !== 0 && (
@@ -544,28 +544,28 @@ export function QuoteSidebar({
 
                           {/* Inkoop / Verkoop / Winst */}
                           <div className="space-y-2.5">
-                            <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+                            <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
                               Inkoop &amp; verkoop<span className="text-[#F15025]">.</span>
                             </h4>
                             <div className="space-y-1.5 text-[13px]">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18] flex-shrink-0" />
-                                  <span className="text-[#6B6B66]">Inkoop</span>
+                                  <span className="text-foreground/70">Inkoop</span>
                                 </div>
                                 <span className="font-mono tabular-nums font-semibold text-[#C03A18]">{totaalInkoop > 0 ? formatCurrency(totaalInkoop) : '—'}</span>
                               </div>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <span className="w-1.5 h-1.5 rounded-full bg-[#1A535C] flex-shrink-0" />
-                                  <span className="text-[#6B6B66]">Verkoop</span>
+                                  <span className="text-foreground/70">Verkoop</span>
                                 </div>
-                                <span className="font-mono tabular-nums font-semibold text-[#1A1A1A]">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</span>
+                                <span className="font-mono tabular-nums font-semibold text-foreground">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</span>
                               </div>
                               <div className="flex items-center justify-between pt-1.5 border-t border-[rgba(26,83,92,0.08)]">
                                 <div className="flex items-center gap-2">
                                   <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] flex-shrink-0" />
-                                  <span className="text-[#1A1A1A] font-semibold">Winst</span>
+                                  <span className="text-foreground font-semibold">Winst</span>
                                 </div>
                                 <span className="font-mono tabular-nums font-bold text-[#2D6B48]">{totaalInkoop > 0 ? formatCurrency(winstExBtw) : '—'}</span>
                               </div>
@@ -574,12 +574,12 @@ export function QuoteSidebar({
 
                           {/* Marge */}
                           <div className="space-y-2">
-                            <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+                            <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
                               Marge<span className="text-[#F15025]">.</span>
                             </h4>
                             <div className="doen-slate-surface rounded-xl p-3 relative overflow-hidden">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-widest">%</span>
+                                <span className="text-[11px] font-semibold text-foreground/70 uppercase tracking-widest">%</span>
                                 <span className={cn('text-[18px] font-extrabold font-mono tabular-nums', margeColor.text)}>
                                   {totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}
                                 </span>
@@ -602,7 +602,7 @@ export function QuoteSidebar({
                             <>
                               <div className="h-px bg-[rgba(26,83,92,0.08)]" />
                               <div className="space-y-2">
-                                <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+                                <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
                                   Per item<span className="text-[#F15025]">.</span>
                                 </h4>
                                 <div className="space-y-1">
@@ -610,8 +610,8 @@ export function QuoteSidebar({
                                     if (!m.hasCalc) return null
                                     const c = getMargeColorSidebar(m.pct)
                                     return (
-                                      <div key={idx} className="flex items-center justify-between text-[12.5px] py-1 px-2 rounded hover:bg-white/60 transition-colors">
-                                        <span className="text-[#6B6B66] truncate max-w-[200px]">{m.beschrijving || `Item ${idx + 1}`}</span>
+                                      <div key={idx} className="flex items-center justify-between text-[12.5px] py-1 px-2 rounded hover:bg-card/60 transition-colors">
+                                        <span className="text-foreground/70 truncate max-w-[200px]">{m.beschrijving || `Item ${idx + 1}`}</span>
                                         <span className={cn('font-mono font-semibold tabular-nums', c.text)}>{m.pct.toFixed(1)}%</span>
                                       </div>
                                     )
@@ -625,7 +625,7 @@ export function QuoteSidebar({
                             <>
                               <div className="h-px bg-[rgba(26,83,92,0.08)]" />
                               <div className="space-y-2">
-                                <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+                                <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
                                   {materiaalKosten > 0 ? 'Uren & materiaal' : 'Uren'}<span className="text-[#F15025]">.</span>
                                 </h4>
                                 <div className="space-y-1.5 text-[13px]">
@@ -639,26 +639,26 @@ export function QuoteSidebar({
                                       <div key={veld} className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                           <Clock className="h-3.5 w-3.5 text-[#1A535C]" />
-                                          <span className="text-[#6B6B66]">{veld}</span>
+                                          <span className="text-foreground/70">{veld}</span>
                                         </div>
                                         <div className="flex items-center gap-1">
                                           {tarief > 0 && (
                                             <button
                                               onClick={() => setUrenCorrectie(prev => ({ ...prev, [veld]: (prev[veld] || 0) - 1 }))}
                                               disabled={effectief <= 0}
-                                              className="h-6 w-6 rounded-md flex items-center justify-center bg-white border border-[rgba(26,83,92,0.12)] hover:border-[#1A535C] hover:bg-[rgba(26,83,92,0.04)] text-[#1A535C] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                              className="h-6 w-6 rounded-md flex items-center justify-center bg-card border border-[rgba(26,83,92,0.12)] hover:border-[#1A535C] hover:bg-[rgba(26,83,92,0.04)] text-[#1A535C] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                               title={`-1 uur ${veld} (${formatCurrency(tarief)}/u)`}
                                             >
                                               <Minus className="h-3 w-3" />
                                             </button>
                                           )}
-                                          <span className={cn('font-mono font-semibold tabular-nums min-w-[3.25rem] text-right', correctie !== 0 ? 'text-[#F15025]' : 'text-[#1A1A1A]')}>
+                                          <span className={cn('font-mono font-semibold tabular-nums min-w-[3.25rem] text-right', correctie !== 0 ? 'text-[#F15025]' : 'text-foreground')}>
                                             {effectief} uur
                                           </span>
                                           {tarief > 0 && (
                                             <button
                                               onClick={() => setUrenCorrectie(prev => ({ ...prev, [veld]: (prev[veld] || 0) + 1 }))}
-                                              className="h-6 w-6 rounded-md flex items-center justify-center bg-white border border-[rgba(26,83,92,0.12)] hover:border-[#1A535C] hover:bg-[rgba(26,83,92,0.04)] text-[#1A535C] transition-colors"
+                                              className="h-6 w-6 rounded-md flex items-center justify-center bg-card border border-[rgba(26,83,92,0.12)] hover:border-[#1A535C] hover:bg-[rgba(26,83,92,0.04)] text-[#1A535C] transition-colors"
                                               title={`+1 uur ${veld} (${formatCurrency(tarief)}/u)`}
                                             >
                                               <Plus className="h-3 w-3" />
@@ -672,14 +672,14 @@ export function QuoteSidebar({
                                     <div className="flex items-center justify-between pt-1.5 border-t border-[rgba(26,83,92,0.08)]">
                                       <div className="flex items-center gap-2">
                                         <Wrench className="h-3.5 w-3.5 text-[#F15025]" />
-                                        <span className="font-semibold text-[#1A1A1A]">Totaal uren</span>
+                                        <span className="font-semibold text-foreground">Totaal uren</span>
                                       </div>
                                       <span className="font-mono tabular-nums font-bold text-[#F15025]">{effectieveTotaalUren} uur</span>
                                     </div>
                                   )}
                                   {urenCorrectieBedrag !== 0 && (
                                     <div className="flex items-center justify-between text-[11.5px]">
-                                      <span className="text-[#9B9B95]">Uren correctie</span>
+                                      <span className="text-muted-foreground">Uren correctie</span>
                                       <span className={cn('font-mono font-semibold', urenCorrectieBedrag > 0 ? 'text-[#2D6B48]' : 'text-[#C03A18]')}>
                                         {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)}
                                       </span>
@@ -689,7 +689,7 @@ export function QuoteSidebar({
                                     <div className="flex items-center justify-between pt-1.5 border-t border-[rgba(26,83,92,0.08)]">
                                       <div className="flex items-center gap-2">
                                         <ShoppingCart className="h-3.5 w-3.5 text-[#1A535C]" />
-                                        <span className="text-[#6B6B66]">Materiaal</span>
+                                        <span className="text-foreground/70">Materiaal</span>
                                       </div>
                                       <span className="font-mono tabular-nums font-semibold text-[#1A535C]">{formatCurrency(materiaalKosten)}</span>
                                     </div>
@@ -709,7 +709,7 @@ export function QuoteSidebar({
                             </button>
                             <button
                               onClick={handleDownloadPdf}
-                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-white border border-[rgba(26,83,92,0.12)] text-[#6B6B66] hover:text-[#1A535C] hover:border-[rgba(26,83,92,0.25)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] text-[12px] font-semibold transition-all"
+                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-card border border-[rgba(26,83,92,0.12)] text-foreground/70 hover:text-[#1A535C] hover:border-[rgba(26,83,92,0.25)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] text-[12px] font-semibold transition-all"
                             >
                               <Download className="h-3.5 w-3.5" />PDF
                             </button>
@@ -730,7 +730,7 @@ export function QuoteSidebar({
                       <div className="doen-slate-surface rounded-2xl overflow-hidden">
                         <button
                           onClick={() => setInkoopPaneelOpen(!inkoopPaneelOpen)}
-                          className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-white/50 transition-colors"
+                          className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-card/50 transition-colors"
                           style={{ borderBottom: inkoopPaneelOpen ? '1px solid rgba(26,83,92,0.08)' : 'none' }}
                         >
                           <div
@@ -740,19 +740,19 @@ export function QuoteSidebar({
                             <ShoppingCart className="h-4 w-4 text-white" />
                           </div>
                           <div className="flex-1 text-left min-w-0">
-                            <p className="text-[14px] font-bold text-[#1A1A1A]">
+                            <p className="text-[14px] font-bold text-foreground">
                               Inkoop<span className="text-[#F15025]">.</span>
                             </p>
                             <p
-                              className="text-[11.5px] text-[#9B9B95]"
+                              className="text-[11.5px] text-muted-foreground"
                               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                             >
                               leveranciersprijzen
                             </p>
                           </div>
                           {inkoopPaneelOpen
-                            ? <ChevronUp className="h-4 w-4 text-[#9B9B95] flex-shrink-0" />
-                            : <ChevronDown className="h-4 w-4 text-[#9B9B95] flex-shrink-0" />}
+                            ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                         </button>
                         {inkoopPaneelOpen && (
                           <div className="p-4">

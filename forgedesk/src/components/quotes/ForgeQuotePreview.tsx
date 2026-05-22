@@ -469,7 +469,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       )}
 
       {/* A4-like document */}
-      <div className="bg-[#FEFDFB] dark:bg-card shadow-xl rounded-lg border border-border dark:border-border overflow-hidden">
+      <div className="bg-background dark:bg-card shadow-xl rounded-lg border border-border dark:border-border overflow-hidden">
         {/* Header */}
         <div className="px-10 pt-10 pb-6">
           <div className="flex justify-between items-start">

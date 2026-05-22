@@ -25,7 +25,7 @@ interface WerkbonHeaderFormProps {
   onFieldChange: (field: string, value: string) => void
 }
 
-const inputStyle = { backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }
+const inputStyle = { backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }
 const labelClass = "text-[11px] font-semibold uppercase tracking-wider mb-1 block"
 const labelColor = { color: '#9B9B95' }
 
@@ -42,7 +42,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
   return (
     <div className="space-y-5">
       {/* Section 1: Klant & details */}
-      <div className="rounded-xl" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
+      <div className="rounded-xl" style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}>
         <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
         <div className="px-4 py-4 space-y-3">
           <div>
@@ -111,7 +111,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
       </div>
 
       {/* Section 2: Locatie + Contact — merged */}
-      <div className="rounded-xl" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
+      <div className="rounded-xl" style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}>
         <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #3A6B8C, #3A6B8C60)' }} />
         <div className="px-4 py-4 space-y-3">
           <div className="flex items-center justify-between">
@@ -173,7 +173,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
                 style={inputStyle}
               />
               {contactTelefoon && (
-                <a href={`tel:${contactTelefoon}`} className="inline-flex items-center justify-center shrink-0 rounded-lg h-9 w-9 hover:bg-[#F4F2EE] transition-colors" style={{ border: '1px solid #EBEBEB' }}>
+                <a href={`tel:${contactTelefoon}`} className="inline-flex items-center justify-center shrink-0 rounded-lg h-9 w-9 hover:bg-muted transition-colors" style={{ border: '1px solid hsl(var(--border))' }}>
                   <Phone className="h-3.5 w-3.5 text-[#1A535C]" />
                 </a>
               )}

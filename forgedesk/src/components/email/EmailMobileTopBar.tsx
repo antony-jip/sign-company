@@ -24,13 +24,13 @@ export function EmailMobileTopBar({
   onOpenAI,
 }: EmailMobileTopBarProps) {
   return (
-    <div className="md:hidden px-3 pb-1 bg-[#F8F7F5] pt-[calc(env(safe-area-inset-top)+0.75rem)]">
-      <div className="flex items-center gap-2 h-11 rounded-full bg-[#F0EFEC] pl-1 pr-1">
+    <div className="md:hidden px-3 pb-1 bg-background pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+      <div className="flex items-center gap-2 h-11 rounded-full bg-muted pl-1 pr-1">
         <button
           type="button"
           onClick={onOpenDrawer}
           aria-label="Open mappen"
-          className="tap-press flex items-center justify-center w-9 h-9 rounded-full text-[#5F5E5A] hover:bg-white/60 active:bg-white/80 transition-colors flex-shrink-0"
+          className="tap-press flex items-center justify-center w-9 h-9 rounded-full text-[#5F5E5A] hover:bg-white/60 active:bg-card/80 transition-colors flex-shrink-0"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -42,7 +42,7 @@ export function EmailMobileTopBar({
             value={searchInput}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Zoeken in mail"
-            className="flex-1 min-w-0 bg-transparent text-[14px] text-[#1A1A1A] outline-none placeholder:text-[#888780]"
+            className="flex-1 min-w-0 bg-transparent text-[14px] text-foreground outline-none placeholder:text-[#888780]"
           />
         </div>
 
@@ -65,7 +65,7 @@ export function EmailMobileTopBar({
         </span>
         {selectedFolder === 'inbox' && todayUnreadCount > 0 && (
           <span className="text-[11px] text-[#888780]">
-            vandaag · <span className="text-[#1A1A1A] font-medium">{todayUnreadCount}</span> nieuwe
+            vandaag · <span className="text-foreground font-medium">{todayUnreadCount}</span> nieuwe
           </span>
         )}
       </div>

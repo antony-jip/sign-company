@@ -64,14 +64,14 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div role="alert" aria-live="assertive" className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center bg-[#F8F7F5]">
+        <div role="alert" aria-live="assertive" className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center bg-background">
           <div className="w-14 h-14 bg-[#FDE8E4] rounded-2xl flex items-center justify-center mb-5">
             <AlertTriangle className="w-7 h-7 text-[#C0451A]" />
           </div>
-          <h2 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px] mb-2">
+          <h2 className="text-xl font-bold text-foreground tracking-[-0.3px] mb-2">
             Er is iets misgegaan<span className="text-[#F15025]">.</span>
           </h2>
-          <p className="text-sm text-[#6B6B66] max-w-md mb-2">
+          <p className="text-sm text-foreground/70 max-w-md mb-2">
             Er is een onverwachte fout opgetreden. Probeer het opnieuw of herlaad de pagina.
           </p>
           {this.state.error && (
@@ -89,7 +89,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </button>
             <button
               onClick={this.handleReload}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-[#6B6B66] border border-[#EBEBEB] rounded-lg hover:bg-[#F8F7F5] transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-foreground/70 border border-border rounded-lg hover:bg-background transition-colors"
             >
               Pagina herladen
             </button>

@@ -113,7 +113,7 @@ export function QuoteHeader({
   })()
 
   return (
-    <div className="sticky top-0 z-10 bg-[#F8F7F5]/90 backdrop-blur-md border-b border-[rgba(26,83,92,0.08)] px-4 md:px-8 py-4 mb-6 -mx-4 md:-mx-6">
+    <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-md border-b border-[rgba(26,83,92,0.08)] px-4 md:px-8 py-4 mb-6 -mx-4 md:-mx-6">
 
       {/* Row 0: breadcrumb */}
       <div className="flex items-center gap-1.5 text-[12px] mb-2">
@@ -136,15 +136,15 @@ export function QuoteHeader({
           return (
             <button
               onClick={handleBack}
-              className="inline-flex items-center gap-1 text-[#9B9B95] hover:text-[#1A535C] transition-colors group"
+              className="inline-flex items-center gap-1 text-muted-foreground hover:text-[#1A535C] transition-colors group"
             >
               <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
               {backLabel}
             </button>
           )
         })()}
-        <span className="text-[#C0BDB8]">·</span>
-        <span className="font-mono text-[11px] font-medium text-[#6B6B66] bg-[rgba(26,83,92,0.05)] border border-[rgba(26,83,92,0.08)] rounded-md px-1.5 py-0.5">
+        <span className="text-muted-foreground/70">·</span>
+        <span className="font-mono text-[11px] font-medium text-foreground/70 bg-[rgba(26,83,92,0.05)] border border-[rgba(26,83,92,0.08)] rounded-md px-1.5 py-0.5">
           {offerteNummer}
         </span>
         {versioning.versieNummer > 1 && (
@@ -162,7 +162,7 @@ export function QuoteHeader({
         {/* Left: H1 + status meta */}
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-3 flex-wrap">
-            <h1 className="text-[28px] md:text-[32px] font-extrabold text-[#1A1A1A] tracking-[-0.5px] leading-none truncate">
+            <h1 className="text-[28px] md:text-[32px] font-extrabold text-foreground tracking-[-0.5px] leading-none truncate">
               {isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}<span className="text-[#F15025]">.</span>
             </h1>
 
@@ -180,7 +180,7 @@ export function QuoteHeader({
                 'inline-flex items-center gap-1 text-[11.5px] font-medium px-2 py-0.5 rounded-md',
                 geldigInfo.accent === 'flame' && 'text-[#C0451A] bg-[#FDE8E2] border border-[#C0451A]/20 font-semibold',
                 geldigInfo.accent === 'amber' && 'text-[#8A6A2A] bg-[#F5F2E8] border border-[#8A6A2A]/15',
-                geldigInfo.accent === 'muted' && 'text-[#6B6B66]',
+                geldigInfo.accent === 'muted' && 'text-foreground/70',
               )}>
                 {geldigInfo.label}
               </span>
@@ -192,12 +192,12 @@ export function QuoteHeader({
             {selectedKlant ? (
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3A6B8C]" />
-                <span className="font-semibold text-[#4A4A46]">{selectedKlant.bedrijfsnaam || selectedKlant.contactpersoon}</span>
-                {selectedKlant.stad && <span className="text-[#9B9B95] font-normal"> · {selectedKlant.stad}</span>}
+                <span className="font-semibold text-foreground/80">{selectedKlant.bedrijfsnaam || selectedKlant.contactpersoon}</span>
+                {selectedKlant.stad && <span className="text-muted-foreground font-normal"> · {selectedKlant.stad}</span>}
               </span>
             ) : (
               <span
-                className="text-[#9B9B95]"
+                className="text-muted-foreground"
                 style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
               >
                 · selecteer een klant en vul de details in
@@ -223,7 +223,7 @@ export function QuoteHeader({
           {/* PDF */}
           <button
             onClick={() => { hapticLight(); handleDownloadPdf() }}
-            className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-3.5 text-[13px] font-medium rounded-xl border border-[rgba(26,83,92,0.12)] bg-white text-[#6B6B66] hover:text-[#1A535C] hover:border-[rgba(26,83,92,0.25)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] transition-all"
+            className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-3.5 text-[13px] font-medium rounded-xl border border-[rgba(26,83,92,0.12)] bg-white text-foreground/70 hover:text-[#1A535C] hover:border-[rgba(26,83,92,0.25)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] transition-all"
             aria-label="PDF downloaden"
           >
             <Download className="h-4 w-4 md:h-3.5 md:w-3.5" />
@@ -273,8 +273,8 @@ export function QuoteHeader({
                         <PhGlobe size={17} weight="duotone" color="#FFFFFF" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13.5px] font-semibold text-[#1A1A1A]">Via portaal</p>
-                        <p className="text-[11.5px] text-[#9B9B95] leading-snug mt-0.5">Klant bekijkt online + email-notificatie</p>
+                        <p className="text-[13.5px] font-semibold text-foreground">Via portaal</p>
+                        <p className="text-[11.5px] text-muted-foreground leading-snug mt-0.5">Klant bekijkt online + email-notificatie</p>
                         {!selectedProjectId && (
                           <p className="text-[10.5px] text-[#C0451A] mt-1">⚠ Koppel eerst een project</p>
                         )}
@@ -296,8 +296,8 @@ export function QuoteHeader({
                         <PhEnvelope size={17} weight="duotone" color="#FFFFFF" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13.5px] font-semibold text-[#1A1A1A]">Via email</p>
-                        <p className="text-[11.5px] text-[#9B9B95] leading-snug mt-0.5">PDF-bijlage + gepersonaliseerde email</p>
+                        <p className="text-[13.5px] font-semibold text-foreground">Via email</p>
+                        <p className="text-[11.5px] text-muted-foreground leading-snug mt-0.5">PDF-bijlage + gepersonaliseerde email</p>
                       </div>
                     </div>
                   </button>
@@ -327,7 +327,7 @@ export function QuoteHeader({
                       disabled={isDuplicating}
                       className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 disabled:opacity-50 transition-colors"
                     >
-                      <Copy className="h-3.5 w-3.5 text-[#9B9B95]" />
+                      <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                       {isDuplicating ? 'Dupliceren…' : 'Dupliceer offerte'}
                     </button>
                     <button
@@ -335,7 +335,7 @@ export function QuoteHeader({
                       disabled={isDuplicating}
                       className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 disabled:opacity-50 transition-colors"
                     >
-                      <ArrowRight className="h-3.5 w-3.5 text-[#9B9B95]" />
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                       Kopieer naar andere klant
                     </button>
                     <button
@@ -343,14 +343,14 @@ export function QuoteHeader({
                       disabled={versioning.isSavingVersie}
                       className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 disabled:opacity-50 transition-colors"
                     >
-                      <Clock className="h-3.5 w-3.5 text-[#9B9B95]" />
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                       {versioning.isSavingVersie ? 'Opslaan…' : `Nieuwe versie (v${versioning.versieNummer})`}
                     </button>
                     <button
                       onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }}
                       className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 transition-colors"
                     >
-                      <Building2 className="h-3.5 w-3.5 text-[#9B9B95]" />
+                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                       Klant wijzigen
                     </button>
                     {onWerkbon && (
@@ -358,7 +358,7 @@ export function QuoteHeader({
                         onClick={() => { onWerkbon(); setShowActionsMenu(false) }}
                         className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 transition-colors"
                       >
-                        <ClipboardList className="h-3.5 w-3.5 text-[#9B9B95]" />
+                        <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
                         Werkbon maken
                       </button>
                     )}
@@ -367,7 +367,7 @@ export function QuoteHeader({
                         onClick={() => { onOpdrachtbevestiging(); setShowActionsMenu(false) }}
                         className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 transition-colors"
                       >
-                        <FileCheck className="h-3.5 w-3.5 text-[#9B9B95]" />
+                        <FileCheck className="h-3.5 w-3.5 text-muted-foreground" />
                         Opdrachtbevestiging
                       </button>
                     )}
@@ -386,19 +386,19 @@ export function QuoteHeader({
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div className="pointer-events-auto doen-slate-surface rounded-2xl shadow-[0_8px_32px_rgba(20,62,71,0.16)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(26,83,92,0.08)]">
-                <h3 className="font-heading text-[16px] font-bold text-[#1A1A1A]">
+                <h3 className="font-heading text-[16px] font-bold text-foreground">
                   Kopieer naar klant<span className="text-[#F15025]">.</span>
                 </h3>
                 <button
                   onClick={() => setShowKopieerNaarKlant(false)}
                   className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-white/60 transition-colors"
                 >
-                  <X className="h-4 w-4 text-[#6B6B66]" />
+                  <X className="h-4 w-4 text-foreground/70" />
                 </button>
               </div>
               <div className="p-4">
                 <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
                     autoFocus
@@ -419,14 +419,14 @@ export function QuoteHeader({
                         disabled={isDuplicating}
                         className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-white/60 transition-colors disabled:opacity-50 flex items-center gap-2"
                       >
-                        <Building2 className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
-                        <span className="truncate text-[#1A1A1A]">{k.bedrijfsnaam || '(naamloos)'}</span>
+                        <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate text-foreground">{k.bedrijfsnaam || '(naamloos)'}</span>
                       </button>
                     ))
                   }
                   {klanten.filter((k) => !kopieerZoek || (k.bedrijfsnaam || '').toLowerCase().includes(kopieerZoek.toLowerCase())).length === 0 && (
                     <p
-                      className="text-center text-sm text-[#9B9B95] py-4"
+                      className="text-center text-sm text-muted-foreground py-4"
                       style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                     >
                       geen klanten gevonden

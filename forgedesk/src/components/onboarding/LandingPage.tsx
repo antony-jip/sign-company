@@ -165,7 +165,7 @@ function Navbar() {
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
           scrolled
-            ? 'lf-glass-nav bg-[#FAFAF8]/70 border-b border-[#E8E5DE]/60 shadow-sm'
+            ? 'lf-glass-nav bg-background/70 border-b border-border/60 shadow-sm'
             : 'bg-transparent'
         }`}
       >
@@ -226,7 +226,7 @@ function Navbar() {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-[#FAFAF8] flex flex-col items-center justify-center gap-8">
+        <div className="fixed inset-0 z-40 bg-background flex flex-col items-center justify-center gap-8">
           <button
             className="absolute top-5 right-6 p-2"
             onClick={() => setMobileOpen(false)}
@@ -308,7 +308,7 @@ function FloatingCards({ scrollY }: { scrollY: number }) {
       {cards.map((card, i) => (
         <div
           key={i}
-          className="lf-float-card absolute bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-[#E8E5DE]/80 p-5 w-[200px]"
+          className="lf-float-card absolute bg-card/80 backdrop-blur-sm rounded-2xl shadow-lg border border-border/80 p-5 w-[200px]"
           style={{
             top: card.top,
             right: card.right,
@@ -334,7 +334,7 @@ function Hero() {
   const fadeRef = useFadeUp()
 
   return (
-    <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 overflow-hidden bg-[#FAFAF8]" ref={fadeRef}>
+    <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 overflow-hidden bg-background" ref={fadeRef}>
       {/* Gradient orbs */}
       <div
         className="lf-orb absolute -top-20 right-[10%] w-[500px] h-[500px] rounded-full pointer-events-none"
@@ -354,7 +354,7 @@ function Hero() {
           {/* Left — Text */}
           <div className="lg:w-[55%]">
             {/* Badge */}
-            <div className="lf-fade-up inline-flex items-center gap-2 bg-white border border-[#E8E5DE] rounded-full px-4 py-2 text-sm font-medium text-[#777] mb-8 shadow-sm">
+            <div className="lf-fade-up inline-flex items-center gap-2 bg-white border border-border rounded-full px-4 py-2 text-sm font-medium text-[#777] mb-8 shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-[#9B8EC4]" />
               Nu met AI-tools ingebouwd
             </div>
@@ -446,7 +446,7 @@ function ThreeIcons() {
   ]
 
   return (
-    <section id="features" className="lf-section bg-[#FAFAF8] py-24 md:py-36" ref={fadeRef}>
+    <section id="features" className="lf-section bg-background py-24 md:py-36" ref={fadeRef}>
       <div className="max-w-6xl mx-auto px-6 lg:px-10">
         <div className="text-center mb-16 md:mb-20">
           <p className="lf-fade-up text-sm font-semibold text-[#C4A882] uppercase tracking-widest mb-4">
@@ -661,7 +661,7 @@ function ForgieSection() {
   }, [activeChat])
 
   return (
-    <section className="lf-section bg-[#FAFAF8] py-24 md:py-36" ref={fadeRef}>
+    <section className="lf-section bg-background py-24 md:py-36" ref={fadeRef}>
       <div className="max-w-6xl mx-auto px-6 lg:px-10">
         <div className="flex flex-col lg:flex-row gap-16 items-center">
           {/* Left: explanation */}
@@ -689,7 +689,7 @@ function ForgieSection() {
                 { icon: <Shield className="w-4 h-4" />, label: 'Veilig & privé' },
                 { icon: <Zap className="w-4 h-4" />, label: 'Claude Sonnet' },
               ].map((tag) => (
-                <div key={tag.label} className="flex items-center gap-2 text-sm text-[#777] bg-white rounded-full px-4 py-2 border border-[#E8E5DE]">
+                <div key={tag.label} className="flex items-center gap-2 text-sm text-[#777] bg-white rounded-full px-4 py-2 border border-border">
                   <span className="text-[#7EB5A6]">{tag.icon}</span>
                   {tag.label}
                 </div>
@@ -699,9 +699,9 @@ function ForgieSection() {
 
           {/* Right: chat mockup */}
           <div className="lf-fade-up lf-delay-3 lg:w-[50%] w-full">
-            <div className="bg-white rounded-3xl shadow-xl border border-[#E8E5DE] overflow-hidden">
+            <div className="bg-white rounded-3xl shadow-xl border border-border overflow-hidden">
               {/* Chat header */}
-              <div className="px-6 py-4 border-b border-[#E8E5DE] bg-[#FAFAF8] flex items-center justify-between">
+              <div className="px-6 py-4 border-b border-border bg-background flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-[#9B8EC4]/15 flex items-center justify-center">
                     <span className="text-base font-bold text-[#9B8EC4]">D</span>
@@ -743,7 +743,7 @@ function ForgieSection() {
               </div>
 
               {/* Suggestion chips */}
-              <div className="px-6 pb-5 border-t border-[#E8E5DE] pt-4">
+              <div className="px-6 pb-5 border-t border-border pt-4">
                 <div className="text-2xs text-[#bbb] uppercase tracking-widest mb-2.5 font-semibold">Probeer een vraag</div>
                 <div className="flex flex-wrap gap-2">
                   {conversations.map((conv, i) => (
@@ -753,7 +753,7 @@ function ForgieSection() {
                       className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-300 ${
                         i === activeChat
                           ? 'bg-[#9B8EC4]/15 text-[#9B8EC4] border border-[#9B8EC4]/25'
-                          : 'bg-bg-subtle border border-[#E8E5DE] text-[#777] hover:border-[#9B8EC4]/30'
+                          : 'bg-bg-subtle border border-border text-[#777] hover:border-[#9B8EC4]/30'
                       }`}
                     >
                       {conv.icon}
@@ -823,7 +823,7 @@ function PricingSection() {
   const priceValue = useCountUp(79, 1500, priceVisible)
 
   return (
-    <section id="prijzen" className="lf-section bg-[#FAFAF8] py-24 md:py-36" ref={fadeRef}>
+    <section id="prijzen" className="lf-section bg-background py-24 md:py-36" ref={fadeRef}>
       <div className="max-w-4xl mx-auto px-6 lg:px-10 text-center">
         <p className="lf-fade-up text-sm font-semibold text-[#C4A882] uppercase tracking-widest mb-4">
           Eenvoudige prijzen
@@ -836,7 +836,7 @@ function PricingSection() {
         </h2>
 
         {/* Pricing card */}
-        <div className="lf-fade-up lf-delay-2 mt-14 bg-white rounded-3xl border border-[#E8E5DE] p-8 md:p-12 shadow-sm max-w-lg mx-auto" ref={priceRef}>
+        <div className="lf-fade-up lf-delay-2 mt-14 bg-white rounded-3xl border border-border p-8 md:p-12 shadow-sm max-w-lg mx-auto" ref={priceRef}>
           {/* Price */}
           <div className="flex items-baseline justify-center gap-2">
             <span className="text-[72px] md:text-[96px] font-extrabold text-[#1a1a1a] leading-none lf-price-number">
@@ -849,7 +849,7 @@ function PricingSection() {
           </p>
 
           {/* Divider */}
-          <div className="border-t border-[#E8E5DE] my-8" />
+          <div className="border-t border-border my-8" />
 
           {/* Features */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-left">
@@ -890,7 +890,7 @@ function PricingSection() {
 
 function FAQItem({ item, isOpen, onToggle }: { item: typeof FAQ_ITEMS[0]; isOpen: boolean; onToggle: () => void }) {
   return (
-    <div className="border-b border-[#E8E5DE]">
+    <div className="border-b border-border">
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between py-6 text-left group"
@@ -1102,7 +1102,7 @@ function BackToTop() {
 
 export default function LandingPage() {
   return (
-    <div className="landing-noise bg-[#FAFAF8] font-sans antialiased">
+    <div className="landing-noise bg-background font-sans antialiased">
       <Navbar />
       <Hero />
       <ThreeIcons />

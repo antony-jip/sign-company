@@ -164,7 +164,7 @@ export function ProjectPhotoGallery({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Camera className="h-4 w-4 text-[#F15025]" />
-              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+              <h3 className="font-heading text-[15px] font-bold text-foreground">
                 Situatiefoto's<span className="text-[#F15025]">.</span>
               </h3>
               {photos.length > 0 && (
@@ -182,7 +182,7 @@ export function ProjectPhotoGallery({
                   >
                     Bekijken
                   </button>
-                  <span className="text-[10px] text-[#C0BDB8] font-mono">·</span>
+                  <span className="text-[10px] text-muted-foreground/70 font-mono">·</span>
                   <button
                     className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3D44] hover:underline transition-colors disabled:opacity-40"
                     onClick={handleBulkDownload}
@@ -248,7 +248,7 @@ export function ProjectPhotoGallery({
               className={cn(
                 'flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed transition-all text-[13px] font-semibold',
                 isUploading
-                  ? 'border-[rgba(26,83,92,0.18)] text-[#9B9B95] cursor-wait'
+                  ? 'border-[rgba(26,83,92,0.18)] text-muted-foreground cursor-wait'
                   : 'border-[rgba(241,80,37,0.28)] text-[#F15025] hover:border-[rgba(241,80,37,0.55)] hover:bg-[rgba(241,80,37,0.04)] cursor-pointer'
               )}
             >
@@ -263,7 +263,7 @@ export function ProjectPhotoGallery({
               className={cn(
                 'inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed transition-all text-[13px] font-semibold sm:hidden',
                 isUploading
-                  ? 'border-[rgba(26,83,92,0.18)] text-[#9B9B95] cursor-wait'
+                  ? 'border-[rgba(26,83,92,0.18)] text-muted-foreground cursor-wait'
                   : 'border-[rgba(26,83,92,0.22)] text-[#1A535C] hover:border-[rgba(26,83,92,0.45)] hover:bg-[rgba(26,83,92,0.04)] cursor-pointer'
               )}
             >

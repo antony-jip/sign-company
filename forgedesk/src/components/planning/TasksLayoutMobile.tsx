@@ -58,9 +58,9 @@ export function TasksLayoutMobile() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
+    <div className="h-full flex flex-col bg-background -m-3 sm:-m-4 md:-m-6">
       <div className="px-5 pt-4 pb-3 bg-white">
-        <div className="inline-flex h-9 p-0.5 rounded-full bg-[#F0EFEC]" role="tablist">
+        <div className="inline-flex h-9 p-0.5 rounded-full bg-muted" role="tablist">
           <button
             type="button"
             role="tab"
@@ -69,8 +69,8 @@ export function TasksLayoutMobile() {
             className={cn(
               'h-8 px-5 rounded-full text-[13px] font-medium transition-colors duration-150',
               activeTab === 'dag'
-                ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                : 'text-[#6B6B66]',
+                ? 'bg-white text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                : 'text-foreground/70',
             )}
           >
             Dag
@@ -83,8 +83,8 @@ export function TasksLayoutMobile() {
             className={cn(
               'h-8 px-5 rounded-full text-[13px] font-medium transition-colors duration-150',
               activeTab === 'maand'
-                ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                : 'text-[#6B6B66]',
+                ? 'bg-white text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                : 'text-foreground/70',
             )}
           >
             Maand

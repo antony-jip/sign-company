@@ -806,18 +806,18 @@ export function EmailTab() {
                 </div>
               )}
 
-              <div className="p-3 rounded-lg border border-[#E6E4E0] dark:border-border bg-[#FAFAF8] dark:bg-muted/30">
+              <div className="p-3 rounded-lg border border-border dark:border-border bg-background dark:bg-muted/30">
                 <div className="flex items-start gap-2">
                   <UserCircle className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-foreground">Afzender-naam in verzonden e-mails</div>
-                    <div className="mt-1.5 text-sm font-mono text-[#6B6B66] dark:text-muted-foreground break-all">
+                    <div className="mt-1.5 text-sm font-mono text-foreground/70 dark:text-muted-foreground break-all">
                       {profile?.bedrijfsnaam
                         ? <>&quot;{profile.bedrijfsnaam}&quot; &lt;{emailSettings.gmail_address || 'je@email'}&gt;</>
                         : <span className="italic">Nog niet ingesteld — ontvangers zien alleen je e-mailadres.</span>
                       }
                     </div>
-                    <p className="mt-2 text-xs text-[#9B9B95]">
+                    <p className="mt-2 text-xs text-muted-foreground">
                       Dit is wat ontvangers zien als afzender. De naam komt uit <span className="font-medium">Instellingen → Bedrijf → Bedrijfsnaam</span>. Gebruik daar je bedrijfsnaam, geen persoonsnaam.
                     </p>
                   </div>
@@ -1043,7 +1043,7 @@ function EmailSettingsInline({
                 <button
                   key={key}
                   onClick={() => handleProviderChange(key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${provider === key ? 'bg-[#1A535C] text-white border-[#1A535C]' : 'bg-white text-[#6B6B66] border-[#EBEBEB] hover:border-[#1A535C]/30'}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${provider === key ? 'bg-[#1A535C] text-white border-[#1A535C]' : 'bg-white text-foreground/70 border-border hover:border-[#1A535C]/30'}`}
                 >
                   {label}
                 </button>

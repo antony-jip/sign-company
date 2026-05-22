@@ -148,25 +148,25 @@ function DoenVibeCard() {
         >
           <Icon className="w-4 h-4" style={{ color: meta.color }} />
         </span>
-        <span className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-semibold">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
           doen<span className="text-[#F15025]">.</span>
         </span>
       </div>
 
       <p
         key={`text-${idx}`}
-        className="relative flex-1 text-[16px] leading-[1.3] text-[#1A1A1A] doen-fact-text"
+        className="relative flex-1 text-[16px] leading-[1.3] text-foreground doen-fact-text"
         style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
       >
         {fact.text}
       </p>
 
       <div className="relative flex items-end justify-between gap-3 mt-auto">
-        <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#9B9B95] font-semibold">
+        <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
           {meta.label}
           <ArrowRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
         </span>
-        <span className="text-[10px] font-mono text-[#9B9B95]">
+        <span className="text-[10px] font-mono text-muted-foreground">
           {String(idx + 1).padStart(2, '0')}/{String(DOEN_FACTS.length).padStart(2, '0')}
         </span>
       </div>
@@ -284,14 +284,14 @@ export function KpiStrip() {
               >
                 <Icon className="w-4 h-4" style={{ color: kpi.accent }} />
               </span>
-              <span className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-semibold">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
                 {kpi.label}
               </span>
             </div>
 
             <div>
-              <p className="font-heading font-bold text-[28px] leading-[1.1] text-[#1A1A1A]">
-                <span className="text-[18px] text-[#9B9B95] mr-1">€</span>
+              <p className="font-heading font-bold text-[28px] leading-[1.1] text-foreground">
+                <span className="text-[18px] text-muted-foreground mr-1">€</span>
                 <span className="font-mono">{formatCurrency(kpi.bedrag).replace(/^€\s*/, '')}</span>
               </p>
             </div>

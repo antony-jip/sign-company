@@ -222,7 +222,7 @@ export function BetaalPagina() {
   // Loading
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#FEFDFB] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
           <p className="text-sm text-muted-foreground">Factuur laden...</p>
@@ -234,7 +234,7 @@ export function BetaalPagina() {
   // Not found
   if (notFound || !factuur) {
     return (
-      <div className="min-h-screen bg-[#FEFDFB] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="flex flex-col items-center gap-4 py-12">
             <AlertTriangle className="h-12 w-12 text-amber-500" />
@@ -267,7 +267,7 @@ export function BetaalPagina() {
     : null
 
   return (
-    <div className="min-h-screen bg-[#FEFDFB] p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <Toaster position="top-center" richColors />
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}

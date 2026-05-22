@@ -170,31 +170,31 @@ export function PakbonVanProjectDialog({
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
                 )}
-                <div className="border-t border-[#F0EFEC] my-1" />
+                <div className="border-t border-border my-1" />
               </div>
             )}
 
             <button
               onClick={() => handleCreate('los')}
               disabled={isCreating}
-              className="w-full flex items-start gap-3 p-3 rounded-xl text-left hover:bg-[#F8F7F5] transition-colors border border-transparent hover:border-[#EBEBEB]"
+              className="w-full flex items-start gap-3 p-3 rounded-xl text-left hover:bg-background transition-colors border border-transparent hover:border-border"
             >
               <ClipboardList className="h-5 w-5 text-[#1A535C] mt-0.5 shrink-0" />
               <div>
-                <div className="text-sm font-semibold text-[#1A1A1A]">Losse pakbon</div>
-                <div className="text-xs text-[#9B9B95] mt-0.5">Lege pakbon om zelf regels aan toe te voegen</div>
+                <div className="text-sm font-semibold text-foreground">Losse pakbon</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Lege pakbon om zelf regels aan toe te voegen</div>
               </div>
             </button>
 
             <button
               onClick={() => handleCreate('leeg')}
               disabled={isCreating}
-              className="w-full flex items-start gap-3 p-3 rounded-xl text-left hover:bg-[#F8F7F5] transition-colors border border-transparent hover:border-[#EBEBEB]"
+              className="w-full flex items-start gap-3 p-3 rounded-xl text-left hover:bg-background transition-colors border border-transparent hover:border-border"
             >
-              <FileCheck className="h-5 w-5 text-[#6B6B66] mt-0.5 shrink-0" />
+              <FileCheck className="h-5 w-5 text-foreground/70 mt-0.5 shrink-0" />
               <div>
-                <div className="text-sm font-semibold text-[#1A1A1A]">Lege pakbon (invulformulier)</div>
-                <div className="text-xs text-[#9B9B95] mt-0.5">Pakbon met lege regels, handig om ter plaatse in te vullen</div>
+                <div className="text-sm font-semibold text-foreground">Lege pakbon (invulformulier)</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Pakbon met lege regels, handig om ter plaatse in te vullen</div>
               </div>
             </button>
 

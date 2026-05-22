@@ -191,8 +191,8 @@ export function KennisbankTab() {
           <h3 className="text-lg font-bold" style={{ color: '#1A1A1A' }}>
             {isNew ? 'Nieuw artikel' : 'Artikel bewerken'}
           </h3>
-          <button onClick={closeEditor} className="p-1.5 rounded-lg hover:bg-[#F4F2EE] transition-colors">
-            <X className="h-4 w-4 text-[#9B9B95]" />
+          <button onClick={closeEditor} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+            <X className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
 
@@ -205,7 +205,7 @@ export function KennisbankTab() {
                 onChange={e => setFormTitel(e.target.value)}
                 placeholder="Bijv. Montage-instructie dibond gevelpanelen"
                 className="h-10 text-[14px] rounded-lg"
-                style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}
+                style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
                 autoFocus
               />
             </div>
@@ -217,7 +217,7 @@ export function KennisbankTab() {
                 placeholder="Schrijf hier het artikel..."
                 rows={12}
                 className="resize-y text-[13px] rounded-lg leading-relaxed"
-                style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}
+                style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
               />
             </div>
           </div>
@@ -228,8 +228,8 @@ export function KennisbankTab() {
               <select
                 value={formCategoryId}
                 onChange={e => setFormCategoryId(e.target.value)}
-                className="w-full h-9 text-[13px] rounded-lg px-2 bg-[#F8F7F5]"
-                style={{ border: '1px solid #EBEBEB' }}
+                className="w-full h-9 text-[13px] rounded-lg px-2 bg-background"
+                style={{ border: '1px solid hsl(var(--border))' }}
               >
                 <option value="">Geen categorie</option>
                 {categories.map(c => (
@@ -244,7 +244,7 @@ export function KennisbankTab() {
                 onChange={e => setFormTags(e.target.value)}
                 placeholder="dibond, montage, gevel"
                 className="h-9 text-[13px] rounded-lg"
-                style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}
+                style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
               />
               <p className="text-[10px] mt-1" style={{ color: '#9B9B95' }}>Komma-gescheiden</p>
             </div>
@@ -294,7 +294,7 @@ export function KennisbankTab() {
             onClick={() => setActiveCategory(null)}
             className={cn(
               'w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors',
-              !activeCategory ? 'bg-[#1A535C]/[0.08] text-[#1A535C]' : 'text-[#6B6B66] hover:bg-[#F4F2EE]'
+              !activeCategory ? 'bg-[#1A535C]/[0.08] text-[#1A535C]' : 'text-foreground/70 hover:bg-muted'
             )}
           >
             <BookOpen className="h-3.5 w-3.5 inline mr-2" />
@@ -309,7 +309,7 @@ export function KennisbankTab() {
                   onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
                   className={cn(
                     'flex-1 text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors truncate',
-                    activeCategory === cat.id ? 'bg-[#1A535C]/[0.08] text-[#1A535C]' : 'text-[#6B6B66] hover:bg-[#F4F2EE]'
+                    activeCategory === cat.id ? 'bg-[#1A535C]/[0.08] text-[#1A535C]' : 'text-foreground/70 hover:bg-muted'
                   )}
                 >
                   <FolderOpen className="h-3.5 w-3.5 inline mr-2" />
@@ -318,22 +318,22 @@ export function KennisbankTab() {
                 </button>
                 <button
                   onClick={() => { setEditingCat(cat); setCatNaam(cat.naam); setShowCatEditor(true) }}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#F4F2EE] transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted transition-all"
                 >
-                  <Pencil className="h-3 w-3 text-[#9B9B95]" />
+                  <Pencil className="h-3 w-3 text-muted-foreground" />
                 </button>
               </div>
             )
           })}
           {/* Add / edit category */}
           {showCatEditor ? (
-            <div className="px-2 py-2 rounded-lg space-y-2" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}>
+            <div className="px-2 py-2 rounded-lg space-y-2" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}>
               <Input
                 value={catNaam}
                 onChange={e => setCatNaam(e.target.value)}
                 placeholder="Categorie naam"
                 className="h-8 text-[12px] rounded-lg"
-                style={{ border: '1px solid #EBEBEB' }}
+                style={{ border: '1px solid hsl(var(--border))' }}
                 autoFocus
                 onKeyDown={e => { if (e.key === 'Enter') handleSaveCategory(); if (e.key === 'Escape') { setShowCatEditor(false); setEditingCat(null) } }}
               />
@@ -346,7 +346,7 @@ export function KennisbankTab() {
                     Verwijder
                   </button>
                 )}
-                <button onClick={() => { setShowCatEditor(false); setEditingCat(null); setCatNaam('') }} className="h-7 px-2 text-[11px] text-[#9B9B95]">
+                <button onClick={() => { setShowCatEditor(false); setEditingCat(null); setCatNaam('') }} className="h-7 px-2 text-[11px] text-muted-foreground">
                   Annuleer
                 </button>
               </div>
@@ -354,7 +354,7 @@ export function KennisbankTab() {
           ) : (
             <button
               onClick={() => { setShowCatEditor(true); setEditingCat(null); setCatNaam('') }}
-              className="w-full text-left px-3 py-2 rounded-lg text-[12px] text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#F4F2EE] transition-colors"
+              className="w-full text-left px-3 py-2 rounded-lg text-[12px] text-muted-foreground hover:text-[#1A535C] hover:bg-muted transition-colors"
             >
               <Plus className="h-3 w-3 inline mr-1.5" /> Categorie
             </button>
@@ -365,20 +365,20 @@ export function KennisbankTab() {
         <div className="flex-1 min-w-0 space-y-3">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Zoek artikelen..."
               className="pl-10 h-9 text-[13px] rounded-lg"
-              style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}
+              style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
             />
           </div>
 
           {/* Articles list */}
           {filtered.length === 0 ? (
             <div className="py-12 text-center">
-              <BookOpen className="h-8 w-8 mx-auto mb-3 text-[#9B9B95] opacity-30" />
+              <BookOpen className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-30" />
               <p className="text-[14px] font-medium" style={{ color: '#6B6B66' }}>
                 {search ? 'Geen artikelen gevonden' : 'Nog geen artikelen'}
               </p>
@@ -402,13 +402,13 @@ export function KennisbankTab() {
                 return (
                   <div
                     key={article.id}
-                    className="group bg-white rounded-xl p-4 border border-[#EBEBEB]/60 hover:border-[#1A535C]/20 hover:shadow-sm cursor-pointer transition-all"
+                    className="group bg-white rounded-xl p-4 border border-border/60 hover:border-[#1A535C]/20 hover:shadow-sm cursor-pointer transition-all"
                     onClick={() => openEditArticle(article)}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-[14px] font-semibold text-[#1A1A1A] truncate group-hover:text-[#1A535C] transition-colors">
+                          <h4 className="text-[14px] font-semibold text-foreground truncate group-hover:text-[#1A535C] transition-colors">
                             {article.titel}
                           </h4>
                           {cat && (
@@ -418,13 +418,13 @@ export function KennisbankTab() {
                           )}
                         </div>
                         {excerpt && (
-                          <p className="text-[12px] text-[#9B9B95] truncate">{excerpt}</p>
+                          <p className="text-[12px] text-muted-foreground truncate">{excerpt}</p>
                         )}
                         {article.zoek_tags.length > 0 && (
                           <div className="flex items-center gap-1 mt-1.5">
-                            <Tag className="h-2.5 w-2.5 text-[#9B9B95]" />
+                            <Tag className="h-2.5 w-2.5 text-muted-foreground" />
                             {article.zoek_tags.slice(0, 4).map(tag => (
-                              <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-[#F4F2EE] text-[#6B6B66]">{tag}</span>
+                              <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground/70">{tag}</span>
                             ))}
                           </div>
                         )}

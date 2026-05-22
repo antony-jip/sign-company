@@ -64,22 +64,22 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
 
   return (
     <>
-      <header className="px-5 pt-5 pb-4 bg-white border-b border-[#EBEBEB]">
-        <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-[#1A1A1A]">
+      <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
+        <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
           Taken<span className="text-[#F15025]">.</span>
         </h1>
-        <p className="mt-1 text-[14px] text-[#6B6B66] capitalize">{monthLabel}</p>
+        <p className="mt-1 text-[14px] text-foreground/70 capitalize">{monthLabel}</p>
         {monthOpenCount > 0 && (
-          <p className="mt-0.5 text-[13px] text-[#9B9B95] tabular-nums">{monthOpenCount} open deze maand</p>
+          <p className="mt-0.5 text-[13px] text-muted-foreground tabular-nums">{monthOpenCount} open deze maand</p>
         )}
       </header>
 
-      <div className="px-5 py-3 flex items-center gap-2 bg-white border-b border-[#EBEBEB]">
+      <div className="px-5 py-3 flex items-center gap-2 bg-white border-b border-border">
         <button
           type="button"
           onClick={() => setVisibleMonth((m) => subMonths(m, 1))}
           aria-label="Vorige maand"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[#F0EFEC] text-[#6B6B66] hover:bg-[#E6E5E1] hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -88,7 +88,7 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
           type="button"
           onClick={() => setVisibleMonth((m) => addMonths(m, 1))}
           aria-label="Volgende maand"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[#F0EFEC] text-[#6B6B66] hover:bg-[#E6E5E1] hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -99,7 +99,7 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
           {['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'].map((d) => (
             <div
               key={d}
-              className="text-center text-[11px] font-medium text-[#9B9B95] uppercase tracking-wider"
+              className="text-center text-[11px] font-medium text-muted-foreground uppercase tracking-wider"
             >
               {d}
             </div>
@@ -127,8 +127,8 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
                   isTodayCell
                     ? 'bg-[#F15025] text-white'
                     : inMonth
-                      ? 'text-[#1A1A1A] hover:bg-[#F0EFEC]/60 active:bg-[#F0EFEC]'
-                      : 'text-[#B0ADA8] hover:bg-[#F0EFEC]/40',
+                      ? 'text-foreground hover:bg-muted/60 active:bg-muted'
+                      : 'text-muted-foreground/80 hover:bg-muted/40',
                 )}
               >
                 <span className="text-[14px] tabular-nums leading-none">{day.getDate()}</span>

@@ -61,24 +61,24 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
 
   return (
     <>
-      <header className="px-5 pt-5 pb-4 bg-white border-b border-[#EBEBEB]">
-        <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-[#1A1A1A]">
+      <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
+        <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
           Taken<span className="text-[#F15025]">.</span>
         </h1>
-        <p className="mt-1 text-[14px] text-[#6B6B66] capitalize">
+        <p className="mt-1 text-[14px] text-foreground/70 capitalize">
           {formatFullWeekdayDate(selectedDate)}
         </p>
         {tasksForDay.length > 0 && (
-          <p className="mt-0.5 text-[13px] text-[#9B9B95] tabular-nums">{openCount} open</p>
+          <p className="mt-0.5 text-[13px] text-muted-foreground tabular-nums">{openCount} open</p>
         )}
       </header>
 
-      <div className="px-5 py-3 flex items-center gap-2 bg-white border-b border-[#EBEBEB]">
+      <div className="px-5 py-3 flex items-center gap-2 bg-white border-b border-border">
         <button
           type="button"
           onClick={() => setSelectedDate((d) => addDays(d, -1))}
           aria-label="Vorige dag"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[#F0EFEC] text-[#6B6B66] hover:bg-[#E6E5E1] hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -97,7 +97,7 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
           type="button"
           onClick={() => setSelectedDate((d) => addDays(d, 1))}
           aria-label="Volgende dag"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[#F0EFEC] text-[#6B6B66] hover:bg-[#E6E5E1] hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -106,18 +106,18 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
       <div className="flex-1 overflow-y-auto pb-[calc(7rem+env(safe-area-inset-bottom))]">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-5 w-5 animate-spin text-[#9B9B95]" />
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : tasksForDay.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-            <div className="w-20 h-20 rounded-full bg-white border border-[#EBEBEB] flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-              <CalendarCheck className="h-9 w-9 text-[#B0ADA8]" strokeWidth={1.5} />
+            <div className="w-20 h-20 rounded-full bg-white border border-border flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+              <CalendarCheck className="h-9 w-9 text-muted-foreground/80" strokeWidth={1.5} />
             </div>
-            <p className="text-[15px] font-medium text-[#6B6B66]">
+            <p className="text-[15px] font-medium text-foreground/70">
               Geen taken voor {isToday ? 'vandaag' : 'deze dag'}<span className="text-[#F15025]">.</span>
             </p>
-            <p className="mt-1.5 text-[13px] text-[#9B9B95] max-w-[240px] leading-relaxed">
-              Tik onderaan op <span className="font-medium text-[#6B6B66]">Nieuwe taak</span> om er een toe te voegen.
+            <p className="mt-1.5 text-[13px] text-muted-foreground max-w-[240px] leading-relaxed">
+              Tik onderaan op <span className="font-medium text-foreground/70">Nieuwe taak</span> om er een toe te voegen.
             </p>
           </div>
         ) : (
@@ -130,7 +130,7 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
                   key={t.id}
                   className={cn(
                     'px-5 py-3.5 flex items-center gap-3 transition-colors',
-                    isDone && 'bg-[#F8F7F5]/60',
+                    isDone && 'bg-background/60',
                   )}
                 >
                   <button
@@ -156,8 +156,8 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
                     className={cn(
                       'flex-1 text-[15px] leading-snug min-w-0 truncate transition-all duration-200',
                       isDone
-                        ? 'line-through text-[#9B9B95] opacity-60'
-                        : 'text-[#1A1A1A] font-medium',
+                        ? 'line-through text-muted-foreground opacity-60'
+                        : 'text-foreground font-medium',
                     )}
                   >
                     {t.titel}
@@ -166,7 +166,7 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
                     <span
                       className={cn(
                         'text-xs tabular-nums flex-shrink-0 transition-opacity duration-200',
-                        isDone ? 'text-[#B0ADA8] opacity-60' : 'text-[#9B9B95]',
+                        isDone ? 'text-muted-foreground/80 opacity-60' : 'text-muted-foreground',
                       )}
                     >
                       {tijd}

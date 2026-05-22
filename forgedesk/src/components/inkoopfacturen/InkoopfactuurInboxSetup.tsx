@@ -117,7 +117,7 @@ export function InkoopfactuurInboxSetup() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Loader2 className="w-6 h-6 animate-spin text-[#9B9B95]" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -128,7 +128,7 @@ export function InkoopfactuurInboxSetup() {
         <h2 className="text-[15px] font-bold tracking-[-0.3px]">
           inkoopfactuur inbox<span className="text-[#F15025]">.</span>
         </h2>
-        <p className="text-[12px] text-[#5A5A55] mt-1">
+        <p className="text-[12px] text-foreground/70 mt-1">
           Koppel een Gmail inbox om inkoopfacturen automatisch op te halen.
         </p>
       </div>
@@ -138,7 +138,7 @@ export function InkoopfactuurInboxSetup() {
         <CardHeader className="pb-3">
           <CardTitle className="text-[13px]">Voorbereiding in Gmail</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-[12px] text-[#4A4A46]">
+        <CardContent className="space-y-2 text-[12px] text-foreground/80">
           <div className="flex gap-2"><span className="font-semibold text-[#C44830] shrink-0">1.</span> Maak een Gmail label <code className="bg-[#F5F5F3] px-1.5 py-0.5 rounded text-[11px]">doen-inkoop</code> in je factuur@ account</div>
           <div className="flex gap-2"><span className="font-semibold text-[#C44830] shrink-0">2.</span> Maak een filter: "Matches: heeft bijlage" &rarr; "Apply label: doen-inkoop"</div>
           <div className="flex gap-2"><span className="font-semibold text-[#C44830] shrink-0">3.</span> Zet 2-staps-verificatie aan op je Google account</div>
@@ -237,16 +237,16 @@ export function InkoopfactuurInboxSetup() {
           <CardContent className="pt-5">
             <div className="grid grid-cols-2 gap-4 text-[12px]">
               <div>
-                <span className="text-[#9B9B95]">Laatst gecheckt</span>
+                <span className="text-muted-foreground">Laatst gecheckt</span>
                 <p className="font-medium">{config.laatst_gecheckt_op ? new Date(config.laatst_gecheckt_op).toLocaleString('nl-NL') : 'Nog niet'}</p>
               </div>
               <div>
-                <span className="text-[#9B9B95]">Status</span>
+                <span className="text-muted-foreground">Status</span>
                 <p className="font-medium">{config.actief ? 'Actief' : 'Gepauzeerd'}</p>
               </div>
               {config.laatste_error && (
                 <div className="col-span-2">
-                  <span className="text-[#9B9B95]">Laatste fout</span>
+                  <span className="text-muted-foreground">Laatste fout</span>
                   <p className="font-medium text-[#C03A18]">{config.laatste_error}</p>
                 </div>
               )}

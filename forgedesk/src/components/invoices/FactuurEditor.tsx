@@ -1676,12 +1676,12 @@ export function FactuurEditor() {
   // ============ RENDER ============
 
   return (
-    <div className="min-h-screen bg-[#F8F7F5]">
+    <div className="min-h-screen bg-background">
       <div className="px-8 pt-3">
         <BackButton fallbackPath="/facturen" />
       </div>
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-[#F8F7F5]/95 backdrop-blur border-b border-[#EBEBEB] px-8 py-3">
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-8 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div>
@@ -1870,7 +1870,7 @@ export function FactuurEditor() {
       {/* Status bar for existing invoices — tekst + Flame punt, geen kleurig vlak */}
       {isEditMode && existingFactuur && (
         <div className="px-8 pt-3">
-          <div className="flex items-center gap-3 text-sm text-[#6B6B66]">
+          <div className="flex items-center gap-3 text-sm text-foreground/70">
             {(() => {
               const iconClass = cn(
                 'h-3.5 w-3.5',
@@ -1887,7 +1887,7 @@ export function FactuurEditor() {
               if (isVervallen) return <AlertTriangle className={iconClass} />
               return null
             })()}
-            <span className="text-[#1A1A1A]">
+            <span className="text-foreground">
               {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span><span className="text-[#F15025]">.</span></>}
               {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd · wachtend op betaling<span className="text-[#F15025]">.</span></>}
               {currentStatus === 'concept' && <>Concept · nog niet verstuurd<span className="text-[#F15025]">.</span></>}
@@ -1895,7 +1895,7 @@ export function FactuurEditor() {
               {isVervallen && <>{dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen<span className="text-[#F15025]">.</span></>}
             </span>
             {existingFactuur.betaal_link && currentStatus !== 'betaald' && (
-              <span className="ml-auto text-xs text-[#9B9B95] truncate max-w-[420px]" title={existingFactuur.betaal_link}>
+              <span className="ml-auto text-xs text-muted-foreground truncate max-w-[420px]" title={existingFactuur.betaal_link}>
                 {existingFactuur.betaal_link}
               </span>
             )}
@@ -2239,7 +2239,7 @@ export function FactuurEditor() {
                 </div>
               )}
               {/* Table header — kolomlabels in tertiary uppercase, geen gekleurd vlak */}
-              <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2 mb-1 text-[11px] font-bold uppercase tracking-wider text-[#9B9B95] border-b border-[#EBEBEB]">
+              <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2 mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
                 <span>Omschrijving</span>
                 <span className="text-right">Aantal</span>
                 <span className="text-right">Prijs</span>
@@ -2254,7 +2254,7 @@ export function FactuurEditor() {
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className="grid grid-cols-1 md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-3 transition-colors hover:bg-[#F8F7F5]"
+                    className="grid grid-cols-1 md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-3 transition-colors hover:bg-background"
                   >
                     <Input
                       value={item.beschrijving}
@@ -2356,7 +2356,7 @@ export function FactuurEditor() {
 
               {/* Totaal rij */}
               {validItems.length > 0 && (
-                <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-3 border-t-2 border-[#EBEBEB]">
+                <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-3 border-t-2 border-border">
                   <span className="text-sm font-semibold text-petrol">Totaal</span>
                   <span />
                   <span />
@@ -2553,7 +2553,7 @@ export function FactuurEditor() {
                         {dialogBijlagen.map((bij) => (
                           <label
                             key={bij.id}
-                            className="flex items-center gap-2 text-xs cursor-pointer hover:bg-[#F8F7F5] rounded px-1.5 py-1"
+                            className="flex items-center gap-2 text-xs cursor-pointer hover:bg-background rounded px-1.5 py-1"
                           >
                             <Checkbox
                               checked={selectedBijlageIds.has(bij.id)}

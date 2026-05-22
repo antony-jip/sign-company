@@ -52,7 +52,7 @@ export function LoginPage() {
   return (
     <DoenAuthShell>
       <DoenAuthHeader rightSlot={
-        <p className="text-[13px] text-[#6B6B66] hidden sm:block">
+        <p className="text-[13px] text-foreground/70 hidden sm:block">
           Nog geen account?{' '}
           <Link to="/registreren" className="text-[#F15025] font-semibold hover:underline underline-offset-4">
             Gratis uitproberen
@@ -88,7 +88,7 @@ export function LoginPage() {
 
           <motion.p
             variants={item}
-            className="mt-6 text-[16px] sm:text-[17px] text-[#5A5A55] leading-[1.6] max-w-[460px]"
+            className="mt-6 text-[16px] sm:text-[17px] text-foreground/70 leading-[1.6] max-w-[460px]"
           >
             Inloggen en weer aan het{' '}
             <span className="text-[#191919] font-semibold">
@@ -99,7 +99,7 @@ export function LoginPage() {
 
           <motion.p
             variants={item}
-            className="mt-8 text-[12px] uppercase tracking-[0.18em] font-semibold text-[#9B9B95]"
+            className="mt-8 text-[12px] uppercase tracking-[0.18em] font-semibold text-muted-foreground"
           >
             Offertes <span className="mx-2 text-[#F15025]">·</span>
             Werkbonnen <span className="mx-2 text-[#F15025]">·</span>
@@ -118,24 +118,24 @@ export function LoginPage() {
             <h2 className="font-heading text-[22px] font-extrabold text-[#191919] tracking-[-0.02em] mb-1">
               Aanmelden<span style={{ color: '#F15025' }}>.</span>
             </h2>
-            <p className="text-[13.5px] text-[#5A5A55] mb-6">
+            <p className="text-[13.5px] text-foreground/70 mb-6">
               Log in op je doen.-account.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A5A55]">
+                <Label htmlFor="email" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground/70">
                   E-mailadres
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-[#C0BDB8] pointer-events-none" aria-hidden />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-muted-foreground/70 pointer-events-none" aria-hidden />
                   <Input
                     id="email"
                     type="email"
                     placeholder="naam@bedrijf.nl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-11 rounded-xl border-[#EBEBEB] bg-[#F8F7F5] text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all"
+                    className="pl-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all"
                     disabled={isLoading}
                     autoComplete="email"
                     autoFocus
@@ -145,7 +145,7 @@ export function LoginPage() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A5A55]">
+                  <Label htmlFor="password" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground/70">
                     Wachtwoord
                   </Label>
                   <Link to="/wachtwoord-vergeten" className="text-[12px] text-[#1A535C] hover:underline underline-offset-4 font-medium">
@@ -153,21 +153,21 @@ export function LoginPage() {
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-[#C0BDB8] pointer-events-none" aria-hidden />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-muted-foreground/70 pointer-events-none" aria-hidden />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Voer je wachtwoord in"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-12 h-11 rounded-xl border-[#EBEBEB] bg-[#F8F7F5] text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all"
+                    className="pl-10 pr-12 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all"
                     disabled={isLoading}
                     autoComplete="current-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-[#C0BDB8] hover:text-[#5A5A55] transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-muted-foreground/70 hover:text-foreground/70 transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30"
                     tabIndex={-1}
                     aria-label={showPassword ? 'Wachtwoord verbergen' : 'Wachtwoord tonen'}
                   >
@@ -195,7 +195,7 @@ export function LoginPage() {
               </Button>
             </form>
 
-            <p className="text-center text-[12px] text-[#9B9B95] mt-5 sm:hidden">
+            <p className="text-center text-[12px] text-muted-foreground mt-5 sm:hidden">
               Nog geen account?{' '}
               <Link to="/registreren" className="text-[#F15025] font-semibold hover:underline">
                 Gratis uitproberen

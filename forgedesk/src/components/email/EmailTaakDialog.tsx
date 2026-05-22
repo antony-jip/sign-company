@@ -28,7 +28,7 @@ const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
   kritiek: 'text-[#C0451A]',
   hoog: 'text-[#F15025]',
   medium: 'text-[#3A5A9A]',
-  laag: 'text-[#9B9B95]',
+  laag: 'text-muted-foreground',
 }
 
 const PRIORITEIT_LABELS: Record<TaakPrioriteit, string> = {
@@ -39,7 +39,7 @@ const PRIORITEIT_LABELS: Record<TaakPrioriteit, string> = {
 }
 
 const pillBase =
-  'h-7 px-2.5 inline-flex items-center gap-1.5 rounded-full border border-[#E0DED8] bg-white text-[12px] font-medium text-[#1A1A1A] hover:border-[#B0ADA8] hover:bg-[#F8F7F5] transition-colors cursor-pointer'
+  'h-7 px-2.5 inline-flex items-center gap-1.5 rounded-full border border-border bg-white text-[12px] font-medium text-foreground hover:border-border hover:bg-background transition-colors cursor-pointer'
 
 export function EmailTaakDialog({
   open,
@@ -78,7 +78,7 @@ export function EmailTaakDialog({
               onChange={(e) => update('titel', e.target.value)}
               placeholder="Titel van de taak"
               autoFocus
-              className="w-full border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-[#1A1A1A] placeholder:text-[#9B9B95] placeholder:font-medium focus:outline-none tracking-[-0.3px]"
+              className="w-full border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-foreground placeholder:text-muted-foreground placeholder:font-medium focus:outline-none tracking-[-0.3px]"
             />
           </div>
 
@@ -102,15 +102,15 @@ export function EmailTaakDialog({
               onClick={() => setDatePickerOpen((v) => !v)}
               className={pillBase}
             >
-              <CalendarIcon className="w-3 h-3 text-[#6B6B66]" />
-              <span className={cn(!formData.deadline && 'text-[#9B9B95]')}>{displayDeadline}</span>
+              <CalendarIcon className="w-3 h-3 text-foreground/70" />
+              <span className={cn(!formData.deadline && 'text-muted-foreground')}>{displayDeadline}</span>
             </button>
             {datePickerOpen && (
               <input
                 type="date"
                 value={formData.deadline}
                 onChange={(e) => { update('deadline', e.target.value); setDatePickerOpen(false) }}
-                className="h-7 px-2 rounded-full border border-[#E0DED8] bg-white text-[12px] text-[#1A1A1A] font-mono focus:outline-none focus:border-[#1A535C]"
+                className="h-7 px-2 rounded-full border border-border bg-white text-[12px] text-foreground font-mono focus:outline-none focus:border-[#1A535C]"
               />
             )}
 
@@ -126,16 +126,16 @@ export function EmailTaakDialog({
                     <option key={m.id} value={m.naam}>{m.naam}</option>
                   ))}
                 </select>
-                <User2 className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#6B6B66] pointer-events-none" />
+                <User2 className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground/70 pointer-events-none" />
               </div>
             ) : (
               <div className={cn(pillBase, 'cursor-text')}>
-                <User2 className="w-3 h-3 text-[#6B6B66]" />
+                <User2 className="w-3 h-3 text-foreground/70" />
                 <input
                   value={formData.toegewezen_aan}
                   onChange={(e) => update('toegewezen_aan', e.target.value)}
                   placeholder="Niet toegewezen"
-                  className="bg-transparent border-0 outline-none text-[12px] font-medium text-[#1A1A1A] placeholder:text-[#9B9B95] w-28"
+                  className="bg-transparent border-0 outline-none text-[12px] font-medium text-foreground placeholder:text-muted-foreground w-28"
                 />
               </div>
             )}
@@ -143,11 +143,11 @@ export function EmailTaakDialog({
 
           {/* Project */}
           <div className="px-7 pb-4 space-y-1.5">
-            <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95] block">Project</label>
+            <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground block">Project</label>
             <select
               value={formData.project_id || ''}
               onChange={(e) => update('project_id', e.target.value)}
-              className="w-full h-9 px-3 text-[13px] border border-[#E0DED8] bg-[#F8F7F5] rounded-lg outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 transition-colors"
+              className="w-full h-9 px-3 text-[13px] border border-border bg-background rounded-lg outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 transition-colors"
             >
               <option value="">Geen project</option>
               {projecten.map((p) => (
@@ -158,34 +158,34 @@ export function EmailTaakDialog({
 
           {/* Briefing */}
           <div className="px-7 pb-5 space-y-2">
-            <label className="text-[11px] uppercase tracking-[0.05em] text-[#9B9B95] font-semibold block">Briefing</label>
+            <label className="text-[11px] uppercase tracking-[0.05em] text-muted-foreground font-semibold block">Briefing</label>
             <textarea
               value={formData.beschrijving}
               onChange={(e) => update('beschrijving', e.target.value)}
               placeholder="Briefing toevoegen…"
               data-gramm="false"
-              className="w-full border-0 shadow-none px-3 py-2.5 min-h-[140px] max-h-[300px] resize-none overflow-y-auto bg-[#F8F7F5] hover:bg-[#F0EFEC] focus:bg-white rounded-lg text-[13px] leading-relaxed text-[#1A1A1A] placeholder:text-[#6B6B66] outline-none focus:ring-1 focus:ring-[#1A535C]/20 transition-colors"
+              className="w-full border-0 shadow-none px-3 py-2.5 min-h-[140px] max-h-[300px] resize-none overflow-y-auto bg-background hover:bg-muted focus:bg-white rounded-lg text-[13px] leading-relaxed text-foreground placeholder:text-foreground/70 outline-none focus:ring-1 focus:ring-[#1A535C]/20 transition-colors"
             />
           </div>
 
           {/* Bijlagen — placeholder voor latere upload-flow */}
           <div className="px-7 pb-5">
             <div className="flex items-center gap-3">
-              <label className="text-[11px] uppercase tracking-[0.05em] text-[#9B9B95] font-semibold m-0">Bijlagen</label>
-              <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-dashed border-[#C4C2BD] bg-transparent text-[11px] font-medium text-[#9B9B95]">
+              <label className="text-[11px] uppercase tracking-[0.05em] text-muted-foreground font-semibold m-0">Bijlagen</label>
+              <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-dashed border-[#C4C2BD] bg-transparent text-[11px] font-medium text-muted-foreground">
                 <Plus className="h-3 w-3" />
                 Toevoegen
               </span>
-              <span className="text-[11px] italic text-[#9B9B95]">via taak-detail</span>
+              <span className="text-[11px] italic text-muted-foreground">via taak-detail</span>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="px-7 py-4 border-t border-[#EBEBEB] bg-[#F8F7F5]/60 flex items-center sm:justify-end gap-2">
+        <DialogFooter className="px-7 py-4 border-t border-border bg-background/60 flex items-center sm:justify-end gap-2">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="h-9 px-4 rounded-md text-[13px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] transition-colors"
+            className="h-9 px-4 rounded-md text-[13px] font-medium text-foreground/70 hover:text-foreground transition-colors"
           >
             Annuleren
           </button>

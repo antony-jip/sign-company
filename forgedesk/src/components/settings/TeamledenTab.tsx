@@ -594,7 +594,7 @@ function UitnodigingRow({ uitnodiging, onCancel }: UitnodigingRowProps) {
   return (
     <div className="flex items-center gap-4 px-5 py-4">
       <Avatar className="h-10 w-10 flex-shrink-0">
-        <AvatarFallback className="bg-[#F4F2EE] text-[#A0A098] dark:bg-muted dark:text-muted-foreground text-sm font-bold">
+        <AvatarFallback className="bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground text-sm font-bold">
           {emailInitials}
         </AvatarFallback>
       </Avatar>

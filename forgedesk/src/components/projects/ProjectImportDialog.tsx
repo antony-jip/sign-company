@@ -260,12 +260,12 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col bg-[#FEFDFB]">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col bg-background">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold" style={{ color: '#1A535C' }}>
             Projecten importeren
           </DialogTitle>
-          <DialogDescription className="text-[13px] text-[#9B9B95]">
+          <DialogDescription className="text-[13px] text-muted-foreground">
             Importeer lopende projecten vanuit James PRO
           </DialogDescription>
         </DialogHeader>
@@ -335,22 +335,22 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
 
             <div className="overflow-auto flex-1 rounded-xl border border-[#E8E7E3]">
               <table className="w-full text-[13px]">
-                <thead className="bg-[#F8F7F5] sticky top-0">
+                <thead className="bg-background sticky top-0">
                   <tr>
                     <th className="w-10 px-3 py-2.5" />
-                    <th className="text-left px-3 py-2.5 font-semibold text-[#6B6B66]">#</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-[#6B6B66]">Projectnaam</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-[#6B6B66]">Klant</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-[#6B6B66]">Datum</th>
-                    <th className="text-right px-3 py-2.5 font-semibold text-[#6B6B66]">Budget</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-[#6B6B66]">Status</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-foreground/70">#</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-foreground/70">Projectnaam</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-foreground/70">Klant</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-foreground/70">Datum</th>
+                    <th className="text-right px-3 py-2.5 font-semibold text-foreground/70">Budget</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-foreground/70">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {projecten.map((p, i) => (
                     <tr
                       key={i}
-                      className={`border-t border-[#F0EFEB] transition-colors ${p.selected ? 'bg-white' : 'bg-[#FAFAF8] opacity-50'}`}
+                      className={`border-t border-[#F0EFEB] transition-colors ${p.selected ? 'bg-white' : 'bg-background opacity-50'}`}
                     >
                       <td className="px-3 py-2">
                         <Checkbox
@@ -358,11 +358,11 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
                           onCheckedChange={() => toggleProject(i)}
                         />
                       </td>
-                      <td className="px-3 py-2 font-mono text-[#9B9B95]">{p.jamesId || '—'}</td>
-                      <td className="px-3 py-2 font-medium text-[#1A1A1A]">{p.naam}</td>
+                      <td className="px-3 py-2 font-mono text-muted-foreground">{p.jamesId || '—'}</td>
+                      <td className="px-3 py-2 font-medium text-foreground">{p.naam}</td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-[#6B6B66]">{p.bedrijfsnaam || '—'}</span>
+                          <span className="text-foreground/70">{p.bedrijfsnaam || '—'}</span>
                           {p.klantMatch ? (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-green-200 text-green-700 bg-green-50">
                               Bestaand
@@ -374,8 +374,8 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
                           ) : null}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-[#9B9B95]">{p.datumAangemaakt || '—'}</td>
-                      <td className="px-3 py-2 text-right font-mono text-[#6B6B66]">
+                      <td className="px-3 py-2 text-muted-foreground">{p.datumAangemaakt || '—'}</td>
+                      <td className="px-3 py-2 text-right font-mono text-foreground/70">
                         {p.budget > 0 ? `€ ${p.budget.toLocaleString('nl-NL', { minimumFractionDigits: 0 })}` : '—'}
                       </td>
                       <td className="px-3 py-2">
@@ -439,12 +439,12 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
             <div className="flex items-center justify-center gap-6 mb-4">
               <div>
                 <span className="text-[24px] font-bold font-mono" style={{ color: '#1A535C' }}>{resultaat.projecten}</span>
-                <p className="text-[12px] text-[#9B9B95]">projecten</p>
+                <p className="text-[12px] text-muted-foreground">projecten</p>
               </div>
               {resultaat.nieuweKlanten > 0 && (
                 <div>
                   <span className="text-[24px] font-bold font-mono" style={{ color: '#3A6B8C' }}>{resultaat.nieuweKlanten}</span>
-                  <p className="text-[12px] text-[#9B9B95]">nieuwe klanten</p>
+                  <p className="text-[12px] text-muted-foreground">nieuwe klanten</p>
                 </div>
               )}
             </div>
