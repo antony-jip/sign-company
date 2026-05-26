@@ -97,7 +97,7 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
         <div className="mx-auto h-1 w-10 rounded-full bg-[#D4D2CE] mb-5" />
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[18px] font-bold text-foreground">
-            Nieuwe taak
+            Nieuwe taak<span className="text-[#F15025]">.</span>
           </h2>
           <button
             type="button"

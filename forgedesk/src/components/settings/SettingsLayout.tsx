@@ -204,7 +204,7 @@ export function SettingsLayout() {
     <div className="space-y-6">
       <div className="flex items-baseline gap-4 min-w-0">
         <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-          Instellingen
+          Instellingen<span className="text-[#F15025]">.</span>
         </h1>
         <span
           className="text-[14px] text-foreground/70 hidden sm:inline truncate"
@@ -416,7 +416,7 @@ function DocumentenTab() {
         factuur_outro_tekst: factuurOutroTekst,
       })
       await refreshSettings()
-      toast.success(<>Opgeslagen</>)
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan documentinstellingen:', err)
       toast.error('Kon documentinstellingen niet opslaan')

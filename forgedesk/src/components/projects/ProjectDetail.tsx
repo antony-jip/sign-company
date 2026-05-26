@@ -1082,7 +1082,7 @@ export function ProjectDetail() {
   const copyApprovalLink = (token: string) => {
     const link = `${window.location.origin}/goedkeuring/${token}`
     navigator.clipboard.writeText(link)
-    toast.success(<>Link gekopieerd naar klembord</>)
+    toast.success(<>Link gekopieerd naar klembord<span style={{ color: '#F15025' }}>.</span></>)
   }
 
   const recenteActiviteiten = useMemo(
@@ -1284,7 +1284,7 @@ export function ProjectDetail() {
               title="Klik om te wijzigen"
               className="text-[32px] font-extrabold text-foreground truncate tracking-[-0.5px] leading-none cursor-text"
             >
-              {project.naam}
+              {project.naam}<span className="text-[#F15025]">.</span>
             </h1>
           )}
 
@@ -1469,7 +1469,7 @@ export function ProjectDetail() {
                 <div className="flex items-center gap-2 mb-3">
                   <Send className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
                   <h3 className="font-heading text-[15px] font-bold text-foreground">
-                    Verzonden
+                    Verzonden<span className="text-[#F15025]">.</span>
                   </h3>
                   <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">{verzonden.length}</span>
                 </div>
@@ -1704,7 +1704,7 @@ export function ProjectDetail() {
                           const confirmed = await confirm({ message: `Werkbon ${wb.werkbon_nummer} verwijderen?`, variant: 'destructive', confirmLabel: 'Verwijderen' })
                           if (confirmed) {
                             deleteWerkbon(wb.id)
-                              .then(() => { setProjectWerkbonnen(prev => prev.filter(w => w.id !== wb.id)); toast.success(<>Werkbon verwijderd</>) })
+                              .then(() => { setProjectWerkbonnen(prev => prev.filter(w => w.id !== wb.id)); toast.success(<>Werkbon verwijderd<span style={{ color: '#F15025' }}>.</span></>) })
                               .catch(() => toast.error('Kon werkbon niet verwijderen'))
                           }
                         }}
@@ -1719,7 +1719,7 @@ export function ProjectDetail() {
                     <div className="flex items-center justify-between mt-3">
                       <span className="text-xs font-mono text-muted-foreground">{new Date(wb.datum).toLocaleDateString('nl-NL')}</span>
                       <span className="text-xs" style={{ color: accentColor }}>
-                        {wbStatusLabel}
+                        {wbStatusLabel}<span className="text-[#F15025]">.</span>
                       </span>
                     </div>
                   </div>
@@ -1803,7 +1803,7 @@ export function ProjectDetail() {
                         <div className="text-right flex-shrink-0">
                           <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(offerte.totaal)}</p>
                           <span className="text-xs" style={{ color: accentColor }}>
-                            {offerteStatusLabel}
+                            {offerteStatusLabel}<span className="text-[#F15025]">.</span>
                           </span>
                         </div>
                       </div>
@@ -1887,7 +1887,7 @@ export function ProjectDetail() {
                           <CheckCircle2 className="h-3 w-3 text-[#3A7D52]" />
                           <span className="font-mono">{linkedFactuur.nummer}</span>
                           <span className="text-[#EBEBEB]">·</span>
-                          <span>{linkedFactuur.status}</span>
+                          <span>{linkedFactuur.status}<span className="text-[#F15025]">.</span></span>
                           <span className="text-[#EBEBEB]">·</span>
                           <span className="font-mono">{formatCurrency(linkedFactuur.totaal)}</span>
                           <button
@@ -1928,7 +1928,7 @@ export function ProjectDetail() {
                       <div className="text-right">
                         <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(factuur.totaal)}</p>
                         <span className="text-xs" style={{ color: accentColor }}>
-                          {factuurStatusLabel}
+                          {factuurStatusLabel}<span className="text-[#F15025]">.</span>
                         </span>
                       </div>
                     </div>
@@ -1961,7 +1961,7 @@ export function ProjectDetail() {
                       <div className="text-right">
                         <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(uitgave.bedrag_incl_btw)}</p>
                         <span className="text-xs" style={{ color: accentColor }}>
-                          {uitgaveStatusLabel}
+                          {uitgaveStatusLabel}<span className="text-[#F15025]">.</span>
                         </span>
                       </div>
                     </div>

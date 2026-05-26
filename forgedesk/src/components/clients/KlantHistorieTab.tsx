@@ -159,7 +159,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold tracking-[-0.02em] flex items-center gap-2">
             <Folder className="h-4 w-4" strokeWidth={1.75} style={{ color: '#3A6B8C' }} />
-            Activiteiten {' '}
+            Activiteiten<span className="text-[#F15025]">.</span>{' '}
             <span className="text-muted-foreground font-mono text-[12px]">{filteredItems.length}</span>
           </CardTitle>
         </CardHeader>

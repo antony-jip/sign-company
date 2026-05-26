@@ -343,7 +343,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
                         )}
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>Mijn stijl</span>
+                        <span>Mijn stijl<span className="text-[#F15025]">.</span></span>
                       </button>
                     </TooltipTrigger>
                     {!heeftSchrijfstijl && (

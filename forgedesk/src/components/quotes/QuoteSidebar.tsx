@@ -357,7 +357,7 @@ export function QuoteSidebar({
                               <div className="flex items-center gap-2 mb-2">
                                 <CheckCircle2 className="h-4 w-4 text-white" />
                                 <p className="text-[10px] uppercase tracking-widest text-white/80 font-semibold">
-                                  Gefactureerd
+                                  Gefactureerd<span className="text-[#F15025]">.</span>
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
@@ -463,7 +463,7 @@ export function QuoteSidebar({
                             style={{ background: 'radial-gradient(circle, rgba(241,80,37,0.18) 0%, transparent 70%)' }}
                           />
                           <p className="relative text-[10px] uppercase tracking-widest text-white/75 font-semibold">
-                            Totaal incl BTW
+                            Totaal incl BTW<span className="text-[#F15025]">.</span>
                           </p>
                           {isEditingTotaal ? (
                             <div className="relative mt-1">
@@ -545,7 +545,7 @@ export function QuoteSidebar({
                           {/* Inkoop / Verkoop / Winst */}
                           <div className="space-y-2.5">
                             <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
-                              Inkoop &amp; verkoop
+                              Inkoop &amp; verkoop<span className="text-[#F15025]">.</span>
                             </h4>
                             <div className="space-y-1.5 text-[13px]">
                               <div className="flex items-center justify-between">
@@ -575,7 +575,7 @@ export function QuoteSidebar({
                           {/* Marge */}
                           <div className="space-y-2">
                             <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
-                              Marge
+                              Marge<span className="text-[#F15025]">.</span>
                             </h4>
                             <div className="doen-slate-surface rounded-xl p-3 relative overflow-hidden">
                               <div className="flex items-center justify-between mb-2">
@@ -603,7 +603,7 @@ export function QuoteSidebar({
                               <div className="h-px bg-[rgba(26,83,92,0.08)]" />
                               <div className="space-y-2">
                                 <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
-                                  Per item
+                                  Per item<span className="text-[#F15025]">.</span>
                                 </h4>
                                 <div className="space-y-1">
                                   {itemMarges.map((m, idx) => {
@@ -626,7 +626,7 @@ export function QuoteSidebar({
                               <div className="h-px bg-[rgba(26,83,92,0.08)]" />
                               <div className="space-y-2">
                                 <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
-                                  {materiaalKosten > 0 ? 'Uren & materiaal' : 'Uren'}
+                                  {materiaalKosten > 0 ? 'Uren & materiaal' : 'Uren'}<span className="text-[#F15025]">.</span>
                                 </h4>
                                 <div className="space-y-1.5 text-[13px]">
                                   {urenVelden.map((veld) => {
@@ -741,7 +741,7 @@ export function QuoteSidebar({
                           </div>
                           <div className="flex-1 text-left min-w-0">
                             <p className="text-[14px] font-bold text-foreground">
-                              Inkoop
+                              Inkoop<span className="text-[#F15025]">.</span>
                             </p>
                             <p
                               className="text-[11.5px] text-muted-foreground"

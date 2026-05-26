@@ -297,7 +297,7 @@ export function BetaalPagina() {
           <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
             <div>
-              <p className="font-medium text-emerald-800">Deze factuur is betaald</p>
+              <p className="font-medium text-emerald-800">Deze factuur is betaald<span style={{ color: '#F15025' }}>.</span></p>
               {factuur.betaaldatum && (
                 <p className="text-sm text-emerald-600">Betaald op <span className="font-mono">{formatDate(factuur.betaaldatum)}</span></p>
               )}
@@ -309,7 +309,7 @@ export function BetaalPagina() {
           <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
             <div>
-              <p className="font-medium text-red-800">Deze factuur is vervallen</p>
+              <p className="font-medium text-red-800">Deze factuur is vervallen<span style={{ color: '#F15025' }}>.</span></p>
               <p className="text-sm text-red-600">Vervaldatum was <span className="font-mono">{formatDate(factuur.vervaldatum)}</span></p>
             </div>
           </div>
@@ -330,7 +330,7 @@ export function BetaalPagina() {
                     : 'bg-blue-100 text-blue-700'
                 }
               >
-                {isBetaald ? 'Betaald' : isVervallen ? 'Vervallen' : 'Openstaand'}
+                {isBetaald ? 'Betaald' : isVervallen ? 'Vervallen' : 'Openstaand'}<span style={{ color: '#F15025' }}>.</span>
               </Badge>
             </div>
 

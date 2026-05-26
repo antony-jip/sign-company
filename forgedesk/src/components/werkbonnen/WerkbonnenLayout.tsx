@@ -148,7 +148,7 @@ export function WerkbonnenLayout() {
     try {
       await deleteWerkbon(deleteTarget.id)
       setWerkbonnen((prev) => prev.filter((wb) => wb.id !== deleteTarget.id))
-      toast.success(<>Werkbon verwijderd</>)
+      toast.success(<>Werkbon verwijderd<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Delete werkbon failed:', err)
       toast.error('Fout bij verwijderen werkbon')
@@ -220,7 +220,7 @@ export function WerkbonnenLayout() {
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
                   <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-                    Werkbonnen
+                    Werkbonnen<span className="text-[#F15025]">.</span>
                   </h1>
                   <Skeleton className="h-4 w-12" />
                 </div>
@@ -288,7 +288,7 @@ export function WerkbonnenLayout() {
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
             <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-              Werkbonnen
+              Werkbonnen<span className="text-[#F15025]">.</span>
             </h1>
             <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {gefilterd.length === werkbonnen.length ? (
@@ -335,7 +335,7 @@ export function WerkbonnenLayout() {
                   <span className="inline-flex items-center gap-2">
                     <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.pulse && 'doen-pulse')} strokeWidth={1.75} />
                     <span className="font-heading text-[14px] font-bold text-foreground">
-                      {tile.label}
+                      {tile.label}<span className="text-[#F15025]">.</span>
                     </span>
                   </span>
                 </div>
@@ -558,7 +558,7 @@ export function WerkbonnenLayout() {
                           style={{ backgroundColor: cfg.bg, color: cfg.text }}
                         >
                           {wb.status === 'definitief' && <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />}
-                          {cfg.label}
+                          {cfg.label}<span className="text-[#F15025]">.</span>
                         </span>
                       </td>
                       <td className="py-3.5 pr-4 text-center">

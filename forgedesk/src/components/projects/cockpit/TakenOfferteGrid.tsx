@@ -69,7 +69,7 @@ export function TakenOfferteGrid({
           <div className="flex items-center gap-2">
             <ListChecks className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
             <h3 className="font-heading text-[15px] font-bold text-foreground">
-              Taken
+              Taken<span className="text-[#F15025]">.</span>
             </h3>
             {taken.length > 0 && (
               <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
@@ -119,7 +119,7 @@ export function TakenOfferteGrid({
           <div className="flex items-center gap-2">
             <Receipt className="h-4 w-4" strokeWidth={1.75} style={{ color: '#F15025' }} />
             <h3 className="font-heading text-[15px] font-bold text-foreground">
-              Offertes
+              Offertes<span className="text-[#F15025]">.</span>
             </h3>
             {offertes.length > 0 && (
               <span className="font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-[#F15025] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">

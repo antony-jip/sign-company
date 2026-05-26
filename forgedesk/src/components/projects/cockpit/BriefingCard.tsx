@@ -106,7 +106,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           <h3 className="font-heading text-[15px] font-bold text-foreground">
-            Briefing
+            Briefing<span className="text-[#F15025]">.</span>
           </h3>
           <span
             className="text-[12px] text-muted-foreground hidden sm:inline"

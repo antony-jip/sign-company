@@ -61,7 +61,7 @@ export function ProfielTab() {
         telefoon,
       })
       await refreshProfile()
-      toast.success(<>Opgeslagen</>)
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err: any) {
       logger.error('Fout bij opslaan profiel:', err)
       const msg = err?.message || err?.details || 'Onbekende fout'
@@ -123,7 +123,7 @@ export function ProfielTab() {
               {greeting}<span className="text-[#F15025]">·</span>
             </p>
             <h2 className="text-[24px] font-extrabold tracking-[-0.3px] text-foreground mt-0.5 truncate">
-              {volledigeNaam || 'Jouw naam'}
+              {volledigeNaam || 'Jouw naam'}<span className="text-[#F15025]">.</span>
             </h2>
             <p className="text-[13px] text-foreground/70 truncate">
               {functie || 'Voeg je functie toe'} <span className="text-muted-foreground/70">·</span> {email}
@@ -230,7 +230,7 @@ export function ProfielTab() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-bold text-foreground truncate">
-                {volledigeNaam || 'Jouw naam'}
+                {volledigeNaam || 'Jouw naam'}<span className="text-[#F15025]">.</span>
               </p>
               {functie && (
                 <p className="text-[12px] text-foreground/70 truncate">{functie}</p>

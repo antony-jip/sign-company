@@ -1602,7 +1602,7 @@ export function EmailLayout() {
         </button>
         <div className="flex items-center gap-2 text-[12px] md:text-[11px] text-muted-foreground md:text-muted-foreground/80">
           <Mail className="h-3 w-3" />
-          <span>doen mail</span>
+          <span>doen<span className="text-[#F15025]">.</span> mail</span>
         </div>
       </div>
     </>

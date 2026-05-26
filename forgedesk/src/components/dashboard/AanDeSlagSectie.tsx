@@ -51,7 +51,7 @@ export function AanDeSlagSectie() {
         className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-white shadow-[0_2px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.05)] transition-shadow text-left"
       >
         <span className="text-[14px] text-foreground">
-          Aan de slag{' '}
+          Aan de slag<span className="text-[#F15025]">.</span>{' '}
           <span className="text-foreground/70">{status.klaarCount} van 6 klaar.</span>
         </span>
         <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#1A535C]">
@@ -80,7 +80,7 @@ export function AanDeSlagSectie() {
           className="font-heading text-white"
           style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.15 }}
         >
-          Werk vanuit projecten
+          Werk vanuit projecten<span className="text-[#F15025]">.</span>
         </h2>
         <p className="mt-3 text-[14px] text-white/60 leading-[1.6] max-w-[640px]">
           In doen. hangt alles aan een project · offertes, taken, planning, facturen, werkbonnen.
@@ -131,7 +131,7 @@ export function AanDeSlagSectie() {
                   )}
                   {klaar && (
                     <span className="text-[10px] uppercase tracking-wider text-[#3A7D52] font-semibold">
-                      Klaar
+                      Klaar<span className="text-[#F15025]">.</span>
                     </span>
                   )}
                 </div>

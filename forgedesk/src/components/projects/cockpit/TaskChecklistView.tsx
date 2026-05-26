@@ -101,7 +101,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
 
               {!isDone && (
                 <span className="text-[10px] font-medium flex-shrink-0" style={{ color: st.color }}>
-                  {st.label}
+                  {st.label}<span className="text-[#F15025]">.</span>
                 </span>
               )}
 

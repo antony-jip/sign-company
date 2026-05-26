@@ -358,7 +358,7 @@ export function MontagePlanningLayoutMobile() {
     <div className="h-full flex flex-col bg-background -m-3 sm:-m-4 md:-m-6">
       <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
         <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
-          Planning
+          Planning<span className="text-[#F15025]">.</span>
         </h1>
         <p className="mt-1 text-[14px] text-foreground/70 capitalize">
           {formatFullWeekdayDate(selectedDate)}
@@ -438,7 +438,7 @@ export function MontagePlanningLayoutMobile() {
               <CalendarCheck className="h-9 w-9 text-muted-foreground/80" strokeWidth={1.5} />
             </div>
             <p className="text-[15px] font-medium text-foreground/70">
-              Geen montages voor {isToday ? 'vandaag' : 'deze dag'}
+              Geen montages voor {isToday ? 'vandaag' : 'deze dag'}<span className="text-[#F15025]">.</span>
             </p>
             {scope === 'mijn' && (
               <p className="mt-1.5 text-[13px] text-muted-foreground max-w-[260px] leading-relaxed">

@@ -167,14 +167,14 @@ export function ForgieTab() {
 
   const handleSaveContext = useCallback(async () => {
     setSaving(true)
-    try { await updateSettings({ forgie_bedrijfscontext: bedrijfscontext }); toast.success(<>Opgeslagen</>) }
+    try { await updateSettings({ forgie_bedrijfscontext: bedrijfscontext }); toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>) }
     catch (err) { logger.error('Save bedrijfscontext:', err); toast.error('Opslaan mislukt') }
     finally { setSaving(false) }
   }, [bedrijfscontext, updateSettings, settings])
 
   const handleSaveTone = useCallback(async () => {
     setSavingTone(true)
-    try { await updateSettings({ ai_tone_of_voice: toneOfVoice }); toast.success(<>Opgeslagen</>) }
+    try { await updateSettings({ ai_tone_of_voice: toneOfVoice }); toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>) }
     catch (err) { logger.error('Save tone of voice:', err); toast.error('Opslaan mislukt') }
     finally { setSavingTone(false) }
   }, [toneOfVoice, updateSettings])
@@ -217,7 +217,7 @@ export function ForgieTab() {
   const handleVisSave = useCallback(async () => {
     if (!user?.id) return
     setVisSaving(true)
-    try { setVisInstellingen(await saveVisualizerInstellingen(user.id, visInstellingen)); toast.success(<>Opgeslagen</>) }
+    try { setVisInstellingen(await saveVisualizerInstellingen(user.id, visInstellingen)); toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>) }
     catch (err) { logger.error('Save visualizer instellingen:', err); toast.error('Opslaan mislukt') }
     finally { setVisSaving(false) }
   }, [user?.id, visInstellingen])

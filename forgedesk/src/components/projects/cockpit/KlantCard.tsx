@@ -146,7 +146,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
       {/* Header */}
       <div className="flex items-baseline justify-between mb-4">
         <h3 className="font-heading text-[15px] font-bold text-foreground">
-          Klant
+          Klant<span className="text-[#F15025]">.</span>
         </h3>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -181,7 +181,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
           </Link>
           {klant.debiteurennummer && (
             <p className="font-mono text-[11px] text-muted-foreground mt-1">
-              Deb. {klant.debiteurennummer}
+              Deb.<span className="text-[#F15025]">.</span> {klant.debiteurennummer}
             </p>
           )}
         </div>

@@ -363,7 +363,7 @@ export function TopNav() {
                   className={cn('w-[16px] h-[16px] transition-all duration-200', isActive ? '' : 'opacity-55')}
                   style={isActive ? { color: item.color, filter: `drop-shadow(0 1px 3px ${item.color}40)` } : undefined}
                 />
-                <span>{item.label}</span>
+                <span>{item.label}<span className="text-[#F15025]">.</span></span>
               </span>
             </NavLink>
           )
@@ -395,7 +395,7 @@ export function TopNav() {
                   >
                     <Icon className="w-[18px] h-[18px]" style={isActive ? { color: item.color } : { opacity: 0.4 }} />
                   </div>
-                  <span>{item.label}</span>
+                  <span>{item.label}<span className="text-[#F15025]">.</span></span>
                 </NavLink>
               )
             })}
@@ -412,7 +412,7 @@ export function TopNav() {
               <div className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-muted/30">
                 <Settings className="w-[18px] h-[18px]" style={{ opacity: 0.4 }} />
               </div>
-              <span>Instellingen</span>
+              <span>Instellingen<span className="text-[#F15025]">.</span></span>
             </NavLink>
           </nav>
 

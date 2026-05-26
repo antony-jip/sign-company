@@ -452,7 +452,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         }
 
         if (emailNotify) sendEmailNotification(tekeningTitel.trim(), tekeningTitel.trim())
-        toast.success(<>Tekening gedeeld</>)
+        toast.success(<>Tekening gedeeld<span style={{ color: '#F15025' }}>.</span></>)
       }
 
       // Reset
@@ -678,7 +678,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                         )}
                       </div>
                       <span className="text-sm shrink-0 flex items-center gap-0.5" style={{ color: st.color }}>
-                        {st.label}
+                        {st.label}<span style={{ color: '#F15025' }}>.</span>
                       </span>
                     </div>
 

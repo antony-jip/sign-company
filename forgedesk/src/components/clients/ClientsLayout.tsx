@@ -337,7 +337,7 @@ export function ClientsLayout() {
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
             <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-              Klanten
+              Klanten<span className="text-[#F15025]">.</span>
             </h1>
             <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {filteredKlanten.length === klanten.length ? (
@@ -384,7 +384,7 @@ export function ClientsLayout() {
                   <span className="inline-flex items-center gap-2">
                     <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'actief' && 'doen-pulse')} strokeWidth={1.75} />
                     <span className="font-heading text-[14px] font-bold text-foreground">
-                      {tile.label}
+                      {tile.label}<span className="text-[#F15025]">.</span>
                     </span>
                   </span>
                 </div>

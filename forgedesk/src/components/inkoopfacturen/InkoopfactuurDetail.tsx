@@ -225,7 +225,7 @@ export function InkoopfactuurDetail() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-bold tracking-[-0.3px]">
-          {factuur.leverancier_naam || 'Nieuwe factuur'}
+          {factuur.leverancier_naam || 'Nieuwe factuur'}<span className="text-[#F15025]">.</span>
         </h1>
         {isExtracting && (
           <span className="flex items-center gap-1.5 text-[12px] font-medium text-[#C44830]">

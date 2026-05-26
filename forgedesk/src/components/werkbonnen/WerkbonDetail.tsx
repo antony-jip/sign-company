@@ -587,7 +587,7 @@ export function WerkbonDetail() {
         { fotos }
       )
       doc.save(`werkbon-${werkbonNummer || 'nieuw'}.pdf`)
-      toast.success(<>PDF gedownload</>)
+      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       console.error('PDF generatie fout:', err)
       toast.error('Kon PDF niet genereren')
@@ -732,7 +732,7 @@ export function WerkbonDetail() {
             </h1>
             {!isNew && (
               <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold', STATUS_CONFIG[status]?.bg, STATUS_CONFIG[status]?.color)}>
-                {STATUS_CONFIG[status]?.label || status}
+                {STATUS_CONFIG[status]?.label || status}<span style={{ color: '#F15025' }}>.</span>
               </span>
             )}
           </div>

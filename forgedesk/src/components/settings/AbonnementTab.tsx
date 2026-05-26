@@ -152,7 +152,7 @@ export function AbonnementTab() {
             {/* Left: pricing */}
             <div>
               <h3 className="font-heading text-[22px] font-bold tracking-tight text-foreground">
-                Gewoon doen
+                Gewoon doen<span style={{ color: '#F15025' }}>.</span>
               </h3>
 
               <div className="flex items-baseline gap-1.5 mt-3">

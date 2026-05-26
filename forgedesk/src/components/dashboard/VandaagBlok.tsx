@@ -204,7 +204,7 @@ export function VandaagBlok() {
       <header className="flex items-baseline justify-between gap-4 mb-5">
         <div className="flex items-baseline gap-3 min-w-0">
           <h2 className="font-heading text-[14px] font-bold text-foreground">
-            Vandaag
+            Vandaag<span className="text-[#F15025]">.</span>
           </h2>
           <span
             className="text-[14px] text-muted-foreground truncate"

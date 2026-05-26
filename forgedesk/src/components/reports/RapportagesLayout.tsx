@@ -497,7 +497,7 @@ export function RapportagesLayout() {
         documentStyle,
       );
       doc.save(`omzet-rapport-${new Date().getFullYear()}.pdf`);
-      toast.success(<>PDF gedownload</>);
+      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>);
     } catch (err) {
       logger.error('Kon omzet PDF niet genereren:', err);
       toast.error('Kon PDF niet genereren');
@@ -532,7 +532,7 @@ export function RapportagesLayout() {
         documentStyle,
       );
       doc.save(`top-klanten-rapport.pdf`);
-      toast.success(<>PDF gedownload</>);
+      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>);
     } catch (err) {
       logger.error('Kon klanten PDF niet genereren:', err);
       toast.error('Kon PDF niet genereren');
@@ -568,7 +568,7 @@ export function RapportagesLayout() {
         documentStyle,
       );
       doc.save(`project-winstgevendheid-rapport.pdf`);
-      toast.success(<>PDF gedownload</>);
+      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>);
     } catch (err) {
       logger.error('Kon project PDF niet genereren:', err);
       toast.error('Kon PDF niet genereren');
@@ -605,7 +605,7 @@ export function RapportagesLayout() {
         documentStyle,
       );
       doc.save(`offerte-conversie-rapport.pdf`);
-      toast.success(<>PDF gedownload</>);
+      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>);
     } catch (err) {
       logger.error('Kon offerte PDF niet genereren:', err);
       toast.error('Kon PDF niet genereren');

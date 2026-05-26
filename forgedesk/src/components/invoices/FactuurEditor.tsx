@@ -1038,7 +1038,7 @@ export function FactuurEditor() {
           a.click()
           document.body.removeChild(a)
           URL.revokeObjectURL(url)
-          toast.success(<>PDF gedownload</>)
+          toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
           return
         }
       } catch (storageErr) {
@@ -1081,7 +1081,7 @@ export function FactuurEditor() {
     try {
       const doc = generateFactuurPDF(factuurData, pdfItems, selectedKlant, bedrijfsProfiel, documentStyle)
       doc.save(filename)
-      toast.success(<>PDF gedownload</>)
+      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij genereren PDF:', err)
       toast.error('Kon PDF niet genereren')
@@ -1885,11 +1885,11 @@ export function FactuurEditor() {
               return null
             })()}
             <span className="text-foreground">
-              {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span></>}
-              {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd · wachtend op betaling</>}
-              {currentStatus === 'concept' && <>Concept · nog niet verstuurd</>}
-              {currentStatus === 'gecrediteerd' && <>Gecrediteerd</>}
-              {isVervallen && <>{dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen</>}
+              {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span><span className="text-[#F15025]">.</span></>}
+              {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd · wachtend op betaling<span className="text-[#F15025]">.</span></>}
+              {currentStatus === 'concept' && <>Concept · nog niet verstuurd<span className="text-[#F15025]">.</span></>}
+              {currentStatus === 'gecrediteerd' && <>Gecrediteerd<span className="text-[#F15025]">.</span></>}
+              {isVervallen && <>{dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen<span className="text-[#F15025]">.</span></>}
             </span>
             {existingFactuur.betaal_link && currentStatus !== 'betaald' && (
               <span className="ml-auto text-xs text-muted-foreground truncate max-w-[420px]" title={existingFactuur.betaal_link}>

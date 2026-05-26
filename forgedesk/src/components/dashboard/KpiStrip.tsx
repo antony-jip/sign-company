@@ -148,7 +148,7 @@ function DoenVibeCard() {
           <Icon className="w-4 h-4" style={{ color: meta.color }} />
         </span>
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-          doen
+          doen<span className="text-[#F15025]">.</span>
         </span>
       </div>
 

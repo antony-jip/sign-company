@@ -324,7 +324,7 @@ export function EmailCompose({
     try {
       await deleteEmailTemplate(id)
       setDbTemplates(prev => prev.filter(t => t.id !== id))
-      toast.success(<>Template verwijderd</>)
+      toast.success(<>Template verwijderd<span style={{ color: '#F15025' }}>.</span></>)
     } catch {
       toast.error('Template verwijderen mislukt')
     }
@@ -497,7 +497,7 @@ export function EmailCompose({
         {/* Panel header — title + back affordance, matches list-header pattern */}
         <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-border/60 flex-shrink-0">
           <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
-            Nieuw bericht
+            Nieuw bericht<span className="text-[#F15025]">.</span>
           </h1>
           <button
             type="button"

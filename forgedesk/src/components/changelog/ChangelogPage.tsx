@@ -130,7 +130,7 @@ export function ChangelogPage() {
           </div>
           <div>
             <h1 className="font-heading text-[28px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
-              What's new
+              What's new<span style={{ color: '#F15025' }}>.</span>
             </h1>
             <p className="text-[14px]" style={{ color: '#6B6B66' }}>Alles wat we bouwen, in één overzicht</p>
           </div>
@@ -250,7 +250,7 @@ export function ChangelogPage() {
       {/* Footer */}
       <div className="text-center mt-10 pb-8">
         <p className="text-[14px] font-heading font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
-          Doen
+          Doen<span style={{ color: '#F15025' }}>.</span>
         </p>
         <p className="text-[12px] mt-1" style={{ color: '#9B9B95' }}>
           Gebouwd voor creatieve maakbedrijven

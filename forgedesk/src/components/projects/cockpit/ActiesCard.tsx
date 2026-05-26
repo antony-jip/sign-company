@@ -34,7 +34,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
       {/* Header */}
       <div className="flex items-baseline justify-between mb-4">
         <h3 className="font-heading text-[15px] font-bold text-foreground">
-          Acties
+          Acties<span className="text-[#F15025]">.</span>
         </h3>
         <span
           className="text-[12px] text-muted-foreground"

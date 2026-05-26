@@ -715,7 +715,7 @@ export function CalculatieModal({
           </div>
           <div className="px-5 py-4 bg-[#1A535C] dark:bg-[#1A535C]/80 text-white">
             <div className="text-xs text-white/70 mb-1">
-              Verkooptotaal
+              Verkooptotaal<span className="text-[#F15025]">.</span>
             </div>
             <div className="font-mono tabular-nums text-xl font-bold">
               {formatCurrency(totalen.totaalVerkoop)}

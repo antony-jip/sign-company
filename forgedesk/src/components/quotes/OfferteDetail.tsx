@@ -836,7 +836,7 @@ export function OfferteDetail() {
                     isExpired && 'text-amber-500',
                     isModRequested && 'text-blue-500'
                   )}>
-                    {STATUS_LABELS[offerte.status]}
+                    {STATUS_LABELS[offerte.status]}<span style={{ color: '#F15025' }}>.</span>
                   </span>
                 </div>
               </>

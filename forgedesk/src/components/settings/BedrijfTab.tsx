@@ -116,7 +116,7 @@ export function BedrijfTab() {
       await updateAppSettings(user.id, { primaire_kleur: emailKleur })
       await refreshProfile()
       await refreshSettings()
-      toast.success(<>Opgeslagen</>)
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err: any) {
       logger.error('Fout bij opslaan bedrijfsgegevens:', err)
       const msg = err?.message || err?.details || 'Onbekende fout'
@@ -151,7 +151,7 @@ export function BedrijfTab() {
         <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
           <div className="space-y-1">
             <h2 className="text-[20px] font-bold tracking-[-0.3px] text-foreground">
-              Bedrijfsgegevens
+              Bedrijfsgegevens<span className="text-[#F15025]">.</span>
             </h2>
             <p
               className="text-[14px] text-foreground/70"
@@ -249,7 +249,7 @@ export function BedrijfTab() {
         <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
           <div className="space-y-1">
             <h2 className="text-[20px] font-bold tracking-[-0.3px] text-foreground">
-              Contactgegevens
+              Contactgegevens<span className="text-[#F15025]">.</span>
             </h2>
             <p
               className="text-[14px] text-foreground/70"
@@ -280,7 +280,7 @@ export function BedrijfTab() {
         <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
           <div className="space-y-1">
             <h2 className="text-[20px] font-bold tracking-[-0.3px] text-foreground">
-              Juridisch &amp; financieel
+              Juridisch &amp; financieel<span className="text-[#F15025]">.</span>
             </h2>
             <p
               className="text-[14px] text-foreground/70"

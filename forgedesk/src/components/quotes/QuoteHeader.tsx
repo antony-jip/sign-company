@@ -161,7 +161,7 @@ export function QuoteHeader({
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-3 flex-wrap">
             <h1 className="text-[28px] md:text-[32px] font-extrabold text-foreground tracking-[-0.5px] leading-none truncate">
-              {isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}
+              {isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}<span className="text-[#F15025]">.</span>
             </h1>
 
             {/* Verstuurd-status pill */}
@@ -385,7 +385,7 @@ export function QuoteHeader({
             <div className="pointer-events-auto doen-slate-surface rounded-2xl shadow-[0_8px_32px_rgba(20,62,71,0.16)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(26,83,92,0.08)]">
                 <h3 className="font-heading text-[16px] font-bold text-foreground">
-                  Kopieer naar klant
+                  Kopieer naar klant<span className="text-[#F15025]">.</span>
                 </h3>
                 <button
                   onClick={() => setShowKopieerNaarKlant(false)}
