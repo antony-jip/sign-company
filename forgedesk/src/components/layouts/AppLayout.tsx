@@ -77,7 +77,7 @@ export function AppLayout() {
                   {!hideTopNav && <TopNav />}
                   <TabBar />
                 </div>
-                <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 pb-20 md:pb-6 page-content-enter">
+                <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-6 md:py-8 pb-20 md:pb-8 page-content-enter">
                   <Outlet />
                 </div>
               </div>
@@ -103,7 +103,7 @@ export function AppLayout() {
           <Header />
           <TabBar />
           <main className="flex-1 overflow-hidden flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 p-3 sm:p-4 md:p-6 pb-20 md:pb-6 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter">
+            <div className="flex-1 min-h-0 p-4 md:p-8 pb-20 md:pb-8 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter">
               <Outlet />
             </div>
           </main>
