@@ -61,18 +61,27 @@ export function AppLayout() {
           <TrialBanner />
           <InkoopAILimietBanner variant="globaal" />
           <main className="flex-1 overflow-hidden flex flex-col min-h-0" style={{ position: 'relative', zIndex: 0 }}>
-            <div className={cn('flex-shrink-0', stickyHeader && 'sticky top-0 z-30')}>
-              {!hideTopNav && <TopNav />}
-              <TabBar />
-            </div>
-            <div className={cn(
-              'flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden page-content-enter',
-              isEmailRoute
-                ? 'p-0' // edge-to-edge voor email-module — geen padding
-                : 'max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 pb-20 md:pb-6',
-            )}>
-              <Outlet />
-            </div>
+            {isEmailRoute ? (
+              <>
+                <div className="flex-shrink-0">
+                  {!hideTopNav && <TopNav />}
+                  <TabBar />
+                </div>
+                <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden page-content-enter p-0">
+                  <Outlet />
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden">
+                <div className={cn('bg-background', stickyHeader && 'sticky top-0 z-30')}>
+                  {!hideTopNav && <TopNav />}
+                  <TabBar />
+                </div>
+                <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 pb-20 md:pb-6 page-content-enter">
+                  <Outlet />
+                </div>
+              </div>
+            )}
           </main>
           <MobileBottomNav />
         </div>

@@ -227,6 +227,22 @@ export function TopNav() {
             <NotificatieCenter />
           </div>
 
+          {/* Sticky-header pin — desktop */}
+          <button
+            type="button"
+            onClick={toggleStickyHeader}
+            className={cn(
+              'tap-press hidden md:inline-flex items-center justify-center w-8 h-8 rounded-[10px] transition-colors duration-150 active:scale-[0.94]',
+              stickyHeader
+                ? 'text-[#F15025] bg-[#F15025]/10 hover:bg-[#F15025]/15 dark:bg-[#F15025]/15 dark:hover:bg-[#F15025]/20'
+                : 'text-foreground/70 hover:text-foreground hover:bg-black/[0.04] dark:text-[hsl(var(--muted-foreground))] dark:hover:text-[hsl(var(--foreground))] dark:hover:bg-[hsl(var(--muted))]',
+            )}
+            title={stickyHeader ? 'Header losmaken' : 'Header vastpinnen'}
+            aria-label={stickyHeader ? 'Header losmaken' : 'Header vastpinnen'}
+            aria-pressed={stickyHeader}
+          >
+            {stickyHeader ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+          </button>
 
           {/* Dark-mode toggle — desktop */}
           <DarkModeToggle className="hidden md:inline-flex" />
