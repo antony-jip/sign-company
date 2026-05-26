@@ -379,7 +379,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       onOpenChange(false)
     } catch (err) {
       logger.error('Email verzenden mislukt:', err)
-      toast.error('Email kon niet verzonden worden — controleer SMTP-instellingen')
+      toast.error('Email kon niet verzonden worden. Controleer SMTP-instellingen.')
     } finally {
       setIsSending(false)
     }

@@ -274,7 +274,7 @@ export function QuoteHeader({
                         <p className="text-[13.5px] font-semibold text-foreground">Via portaal</p>
                         <p className="text-[11.5px] text-muted-foreground leading-snug mt-0.5">Klant bekijkt online + email-notificatie</p>
                         {!selectedProjectId && (
-                          <p className="text-[10.5px] text-[#C0451A] mt-1">⚠ Koppel eerst een project</p>
+                          <p className="text-[10.5px] text-[#C0451A] mt-1">Koppel eerst een project</p>
                         )}
                         {email.isSendingPortaal && (
                           <p className="text-[10.5px] text-[#1A535C] mt-1 flex items-center gap-1">

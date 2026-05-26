@@ -729,7 +729,7 @@ export function EmailTab() {
                             <div className="flex-1 min-w-0 space-y-3">
                               <div>
                                 <p className="font-medium text-sm">{mw.naam}</p>
-                                <p className="text-xs text-muted-foreground">{mw.functie || mw.rol} — {mw.email}</p>
+                                <p className="text-xs text-muted-foreground">{mw.functie || mw.rol} · {mw.email}</p>
                               </div>
 
                               <SignatureImageUpload
@@ -814,7 +814,7 @@ export function EmailTab() {
                     <div className="mt-1.5 text-sm font-mono text-foreground/70 dark:text-muted-foreground break-all">
                       {profile?.bedrijfsnaam
                         ? <>&quot;{profile.bedrijfsnaam}&quot; &lt;{emailSettings.gmail_address || 'je@email'}&gt;</>
-                        : <span className="italic">Nog niet ingesteld — ontvangers zien alleen je e-mailadres.</span>
+                        : <span className="italic">Nog niet ingesteld. Ontvangers zien alleen je e-mailadres.</span>
                       }
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">

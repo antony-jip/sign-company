@@ -89,7 +89,7 @@ export function OfferteOpvolgingSubTab() {
       toast.success(`Testmail verstuurd naar ${user.email}`)
     } catch (err) {
       logger.error('sendTestEmail:', err)
-      toast.error('Kon testmail niet versturen — controleer je email instellingen')
+      toast.error('Kon testmail niet versturen. Controleer je e-mailinstellingen.')
     } finally {
       setSendingTestId(null)
     }

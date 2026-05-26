@@ -4,9 +4,9 @@ import type { Project } from '@/types'
 import { formatAmount, cn } from '@/lib/utils'
 
 const FASES = [
-  { key: 'gepland',        label: 'Gepland',        caption: 'wacht op start',   Icon: Calendar },
+  { key: 'gepland',        label: 'Gepland',        caption: 'klaar om te starten', Icon: Calendar },
   { key: 'actief',         label: 'Actief',         caption: 'aan het werk',     Icon: Hammer   },
-  { key: 'in-review',      label: 'Review',         caption: 'wacht goedkeuring', Icon: Eye     },
+  { key: 'in-review',      label: 'Review',         caption: 'klaar voor goedkeuring', Icon: Eye },
   { key: 'te-factureren',  label: 'Te factureren',  caption: 'klaar om te incasseren', Icon: Receipt },
   { key: 'afgerond',       label: 'Gedaan',         caption: 'voltooid',         Icon: Smile    },
 ] as const

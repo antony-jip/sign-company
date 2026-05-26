@@ -106,7 +106,7 @@ export function PortaalTab() {
       toast.success(`Testmail verstuurd naar ${user.email}`)
     } catch (err) {
       logger.error('Kon testmail niet versturen:', err)
-      toast.error('Kon testmail niet versturen — controleer je email instellingen')
+      toast.error('Kon testmail niet versturen. Controleer je e-mailinstellingen.')
     } finally {
       setIsSendingTest(null)
     }

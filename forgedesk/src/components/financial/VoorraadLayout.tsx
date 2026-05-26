@@ -367,7 +367,7 @@ export function VoorraadLayout() {
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
             <div>
               <p className="font-medium text-red-800 dark:text-red-300">Voorraad onder minimum!</p>
-              <p className="text-sm text-red-600 dark:text-red-400">Huidig: {selectedArtikel.huidige_voorraad} {selectedArtikel.eenheid} — Minimum: {selectedArtikel.minimum_voorraad} {selectedArtikel.eenheid}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">Huidig: {selectedArtikel.huidige_voorraad} {selectedArtikel.eenheid} · Minimum: {selectedArtikel.minimum_voorraad} {selectedArtikel.eenheid}</p>
             </div>
           </div>
         )}
@@ -470,7 +470,7 @@ export function VoorraadLayout() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground font-display">Voorraadbeheer</h1>
-            <p className="text-sm text-muted-foreground"><span className="font-mono">{artikelen.length}</span> artikelen — Totale waarde: <span className="font-mono">{formatCurrency(totaleWaarde)}</span></p>
+            <p className="text-sm text-muted-foreground"><span className="font-mono">{artikelen.length}</span> artikelen · Totale waarde: <span className="font-mono">{formatCurrency(totaleWaarde)}</span></p>
           </div>
         </div>
         <Button
@@ -662,7 +662,7 @@ export function VoorraadLayout() {
           <DialogHeader>
             <DialogTitle>Nieuwe mutatie</DialogTitle>
             <DialogDescription>
-              {selectedArtikel ? `${selectedArtikel.naam} — Huidig: ${selectedArtikel.huidige_voorraad} ${selectedArtikel.eenheid}` : ''}
+              {selectedArtikel ? ` · Huidig: ${selectedArtikel.huidige_voorraad} ${selectedArtikel.eenheid}` : ''}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

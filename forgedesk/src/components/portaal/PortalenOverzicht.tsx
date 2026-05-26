@@ -71,7 +71,7 @@ function getPortaalStatus(items: PortaalItem[]): { label: string; color: string;
   if (hasRevisie) return { label: 'Revisie gevraagd', color: 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18]', icon: RotateCcw }
   const allDone = items.every(i => ['goedgekeurd', 'betaald', 'vervangen'].includes(i.status))
   if (allDone) return { label: 'Afgerond', color: 'bg-[hsl(var(--status-green-bg))] text-[#2D6B48]', icon: CheckCircle2 }
-  return { label: 'Wacht op reactie', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300', icon: Clock }
+  return { label: 'Opvolgen', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300', icon: Clock }
 }
 
 function getItemSamenvatting(items: PortaalItem[]): string {
@@ -107,7 +107,7 @@ function matchesFilter(portaal: PortaalEnriched, filter: FilterType): boolean {
   const items = portaal.items || []
   if (filter === 'alle') return true
   const status = getPortaalStatus(items)
-  if (filter === 'wacht') return status.label === 'Wacht op reactie'
+  if (filter === 'wacht') return status.label === 'Opvolgen'
   if (filter === 'revisie') return status.label === 'Revisie gevraagd'
   if (filter === 'afgerond') return status.label === 'Afgerond'
   return true
@@ -340,7 +340,7 @@ export function PortalenOverzicht() {
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'alle', label: 'Alle' },
-    { key: 'wacht', label: 'Wacht op reactie' },
+    { key: 'wacht', label: 'Opvolgen' },
     { key: 'revisie', label: 'Revisie gevraagd' },
     { key: 'afgerond', label: 'Afgerond' },
   ]

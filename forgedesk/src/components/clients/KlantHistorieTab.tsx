@@ -52,7 +52,7 @@ function getStatusBadge(status?: string) {
     return <Badge className="bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80] text-2xs px-1.5 py-0 border-0">Akkoord</Badge>
   }
   if (lower === 'in afwachting') {
-    return <Badge className="bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A] text-2xs px-1.5 py-0 border-0">In afwachting</Badge>
+    return <Badge className="bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A] text-2xs px-1.5 py-0 border-0">Opvolgen</Badge>
   }
   if (lower === 'niet akkoord') {
     return <Badge className="bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70] text-2xs px-1.5 py-0 border-0">Niet akkoord</Badge>

@@ -1409,7 +1409,7 @@ export function FacturenLayout() {
       setFacturen((prev) => [saved, ...prev])
 
       setEindafrekeningDialogOpen(false)
-      toast.success(`Eindafrekening ${nummer} aangemaakt — ${formatCurrency(restBedrag)} resterend`)
+      toast.success(`Eindafrekening ${nummer} aangemaakt · ${formatCurrency(restBedrag)} resterend`)
     } catch (err) {
       logger.error('Fout bij aanmaken eindafrekening:', err)
       toast.error('Fout bij aanmaken eindafrekening')

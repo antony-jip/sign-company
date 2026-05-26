@@ -83,7 +83,6 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
                       className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold whitespace-nowrap"
                       style={{ color: cfg.color, backgroundColor: cfg.bgColor }}
                     >
-                      {(klant.klant_status === 'niet_helpen' || klant.klant_status === 'geblokkeerd') && '⚠ '}
                       {cfg.label}
                     </span>
                   )
