@@ -367,7 +367,7 @@ export function QuotesPipeline() {
     return map
   }, [filteredOffertes, STATUS_COLUMNS])
 
-  const eigenOffertes = useMemo(() => offertes, [offertes])
+  const eigenOffertes = offertes
 
   const salesSummary = useMemo(() => {
     const pipelineStatuses = ['concept', 'verzonden', 'bekeken']

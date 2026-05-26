@@ -169,7 +169,7 @@ export function InkoopfacturenLayout() {
     }
   }
 
-  const nieuwCount = useMemo(() => facturen.filter(f => f.status === 'nieuw').length, [facturen])
+  const nieuwCount = facturen.filter(f => f.status === 'nieuw').length
 
   const maandStats = useMemo(() => {
     const nu = new Date()

@@ -288,7 +288,7 @@ export function EmailLayout() {
   async function triggerImapSync(folder: string): Promise<{ total: number; synced: number }> {
     const result = await fetchEmailsFromIMAP(folder, fetchLimitRef.current, 0)
     if (result.errors) {
-      console.warn('[Email] Sync errors:', result.errors)
+      logger.warn('[Email] Sync errors:', result.errors)
     }
     return { total: result.total || 0, synced: result.synced || 0 }
   }
@@ -309,7 +309,7 @@ export function EmailLayout() {
           // Step 2: Background IMAP sync for fresh data
           triggerImapSync('INBOX')
             .then(async ({ total, synced }) => {
-              console.log(`[Email] Sync klaar: ${synced} gesynct, ${total} totaal`)
+              logger.log(`[Email] Sync klaar: ${synced} gesynct, ${total} totaal`)
               setImapTotal(total)
               setUseIMAP(true)
               // Re-read from Supabase after sync
@@ -317,7 +317,7 @@ export function EmailLayout() {
               if (fresh.length > 0) setEmails(fresh)
             })
             .catch((err) => {
-              console.warn('[Email] Achtergrond IMAP sync mislukt:', err?.message || err)
+              logger.warn('[Email] Achtergrond IMAP sync mislukt:', err?.message || err)
             })
           return
         }

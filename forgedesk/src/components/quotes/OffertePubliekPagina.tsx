@@ -424,7 +424,7 @@ export function OffertePubliekPagina() {
   }, [offerte, items, bedrijf, klant, docStyle])
 
   // ============ DERIVED STATE (must be before early returns to respect rules of hooks) ============
-  const vandaag = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const vandaag = new Date().toISOString().split('T')[0]
   const btwGroepen = useMemo(
     () => groepeerBtwMetSelectie(items, selectedItems, selectedVariants, hasOptionalItems),
     [items, selectedItems, selectedVariants, hasOptionalItems],

@@ -1065,7 +1065,7 @@ export function TasksLayout() {
           localStorage.setItem(NIET_VERGETEN_KEY, JSON.stringify(stored))
           // Force re-render van NietVergetenStrip
           window.dispatchEvent(new Event('storage'))
-        } catch (err) {}
+        } catch (err) { logger.warn('[taken] niet-vergeten persist', err) }
         toast.success(`"${nvTitel}" ingepland`)
       }
       return
@@ -2029,7 +2029,7 @@ function NietVergetenStrip() {
   // Sync met localStorage als een item via drag wordt verwijderd
   useEffect(() => {
     const handler = () => {
-      try { setItems(JSON.parse(localStorage.getItem(NIET_VERGETEN_KEY) || '[]')) } catch (err) {}
+      try { setItems(JSON.parse(localStorage.getItem(NIET_VERGETEN_KEY) || '[]')) } catch (err) { logger.warn('[taken] niet-vergeten parse', err) }
     }
     window.addEventListener('storage', handler)
     return () => window.removeEventListener('storage', handler)

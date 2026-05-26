@@ -111,7 +111,7 @@ export function EmailContextSidebar({
   // ── Contact info ──
   const contactEmail = mode === 'reading' ? (propSenderEmail || '') : (composeToAddress || '')
   const contactName = mode === 'reading' ? (propSenderName || '') : ''
-  const personName = useMemo(() => (contactName || '').replace(/\s*[|–—-]\s*.+$/, '').trim(), [contactName])
+  const personName = (contactName || '').replace(/\s*[|–—-]\s*.+$/, '').trim()
   const companyGuess = useMemo(() => contactEmail ? extractCompanyName(contactName, contactEmail) : '', [contactName, contactEmail])
 
   // ── Klant lookup ──

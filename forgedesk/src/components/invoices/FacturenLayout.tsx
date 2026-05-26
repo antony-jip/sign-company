@@ -426,7 +426,7 @@ export function FacturenLayout() {
 
   // ============ COMPUTED VALUES ============
 
-  const eigenFacturen = useMemo(() => facturen, [facturen])
+  const eigenFacturen = facturen
 
   const statistics = useMemo(() => {
     const openStatuses: FactuurStatus[] = ['verzonden', 'vervallen']

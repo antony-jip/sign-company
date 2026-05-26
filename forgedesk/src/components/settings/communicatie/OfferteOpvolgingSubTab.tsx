@@ -120,7 +120,7 @@ export function OfferteOpvolgingSubTab() {
         if (updated) setSelectedSchema(updated)
       }
     } catch (e) {
-      console.error(e)
+      logger.error('[opvolging] schemas laden mislukt', e)
       toast.error('Kon opvolgschema\'s niet laden')
     } finally {
       setLoading(false)

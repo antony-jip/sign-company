@@ -648,7 +648,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
   const toggleCollapsed = () => {
     const next = !collapsed
     setCollapsed(next)
-    try { localStorage.setItem(STORAGE_KEY, String(next)) } catch (err) {}
+    try { localStorage.setItem(STORAGE_KEY, String(next)) } catch (err) { logger.warn('[portaal] collapsed persist', err) }
   }
 
   const hasKlantReactie = (() => {

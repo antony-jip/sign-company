@@ -32,7 +32,7 @@ interface TasksMonthTabProps {
 
 export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, setActiveTab }: TasksMonthTabProps) {
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(selectedDate))
-  const today = useMemo(() => new Date(), [])
+  const today = new Date()
 
   const gridDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(visibleMonth), { weekStartsOn: 1 })
