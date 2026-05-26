@@ -1387,19 +1387,19 @@ export function EmailReader({
                 <span className="text-[12px] text-muted-foreground tabular-nums whitespace-nowrap flex-shrink-0">{formatShortDate(email.datum)}</span>
               </div>
             ) : (
-              <div className="px-4 md:px-8 py-5 border-b border-border">
+              <div className="px-4 md:px-8 pt-5 pb-4 border-b border-border">
                 {/* Subject row */}
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <h1 className="font-heading text-[22px] md:text-[20px] font-bold text-foreground leading-snug tracking-[-0.3px]">
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <h1 className="font-heading text-title-sm font-bold text-foreground leading-[1.2] tracking-[-0.015em]">
                     {email.onderwerp || '(geen onderwerp)'}
                   </h1>
-                  <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+                  <div className="flex items-center gap-1 flex-shrink-0 pt-1">
                     <span className="text-[11px] text-muted-foreground/80 font-mono tabular-nums whitespace-nowrap">{formatShortDate(email.datum)}</span>
                     <button
                       onClick={() => onTogglePin?.(email)}
                       title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
                       className={cn(
-                        'p-1 rounded-[10px] transition-colors duration-150',
+                        'p-1 rounded-button transition-colors duration-150',
                         email.pinned
                           ? 'text-[#1A535C] hover:bg-[#1A535C]/10'
                           : 'text-muted-foreground/80 hover:text-[#1A535C] hover:bg-muted',
@@ -1410,40 +1410,40 @@ export function EmailReader({
                   </div>
                 </div>
 
-                {/* Sender info — larger avatar with accent ring */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ring-1 ring-black/[0.03]" style={{ backgroundColor: avatarStyle.bg }}>
-                    <span className="text-[14px] font-bold leading-none" style={{ color: avatarStyle.text }}>{senderName[0]?.toUpperCase()}</span>
+                {/* Sender info — system-style avatar, tighter rhythm */}
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatarStyle.bg }}>
+                    <span className="text-[12px] font-semibold leading-none" style={{ color: avatarStyle.text }}>{senderName[0]?.toUpperCase()}</span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-col md:flex-row md:items-baseline md:gap-2 min-w-0">
-                      <span className="text-[14px] font-semibold text-foreground leading-snug truncate">{senderName}</span>
-                      <span className="text-[12px] text-muted-foreground truncate leading-snug">{senderEmail}</span>
+                    <div className="flex flex-col md:flex-row md:items-baseline md:gap-1.5 min-w-0">
+                      <span className="text-[13px] font-semibold text-foreground leading-tight truncate">{senderName}</span>
+                      <span className="text-[12px] text-muted-foreground truncate leading-tight">{senderEmail}</span>
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5 truncate">aan {email.aan}</div>
+                    <div className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">aan {email.aan}</div>
                   </div>
                 </div>
 
-                {/* Reply/Forward — primary on mobile is dominant, secondaries flank */}
-                <div className="flex items-stretch md:items-center gap-2 md:gap-1.5">
+                {/* Reply/Forward — flatter system-style row */}
+                <div className="flex items-stretch md:items-center gap-1.5">
                   <button onClick={() => { hapticLight(); handleReply('reply') }}
-                    className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-10 md:h-9 px-4 md:px-4 rounded-[10px] text-[14px] md:text-[13px] font-semibold text-white bg-[#1A535C] hover:bg-[#0F3C44] shadow-sm transition-colors duration-150"
+                    className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-9 md:h-8 px-3.5 rounded-button text-[13px] font-semibold text-white bg-[#1A535C] hover:bg-[#0F3C44] transition-colors duration-150"
                     title="Beantwoorden (r)">
-                    <Reply className="h-4 w-4" />
+                    <Reply className="h-3.5 w-3.5" strokeWidth={2} />
                     <span>Beantwoorden</span>
                   </button>
                   <button onClick={() => { hapticLight(); handleReply('reply-all') }}
-                    className="tap-press flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-[10px] text-[12px] font-medium text-muted-foreground hover:text-foreground/80 hover:bg-muted transition-colors duration-150"
+                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
                     title="Allen beantwoorden"
                     aria-label="Allen beantwoorden">
-                    <ReplyAll className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                    <ReplyAll className="h-3.5 w-3.5" strokeWidth={1.75} />
                     <span className="hidden md:inline">Allen</span>
                   </button>
                   <button onClick={() => { hapticLight(); handleReply('forward') }}
-                    className="tap-press flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-[10px] text-[12px] font-medium text-muted-foreground hover:text-foreground/80 hover:bg-muted transition-colors duration-150"
+                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
                     title="Doorsturen (f)"
                     aria-label="Doorsturen">
-                    <Forward className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                    <Forward className="h-3.5 w-3.5" strokeWidth={1.75} />
                     <span className="hidden md:inline">Doorsturen</span>
                   </button>
                 </div>
@@ -1459,13 +1459,16 @@ export function EmailReader({
                   Toon alle berichten in dezelfde conversatie. De huidige is
                   gehighlight, klik op een ander bericht om dat te openen. */}
               {threadEmails && threadEmails.length > 1 && (
-                <div className="mb-6 rounded-xl border border-border bg-white overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-background">
-                    <span className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider">
-                      Gesprek · {threadEmails.length} berichten
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 px-1 mb-2">
+                    <span className="text-[10.5px] font-semibold text-muted-foreground/80 uppercase tracking-[0.08em]">
+                      Gesprek
+                    </span>
+                    <span className="text-[10.5px] text-muted-foreground/60 tabular-nums">
+                      · {threadEmails.length}
                     </span>
                   </div>
-                  <div className="divide-y divide-[#F0EFEC]">
+                  <div className="rounded-tile border border-border/60 overflow-hidden divide-y divide-border/50">
                     {threadEmails.map((tEmail) => {
                       const isCurrent = tEmail.id === email.id
                       const senderShort = extractSenderName(tEmail.van)
@@ -1477,24 +1480,23 @@ export function EmailReader({
                             if (!isCurrent && onSelectEmail) onSelectEmail(tEmail)
                           }}
                           className={cn(
-                            'w-full flex items-start gap-3 px-4 py-2.5 text-left transition-colors',
+                            'w-full flex items-start gap-3 px-3.5 py-2.5 text-left transition-colors',
                             isCurrent
-                              ? 'bg-[#1A535C]/[0.06]'
-                              : 'hover:bg-background cursor-pointer',
+                              ? 'bg-[#1A535C]/[0.05]'
+                              : 'bg-background hover:bg-muted cursor-pointer',
                           )}
                         >
-                          <div className="flex-shrink-0 mt-0.5">
-                            {isCurrent ? (
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#1A535C]" />
-                            ) : (
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#D4D2CE]" />
-                            )}
+                          <div className="flex-shrink-0 mt-1.5">
+                            <div className={cn(
+                              'w-1.5 h-1.5 rounded-full',
+                              isCurrent ? 'bg-[#1A535C]' : 'bg-muted-foreground/30',
+                            )} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <span className={cn(
                                 'text-[13px] truncate',
-                                isCurrent ? 'font-semibold text-foreground' : 'text-[#3A3A36]',
+                                isCurrent ? 'font-semibold text-foreground' : 'text-foreground/80',
                               )}>
                                 {senderShort}
                               </span>
@@ -1503,7 +1505,7 @@ export function EmailReader({
                               </span>
                             </div>
                             {!isCurrent && tEmail.body_text && (
-                              <p className="text-[12px] text-muted-foreground truncate mt-0.5">
+                              <p className="text-[12px] text-muted-foreground/80 truncate mt-0.5">
                                 {tEmail.body_text.replace(/\s+/g, ' ').slice(0, 120)}
                               </p>
                             )}
