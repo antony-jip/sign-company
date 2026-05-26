@@ -26,22 +26,24 @@ export function ModuleHeader({ module, icon: Icon, title, subtitle, actions }: M
   const [bg, iconColor] = MODULE_ICON_COLORS[module] ?? ['#E5ECF6', '#3A6B8C']
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 border-b bg-background flex-shrink-0 rounded-t-2xl">
-      <div className="flex items-center gap-3.5 min-w-0">
+    <div className="flex items-center justify-between gap-4 px-4 md:px-2 py-5 md:py-6 border-b bg-background flex-shrink-0 rounded-t-2xl">
+      <div className="flex items-center gap-3 min-w-0">
         <div
-          className="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0"
+          className="h-8 w-8 rounded-tile flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: bg }}
         >
-          <Icon className="h-5 w-5" style={{ color: iconColor }} />
+          <Icon className="h-4 w-4" strokeWidth={1.75} style={{ color: iconColor }} />
         </div>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold truncate" style={{ color: '#191919' }}>{title}</h1>
+          <h1 className="font-bold tracking-[-0.022em] truncate text-[22px] md:text-title leading-[1.1]" style={{ color: '#191919' }}>
+            {title}
+          </h1>
           {subtitle && (
-            <p className="text-[13px] mt-0.5" style={{ color: '#5A5A55' }}>{subtitle}</p>
+            <p className="text-caption mt-1" style={{ color: '#5A5A55' }}>{subtitle}</p>
           )}
         </div>
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
     </div>
   )
 }
