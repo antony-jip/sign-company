@@ -58,6 +58,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage, getMedewerkers } from '@/services/supabaseService'
 import { getDisplayFilename } from '@/services/projectService'
+import { confirm } from '@/components/shared/ConfirmDialog'
 import type { Taak, Project, Klant, MontageAfspraak, Offerte, Medewerker } from '@/types'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
@@ -2577,11 +2578,15 @@ function TaskCard({
     }
   }
 
-  function handleDeleteClick(e: React.MouseEvent) {
+  async function handleDeleteClick(e: React.MouseEvent) {
     e.stopPropagation()
-    if (window.confirm(`"${taak.titel}" verwijderen?`)) {
-      onDelete()
-    }
+    const ok = await confirm({
+      title: 'Taak verwijderen',
+      message: `Weet je zeker dat je "${taak.titel}" wilt verwijderen?`,
+      confirmLabel: 'Verwijderen',
+      variant: 'destructive',
+    })
+    if (ok) onDelete()
   }
 
   function handleDragStart(e: React.DragEvent) {

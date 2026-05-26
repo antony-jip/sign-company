@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import {
   Bell, Eye, AlertTriangle, AlertCircle, Clock, Mail, CheckCircle2, Truck,
   Banknote, Wallet, CalendarCheck, RotateCcw, MessageSquare, BellRing,
@@ -137,11 +138,32 @@ export function MeldingenPage() {
   async function handleAllesGelezen() {
     await markAlleNotificatiesGelezen()
     setNotificaties((prev) => prev.map((n) => ({ ...n, gelezen: true })))
+    toast.success('Alle meldingen gemarkeerd als gelezen')
   }
 
-  async function handleVerwijder(id: string) {
-    await deleteNotificatie(id)
+  function handleVerwijder(id: string) {
+    const removed = notificaties.find((n) => n.id === id)
+    if (!removed) return
     setNotificaties((prev) => prev.filter((n) => n.id !== id))
+    let cancelled = false
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        deleteNotificatie(id).catch(() => {
+          setNotificaties((prev) => [removed, ...prev])
+          toast.error('Kon melding niet verwijderen')
+        })
+      }
+    }, 5000)
+    toast.success('Melding verwijderd', {
+      action: {
+        label: 'Ongedaan maken',
+        onClick: () => {
+          cancelled = true
+          clearTimeout(timeout)
+          setNotificaties((prev) => [removed, ...prev])
+        },
+      },
+    })
   }
 
   function handleKlik(n: Notificatie) {

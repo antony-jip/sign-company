@@ -232,7 +232,11 @@ export function LeveranciersLayout() {
           {gefilterd.map((lev) => {
             const stats = uitgavenCounts[lev.id] || { count: 0, totaal: 0 }
             return (
-              <Card key={lev.id} className={cn('hover:shadow-md transition-shadow', !lev.actief && 'opacity-60')}>
+              <Card
+                key={lev.id}
+                onClick={() => openEdit(lev)}
+                className={cn('cursor-pointer hover:shadow-md transition-shadow', !lev.actief && 'opacity-60')}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div>
@@ -240,11 +244,11 @@ export function LeveranciersLayout() {
                       {lev.contactpersoon && <p className="text-sm text-muted-foreground">{lev.contactpersoon}</p>}
                     </div>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(lev)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openEdit(lev) }}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                        onClick={() => { setDeleteTarget(lev); setDeleteDialogOpen(true) }}>
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(lev); setDeleteDialogOpen(true) }}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>

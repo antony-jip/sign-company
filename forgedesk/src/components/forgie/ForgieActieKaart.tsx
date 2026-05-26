@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { FolderOpen, FileText, CheckSquare, Users, Check, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -202,10 +203,19 @@ export function ForgieActieKaart({
       }
 
       setStatus('created')
+      const labels: Record<string, string> = {
+        klant: 'Klant aangemaakt door Daan',
+        project: 'Project aangemaakt door Daan',
+        offerte: 'Offerte aangemaakt door Daan',
+        taak: 'Taak aangemaakt door Daan',
+      }
+      toast.success(labels[actie.type] || 'Aangemaakt door Daan')
       onCreated(actie.type, createdId)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Aanmaken mislukt')
+      const msg = err instanceof Error ? err.message : 'Aanmaken mislukt'
+      setError(msg)
       setStatus('idle')
+      toast.error(`Daan kon ${actie.type} niet aanmaken: ${msg}`)
     }
   }, [actie.type, editedData, pendingKlantId, pendingProjectId, onCreated])
 

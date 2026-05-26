@@ -402,7 +402,7 @@ export function UitgavenLayout() {
                 {gefilterd.map((u) => {
                   const cfg = STATUS_CONFIG[u.status] || STATUS_CONFIG.open
                   return (
-                    <tr key={u.id} className="group hover:bg-background/80 dark:hover:bg-muted/50">
+                    <tr key={u.id} onClick={() => openEdit(u)} className="group cursor-pointer hover:bg-background/80 dark:hover:bg-muted/50">
                       <td className="px-4 py-3 text-sm">{new Date(u.datum).toLocaleDateString('nl-NL')}</td>
                       <td className="px-4 py-3 text-sm">{getLeverancierNaam(u.leverancier_id)}</td>
                       <td className="px-4 py-3 text-sm max-w-[200px] truncate">{u.omschrijving}</td>
@@ -416,11 +416,11 @@ export function UitgavenLayout() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(u)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); openEdit(u) }}>
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
-                            onClick={() => { setDeleteTarget(u); setDeleteDialogOpen(true) }}>
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(u); setDeleteDialogOpen(true) }}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
