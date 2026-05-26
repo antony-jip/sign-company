@@ -58,11 +58,7 @@ import {
   History,
   ArrowRightLeft,
 } from 'lucide-react'
-import {
-  FolderSimple as PhFolderSimple,
-  FileText as PhFileText,
-  EnvelopeSimple as PhEnvelope,
-} from '@phosphor-icons/react'
+import { Folder, FileText, Mail as MailLg } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   cn,
@@ -883,9 +879,7 @@ export function ClientProfile() {
             <Card>
               {clientProjecten.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <span className="doen-duo-icon mb-3 inline-flex" style={{ '--duo-sec': '#1A535C', '--duo-sec-opacity': 0.5 } as React.CSSProperties}>
-                    <PhFolderSimple size={48} weight="duotone" />
-                  </span>
+                  <Folder className="mb-3 inline-block h-12 w-12" strokeWidth={1.5} style={{ color: 'rgba(26,83,92,0.5)' }} />
                   <p
                     className="text-muted-foreground"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
@@ -1025,9 +1019,7 @@ export function ClientProfile() {
             <Card>
               {clientOffertes.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <span className="doen-duo-icon mb-3 inline-flex">
-                    <PhFileText size={48} weight="duotone" />
-                  </span>
+                  <FileText className="mb-3 inline-block h-12 w-12" strokeWidth={1.5} style={{ color: 'rgba(241,80,37,0.6)' }} />
                   <p
                     className="text-muted-foreground"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
@@ -1241,9 +1233,7 @@ export function ClientProfile() {
               {clientEmails.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <span className="doen-duo-icon mb-3 inline-flex" style={{ '--duo-sec': '#1A535C', '--duo-sec-opacity': 0.5 } as React.CSSProperties}>
-                      <PhEnvelope size={48} weight="duotone" />
-                    </span>
+                    <MailLg className="mb-3 inline-block h-12 w-12" strokeWidth={1.5} style={{ color: 'rgba(26,83,92,0.5)' }} />
                     <p
                       className="text-muted-foreground"
                       style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}

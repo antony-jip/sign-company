@@ -1,11 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  ListChecks as PhListChecks,
-  Receipt as PhReceipt,
-  Plus as PhPlus,
-  Trash as PhTrash,
-} from '@phosphor-icons/react'
+import { ListChecks, Receipt, Plus, Trash2 } from 'lucide-react'
 import { formatAmount } from '@/lib/utils'
 import { getStatusPillClass, getStatusPillTone, getStatusLabel, type PillTone } from '@/utils/statusColors'
 import { TaskChecklistView } from './TaskChecklistView'
@@ -72,9 +67,7 @@ export function TakenOfferteGrid({
       <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
-              <PhListChecks size={16} weight="duotone" />
-            </span>
+            <ListChecks className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
             <h3 className="font-heading text-[15px] font-bold text-foreground">
               Taken
             </h3>
@@ -88,7 +81,7 @@ export function TakenOfferteGrid({
             onClick={onNewTaak}
             className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#1A535C] hover:text-[#0F3D44] hover:underline transition-colors"
           >
-            <PhPlus size={12} weight="bold" />
+            <Plus className="h-3 w-3" strokeWidth={2.5} />
             Taak
           </button>
         </div>
@@ -106,9 +99,7 @@ export function TakenOfferteGrid({
             onClick={onNewTaak}
             className="w-full rounded-xl border border-dashed border-[rgba(26,83,92,0.18)] bg-transparent hover:bg-white/40 hover:border-[rgba(26,83,92,0.3)] transition-all px-4 py-8 flex flex-col items-center gap-2.5 text-center group"
           >
-            <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C', '--duo-sec-opacity': 0.45 } as React.CSSProperties}>
-              <PhListChecks size={28} weight="duotone" className="transition-transform group-hover:scale-110" />
-            </span>
+            <ListChecks className="h-7 w-7 transition-transform group-hover:scale-110" strokeWidth={1.5} style={{ color: 'rgba(26,83,92,0.45)' }} />
             <div>
               <p className="text-[13px] font-semibold text-foreground">Eerste taak toevoegen</p>
               <p
@@ -126,9 +117,7 @@ export function TakenOfferteGrid({
       <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <span className="doen-duo-icon">
-              <PhReceipt size={16} weight="duotone" />
-            </span>
+            <Receipt className="h-4 w-4" strokeWidth={1.75} style={{ color: '#F15025' }} />
             <h3 className="font-heading text-[15px] font-bold text-foreground">
               Offertes
             </h3>
@@ -142,7 +131,7 @@ export function TakenOfferteGrid({
             onClick={onNewOfferte}
             className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#F15025] hover:text-[#D03A18] hover:underline transition-colors"
           >
-            <PhPlus size={12} weight="bold" />
+            <Plus className="h-3 w-3" strokeWidth={2.5} />
             Offerte
           </button>
         </div>
@@ -190,7 +179,7 @@ export function TakenOfferteGrid({
                         aria-label={`Offerte ${offerte.nummer} verwijderen`}
                         className="opacity-0 group-hover:opacity-100 focus:opacity-100 h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground/70 hover:bg-[hsl(var(--status-flame-bg))] hover:text-[#C03A18] transition-all flex-shrink-0"
                       >
-                        <PhTrash size={14} weight="duotone" />
+                        <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
                       </button>
                     )}
                   </div>
@@ -235,9 +224,7 @@ export function TakenOfferteGrid({
             onClick={onNewOfferte}
             className="w-full rounded-xl border border-dashed border-[rgba(241,80,37,0.22)] bg-transparent hover:bg-white/40 hover:border-[rgba(241,80,37,0.4)] transition-all px-4 py-8 flex flex-col items-center gap-2.5 text-center group"
           >
-            <span className="doen-duo-icon" style={{ '--duo-sec-opacity': 0.5 } as React.CSSProperties}>
-              <PhReceipt size={28} weight="duotone" className="transition-transform group-hover:scale-110" />
-            </span>
+            <Receipt className="h-7 w-7 transition-transform group-hover:scale-110" strokeWidth={1.5} style={{ color: 'rgba(241,80,37,0.5)' }} />
             <div>
               <p className="text-[13px] font-semibold text-foreground">Offerte maken</p>
               <p

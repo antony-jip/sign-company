@@ -34,12 +34,7 @@ import {
   CheckSquare,
   X,
 } from 'lucide-react'
-import {
-  WarningCircle as PhWarningCircle,
-  Pulse as PhPulse,
-  Handshake as PhHandshake,
-  MoonStars as PhMoonStars,
-} from '@phosphor-icons/react'
+import { AlertCircle, Activity, UserPlus, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
@@ -367,10 +362,10 @@ export function ClientsLayout() {
         {/* KPI tiles — clickable triage entry-points */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
-            { key: 'met-aandacht' as StatusFilter, label: 'Met aandacht',  sub: 'niet helpen of geblokkeerd', count: kpiCounts.metAandacht, Icon: PhWarningCircle },
-            { key: 'actief'       as StatusFilter, label: 'Actief',        sub: 'lopende klanten',            count: kpiCounts.actief,      Icon: PhPulse         },
-            { key: 'prospect'     as StatusFilter, label: 'Prospect',      sub: 'in opvolging',               count: kpiCounts.prospect,    Icon: PhHandshake     },
-            { key: 'inactief'     as StatusFilter, label: 'Inactief',      sub: 'rust.',                      count: kpiCounts.inactief,    Icon: PhMoonStars     },
+            { key: 'met-aandacht' as StatusFilter, label: 'Met aandacht',  sub: 'niet helpen of geblokkeerd', count: kpiCounts.metAandacht, Icon: AlertCircle },
+            { key: 'actief'       as StatusFilter, label: 'Actief',        sub: 'lopende klanten',            count: kpiCounts.actief,      Icon: Activity    },
+            { key: 'prospect'     as StatusFilter, label: 'Prospect',      sub: 'in opvolging',               count: kpiCounts.prospect,    Icon: UserPlus    },
+            { key: 'inactief'     as StatusFilter, label: 'Inactief',      sub: 'rust.',                      count: kpiCounts.inactief,    Icon: Moon        },
           ]).map((tile) => {
             const isActive = statusFilter === tile.key
             const TileIcon = tile.Icon
@@ -387,9 +382,7 @@ export function ClientsLayout() {
               >
                 <div className="flex items-baseline justify-between gap-3 mb-2">
                   <span className="inline-flex items-center gap-2">
-                    <span className={cn('doen-duo-icon flex-shrink-0', tile.key === 'actief' && 'doen-pulse')}>
-                      <TileIcon size={18} weight="duotone" />
-                    </span>
+                    <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'actief' && 'doen-pulse')} strokeWidth={1.75} />
                     <span className="font-heading text-[14px] font-bold text-foreground">
                       {tile.label}
                     </span>

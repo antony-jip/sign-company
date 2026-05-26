@@ -64,12 +64,7 @@ import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOptimisticState } from '@/hooks/useOptimistic'
-import {
-  ClockCountdown as PhClockCountdown,
-  PencilSimple as PhPencilSimple,
-  HandHeart as PhHandHeart,
-  HourglassMedium as PhHourglass,
-} from '@phosphor-icons/react'
+import { Timer, PenLine, Heart, Hourglass } from 'lucide-react'
 
 type ViewMode = 'pipeline' | 'lijst'
 type SortOption = 'newest' | 'oldest' | 'highest' | 'expiring'
@@ -881,10 +876,10 @@ export function QuotesPipeline() {
             {/* KPI tiles — clickable status-filter shortcuts */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {([
-                { key: 'wacht_op_reactie', label: 'Opvolgen',  sub: 'wacht op reactie',         count: offerteKpis.opvolgen, Icon: PhClockCountdown },
-                { key: 'concept',          label: 'Concept',   sub: 'nog niet verstuurd',       count: offerteKpis.concept,  Icon: PhPencilSimple   },
-                { key: 'goedgekeurd',      label: 'Akkoord',   sub: 'klaar om te factureren',   count: offerteKpis.akkoord,  Icon: PhHandHeart      },
-                { key: 'verlopen',         label: 'Verlopen',  sub: 'geldigheid voorbij.',      count: offerteKpis.verlopen, Icon: PhHourglass      },
+                { key: 'wacht_op_reactie', label: 'Opvolgen',  sub: 'wacht op reactie',         count: offerteKpis.opvolgen, Icon: Timer    },
+                { key: 'concept',          label: 'Concept',   sub: 'nog niet verstuurd',       count: offerteKpis.concept,  Icon: PenLine  },
+                { key: 'goedgekeurd',      label: 'Akkoord',   sub: 'klaar om te factureren',   count: offerteKpis.akkoord,  Icon: Heart    },
+                { key: 'verlopen',         label: 'Verlopen',  sub: 'geldigheid voorbij.',      count: offerteKpis.verlopen, Icon: Hourglass },
               ] as const).map((tile) => {
                 const isActive = statusFilter === tile.key
                 const TileIcon = tile.Icon
@@ -901,9 +896,7 @@ export function QuotesPipeline() {
                   >
                     <div className="flex items-baseline justify-between gap-3 mb-2">
                       <span className="inline-flex items-center gap-2">
-                        <span className={cn('doen-duo-icon flex-shrink-0', tile.key === 'wacht_op_reactie' && 'doen-pulse')}>
-                          <TileIcon size={18} weight="duotone" />
-                        </span>
+                        <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'wacht_op_reactie' && 'doen-pulse')} strokeWidth={1.75} />
                         <span className="font-heading text-[14px] font-bold text-foreground">
                           {tile.label}
                         </span>

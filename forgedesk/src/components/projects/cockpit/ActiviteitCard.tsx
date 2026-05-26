@@ -1,30 +1,23 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
 import {
-  PaperPlaneRight as PhSend,
-  Receipt as PhReceipt,
-  CreditCard as PhCreditCard,
-  ClipboardText as PhClipboard,
-  Camera as PhCamera,
-  CheckCircle as PhCheckCircle,
-  Wrench as PhWrench,
-  FolderPlus as PhFolderPlus,
-  Pulse as PhPulse,
-  type Icon as PhosphorIcon,
-} from '@phosphor-icons/react'
+  ChevronDown, ChevronRight,
+  Send, Receipt, CreditCard, ClipboardList, Camera,
+  CheckCircle, Wrench, FolderPlus, Activity,
+  type LucideIcon,
+} from 'lucide-react'
 import type { ActivityEvent } from './ActiviteitFeed'
 
 const STORAGE_KEY = 'doen_activiteit_collapsed'
 
-const typeIcon: Record<ActivityEvent['type'], PhosphorIcon> = {
-  project:  PhFolderPlus,
-  offerte:  PhReceipt,
-  montage:  PhWrench,
-  werkbon:  PhClipboard,
-  factuur:  PhCreditCard,
-  taak:     PhCheckCircle,
-  foto:     PhCamera,
-  portaal:  PhSend,
+const typeIcon: Record<ActivityEvent['type'], LucideIcon> = {
+  project:  FolderPlus,
+  offerte:  Receipt,
+  montage:  Wrench,
+  werkbon:  ClipboardList,
+  factuur:  CreditCard,
+  taak:     CheckCircle,
+  foto:     Camera,
+  portaal:  Send,
 }
 
 const typeColor: Record<ActivityEvent['type'], string> = {
@@ -83,9 +76,7 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
     return (
       <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-2">
-          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
-            <PhPulse size={16} weight="duotone" />
-          </span>
+          <Activity className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           <h3 className="font-heading text-[15px] font-bold text-foreground">
             Activiteit
           </h3>
@@ -111,9 +102,7 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
             ? <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
             : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
           }
-          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
-            <PhPulse size={16} weight="duotone" />
-          </span>
+          <Activity className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           <h3 className="font-heading text-[15px] font-bold text-foreground">
             Activiteit
           </h3>

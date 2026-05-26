@@ -16,12 +16,7 @@ import { cn } from '@/lib/utils'
 // ModuleHeader removed — using DOEN inline header
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Wrench as PhWrench,
-  Sun as PhSun,
-  Clipboard as PhClipboard,
-  FlagBanner as PhFlag,
-} from '@phosphor-icons/react'
+import { Wrench, Sun, Clipboard, Flag } from 'lucide-react'
 import type { Werkbon, Klant, Project, Offerte } from '@/types'
 import {
   getWerkbonnen, deleteWerkbon, getKlanten, getProjecten, getOffertes, getWerkbonItems,
@@ -318,10 +313,10 @@ export function WerkbonnenLayout() {
         {/* KPI tiles — clickable triage entry-points */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
-            { key: 'definitief' as FilterStatus, label: 'In uitvoering', sub: 'lopende werkbonnen',  count: statusCounts['definitief'] || 0, Icon: PhWrench,    pulse: true  },
-            { key: 'vandaag'    as FilterStatus, label: 'Vandaag',       sub: 'ingepland vandaag',   count: vandaagCount,                    Icon: PhSun,       pulse: false },
-            { key: 'concept'    as FilterStatus, label: 'Open',          sub: 'wacht op uitvoering', count: statusCounts['concept'] || 0,    Icon: PhClipboard, pulse: false },
-            { key: 'afgerond'   as FilterStatus, label: 'Afgetekend',    sub: 'klaar.',              count: statusCounts['afgerond'] || 0,   Icon: PhFlag,      pulse: false },
+            { key: 'definitief' as FilterStatus, label: 'In uitvoering', sub: 'lopende werkbonnen',  count: statusCounts['definitief'] || 0, Icon: Wrench,    pulse: true  },
+            { key: 'vandaag'    as FilterStatus, label: 'Vandaag',       sub: 'ingepland vandaag',   count: vandaagCount,                    Icon: Sun,       pulse: false },
+            { key: 'concept'    as FilterStatus, label: 'Open',          sub: 'wacht op uitvoering', count: statusCounts['concept'] || 0,    Icon: Clipboard, pulse: false },
+            { key: 'afgerond'   as FilterStatus, label: 'Afgetekend',    sub: 'klaar.',              count: statusCounts['afgerond'] || 0,   Icon: Flag,      pulse: false },
           ]).map((tile) => {
             const isActive = filterStatus === tile.key
             const TileIcon = tile.Icon
@@ -338,9 +333,7 @@ export function WerkbonnenLayout() {
               >
                 <div className="flex items-baseline justify-between gap-3 mb-2">
                   <span className="inline-flex items-center gap-2">
-                    <span className={cn('doen-duo-icon flex-shrink-0', tile.pulse && 'doen-pulse')}>
-                      <TileIcon size={18} weight="duotone" />
-                    </span>
+                    <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.pulse && 'doen-pulse')} strokeWidth={1.75} />
                     <span className="font-heading text-[14px] font-bold text-foreground">
                       {tile.label}
                     </span>

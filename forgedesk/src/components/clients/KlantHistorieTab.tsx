@@ -5,10 +5,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   FolderKanban,
+  Folder,
   Calendar,
   Filter,
 } from 'lucide-react'
-import { FolderSimple as PhFolderSimple } from '@phosphor-icons/react'
 import { getKlantHistorie } from '@/services/supabaseService'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
@@ -107,9 +107,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
     return (
       <Card className="border-dashed">
         <CardContent className="py-12 text-center">
-          <span className="doen-duo-icon mb-3 inline-flex" style={{ '--duo-sec': '#1A535C', '--duo-sec-opacity': 0.5 } as React.CSSProperties}>
-            <PhFolderSimple size={42} weight="duotone" />
-          </span>
+          <Folder className="mb-3 inline-block h-10 w-10" strokeWidth={1.5} style={{ color: 'rgba(26,83,92,0.45)' }} />
           <p className="text-sm font-semibold text-foreground">Geen activiteiten</p>
           <p
             className="text-xs text-muted-foreground mt-1"
@@ -160,9 +158,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold tracking-[-0.02em] flex items-center gap-2">
-            <span className="doen-duo-icon" style={{ '--duo-sec': '#3A6B8C' } as React.CSSProperties}>
-              <PhFolderSimple size={16} weight="duotone" />
-            </span>
+            <Folder className="h-4 w-4" strokeWidth={1.75} style={{ color: '#3A6B8C' }} />
             Activiteiten {' '}
             <span className="text-muted-foreground font-mono text-[12px]">{filteredItems.length}</span>
           </CardTitle>

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2 } from 'lucide-react'
-import { Sparkle as PhSparkle, FileText as PhFileText } from '@phosphor-icons/react'
+import { Loader2, Sparkles, FileText } from 'lucide-react'
 import { chatCompletion, isAIConfigured } from '@/services/aiService'
 
 interface BriefingCardProps {
@@ -105,9 +104,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
     <div className="doen-slate-surface rounded-2xl p-5">
       <div className="flex items-center justify-between mb-4 min-h-[24px]">
         <div className="flex items-center gap-2">
-          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
-            <PhFileText size={16} weight="duotone" />
-          </span>
+          <FileText className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           <h3 className="font-heading text-[15px] font-bold text-foreground">
             Briefing
           </h3>
@@ -136,9 +133,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
               {isGenerating ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
-                <span className="doen-duo-icon">
-                  <PhSparkle size={13} weight="duotone" />
-                </span>
+                <Sparkles className="h-3 w-3" strokeWidth={1.75} />
               )}
               {isGenerating ? 'Daan schrijft…' : 'Daan AI'}
             </button>

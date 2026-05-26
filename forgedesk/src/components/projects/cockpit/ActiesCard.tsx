@@ -1,12 +1,7 @@
 import {
-  Receipt as PhReceipt,
-  ClipboardText as PhClipboard,
-  Wrench as PhWrench,
-  CreditCard as PhCreditCard,
-  Package as PhPackage,
-  Handshake as PhHandshake,
-  type Icon as PhosphorIcon,
-} from '@phosphor-icons/react'
+  Receipt, ClipboardList, Wrench, CreditCard, Package, FileSignature,
+  type LucideIcon,
+} from 'lucide-react'
 
 interface ActiesCardProps {
   onOfferte: () => void
@@ -21,17 +16,17 @@ interface ActieTile {
   key: string
   label: string
   sublabel: string
-  icon: PhosphorIcon
+  icon: LucideIcon
   color: string
   onClick: () => void
 }
 
 export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbon, onBevestiging }: ActiesCardProps) {
   const tiles: ActieTile[] = [
-    { key: 'offerte',  label: 'Offerte',  sublabel: 'Stuur een prijsopgave', icon: PhReceipt,    color: '#F15025', onClick: onOfferte },
-    { key: 'werkbon',  label: 'Werkbon',  sublabel: 'Voor de monteur',       icon: PhClipboard,  color: '#C44830', onClick: onWerkbon },
-    { key: 'montage',  label: 'Montage',  sublabel: 'Plan de uitvoering',    icon: PhWrench,     color: '#9A5A48', onClick: onMontage },
-    { key: 'factuur',  label: 'Factuur',  sublabel: 'Verstuur de rekening',  icon: PhCreditCard, color: '#2D6B48', onClick: onFactuur },
+    { key: 'offerte',  label: 'Offerte',  sublabel: 'Stuur een prijsopgave', icon: Receipt,       color: '#F15025', onClick: onOfferte },
+    { key: 'werkbon',  label: 'Werkbon',  sublabel: 'Voor de monteur',       icon: ClipboardList, color: '#C44830', onClick: onWerkbon },
+    { key: 'montage',  label: 'Montage',  sublabel: 'Plan de uitvoering',    icon: Wrench,        color: '#9A5A48', onClick: onMontage },
+    { key: 'factuur',  label: 'Factuur',  sublabel: 'Verstuur de rekening',  icon: CreditCard,    color: '#2D6B48', onClick: onFactuur },
   ]
 
   return (
@@ -81,7 +76,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
                     border: `1px solid ${tile.color}1A`,
                   }}
                 >
-                  <Icon size={20} weight="duotone" color={tile.color} />
+                  <Icon className="h-5 w-5" strokeWidth={1.75} style={{ color: tile.color }} />
                 </div>
 
                 <div className="min-w-0 flex-1 pt-0.5">
@@ -111,9 +106,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
           onClick={onPakbon}
           className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-[#1A535C] transition-colors px-2 py-1 rounded-md"
         >
-          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
-            <PhPackage size={14} weight="duotone" />
-          </span>
+          <Package className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           Pakbon
         </button>
 
@@ -123,9 +116,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
           onClick={onBevestiging}
           className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-[#1A535C] transition-colors px-2 py-1 rounded-md"
         >
-          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
-            <PhHandshake size={14} weight="duotone" />
-          </span>
+          <FileSignature className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           Bevestiging
         </button>
       </div>

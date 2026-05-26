@@ -2963,24 +2963,4 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
   .doen-pulse, .doen-row { animation: none; }
 }
 
-/* ============================================================
-   doen-duo-icon — Phosphor duotone iconen met EIGEN twee-kleurige
-   schema (petrol body + flame accent). Phosphor levert standaard
-   één basiskleur met een 0.2-opacity laag; deze override scheidt
-   beide lagen in twee distinct kleuren.
-
-   Standaard: petrol als body-fill (subtiel), flame als detail-stroke.
-   Override via CSS-variabelen op de wrapper: --duo-pri en --duo-sec.
-   ============================================================ */
-.doen-duo-icon {
-  display: inline-flex;
-  line-height: 0;
-}
-.doen-duo-icon svg path[opacity] {
-  fill: var(--duo-pri, #1A535C);
-  opacity: var(--duo-pri-opacity, 0) !important;
-}
-.doen-duo-icon svg path:not([opacity]) {
-  fill: var(--duo-sec, #F15025);
-  opacity: var(--duo-sec-opacity, 1);
-}
+/* doen-duo-icon CSS retired — Phosphor migrated out to Lucide stroke icons. */

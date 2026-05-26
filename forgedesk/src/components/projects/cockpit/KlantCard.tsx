@@ -1,12 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MoreHorizontal, ExternalLink, ChevronDown } from 'lucide-react'
-import {
-  MapPin as PhMapPin,
-  Phone as PhPhone,
-  EnvelopeSimple as PhEnvelope,
-  type Icon as PhosphorIcon,
-} from '@phosphor-icons/react'
+import { MoreHorizontal, ExternalLink, ChevronDown, MapPin, Phone, Mail, type LucideIcon } from 'lucide-react'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
@@ -122,12 +116,10 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
     }
   }
 
-  const InfoRow = ({ icon: Icon, label, href, mono }: { icon: PhosphorIcon; label: string; href?: string; mono?: boolean }) => {
+  const InfoRow = ({ icon: Icon, label, href, mono }: { icon: LucideIcon; label: string; href?: string; mono?: boolean }) => {
     const content = (
       <>
-        <span className="doen-duo-icon flex-shrink-0">
-          <Icon size={14} weight="duotone" />
-        </span>
+        <Icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" strokeWidth={1.75} />
         <span className={`flex-1 min-w-0 truncate text-[13px] text-foreground ${mono ? 'font-mono' : ''}`}>{label}</span>
         {href && (
           <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
@@ -198,19 +190,17 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
       {/* Info rows */}
       <div className="-mx-2 mb-3">
         {adresLabel && (
-          <InfoRow icon={PhMapPin} label={adresLabel} href={mapsUrl || undefined} />
+          <InfoRow icon={MapPin} label={adresLabel} href={mapsUrl || undefined} />
         )}
         {displayTelefoon && (
-          <InfoRow icon={PhPhone} label={displayTelefoon} href={`tel:${displayTelefoon}`} mono />
+          <InfoRow icon={Phone} label={displayTelefoon} href={`tel:${displayTelefoon}`} mono />
         )}
         {displayEmail && (
           <button
             onClick={handleMail}
             className="w-full group flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/60 transition-colors text-left"
           >
-            <span className="doen-duo-icon flex-shrink-0">
-              <PhEnvelope size={14} weight="duotone" />
-            </span>
+            <Mail className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" strokeWidth={1.75} />
             <span className="flex-1 min-w-0 truncate text-[13px] text-foreground">{displayEmail}</span>
             <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
           </button>
@@ -307,7 +297,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
           disabled={!displayEmail}
           className="group w-full mt-3 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#1A535C] text-white text-[13px] font-semibold shadow-[0_2px_8px_rgba(20,62,71,0.18)] hover:bg-[#0F3D44] hover:shadow-[0_4px_16px_rgba(20,62,71,0.28)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         >
-          <PhEnvelope size={15} weight="duotone" />
+          <Mail className="h-4 w-4" strokeWidth={1.75} />
           Mail contactpersoon
         </button>
 

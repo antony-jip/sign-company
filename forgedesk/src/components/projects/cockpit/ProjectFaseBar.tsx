@@ -2,7 +2,6 @@ import { motion } from 'framer-motion'
 import { Calendar, Hammer, Eye, Receipt, Smile } from 'lucide-react'
 import type { Project } from '@/types'
 import { formatAmount, cn } from '@/lib/utils'
-import { CalendarBlank as PhCalendar } from '@phosphor-icons/react'
 
 const FASES = [
   { key: 'gepland',        label: 'Gepland',        caption: 'wacht op start',   Icon: Calendar },
@@ -239,9 +238,11 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                   Deadline
                 </span>
                 <span className="flex items-center gap-1.5 font-mono text-[13px] font-semibold">
-                  <span className="doen-duo-icon" style={{ '--duo-sec': deadlineInfo.overdue ? '#C03A18' : '#1A535C' } as React.CSSProperties}>
-                    <PhCalendar size={13} weight="duotone" />
-                  </span>
+                  <Calendar
+                    className="h-3.5 w-3.5"
+                    strokeWidth={1.75}
+                    style={{ color: deadlineInfo.overdue ? '#C03A18' : '#1A535C' }}
+                  />
                   <span className="text-foreground">{deadlineInfo.label}</span>
                   {deadlineInfo.daysLeft !== null && (
                     <span

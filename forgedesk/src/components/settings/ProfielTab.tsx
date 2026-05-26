@@ -1,13 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  EnvelopeSimple as PhEnvelope,
-  Phone as PhPhone,
-  Sparkle as PhSparkle,
-  CheckCircle as PhCheckCircle,
-  IdentificationCard as PhIdCard,
-} from '@phosphor-icons/react'
+import { Mail, Phone, Sparkles, CheckCircle, User } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getProfile, updateProfile } from '@/services/supabaseService'
@@ -208,9 +202,7 @@ export function ProfielTab() {
       {/* ── Right column: live identity preview ───────────────────────── */}
       <aside className="space-y-3">
         <div className="flex items-center gap-2">
-          <span className="doen-duo-icon">
-            <PhSparkle size={16} weight="duotone" />
-          </span>
+          <Sparkles className="h-4 w-4" strokeWidth={1.75} style={{ color: '#F15025' }} />
           <span className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70">
             Hoe anderen je zien
           </span>
@@ -248,32 +240,24 @@ export function ProfielTab() {
 
           <div className="relative space-y-2 text-[12.5px]">
             <div className="flex items-center gap-2 text-foreground/80">
-              <span className="doen-duo-icon flex-shrink-0">
-                <PhEnvelope size={16} weight="duotone" />
-              </span>
+              <Mail className="h-4 w-4 flex-shrink-0" strokeWidth={1.75} style={{ color: '#1A535C' }} />
               <span className="truncate font-mono">{email || 'jouw@email.nl'}</span>
             </div>
             {telefoon ? (
               <div className="flex items-center gap-2 text-foreground/80">
-                <span className="doen-duo-icon flex-shrink-0">
-                  <PhPhone size={16} weight="duotone" />
-                </span>
+                <Phone className="h-4 w-4 flex-shrink-0" strokeWidth={1.75} style={{ color: '#1A535C' }} />
                 <span className="truncate font-mono">{telefoon}</span>
               </div>
             ) : (
               <div className="flex items-center gap-2 text-muted-foreground/70">
-                <span className="doen-duo-icon flex-shrink-0" style={{ '--duo-sec': '#C0BDB8' } as React.CSSProperties}>
-                  <PhPhone size={16} weight="duotone" />
-                </span>
+                <Phone className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} style={{ color: '#C0BDB8' }} />
                 <span className="italic" style={{ fontFamily: '"Instrument Serif", serif' }}>geen telefoonnummer</span>
               </div>
             )}
           </div>
 
           <div className="relative mt-4 pt-3 border-t border-[rgba(26,83,92,0.1)] flex items-center gap-2">
-            <span className="doen-duo-icon flex-shrink-0" style={{ '--duo-sec': '#9B9B95' } as React.CSSProperties}>
-              <PhIdCard size={14} weight="duotone" />
-            </span>
+            <User className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} style={{ color: '#9B9B95' }} />
             <p
               className="text-[11px] text-muted-foreground"
               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
@@ -299,9 +283,7 @@ export function ProfielTab() {
             return (
               <div key={f.key} className="flex items-center gap-2.5 text-[13px]">
                 {done ? (
-                  <span className="doen-duo-icon flex-shrink-0" style={{ '--duo-sec': '#2D6B48' } as React.CSSProperties}>
-                    <PhCheckCircle size={18} weight="duotone" />
-                  </span>
+                  <CheckCircle className="h-[18px] w-[18px] flex-shrink-0" strokeWidth={1.75} style={{ color: '#2D6B48' }} />
                 ) : (
                   <span className="w-[18px] h-[18px] rounded-full bg-muted flex-shrink-0" />
                 )}

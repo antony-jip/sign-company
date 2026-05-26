@@ -1,15 +1,9 @@
 import { useState, useCallback, lazy } from 'react'
-import { Trash2, Eye } from 'lucide-react'
 import {
-  FileText as PhFileText,
-  FileXls as PhFileXls,
-  FileZip as PhFileZip,
-  Image as PhImage,
-  File as PhFile,
-  Files as PhFiles,
-  UploadSimple as PhUpload,
-  type Icon as PhosphorIcon,
-} from '@phosphor-icons/react'
+  Trash2, Eye, FileText, FileSpreadsheet, FileArchive,
+  Image as ImageIcon, File, Files, Upload,
+  type LucideIcon,
+} from 'lucide-react'
 import { getSignedUrl } from '@/services/storageService'
 import type { PillTone } from '@/utils/statusColors'
 const PdfPreviewDialog = lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
@@ -43,14 +37,14 @@ const toneStyles: Record<PillTone, { bg: string; color: string }> = {
   lavender: { bg: 'var(--lavender-bg)', color: 'var(--lavender-text)' },
 }
 
-function getFileGlyph(ext: string): PhosphorIcon {
+function getFileGlyph(ext: string): LucideIcon {
   const e = ext.toUpperCase()
-  if (e === 'PDF') return PhFileText
-  if (['JPG', 'JPEG', 'PNG', 'GIF', 'WEBP'].includes(e)) return PhImage
-  if (['XLS', 'XLSX', 'CSV'].includes(e)) return PhFileXls
-  if (['ZIP', 'RAR', '7Z'].includes(e)) return PhFileZip
-  if (['DOC', 'DOCX', 'TXT', 'RTF', 'DWG', 'DXF'].includes(e)) return PhFileText
-  return PhFile
+  if (e === 'PDF') return FileText
+  if (['JPG', 'JPEG', 'PNG', 'GIF', 'WEBP'].includes(e)) return ImageIcon
+  if (['XLS', 'XLSX', 'CSV'].includes(e)) return FileSpreadsheet
+  if (['ZIP', 'RAR', '7Z'].includes(e)) return FileArchive
+  if (['DOC', 'DOCX', 'TXT', 'RTF', 'DWG', 'DXF'].includes(e)) return FileText
+  return File
 }
 
 function formatFileSize(bytes: number): string {
@@ -100,9 +94,7 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
     <div className="doen-slate-surface rounded-2xl p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
-            <PhFiles size={16} weight="duotone" />
-          </span>
+          <Files className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           <h3 className="font-heading text-[15px] font-bold text-foreground">
             Bestanden
           </h3>
@@ -116,7 +108,7 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
           onClick={onUpload}
           className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#1A535C] hover:text-[#0F3D44] hover:underline transition-colors"
         >
-          <PhUpload size={12} weight="bold" />
+          <Upload className="h-3 w-3" strokeWidth={2.25} />
           Upload
         </button>
       </div>
@@ -126,9 +118,7 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
           onClick={onUpload}
           className="w-full rounded-xl border border-dashed border-[rgba(26,83,92,0.2)] bg-transparent hover:bg-white/40 hover:border-[rgba(26,83,92,0.32)] transition-all px-4 py-7 flex flex-col items-center gap-2.5 text-center group"
         >
-          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C', '--duo-sec-opacity': 0.5 } as React.CSSProperties}>
-            <PhUpload size={26} weight="duotone" className="transition-transform group-hover:scale-110 group-hover:-translate-y-0.5" />
-          </span>
+          <Upload className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:-translate-y-0.5" strokeWidth={1.5} style={{ color: 'rgba(26,83,92,0.5)' }} />
           <div>
             <p className="text-[13px] font-semibold text-foreground">Eerste bestand uploaden</p>
             <p

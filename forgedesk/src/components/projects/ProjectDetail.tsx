@@ -45,13 +45,7 @@ import {
   User2,
   CalendarDays,
 } from 'lucide-react'
-import {
-  ListBullets as PhListBullets,
-  Wrench as PhWrenchTab,
-  CurrencyEur as PhCurrencyEur,
-  NotePencil as PhNotePencil,
-  EnvelopeSimple as PhEnvelope,
-} from '@phosphor-icons/react'
+import { List as TabList, Wrench as TabWrench, Euro as TabEuro, PenLine as TabPenLine, Mail as TabMail } from 'lucide-react'
 import { getEmailsVoorProject, type ProjectMail } from '@/services/emailProjectService'
 import { sanitizeEmailHTML } from '@/lib/sanitize'
 import { callForgie } from '@/services/forgieService'
@@ -1322,11 +1316,11 @@ export function ProjectDetail() {
         {/* TAB BAR — flame underline, duotone icoon per tab */}
         <div className="flex items-center gap-1 border-b border-[rgba(26,83,92,0.12)] mt-5 sticky top-0 z-10 bg-background">
           {([
-            { key: 'overzicht' as ProjectTab,  label: 'Overzicht',  count: 0,                          Icon: PhListBullets },
-            { key: 'werkbon' as ProjectTab,    label: 'Werkbon',    count: projectWerkbonnen.length,   Icon: PhWrenchTab   },
-            { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectFacturen.length,     Icon: PhCurrencyEur },
-            { key: 'email' as ProjectTab,      label: 'E-mail',     count: projectEmails.length,       Icon: PhEnvelope    },
-            { key: 'notities' as ProjectTab,   label: 'Notities',   count: 0,                          Icon: PhNotePencil  },
+            { key: 'overzicht' as ProjectTab,  label: 'Overzicht',  count: 0,                          Icon: TabList    },
+            { key: 'werkbon' as ProjectTab,    label: 'Werkbon',    count: projectWerkbonnen.length,   Icon: TabWrench  },
+            { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectFacturen.length,     Icon: TabEuro    },
+            { key: 'email' as ProjectTab,      label: 'E-mail',     count: projectEmails.length,       Icon: TabMail    },
+            { key: 'notities' as ProjectTab,   label: 'Notities',   count: 0,                          Icon: TabPenLine },
           ]).map((tab) => {
             const TabIcon = tab.Icon
             const isActive = activeTab === tab.key
@@ -1341,9 +1335,7 @@ export function ProjectDetail() {
                     : 'text-foreground/70 hover:text-foreground'
                 )}
               >
-                <span className="doen-duo-icon flex-shrink-0">
-                  <TabIcon size={15} weight="duotone" />
-                </span>
+                <TabIcon className="h-4 w-4 flex-shrink-0" strokeWidth={1.75} />
                 {tab.label}
                 {tab.count > 0 && (
                   <span className={cn(
@@ -1475,9 +1467,7 @@ export function ProjectDetail() {
             return (
               <div className="doen-slate-surface rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
-                    <Send className="h-4 w-4" />
-                  </span>
+                  <Send className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
                   <h3 className="font-heading text-[15px] font-bold text-foreground">
                     Verzonden
                   </h3>
@@ -2058,7 +2048,7 @@ export function ProjectDetail() {
           <p className="text-[13px] text-muted-foreground">Laden.</p>
         ) : projectEmails.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
-            <PhEnvelope size={28} weight="duotone" className="mx-auto text-muted-foreground/80 mb-2" />
+            <TabMail className="mx-auto text-muted-foreground/80 mb-2 h-7 w-7" strokeWidth={1.5} />
             <p className="text-[13px] text-foreground/70">Nog geen e-mails gekoppeld aan dit project.</p>
             <p className="text-[11px] text-muted-foreground mt-1">
               Open een mail in de mail-module, kies "Koppel aan project" in de zijbalk en selecteer dit project.

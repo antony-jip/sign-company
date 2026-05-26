@@ -4,23 +4,10 @@ import {
   ChevronLeft, ChevronRight, LogOut, Menu, X,
   Moon, Sun, CreditCard, PanelTop,
   LayoutDashboard, CircleUserRound, BookOpen,
+  Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox,
+  TrendingUp, Calendar, ListChecks, Send, Globe, SlidersHorizontal,
+  type LucideIcon,
 } from 'lucide-react'
-import {
-  Hammer as PhHammer,
-  FileText as PhFileSignature,
-  Buildings as PhBuildings,
-  Wrench as PhWrench,
-  MagicWand as PhMagicWand,
-  Money as PhMoney,
-  Tray as PhTray,
-  TrendUp as PhTrendUp,
-  CalendarBlank as PhCalendar,
-  ListChecks as PhListChecks,
-  PaperPlaneRight as PhPaperPlane,
-  GlobeHemisphereWest as PhGlobe,
-  SlidersHorizontal as PhSliders,
-  type Icon as PhosphorIcon,
-} from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { useSidebar, RAIL_WIDTH, EXPANDED_WIDTH } from '@/contexts/SidebarContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -30,7 +17,7 @@ import { Button } from '@/components/ui/button'
 
 interface NavItem {
   label: string
-  icon: PhosphorIcon
+  icon: LucideIcon
   path: string
   color: string
 }
@@ -42,30 +29,30 @@ interface NavGroup {
 
 // Module colors per the DOEN design system
 const WERK_ITEMS: NavItem[] = [
-  { label: 'Projecten', icon: PhHammer, path: '/projecten', color: '#1A535C' },
-  { label: 'Offertes', icon: PhFileSignature, path: '/offertes', color: '#F15025' },
-  { label: 'Klanten', icon: PhBuildings, path: '/klanten', color: '#3A6B8C' },
-  { label: 'Werkbonnen', icon: PhWrench, path: '/werkbonnen', color: '#C44830' },
-  { label: 'Visualizer', icon: PhMagicWand, path: '/visualizer', color: '#9A5A48' },
+  { label: 'Projecten', icon: Hammer, path: '/projecten', color: '#1A535C' },
+  { label: 'Offertes', icon: FileText, path: '/offertes', color: '#F15025' },
+  { label: 'Klanten', icon: Building2, path: '/klanten', color: '#3A6B8C' },
+  { label: 'Werkbonnen', icon: Wrench, path: '/werkbonnen', color: '#C44830' },
+  { label: 'Visualizer', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
 ]
 
 const FINANCIEEL_ITEMS: NavItem[] = [
-  { label: 'Facturen', icon: PhMoney, path: '/facturen', color: '#2D6B48' },
-  { label: 'Inkoopfacturen', icon: PhTray, path: '/inkoopfacturen', color: '#C44830' },
-  { label: 'Financieel', icon: PhTrendUp, path: '/financieel', color: '#2D6B48' },
+  { label: 'Facturen', icon: Banknote, path: '/facturen', color: '#2D6B48' },
+  { label: 'Inkoopfacturen', icon: Inbox, path: '/inkoopfacturen', color: '#C44830' },
+  { label: 'Financieel', icon: TrendingUp, path: '/financieel', color: '#2D6B48' },
 ]
 
 const PLANNING_ITEMS: NavItem[] = [
-  { label: 'Planning', icon: PhCalendar, path: '/planning', color: '#9A5A48' },
-  { label: 'Taken', icon: PhListChecks, path: '/taken', color: '#5A5A55' },
+  { label: 'Planning', icon: Calendar, path: '/planning', color: '#9A5A48' },
+  { label: 'Taken', icon: ListChecks, path: '/taken', color: '#5A5A55' },
 ]
 
 const COMMUNICATIE_ITEMS: NavItem[] = [
-  { label: 'Email', icon: PhPaperPlane, path: '/email', color: '#6A5A8A' },
-  { label: 'Portaal', icon: PhGlobe, path: '/portalen', color: '#6A5A8A' },
+  { label: 'Email', icon: Send, path: '/email', color: '#6A5A8A' },
+  { label: 'Portaal', icon: Globe, path: '/portalen', color: '#6A5A8A' },
 ]
 
-const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: PhSliders, path: '/instellingen', color: '#5A5A55' }
+const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: '#5A5A55' }
 
 const NAV_GROUPS: NavGroup[] = [
   { section: 'WERK', items: WERK_ITEMS },
@@ -199,7 +186,7 @@ export function Sidebar() {
             !active && 'group-hover/rail:scale-110',
           )}
         >
-          <Icon size={22} weight="duotone" color={item.color} />
+          <Icon className="h-[22px] w-[22px]" strokeWidth={1.75} color={item.color} />
         </div>
 
         <span
@@ -258,8 +245,8 @@ export function Sidebar() {
           }}
         >
           <Icon
-            size={17}
-            weight={active ? 'fill' : 'duotone'}
+            className="h-[17px] w-[17px]"
+            strokeWidth={active ? 2.25 : 1.75}
             color={item.color}
           />
         </div>
@@ -410,7 +397,7 @@ export function Sidebar() {
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
                       className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200"
                     >
-                      <PhSliders size={16} weight="duotone" color="#9B9B95" />
+                      <SlidersHorizontal className="h-4 w-4" strokeWidth={1.75} color="#9B9B95" />
                       Profiel
                     </button>
                     <button

@@ -16,12 +16,10 @@ import {
   ArrowRight,
   Search,
   X,
+  Send,
+  Mail,
+  Globe,
 } from 'lucide-react'
-import {
-  PaperPlaneRight as PhSend,
-  EnvelopeSimple as PhEnvelope,
-  Globe as PhGlobe,
-} from '@phosphor-icons/react'
 import type { Klant } from '@/types'
 import { cn } from '@/lib/utils'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
@@ -169,7 +167,7 @@ export function QuoteHeader({
             {/* Verstuurd-status pill */}
             {verstuurdOp && (
               <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#3A5A9A] bg-[hsl(var(--status-blue-bg))] border border-[#3A5A9A]/20 px-2 py-0.5 rounded-md">
-                <PhSend size={11} weight="duotone" />
+                <Send className="h-3 w-3" strokeWidth={1.75} />
                 Verstuurd{verstuurdNaar ? ` · ${verstuurdNaar}` : ''} · {new Date(verstuurdOp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
               </span>
             )}
@@ -248,7 +246,7 @@ export function QuoteHeader({
               disabled={isSaving}
               className="inline-flex items-center justify-center gap-2 h-10 md:h-9 px-4 md:px-5 text-[13px] md:text-sm font-semibold rounded-l-xl bg-[#F15025] text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
             >
-              <PhSend size={15} weight="duotone" />
+              <Send className="h-4 w-4" strokeWidth={1.75} />
               <span>Verstuur</span>
             </button>
             <button
@@ -270,7 +268,7 @@ export function QuoteHeader({
                   >
                     <div className="flex items-start gap-3">
                       <div className="h-9 w-9 rounded-lg bg-[#1A535C] flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(20,62,71,0.2)]">
-                        <PhGlobe size={17} weight="duotone" color="#FFFFFF" />
+                        <Globe className="h-4 w-4" strokeWidth={1.75} color="#FFFFFF" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[13.5px] font-semibold text-foreground">Via portaal</p>
@@ -293,7 +291,7 @@ export function QuoteHeader({
                   >
                     <div className="flex items-start gap-3">
                       <div className="h-9 w-9 rounded-lg bg-[#F15025] flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(241,80,37,0.25)]">
-                        <PhEnvelope size={17} weight="duotone" color="#FFFFFF" />
+                        <Mail className="h-4 w-4" strokeWidth={1.75} color="#FFFFFF" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[13.5px] font-semibold text-foreground">Via email</p>
