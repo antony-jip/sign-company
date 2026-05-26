@@ -90,6 +90,12 @@
     --radius-xl: 14px;
     --radius-2xl: 18px;
 
+    /* iOS-scale semantic radius tokens (Fase 0 additive). Use in new code. */
+    --radius-button: 8px;
+    --radius-tile: 12px;
+    --radius-card: 16px;
+    --radius-modal: 20px;
+
     /* Doen design tokens */
     --wm-gradient-start: #1A535C;
     --wm-gradient-mid: #B8D8DA;

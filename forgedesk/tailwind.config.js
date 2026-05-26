@@ -21,6 +21,14 @@ export default {
       },
       fontSize: {
         "2xs": ["10px", { lineHeight: "14px" }],
+        // iOS-scale type tokens — Fase 0 additive. Migration in Fase 3.
+        "tiny": ["11px", { lineHeight: "16px" }],
+        "caption": ["13px", { lineHeight: "18px" }],
+        "body": ["15px", { lineHeight: "22px" }],
+        "headline": ["17px", { lineHeight: "24px", letterSpacing: "-0.01em" }],
+        "title-sm": ["22px", { lineHeight: "28px", letterSpacing: "-0.015em" }],
+        "title": ["28px", { lineHeight: "34px", letterSpacing: "-0.022em" }],
+        "title-lg": ["34px", { lineHeight: "40px", letterSpacing: "-0.025em" }],
       },
       letterSpacing: {
         'label': '0.06em',
@@ -171,6 +179,11 @@ export default {
         lg: "var(--radius-lg)",
         xl: "var(--radius-xl)",
         "2xl": "var(--radius-2xl)",
+        // iOS-scale semantic radius tokens — Fase 0 additive. Migration in Fase 2.
+        button: "var(--radius-button)",
+        tile: "var(--radius-tile)",
+        card: "var(--radius-card)",
+        modal: "var(--radius-modal)",
       },
       keyframes: {
         "stagger-item": {
