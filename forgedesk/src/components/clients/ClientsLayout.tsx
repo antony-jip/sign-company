@@ -34,7 +34,7 @@ import {
   CheckSquare,
   X,
 } from 'lucide-react'
-import { AlertCircle, Activity, UserPlus, Moon } from 'lucide-react'
+import { AlertCircle, Activity, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
