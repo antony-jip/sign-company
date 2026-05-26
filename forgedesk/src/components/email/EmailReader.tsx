@@ -864,41 +864,41 @@ export function EmailReader({
           {/* ─── Compose fields (iOS-style: hairlines, ruime padding, duidelijke labels) ─── */}
           <div className="bg-white flex-shrink-0">
             {/* Aan field */}
-            <div className="flex items-center px-5 md:px-7 py-3 border-b border-black/[0.06]">
-              <span className="text-[13px] text-muted-foreground flex-shrink-0 mr-3 font-normal">Aan</span>
+            <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06]">
+              <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Aan</span>
               <div className="flex-1 flex items-center gap-2 min-w-0">
                 <input
                   type="text"
                   value={replyTo}
                   onChange={(e) => setReplyTo(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none text-[15px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
+                  className="flex-1 bg-transparent border-none outline-none text-[14px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
                   placeholder="ontvanger@voorbeeld.nl"
                 />
               </div>
               {!showCcBcc && (
                 <button
                   onClick={() => setShowCcBcc(true)}
-                  className="text-[13px] text-muted-foreground hover:text-foreground/70 ml-2 flex-shrink-0 transition-colors"
+                  className="text-[12px] text-muted-foreground/80 hover:text-foreground ml-2 flex-shrink-0 transition-colors"
                 >
                   Cc/Bcc
                 </button>
               )}
               {/* Reply-mode segmented control — iOS-style pill */}
-              <div className="hidden md:flex items-center ml-3 flex-shrink-0 bg-[#F2F2F2] rounded-[8px] p-[2px]">
+              <div className="hidden md:flex items-center ml-2.5 flex-shrink-0 bg-muted rounded-button p-[2px]">
                 <button
                   onClick={() => {
                     setReplyMode('reply')
                     setReplyTo(extractSenderEmail(email.van))
                   }}
                   className={cn(
-                    'flex items-center justify-center w-7 h-6 rounded-[6px] transition-all duration-200',
+                    'flex items-center justify-center w-6 h-5 rounded-[5px] transition-all duration-200',
                     replyMode === 'reply'
-                      ? 'bg-white text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
-                      : 'text-muted-foreground hover:text-foreground/70',
+                      ? 'bg-card text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
+                      : 'text-muted-foreground hover:text-foreground',
                   )}
                   title="Beantwoorden"
                 >
-                  <Reply className="h-[14px] w-[14px]" />
+                  <Reply className="h-3 w-3" />
                 </button>
                 <button
                   onClick={() => {
@@ -906,14 +906,14 @@ export function EmailReader({
                     setReplyTo(extractSenderEmail(email.van))
                   }}
                   className={cn(
-                    'flex items-center justify-center w-7 h-6 rounded-[6px] transition-all duration-200',
+                    'flex items-center justify-center w-6 h-5 rounded-[5px] transition-all duration-200',
                     replyMode === 'reply-all'
-                      ? 'bg-white text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
-                      : 'text-muted-foreground hover:text-foreground/70',
+                      ? 'bg-card text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
+                      : 'text-muted-foreground hover:text-foreground',
                   )}
                   title="Allen beantwoorden"
                 >
-                  <ReplyAll className="h-[14px] w-[14px]" />
+                  <ReplyAll className="h-3 w-3" />
                 </button>
                 <button
                   onClick={() => {
@@ -921,14 +921,14 @@ export function EmailReader({
                     setReplyTo('')
                   }}
                   className={cn(
-                    'flex items-center justify-center w-7 h-6 rounded-[6px] transition-all duration-200',
+                    'flex items-center justify-center w-6 h-5 rounded-[5px] transition-all duration-200',
                     replyMode === 'forward'
-                      ? 'bg-white text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
-                      : 'text-muted-foreground hover:text-foreground/70',
+                      ? 'bg-card text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
+                      : 'text-muted-foreground hover:text-foreground',
                   )}
                   title="Doorsturen"
                 >
-                  <Forward className="h-[14px] w-[14px]" />
+                  <Forward className="h-3 w-3" />
                 </button>
               </div>
             </div>
@@ -936,23 +936,23 @@ export function EmailReader({
             {/* CC / BCC fields */}
             {showCcBcc && (
               <>
-                <div className="flex items-center px-5 md:px-7 py-3 border-b border-black/[0.06]">
-                  <span className="text-[13px] text-muted-foreground flex-shrink-0 mr-3">Cc</span>
+                <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06]">
+                  <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Cc</span>
                   <input
                     type="text"
                     value={replyCc}
                     onChange={(e) => setReplyCc(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-[15px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
+                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
                     placeholder="cc@voorbeeld.nl"
                   />
                 </div>
-                <div className="flex items-center px-5 md:px-7 py-3 border-b border-black/[0.06]">
-                  <span className="text-[13px] text-muted-foreground flex-shrink-0 mr-3">Bcc</span>
+                <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06]">
+                  <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Bcc</span>
                   <input
                     type="text"
                     value={replyBcc}
                     onChange={(e) => setReplyBcc(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-[15px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
+                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
                     placeholder="bcc@voorbeeld.nl"
                   />
                 </div>
@@ -960,27 +960,28 @@ export function EmailReader({
             )}
 
             {/* Subject */}
-            <div className="flex items-center px-5 md:px-7 py-3 border-b border-black/[0.06]">
-              <span className="text-[13px] text-muted-foreground flex-shrink-0 mr-3">Onderwerp</span>
+            <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06]">
+              <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Onderwerp</span>
               <input
                 type="text"
                 value={replySubject}
                 onChange={(e) => setReplySubject(e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none text-[15px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
+                className="flex-1 bg-transparent border-none outline-none text-[14px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
                 placeholder="Onderwerp..."
               />
             </div>
 
-            {/* AI suggestion-chip — iOS-style: zachte achtergrond, sparkles in flame */}
-            <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06]">
+            {/* AI suggestion — subtler text-link op zelfde aligning kolom */}
+            <div className="flex items-center px-5 md:px-7 py-2 border-b border-black/[0.06]">
+              <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Daan</span>
               <button
                 onClick={handleForgieWrite}
                 disabled={forgieLoading}
                 className={cn(
-                  'tap-press inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] text-[13px] font-medium transition-all duration-200',
+                  'inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors duration-150',
                   forgieLoading
-                    ? 'bg-[#F2F2F2] text-muted-foreground'
-                    : 'bg-[#F15025]/[0.08] text-[#C0451A] hover:bg-[#F15025]/[0.14] active:scale-[0.97]',
+                    ? 'text-muted-foreground'
+                    : 'text-[#C0451A] hover:text-[#F15025]',
                 )}
               >
                 {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
@@ -1211,44 +1212,43 @@ export function EmailReader({
     <div className="flex flex-col h-full min-w-0">
         {/* Top action bar — sticky, grouped */}
         <TooltipProvider delayDuration={300}>
-        <div className="flex items-center justify-between px-2 md:px-5 h-12 border-b border-black/[0.06] flex-shrink-0 bg-card/85 backdrop-blur-xl sticky top-0 z-10">
+        <div className="flex items-center justify-between gap-2 px-2 md:px-5 h-12 border-b border-black/[0.06] flex-shrink-0 bg-card/85 backdrop-blur-xl sticky top-0 z-10">
           {/* Left: Back + email-acties (markeer + organize) */}
           <div className="flex items-center gap-0.5"><Button
               variant="ghost"
               size="sm"
-              className="tap-press h-10 md:h-8 w-10 md:w-auto px-0 md:px-3 gap-1.5 text-foreground/70 hover:text-foreground hover:bg-muted"
+              className="tap-press h-10 md:h-8 w-10 md:w-auto px-0 md:px-2.5 gap-1.5 text-foreground/70 hover:text-foreground hover:bg-muted rounded-button"
               onClick={() => { hapticLight(); onBack?.() }}
             >
               <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
-              <span className="text-[14px] hidden md:inline">Terug</span>
+              <span className="text-[13px] hidden md:inline">Terug</span>
             </Button>
-            <div className="w-px h-5 bg-border mx-1.5 hidden md:block" />
+            <div className="w-1 hidden md:block" />
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground/70 hover:bg-muted transition-colors duration-150" onClick={() => { hapticLight(); if (email) onArchive?.(email) }}>
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-muted rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onArchive?.(email) }}>
                 <Archive className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Archiveren</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150" onClick={() => { hapticMedium(); if (email) onDelete?.(email) }}>
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] rounded-button transition-colors duration-150" onClick={() => { hapticMedium(); if (email) onDelete?.(email) }}>
                 <Trash2 className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Verwijderen</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground/70 hover:bg-muted transition-colors duration-150" onClick={() => { hapticLight(); if (email) onToggleRead?.(email) }}>
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-muted rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onToggleRead?.(email) }}>
                 <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Markeer als ongelezen</TooltipContent></Tooltip>
-            <div className="w-px h-5 bg-border mx-1.5 hidden md:block" />
             <div ref={snoozeMenuRef} className="relative">
               <Tooltip><TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    'tap-press h-10 w-10 md:h-8 md:w-8 transition-colors duration-150',
+                    'tap-press h-10 w-10 md:h-8 md:w-8 rounded-button transition-colors duration-150',
                     email?.snoozed_until
                       ? 'text-[#1A535C] hover:bg-[#1A535C]/[0.08]'
-                      : 'text-muted-foreground hover:text-foreground/70 hover:bg-muted',
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                   )}
                   onClick={() => { hapticLight(); setSnoozeMenuOpen((v) => !v) }}
                 >
