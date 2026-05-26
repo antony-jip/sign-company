@@ -38,6 +38,8 @@ const typeConfig: Record<
   budget_waarschuwing: { icon: Wallet, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Budget waarschuwing', categorie: 'systeem' },
   booking_nieuw:       { icon: CalendarCheck, colorClass: 'text-purple-600', bgClass: 'bg-purple-100', label: 'Nieuwe booking', categorie: 'systeem' },
   algemeen:            { icon: Bell, colorClass: 'text-muted-foreground', bgClass: 'bg-muted', label: 'Algemeen', categorie: 'systeem' },
+  goedkeuring:         { icon: CheckCircle2, colorClass: 'text-green-600', bgClass: 'bg-green-100', label: 'Goedkeuring', categorie: 'offertes' },
+  herinnering:         { icon: BellRing, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Herinnering', categorie: 'systeem' },
   portaal_goedkeuring: { icon: CheckCircle2, colorClass: 'text-green-600', bgClass: 'bg-green-100', label: 'Portaal goedkeuring', categorie: 'portaal' },
   portaal_revisie:     { icon: RotateCcw, colorClass: 'text-amber-600', bgClass: 'bg-amber-100', label: 'Portaal revisie', categorie: 'portaal' },
   portaal_bericht:     { icon: MessageSquare, colorClass: 'text-blue-600', bgClass: 'bg-blue-100', label: 'Portaal bericht', categorie: 'portaal' },
@@ -229,7 +231,7 @@ export function MeldingenPage() {
               </h2>
               <Card className="divide-y divide-border overflow-hidden">
                 {groep.items.map((n) => {
-                  const config = typeConfig[n.type]
+                  const config = typeConfig[n.type] || typeConfig.algemeen
                   const Icon = config.icon
 
                   return (

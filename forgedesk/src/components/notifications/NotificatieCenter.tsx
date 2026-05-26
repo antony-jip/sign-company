@@ -105,6 +105,16 @@ const typeConfig: Record<
     colorClass: "text-foreground/70",
     bgClass: "bg-muted",
   },
+  goedkeuring: {
+    icon: CheckCircle2,
+    colorClass: "text-[#1A535C]",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
+  },
+  herinnering: {
+    icon: BellRing,
+    colorClass: "text-[#C03A18]",
+    bgClass: "bg-[hsl(var(--status-flame-bg))]",
+  },
   portaal_goedkeuring: {
     icon: CheckCircle2,
     colorClass: "text-[#1A535C]",
@@ -257,7 +267,7 @@ function NotificatieToast({
   onClose: () => void;
   onClick: () => void;
 }) {
-  const config = typeConfig[notificatie.type];
+  const config = typeConfig[notificatie.type] || typeConfig.algemeen;
   const Icon = config.icon;
 
   useEffect(() => {
@@ -595,7 +605,7 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
             <div className="max-h-[420px] overflow-y-auto overscroll-contain">
               <div className="flex flex-col py-1">
                 {notificaties.map((notificatie) => {
-                  const config = typeConfig[notificatie.type];
+                  const config = typeConfig[notificatie.type] || typeConfig.algemeen;
                   const Icon = config.icon;
                   const isUnread = !notificatie.gelezen;
 
