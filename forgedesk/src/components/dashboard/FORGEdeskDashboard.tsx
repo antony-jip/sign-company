@@ -346,7 +346,9 @@ function FORGEdeskDashboardInner() {
                           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
                           {weather.forecast!.slice(1).map((day, idx) => {
-                            const Icon = WEATHER_ICONS[day.iconKey]
+                            // Defensive: cached/legacy snapshots kunnen iconKey buiten enum hebben.
+                            // Fallback op Cloud zodat we niet crashen op undefined.
+                            const Icon = WEATHER_ICONS[day.iconKey] ?? Cloud
                             const tint = day.isRaining ? '#9DD3DA' : '#F5C460'
                             const dateObj = new Date(day.date + 'T00:00:00')
                             const dagNaam = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'][dateObj.getDay()]

@@ -124,6 +124,7 @@ import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // ============ TYPES ============
 
@@ -1666,11 +1667,7 @@ export function FactuurEditor() {
   // ============ LOADING ============
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <FactuurEditorSkeleton />
   }
 
   // ============ RENDER ============
@@ -2720,6 +2717,215 @@ export function FactuurEditor() {
         </div>
       )}
       <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
+    </div>
+  )
+}
+
+// ============ SKELETON ============
+
+function FactuurEditorSkeleton() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="px-8 pt-3">
+        <Skeleton className="h-8 w-24" />
+      </div>
+
+      {/* Header — mimic sticky top-bar */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-8 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-56" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="hidden xl:block h-3 w-52" />
+            <Skeleton className="h-8 w-28 rounded-md" />
+            <Skeleton className="h-8 w-32 rounded-md" />
+            <Skeleton className="h-8 w-8 rounded-md" />
+            <Skeleton className="h-8 w-24 rounded-md" />
+          </div>
+        </div>
+      </div>
+
+      {/* Status bar */}
+      <div className="px-8 pt-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-3.5 w-3.5 rounded-full" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+      </div>
+
+      {/* Content: Two-column layout */}
+      <div className="px-8 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 lg:items-start">
+        {/* LEFT PANEL */}
+        <div className="space-y-4">
+          {/* Klant card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-4 w-16" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Skeleton className="h-9 w-full rounded-md" />
+              <Skeleton className="h-9 w-full rounded-md" />
+              <Skeleton className="h-3 w-2/3" />
+            </CardContent>
+          </Card>
+
+          {/* Factuurgegevens card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-4 w-32" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1.5">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-9 w-full rounded-md" />
+              </div>
+              <div className="space-y-1.5">
+                <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-9 w-full rounded-md" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-9 w-full rounded-md" />
+                </div>
+                <div className="space-y-1.5">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-9 w-full rounded-md" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Financieel card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-4 w-20" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2.5">
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-14" />
+              </div>
+              <Separator className="bg-sand" />
+              <div className="flex justify-between items-baseline pt-1">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-6 w-24" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bijlagen card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-4 w-20" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-3 w-3/4" />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div className="space-y-4">
+          {/* Intro tekst card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">
+                <Skeleton className="h-4 w-20" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-14 w-full rounded-md" />
+            </CardContent>
+          </Card>
+
+          {/* Factuurregels card — items table */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium">
+                  <Skeleton className="h-4 w-32" />
+                </CardTitle>
+                <Skeleton className="h-8 w-20 rounded-md" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Table header */}
+              <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2 mb-1 border-b border-border">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-10 ml-auto" />
+                <Skeleton className="h-3 w-10 ml-auto" />
+                <Skeleton className="h-3 w-8 ml-auto" />
+                <Skeleton className="h-3 w-10 ml-auto" />
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-12 ml-auto" />
+                <span />
+              </div>
+
+              {/* Rows */}
+              <div className="divide-y divide-[#EBEBEB]">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="grid grid-cols-1 md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-3"
+                  >
+                    <Skeleton className="h-9 w-full rounded-md" />
+                    <Skeleton className="h-9 w-full rounded-md" />
+                    <Skeleton className="h-9 w-full rounded-md" />
+                    <Skeleton className="h-9 w-full rounded-md" />
+                    <Skeleton className="h-9 w-full rounded-md" />
+                    <Skeleton className="h-9 w-full rounded-md" />
+                    <Skeleton className="h-4 w-16 ml-auto self-center" />
+                    <Skeleton className="h-7 w-7 rounded self-center" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Totaal rij */}
+              <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-3 border-t-2 border-border">
+                <Skeleton className="h-4 w-16" />
+                <span />
+                <span />
+                <span />
+                <span />
+                <span />
+                <Skeleton className="h-4 w-20 ml-auto" />
+                <span />
+              </div>
+
+              <Skeleton className="mt-3 h-4 w-32" />
+            </CardContent>
+          </Card>
+
+          {/* Extra tekst (collapsible header — alleen header zichtbaar) */}
+          <Card>
+            <div className="w-full flex items-center justify-between px-6 py-3">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-4 w-4 rounded" />
+            </div>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }
