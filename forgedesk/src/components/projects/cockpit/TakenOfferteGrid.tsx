@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ListChecks as PhListChecks,
@@ -9,6 +10,10 @@ import { formatAmount } from '@/lib/utils'
 import { getStatusPillClass, getStatusPillTone, getStatusLabel, type PillTone } from '@/utils/statusColors'
 import { TaskChecklistView } from './TaskChecklistView'
 import type { Taak, Offerte, Medewerker } from '@/types'
+
+function parseBedrag(s: string): number {
+  return parseFloat(s.replace(',', '.')) || 0
+}
 
 const toneAccent: Record<PillTone, string> = {
   cream:    'var(--cream-text)',
@@ -29,6 +34,7 @@ interface TakenOfferteGridProps {
   onTaakStatusChange: (taakId: string, newStatus: Taak['status']) => Promise<void>
   onOpdrachtbevestiging?: (offerte: Offerte) => void
   onOfferteDelete?: (offerte: Offerte) => Promise<void> | void
+  onQuickOfferte?: (bedrag: number) => Promise<void>
 }
 
 export function TakenOfferteGrid({
@@ -39,8 +45,26 @@ export function TakenOfferteGrid({
   onNewOfferte,
   onTaakStatusChange,
   onOfferteDelete,
+  onQuickOfferte,
 }: TakenOfferteGridProps) {
   const navigate = useNavigate()
+  const [quickBedrag, setQuickBedrag] = useState('')
+  const [quickSubmitting, setQuickSubmitting] = useState(false)
+
+  const quickValue = parseBedrag(quickBedrag)
+  const canQuickSubmit = quickValue > 0 && !quickSubmitting
+
+  async function handleQuickSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!onQuickOfferte || !canQuickSubmit) return
+    setQuickSubmitting(true)
+    try {
+      await onQuickOfferte(quickValue)
+      setQuickBedrag('')
+    } finally {
+      setQuickSubmitting(false)
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -173,6 +197,38 @@ export function TakenOfferteGrid({
                 </div>
               )
             })}
+          </div>
+        ) : onQuickOfferte ? (
+          <div className="rounded-xl border border-dashed border-[rgba(241,80,37,0.22)] bg-transparent px-3 py-3 flex flex-col gap-1.5">
+            <form onSubmit={handleQuickSubmit} className="flex items-stretch gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground font-mono pointer-events-none">€</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={quickBedrag}
+                  onChange={(e) => setQuickBedrag(e.target.value)}
+                  placeholder="0,00"
+                  disabled={quickSubmitting}
+                  className="w-full h-8 pl-6 pr-2 text-sm font-mono text-right border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-[#F15025]/30 focus:border-[#F15025] disabled:opacity-50"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!canQuickSubmit}
+                className="h-8 px-3 text-[12px] font-semibold text-white rounded-lg transition-colors disabled:opacity-40 whitespace-nowrap"
+                style={{ backgroundColor: '#F15025' }}
+              >
+                {quickSubmitting ? 'Aanmaken.' : 'Prijs aanmaken'}
+              </button>
+            </form>
+            <button
+              type="button"
+              onClick={onNewOfferte}
+              className="self-end text-[11px] text-muted-foreground hover:text-[#F15025] hover:underline transition-colors"
+            >
+              of open de volledige editor
+            </button>
           </div>
         ) : (
           <button

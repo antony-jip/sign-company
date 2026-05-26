@@ -96,6 +96,8 @@ import {
   createTaak,
   updateTaak,
   getOffertesByProject,
+  createOfferte,
+  createOfferteItem,
   updateOfferte,
   deleteOfferte,
   createDocument,
@@ -461,6 +463,56 @@ export function ProjectDetail() {
       params.set('contactpersoon_id', project.contactpersoon_id)
     }
     navigate(`/offertes/nieuw?${params.toString()}`, { state: { from: location.pathname } })
+  }
+
+  // Snelle prijsopgave vanuit de Offertes-card: maakt een concept-offerte
+  // met één regel (bedrag excl. btw, 21% btw) en koppelt aan dit project.
+  const handleQuickOfferte = async (bedrag: number) => {
+    if (!project || !id) return
+    try {
+      const subtotaal = Math.round(bedrag * 100) / 100
+      const btw = Math.round(subtotaal * 0.21 * 100) / 100
+      const totaal = Math.round((subtotaal + btw) * 100) / 100
+      const titel = project.naam || 'Offerte'
+      const offerte = await createOfferte({
+        klant_id: project.klant_id,
+        klant_naam: klant?.bedrijfsnaam || project.klant_naam || '',
+        project_id: id,
+        titel,
+        nummer: '',
+        status: 'concept',
+        subtotaal,
+        btw_bedrag: btw,
+        totaal,
+        geldig_tot: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        notities: '',
+        voorwaarden: '',
+      })
+      await createOfferteItem({
+        offerte_id: offerte.id,
+        beschrijving: titel,
+        aantal: 1,
+        eenheidsprijs: subtotaal,
+        btw_percentage: 21,
+        korting_percentage: 0,
+        totaal: subtotaal,
+        volgorde: 0,
+        soort: 'prijs',
+      })
+      logCreate({ user, medewerkers: alleMedewerkers, entityType: 'offerte', entityId: offerte.id })
+      const offertes = await getOffertesByProject(id)
+      setProjectOffertes(offertes)
+      toast.success('Offerte aangemaakt', {
+        action: {
+          label: 'Openen',
+          onClick: () => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } }),
+        },
+      })
+    } catch (err) {
+      logger.error('Fout bij aanmaken snelle offerte:', err)
+      toast.error('Kon offerte niet aanmaken')
+      throw err
+    }
   }
 
   // ── Verstuur naar klant dialog ──
@@ -1377,6 +1429,7 @@ export function ProjectDetail() {
             projectId={id!}
             onNewTaak={() => setNieuweTaakOpen(true)}
             onNewOfferte={openNieuweOfferte}
+            onQuickOfferte={handleQuickOfferte}
             onTaakStatusChange={async (taakId, newStatus) => {
               try {
                 await updateTaak(taakId, { status: newStatus })
