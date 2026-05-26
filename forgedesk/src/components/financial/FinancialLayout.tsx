@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -43,6 +44,7 @@ function formatTooltipValue(value: number) {
 }
 
 export function FinancialLayout() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overzicht')
   const [facturen, setFacturen] = useState<Factuur[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
@@ -283,10 +285,18 @@ export function FinancialLayout() {
               </CardHeader>
               <CardContent>
                 {facturen.length === 0 ? (
-                  <div className="h-[350px] flex items-center justify-center">
+                  <div className="h-[350px] flex flex-col items-center justify-center gap-4">
                     <p className="text-sm text-muted-foreground">
-                      Nog geen facturen. Maak je eerste factuur aan om het overzicht te zien
+                      Nog geen facturen. Maak je eerste factuur aan om het overzicht te zien.
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/facturen/nieuw')}
+                      className="h-9 px-4 text-sm font-semibold text-white rounded-lg transition-colors"
+                      style={{ backgroundColor: '#F15025' }}
+                    >
+                      Eerste factuur maken
+                    </button>
                   </div>
                 ) : (
                 <div className="h-[350px]">

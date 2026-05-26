@@ -189,7 +189,7 @@ function ProjectDetailSkeleton() {
         </div>
 
         {/* Two-column body grid */}
-        <div className="flex flex-col lg:flex-row gap-8 px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-6 md:gap-8 px-4 md:px-8 py-4 md:py-8">
           {/* Left column */}
           <div className="flex-1 min-w-0 space-y-6">
             {/* Voortgang/Fase card — 5 stage cirkels */}
@@ -1169,8 +1169,8 @@ export function ProjectDetail() {
         }}
       />
 
-      {/* Mobile floating camera button */}
-      <div className="fixed bottom-6 right-6 z-40 md:hidden">
+      {/* Mobile floating camera button — clears MobileBottomNav (h-14) */}
+      <div className="fixed right-4 z-40 md:hidden bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)]">
         <label
           className="flex items-center justify-center h-14 w-14 rounded-full bg-[#1A535C] text-white shadow-lg shadow-[#1A535C]/25 active:scale-95 transition-transform cursor-pointer"
         >
@@ -1206,7 +1206,7 @@ export function ProjectDetail() {
       <div ref={scrollAreaRef}>
 
       {/* ══════════ HEADER + TABS ══════════ */}
-      <div className="px-8 pt-5">
+      <div className="px-4 md:px-8 pt-4 md:pt-5">
 
         {/* Row 0: breadcrumb */}
         <div className="flex items-center gap-1.5 text-[12px] mb-2">
@@ -1360,7 +1360,7 @@ export function ProjectDetail() {
       {/* ══════════ OVERZICHT TAB ══════════ */}
       {activeTab === 'overzicht' && (
       <div>
-      <div className="flex flex-col lg:flex-row gap-8 px-8 py-8">
+      <div className="flex flex-col lg:flex-row gap-6 md:gap-8 px-4 md:px-8 py-4 md:py-8">
 
         {/* ── Left column (65%) ── */}
         <div className="flex-1 min-w-0 space-y-6">
@@ -1666,7 +1666,7 @@ export function ProjectDetail() {
 
       {/* ══════════ WERKBON TAB ══════════ */}
       {activeTab === 'werkbon' && (
-      <div className="px-8 py-6 space-y-6">
+      <div className="px-4 md:px-8 py-4 md:py-6 space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-foreground tracking-[-0.3px]">Werkbonnen</h2>
           <button
@@ -1733,7 +1733,7 @@ export function ProjectDetail() {
 
       {/* ══════════ FINANCIEEL TAB ══════════ */}
       {activeTab === 'financieel' && (
-      <div className="px-8 py-6 space-y-8">
+      <div className="px-4 md:px-8 py-4 md:py-6 space-y-8">
         {/* Totalen overzicht */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
@@ -1980,7 +1980,7 @@ export function ProjectDetail() {
           opent de body inline zodat het team de communicatie hier
           kan lezen zonder naar de email-module te schakelen. */}
       {activeTab === 'email' && (
-      <div className="px-8 py-6">
+      <div className="px-4 md:px-8 py-4 md:py-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-foreground tracking-[-0.3px]">E-mailcommunicatie</h2>
         </div>
@@ -2125,7 +2125,7 @@ export function ProjectDetail() {
 
       {/* ══════════ NOTITIES TAB ══════════ */}
       {activeTab === 'notities' && (
-      <div className="px-8 py-6">
+      <div className="px-4 md:px-8 py-4 md:py-6">
         <div className="max-w-2xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-foreground tracking-[-0.3px]">Notities</h2>
