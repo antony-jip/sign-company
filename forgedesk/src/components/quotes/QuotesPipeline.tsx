@@ -750,7 +750,7 @@ export function QuotesPipeline() {
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
                   <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-                    Offertes<span className="text-[#F15025]">.</span>
+                    Offertes
                   </h1>
                   <Skeleton className="h-4 w-12" />
                 </div>
@@ -856,7 +856,7 @@ export function QuotesPipeline() {
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-4">
                 <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-                  Offertes<span className="text-[#F15025]">.</span>
+                  Offertes
                 </h1>
                 <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
                   {filteredOffertes.length === offertes.length ? (
@@ -905,7 +905,7 @@ export function QuotesPipeline() {
                           <TileIcon size={18} weight="duotone" />
                         </span>
                         <span className="font-heading text-[14px] font-bold text-foreground">
-                          {tile.label}<span className="text-[#F15025]">.</span>
+                          {tile.label}
                         </span>
                       </span>
                     </div>
@@ -1075,7 +1075,7 @@ export function QuotesPipeline() {
                     <div key={col.key} className="doen-slate-surface rounded-2xl p-5">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: col.dot }} />
-                        <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: col.text }}>{col.label}<span className="text-[#F15025]">.</span></span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: col.text }}>{col.label}</span>
                       </div>
                       <p className="text-[18px] font-bold font-mono tabular-nums text-foreground">{formatEur(data.totaal)}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">{data.count} {data.count === 1 ? 'offerte' : 'offertes'}</p>
@@ -1144,7 +1144,7 @@ export function QuotesPipeline() {
                               className="font-bold text-[13px] text-foreground hover:text-[#1A535C] transition-colors text-left"
                               title="Klik om kolomnaam aan te passen"
                             >
-                              {col.label}<span className="text-[#F15025]">.</span>
+                              {col.label}
                             </button>
                           )}
                           <span className="ml-auto text-[11px] font-mono font-semibold text-muted-foreground bg-border px-2 py-0.5 rounded-md">{colOffertes.length}</span>
@@ -1370,7 +1370,7 @@ export function QuotesPipeline() {
                             <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium rounded-md px-2 py-0.5"
                               style={{ backgroundColor: STATUS_BADGE_STYLES[offerte.status]?.bg ?? '#EEEEED', color: STATUS_BADGE_STYLES[offerte.status]?.text ?? '#5A5A55' }}
                             >
-                              {STATUS_LABELS[offerte.status] || offerte.status}<span className="text-[#F15025]">.</span>
+                              {STATUS_LABELS[offerte.status] || offerte.status}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-1.5">
@@ -1485,7 +1485,7 @@ export function QuotesPipeline() {
                                           {(offerte.status === 'verzonden' || offerte.status === 'bekeken') && (
                                             <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />
                                           )}
-                                          {STATUS_LABELS[offerte.status] || offerte.status}<span className="text-[#F15025]">.</span>
+                                          {STATUS_LABELS[offerte.status] || offerte.status}
                                         </span>
                                         <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity -ml-0.5" />
                                       </button>

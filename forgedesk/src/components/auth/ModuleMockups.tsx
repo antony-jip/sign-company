@@ -96,7 +96,7 @@ export function WerkbonnenMockup() {
           <span className="font-mono font-medium text-[#1A535C]">{r.nr}</span>
           <span className="text-ink/80">{r.klant}</span>
           <span className="px-1.5 py-0.5 rounded-full text-[6px] font-bold inline-block w-fit" style={{ backgroundColor: r.statusBg, color: r.statusColor }}>
-            {r.status}<span style={{ color: '#F15025' }}>.</span>
+            {r.status}
           </span>
           <span className="text-muted-foreground text-right font-mono">{r.datum}</span>
         </div>
@@ -112,7 +112,7 @@ export function KlantportaalMockup() {
       {/* Header */}
       <div className="bg-[#1A535C] px-3 py-2 text-white flex items-baseline gap-1">
         <span className="font-bold text-[9px]">Klantportaal</span>
-        <span className="text-[#F15025] font-bold text-[9px]">.</span>
+        
       </div>
       {/* Chat timeline */}
       <div className="flex-1 p-3 space-y-2 overflow-hidden">
@@ -142,7 +142,7 @@ export function KlantportaalMockup() {
             <div className="flex items-center justify-between mb-1">
               <span className="text-[7px] font-semibold">Factuur #F-2024-018</span>
               <span className="text-[6px] font-bold px-1.5 py-0.5 rounded-full bg-[hsl(var(--status-green-bg))] text-[#2D6B48]">
-                Betaald<span className="text-[#F15025]">.</span>
+                Betaald
               </span>
             </div>
             <span className="font-mono text-[8px] font-bold text-[#2D6B48]">&euro;2.450</span>
@@ -245,7 +245,7 @@ export function FacturenMockup() {
           <span className="font-mono font-bold text-ink text-right">{r.bedrag}</span>
           <div className="flex justify-end">
             <span className="px-1.5 py-0.5 rounded-full text-[6px] font-bold" style={{ backgroundColor: r.statusBg, color: r.statusColor }}>
-              {r.status}<span style={{ color: '#F15025' }}>.</span>
+              {r.status}
             </span>
           </div>
         </div>

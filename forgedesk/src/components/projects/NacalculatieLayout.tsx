@@ -235,7 +235,7 @@ export function NacalculatieLayout() {
       'Uitgaven kosten': round2(d.uitgavenKosten),
     }))
     exportCSV('nacalculatie', headers, rows)
-    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>CSV gedownload</>)
   }
 
   function handleExportExcel() {

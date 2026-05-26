@@ -211,7 +211,7 @@ export const CRMSidebar = memo(function CRMSidebar({
       })
       logCreate({ user, entityType: 'taak', entityId: taak.id })
       setActivePanel('none')
-      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak aangemaakt</>)
     } catch (err) { logger.error('Failed to create taak:', err); toast.error('Taak aanmaken mislukt') }
     finally { setSaving(false) }
   }

@@ -565,7 +565,7 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3.5">
             <h3 className="text-[14px] font-bold text-foreground tracking-[-0.2px]">
-              Notificaties{aantalOngelezen > 0 && <span className="text-[#F15025]">.</span>}
+              Notificaties
             </h3>
             <div className="flex items-center gap-2">
               {aantalOngelezen > 0 && (

@@ -273,7 +273,7 @@ export function ProjectKaart({
                 backgroundColor: badgeStyle.bg,
                 color: badgeStyle.color,
               }}>
-                {(statusLabels[project.status] || project.status).toUpperCase()}<span style={{ color: '#F15025' }}>.</span>
+                {(statusLabels[project.status] || project.status).toUpperCase()}
               </Badge>
             </div>
             <div className="flex items-center gap-2 text-[13px] text-muted-foreground mt-0.5">

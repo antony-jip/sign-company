@@ -69,7 +69,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle className="w-7 h-7 text-[#C0451A]" />
           </div>
           <h2 className="text-xl font-bold text-foreground tracking-[-0.3px] mb-2">
-            Er is iets misgegaan<span className="text-[#F15025]">.</span>
+            Er is iets misgegaan
           </h2>
           <p className="text-sm text-foreground/70 max-w-md mb-2">
             Er is een onverwachte fout opgetreden. Probeer het opnieuw of herlaad de pagina.

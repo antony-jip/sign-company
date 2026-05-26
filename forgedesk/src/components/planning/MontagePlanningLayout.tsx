@@ -1360,7 +1360,7 @@ export function MontagePlanningLayout() {
         style={{ backgroundColor: cfg.bg, color: cfg.text }}
       >
         <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.dot }} />
-        {cfg.label}<span className="text-[#F15025]">.</span>
+        {cfg.label}
       </span>
     );
   }
@@ -1480,7 +1480,7 @@ export function MontagePlanningLayout() {
                     className="flex flex-col items-start gap-0.5 py-1.5 data-[highlighted]:bg-background data-[highlighted]:text-foreground"
                   >
                     <span className="text-[12px] font-medium">
-                      Afronden &amp; factureren<span className="text-[#F15025]">.</span>
+                      Afronden &amp; factureren
                     </span>
                     <span className="text-[10px] opacity-60">Project naar 'Te factureren'</span>
                   </DropdownMenuItem>
@@ -2639,7 +2639,7 @@ export function MontagePlanningLayout() {
                 </DialogTitle>
                 {editingAfspraak && STATUS_CONFIG[formData.status] && (
                   <div className="text-[13px] text-foreground/70 font-medium px-0">
-                    {STATUS_CONFIG[formData.status].label}<span className="text-[#F15025]">.</span>
+                    {STATUS_CONFIG[formData.status].label}
                   </div>
                 )}
               </div>
@@ -3031,7 +3031,7 @@ export function MontagePlanningLayout() {
                       className="flex flex-col items-start gap-0.5 py-1.5 data-[highlighted]:bg-background data-[highlighted]:text-foreground"
                     >
                       <span className="text-[13px] font-medium">
-                        Afronden &amp; factureren<span className="text-[#F15025]">.</span>
+                        Afronden &amp; factureren
                       </span>
                       <span className="text-[11px] opacity-60">Project naar 'Te factureren'</span>
                     </DropdownMenuItem>
@@ -3111,7 +3111,7 @@ export function MontagePlanningLayout() {
         {/* Compacte paginatitel */}
         <div className="px-4 pt-5 pb-3 flex items-baseline gap-2 shrink-0">
           <h1 className="text-[18px] font-extrabold tracking-[-0.3px] text-foreground leading-none">
-            Planning<span className="text-[#F15025]">.</span>
+            Planning
           </h1>
           <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
             {stats.totaalWeek}
@@ -3196,10 +3196,10 @@ export function MontagePlanningLayout() {
         {/* Sidebar footer: stats */}
         <div className="px-3 py-2.5 border-t border-border text-[11px] text-foreground/70 space-y-0.5">
           <div>
-            <span className="font-mono tabular-nums">{stats.totaalWeek}</span> montages<span className="text-[#F15025]">.</span>
+            <span className="font-mono tabular-nums">{stats.totaalWeek}</span> montages
           </div>
           <div>
-            <span className="font-mono tabular-nums">{stats.monteursBeschikbaar}</span> beschikbaar<span className="text-[#F15025]">.</span>
+            <span className="font-mono tabular-nums">{stats.monteursBeschikbaar}</span> beschikbaar
           </div>
         </div>
       </div>

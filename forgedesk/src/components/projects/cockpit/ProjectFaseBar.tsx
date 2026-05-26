@@ -53,7 +53,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
     <div className="rounded-2xl p-7 bg-card border border-border/50">
       <div className="flex items-baseline justify-between mb-8">
         <h3 className="font-heading text-[15px] font-bold text-foreground">
-          Voortgang<span className="text-[#F15025]">.</span>
+          Voortgang
         </h3>
         <span
           className="text-[12px] text-muted-foreground"
@@ -166,7 +166,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                         isActive ? 'text-foreground' : isPast || isFinalCompleted ? 'text-[#1A535C]' : 'text-[rgba(26,83,92,0.45)] group-hover:text-[#1A535C]',
                       )}
                     >
-                      {fase.label}<span className="text-[#F15025]">.</span>
+                      {fase.label}
                     </span>
                     <span
                       className={cn(

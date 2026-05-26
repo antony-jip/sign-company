@@ -109,7 +109,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
             <PhFileText size={16} weight="duotone" />
           </span>
           <h3 className="font-heading text-[15px] font-bold text-foreground">
-            Briefing<span className="text-[#F15025]">.</span>
+            Briefing
           </h3>
           <span
             className="text-[12px] text-muted-foreground hidden sm:inline"

@@ -274,7 +274,7 @@ function DezeWeekCard() {
         <div className="flex items-baseline gap-2 min-w-0">
           <h2 className="font-heading text-[14px] font-bold text-foreground">
             {weekOffset === 0 ? 'Deze week' : weekOffset === -1 ? 'Vorige week' : weekOffset === 1 ? 'Volgende week' : `Week ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
-            <span className="text-[#F15025]">.</span>
+            
           </h2>
           <span
             className="text-[14px] text-muted-foreground truncate"
@@ -514,7 +514,7 @@ function TeamCard() {
     >
       <header className="flex items-baseline justify-between mb-4">
         <h2 className="font-heading text-[14px] font-bold text-foreground">
-          Gedaan<span className="text-[#F15025]">.</span>
+          Gedaan
           <span
             className="text-muted-foreground ml-2 font-normal"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}

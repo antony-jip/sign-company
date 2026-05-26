@@ -914,7 +914,7 @@ export function TasksLayout() {
           logWijziging({ userId: user.id, entityType: 'taak', entityId: newTaak.id, actie: 'gewijzigd', veld: 'toewijzing', medewerkerNaam, nieuweWaarde: newTaak.toegewezen_aan })
         }
       }
-      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak aangemaakt</>)
       return true
     } catch (error) {
       logger.error('Fout bij aanmaken:', error)
@@ -971,7 +971,7 @@ export function TasksLayout() {
     try {
       await deleteTaak(taak.id)
       setTaken((prev) => prev.filter((t) => t.id !== taak.id))
-      toast.success(<>Taak verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak verwijderd</>)
     } catch (error) {
       logger.error('Fout bij verwijderen:', error)
       toast.error('Kon taak niet verwijderen')
@@ -1039,7 +1039,7 @@ export function TasksLayout() {
     try {
       await deleteTaak(deletingTaak.id)
       setTaken((prev) => prev.filter((t) => t.id !== deletingTaak.id))
-      toast.success(<>Taak verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak verwijderd</>)
       setDeleteDialogOpen(false)
       setDeletingTaak(null)
     } catch (error) {
@@ -1169,7 +1169,7 @@ export function TasksLayout() {
         <div className="sticky top-0 z-20 bg-card border-b border-border shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
           <div className="flex items-baseline gap-2">
             <h1 className="text-[17px] font-bold text-foreground tracking-[-0.3px]">
-              Taken<span className="text-[#F15025]">.</span>
+              Taken
             </h1>
             <Skeleton className="h-3 w-10" />
           </div>
@@ -1237,7 +1237,7 @@ export function TasksLayout() {
           {/* Titel + counter */}
           <div className="flex items-baseline gap-2">
             <h1 className="text-[17px] font-bold text-foreground tracking-[-0.3px]">
-              Taken<span className="text-[#F15025]">.</span>
+              Taken
             </h1>
             <span
               className="text-[12px] text-muted-foreground tabular-nums"
@@ -1393,7 +1393,7 @@ export function TasksLayout() {
                     'text-[11px] font-semibold tracking-[0.06em] uppercase',
                     isToday ? 'text-[#1A535C]' : isPast ? 'text-muted-foreground/80' : 'text-muted-foreground'
                   )}>
-                    {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
+                    {DAY_LABELS[i]}
                   </span>
                   <div className="flex items-baseline gap-1.5">
                     <span className={cn(
@@ -1716,7 +1716,7 @@ export function TasksLayout() {
                         'text-[11px] font-semibold tracking-[0.06em] uppercase',
                         isToday ? 'text-[#1A535C]' : 'text-muted-foreground'
                       )}>
-                        {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
+                        {DAY_LABELS[i]}
                       </span>
                       <div className="flex items-center gap-1.5">
                         {hasDayTasks && (

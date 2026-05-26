@@ -24,7 +24,7 @@ export function ShareButton({ title, url, className }: ShareButtonProps) {
     } else {
       try {
         await navigator.clipboard.writeText(fullUrl)
-        toast.success(<>Link gekopieerd naar klembord<span style={{ color: '#F15025' }}>.</span></>)
+        toast.success(<>Link gekopieerd naar klembord</>)
       } catch (err) {
         toast.error('Kon link niet kopiëren')
       }

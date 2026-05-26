@@ -104,7 +104,7 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
             <PhFiles size={16} weight="duotone" />
           </span>
           <h3 className="font-heading text-[15px] font-bold text-foreground">
-            Bestanden<span className="text-[#F15025]">.</span>
+            Bestanden
           </h3>
           {documenten.length > 0 && (
             <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">

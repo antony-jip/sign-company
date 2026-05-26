@@ -364,7 +364,7 @@ export function InkoopfacturenLayout() {
       Status: STATUS_CONFIG[f.status].label,
     }))
     exportCSV('inkoopfacturen', headers, rows)
-    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>CSV gedownload</>)
   }, [filtered])
 
   const handleExportExcel = useCallback(() => {
@@ -379,7 +379,7 @@ export function InkoopfacturenLayout() {
       Status: STATUS_CONFIG[f.status].label,
     }))
     exportExcel('inkoopfacturen', headers, rows, 'Inkoopfacturen')
-    toast.success(<>Excel gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Excel gedownload</>)
   }, [filtered])
 
   const statistics = useMemo(() => {
@@ -407,7 +407,7 @@ export function InkoopfacturenLayout() {
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
             <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-              Inkoopfacturen<span className="text-[#F15025]">.</span>
+              Inkoopfacturen
             </h1>
             <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {filtered.length === facturen.length ? (
@@ -466,7 +466,7 @@ export function InkoopfacturenLayout() {
                       style={{ backgroundColor: tile.dot }}
                     />
                     <span className="font-heading text-[14px] font-bold text-foreground">
-                      {tile.label}<span className="text-[#F15025]">.</span>
+                      {tile.label}
                     </span>
                   </span>
                 </div>
@@ -690,7 +690,7 @@ export function InkoopfacturenLayout() {
                           style={{ backgroundColor: config.bg, color: config.text }}
                         >
                           {config.dot && <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />}
-                          {config.label}<span className="text-[#F15025]">.</span>
+                          {config.label}
                         </span>
                       </td>
                     </tr>
@@ -745,7 +745,7 @@ export function InkoopfacturenLayout() {
               {/* Leverancier */}
               <div>
                 <h3 className="text-[18px] font-bold text-foreground leading-tight">
-                  {lightbox.factuur.leverancier_naam || lightbox.factuur.email_van || 'Factuur'}<span className="text-[#F15025]">.</span>
+                  {lightbox.factuur.leverancier_naam || lightbox.factuur.email_van || 'Factuur'}
                 </h3>
                 {lightbox.factuur.factuur_nummer && (
                   <p className="text-[13px] font-mono text-muted-foreground mt-1">#{lightbox.factuur.factuur_nummer}</p>
@@ -796,7 +796,7 @@ export function InkoopfacturenLayout() {
                 style={{ backgroundColor: STATUS_CONFIG[lightbox.factuur.status].bg, color: STATUS_CONFIG[lightbox.factuur.status].text }}
               >
                 {STATUS_CONFIG[lightbox.factuur.status].dot && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
-                {STATUS_CONFIG[lightbox.factuur.status].label}<span className="text-[#F15025]">.</span>
+                {STATUS_CONFIG[lightbox.factuur.status].label}
               </span>
 
               {lightbox.factuur.extractie_opmerkingen && (

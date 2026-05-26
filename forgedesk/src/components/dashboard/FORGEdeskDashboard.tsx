@@ -229,7 +229,7 @@ function FORGEdeskDashboardInner() {
                     {verb}
                   </span>
                   {userName ? `, ${userName}` : ''}
-                  <span style={{ color: '#F15025' }}>.</span>
+                  
                 </h1>
               </div>
 

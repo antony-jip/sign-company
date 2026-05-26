@@ -66,7 +66,7 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium text-foreground truncate">{m.titel}</p>
                   <span className="text-xs text-foreground/70 flex-shrink-0">
-                    {st.label}<span className="text-[#F15025]">.</span>
+                    {st.label}
                   </span>
                 </div>
 

@@ -342,7 +342,7 @@ export function ClientsLayout() {
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
             <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-              Klanten<span className="text-[#F15025]">.</span>
+              Klanten
             </h1>
             <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {filteredKlanten.length === klanten.length ? (
@@ -391,7 +391,7 @@ export function ClientsLayout() {
                       <TileIcon size={18} weight="duotone" />
                     </span>
                     <span className="font-heading text-[14px] font-bold text-foreground">
-                      {tile.label}<span className="text-[#F15025]">.</span>
+                      {tile.label}
                     </span>
                   </span>
                 </div>

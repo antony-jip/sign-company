@@ -611,7 +611,7 @@ export function TijdregistratieLayout() {
       Facturabel: r.facturabel ? "Ja" : "Nee",
     }));
     exportCSV("tijdregistratie", headers, exportData);
-    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>);
+    toast.success(<>CSV gedownload</>);
   }
 
   function handleExportExcel() {
@@ -628,7 +628,7 @@ export function TijdregistratieLayout() {
       Facturabel: r.facturabel ? "Ja" : "Nee",
     }));
     exportExcel("tijdregistratie", headers, exportData);
-    toast.success(<>Excel gedownload<span style={{ color: '#F15025' }}>.</span></>);
+    toast.success(<>Excel gedownload</>);
   }
 
   const berekendeFormDuur = formData.start_tijd && formData.eind_tijd

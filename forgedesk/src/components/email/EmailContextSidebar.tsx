@@ -409,7 +409,7 @@ export function EmailContextSidebar({
       logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
       setShowIdleTaakForm(false)
       setIdleTaakForm({ titel: '', beschrijving: '' })
-      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak aangemaakt</>)
     } catch (err) { logger.error('Taak aanmaken mislukt:', err); toast.error('Taak aanmaken mislukt') }
     finally { setSavingIdleTaak(false) }
   }
@@ -897,7 +897,7 @@ export function EmailContextSidebar({
             <div className="px-6 pt-6 pb-5">
               <DialogHeader className="mb-4">
                 <DialogTitle className="text-[20px] font-bold tracking-tight text-foreground">
-                  {klantSearchMode ? <>Contact koppelen<span className="text-[#F15025]">.</span></> : <>Nieuw contact<span className="text-[#F15025]">.</span></>}
+                  {klantSearchMode ? <>Contact koppelen</> : <>Nieuw contact</>}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-2">
@@ -913,7 +913,7 @@ export function EmailContextSidebar({
             <div className="px-6 pt-6 pb-5">
               <DialogHeader className="mb-4">
                 <DialogTitle className="text-[20px] font-bold tracking-tight text-foreground">
-                  Nieuwe taak<span className="text-[#F15025]">.</span>
+                  Nieuwe taak
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-2">
@@ -929,7 +929,7 @@ export function EmailContextSidebar({
             <div className="px-8 pt-7 pb-6">
               <DialogHeader className="mb-5">
                 <DialogTitle className="text-[22px] font-bold tracking-tight text-foreground">
-                  Nieuw project<span className="text-[#F15025]">.</span>
+                  Nieuw project
                 </DialogTitle>
                 <p className="text-[13px] text-muted-foreground mt-1">Vul de gegevens in om te starten</p>
               </DialogHeader>

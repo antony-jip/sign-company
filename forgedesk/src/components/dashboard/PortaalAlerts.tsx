@@ -172,7 +172,7 @@ export function PortaalAlerts() {
         locatie: '',
       })
       logCreate({ user, entityType: 'taak', entityId: taak.id })
-      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak aangemaakt</>)
       setTaakOpen(false)
       await handleDismiss(taakNotifId)
       fetchAlerts()

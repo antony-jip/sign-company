@@ -87,7 +87,7 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
             <PhPulse size={16} weight="duotone" />
           </span>
           <h3 className="font-heading text-[15px] font-bold text-foreground">
-            Activiteit<span className="text-[#F15025]">.</span>
+            Activiteit
           </h3>
         </div>
         <p
@@ -115,7 +115,7 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
             <PhPulse size={16} weight="duotone" />
           </span>
           <h3 className="font-heading text-[15px] font-bold text-foreground">
-            Activiteit<span className="text-[#F15025]">.</span>
+            Activiteit
           </h3>
           <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
             {events.length}

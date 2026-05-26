@@ -77,7 +77,7 @@ export function Header() {
       {/* Left: Breadcrumb */}
       <div className="flex items-center gap-1.5 min-w-0">
         <span className="text-[13px] font-semibold text-foreground">
-          {moduleName}<span className="text-[#F15025]">.</span>
+          {moduleName}
         </span>
         {subPage && (
           <>

@@ -126,7 +126,7 @@ export function InkoopfactuurInboxSetup() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h2 className="text-[15px] font-bold tracking-[-0.3px]">
-          inkoopfactuur inbox<span className="text-[#F15025]">.</span>
+          inkoopfactuur inbox
         </h2>
         <p className="text-[12px] text-foreground/70 mt-1">
           Koppel een Gmail inbox om inkoopfacturen automatisch op te halen.

@@ -346,7 +346,7 @@ export function LeveringsbonDetail() {
         documentStyle
       )
       doc.save(`leveringsbon-${leveringsbonNummer}.pdf`)
-      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>PDF gedownload</>)
     } catch (err) {
       logger.error('Generate leveringsbon PDF failed:', err)
       toast.error('Kon PDF niet genereren')

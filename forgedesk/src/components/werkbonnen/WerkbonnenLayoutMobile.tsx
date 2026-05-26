@@ -98,7 +98,7 @@ export function WerkbonnenLayoutMobile() {
     <div className="h-full flex flex-col bg-background -m-3 sm:-m-4 md:-m-6">
       <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
         <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
-          Werkbonnen<span className="text-[#F15025]">.</span>
+          Werkbonnen
         </h1>
         {!loading && (
           <p className="mt-1 text-[14px] text-foreground/70 tabular-nums">
@@ -166,7 +166,7 @@ export function WerkbonnenLayoutMobile() {
             </div>
             <p className="text-[15px] font-medium text-foreground/70">
               {search.trim() || filter !== 'alle' ? 'Geen werkbonnen gevonden' : 'Geen werkbonnen'}
-              <span className="text-[#F15025]">.</span>
+              
             </p>
             {(search.trim() || filter !== 'alle') && (
               <button

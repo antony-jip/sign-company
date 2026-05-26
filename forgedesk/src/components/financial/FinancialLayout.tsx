@@ -223,7 +223,7 @@ export function FinancialLayout() {
       {/* Page Header — DOEN inline style */}
       <div className="flex items-baseline gap-4">
         <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-          Financieel<span className="text-[#F15025]">.</span>
+          Financieel
         </h1>
         <span
           className="text-[13px] text-muted-foreground"
@@ -255,7 +255,7 @@ export function FinancialLayout() {
                       style={{ backgroundColor: stat.dot }}
                     />
                     <span className="font-heading text-[14px] font-bold text-foreground">
-                      {stat.label}<span className="text-[#F15025]">.</span>
+                      {stat.label}
                     </span>
                   </span>
                 </div>

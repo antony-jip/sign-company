@@ -221,7 +221,7 @@ function SidebarContent({
             className="hover:opacity-80 transition-opacity"
             style={{ fontFamily: '"Bricolage Grotesque", sans-serif', fontWeight: 800, color: 'inherit' }}
           >
-            doen<span style={{ color: '#F15025' }}>.</span>
+            doen
           </a>
           {' '}slim gedaan.
         </p>

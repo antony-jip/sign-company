@@ -177,7 +177,7 @@ export function RegelTemplateEditor({
       <PopoverContent align="start" className="w-96 p-0">
         <div className="px-4 pt-3 pb-2 border-b border-border/60">
           <h4 className="font-heading text-[13px] font-bold text-foreground">
-            Rij-labels<span className="text-[#F15025]">.</span>
+            Rij-labels
           </h4>
           <p className="text-[11px] text-muted-foreground mt-0.5">
             Velden die elk nieuw offerte-item standaard krijgt.

@@ -282,7 +282,7 @@ export function PortaalSidebarActions({
         volgorde: 0,
       } as any)
       const titel = tekeningTitel || tekeningFile.name
-      toast.success(<>Tekening gedeeld<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Tekening gedeeld</>)
       setTekeningFile(null)
       setTekeningTitel('')
       setTekeningPopoverOpen(false)

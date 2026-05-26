@@ -944,7 +944,7 @@ export function FacturenLayout() {
       Totaal: f.totaal,
     }))
     exportCSV('facturen', headers, rows)
-    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>CSV gedownload</>)
   }, [filteredFacturen])
 
   const handleExportExcel = useCallback(() => {
@@ -961,7 +961,7 @@ export function FacturenLayout() {
       Totaal: f.totaal,
     }))
     exportExcel('facturen', headers, rows, 'Facturen')
-    toast.success(<>Excel gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Excel gedownload</>)
   }, [filteredFacturen])
 
   const handleDownloadPdf = useCallback(
@@ -1482,7 +1482,7 @@ export function FacturenLayout() {
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
             <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-              Facturen<span className="text-[#F15025]">.</span>
+              Facturen
             </h1>
             <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {filteredFacturen.length === facturen.length ? (
@@ -1541,7 +1541,7 @@ export function FacturenLayout() {
                       style={{ backgroundColor: tile.dot }}
                     />
                     <span className="font-heading text-[14px] font-bold text-foreground">
-                      {tile.label}<span className="text-[#F15025]">.</span>
+                      {tile.label}
                     </span>
                   </span>
                 </div>
@@ -1783,7 +1783,7 @@ export function FacturenLayout() {
                   {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
                     <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />
                   )}
-                  {config.label}<span className="text-[#F15025]">.</span>
+                  {config.label}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[12px] text-muted-foreground">
@@ -2036,7 +2036,7 @@ export function FacturenLayout() {
                         {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
                           <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />
                         )}
-                        {config.label}<span className="text-[#F15025]">.</span>
+                        {config.label}
                       </span>
                     </td>
                     <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
@@ -2135,7 +2135,7 @@ export function FacturenLayout() {
                                 try { await navigator.share({ title: `Factuur ${factuur.nummer}`, url }) } catch (err) { /* cancelled */ }
                               } else {
                                 await navigator.clipboard.writeText(url)
-                                toast.success(<>Link gekopieerd naar klembord<span style={{ color: '#F15025' }}>.</span></>)
+                                toast.success(<>Link gekopieerd naar klembord</>)
                               }
                             }}>
                               <Share2 className="h-4 w-4 mr-2" />
@@ -2232,7 +2232,7 @@ export function FacturenLayout() {
                       STATUS_CONFIG[viewingFactuur.status].bg
                     )}
                   >
-                    {STATUS_CONFIG[viewingFactuur.status].label}<span className="text-[#F15025]">.</span>
+                    {STATUS_CONFIG[viewingFactuur.status].label}
                   </Badge>
                 </div>
                 <div>

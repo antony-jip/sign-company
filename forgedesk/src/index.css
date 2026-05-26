@@ -555,25 +555,9 @@ input:focus, textarea:focus, select:focus {
     border-radius: 50%;
     flex-shrink: 0;
   }
-  /* Flame punt after every status badge */
-  .badge-success::after, .badge-warning::after, .badge-danger::after,
-  .badge-info::after, .badge-neutral::after, .badge-purple::after,
-  .badge-flame::after, .badge-petrol::after, .badge-groen::after,
-  .badge-blauw::after, .badge-paars::after, .badge-grijs::after, .badge-warm-paars::after {
-    content: '.';
-    color: #F15025;
-    font-weight: 800;
-    margin-left: -2px;
-  }
-  tbody tr:hover .badge-success, tbody tr:hover .badge-warning,
-  tbody tr:hover .badge-danger, tbody tr:hover .badge-info,
-  tbody tr:hover .badge-neutral, tbody tr:hover .badge-purple,
-  tbody tr:hover .badge-flame, tbody tr:hover .badge-petrol,
-  tbody tr:hover .badge-groen, tbody tr:hover .badge-blauw,
-  tbody tr:hover .badge-paars, tbody tr:hover .badge-grijs,
-  tbody tr:hover .badge-warm-paars {
-    transform: scale(1.04);
-  }
+  /* Flame-dot on status badges retired (iOS-clean: reserve Flame for
+     logo, sidebar-section-labels and terminal CTAs). Hover-scale on
+     row-hover also dropped — colors-only feedback. */
 
   /* Success: betaald, afgerond, actief */
   .badge-success { background: #E8F5EC; color: #4A9960; }

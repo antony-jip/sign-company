@@ -438,7 +438,7 @@ export function KennisbankPage() {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
             <div className="max-w-2xl">
               <h1 className="font-heading text-[44px] md:text-[56px] font-bold tracking-[-2.5px] leading-[0.95] text-white mb-4">
-                Doen<span style={{ color: '#F15025' }}>.</span><br />
+                Doen<br />
                 <span className="text-white/40">de kracht achter</span><br />
                 doeners.
               </h1>
@@ -451,7 +451,7 @@ export function KennisbankPage() {
               <div className="h-20 w-20 rounded-3xl flex items-center justify-center relative" style={{ backgroundColor: '#F15025', boxShadow: '0 8px 30px rgba(241,80,37,0.4)' }}>
                 <CheckCircle className="h-9 w-9 text-white" />
               </div>
-              <span className="text-[15px] font-bold text-white mt-3">Gedaan<span style={{ color: '#F15025' }}>.</span></span>
+              <span className="text-[15px] font-bold text-white mt-3">Gedaan</span>
               <span className="text-[11px] text-white/35">Klant tevreden</span>
             </div>
           </div>
@@ -636,7 +636,7 @@ export function KennisbankPage() {
         <div className="text-center mt-20 pb-10">
           <div className="h-px w-16 mx-auto mb-6" style={{ backgroundColor: '#E6E4E0' }} />
           <p className="text-[14px] font-heading font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
-            Doen<span style={{ color: '#F15025' }}>.</span>
+            Doen
           </p>
           <p className="text-[12px] mt-1" style={{ color: '#9B9B95' }}>
             Gebouwd voor creatieve maakbedrijven

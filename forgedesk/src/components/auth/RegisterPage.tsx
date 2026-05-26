@@ -281,7 +281,7 @@ export function RegisterPage() {
             Hoe het werkt
           </p>
           <h2 className="font-heading text-[28px] sm:text-[36px] lg:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919]">
-            Klant tot factuur. In één flow<span style={{ color: '#F15025' }}>.</span>
+            Klant tot factuur. In één flow.
           </h2>
           <p className="mt-3 text-[15px] sm:text-[16px] text-foreground/70 max-w-[520px] mx-auto leading-[1.6]">
             Niets meer overtypen tussen 8 systemen. Eén klant, één project, één plek waar alles samenkomt.
@@ -301,7 +301,7 @@ export function RegisterPage() {
             Waarom doen
           </p>
           <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919]">
-            Drie redenen om vandaag te beginnen<span style={{ color: '#F15025' }}>.</span>
+            Drie redenen om vandaag te beginnen.
           </h2>
         </div>
 
@@ -330,7 +330,7 @@ export function RegisterPage() {
             Overstappen
           </p>
           <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919]">
-            Eenvoudig overzetten uit ieder pakket<span style={{ color: '#F15025' }}>.</span>
+            Eenvoudig overzetten uit ieder pakket.
           </h2>
           <p className="mt-3 text-[14px] sm:text-[15px] text-foreground/70 max-w-[520px] mx-auto leading-[1.6]">
             Werk je nu met een ander pakket of in Excel? Twee opties. Kies wat bij je past. Je data komt netjes mee.
@@ -375,7 +375,7 @@ export function RegisterPage() {
       {/* CONVERSION SECTION 3 — Final close: zero-risk reframe + scroll back to form */}
       <section className="relative z-10 max-w-[820px] w-full mx-auto px-6 sm:px-10 py-12 sm:py-16 text-center">
         <h2 className="font-heading text-[30px] sm:text-[42px] lg:text-[52px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919]">
-          Beginnen kost je niks<span style={{ color: '#F15025' }}>.</span>
+          Beginnen kost je niks.
         </h2>
         <p className="mt-5 text-[15px] sm:text-[17px] text-foreground/70 leading-[1.6] max-w-[560px] mx-auto">
           30 dagen volledig gratis. Geen creditcard. Geen verplichting na de proef.
@@ -668,7 +668,7 @@ export function DoenAuthFooter() {
           © {new Date().getFullYear()} doen<span style={{ color: '#F15025' }}>.</span> Gemaakt voor doeners.
         </p>
         <p className="text-[11px] text-muted-foreground tracking-[0.12em] uppercase">
-          Slim gedaan<span style={{ color: '#F15025' }}>.</span>
+          Slim gedaan.
         </p>
       </div>
     </footer>

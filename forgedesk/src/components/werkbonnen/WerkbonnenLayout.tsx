@@ -153,7 +153,7 @@ export function WerkbonnenLayout() {
     try {
       await deleteWerkbon(deleteTarget.id)
       setWerkbonnen((prev) => prev.filter((wb) => wb.id !== deleteTarget.id))
-      toast.success(<>Werkbon verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Werkbon verwijderd</>)
     } catch (err) {
       logger.error('Delete werkbon failed:', err)
       toast.error('Fout bij verwijderen werkbon')
@@ -225,7 +225,7 @@ export function WerkbonnenLayout() {
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
                   <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-                    Werkbonnen<span className="text-[#F15025]">.</span>
+                    Werkbonnen
                   </h1>
                   <Skeleton className="h-4 w-12" />
                 </div>
@@ -293,7 +293,7 @@ export function WerkbonnenLayout() {
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
             <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-              Werkbonnen<span className="text-[#F15025]">.</span>
+              Werkbonnen
             </h1>
             <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {gefilterd.length === werkbonnen.length ? (
@@ -342,7 +342,7 @@ export function WerkbonnenLayout() {
                       <TileIcon size={18} weight="duotone" />
                     </span>
                     <span className="font-heading text-[14px] font-bold text-foreground">
-                      {tile.label}<span className="text-[#F15025]">.</span>
+                      {tile.label}
                     </span>
                   </span>
                 </div>
@@ -565,7 +565,7 @@ export function WerkbonnenLayout() {
                           style={{ backgroundColor: cfg.bg, color: cfg.text }}
                         >
                           {wb.status === 'definitief' && <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />}
-                          {cfg.label}<span className="text-[#F15025]">.</span>
+                          {cfg.label}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4 text-center">

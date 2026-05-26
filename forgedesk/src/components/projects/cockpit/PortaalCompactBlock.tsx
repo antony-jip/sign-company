@@ -88,13 +88,13 @@ function OfferteKaart({ item }: { item: PortaalItem }) {
           <div className="flex items-center justify-between mt-1">
             <span className="text-lg font-mono font-semibold text-foreground">{currencyFmt.format(item.bedrag)}</span>
             <span className="text-sm flex items-center gap-1" style={{ color: st.color }}>
-              {st.label}<span className="text-[#F15025]">.</span>
+              {st.label}
             </span>
           </div>
         )}
         {!item.bedrag && (
           <span className="text-sm flex items-center gap-1 mt-1" style={{ color: st.color }}>
-            {st.label}<span className="text-[#F15025]">.</span>
+            {st.label}
           </span>
         )}
         {/* Actieknoppen — disabled in interne view */}
@@ -124,7 +124,7 @@ function FactuurKaart({ item }: { item: PortaalItem }) {
           <div className="flex items-center justify-between mt-1">
             <span className="text-lg font-mono font-semibold text-foreground">{currencyFmt.format(item.bedrag)}</span>
             <span className="text-sm flex items-center gap-1" style={{ color: st.color }}>
-              {st.label}<span className="text-[#F15025]">.</span>
+              {st.label}
             </span>
           </div>
         )}
@@ -157,7 +157,7 @@ function TekeningKaart({ item }: { item: PortaalItem }) {
             <p className="text-sm font-medium text-foreground mt-1">{item.titel}</p>
             {item.omschrijving && <p className="text-xs text-foreground/70 mt-0.5">{item.omschrijving}</p>}
             <span className="text-sm flex items-center gap-1 mt-1.5" style={{ color: st.color }}>
-              {st.label}<span className="text-[#F15025]">.</span>
+              {st.label}
             </span>
           </div>
           {thumbFile && (
@@ -421,7 +421,7 @@ function InputBar({
         thumbnail_url: tekeningFile.type.startsWith('image/') ? url : undefined,
         uploaded_by: 'bedrijf',
       })
-      toast.success(<>Tekening gedeeld<span style={{ color: '#F15025' }}>.</span></>); setTekeningFile(null); setTekeningTitel(''); setTekeningPopoverOpen(false)
+      toast.success(<>Tekening gedeeld</>); setTekeningFile(null); setTekeningTitel(''); setTekeningPopoverOpen(false)
       await fetchItems()
       if (notificeerKlant) sendEmailNotification(tekeningTitel || tekeningFile.name, tekeningTitel || tekeningFile.name)
     })
@@ -773,7 +773,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
           )}
           <h3 className="text-[12px] font-semibold text-white uppercase tracking-widest">Portaal</h3>
           <span className="text-[11px] font-medium text-white/60">
-            {portaal ? (isActief ? 'Actief' : 'Verlopen') : 'Niet actief'}<span className="text-[#F15025]">.</span>
+            {portaal ? (isActief ? 'Actief' : 'Verlopen') : 'Niet actief'}
           </span>
           {portaal && sharedCount > 0 && (
             <span className="text-[11px] text-white/40 font-mono">{sharedCount} gedeeld</span>

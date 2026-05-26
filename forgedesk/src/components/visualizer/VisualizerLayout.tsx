@@ -792,7 +792,7 @@ export function VisualizerLayout() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground tracking-[-0.3px]">Visualizer<span className="text-[#F15025]">.</span></h1>
+              <h1 className="text-xl font-bold text-foreground tracking-[-0.3px]">Visualizer</h1>
               <span className="text-xs font-mono text-muted-foreground">Nano Banana Gemini + Claude</span>
             </div>
             <p className="text-[13px] text-foreground/70 mt-0.5">Upload een foto, beschrijf wat je wilt zien — Claude verfijnt je prompt, Gemini genereert het beeld</p>

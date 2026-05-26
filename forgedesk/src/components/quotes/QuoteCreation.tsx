@@ -1592,7 +1592,7 @@ export function QuoteCreation() {
         primaireKleur: primaireKleur || '#2563eb',
       }, documentStyle)
       doc.save(`${offerteNummer}.pdf`)
-      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>PDF gedownload</>)
     } catch (err) {
       logger.error('Failed to generate PDF:', err)
       toast.error('Kon PDF niet genereren')
@@ -2119,7 +2119,7 @@ export function QuoteCreation() {
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Introductietekst<span className="text-[#F15025]">.</span>
+                Introductietekst
                 <span
                   className="ml-2 text-[12px] text-muted-foreground font-normal"
                   style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
@@ -2157,7 +2157,7 @@ export function QuoteCreation() {
             <div className="flex items-baseline justify-between mb-4">
               <h3 className="font-heading text-[15px] font-bold text-foreground flex items-center">
                 <span>
-                  Offerte-items<span className="text-[#F15025]">.</span>
+                  Offerte-items
                 </span>
                 {items.length > 0 && (
                   <span className="ml-2 font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-[#F15025] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
@@ -2205,7 +2205,7 @@ export function QuoteCreation() {
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Afsluittekst<span className="text-[#F15025]">.</span>
+                Afsluittekst
                 <span
                   className="ml-2 text-[12px] text-muted-foreground font-normal"
                   style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
@@ -2242,7 +2242,7 @@ export function QuoteCreation() {
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Notities &amp; voorwaarden<span className="text-[#F15025]">.</span>
+                Notities &amp; voorwaarden
               </h3>
             </div>
             <div>
@@ -2279,7 +2279,7 @@ export function QuoteCreation() {
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-[rgba(26,83,92,0.08)]">
                   <h3 className="font-heading text-[15px] font-bold text-foreground">
-                    Email versturen<span className="text-[#F15025]">.</span>
+                    Email versturen
                   </h3>
                   <button onClick={() => email.setShowEmailCompose(false)} className="text-muted-foreground hover:text-foreground hover:bg-white/60 transition-colors h-7 w-7 rounded-md flex items-center justify-center">
                     <X className="h-4 w-4" />

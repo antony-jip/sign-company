@@ -76,7 +76,7 @@ export function TakenOfferteGrid({
               <PhListChecks size={16} weight="duotone" />
             </span>
             <h3 className="font-heading text-[15px] font-bold text-foreground">
-              Taken<span className="text-[#F15025]">.</span>
+              Taken
             </h3>
             {taken.length > 0 && (
               <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
@@ -130,7 +130,7 @@ export function TakenOfferteGrid({
               <PhReceipt size={16} weight="duotone" />
             </span>
             <h3 className="font-heading text-[15px] font-bold text-foreground">
-              Offertes<span className="text-[#F15025]">.</span>
+              Offertes
             </h3>
             {offertes.length > 0 && (
               <span className="font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-[#F15025] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">

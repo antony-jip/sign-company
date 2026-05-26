@@ -66,7 +66,7 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
     <>
       <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
         <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
-          Taken<span className="text-[#F15025]">.</span>
+          Taken
         </h1>
         <p className="mt-1 text-[14px] text-foreground/70 capitalize">{monthLabel}</p>
         {monthOpenCount > 0 && (

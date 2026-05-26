@@ -369,7 +369,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       // Clear draft op succes
       try { localStorage.removeItem(draftKey) } catch { /* ignore */ }
 
-      toast.success(<>Email verstuurd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Email verstuurd</>)
       setBijlagen([])
       setBody(defaultBody)
       setSubject(defaultSubject)

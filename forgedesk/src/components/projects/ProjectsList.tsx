@@ -657,7 +657,7 @@ export function ProjectsList() {
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
                   <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-                    Projecten<span className="text-[#F15025]">.</span>
+                    Projecten
                   </h1>
                   <Skeleton className="h-4 w-12" />
                 </div>
@@ -775,7 +775,7 @@ export function ProjectsList() {
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-4">
                 <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-                  Projecten<span className="text-[#F15025]">.</span>
+                  Projecten
                 </h1>
                 <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
                   {gefilterdeProjecten.length === projecten.length ? (
@@ -837,7 +837,7 @@ export function ProjectsList() {
                           <TileIcon size={18} weight="duotone" />
                         </span>
                         <span className="font-heading text-[14px] font-bold text-foreground">
-                          {tile.label}<span className="text-[#F15025]">.</span>
+                          {tile.label}
                         </span>
                       </span>
                     </div>
@@ -1123,7 +1123,7 @@ export function ProjectsList() {
                           className="text-xs font-semibold flex-shrink-0 px-2.5 py-1 rounded-full"
                           style={{ color: getStatusTextColor(project.status), backgroundColor: statusBg[project.status] || 'hsl(var(--muted))' }}
                         >
-                          {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
+                          {statusLabels[project.status] || project.status}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -1456,7 +1456,7 @@ export function ProjectsList() {
                                     className="text-[13px] font-medium"
                                     style={{ color: getStatusTextColor(project.status) }}
                                   >
-                                    {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
+                                    {statusLabels[project.status] || project.status}
                                   </span>
                                   <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity" />
                                 </button>

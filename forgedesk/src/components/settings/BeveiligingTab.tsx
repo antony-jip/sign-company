@@ -82,7 +82,7 @@ export function BeveiligingTab() {
           toast.error(`Kon wachtwoord niet wijzigen: ${updateError.message}`)
           return
         }
-        toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+        toast.success(<>Opgeslagen</>)
       } else {
         // Demo mode - update password in localStorage
         const storedUser = localStorage.getItem('doen_demo_user')
@@ -94,7 +94,7 @@ export function BeveiligingTab() {
             return
           }
           localStorage.setItem('doen_demo_password', newPassword)
-          toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+          toast.success(<>Opgeslagen</>)
         }
       }
       setCurrentPassword('')

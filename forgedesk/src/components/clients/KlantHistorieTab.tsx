@@ -163,7 +163,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
             <span className="doen-duo-icon" style={{ '--duo-sec': '#3A6B8C' } as React.CSSProperties}>
               <PhFolderSimple size={16} weight="duotone" />
             </span>
-            Activiteiten <span className="text-[#F15025]">.</span>{' '}
+            Activiteiten {' '}
             <span className="text-muted-foreground font-mono text-[12px]">{filteredItems.length}</span>
           </CardTitle>
         </CardHeader>
