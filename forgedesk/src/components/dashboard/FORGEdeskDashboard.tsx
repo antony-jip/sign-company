@@ -202,34 +202,10 @@ function FORGEdeskDashboardInner() {
       <div className="flex flex-col xl:flex-row gap-6">
         {/* ── Main column ── */}
         <main className="flex-1 min-w-0 space-y-5">
-          {/* ── Hero — petrol-gradient card met omzet-overlay rechts ── */}
+          {/* ── Hero — petrol card met omzet-overlay rechts ── */}
           <section
-            className="relative rounded-2xl overflow-hidden bg-[linear-gradient(135deg,#143E47_0%,#1A535C_55%,#2A6E78_100%)] dark:bg-[linear-gradient(135deg,#1A0805_0%,#4A1810_50%,#8C2818_100%)]"
+            className="relative rounded-2xl overflow-hidden bg-[#1A535C] dark:bg-[#4A1810]"
           >
-            {/* Rustige Flame-orbs die langzaam over de banner drijven —
-                vult de open vlakke ruimte op brede schermen subtiel op. */}
-            <div
-              className="hero-orb-a absolute pointer-events-none rounded-full"
-              aria-hidden
-              style={{
-                top: '-30%',
-                left: '38%',
-                width: '420px',
-                height: '420px',
-                background: 'radial-gradient(closest-side, rgba(241,80,37,0.18), rgba(241,80,37,0) 70%)',
-              }}
-            />
-            <div
-              className="hero-orb-b absolute pointer-events-none rounded-full"
-              aria-hidden
-              style={{
-                bottom: '-40%',
-                left: '58%',
-                width: '520px',
-                height: '520px',
-                background: 'radial-gradient(closest-side, rgba(157,211,218,0.14), rgba(157,211,218,0) 70%)',
-              }}
-            />
             <div className="relative flex flex-col md:flex-row">
               <div className="flex-1 px-7 py-7 sm:px-9 sm:py-9">
                 <div className="flex items-center gap-2 mb-4">
@@ -265,33 +241,6 @@ function FORGEdeskDashboardInner() {
                     borderLeft: '1px solid rgba(255,255,255,0.08)',
                   }}
                 >
-                  {/* drifting cloud silhouettes — rustig parallax-effect */}
-                  <svg
-                    className="hero-cloud-a absolute pointer-events-none"
-                    style={{ top: '18%', left: 0, width: '140%', height: 'auto', opacity: 0.05 }}
-                    viewBox="0 0 200 60"
-                    aria-hidden
-                  >
-                    <g fill="#FFFFFF">
-                      <ellipse cx="40" cy="38" rx="32" ry="20" />
-                      <ellipse cx="78" cy="28" rx="34" ry="22" />
-                      <ellipse cx="118" cy="32" rx="30" ry="20" />
-                      <ellipse cx="152" cy="38" rx="26" ry="18" />
-                    </g>
-                  </svg>
-                  <svg
-                    className="hero-cloud-b absolute pointer-events-none"
-                    style={{ top: '55%', left: 0, width: '110%', height: 'auto', opacity: 0.035 }}
-                    viewBox="0 0 200 60"
-                    aria-hidden
-                  >
-                    <g fill="#FFFFFF">
-                      <ellipse cx="50" cy="35" rx="36" ry="22" />
-                      <ellipse cx="100" cy="28" rx="42" ry="24" />
-                      <ellipse cx="150" cy="36" rx="34" ry="22" />
-                    </g>
-                  </svg>
-
                   <div className="relative z-10">
                     <div className="flex items-center gap-4 mb-1">
                       <div className="flex items-center gap-3 flex-shrink-0">
