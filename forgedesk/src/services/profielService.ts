@@ -163,7 +163,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     email_handtekening: '',
     handtekening_afbeelding: '',
     handtekening_afbeelding_grootte: 64,
-    primaire_kleur: '#2563eb',
+    primaire_kleur: '#1A535C',
     secundaire_kleur: '#7c3aed',
     toon_conversie_rate: true,
     toon_dagen_open: true,
@@ -252,12 +252,13 @@ export async function getAppSettings(userId: string): Promise<AppSettings> {
         .maybeSingle()
       data = res.data
     }
-    // Fallback: user_id lookup
+    // getOrgId() kan transient leeg zijn; RLS scopet app_settings al op de eigen org via auth_organisatie_id(), dus een ongefilterde select levert de org-row.
     if (!data) {
       const res = await supabase
         .from('app_settings')
         .select('*')
-        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .maybeSingle()
       data = res.data
     }
