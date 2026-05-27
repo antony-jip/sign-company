@@ -77,7 +77,7 @@ export function AppLayout() {
                   {!hideTopNav && <TopNav />}
                   <TabBar />
                 </div>
-                <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-6 md:py-8 pb-20 md:pb-8 page-content-enter">
+                <div className="w-full px-4 md:px-8 py-6 md:py-8 pb-20 md:pb-8 page-content-enter">
                   <Outlet />
                 </div>
               </div>
