@@ -27,38 +27,17 @@ export default function ModulesCarousel() {
       style={{ backgroundColor: '#F3F2ED' }}
     >
       <TrimCorners inset={28} size={16} color="rgba(26,83,92,0.28)" />
-      {/* Soft blurred ambient blobs — flow across boundaries */}
+      {/* Eén zachte ambient blob — rustige warmte, geen drukte */}
       <div
         aria-hidden
-        className="absolute -top-20 -left-32 w-[500px] h-[500px] rounded-full pointer-events-none"
-        style={{ backgroundColor: '#E8E1D0', opacity: 0.6, filter: 'blur(80px)' }}
-      />
-      <div
-        aria-hidden
-        className="absolute -bottom-32 -right-20 w-[580px] h-[580px] rounded-full pointer-events-none"
-        style={{ backgroundColor: '#E4DBC6', opacity: 0.5, filter: 'blur(90px)' }}
-      />
-      {/* Subtle flame accent */}
-      <div
-        aria-hidden
-        className="absolute top-[40%] left-[60%] w-[320px] h-[320px] rounded-full pointer-events-none"
-        style={{ backgroundColor: '#F15025', opacity: 0.05, filter: 'blur(100px)' }}
-      />
-
-      {/* Subtle dot pattern */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'><circle cx='11' cy='11' r='0.7' fill='%231A1A1A' opacity='0.08'/></svg>")`,
-          backgroundSize: '22px 22px',
-        }}
+        className="absolute -bottom-32 -right-24 w-[620px] h-[620px] rounded-full pointer-events-none"
+        style={{ backgroundColor: '#E4DBC6', opacity: 0.35, filter: 'blur(100px)' }}
       />
 
       <div className="container-site relative py-24 md:py-32">
 
-        {/* Header — integrated numerals in headline */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 lg:gap-12 items-end mb-14 md:mb-20">
+        {/* Header — uitgelijnd op het 2-koloms ritme van de Hero zodat secties doorlopen */}
+        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 lg:gap-16 items-end mb-14 md:mb-20">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -111,7 +90,7 @@ export default function ModulesCarousel() {
             initial={{ opacity: 0, y: 16 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="hidden lg:block w-[320px]"
+            className="hidden lg:block w-[320px] lg:justify-self-end"
           >
             <div className="relative">
               {/* Tape piece sticker — workshop signal */}

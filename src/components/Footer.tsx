@@ -28,9 +28,8 @@ export default function Footer() {
         {/* Top: wordmark + CTA */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-14">
           <div>
-            <div className="font-heading text-[40px] md:text-[48px] font-bold text-white tracking-tighter leading-none mb-2">
-              doen<span style={{ color: '#F15025' }}>.</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-10 md:h-12 w-auto mb-2" />
             <p
               className="text-[15px] mt-3"
               style={{
@@ -40,7 +39,7 @@ export default function Footer() {
                 fontWeight: 400,
               }}
             >
-              De kracht achter doeners<span style={{ color: '#F15025' }}>.</span>
+              Slim gedaan<span style={{ color: '#F15025' }}>.</span>
             </p>
           </div>
           <a

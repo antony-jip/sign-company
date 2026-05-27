@@ -75,35 +75,29 @@ export default function Navbar() {
             {/* Wordmark */}
             <Link
               href="/"
-              className="inline-flex items-baseline shrink-0"
+              className="relative inline-flex items-center shrink-0"
               onClick={(e) => {
                 if (pathname === '/') e.preventDefault()
               }}
             >
-              <span
-                className={`font-heading font-bold tracking-tighter transition-all duration-300 ${
-                  isScrolled ? 'text-[24px]' : 'text-[28px]'
-                }`}
-                style={{ color: '#1A535C' }}
-              >
-                doen
-              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logos/doen-logo.svg"
+                alt="doen."
+                className={`w-auto transition-all duration-300 ${isScrolled ? 'h-6' : 'h-7'}`}
+              />
+              {/* Easter egg: klik op de punt */}
               <span
                 role="button"
                 tabIndex={0}
                 aria-label="doen. punt"
-                className={`font-heading font-bold tracking-tighter cursor-pointer transition-all duration-300 ${
-                  isScrolled ? 'text-[24px]' : 'text-[28px]'
-                }`}
-                style={{ color: '#F15025' }}
+                className="absolute right-0 bottom-0 h-1/2 w-[18%] cursor-pointer"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
                   handlePuntClick()
                 }}
-              >
-                .
-              </span>
+              />
             </Link>
 
             {/* Desktop nav — numbered, pill-hover, active flame dot */}
@@ -186,13 +180,14 @@ export default function Navbar() {
               </a>
               <a
                 href="https://app.doen.team/register"
-                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white px-5 h-[42px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A1A1A]"
+                className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-white px-5 h-[42px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_8px_22px_-2px_rgba(241,80,37,0.5)] active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A1A1A]"
                 style={{
-                  backgroundColor: '#1A1A1A',
+                  backgroundColor: '#F15025',
+                  boxShadow: '0 6px 18px -2px rgba(241,80,37,0.38)',
                 }}
               >
                 <span>Start gratis</span>
-                <svg width="12" height="12" viewBox="0 0 11 11" fill="none">
+                <svg width="12" height="12" viewBox="0 0 11 11" fill="none" className="transition-transform duration-300 group-hover:translate-x-0.5">
                   <path d="M1 5.5h8.5M6.5 2L10 5.5 6.5 9" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </a>
@@ -228,6 +223,17 @@ export default function Navbar() {
             </button>
           </div>
         </nav>
+
+        {/* Flame-accent onderrand — verschijnt bij scrollen */}
+        <div
+          aria-hidden
+          className="absolute bottom-0 left-0 right-0 h-px transition-opacity duration-300"
+          style={{
+            opacity: isScrolled ? 1 : 0,
+            background:
+              'linear-gradient(90deg, rgba(241,80,37,0) 0%, rgba(241,80,37,0.55) 22%, rgba(26,83,92,0.16) 55%, rgba(241,80,37,0) 100%)',
+          }}
+        />
       </header>
 
       {/* Mobile overlay */}
@@ -280,7 +286,7 @@ export default function Navbar() {
                   href="https://app.doen.team/register"
                   onClick={() => setIsMobileOpen(false)}
                   className="flex items-center justify-between text-[16px] font-semibold text-white px-6 h-[56px] rounded-[6px]"
-                  style={{ backgroundColor: '#1A1A1A' }}
+                  style={{ backgroundColor: '#F15025', boxShadow: '0 6px 18px -2px rgba(241,80,37,0.38)' }}
                 >
                   <span>Start gratis</span>
                   <span aria-hidden>→</span>

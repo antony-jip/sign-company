@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import SectionReveal from '../SectionReveal'
@@ -121,6 +122,7 @@ const modules = [
 ]
 
 function PortaalDemo() {
+  const reduce = useReducedMotion()
   return (
     <div style={{ backgroundColor: '#F3F2ED', position: 'relative', overflow: 'hidden' }}>
       <div aria-hidden style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none'}}>
@@ -128,7 +130,7 @@ function PortaalDemo() {
         <div style={{position:'absolute',bottom:'-80px',left:'-80px',width:'460px',height:'460px',borderRadius:'50%',backgroundColor:'#E4DBC6',opacity:0.5,filter:'blur(90px)'}} />
       </div>
       <div style={{position:'relative'}}>
-      <div className="container-site py-16 md:py-24">
+      <div className="container-site py-24 md:py-32">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -136,22 +138,26 @@ function PortaalDemo() {
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
-            <p className="font-mono text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: '#F15025' }}>
-              Zo ziet je klant het
-            </p>
-            <h2 className="text-[24px] md:text-[32px] font-bold tracking-tight mt-2 mb-5" style={{ color: '#1A535C' }}>
-              Eén link<span className="text-flame">.</span> Alles erin<span className="text-flame">.</span>
+            <div className="inline-flex items-center gap-2 mb-7">
+              <span className="relative inline-flex items-center justify-center w-2 h-2">
+                {!reduce && <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.4 }} />}
+                <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+              </span>
+              <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>Zo ziet je klant het</span>
+            </div>
+            <h2 className="font-heading font-bold tracking-[-1px] leading-[1.05] mb-5" style={{ fontSize: 'clamp(22px, 3vw, 32px)', color: '#1A535C' }}>
+              Eén link<span style={{ color: '#F15025' }}>.</span> Alles erin<span style={{ color: '#F15025' }}>.</span>
             </h2>
             <p className="text-[14px] md:text-[16px] leading-[1.7]" style={{ color: '#3F3F3A' }}>
               Je klant opent de link en ziet alles in chronologische volgorde. Tekeningen, offertes, opdrachtbevestigingen, facturen en foto's. Reageren kan direct. Geen inlog, geen app, geen gedoe.
             </p>
             <a
               href="https://app.doen.team/register"
-              className="inline-flex items-center gap-2 text-white font-semibold text-[14px] px-7 py-3.5 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] mt-8"
-              style={{ backgroundColor: '#F15025' }}
+              className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] mt-8"
+              style={{ backgroundColor: '#F15025', boxShadow: '0 8px 24px rgba(241,80,37,0.25)' }}
             >
-              Start gratis
-              <span className="text-[16px]">→</span>
+              <span>Start gratis</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
             </a>
           </motion.div>
 
@@ -290,6 +296,7 @@ function PortaalDemo() {
 
 function WerktekeningSection() {
   const [showResult, setShowResult] = useState(false)
+  const reduce = useReducedMotion()
 
   return (
     <div style={{ backgroundColor: '#F3F2ED', position: 'relative', overflow: 'hidden' }}>
@@ -298,7 +305,7 @@ function WerktekeningSection() {
         <div style={{position:'absolute',bottom:'-80px',left:'-80px',width:'460px',height:'460px',borderRadius:'50%',backgroundColor:'#E4DBC6',opacity:0.5,filter:'blur(90px)'}} />
       </div>
       <div style={{position:'relative'}}>
-      <div className="container-site py-16 md:py-24">
+      <div className="container-site py-24 md:py-32">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -306,22 +313,26 @@ function WerktekeningSection() {
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
-            <p className="font-mono text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: '#F15025' }}>
-              Werktekening
-            </p>
-            <h2 className="text-[24px] md:text-[32px] font-bold tracking-tight mt-2 mb-5" style={{ color: '#1A535C' }}>
-              Upload je tekening<span className="text-flame">.</span> doen<span className="text-flame">.</span> doet de rest<span className="text-flame">.</span>
+            <div className="inline-flex items-center gap-2 mb-7">
+              <span className="relative inline-flex items-center justify-center w-2 h-2">
+                {!reduce && <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.4 }} />}
+                <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+              </span>
+              <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>Werktekening</span>
+            </div>
+            <h2 className="font-heading font-bold tracking-[-1px] leading-[1.05] mb-5" style={{ fontSize: 'clamp(22px, 3vw, 32px)', color: '#1A535C' }}>
+              Upload je tekening<span style={{ color: '#F15025' }}>.</span> doen<span style={{ color: '#F15025' }}>.</span> doet de rest<span style={{ color: '#F15025' }}>.</span>
             </h2>
             <p className="text-[14px] md:text-[16px] leading-[1.7]" style={{ color: '#3F3F3A' }}>
               Sleep je werktekening in de offerte. De omschrijving van de offerteregel wordt automatisch overgenomen als titel. Je klant ziet een professionele tekening met uitleg. Geen Illustrator nodig.
             </p>
             <a
               href="https://app.doen.team/register"
-              className="inline-flex items-center gap-2 text-white font-semibold text-[14px] px-7 py-3.5 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] mt-8"
-              style={{ backgroundColor: '#F15025' }}
+              className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] mt-8"
+              style={{ backgroundColor: '#F15025', boxShadow: '0 8px 24px rgba(241,80,37,0.25)' }}
             >
-              Start gratis
-              <span className="text-[16px]">→</span>
+              <span>Start gratis</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
             </a>
           </motion.div>
 
@@ -475,6 +486,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
   const [activeModule, setActiveModule] = useState(initialModule)
   const scrollRef = useRef<HTMLDivElement>(null)
   const mod = modules[activeModule]
+  const reduce = useReducedMotion()
 
   function selectModule(index: number) {
     setActiveModule(index)
@@ -684,10 +696,10 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               >
                 <span className="relative inline-flex items-center justify-center w-2 h-2">
-                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />
+                  {!reduce && <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />}
                   <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
                 </span>
-                <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: '#6B6B66' }}>
+                <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>
                   {heroConfig!.label}
                 </span>
               </motion.div>
@@ -1341,11 +1353,17 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
               <div style={{position:'absolute',bottom:'-80px',left:'-80px',width:'460px',height:'460px',borderRadius:'50%',backgroundColor:'#E4DBC6',opacity:0.5,filter:'blur(90px)'}} />
             </div>
             <div style={{position:'relative'}}>
-            <div className="container-site py-16 md:py-24">
+            <div className="container-site py-24 md:py-32">
               <SectionReveal>
-                <p className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.3em] uppercase text-center mb-3" style={{ color: '#F15025' }}>
-                  {heroConfig!.pillarsTitle}
-                </p>
+                <div className="inline-flex items-center gap-2 mb-7 justify-center w-full">
+                  <span className="relative inline-flex items-center justify-center w-2 h-2">
+                    {!reduce && <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.4 }} />}
+                    <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+                  </span>
+                  <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>
+                    {heroConfig!.pillarsTitle}
+                  </span>
+                </div>
                 <h2 className="font-heading text-[28px] md:text-[36px] font-bold tracking-[-1.5px] text-center mb-14 md:mb-20" style={{ color: '#1A535C' }}>
                   {heroConfig!.pillarsHeading![0]}<span className="text-flame">.</span> {heroConfig!.pillarsHeading![1]}<span className="text-flame">.</span>
                 </h2>
@@ -1361,11 +1379,11 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
                   >
                     <div
-                      className="rounded-xl overflow-hidden h-[280px] md:h-[320px] flex items-center justify-center p-8 relative group"
+                      className="rounded-[16px] overflow-hidden h-[280px] md:h-[320px] flex items-center justify-center p-8 relative group"
                       style={{
                         backgroundColor: '#F0E9D7',
                         border: '1px solid rgba(26,83,92,0.10)',
-                        boxShadow: '0 4px 14px rgba(40,30,20,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
+                        boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 24px 56px -30px rgba(19,62,69,0.24)',
                       }}
                     >
                       {/* Top flame accent bar — brand status strip */}
@@ -1423,11 +1441,11 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
               >
                 <a
                   href="https://app.doen.team/register"
-                  className="inline-flex items-center gap-2 text-white font-semibold text-[14px] px-7 py-3.5 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
-                  style={{ backgroundColor: '#F15025' }}
+                  className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                  style={{ backgroundColor: '#F15025', boxShadow: '0 8px 24px rgba(241,80,37,0.25)' }}
                 >
-                  Start gratis
-                  <span className="text-[16px]">→</span>
+                  <span>Start gratis</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
                 </a>
                 <p className="text-[12px] mt-3" style={{ color: '#6B6B66' }}>
                   30 dagen gratis. Geen creditcard nodig.
@@ -1455,11 +1473,17 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                 <div style={{position:'absolute',bottom:'-80px',left:'-80px',width:'460px',height:'460px',borderRadius:'50%',backgroundColor:'#E4DBC6',opacity:0.5,filter:'blur(90px)'}} />
               </div>
               <div style={{position:'relative'}}>
-              <div className="container-site py-16 md:py-24">
+              <div className="container-site py-24 md:py-32">
                 <SectionReveal>
-                  <p className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.3em] uppercase text-center mb-3" style={{ color: '#F15025' }}>
-                    Hoe het werkt
-                  </p>
+                  <div className="inline-flex items-center gap-2 mb-7 justify-center w-full">
+                    <span className="relative inline-flex items-center justify-center w-2 h-2">
+                      {!reduce && <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.4 }} />}
+                      <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+                    </span>
+                    <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>
+                      Hoe het werkt
+                    </span>
+                  </div>
                   <h2 className="font-heading text-[28px] md:text-[36px] font-bold tracking-[-1.5px] text-center mb-14 md:mb-20" style={{ color: '#1A535C' }}>
                     Foto erin<span className="text-flame">.</span> Visualisatie eruit<span className="text-flame">.</span>
                   </h2>
@@ -1473,7 +1497,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     viewport={{ once: true, margin: '-60px' }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <div className="rounded-xl p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(26,83,92,0.08)', boxShadow: '0 4px 16px rgba(26,83,92,0.06)' }}>
+                    <div className="rounded-[16px] p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(26,83,92,0.10)', boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 24px 56px -30px rgba(19,62,69,0.24)' }}>
                       <div className="text-center">
                         <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'rgba(241,80,37,0.15)' }}>
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F15025" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1502,7 +1526,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     viewport={{ once: true, margin: '-60px' }}
                     transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <div className="rounded-xl p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(26,83,92,0.08)', boxShadow: '0 4px 16px rgba(26,83,92,0.06)' }}>
+                    <div className="rounded-[16px] p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(26,83,92,0.10)', boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 24px 56px -30px rgba(19,62,69,0.24)' }}>
                       <div className="text-center">
                         <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'rgba(26,83,92,0.2)' }}>
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A535C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1531,7 +1555,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     viewport={{ once: true, margin: '-60px' }}
                     transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <div className="rounded-xl p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(26,83,92,0.08)', boxShadow: '0 4px 16px rgba(26,83,92,0.06)' }}>
+                    <div className="rounded-[16px] p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(26,83,92,0.10)', boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 24px 56px -30px rgba(19,62,69,0.24)' }}>
                       <div className="text-center">
                         <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'rgba(45,107,72,0.15)' }}>
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2D6B48" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1564,11 +1588,11 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                 >
                   <a
                     href="https://app.doen.team/register"
-                    className="inline-flex items-center gap-2 text-white font-semibold text-[14px] px-7 py-3.5 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
-                    style={{ backgroundColor: '#F15025' }}
+                    className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                    style={{ backgroundColor: '#F15025', boxShadow: '0 8px 24px rgba(241,80,37,0.25)' }}
                   >
-                    Start gratis
-                    <span className="text-[16px]">→</span>
+                    <span>Start gratis</span>
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
                   </a>
                   <p className="text-[12px] mt-3" style={{ color: '#6B6B66' }}>
                     10 credits inbegrepen. Bijkopen wanneer je wilt.
@@ -1605,10 +1629,10 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
             <SectionReveal>
               <div className="inline-flex items-center gap-2 mb-6">
                 <span className="relative inline-flex items-center justify-center w-2 h-2">
-                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />
+                  {!reduce && <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />}
                   <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
                 </span>
-                <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: '#6B6B66' }}>
+                <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>
                   Welkom in de cockpit
                 </span>
               </div>
@@ -1671,7 +1695,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       </section>
 
       {/* Active module content — Hero-style on beige */}
-      <section className="relative py-20 md:py-28" style={{ backgroundColor: '#F3F2ED' }}>
+      <section className="relative py-24 md:py-32" style={{ backgroundColor: '#F3F2ED' }}>
         {/* Backdrop layer scoped */}
         <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
@@ -1714,17 +1738,19 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                   {/* Eyebrow with ping dot in module color */}
                   <div className="inline-flex items-center gap-2 mb-6">
                     <span className="relative inline-flex items-center justify-center w-2 h-2">
-                      <span
-                        className="absolute inset-0 rounded-full animate-ping"
-                        style={{ backgroundColor: mod.color, opacity: 0.45 }}
-                      />
+                      {!reduce && (
+                        <span
+                          className="absolute inset-0 rounded-full animate-ping"
+                          style={{ backgroundColor: mod.color, opacity: 0.45 }}
+                        />
+                      )}
                       <span
                         className="relative w-1.5 h-1.5 rounded-full"
                         style={{ backgroundColor: mod.color }}
                       />
                     </span>
                     <span
-                      className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase"
+                      className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase"
                       style={{ color: '#6B6B66' }}
                     >
                       Module · {mod.name}
@@ -1805,14 +1831,14 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                   <div className="flex flex-wrap items-center gap-5">
                     <a
                       href="https://app.doen.team/register"
-                      className="inline-flex items-center gap-2 font-mono text-[12px] font-bold tracking-[0.18em] uppercase text-white px-7 h-[52px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                      className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
                       style={{
                         backgroundColor: '#F15025',
-                        boxShadow: '0 8px 24px rgba(241,80,37,0.28)',
+                        boxShadow: '0 8px 24px rgba(241,80,37,0.25)',
                       }}
                     >
                       <span>Start gratis</span>
-                      <span aria-hidden>→</span>
+                      <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
                     </a>
                     <a
                       href="/contact"
@@ -1834,10 +1860,10 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
 
               {/* Detail section — card with mod-color accent */}
               <motion.div
-                className="mt-16 md:mt-20 rounded-[10px] p-5 md:p-10 bg-white relative overflow-hidden"
+                className="mt-16 md:mt-20 rounded-[16px] p-5 md:p-10 bg-white relative overflow-hidden"
                 style={{
-                  border: '1px solid rgba(26,83,92,0.08)',
-                  boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 12px 28px -14px rgba(20,40,40,0.14)',
+                  border: '1px solid rgba(26,83,92,0.10)',
+                  boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 24px 56px -30px rgba(19,62,69,0.24)',
                 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1914,10 +1940,10 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
             <div className="relative max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 mb-6">
                 <span className="relative inline-flex items-center justify-center w-2 h-2">
-                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />
+                  {!reduce && <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />}
                   <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
                 </span>
-                <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: 'rgba(255,255,255,0.55)' }}>
                   Nu beschikbaar
                 </span>
               </div>
@@ -1940,14 +1966,14 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
               <div className="flex flex-wrap items-center justify-center gap-5">
                 <a
                   href="https://app.doen.team/register"
-                  className="inline-flex items-center gap-2 font-mono text-[12px] font-bold tracking-[0.18em] uppercase text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                  className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
                   style={{
                     backgroundColor: '#F15025',
                     boxShadow: '0 10px 28px rgba(241,80,37,0.4)',
                   }}
                 >
                   <span>Start gratis</span>
-                  <span aria-hidden>→</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
                 </a>
                 <a
                   href="/contact"

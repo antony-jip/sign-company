@@ -60,7 +60,7 @@ export default function CTASection() {
               <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
             </span>
             <span
-              className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase"
+              className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase"
               style={{ color: '#6B6B66' }}
             >
               30 dagen gratis · geen creditcard
@@ -91,11 +91,11 @@ export default function CTASection() {
           >
             <a
               href="https://app.doen.team/register"
-              className="inline-flex items-center gap-2 font-mono text-[12px] font-bold tracking-[0.18em] uppercase text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#1A535C]"
+              className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#1A535C]"
               style={{ backgroundColor: '#F15025', boxShadow: '0 10px 28px rgba(241,80,37,0.32)' }}
             >
               <span>Start gratis</span>
-              <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
             </a>
             <a
               href="/contact"

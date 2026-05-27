@@ -9,7 +9,7 @@ import {
   Activity, CheckCircle2, ArrowUpRight, Wrench, ChevronRight, Image as ImageIcon,
   Pencil, Camera, Inbox, Archive, Paperclip, Pin, Clock, FileEdit, Trash2,
   CalendarClock, ArrowLeft, MoreHorizontal, Copy, ChevronDown, ChevronsRight,
-  RefreshCw,
+  RefreshCw, Tag, Reply, ReplyAll, Forward, ChevronUp,
   type LucideIcon,
 } from 'lucide-react'
 import SerifItalic from '@/components/SerifItalic'
@@ -47,7 +47,7 @@ export default function AppShowcase() {
 
   return (
     <section ref={ref} className="relative" style={{ backgroundColor: '#F3F2ED' }}>
-      <div className="container-site relative py-20 md:py-28">
+      <div className="container-site relative py-24 md:py-32">
 
         {/* Section heading */}
         <motion.div
@@ -57,8 +57,11 @@ export default function AppShowcase() {
           className="max-w-3xl mb-10 md:mb-14"
         >
           <div className="inline-flex items-center gap-2 mb-5">
-            <span className="w-6 h-px" style={{ backgroundColor: FLAME }} />
-            <span className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase" style={{ color: MUTED }}>
+            <span className="relative inline-flex items-center justify-center w-2 h-2">
+              <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.4 }} />
+              <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+            </span>
+            <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
               Dit is doen.
             </span>
           </div>
@@ -126,81 +129,96 @@ export default function AppShowcase() {
           })}
         </motion.div>
 
-        {/* App shell — browser frame */}
+        {/* App shell — browser frame (compacter, gecentreerd) */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.85, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="relative rounded-[16px] overflow-hidden mx-auto"
-          style={{
-            backgroundColor: BG,
-            border: `1px solid ${LINE}`,
-            boxShadow: '0 4px 10px rgba(20,40,40,0.05), 0 36px 80px -20px rgba(19,62,69,0.22)',
-            maxWidth: 1240,
-          }}
+          className="mx-auto"
+          style={{ maxWidth: 1240 }}
         >
-          {/* Browser bar */}
-          <div
-            className="flex items-center gap-3 px-4 py-2.5"
-            style={{ backgroundColor: '#F0EEE8', borderBottom: `1px solid ${LINE}` }}
-          >
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#E5A4A4' }} />
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#E5CFA4' }} />
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#A4D9B8' }} />
-            </div>
-            <div
-              className="flex-1 mx-3 px-3 py-1 rounded-full font-mono text-[10px] md:text-[11px] tracking-wide hidden sm:block"
-              style={{ backgroundColor: BG, color: MUTED, border: `1px solid ${LINE}` }}
-            >
-              app.doen.team / {
-                view === 'dashboard' ? 'dashboard'
-                : view === 'projecten' ? 'projecten'
-                : view === 'detail' ? 'projecten / PRJ-2026-044'
-                : view === 'klanten' ? 'klanten'
-                : view === 'offerte' ? 'offertes / OFF-2026-236'
-                : view === 'email' ? 'email / inbox'
-                : view === 'factuur' ? 'facturen / 2026234'
-                : view === 'inkoop' ? 'inkoopfacturen'
-                : view === 'taken' ? 'taken / week-21'
-                : 'planning / week-21'
-              }
-            </div>
-          </div>
-
-          {/* Top nav (modules) */}
-          <TopNav view={view} setView={setView} />
-
-          {/* Sub-tab strip */}
-          <SubTabs view={view} setView={setView} />
-
-          {/* CONTENT */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={view}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.3 }}
-            >
-              {view === 'dashboard' && <DashboardView setView={setView} />}
-              {view === 'projecten' && <ProjectenView setView={setView} />}
-              {view === 'detail' && <ProjectDetailView setView={setView} />}
-              {view === 'klanten' && <KlantenView />}
-              {view === 'offerte' && <OfferteView />}
-              {view === 'email' && <EmailView />}
-              {view === 'factuur' && <FactuurView />}
-              {view === 'inkoop' && <InkoopView />}
-              {view === 'taken' && <TakenView />}
-              {view === 'planning' && <PlanningView />}
-            </motion.div>
-          </AnimatePresence>
+          <AppFrame view={view} setView={setView} />
         </motion.div>
 
         {/* Pinpoints — wat kan je op deze tab */}
         <FeatureList view={view} />
       </div>
     </section>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────
+   APP FRAME — browser-frame mockup
+   ────────────────────────────────────────────────────────────── */
+
+function AppFrame({ view, setView }: { view: View; setView: (v: View) => void }) {
+  const url =
+    view === 'dashboard' ? 'dashboard'
+    : view === 'projecten' ? 'projecten'
+    : view === 'detail' ? 'projecten / PRJ-2026-044'
+    : view === 'klanten' ? 'klanten'
+    : view === 'offerte' ? 'offertes / OFF-2026-236'
+    : view === 'email' ? 'email / inbox'
+    : view === 'factuur' ? 'facturen / 2026234'
+    : view === 'inkoop' ? 'inkoopfacturen'
+    : view === 'taken' ? 'taken / week-21'
+    : 'planning / week-21'
+
+  return (
+    <div
+      className="relative flex flex-col overflow-hidden rounded-[16px]"
+      style={{
+        backgroundColor: BG,
+        border: `1px solid ${LINE}`,
+        boxShadow: '0 4px 10px rgba(20,40,40,0.05), 0 24px 60px -20px rgba(19,62,69,0.18)',
+      }}
+    >
+      {/* Browser bar */}
+      <div
+        className="flex items-center gap-3 px-4 py-2.5 shrink-0"
+        style={{ backgroundColor: '#F0EEE8', borderBottom: `1px solid ${LINE}` }}
+      >
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#E5A4A4' }} />
+          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#E5CFA4' }} />
+          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#A4D9B8' }} />
+        </div>
+        <div
+          className="flex-1 mx-3 px-3 py-1 rounded-full font-mono text-[10px] md:text-[11px] tracking-wide hidden sm:block"
+          style={{ backgroundColor: BG, color: MUTED, border: `1px solid ${LINE}` }}
+        >
+          app.doen.team / {url}
+        </div>
+      </div>
+
+      {/* Top nav (modules) */}
+      <TopNav view={view} setView={setView} />
+
+      {/* Sub-tab strip */}
+      <SubTabs view={view} setView={setView} />
+
+      {/* CONTENT */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={view}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.3 }}
+        >
+          {view === 'dashboard' && <DashboardView setView={setView} />}
+          {view === 'projecten' && <ProjectenView setView={setView} />}
+          {view === 'detail' && <ProjectDetailView setView={setView} />}
+          {view === 'klanten' && <KlantenView />}
+          {view === 'offerte' && <OfferteView />}
+          {view === 'email' && <EmailView />}
+          {view === 'factuur' && <FactuurView />}
+          {view === 'inkoop' && <InkoopView />}
+          {view === 'taken' && <TakenView />}
+          {view === 'planning' && <PlanningView />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
   )
 }
 
@@ -413,10 +431,11 @@ function TopNav({ view, setView }: { view: View; setView: (v: View) => void }) {
       <button
         type="button"
         onClick={() => setView('dashboard')}
-        className="font-heading font-bold text-[20px] tracking-tighter mr-4 md:mr-6 shrink-0 cursor-pointer"
-        style={{ color: PETROL }}
+        aria-label="doen."
+        className="mr-4 md:mr-6 shrink-0 cursor-pointer inline-flex items-center"
       >
-        doen<span style={{ color: FLAME }}>.</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logos/doen-logo.svg" alt="doen." className="h-5 w-auto" />
       </button>
       <div className="hidden lg:flex items-center gap-1 flex-1 overflow-hidden">
         {nav.map((item) => <NavTab key={item.label} item={item} view={view} setView={setView} compact={false} />)}
@@ -1198,94 +1217,90 @@ const mailboxen: { icon: LucideIcon; label: string; count?: string; active?: boo
   { icon: CalendarClock, label: 'Ingeplande berichten' },
 ]
 
-const emails: { av: string; avBg: string; sender: string; subject: string; preview: string; time: string; unread?: boolean; pinned?: boolean }[] = [
-  { av: 'L', avBg: '#FAE5D5', sender: 'Lars de Boer',          subject: 'Vraag over geveltekst',                                     preview: 'Hoi Antony, wij willen onze gevel aankleden met stalen letters, kun je…',     time: '20:04' },
-  { av: 'G', avBg: '#FBE0D5', sender: 'Glashandel Bos',        subject: 'Alleen in mei: bespaar tot € 30,– op verzendkosten',         preview: '[In de browser weergeven]([link]) Dag Sign Company, mei is er — de pe…',   time: '20:00' },
-  { av: 'D', avBg: '#E2F0F0', sender: 'doen.team',             subject: 'Contact via doen.team — Test',                              preview: 'Naam: Test Email: test@example.nl Bericht: Testbericht via curl op lo…',     time: '19:58' },
-  { av: 'V', avBg: '#F2E8E5', sender: 'Videoland',             subject: 'Dé serie waar we allemaal naar uitkeken!',                  preview: 'Videoland [link] Geen Flodd',                                                  time: '19:55', pinned: true },
-  { av: 'W', avBg: '#E5ECF6', sender: 'WooPayments',           subject: '🛡 Actie vereist: verifieer je gegevens met WooPayments',    preview: 'Loop je betalingen niet mis!',                                                 time: '19:54' },
-  { av: 'L', avBg: '#FBE0D5', sender: 'LinkedIn',              subject: 'U hebt 4 nieuwe berichten',                                 preview: 'U hebt 4 nieuwe berichten. Berichten weergeven: [link]',                       time: '19:36' },
-  { av: 'M', avBg: '#EEE8F5', sender: 'Mailchimp',             subject: 'Je weekrapport is klaar — campagne mei 18',                 preview: 'Open rate 38%, click-through 9%. Bekijk je volledige stats in de app.',        time: '19:26' },
-  { av: 'P', avBg: '#FBE0D5', sender: 'Pro & Co',              subject: '⏳ 48 — antony, less than 48 hours left on the Spring Bundle', preview: 'Spring Mega Bundle eindigt dinsdag. ([link])',                                 time: '19:25' },
-  { av: 'P', avBg: '#FAE5D5', sender: 'PWN',                   subject: 'Geef uw watermeterstand door',                              preview: 'Beste klant, het is weer tijd om uw watermeterstand door te geven.',           time: '19:25', unread: true },
-  { av: 'J', avBg: '#E4F0EA', sender: 'Familie de Jong',       subject: 'The best time of the year 🏔️',                              preview: 'Hoi Antony, we zijn er weer aan toe! Kom je dit jaar mee skiën?',              time: '19:17' },
-  { av: 'P', avBg: '#FBE0D5', sender: 'Probo',                 subject: 'Bevestiging van je bestelling: Kunstdoekjes',               preview: 'We hebben je bestelling (1260305765 - Kunstdoekjes) ontvangen en gaan zo snel m…', time: '19:07' },
-  { av: 'S', avBg: '#E2F0F0', sender: 'Shutterstock',          subject: 'Klaar om te downloaden: De gratis afbeeldingen van deze week', preview: 'Shutterstock &',                                                              time: '19:05' },
-  { av: 'S', avBg: '#FAE5D5', sender: 'Sanne Visser',          subject: 'Verandering huisstijl',                                     preview: 'Hallo Mark, ik heb enige tijd geleden raam- en autostickers bij jullie laten maken voor…', time: '18:54' },
-  { av: 'G', avBg: '#E5ECF6', sender: 'The Google Workspace',  subject: 'Herinnering over gekoppelde Google-services',               preview: 'Google Workspace logo Je kunt je keuzes altijd wijzigen in je Google-account. Vo…', time: '18:46' },
+const emails: { av: string; avBg: string; sender: string; subject: string; time: string; unread?: boolean; attachment?: boolean }[] = [
+  { av: 'B', avBg: '#FAE5D5', sender: 'Bakkerij Steeg',    subject: 'Drukproef akkoord — gevelreclame', time: '18:48' },
+  { av: 'G', avBg: '#E5ECF6', sender: 'Glashandel Bos',    subject: 'Bevestiging bestelling: 6mm glas',  time: '18:30', attachment: true },
+  { av: 'A', avBg: '#EEE8F5', sender: 'Atelier 9',         subject: 'Vraag over stalen letters',        time: '18:09', unread: true },
+  { av: 'C', avBg: '#E4F0EA', sender: 'Café De Zon',       subject: 'Offerte voor terrasbord',           time: '17:54' },
+  { av: 'S', avBg: '#F3ECD5', sender: 'Sign Supply',       subject: 'Mei-actie: 15% op vinyl',           time: '17:35' },
+  { av: 'V', avBg: '#FBE0D5', sender: 'Van Meer & Co',     subject: 'RE: planning montage',              time: '17:27' },
+  { av: 'J', avBg: '#E4F0EA', sender: 'Jachtwerf Kemper',  subject: 'Boottekst — maten doorgegeven',     time: '17:00' },
+  { av: 'G', avBg: '#E5ECF6', sender: 'Groenland BV',      subject: 'Nieuwe huisstijl — logo',           time: '16:54', attachment: true },
+  { av: 'K', avBg: '#FAE5D5', sender: 'Kemper B.V.',       subject: 'Factuur 2026234 voldaan',           time: '16:34' },
+  { av: 'D', avBg: '#E2F0F0', sender: 'De Wit Bouw',       subject: 'Bouwhek-doek bestellen',            time: '16:14' },
+  { av: 'J', avBg: '#FBE0D5', sender: 'Jansen Bouw',       subject: 'Reclamezuil parkeerterrein',        time: '16:00' },
+  { av: 'P', avBg: '#EEE8F5', sender: 'PrintPartner',      subject: 'Levertijd banners deze week',       time: '15:48' },
+  { av: 'M', avBg: '#F2E8E5', sender: 'Mark de Vries',     subject: 'Even tijd voor een koffie?',        time: '15:25' },
+  { av: 'A', avBg: '#E4F0EA', sender: 'Atelier 9',         subject: "Situatiefoto's aangeleverd",        time: '15:12' },
+]
+
+const conversationThread: { from: string; time: string; preview?: string; active?: boolean }[] = [
+  { from: 'Jan Visser (Vakwerk Signing)', time: '09:30', preview: 'Hoi Mark, We hebben elkaar de afgelopen jaren een paar keer gezien op de vakbeurs. Goed om weer eens bij te praten over…' },
+  { from: 'Mark de Vries',                 time: '12:19', preview: 'Hoi Jan, Leuk! Ik kom graag even bij je buurten om hierover te praten. Alleen lukt me dat op korte termijn niet zo goed…' },
+  { from: 'Jan Visser (Vakwerk Signing)', time: '13:38', preview: 'Hoi Mark, Dank voor je reactie, top! Na 15 juni is prima, ik ga 22 juni op vakantie. Kan het tussen 15 en 22 juni?' },
+  { from: 'Mark de Vries',                 time: '15:25', active: true },
+  { from: 'Jan Visser (Vakwerk Signing)', time: '15:40', preview: 'Zeker! In de week van 6 juli ben ik weer aan het werk zoals het er nu uitziet. Laat maar weten wanneer het jou uitkomt…' },
 ]
 
 function EmailView() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr]" style={{ minHeight: 560 }}>
-      {/* Sidebar */}
-      <aside className="hidden md:flex flex-col p-4 gap-3" style={{ borderRight: `1px solid ${LINE}`, backgroundColor: CARD }}>
-        <button
-          type="button"
-          className="inline-flex items-center justify-center gap-2 h-10 rounded-[10px] font-semibold text-[13px] text-white"
-          style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(241,80,37,0.28)' }}
-        >
-          <Pencil className="w-3.5 h-3.5" strokeWidth={2.4} />
-          Nieuw bericht
-        </button>
-        <ul className="mt-2 space-y-0.5">
-          {mailboxen.map((m) => {
-            const Icon = m.icon
-            return (
-              <li
-                key={m.label}
-                className="flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] text-[12.5px] font-medium"
-                style={{
-                  backgroundColor: m.active ? 'rgba(26,83,92,0.07)' : 'transparent',
-                  color: m.active ? PETROL : '#3F3F3A',
-                }}
-              >
-                <Icon className="w-3.5 h-3.5" strokeWidth={2} />
-                <span className="flex-1">{m.label}</span>
-                {m.count && <span className="font-mono text-[10px] tabular-nums" style={{ color: MUTED }}>{m.count}</span>}
-              </li>
-            )
-          })}
-        </ul>
+    <div className="grid grid-cols-1 md:grid-cols-[52px_minmax(0,1fr)] lg:grid-cols-[52px_minmax(300px,360px)_minmax(0,1fr)]" style={{ minHeight: 560 }}>
+      {/* Icon rail — collapsed mailboxes */}
+      <aside className="hidden md:flex flex-col items-center gap-1 py-4" style={{ borderRight: `1px solid ${LINE}`, backgroundColor: '#FAFAF8' }}>
+        {mailboxen.map((m) => {
+          const Icon = m.icon
+          return (
+            <span
+              key={m.label}
+              className="relative w-9 h-9 rounded-[10px] inline-flex items-center justify-center"
+              style={{ backgroundColor: m.active ? PETROL : 'transparent', color: m.active ? '#FFFFFF' : MUTED }}
+            >
+              <Icon className="w-4 h-4" strokeWidth={2} />
+              {m.count && (
+                <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full inline-flex items-center justify-center font-mono text-[8px] font-bold text-white" style={{ backgroundColor: FLAME }}>{m.count}</span>
+              )}
+            </span>
+          )
+        })}
       </aside>
 
-      {/* Main */}
-      <div className="flex flex-col">
-        {/* Top strip */}
-        <div className="flex items-center justify-between px-4 md:px-5 py-3" style={{ borderBottom: `1px solid ${LINE}` }}>
-          <div />
-          <div className="inline-flex items-center gap-2 text-[11px]" style={{ color: MUTED }}>
-            <span>Focus modus</span>
-            <span className="w-7 h-4 rounded-full inline-flex items-center px-0.5" style={{ backgroundColor: '#E6E1D5' }}>
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: CARD, boxShadow: '0 1px 2px rgba(0,0,0,0.10)' }} />
-            </span>
-          </div>
+      {/* Inbox list */}
+      <div className="flex flex-col min-w-0" style={{ borderRight: `1px solid ${LINE}`, backgroundColor: CARD }}>
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3">
+          <h3 className="font-heading text-[22px] font-bold tracking-tight" style={{ color: INK }}>Inbox</h3>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 h-9 px-3.5 rounded-[10px] font-semibold text-[12.5px] text-white shrink-0"
+            style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(241,80,37,0.28)' }}
+          >
+            <Pencil className="w-3.5 h-3.5" strokeWidth={2.4} />
+            Nieuw bericht
+          </button>
         </div>
 
-        {/* Tabs + view toolbar */}
-        <div className="flex items-center gap-2 px-4 md:px-5 py-3 flex-wrap" style={{ borderBottom: `1px solid ${LINE}` }}>
-          <span className="w-4 h-4 rounded-[4px] inline-block" style={{ border: `1.5px solid ${LINE}` }} />
+        {/* Tabs */}
+        <div className="flex items-center gap-1.5 px-4 pb-3">
+          <span className="w-4 h-4 rounded-[4px] inline-block shrink-0" style={{ border: `1.5px solid ${LINE}` }} />
           {[
             { l: 'Alle', active: true },
             { l: 'Ongelezen' },
             { l: 'Vastgepind' },
             { l: 'Bijlagen' },
           ].map((t) => (
-            <span key={t.l} className="px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{
+            <span key={t.l} className="px-2.5 py-1 rounded-full text-[12px] font-semibold whitespace-nowrap" style={{
               color: t.active ? INK : MUTED,
               backgroundColor: t.active ? 'rgba(26,83,92,0.07)' : 'transparent',
             }}>{t.l}</span>
           ))}
-          <span className="ml-auto inline-flex items-center gap-3" style={{ color: MUTED }}>
+          <span className="ml-auto inline-flex items-center gap-2.5 shrink-0" style={{ color: '#9B9B95' }}>
             <LayoutGrid className="w-3.5 h-3.5" strokeWidth={1.8} />
-            <span className="font-mono text-[11px]" style={{ color: '#9B9B95' }}>A</span>
-            <span className="font-mono text-[12px] font-bold" style={{ color: INK }}>A</span>
-            <span className="font-mono text-[13px]" style={{ color: '#9B9B95' }}>A</span>
+            <RefreshCw className="w-3.5 h-3.5" strokeWidth={1.8} />
           </span>
         </div>
 
         {/* Search */}
-        <div className="px-4 md:px-5 py-3" style={{ borderBottom: `1px solid ${LINE}` }}>
+        <div className="px-4 pb-3">
           <div className="flex items-center gap-2 px-3 py-2 rounded-md" style={{ backgroundColor: BG, border: `1px solid ${LINE}` }}>
             <Search className="w-3.5 h-3.5" style={{ color: '#9B9B95' }} />
             <span className="text-[12px]" style={{ color: '#9B9B95' }}>Zoek in emails…</span>
@@ -1293,7 +1308,8 @@ function EmailView() {
         </div>
 
         {/* Date divider */}
-        <div className="px-4 md:px-5 pt-3 pb-1">
+        <div className="flex items-center gap-2 px-4 pt-1 pb-1">
+          <span className="w-3 h-3 rounded-[3px] inline-block" style={{ border: `1.5px solid ${LINE}` }} />
           <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: '#9B9B95' }}>Vandaag</p>
         </div>
 
@@ -1302,7 +1318,7 @@ function EmailView() {
           {emails.map((e, i) => (
             <li
               key={i}
-              className="grid grid-cols-[16px_28px_minmax(0,1fr)_auto] items-center gap-3 px-4 md:px-5 py-3"
+              className="grid grid-cols-[14px_28px_minmax(0,1fr)_auto] items-center gap-2.5 px-4 py-2.5"
               style={{
                 borderTop: i === 0 ? 'none' : `1px solid ${LINE}`,
                 backgroundColor: e.unread ? 'rgba(26,83,92,0.04)' : 'transparent',
@@ -1314,20 +1330,129 @@ function EmailView() {
               <span className="w-7 h-7 rounded-full inline-flex items-center justify-center font-mono text-[11px] font-bold" style={{ backgroundColor: e.avBg, color: INK }}>
                 {e.av}
               </span>
-              <div className="min-w-0 grid grid-cols-[180px_1fr] gap-3">
-                <span className="text-[13px] truncate" style={{ color: INK, fontWeight: e.unread ? 700 : 500 }}>{e.sender}</span>
-                <span className="text-[13px] truncate" style={{ color: e.unread ? INK : '#3F3F3A' }}>
-                  <span style={{ fontWeight: e.unread ? 700 : 600 }}>{e.subject}</span>
-                  <span className="ml-2" style={{ color: '#9B9B95' }}>{e.preview}</span>
-                </span>
+              <div className="min-w-0 flex items-baseline gap-1.5">
+                <span className="text-[12.5px] truncate shrink-0 max-w-[46%]" style={{ color: INK, fontWeight: e.unread ? 700 : 600 }}>{e.sender}</span>
+                <span className="text-[12.5px] truncate" style={{ color: '#7C7C76' }}>{e.subject}</span>
               </div>
-              <div className="inline-flex items-center gap-2 shrink-0">
-                {e.pinned && <Pin className="w-3 h-3" style={{ color: MUTED }} strokeWidth={2} />}
+              <div className="inline-flex items-center gap-1.5 shrink-0">
+                {e.attachment && <Paperclip className="w-3 h-3" style={{ color: '#9B9B95' }} strokeWidth={2} />}
                 <span className="font-mono text-[11px] tabular-nums" style={{ color: e.unread ? PETROL : MUTED, fontWeight: e.unread ? 700 : 400 }}>{e.time}</span>
               </div>
             </li>
           ))}
         </ul>
+      </div>
+
+      {/* Conversation pane */}
+      <div className="hidden lg:flex flex-col min-w-0">
+        {/* Toolbar */}
+        <div className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: `1px solid ${LINE}` }}>
+          <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: INK }}>
+            <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2.2} />
+            Terug
+          </span>
+          <span className="inline-flex items-center gap-3.5 ml-1" style={{ color: MUTED }}>
+            <Archive className="w-4 h-4" strokeWidth={1.8} />
+            <Trash2 className="w-4 h-4" strokeWidth={1.8} />
+            <Mail className="w-4 h-4" strokeWidth={1.8} />
+            <Clock className="w-4 h-4" strokeWidth={1.8} />
+            <Tag className="w-4 h-4" strokeWidth={1.8} />
+          </span>
+          <span className="ml-auto inline-flex items-center gap-4">
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: MUTED }}>
+              <Sparkles className="w-3.5 h-3.5" style={{ color: '#6A5A8A' }} strokeWidth={2} />
+              Samenvatten
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: MUTED }}>
+              <Sparkles className="w-3.5 h-3.5" style={{ color: '#6A5A8A' }} strokeWidth={2} />
+              Beantwoord
+            </span>
+            <span className="font-mono text-[11px] tabular-nums" style={{ color: '#9B9B95' }}>15/166</span>
+            <span className="inline-flex flex-col items-center" style={{ color: MUTED }}>
+              <ChevronUp className="w-3.5 h-3.5" strokeWidth={2} />
+              <ChevronDown className="w-3.5 h-3.5 -mt-1" strokeWidth={2} />
+            </span>
+            <MoreHorizontal className="w-4 h-4" style={{ color: MUTED }} strokeWidth={2} />
+          </span>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5">
+          {/* Subject */}
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <h3 className="text-[19px] lg:text-[22px] font-bold tracking-tight leading-tight" style={{ color: INK }}>
+              RE: Even tijd voor een koffie? (online mag ook)
+            </h3>
+            <span className="inline-flex items-center gap-2 shrink-0 mt-1.5">
+              <span className="font-mono text-[11px]" style={{ color: MUTED }}>15:25</span>
+              <Pin className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
+            </span>
+          </div>
+
+          {/* Sender */}
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-9 h-9 rounded-full inline-flex items-center justify-center font-mono text-[12px] font-bold shrink-0" style={{ backgroundColor: '#F2E8E5', color: INK }}>M</span>
+            <div className="min-w-0">
+              <p className="text-[13.5px] truncate">
+                <span className="font-bold" style={{ color: INK }}>Mark de Vries</span>{' '}
+                <span style={{ color: MUTED }}>mark@devriesreclame.nl</span>
+              </p>
+              <p className="text-[12px]" style={{ color: '#9B9B95' }}>aan jan@vakwerk-signing.nl</p>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 mb-7">
+            <button type="button" className="inline-flex items-center gap-1.5 h-9 px-4 rounded-[8px] font-semibold text-[12.5px] text-white" style={{ backgroundColor: PETROL }}>
+              <Reply className="w-3.5 h-3.5" strokeWidth={2.2} />
+              Beantwoorden
+            </button>
+            <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-[8px] font-semibold text-[12.5px]" style={{ color: INK, border: `1px solid ${LINE}` }}>
+              <ReplyAll className="w-3.5 h-3.5" strokeWidth={2} />
+              Allen
+            </button>
+            <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-[8px] font-semibold text-[12.5px]" style={{ color: INK, border: `1px solid ${LINE}` }}>
+              <Forward className="w-3.5 h-3.5" strokeWidth={2} />
+              Doorsturen
+            </button>
+          </div>
+
+          {/* Gesprek divider */}
+          <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase mb-3" style={{ color: '#9B9B95' }}>Gesprek · 5</p>
+
+          {/* Thread */}
+          <div className="rounded-[12px] overflow-hidden mb-7" style={{ border: `1px solid ${LINE}` }}>
+            {conversationThread.map((m, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 px-4 py-3"
+                style={{ borderTop: i === 0 ? 'none' : `1px solid ${LINE}`, backgroundColor: m.active ? 'rgba(26,83,92,0.04)' : 'transparent' }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: m.active ? PETROL : '#C8C8C0' }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12.5px] font-bold" style={{ color: INK }}>{m.from}</p>
+                  {m.preview && <p className="text-[12px] truncate" style={{ color: MUTED }}>{m.preview}</p>}
+                </div>
+                <span className="font-mono text-[11px] tabular-nums shrink-0" style={{ color: '#9B9B95' }}>{m.time}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Reply body */}
+          <div className="space-y-4 text-[14px] leading-[1.7]" style={{ color: INK }}>
+            <p>Dat is een lekker vooruitzicht!</p>
+            <p>En wanneer ben je weer terug van je vakantie? Even als uitwijkmogelijkheid</p>
+          </div>
+
+          {/* Quoted */}
+          <div className="mt-6 pt-4 text-[12.5px] leading-[1.9]" style={{ borderTop: `1px solid ${LINE}`, color: '#3F3F3A' }}>
+            <p><span className="font-bold">Van:</span> Jan Visser (Vakwerk Signing) &lt;jan@vakwerk-signing.nl&gt;</p>
+            <p><span className="font-bold">Verzonden:</span> woensdag 27 mei 2026 13:38</p>
+            <p><span className="font-bold">Aan:</span> Mark de Vries &lt;mark@devriesreclame.nl&gt;</p>
+            <p><span className="font-bold">Onderwerp:</span> Re: Even tijd voor een koffie? (online mag ook)</p>
+            <p className="mt-3">Hoi Mark,</p>
+          </div>
+        </div>
       </div>
     </div>
   )

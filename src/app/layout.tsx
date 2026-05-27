@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Bricolage_Grotesque, IBM_Plex_Sans, IBM_Plex_Mono, Instrument_Serif } from 'next/font/google'
+import { Bricolage_Grotesque, Inter, IBM_Plex_Mono, Instrument_Serif } from 'next/font/google'
 import './globals.css'
 
 const bricolage = Bricolage_Grotesque({
@@ -9,10 +9,10 @@ const bricolage = Bricolage_Grotesque({
   display: 'swap',
 })
 
-const plexSans = IBM_Plex_Sans({
+const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-plex-sans',
+  variable: '--font-inter',
   display: 'swap',
 })
 
@@ -66,7 +66,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="nl" className={`${bricolage.variable} ${plexSans.variable} ${plexMono.variable} ${instrumentSerif.variable}`}>
+    <html lang="nl" className={`${bricolage.variable} ${inter.variable} ${plexMono.variable} ${instrumentSerif.variable}`}>
       <head>
         <link rel="canonical" href="https://doen.team" />
       </head>

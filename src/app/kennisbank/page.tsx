@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import ScrollProgress from '@/components/ScrollProgress'
 import Footer from '@/components/Footer'
@@ -31,7 +32,7 @@ export default function KennisbankPage() {
                 <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
                 <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
               </span>
-              <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: MUTED }}>
+              <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
                 Kennisbank
               </span>
             </div>
@@ -79,11 +80,11 @@ export default function KennisbankPage() {
             </p>
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 font-semibold text-[14px] text-white px-6 h-12 rounded-xl transition-transform hover:scale-[1.02] active:scale-[0.98]"
-              style={{ backgroundColor: FLAME, boxShadow: '0 4px 14px rgba(241,80,37,0.25)' }}
+              className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+              style={{ backgroundColor: FLAME, boxShadow: '0 8px 24px rgba(241,80,37,0.25)' }}
             >
               <span>Neem contact op</span>
-              <span aria-hidden>→</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
             </Link>
           </div>
         </div>

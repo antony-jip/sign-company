@@ -24,6 +24,7 @@ import {
   Smile,
   Check,
   X,
+  ArrowRight,
   type LucideIcon,
 } from 'lucide-react'
 import SectionReveal from '../SectionReveal'
@@ -84,7 +85,7 @@ function Act1Opening() {
                 <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
                 <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
               </span>
-              <span className="font-mono text-[11px] md:text-[12px] font-medium tracking-[0.22em] uppercase" style={{ color: MUTED }}>
+              <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
                 08:15 · Maandagochtend
               </span>
             </motion.div>
@@ -226,13 +227,19 @@ function Act2Pain() {
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
   return (
-    <section className="py-24 md:py-36 relative overflow-hidden">
+    <section className="py-24 md:py-32 relative overflow-hidden">
       <div className="container-site relative">
         <SectionReveal>
           <div className="max-w-3xl mb-16 md:mb-20">
-            <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase mb-5" style={{ color: FLAME }}>
-              De diagnose
-            </p>
+            <div className="inline-flex items-center gap-2 mb-7">
+              <span className="relative inline-flex items-center justify-center w-2 h-2">
+                <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.4 }} />
+                <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+              </span>
+              <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
+                De diagnose
+              </span>
+            </div>
             <h2 className="font-heading text-[36px] md:text-[56px] font-extrabold tracking-[-2px] leading-[0.98] mb-6" style={{ color: PETROL }}>
               Je software stopt waar<span style={{ color: FLAME }}>.</span>
               <br />
@@ -269,8 +276,8 @@ function PainCard({ pain, index, isInView }: { pain: Pain; index: number; isInVi
       className="p-6 md:p-7 rounded-2xl flex flex-col"
       style={{
         backgroundColor: '#FFFFFF',
-        border: '1px solid #EBEBEB',
-        boxShadow: '0 2px 10px rgba(26,83,92,0.04)',
+        border: '1px solid rgba(26,83,92,0.10)',
+        boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 24px 56px -30px rgba(19,62,69,0.24)',
       }}
     >
       <div
@@ -575,15 +582,20 @@ function Act4Solution() {
       {/* Header */}
       <div ref={headerRef} className="py-24 md:py-32">
         <div className="container-site text-center max-w-3xl mx-auto">
-          <motion.p
-            className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase mb-5"
-            style={{ color: FLAME }}
+          <motion.div
+            className="inline-flex items-center gap-2 mb-7"
             initial={{ opacity: 0, y: 10 }}
             animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6 }}
           >
-            Dezelfde maandag · andere uitkomst
-          </motion.p>
+            <span className="relative inline-flex items-center justify-center w-2 h-2">
+              <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.4 }} />
+              <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+            </span>
+            <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
+              Dezelfde maandag · andere uitkomst
+            </span>
+          </motion.div>
           <motion.h2
             className="font-heading text-[36px] md:text-[56px] font-extrabold tracking-[-2px] leading-[0.98] mb-6"
             style={{ color: PETROL }}
@@ -696,7 +708,7 @@ function FlowStepBlock({ step, index, isLast }: { step: FlowStep; index: number;
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.4 }}
             className="p-4 rounded-xl relative"
-            style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}
+            style={{ backgroundColor: '#FFFFFF', border: '1px solid rgba(26,83,92,0.10)' }}
           >
             <div className="flex items-center gap-2 mb-2">
               <div
@@ -1129,9 +1141,15 @@ function Act5CTA() {
               }}
             />
             <div className="relative">
-              <p className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.2em] uppercase mb-5" style={{ color: FLAME }}>
-                Nu beschikbaar
-              </p>
+              <div className="inline-flex items-center gap-2 mb-7">
+                <span className="relative inline-flex items-center justify-center w-2 h-2">
+                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.4 }} />
+                  <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+                </span>
+                <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  Nu beschikbaar
+                </span>
+              </div>
               <h2 className="font-heading text-[32px] md:text-[48px] font-extrabold tracking-[-1.5px] leading-tight mb-5 text-white">
                 Klaar om het anders te doen
                 <span style={{ color: FLAME }}>?</span>
@@ -1142,14 +1160,14 @@ function Act5CTA() {
               <div className="flex justify-center">
                 <a
                   href="https://app.doen.team/register"
-                  className="inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white px-8 h-[56px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
                   style={{
                     backgroundColor: FLAME,
-                    boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
+                    boxShadow: '0 8px 24px rgba(241,80,37,0.25)',
                   }}
                 >
                   <span>Start gratis</span>
-                  <span aria-hidden>→</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
                 </a>
               </div>
               <p className="text-[12px] mt-5" style={{ color: 'rgba(255,255,255,0.35)' }}>
@@ -1176,9 +1194,14 @@ export default function HoeHetWerktContent() {
       <div className="pt-28 md:pt-36">
         <section className="py-16">
           <div className="container-site max-w-3xl">
-            <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: FLAME }}>
-              Hoe het werkt
-            </p>
+            <div className="inline-flex items-center gap-2 mb-7">
+              <span className="relative inline-flex items-center justify-center w-2 h-2">
+                <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+              </span>
+              <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
+                Hoe het werkt
+              </span>
+            </div>
             <h1 className="font-heading text-[36px] md:text-[52px] font-extrabold tracking-[-2px] leading-tight mb-6" style={{ color: PETROL }}>
               Van aanvraag tot factuur<span style={{ color: FLAME }}>.</span>
             </h1>

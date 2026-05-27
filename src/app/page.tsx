@@ -1,11 +1,8 @@
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
-import PromiseStrip from '@/components/home/PromiseStrip'
 import AppShowcase from '@/components/home/AppShowcase'
-import PainComparison from '@/components/home/PainComparison'
+import SectionCTA from '@/components/home/SectionCTA'
 import ValueProps from '@/components/home/ValueProps'
-import ProcesVisual from '@/components/home/ProcesVisual'
-import FlowSteps from '@/components/home/FlowSteps'
 import ModulesCarousel from '@/components/home/ModulesCarousel'
 import MarqueeStrip from '@/components/home/MarqueeStrip'
 import PricingSection from '@/components/home/PricingSection'
@@ -20,14 +17,12 @@ export default function Home() {
       <Navbar />
       <main id="main-content">
         <Hero />
-        <PromiseStrip />
         <AppShowcase />
-        <PainComparison />
+        <SectionCTA title="Zie het in je eigen cockpit" sub="Maak gratis een account en klik direct door doen." />
         <ModulesCarousel />
         <SignTypesStrip />
-        <FlowSteps />
         <MarqueeStrip />
-        <ProcesVisual />
+        <SectionCTA title="Alles, op één plek" sub="Eén systeem voor je hele signbedrijf. 30 dagen gratis." />
         <ValueProps />
         <PricingSection />
         <FaqSection />

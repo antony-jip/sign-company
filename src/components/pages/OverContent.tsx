@@ -1,8 +1,9 @@
 'use client'
 
-import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion'
+import { motion, useInView, useMotionValue, useTransform, animate, useReducedMotion } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
+import { ArrowRight } from 'lucide-react'
 import SectionReveal from '../SectionReveal'
 
 const pains = [
@@ -40,6 +41,7 @@ function AnimatedNumber({ value, suffix = '', inView }: { value: number; suffix?
 }
 
 export default function OverContent() {
+  const reduce = useReducedMotion()
   const portalRef = useRef(null)
   const portalInView = useInView(portalRef, { once: true, margin: '-80px' })
   const compareRef = useRef(null)
@@ -72,10 +74,12 @@ export default function OverContent() {
                 className="inline-flex items-center gap-2 mb-7"
               >
                 <span className="relative inline-flex items-center justify-center w-2 h-2">
-                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />
+                  {!reduce && (
+                    <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.4 }} />
+                  )}
                   <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
                 </span>
-                <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: '#6B6B66' }}>
+                <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>
                   Waarom doen. bestaat
                 </span>
               </motion.div>
@@ -427,14 +431,11 @@ export default function OverContent() {
               <div className="flex justify-center">
                 <a
                   href="https://app.doen.team/register"
-                  className="inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white px-8 h-[56px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                  style={{
-                    backgroundColor: '#F15025',
-                    boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
-                  }}
+                  className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                  style={{ backgroundColor: '#F15025', boxShadow: '0 8px 24px rgba(241,80,37,0.25)' }}
                 >
                   <span>Start gratis</span>
-                  <span aria-hidden>→</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
                 </a>
               </div>
             </SectionReveal>

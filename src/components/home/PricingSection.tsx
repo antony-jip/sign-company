@@ -280,14 +280,14 @@ function PriceTicket({ inView }: { inView: boolean }) {
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
             <a
               href="https://app.doen.team/register"
-              className="inline-flex items-center justify-center gap-2 font-mono text-[12px] font-bold tracking-[0.18em] uppercase text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.02] active:scale-[0.97]"
+              className="group inline-flex items-center justify-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.02] active:scale-[0.97]"
               style={{
                 backgroundColor: '#F15025',
                 boxShadow: '0 8px 24px rgba(241,80,37,0.32)',
               }}
             >
               <span>Start 30 dagen gratis</span>
-              <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
             </a>
 
             <a

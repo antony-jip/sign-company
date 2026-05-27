@@ -146,15 +146,15 @@ export default function PrijzenContent() {
               <div className="flex flex-col sm:flex-row items-stretch gap-3">
                 <a
                   href="https://app.doen.team/register"
-                  className="inline-flex items-center justify-center gap-2 text-[14px] font-semibold text-white px-6 h-[52px] rounded-full transition-all duration-300 hover:scale-[1.02] active:scale-[0.97]"
-                  style={{ backgroundColor: '#F15025', boxShadow: '0 8px 24px rgba(241,80,37,0.32)' }}
+                  className="group inline-flex items-center justify-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                  style={{ backgroundColor: '#F15025', boxShadow: '0 8px 24px rgba(241,80,37,0.25)' }}
                 >
                   <span>Start 30 dagen gratis</span>
-                  <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
                 </a>
                 <a
                   href="/contact"
-                  className="inline-flex items-center justify-center gap-2 text-[14px] font-semibold px-6 h-[52px] rounded-full transition-colors"
+                  className="inline-flex items-center justify-center gap-2 text-[14px] font-semibold px-6 h-[56px] rounded-[6px] transition-colors"
                   style={{ color: '#1A535C', border: '1.5px solid #1A535C' }}
                 >
                   Demo plannen
@@ -183,7 +183,7 @@ export default function PrijzenContent() {
 
               <div className="relative flex items-center gap-2 mb-5">
                 <span className="w-6 h-px" style={{ backgroundColor: '#1A535C' }} />
-                <span className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                <span className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: 'rgba(255,255,255,0.55)' }}>
                   Vergelijken
                 </span>
               </div>
@@ -202,7 +202,7 @@ export default function PrijzenContent() {
               <div className="relative grid grid-cols-2 gap-6 flex-1">
                 {/* Gangbaar */}
                 <div>
-                  <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>
                     Gangbaar
                   </p>
                   <p className="font-heading font-bold tabular-nums leading-none mb-3" style={{ fontSize: 'clamp(36px, 5vw, 56px)', color: '#FFFFFF', letterSpacing: '-1.5px' }}>
@@ -216,7 +216,7 @@ export default function PrijzenContent() {
 
                 {/* doen. */}
                 <div style={{ borderLeft: '1px solid rgba(255,255,255,0.10)', paddingLeft: '24px' }}>
-                  <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase mb-3" style={{ color: '#F15025' }}>
+                  <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-3" style={{ color: '#F15025' }}>
                     doen<span style={{ color: '#F15025' }}>.</span>
                   </p>
                   <p className="font-heading font-bold tabular-nums leading-none mb-3" style={{ fontSize: 'clamp(36px, 5vw, 56px)', color: '#F15025', letterSpacing: '-1.5px' }}>
@@ -242,10 +242,13 @@ export default function PrijzenContent() {
       {/* COMPARE SLIDER */}
       <section className="relative overflow-hidden">
         <PageBackdrop variant="mirror" />
-        <div className="container-site relative py-20 md:py-28">
+        <div className="container-site relative py-24 md:py-32">
           <div className="max-w-2xl mx-auto text-center mb-12">
-            <div className="inline-flex items-center gap-2 mb-5">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+            <div className="inline-flex items-center gap-2 mb-7">
+              <span className="relative inline-flex items-center justify-center w-2 h-2">
+                <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.4 }} />
+                <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+              </span>
               <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>
                 Vergelijk zelf
               </span>
@@ -271,10 +274,13 @@ export default function PrijzenContent() {
       {/* FAQ */}
       <section className="relative overflow-hidden">
         <PageBackdrop variant="default" />
-        <div className="container-site relative py-20 md:py-28">
+        <div className="container-site relative py-24 md:py-32">
           <div className="max-w-2xl mb-12 md:mb-16">
-            <div className="inline-flex items-center gap-2 mb-5">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+            <div className="inline-flex items-center gap-2 mb-7">
+              <span className="relative inline-flex items-center justify-center w-2 h-2">
+                <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.4 }} />
+                <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+              </span>
               <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>
                 Veelgestelde vragen
               </span>

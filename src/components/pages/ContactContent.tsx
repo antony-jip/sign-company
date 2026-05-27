@@ -60,7 +60,7 @@ export default function ContactContent() {
                     <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
                     <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
                   </span>
-                  <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: MUTED }}>
+                  <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
                     Contact
                   </span>
                 </div>
@@ -120,7 +120,7 @@ export default function ContactContent() {
                     className="absolute -top-16 -right-16 w-[220px] h-[220px] rounded-full pointer-events-none"
                     style={{ backgroundColor: FLAME, opacity: 0.14, filter: 'blur(70px)' }}
                   />
-                  <p className="relative font-mono text-[10px] font-bold tracking-[0.22em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  <p className="relative font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
                     Liever direct
                   </p>
                   <p className="relative font-heading text-[22px] md:text-[26px] font-bold tracking-[-0.5px] leading-[1.1] text-white mb-2">
@@ -131,14 +131,14 @@ export default function ContactContent() {
                   </p>
                   <a
                     href="https://app.doen.team/register"
-                    className="relative inline-flex items-center justify-center gap-2 font-semibold text-[14px] text-white px-6 h-[48px] rounded-full whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                    className="relative group inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white px-7 h-[56px] rounded-[6px] whitespace-nowrap transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
                     style={{
                       backgroundColor: FLAME,
-                      boxShadow: '0 8px 22px rgba(241,80,37,0.36)',
+                      boxShadow: '0 8px 24px rgba(241,80,37,0.25)',
                     }}
                   >
                     <span>Start gratis</span>
-                    <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
                   </a>
                 </div>
               </SectionReveal>
@@ -185,7 +185,7 @@ export default function ContactContent() {
                         <div className="flex items-center gap-2 mb-2">
                           <span className="w-6 h-px" style={{ backgroundColor: FLAME }} />
                           <p
-                            className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase"
+                            className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase"
                             style={{ color: MUTED_SOFT }}
                           >
                             Stuur een bericht
@@ -237,13 +237,13 @@ export default function ContactContent() {
                         <motion.button
                           type="submit"
                           disabled={formState === 'loading'}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.98 }}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
                           transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                          className="w-full inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white h-14 rounded-full disabled:opacity-70 disabled:cursor-not-allowed"
+                          className="w-full inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white h-[56px] rounded-[6px] disabled:opacity-70 disabled:cursor-not-allowed"
                           style={{
                             backgroundColor: FLAME,
-                            boxShadow: '0 8px 24px rgba(241,80,37,0.32)',
+                            boxShadow: '0 8px 24px rgba(241,80,37,0.25)',
                           }}
                         >
                           {formState === 'loading' ? (
@@ -338,7 +338,7 @@ function ContactCard({
         <Icon className="w-[18px] h-[18px]" style={{ color: PETROL }} strokeWidth={1.8} />
       </div>
       <div className="min-w-0">
-        <p className="font-mono text-[10px] font-bold tracking-[0.14em] uppercase mb-1" style={{ color: MUTED_SOFT }}>
+        <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-1" style={{ color: MUTED_SOFT }}>
           {label}
         </p>
         <p className="text-[15px] font-semibold transition-colors" style={{ color: PETROL }}>

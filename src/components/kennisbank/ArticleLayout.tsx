@@ -89,7 +89,7 @@ export default function ArticleLayout({ article }: { article: Article }) {
             >
               {/* Category eyebrow */}
               <p
-                className="font-mono text-[11px] font-bold tracking-[0.2em] uppercase mb-4"
+                className="font-mono text-[11px] font-bold tracking-[0.18em] uppercase mb-4"
                 style={{ color: FLAME }}
               >
                 {article.category}
@@ -159,11 +159,17 @@ export default function ArticleLayout({ article }: { article: Article }) {
               </p>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-1.5 text-[14px] font-semibold transition-opacity hover:opacity-70"
+                className="inline-flex items-center gap-2 text-[15px] font-semibold transition-all group"
                 style={{ color: PETROL }}
               >
-                Stel je vraag direct
-                <span style={{ color: FLAME }}>.</span>
+                <span className="relative">
+                  Stel je vraag direct
+                  <span
+                    className="absolute left-0 -bottom-0.5 h-[2px] w-full origin-left scale-x-100 transition-transform duration-300 group-hover:scale-x-0"
+                    style={{ backgroundColor: PETROL }}
+                  />
+                </span>
+                <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">→</span>
               </Link>
             </div>
           </article>
@@ -172,7 +178,7 @@ export default function ArticleLayout({ article }: { article: Article }) {
           <aside className="hidden lg:block">
             <div className="sticky top-28">
               <p
-                className="font-mono text-[10px] font-bold tracking-[0.2em] uppercase mb-4 pb-3"
+                className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-4 pb-3"
                 style={{ color: MUTED_SOFT, borderBottom: '1px solid rgba(26,83,92,0.08)' }}
               >
                 In dit artikel
