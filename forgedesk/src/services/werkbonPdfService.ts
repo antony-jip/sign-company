@@ -174,7 +174,7 @@ export async function generateWerkbonInstructiePDF(
     rightY += 4
 
     if (werkbonData.contact_naam) {
-      doc.text(`Contact: ${werkbonData.contact_naam}${werkbonData.contact_telefoon ? ` — ${werkbonData.contact_telefoon}` : ''}`, rightX, rightY, { align: 'right' })
+      doc.text(`Contact: ${werkbonData.contact_naam}${werkbonData.contact_telefoon ? ` · ${werkbonData.contact_telefoon}` : ''}`, rightX, rightY, { align: 'right' })
       rightY += 4
     }
 
