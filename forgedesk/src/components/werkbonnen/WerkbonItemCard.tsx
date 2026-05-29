@@ -12,6 +12,7 @@ import type { WerkbonItem, WerkbonBlokType, WerkbonTekstPositie } from '@/types'
 import { resolveSchaal } from '@/services/werkbonService'
 import { WerkbonDropZone } from './WerkbonDropZone'
 import { AfbeeldingResizeHandle } from './AfbeeldingResizeHandle'
+import { WerkbonCanvas } from './WerkbonCanvas'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 interface WerkbonItemCardProps {
@@ -30,6 +31,9 @@ interface WerkbonItemCardProps {
   onLightbox: (url: string) => void
   onAfbeeldingenDropped?: (itemId: string, files: File[]) => void | Promise<void>
   onAfbeeldingReorder?: (itemId: string, draggedAfbId: string, targetAfbId: string) => void | Promise<void>
+  // Fase 3 canvas-mutaties — alleen gebruikt wanneer werkbon_canvas_versie >= 3.
+  onCanvasElementMove?: (itemId: string, afbId: string, x_mm: number, y_mm: number) => void | Promise<void>
+  onCanvasElementResize?: (itemId: string, afbId: string, w_mm: number, h_mm: number) => void | Promise<void>
 }
 
 const GROOTTE_OPTIES: ReadonlyArray<'klein' | 'normaal' | 'groot'> = ['klein', 'normaal', 'groot']
@@ -69,11 +73,12 @@ function useDebouncedField(initialValue: string, onCommit: (val: string) => void
 
 export const WerkbonItemCard = React.memo(function WerkbonItemCard({
   item, index, totalItems, onUpdate, onDelete, onMove, onImageAdd, onImageDelete, onImageGrootteChange, onImageBlokTypeChange, onImageSchaalChange, onImageTekstPositieChange, onLightbox,
-  onAfbeeldingenDropped, onAfbeeldingReorder,
+  onAfbeeldingenDropped, onAfbeeldingReorder, onCanvasElementMove, onCanvasElementResize,
 }: WerkbonItemCardProps) {
   const { werkbonCanvasVersie } = useAppSettings()
   const canvasActief = werkbonCanvasVersie >= 1
   const fase2Actief = werkbonCanvasVersie >= 2
+  const fase3Actief = werkbonCanvasVersie >= 3
   const [schaalPreview, setSchaalPreview] = useState<Record<string, number>>({})
   const aantalFotos = item.afbeeldingen.filter((a) => (a.layout?.blok_type ?? 'foto') !== 'logo').length
   const [omschrijving, setOmschrijving] = useDebouncedField(
@@ -118,7 +123,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
   }, [item.id, onAfbeeldingReorder])
 
   return (
-    <WerkbonDropZone itemId={item.id} onFilesDropped={onAfbeeldingenDropped ?? (() => {})} disabled={!canvasActief || !onAfbeeldingenDropped}>
+    <WerkbonDropZone itemId={item.id} onFilesDropped={onAfbeeldingenDropped ?? (() => {})} disabled={!canvasActief || !onAfbeeldingenDropped || fase3Actief}>
       <Card className="overflow-hidden rounded-xl border-black/[0.06]">
         <CardContent className="p-4 space-y-4">
           <div className="flex items-start justify-between gap-3">
@@ -175,6 +180,16 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
             </div>
           </div>
 
+          {fase3Actief ? (
+            <WerkbonCanvas
+              itemId={item.id}
+              afbeeldingen={item.afbeeldingen}
+              onElementMove={(afbId, x, y) => { void onCanvasElementMove?.(item.id, afbId, x, y) }}
+              onElementResize={(afbId, w, h) => { void onCanvasElementResize?.(item.id, afbId, w, h) }}
+              onElementDelete={(afbId) => onImageDelete(item.id, afbId)}
+              onFilesDropped={onAfbeeldingenDropped ?? (() => {})}
+            />
+          ) : (
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label className="text-xs">Afbeeldingen <span className="text-muted-foreground font-normal">({item.afbeeldingen.length}/2)</span></Label>
@@ -321,6 +336,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
               </div>
             )}
           </div>
+          )}
 
           <div>
             <Label className="text-xs">Notitie voor monteur</Label>

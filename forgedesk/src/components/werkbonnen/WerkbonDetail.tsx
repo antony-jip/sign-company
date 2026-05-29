@@ -36,6 +36,13 @@ import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { uploadFile, downloadFile, getSignedUrl } from '@/services/storageService'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { pdfEerstePaginaNaarImage } from '@/utils/pdfToImage'
+import {
+  CANVAS_DROP_CASCADE_START_MM,
+  CANVAS_DROP_CASCADE_OFFSET_MM,
+  CANVAS_LOGO_DEFAULT_MM,
+  CANVAS_SOFT_CAP_ELEMENTS,
+  CANVAS_Z_INDEX_DEFAULTS,
+} from '@/utils/werkbonCanvas'
 import { WerkbonItemCard } from './WerkbonItemCard'
 import { WerkbonHeaderForm } from './WerkbonHeaderForm'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
@@ -103,6 +110,7 @@ export function WerkbonDetail() {
   } = useAppSettings()
   const canvasActief = werkbonCanvasVersie >= 1
   const fase2Actief = werkbonCanvasVersie >= 2
+  const fase3Actief = werkbonCanvasVersie >= 3
   const documentStyle = useDocumentStyle()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
@@ -532,14 +540,51 @@ export function WerkbonDetail() {
     const item = werkbonItems.find((i) => i.id === itemId)
     if (!item) return
     const huidigAantal = item.afbeeldingen.length
-    const beschikbaar = Math.max(0, 2 - huidigAantal)
-    if (beschikbaar === 0) {
-      toast.error('Max 2 afbeeldingen per item')
-      return
+
+    // Fase 3: 2-image cap vervalt; soft-cap waarschuwing bij > 6 elementen
+    // op een werkblad maar geen hard-block. Fase < 3: bestaande cap blijft.
+    let teVerwerken: File[]
+    let overgeslagen: number
+    if (fase3Actief) {
+      teVerwerken = bruikbareFiles
+      overgeslagen = 0
+      const totaal = huidigAantal + teVerwerken.length
+      if (totaal > CANVAS_SOFT_CAP_ELEMENTS) {
+        toast.info(`${totaal} elementen op het werkblad. Veel elementen kan de preview vertragen.`)
+      }
+    } else {
+      const beschikbaar = Math.max(0, 2 - huidigAantal)
+      if (beschikbaar === 0) {
+        toast.error('Max 2 afbeeldingen per item')
+        return
+      }
+      teVerwerken = bruikbareFiles.slice(0, beschikbaar)
+      overgeslagen = bruikbareFiles.length - teVerwerken.length
     }
 
-    const teVerwerken = bruikbareFiles.slice(0, beschikbaar)
-    const overgeslagen = bruikbareFiles.length - teVerwerken.length
+    // Default canvas-positie cascade voor fase 3: per nieuw element komt (5+i*10, 5+i*10) mm
+    // binnen het werkblad. cascadeIndex is de index binnen deze drop-batch, dus overlap
+    // met bestaande elementen wordt geaccepteerd (gebruiker rangschikt zelf verder).
+    // Bij fase < 3 wordt enkel blok_type gezet, identiek aan fase-2-gedrag.
+    const makeLayout = (
+      blokType: WerkbonBlokType,
+      cascadeIndex: number,
+      extra: Partial<WerkbonAfbeeldingLayout> = {},
+    ): WerkbonAfbeeldingLayout => {
+      if (!fase3Actief) {
+        return { blok_type: blokType, ...extra }
+      }
+      const isLogo = blokType === 'logo'
+      return {
+        blok_type: blokType,
+        canvas_x_mm: CANVAS_DROP_CASCADE_START_MM + cascadeIndex * CANVAS_DROP_CASCADE_OFFSET_MM,
+        canvas_y_mm: CANVAS_DROP_CASCADE_START_MM + cascadeIndex * CANVAS_DROP_CASCADE_OFFSET_MM,
+        canvas_breedte_mm: isLogo ? CANVAS_LOGO_DEFAULT_MM : 80,
+        canvas_hoogte_mm: isLogo ? CANVAS_LOGO_DEFAULT_MM : 60,
+        z_index: CANVAS_Z_INDEX_DEFAULTS[blokType],
+        ...extra,
+      }
+    }
 
     const nieuweAfbeeldingen: WerkbonAfbeelding[] = []
     let lastError: string | null = null
@@ -579,7 +624,7 @@ export function WerkbonDetail() {
             url: uploadedPngPath,
             type: 'overig',
             omschrijving: file.name,
-            layout: { blok_type: 'pdf', pdf_bron_url: uploadedPdfPath },
+            layout: makeLayout('pdf', nieuweAfbeeldingen.length, { pdf_bron_url: uploadedPdfPath }),
           })
           afb.url = displayUrl
           nieuweAfbeeldingen.push(afb)
@@ -609,7 +654,7 @@ export function WerkbonDetail() {
           url: uploadedPath,
           type: 'overig',
           omschrijving: file.name,
-          layout: { blok_type: 'foto' },
+          layout: makeLayout('foto', nieuweAfbeeldingen.length),
         })
         afb.url = displayUrl
         nieuweAfbeeldingen.push(afb)
@@ -636,7 +681,71 @@ export function WerkbonDetail() {
     } else if (lastError) {
       toast.error(`Upload mislukt voor sommige bestanden: ${lastError}`)
     }
-  }, [werkbonItems, bumpPreview, canvasActief, fase2Actief])
+  }, [werkbonItems, bumpPreview, canvasActief, fase2Actief, fase3Actief])
+
+  // Canvas-element verplaatsen (fase 3) — schrijft canvas_x_mm/y_mm naar layout.
+  const handleCanvasElementMove = useCallback(async (
+    itemId: string,
+    afbId: string,
+    x_mm: number,
+    y_mm: number,
+  ) => {
+    if (!fase3Actief) return
+    const item = werkbonItems.find((i) => i.id === itemId)
+    const afb = item?.afbeeldingen.find((a) => a.id === afbId)
+    if (!afb) return
+    const nieuweLayout: WerkbonAfbeeldingLayout = {
+      ...(afb.layout ?? {}),
+      canvas_x_mm: x_mm,
+      canvas_y_mm: y_mm,
+    }
+    setWerkbonItems((prev) => prev.map((it) =>
+      it.id === itemId
+        ? { ...it, afbeeldingen: it.afbeeldingen.map((a) =>
+            a.id === afbId ? { ...a, layout: nieuweLayout } : a
+          ) }
+        : it
+    ))
+    try {
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
+      bumpPreview()
+    } catch (err) {
+      logger.error('Kon canvas-positie niet opslaan:', err)
+      toast.error('Kon positie niet opslaan')
+    }
+  }, [werkbonItems, fase3Actief, bumpPreview])
+
+  // Canvas-element vergroten/verkleinen (fase 3) — schrijft canvas_breedte_mm/hoogte_mm.
+  const handleCanvasElementResize = useCallback(async (
+    itemId: string,
+    afbId: string,
+    w_mm: number,
+    h_mm: number,
+  ) => {
+    if (!fase3Actief) return
+    const item = werkbonItems.find((i) => i.id === itemId)
+    const afb = item?.afbeeldingen.find((a) => a.id === afbId)
+    if (!afb) return
+    const nieuweLayout: WerkbonAfbeeldingLayout = {
+      ...(afb.layout ?? {}),
+      canvas_breedte_mm: w_mm,
+      canvas_hoogte_mm: h_mm,
+    }
+    setWerkbonItems((prev) => prev.map((it) =>
+      it.id === itemId
+        ? { ...it, afbeeldingen: it.afbeeldingen.map((a) =>
+            a.id === afbId ? { ...a, layout: nieuweLayout } : a
+          ) }
+        : it
+    ))
+    try {
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
+      bumpPreview()
+    } catch (err) {
+      logger.error('Kon canvas-grootte niet opslaan:', err)
+      toast.error('Kon grootte niet opslaan')
+    }
+  }, [werkbonItems, fase3Actief, bumpPreview])
 
   // Afbeelding-grootte wisselen (klein / normaal / groot → schaal_percentage in layout)
   const handleAfbeeldingGrootteWijzig = useCallback(async (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => {
@@ -1152,6 +1261,8 @@ export function WerkbonDetail() {
                     onLightbox={setLightboxUrl}
                     onAfbeeldingenDropped={handleAfbeeldingenDropped}
                     onAfbeeldingReorder={handleAfbeeldingReorder}
+                    onCanvasElementMove={handleCanvasElementMove}
+                    onCanvasElementResize={handleCanvasElementResize}
                   />
                 ))}
                 <div className="flex justify-end pt-2">
