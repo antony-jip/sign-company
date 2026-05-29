@@ -23,7 +23,7 @@ import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
-import type { Werkbon, WerkbonItem, WerkbonFoto, WerkbonAfbeelding, WerkbonAfbeeldingLayout, Klant, Project, Offerte } from '@/types'
+import type { Werkbon, WerkbonItem, WerkbonFoto, WerkbonAfbeelding, WerkbonAfbeeldingLayout, WerkbonBlokType, Klant, Project, Offerte } from '@/types'
 import {
   getWerkbon, createWerkbon, updateWerkbon,
   getWerkbonItems, createWerkbonItem, updateWerkbonItem, deleteWerkbonItem,
@@ -596,6 +596,37 @@ export function WerkbonDetail() {
     }
   }, [bumpPreview])
 
+  const handleAfbeeldingBlokTypeWijzig = useCallback(async (
+    itemId: string,
+    afbId: string,
+    blokType: WerkbonBlokType,
+  ) => {
+    let nieuweLayout: WerkbonAfbeeldingLayout | undefined
+    setWerkbonItems((prev) => prev.map((item) => {
+      if (item.id !== itemId) return item
+      return {
+        ...item,
+        afbeeldingen: item.afbeeldingen.map((a) => {
+          if (a.id !== afbId) return a
+          const layout: WerkbonAfbeeldingLayout = {
+            ...(a.layout ?? {}),
+            blok_type: blokType,
+          }
+          nieuweLayout = layout
+          return { ...a, layout }
+        }),
+      }
+    }))
+    bumpPreview()
+    if (!nieuweLayout) return
+    try {
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
+    } catch (err) {
+      logger.error('Kon blok-type niet opslaan:', err)
+      toast.error('Kon blok-type niet opslaan')
+    }
+  }, [bumpPreview])
+
   // Afbeelding-reorder binnen item via drag-drop
   const handleAfbeeldingReorder = useCallback(async (itemId: string, draggedAfbId: string, targetAfbId: string) => {
     let herordendeAfbeeldingen: WerkbonAfbeelding[] | null = null
@@ -987,6 +1018,7 @@ export function WerkbonDetail() {
                     onImageAdd={handleAfbeeldingToevoegen}
                     onImageDelete={handleAfbeeldingVerwijderen}
                     onImageGrootteChange={handleAfbeeldingGrootteWijzig}
+                    onImageBlokTypeChange={handleAfbeeldingBlokTypeWijzig}
                     onLightbox={setLightboxUrl}
                     onAfbeeldingenDropped={handleAfbeeldingenDropped}
                     onAfbeeldingReorder={handleAfbeeldingReorder}
