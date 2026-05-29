@@ -19,7 +19,15 @@ interface WerkbonItemCardProps {
   onMove: (itemId: string, direction: 'up' | 'down') => void
   onImageAdd: (itemId: string, e: React.ChangeEvent<HTMLInputElement>) => void
   onImageDelete: (itemId: string, afbId: string) => void
+  onImageGrootteChange: (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => void
   onLightbox: (url: string) => void
+}
+
+const GROOTTE_OPTIES: ReadonlyArray<'klein' | 'normaal' | 'groot'> = ['klein', 'normaal', 'groot']
+const GROOTTE_LABEL: Record<'klein' | 'normaal' | 'groot', string> = {
+  klein: 'Klein',
+  normaal: 'Normaal',
+  groot: 'Groot',
 }
 
 /** Debounced text field — local state for fast typing, debounced callback for persistence */
@@ -42,7 +50,7 @@ function useDebouncedField(initialValue: string, onCommit: (val: string) => void
 }
 
 export const WerkbonItemCard = React.memo(function WerkbonItemCard({
-  item, index, totalItems, onUpdate, onDelete, onMove, onImageAdd, onImageDelete, onLightbox,
+  item, index, totalItems, onUpdate, onDelete, onMove, onImageAdd, onImageDelete, onImageGrootteChange, onLightbox,
 }: WerkbonItemCardProps) {
   const [omschrijving, setOmschrijving] = useDebouncedField(
     item.omschrijving,
@@ -141,42 +149,65 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
           </div>
           {item.afbeeldingen.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
-              {item.afbeeldingen.map((afb) => (
-                <div key={afb.id} className="relative group rounded-lg overflow-hidden border bg-muted/30">
-                  {afb.url ? (
-                    <img
-                      src={afb.url}
-                      alt={afb.omschrijving || 'Afbeelding'}
-                      className="w-full aspect-[4/3] object-cover cursor-pointer"
-                      onClick={() => onLightbox(afb.url)}
-                    />
-                  ) : (
-                    <div className="w-full aspect-[4/3] bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                      Afbeelding niet beschikbaar
+              {item.afbeeldingen.map((afb) => {
+                const grootte = afb.grootte || 'normaal'
+                return (
+                  <div key={afb.id} className="rounded-lg overflow-hidden border">
+                    <div className="relative group">
+                      {afb.url ? (
+                        <div className="w-full aspect-[4/3] flex items-center justify-center cursor-pointer" style={{ backgroundColor: '#F8F7F5' }} onClick={() => onLightbox(afb.url)}>
+                          <img
+                            src={afb.url}
+                            alt={afb.omschrijving || 'Afbeelding'}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-[4/3] bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                          Afbeelding niet beschikbaar
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 active:opacity-100">
+                        {afb.url && (
+                          <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => onLightbox(afb.url)}>
+                            <Maximize2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                        <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => onImageDelete(item.id, afb.id)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 active:opacity-100">
-                    {afb.url && (
-                      <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => onLightbox(afb.url)}>
-                        <Maximize2 className="h-3 w-3" />
-                      </Button>
+                    <div className="flex gap-0.5 px-1 py-1 border-t" style={{ backgroundColor: '#F8F7F5', borderColor: '#EBEBEB' }}>
+                      {GROOTTE_OPTIES.map((g) => {
+                        const active = grootte === g
+                        return (
+                          <button
+                            key={g}
+                            type="button"
+                            onClick={() => onImageGrootteChange(item.id, afb.id, g)}
+                            className={`flex-1 h-7 text-[10px] uppercase tracking-wider rounded transition-colors ${active ? 'font-semibold text-white' : 'text-[#9B9B95] hover:bg-white'}`}
+                            style={active ? { backgroundColor: '#F15025' } : undefined}
+                            aria-pressed={active}
+                          >
+                            {GROOTTE_LABEL[g]}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {afb.omschrijving && (
+                      <p className="text-2xs text-muted-foreground truncate px-1 py-0.5">{afb.omschrijving}</p>
                     )}
-                    <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => onImageDelete(item.id, afb.id)}>
-                      <X className="h-3 w-3" />
-                    </Button>
                   </div>
-                  {afb.omschrijving && (
-                    <p className="text-2xs text-muted-foreground truncate px-1 py-0.5">{afb.omschrijving}</p>
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="border border-dashed rounded-lg p-6 text-center">
               <label className="cursor-pointer">
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => onImageAdd(item.id, e)} />
                 <ImagePlus className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-                <p className="text-xs text-muted-foreground">Upload jouw 4:3 foto (max 2)</p>
+                <p className="text-xs text-muted-foreground">Upload een foto (max 2)</p>
               </label>
             </div>
           )}

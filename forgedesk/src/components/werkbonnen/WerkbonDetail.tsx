@@ -27,7 +27,7 @@ import type { Werkbon, WerkbonItem, WerkbonFoto, Klant, Project, Offerte } from 
 import {
   getWerkbon, createWerkbon, updateWerkbon,
   getWerkbonItems, createWerkbonItem, updateWerkbonItem, deleteWerkbonItem,
-  createWerkbonAfbeelding, deleteWerkbonAfbeelding,
+  createWerkbonAfbeelding, updateWerkbonAfbeelding, deleteWerkbonAfbeelding,
   getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
   getKlanten, getProjecten, getOffertes,
   getMontageAfspraak, updateMontageAfspraak,
@@ -461,6 +461,21 @@ export function WerkbonDetail() {
     toast.success('Afbeelding verwijderd')
   }, [])
 
+  // Afbeelding-grootte wisselen (klein / normaal / groot voor PDF-render)
+  const handleAfbeeldingGrootteWijzig = useCallback(async (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => {
+    setWerkbonItems((prev) => prev.map((item) =>
+      item.id === itemId
+        ? { ...item, afbeeldingen: item.afbeeldingen.map((a) => a.id === afbId ? { ...a, grootte } : a) }
+        : item
+    ))
+    try {
+      await updateWerkbonAfbeelding(afbId, { grootte })
+    } catch (err) {
+      logger.error('Kon afbeelding-grootte niet opslaan:', err)
+      toast.error('Kon grootte niet opslaan')
+    }
+  }, [])
+
   // Foto toevoegen (monteur voor/na)
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
     if (!werkbonId) { toast.error('Sla de werkbon eerst op'); return }
@@ -854,6 +869,7 @@ export function WerkbonDetail() {
                     onMove={handleItemMove}
                     onImageAdd={handleAfbeeldingToevoegen}
                     onImageDelete={handleAfbeeldingVerwijderen}
+                    onImageGrootteChange={handleAfbeeldingGrootteWijzig}
                     onLightbox={setLightboxUrl}
                   />
                 ))}
