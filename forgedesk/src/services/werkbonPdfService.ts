@@ -3,6 +3,11 @@ import type { WerkbonItem, WerkbonFoto, Klant, Profile, DocumentStyle, WerkbonTe
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 import { resolveImageToBase64, detectImageFormat } from '@/services/pdfService'
 import { resolveSchaal } from '@/services/werkbonService'
+import {
+  itemHeeftCanvasData,
+  CANVAS_WERKRUIMTE_MM,
+  CANVAS_Z_INDEX_DEFAULTS,
+} from '@/utils/werkbonCanvas'
 
 interface PdfBedrijfsProfiel extends Partial<Profile> {
   primaireKleur?: string
@@ -355,8 +360,71 @@ export async function generateWerkbonInstructiePDF(
     return localY
   }
 
+  // Fase-3 coord-render: tekstblok bovenaan over volledige breedte, daarna
+  // een canvas-area van 267x100mm waarin elke afbeelding op zijn absolute
+  // (x_mm, y_mm, breedte_mm, hoogte_mm) wordt geplaatst. contentWidth is
+  // exact 267mm (pageWidth 297 minus 2x 15mm marges), dus de canvas-coordinaten
+  // mappen 1:1 op PDF-coordinaten — geen schaling nodig.
+  function renderCanvasItem(item: WerkbonItem, itemIndex: number): void {
+    // Veilige bovengrens voor page-break check: tekst 40mm + 4 gap + canvas 100mm + 5 spacing.
+    // Bij overschatting krijgen we een vroege page-break, geen render-fout.
+    const canvasH = CANVAS_WERKRUIMTE_MM.hoogte
+    const textEstimate = 40
+    const estimatedHeight = textEstimate + 4 + canvasH + 5
+
+    if (y + estimatedHeight > availableHeight) {
+      y = addNewPage()
+    }
+
+    const textBottom = renderTekstBlok(item, itemIndex, marginLeft, y, contentWidth)
+    const canvasY = textBottom + 4
+
+    // Z-sort: lager z eerst (achter), tiebreaker created_at (newer-on-top).
+    // Identieke fallback-logica als WerkbonCanvas zodat DOM-stacking in de
+    // editor en PDF-stacking in de output nooit divergeren.
+    const canvasElementen = [...item.afbeeldingen]
+      .filter((a) => a.layout?.canvas_x_mm !== undefined)
+      .sort((a, b) => {
+        const blokA = a.layout?.blok_type ?? 'foto'
+        const blokB = b.layout?.blok_type ?? 'foto'
+        const za = a.layout?.z_index ?? CANVAS_Z_INDEX_DEFAULTS[blokA]
+        const zb = b.layout?.z_index ?? CANVAS_Z_INDEX_DEFAULTS[blokB]
+        if (za !== zb) return za - zb
+        return a.created_at.localeCompare(b.created_at)
+      })
+
+    for (const afb of canvasElementen) {
+      if (!afb.url) continue
+      const layout = afb.layout!
+      const ex = marginLeft + (layout.canvas_x_mm ?? 0)
+      const ey = canvasY + (layout.canvas_y_mm ?? 0)
+      const ew = layout.canvas_breedte_mm ?? 60
+      const eh = layout.canvas_hoogte_mm ?? 40
+      const cached = afbCache.get(afb.id)
+      drawImageContain(cached?.base64 ?? null, cached?.ratio ?? null, afb.url, ex, ey, ew, eh)
+    }
+
+    y = canvasY + canvasH + 5
+  }
+
   for (let i = 0; i < items.length; i++) {
     const item = items[i]
+
+    // Per-item router (masterplan §8.3 v1.2): items met canvas-coordinaten
+    // gaan via het coord-pad, alle andere items blijven op het bestaande
+    // flow-pad. Geen migratie-data-write nodig — items zonder canvas_x_mm
+    // (legacy + versie<3) volgen exact het oude gedrag.
+    if (itemHeeftCanvasData(item.afbeeldingen)) {
+      renderCanvasItem(item, i)
+      if (i < items.length - 1) {
+        doc.setDrawColor(220, 220, 220)
+        doc.setLineWidth(0.2)
+        doc.line(marginLeft, y, pageWidth - marginRight, y)
+        y += 5
+      }
+      continue
+    }
+
     const logos = item.afbeeldingen.filter((a) => a.layout?.blok_type === 'logo')
     // PDF-blok-type wordt bewust als foto behandeld: bij upload zet Stream E2
     // de eerste PDF-pagina om naar PNG/JPEG, dus zelfde render-pad als foto's
