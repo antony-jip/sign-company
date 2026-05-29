@@ -1,5 +1,32 @@
 # Antony's Persoonlijke Actielijst - FORGEdesk
 
+## ACTIE VEREIST — Werkbon canvas fase 1 (lokale test)
+
+**Status:** Code klaar op branch `feat/werkbon-canvas-fase1`. Niet gepusht. Niet gemerged. Geen productie-rollout.
+
+### Stappen
+1. **Migraties draaien in Supabase SQL Editor** (in volgorde):
+   - `supabase/migrations/114_werkbon_layout_jsonb.sql`
+   - `supabase/migrations/115_werkbon_canvas_versie.sql`
+2. **Flag activeren op jouw eigen org:**
+   ```sql
+   UPDATE app_settings SET werkbon_canvas_versie = 1
+   WHERE organisatie_id = '<jouw-org-uuid>';
+   ```
+3. **Volg `WERKBON_CANVAS_FASE1_TESTPLAN.md`** voor de 9 acceptatie-criteria + 2-cap + rollback-test.
+4. **Rapport terug bij Claude Code** wanneer test compleet — beslis dan: door naar fase 2, of issues opvolgen.
+
+### Rollback indien iets stuk gaat
+```sql
+UPDATE app_settings SET werkbon_canvas_versie = 0
+WHERE organisatie_id = '<jouw-org-uuid>';
+```
+Geen deploy nodig, geen migratie terug.
+
+---
+
+(Hieronder de oudere TODO-items — mogelijk stale, niet gecontroleerd in deze update.)
+
 ## Status: Alle code-fixes zijn klaar. Nu moet JIJ actie ondernemen.
 
 ---
