@@ -519,10 +519,22 @@ export function WerkbonDetail() {
     const imageFiles = files.filter((f) => f.type.startsWith('image/'))
     if (imageFiles.length === 0) return
 
+    const item = werkbonItems.find((i) => i.id === itemId)
+    if (!item) return
+    const huidigAantal = item.afbeeldingen.length
+    const beschikbaar = Math.max(0, 2 - huidigAantal)
+    if (beschikbaar === 0) {
+      toast.error('Max 2 afbeeldingen per item')
+      return
+    }
+
+    const teVerwerken = imageFiles.slice(0, beschikbaar)
+    const overgeslagen = imageFiles.length - teVerwerken.length
+
     const nieuweAfbeeldingen: WerkbonAfbeelding[] = []
     let lastError: string | null = null
 
-    for (const file of imageFiles) {
+    for (const file of teVerwerken) {
       if (file.size > 10 * 1024 * 1024) {
         lastError = `${file.name} is te groot (max 10MB)`
         continue
@@ -559,12 +571,15 @@ export function WerkbonDetail() {
       toast.success(`${nieuweAfbeeldingen.length} afbeelding${nieuweAfbeeldingen.length > 1 ? 'en' : ''} toegevoegd`)
       bumpPreview()
     }
+    if (overgeslagen > 0) {
+      toast.info(`${overgeslagen} afbeelding(en) overgeslagen (max 2 per item)`)
+    }
     if (lastError && nieuweAfbeeldingen.length === 0) {
       toast.error(`Upload mislukt: ${lastError}`)
     } else if (lastError) {
       toast.error(`Upload mislukt voor sommige bestanden: ${lastError}`)
     }
-  }, [bumpPreview])
+  }, [werkbonItems, bumpPreview])
 
   // Afbeelding-grootte wisselen (klein / normaal / groot → schaal_percentage in layout)
   const handleAfbeeldingGrootteWijzig = useCallback(async (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => {
