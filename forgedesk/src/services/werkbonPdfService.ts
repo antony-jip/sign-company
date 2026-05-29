@@ -296,7 +296,7 @@ export async function generateWerkbonInstructiePDF(
       return { w, h: w * 0.75 }
     }
     if (grootte === 'groot') {
-      return { w: contentWidth, h: 130 }
+      return { w: contentWidth, h: 110 }
     }
     const w = (contentWidth - colGap) / 2
     return { w, h: w * 0.75 }
@@ -310,7 +310,7 @@ export async function generateWerkbonInstructiePDF(
 
     // Bereken geschatte hoogte voor dit item
     const hasGroot = hasImage && item.afbeeldingen.some((a) => a.grootte === 'groot')
-    const estimatedHeight = hasImage ? (hasGroot ? 180 : 90) : 40
+    const estimatedHeight = hasImage ? (hasGroot ? 160 : 90) : 40
 
     // Nieuwe pagina als niet genoeg ruimte
     if (y + estimatedHeight > availableHeight) {
