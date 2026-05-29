@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import type { WerkbonItem } from '@/types'
+import type { WerkbonItem, WerkbonBlokType } from '@/types'
 import { resolveSchaal } from '@/services/werkbonService'
 import { WerkbonDropZone } from './WerkbonDropZone'
 
@@ -22,6 +22,7 @@ interface WerkbonItemCardProps {
   onImageAdd: (itemId: string, e: React.ChangeEvent<HTMLInputElement>) => void
   onImageDelete: (itemId: string, afbId: string) => void
   onImageGrootteChange: (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => void
+  onImageBlokTypeChange: (itemId: string, afbId: string, blokType: WerkbonBlokType) => void
   onLightbox: (url: string) => void
   onAfbeeldingenDropped?: (itemId: string, files: File[]) => void | Promise<void>
   onAfbeeldingReorder?: (itemId: string, draggedAfbId: string, targetAfbId: string) => void | Promise<void>
@@ -55,7 +56,7 @@ function useDebouncedField(initialValue: string, onCommit: (val: string) => void
 }
 
 export const WerkbonItemCard = React.memo(function WerkbonItemCard({
-  item, index, totalItems, onUpdate, onDelete, onMove, onImageAdd, onImageDelete, onImageGrootteChange, onLightbox,
+  item, index, totalItems, onUpdate, onDelete, onMove, onImageAdd, onImageDelete, onImageGrootteChange, onImageBlokTypeChange, onLightbox,
   onAfbeeldingenDropped, onAfbeeldingReorder,
 }: WerkbonItemCardProps) {
   const [omschrijving, setOmschrijving] = useDebouncedField(
@@ -175,6 +176,8 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                   const schaal = resolveSchaal(afb)
                   const huidigeGrootte: 'klein' | 'normaal' | 'groot' =
                     schaal <= 40 ? 'klein' : schaal <= 75 ? 'normaal' : 'groot'
+                  const huidigBlokType: WerkbonBlokType = afb.layout?.blok_type ?? 'foto'
+                  const isLogo = huidigBlokType === 'logo'
                   const wordtGedragen = draggedAfbId === afb.id
                   return (
                     <div
@@ -187,6 +190,22 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                       className={`rounded-lg overflow-hidden border transition-opacity ${wordtGedragen ? 'opacity-40' : ''}`}
                     >
                       <div className="relative group">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onImageBlokTypeChange(item.id, afb.id, isLogo ? 'foto' : 'logo')
+                          }}
+                          aria-pressed={isLogo}
+                          title={isLogo ? 'Schakel naar foto' : 'Schakel naar logo (40×40mm rechtsboven in PDF)'}
+                          className={`absolute top-1 right-1 z-10 px-2 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-wider transition-colors ${
+                            isLogo
+                              ? 'bg-[#FFFFFF] text-[#F15025] border-2 border-[#F15025]'
+                              : 'bg-white/80 text-[#9B9B95]'
+                          }`}
+                        >
+                          {isLogo ? 'LOGO' : 'FOTO'}
+                        </button>
                         {afb.url ? (
                           <div className="w-full aspect-[4/3] flex items-center justify-center cursor-pointer" style={{ backgroundColor: '#F8F7F5' }} onClick={() => onLightbox(afb.url)}>
                             <img
