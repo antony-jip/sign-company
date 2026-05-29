@@ -5,8 +5,10 @@ import { resolveImageToBase64, detectImageFormat } from '@/services/pdfService'
 import { resolveSchaal } from '@/services/werkbonService'
 import {
   itemHeeftCanvasData,
+  heeftCanvasCoords,
   CANVAS_WERKRUIMTE_MM,
   CANVAS_Z_INDEX_DEFAULTS,
+  CANVAS_LOGO_DEFAULT_MM,
 } from '@/utils/werkbonCanvas'
 
 interface PdfBedrijfsProfiel extends Partial<Profile> {
@@ -366,10 +368,12 @@ export async function generateWerkbonInstructiePDF(
   // exact 267mm (pageWidth 297 minus 2x 15mm marges), dus de canvas-coordinaten
   // mappen 1:1 op PDF-coordinaten — geen schaling nodig.
   function renderCanvasItem(item: WerkbonItem, itemIndex: number): void {
-    // Veilige bovengrens voor page-break check: tekst 40mm + 4 gap + canvas 100mm + 5 spacing.
-    // Bij overschatting krijgen we een vroege page-break, geen render-fout.
+    // Page-break bovengrens. Worst-case renderTekstBlok ~= 12mm nummer/omschrijving
+    // (3 regels) + 8mm afmetingen + 25mm notitie (4 regels in gele box) = ~45mm,
+    // plus marge tot 65mm. Bij overschatting krijgen we een vroege page-break,
+    // bij onderschatting wordt het canvas afgekapt — dus liever te hoog inschatten.
     const canvasH = CANVAS_WERKRUIMTE_MM.hoogte
-    const textEstimate = 40
+    const textEstimate = 65
     const estimatedHeight = textEstimate + 4 + canvasH + 5
 
     if (y + estimatedHeight > availableHeight) {
@@ -383,7 +387,7 @@ export async function generateWerkbonInstructiePDF(
     // Identieke fallback-logica als WerkbonCanvas zodat DOM-stacking in de
     // editor en PDF-stacking in de output nooit divergeren.
     const canvasElementen = [...item.afbeeldingen]
-      .filter((a) => a.layout?.canvas_x_mm !== undefined)
+      .filter((a) => heeftCanvasCoords(a.layout))
       .sort((a, b) => {
         const blokA = a.layout?.blok_type ?? 'foto'
         const blokB = b.layout?.blok_type ?? 'foto'
@@ -396,10 +400,12 @@ export async function generateWerkbonInstructiePDF(
     for (const afb of canvasElementen) {
       if (!afb.url) continue
       const layout = afb.layout!
+      const blokType = layout.blok_type ?? 'foto'
+      const defaultSize = blokType === 'logo' ? CANVAS_LOGO_DEFAULT_MM : 60
       const ex = marginLeft + (layout.canvas_x_mm ?? 0)
       const ey = canvasY + (layout.canvas_y_mm ?? 0)
-      const ew = layout.canvas_breedte_mm ?? 60
-      const eh = layout.canvas_hoogte_mm ?? 40
+      const ew = layout.canvas_breedte_mm ?? defaultSize
+      const eh = layout.canvas_hoogte_mm ?? (blokType === 'logo' ? defaultSize : 40)
       const cached = afbCache.get(afb.id)
       drawImageContain(cached?.base64 ?? null, cached?.ratio ?? null, afb.url, ex, ey, ew, eh)
     }
