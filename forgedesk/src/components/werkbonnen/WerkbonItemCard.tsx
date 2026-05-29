@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import type { WerkbonItem, WerkbonBlokType } from '@/types'
 import { resolveSchaal } from '@/services/werkbonService'
 import { WerkbonDropZone } from './WerkbonDropZone'
+import { AfbeeldingResizeHandle } from './AfbeeldingResizeHandle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 interface WerkbonItemCardProps {
@@ -24,6 +25,7 @@ interface WerkbonItemCardProps {
   onImageDelete: (itemId: string, afbId: string) => void
   onImageGrootteChange: (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => void
   onImageBlokTypeChange: (itemId: string, afbId: string, blokType: WerkbonBlokType) => void
+  onImageSchaalChange?: (itemId: string, afbId: string, schaalPercentage: number) => void | Promise<void>
   onLightbox: (url: string) => void
   onAfbeeldingenDropped?: (itemId: string, files: File[]) => void | Promise<void>
   onAfbeeldingReorder?: (itemId: string, draggedAfbId: string, targetAfbId: string) => void | Promise<void>
@@ -57,11 +59,13 @@ function useDebouncedField(initialValue: string, onCommit: (val: string) => void
 }
 
 export const WerkbonItemCard = React.memo(function WerkbonItemCard({
-  item, index, totalItems, onUpdate, onDelete, onMove, onImageAdd, onImageDelete, onImageGrootteChange, onImageBlokTypeChange, onLightbox,
+  item, index, totalItems, onUpdate, onDelete, onMove, onImageAdd, onImageDelete, onImageGrootteChange, onImageBlokTypeChange, onImageSchaalChange, onLightbox,
   onAfbeeldingenDropped, onAfbeeldingReorder,
 }: WerkbonItemCardProps) {
   const { werkbonCanvasVersie } = useAppSettings()
   const canvasActief = werkbonCanvasVersie >= 1
+  const fase2Actief = werkbonCanvasVersie >= 2
+  const [schaalPreview, setSchaalPreview] = useState<Record<string, number>>({})
   const [omschrijving, setOmschrijving] = useDebouncedField(
     item.omschrijving,
     (val) => onUpdate(item.id, { omschrijving: val }),
@@ -176,7 +180,8 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
             {item.afbeeldingen.length > 0 ? (
               <div className="grid grid-cols-2 gap-2">
                 {item.afbeeldingen.map((afb) => {
-                  const schaal = resolveSchaal(afb)
+                  const schaalOpgeslagen = resolveSchaal(afb)
+                  const schaal = schaalPreview[afb.id] ?? schaalOpgeslagen
                   const huidigeGrootte: 'klein' | 'normaal' | 'groot' =
                     schaal <= 40 ? 'klein' : schaal <= 75 ? 'normaal' : 'groot'
                   const huidigBlokType: WerkbonBlokType = afb.layout?.blok_type ?? 'foto'
@@ -234,6 +239,21 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                             <X className="h-3 w-3" />
                           </Button>
                         </div>
+                        {fase2Actief && onImageSchaalChange && (
+                          <AfbeeldingResizeHandle
+                            schaalPercentage={schaal}
+                            onSchaalChange={(s) => setSchaalPreview((prev) => ({ ...prev, [afb.id]: s }))}
+                            onSchaalCommit={(s) => {
+                              setSchaalPreview((prev) => {
+                                const next = { ...prev }
+                                delete next[afb.id]
+                                return next
+                              })
+                              void onImageSchaalChange(item.id, afb.id, s)
+                            }}
+                            disabled={!canvasActief}
+                          />
+                        )}
                       </div>
                       <div className="flex gap-0.5 px-1 py-1 border-t" style={{ backgroundColor: '#F8F7F5', borderColor: '#EBEBEB' }}>
                         {GROOTTE_OPTIES.map((g) => {
