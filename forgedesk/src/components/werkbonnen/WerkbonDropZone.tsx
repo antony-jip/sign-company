@@ -44,7 +44,9 @@ export const WerkbonDropZone = React.memo(function WerkbonDropZone({
     if (disabled) return
     e.preventDefault()
     setIsDragOver(false)
-    const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type.startsWith('image/'))
+    const files = Array.from(e.dataTransfer.files || []).filter(
+      (f) => f.type.startsWith('image/') || f.type === 'application/pdf',
+    )
     if (files.length === 0) return
     void onFilesDropped(itemId, files)
   }, [disabled, itemId, onFilesDropped])
