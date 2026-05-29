@@ -96,6 +96,7 @@ import { CustomerSelector } from './CustomerSelector'
 import { QuoteHeader } from './QuoteHeader'
 import { QuoteSidebar } from './QuoteSidebar'
 import { safeSetItem } from '@/utils/localStorageUtils'
+import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { useQuoteClipboard } from '@/hooks/useQuoteClipboard'
 import { useQuoteVersioning } from '@/hooks/useQuoteVersioning'
 import { useContactManagement } from '@/hooks/useContactManagement'
@@ -1837,7 +1838,7 @@ export function QuoteCreation() {
       if (email.emailExtraBijlagen && email.emailExtraBijlagen.length > 0) {
         for (const bijlage of email.emailExtraBijlagen) {
           try {
-            const path = `${uploadDir}/${crypto.randomUUID()}-${bijlage.naam}`
+            const path = `${uploadDir}/${crypto.randomUUID()}-${sanitizeStorageFilename(bijlage.naam)}`
             const { error: upErr } = await supabase.storage
               .from('documenten')
               .upload(path, bijlage.file, { contentType: bijlage.file.type || 'application/octet-stream', upsert: false })
