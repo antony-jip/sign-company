@@ -738,6 +738,7 @@ export interface AppSettings {
   werkbon_monteur_fotos: boolean;
   werkbon_klant_handtekening: boolean;
   werkbon_briefpapier: boolean;
+  werkbon_canvas_versie?: number;
   herinnering_1_tekst: string;
   herinnering_1_onderwerp: string;
   herinnering_2_tekst: string;
