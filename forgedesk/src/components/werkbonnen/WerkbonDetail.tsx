@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { BackButton } from '@/components/shared/BackButton'
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
@@ -6,7 +6,7 @@ import { useDebouncedCallback } from '@/hooks/useDebounce'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import {
-  Save, FileText, Plus, ClipboardCheck, Printer, Share2, Lock,
+  Save, FileText, Plus, ClipboardCheck, Printer, Share2, Lock, Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -38,6 +38,10 @@ import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { WerkbonItemCard } from './WerkbonItemCard'
 import { WerkbonHeaderForm } from './WerkbonHeaderForm'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
+
+const PdfPreviewDialog = React.lazy(() =>
+  import('@/components/shared/PdfPreviewDialog').then((m) => ({ default: m.PdfPreviewDialog })),
+)
 
 // Resolve a URL: if it's a storage path, convert to a signed URL.
 // Returns '' on failure so render-laag een placeholder kan tonen ipv broken image.
@@ -135,6 +139,17 @@ export function WerkbonDetail() {
   // Lightbox
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
+  // Live PDF-preview state
+  const [showPdfPreview, setShowPdfPreview] = useState(false)
+  const [previewNonce, setPreviewNonce] = useState(0)
+  const bumpTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const bumpPreview = useCallback(() => {
+    if (!showPdfPreview) return
+    if (bumpTimer.current) clearTimeout(bumpTimer.current)
+    bumpTimer.current = setTimeout(() => setPreviewNonce((n) => n + 1), 600)
+  }, [showPdfPreview])
+  useEffect(() => () => { if (bumpTimer.current) clearTimeout(bumpTimer.current) }, [])
+
   // Laad data
   useEffect(() => {
     let cancelled = false
@@ -207,6 +222,35 @@ export function WerkbonDetail() {
     return () => { cancelled = true }
   }, [id, isNew, navigate, werkbonBriefpapier])
 
+  // Bouwt het pdfData-object dat alle 3 PDF-flows (download/print/share) en
+  // de live preview delen. Resolve van aanmaker-naam loopt via medewerkers
+  // op user_id, met fallback op huidige user voor concept-werkbonnen.
+  const buildWerkbonPdfData = useCallback(() => {
+    const aanmakerNaam = medewerkers.find((m) => m.user_id === (aanmakerUserId || userId))?.naam
+    return {
+      werkbon_nummer: werkbonNummer,
+      titel,
+      datum,
+      locatie_adres: locatieAdres,
+      locatie_stad: locatieStad,
+      locatie_postcode: locatiePostcode,
+      contact_naam: contactNaam,
+      contact_telefoon: contactTelefoon,
+      toon_briefpapier: toonBriefpapier,
+      status,
+      uren_gewerkt: urenGewerkt,
+      monteur_opmerkingen: monteurOpmerkingen,
+      klant_handtekening: handtekeningData,
+      klant_naam_getekend: klantNaamGetekend,
+      aanmaker_naam: aanmakerNaam,
+    }
+  }, [
+    werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
+    contactNaam, contactTelefoon, toonBriefpapier, status,
+    urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend,
+    medewerkers, aanmakerUserId, userId,
+  ])
+
   // Klant change → prefill locatie
   const handleKlantChange = useCallback((newKlantId: string) => {
     setKlantId(newKlantId)
@@ -217,7 +261,8 @@ export function WerkbonDetail() {
       setLocatieStad(kl.stad || '')
       setLocatiePostcode(kl.postcode || '')
     }
-  }, [klanten, setDirty])
+    bumpPreview()
+  }, [klanten, setDirty, bumpPreview])
 
   // Header form field change
   const handleFieldChange = useCallback((field: string, value: string) => {
@@ -233,7 +278,8 @@ export function WerkbonDetail() {
       case 'contactNaam': setContactNaam(value); break
       case 'contactTelefoon': setContactTelefoon(value); break
     }
-  }, [setDirty])
+    bumpPreview()
+  }, [setDirty, bumpPreview])
 
   // Save
   const handleSave = useCallback(async () => {
@@ -320,7 +366,8 @@ export function WerkbonDetail() {
     } finally {
       setIsSaving(false)
     }
-  }, [werkbonId, klantId, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty, montageAfspraakId])
+    bumpPreview()
+  }, [werkbonId, klantId, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty, montageAfspraakId, bumpPreview])
 
   // Item toevoegen — auto-save werkbon als die nog niet bestaat
   const handleItemToevoegen = useCallback(async () => {
@@ -363,13 +410,14 @@ export function WerkbonDetail() {
       })
       setWerkbonItems((prev) => [...prev, newItem])
       setDirty(true)
+      bumpPreview()
     } catch (err) {
       logger.error('Kon item niet toevoegen:', err)
       toast.error('Kon item niet toevoegen')
     }
   }, [werkbonId, userId, klantId, projectId, offerteId, titel, datum, status,
     locatieAdres, locatieStad, locatiePostcode, toonBriefpapier,
-    werkbonItems.length, setDirty, navigate])
+    werkbonItems.length, setDirty, navigate, bumpPreview])
 
   // Item bijwerken — debounced Supabase call
   const debouncedUpdateItem = useDebouncedCallback(
@@ -383,14 +431,16 @@ export function WerkbonDetail() {
     setWerkbonItems((prev) => prev.map((i) => i.id === itemId ? { ...i, ...updates } : i))
     setDirty(true)
     debouncedUpdateItem(itemId, updates)
-  }, [setDirty, debouncedUpdateItem])
+    bumpPreview()
+  }, [setDirty, debouncedUpdateItem, bumpPreview])
 
   // Item verwijderen
   const handleItemVerwijderen = useCallback(async (itemId: string) => {
     await deleteWerkbonItem(itemId)
     setWerkbonItems((prev) => prev.filter((i) => i.id !== itemId))
     toast.success('Item verwijderd')
-  }, [])
+    bumpPreview()
+  }, [bumpPreview])
 
   // Item herordenen
   const handleItemMove = useCallback(async (itemId: string, direction: 'up' | 'down') => {
@@ -411,7 +461,8 @@ export function WerkbonDetail() {
       })
       return next
     })
-  }, [])
+    bumpPreview()
+  }, [bumpPreview])
 
   // Afbeelding toevoegen aan item
   const handleAfbeeldingToevoegen = useCallback(async (itemId: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -442,13 +493,14 @@ export function WerkbonDetail() {
           : item
       ))
       toast.success('Afbeelding toegevoegd')
+      bumpPreview()
     } catch (err) {
       logger.error('Fout bij uploaden afbeelding:', err)
       const msg = err instanceof Error ? err.message : 'Onbekende fout'
       toast.error(`Upload mislukt: ${msg}`)
     }
     e.target.value = ''
-  }, [])
+  }, [bumpPreview])
 
   // Afbeelding verwijderen
   const handleAfbeeldingVerwijderen = useCallback(async (itemId: string, afbId: string) => {
@@ -459,7 +511,8 @@ export function WerkbonDetail() {
         : item
     ))
     toast.success('Afbeelding verwijderd')
-  }, [])
+    bumpPreview()
+  }, [bumpPreview])
 
   // Afbeelding-grootte wisselen (klein / normaal / groot voor PDF-render)
   const handleAfbeeldingGrootteWijzig = useCallback(async (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => {
@@ -468,13 +521,14 @@ export function WerkbonDetail() {
         ? { ...item, afbeeldingen: item.afbeeldingen.map((a) => a.id === afbId ? { ...a, grootte } : a) }
         : item
     ))
+    bumpPreview()
     try {
       await updateWerkbonAfbeelding(afbId, { grootte })
     } catch (err) {
       logger.error('Kon afbeelding-grootte niet opslaan:', err)
       toast.error('Kon grootte niet opslaan')
     }
-  }, [])
+  }, [bumpPreview])
 
   // Foto toevoegen (monteur voor/na)
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
@@ -508,17 +562,18 @@ export function WerkbonDetail() {
         lastError = err instanceof Error ? err.message : 'Onbekende fout'
       }
     }
-    if (uploaded > 0) toast.success(`${uploaded} foto${uploaded > 1 ? "'s" : ''} toegevoegd`)
+    if (uploaded > 0) { toast.success(`${uploaded} foto${uploaded > 1 ? "'s" : ''} toegevoegd`); bumpPreview() }
     else toast.error(`Upload mislukt: ${lastError ?? 'Onbekende fout'}`)
     e.target.value = ''
-  }, [werkbonId, userId])
+  }, [werkbonId, userId, bumpPreview])
 
   // Foto verwijderen
   const handleFotoVerwijderen = useCallback(async (fotoId: string) => {
     await deleteWerkbonFoto(fotoId)
     setFotos((prev) => prev.filter((f) => f.id !== fotoId))
     toast.success('Foto verwijderd')
-  }, [])
+    bumpPreview()
+  }, [bumpPreview])
 
   const handleDownloadFotos = useCallback(async () => {
     if (fotos.length === 0) return
@@ -549,49 +604,30 @@ export function WerkbonDetail() {
 
   // Monteur field handlers
   const handleUrenChange = useCallback((val: number | undefined) => {
-    setUrenGewerkt(val); setDirty(true)
-  }, [setDirty])
+    setUrenGewerkt(val); setDirty(true); bumpPreview()
+  }, [setDirty, bumpPreview])
 
   const handleOpmerkingenChange = useCallback((val: string) => {
-    setMonteurOpmerkingen(val); setDirty(true)
-  }, [setDirty])
+    setMonteurOpmerkingen(val); setDirty(true); bumpPreview()
+  }, [setDirty, bumpPreview])
 
   const handleKlantNaamChange = useCallback((val: string) => {
-    setKlantNaamGetekend(val); setDirty(true)
-  }, [setDirty])
+    setKlantNaamGetekend(val); setDirty(true); bumpPreview()
+  }, [setDirty, bumpPreview])
 
   const handleHandtekeningChange = useCallback((data: string | undefined) => {
-    setHandtekeningData(data); setDirty(true)
-  }, [setDirty])
+    setHandtekeningData(data); setDirty(true); bumpPreview()
+  }, [setDirty, bumpPreview])
 
   // PDF download
   const handleDownloadPDF = useCallback(async () => {
     const klant = klanten.find((k) => k.id === klantId)
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
-    const aanmakerNaam = medewerkers.find((m) => m.user_id === (aanmakerUserId || userId))?.naam
-
-    const pdfData = {
-      werkbon_nummer: werkbonNummer,
-      titel,
-      datum,
-      locatie_adres: locatieAdres,
-      locatie_stad: locatieStad,
-      locatie_postcode: locatiePostcode,
-      contact_naam: contactNaam,
-      contact_telefoon: contactTelefoon,
-      toon_briefpapier: toonBriefpapier,
-      status,
-      uren_gewerkt: urenGewerkt,
-      monteur_opmerkingen: monteurOpmerkingen,
-      klant_handtekening: handtekeningData,
-      klant_naam_getekend: klantNaamGetekend,
-      aanmaker_naam: aanmakerNaam,
-    }
 
     try {
       const doc = await generateWerkbonInstructiePDF(
-        pdfData,
+        buildWerkbonPdfData(),
         werkbonItems,
         klant || {},
         project?.naam || '',
@@ -607,10 +643,7 @@ export function WerkbonDetail() {
     }
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
-    werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
-    contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
-    status, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, fotos,
-    medewerkers, aanmakerUserId, userId,
+    werkbonItems, werkbonNummer, fotos, buildWerkbonPdfData,
   ])
 
   // Print werkbon (open PDF in nieuw venster met print dialog)
@@ -618,29 +651,10 @@ export function WerkbonDetail() {
     const klant = klanten.find((k) => k.id === klantId)
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
-    const aanmakerNaam = medewerkers.find((m) => m.user_id === (aanmakerUserId || userId))?.naam
-
-    const pdfData = {
-      werkbon_nummer: werkbonNummer,
-      titel,
-      datum,
-      locatie_adres: locatieAdres,
-      locatie_stad: locatieStad,
-      locatie_postcode: locatiePostcode,
-      contact_naam: contactNaam,
-      contact_telefoon: contactTelefoon,
-      toon_briefpapier: toonBriefpapier,
-      status,
-      uren_gewerkt: urenGewerkt,
-      monteur_opmerkingen: monteurOpmerkingen,
-      klant_handtekening: handtekeningData,
-      klant_naam_getekend: klantNaamGetekend,
-      aanmaker_naam: aanmakerNaam,
-    }
 
     try {
       const doc = await generateWerkbonInstructiePDF(
-        pdfData,
+        buildWerkbonPdfData(),
         werkbonItems,
         klant || {},
         project?.naam || '',
@@ -659,10 +673,7 @@ export function WerkbonDetail() {
     }
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
-    werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
-    contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
-    status, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, fotos,
-    medewerkers, aanmakerUserId, userId,
+    werkbonItems, fotos, buildWerkbonPdfData,
   ])
 
   // Deel werkbon PDF via WhatsApp / native share
@@ -671,21 +682,9 @@ export function WerkbonDetail() {
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
     const bestandsnaam = `werkbon-${werkbonNummer || 'nieuw'}.pdf`
-    const aanmakerNaam = medewerkers.find((m) => m.user_id === (aanmakerUserId || userId))?.naam
 
     const doc = await generateWerkbonInstructiePDF(
-      {
-        werkbon_nummer: werkbonNummer,
-        titel,
-        datum,
-        locatie_adres: locatieAdres,
-        locatie_stad: locatieStad,
-        locatie_postcode: locatiePostcode,
-        contact_naam: contactNaam,
-        contact_telefoon: contactTelefoon,
-        toon_briefpapier: toonBriefpapier,
-        aanmaker_naam: aanmakerNaam,
-      },
+      buildWerkbonPdfData(),
       werkbonItems,
       klant || {},
       project?.naam || '',
@@ -723,9 +722,27 @@ export function WerkbonDetail() {
     }
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
-    werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
-    contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
-    medewerkers, aanmakerUserId, userId,
+    werkbonNummer, titel, werkbonItems, buildWerkbonPdfData,
+  ])
+
+  // Genereer PDF-blob voor de live preview-dialog
+  const generatePreviewPdf = useCallback(async (): Promise<Blob> => {
+    const klant = klanten.find((k) => k.id === klantId)
+    const project = projecten.find((p) => p.id === projectId)
+    const bedrijfsProfiel = { ...profile, primaireKleur }
+    const doc = await generateWerkbonInstructiePDF(
+      buildWerkbonPdfData(),
+      werkbonItems,
+      klant || {},
+      project?.naam || '',
+      bedrijfsProfiel,
+      documentStyle,
+      { fotos },
+    )
+    return doc.output('blob') as Blob
+  }, [
+    klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
+    werkbonItems, fotos, buildWerkbonPdfData,
   ])
 
   if (isLoading) {
@@ -761,6 +778,9 @@ export function WerkbonDetail() {
           {!isNew && (
             <>
               <div className="hidden md:contents">
+                <button onClick={() => setShowPdfPreview(true)} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-muted" style={{ border: '1px solid hsl(var(--border))' }} title="Live preview">
+                  <Eye className="h-4 w-4 text-foreground/70" />
+                </button>
                 <button onClick={handlePrint} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-muted" style={{ border: '1px solid hsl(var(--border))' }} title="Printen">
                   <Printer className="h-4 w-4 text-foreground/70" />
                 </button>
@@ -771,7 +791,7 @@ export function WerkbonDetail() {
                   <Share2 className="h-3.5 w-3.5 text-foreground/70" />
                 </button>
               </div>
-              <Select value={status} onValueChange={(v) => { setStatus(v as Werkbon['status']); setDirty(true) }}>
+              <Select value={status} onValueChange={(v) => { setStatus(v as Werkbon['status']); setDirty(true); bumpPreview() }}>
                 <SelectTrigger className="w-[120px] h-8 text-[12px] rounded-lg" style={{ border: '1px solid hsl(var(--border))' }}>
                   <SelectValue />
                 </SelectTrigger>
@@ -923,6 +943,19 @@ export function WerkbonDetail() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Live PDF-preview */}
+      {showPdfPreview && (
+        <React.Suspense fallback={null}>
+          <PdfPreviewDialog
+            open={showPdfPreview}
+            onOpenChange={setShowPdfPreview}
+            title={`Werkbon ${werkbonNummer || 'concept'}`}
+            generatePdf={generatePreviewPdf}
+            refreshNonce={previewNonce}
+          />
+        </React.Suspense>
+      )}
     </div>
     </div>
   )

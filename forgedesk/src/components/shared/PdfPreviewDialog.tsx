@@ -18,9 +18,14 @@ interface PdfPreviewDialogProps {
   onOpenChange: (open: boolean) => void
   title: string
   generatePdf: () => Promise<Blob>
+  /** Wijzig de waarde om een live-refresh te triggeren terwijl de dialog
+   *  open staat. Optioneel; bij undefined blijft het bestaande gedrag
+   *  (één render bij open=true). Bij verandering wordt de PDF opnieuw
+   *  gegenereerd en de huidige zoom + pagina behouden. */
+  refreshNonce?: number | string
 }
 
-export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf }: PdfPreviewDialogProps) {
+export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refreshNonce }: PdfPreviewDialogProps) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -51,7 +56,10 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf }: Pdf
       .then((blob) => {
         if (cancelled) return
         const url = URL.createObjectURL(blob)
-        setBlobUrl(url)
+        // Oude blob-URL revoken bij refresh om memory-leak te voorkomen.
+        // Zoom + paginanummer blijven bewust staan zodat een live-refresh
+        // tijdens een wijziging de gebruiker niet uit z'n view-state schopt.
+        setBlobUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return url })
         setPdfBlob(blob)
       })
       .catch((err) => {
@@ -65,7 +73,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf }: Pdf
     return () => {
       cancelled = true
     }
-  }, [open, generatePdf])
+  }, [open, generatePdf, refreshNonce])
 
   const onDocumentLoadSuccess = useCallback(({ numPages: n }: { numPages: number }) => {
     setNumPages(n)
