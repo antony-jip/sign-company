@@ -465,7 +465,7 @@ export function WerkbonMonteurView() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="text-[14px] leading-snug whitespace-pre-wrap" style={{ color: '#1A1A1A' }}>
-                          {item.omschrijving || '—'}
+                          {item.omschrijving || 'Geen omschrijving'}
                         </p>
                         {heeftAfmeting && (
                           <p className="mt-1 text-[12px] font-mono" style={{ color: '#6B6B66' }}>
