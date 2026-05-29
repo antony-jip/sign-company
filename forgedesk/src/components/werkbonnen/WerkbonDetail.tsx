@@ -35,6 +35,7 @@ import {
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { uploadFile, downloadFile, getSignedUrl } from '@/services/storageService'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
+import { pdfEerstePaginaNaarImage } from '@/utils/pdfToImage'
 import { WerkbonItemCard } from './WerkbonItemCard'
 import { WerkbonHeaderForm } from './WerkbonHeaderForm'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
@@ -101,6 +102,7 @@ export function WerkbonDetail() {
     werkbonCanvasVersie,
   } = useAppSettings()
   const canvasActief = werkbonCanvasVersie >= 1
+  const fase2Actief = werkbonCanvasVersie >= 2
   const documentStyle = useDocumentStyle()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
@@ -516,11 +518,16 @@ export function WerkbonDetail() {
     bumpPreview()
   }, [bumpPreview])
 
-  // Meerdere afbeeldingen uploaden via desktop drop
+  // Meerdere afbeeldingen uploaden via desktop drop.
+  // Fase 2: PDF-bestanden worden geaccepteerd en geconverteerd naar PNG
+  // (eerste pagina) voor weergave; originele PDF blijft beschikbaar via
+  // layout.pdf_bron_url voor download/herrendering.
   const handleAfbeeldingenDropped = useCallback(async (itemId: string, files: File[]) => {
     if (!canvasActief) return
-    const imageFiles = files.filter((f) => f.type.startsWith('image/'))
-    if (imageFiles.length === 0) return
+    const bruikbareFiles = files.filter(
+      (f) => f.type.startsWith('image/') || f.type === 'application/pdf',
+    )
+    if (bruikbareFiles.length === 0) return
 
     const item = werkbonItems.find((i) => i.id === itemId)
     if (!item) return
@@ -531,13 +538,60 @@ export function WerkbonDetail() {
       return
     }
 
-    const teVerwerken = imageFiles.slice(0, beschikbaar)
-    const overgeslagen = imageFiles.length - teVerwerken.length
+    const teVerwerken = bruikbareFiles.slice(0, beschikbaar)
+    const overgeslagen = bruikbareFiles.length - teVerwerken.length
 
     const nieuweAfbeeldingen: WerkbonAfbeelding[] = []
     let lastError: string | null = null
 
     for (const file of teVerwerken) {
+      const isPdf = file.type === 'application/pdf'
+
+      if (isPdf && !fase2Actief) {
+        toast.info('PDF-bestanden vereisen fase 2')
+        continue
+      }
+
+      if (isPdf) {
+        if (file.size > 25 * 1024 * 1024) {
+          toast.error(`${file.name} is te groot (max 25MB)`)
+          continue
+        }
+        try {
+          const pngBlob = await pdfEerstePaginaNaarImage(file, { maxBreedtePx: 1200 })
+          const pngBaseName = file.name.replace(/\.pdf$/i, '.png')
+          const pngFile = new File([pngBlob], pngBaseName, { type: 'image/png' })
+
+          const safePdfName = sanitizeStorageFilename(file.name)
+          const safePngName = sanitizeStorageFilename(pngBaseName)
+          const timestamp = Date.now()
+          const pngStoragePath = `werkbon-afbeeldingen/${itemId}/${timestamp}-${safePngName}`
+          const pdfStoragePath = `werkbon-pdfs/${itemId}/${timestamp}-${safePdfName}`
+
+          const [uploadedPngPath, uploadedPdfPath] = await Promise.all([
+            uploadFile(pngFile, pngStoragePath),
+            uploadFile(file, pdfStoragePath),
+          ])
+          const displayUrl = await resolveUrl(uploadedPngPath)
+
+          const afb = await createWerkbonAfbeelding({
+            werkbon_item_id: itemId,
+            url: uploadedPngPath,
+            type: 'overig',
+            omschrijving: file.name,
+            layout: { blok_type: 'pdf', pdf_bron_url: uploadedPdfPath },
+          })
+          afb.url = displayUrl
+          nieuweAfbeeldingen.push(afb)
+        } catch (err) {
+          logger.error('Fout bij verwerken PDF:', err)
+          const msg = err instanceof Error ? err.message : 'Onbekende fout'
+          lastError = `${file.name}: PDF kon niet worden ingelezen (${msg})`
+          toast.error(`PDF-verwerking mislukt voor ${file.name}`)
+        }
+        continue
+      }
+
       if (file.size > 10 * 1024 * 1024) {
         lastError = `${file.name} is te groot (max 10MB)`
         continue
@@ -575,14 +629,14 @@ export function WerkbonDetail() {
       bumpPreview()
     }
     if (overgeslagen > 0) {
-      toast.info(`${overgeslagen} afbeelding(en) overgeslagen (max 2 per item)`)
+      toast.info(`${overgeslagen} bestand(en) overgeslagen (max 2 per item)`)
     }
     if (lastError && nieuweAfbeeldingen.length === 0) {
       toast.error(`Upload mislukt: ${lastError}`)
     } else if (lastError) {
       toast.error(`Upload mislukt voor sommige bestanden: ${lastError}`)
     }
-  }, [werkbonItems, bumpPreview, canvasActief])
+  }, [werkbonItems, bumpPreview, canvasActief, fase2Actief])
 
   // Afbeelding-grootte wisselen (klein / normaal / groot → schaal_percentage in layout)
   const handleAfbeeldingGrootteWijzig = useCallback(async (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => {
