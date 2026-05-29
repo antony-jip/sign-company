@@ -829,20 +829,30 @@ export function WerkbonDetail() {
                 </p>
               </button>
             ) : (
-              werkbonItems.map((item, idx) => (
-                <WerkbonItemCard
-                  key={item.id}
-                  item={item}
-                  index={idx}
-                  totalItems={werkbonItems.length}
-                  onUpdate={handleItemUpdate}
-                  onDelete={handleItemVerwijderen}
-                  onMove={handleItemMove}
-                  onImageAdd={handleAfbeeldingToevoegen}
-                  onImageDelete={handleAfbeeldingVerwijderen}
-                  onLightbox={setLightboxUrl}
-                />
-              ))
+              <>
+                {werkbonItems.map((item, idx) => (
+                  <WerkbonItemCard
+                    key={item.id}
+                    item={item}
+                    index={idx}
+                    totalItems={werkbonItems.length}
+                    onUpdate={handleItemUpdate}
+                    onDelete={handleItemVerwijderen}
+                    onMove={handleItemMove}
+                    onImageAdd={handleAfbeeldingToevoegen}
+                    onImageDelete={handleAfbeeldingVerwijderen}
+                    onLightbox={setLightboxUrl}
+                  />
+                ))}
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={handleItemToevoegen}
+                    className="inline-flex items-center gap-1 h-8 px-3 text-[12px] font-semibold rounded-lg border border-[#F15025]/30 text-[#F15025] hover:bg-[#F15025] hover:text-white hover:border-[#F15025] transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Item toevoegen
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
