@@ -260,7 +260,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                 })}
               </div>
             ) : (
-              <div className="border border-dashed rounded-lg p-6 text-center">
+              <div className="rounded-lg p-6 text-center">
                 <label className="cursor-pointer">
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => onImageAdd(item.id, e)} />
                   <ImagePlus className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
