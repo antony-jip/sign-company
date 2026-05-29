@@ -325,7 +325,7 @@ export async function deleteWerkbonAfbeelding(id: string): Promise<void> {
 
 export async function updateWerkbonAfbeelding(
   id: string,
-  updates: Partial<Pick<WerkbonAfbeelding, 'grootte' | 'omschrijving'>>,
+  updates: Partial<Pick<WerkbonAfbeelding, 'grootte' | 'omschrijving' | 'layout'>>,
 ): Promise<WerkbonAfbeelding> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
@@ -344,4 +344,13 @@ export async function updateWerkbonAfbeelding(
   items[index] = { ...items[index], ...updates }
   setLocalData('werkbon_afbeeldingen', items)
   return items[index]
+}
+
+export function deriveFromGrootte(g?: 'klein' | 'normaal' | 'groot'): number | undefined {
+  if (!g) return undefined
+  return { klein: 33, normaal: 50, groot: 100 }[g]
+}
+
+export function resolveSchaal(afb: WerkbonAfbeelding): number {
+  return afb.layout?.schaal_percentage ?? deriveFromGrootte(afb.grootte) ?? 50
 }
