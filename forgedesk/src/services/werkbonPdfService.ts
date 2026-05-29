@@ -2,6 +2,7 @@ import jsPDF from 'jspdf'
 import type { WerkbonItem, WerkbonFoto, Klant, Profile, DocumentStyle } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 import { resolveImageToBase64, detectImageFormat } from '@/services/pdfService'
+import { resolveSchaal } from '@/services/werkbonService'
 
 interface PdfBedrijfsProfiel extends Partial<Profile> {
   primaireKleur?: string
@@ -285,26 +286,28 @@ export async function generateWerkbonInstructiePDF(
   }
 
   const colGap = 6
-  function sizeFor(grootte: 'klein' | 'normaal' | 'groot'): { w: number; h: number } {
-    if (grootte === 'klein') {
-      const w = (contentWidth - 2 * colGap) / 3
-      return { w, h: w * 0.75 }
+  function sizeFor(schaalPercentage: number): { w: number; h: number } {
+    if (schaalPercentage <= 40) {
+      return { w: 85, h: 64 }
     }
-    if (grootte === 'groot') {
-      return { w: contentWidth, h: 100 }
+    if (schaalPercentage <= 75) {
+      return { w: 130, h: 98 }
     }
-    const w = (contentWidth - colGap) / 2
-    return { w, h: w * 0.75 }
+    return { w: 267, h: 100 }
   }
+
+  const LOGO_BBOX = 40
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i]
-    const hasImage = item.afbeeldingen.length > 0
+    const logos = item.afbeeldingen.filter((a) => a.layout?.blok_type === 'logo')
+    const fotos = item.afbeeldingen.filter((a) => a.layout?.blok_type !== 'logo')
+    const hasImage = fotos.length > 0
     const hasNote = !!item.interne_notitie
     const hasDimensions = !!(item.afmeting_breedte_mm || item.afmeting_hoogte_mm)
 
     // Bereken geschatte hoogte voor dit item
-    const hasGroot = hasImage && item.afbeeldingen.some((a) => a.grootte === 'groot')
+    const hasGroot = hasImage && fotos.some((a) => resolveSchaal(a) >= 76)
     const estimatedHeight = hasImage ? (hasGroot ? 150 : 90) : 40
 
     // Nieuwe pagina als niet genoeg ruimte
@@ -315,23 +318,34 @@ export async function generateWerkbonInstructiePDF(
     // ─── Item layout: flow-row van afbeeldingen + tekst eronder ───
     const itemStartY = y
 
+    // Logo-blok-type: vast 40×40mm rechtsboven binnen de item-block.
+    // Bewust niet-flow: overschrijft NIET de tekst-block, maar kan overlappen
+    // met een 'groot' foto-blok dat de volle contentbreedte gebruikt.
+    // Vrij plaatsbaar pas in fase 3 (masterplan §2.4).
+    const logoX = marginLeft + contentWidth - LOGO_BBOX
+    for (const logo of logos) {
+      if (!logo.url) continue
+      const cached = afbCache.get(logo.id)
+      drawImageContain(cached?.base64 ?? null, cached?.ratio ?? null, logo.url, logoX, itemStartY, LOGO_BBOX, LOGO_BBOX)
+    }
+
     if (hasImage) {
       const colW = (contentWidth - colGap) / 2  // tekst-kolom-breedte (= huidige "normaal")
       const col2X = marginLeft + colW + colGap
 
-      // Flow-based afbeeldingen-render: per afbeelding bepaalt 'grootte'
-      // de bounding-box; volle breedte ('groot') forceert nieuwe rij.
+      // Flow-based afbeeldingen-render: per afbeelding bepaalt schaal_percentage
+      // de bounding-box; volle breedte (>75%) forceert nieuwe rij.
       let rowX = marginLeft
       let rowY = y
       let rowMaxH = 0
       const rightEdge = marginLeft + contentWidth + 0.1
       // Render alleen de eerste twee afbeeldingen via flow; 3+ blijven via de
       // bestaande thumbnail-fallback hieronder (upload-flow maxt momenteel op 2).
-      const flowCount = Math.min(2, item.afbeeldingen.length)
+      const flowCount = Math.min(2, fotos.length)
       for (let ai = 0; ai < flowCount; ai++) {
-        const afb = item.afbeeldingen[ai]
+        const afb = fotos[ai]
         if (!afb?.url) continue
-        const { w, h } = sizeFor(afb.grootte || 'normaal')
+        const { w, h } = sizeFor(resolveSchaal(afb))
         if (rowX > marginLeft && rowX + w > rightEdge) {
           rowY += rowMaxH + colGap
           rowX = marginLeft
@@ -394,13 +408,13 @@ export async function generateWerkbonInstructiePDF(
       // Dead code zolang upload-flow op 2 maxt; behouden voor toekomstige
       // cap-verhoging. Gebruikt imageBlockBottom als anker i.p.v. de
       // verwijderde fixed imgH.
-      if (item.afbeeldingen.length > 2) {
+      if (fotos.length > 2) {
         let thumbY = imageBlockBottom + 4
         const thumbW = 30
         const thumbH = 22
         let thumbX = col2X
-        for (let ai = 2; ai < item.afbeeldingen.length && ai < 6; ai++) {
-          const afb = item.afbeeldingen[ai]
+        for (let ai = 2; ai < fotos.length && ai < 6; ai++) {
+          const afb = fotos[ai]
           if (afb?.url) {
             try {
               doc.addImage(afb.url, 'JPEG', thumbX, thumbY, thumbW, thumbH, undefined, 'MEDIUM')
