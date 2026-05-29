@@ -129,11 +129,20 @@ export async function generateWerkbonInstructiePDF(
     doc.setTextColor(...brand)
     doc.text(`WERKBON ${werkbonData.werkbon_nummer}`, headerX, y + 5)
 
+    let leftY = y + 11
     if (werkbonData.titel) {
       doc.setFont(bodyFont, 'normal')
       doc.setFontSize(9)
       doc.setTextColor(...textColor)
-      doc.text(werkbonData.titel, headerX, y + 11)
+      doc.text(werkbonData.titel, headerX, leftY)
+      leftY += 5
+    }
+
+    if (werkbonData.aanmaker_naam) {
+      doc.setFont(bodyFont, 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(...textColor)
+      doc.text(`Aangemaakt door: ${werkbonData.aanmaker_naam}`, headerX, leftY)
     }
 
     // Rechts: klant + locatie + datum
@@ -163,11 +172,6 @@ export async function generateWerkbonInstructiePDF(
 
     doc.text(`Datum: ${formatDate(werkbonData.datum)}`, rightX, rightY, { align: 'right' })
     rightY += 4
-
-    if (werkbonData.aanmaker_naam) {
-      doc.text(`Aangemaakt door: ${werkbonData.aanmaker_naam}`, rightX, rightY, { align: 'right' })
-      rightY += 4
-    }
 
     if (werkbonData.contact_naam) {
       doc.text(`Contact: ${werkbonData.contact_naam}${werkbonData.contact_telefoon ? ` — ${werkbonData.contact_telefoon}` : ''}`, rightX, rightY, { align: 'right' })
