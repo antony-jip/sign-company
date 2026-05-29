@@ -1317,6 +1317,7 @@ export interface WerkbonAfbeelding {
   url: string;
   type: 'tekening' | 'drukproef' | 'foto' | 'overig';
   omschrijving?: string;
+  grootte?: 'klein' | 'normaal' | 'groot';
   created_at: string;
 }
 
