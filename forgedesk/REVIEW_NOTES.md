@@ -414,4 +414,125 @@ lockt via `readOnly={werkbon.status === 'afgerond'}`.
   `BEGIN/COMMIT + DO $$` block — niet-blokkerend, niet retrofitten.
 - Pre-existing `profile?.naam` TS-issue: apart fix-ticket, gedeeld met
   `WerkbonDetail.tsx:340`.
+- Em-dash in `WerkbonMonteurView.tsx:468` (`{item.omschrijving || '—'}`)
+  per memory `feedback_geen_em_dashes` vervangen door punten/komma's of
+  laat leeg. Cosmetisch, niet blokkerend.
+
+---
+
+## Werkbon canvas fase 1 — Stream B + D + E + F + G (2026-05-29)
+
+Vervolg op A+C-sectie hierboven. Alle resterende streams op
+`feat/werkbon-canvas-fase1` reviewed en gemerged. Build groen na elke merge.
+
+### Stream B — PDF render (1 commit) — Verdict: AKKOORD-MET-OPMERKINGEN
+| Hash | Subject |
+|---|---|
+| `d4e43088` | feat(werkbon-pdf): use schaal_percentage via resolveSchaal + add logo blok render (canvas phase 1) |
+
+- `sizeFor` percentage-based: ≤40 klein 85×64mm, ≤75 normaal 130×98mm, >75
+  groot 267×100mm. Map-exact op oude formules bij `contentWidth=267`.
+- `hasGroot`-drempel `>=76` dekt zowel `layout.schaal_percentage>=76` als
+  legacy `grootte='groot'` via `resolveSchaal`.
+- Logo-render: vast 40×40mm rechtsboven in item-block
+  (`marginLeft + contentWidth - 40, itemStartY`). Pre-resolve cache pakt
+  logos automatisch mee.
+
+**Opmerkingen (niet-blokkerend):**
+- `estimatedHeight` negeert logo-only items — bij item met enkel logo
+  zonder foto/notitie kan logo bottom-margin schenden bij page-break-edge.
+  Lage kans (logos zeldzaam); fase-2-fix overwegen via `hasLogo`-tak.
+- Logo overlapt mogelijk lange omschrijving in no-image branch en groot-foto
+  rechter-bovenhoek. Bewust geaccepteerd voor fase 1 (vrij plaatsbaar pas
+  in fase 3).
+- `sizeFor` constanten nu hard-coded i.p.v. afgeleid van `contentWidth/colGap`
+  — fragiel bij margin-wijziging. Geen blocker, onderhouds-noot.
+
+### Stream D — Drop & reorder UI (3 commits) — Verdict: AKKOORD-MET-OPMERKINGEN
+| Hash | Subject |
+|---|---|
+| `aa5e6314` | feat(werkbon): add WerkbonDropZone component for per-item file drop |
+| `71e5f333` | feat(werkbon): integrate drop-zone + reorder + schaal-via-layout in WerkbonItemCard |
+| `646cb813` | feat(werkbon): wire drop handler + reorder + schaal-via-layout in WerkbonDetail |
+
+- DropZone: `image/*` mime-filter, multi-file, dataTransfer-type `'Files'`
+  check voorkomt false-positive op interne reorder-drags. Absolute overlay
+  (geen layout-shift). Dashed flame border `#F15025` + cream-bg overlay.
+- Reorder: HTML5 native `draggable`, custom mime `text/afb-id`,
+  `e.stopPropagation()` voor drop-isolatie. Volgorde persistent via
+  `layout.volgorde` (Stream A's types uitgebreid). `getWerkbonAfbeeldingen`
+  sorteert op `layout.volgorde ?? MAX_SAFE_INTEGER` daarna `created_at`.
+- Schaal-toggle: read via `resolveSchaal` → klein/normaal/groot mapping,
+  write **uitsluitend** `layout.schaal_percentage` (33/50/100), nooit meer
+  `grootte` (per masterplan v1.1).
+- Drop-handler: hergebruikt resize/sanitize/upload-flow met
+  `sanitizeStorageFilename`. Nieuwe afbeeldingen krijgen
+  `layout: { blok_type: 'foto' }` als fase-1-default.
+
+**Opmerkingen (afgehandeld of niet-blokkerend):**
+- 2-cap niet afgedwongen bij drop → **afgehandeld in Stream F**.
+- Reorder N-writes geen rollback bij failure tweede call — N=2 max, impact
+  klein voor fase 1.
+- Reorder-semantiek "dragged altijd vóór target" — handmatig valideren in
+  acceptatie-test.
+- `disabled` op DropZone niet gebonden aan `status === 'afgerond'` — bestaand
+  pre-canvas patroon (afgeronde werkbon = alles bewerkbaar in editor). Buiten
+  scope.
+
+### Stream E — Logo/foto pill toggle (1 commit) — Verdict: AKKOORD
+| Hash | Subject |
+|---|---|
+| `0a071695` | feat(werkbon): add logo/foto blok-type pill toggle on image thumbnail |
+
+- Pill `absolute top-1 right-1 z-10` rechtsboven op thumb, altijd zichtbaar.
+- Foto-state: `bg-white/80`, `text-[#9B9B95]`, geen border, label `FOTO`.
+- Logo-state: `bg-[#FFFFFF]`, `text-[#F15025]`, `border-2 border-[#F15025]`,
+  label `LOGO`. Font-mono 10px uppercase tracking-wider.
+- Klik flipt `layout.blok_type`, bewaart bestaande layout-velden
+  (`schaal_percentage`, `volgorde`) via spread. `e.stopPropagation()` vermijdt
+  lightbox-trigger.
+- WerkbonMonteurView.tsx ongewijzigd (rendert eigen thumbs zonder
+  WerkbonItemCard) — toggle verschijnt automatisch niet op monteur-view.
+- Sluit logo-UI-gat uit QAA-rapport.
+
+### Stream F — 2-image cap op drop (1 commit) — Verdict: AKKOORD
+| Hash | Subject |
+|---|---|
+| `0acdbf5d` | fix(werkbon): enforce 2-image cap on drop handler (canvas phase 1) |
+
+- `handleAfbeeldingenDropped` checkt `huidigAantal = item.afbeeldingen.length`,
+  `beschikbaar = max(0, 2 - huidigAantal)`. Vol → `toast.error('Max 2
+  afbeeldingen per item')` + return.
+- Anders: `slice(0, beschikbaar)` + `toast.info(N overgeslagen)` bij
+  partial-acceptatie.
+- `useCallback`-deps uitgebreid met `werkbonItems` (voor lookup).
+
+### Stream G — Feature-flag `werkbon_canvas_versie` (3 commits) — Verdict: AKKOORD
+| Hash | Subject |
+|---|---|
+| `5ef66b33` | feat(werkbon): add werkbon_canvas_versie feature-flag column (migration 115) |
+| `c621d79b` | feat(werkbon): gate mobile monteur-view behind werkbon_canvas_versie flag |
+| `84a86139` | feat(werkbon): gate drop + reorder + logo-toggle behind werkbon_canvas_versie flag |
+
+- **Tabel:** `app_settings.werkbon_canvas_versie INT NOT NULL DEFAULT 0`
+  (per-org via bestaande RLS migratie 112). Default 0 = veilige rollback.
+- **Context:** `AppSettingsContext.werkbonCanvasVersie` via `useAppSettings()`.
+- **Gating-strategie:** UI-affordances gegate bij `versie === 0`,
+  render-paden NIET gegate (data canonical). Werkbon met `layout.blok_type=
+  'logo'` rendert correct ook bij flag=0 — rollback-veilig.
+- **Niet gegated:** `resolveSchaal`/`deriveFromGrootte` (backward-compat),
+  PDF logo-render, migratie zelf, klein/normaal/groot toggle (pre-canvas).
+- **Wel gegated:** App.tsx mobile-fork (val terug op `WerkbonDetail` op
+  mobiel bij flag=0), `WerkbonDropZone` disabled, logo-pill verborgen,
+  `draggable={canvasActief}` op thumbnails, drie WerkbonDetail-handlers
+  vroege-return.
+
+**Productie-rollout-stappen voor Antony:**
+1. Migratie 114 + 115 handmatig draaien in Supabase SQL Editor.
+2. Default flag=0 → app gedraagt zich identiek aan pre-canvas. Verifieer.
+3. Per org activeren via Supabase:
+   `UPDATE app_settings SET werkbon_canvas_versie = 1 WHERE organisatie_id = '<jouw-org-uuid>';`
+4. Test eigen org ⩾ 1 week per masterplan §8.1 stop-gate.
+5. Rollback indien nodig: `UPDATE ... SET werkbon_canvas_versie = 0` — geen
+   deploy.
 
