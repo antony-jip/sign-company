@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import type { WerkbonItem, WerkbonBlokType } from '@/types'
 import { resolveSchaal } from '@/services/werkbonService'
 import { WerkbonDropZone } from './WerkbonDropZone'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 interface WerkbonItemCardProps {
   item: WerkbonItem
@@ -59,6 +60,8 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
   item, index, totalItems, onUpdate, onDelete, onMove, onImageAdd, onImageDelete, onImageGrootteChange, onImageBlokTypeChange, onLightbox,
   onAfbeeldingenDropped, onAfbeeldingReorder,
 }: WerkbonItemCardProps) {
+  const { werkbonCanvasVersie } = useAppSettings()
+  const canvasActief = werkbonCanvasVersie >= 1
   const [omschrijving, setOmschrijving] = useDebouncedField(
     item.omschrijving,
     (val) => onUpdate(item.id, { omschrijving: val }),
@@ -101,7 +104,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
   }, [item.id, onAfbeeldingReorder])
 
   return (
-    <WerkbonDropZone itemId={item.id} onFilesDropped={onAfbeeldingenDropped ?? (() => {})} disabled={!onAfbeeldingenDropped}>
+    <WerkbonDropZone itemId={item.id} onFilesDropped={onAfbeeldingenDropped ?? (() => {})} disabled={!canvasActief || !onAfbeeldingenDropped}>
       <Card className="overflow-hidden rounded-xl border-black/[0.06]">
         <CardContent className="p-4 space-y-4">
           <div className="flex items-start justify-between gap-3">
@@ -182,7 +185,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                   return (
                     <div
                       key={afb.id}
-                      draggable
+                      draggable={canvasActief}
                       onDragStart={(e) => handleAfbDragStart(e, afb.id)}
                       onDragEnd={handleAfbDragEnd}
                       onDragOver={handleAfbDragOver}
@@ -190,22 +193,24 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                       className={`rounded-lg overflow-hidden border transition-opacity ${wordtGedragen ? 'opacity-40' : ''}`}
                     >
                       <div className="relative group">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onImageBlokTypeChange(item.id, afb.id, isLogo ? 'foto' : 'logo')
-                          }}
-                          aria-pressed={isLogo}
-                          title={isLogo ? 'Schakel naar foto' : 'Schakel naar logo (40×40mm rechtsboven in PDF)'}
-                          className={`absolute top-1 right-1 z-10 px-2 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-wider transition-colors ${
-                            isLogo
-                              ? 'bg-[#FFFFFF] text-[#F15025] border-2 border-[#F15025]'
-                              : 'bg-white/80 text-[#9B9B95]'
-                          }`}
-                        >
-                          {isLogo ? 'LOGO' : 'FOTO'}
-                        </button>
+                        {canvasActief && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onImageBlokTypeChange(item.id, afb.id, isLogo ? 'foto' : 'logo')
+                            }}
+                            aria-pressed={isLogo}
+                            title={isLogo ? 'Schakel naar foto' : 'Schakel naar logo (40×40mm rechtsboven in PDF)'}
+                            className={`absolute top-1 right-1 z-10 px-2 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-wider transition-colors ${
+                              isLogo
+                                ? 'bg-[#FFFFFF] text-[#F15025] border-2 border-[#F15025]'
+                                : 'bg-white/80 text-[#9B9B95]'
+                            }`}
+                          >
+                            {isLogo ? 'LOGO' : 'FOTO'}
+                          </button>
+                        )}
                         {afb.url ? (
                           <div className="w-full aspect-[4/3] flex items-center justify-center cursor-pointer" style={{ backgroundColor: '#F8F7F5' }} onClick={() => onLightbox(afb.url)}>
                             <img

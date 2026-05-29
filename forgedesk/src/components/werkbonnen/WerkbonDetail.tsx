@@ -98,7 +98,9 @@ export function WerkbonDetail() {
     profile, primaireKleur,
     werkbonMonteurUren, werkbonMonteurOpmerkingen,
     werkbonMonteurFotos, werkbonKlantHandtekening, werkbonBriefpapier,
+    werkbonCanvasVersie,
   } = useAppSettings()
+  const canvasActief = werkbonCanvasVersie >= 1
   const documentStyle = useDocumentStyle()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
@@ -516,6 +518,7 @@ export function WerkbonDetail() {
 
   // Meerdere afbeeldingen uploaden via desktop drop
   const handleAfbeeldingenDropped = useCallback(async (itemId: string, files: File[]) => {
+    if (!canvasActief) return
     const imageFiles = files.filter((f) => f.type.startsWith('image/'))
     if (imageFiles.length === 0) return
 
@@ -579,7 +582,7 @@ export function WerkbonDetail() {
     } else if (lastError) {
       toast.error(`Upload mislukt voor sommige bestanden: ${lastError}`)
     }
-  }, [werkbonItems, bumpPreview])
+  }, [werkbonItems, bumpPreview, canvasActief])
 
   // Afbeelding-grootte wisselen (klein / normaal / groot → schaal_percentage in layout)
   const handleAfbeeldingGrootteWijzig = useCallback(async (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => {
@@ -616,6 +619,7 @@ export function WerkbonDetail() {
     afbId: string,
     blokType: WerkbonBlokType,
   ) => {
+    if (!canvasActief) return
     let nieuweLayout: WerkbonAfbeeldingLayout | undefined
     setWerkbonItems((prev) => prev.map((item) => {
       if (item.id !== itemId) return item
@@ -640,10 +644,11 @@ export function WerkbonDetail() {
       logger.error('Kon blok-type niet opslaan:', err)
       toast.error('Kon blok-type niet opslaan')
     }
-  }, [bumpPreview])
+  }, [bumpPreview, canvasActief])
 
   // Afbeelding-reorder binnen item via drag-drop
   const handleAfbeeldingReorder = useCallback(async (itemId: string, draggedAfbId: string, targetAfbId: string) => {
+    if (!canvasActief) return
     let herordendeAfbeeldingen: WerkbonAfbeelding[] | null = null
     setWerkbonItems((prev) => prev.map((item) => {
       if (item.id !== itemId) return item
@@ -671,7 +676,7 @@ export function WerkbonDetail() {
       logger.error('Kon afbeelding-volgorde niet opslaan:', err)
       toast.error('Kon volgorde niet opslaan')
     }
-  }, [bumpPreview])
+  }, [bumpPreview, canvasActief])
 
   // Foto toevoegen (monteur voor/na)
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
