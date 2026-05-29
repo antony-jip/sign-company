@@ -9,6 +9,29 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
+// Canonical version: src/utils/storageHelpers.ts — api/ kan geen src/ importeren (Vercel serverless constraint)
+function sanitizeStorageFilename(naam: string, maxLength = 100): string {
+  if (!naam || typeof naam !== 'string') return 'bestand'
+  const lastDot = naam.lastIndexOf('.')
+  const heeftExtensie = lastDot > 0 && lastDot < naam.length - 1
+  const rawBase = heeftExtensie ? naam.slice(0, lastDot) : naam
+  const rawExt = heeftExtensie ? naam.slice(lastDot + 1) : ''
+  const sanitize = (s: string) =>
+    s
+      .normalize('NFKD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[­​-‏﻿]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^[._-]+|[._-]+$/g, '')
+  const ext = sanitize(rawExt).toLowerCase().slice(0, 10)
+  let base = sanitize(rawBase)
+  if (!base) base = 'bestand'
+  if (base.length > maxLength) base = base.slice(0, maxLength)
+  return ext ? `${base}.${ext}` : base
+}
+
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
@@ -83,7 +106,7 @@ async function writeAttachmentToCache(
   contentType: string,
   buffer: Buffer,
 ): Promise<void> {
-  const path = `${user_id}/${email_uuid}/${filename}`
+  const path = `${user_id}/${email_uuid}/${sanitizeStorageFilename(filename)}`
   const { error: uploadErr } = await supabaseAdmin.storage
     .from(STORAGE_BUCKET)
     .upload(path, buffer, { contentType, upsert: true })
