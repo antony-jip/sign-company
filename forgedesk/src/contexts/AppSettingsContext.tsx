@@ -56,6 +56,7 @@ interface AppSettingsContextType {
   werkbonKlantHandtekening: boolean
   werkbonBriefpapier: boolean
   werkbonPrefix: string
+  werkbonCanvasVersie: number
   // Email
   emailFetchLimit: number
   // Daan
@@ -210,6 +211,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     werkbonKlantHandtekening: settings.werkbon_klant_handtekening ?? true,
     werkbonBriefpapier: settings.werkbon_briefpapier ?? true,
     werkbonPrefix: settings.werkbon_prefix || 'WB',
+    werkbonCanvasVersie: settings?.werkbon_canvas_versie ?? 0,
     // Email
     emailFetchLimit: settings.email_fetch_limit ?? 200,
     // Daan
