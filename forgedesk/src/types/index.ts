@@ -1316,6 +1316,7 @@ export type WerkbonBlokType = 'foto' | 'logo';
 export interface WerkbonAfbeeldingLayout {
   blok_type?: WerkbonBlokType;
   schaal_percentage?: number;
+  volgorde?: number;
 }
 
 export interface WerkbonAfbeelding {
