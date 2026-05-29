@@ -15,6 +15,30 @@ async function isRateLimited(ip: string, endpoint: string, maxCount: number, win
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
 
+// Inline kopie van src/utils/storageHelpers.ts :: sanitizeStorageFilename.
+// Vercel serverless mag geen src/-imports doen; canonical versie + tests staan in src/utils.
+function sanitizeStorageFilename(naam: string, maxLength = 100): string {
+  if (!naam || typeof naam !== 'string') return 'bestand'
+  const lastDot = naam.lastIndexOf('.')
+  const heeftExtensie = lastDot > 0 && lastDot < naam.length - 1
+  const rawBase = heeftExtensie ? naam.slice(0, lastDot) : naam
+  const rawExt = heeftExtensie ? naam.slice(lastDot + 1) : ''
+  const sanitize = (s: string) =>
+    s
+      .normalize('NFKD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[­​-‏﻿]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^[._-]+|[._-]+$/g, '')
+  const ext = sanitize(rawExt).toLowerCase().slice(0, 10)
+  let base = sanitize(rawBase)
+  if (!base) base = 'bestand'
+  if (base.length > maxLength) base = base.slice(0, maxLength)
+  return ext ? `${base}.${ext}` : base
+}
+
 export const config = {
   api: {
     bodyParser: {
@@ -79,12 +103,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Item niet gevonden' })
     }
 
-    // Sanitize bestandsnaam tegen directory traversal (behoud Nederlandse tekens)
-    const safeName = bestandsnaam
-      .replace(/[/\\:*?"<>|]/g, '_')
-      .replace(/\.{2,}/g, '.')
-      .replace(/^\./g, '_')
-      .slice(0, 255)
+    // Storage key: spaces en non-ASCII chars uitfilteren (Supabase Storage weigert die).
+    // bestandsnaam blijft origineel in DB-display (zie insert hieronder).
+    const safeName = sanitizeStorageFilename(bestandsnaam)
 
     // Upload naar Supabase Storage
     const filePath = `portaal-bestanden/${portaal.id}/${Date.now()}_${safeName}`
