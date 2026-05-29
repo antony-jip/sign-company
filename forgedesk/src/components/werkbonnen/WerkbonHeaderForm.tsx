@@ -164,14 +164,17 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
               style={inputStyle}
             />
             <div className="flex gap-1.5">
-              <Input
-                defaultValue={contactTelefoon}
-                onBlur={(e) => onFieldChange('contactTelefoon', e.target.value)}
-                placeholder="06-12345678"
-                type="tel"
-                className="h-9 text-[13px] font-mono rounded-lg"
-                style={inputStyle}
-              />
+              <div className="relative flex-1">
+                <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95] pointer-events-none" />
+                <Input
+                  defaultValue={contactTelefoon}
+                  onBlur={(e) => onFieldChange('contactTelefoon', e.target.value)}
+                  placeholder="06-12345678"
+                  type="tel"
+                  className="h-9 pl-8 text-[13px] font-mono rounded-lg"
+                  style={inputStyle}
+                />
+              </div>
               {contactTelefoon && (
                 <a href={`tel:${contactTelefoon}`} className="inline-flex items-center justify-center shrink-0 rounded-lg h-9 w-9 hover:bg-muted transition-colors" style={{ border: '1px solid hsl(var(--border))' }}>
                   <Phone className="h-3.5 w-3.5 text-[#1A535C]" />
