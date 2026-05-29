@@ -1318,10 +1318,21 @@ export type WerkbonTekstPositie = 'links' | 'rechts' | 'boven' | 'onder';
 
 export interface WerkbonAfbeeldingLayout {
   blok_type?: WerkbonBlokType;
+  // Fase 1+2 (legacy bij werkbon_canvas_versie<3)
   schaal_percentage?: number;
   volgorde?: number;
   tekst_positie?: WerkbonTekstPositie;
+  // Fase 2
   pdf_bron_url?: string;
+  // Fase 3 canvas-coordinaten (absolute mm binnen 267x100mm werkruimte).
+  // Aanwezigheid van canvas_x_mm = element wordt via coord-based pad gerenderd.
+  canvas_x_mm?: number;
+  canvas_y_mm?: number;
+  canvas_breedte_mm?: number;
+  canvas_hoogte_mm?: number;
+  // Stacking-order op canvas. Default 1 voor foto/pdf, 2 voor logo.
+  // Tiebreaker bij gelijke z_index = created_at (newer-on-top).
+  z_index?: number;
 }
 
 export interface WerkbonAfbeelding {
