@@ -16,8 +16,11 @@ interface WerkbonCanvasProps {
   onElementResize: (afbeeldingId: string, w_mm: number, h_mm: number) => void
   onElementDelete: (afbeeldingId: string) => void
   onFilesDropped: (itemId: string, files: File[]) => void | Promise<void>
-  disabled?: boolean
 }
+
+// Read-only werkbon-states (gefactureerd, afgerond) renderen deze
+// component niet — parent kiest tussen WerkbonCanvas en een statische
+// preview. Daarom geen disabled-prop hier.
 
 /**
  * Canvas-werkblad per werkbon-item. 267x100mm landscape-ratio,
@@ -30,14 +33,16 @@ interface WerkbonCanvasProps {
  *  - file-drop        → hier, doorgegeven naar parent via onFilesDropped
  *  - keyboard delete  → hier, alleen actief bij selectie en niet in input
  */
-export const WerkbonCanvas = React.memo(function WerkbonCanvas({
+// React.memo bewust weggelaten: WerkbonCanvasElement krijgt callbacks via
+// inline arrows (id-capture per element), waardoor memoization toch niet
+// zou hitten. Soft-cap = 6 elementen, render-cost is verwaarloosbaar.
+export function WerkbonCanvas({
   itemId,
   afbeeldingen,
   onElementMove,
   onElementResize,
   onElementDelete,
   onFilesDropped,
-  disabled = false,
 }: WerkbonCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState<number>(3)
@@ -79,13 +84,14 @@ export const WerkbonCanvas = React.memo(function WerkbonCanvas({
     if (e.target === e.currentTarget) setSelectedId(null)
   }, [])
 
-  // Delete/Backspace deselecteert + verwijdert geselecteerd element.
-  // Skip wanneer focus in input/textarea — voorkomt dat typen in de
-  // omschrijving het element op de canvas wist.
+  // Delete verwijdert geselecteerd element. Backspace bewust NIET, want
+  // dat triggert ook bij focus op willekeurige buttons en zou per ongeluk
+  // canvas-elementen wissen tijdens toetsenbordnavigatie (macOS-gebruikers
+  // hitten Backspace permanent). Skip ook wanneer focus in tekst-input ligt.
   useEffect(() => {
     if (!selectedId) return
     const handler = (e: KeyboardEvent) => {
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return
+      if (e.key !== 'Delete') return
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
       e.preventDefault()
@@ -97,29 +103,25 @@ export const WerkbonCanvas = React.memo(function WerkbonCanvas({
   }, [selectedId, onElementDelete])
 
   const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    if (disabled) return
     if (!e.dataTransfer.types.includes('Files')) return
     e.preventDefault()
     setIsDragOver(true)
-  }, [disabled])
+  }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    if (disabled) return
     if (!e.dataTransfer.types.includes('Files')) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
     if (!isDragOver) setIsDragOver(true)
-  }, [disabled, isDragOver])
+  }, [isDragOver])
 
   const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    if (disabled) return
     const related = e.relatedTarget as Node | null
     if (related && e.currentTarget.contains(related)) return
     setIsDragOver(false)
-  }, [disabled])
+  }, [])
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    if (disabled) return
     e.preventDefault()
     setIsDragOver(false)
     const files = Array.from(e.dataTransfer.files || []).filter(
@@ -127,7 +129,7 @@ export const WerkbonCanvas = React.memo(function WerkbonCanvas({
     )
     if (files.length === 0) return
     void onFilesDropped(itemId, files)
-  }, [disabled, itemId, onFilesDropped])
+  }, [itemId, onFilesDropped])
 
   const snapPx = CANVAS_SNAP_GRID_MM * scale
 
@@ -194,4 +196,4 @@ export const WerkbonCanvas = React.memo(function WerkbonCanvas({
       ))}
     </div>
   )
-})
+}

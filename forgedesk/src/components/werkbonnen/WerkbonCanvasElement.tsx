@@ -6,6 +6,7 @@ import {
   CANVAS_WERKRUIMTE_MM,
   CANVAS_SNAP_GRID_MM,
   CANVAS_MIN_ELEMENT_MM,
+  CANVAS_Z_INDEX_DEFAULTS,
 } from '@/utils/werkbonCanvas'
 
 interface WerkbonCanvasElementProps {
@@ -231,9 +232,13 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
         nh = Math.round(nh / CANVAS_SNAP_GRID_MM) * CANVAS_SNAP_GRID_MM
       }
 
-      // Min-size floor (visueel waarschuwbaar via badge-kleur)
-      nw = Math.max(1, nw)
-      nh = Math.max(1, nh)
+      // Hard-floor 1 snap-stap (5mm) BEFORE we derive nx/ny van de nieuwe
+      // afmetingen — anders kan een NW-resize naar binnen het element
+      // wegklemmen tot 1mm in de rechter-onderhoek.
+      // CANVAS_MIN_ELEMENT_MM (15mm) blijft soft-cap voor de rode badge.
+      const MIN = CANVAS_SNAP_GRID_MM
+      nw = Math.max(MIN, nw)
+      nh = Math.max(MIN, nh)
 
       // X/Y aanpassen voor NW/SW/NE waar de west- of noord-rand verschuift
       if (start.corner === 'sw' || start.corner === 'nw') {
@@ -243,11 +248,12 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
         ny = start.elementY + (start.elementH - nh)
       }
 
-      // Clamp binnen werkruimte
-      nx = clamp(nx, 0, CANVAS_WERKRUIMTE_MM.breedte - 1)
-      ny = clamp(ny, 0, CANVAS_WERKRUIMTE_MM.hoogte - 1)
-      nw = clamp(nw, 1, CANVAS_WERKRUIMTE_MM.breedte - nx)
-      nh = clamp(nh, 1, CANVAS_WERKRUIMTE_MM.hoogte - ny)
+      // Clamp binnen werkruimte — nx/ny eerst tegen breedte-nw zodat de
+      // element-grenzen altijd binnen 267x100mm vallen.
+      nx = clamp(nx, 0, CANVAS_WERKRUIMTE_MM.breedte - nw)
+      ny = clamp(ny, 0, CANVAS_WERKRUIMTE_MM.hoogte - nh)
+      nw = clamp(nw, MIN, CANVAS_WERKRUIMTE_MM.breedte - nx)
+      nh = clamp(nh, MIN, CANVAS_WERKRUIMTE_MM.hoogte - ny)
 
       setLiveSize({ w: nw, h: nh })
       setLivePos({ x: nx, y: ny })
@@ -318,7 +324,10 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
         top: `${topPx}px`,
         width: `${widthPx}px`,
         height: `${heightPx}px`,
-        zIndex: layout?.z_index ?? 1,
+        // Dezelfde fallback als de B3 sort-logica zodat DOM-stacking en
+        // render-volgorde nooit divergeren (logo automatisch boven foto/pdf).
+        zIndex:
+          layout?.z_index ?? CANVAS_Z_INDEX_DEFAULTS[layout?.blok_type ?? 'foto'],
       }}
     >
       <img
