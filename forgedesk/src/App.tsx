@@ -7,7 +7,7 @@ import { PaletteProvider } from '@/contexts/PaletteContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import { TabsProvider } from '@/contexts/TabsContext'
-import { AppSettingsProvider } from '@/contexts/AppSettingsContext'
+import { AppSettingsProvider, useAppSettings } from '@/contexts/AppSettingsContext'
 import { MedewerkersProvider } from '@/contexts/MedewerkersContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppLayout } from '@/components/layouts/AppLayout'
@@ -119,7 +119,10 @@ const WerkbonMonteurView = lazy(() => import('@/components/werkbonnen/WerkbonMon
 
 function WerkbonDetailWrapper() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
-  return isDesktop ? <WerkbonDetail /> : <WerkbonMonteurView />
+  const { werkbonCanvasVersie } = useAppSettings()
+  // Mobile-monteur-view alleen tonen wanneer canvas-fase-1 actief is voor deze org.
+  if (!isDesktop && werkbonCanvasVersie >= 1) return <WerkbonMonteurView />
+  return <WerkbonDetail />
 }
 
 // Kennisbank + Changelog
