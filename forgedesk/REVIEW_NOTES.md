@@ -288,3 +288,130 @@ blokkades. Vijf observaties voor de backlog:
    verschijnt tijdens een open picker kan dat verwarrend voelen.
    Edge-case, niet bevestigd.
 
+---
+
+## Werkbon canvas fase 1 — Stream A & C (2026-05-29)
+
+Gate-reviews op `feat/werkbon-canvas-fase1` (parent `f5d27254`). Beide
+streams: verdict **AKKOORD-MET-OPMERKINGEN**. Geen blokkades. Build groen
+na merge van A+C in umbrella branch.
+
+### Stream A — Datamodel (3 commits)
+
+| Hash | Subject | Verdict |
+|---|---|---|
+| `38e35072` | feat(werkbon): add layout JSONB column to werkbon_afbeeldingen (migration 114, canvas phase 1) | AKKOORD-MET-OPMERKINGEN |
+| `6c03e3cf` | feat(werkbon): extend WerkbonAfbeelding with layout field (canvas phase 1) | AKKOORD |
+| `ab6ce4d8` | feat(werkbon): add resolveSchaal helper + allow layout in updateWerkbonAfbeelding | AKKOORD |
+
+**Reviewer-bevindingen integraal:**
+
+#### Commit `38e35072` — migration 114
+- Migratie-nummer 114 klopt: 113 is laatste in repo, 114 vrij per Antony.
+- `ADD COLUMN IF NOT EXISTS` is idempotent en re-runnable, conform CLAUDE.md §3.
+- `NOT NULL DEFAULT '{}'::jsonb` correct: bestaande rows krijgen `{}` zodat
+  fallback-keten via `deriveFromGrootte(grootte)` kicken kan (masterplan §2.3).
+- Geen RLS-conflict: `werkbon_afbeeldingen` heeft al een org-dekkende
+  `FOR ALL`-policy uit migratie 022 die elke kolom dekt — kolom-toevoeging
+  vereist geen policy-update.
+- Backward-compat masterplan §2.3 correct ondersteund.
+
+**Opmerking (niet-blokkerend):**
+- Migratie 113 wikkelt de ADD COLUMN in `BEGIN/COMMIT` met `DO $$ ... IF NOT
+  EXISTS`-block, migratie 114 is een platte one-liner. Functioneel equivalent
+  (idempotent in beide gevallen), maar stilistisch inconsistent met directe
+  voorganger.
+
+#### Commit `6c03e3cf` — types
+- `WerkbonBlokType` correct gedefinieerd als union `'foto' | 'logo'` (fase 1
+  scope; `'pdf'`/`'tekst'` komen later, masterplan §2.5/2.6).
+- `WerkbonAfbeeldingLayout` interface heeft alle velden optioneel
+  (`blok_type?`, `schaal_percentage?`) — matcht het lege-`{}`-default uit
+  migratie 114 zonder TypeScript-fouten bij oude data.
+- Veld `layout?` op `WerkbonAfbeelding` optioneel toegevoegd: bestaande
+  callers die alleen `grootte`/`omschrijving` raken blijven werken.
+- `grootte?: 'klein' | 'normaal' | 'groot'` blijft staan voor legacy fallback.
+- Beide types geëxporteerd voor Stream B en UI.
+
+#### Commit `ab6ce4d8` — service helpers
+- `updateWerkbonAfbeelding` signature uitgebreid van `'grootte' |
+  'omschrijving'` naar `'grootte' | 'omschrijving' | 'layout'`. Enige caller
+  (`WerkbonDetail.tsx:526` met `{ grootte }`) blijft valide.
+- `deriveFromGrootte` returnt exact `{ klein: 33, normaal: 50, groot: 100 }`
+  zoals masterplan §2.2 voorschrijft.
+- `resolveSchaal` fallback-keten klopt 1-op-1 met masterplan §2.2:
+  `afb.layout?.schaal_percentage ?? deriveFromGrootte(afb.grootte) ?? 50`.
+- Beide helpers zijn `export function`, beschikbaar voor Stream B en UI.
+- Service-layer-Supabase-pad propagiert `updates` rechtstreeks (`.update(updates)`)
+  — JSONB-object wordt door supabase-js correct als JSON gemarshaled.
+- LocalStorage-pad mergeert op top-level: OK voor fase 1 (UI schrijft `layout`
+  altijd als volledig object, niet als patch).
+- Defensief lezen via optional chaining voorkomt crashes op rows met
+  `layout = {}` of legacy `layout = null` (masterplan §7.2 punt 2).
+
+**Stream A eindoordeel:** AKKOORD-MET-OPMERKINGEN. Klaar voor Stream B —
+`resolveSchaal`, `deriveFromGrootte` en `WerkbonAfbeeldingLayout` zijn alle
+drie correct geëxporteerd, semantiek matcht masterplan exact, backward-compat
+flow is verifieerbaar gedekt.
+
+### Stream C — Mobile fork (2 commits)
+
+| Hash | Subject | Verdict |
+|---|---|---|
+| `484e4630` | feat(werkbon): add WerkbonMonteurView read-only mobile view (canvas phase 1) | AKKOORD-MET-OPMERKINGEN |
+| `d64332ae` | feat(werkbon): route-fork werkbonnen/:id to WerkbonMonteurView on mobile (canvas phase 1) | AKKOORD |
+
+#### Commit `484e4630` — WerkbonMonteurView component
+- Nieuwe component is read-only voor header + items: geen
+  `onDrop/onDragStart/reorder/Grip/toevoegen`-handlers in items-sectie.
+  Item-cards renderen alleen omschrijving, afmeting (mono), notitie en thumbs
+  (lightbox-only).
+- `WerkbonMonteurFeedback` 1-op-1 hergebruikt met volledige bewerkbaarheid
+  (uren / opmerkingen / voor-na fotos / handtekening / afronden).
+- `PdfPreviewDialog` lazy-geladen en hergebruikt zoals desktop (zelfde
+  `generatePreviewPdf` + `refreshNonce` pattern).
+- Fetch-pattern correcte kopie uit `WerkbonDetail.tsx` (regels 154-223):
+  klant + project + offerte + werkbon-items + werkbon-fotos + signed-URL
+  resolve per afbeelding/foto. Loading- en niet-gevonden-states aanwezig.
+- `WerkbonDetail`, `WerkbonHeaderForm`, `WerkbonItemCard`,
+  `WerkbonMonteurFeedback` worden niet aangeraakt (geen refactor).
+- Design-tokens correct: `#F8F7F5` pagina-bg, card shadow `rgba(0,0,0,0.03)`,
+  `rounded-xl`, tekst `#1A1A1A/#6B6B66/#9B9B95`, Flame `#F15025` puntsignature,
+  Petrol `#1A535C` voor links, mono voor werkbonnummer + afmetingen, geen
+  pill-badges, geen emojis, geen "FORGEdesk".
+- Mobile-first padding `px-4 py-4`, `max-w-2xl` center, sticky `pb-32` voor
+  monteur-bar.
+
+**Opmerkingen (niet-blokkerend):**
+- Anti-pattern `bg-white` 3× gebruikt (regels 364, 373, 459) waar SKILL.md
+  expliciet `bg-white` als anti-pattern noemt. Visueel correct (FFFFFF =
+  card-token) en consistent met rest van werkbonnen-module (17× elders),
+  maar canoniek zou `bg-[#FFFFFF]` zijn.
+- `text-muted-foreground` op loading-spinner (regel 311). Niet expliciet
+  verboden, maar canoniek zou `#9B9B95` zijn. Triviaal.
+- Pre-existing TS-issue `profile?.naam` (regel 238) bestaat ook in
+  `WerkbonDetail.tsx:340` — identieke kopie, geen nieuwe schade.
+
+#### Commit `d64332ae` — route-fork in App.tsx
+- `useMediaQuery('(min-width: 768px)')` exact analoog aan bestaande
+  `WerkbonnenRoute` op regel 113-116.
+- `WerkbonMonteurView` lazy-geïmporteerd via dezelfde named-export helper als
+  buurcomponenten (regel 118).
+- Route `werkbonnen/:id` (regel 277) verwijst naar wrapper-component
+  `WerkbonDetailWrapper`, niet inline-conditie.
+- Géén andere routes of imports geraakt; minimale 7-regel diff, één concern.
+
+**Stream C eindoordeel:** AKKOORD-MET-OPMERKINGEN. Klaar voor productie-
+rollout fase 1 — mobile-fork solide. Aanbeveling tijdens fase-1-acceptatie:
+handmatig op telefoon verifiëren dat (a) desktop-link op mobiel automatisch
+naar monteur-view forkt, (b) `afgerond`-status correct alle bewerkbare velden
+lockt via `readOnly={werkbon.status === 'afgerond'}`.
+
+### Open follow-ups voor fase-1-acceptatiecheck
+- `bg-white` → `bg-[#FFFFFF]` consistent maken in werkbonnen-module
+  (Stream C cosmetisch, plus 17× elders) — apart cleanup-ticket post-fase-1.
+- Migratie-stijl-consistentie: future migrations volgen 113-style
+  `BEGIN/COMMIT + DO $$` block — niet-blokkerend, niet retrofitten.
+- Pre-existing `profile?.naam` TS-issue: apart fix-ticket, gedeeld met
+  `WerkbonDetail.tsx:340`.
+
