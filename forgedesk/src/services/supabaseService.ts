@@ -26,7 +26,7 @@ export {
   getWerkbonRegels, createWerkbonRegel, updateWerkbonRegel, deleteWerkbonRegel,
   getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
   getWerkbonItems, createWerkbonItem, updateWerkbonItem, deleteWerkbonItem,
-  getWerkbonAfbeeldingen, createWerkbonAfbeelding, deleteWerkbonAfbeelding,
+  getWerkbonAfbeeldingen, createWerkbonAfbeelding, updateWerkbonAfbeelding, deleteWerkbonAfbeelding,
 } from './werkbonService'
 
 export {

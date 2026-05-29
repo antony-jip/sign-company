@@ -322,3 +322,26 @@ export async function deleteWerkbonAfbeelding(id: string): Promise<void> {
   const items = getLocalData<WerkbonAfbeelding>('werkbon_afbeeldingen')
   setLocalData('werkbon_afbeeldingen', items.filter((a) => a.id !== id))
 }
+
+export async function updateWerkbonAfbeelding(
+  id: string,
+  updates: Partial<Pick<WerkbonAfbeelding, 'grootte' | 'omschrijving'>>,
+): Promise<WerkbonAfbeelding> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('werkbon_afbeeldingen')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<WerkbonAfbeelding>('werkbon_afbeeldingen')
+  const index = items.findIndex((a) => a.id === id)
+  if (index === -1) throw new Error('Werkbon-afbeelding niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('werkbon_afbeeldingen', items)
+  return items[index]
+}
