@@ -125,15 +125,6 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
           </div>
         </div>
 
-        {/* Afmetingen display */}
-        {(item.afmeting_breedte_mm || item.afmeting_hoogte_mm) && (
-          <div className="bg-muted/50 rounded-lg px-3 py-2">
-            <span className="text-lg font-bold font-mono text-foreground">
-              {item.afmeting_breedte_mm || '?'} &times; {item.afmeting_hoogte_mm || '?'} mm
-            </span>
-          </div>
-        )}
-
         {/* Afbeeldingen */}
         <div>
           <div className="flex items-center justify-between mb-2">
