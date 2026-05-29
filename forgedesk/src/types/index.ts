@@ -1311,6 +1311,13 @@ export interface WerkbonItem {
   created_at: string;
 }
 
+export type WerkbonBlokType = 'foto' | 'logo';
+
+export interface WerkbonAfbeeldingLayout {
+  blok_type?: WerkbonBlokType;
+  schaal_percentage?: number;
+}
+
 export interface WerkbonAfbeelding {
   id: string;
   werkbon_item_id: string;
@@ -1318,6 +1325,7 @@ export interface WerkbonAfbeelding {
   type: 'tekening' | 'drukproef' | 'foto' | 'overig';
   omschrijving?: string;
   grootte?: 'klein' | 'normaal' | 'groot';
+  layout?: WerkbonAfbeeldingLayout;
   created_at: string;
 }
 
