@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured, assertId, getOrgId } from './supabaseHelpers'
 import type { FactuurBijlage } from '@/types'
+import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 
 const BUCKET = 'factuur-bijlagen'
 const MAX_BIJLAGEN_PER_FACTUUR = 5
@@ -11,15 +12,6 @@ const TOEGESTANE_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ] as const
-
-const sanitizeFilename = (name: string): string =>
-  name
-    .normalize('NFKD')
-    .replace(/[­​-‏﻿]/g, '')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^\w.\-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '') || 'bestand'
 
 function assertSupabase() {
   if (!isSupabaseConfigured() || !supabase) {
@@ -65,7 +57,7 @@ export async function uploadFactuurBijlage(
     throw new Error(`Maximum van ${MAX_BIJLAGEN_PER_FACTUUR} bijlagen per factuur bereikt.`)
   }
 
-  const sanitized = sanitizeFilename(file.name)
+  const sanitized = sanitizeStorageFilename(file.name)
   const storagePath = `${organisatieId}/${factuurId}/${Date.now()}-${sanitized}`
 
   const { error: uploadError } = await supabase!.storage

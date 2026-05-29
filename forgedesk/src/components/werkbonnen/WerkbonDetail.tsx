@@ -33,6 +33,7 @@ import {
 } from '@/services/supabaseService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { uploadFile, downloadFile, getSignedUrl } from '@/services/storageService'
+import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { WerkbonItemCard } from './WerkbonItemCard'
 import { WerkbonHeaderForm } from './WerkbonHeaderForm'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
@@ -46,15 +47,6 @@ async function resolveUrl(url: string): Promise<string> {
     return ''
   }
 }
-
-const sanitizeFilename = (name: string): string =>
-  name
-    .normalize('NFKD')
-    .replace(/[\u00AD\u200B-\u200F\uFEFF]/g, '')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\w.\-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
 
 // Resize image voor localStorage limiet
 function resizeImage(file: File, maxWidth: number): Promise<Blob> {
@@ -427,7 +419,7 @@ export function WerkbonDetail() {
     try {
       const resized = await resizeImage(file, 1200)
       const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
-      const safeName = sanitizeFilename(file.name)
+      const safeName = sanitizeStorageFilename(file.name)
       const storagePath = `werkbon-afbeeldingen/${itemId}/${Date.now()}-${safeName}`
       const uploadedPath = await uploadFile(resizedFile, storagePath)
       const displayUrl = await resolveUrl(uploadedPath)
@@ -436,7 +428,7 @@ export function WerkbonDetail() {
         werkbon_item_id: itemId,
         url: uploadedPath,
         type: 'overig',
-        omschrijving: safeName,
+        omschrijving: file.name,
       })
       // Gebruik display URL voor directe weergave, DB heeft het storage path
       afb.url = displayUrl
@@ -477,7 +469,7 @@ export function WerkbonDetail() {
       try {
         const resized = await resizeImage(file, 1200)
         const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
-        const safeName = sanitizeFilename(file.name)
+        const safeName = sanitizeStorageFilename(file.name)
         const storagePath = `werkbon-fotos/${werkbonId}/${Date.now()}-${safeName}`
         const uploadedPath = await uploadFile(resizedFile, storagePath)
         const displayUrl = await resolveUrl(uploadedPath)
@@ -487,7 +479,7 @@ export function WerkbonDetail() {
           werkbon_id: werkbonId,
           type,
           url: uploadedPath,
-          omschrijving: safeName,
+          omschrijving: file.name,
         })
         foto.url = displayUrl
         setFotos((prev) => [...prev, foto])
