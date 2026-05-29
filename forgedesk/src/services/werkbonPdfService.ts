@@ -87,6 +87,26 @@ export async function generateWerkbonInstructiePDF(
     logoBase64 = await resolveImageToBase64(bedrijfsProfiel.logo_url)
   }
 
+  // Pre-resolve item-afbeeldingen naar base64 + ratio zodat we object-contain
+  // letterbox-renders kunnen doen (jsPDF.addImage rekt anders naar de box).
+  const afbCache = new Map<string, { base64: string | null; ratio: number | null }>()
+  for (const item of items) {
+    for (const afb of item.afbeeldingen || []) {
+      if (!afb.url || afbCache.has(afb.id)) continue
+      const base64 = await resolveImageToBase64(afb.url)
+      let ratio: number | null = null
+      if (base64) {
+        try {
+          const props = doc.getImageProperties(base64)
+          if (props.width && props.height) ratio = props.width / props.height
+        } catch (err) {
+          // leave ratio null; drawImageContain falls back to stretching
+        }
+      }
+      afbCache.set(afb.id, { base64, ratio })
+    }
+  }
+
   // Terracotta strip at top (werkbon = uitvoering)
   const pgW0 = doc.internal.pageSize.getWidth()
   doc.setFillColor(154, 90, 72) // #9A5A48
@@ -228,6 +248,60 @@ export async function generateWerkbonInstructiePDF(
     }
   }
 
+  // Teken een afbeelding object-contain binnen een box: bron-aspect-ratio
+  // behouden, letterbox-witruimte (cream #F8F7F5) rondom, dunne grijze border
+  // om de hele box. Valt terug op drawImage als er geen base64+ratio is.
+  function drawImageContain(
+    base64: string | null,
+    ratio: number | null,
+    fallbackUrl: string,
+    x: number,
+    iy: number,
+    boxW: number,
+    boxH: number,
+  ) {
+    if (!base64 || !ratio) {
+      drawImage(fallbackUrl, x, iy, boxW, boxH)
+      return
+    }
+    doc.setFillColor(248, 247, 245) // #F8F7F5 doen.-cream als letterbox-bg
+    doc.rect(x, iy, boxW, boxH, 'F')
+    const boxRatio = boxW / boxH
+    let actualW = boxW
+    let actualH = boxH
+    if (ratio > boxRatio) {
+      actualH = boxW / ratio
+    } else {
+      actualW = boxH * ratio
+    }
+    const xOff = (boxW - actualW) / 2
+    const yOff = (boxH - actualH) / 2
+    try {
+      doc.addImage(base64, 'JPEG', x + xOff, iy + yOff, actualW, actualH, undefined, 'MEDIUM')
+    } catch (err) {
+      // base64 kon niet worden geplaatst — toon placeholder
+      doc.setFontSize(8)
+      doc.setTextColor(150, 150, 150)
+      doc.text('Afbeelding niet beschikbaar', x + boxW / 2, iy + boxH / 2, { align: 'center' })
+    }
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.3)
+    doc.rect(x, iy, boxW, boxH)
+  }
+
+  const colGap = 6
+  function sizeFor(grootte: 'klein' | 'normaal' | 'groot'): { w: number; h: number } {
+    if (grootte === 'klein') {
+      const w = (contentWidth - 2 * colGap) / 3
+      return { w, h: w * 0.75 }
+    }
+    if (grootte === 'groot') {
+      return { w: contentWidth, h: 130 }
+    }
+    const w = (contentWidth - colGap) / 2
+    return { w, h: w * 0.75 }
+  }
+
   for (let i = 0; i < items.length; i++) {
     const item = items[i]
     const hasImage = item.afbeeldingen.length > 0
@@ -235,34 +309,48 @@ export async function generateWerkbonInstructiePDF(
     const hasDimensions = !!(item.afmeting_breedte_mm || item.afmeting_hoogte_mm)
 
     // Bereken geschatte hoogte voor dit item
-    const estimatedHeight = hasImage ? 90 : 40
+    const hasGroot = hasImage && item.afbeeldingen.some((a) => a.grootte === 'groot')
+    const estimatedHeight = hasImage ? (hasGroot ? 180 : 90) : 40
 
     // Nieuwe pagina als niet genoeg ruimte
     if (y + estimatedHeight > availableHeight) {
       y = addNewPage()
     }
 
-    // ─── Item layout: 2x2 grid ───
-    // Bovenste rij: 2 foto's (4:3) naast elkaar (elk 50%)
-    // Onderste rij: beschrijving links (50%), rechts leeg
+    // ─── Item layout: flow-row van afbeeldingen + tekst eronder ───
     const itemStartY = y
 
     if (hasImage) {
-      const colGap = 6
-      const colW = (contentWidth - colGap) / 2
-      const imgH = colW * 0.75  // 4:3 ratio
+      const colW = (contentWidth - colGap) / 2  // tekst-kolom-breedte (= huidige "normaal")
       const col2X = marginLeft + colW + colGap
 
-      // Rij 1: foto's naast elkaar
-      if (item.afbeeldingen[0]?.url) {
-        drawImage(item.afbeeldingen[0].url, marginLeft, y, colW, imgH)
+      // Flow-based afbeeldingen-render: per afbeelding bepaalt 'grootte'
+      // de bounding-box; volle breedte ('groot') forceert nieuwe rij.
+      let rowX = marginLeft
+      let rowY = y
+      let rowMaxH = 0
+      const rightEdge = marginLeft + contentWidth + 0.1
+      // Render alleen de eerste twee afbeeldingen via flow; 3+ blijven via de
+      // bestaande thumbnail-fallback hieronder (upload-flow maxt momenteel op 2).
+      const flowCount = Math.min(2, item.afbeeldingen.length)
+      for (let ai = 0; ai < flowCount; ai++) {
+        const afb = item.afbeeldingen[ai]
+        if (!afb?.url) continue
+        const { w, h } = sizeFor(afb.grootte || 'normaal')
+        if (rowX > marginLeft && rowX + w > rightEdge) {
+          rowY += rowMaxH + colGap
+          rowX = marginLeft
+          rowMaxH = 0
+        }
+        const cached = afbCache.get(afb.id)
+        drawImageContain(cached?.base64 ?? null, cached?.ratio ?? null, afb.url, rowX, rowY, w, h)
+        rowX += w + colGap
+        rowMaxH = Math.max(rowMaxH, h)
       }
-      if (item.afbeeldingen.length > 1 && item.afbeeldingen[1]?.url) {
-        drawImage(item.afbeeldingen[1].url, col2X, y, colW, imgH)
-      }
+      const imageBlockBottom = rowY + rowMaxH
 
-      // Rij 2: beschrijving linksonder
-      let textY = y + imgH + 4
+      // Tekst-rij: omschrijving + afmetingen + notitie onder de afbeeldingen
+      let textY = imageBlockBottom + 4
 
       // Item nummer + omschrijving
       doc.setFont(headingFont, 'bold')
@@ -307,9 +395,12 @@ export async function generateWerkbonInstructiePDF(
         textY += noteHeight + 3
       }
 
-      // Extra afbeeldingen (3+) als thumbnails rechtsonder
+      // Extra afbeeldingen (3+) als thumbnails rechtsonder.
+      // Dead code zolang upload-flow op 2 maxt; behouden voor toekomstige
+      // cap-verhoging. Gebruikt imageBlockBottom als anker i.p.v. de
+      // verwijderde fixed imgH.
       if (item.afbeeldingen.length > 2) {
-        let thumbY = y + imgH + 4
+        let thumbY = imageBlockBottom + 4
         const thumbW = 30
         const thumbH = 22
         let thumbX = col2X
