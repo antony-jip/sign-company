@@ -1312,12 +1312,16 @@ export interface WerkbonItem {
   created_at: string;
 }
 
-export type WerkbonBlokType = 'foto' | 'logo';
+export type WerkbonBlokType = 'foto' | 'logo' | 'pdf';
+
+export type WerkbonTekstPositie = 'links' | 'rechts' | 'boven' | 'onder';
 
 export interface WerkbonAfbeeldingLayout {
   blok_type?: WerkbonBlokType;
   schaal_percentage?: number;
   volgorde?: number;
+  tekst_positie?: WerkbonTekstPositie;
+  pdf_bron_url?: string;
 }
 
 export interface WerkbonAfbeelding {
