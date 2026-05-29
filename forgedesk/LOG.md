@@ -1,5 +1,36 @@
 # doen. — Development Log
 
+## Mei 2026 — Werkbon canvas fase 2 (lokaal afgerond, geen productie-rollout)
+
+**Branch:** `feat/werkbon-canvas-fase2` (15 commits vanaf parent `c462ad38` op fase 1 branch)
+**Status:** Lokale acceptatie-test in gang. Niet gemerged naar main, geen productie-rollout. Gate op `werkbonCanvasVersie >= 2`.
+
+### Wat gebouwd
+- **Datamodel:** `WerkbonAfbeeldingLayout` uitgebreid met `tekst_positie: 'links'|'rechts'|'boven'|'onder'` en `pdf_bron_url`. `WerkbonBlokType` krijgt `'pdf'`. Geen migratie — alles JSONB-additive.
+- **PDF render:** tekst-positie-aware single-image layout (links/rechts side-by-side, boven/onder stacked). Multi-image-items vallen automatisch terug op fase-1 flow. PDF-blok rendert identiek aan foto (pre-resolved PNG van eerste pagina).
+- **Editor UI:** corner-resize-handle rechtsonder elke thumbnail (pointer-events, 1px≈1%, snap 25/50/75/100 of Shift voor vrij). Tekst-positie-radio (4 opties, Petrol-active) onder klein/normaal/groot toggle bij single-image items.
+- **PDF drop:** WerkbonDropZone accepteert PDF-mime. `pdfToImage.ts` helper extrahieert eerste pagina als 1200px PNG via pdfjs-dist (already peer-dep van react-pdf, geen install). Dual-storage: PNG voor display + originele PDF in `pdf_bron_url`. 25MB cap.
+
+### Nieuwe patterns om te hergebruiken
+- **`renderTekstBlok` helper in werkbonPdfService**: inner-helper voor item-text op willekeurige (tx, ty, tw). Te hergebruiken voor fase-3 vrije positie.
+- **`pdfEerstePaginaNaarImage` helper**: standalone PDF→PNG conversion. Te hergebruiken voor andere PDF-thumb-needs (offerte-attachments, etc.).
+- **Pointer-events resize pattern**: AfbeeldingResizeHandle als template voor fase-3 vrije resize handles.
+- **Per-feature gating-strategy**: `fase2Actief = werkbonCanvasVersie >= 2` lokaal in component, UI verbergt features bij flag < N. Renderer respect data altijd (rollback-safe).
+
+### Architectuur-keuzes met motivatie
+- **Geen aparte render-pad voor pdf-blok:** PNG van eerste pagina staat al in `url`, renderer behandelt het als foto. Eenvoudiger, minder code-duplicatie. Originele PDF blijft beschikbaar via `pdf_bron_url` voor download/herrendering bij quality-bump.
+- **Tekst-positie alleen voor single-image items:** masterplan §8.2 — multi-image flow blijft 'onder'. Voorkomt UX-complexiteit (hoe positie kiezen per afbeelding in een multi-row?).
+- **`schaal_percentage` blijft via thresholds in PDF mapping:** ≤40 klein, ≤75 normaal, >75 groot. Continue waarden (uit resize-handle) snappen naar 3 buckets. Echt continue PDF-render is fase 3 (coord-based).
+
+### Open punten voor fase 3
+- `renderTekstBlok` heeft tekst-render-code; `hasImage`-tak heeft nog steeds identieke code. Cleanup: route hasImage ook door renderTekstBlok. Niet-blokkerend.
+- Aspect-ratio lock werkt via vaste bbox-aspectverhoudingen in `sizeFor`, niet via image-eigen aspect. Bij `boven`/`onder` tekst-positie: image krijgt `min(sizeFor.w, contentWidth)` — kan aspect-verstoring veroorzaken als sizeFor.h niet schaalt mee. Verifieer in §7.4 #3.
+- PDF >25MB: cap is hard-error. Eventueel: degrade-render naar lager DPI?
+- Continue schaal in PDF-render: alleen mogelijk via fase-3 coord-based pad.
+
+### Stop-gate vóór fase 3
+Per masterplan §8.4: minimaal 2 productie-weken na fase 2. Lokaal: gebruik fase-2-testplan + acceptatiecriteria §7.4.
+
 ## Mei 2026 — Werkbon canvas fase 1 (lokaal afgerond, geen productie-rollout)
 
 **Branch:** `feat/werkbon-canvas-fase1` (22 commits vanaf parent `f5d27254`)
