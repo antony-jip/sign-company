@@ -249,8 +249,8 @@ export async function generateWerkbonInstructiePDF(
   }
 
   // Teken een afbeelding object-contain binnen een box: bron-aspect-ratio
-  // behouden, letterbox-witruimte (cream #F8F7F5) rondom, dunne grijze border
-  // om de hele box. Valt terug op drawImage als er geen base64+ratio is.
+  // behouden, witruimte rondom (geen fill, geen border — laat de pagina-bg
+  // doorzichtig). Valt terug op drawImage als er geen base64+ratio is.
   function drawImageContain(
     base64: string | null,
     ratio: number | null,
@@ -264,8 +264,6 @@ export async function generateWerkbonInstructiePDF(
       drawImage(fallbackUrl, x, iy, boxW, boxH)
       return
     }
-    doc.setFillColor(248, 247, 245) // #F8F7F5 doen.-cream als letterbox-bg
-    doc.rect(x, iy, boxW, boxH, 'F')
     const boxRatio = boxW / boxH
     let actualW = boxW
     let actualH = boxH
@@ -284,9 +282,6 @@ export async function generateWerkbonInstructiePDF(
       doc.setTextColor(150, 150, 150)
       doc.text('Afbeelding niet beschikbaar', x + boxW / 2, iy + boxH / 2, { align: 'center' })
     }
-    doc.setDrawColor(200, 200, 200)
-    doc.setLineWidth(0.3)
-    doc.rect(x, iy, boxW, boxH)
   }
 
   const colGap = 6
@@ -296,7 +291,7 @@ export async function generateWerkbonInstructiePDF(
       return { w, h: w * 0.75 }
     }
     if (grootte === 'groot') {
-      return { w: contentWidth, h: 110 }
+      return { w: contentWidth, h: 100 }
     }
     const w = (contentWidth - colGap) / 2
     return { w, h: w * 0.75 }
@@ -310,7 +305,7 @@ export async function generateWerkbonInstructiePDF(
 
     // Bereken geschatte hoogte voor dit item
     const hasGroot = hasImage && item.afbeeldingen.some((a) => a.grootte === 'groot')
-    const estimatedHeight = hasImage ? (hasGroot ? 160 : 90) : 40
+    const estimatedHeight = hasImage ? (hasGroot ? 150 : 90) : 40
 
     // Nieuwe pagina als niet genoeg ruimte
     if (y + estimatedHeight > availableHeight) {
