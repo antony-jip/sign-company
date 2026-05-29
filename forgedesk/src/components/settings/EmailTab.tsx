@@ -39,6 +39,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import { uploadFile, downloadFile } from '@/services/storageService'
+import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import type { Medewerker } from '@/types'
@@ -292,7 +293,7 @@ function SignatureImageUpload({
       setIsUploading(true)
       // Upload path must start with user_id for Supabase RLS policies
       const userId = user?.id || 'local'
-      const path = `${userId}/handtekeningen/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+      const path = `${userId}/handtekeningen/${Date.now()}_${sanitizeStorageFilename(file.name)}`
       await uploadFile(file, path)
       const url = await downloadFile(path)
       onImageChange(url)
