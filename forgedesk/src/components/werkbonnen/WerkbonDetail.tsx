@@ -614,6 +614,33 @@ export function WerkbonDetail() {
     }
   }, [bumpPreview])
 
+  const handleAfbeeldingSchaalWijzig = useCallback(async (
+    itemId: string,
+    afbId: string,
+    schaalPercentage: number,
+  ) => {
+    if (!canvasActief) return
+    const item = werkbonItems.find((i) => i.id === itemId)
+    const afb = item?.afbeeldingen.find((a) => a.id === afbId)
+    if (!afb) return
+    const huidigeLayout = afb.layout ?? {}
+    const nieuweLayout: WerkbonAfbeeldingLayout = { ...huidigeLayout, schaal_percentage: schaalPercentage }
+    setWerkbonItems((prev) => prev.map((it) =>
+      it.id === itemId
+        ? { ...it, afbeeldingen: it.afbeeldingen.map((a) =>
+            a.id === afbId ? { ...a, layout: nieuweLayout } : a
+          ) }
+        : it
+    ))
+    try {
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
+      bumpPreview()
+    } catch (err) {
+      logger.error('Kon afbeelding-schaal niet opslaan:', err)
+      toast.error('Kon schaal niet opslaan')
+    }
+  }, [werkbonItems, canvasActief, bumpPreview])
+
   const handleAfbeeldingBlokTypeWijzig = useCallback(async (
     itemId: string,
     afbId: string,
@@ -1039,6 +1066,7 @@ export function WerkbonDetail() {
                     onImageDelete={handleAfbeeldingVerwijderen}
                     onImageGrootteChange={handleAfbeeldingGrootteWijzig}
                     onImageBlokTypeChange={handleAfbeeldingBlokTypeWijzig}
+                    onImageSchaalChange={handleAfbeeldingSchaalWijzig}
                     onLightbox={setLightboxUrl}
                     onAfbeeldingenDropped={handleAfbeeldingenDropped}
                     onAfbeeldingReorder={handleAfbeeldingReorder}
