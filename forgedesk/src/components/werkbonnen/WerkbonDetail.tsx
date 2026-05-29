@@ -23,7 +23,7 @@ import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
-import type { Werkbon, WerkbonItem, WerkbonFoto, WerkbonAfbeelding, WerkbonAfbeeldingLayout, WerkbonBlokType, Klant, Project, Offerte } from '@/types'
+import type { Werkbon, WerkbonItem, WerkbonFoto, WerkbonAfbeelding, WerkbonAfbeeldingLayout, WerkbonBlokType, WerkbonTekstPositie, Klant, Project, Offerte } from '@/types'
 import {
   getWerkbon, createWerkbon, updateWerkbon,
   getWerkbonItems, createWerkbonItem, updateWerkbonItem, deleteWerkbonItem,
@@ -673,6 +673,33 @@ export function WerkbonDetail() {
     }
   }, [bumpPreview, canvasActief])
 
+  const handleAfbeeldingTekstPositieWijzig = useCallback(async (
+    itemId: string,
+    afbId: string,
+    positie: WerkbonTekstPositie,
+  ) => {
+    if (!canvasActief) return
+    const item = werkbonItems.find((i) => i.id === itemId)
+    const afb = item?.afbeeldingen.find((a) => a.id === afbId)
+    if (!afb) return
+    const huidigeLayout = afb.layout ?? {}
+    const nieuweLayout: WerkbonAfbeeldingLayout = { ...huidigeLayout, tekst_positie: positie }
+    setWerkbonItems((prev) => prev.map((it) =>
+      it.id === itemId
+        ? { ...it, afbeeldingen: it.afbeeldingen.map((a) =>
+            a.id === afbId ? { ...a, layout: nieuweLayout } : a
+          ) }
+        : it
+    ))
+    try {
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
+      bumpPreview()
+    } catch (err) {
+      logger.error('Kon tekst-positie niet opslaan:', err)
+      toast.error('Kon tekst-positie niet opslaan')
+    }
+  }, [werkbonItems, canvasActief, bumpPreview])
+
   // Afbeelding-reorder binnen item via drag-drop
   const handleAfbeeldingReorder = useCallback(async (itemId: string, draggedAfbId: string, targetAfbId: string) => {
     if (!canvasActief) return
@@ -1067,6 +1094,7 @@ export function WerkbonDetail() {
                     onImageGrootteChange={handleAfbeeldingGrootteWijzig}
                     onImageBlokTypeChange={handleAfbeeldingBlokTypeWijzig}
                     onImageSchaalChange={handleAfbeeldingSchaalWijzig}
+                    onImageTekstPositieChange={handleAfbeeldingTekstPositieWijzig}
                     onLightbox={setLightboxUrl}
                     onAfbeeldingenDropped={handleAfbeeldingenDropped}
                     onAfbeeldingReorder={handleAfbeeldingReorder}

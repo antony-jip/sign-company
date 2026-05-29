@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import type { WerkbonItem, WerkbonBlokType } from '@/types'
+import type { WerkbonItem, WerkbonBlokType, WerkbonTekstPositie } from '@/types'
 import { resolveSchaal } from '@/services/werkbonService'
 import { WerkbonDropZone } from './WerkbonDropZone'
 import { AfbeeldingResizeHandle } from './AfbeeldingResizeHandle'
@@ -26,6 +26,7 @@ interface WerkbonItemCardProps {
   onImageGrootteChange: (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => void
   onImageBlokTypeChange: (itemId: string, afbId: string, blokType: WerkbonBlokType) => void
   onImageSchaalChange?: (itemId: string, afbId: string, schaalPercentage: number) => void | Promise<void>
+  onImageTekstPositieChange: (itemId: string, afbId: string, positie: WerkbonTekstPositie) => void
   onLightbox: (url: string) => void
   onAfbeeldingenDropped?: (itemId: string, files: File[]) => void | Promise<void>
   onAfbeeldingReorder?: (itemId: string, draggedAfbId: string, targetAfbId: string) => void | Promise<void>
@@ -36,6 +37,14 @@ const GROOTTE_LABEL: Record<'klein' | 'normaal' | 'groot', string> = {
   klein: 'Klein',
   normaal: 'Normaal',
   groot: 'Groot',
+}
+
+const TEKST_POSITIE_OPTIES: ReadonlyArray<WerkbonTekstPositie> = ['links', 'rechts', 'boven', 'onder']
+const TEKST_POSITIE_LABEL: Record<WerkbonTekstPositie, string> = {
+  links: 'Links',
+  rechts: 'Rechts',
+  boven: 'Boven',
+  onder: 'Onder',
 }
 
 const AFB_DRAG_MIME = 'text/afb-id'
@@ -59,13 +68,14 @@ function useDebouncedField(initialValue: string, onCommit: (val: string) => void
 }
 
 export const WerkbonItemCard = React.memo(function WerkbonItemCard({
-  item, index, totalItems, onUpdate, onDelete, onMove, onImageAdd, onImageDelete, onImageGrootteChange, onImageBlokTypeChange, onImageSchaalChange, onLightbox,
+  item, index, totalItems, onUpdate, onDelete, onMove, onImageAdd, onImageDelete, onImageGrootteChange, onImageBlokTypeChange, onImageSchaalChange, onImageTekstPositieChange, onLightbox,
   onAfbeeldingenDropped, onAfbeeldingReorder,
 }: WerkbonItemCardProps) {
   const { werkbonCanvasVersie } = useAppSettings()
   const canvasActief = werkbonCanvasVersie >= 1
   const fase2Actief = werkbonCanvasVersie >= 2
   const [schaalPreview, setSchaalPreview] = useState<Record<string, number>>({})
+  const aantalFotos = item.afbeeldingen.filter((a) => (a.layout?.blok_type ?? 'foto') !== 'logo').length
   const [omschrijving, setOmschrijving] = useDebouncedField(
     item.omschrijving,
     (val) => onUpdate(item.id, { omschrijving: val }),
@@ -186,6 +196,8 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                     schaal <= 40 ? 'klein' : schaal <= 75 ? 'normaal' : 'groot'
                   const huidigBlokType: WerkbonBlokType = afb.layout?.blok_type ?? 'foto'
                   const isLogo = huidigBlokType === 'logo'
+                  const huidigeTekstPositie: WerkbonTekstPositie = afb.layout?.tekst_positie ?? 'onder'
+                  const toonTekstPositieRadio = fase2Actief && !isLogo && aantalFotos === 1
                   const wordtGedragen = draggedAfbId === afb.id
                   return (
                     <div
@@ -272,6 +284,26 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                           )
                         })}
                       </div>
+                      {toonTekstPositieRadio && (
+                        <div className="flex gap-0.5 px-1 py-1 border-t" style={{ backgroundColor: '#F8F7F5', borderColor: '#EBEBEB' }}>
+                          {TEKST_POSITIE_OPTIES.map((p) => {
+                            const active = huidigeTekstPositie === p
+                            return (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={() => onImageTekstPositieChange(item.id, afb.id, p)}
+                                className={`flex-1 h-7 text-[10px] uppercase tracking-wider rounded transition-colors ${active ? 'font-semibold text-white' : 'text-[#9B9B95] hover:bg-[#FFFFFF]'}`}
+                                style={active ? { backgroundColor: '#1A535C' } : undefined}
+                                aria-pressed={active}
+                                title={`Tekst ${p} van afbeelding`}
+                              >
+                                {TEKST_POSITIE_LABEL[p]}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                       {afb.omschrijving && (
                         <p className="text-2xs text-muted-foreground truncate px-1 py-0.5">{afb.omschrijving}</p>
                       )}
