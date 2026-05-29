@@ -23,7 +23,7 @@ import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
-import type { Werkbon, WerkbonItem, WerkbonFoto, Klant, Project, Offerte } from '@/types'
+import type { Werkbon, WerkbonItem, WerkbonFoto, WerkbonAfbeelding, WerkbonAfbeeldingLayout, Klant, Project, Offerte } from '@/types'
 import {
   getWerkbon, createWerkbon, updateWerkbon,
   getWerkbonItems, createWerkbonItem, updateWerkbonItem, deleteWerkbonItem,
@@ -514,19 +514,116 @@ export function WerkbonDetail() {
     bumpPreview()
   }, [bumpPreview])
 
-  // Afbeelding-grootte wisselen (klein / normaal / groot voor PDF-render)
+  // Meerdere afbeeldingen uploaden via desktop drop
+  const handleAfbeeldingenDropped = useCallback(async (itemId: string, files: File[]) => {
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'))
+    if (imageFiles.length === 0) return
+
+    const nieuweAfbeeldingen: WerkbonAfbeelding[] = []
+    let lastError: string | null = null
+
+    for (const file of imageFiles) {
+      if (file.size > 10 * 1024 * 1024) {
+        lastError = `${file.name} is te groot (max 10MB)`
+        continue
+      }
+      try {
+        const resized = await resizeImage(file, 1200)
+        const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
+        const safeName = sanitizeStorageFilename(file.name)
+        const storagePath = `werkbon-afbeeldingen/${itemId}/${Date.now()}-${safeName}`
+        const uploadedPath = await uploadFile(resizedFile, storagePath)
+        const displayUrl = await resolveUrl(uploadedPath)
+
+        const afb = await createWerkbonAfbeelding({
+          werkbon_item_id: itemId,
+          url: uploadedPath,
+          type: 'overig',
+          omschrijving: file.name,
+          layout: { blok_type: 'foto' },
+        })
+        afb.url = displayUrl
+        nieuweAfbeeldingen.push(afb)
+      } catch (err) {
+        logger.error('Fout bij uploaden afbeelding:', err)
+        lastError = err instanceof Error ? err.message : 'Onbekende fout'
+      }
+    }
+
+    if (nieuweAfbeeldingen.length > 0) {
+      setWerkbonItems((prev) => prev.map((item) =>
+        item.id === itemId
+          ? { ...item, afbeeldingen: [...item.afbeeldingen, ...nieuweAfbeeldingen] }
+          : item
+      ))
+      toast.success(`${nieuweAfbeeldingen.length} afbeelding${nieuweAfbeeldingen.length > 1 ? 'en' : ''} toegevoegd`)
+      bumpPreview()
+    }
+    if (lastError && nieuweAfbeeldingen.length === 0) {
+      toast.error(`Upload mislukt: ${lastError}`)
+    } else if (lastError) {
+      toast.error(`Upload mislukt voor sommige bestanden: ${lastError}`)
+    }
+  }, [bumpPreview])
+
+  // Afbeelding-grootte wisselen (klein / normaal / groot → schaal_percentage in layout)
   const handleAfbeeldingGrootteWijzig = useCallback(async (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => {
-    setWerkbonItems((prev) => prev.map((item) =>
-      item.id === itemId
-        ? { ...item, afbeeldingen: item.afbeeldingen.map((a) => a.id === afbId ? { ...a, grootte } : a) }
-        : item
-    ))
+    const percentage = grootte === 'klein' ? 33 : grootte === 'normaal' ? 50 : 100
+    let nieuweLayout: WerkbonAfbeeldingLayout | undefined
+    setWerkbonItems((prev) => prev.map((item) => {
+      if (item.id !== itemId) return item
+      return {
+        ...item,
+        afbeeldingen: item.afbeeldingen.map((a) => {
+          if (a.id !== afbId) return a
+          const layout: WerkbonAfbeeldingLayout = {
+            ...(a.layout ?? {}),
+            blok_type: a.layout?.blok_type ?? 'foto',
+            schaal_percentage: percentage,
+          }
+          nieuweLayout = layout
+          return { ...a, layout }
+        }),
+      }
+    }))
     bumpPreview()
+    if (!nieuweLayout) return
     try {
-      await updateWerkbonAfbeelding(afbId, { grootte })
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
     } catch (err) {
       logger.error('Kon afbeelding-grootte niet opslaan:', err)
       toast.error('Kon grootte niet opslaan')
+    }
+  }, [bumpPreview])
+
+  // Afbeelding-reorder binnen item via drag-drop
+  const handleAfbeeldingReorder = useCallback(async (itemId: string, draggedAfbId: string, targetAfbId: string) => {
+    let herordendeAfbeeldingen: WerkbonAfbeelding[] | null = null
+    setWerkbonItems((prev) => prev.map((item) => {
+      if (item.id !== itemId) return item
+      const draggedIdx = item.afbeeldingen.findIndex((a) => a.id === draggedAfbId)
+      const targetIdx = item.afbeeldingen.findIndex((a) => a.id === targetAfbId)
+      if (draggedIdx === -1 || targetIdx === -1 || draggedIdx === targetIdx) return item
+      const next = [...item.afbeeldingen]
+      const [dragged] = next.splice(draggedIdx, 1)
+      const insertIdx = next.findIndex((a) => a.id === targetAfbId)
+      next.splice(insertIdx, 0, dragged)
+      const metVolgorde = next.map((a, i) => ({
+        ...a,
+        layout: { ...(a.layout ?? {}), blok_type: a.layout?.blok_type ?? 'foto', volgorde: i },
+      }))
+      herordendeAfbeeldingen = metVolgorde
+      return { ...item, afbeeldingen: metVolgorde }
+    }))
+    bumpPreview()
+    if (!herordendeAfbeeldingen) return
+    try {
+      for (const afb of herordendeAfbeeldingen as WerkbonAfbeelding[]) {
+        await updateWerkbonAfbeelding(afb.id, { layout: afb.layout })
+      }
+    } catch (err) {
+      logger.error('Kon afbeelding-volgorde niet opslaan:', err)
+      toast.error('Kon volgorde niet opslaan')
     }
   }, [bumpPreview])
 
@@ -891,6 +988,8 @@ export function WerkbonDetail() {
                     onImageDelete={handleAfbeeldingVerwijderen}
                     onImageGrootteChange={handleAfbeeldingGrootteWijzig}
                     onLightbox={setLightboxUrl}
+                    onAfbeeldingenDropped={handleAfbeeldingenDropped}
+                    onAfbeeldingReorder={handleAfbeeldingReorder}
                   />
                 ))}
                 <div className="flex justify-end pt-2">
