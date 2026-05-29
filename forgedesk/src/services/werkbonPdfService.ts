@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf'
-import type { WerkbonItem, WerkbonFoto, Klant, Profile, DocumentStyle } from '@/types'
+import type { WerkbonItem, WerkbonFoto, Klant, Profile, DocumentStyle, WerkbonTekstPositie } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 import { resolveImageToBase64, detectImageFormat } from '@/services/pdfService'
 import { resolveSchaal } from '@/services/werkbonService'
@@ -298,13 +298,80 @@ export async function generateWerkbonInstructiePDF(
 
   const LOGO_BBOX = 40
 
+  // Rendert het tekst-blok (itemnummer + omschrijving + afmetingen + notitie)
+  // op een willekeurige (x, y) met opgegeven breedte. Retourneert de bottom-y.
+  // Gebruikt door zowel het bestaande flow-pad als de tekst-positie-aware
+  // single-image layout (fase 2, masterplan §8.2).
+  function renderTekstBlok(
+    item: WerkbonItem,
+    itemIndex: number,
+    tx: number,
+    ty: number,
+    tw: number,
+  ): number {
+    const hasDim = !!(item.afmeting_breedte_mm || item.afmeting_hoogte_mm)
+    const hasNoteLocal = !!item.interne_notitie
+
+    doc.setFont(headingFont, 'bold')
+    doc.setFontSize(12)
+    doc.setTextColor(...brand)
+    doc.text(`${itemIndex + 1}.`, tx, ty + 2)
+
+    doc.setFont(headingFont, 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(...textColor)
+    const omschrLines = doc.splitTextToSize(item.omschrijving, tw - 12)
+    doc.text(omschrLines, tx + 10, ty + 2)
+    let localY = ty + omschrLines.length * 5 + 4
+
+    if (hasDim) {
+      doc.setFont(bodyFont, 'bold')
+      doc.setFontSize(14)
+      doc.setTextColor(...brand)
+      doc.text(`${item.afmeting_breedte_mm || '?'} × ${item.afmeting_hoogte_mm || '?'} mm`, tx + 10, localY)
+      localY += 8
+    }
+
+    if (hasNoteLocal) {
+      localY += 2
+      const noteLines = doc.splitTextToSize(item.interne_notitie || '', tw - 6)
+      const noteHeight = noteLines.length * 4.5 + 6
+      doc.setFillColor(255, 251, 235)
+      doc.setDrawColor(252, 211, 77)
+      doc.roundedRect(tx, localY, tw, noteHeight, 2, 2, 'FD')
+
+      doc.setFont(bodyFont, 'bold')
+      doc.setFontSize(7)
+      doc.setTextColor(161, 98, 7)
+      doc.text('NOTITIE', tx + 3, localY + 4)
+
+      doc.setFont(bodyFont, 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(120, 53, 15)
+      doc.text(noteLines, tx + 3, localY + 9)
+      localY += noteHeight + 3
+    }
+
+    return localY
+  }
+
   for (let i = 0; i < items.length; i++) {
     const item = items[i]
     const logos = item.afbeeldingen.filter((a) => a.layout?.blok_type === 'logo')
+    // PDF-blok-type wordt bewust als foto behandeld: bij upload zet Stream E2
+    // de eerste PDF-pagina om naar PNG/JPEG, dus zelfde render-pad als foto's
+    // (masterplan §2.5).
     const fotos = item.afbeeldingen.filter((a) => a.layout?.blok_type !== 'logo')
     const hasImage = fotos.length > 0
     const hasNote = !!item.interne_notitie
     const hasDimensions = !!(item.afmeting_breedte_mm || item.afmeting_hoogte_mm)
+
+    // Tekst-positie van de eerste foto bepaalt de layout-keuze voor het item.
+    // Bij meerdere afbeeldingen valt het terug op 'onder' (het bestaande
+    // flow-pad), zoals afgesproken in fase 2 (masterplan §8.2).
+    const primair = fotos[0]
+    const tekstPositie: WerkbonTekstPositie = primair?.layout?.tekst_positie ?? 'onder'
+    const enkeleFotoMetPositie = hasImage && fotos.length === 1 && tekstPositie !== 'onder'
 
     // Bereken geschatte hoogte voor dit item
     const hasGroot = hasImage && fotos.some((a) => resolveSchaal(a) >= 76)
@@ -329,7 +396,48 @@ export async function generateWerkbonInstructiePDF(
       drawImageContain(cached?.base64 ?? null, cached?.ratio ?? null, logo.url, logoX, itemStartY, LOGO_BBOX, LOGO_BBOX)
     }
 
-    if (hasImage) {
+    if (enkeleFotoMetPositie && primair?.url) {
+      // Single-image layout met expliciete tekst-positie (fase 2, masterplan §8.2).
+      // Tekst-positie semantiek: 'links'/'rechts' = side-by-side (tekst aan die
+      // kant t.o.v. de afbeelding); 'boven' = tekst boven, image eronder.
+      const { w: rawBoxW, h: rawBoxH } = sizeFor(resolveSchaal(primair))
+      const cachedPrimair = afbCache.get(primair.id)
+
+      let imageBottom: number
+      let textBottom: number
+
+      if (tekstPositie === 'links' || tekstPositie === 'rechts') {
+        // Side-by-side: cap de boxbreedte op de helft minus colGap zodat er
+        // ruimte overblijft voor de tekst-kolom (ook bij 'groot' = 267mm).
+        const maxBoxW = (contentWidth - colGap) / 2
+        const boxW = Math.min(rawBoxW, maxBoxW)
+        const boxH = rawBoxH
+        const tekstW = contentWidth - boxW - colGap
+
+        const imageX = tekstPositie === 'links'
+          ? marginLeft + tekstW + colGap
+          : marginLeft
+        const tekstX = tekstPositie === 'links'
+          ? marginLeft
+          : marginLeft + boxW + colGap
+
+        drawImageContain(cachedPrimair?.base64 ?? null, cachedPrimair?.ratio ?? null, primair.url, imageX, y, boxW, boxH)
+        imageBottom = y + boxH
+
+        textBottom = renderTekstBlok(item, i, tekstX, y, tekstW)
+      } else {
+        // 'boven': tekst eerst, image eronder, gecentreerd.
+        const boxW = Math.min(rawBoxW, contentWidth)
+        const boxH = rawBoxH
+        textBottom = renderTekstBlok(item, i, marginLeft, y, contentWidth)
+        const imageY = textBottom + colGap
+        const imageX = marginLeft + (contentWidth - boxW) / 2
+        drawImageContain(cachedPrimair?.base64 ?? null, cachedPrimair?.ratio ?? null, primair.url, imageX, imageY, boxW, boxH)
+        imageBottom = imageY + boxH
+      }
+
+      y = Math.max(imageBottom, textBottom) + 5
+    } else if (hasImage) {
       const colW = (contentWidth - colGap) / 2  // tekst-kolom-breedte (= huidige "normaal")
       const col2X = marginLeft + colW + colGap
 
