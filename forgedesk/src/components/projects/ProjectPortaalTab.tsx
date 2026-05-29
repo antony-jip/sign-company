@@ -25,6 +25,7 @@ import {
   markNotificatieGelezen,
 } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
+import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import type { ProjectPortaal, PortaalItem, Offerte, Factuur, Notificatie } from '@/types'
 import { PortaalLightbox } from '@/components/portaal/PortaalLightbox'
 
@@ -332,7 +333,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       } else if (inputType === 'foto') {
         if (selectedFiles.length === 0) return
         const file = selectedFiles[0]
-        const path = `${user.id}/portaal/${portaal.id}/${Date.now()}_${file.name}`
+        const path = `${user.id}/portaal/${portaal.id}/${Date.now()}_${sanitizeStorageFilename(file.name)}`
         const url = await uploadFile(file, path)
         await createPortaalItem({
           user_id: user.id,
@@ -386,7 +387,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
           const doc = await generateOffertePDF(offerte, offerteItems, klant || {}, { ...profile, primaireKleur: docStyle?.primaire_kleur || '#2563eb' }, docStyle)
           const pdfBlob = doc.output('blob')
           const pdfFile = new File([pdfBlob], `${offerte.nummer}.pdf`, { type: 'application/pdf' })
-          const pdfPath = `${user.id}/portaal/${portaal.id}/${Date.now()}_${offerte.nummer}.pdf`
+          const pdfPath = `${user.id}/portaal/${portaal.id}/${Date.now()}_${sanitizeStorageFilename(`${offerte.nummer}.pdf`)}`
           const pdfUrl = await uploadFile(pdfFile, pdfPath)
           await createPortaalBestand({
             portaal_item_id: newItem.id,
@@ -438,7 +439,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         })
 
         for (const file of selectedFiles) {
-          const path = `${user.id}/portaal/${portaal.id}/${Date.now()}_${file.name}`
+          const path = `${user.id}/portaal/${portaal.id}/${Date.now()}_${sanitizeStorageFilename(file.name)}`
           const url = await uploadFile(file, path)
           await createPortaalBestand({
             portaal_item_id: newItem.id,

@@ -9,6 +9,7 @@ import {
 import { toast } from 'sonner'
 import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject, createPortaal } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
+import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { offerteTokenExpiry } from '@/lib/tokenExpiry'
 import type { ProjectPortaal, PortaalItem, Offerte, Factuur } from '@/types'
@@ -390,7 +391,7 @@ function InputBar({
 
   async function handleSendFoto(file: File) {
     await send(async () => {
-      const storagePath = await uploadFile(file, `${userId}/portaal/${portaal.id}/${Date.now()}_${file.name}`)
+      const storagePath = await uploadFile(file, `${userId}/portaal/${portaal.id}/${Date.now()}_${sanitizeStorageFilename(file.name)}`)
       // Resolve to public URL if it's a storage path
       let url = storagePath
       if (!storagePath.startsWith('http') && !storagePath.startsWith('data:')) {
@@ -409,7 +410,7 @@ function InputBar({
   async function handleSendTekening() {
     if (!tekeningFile) return
     await send(async () => {
-      const url = await uploadFile(tekeningFile, `${userId}/portaal/${portaal.id}/${Date.now()}_${tekeningFile.name}`)
+      const url = await uploadFile(tekeningFile, `${userId}/portaal/${portaal.id}/${Date.now()}_${sanitizeStorageFilename(tekeningFile.name)}`)
       const newItem = await createPortaalItem({ user_id: userId, project_id: projectId, portaal_id: portaal.id, type: 'tekening', titel: tekeningTitel || tekeningFile.name, status: 'verstuurd', zichtbaar_voor_klant: true, volgorde: 0 } as any)
       const { createPortaalBestand } = await import('@/services/supabaseService')
       await createPortaalBestand({

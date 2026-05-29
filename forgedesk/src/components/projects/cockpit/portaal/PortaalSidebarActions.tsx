@@ -5,6 +5,7 @@ import {
 import { toast } from 'sonner'
 import { createPortaalItem, getOffertesByProject, getFacturenByProject } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
+import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { offerteTokenExpiry } from '@/lib/tokenExpiry'
 import { currencyFmt } from './PortaalTimelineItems'
 import { logger } from '@/utils/logger'
@@ -238,7 +239,7 @@ export function PortaalSidebarActions({
     if (!portaal || !userId) return
     setIsSending(true)
     try {
-      const path = `${userId}/portaal/${portaal.id}/${Date.now()}_${file.name}`
+      const path = `${userId}/portaal/${portaal.id}/${Date.now()}_${sanitizeStorageFilename(file.name)}`
       const url = await uploadFile(file, path)
       await createPortaalItem({
         user_id: userId,
@@ -268,7 +269,7 @@ export function PortaalSidebarActions({
     if (!portaal || !userId || !tekeningFile) return
     setIsSending(true)
     try {
-      const path = `${userId}/portaal/${portaal.id}/${Date.now()}_${tekeningFile.name}`
+      const path = `${userId}/portaal/${portaal.id}/${Date.now()}_${sanitizeStorageFilename(tekeningFile.name)}`
       const url = await uploadFile(tekeningFile, path)
       await createPortaalItem({
         user_id: userId,
