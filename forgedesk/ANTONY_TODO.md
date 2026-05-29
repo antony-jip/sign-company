@@ -1,27 +1,28 @@
 # Antony's Persoonlijke Actielijst - FORGEdesk
 
-## ACTIE VEREIST — Werkbon canvas fase 1 (lokale test)
+## ACTIE VEREIST — Werkbon canvas fase 2 (lokale test)
 
-**Status:** Code klaar op branch `feat/werkbon-canvas-fase1`. Niet gepusht. Niet gemerged. Geen productie-rollout.
+**Status:** Code klaar op branch `feat/werkbon-canvas-fase2`. Niet gepusht. Niet gemerged. Geen productie-rollout.
 
 ### Stappen
-1. **Migraties draaien in Supabase SQL Editor** (in volgorde):
-   - `supabase/migrations/114_werkbon_layout_jsonb.sql`
-   - `supabase/migrations/115_werkbon_canvas_versie.sql`
-2. **Flag activeren op jouw eigen org:**
+1. **Geen nieuwe migraties** — fase 2 is JSONB-additive (layout-veld uit fase 1 wordt uitgebreid in-place).
+2. **Flag verhogen op jouw eigen org:**
    ```sql
-   UPDATE app_settings SET werkbon_canvas_versie = 1
+   UPDATE app_settings SET werkbon_canvas_versie = 2
    WHERE organisatie_id = '<jouw-org-uuid>';
    ```
-3. **Volg `WERKBON_CANVAS_FASE1_TESTPLAN.md`** voor de 9 acceptatie-criteria + 2-cap + rollback-test.
-4. **Rapport terug bij Claude Code** wanneer test compleet — beslis dan: door naar fase 2, of issues opvolgen.
+3. **Test de fase-2-features:**
+   - Corner-resize: pak hoek rechtsonder van een thumbnail, sleep. Verwacht: snap naar 25/50/75/100; Shift = vrij.
+   - Tekst-positie radio: bij single-image item zie je 4 buttons onder klein/normaal/groot. Klik links/rechts/boven/onder. PDF rendert tekst aan gekozen kant.
+   - PDF-drop: sleep een PDF op een item-card. Eerste pagina verschijnt als image-thumb. Origineel-PDF wordt in `pdf_bron_url` bewaard.
+4. **Acceptatie volgens masterplan §7.4 fase 2** (Antony's eigen checklist).
 
-### Rollback indien iets stuk gaat
+### Rollback naar fase 1
 ```sql
-UPDATE app_settings SET werkbon_canvas_versie = 0
+UPDATE app_settings SET werkbon_canvas_versie = 1
 WHERE organisatie_id = '<jouw-org-uuid>';
 ```
-Geen deploy nodig, geen migratie terug.
+Fase-2-features verdwijnen uit UI; bestaande data blijft canonical voor render.
 
 ---
 
