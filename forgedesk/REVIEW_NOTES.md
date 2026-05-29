@@ -536,3 +536,87 @@ Vervolg op A+C-sectie hierboven. Alle resterende streams op
 5. Rollback indien nodig: `UPDATE ... SET werkbon_canvas_versie = 0` — geen
    deploy.
 
+
+---
+
+## Werkbon canvas fase 3 — `feat/werkbon-canvas-fase3` (2026-05-30)
+
+Branch geforked van fase 2 (lokaal getest, niet gemerged). Fase 2 expliciet
+gedropt; `pdfToImage.ts` + PDF-drop-tak zijn al in deze branch aanwezig en
+worden hergebruikt.
+
+| Commit | Stream | Onderwerp |
+|---|---|---|
+| `781218c0` | A3 | types-extension + constants + migratie 116 (`COMMENT ON COLUMN`) |
+| `d5b90118` | B3+C3 | WerkbonCanvas + WerkbonCanvasElement (gecombineerd: tight coupling) |
+| `aa079038` | B3+C3 review-fix | Backspace-delete, z_index-fallback, NW-resize clamp |
+| `568f4e8e` | D3 | PDF coord-render + per-item-router in `werkbonPdfService` |
+| `d2555e86` | D3 review-fix | textEstimate 40→65mm, `heeftCanvasCoords` parity, logo-default |
+| `290b6b13` | E3 | WerkbonItemCard fase3-router + WerkbonDetail canvas-handlers + 2-cap weg |
+
+**Senior-review-uitkomsten:**
+- A3: AKKOORD (3 niet-blokkerende stijl-opmerkingen, alle out-of-scope)
+- B3+C3: AKKOORD-MET-OPMERKINGEN → 3 bugs + 2 cleanups gefixt in `aa079038`
+- D3: AKKOORD-MET-OPMERKINGEN → 3 punten gefixt in `d2555e86`
+- E3: AKKOORD-MET-OPMERKINGEN → punten niet-blokkerend, hieronder gelogd
+
+**Open niet-blokkerende opmerkingen (uit E3-review):**
+
+1. **Soft-cap toast-copy passief.** `${totaal} elementen op het werkblad. Veel
+   elementen kan de preview vertragen.` is descriptief, niet actief. Per
+   project-feedback `feedback_ui_copy_actief.md` mag actiever, bv. "Werkblad
+   raakt vol · preview kan traag worden bij ${totaal} elementen." Niet
+   gefixt om scope te bewaken.
+2. **Cascade-overlap bij bestaande elementen.** `cascadeIndex = nieuweAfbeeldingen.length`
+   start altijd op (5,5) mm voor de eerste van een drop-batch. Bij een canvas
+   dat al een element op (5,5) heeft, overlapt het nieuwe element. By-design
+   voor V1 (gebruiker rangschikt zelf verder); polishing later overwegen via
+   `huidigAantal + nieuweAfbeeldingen.length` of slot-based vrije-plaats-zoeker.
+3. **Code-duplicatie handleCanvasElementMove vs Resize** (~95% identiek). Per
+   project-regel "refactor niet tenzij gevraagd" laten staan.
+4. **PDF estimatedHeight pessimistisch.** 65mm tekstblok-schatting betekent dat
+   één canvas-item nooit met een ander item op één pagina past. By-design per
+   masterplan §8.3.
+
+**Architectuur:**
+
+- **A3-contract** = single source of truth voor canvas-werkruimte/snap/z-index.
+  B3 (editor sort), C3 (clamp + snap), D3 (PDF z-sort) importeren alle drie
+  uit `src/utils/werkbonCanvas.ts`. Helper `heeftCanvasCoords` is de
+  canonieke check voor "rendert via coord-pad".
+- **Drop-zone nesting** in fase 3: buitenste `WerkbonDropZone` (item-card)
+  is `disabled` zodra `fase3Actief`, binnenste drop-zone in `WerkbonCanvas`
+  vangt de file-drop. Geen dubbele events.
+- **State-eigenaarschap canvas** (per spec deliverable):
+  - selectie-id → `WerkbonCanvas` (één per item)
+  - transient drag/resize → `WerkbonCanvasElement` (per-element pointer-state)
+  - scale (px/mm) → `WerkbonCanvas` via `ResizeObserver`, doorgegeven aan elementen
+  - DB-writes → `WerkbonDetail` via `updateWerkbonAfbeelding` met layout-spread
+- **PDF coord-mapping 1:1**: `contentWidth=267mm` (297-15-15) matcht exact
+  `CANVAS_WERKRUIMTE_MM.breedte`. Element op `(x_mm, y_mm)` rendert op
+  `(marginLeft + x_mm, canvasY + y_mm)`. Geen schaling-rekenfouten.
+
+**Mobile**: `WerkbonMonteurView` is read-only en gebruikt
+`generateWerkbonInstructiePDF` direct. D3 coord-render werkt automatisch
+voor mobile zonder code-wijziging.
+
+**Productie-rollout-stappen voor Antony:**
+
+1. Pull `feat/werkbon-canvas-fase3` lokaal, `npm run build` groen.
+2. Draai migratie 116 in Supabase SQL Editor (alleen `COMMENT ON COLUMN`,
+   geen schema-wijziging, idempotent).
+3. Default flag=2 of lager → app gedraagt zich identiek aan fase 2. Verifieer.
+4. Eigen org activeren via Supabase:
+   `UPDATE app_settings SET werkbon_canvas_versie = 3 WHERE organisatie_id = '<jouw-org-uuid>';`
+5. Manuele test-checklist per masterplan §7.4 fase 3:
+   - Drag-anywhere positie persistent
+   - Z-index logica klopt — logo bovenop foto
+   - Snap-to-grid 5mm voelt prettig
+   - Vrije positie blijft binnen pagina-grenzen (geen overflow naar buiten margin)
+   - Bestaande flow-werkbonnen blijven 100% identiek renderen (test met org op versie<3)
+   - Mix: één item flow-based, ander vrij geplaatst, beide op dezelfde werkbon
+6. Test eigen org ≥ 2 weken per masterplan §8.4 stop-gate voor breder rollout.
+7. Rollback indien nodig:
+   `UPDATE app_settings SET werkbon_canvas_versie = 2 WHERE organisatie_id = '<uuid>';`
+   Canvas-data blijft in DB (`layout.canvas_x_mm` etc.) maar wordt genegeerd
+   door render-pad — geen data-verlies.
