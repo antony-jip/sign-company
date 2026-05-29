@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { MapPin, Phone } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -38,6 +38,20 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
 }: WerkbonHeaderFormProps) {
   const filteredOffertes = offertes.filter((o) => !klantId || o.klant_id === klantId)
   const filteredProjecten = projecten.filter((p) => !klantId || p.klant_id === klantId)
+
+  // Contactpersoon-picker bumpt deze counter zodat de naam/tel inputs remounten
+  // met verse defaultValue. Tijdens typen blijft de counter gelijk, dus geen
+  // focus-verlies per keystroke.
+  const [pickerVersion, setPickerVersion] = useState(0)
+  const selectedKlant = klanten.find((k) => k.id === klantId)
+  const contactpersonen = selectedKlant?.contactpersonen || []
+  const handleContactpersoonPick = (cpId: string) => {
+    const cp = contactpersonen.find((c) => c.id === cpId)
+    if (!cp) return
+    onFieldChange('contactNaam', cp.naam || '')
+    onFieldChange('contactTelefoon', cp.telefoon || '')
+    setPickerVersion((v) => v + 1)
+  }
 
   return (
     <div className="space-y-5">
@@ -155,8 +169,23 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
           <div className="pt-2 border-t" style={{ borderColor: '#EBEBEB' }}>
             <span className={labelClass} style={labelColor}>Contact op locatie</span>
           </div>
+          {contactpersonen.length > 0 && (
+            <Select value="" onValueChange={handleContactpersoonPick}>
+              <SelectTrigger className="h-9 text-[13px] rounded-lg" style={inputStyle}>
+                <SelectValue placeholder="Kies contactpersoon..." />
+              </SelectTrigger>
+              <SelectContent>
+                {contactpersonen.map((cp) => (
+                  <SelectItem key={cp.id} value={cp.id}>
+                    {cp.naam}{cp.telefoon ? ` · ${cp.telefoon}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <Input
+              key={`naam-${pickerVersion}`}
               defaultValue={contactNaam}
               onBlur={(e) => onFieldChange('contactNaam', e.target.value)}
               placeholder="Naam"
@@ -167,6 +196,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
               <div className="relative flex-1">
                 <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95] pointer-events-none" />
                 <Input
+                  key={`tel-${pickerVersion}`}
                   defaultValue={contactTelefoon}
                   onBlur={(e) => onFieldChange('contactTelefoon', e.target.value)}
                   placeholder="06-12345678"
