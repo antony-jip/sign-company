@@ -1296,6 +1296,7 @@ export function FactuurEditor() {
           const wbFotos = await getWerkbonFotos(wb.id)
           const project = projectId ? await getProject(projectId).catch(() => null) : null
           const bedrijfsProfiel = { ...profile, primaireKleur }
+          const aanmakerNaamWb = wb.user_id ? medewerkers.find((m) => m.user_id === wb.user_id)?.naam : undefined
           const wbDoc = generateWerkbonInstructiePDF(
             {
               werkbon_nummer: wb.werkbon_nummer,
@@ -1312,6 +1313,7 @@ export function FactuurEditor() {
               monteur_opmerkingen: wb.monteur_opmerkingen,
               klant_handtekening: wb.klant_handtekening,
               klant_naam_getekend: wb.klant_naam_getekend,
+              aanmaker_naam: aanmakerNaamWb,
             },
             wbItems,
             selectedKlant,
@@ -1366,7 +1368,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds])
+  }, [existingFactuur, selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds, medewerkers])
 
   // ============ MARK AS PAID ============
 

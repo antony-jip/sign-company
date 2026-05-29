@@ -23,6 +23,7 @@ interface WerkbonPdfData {
   klant_handtekening?: string
   klant_naam_getekend?: string
   getekend_op?: string
+  aanmaker_naam?: string
 }
 
 export interface WerkbonPdfOptions {
@@ -163,16 +164,18 @@ export async function generateWerkbonInstructiePDF(
     doc.text(`Datum: ${formatDate(werkbonData.datum)}`, rightX, rightY, { align: 'right' })
     rightY += 4
 
+    if (werkbonData.aanmaker_naam) {
+      doc.text(`Aangemaakt door: ${werkbonData.aanmaker_naam}`, rightX, rightY, { align: 'right' })
+      rightY += 4
+    }
+
     if (werkbonData.contact_naam) {
       doc.text(`Contact: ${werkbonData.contact_naam}${werkbonData.contact_telefoon ? ` — ${werkbonData.contact_telefoon}` : ''}`, rightX, rightY, { align: 'right' })
       rightY += 4
     }
 
-    // Scheiding
+    // Scheiding (whitespace, geen lijn)
     y += 18
-    doc.setDrawColor(220, 220, 220)
-    doc.setLineWidth(0.3)
-    doc.line(marginLeft, y, pageWidth - marginRight, y)
 
     return y + 5
   }

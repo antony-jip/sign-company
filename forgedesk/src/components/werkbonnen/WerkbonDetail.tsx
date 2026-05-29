@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -88,6 +89,7 @@ export function WerkbonDetail() {
   const navigate = useNavigate()
   const { setDirty } = useTabDirtyState()
   const { user } = useAuth()
+  const { medewerkers } = useMedewerkers()
   const {
     profile, primaireKleur,
     werkbonMonteurUren, werkbonMonteurOpmerkingen,
@@ -118,6 +120,7 @@ export function WerkbonDetail() {
   const [status, setStatus] = useState<Werkbon['status']>('concept')
   const [werkbonNummer, setWerkbonNummer] = useState('')
   const [werkbonId, setWerkbonId] = useState('')
+  const [aanmakerUserId, setAanmakerUserId] = useState<string | undefined>(undefined)
   const [toonBriefpapier, setToonBriefpapier] = useState(true)
   const [contactNaam, setContactNaam] = useState('')
   const [contactTelefoon, setContactTelefoon] = useState('')
@@ -158,6 +161,7 @@ export function WerkbonDetail() {
           if (cancelled) return
           setWerkbonId(wb.id)
           setWerkbonNummer(wb.werkbon_nummer)
+          setAanmakerUserId(wb.user_id)
           setKlantId(wb.klant_id)
           setProjectId(wb.project_id || '')
           setOfferteId(wb.offerte_id || '')
@@ -550,6 +554,7 @@ export function WerkbonDetail() {
     const klant = klanten.find((k) => k.id === klantId)
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
+    const aanmakerNaam = medewerkers.find((m) => m.user_id === (aanmakerUserId || userId))?.naam
 
     const pdfData = {
       werkbon_nummer: werkbonNummer,
@@ -566,6 +571,7 @@ export function WerkbonDetail() {
       monteur_opmerkingen: monteurOpmerkingen,
       klant_handtekening: handtekeningData,
       klant_naam_getekend: klantNaamGetekend,
+      aanmaker_naam: aanmakerNaam,
     }
 
     try {
@@ -589,6 +595,7 @@ export function WerkbonDetail() {
     werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
     contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
     status, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, fotos,
+    medewerkers, aanmakerUserId, userId,
   ])
 
   // Print werkbon (open PDF in nieuw venster met print dialog)
@@ -596,6 +603,7 @@ export function WerkbonDetail() {
     const klant = klanten.find((k) => k.id === klantId)
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
+    const aanmakerNaam = medewerkers.find((m) => m.user_id === (aanmakerUserId || userId))?.naam
 
     const pdfData = {
       werkbon_nummer: werkbonNummer,
@@ -612,6 +620,7 @@ export function WerkbonDetail() {
       monteur_opmerkingen: monteurOpmerkingen,
       klant_handtekening: handtekeningData,
       klant_naam_getekend: klantNaamGetekend,
+      aanmaker_naam: aanmakerNaam,
     }
 
     try {
@@ -638,6 +647,7 @@ export function WerkbonDetail() {
     werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
     contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
     status, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, fotos,
+    medewerkers, aanmakerUserId, userId,
   ])
 
   // Deel werkbon PDF via WhatsApp / native share
@@ -646,6 +656,7 @@ export function WerkbonDetail() {
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
     const bestandsnaam = `werkbon-${werkbonNummer || 'nieuw'}.pdf`
+    const aanmakerNaam = medewerkers.find((m) => m.user_id === (aanmakerUserId || userId))?.naam
 
     const doc = await generateWerkbonInstructiePDF(
       {
@@ -658,6 +669,7 @@ export function WerkbonDetail() {
         contact_naam: contactNaam,
         contact_telefoon: contactTelefoon,
         toon_briefpapier: toonBriefpapier,
+        aanmaker_naam: aanmakerNaam,
       },
       werkbonItems,
       klant || {},
@@ -698,6 +710,7 @@ export function WerkbonDetail() {
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
     werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
     contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
+    medewerkers, aanmakerUserId, userId,
   ])
 
   if (isLoading) {
