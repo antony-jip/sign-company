@@ -1135,7 +1135,7 @@ export function WerkbonDetail() {
 
   return (
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: 'hsl(var(--background))' }}>
-    <div className="max-w-6xl mx-auto px-4 md:px-6 py-5 pb-32">
+    <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-5 pb-32">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
         <div className="flex items-center gap-3">
