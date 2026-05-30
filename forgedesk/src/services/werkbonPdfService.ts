@@ -368,12 +368,23 @@ export async function generateWerkbonInstructiePDF(
   // exact 267mm (pageWidth 297 minus 2x 15mm marges), dus de canvas-coordinaten
   // mappen 1:1 op PDF-coordinaten — geen schaling nodig.
   function renderCanvasItem(item: WerkbonItem, itemIndex: number): void {
-    // Page-break bovengrens. Worst-case renderTekstBlok ~= 12mm nummer/omschrijving
-    // (3 regels) + 8mm afmetingen + 25mm notitie (4 regels in gele box) = ~45mm,
-    // plus marge tot 65mm. Bij overschatting krijgen we een vroege page-break,
-    // bij onderschatting wordt het canvas afgekapt — dus liever te hoog inschatten.
+    // Page-break check op basis van de werkelijke tekstblok-hoogte per item.
+    // Spiegelt 1-op-1 de maat-logica in renderTekstBlok (regel 305-356):
+    //   omschr      = 4 top-pad + lines*5 + 4 bottom-pad
+    //   afmeting    = +8 als aanwezig
+    //   notitie     = +2 top-pad + lines*4.5 + 6 box-pad + 3 bottom-pad
+    // Zo voorkomen we onnodige page-breaks bij korte items zonder notitie,
+    // én clipping bij items met lange notities.
+    const omschrLines = doc.splitTextToSize(item.omschrijving || '', contentWidth - 12).length || 1
+    const hasDim = !!(item.afmeting_breedte_mm || item.afmeting_hoogte_mm)
+    const noteLines = item.interne_notitie
+      ? doc.splitTextToSize(item.interne_notitie, contentWidth - 6).length
+      : 0
+    const textEstimate = 8 + omschrLines * 5
+      + (hasDim ? 8 : 0)
+      + (noteLines > 0 ? 11 + noteLines * 4.5 : 0)
+
     const canvasH = CANVAS_WERKRUIMTE_MM.hoogte
-    const textEstimate = 65
     const estimatedHeight = textEstimate + 4 + canvasH + 5
 
     if (y + estimatedHeight > availableHeight) {
