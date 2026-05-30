@@ -620,3 +620,31 @@ voor mobile zonder code-wijziging.
    `UPDATE app_settings SET werkbon_canvas_versie = 2 WHERE organisatie_id = '<uuid>';`
    Canvas-data blijft in DB (`layout.canvas_x_mm` etc.) maar wordt genegeerd
    door render-pad — geen data-verlies.
+
+### Fase 3 bug-fixes — `feat/werkbon-canvas-fase3` (2026-05-30)
+
+Twee bugs uit Antony's lokale test gefixt na fase-3-merge-prep:
+
+| Commit | Bug |
+|---|---|
+| `4ab8df54` | Selectie-frame om bounding-box i.p.v. visible image (object-contain letterbox) |
+| `55dedef4` | Lege eerste PDF-pagina door over-conservatieve textEstimate=65mm |
+
+**Open opmerkingen uit gate-review:**
+
+1. **Bestaande canvas-items met hardcoded 80×60 mm.** Items die in Antony's
+   eigen test-org gemaakt zijn vóór `4ab8df54` houden de oude bounding-box
+   en tonen nog het letterbox-frame. Per `feedback_geen_silent_data_mutations`
+   geen automatische backfill. Opt-in fix: gebruiker verwijdert (X-knop) en
+   dropt opnieuw — nieuwe element krijgt de juiste ratio. Geen blocker voor
+   merge.
+2. **`deriveCanvasSize` defensive guard.** Helper accepteert nu `ratio` van
+   één caller (`getImageBlobRatio` die zelf guard't op `r > 0 && Number.isFinite`).
+   Bij toekomstig hergebruik door andere callers zou een interne guard
+   `if (!(ratio > 0) || !Number.isFinite(ratio)) ratio = 1` de helper
+   standalone-safe maken. 3 regels werk, niet kritiek.
+3. **`maxH`-clamp in `deriveCanvasSize` is dode tak** voor huidige
+   target-waarden (80mm < 90mm). Cosmetisch.
+4. **`textEstimate` overshoot 4mm op omschrijving-deel** (8 base-pad vs.
+   4 in renderTekstBlok). Mirror-fout, maar veilig kant op: leidt tot iets
+   conservatievere estimate, geen clipping risico.
