@@ -70,3 +70,59 @@ export function heeftCanvasCoords(layout: WerkbonAfbeeldingLayout | undefined): 
 export function itemHeeftCanvasData(afbeeldingen: WerkbonAfbeelding[]): boolean {
   return afbeeldingen.some((a) => heeftCanvasCoords(a.layout))
 }
+
+/**
+ * Leest de aspect-ratio (breedte/hoogte) uit een image-blob via een
+ * tijdelijke object-URL. Wordt bij drop gebruikt om de canvas-afmetingen
+ * direct aan de source-ratio te koppelen, zodat object-contain geen
+ * letterbox-witruimte introduceert in de editor en het selectie-frame
+ * strak om de zichtbare pixels valt.
+ *
+ * Faalt stil naar 1 (vierkant) als de blob niet decodeerbaar is.
+ */
+export function getImageBlobRatio(blob: Blob): Promise<number> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(blob)
+    const img = new Image()
+    img.onload = () => {
+      const r = img.naturalWidth / img.naturalHeight
+      URL.revokeObjectURL(url)
+      resolve(r > 0 && Number.isFinite(r) ? r : 1)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(1)
+    }
+    img.src = url
+  })
+}
+
+/**
+ * Berekent canvas-element afmetingen op basis van de bron-aspect-ratio.
+ * Streeft naar maximaal 80mm langste zijde (40mm voor logo's), clampt
+ * tegen de werkruimte (267x100mm) met 10mm marge zodat een element altijd
+ * binnen het werkblad past.
+ */
+export function deriveCanvasSize(ratio: number, isLogo: boolean): { w: number; h: number } {
+  const target = isLogo ? CANVAS_LOGO_DEFAULT_MM : 80
+  let w: number
+  let h: number
+  if (ratio >= 1) {
+    w = target
+    h = w / ratio
+  } else {
+    h = target
+    w = h * ratio
+  }
+  const maxW = CANVAS_WERKRUIMTE_MM.breedte - 10
+  const maxH = CANVAS_WERKRUIMTE_MM.hoogte - 10
+  if (h > maxH) {
+    h = maxH
+    w = h * ratio
+  }
+  if (w > maxW) {
+    w = maxW
+    h = w / ratio
+  }
+  return { w, h }
+}

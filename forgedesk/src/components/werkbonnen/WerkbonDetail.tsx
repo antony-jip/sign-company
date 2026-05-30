@@ -42,6 +42,8 @@ import {
   CANVAS_LOGO_DEFAULT_MM,
   CANVAS_SOFT_CAP_ELEMENTS,
   CANVAS_Z_INDEX_DEFAULTS,
+  getImageBlobRatio,
+  deriveCanvasSize,
 } from '@/utils/werkbonCanvas'
 import { WerkbonItemCard } from './WerkbonItemCard'
 import { WerkbonHeaderForm } from './WerkbonHeaderForm'
@@ -566,21 +568,30 @@ export function WerkbonDetail() {
     // binnen het werkblad. cascadeIndex is de index binnen deze drop-batch, dus overlap
     // met bestaande elementen wordt geaccepteerd (gebruiker rangschikt zelf verder).
     // Bij fase < 3 wordt enkel blok_type gezet, identiek aan fase-2-gedrag.
+    //
+    // `ratio` (bron breedte/hoogte) wordt vlak vóór de createWerkbonAfbeelding-call
+    // gelezen via getImageBlobRatio. Met die ratio bepaalt deriveCanvasSize de
+    // element-afmetingen — geen object-contain letterbox in de editor, dus het
+    // selectie-frame valt strak om de zichtbare pixels (fix bug 1).
     const makeLayout = (
       blokType: WerkbonBlokType,
       cascadeIndex: number,
+      ratio: number | null,
       extra: Partial<WerkbonAfbeeldingLayout> = {},
     ): WerkbonAfbeeldingLayout => {
       if (!fase3Actief) {
         return { blok_type: blokType, ...extra }
       }
       const isLogo = blokType === 'logo'
+      const { w, h } = ratio !== null
+        ? deriveCanvasSize(ratio, isLogo)
+        : { w: isLogo ? CANVAS_LOGO_DEFAULT_MM : 80, h: isLogo ? CANVAS_LOGO_DEFAULT_MM : 60 }
       return {
         blok_type: blokType,
         canvas_x_mm: CANVAS_DROP_CASCADE_START_MM + cascadeIndex * CANVAS_DROP_CASCADE_OFFSET_MM,
         canvas_y_mm: CANVAS_DROP_CASCADE_START_MM + cascadeIndex * CANVAS_DROP_CASCADE_OFFSET_MM,
-        canvas_breedte_mm: isLogo ? CANVAS_LOGO_DEFAULT_MM : 80,
-        canvas_hoogte_mm: isLogo ? CANVAS_LOGO_DEFAULT_MM : 60,
+        canvas_breedte_mm: w,
+        canvas_hoogte_mm: h,
         z_index: CANVAS_Z_INDEX_DEFAULTS[blokType],
         ...extra,
       }
@@ -613,9 +624,10 @@ export function WerkbonDetail() {
           const pngStoragePath = `werkbon-afbeeldingen/${itemId}/${timestamp}-${safePngName}`
           const pdfStoragePath = `werkbon-pdfs/${itemId}/${timestamp}-${safePdfName}`
 
-          const [uploadedPngPath, uploadedPdfPath] = await Promise.all([
+          const [uploadedPngPath, uploadedPdfPath, ratio] = await Promise.all([
             uploadFile(pngFile, pngStoragePath),
             uploadFile(file, pdfStoragePath),
+            fase3Actief ? getImageBlobRatio(pngBlob) : Promise.resolve(null),
           ])
           const displayUrl = await resolveUrl(uploadedPngPath)
 
@@ -624,7 +636,7 @@ export function WerkbonDetail() {
             url: uploadedPngPath,
             type: 'overig',
             omschrijving: file.name,
-            layout: makeLayout('pdf', nieuweAfbeeldingen.length, { pdf_bron_url: uploadedPdfPath }),
+            layout: makeLayout('pdf', nieuweAfbeeldingen.length, ratio, { pdf_bron_url: uploadedPdfPath }),
           })
           afb.url = displayUrl
           nieuweAfbeeldingen.push(afb)
@@ -646,7 +658,10 @@ export function WerkbonDetail() {
         const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
         const safeName = sanitizeStorageFilename(file.name)
         const storagePath = `werkbon-afbeeldingen/${itemId}/${Date.now()}-${safeName}`
-        const uploadedPath = await uploadFile(resizedFile, storagePath)
+        const [uploadedPath, ratio] = await Promise.all([
+          uploadFile(resizedFile, storagePath),
+          fase3Actief ? getImageBlobRatio(resized) : Promise.resolve(null),
+        ])
         const displayUrl = await resolveUrl(uploadedPath)
 
         const afb = await createWerkbonAfbeelding({
@@ -654,7 +669,7 @@ export function WerkbonDetail() {
           url: uploadedPath,
           type: 'overig',
           omschrijving: file.name,
-          layout: makeLayout('foto', nieuweAfbeeldingen.length),
+          layout: makeLayout('foto', nieuweAfbeeldingen.length, ratio),
         })
         afb.url = displayUrl
         nieuweAfbeeldingen.push(afb)
