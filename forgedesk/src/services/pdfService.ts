@@ -1466,13 +1466,16 @@ export function generateFactuurPDF(
     totalsY = flowText(outroLines, margins.left, totalsY, 5)
   }
 
-  // Gedempte vertrouwensregel (item 6)
-  advanceY(12)
-  doc.setFont(bodyFont, 'normal')
-  doc.setFontSize(baseFontSize - 1)
-  doc.setTextColor(140, 140, 135)
-  doc.text('We vertrouwen op een tijdige betaling.', margins.left, totalsY)
-  doc.setTextColor(...textColor)
+  // Gedempte vertrouwensregel (item 6) — alleen als de gebruiker geen eigen
+  // outro_tekst heeft ingevuld, anders dekt die tekst dit al af (geen dubbeling).
+  if (!factuurData.outro_tekst?.trim()) {
+    advanceY(12)
+    doc.setFont(bodyFont, 'normal')
+    doc.setFontSize(baseFontSize - 1)
+    doc.setTextColor(140, 140, 135)
+    doc.text('We vertrouwen op een tijdige betaling.', margins.left, totalsY)
+    doc.setTextColor(...textColor)
+  }
 
   // Payment info
   advanceY(12)
