@@ -1495,7 +1495,9 @@ export function generateFactuurPDF(
   }
 
   // Betaaltermijn: dagen tussen factuurdatum en vervaldatum (indien beide geldig).
-  if (factuurData.datum && factuurData.vervaldatum) {
+  // Alleen tonen als de gebruiker geen eigen betaalvoorwaarden heeft ingevuld —
+  // die tekst (hieronder) dekt de termijn dan al af (geen dubbeling).
+  if (!factuurData.betaalvoorwaarden?.trim() && factuurData.datum && factuurData.vervaldatum) {
     const start = new Date(factuurData.datum).getTime()
     const eind = new Date(factuurData.vervaldatum).getTime()
     if (!isNaN(start) && !isNaN(eind) && eind >= start) {
