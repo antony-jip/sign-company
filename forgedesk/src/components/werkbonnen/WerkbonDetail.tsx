@@ -1210,25 +1210,27 @@ export function WerkbonDetail() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Linker kolom: meta info */}
-        <WerkbonHeaderForm
-          klantId={klantId}
-          projectId={projectId}
-          offerteId={offerteId}
-          titel={titel}
-          datum={datum}
-          locatieAdres={locatieAdres}
-          locatieStad={locatieStad}
-          locatiePostcode={locatiePostcode}
-          contactNaam={contactNaam}
-          contactTelefoon={contactTelefoon}
-          klanten={klanten}
-          projecten={projecten}
-          offertes={offertes}
-          onKlantChange={handleKlantChange}
-          onFieldChange={handleFieldChange}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        {/* Linker kolom: meta info — sticky tijdens scroll vanaf lg-breakpoint */}
+        <div className="lg:sticky lg:top-4">
+          <WerkbonHeaderForm
+            klantId={klantId}
+            projectId={projectId}
+            offerteId={offerteId}
+            titel={titel}
+            datum={datum}
+            locatieAdres={locatieAdres}
+            locatieStad={locatieStad}
+            locatiePostcode={locatiePostcode}
+            contactNaam={contactNaam}
+            contactTelefoon={contactTelefoon}
+            klanten={klanten}
+            projecten={projecten}
+            offertes={offertes}
+            onKlantChange={handleKlantChange}
+            onFieldChange={handleFieldChange}
+          />
+        </div>
 
         {/* Rechter kolom: items + monteur secties */}
         <div className="lg:col-span-2 space-y-5">
