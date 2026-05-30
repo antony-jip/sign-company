@@ -1,7 +1,15 @@
 import jsPDF from 'jspdf'
-import type { WerkbonItem, WerkbonFoto, Klant, Profile, DocumentStyle } from '@/types'
+import type { WerkbonItem, WerkbonFoto, Klant, Profile, DocumentStyle, WerkbonTekstPositie } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 import { resolveImageToBase64, detectImageFormat } from '@/services/pdfService'
+import { resolveSchaal } from '@/services/werkbonService'
+import {
+  itemHeeftCanvasData,
+  heeftCanvasCoords,
+  CANVAS_WERKRUIMTE_MM,
+  CANVAS_Z_INDEX_DEFAULTS,
+  CANVAS_LOGO_DEFAULT_MM,
+} from '@/utils/werkbonCanvas'
 
 interface PdfBedrijfsProfiel extends Partial<Profile> {
   primaireKleur?: string
@@ -127,29 +135,30 @@ export async function generateWerkbonInstructiePDF(
   let currentPage = 1
 
   function addPageHeader(y: number): number {
-    // Logo + bedrijfsnaam (optioneel)
+    // Logo links
     let logoWidth = 0
+    const logoH = 12
     if (logoBase64) {
       try {
-        const maxLogoH = 12
         const props = doc.getImageProperties(logoBase64)
         const ratio = props.width / props.height
-        logoWidth = maxLogoH * ratio
-        doc.addImage(logoBase64, detectImageFormat(logoBase64), marginLeft, y + 1, logoWidth, maxLogoH, undefined, 'MEDIUM')
+        logoWidth = logoH * ratio
+        doc.addImage(logoBase64, detectImageFormat(logoBase64), marginLeft, y + 1, logoWidth, logoH, undefined, 'MEDIUM')
       } catch (err) {
         // logo failed
       }
     }
 
     const headerX = logoWidth > 0 ? marginLeft + logoWidth + 5 : marginLeft
+    const headlineY = y + 5  // gedeelde baseline voor logo-midden, WERKBON-titel en klantnaam
 
-    // Werkbon nummer + titel
+    // Links: WERKBON-nummer (op headline) + titel (eronder)
     doc.setFont(headingFont, 'bold')
     doc.setFontSize(14)
     doc.setTextColor(...brand)
-    doc.text(`WERKBON ${werkbonData.werkbon_nummer}`, headerX, y + 5)
+    doc.text(`WERKBON ${werkbonData.werkbon_nummer}`, headerX, headlineY)
 
-    let leftY = y + 11
+    let leftY = headlineY + 6
     if (werkbonData.titel) {
       doc.setFont(bodyFont, 'normal')
       doc.setFontSize(9)
@@ -158,50 +167,48 @@ export async function generateWerkbonInstructiePDF(
       leftY += 5
     }
 
-    if (werkbonData.aanmaker_naam) {
-      doc.setFont(bodyFont, 'normal')
-      doc.setFontSize(9)
-      doc.setTextColor(...textColor)
-      doc.text(`Aangemaakt door: ${werkbonData.aanmaker_naam}`, headerX, leftY)
-    }
-
-    // Rechts: klant + locatie + datum
+    // Rechts: klant (op headline) + locatie + datum/aanmaker + contact
     const rightX = pageWidth - marginRight
+    const rightLineHeight = 4.5
     doc.setFont(bodyFont, 'normal')
     doc.setFontSize(9)
     doc.setTextColor(...textColor)
 
-    let rightY = y + 2
+    let rightY = headlineY
     if (klant.bedrijfsnaam) {
       doc.setFont(bodyFont, 'bold')
       doc.text(klant.bedrijfsnaam, rightX, rightY, { align: 'right' })
-      rightY += 4
+      rightY += rightLineHeight
       doc.setFont(bodyFont, 'normal')
-    }
-
-    if (projectNaam) {
-      doc.text(`Project: ${projectNaam}`, rightX, rightY, { align: 'right' })
-      rightY += 4
     }
 
     const locatieParts = [werkbonData.locatie_adres, werkbonData.locatie_postcode, werkbonData.locatie_stad].filter(Boolean)
     if (locatieParts.length > 0) {
-      doc.text(locatieParts.join(', '), rightX, rightY, { align: 'right' })
-      rightY += 4
+      doc.text(locatieParts.join(' · '), rightX, rightY, { align: 'right' })
+      rightY += rightLineHeight
     }
 
-    doc.text(`Datum: ${formatDate(werkbonData.datum)}`, rightX, rightY, { align: 'right' })
-    rightY += 4
+    // Aanmaker staat als footer rechtsonder per pagina (zie paginanummer-loop).
+    doc.text(formatDate(werkbonData.datum), rightX, rightY, { align: 'right' })
+    rightY += rightLineHeight
 
     if (werkbonData.contact_naam) {
-      doc.text(`Contact: ${werkbonData.contact_naam}${werkbonData.contact_telefoon ? ` · ${werkbonData.contact_telefoon}` : ''}`, rightX, rightY, { align: 'right' })
-      rightY += 4
+      const contactRegel = werkbonData.contact_telefoon
+        ? `${werkbonData.contact_naam} · ${werkbonData.contact_telefoon}`
+        : werkbonData.contact_naam
+      doc.text(contactRegel, rightX, rightY, { align: 'right' })
+      rightY += rightLineHeight
     }
 
-    // Scheiding (whitespace, geen lijn)
-    y += 18
+    // Hairline separator onder het verste blok (links/rechts/logo)
+    const logoBottom = logoBase64 ? y + 1 + logoH : 0
+    const headerBottom = Math.max(leftY, rightY, logoBottom)
+    const separatorY = headerBottom + 2
+    doc.setDrawColor(235, 235, 235)
+    doc.setLineWidth(0.2)
+    doc.line(marginLeft, separatorY, pageWidth - marginRight, separatorY)
 
-    return y + 5
+    return separatorY + 5
   }
 
   function addNewPage(): number {
@@ -285,26 +292,173 @@ export async function generateWerkbonInstructiePDF(
   }
 
   const colGap = 6
-  function sizeFor(grootte: 'klein' | 'normaal' | 'groot'): { w: number; h: number } {
-    if (grootte === 'klein') {
-      const w = (contentWidth - 2 * colGap) / 3
-      return { w, h: w * 0.75 }
+  function sizeFor(schaalPercentage: number): { w: number; h: number } {
+    if (schaalPercentage <= 40) {
+      return { w: 85, h: 64 }
     }
-    if (grootte === 'groot') {
-      return { w: contentWidth, h: 100 }
+    if (schaalPercentage <= 75) {
+      return { w: 130, h: 98 }
     }
-    const w = (contentWidth - colGap) / 2
-    return { w, h: w * 0.75 }
+    return { w: 267, h: 100 }
+  }
+
+  const LOGO_BBOX = 40
+
+  // Rendert het tekst-blok (itemnummer + omschrijving + afmetingen + notitie)
+  // op een willekeurige (x, y) met opgegeven breedte. Retourneert de bottom-y.
+  // Gebruikt door zowel het bestaande flow-pad als de tekst-positie-aware
+  // single-image layout (fase 2, masterplan §8.2).
+  function renderTekstBlok(
+    item: WerkbonItem,
+    itemIndex: number,
+    tx: number,
+    ty: number,
+    tw: number,
+  ): number {
+    const hasDim = !!(item.afmeting_breedte_mm || item.afmeting_hoogte_mm)
+    const hasNoteLocal = !!item.interne_notitie
+
+    doc.setFont(headingFont, 'bold')
+    doc.setFontSize(12)
+    doc.setTextColor(...brand)
+    doc.text(`${itemIndex + 1}.`, tx, ty + 2)
+
+    doc.setFont(headingFont, 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(...textColor)
+    const omschrLines = doc.splitTextToSize(item.omschrijving, tw - 12)
+    doc.text(omschrLines, tx + 10, ty + 2)
+    let localY = ty + omschrLines.length * 5 + 4
+
+    if (hasDim) {
+      doc.setFont(bodyFont, 'bold')
+      doc.setFontSize(14)
+      doc.setTextColor(...brand)
+      doc.text(`${item.afmeting_breedte_mm || '?'} × ${item.afmeting_hoogte_mm || '?'} mm`, tx + 10, localY)
+      localY += 8
+    }
+
+    if (hasNoteLocal) {
+      localY += 2
+      const noteLines = doc.splitTextToSize(item.interne_notitie || '', tw - 6)
+      const noteHeight = noteLines.length * 4.5 + 6
+      doc.setFillColor(255, 251, 235)
+      doc.setDrawColor(252, 211, 77)
+      doc.roundedRect(tx, localY, tw, noteHeight, 2, 2, 'FD')
+
+      doc.setFont(bodyFont, 'bold')
+      doc.setFontSize(7)
+      doc.setTextColor(161, 98, 7)
+      doc.text('NOTITIE', tx + 3, localY + 4)
+
+      doc.setFont(bodyFont, 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(120, 53, 15)
+      doc.text(noteLines, tx + 3, localY + 9)
+      localY += noteHeight + 3
+    }
+
+    return localY
+  }
+
+  // Fase-3 coord-render: tekstblok bovenaan over volledige breedte, daarna
+  // een canvas-area van 267x100mm waarin elke afbeelding op zijn absolute
+  // (x_mm, y_mm, breedte_mm, hoogte_mm) wordt geplaatst. contentWidth is
+  // exact 267mm (pageWidth 297 minus 2x 15mm marges), dus de canvas-coordinaten
+  // mappen 1:1 op PDF-coordinaten — geen schaling nodig.
+  function renderCanvasItem(item: WerkbonItem, itemIndex: number): void {
+    // Page-break check op basis van de werkelijke tekstblok-hoogte per item.
+    // Spiegelt 1-op-1 de maat-logica in renderTekstBlok (regel 305-356):
+    //   omschr      = 4 top-pad + lines*5 + 4 bottom-pad
+    //   afmeting    = +8 als aanwezig
+    //   notitie     = +2 top-pad + lines*4.5 + 6 box-pad + 3 bottom-pad
+    // Zo voorkomen we onnodige page-breaks bij korte items zonder notitie,
+    // én clipping bij items met lange notities.
+    const omschrLines = doc.splitTextToSize(item.omschrijving || '', contentWidth - 12).length || 1
+    const hasDim = !!(item.afmeting_breedte_mm || item.afmeting_hoogte_mm)
+    const noteLines = item.interne_notitie
+      ? doc.splitTextToSize(item.interne_notitie, contentWidth - 6).length
+      : 0
+    const textEstimate = 8 + omschrLines * 5
+      + (hasDim ? 8 : 0)
+      + (noteLines > 0 ? 11 + noteLines * 4.5 : 0)
+
+    const canvasH = CANVAS_WERKRUIMTE_MM.hoogte
+    const estimatedHeight = textEstimate + 4 + canvasH + 5
+
+    if (y + estimatedHeight > availableHeight) {
+      y = addNewPage()
+    }
+
+    const textBottom = renderTekstBlok(item, itemIndex, marginLeft, y, contentWidth)
+    const canvasY = textBottom + 4
+
+    // Z-sort: lager z eerst (achter), tiebreaker created_at (newer-on-top).
+    // Identieke fallback-logica als WerkbonCanvas zodat DOM-stacking in de
+    // editor en PDF-stacking in de output nooit divergeren.
+    const canvasElementen = [...item.afbeeldingen]
+      .filter((a) => heeftCanvasCoords(a.layout))
+      .sort((a, b) => {
+        const blokA = a.layout?.blok_type ?? 'foto'
+        const blokB = b.layout?.blok_type ?? 'foto'
+        const za = a.layout?.z_index ?? CANVAS_Z_INDEX_DEFAULTS[blokA]
+        const zb = b.layout?.z_index ?? CANVAS_Z_INDEX_DEFAULTS[blokB]
+        if (za !== zb) return za - zb
+        return a.created_at.localeCompare(b.created_at)
+      })
+
+    for (const afb of canvasElementen) {
+      if (!afb.url) continue
+      const layout = afb.layout!
+      const blokType = layout.blok_type ?? 'foto'
+      const defaultSize = blokType === 'logo' ? CANVAS_LOGO_DEFAULT_MM : 60
+      const ex = marginLeft + (layout.canvas_x_mm ?? 0)
+      const ey = canvasY + (layout.canvas_y_mm ?? 0)
+      const ew = layout.canvas_breedte_mm ?? defaultSize
+      const eh = layout.canvas_hoogte_mm ?? (blokType === 'logo' ? defaultSize : 40)
+      const cached = afbCache.get(afb.id)
+      drawImageContain(cached?.base64 ?? null, cached?.ratio ?? null, afb.url, ex, ey, ew, eh)
+    }
+
+    y = canvasY + canvasH + 5
   }
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i]
-    const hasImage = item.afbeeldingen.length > 0
+
+    // Per-item router (masterplan §8.3 v1.2): items met canvas-coordinaten
+    // gaan via het coord-pad, alle andere items blijven op het bestaande
+    // flow-pad. Geen migratie-data-write nodig — items zonder canvas_x_mm
+    // (legacy + versie<3) volgen exact het oude gedrag.
+    if (itemHeeftCanvasData(item.afbeeldingen)) {
+      renderCanvasItem(item, i)
+      if (i < items.length - 1) {
+        doc.setDrawColor(220, 220, 220)
+        doc.setLineWidth(0.2)
+        doc.line(marginLeft, y, pageWidth - marginRight, y)
+        y += 5
+      }
+      continue
+    }
+
+    const logos = item.afbeeldingen.filter((a) => a.layout?.blok_type === 'logo')
+    // PDF-blok-type wordt bewust als foto behandeld: bij upload zet Stream E2
+    // de eerste PDF-pagina om naar PNG/JPEG, dus zelfde render-pad als foto's
+    // (masterplan §2.5).
+    const fotos = item.afbeeldingen.filter((a) => a.layout?.blok_type !== 'logo')
+    const hasImage = fotos.length > 0
     const hasNote = !!item.interne_notitie
     const hasDimensions = !!(item.afmeting_breedte_mm || item.afmeting_hoogte_mm)
 
+    // Tekst-positie van de eerste foto bepaalt de layout-keuze voor het item.
+    // Bij meerdere afbeeldingen valt het terug op 'onder' (het bestaande
+    // flow-pad), zoals afgesproken in fase 2 (masterplan §8.2).
+    const primair = fotos[0]
+    const tekstPositie: WerkbonTekstPositie = primair?.layout?.tekst_positie ?? 'onder'
+    const enkeleFotoMetPositie = hasImage && fotos.length === 1 && tekstPositie !== 'onder'
+
     // Bereken geschatte hoogte voor dit item
-    const hasGroot = hasImage && item.afbeeldingen.some((a) => a.grootte === 'groot')
+    const hasGroot = hasImage && fotos.some((a) => resolveSchaal(a) >= 76)
     const estimatedHeight = hasImage ? (hasGroot ? 150 : 90) : 40
 
     // Nieuwe pagina als niet genoeg ruimte
@@ -315,23 +469,75 @@ export async function generateWerkbonInstructiePDF(
     // ─── Item layout: flow-row van afbeeldingen + tekst eronder ───
     const itemStartY = y
 
-    if (hasImage) {
+    // Logo-blok-type: vast 40×40mm rechtsboven binnen de item-block.
+    // Bewust niet-flow: overschrijft NIET de tekst-block, maar kan overlappen
+    // met een 'groot' foto-blok dat de volle contentbreedte gebruikt.
+    // Vrij plaatsbaar pas in fase 3 (masterplan §2.4).
+    const logoX = marginLeft + contentWidth - LOGO_BBOX
+    for (const logo of logos) {
+      if (!logo.url) continue
+      const cached = afbCache.get(logo.id)
+      drawImageContain(cached?.base64 ?? null, cached?.ratio ?? null, logo.url, logoX, itemStartY, LOGO_BBOX, LOGO_BBOX)
+    }
+
+    if (enkeleFotoMetPositie && primair?.url) {
+      // Single-image layout met expliciete tekst-positie (fase 2, masterplan §8.2).
+      // Tekst-positie semantiek: 'links'/'rechts' = side-by-side (tekst aan die
+      // kant t.o.v. de afbeelding); 'boven' = tekst boven, image eronder.
+      const { w: rawBoxW, h: rawBoxH } = sizeFor(resolveSchaal(primair))
+      const cachedPrimair = afbCache.get(primair.id)
+
+      let imageBottom: number
+      let textBottom: number
+
+      if (tekstPositie === 'links' || tekstPositie === 'rechts') {
+        // Side-by-side: cap de boxbreedte op de helft minus colGap zodat er
+        // ruimte overblijft voor de tekst-kolom (ook bij 'groot' = 267mm).
+        const maxBoxW = (contentWidth - colGap) / 2
+        const boxW = Math.min(rawBoxW, maxBoxW)
+        const boxH = rawBoxH
+        const tekstW = contentWidth - boxW - colGap
+
+        const imageX = tekstPositie === 'links'
+          ? marginLeft + tekstW + colGap
+          : marginLeft
+        const tekstX = tekstPositie === 'links'
+          ? marginLeft
+          : marginLeft + boxW + colGap
+
+        drawImageContain(cachedPrimair?.base64 ?? null, cachedPrimair?.ratio ?? null, primair.url, imageX, y, boxW, boxH)
+        imageBottom = y + boxH
+
+        textBottom = renderTekstBlok(item, i, tekstX, y, tekstW)
+      } else {
+        // 'boven': tekst eerst, image eronder, gecentreerd.
+        const boxW = Math.min(rawBoxW, contentWidth)
+        const boxH = rawBoxH
+        textBottom = renderTekstBlok(item, i, marginLeft, y, contentWidth)
+        const imageY = textBottom + colGap
+        const imageX = marginLeft + (contentWidth - boxW) / 2
+        drawImageContain(cachedPrimair?.base64 ?? null, cachedPrimair?.ratio ?? null, primair.url, imageX, imageY, boxW, boxH)
+        imageBottom = imageY + boxH
+      }
+
+      y = Math.max(imageBottom, textBottom) + 5
+    } else if (hasImage) {
       const colW = (contentWidth - colGap) / 2  // tekst-kolom-breedte (= huidige "normaal")
       const col2X = marginLeft + colW + colGap
 
-      // Flow-based afbeeldingen-render: per afbeelding bepaalt 'grootte'
-      // de bounding-box; volle breedte ('groot') forceert nieuwe rij.
+      // Flow-based afbeeldingen-render: per afbeelding bepaalt schaal_percentage
+      // de bounding-box; volle breedte (>75%) forceert nieuwe rij.
       let rowX = marginLeft
       let rowY = y
       let rowMaxH = 0
       const rightEdge = marginLeft + contentWidth + 0.1
       // Render alleen de eerste twee afbeeldingen via flow; 3+ blijven via de
       // bestaande thumbnail-fallback hieronder (upload-flow maxt momenteel op 2).
-      const flowCount = Math.min(2, item.afbeeldingen.length)
+      const flowCount = Math.min(2, fotos.length)
       for (let ai = 0; ai < flowCount; ai++) {
-        const afb = item.afbeeldingen[ai]
+        const afb = fotos[ai]
         if (!afb?.url) continue
-        const { w, h } = sizeFor(afb.grootte || 'normaal')
+        const { w, h } = sizeFor(resolveSchaal(afb))
         if (rowX > marginLeft && rowX + w > rightEdge) {
           rowY += rowMaxH + colGap
           rowX = marginLeft
@@ -394,13 +600,13 @@ export async function generateWerkbonInstructiePDF(
       // Dead code zolang upload-flow op 2 maxt; behouden voor toekomstige
       // cap-verhoging. Gebruikt imageBlockBottom als anker i.p.v. de
       // verwijderde fixed imgH.
-      if (item.afbeeldingen.length > 2) {
+      if (fotos.length > 2) {
         let thumbY = imageBlockBottom + 4
         const thumbW = 30
         const thumbH = 22
         let thumbX = col2X
-        for (let ai = 2; ai < item.afbeeldingen.length && ai < 6; ai++) {
-          const afb = item.afbeeldingen[ai]
+        for (let ai = 2; ai < fotos.length && ai < 6; ai++) {
+          const afb = fotos[ai]
           if (afb?.url) {
             try {
               doc.addImage(afb.url, 'JPEG', thumbX, thumbY, thumbW, thumbH, undefined, 'MEDIUM')
@@ -639,7 +845,7 @@ export async function generateWerkbonInstructiePDF(
     }
   }
 
-  // Paginanummering
+  // Paginanummering + aanmaker rechtsonder (per pagina, zelfde footer-stijl)
   const totalPages = doc.getNumberOfPages()
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p)
@@ -647,6 +853,9 @@ export async function generateWerkbonInstructiePDF(
     doc.setFontSize(7)
     doc.setTextColor(150, 150, 150)
     doc.text(`${werkbonData.werkbon_nummer} — Pagina ${p} van ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' })
+    if (werkbonData.aanmaker_naam) {
+      doc.text(`Aangemaakt door ${werkbonData.aanmaker_naam}`, pageWidth - marginRight, pageHeight - 8, { align: 'right' })
+    }
   }
 
   return doc

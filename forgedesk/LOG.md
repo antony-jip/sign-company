@@ -1,5 +1,73 @@
 # doen. — Development Log
 
+## Mei 2026 — Werkbon canvas fase 2 (lokaal afgerond, geen productie-rollout)
+
+**Branch:** `feat/werkbon-canvas-fase2` (15 commits vanaf parent `c462ad38` op fase 1 branch)
+**Status:** Lokale acceptatie-test in gang. Niet gemerged naar main, geen productie-rollout. Gate op `werkbonCanvasVersie >= 2`.
+
+### Wat gebouwd
+- **Datamodel:** `WerkbonAfbeeldingLayout` uitgebreid met `tekst_positie: 'links'|'rechts'|'boven'|'onder'` en `pdf_bron_url`. `WerkbonBlokType` krijgt `'pdf'`. Geen migratie — alles JSONB-additive.
+- **PDF render:** tekst-positie-aware single-image layout (links/rechts side-by-side, boven/onder stacked). Multi-image-items vallen automatisch terug op fase-1 flow. PDF-blok rendert identiek aan foto (pre-resolved PNG van eerste pagina).
+- **Editor UI:** corner-resize-handle rechtsonder elke thumbnail (pointer-events, 1px≈1%, snap 25/50/75/100 of Shift voor vrij). Tekst-positie-radio (4 opties, Petrol-active) onder klein/normaal/groot toggle bij single-image items.
+- **PDF drop:** WerkbonDropZone accepteert PDF-mime. `pdfToImage.ts` helper extrahieert eerste pagina als 1200px PNG via pdfjs-dist (already peer-dep van react-pdf, geen install). Dual-storage: PNG voor display + originele PDF in `pdf_bron_url`. 25MB cap.
+
+### Nieuwe patterns om te hergebruiken
+- **`renderTekstBlok` helper in werkbonPdfService**: inner-helper voor item-text op willekeurige (tx, ty, tw). Te hergebruiken voor fase-3 vrije positie.
+- **`pdfEerstePaginaNaarImage` helper**: standalone PDF→PNG conversion. Te hergebruiken voor andere PDF-thumb-needs (offerte-attachments, etc.).
+- **Pointer-events resize pattern**: AfbeeldingResizeHandle als template voor fase-3 vrije resize handles.
+- **Per-feature gating-strategy**: `fase2Actief = werkbonCanvasVersie >= 2` lokaal in component, UI verbergt features bij flag < N. Renderer respect data altijd (rollback-safe).
+
+### Architectuur-keuzes met motivatie
+- **Geen aparte render-pad voor pdf-blok:** PNG van eerste pagina staat al in `url`, renderer behandelt het als foto. Eenvoudiger, minder code-duplicatie. Originele PDF blijft beschikbaar via `pdf_bron_url` voor download/herrendering bij quality-bump.
+- **Tekst-positie alleen voor single-image items:** masterplan §8.2 — multi-image flow blijft 'onder'. Voorkomt UX-complexiteit (hoe positie kiezen per afbeelding in een multi-row?).
+- **`schaal_percentage` blijft via thresholds in PDF mapping:** ≤40 klein, ≤75 normaal, >75 groot. Continue waarden (uit resize-handle) snappen naar 3 buckets. Echt continue PDF-render is fase 3 (coord-based).
+
+### Open punten voor fase 3
+- `renderTekstBlok` heeft tekst-render-code; `hasImage`-tak heeft nog steeds identieke code. Cleanup: route hasImage ook door renderTekstBlok. Niet-blokkerend.
+- Aspect-ratio lock werkt via vaste bbox-aspectverhoudingen in `sizeFor`, niet via image-eigen aspect. Bij `boven`/`onder` tekst-positie: image krijgt `min(sizeFor.w, contentWidth)` — kan aspect-verstoring veroorzaken als sizeFor.h niet schaalt mee. Verifieer in §7.4 #3.
+- PDF >25MB: cap is hard-error. Eventueel: degrade-render naar lager DPI?
+- Continue schaal in PDF-render: alleen mogelijk via fase-3 coord-based pad.
+
+### Stop-gate vóór fase 3
+Per masterplan §8.4: minimaal 2 productie-weken na fase 2. Lokaal: gebruik fase-2-testplan + acceptatiecriteria §7.4.
+
+## Mei 2026 — Werkbon canvas fase 1 (lokaal afgerond, geen productie-rollout)
+
+**Branch:** `feat/werkbon-canvas-fase1` (22 commits vanaf parent `f5d27254`)
+**Status:** Lokale acceptatie-test in gang. Geen merge naar main, geen productie-rollout.
+
+### Wat gebouwd
+- **Datamodel:** migratie 114 (`werkbon_afbeeldingen.layout JSONB`) + migratie 115 (`app_settings.werkbon_canvas_versie INT`).
+- **PDF render:** percentage-based `sizeFor` via `resolveSchaal`-fallback-keten (`layout.schaal_percentage` → `deriveFromGrootte(grootte)` → 50). Logo-blok-render 40×40mm rechtsboven in item-block.
+- **Editor UI:** WerkbonDropZone-component voor per-item file-drop (JPG/PNG, multi-file, mime-validatie, dashed flame border). HTML5 drag-reorder binnen item via `layout.volgorde`. Klein/normaal/groot toggle schrijft nu uitsluitend `layout.schaal_percentage` (33/50/100); `grootte`-kolom blijft alleen read-fallback. Logo/foto pill-toggle rechtsboven op elke thumbnail (FOTO subtiel, LOGO met flame-border).
+- **Mobile fork:** nieuwe `WerkbonMonteurView` read-only voor telefoon. `App.tsx` route-fork via `useMediaQuery + useAppSettings`. Hergebruikt `WerkbonMonteurFeedback` + `PdfPreviewDialog`.
+- **Feature-flag:** `werkbon_canvas_versie` op `app_settings` (per-org via bestaande RLS). Default 0 (= pre-canvas-gedrag). Antony zet 1 per org in Supabase voor activatie. UI-affordances gegate, render-paden niet (data canonical → rollback-veilig).
+- **UX-cleanups:** 2-image cap afgedwongen in drop-handler. Em-dash uit WerkbonMonteurView. Dubbele dashed-border weg.
+
+### Nieuwe patterns om te hergebruiken
+- **JSONB-additive datamodel** voor incrementele feature-uitbreiding (fase 2/3 breiden `layout`-shape uit zonder schema-breaks).
+- **Resolver-pattern** met fallback-keten (`resolveSchaal`, `deriveFromGrootte`) voor backward-compat zonder data-backfill.
+- **Per-org feature-flag op `app_settings`** voor instant rollback zonder deploy. Pattern: gate UI-affordances, laat render-paden data-canonical.
+- **Aparte mobile-view-component** (`WerkbonMonteurView`) i.p.v. `isReadOnly` props in desktop-component — vermijdt conditional-rendering-hel.
+- **WerkbonDropZone-component** als herbruikbare native-HTML5-drop-wrap met `disabled`-prop en MIME-filter (`Files`-type) tegen reorder-conflicten.
+
+### Architectuur-keuzes met motivatie
+- **Eén schrijf-bron per data-veld:** UI schrijft uitsluitend `layout.schaal_percentage`, nooit meer `grootte`. Voorkomt dual-source-divergentie in fase 2 als schaal continu wordt (per memory `feedback_geen_silent_data_mutations`).
+- **HTML5 native drag-drop, geen libs:** consistent met bestaand werkbonnen/quotes/clients pattern. Geen `react-dnd`/`dnd-kit`/`react-rnd` (CLAUDE.md regel: geen nieuwe npm packages).
+- **Flow-based PDF blijft canon:** coordinate-based wordt pas fase 3 (hybride pad). Backward-compat verplicht.
+
+### Open punten voor fase 2 (niet test-blokkers)
+- Cosmetisch: `bg-white` → `bg-[#FFFFFF]` consistent maken in werkbonnen-module (17× elders).
+- `estimatedHeight` negeert logo-only items (page-break-edge-risico, zeer lage kans).
+- Logo overlapt lange omschrijving in no-image PDF-branch (geaccepteerd voor fase 1).
+- `sizeFor` constanten hard-coded i.p.v. afgeleid van `contentWidth/colGap` (onderhouds-noot).
+- Pre-existing `profile?.naam` TS-issue (gedeeld met `WerkbonDetail.tsx:340`).
+
+### Stop-gate vóór fase 2
+Per masterplan §8.1: minimaal 1 productie-week monitoring na rollout. Bij lokale test:
+- Test-checklist in `WERKBON_CANVAS_FASE1_TESTPLAN.md`.
+- Akkoord per email/bericht: "Fase 2 mag starten".
+
 ## April 2026 — Taken-module refactor (afgerond)
 
 **Commits:** c4d97cac, 4b6703ac, 0abecff5, ed0d0f65, 34387d06, d0aac7ff, f2ef242d

@@ -23,7 +23,7 @@ import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
-import type { Werkbon, WerkbonItem, WerkbonFoto, Klant, Project, Offerte } from '@/types'
+import type { Werkbon, WerkbonItem, WerkbonFoto, WerkbonAfbeelding, WerkbonAfbeeldingLayout, WerkbonBlokType, WerkbonTekstPositie, Klant, Project, Offerte } from '@/types'
 import {
   getWerkbon, createWerkbon, updateWerkbon,
   getWerkbonItems, createWerkbonItem, updateWerkbonItem, deleteWerkbonItem,
@@ -35,6 +35,16 @@ import {
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { uploadFile, downloadFile, getSignedUrl } from '@/services/storageService'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
+import { pdfEerstePaginaNaarImage } from '@/utils/pdfToImage'
+import {
+  CANVAS_DROP_CASCADE_START_MM,
+  CANVAS_DROP_CASCADE_OFFSET_MM,
+  CANVAS_LOGO_DEFAULT_MM,
+  CANVAS_SOFT_CAP_ELEMENTS,
+  CANVAS_Z_INDEX_DEFAULTS,
+  getImageBlobRatio,
+  deriveCanvasSize,
+} from '@/utils/werkbonCanvas'
 import { WerkbonItemCard } from './WerkbonItemCard'
 import { WerkbonHeaderForm } from './WerkbonHeaderForm'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
@@ -98,7 +108,11 @@ export function WerkbonDetail() {
     profile, primaireKleur,
     werkbonMonteurUren, werkbonMonteurOpmerkingen,
     werkbonMonteurFotos, werkbonKlantHandtekening, werkbonBriefpapier,
+    werkbonCanvasVersie,
   } = useAppSettings()
+  const canvasActief = werkbonCanvasVersie >= 1
+  const fase2Actief = werkbonCanvasVersie >= 2
+  const fase3Actief = werkbonCanvasVersie >= 3
   const documentStyle = useDocumentStyle()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
@@ -514,21 +528,387 @@ export function WerkbonDetail() {
     bumpPreview()
   }, [bumpPreview])
 
-  // Afbeelding-grootte wisselen (klein / normaal / groot voor PDF-render)
-  const handleAfbeeldingGrootteWijzig = useCallback(async (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => {
-    setWerkbonItems((prev) => prev.map((item) =>
-      item.id === itemId
-        ? { ...item, afbeeldingen: item.afbeeldingen.map((a) => a.id === afbId ? { ...a, grootte } : a) }
-        : item
+  // Meerdere afbeeldingen uploaden via desktop drop.
+  // Fase 2: PDF-bestanden worden geaccepteerd en geconverteerd naar PNG
+  // (eerste pagina) voor weergave; originele PDF blijft beschikbaar via
+  // layout.pdf_bron_url voor download/herrendering.
+  const handleAfbeeldingenDropped = useCallback(async (itemId: string, files: File[]) => {
+    if (!canvasActief) return
+    const bruikbareFiles = files.filter(
+      (f) => f.type.startsWith('image/') || f.type === 'application/pdf',
+    )
+    if (bruikbareFiles.length === 0) return
+
+    const item = werkbonItems.find((i) => i.id === itemId)
+    if (!item) return
+    const huidigAantal = item.afbeeldingen.length
+
+    // Fase 3: 2-image cap vervalt; soft-cap waarschuwing bij > 6 elementen
+    // op een werkblad maar geen hard-block. Fase < 3: bestaande cap blijft.
+    let teVerwerken: File[]
+    let overgeslagen: number
+    if (fase3Actief) {
+      teVerwerken = bruikbareFiles
+      overgeslagen = 0
+      const totaal = huidigAantal + teVerwerken.length
+      if (totaal > CANVAS_SOFT_CAP_ELEMENTS) {
+        toast.info(`${totaal} elementen op het werkblad. Veel elementen kan de preview vertragen.`)
+      }
+    } else {
+      const beschikbaar = Math.max(0, 2 - huidigAantal)
+      if (beschikbaar === 0) {
+        toast.error('Max 2 afbeeldingen per item')
+        return
+      }
+      teVerwerken = bruikbareFiles.slice(0, beschikbaar)
+      overgeslagen = bruikbareFiles.length - teVerwerken.length
+    }
+
+    // Default canvas-positie cascade voor fase 3: per nieuw element komt (5+i*10, 5+i*10) mm
+    // binnen het werkblad. cascadeIndex is de index binnen deze drop-batch, dus overlap
+    // met bestaande elementen wordt geaccepteerd (gebruiker rangschikt zelf verder).
+    // Bij fase < 3 wordt enkel blok_type gezet, identiek aan fase-2-gedrag.
+    //
+    // `ratio` (bron breedte/hoogte) wordt vlak vóór de createWerkbonAfbeelding-call
+    // gelezen via getImageBlobRatio. Met die ratio bepaalt deriveCanvasSize de
+    // element-afmetingen — geen object-contain letterbox in de editor, dus het
+    // selectie-frame valt strak om de zichtbare pixels (fix bug 1).
+    const makeLayout = (
+      blokType: WerkbonBlokType,
+      cascadeIndex: number,
+      ratio: number | null,
+      extra: Partial<WerkbonAfbeeldingLayout> = {},
+    ): WerkbonAfbeeldingLayout => {
+      if (!fase3Actief) {
+        return { blok_type: blokType, ...extra }
+      }
+      const isLogo = blokType === 'logo'
+      const { w, h } = ratio !== null
+        ? deriveCanvasSize(ratio, isLogo)
+        : { w: isLogo ? CANVAS_LOGO_DEFAULT_MM : 80, h: isLogo ? CANVAS_LOGO_DEFAULT_MM : 60 }
+      return {
+        blok_type: blokType,
+        canvas_x_mm: CANVAS_DROP_CASCADE_START_MM + cascadeIndex * CANVAS_DROP_CASCADE_OFFSET_MM,
+        canvas_y_mm: CANVAS_DROP_CASCADE_START_MM + cascadeIndex * CANVAS_DROP_CASCADE_OFFSET_MM,
+        canvas_breedte_mm: w,
+        canvas_hoogte_mm: h,
+        z_index: CANVAS_Z_INDEX_DEFAULTS[blokType],
+        ...extra,
+      }
+    }
+
+    const nieuweAfbeeldingen: WerkbonAfbeelding[] = []
+    let lastError: string | null = null
+
+    for (const file of teVerwerken) {
+      const isPdf = file.type === 'application/pdf'
+
+      if (isPdf && !fase2Actief) {
+        toast.info('PDF-bestanden vereisen fase 2')
+        continue
+      }
+
+      if (isPdf) {
+        if (file.size > 25 * 1024 * 1024) {
+          toast.error(`${file.name} is te groot (max 25MB)`)
+          continue
+        }
+        try {
+          const pngBlob = await pdfEerstePaginaNaarImage(file, { maxBreedtePx: 1200 })
+          const pngBaseName = file.name.replace(/\.pdf$/i, '.png')
+          const pngFile = new File([pngBlob], pngBaseName, { type: 'image/png' })
+
+          const safePdfName = sanitizeStorageFilename(file.name)
+          const safePngName = sanitizeStorageFilename(pngBaseName)
+          const timestamp = Date.now()
+          const pngStoragePath = `werkbon-afbeeldingen/${itemId}/${timestamp}-${safePngName}`
+          const pdfStoragePath = `werkbon-pdfs/${itemId}/${timestamp}-${safePdfName}`
+
+          const [uploadedPngPath, uploadedPdfPath, ratio] = await Promise.all([
+            uploadFile(pngFile, pngStoragePath),
+            uploadFile(file, pdfStoragePath),
+            fase3Actief ? getImageBlobRatio(pngBlob) : Promise.resolve(null),
+          ])
+          const displayUrl = await resolveUrl(uploadedPngPath)
+
+          const afb = await createWerkbonAfbeelding({
+            werkbon_item_id: itemId,
+            url: uploadedPngPath,
+            type: 'overig',
+            omschrijving: file.name,
+            layout: makeLayout('pdf', nieuweAfbeeldingen.length, ratio, { pdf_bron_url: uploadedPdfPath }),
+          })
+          afb.url = displayUrl
+          nieuweAfbeeldingen.push(afb)
+        } catch (err) {
+          logger.error('Fout bij verwerken PDF:', err)
+          const msg = err instanceof Error ? err.message : 'Onbekende fout'
+          lastError = `${file.name}: PDF kon niet worden ingelezen (${msg})`
+          toast.error(`PDF-verwerking mislukt voor ${file.name}`)
+        }
+        continue
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        lastError = `${file.name} is te groot (max 10MB)`
+        continue
+      }
+      try {
+        const resized = await resizeImage(file, 1200)
+        const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
+        const safeName = sanitizeStorageFilename(file.name)
+        const storagePath = `werkbon-afbeeldingen/${itemId}/${Date.now()}-${safeName}`
+        const [uploadedPath, ratio] = await Promise.all([
+          uploadFile(resizedFile, storagePath),
+          fase3Actief ? getImageBlobRatio(resized) : Promise.resolve(null),
+        ])
+        const displayUrl = await resolveUrl(uploadedPath)
+
+        const afb = await createWerkbonAfbeelding({
+          werkbon_item_id: itemId,
+          url: uploadedPath,
+          type: 'overig',
+          omschrijving: file.name,
+          layout: makeLayout('foto', nieuweAfbeeldingen.length, ratio),
+        })
+        afb.url = displayUrl
+        nieuweAfbeeldingen.push(afb)
+      } catch (err) {
+        logger.error('Fout bij uploaden afbeelding:', err)
+        lastError = err instanceof Error ? err.message : 'Onbekende fout'
+      }
+    }
+
+    if (nieuweAfbeeldingen.length > 0) {
+      setWerkbonItems((prev) => prev.map((item) =>
+        item.id === itemId
+          ? { ...item, afbeeldingen: [...item.afbeeldingen, ...nieuweAfbeeldingen] }
+          : item
+      ))
+      toast.success(`${nieuweAfbeeldingen.length} afbeelding${nieuweAfbeeldingen.length > 1 ? 'en' : ''} toegevoegd`)
+      bumpPreview()
+    }
+    if (overgeslagen > 0) {
+      toast.info(`${overgeslagen} bestand(en) overgeslagen (max 2 per item)`)
+    }
+    if (lastError && nieuweAfbeeldingen.length === 0) {
+      toast.error(`Upload mislukt: ${lastError}`)
+    } else if (lastError) {
+      toast.error(`Upload mislukt voor sommige bestanden: ${lastError}`)
+    }
+  }, [werkbonItems, bumpPreview, canvasActief, fase2Actief, fase3Actief])
+
+  // Canvas-element verplaatsen (fase 3) — schrijft canvas_x_mm/y_mm naar layout.
+  const handleCanvasElementMove = useCallback(async (
+    itemId: string,
+    afbId: string,
+    x_mm: number,
+    y_mm: number,
+  ) => {
+    if (!fase3Actief) return
+    const item = werkbonItems.find((i) => i.id === itemId)
+    const afb = item?.afbeeldingen.find((a) => a.id === afbId)
+    if (!afb) return
+    const nieuweLayout: WerkbonAfbeeldingLayout = {
+      ...(afb.layout ?? {}),
+      canvas_x_mm: x_mm,
+      canvas_y_mm: y_mm,
+    }
+    setWerkbonItems((prev) => prev.map((it) =>
+      it.id === itemId
+        ? { ...it, afbeeldingen: it.afbeeldingen.map((a) =>
+            a.id === afbId ? { ...a, layout: nieuweLayout } : a
+          ) }
+        : it
     ))
-    bumpPreview()
     try {
-      await updateWerkbonAfbeelding(afbId, { grootte })
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
+      bumpPreview()
+    } catch (err) {
+      logger.error('Kon canvas-positie niet opslaan:', err)
+      toast.error('Kon positie niet opslaan')
+    }
+  }, [werkbonItems, fase3Actief, bumpPreview])
+
+  // Canvas-element vergroten/verkleinen (fase 3) — schrijft canvas_breedte_mm/hoogte_mm.
+  const handleCanvasElementResize = useCallback(async (
+    itemId: string,
+    afbId: string,
+    w_mm: number,
+    h_mm: number,
+  ) => {
+    if (!fase3Actief) return
+    const item = werkbonItems.find((i) => i.id === itemId)
+    const afb = item?.afbeeldingen.find((a) => a.id === afbId)
+    if (!afb) return
+    const nieuweLayout: WerkbonAfbeeldingLayout = {
+      ...(afb.layout ?? {}),
+      canvas_breedte_mm: w_mm,
+      canvas_hoogte_mm: h_mm,
+    }
+    setWerkbonItems((prev) => prev.map((it) =>
+      it.id === itemId
+        ? { ...it, afbeeldingen: it.afbeeldingen.map((a) =>
+            a.id === afbId ? { ...a, layout: nieuweLayout } : a
+          ) }
+        : it
+    ))
+    try {
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
+      bumpPreview()
+    } catch (err) {
+      logger.error('Kon canvas-grootte niet opslaan:', err)
+      toast.error('Kon grootte niet opslaan')
+    }
+  }, [werkbonItems, fase3Actief, bumpPreview])
+
+  // Afbeelding-grootte wisselen (klein / normaal / groot → schaal_percentage in layout)
+  const handleAfbeeldingGrootteWijzig = useCallback(async (itemId: string, afbId: string, grootte: 'klein' | 'normaal' | 'groot') => {
+    const percentage = grootte === 'klein' ? 33 : grootte === 'normaal' ? 50 : 100
+    let nieuweLayout: WerkbonAfbeeldingLayout | undefined
+    setWerkbonItems((prev) => prev.map((item) => {
+      if (item.id !== itemId) return item
+      return {
+        ...item,
+        afbeeldingen: item.afbeeldingen.map((a) => {
+          if (a.id !== afbId) return a
+          const layout: WerkbonAfbeeldingLayout = {
+            ...(a.layout ?? {}),
+            blok_type: a.layout?.blok_type ?? 'foto',
+            schaal_percentage: percentage,
+          }
+          nieuweLayout = layout
+          return { ...a, layout }
+        }),
+      }
+    }))
+    bumpPreview()
+    if (!nieuweLayout) return
+    try {
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
     } catch (err) {
       logger.error('Kon afbeelding-grootte niet opslaan:', err)
       toast.error('Kon grootte niet opslaan')
     }
   }, [bumpPreview])
+
+  const handleAfbeeldingSchaalWijzig = useCallback(async (
+    itemId: string,
+    afbId: string,
+    schaalPercentage: number,
+  ) => {
+    if (!canvasActief) return
+    const item = werkbonItems.find((i) => i.id === itemId)
+    const afb = item?.afbeeldingen.find((a) => a.id === afbId)
+    if (!afb) return
+    const huidigeLayout = afb.layout ?? {}
+    const nieuweLayout: WerkbonAfbeeldingLayout = { ...huidigeLayout, schaal_percentage: schaalPercentage }
+    setWerkbonItems((prev) => prev.map((it) =>
+      it.id === itemId
+        ? { ...it, afbeeldingen: it.afbeeldingen.map((a) =>
+            a.id === afbId ? { ...a, layout: nieuweLayout } : a
+          ) }
+        : it
+    ))
+    try {
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
+      bumpPreview()
+    } catch (err) {
+      logger.error('Kon afbeelding-schaal niet opslaan:', err)
+      toast.error('Kon schaal niet opslaan')
+    }
+  }, [werkbonItems, canvasActief, bumpPreview])
+
+  const handleAfbeeldingBlokTypeWijzig = useCallback(async (
+    itemId: string,
+    afbId: string,
+    blokType: WerkbonBlokType,
+  ) => {
+    if (!canvasActief) return
+    let nieuweLayout: WerkbonAfbeeldingLayout | undefined
+    setWerkbonItems((prev) => prev.map((item) => {
+      if (item.id !== itemId) return item
+      return {
+        ...item,
+        afbeeldingen: item.afbeeldingen.map((a) => {
+          if (a.id !== afbId) return a
+          const layout: WerkbonAfbeeldingLayout = {
+            ...(a.layout ?? {}),
+            blok_type: blokType,
+          }
+          nieuweLayout = layout
+          return { ...a, layout }
+        }),
+      }
+    }))
+    bumpPreview()
+    if (!nieuweLayout) return
+    try {
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
+    } catch (err) {
+      logger.error('Kon blok-type niet opslaan:', err)
+      toast.error('Kon blok-type niet opslaan')
+    }
+  }, [bumpPreview, canvasActief])
+
+  const handleAfbeeldingTekstPositieWijzig = useCallback(async (
+    itemId: string,
+    afbId: string,
+    positie: WerkbonTekstPositie,
+  ) => {
+    if (!canvasActief) return
+    const item = werkbonItems.find((i) => i.id === itemId)
+    const afb = item?.afbeeldingen.find((a) => a.id === afbId)
+    if (!afb) return
+    const huidigeLayout = afb.layout ?? {}
+    const nieuweLayout: WerkbonAfbeeldingLayout = { ...huidigeLayout, tekst_positie: positie }
+    setWerkbonItems((prev) => prev.map((it) =>
+      it.id === itemId
+        ? { ...it, afbeeldingen: it.afbeeldingen.map((a) =>
+            a.id === afbId ? { ...a, layout: nieuweLayout } : a
+          ) }
+        : it
+    ))
+    try {
+      await updateWerkbonAfbeelding(afbId, { layout: nieuweLayout })
+      bumpPreview()
+    } catch (err) {
+      logger.error('Kon tekst-positie niet opslaan:', err)
+      toast.error('Kon tekst-positie niet opslaan')
+    }
+  }, [werkbonItems, canvasActief, bumpPreview])
+
+  // Afbeelding-reorder binnen item via drag-drop
+  const handleAfbeeldingReorder = useCallback(async (itemId: string, draggedAfbId: string, targetAfbId: string) => {
+    if (!canvasActief) return
+    let herordendeAfbeeldingen: WerkbonAfbeelding[] | null = null
+    setWerkbonItems((prev) => prev.map((item) => {
+      if (item.id !== itemId) return item
+      const draggedIdx = item.afbeeldingen.findIndex((a) => a.id === draggedAfbId)
+      const targetIdx = item.afbeeldingen.findIndex((a) => a.id === targetAfbId)
+      if (draggedIdx === -1 || targetIdx === -1 || draggedIdx === targetIdx) return item
+      const next = [...item.afbeeldingen]
+      const [dragged] = next.splice(draggedIdx, 1)
+      const insertIdx = next.findIndex((a) => a.id === targetAfbId)
+      next.splice(insertIdx, 0, dragged)
+      const metVolgorde = next.map((a, i) => ({
+        ...a,
+        layout: { ...(a.layout ?? {}), blok_type: a.layout?.blok_type ?? 'foto', volgorde: i },
+      }))
+      herordendeAfbeeldingen = metVolgorde
+      return { ...item, afbeeldingen: metVolgorde }
+    }))
+    bumpPreview()
+    if (!herordendeAfbeeldingen) return
+    try {
+      for (const afb of herordendeAfbeeldingen as WerkbonAfbeelding[]) {
+        await updateWerkbonAfbeelding(afb.id, { layout: afb.layout })
+      }
+    } catch (err) {
+      logger.error('Kon afbeelding-volgorde niet opslaan:', err)
+      toast.error('Kon volgorde niet opslaan')
+    }
+  }, [bumpPreview, canvasActief])
 
   // Foto toevoegen (monteur voor/na)
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
@@ -755,7 +1135,7 @@ export function WerkbonDetail() {
 
   return (
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: 'hsl(var(--background))' }}>
-    <div className="max-w-6xl mx-auto px-4 md:px-6 py-5 pb-32">
+    <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-5 pb-32">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
         <div className="flex items-center gap-3">
@@ -830,25 +1210,27 @@ export function WerkbonDetail() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Linker kolom: meta info */}
-        <WerkbonHeaderForm
-          klantId={klantId}
-          projectId={projectId}
-          offerteId={offerteId}
-          titel={titel}
-          datum={datum}
-          locatieAdres={locatieAdres}
-          locatieStad={locatieStad}
-          locatiePostcode={locatiePostcode}
-          contactNaam={contactNaam}
-          contactTelefoon={contactTelefoon}
-          klanten={klanten}
-          projecten={projecten}
-          offertes={offertes}
-          onKlantChange={handleKlantChange}
-          onFieldChange={handleFieldChange}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        {/* Linker kolom: meta info — sticky tijdens scroll vanaf lg-breakpoint */}
+        <div className="lg:sticky lg:top-4">
+          <WerkbonHeaderForm
+            klantId={klantId}
+            projectId={projectId}
+            offerteId={offerteId}
+            titel={titel}
+            datum={datum}
+            locatieAdres={locatieAdres}
+            locatieStad={locatieStad}
+            locatiePostcode={locatiePostcode}
+            contactNaam={contactNaam}
+            contactTelefoon={contactTelefoon}
+            klanten={klanten}
+            projecten={projecten}
+            offertes={offertes}
+            onKlantChange={handleKlantChange}
+            onFieldChange={handleFieldChange}
+          />
+        </div>
 
         {/* Rechter kolom: items + monteur secties */}
         <div className="lg:col-span-2 space-y-5">
@@ -890,7 +1272,14 @@ export function WerkbonDetail() {
                     onImageAdd={handleAfbeeldingToevoegen}
                     onImageDelete={handleAfbeeldingVerwijderen}
                     onImageGrootteChange={handleAfbeeldingGrootteWijzig}
+                    onImageBlokTypeChange={handleAfbeeldingBlokTypeWijzig}
+                    onImageSchaalChange={handleAfbeeldingSchaalWijzig}
+                    onImageTekstPositieChange={handleAfbeeldingTekstPositieWijzig}
                     onLightbox={setLightboxUrl}
+                    onAfbeeldingenDropped={handleAfbeeldingenDropped}
+                    onAfbeeldingReorder={handleAfbeeldingReorder}
+                    onCanvasElementMove={handleCanvasElementMove}
+                    onCanvasElementResize={handleCanvasElementResize}
                   />
                 ))}
                 <div className="flex justify-end pt-2">

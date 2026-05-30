@@ -291,12 +291,20 @@ export async function deleteWerkbonItem(id: string): Promise<void> {
 
 export async function getWerkbonAfbeeldingen(werkbonItemId: string): Promise<WerkbonAfbeelding[]> {
   assertId(werkbonItemId, 'werkbon_item_id')
+  const sorteer = (a: WerkbonAfbeelding, b: WerkbonAfbeelding) => {
+    const ordA = a.layout?.volgorde ?? Number.MAX_SAFE_INTEGER
+    const ordB = b.layout?.volgorde ?? Number.MAX_SAFE_INTEGER
+    if (ordA !== ordB) return ordA - ordB
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  }
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('werkbon_afbeeldingen').select('*').eq('werkbon_item_id', werkbonItemId).order('created_at')
     if (error) throw error
-    return data || []
+    return (data || []).sort(sorteer)
   }
-  return getLocalData<WerkbonAfbeelding>('werkbon_afbeeldingen').filter((a) => a.werkbon_item_id === werkbonItemId)
+  return getLocalData<WerkbonAfbeelding>('werkbon_afbeeldingen')
+    .filter((a) => a.werkbon_item_id === werkbonItemId)
+    .sort(sorteer)
 }
 
 export async function createWerkbonAfbeelding(afbeelding: Omit<WerkbonAfbeelding, 'id' | 'created_at'>): Promise<WerkbonAfbeelding> {
@@ -325,7 +333,7 @@ export async function deleteWerkbonAfbeelding(id: string): Promise<void> {
 
 export async function updateWerkbonAfbeelding(
   id: string,
-  updates: Partial<Pick<WerkbonAfbeelding, 'grootte' | 'omschrijving'>>,
+  updates: Partial<Pick<WerkbonAfbeelding, 'grootte' | 'omschrijving' | 'layout'>>,
 ): Promise<WerkbonAfbeelding> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
@@ -344,4 +352,13 @@ export async function updateWerkbonAfbeelding(
   items[index] = { ...items[index], ...updates }
   setLocalData('werkbon_afbeeldingen', items)
   return items[index]
+}
+
+export function deriveFromGrootte(g?: 'klein' | 'normaal' | 'groot'): number | undefined {
+  if (!g) return undefined
+  return { klein: 33, normaal: 50, groot: 100 }[g]
+}
+
+export function resolveSchaal(afb: WerkbonAfbeelding): number {
+  return afb.layout?.schaal_percentage ?? deriveFromGrootte(afb.grootte) ?? 50
 }

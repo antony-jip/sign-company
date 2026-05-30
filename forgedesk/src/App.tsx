@@ -7,7 +7,7 @@ import { PaletteProvider } from '@/contexts/PaletteContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import { TabsProvider } from '@/contexts/TabsContext'
-import { AppSettingsProvider } from '@/contexts/AppSettingsContext'
+import { AppSettingsProvider, useAppSettings } from '@/contexts/AppSettingsContext'
 import { MedewerkersProvider } from '@/contexts/MedewerkersContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppLayout } from '@/components/layouts/AppLayout'
@@ -115,6 +115,15 @@ function WerkbonnenRoute() {
   return isDesktop ? <WerkbonnenLayout /> : <WerkbonnenLayoutMobile />
 }
 const WerkbonDetail = lazy(() => import('@/components/werkbonnen/WerkbonDetail'), 'WerkbonDetail')
+const WerkbonMonteurView = lazy(() => import('@/components/werkbonnen/WerkbonMonteurView'), 'WerkbonMonteurView')
+
+function WerkbonDetailWrapper() {
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  const { werkbonCanvasVersie } = useAppSettings()
+  // Mobile-monteur-view alleen tonen wanneer canvas-fase-1 actief is voor deze org.
+  if (!isDesktop && werkbonCanvasVersie >= 1) return <WerkbonMonteurView />
+  return <WerkbonDetail />
+}
 
 // Kennisbank + Changelog
 const KennisbankPage = lazy(() => import('@/components/kennisbank/KennisbankPage'), 'KennisbankPage')
@@ -268,7 +277,7 @@ function AppContent() {
         <Route path="kennisbank" element={<KennisbankPage />} />
         <Route path="changelog" element={<ChangelogPage />} />
         <Route path="werkbonnen" element={<WerkbonnenRoute />} />
-        <Route path="werkbonnen/:id" element={<WerkbonDetail />} />
+        <Route path="werkbonnen/:id" element={<WerkbonDetailWrapper />} />
         <Route path="bestelbonnen" element={<BestelbonnenLayout />} />
         <Route path="bestelbonnen/:id" element={<BestelbonDetail />} />
         <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />

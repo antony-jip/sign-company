@@ -26,8 +26,8 @@ interface WerkbonHeaderFormProps {
 }
 
 const inputStyle = { backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }
-const labelClass = "text-[11px] font-semibold uppercase tracking-wider mb-1 block"
-const labelColor = { color: '#9B9B95' }
+const labelClass = "text-[12px] font-medium mb-1.5 block"
+const labelColor = { color: '#6B6B66' }
 
 export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
   klantId, projectId, offerteId, titel, datum,
@@ -57,7 +57,6 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
     <div className="space-y-5">
       {/* Section 1: Klant & details */}
       <div className="rounded-xl" style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}>
-        <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
         <div className="px-4 py-4 space-y-3">
           <div>
             <Label className={labelClass} style={labelColor}>Klant *</Label>
@@ -126,7 +125,6 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
 
       {/* Section 2: Locatie + Contact — merged */}
       <div className="rounded-xl" style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}>
-        <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #3A6B8C, #3A6B8C60)' }} />
         <div className="px-4 py-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className={labelClass} style={{ ...labelColor, marginBottom: 0 }}>Locatie</span>

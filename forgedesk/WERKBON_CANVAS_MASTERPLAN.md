@@ -1,8 +1,8 @@
 # Werkbon Canvas — Masterplan
 
-> **Status:** v1.1 — beslissingen Antony verwerkt, klaar voor fase-1-implementatie in een aparte sessie.
+> **Status:** v1.2 — fase 1+2 lokaal afgerond, fase 3 heroriëntatie na lokale fase-2-test. Klaar voor Antony's gate.
 > **Geschreven:** 2026-05-29
-> **Doel:** werkbon-editor transformeren van form-based (klein/normaal/groot toggles) naar desktop canvas-achtige editor. Mobiel wordt read-only via aparte `WerkbonMonteurView`-component.
+> **Doel:** werkbon-editor transformeren van form-based (klein/normaal/groot toggles) naar **echte canvas-editor per item**. Mobiel blijft read-only via aparte `WerkbonMonteurView`-component.
 
 ---
 
@@ -16,6 +16,7 @@
   - Per-item drop-zone, geen centrale
   - Mobile-fork via aparte `WerkbonMonteurView`-component (optie C) direct vanaf fase 1
   - Migratie-nummer reservering: 114 vrij in repo; Antony bevestigt in Supabase Dashboard
+- **v1.2** — fase-2-leerpunten verwerkt. Fase 3 herontworpen: van "vrije positie binnen item-block" naar **echte canvas-editor per item**. Klein/normaal/groot-toggle, tekst-positie-radio en 2-image cap **verwijderd** bij versie≥3. Vrije tekstblokken **uit scope** (item-tekst hoort bovenaan, niet als losse blokken op canvas). Logo en foto worden vrij positioneerbaar op een gedeelde canvas-area per item. **Eén canvas per item** (niet per pagina, niet per werkbon). Multi-page canvas, layers panel, undo/redo, smart-guides, roteren expliciet uit scope. Coord-based render-pad naast bestaande flow-pad — per-item-router op `heeftCanvasData`. Migratie 116 (`COMMENT ON COLUMN`, geen schema-wijziging).
 
 ---
 
@@ -25,7 +26,7 @@ Drie fasen, in volgorde:
 
 1. **Fase 1 — Drop & flow** (geschat 12–20 uur, 1–2 dagen). Per-item drop-zone vanuit desktop, nieuwe blok-types (foto/logo), free-reorder. `schaal_percentage` (continu) wordt nieuwe schrijf-bron; `grootte` alleen nog read-fallback. Mobile splitst naar aparte `WerkbonMonteurView`. Flow-based PDF blijft.
 2. **Fase 2 — Free-position binnen item-block + PDF-blokken** (4–7 dagen, 32–56 uur). Resize via corner-handles, snap (25/50/75/100%), aspect-ratio lock, tekst-positie keuze. Drop van PDF-bestanden → eerste pagina via `pdfjs-dist` als image-blok. Flow-based PDF nog steeds.
-3. **Fase 3 — Vrije canvas per pagina + tekst-blokken** (60–100 uur, 8–13 dagen). Drag-anywhere, layers/z-index, snap-to-grid 5mm, multi-page, vrije tekst-blokken op canvas. Coordinate-based PDF render naast bestaande flow-based — hybride. Inline split-pane preview als optie.
+3. **Fase 3 — Canvas per item** (v1.2 herontwerp, 63–93 uur, 8–12 dagen). Onder elke item-card komt een landscape-ratio canvas-area (267×100mm werkruimte). Foto's en logo's worden canvas-elementen met absolute mm-positie, vrij sleepbaar via pointer-events, 4-corner-resize met aspect-ratio-lock (Shift = vrij), snap-to-grid 5mm (Shift = vrij), z-index foto < logo. Item-tekst (omschrijving, afmeting, notitie) staat **bovenaan** in de PDF, canvas eronder met absolute posities. Coordinate-based render-pad naast bestaande flow-pad — per-item-router op `heeftCanvasData`. Multi-page canvas, layers UI, vrije tekstblokken, roteren, undo/redo, smart-guides expliciet **niet** in scope. Feature-flag `werkbon_canvas_versie = 3` activeert; versie < 3 = fase-2-gedrag (thumbnails grid + radio's).
 
 Per fase gate door Antony vóór begin volgende fase. Aparte feature-branches per fase, mergen na akkoord. Backward-compat verplicht — bestaande werkbonnen blijven werken zonder migratie-pijn.
 
@@ -83,6 +84,18 @@ App.tsx
 | Geen positie-data in DB | `werkbon_afbeeldingen` heeft alleen `grootte` enum | Migratie verplicht voor fase 2/3 |
 | Geen drag-functionaliteit | `WerkbonItemCard` heeft visuele `GripVertical` maar geen `draggable` attr | Wel bestaande patterns elders (zie 4.1) |
 | `WerkbonDetail` is desktop+mobile single component | Geen mobile-read-only mode | Aparte mobile component via optie C (zie §6) |
+
+### 1.4 Leerpunten fase 2 (v1.2 — na lokale test)
+
+Vanuit Antony's lokale test op `feat/werkbon-canvas-fase2` (niet gemerged):
+
+1. **Resize-handles op thumbnails voelen niet als tekenen.** De 14×14 corner-handle op een form-thumbnail (`AfbeeldingResizeHandle.tsx`) doet z'n werk technisch, maar de mentale modellen botsen: een thumbnail "in een formulier" ↔ een element "op een werkblad". Resize voelt als toggle-vervanger, niet als layout-control.
+2. **Tekst-positie radio (links/rechts/boven/onder) is onvindbaar en conceptueel verkeerd.** Verschijnt alleen bij `aantalFotos === 1` (`WerkbonItemCard.tsx:200`), verstopt onderaan de thumbnail. Bovendien past het concept niet: de instructie-tekst van een item (nummer + omschrijving + afmeting + notitie) is **één blok** dat consistent bovenaan hoort, niet rondom een afbeelding gedrapeerd.
+3. **2-image cap (geforceerd via Stream F, `WerkbonDetail.tsx:536-538`) is te restrictief.** Echte werkbonnen hebben soms 3-4 referentie-foto's (front, achter, detail, drukproef). Hard-cap was reflex van het oude formulier, niet een product-keuze.
+4. **Vaste 2-kolom 50/50-grid (`WerkbonItemCard.tsx:191`) is verkeerd primitief.** Een werkbon is een visueel instructie-blad, geen formulier-rijtje. De juiste primitief is een **vrij canvas met absolute posities**.
+5. **Klein/normaal/groot toggle vervalt automatisch zodra hoek-resize op canvas-elementen werkt.** Vrije resize maakt drie discrete maten betekenisloos (`WerkbonItemCard.tsx:270-286`).
+
+**Conclusie:** fase 3 wordt geen incrementele uitbreiding van fase 2 maar een **structuur-shift**. Items-lijst boven, canvas eronder, per item één canvas. Zie §8.3 (v1.2).
 
 ---
 
@@ -481,39 +494,161 @@ Risico-vectoren:
 
 **Stop-gate:** zelfde proces als 8.1.
 
-### 8.3 Fase 3 — Vrije canvas per pagina + vrije tekst-blokken
+### 8.3 (v1.2) Fase 3 — Canvas per item
+
+> **Scope-statement (v1.2):** onder elke item-card komt **één canvas-area** (267×100mm werkruimte, landscape-ratio, cream bg `#F8F7F5`, 1px subtle border). Afbeeldingen en logo's zijn vrij sleepbare canvas-elementen met absolute (x, y, breedte, hoogte) in mm. Resize via 4 corner-handles met aspect-ratio-lock (Shift = vrij). Snap-to-grid 5mm (Shift omzeilt). Click-buiten = deselect. Delete via X-knop (hover, rechtsboven) of Delete-key. Per item krijgt de PDF een tekstblok bovenaan (nummer + omschrijving + afmeting + notitie), canvas eronder met 1:1 absolute posities. Item-tekst hoort bij item, niet bij element. Een item kan nul tot ca. zes elementen hebben (geen hard-cap, soft-cap ~6 voor performance). Eén canvas per item, geen multi-page binnen item.
 
 **In scope:**
-- `layout.vrij_geplaatst=true` → coordinate-render-pad
-- Drag-anywhere binnen pagina-grenzen
-- Snap-to-grid 5mm, Shift-vrij
-- Z-index UI (mini-knoppen: naar voren / naar achteren)
-- Multi-page navigatie (toggle tussen pagina's)
-- Inline split-pane preview optie (toggle naast modal-preview, default modal voor smaller screens)
-- Logo's kunnen bovenop foto's
-- **Vrije tekst-blokken** (`layout.blok_type='tekst'`) — sleepbaar, resize-baar, content via contentEditable of Textarea
-- Logo-blokken worden ook vrij plaatsbaar (niet meer vast rechtsboven)
+- `WerkbonCanvas` component per item-card (cream bg, 1px border, drop-zone)
+- `WerkbonCanvasElement` met absolute (`canvas_x_mm`, `canvas_y_mm`, `canvas_breedte_mm`, `canvas_hoogte_mm`, `z_index`) in `layout` JSONB
+- Pointer-events drag binnen canvas-grenzen (clamp + snap-to-5mm + Shift-bypass)
+- 4-corner resize met aspect-ratio-lock (Shift = vrij)
+- Selectie-state: 1px Petrol border + 4 corner-handles 10×10px Flame met witte border
+- Click-buiten = deselect, Delete-key + X-knop verwijderen element
+- Live position/size-badge tijdens drag/resize
+- Logo blok-type toggle in selectie-overlay (geen rechtsboven-thumbnail-pill meer)
+- Z-index foto < logo automatisch (foto default 1, logo default 2)
+- PDF coord-based render-pad per item, met page-break check op item-niveau
+- Per-item-router op `heeftCanvasData` (`some(a => a.layout?.canvas_x_mm !== undefined)`)
+- Bestaande flow-render pad BEHOUDEN voor legacy items
+- 2-image cap verwijderen uit `handleAfbeeldingenDropped`
+- Soft-cap ~6 elementen → toast.info, geen hard-block
+- Feature-flag `werkbon_canvas_versie = 3` activeert canvas-mode
+- Mobile `WerkbonMonteurView` blijft read-only, PDF-preview toont nieuwe render
 
-**Buiten scope:**
-- Roteren
+**Buiten scope (v1.2):**
+- Multi-page canvas (één canvas per item, max ~100mm hoog)
+- Layers panel (geen handmatige z-index UI; alleen automatisch foto<logo)
+- Vrije tekst-blokken op canvas (item-tekst blijft bovenaan, géén `blok_type='tekst'`)
+- Roteren van elementen
+- Undo/redo
 - Smart-guides / align-tot-andere-objecten
-- Undo/redo (apart fase 4 als nodig)
-- Multi-page PDF-import (alleen eerste pagina blijft de regel; multi-page kost te veel scope)
-- Rich-text formatting binnen tekst-blokken (alleen plain-text/basis bold-italic via keyboard shortcuts)
+- Touch-edit op mobiel (read-only blijft)
 
-**Files geraakt (ramen):**
-- `src/services/werkbonPdfService.ts` (tweede render-pad coord-based, tekst-blok render)
-- `src/components/werkbonnen/WerkbonDetail.tsx` (canvas-mode toggle)
-- nieuw: `src/components/werkbonnen/WerkbonCanvas.tsx` (canvas-pagina component)
-- nieuw: `src/components/werkbonnen/WerkbonCanvasElement.tsx` (sleepbaar element — image, logo, pdf, tekst)
-- nieuw: `src/components/werkbonnen/WerkbonTekstBlok.tsx` (vrije tekst-blok editor)
-- `src/components/shared/PdfPreviewDialog.tsx` (split-pane mode)
-- `src/types/index.ts`
-- `src/services/werkbonService.ts`
+**Wat overleeft uit fase 1+2 bij versie≥3** (zie §8.3.7-tabel):
+- Drop-flow (image + PDF), `pdfToImage` helper, `sanitizeStorageFilename`
+- Logo blok-type toggle (UI-plek verhuist naar selectie-overlay)
+- `pdfjs-dist` integratie
+- `WerkbonMonteurView` mobile-fork
+- Feature-flag pattern
+- `resolveSchaal`/`deriveFromGrootte` (voor versie<3 fallback en legacy data)
+- `AfbeeldingResizeHandle` component (versie<3 fallback)
+- `bumpPreview` 600ms debounce
 
-**Geschatte uren:** 60–100 (verhoogd t.o.v. v1.0 met vrije tekst-blokken erbij — Antony's keuze: meenemen i.p.v. uitstellen). Hoogste onzekerheid van de drie.
+**Wat vervalt bij versie≥3:**
+- Klein/normaal/groot toggle (`WerkbonItemCard.tsx:270-286`)
+- Tekst-positie radio L/R/B/O (`WerkbonItemCard.tsx:287-306`)
+- Thumb-reorder via drag (`AFB_DRAG_MIME`, array-`volgorde`)
+- 2-image cap (`WerkbonDetail.tsx:535-539`)
+- Vaste 2-kolom 50/50 grid (`WerkbonItemCard.tsx:191`)
+- Logo render 40×40mm vast rechtsboven (canvas regelt positie)
+- `enkeleFotoMetPositie`-tak in `werkbonPdfService` (laten staan voor legacy)
 
-**Stop-gate:** zelfde proces.
+**Migratie 116 — `COMMENT ON COLUMN`, geen schema-wijziging:**
+
+```sql
+-- Migratie 116 — Werkbon canvas fase 3
+-- Voegt geen kolommen toe: canvas-coördinaten leven in bestaande layout JSONB.
+-- Backward-compat: items zonder canvas_*_mm rendert PDF via flow-pad.
+-- Idempotent: COMMENT-statements zijn re-runnable.
+
+COMMENT ON COLUMN werkbon_afbeeldingen.layout IS
+  'JSONB layout per afbeelding. Velden:
+   - blok_type: foto | logo | pdf (fase 1+2)
+   - schaal_percentage: 0-100 (fase 1+2, legacy)
+   - tekst_positie: links/rechts/boven/onder (fase 2, legacy)
+   - volgorde: array-index (fase 1, legacy)
+   - pdf_bron_url: storage-pad origineel PDF (fase 2)
+   - canvas_x_mm, canvas_y_mm: absolute positie op item-canvas (fase 3)
+   - canvas_breedte_mm, canvas_hoogte_mm: element-grootte op canvas (fase 3)
+   - z_index: stacking, default 1 foto/pdf, 2 logo (fase 3)
+   Werkruimte canvas = 267mm breed × 100mm hoog.';
+```
+
+Geen RLS-update (parent-tabel `werkbon_afbeeldingen` heeft al org-dekkende FOR ALL policy uit migratie 022). Feature-flag-kolom `werkbon_canvas_versie` uit migratie 115 accepteert al INT — geen migratie voor `=3`.
+
+**Component-architectuur:**
+
+Nieuwe componenten:
+- `src/components/werkbonnen/WerkbonCanvas.tsx` (~250-350 regels) — canvas-area, drop-zone, lege-staat, selection-state, position-badge, click-outside-deselect, keyboard Delete
+- `src/components/werkbonnen/WerkbonCanvasElement.tsx` (~200-280 regels) — sleepbaar/resizebaar element, 4-corner-handles, aspect-lock, snap-to-5mm, Shift-bypass, blok-type pill in selectie
+
+Niet apart (overwogen, afgewezen): `SelectionOverlay`, `GridSnapHelper`, `PositionBadge`, `WerkbonTekstBlok` (vrije tekstblokken zijn uit scope).
+
+Gewijzigde bestaande:
+- `WerkbonItemCard.tsx` — versie≥3 tak rendert `<WerkbonCanvas>` i.p.v. thumbnail-grid. Header/omschrijving/dimensies/notitie blijven 1-op-1
+- `WerkbonDetail.tsx` — 3 nieuwe handlers (`handleCanvasElementPositie`, `handleCanvasElementResize`, hergebruik `handleAfbeeldingVerwijderen` voor delete), 2-cap weg, default canvas-positie-cascade in `handleAfbeeldingenDropped`
+- `werkbonPdfService.ts` — per-item-router, `renderCanvasItem` helper (hergebruikt bestaande `renderTekstBlok`), ~150-200 nieuwe regels
+- `types/index.ts` — `WerkbonAfbeeldingLayout` uitbreiden met 5 nieuwe optionele velden
+
+**PDF coord-render strategie:**
+
+Per item:
+```ts
+const heeftCanvasData = item.afbeeldingen.some(
+  (a) => a.layout?.canvas_x_mm !== undefined
+)
+if (heeftCanvasData) {
+  // 1. page-break check op item-niveau
+  // 2. renderTekstBlok(item, i, marginLeft, y, contentWidth) → textBottom
+  // 3. canvasY = textBottom + 4; canvasH = 100
+  // 4. sorteer afbeeldingen op z_index (foto<logo), tiebreaker created_at
+  // 5. per afbeelding: drawImageContain op (canvas_x_mm, canvas_y_mm, breedte_mm, hoogte_mm) 1:1
+  // 6. y = canvasY + canvasH + 5
+} else {
+  // bestaande flow-pad ongewijzigd
+}
+```
+
+Mm-mapping 1:1: canvas-werkblad (267×100mm) is exact gelijk aan PDF content-block bij landscape A4 met 15mm marges. Geen rekenfouten.
+
+**Stream-decompositie (parallel waar mogelijk):**
+
+| Stream | Naam | Dependencies |
+|---|---|---|
+| **A3** | Datamodel + types (migratie 116 + `WerkbonAfbeeldingLayout` extension) | — |
+| **B3** | `WerkbonCanvas` component | A3 |
+| **C3** | `WerkbonCanvasElement` component | A3 |
+| **D3** | PDF coord-render + per-item-router | A3 |
+| **E3** | Item-card cleanup + Detail-handlers + 2-cap weg + dead-code-gating | B3 + C3 |
+| **F3** | Mobile-verify + feature-flag `=3` + rollout-SQL | E3 |
+
+Volgorde: `A3 → {B3, C3, D3} parallel → E3 → F3`. A3 bottleneck ~2-4u. B3+C3 grootste werk. D3 kan parallel met E3 als B3+C3 klaar.
+
+**Geschatte uren (eerlijk + 40% buffer):**
+
+| Stream | Basis (h) | Met buffer (h) |
+|---|---|---|
+| A3 datamodel + types | 1.5 | 2 |
+| B3 WerkbonCanvas | 10-14 | 14-20 |
+| C3 WerkbonCanvasElement | 16-22 | 22-31 |
+| D3 PDF coord-render | 6-10 | 8-14 |
+| E3 ItemCard + Detail integratie | 6-9 | 8-13 |
+| F3 mobile + flag + SQL | 1.5-2.5 | 2-3.5 |
+| Cross-browser + manual test | — | +7-10 |
+| **Totaal eindschatting** | **41-58** | **63-93** |
+
+Target 70u, alarm 90u. **30% lager** dan v1.1's 60-100u want vrije tekstblokken + multi-page + layers panel zijn uit scope.
+
+**Risico's & onbekenden (samenvatting — volledig in §8.3.8 v1.2 in bronrapport):**
+
+1. Canvas-state-management: selectie + drag + resize + snap + shift door elkaar → mitigatie via `onPointerCancel`-reset + minimale state-refs (zelfde pattern als `AfbeeldingResizeHandle`)
+2. Pointer-events vs HTML5 drag: canvas-element-drag = pointer (consistent met resize), file-drop blijft HTML5 (Files-transfer). Acceptabele paradigma-scheiding
+3. Backward-compat per-item-router: legacy items met `tekst_positie='rechts'` blijven via fase-2-tak renderen
+4. Touch-device drag op tablet: buiten scope fase 3 (read-only blijft)
+5. Boundary-clipping snel slepen: `clamp(0, 267-w, x)` en idem y
+6. Performance 6×5 elementen: pre-resolve cache schaalt lineair, debounce blijft 600ms
+7. Default-positie cascade bij multi-drop: `x = 5 + i*10, y = 5 + i*10`
+8. Element-overlap bij z=z: tiebreaker `created_at` voor stabiele newer-on-top
+
+**Stop-gate vóór implementatie (v1.2):**
+
+Antony bevestigt expliciet:
+1. **Scope** klopt — canvas per item, niet per pagina; tekstblok bovenaan; klein/normaal/groot weg; tekst-positie radio weg; 2-cap weg; logo wordt canvas-element; multi-page/layers/vrije tekstblokken/roteren/undo/smart-guides expliciet uit scope
+2. **Uren-schatting** acceptabel — 63–93u eindschatting (70u target, 90u alarm)
+3. **Stream-plan** akkoord — A3 → {B3, C3, D3} parallel → E3 → F3, branch `feat/werkbon-canvas-fase3`
+4. **Migratie 116 SQL** ok — `COMMENT ON COLUMN`, geen schema-wijziging
+5. **Fase 2-keuze** — fase 2 is lokaal getest maar niet gemerged. Vóór fase-3-start: óf fase 2 alsnog mergen met `werkbon_canvas_versie=2`-gating als fallback-pad, óf fase 2 verwerpen (lokale branch droppen) en `pdfToImage.ts` + PDF-blok-type-tak porteren naar fase 3-branch. **Aanbeveling**: fase 2 droppen omdat versie≥3 het grootste deel obsoleet maakt. **Beslissing nodig van Antony.**
 
 ### 8.4 Volgorde-overwegingen
 
@@ -537,10 +672,16 @@ In `app_settings` of `org_settings`: nieuw veld `werkbon_canvas_versie: 0 | 1 | 
 Render-paden checken setting:
 ```ts
 const versie = appSettings.werkbon_canvas_versie ?? 0
-if (versie >= 1) { /* logo-blok beschikbaar, drop-zones, monteur-view */ }
-if (versie >= 2) { /* resize-handles, PDF-blokken */ }
-if (versie >= 3) { /* vrije positie, tekst-blokken */ }
+if (versie >= 1) { /* drop-zones, logo-pill, monteur-view */ }
+if (versie >= 2) { /* resize-handles thumbnails, tekst-positie radio, PDF-drop */ }
+if (versie === 3) {
+  /* canvas-mode v1.2: WerkbonItemCard rendert <WerkbonCanvas>,
+     klein/normaal/groot + tekst-positie radio + 2-cap UI verborgen,
+     PDF gebruikt coord-router per item op heeftCanvasData */
+}
 ```
+
+**Per-org rollback v1.2:** `UPDATE app_settings SET werkbon_canvas_versie = 1 WHERE organisatie_id = '<uuid>'` — terug naar fase 1, canvas-data blijft in DB maar wordt genegeerd door render-pad (`heeftCanvasData` check is alleen actief in versie=3 pad). Geen data-verlies.
 
 Setting wordt door Antony in productie aangezet per organisatie (eerst eigen org, daarna breder).
 
