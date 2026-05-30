@@ -188,11 +188,8 @@ export async function generateWerkbonInstructiePDF(
       rightY += rightLineHeight
     }
 
-    // Datum + aanmaker op één regel — aanmaker is metadata, niet hoofd-content
-    const datumRegel = werkbonData.aanmaker_naam
-      ? `${formatDate(werkbonData.datum)} · ${werkbonData.aanmaker_naam}`
-      : formatDate(werkbonData.datum)
-    doc.text(datumRegel, rightX, rightY, { align: 'right' })
+    // Aanmaker staat als footer rechtsonder per pagina (zie paginanummer-loop).
+    doc.text(formatDate(werkbonData.datum), rightX, rightY, { align: 'right' })
     rightY += rightLineHeight
 
     if (werkbonData.contact_naam) {
@@ -848,7 +845,7 @@ export async function generateWerkbonInstructiePDF(
     }
   }
 
-  // Paginanummering
+  // Paginanummering + aanmaker rechtsonder (per pagina, zelfde footer-stijl)
   const totalPages = doc.getNumberOfPages()
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p)
@@ -856,6 +853,9 @@ export async function generateWerkbonInstructiePDF(
     doc.setFontSize(7)
     doc.setTextColor(150, 150, 150)
     doc.text(`${werkbonData.werkbon_nummer} — Pagina ${p} van ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' })
+    if (werkbonData.aanmaker_naam) {
+      doc.text(`Aangemaakt door ${werkbonData.aanmaker_naam}`, pageWidth - marginRight, pageHeight - 8, { align: 'right' })
+    }
   }
 
   return doc
