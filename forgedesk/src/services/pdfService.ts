@@ -208,7 +208,7 @@ function addHeader(
   title: string,
   nummer: string,
   docStyle?: DocumentStyle | null,
-  options?: { omitMetadata?: boolean }
+  options?: { omitMetadata?: boolean; omitTitle?: boolean }
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth()
   const brand = getBrandColor(bedrijfsProfiel, docStyle)
@@ -310,6 +310,10 @@ function addHeader(
     doc.setLineWidth(0.5)
     doc.line(margins.left, lineY, pageWidth - margins.right, lineY)
 
+    if (options?.omitTitle) {
+      return lineY + 8
+    }
+
     // Document title and number
     doc.setFontSize(baseFontSize * 1.6)
     doc.setFont(headingFont, 'bold')
@@ -331,6 +335,10 @@ function addHeader(
 
   // ── Briefpapier modus: alleen document titel + nummer, geen branding ──
   const contentStartY = margins.top
+
+  if (options?.omitTitle) {
+    return contentStartY
+  }
 
   doc.setFontSize(baseFontSize * 1.6)
   doc.setFont(headingFont, 'bold')
@@ -1198,9 +1206,6 @@ export function generateFactuurPDF(
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
 
-  // Green strip at top (groen = betaling)
-  addColorStrip(doc, [45, 107, 72]) // #2D6B48
-
   const brand = getBrandColor(bedrijfsProfiel, docStyle)
   const margins = getMargins(docStyle)
   const headingFont = getHeadingFont(docStyle)
@@ -1256,10 +1261,10 @@ export function generateFactuurPDF(
   // Override brand color to red for creditnota
   const effectiveBrand: [number, number, number] = isCreditnota ? [200, 50, 50] : brand
 
-  // Header — type + nummer als één titel ("Factuur FAC-2026-010"). De
-  // metadata (datum etc) komt eronder in het 3-koloms blok.
-  const headerTitle = `${headerLabel} ${factuurData.nummer}`
-  let y = addHeader(doc, bedrijfsProfiel, headerTitle, factuurData.nummer, docStyle, { omitMetadata: true })
+  // Header tekent alleen afzender-branding (logo/contact) wanneer er geen
+  // briefpapier is, plus de briefpapier-achtergrond. Titel + metadata worden
+  // hieronder inline getekend, onder het klant-adresblok.
+  let y = addHeader(doc, bedrijfsProfiel, '', factuurData.nummer, docStyle, { omitTitle: true })
 
   // Diagonal watermark for creditnota
   if (isCreditnota) {
@@ -1275,27 +1280,46 @@ export function generateFactuurPDF(
     doc.restoreGraphicsState()
   }
 
-  // Client info
+  // Klant-adresblok (item 1): naam · t.a.v. · adres · postcode plaats · Debiteurnr.
   y = addClientInfo(doc, klant, y, docStyle)
 
-  // Invoice details — Onderwerp/toelichting + 2-koloms metadata blok
-  doc.setFontSize(baseFontSize)
-  doc.setFont(bodyFont, 'normal')
-  doc.setTextColor(...textColor)
+  // Titel "factuur." — lowercase + afsluitende dot, accentkleur, geen nummer.
+  // Type-correct: creditnota wordt "creditfactuur.", voorschot "voorschotfactuur.".
+  doc.setFont(headingFont, 'bold')
+  doc.setFontSize(baseFontSize * 1.9)
+  doc.setTextColor(...effectiveBrand)
+  doc.text(`${headerLabel.toLowerCase()}.`, margins.left, y + 4)
+  y += 13
 
-  // Onderwerp / toelichting (optioneel — extra tekst die de gebruiker kan invullen)
-  if (factuurData.titel) {
-    doc.setFont(bodyFont, 'bold')
-    doc.setFontSize(baseFontSize - 1)
-    doc.text('Onderwerp', margins.left, y)
-    doc.setFont(bodyFont, 'normal')
-    doc.setFontSize(baseFontSize)
-    doc.text(factuurData.titel, margins.left, y + 5)
-    y += 12
+  // Meta-grid: uitgelijnde "label : waarde" rijen met vaste labelkolom.
+  const metaRows: { label: string; value: string }[] = [
+    { label: 'Factuurnummer', value: factuurData.nummer },
+  ]
+  if (klant.debiteurennummer) {
+    metaRows.push({ label: 'Debiteurnummer', value: String(klant.debiteurennummer) })
   }
+  metaRows.push({ label: 'Factuurdatum', value: formatDate(factuurData.datum) })
+  metaRows.push({ label: 'Vervaldatum', value: formatDate(factuurData.vervaldatum) })
+  if (factuurData.titel) {
+    metaRows.push({ label: 'Referentie', value: factuurData.titel })
+  }
+
+  const labelColWidth = 42
+  doc.setFontSize(baseFontSize - 1)
+  metaRows.forEach((row) => {
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(120, 120, 115)
+    doc.text(row.label, margins.left, y)
+    doc.text(':', margins.left + labelColWidth - 4, y)
+    doc.setTextColor(...textColor)
+    doc.text(row.value, margins.left + labelColWidth, y)
+    y += 5.5
+  })
+  doc.setFontSize(baseFontSize)
 
   // Referentie naar originele factuur bij creditnota
   if (isCreditnota && factuurData.credit_voor_nummer) {
+    y += 2
     doc.setFont(bodyFont, 'bold')
     doc.setTextColor(200, 50, 50)
     doc.text(`Creditfactuur voor: ${factuurData.credit_voor_nummer}`, margins.left, y)
@@ -1303,24 +1327,7 @@ export function generateFactuurPDF(
     doc.setTextColor(...textColor)
     y += 6
   }
-
-  // 2-koloms metadata: Factuurdatum | Vervaldatum (nummer staat al in de titel)
-  const metaColWidth = (pageWidth - margins.left - margins.right) / 2
-  const metaCols = [
-    { label: 'Factuurdatum', value: formatDate(factuurData.datum) },
-    { label: 'Vervaldatum', value: formatDate(factuurData.vervaldatum) },
-  ]
-  doc.setFontSize(baseFontSize - 1)
-  metaCols.forEach((col, i) => {
-    const x = margins.left + i * metaColWidth
-    doc.setFont(bodyFont, 'bold')
-    doc.setTextColor(...textColor)
-    doc.text(col.label, x, y)
-    doc.setFont(bodyFont, 'normal')
-    doc.text(col.value, x, y + 5)
-  })
-  y += 14
-  doc.setFontSize(baseFontSize)
+  y += 8
 
   // Items table — hairline separator tussen items + uppercase brand header
   const separatorColor: [number, number, number] = [225, 225, 228]
@@ -1359,10 +1366,10 @@ export function generateFactuurPDF(
     startY: y,
     head: [[
       { content: '#', styles: { halign: 'center' } },
-      { content: 'OMSCHRIJVING', styles: { halign: 'left' } },
-      { content: 'AANTAL', styles: { halign: 'center' } },
-      { content: 'EENHEIDSPRIJS', styles: { halign: 'right' } },
-      { content: 'TOTAAL', styles: { halign: 'right' } },
+      { content: 'Omschrijving', styles: { halign: 'left' } },
+      { content: 'Aantal', styles: { halign: 'right' } },
+      { content: 'Eenheidsprijs', styles: { halign: 'right' } },
+      { content: 'Totaal', styles: { halign: 'right' } },
     ]],
     body: tableBody,
     theme: 'plain',
@@ -1376,7 +1383,7 @@ export function generateFactuurPDF(
     columnStyles: {
       0: { cellWidth: 12, halign: 'center', textColor: [140, 140, 135] },
       1: { cellWidth: 'auto', halign: 'left' },
-      2: { cellWidth: 22, halign: 'center' },
+      2: { cellWidth: 22, halign: 'right' },
       3: { cellWidth: 32, halign: 'right' },
       4: { cellWidth: 32, halign: 'right' },
     },
@@ -1399,8 +1406,15 @@ export function generateFactuurPDF(
   doc.text(formatCurrency(factuurData.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 6
 
+  // BTW-label: toon het percentage alleen bij precies één tarief. Bij meerdere
+  // tarieven geen blended/afgeleid percentage verzinnen — kale "BTW".
+  const btwTarieven = Array.from(
+    new Set(items.filter((it) => it.soort !== 'tekst').map((it) => it.btw_percentage))
+  )
+  const btwLabel = btwTarieven.length === 1 ? `BTW (${btwTarieven[0]}%)` : 'BTW'
+
   doc.setTextColor(120, 120, 115)
-  doc.text('BTW', totalsX, totalsY)
+  doc.text(btwLabel, totalsX, totalsY)
   doc.setTextColor(...textColor)
   doc.text(formatCurrency(factuurData.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 6
@@ -1435,7 +1449,7 @@ export function generateFactuurPDF(
     }
     doc.setFontSize(baseFontSize)
     doc.setFont(headingFont, 'bold')
-    doc.setTextColor(...brand)
+    doc.setTextColor(...effectiveBrand)
     doc.text(label, margins.left, totalsY)
     totalsY += 6
   }
@@ -1452,8 +1466,16 @@ export function generateFactuurPDF(
     totalsY = flowText(outroLines, margins.left, totalsY, 5)
   }
 
+  // Gedempte vertrouwensregel (item 6)
+  advanceY(12)
+  doc.setFont(bodyFont, 'normal')
+  doc.setFontSize(baseFontSize - 1)
+  doc.setTextColor(140, 140, 135)
+  doc.text('We vertrouwen op een tijdige betaling.', margins.left, totalsY)
+  doc.setTextColor(...textColor)
+
   // Payment info
-  advanceY(15)
+  advanceY(12)
   drawSectionHeader('Betaalinformatie:')
 
   doc.setFont(bodyFont, 'normal')
@@ -1465,6 +1487,17 @@ export function generateFactuurPDF(
     totalsY += 5
     if (bedrijfsProfiel.bedrijfsnaam) {
       doc.text(`t.n.v. ${bedrijfsProfiel.bedrijfsnaam}`, margins.left, totalsY)
+      totalsY += 6
+    }
+  }
+
+  // Betaaltermijn: dagen tussen factuurdatum en vervaldatum (indien beide geldig).
+  if (factuurData.datum && factuurData.vervaldatum) {
+    const start = new Date(factuurData.datum).getTime()
+    const eind = new Date(factuurData.vervaldatum).getTime()
+    if (!isNaN(start) && !isNaN(eind) && eind >= start) {
+      const dagen = Math.round((eind - start) / 86400000)
+      doc.text(`Betaaltermijn: ${dagen} dagen (vervalt ${formatDate(factuurData.vervaldatum)})`, margins.left, totalsY)
       totalsY += 6
     }
   }
