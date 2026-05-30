@@ -135,29 +135,30 @@ export async function generateWerkbonInstructiePDF(
   let currentPage = 1
 
   function addPageHeader(y: number): number {
-    // Logo + bedrijfsnaam (optioneel)
+    // Logo links
     let logoWidth = 0
+    const logoH = 12
     if (logoBase64) {
       try {
-        const maxLogoH = 12
         const props = doc.getImageProperties(logoBase64)
         const ratio = props.width / props.height
-        logoWidth = maxLogoH * ratio
-        doc.addImage(logoBase64, detectImageFormat(logoBase64), marginLeft, y + 1, logoWidth, maxLogoH, undefined, 'MEDIUM')
+        logoWidth = logoH * ratio
+        doc.addImage(logoBase64, detectImageFormat(logoBase64), marginLeft, y + 1, logoWidth, logoH, undefined, 'MEDIUM')
       } catch (err) {
         // logo failed
       }
     }
 
     const headerX = logoWidth > 0 ? marginLeft + logoWidth + 5 : marginLeft
+    const headlineY = y + 5  // gedeelde baseline voor logo-midden, WERKBON-titel en klantnaam
 
-    // Werkbon nummer + titel
+    // Links: WERKBON-nummer (op headline) + titel (eronder)
     doc.setFont(headingFont, 'bold')
     doc.setFontSize(14)
     doc.setTextColor(...brand)
-    doc.text(`WERKBON ${werkbonData.werkbon_nummer}`, headerX, y + 5)
+    doc.text(`WERKBON ${werkbonData.werkbon_nummer}`, headerX, headlineY)
 
-    let leftY = y + 11
+    let leftY = headlineY + 6
     if (werkbonData.titel) {
       doc.setFont(bodyFont, 'normal')
       doc.setFontSize(9)
@@ -166,50 +167,51 @@ export async function generateWerkbonInstructiePDF(
       leftY += 5
     }
 
-    if (werkbonData.aanmaker_naam) {
-      doc.setFont(bodyFont, 'normal')
-      doc.setFontSize(9)
-      doc.setTextColor(...textColor)
-      doc.text(`Aangemaakt door: ${werkbonData.aanmaker_naam}`, headerX, leftY)
-    }
-
-    // Rechts: klant + locatie + datum
+    // Rechts: klant (op headline) + locatie + datum/aanmaker + contact
     const rightX = pageWidth - marginRight
+    const rightLineHeight = 4.5
     doc.setFont(bodyFont, 'normal')
     doc.setFontSize(9)
     doc.setTextColor(...textColor)
 
-    let rightY = y + 2
+    let rightY = headlineY
     if (klant.bedrijfsnaam) {
       doc.setFont(bodyFont, 'bold')
       doc.text(klant.bedrijfsnaam, rightX, rightY, { align: 'right' })
-      rightY += 4
+      rightY += rightLineHeight
       doc.setFont(bodyFont, 'normal')
-    }
-
-    if (projectNaam) {
-      doc.text(`Project: ${projectNaam}`, rightX, rightY, { align: 'right' })
-      rightY += 4
     }
 
     const locatieParts = [werkbonData.locatie_adres, werkbonData.locatie_postcode, werkbonData.locatie_stad].filter(Boolean)
     if (locatieParts.length > 0) {
-      doc.text(locatieParts.join(', '), rightX, rightY, { align: 'right' })
-      rightY += 4
+      doc.text(locatieParts.join(' · '), rightX, rightY, { align: 'right' })
+      rightY += rightLineHeight
     }
 
-    doc.text(`Datum: ${formatDate(werkbonData.datum)}`, rightX, rightY, { align: 'right' })
-    rightY += 4
+    // Datum + aanmaker op één regel — aanmaker is metadata, niet hoofd-content
+    const datumRegel = werkbonData.aanmaker_naam
+      ? `${formatDate(werkbonData.datum)} · ${werkbonData.aanmaker_naam}`
+      : formatDate(werkbonData.datum)
+    doc.text(datumRegel, rightX, rightY, { align: 'right' })
+    rightY += rightLineHeight
 
     if (werkbonData.contact_naam) {
-      doc.text(`Contact: ${werkbonData.contact_naam}${werkbonData.contact_telefoon ? ` · ${werkbonData.contact_telefoon}` : ''}`, rightX, rightY, { align: 'right' })
-      rightY += 4
+      const contactRegel = werkbonData.contact_telefoon
+        ? `${werkbonData.contact_naam} · ${werkbonData.contact_telefoon}`
+        : werkbonData.contact_naam
+      doc.text(contactRegel, rightX, rightY, { align: 'right' })
+      rightY += rightLineHeight
     }
 
-    // Scheiding (whitespace, geen lijn)
-    y += 18
+    // Hairline separator onder het verste blok (links/rechts/logo)
+    const logoBottom = logoBase64 ? y + 1 + logoH : 0
+    const headerBottom = Math.max(leftY, rightY, logoBottom)
+    const separatorY = headerBottom + 2
+    doc.setDrawColor(235, 235, 235)
+    doc.setLineWidth(0.2)
+    doc.line(marginLeft, separatorY, pageWidth - marginRight, separatorY)
 
-    return y + 5
+    return separatorY + 5
   }
 
   function addNewPage(): number {
