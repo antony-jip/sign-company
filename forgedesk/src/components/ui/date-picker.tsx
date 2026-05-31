@@ -116,7 +116,7 @@ export function DatePicker({
   const footerLabel = selected && isValid(selected)
     ? format(selected, 'EEE d MMMM yyyy', { locale: nl })
     : ''
-  const monoFont = { fontFamily: '"DM Mono", ui-monospace, monospace' }
+  const numberFont = { fontFamily: 'Inter, system-ui, sans-serif' }
 
   const renderedTrigger = trigger ?? (
     <button
@@ -208,7 +208,7 @@ export function DatePicker({
                           : 'border-border/50 text-foreground hover:bg-primary/10',
                 )}
               >
-                <span className="text-[15px] leading-none" style={monoFont}>
+                <span className="text-[15px] leading-none tabular-nums" style={numberFont}>
                   {format(d, 'd')}
                 </span>
                 {isToday && (
