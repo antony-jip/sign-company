@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
 import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DatePicker } from '@/components/ui/date-picker'
 import { getAvatarStyle, extractSenderName } from './emailHelpers'
 import { EmailProjectKoppelingPanel } from './EmailProjectKoppelingPanel'
 import { toast } from 'sonner'
@@ -661,8 +662,8 @@ export function EmailContextSidebar({
                 className={`${inputCls} resize-none h-16`} placeholder="Beschrijving" />
               <div>
                 <label className="text-[10px] text-muted-foreground block mb-1">Inplannen op</label>
-                <input type="date" value={taakForm.deadline} onChange={e => setTaakForm(f => ({ ...f, deadline: e.target.value }))}
-                  className={inputCls} />
+                <DatePicker value={taakForm.deadline} onChange={v => setTaakForm(f => ({ ...f, deadline: v }))}
+                  asInput className={inputCls} />
                 <div className="flex gap-1.5 mt-1.5">
                   {[
                     { label: 'Vandaag', days: 0 },
@@ -979,20 +980,20 @@ export function EmailContextSidebar({
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-muted-foreground">Startdatum</label>
-                    <input
-                      type="date"
+                    <DatePicker
                       value={projectForm.start_datum}
-                      onChange={e => setProjectForm(f => ({ ...f, start_datum: e.target.value }))}
-                      className="w-full h-10 px-3 text-[13px] font-mono bg-background rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors"
+                      onChange={v => setProjectForm(f => ({ ...f, start_datum: v }))}
+                      asInput
+                      className="w-full h-10 px-3 text-[13px] font-mono"
                     />
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-muted-foreground">Einddatum</label>
-                    <input
-                      type="date"
+                    <DatePicker
                       value={projectForm.eind_datum}
-                      onChange={e => setProjectForm(f => ({ ...f, eind_datum: e.target.value }))}
-                      className="w-full h-10 px-3 text-[13px] font-mono bg-background rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors"
+                      onChange={v => setProjectForm(f => ({ ...f, eind_datum: v }))}
+                      asInput
+                      className="w-full h-10 px-3 text-[13px] font-mono"
                     />
                   </div>
                 </div>

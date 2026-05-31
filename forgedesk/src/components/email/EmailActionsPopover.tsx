@@ -4,6 +4,7 @@ import {
   ArrowLeft, X, Loader2, Building2, Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/ui/date-picker'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Email, Medewerker, Klant } from '@/types'
@@ -368,8 +369,8 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                 </div>
                 <div>
                   <label className={labelCls}>Inplannen op</label>
-                  <input type="date" value={taakForm.deadline} onChange={e => setTaakForm(f => ({ ...f, deadline: e.target.value }))}
-                    className={inputCls} />
+                  <DatePicker value={taakForm.deadline} onChange={v => setTaakForm(f => ({ ...f, deadline: v }))}
+                    asInput className={inputCls} />
                   <div className="flex gap-1.5 mt-1.5">
                     {[
                       { label: 'Vandaag', days: 0 },
