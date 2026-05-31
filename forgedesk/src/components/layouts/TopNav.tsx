@@ -215,10 +215,10 @@ export function TopNav() {
 
         {/* ── Module-nav: meest gebruikt + Overig — desktop ── */}
         <nav ref={navRef} className="relative hidden lg:flex items-stretch h-full gap-1.5">
-          {/* Sliding indicator */}
+          {/* Sliding indicator — iOS "segment"-pill achter het actieve item */}
           <div
             ref={indicatorRef}
-            className="absolute bottom-0 left-0 h-[2px] rounded-t-full bg-[#1A535C] transition-all duration-300 ease-out"
+            className="absolute top-1/2 -mt-[15px] left-0 h-[30px] rounded-[10px] bg-white dark:bg-white/[0.08] shadow-[0_1px_2px_rgba(20,30,40,0.08),0_2px_6px_rgba(20,30,40,0.05)] ring-1 ring-black/[0.03] dark:ring-white/[0.05] transition-all duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{ opacity: 0 }}
           />
 
@@ -239,7 +239,7 @@ export function TopNav() {
                 <span
                   data-tab-content
                   className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors',
+                    'inline-flex items-center gap-1.5 px-3 py-1 rounded-[10px] transition-colors',
                     !isActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
                   )}
                 >
@@ -269,7 +269,7 @@ export function TopNav() {
                 <span
                   data-tab-content
                   className={cn(
-                    'inline-flex items-center gap-1 px-3 py-1 rounded-md transition-colors',
+                    'inline-flex items-center gap-1 px-3 py-1 rounded-[10px] transition-colors',
                     !overigActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
                     overigOpen && 'bg-[rgba(26,83,92,0.06)]',
                   )}

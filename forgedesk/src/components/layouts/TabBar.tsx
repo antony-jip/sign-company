@@ -21,9 +21,9 @@ function TabItem({
   return (
     <button
       className={cn(
-        'tab-bar-item group relative flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold tracking-[-0.01em] transition-colors duration-150 whitespace-nowrap max-w-[200px] min-w-[80px] select-none rounded-md',
+        'tab-bar-item group relative flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold tracking-[-0.01em] transition-all duration-150 ease-out active:scale-[0.97] whitespace-nowrap max-w-[200px] min-w-[80px] select-none rounded-[9px]',
         isActive
-          ? 'bg-[#1A535C]/[0.07] text-[#1A535C]'
+          ? 'bg-[#1A535C]/[0.08] text-[#1A535C] shadow-[0_1px_2px_rgba(20,30,40,0.06)] ring-1 ring-[#1A535C]/[0.06]'
           : 'text-muted-foreground hover:text-foreground hover:bg-black/[0.04]'
       )}
       onClick={onActivate}
@@ -189,7 +189,7 @@ export function TabBar() {
           ))}
 
           <button
-            className="flex-shrink-0 w-6 h-6 rounded-md text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.08] flex items-center justify-center transition-colors ml-0.5"
+            className="flex-shrink-0 w-6 h-6 rounded-lg text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.08] flex items-center justify-center transition-all duration-150 ease-out active:scale-[0.92] ml-0.5"
             onClick={newTab}
             title="Nieuw tabblad (Cmd+T)"
           >
