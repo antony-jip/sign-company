@@ -278,7 +278,6 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               <div className="mt-3 pt-3 border-t border-border/40">
                 <KlantContactSelector
                   contactOnly={!!resolvedKlant && !createNew}
-                  compactContactList
                   autoSelect="singleOnly"
                   requireContactEmail
                   klantId={resolvedKlant?.id ?? ''}
