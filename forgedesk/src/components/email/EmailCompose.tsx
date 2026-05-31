@@ -758,7 +758,7 @@ export function EmailCompose({
                 {writeBriefOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setWriteBriefOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-[340px] bg-card rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-border z-50 p-3.5 space-y-2.5">
+                    <div className="absolute left-0 top-full mt-2 w-[340px] max-w-[calc(100vw-2rem)] bg-card rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-border z-50 p-3.5 space-y-2.5">
                       <div className="flex items-center gap-1.5">
                         <Sparkles className="h-3.5 w-3.5 text-[#F15025]" />
                         <p className="text-[13px] font-semibold text-foreground">Wat voor mail wil je schrijven?</p>
