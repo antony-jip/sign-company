@@ -406,6 +406,13 @@ button, a, [role="button"], input, select, textarea {
               box-shadow var(--duration-fast) var(--ease-out);
 }
 
+/* Native form-controls erven standaard geen text-color (UA-default), waardoor
+   ze in dark mode donker-op-donker werden. Laat ze de page-foreground erven;
+   utility-classes (text-white op gekleurde knoppen e.d.) overschrijven dit. */
+input, select, textarea, button {
+  color: inherit;
+}
+
 /* Reduced motion — respect user preference */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
