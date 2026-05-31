@@ -41,6 +41,7 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage, berekenVerkoopVanMarkup } from '@/utils/margeBerekening'
+import { berekenCalculatieTotalen, berekenRegeltotaal } from '@/utils/calculatieBerekening'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getCalculatieProducten, getCalculatieTemplates } from '@/services/supabaseService'
 import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate } from '@/types'
@@ -294,35 +295,7 @@ export function CalculatieModal({
 
   // ---- Berekeningen ----
 
-  const totalen = useMemo(() => {
-    let totaalInkoop = 0
-    let totaalVerkoop = 0
-    let totaalKorting = 0
-
-    regels.forEach((r) => {
-      const regelInkoop = round2(r.aantal * r.inkoop_prijs)
-      const regelVerkoop = round2(r.aantal * r.verkoop_prijs)
-      const kortingBedrag = round2(regelVerkoop * (r.korting_percentage / 100))
-      totaalInkoop += regelInkoop
-      totaalVerkoop += regelVerkoop - kortingBedrag
-      totaalKorting += kortingBedrag
-    })
-
-    totaalInkoop = round2(totaalInkoop)
-    totaalVerkoop = round2(totaalVerkoop)
-    totaalKorting = round2(totaalKorting)
-
-    const margeBedrag = round2(totaalVerkoop - totaalInkoop)
-    const margePercentage = Math.round(berekenMarkupPercentage(totaalInkoop, totaalVerkoop) * 10) / 10
-
-    return {
-      totaalInkoop,
-      totaalVerkoop,
-      totaalKorting,
-      margeBedrag,
-      margePercentage,
-    }
-  }, [regels])
+  const totalen = useMemo(() => berekenCalculatieTotalen(regels), [regels])
 
   // ---- Bevestigen ----
 
@@ -545,9 +518,7 @@ export function CalculatieModal({
               </thead>
               <tbody>
                 {regels.map((regel, index) => {
-                  const regelVerkoop = round2(regel.aantal * regel.verkoop_prijs)
-                  const kortingBedrag = round2(regelVerkoop * (regel.korting_percentage / 100))
-                  const regelTotaal = round2(regelVerkoop - kortingBedrag)
+                  const regelTotaal = berekenRegeltotaal(regel)
                   const regelInkoop = round2(regel.aantal * regel.inkoop_prijs)
                   const isWinst = regelTotaal > regelInkoop
 
