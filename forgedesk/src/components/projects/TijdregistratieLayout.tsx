@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -1220,13 +1221,12 @@ export function TijdregistratieLayout() {
 
             <div className="grid gap-2">
               <Label htmlFor="form-datum">Datum</Label>
-              <Input
-                id="form-datum"
-                type="date"
+              <DatePicker
                 value={formData.datum}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, datum: e.target.value }))
+                onChange={(v) =>
+                  setFormData((prev) => ({ ...prev, datum: v }))
                 }
+                asInput
               />
             </div>
 

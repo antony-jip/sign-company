@@ -6,6 +6,7 @@ import type { Klant } from '@/types'
 import { toast } from 'sonner'
 import { ArrowLeft, Save, FolderKanban } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -206,22 +207,20 @@ export function ProjectCreate() {
               </div>
               <div>
                 <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Startdatum</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={startDatum}
-                  onChange={(e) => setStartDatum(e.target.value)}
+                  onChange={(v) => setStartDatum(v)}
+                  asInput
                   className="h-10 rounded-lg font-mono text-[13px]"
-                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }}
                 />
               </div>
               <div>
                 <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Einddatum</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={eindDatum}
-                  onChange={(e) => setEindDatum(e.target.value)}
+                  onChange={(v) => setEindDatum(v)}
+                  asInput
                   className="h-10 rounded-lg font-mono text-[13px]"
-                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }}
                 />
               </div>
             </div>

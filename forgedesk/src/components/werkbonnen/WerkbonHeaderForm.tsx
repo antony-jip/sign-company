@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { MapPin, Phone } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -84,12 +85,11 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className={labelClass} style={labelColor}>Datum</Label>
-              <Input
-                type="date"
-                defaultValue={datum}
-                onBlur={(e) => onFieldChange('datum', e.target.value)}
+              <DatePicker
+                value={datum}
+                onChange={(v) => onFieldChange('datum', v)}
+                asInput
                 className="h-9 text-[13px] font-mono rounded-lg"
-                style={inputStyle}
               />
             </div>
             <div>
