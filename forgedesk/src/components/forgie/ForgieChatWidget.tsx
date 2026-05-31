@@ -6,9 +6,13 @@ import {
   getForgieHistory,
   clearForgieHistory,
   type ForgieChatMessage,
+  type ForgieActie,
 } from '@/services/forgieChatService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { renderForgieMarkdown } from '@/utils/forgieMarkdown'
+import { DaanActiePlan } from './DaanActiePlan'
+
+type WidgetMessage = ForgieChatMessage & { acties?: ForgieActie[] }
 
 const SUGGESTIE_CHIPS = [
   'Wat staat er open?',
@@ -20,7 +24,7 @@ const SUGGESTIE_CHIPS = [
 export function ForgieChatWidget() {
   const { forgieEnabled } = useAppSettings()
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<ForgieChatMessage[]>([])
+  const [messages, setMessages] = useState<WidgetMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
@@ -82,7 +86,7 @@ export function ForgieChatWidget() {
 
     try {
       const result = await sendForgieChat(question, messages)
-      const forgieMsg: ForgieChatMessage = { role: 'forgie', content: result.answer }
+      const forgieMsg: WidgetMessage = { role: 'forgie', content: result.answer, acties: result.acties }
       setMessages(prev => [...prev, forgieMsg])
       if (!isOpen) setHasUnread(true)
     } catch (err) {
@@ -237,47 +241,41 @@ export function ForgieChatWidget() {
             )}
 
             {/* Messages */}
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={cn('flex gap-2.5', msg.role === 'user' ? 'justify-end' : 'justify-start')}
-              >
-                {msg.role === 'forgie' && (
-                  <div
-                    className="flex-shrink-0 flex items-center justify-center mt-0.5"
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: '50%',
-                      backgroundColor: '#E2F0F0',
-                    }}
-                  >
-                    <span style={{ fontSize: 10, fontWeight: 800, color: '#1A535C' }}>D</span>
-                  </div>
-                )}
+            {messages.map((msg, i) => {
+              const hasActies = msg.role === 'forgie' && !!msg.acties && msg.acties.length > 0
+              return (
                 <div
-                  className="max-w-[85%] px-3 py-2 whitespace-pre-wrap"
-                  style={msg.role === 'user'
-                    ? {
-                        fontSize: 12,
-                        lineHeight: 1.6,
-                        color: '#FFFFFF',
-                        backgroundColor: '#1A535C',
-                        borderRadius: '10px 10px 2px 10px',
-                      }
-                    : {
-                        fontSize: 12,
-                        lineHeight: 1.6,
-                        color: '#191919',
-                        backgroundColor: '#F4F2EE',
-                        borderRadius: '10px 10px 10px 2px',
-                      }
-                  }
+                  key={i}
+                  className={cn('flex gap-2.5', msg.role === 'user' ? 'justify-end' : 'justify-start')}
                 >
-                  {msg.role === 'forgie' ? renderForgieMarkdown(msg.content) : msg.content}
+                  {msg.role === 'forgie' && (
+                    <div
+                      className="flex-shrink-0 flex items-center justify-center mt-0.5 bg-petrol-light"
+                      style={{ width: 24, height: 24, borderRadius: '50%' }}
+                    >
+                      <span className="text-petrol" style={{ fontSize: 10, fontWeight: 800 }}>D</span>
+                    </div>
+                  )}
+                  {hasActies ? (
+                    <div className="min-w-0 flex-1">
+                      {/* De kaart toont zelf de bevestiging — het tijdelijke tekstzinnetje vervalt. */}
+                      <DaanActiePlan acties={msg.acties!} />
+                    </div>
+                  ) : (
+                    <div
+                      className={cn(
+                        'max-w-[85%] px-3 py-2 whitespace-pre-wrap text-xs leading-relaxed',
+                        msg.role === 'user'
+                          ? 'bg-petrol text-white rounded-2xl rounded-br-sm'
+                          : 'bg-white dark:bg-card text-foreground border border-border/60 shadow-sm rounded-2xl rounded-bl-sm',
+                      )}
+                    >
+                      {msg.role === 'forgie' ? renderForgieMarkdown(msg.content) : msg.content}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
 
             {/* Loading indicator */}
             {loading && (

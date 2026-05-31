@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { FolderOpen, FileText, CheckSquare, Users, Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -81,6 +81,8 @@ const DISPLAY_FIELDS: Record<string, string[]> = {
 
 const VALID_PROJECT_STATUSES = ['gepland', 'actief', 'in-review', 'afgerond', 'on-hold', 'te-factureren', 'te-plannen']
 
+type ActieStatus = 'idle' | 'creating' | 'created' | 'cancelled'
+
 interface ForgieActieKaartProps {
   actie: ForgieActie
   onCreated: (type: string, id: string) => void
@@ -88,6 +90,7 @@ interface ForgieActieKaartProps {
   disabled?: boolean
   pendingKlantId?: string
   pendingProjectId?: string
+  onStatusChange?: (status: ActieStatus) => void
 }
 
 export function ForgieActieKaart({
@@ -97,12 +100,17 @@ export function ForgieActieKaart({
   disabled = false,
   pendingKlantId,
   pendingProjectId,
+  onStatusChange,
 }: ForgieActieKaartProps) {
   const { user } = useAuth()
   const [editedData, setEditedData] = useState<Record<string, unknown>>({ ...actie.data })
   const [editingField, setEditingField] = useState<string | null>(null)
-  const [status, setStatus] = useState<'idle' | 'creating' | 'created' | 'cancelled'>('idle')
+  const [status, setStatus] = useState<ActieStatus>('idle')
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    onStatusChange?.(status)
+  }, [status, onStatusChange])
 
   const config = MODULE_CONFIG[actie.type] || MODULE_CONFIG.project
   const Icon = config.icon
