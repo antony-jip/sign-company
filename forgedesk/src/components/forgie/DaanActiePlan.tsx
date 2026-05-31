@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FolderOpen, FileText, CheckSquare, Users, Check, Loader2, Circle, ArrowRight } from 'lucide-react'
+import {
+  FolderOpen, FileText, CheckSquare, Users,
+  Check, Loader2, Circle, ArrowRight, Sparkles, AlertCircle,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getKlanten } from '@/services/supabaseService'
 import type { Klant } from '@/types'
@@ -13,6 +16,8 @@ const STEP_CONFIG: Record<string, { label: string; icon: React.ElementType; orde
   offerte: { label: 'Offerte', icon: FileText, order: 2, route: (id) => `/offertes/${id}` },
   taak: { label: 'Taak', icon: CheckSquare, order: 3 },
 }
+
+type StepState = 'done' | 'busy' | 'pending' | 'failed'
 
 const norm = (s: string) => s.trim().toLowerCase()
 
@@ -44,6 +49,13 @@ function lijktOp(doel: string, kandidaat: string): boolean {
   return dist > 0 && dist <= drempel
 }
 
+function stepLabel(type: string, state: StepState): string {
+  const base = STEP_CONFIG[type]?.label ?? 'Stap'
+  if (state === 'busy') return `${base} aanmaken…`
+  if (state === 'failed') return `${base} — mislukt`
+  return base
+}
+
 interface DaanActiePlanProps {
   acties: ForgieActie[]
 }
@@ -69,11 +81,14 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const [klantMatches, setKlantMatches] = useState<Klant[] | null>(null)
   const [createNew, setCreateNew] = useState(false)
 
+  const [started, setStarted] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [createdIds, setCreatedIds] = useState<Record<string, string>>({})
   const [pendingKlantId, setPendingKlantId] = useState<string>()
   const [pendingProjectId, setPendingProjectId] = useState<string>()
   const [busyType, setBusyType] = useState<string | null>(null)
+  const [failedType, setFailedType] = useState<string | null>(null)
+  const [error, setError] = useState<string>()
   const [cancelled, setCancelled] = useState(false)
 
   // Eenduidige match -> auto-koppelen; meerdere -> kiezen; geen -> aanmaken (geen gok).
@@ -138,137 +153,172 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
     setBusyType(status === 'creating' ? type : null)
   }, [])
 
-  const handleCancel = useCallback(() => {
+  // Fout halverwege: stop op deze stap (geen half-en-half); eerdere stappen blijven staan.
+  const handleError = useCallback((type: string, msg: string) => {
     setBusyType(null)
-    setCancelled(true)
+    setFailedType(type)
+    setError(msg)
   }, [])
 
   const done = currentIndex >= ordered.length
-  const activeActie = !done && !cancelled ? ordered[currentIndex] : undefined
+  const halted = cancelled || !!failedType
+  const activeActie = started && !done && !halted ? ordered[currentIndex] : undefined
 
-  const title = cancelled ? 'Geannuleerd' : done ? 'Aangemaakt' : 'Daan wil dit voor je aanmaken'
+  // Stepper-rijen: de (eventueel) gekoppelde klant als done-rij, dan de keten.
+  const displaySteps = useMemo(() => {
+    const rows: { type: string; label: string; state: StepState; route?: string }[] = []
+    if (resolvedKlant) {
+      rows.push({ type: 'klant', label: `Klant gekoppeld — ${resolvedKlant.naam}`, state: 'done' })
+    }
+    ordered.forEach((actie) => {
+      const t = actie.type
+      const state: StepState = createdIds[t]
+        ? 'done'
+        : failedType === t
+          ? 'failed'
+          : busyType === t
+            ? 'busy'
+            : 'pending'
+      rows.push({
+        type: t,
+        label: stepLabel(t, state),
+        state,
+        route: createdIds[t] ? STEP_CONFIG[t]?.route?.(createdIds[t]) : undefined,
+      })
+    })
+    return rows
+  }, [resolvedKlant, ordered, createdIds, failedType, busyType])
 
   // Diepste aangemaakte record voor de samenvattingslink: offerte > project.
   const linkType = createdIds.offerte ? 'offerte' : createdIds.project ? 'project' : undefined
   const linkRoute = linkType && STEP_CONFIG[linkType].route?.(createdIds[linkType])
 
   const showChooser = !!klantMatches && !resolvedKlant && !createNew
+  const canConfirm = !started && !resolving && !showChooser && !cancelled && ordered.length > 0
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card shadow-sm p-3 mt-1 w-full">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2.5">
-        {title}
-      </p>
+    <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden mt-1 w-full">
+      <div className="flex items-center gap-1.5 px-3 py-2 bg-flame-light border-b border-flame-border/50">
+        <Sparkles className="w-3.5 h-3.5 text-flame" />
+        <span className="text-[11px] font-bold uppercase tracking-wider text-flame-text">
+          Daan zet dit klaar
+        </span>
+      </div>
 
-      {resolving ? (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-petrol" />
-          Klant opzoeken…
-        </div>
-      ) : showChooser ? (
-        <div className="space-y-1.5">
-          <p className="text-xs text-muted-foreground mb-1">
-            Welke klant bedoel je met “{klantNaam}”?
-          </p>
-          {klantMatches!.map((k) => (
-            <button
-              key={k.id}
-              onClick={() => setResolvedKlant({ id: k.id, naam: k.bedrijfsnaam })}
-              className="w-full flex items-center gap-2 text-left text-xs px-2 py-1.5 rounded-lg border border-border/60 hover:border-petrol hover:bg-petrol-light/40 transition-colors"
-            >
-              <Users className="w-3.5 h-3.5 text-petrol flex-shrink-0" />
-              <span className="text-foreground">{k.bedrijfsnaam}</span>
-            </button>
-          ))}
-          <button
-            onClick={() => {
-              setKlantMatches(null)
-              setCreateNew(true)
-            }}
-            className="text-xs text-muted-foreground hover:text-petrol underline-offset-2 hover:underline mt-0.5"
-          >
-            Geen van deze — nieuw aanmaken
-          </button>
-        </div>
-      ) : (
-        <>
-          {resolvedKlant && (
-            <p className="text-xs text-muted-foreground mb-2">
-              Klant: <span className="text-foreground font-medium">{resolvedKlant.naam}</span>
-            </p>
-          )}
-
+      <div className="p-3">
+        {resolving ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-petrol" />
+            Klant opzoeken…
+          </div>
+        ) : showChooser ? (
           <div className="space-y-1.5">
-            {ordered.map((actie, i) => {
-              const cfg = STEP_CONFIG[actie.type] || STEP_CONFIG.taak
-              const Icon = cfg.icon
-              const isDone = Boolean(createdIds[actie.type])
-              const isBusy = busyType === actie.type && i === currentIndex
-              const isActive = i === currentIndex && !cancelled && !isDone
-
-              return (
-                <div key={`${actie.type}-${i}`} className="flex items-center gap-2 text-xs">
+            <p className="text-xs text-muted-foreground mb-1">
+              Welke klant bedoel je met “{klantNaam}”?
+            </p>
+            {klantMatches!.map((k) => (
+              <button
+                key={k.id}
+                onClick={() => setResolvedKlant({ id: k.id, naam: k.bedrijfsnaam })}
+                className="w-full flex items-center gap-2 text-left text-xs px-2 py-1.5 rounded-lg border border-border/60 hover:border-petrol hover:bg-petrol-light/40 transition-colors"
+              >
+                <Users className="w-3.5 h-3.5 text-petrol flex-shrink-0" />
+                <span className="text-foreground">{k.bedrijfsnaam}</span>
+              </button>
+            ))}
+            <button
+              onClick={() => {
+                setKlantMatches(null)
+                setCreateNew(true)
+              }}
+              className="text-xs text-muted-foreground hover:text-petrol underline-offset-2 hover:underline mt-0.5"
+            >
+              Geen van deze — nieuw aanmaken
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              {displaySteps.map((step, i) => (
+                <div key={`${step.type}-${i}`} className="flex items-center gap-2.5 text-sm">
                   <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
-                    {isDone ? (
+                    {step.state === 'done' ? (
                       <Check className="w-4 h-4" style={{ color: 'var(--status-green-text)' }} />
-                    ) : isBusy ? (
+                    ) : step.state === 'busy' ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-flame" />
-                    ) : isActive ? (
-                      <Icon className="w-3.5 h-3.5 text-petrol" />
+                    ) : step.state === 'failed' ? (
+                      <AlertCircle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
                     ) : (
-                      <Circle className="w-2 h-2 text-muted-foreground/50" />
+                      <Circle className="w-2 h-2 text-muted-foreground/40" />
                     )}
                   </span>
                   <span
                     className={cn(
-                      'flex items-center gap-1',
-                      isDone
-                        ? 'text-foreground'
-                        : isActive || isBusy
-                          ? 'text-foreground font-medium'
-                          : 'text-muted-foreground/60',
+                      step.state === 'busy' && 'text-flame font-medium',
+                      step.state === 'failed' && 'text-red-600 dark:text-red-400 font-medium',
+                      step.state === 'pending' && 'text-muted-foreground/60',
                     )}
-                    style={isDone ? { color: 'var(--status-green-text)' } : undefined}
+                    style={step.state === 'done' ? { color: 'var(--status-green-text)' } : undefined}
                   >
-                    {cfg.label}
-                    {isDone && cfg.route && (
-                      <button
-                        onClick={() => navigate(cfg.route!(createdIds[actie.type]))}
-                        className="text-muted-foreground hover:text-petrol underline-offset-2 hover:underline"
-                      >
-                        bekijken
-                      </button>
-                    )}
+                    {step.label}
                   </span>
                 </div>
-              )
-            })}
-          </div>
+              ))}
+            </div>
 
-          {activeActie && (
-            <div className="mt-2.5">
+            {error && failedType && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-2">{error}</p>
+            )}
+
+            {/* Voert de keten headless uit na één bevestiging; voortgang loopt via de stepper. */}
+            {activeActie && (
               <ForgieActieKaart
                 actie={activeActie}
+                silent
+                autoStart
                 onCreated={handleCreated}
-                onCancel={handleCancel}
+                onCancel={() => setCancelled(true)}
                 onStatusChange={(status) => handleStatusChange(status, activeActie.type)}
+                onError={(msg) => handleError(activeActie.type, msg)}
                 pendingKlantId={effectiveKlantId}
                 pendingProjectId={pendingProjectId}
               />
-            </div>
-          )}
+            )}
 
-          {done && linkRoute && (
-            <button
-              onClick={() => navigate(linkRoute)}
-              className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-petrol hover:gap-2 transition-all"
-            >
-              Bekijk {linkType === 'offerte' ? 'de offerte' : 'het project'}
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </>
-      )}
+            {canConfirm && (
+              <div className="flex items-center justify-end gap-3 mt-3">
+                <button
+                  onClick={() => setCancelled(true)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={() => setStarted(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-flame text-white text-sm font-semibold shadow-sm hover:bg-flame/90 transition-colors"
+                >
+                  Bevestigen
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {cancelled && !failedType && (
+              <p className="text-xs text-muted-foreground mt-2">Geannuleerd.</p>
+            )}
+
+            {done && linkRoute && (
+              <button
+                onClick={() => navigate(linkRoute)}
+                className="mt-3 flex items-center gap-1.5 text-xs font-medium text-petrol hover:gap-2 transition-all"
+              >
+                Bekijk {linkType === 'offerte' ? 'de offerte' : 'het project'}
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

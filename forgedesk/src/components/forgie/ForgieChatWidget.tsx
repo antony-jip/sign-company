@@ -14,6 +14,14 @@ import { DaanActiePlan } from './DaanActiePlan'
 
 type WidgetMessage = ForgieChatMessage & { acties?: ForgieActie[] }
 
+function DaanAvatar() {
+  return (
+    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-petrol flex items-center justify-center mt-0.5">
+      <span className="text-white text-[10px] font-extrabold">D</span>
+    </div>
+  )
+}
+
 const SUGGESTIE_CHIPS = [
   'Wat staat er open?',
   'Omzet deze maand',
@@ -141,24 +149,19 @@ export function ForgieChatWidget() {
           {/* Header — petrol */}
           <div
             className="flex items-center justify-between px-4 py-3 flex-shrink-0"
-            style={{ backgroundColor: '#1A535C' }}
+            style={{ background: 'linear-gradient(135deg, var(--color-petrol) 0%, var(--color-petrol-dark) 100%)' }}
           >
             <div className="flex items-center gap-2.5">
-              {/* D avatar */}
-              <div
-                className="flex items-center justify-center"
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 10,
-                  backgroundColor: 'rgba(255,255,255,0.12)',
-                }}
-              >
-                <span style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 800 }}>D</span>
+              {/* D avatar met flame-statusstipje */}
+              <div className="relative flex items-center justify-center w-[34px] h-[34px] rounded-xl bg-white/10">
+                <span className="text-white text-sm font-extrabold">D</span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-flame ring-2 ring-petrol" />
               </div>
               <div>
-                <h2 style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', lineHeight: 1.2 }}>Daan</h2>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', lineHeight: 1.2 }}>Klaar om te helpen</p>
+                <h2 className="text-sm font-bold text-white leading-tight">
+                  Daan<span className="text-flame">.</span>
+                </h2>
+                <p className="text-[10px] text-white/55 leading-tight">je digitale collega</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -191,29 +194,9 @@ export function ForgieChatWidget() {
             {messages.length === 0 && !loading && (
               <div className="space-y-4 pt-2">
                 <div className="flex gap-2.5 items-start">
-                  {/* Daan avatar */}
-                  <div
-                    className="flex-shrink-0 flex items-center justify-center"
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: '50%',
-                      backgroundColor: '#E2F0F0',
-                    }}
-                  >
-                    <span style={{ fontSize: 10, fontWeight: 800, color: '#1A535C' }}>D</span>
-                  </div>
-                  <div
-                    className="px-3 py-2"
-                    style={{
-                      fontSize: 12,
-                      lineHeight: 1.6,
-                      color: '#191919',
-                      backgroundColor: '#F4F2EE',
-                      borderRadius: '10px 10px 10px 2px',
-                    }}
-                  >
-                    Hoi! Ik ben <strong>Daan</strong>, stel me een vraag over je klanten, projecten, offertes of facturen.
+                  <DaanAvatar />
+                  <div className="max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed bg-white dark:bg-card text-foreground border border-border/60 shadow-sm rounded-2xl rounded-bl-md">
+                    Hoi, ik ben <strong>Daan</strong>. Stel me een vraag over je klanten, projecten, offertes of facturen, of vraag me iets aan te maken.
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5" style={{ paddingLeft: 32 }}>
@@ -242,35 +225,32 @@ export function ForgieChatWidget() {
 
             {/* Messages */}
             {messages.map((msg, i) => {
-              const hasActies = msg.role === 'forgie' && !!msg.acties && msg.acties.length > 0
+              if (msg.role === 'user') {
+                return (
+                  <div key={i} className="flex justify-end">
+                    <div className="max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap bg-petrol text-white rounded-2xl rounded-br-md shadow-sm">
+                      {msg.content}
+                    </div>
+                  </div>
+                )
+              }
+              const hasActies = !!msg.acties && msg.acties.length > 0
               return (
-                <div
-                  key={i}
-                  className={cn('flex gap-2.5', msg.role === 'user' ? 'justify-end' : 'justify-start')}
-                >
-                  {msg.role === 'forgie' && (
-                    <div
-                      className="flex-shrink-0 flex items-center justify-center mt-0.5 bg-petrol-light"
-                      style={{ width: 24, height: 24, borderRadius: '50%' }}
-                    >
-                      <span className="text-petrol" style={{ fontSize: 10, fontWeight: 800 }}>D</span>
+                <div key={i} className="space-y-3">
+                  {msg.content?.trim() && (
+                    <div className="flex gap-2.5 justify-start">
+                      <DaanAvatar />
+                      <div className="max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed bg-white dark:bg-card text-foreground border border-border/60 shadow-sm rounded-2xl rounded-bl-md">
+                        {renderForgieMarkdown(msg.content)}
+                      </div>
                     </div>
                   )}
-                  {hasActies ? (
-                    <div className="min-w-0 flex-1">
-                      {/* De kaart toont zelf de bevestiging — het tijdelijke tekstzinnetje vervalt. */}
-                      <DaanActiePlan acties={msg.acties!} />
-                    </div>
-                  ) : (
-                    <div
-                      className={cn(
-                        'max-w-[85%] px-3 py-2 whitespace-pre-wrap text-xs leading-relaxed',
-                        msg.role === 'user'
-                          ? 'bg-petrol text-white rounded-2xl rounded-br-sm'
-                          : 'bg-white dark:bg-card text-foreground border border-border/60 shadow-sm rounded-2xl rounded-bl-sm',
-                      )}
-                    >
-                      {msg.role === 'forgie' ? renderForgieMarkdown(msg.content) : msg.content}
+                  {hasActies && (
+                    <div className="flex gap-2.5 justify-start">
+                      <DaanAvatar />
+                      <div className="min-w-0 flex-1">
+                        <DaanActiePlan acties={msg.acties!} />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -280,33 +260,15 @@ export function ForgieChatWidget() {
             {/* Loading indicator */}
             {loading && (
               <div className="flex gap-2.5 justify-start">
-                <div
-                  className="flex-shrink-0 flex items-center justify-center mt-0.5"
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    backgroundColor: '#E2F0F0',
-                  }}
-                >
-                  <span style={{ fontSize: 10, fontWeight: 800, color: '#1A535C' }}>D</span>
-                </div>
-                <div
-                  className="px-3 py-2"
-                  style={{
-                    fontSize: 12,
-                    color: '#5A5A55',
-                    backgroundColor: '#F4F2EE',
-                    borderRadius: '10px 10px 10px 2px',
-                  }}
-                >
-                  <span className="flex items-center gap-2">
+                <DaanAvatar />
+                <div className="px-3.5 py-2.5 bg-white dark:bg-card border border-border/60 shadow-sm rounded-2xl rounded-bl-md">
+                  <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
                     <span className="flex gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#A0A098', animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#A0A098', animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#A0A098', animationDelay: '300ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: '300ms' }} />
                     </span>
-                    <span style={{ fontSize: 11 }}>Daan denkt na...</span>
+                    Daan denkt na…
                   </span>
                 </div>
               </div>
@@ -316,7 +278,7 @@ export function ForgieChatWidget() {
           </div>
 
           {/* Input area */}
-          <div className="flex-shrink-0 p-3" style={{ borderTop: '0.5px solid #E6E4E0', backgroundColor: 'hsl(var(--card))' }}>
+          <div className="flex-shrink-0 p-3 border-t border-border/60 bg-card">
             <div className="flex items-center gap-2">
               <input
                 ref={inputRef}
@@ -324,33 +286,14 @@ export function ForgieChatWidget() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Vraag het aan Daan..."
+                placeholder="Zeg het tegen Daan…"
                 disabled={loading}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  fontSize: 12,
-                  color: '#191919',
-                  backgroundColor: '#F4F2EE',
-                  border: '0.5px solid #E6E4E0',
-                  borderRadius: 8,
-                  outline: 'none',
-                }}
-                onFocus={e => { e.target.style.borderColor = '#1A535C' }}
-                onBlur={e => { e.target.style.borderColor = '#E6E4E0' }}
+                className="flex-1 px-3 py-2 text-[13px] text-foreground bg-muted/50 rounded-lg outline-none border border-border/60 focus:border-petrol placeholder:text-muted-foreground/70"
               />
               <button
                 onClick={() => handleSend()}
                 disabled={!input.trim() || loading}
-                className="flex items-center justify-center transition-opacity disabled:opacity-40"
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  backgroundColor: '#1A535C',
-                  color: '#FFFFFF',
-                  flexShrink: 0,
-                }}
+                className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-flame text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { FolderOpen, FileText, CheckSquare, Users, Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -91,6 +91,12 @@ interface ForgieActieKaartProps {
   pendingKlantId?: string
   pendingProjectId?: string
   onStatusChange?: (status: ActieStatus) => void
+  /** Voert direct uit bij mount (chain-mode), zonder eigen knop. */
+  autoStart?: boolean
+  /** Meldt een mislukte create aan de parent (voor stop-halverwege). */
+  onError?: (message: string) => void
+  /** Rendert niets — alleen uitvoeren (de stepper in DaanActiePlan toont de voortgang). */
+  silent?: boolean
 }
 
 export function ForgieActieKaart({
@@ -101,6 +107,9 @@ export function ForgieActieKaart({
   pendingKlantId,
   pendingProjectId,
   onStatusChange,
+  autoStart = false,
+  onError,
+  silent = false,
 }: ForgieActieKaartProps) {
   const { user } = useAuth()
   const [editedData, setEditedData] = useState<Record<string, unknown>>({ ...actie.data })
@@ -223,16 +232,27 @@ export function ForgieActieKaart({
       const msg = err instanceof Error ? err.message : 'Aanmaken mislukt'
       setError(msg)
       setStatus('idle')
+      onError?.(msg)
       toast.error(`Daan kon ${actie.type} niet aanmaken: ${msg}`)
     }
-  }, [actie.type, editedData, pendingKlantId, pendingProjectId, onCreated])
+  }, [actie.type, editedData, pendingKlantId, pendingProjectId, onCreated, onError])
 
   const handleCancel = useCallback(() => {
     setStatus('cancelled')
     onCancel()
   }, [onCancel])
 
+  // Chain-mode: start de create één keer automatisch (geen retry-loop bij een fout).
+  const startedRef = useRef(false)
+  useEffect(() => {
+    if (autoStart && !startedRef.current && status === 'idle') {
+      startedRef.current = true
+      handleCreate()
+    }
+  }, [autoStart, status, handleCreate])
+
   if (status === 'cancelled') return null
+  if (silent) return null
 
   return (
     <div
