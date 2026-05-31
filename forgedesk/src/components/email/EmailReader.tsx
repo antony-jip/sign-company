@@ -1438,17 +1438,17 @@ export function EmailReader({
                     <Forward className="h-3.5 w-3.5" strokeWidth={1.75} />
                     <span className="hidden md:inline">Doorsturen</span>
                   </button>
-                </div>
 
-                {/* Aanmaken vanuit deze mail — eigen regel */}
-                {onOpenContextPanel && (
-                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                    <EmailActionsPopover
-                      email={email}
-                      onOpenProjectDialog={() => onOpenContextPanel('project')}
-                    />
-                  </div>
-                )}
+                  {/* Aanmaken vanuit deze mail — subtiele icon-buttons, rechts */}
+                  {onOpenContextPanel && (
+                    <div className="ml-auto">
+                      <EmailActionsPopover
+                        email={email}
+                        onOpenProjectDialog={() => onOpenContextPanel('project')}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

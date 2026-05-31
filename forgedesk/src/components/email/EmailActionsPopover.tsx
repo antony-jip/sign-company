@@ -203,39 +203,35 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
       {/* Flame-tinted "create" family — losse regel onder de reply/AI-acties */}
       <button
         onClick={() => { hapticLight(); setView('klant'); setOpen(true) }}
-        className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+        className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
         title="Klant aanmaken vanuit deze mail"
         aria-label="Klant aanmaken"
       >
         <UserPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
-        <span className="hidden md:inline">Klant</span>
       </button>
       <button
         onClick={() => { hapticLight(); onOpenProjectDialog() }}
-        className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+        className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
         title="Project aanmaken vanuit deze mail"
         aria-label="Project aanmaken"
       >
         <FolderPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
-        <span className="hidden md:inline">Project</span>
       </button>
       <button
         onClick={() => { hapticLight(); setView('taak'); setOpen(true) }}
-        className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+        className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
         title="Taak aanmaken vanuit deze mail"
         aria-label="Taak aanmaken"
       >
         <ListPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
-        <span className="hidden md:inline">Taak</span>
       </button>
       <button
         onClick={() => { hapticLight(); setView('koppel'); setOpen(true) }}
-        className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+        className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
         title="Aan project koppelen"
         aria-label="Aan project koppelen"
       >
         <Link2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-        <span className="hidden md:inline">Koppelen</span>
       </button>
 
       {open && (
