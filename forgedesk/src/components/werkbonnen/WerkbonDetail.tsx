@@ -1144,7 +1144,7 @@ export function WerkbonDetail() {
             <ClipboardCheck className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
+            <h1 className="text-lg font-bold tracking-tight text-foreground">
               {isNew ? 'Nieuwe werkbon' : <span>Werkbon <span className="font-mono">{werkbonNummer}</span></span>}
             </h1>
             {!isNew && (

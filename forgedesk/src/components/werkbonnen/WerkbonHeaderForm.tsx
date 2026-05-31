@@ -25,7 +25,7 @@ interface WerkbonHeaderFormProps {
   onFieldChange: (field: string, value: string) => void
 }
 
-const inputStyle = { backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }
+const inputStyle = { backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' }
 const labelClass = "text-[12px] font-medium mb-1.5 block"
 const labelColor = { color: '#6B6B66' }
 
@@ -164,7 +164,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
           </div>
 
           {/* Contact on-site */}
-          <div className="pt-2 border-t" style={{ borderColor: '#EBEBEB' }}>
+          <div className="pt-2 border-t" style={{ borderColor: 'hsl(var(--border))' }}>
             <span className={labelClass} style={labelColor}>Contact op locatie</span>
           </div>
           {contactpersonen.length > 0 && (
