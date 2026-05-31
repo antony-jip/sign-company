@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
-  MoreHorizontal, UserPlus, FolderPlus, ListPlus, Link2,
+  UserPlus, FolderPlus, ListPlus, Link2,
   ArrowLeft, X, Loader2, Building2, Search,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -200,18 +199,44 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
   const widthClass = view === 'menu' ? 'w-[240px]' : view === 'koppel' ? 'w-[380px]' : 'w-[340px]'
 
   return (
-    <div ref={containerRef} className="relative">
-      <div className="w-px h-5 bg-border mx-2 hidden md:inline-block" />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#F15025] hover:text-[#C0451A] hover:bg-[#F15025]/[0.08] rounded-[10px] transition-colors duration-150"
-        onClick={() => { hapticLight(); setOpen(v => !v) }}
-        title="Acties — klant, project of taak aanmaken vanuit deze mail"
-        aria-label="Acties"
+    <div ref={containerRef} className="relative flex items-center gap-1.5">
+      <div className="w-px h-5 bg-border mx-0.5 hidden md:block" aria-hidden />
+      <button
+        onClick={() => { hapticLight(); setView('klant'); setOpen(true) }}
+        className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+        title="Klant aanmaken vanuit deze mail"
+        aria-label="Klant aanmaken"
       >
-        <MoreHorizontal className="h-[18px] w-[18px] md:h-4 md:w-4" />
-      </Button>
+        <UserPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
+        <span className="hidden md:inline">Klant</span>
+      </button>
+      <button
+        onClick={() => { hapticLight(); onOpenProjectDialog() }}
+        className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+        title="Project aanmaken vanuit deze mail"
+        aria-label="Project aanmaken"
+      >
+        <FolderPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
+        <span className="hidden md:inline">Project</span>
+      </button>
+      <button
+        onClick={() => { hapticLight(); setView('taak'); setOpen(true) }}
+        className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+        title="Taak aanmaken vanuit deze mail"
+        aria-label="Taak aanmaken"
+      >
+        <ListPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
+        <span className="hidden md:inline">Taak</span>
+      </button>
+      <button
+        onClick={() => { hapticLight(); setView('koppel'); setOpen(true) }}
+        className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+        title="Aan project koppelen"
+        aria-label="Aan project koppelen"
+      >
+        <Link2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+        <span className="hidden md:inline">Koppelen</span>
+      </button>
 
       {open && (
         <div
@@ -220,20 +245,11 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
             widthClass,
           )}
         >
-          {view === 'menu' ? (
-            <div className="py-1.5">
-              <p className="px-3.5 pt-1.5 pb-1 text-[10px] uppercase tracking-[0.08em] text-muted-foreground font-semibold">Acties</p>
-              <MenuItem icon={<UserPlus className="h-3.5 w-3.5" />} label="Klant aanmaken" onClick={() => setView('klant')} />
-              <MenuItem icon={<FolderPlus className="h-3.5 w-3.5" />} label="Project aanmaken" onClick={() => { setOpen(false); onOpenProjectDialog() }} />
-              <MenuItem icon={<ListPlus className="h-3.5 w-3.5" />} label="Taak aanmaken" onClick={() => setView('taak')} />
-              <div className="my-1 mx-3.5 h-px bg-black/[0.06]" aria-hidden />
-              <MenuItem icon={<Link2 className="h-3.5 w-3.5" />} label="Aan project koppelen" onClick={() => setView('koppel')} />
-            </div>
-          ) : view === 'klant' ? (
+          {view === 'klant' ? (
             <FormFrame
               title={klantStep === 'search' ? 'Klant koppelen' : klantStep === 'add-to-existing' ? `Contact toevoegen` : 'Nieuwe klant'}
               onBack={() => {
-                if (klantStep === 'search') setView('menu')
+                if (klantStep === 'search') setOpen(false)
                 else { setKlantStep('search'); setAddToKlant(null) }
               }}
               onClose={() => setOpen(false)}
@@ -358,7 +374,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
           ) : view === 'taak' ? (
             <FormFrame
               title="Taak aanmaken"
-              onBack={() => setView('menu')}
+              onBack={() => setOpen(false)}
               onClose={() => setOpen(false)}
             >
               <div className="space-y-2.5">
@@ -431,7 +447,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
           ) : view === 'koppel' ? (
             <FormFrame
               title="Aan project koppelen"
-              onBack={() => setView('menu')}
+              onBack={() => setOpen(false)}
               onClose={() => setOpen(false)}
             >
               {email?.thread_id ? (
@@ -447,21 +463,6 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
         </div>
       )}
     </div>
-  )
-}
-
-function MenuItem({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-foreground hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
-    >
-      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#1A535C]/[0.08] text-[#1A535C]">
-        {icon}
-      </div>
-      <span className="font-medium">{label}</span>
-    </button>
   )
 }
 

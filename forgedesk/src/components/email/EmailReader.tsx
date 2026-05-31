@@ -1357,15 +1357,6 @@ export function EmailReader({
                 </Button>
               </span>
             )}
-
-            {/* Acties-popover: Klant/Taak/Koppel renderen inline (morph),
-                Project blijft Dialog via onOpenContextPanel callback. */}
-            {onOpenContextPanel && (
-              <EmailActionsPopover
-                email={email}
-                onOpenProjectDialog={() => onOpenContextPanel('project')}
-              />
-            )}
           </div>
         </div>
         </TooltipProvider>
@@ -1426,7 +1417,7 @@ export function EmailReader({
                 </div>
 
                 {/* Reply/Forward — flatter system-style row */}
-                <div className="flex items-stretch md:items-center gap-1.5">
+                <div className="flex flex-wrap items-stretch md:items-center gap-1.5">
                   <button onClick={() => { hapticLight(); handleReply('reply') }}
                     className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-9 md:h-8 px-3.5 rounded-button text-[13px] font-semibold text-white bg-[#1A535C] hover:bg-[#0F3C44] transition-colors duration-150"
                     title="Beantwoorden (r)">
@@ -1447,6 +1438,16 @@ export function EmailReader({
                     <Forward className="h-3.5 w-3.5" strokeWidth={1.75} />
                     <span className="hidden md:inline">Doorsturen</span>
                   </button>
+
+                  {/* Acties vanuit deze mail — inline, altijd zichtbaar, rechts */}
+                  {onOpenContextPanel && (
+                    <div className="ml-auto">
+                      <EmailActionsPopover
+                        email={email}
+                        onOpenProjectDialog={() => onOpenContextPanel('project')}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
