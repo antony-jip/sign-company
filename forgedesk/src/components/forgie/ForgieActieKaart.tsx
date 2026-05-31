@@ -170,7 +170,7 @@ export function ForgieActieKaart({
         logCreate({ user, entityType: 'project', entityId: result.id, omschrijving: 'Aangemaakt via Daan' })
         createdId = result.id
       } else if (actie.type === 'offerte') {
-        const klantId = String(editedData.klant_id || '')
+        const klantId = String(editedData.klant_id || pendingKlantId || '')
         if (!klantId) {
           setError('Klant is verplicht voor een offerte')
           setStatus('idle')
