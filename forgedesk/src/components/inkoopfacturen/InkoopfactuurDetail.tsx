@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft, Plus, Trash2, Sparkles } from 'lucide-react'
@@ -274,11 +275,11 @@ export function InkoopfactuurDetail() {
               </div>
               <div>
                 <Label className="text-[11px]">Factuurdatum</Label>
-                <Input type="date" value={factuur.factuur_datum || ''} onChange={e => updateField('factuur_datum', e.target.value)} disabled={isAfgerond} />
+                <DatePicker value={factuur.factuur_datum || ''} onChange={v => updateField('factuur_datum', v)} asInput disabled={isAfgerond} />
               </div>
               <div>
                 <Label className="text-[11px]">Vervaldatum</Label>
-                <Input type="date" value={factuur.vervaldatum || ''} onChange={e => updateField('vervaldatum', e.target.value)} disabled={isAfgerond} />
+                <DatePicker value={factuur.vervaldatum || ''} onChange={v => updateField('vervaldatum', v)} asInput disabled={isAfgerond} />
               </div>
             </div>
 

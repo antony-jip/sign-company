@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -405,11 +406,11 @@ export function BestelbonDetail() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Besteld op</Label>
-                <Input type="date" value={besteldOp} onChange={(e) => setBesteldOp(e.target.value)} />
+                <DatePicker value={besteldOp} onChange={(v) => setBesteldOp(v)} asInput />
               </div>
               <div>
                 <Label>Verwachte levering</Label>
-                <Input type="date" value={verwachteLevering} onChange={(e) => setVerwachteLevering(e.target.value)} />
+                <DatePicker value={verwachteLevering} onChange={(v) => setVerwachteLevering(v)} asInput />
               </div>
             </div>
             <div>
