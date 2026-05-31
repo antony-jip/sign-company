@@ -2977,6 +2977,23 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
     0 8px 24px rgba(26,83,92,0.25);
 }
 
+/* ProjectFaseBar — "nog te bereiken" fase-tinten. Petrol-met-opacity is op
+   donkere surface onleesbaar; in dark mode een koel off-white gebruiken. */
+:root {
+  --fase-ring: rgba(26,83,92,0.30);
+  --fase-icon: rgba(26,83,92,0.55);
+  --fase-line: rgba(26,83,92,0.25);
+  --fase-label: rgba(26,83,92,0.45);
+  --fase-caption: rgba(26,83,92,0.30);
+}
+.dark {
+  --fase-ring: rgba(168,188,191,0.32);
+  --fase-icon: rgba(168,188,191,0.60);
+  --fase-line: rgba(168,188,191,0.22);
+  --fase-label: rgba(168,188,191,0.58);
+  --fase-caption: rgba(168,188,191,0.42);
+}
+
 /* Shared row + pulse animaties (waren eerder per-component inline <style>) */
 @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
 @keyframes doen-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }

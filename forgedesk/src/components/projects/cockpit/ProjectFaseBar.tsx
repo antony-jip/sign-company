@@ -92,14 +92,14 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                 ? PETROL
                 : isPast
                   ? PETROL
-                  : 'rgba(26,83,92,0.30)'
+                  : 'var(--fase-ring)'
             const iconColor = isFinalCompleted
               ? '#FFFFFF'
               : isPast
                 ? '#FFFFFF'
                 : isActive
                   ? PETROL
-                  : 'rgba(26,83,92,0.55)'
+                  : 'var(--fase-icon)'
 
             return (
               <div key={fase.key} className="flex items-start flex-1 last:flex-initial min-w-0">
@@ -162,7 +162,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     <span
                       className={cn(
                         'font-heading font-bold text-[15px] tracking-[-0.01em] transition-colors duration-200',
-                        isActive ? 'text-foreground' : isPast || isFinalCompleted ? 'text-[#1A535C]' : 'text-[rgba(26,83,92,0.45)] group-hover:text-[#1A535C]',
+                        isActive ? 'text-foreground' : isPast || isFinalCompleted ? 'text-[#1A535C] dark:text-[#5FA8B5]' : 'text-[var(--fase-label)] group-hover:text-foreground',
                       )}
                     >
                       {fase.label}<span className="text-[#F15025]">.</span>
@@ -170,7 +170,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     <span
                       className={cn(
                         'text-[9.5px] uppercase tracking-[0.16em] font-semibold transition-colors duration-200 text-center max-w-[110px] leading-[1.4]',
-                        isActive ? 'text-foreground/70' : isPast || isFinalCompleted ? 'text-muted-foreground' : 'text-[rgba(26,83,92,0.30)] group-hover:text-muted-foreground',
+                        isActive ? 'text-foreground/70' : isPast || isFinalCompleted ? 'text-muted-foreground' : 'text-[var(--fase-caption)] group-hover:text-muted-foreground',
                       )}
                     >
                       {fase.caption}
@@ -185,7 +185,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     <div
                       className="absolute inset-x-0 top-0 h-px"
                       style={{
-                        backgroundImage: `linear-gradient(90deg, rgba(26,83,92,0.25) 50%, transparent 50%)`,
+                        backgroundImage: `linear-gradient(90deg, var(--fase-line) 50%, transparent 50%)`,
                         backgroundSize: '8px 1px',
                         backgroundRepeat: 'repeat-x',
                       }}
