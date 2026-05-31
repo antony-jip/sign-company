@@ -83,6 +83,9 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const [klantMatches, setKlantMatches] = useState<Klant[] | null>(null)
   const [createNew, setCreateNew] = useState(false)
   const [contactpersoonId, setContactpersoonId] = useState('')
+  const [projectNaam, setProjectNaam] = useState(
+    () => String(baseOrdered.find((a) => a.type === 'project')?.data.naam ?? ''),
+  )
 
   const [started, setStarted] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -142,6 +145,21 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
     [baseOrdered, needsKlant],
   )
 
+  const hasProject = ordered.some((a) => a.type === 'project')
+  const klantNaamCheck = resolvedKlant?.naam ?? klantNaam ?? ''
+  // Geldige projectnaam: niet leeg, niet de klantnaam, niet de "Nieuw project"-default.
+  const projectNaamReady =
+    !hasProject ||
+    (projectNaam.trim() !== '' &&
+      norm(projectNaam) !== norm(klantNaamCheck) &&
+      norm(projectNaam) !== 'nieuw project')
+
+  // Een voorgestelde naam die toevallig de klantnaam is, niet voorvullen.
+  useEffect(() => {
+    const kn = resolvedKlant?.naam ?? klantNaam
+    if (kn && norm(projectNaam) === norm(kn)) setProjectNaam('')
+  }, [resolvedKlant, klantNaam])
+
   const handleCreated = useCallback((type: string, id: string) => {
     setCreatedIds((prev) => ({ ...prev, [type]: id }))
     if (type === 'project') setPendingProjectId(id)
@@ -164,11 +182,14 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const halted = cancelled || !!failedType
   const activeActie = started && !done && !halted ? ordered[currentIndex] : undefined
 
-  // Contactpersoon_id meegeven aan project/offerte (de kaart leest het uit data).
-  const cardActie =
-    activeActie && (activeActie.type === 'project' || activeActie.type === 'offerte')
-      ? { ...activeActie, data: { ...activeActie.data, contactpersoon_id: contactpersoonId } }
-      : activeActie
+  // Naam + contactpersoon_id meegeven aan project/offerte (de kaart leest ze uit data).
+  const cardActie = !activeActie
+    ? activeActie
+    : activeActie.type === 'project'
+      ? { ...activeActie, data: { ...activeActie.data, naam: projectNaam.trim(), contactpersoon_id: contactpersoonId } }
+      : activeActie.type === 'offerte'
+        ? { ...activeActie, data: { ...activeActie.data, contactpersoon_id: contactpersoonId } }
+        : activeActie
 
   // Stepper-rijen: de (eventueel) gekoppelde klant als done-rij, dan de keten.
   const displaySteps = useMemo(() => {
@@ -273,6 +294,21 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               <p className="text-xs text-red-600 dark:text-red-400 mt-2">{error}</p>
             )}
 
+            {/* Projectnaam (verplicht) — voorgevuld met Daans suggestie, aanpasbaar. */}
+            {hasProject && !started && (
+              <div className="mt-3 pt-3 border-t border-border/40">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                  Projectnaam
+                </label>
+                <input
+                  value={projectNaam}
+                  onChange={(e) => setProjectNaam(e.target.value)}
+                  placeholder="Hoe wil je dit project noemen?"
+                  className="w-full px-3 py-2 text-[13px] text-foreground bg-background rounded-lg border border-border/60 focus:border-petrol outline-none placeholder:text-muted-foreground/70"
+                />
+              </div>
+            )}
+
             {/* Contactpersoon-keuze (verplicht). Een klik selecteert én bevestigt. */}
             {needsKlant && !started && (
               <div className="mt-3 pt-3 border-t border-border/40 max-h-64 overflow-y-auto">
@@ -286,7 +322,10 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
                   }}
                   contactpersoonId={contactpersoonId}
                   onContactpersoonChange={setContactpersoonId}
-                  onContactpersoonPicked={(id) => { setContactpersoonId(id); setStarted(true) }}
+                  onContactpersoonPicked={(id) => {
+                    setContactpersoonId(id)
+                    if (klantReady && projectNaamReady) setStarted(true)
+                  }}
                   klanten={klanten}
                   onKlantenRefresh={fetchKlanten}
                 />
@@ -310,9 +349,11 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
 
             {showConfirm && (
               <div className="mt-3">
-                {needsKlant && klantReady && !contactReady && (
+                {hasProject && !projectNaamReady ? (
+                  <p className="text-[11px] text-muted-foreground mb-2">Geef het project een naam.</p>
+                ) : needsKlant && klantReady && !contactReady ? (
                   <p className="text-[11px] text-muted-foreground mb-2">Kies eerst een contactpersoon.</p>
-                )}
+                ) : null}
                 <div className="flex items-center justify-end gap-3">
                   <button
                     onClick={() => setCancelled(true)}
@@ -322,7 +363,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
                   </button>
                   <button
                     onClick={() => setStarted(true)}
-                    disabled={!klantReady || !contactReady}
+                    disabled={!klantReady || !contactReady || !projectNaamReady}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-flame text-white text-sm font-semibold shadow-sm hover:bg-flame/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Bevestigen

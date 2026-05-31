@@ -579,7 +579,10 @@ VRAAG OF OPDRACHT (belangrijk):
         'project: naam, klant_naam, beschrijving, status. ' +
         'offerte: onderwerp, klant_naam, project_naam. ' +
         'taak: titel, beschrijving, project_naam, prioriteit, deadline. ' +
-        'Vul alleen velden die de gebruiker noemt; verzin niets en reken niets uit.',
+        'Vul alleen velden die de gebruiker noemt; verzin niets en reken niets uit. ' +
+        'Voor een project: gebruik de projectnaam die de gebruiker noemt; noemt hij er geen, ' +
+        'stel er dan een voor op basis van het werk in de opdracht (bv. "Beachflag + montage"). ' +
+        'Gebruik NOOIT de klantnaam als projectnaam, en laat "naam" leeg als er niets bruikbaars is.',
       input_schema: {
         type: 'object',
         properties: {
