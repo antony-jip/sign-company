@@ -552,7 +552,7 @@ REGELS:
 
 VRAAG OF OPDRACHT (belangrijk):
 - Een VRAAG over data ("hoeveel offertes had ik?", "wat staat er open?") beantwoord je gewoon in tekst. Roep dan GEEN tool aan.
-- Een duidelijke OPDRACHT om iets aan te maken ("maak een offerte/project/klant/taak voor…") handel je af met de tool 'stel_actie_voor': geef het type en de velden die de gebruiker noemt. Verzin GEEN waarden die je niet hebt en reken NIETS uit. Zet bij een tool-aanroep ook altijd een korte, leesbare bevestigingszin in je tekst, bv. "Ik zou nu een offerte aanmaken voor KWS Vegetables — klopt dat?".
+- Een duidelijke OPDRACHT om iets aan te maken ("maak een project/klant/taak voor…") handel je af met de tool 'stel_actie_voor': geef het type en de velden die de gebruiker noemt. Verzin GEEN waarden die je niet hebt en reken NIETS uit. Zet bij een tool-aanroep ook altijd een korte, leesbare bevestigingszin in je tekst, bv. "Ik zou nu een project aanmaken voor KWS Vegetables — klopt dat?". Vraagt de gebruiker om een offerte, stel dan een PROJECT voor; de app biedt daarna zelf aan om er een offerte bij te maken.
 - TWIJFEL je of een bericht een vraag of een opdracht is (bv. alleen een losse naam zonder werkwoord)? Roep dan GEEN tool aan, maar stel een korte verhelderende wedervraag in tekst, bv. "Bedoel je dat ik die offerte moet aanmaken?".
 - Je voert zelf niets uit en slaat niets op; je stelt alleen een actie voor die de gebruiker daarna zelf bevestigt.`
 
@@ -577,22 +577,17 @@ VRAAG OF OPDRACHT (belangrijk):
         'Verwachte velden in "data" per type: ' +
         'klant: bedrijfsnaam, contactpersoon, email, telefoon. ' +
         'project: naam, klant_naam, beschrijving, status. ' +
-        'offerte: onderwerp, klant_naam, project_naam, en optioneel regels (zie hieronder). ' +
         'taak: titel, beschrijving, project_naam, prioriteit, deadline. ' +
         'Vul alleen velden die de gebruiker noemt; verzin niets en reken niets uit. ' +
         'Voor een project: gebruik de projectnaam die de gebruiker noemt; noemt hij er geen, ' +
         'stel er dan een voor op basis van het werk in de opdracht (bv. "Beachflag + montage"). ' +
         'Gebruik NOOIT de klantnaam als projectnaam, en laat "naam" leeg als er niets bruikbaars is. ' +
-        'Voor een offerte met inhoud: zet de genoemde werkregels in "data.regels" (een array). ' +
-        'Een productregel = { type:"product", omschrijving, aantal, inkoop?, marge?, marge_type? } ' +
-        'waarbij marge_type "procent" of "bedrag" is. Een montageregel = { type:"montage", omschrijving?, uren }. ' +
-        'Lever uitsluitend de RUWE getallen uit de zin (inkoop, marge-getal, aantal, uren); ' +
-        'reken GEEN verkoopprijzen of totalen uit en verzin geen bedragen — dat doet de calculator. ' +
-        'Zet "marge_type" alleen als de gebruiker duidelijk "%" of "euro" zegt; bij twijfel laat je het weg.',
+        'Een offerte stel je NOOIT los voor: vraagt de gebruiker om een offerte, stel dan een project voor — ' +
+        'de app biedt daarna zelf aan om er een offerte bij te maken.',
       input_schema: {
         type: 'object',
         properties: {
-          type: { type: 'string', enum: ['klant', 'project', 'offerte', 'taak'] },
+          type: { type: 'string', enum: ['klant', 'project', 'taak'] },
           data: { type: 'object', description: 'De ingevulde velden voor dit type, leesbaar (namen, geen ids).' },
         },
         required: ['type', 'data'],
