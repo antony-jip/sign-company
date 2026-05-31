@@ -577,12 +577,18 @@ VRAAG OF OPDRACHT (belangrijk):
         'Verwachte velden in "data" per type: ' +
         'klant: bedrijfsnaam, contactpersoon, email, telefoon. ' +
         'project: naam, klant_naam, beschrijving, status. ' +
-        'offerte: onderwerp, klant_naam, project_naam. ' +
+        'offerte: onderwerp, klant_naam, project_naam, en optioneel regels (zie hieronder). ' +
         'taak: titel, beschrijving, project_naam, prioriteit, deadline. ' +
         'Vul alleen velden die de gebruiker noemt; verzin niets en reken niets uit. ' +
         'Voor een project: gebruik de projectnaam die de gebruiker noemt; noemt hij er geen, ' +
         'stel er dan een voor op basis van het werk in de opdracht (bv. "Beachflag + montage"). ' +
-        'Gebruik NOOIT de klantnaam als projectnaam, en laat "naam" leeg als er niets bruikbaars is.',
+        'Gebruik NOOIT de klantnaam als projectnaam, en laat "naam" leeg als er niets bruikbaars is. ' +
+        'Voor een offerte met inhoud: zet de genoemde werkregels in "data.regels" (een array). ' +
+        'Een productregel = { type:"product", omschrijving, aantal, inkoop?, marge?, marge_type? } ' +
+        'waarbij marge_type "procent" of "bedrag" is. Een montageregel = { type:"montage", omschrijving?, uren }. ' +
+        'Lever uitsluitend de RUWE getallen uit de zin (inkoop, marge-getal, aantal, uren); ' +
+        'reken GEEN verkoopprijzen of totalen uit en verzin geen bedragen — dat doet de calculator. ' +
+        'Zet "marge_type" alleen als de gebruiker duidelijk "%" of "euro" zegt; bij twijfel laat je het weg.',
       input_schema: {
         type: 'object',
         properties: {
