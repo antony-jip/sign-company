@@ -411,6 +411,8 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
                   onContactpersoonPicked={(id, naam) => {
                     setContactpersoonId(id)
                     if (naam) setContactNaam(naam)
+                    // Een klik op een contactpersoon bevestigt meteen — geen aparte Bevestigen-klik nodig.
+                    if (klantReady && projectNaamReady) setStarted(true)
                   }}
                   klanten={klanten}
                   onKlantenRefresh={fetchKlanten}
