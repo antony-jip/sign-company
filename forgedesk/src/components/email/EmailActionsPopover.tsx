@@ -4,6 +4,7 @@ import {
   ArrowLeft, X, Loader2, Building2, Search,
 } from 'lucide-react'
 import { DatePicker } from '@/components/ui/date-picker'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Email, Medewerker, Klant } from '@/types'
@@ -200,39 +201,57 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
 
   return (
     <div ref={containerRef} className="relative flex items-center gap-1.5">
-      {/* Flame-tinted "create" family — losse regel onder de reply/AI-acties */}
-      <button
-        onClick={() => { hapticLight(); setView('klant'); setOpen(true) }}
-        className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
-        title="Klant aanmaken vanuit deze mail"
-        aria-label="Klant aanmaken"
-      >
-        <UserPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
-      </button>
-      <button
-        onClick={() => { hapticLight(); onOpenProjectDialog() }}
-        className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
-        title="Project aanmaken vanuit deze mail"
-        aria-label="Project aanmaken"
-      >
-        <FolderPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
-      </button>
-      <button
-        onClick={() => { hapticLight(); setView('taak'); setOpen(true) }}
-        className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
-        title="Taak aanmaken vanuit deze mail"
-        aria-label="Taak aanmaken"
-      >
-        <ListPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
-      </button>
-      <button
-        onClick={() => { hapticLight(); setView('koppel'); setOpen(true) }}
-        className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
-        title="Aan project koppelen"
-        aria-label="Aan project koppelen"
-      >
-        <Link2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-      </button>
+      {/* Aanmaken vanuit deze mail — subtiele icon-buttons met tooltip-label */}
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => { hapticLight(); setView('klant'); setOpen(true) }}
+              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+              aria-label="Klant aanmaken"
+            >
+              <UserPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[12px]">Klant aanmaken</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => { hapticLight(); onOpenProjectDialog() }}
+              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+              aria-label="Project aanmaken"
+            >
+              <FolderPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[12px]">Project aanmaken</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => { hapticLight(); setView('taak'); setOpen(true) }}
+              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+              aria-label="Taak aanmaken"
+            >
+              <ListPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[12px]">Taak aanmaken</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => { hapticLight(); setView('koppel'); setOpen(true) }}
+              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+              aria-label="Aan project koppelen"
+            >
+              <Link2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[12px]">Aan project koppelen</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {open && (
         <div
