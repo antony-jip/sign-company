@@ -126,6 +126,9 @@ export function EmailReader({
   const [showQuotedText, setShowQuotedText] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [forgieLoading, setForgieLoading] = useState(false)
+  const [replyAiOpen, setReplyAiOpen] = useState(false)
+  const [replyBriefOpen, setReplyBriefOpen] = useState(false)
+  const [replyBrief, setReplyBrief] = useState('')
   const [replyAttachments, setReplyAttachments] = useState<File[]>([])
 
   // Blob-URLs voor image-thumbnails op user-uploaded reply-bijlagen
@@ -771,6 +774,27 @@ export function EmailReader({
     }
   }, [email, signatureHtml])
 
+  // Reply met eigen input: Daan schrijft een antwoord op basis van de brief van de gebruiker.
+  const handleReplyFromBrief = useCallback(async () => {
+    const brief = replyBrief.trim()
+    if (!email || !brief || !editorRef.current) return
+    setForgieLoading(true)
+    try {
+      const context = `Antwoord op deze e-mail van ${extractSenderName(email.van)} (${email.onderwerp}):\n${email.inhoud?.replace(/<[^>]*>/g, '').slice(0, 800)}`
+      const response = await callForgie('write-email', brief, context)
+      if (response?.result && editorRef.current) {
+        editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
+      }
+      setReplyBriefOpen(false)
+      setReplyBrief('')
+    } catch (err) {
+      logger.error('Fout bij genereren antwoord (brief):', err)
+      toast.error('Daan kon geen antwoord genereren')
+    } finally {
+      setForgieLoading(false)
+    }
+  }, [email, replyBrief, signatureHtml])
+
   // Generate reply from reader: opens reply mode first, then generates
   const handleGenerateReplyFromReader = useCallback(async () => {
     if (!email) return
@@ -975,19 +999,69 @@ export function EmailReader({
             {/* AI suggestion — subtler text-link op zelfde aligning kolom */}
             <div className="flex items-center px-5 md:px-7 py-2 border-b border-black/[0.06]">
               <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Daan</span>
-              <button
-                onClick={handleForgieWrite}
-                disabled={forgieLoading}
-                className={cn(
-                  'inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors duration-150',
-                  forgieLoading
-                    ? 'text-muted-foreground'
-                    : 'text-[#C0451A] hover:text-[#F15025]',
+              <div className="relative">
+                <button
+                  onClick={() => setReplyAiOpen(v => !v)}
+                  disabled={forgieLoading}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors duration-150',
+                    forgieLoading ? 'text-muted-foreground' : 'text-[#C0451A] hover:text-[#F15025]',
+                  )}
+                >
+                  {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Beantwoord met AI
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                {replyAiOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setReplyAiOpen(false)} />
+                    <div className="absolute left-0 top-full mt-1.5 w-[230px] bg-card rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-border z-50 py-1.5">
+                      <button
+                        onClick={() => { setReplyAiOpen(false); handleForgieWrite() }}
+                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-background transition-colors flex items-center gap-2"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-[#F15025]" />
+                        Uit context mail
+                      </button>
+                      <button
+                        onClick={() => { setReplyAiOpen(false); setReplyBriefOpen(true) }}
+                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-background transition-colors flex items-center gap-2"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                        Eigen input geven
+                      </button>
+                    </div>
+                  </>
                 )}
-              >
-                {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                Schrijf mijn e-mail
-              </button>
+                {replyBriefOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setReplyBriefOpen(false)} />
+                    <div className="absolute left-0 top-full mt-1.5 w-[340px] max-w-[calc(100vw-2rem)] bg-card rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-border z-50 p-3.5 space-y-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-[#F15025]" />
+                        <p className="text-[13px] font-semibold text-foreground">Wat wil je antwoorden?</p>
+                      </div>
+                      <textarea
+                        value={replyBrief}
+                        onChange={(e) => setReplyBrief(e.target.value)}
+                        onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleReplyFromBrief() }}
+                        rows={3}
+                        autoFocus
+                        placeholder="Bijv. Bevestig de afspraak en vraag om het juiste leveradres."
+                        className="w-full text-[13px] text-foreground bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-[#1A535C] resize-none"
+                      />
+                      <p className="text-[11px] text-muted-foreground">Daan schrijft in jouw tone of voice. <span className="text-muted-foreground/70">⌘↵ om te genereren</span></p>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => setReplyBriefOpen(false)} className="text-[12px] text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-lg transition-colors">Annuleren</button>
+                        <button onClick={handleReplyFromBrief} disabled={!replyBrief.trim() || forgieLoading} className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-[#F15025] hover:bg-[#D9421C] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40">
+                          {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                          Genereer
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
