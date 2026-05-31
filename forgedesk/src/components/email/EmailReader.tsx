@@ -1420,14 +1420,14 @@ export function EmailReader({
 
                   {/* AI-helpers (Daan) — uitnodigende zachte pillen */}
                   <button onClick={handleSummarize} disabled={summaryLoading}
-                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-3 rounded-button text-[12px] font-medium text-[#1A535C] bg-[#1A535C]/[0.06] hover:bg-[#1A535C]/[0.12] transition-colors duration-150 disabled:opacity-50"
+                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-3 rounded-button text-[12px] font-medium text-[#1A535C]/80 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 disabled:opacity-50"
                     title="Samenvatten (⌘⇧S)"
                     aria-label="Samenvatten">
                     {summaryLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                     <span className="hidden md:inline">Samenvatten</span>
                   </button>
                   <button onClick={handleGenerateReplyFromReader} disabled={forgieLoading}
-                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-3 rounded-button text-[12px] font-medium text-[#1A535C] bg-[#1A535C]/[0.06] hover:bg-[#1A535C]/[0.12] transition-colors duration-150 disabled:opacity-50"
+                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-3 rounded-button text-[12px] font-medium text-[#1A535C]/80 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 disabled:opacity-50"
                     title="Beantwoord met AI (⌘⇧R)"
                     aria-label="Beantwoord met AI">
                     {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
