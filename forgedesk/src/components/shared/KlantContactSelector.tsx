@@ -35,6 +35,15 @@ interface KlantContactSelectorProps {
    *  geselecteerd is (i.p.v. alleen bij een gepinde contactpersoon).
    *  Gebruiker kan altijd uitklappen via "Andere contactpersoon". */
   compactContactList?: boolean
+  /** Verberg het klant- en vestiging-blok; toon alleen de contactpersoon-keuze
+   *  (voor contexten waar de klant al vaststaat, bv. de Daan-actiekaart). */
+  contactOnly?: boolean
+  /** Wanneer automatisch een contactpersoon voorselecteren:
+   *  'firstOrPrimary' (default) = primair of eerste; 'singleOnly' = alleen bij
+   *  precies één contact; 'never' = nooit (gebruiker kiest altijd). */
+  autoSelect?: 'firstOrPrimary' | 'singleOnly' | 'never'
+  /** Maak e-mail verplicht bij het inline aanmaken van een nieuwe contactpersoon. */
+  requireContactEmail?: boolean
 }
 
 export function KlantContactSelector({
@@ -50,6 +59,9 @@ export function KlantContactSelector({
   onKlantenRefresh,
   contactLabelAccent = false,
   compactContactList = false,
+  contactOnly = false,
+  autoSelect = 'firstOrPrimary',
+  requireContactEmail = false,
 }: KlantContactSelectorProps) {
   const { user } = useAuth()
   const [search, setSearch] = useState('')
@@ -120,13 +132,17 @@ export function KlantContactSelector({
     getContactpersonenByKlant(klantId).then(setDbContacten).catch(() => setDbContacten([]))
   }, [klantId])
 
-  // Auto-select first contactpersoon when klant changes and has contacts
+  // Auto-select contactpersoon when klant changes, afhankelijk van de modus.
   useEffect(() => {
-    if (!klantId || !onContactpersoonChange) return
+    if (!klantId || !onContactpersoonChange || autoSelect === 'never') return
     // Wait for contactpersonen to load
     if (contactpersonen.length > 0 && !contactpersoonId) {
-      const primair = contactpersonen.find((c) => c.is_primair)
-      onContactpersoonChange((primair || contactpersonen[0]).id)
+      if (autoSelect === 'singleOnly') {
+        if (contactpersonen.length === 1) onContactpersoonChange(contactpersonen[0].id)
+      } else {
+        const primair = contactpersonen.find((c) => c.is_primair)
+        onContactpersoonChange((primair || contactpersonen[0]).id)
+      }
     }
   }, [klantId, contactpersonen.length])
 
@@ -242,6 +258,7 @@ export function KlantContactSelector({
 
   async function handleAddContact() {
     if (!selectedKlant || !nc.naam.trim()) return
+    if (requireContactEmail && !nc.email.trim()) return
     setCreating(true)
     try {
       const newCp: Contactpersoon = {
@@ -274,6 +291,7 @@ export function KlantContactSelector({
   return (
     <div className="space-y-3">
       {/* Klant zoeken / selectie */}
+      {!contactOnly && (
       <div>
         <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
           Klant
@@ -434,6 +452,7 @@ export function KlantContactSelector({
           </div>
         )}
       </div>
+      )}
 
       {/* Contactpersoon */}
       {selectedKlant && onContactpersoonChange && (
@@ -566,13 +585,13 @@ export function KlantContactSelector({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Input value={nc.naam} onChange={(e) => setNc({ ...nc, naam: e.target.value })} placeholder="Naam *" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} autoFocus />
                 <Input value={nc.functie} onChange={(e) => setNc({ ...nc, functie: e.target.value })} placeholder="Functie" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                <Input value={nc.email} onChange={(e) => setNc({ ...nc, email: e.target.value })} placeholder="E-mailadres" type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                <Input value={nc.email} onChange={(e) => setNc({ ...nc, email: e.target.value })} placeholder={requireContactEmail ? 'E-mailadres *' : 'E-mailadres'} type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                 <Input value={nc.telefoon} onChange={(e) => setNc({ ...nc, telefoon: e.target.value })} placeholder="Telefoonnummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
               </div>
               <div className="flex items-center gap-2 pt-1">
                 <button
                   onClick={handleAddContact}
-                  disabled={!nc.naam.trim() || creating}
+                  disabled={!nc.naam.trim() || (requireContactEmail && !nc.email.trim()) || creating}
                   className="h-7 px-3 text-[11px] font-semibold rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
                   style={{ backgroundColor: '#1A535C' }}
                 >
@@ -593,7 +612,7 @@ export function KlantContactSelector({
       )}
 
       {/* Vestiging */}
-      {selectedKlant && vestigingen.length > 0 && onVestigingChange && (
+      {!contactOnly && selectedKlant && vestigingen.length > 0 && onVestigingChange && (
         <div>
           <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
             Vestiging

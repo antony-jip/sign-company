@@ -7,6 +7,7 @@ import {
 import { cn } from '@/lib/utils'
 import { getKlanten } from '@/services/supabaseService'
 import type { Klant } from '@/types'
+import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import { ForgieActieKaart } from './ForgieActieKaart'
 import type { ForgieActie } from '@/services/forgieChatService'
 
@@ -68,7 +69,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
     [acties],
   )
 
-  // Project en offerte hebben een klant_id nodig; resolve de klantnaam vooraf.
+  // Project en offerte hebben een klant_id + contactpersoon nodig; resolve de klant vooraf.
   const needsKlant = baseOrdered.some((a) => a.type === 'project' || a.type === 'offerte')
   const klantNaam = useMemo(() => {
     const fromRef = baseOrdered.find((a) => a.type !== 'klant' && typeof a.data.klant_naam === 'string')?.data.klant_naam
@@ -76,41 +77,46 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
     return (fromRef ?? fromKlant) as string | undefined
   }, [baseOrdered])
 
+  const [klanten, setKlanten] = useState<Klant[]>([])
   const [resolving, setResolving] = useState(needsKlant && !!klantNaam)
   const [resolvedKlant, setResolvedKlant] = useState<{ id: string; naam: string }>()
   const [klantMatches, setKlantMatches] = useState<Klant[] | null>(null)
   const [createNew, setCreateNew] = useState(false)
+  const [contactpersoonId, setContactpersoonId] = useState('')
 
   const [started, setStarted] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [createdIds, setCreatedIds] = useState<Record<string, string>>({})
-  const [pendingKlantId, setPendingKlantId] = useState<string>()
   const [pendingProjectId, setPendingProjectId] = useState<string>()
   const [busyType, setBusyType] = useState<string | null>(null)
   const [failedType, setFailedType] = useState<string | null>(null)
   const [error, setError] = useState<string>()
   const [cancelled, setCancelled] = useState(false)
 
-  // Eenduidige match -> auto-koppelen; meerdere -> kiezen; geen -> aanmaken (geen gok).
+  const fetchKlanten = useCallback(() => {
+    getKlanten().then(setKlanten).catch(() => {})
+  }, [])
+
+  // Eén fetch: vul de klantenlijst (voor de selector) én resolve de naam.
+  // Eenduidige match -> auto-koppelen; meerdere/gelijkend -> kiezen; geen -> nieuw (geen gok).
   useEffect(() => {
-    if (!needsKlant || !klantNaam) {
-      setResolving(false)
-      return
-    }
     let abort = false
     getKlanten()
-      .then((klanten) => {
+      .then((lijst) => {
         if (abort) return
+        setKlanten(lijst)
+        if (!needsKlant || !klantNaam) {
+          setResolving(false)
+          return
+        }
         const doel = norm(klantNaam)
-        const exact = klanten.filter((k) => norm(k.bedrijfsnaam) === doel)
+        const exact = lijst.filter((k) => norm(k.bedrijfsnaam) === doel)
         if (exact.length === 1) {
           setResolvedKlant({ id: exact[0].id, naam: exact[0].bedrijfsnaam })
         } else if (exact.length > 1) {
           setKlantMatches(exact)
         } else {
-          // Geen exacte match: verzamel gelijkende kandidaten (substring of tikfout-nabij)
-          // en laat kiezen — nooit automatisch koppelen, om duplicaten te voorkomen.
-          const kandidaten = klanten.filter((k) => {
+          const kandidaten = lijst.filter((k) => {
             const kn = norm(k.bedrijfsnaam)
             return kn.includes(doel) || doel.includes(kn) || lijktOp(doel, kn)
           })
@@ -129,21 +135,15 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
     }
   }, [needsKlant, klantNaam])
 
-  // De daadwerkelijk uit te voeren keten: bestaande klant -> klant-stap weg (geen duplicaat);
-  // niet gevonden zonder klant-actie van Daan -> synthetiseer een aanmaak-stap.
-  const ordered = useMemo(() => {
-    if (resolvedKlant) return baseOrdered.filter((a) => a.type !== 'klant')
-    if (createNew && needsKlant && klantNaam && !baseOrdered.some((a) => a.type === 'klant')) {
-      return [{ type: 'klant', data: { bedrijfsnaam: klantNaam } } as ForgieActie, ...baseOrdered]
-    }
-    return baseOrdered
-  }, [baseOrdered, resolvedKlant, createNew, needsKlant, klantNaam])
-
-  const effectiveKlantId = resolvedKlant?.id ?? pendingKlantId
+  // De uit te voeren keten. Bij een project/offerte wordt de klant buiten de keten
+  // geresolveerd/aangemaakt (via de selector), dus die stap zit niet in de keten.
+  const ordered = useMemo(
+    () => (needsKlant ? baseOrdered.filter((a) => a.type !== 'klant') : baseOrdered),
+    [baseOrdered, needsKlant],
+  )
 
   const handleCreated = useCallback((type: string, id: string) => {
     setCreatedIds((prev) => ({ ...prev, [type]: id }))
-    if (type === 'klant') setPendingKlantId(id)
     if (type === 'project') setPendingProjectId(id)
     setBusyType(null)
     setCurrentIndex((i) => i + 1)
@@ -164,9 +164,15 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const halted = cancelled || !!failedType
   const activeActie = started && !done && !halted ? ordered[currentIndex] : undefined
 
+  // Contactpersoon_id meegeven aan project/offerte (de kaart leest het uit data).
+  const cardActie =
+    activeActie && (activeActie.type === 'project' || activeActie.type === 'offerte')
+      ? { ...activeActie, data: { ...activeActie.data, contactpersoon_id: contactpersoonId } }
+      : activeActie
+
   // Stepper-rijen: de (eventueel) gekoppelde klant als done-rij, dan de keten.
   const displaySteps = useMemo(() => {
-    const rows: { type: string; label: string; state: StepState; route?: string }[] = []
+    const rows: { type: string; label: string; state: StepState }[] = []
     if (resolvedKlant) {
       rows.push({ type: 'klant', label: `Klant gekoppeld — ${resolvedKlant.naam}`, state: 'done' })
     }
@@ -179,12 +185,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
           : busyType === t
             ? 'busy'
             : 'pending'
-      rows.push({
-        type: t,
-        label: stepLabel(t, state),
-        state,
-        route: createdIds[t] ? STEP_CONFIG[t]?.route?.(createdIds[t]) : undefined,
-      })
+      rows.push({ type: t, label: stepLabel(t, state), state })
     })
     return rows
   }, [resolvedKlant, ordered, createdIds, failedType, busyType])
@@ -194,7 +195,9 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const linkRoute = linkType && STEP_CONFIG[linkType].route?.(createdIds[linkType])
 
   const showChooser = !!klantMatches && !resolvedKlant && !createNew
-  const canConfirm = !started && !resolving && !showChooser && !cancelled && ordered.length > 0
+  const klantReady = !needsKlant || !!resolvedKlant
+  const contactReady = !needsKlant || !!contactpersoonId
+  const showConfirm = !started && !done && !cancelled && ordered.length > 0
 
   return (
     <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden mt-1 w-full">
@@ -270,36 +273,62 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               <p className="text-xs text-red-600 dark:text-red-400 mt-2">{error}</p>
             )}
 
+            {/* Contactpersoon-keuze (verplicht) binnen de gekoppelde/nieuwe klant. */}
+            {needsKlant && !started && (
+              <div className="mt-3 pt-3 border-t border-border/40">
+                <KlantContactSelector
+                  contactOnly={!!resolvedKlant && !createNew}
+                  compactContactList
+                  autoSelect="singleOnly"
+                  requireContactEmail
+                  klantId={resolvedKlant?.id ?? ''}
+                  onKlantChange={(_id, klant) => {
+                    if (klant) setResolvedKlant({ id: klant.id, naam: klant.bedrijfsnaam })
+                  }}
+                  contactpersoonId={contactpersoonId}
+                  onContactpersoonChange={setContactpersoonId}
+                  klanten={klanten}
+                  onKlantenRefresh={fetchKlanten}
+                />
+              </div>
+            )}
+
             {/* Voert de keten headless uit na één bevestiging; voortgang loopt via de stepper. */}
-            {activeActie && (
+            {cardActie && (
               <ForgieActieKaart
-                actie={activeActie}
+                actie={cardActie}
                 silent
                 autoStart
                 onCreated={handleCreated}
                 onCancel={() => setCancelled(true)}
-                onStatusChange={(status) => handleStatusChange(status, activeActie.type)}
-                onError={(msg) => handleError(activeActie.type, msg)}
-                pendingKlantId={effectiveKlantId}
+                onStatusChange={(status) => handleStatusChange(status, cardActie.type)}
+                onError={(msg) => handleError(cardActie.type, msg)}
+                pendingKlantId={resolvedKlant?.id}
                 pendingProjectId={pendingProjectId}
               />
             )}
 
-            {canConfirm && (
-              <div className="flex items-center justify-end gap-3 mt-3">
-                <button
-                  onClick={() => setCancelled(true)}
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Annuleren
-                </button>
-                <button
-                  onClick={() => setStarted(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-flame text-white text-sm font-semibold shadow-sm hover:bg-flame/90 transition-colors"
-                >
-                  Bevestigen
-                  <Check className="w-4 h-4" />
-                </button>
+            {showConfirm && (
+              <div className="mt-3">
+                {needsKlant && klantReady && !contactReady && (
+                  <p className="text-[11px] text-muted-foreground mb-2">Kies eerst een contactpersoon.</p>
+                )}
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setCancelled(true)}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Annuleren
+                  </button>
+                  <button
+                    onClick={() => setStarted(true)}
+                    disabled={!klantReady || !contactReady}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-flame text-white text-sm font-semibold shadow-sm hover:bg-flame/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Bevestigen
+                    <Check className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
 

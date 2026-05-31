@@ -167,6 +167,7 @@ export function ForgieActieKaart({
           : 'gepland'
         const result = await createProject({
           klant_id: klantId,
+          contactpersoon_id: String(editedData.contactpersoon_id || '') || undefined,
           naam: String(editedData.naam || 'Nieuw project'),
           beschrijving: String(editedData.beschrijving || ''),
           status: statusValue as 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren' | 'te-plannen',
@@ -190,6 +191,7 @@ export function ForgieActieKaart({
         geldigTot.setDate(geldigTot.getDate() + 30)
         const result = await createOfferte({
           klant_id: klantId,
+          contactpersoon_id: String(editedData.contactpersoon_id || '') || undefined,
           project_id: String(editedData.project_id || pendingProjectId || ''),
           nummer,
           titel: String(editedData.onderwerp || 'Nieuwe offerte'),
