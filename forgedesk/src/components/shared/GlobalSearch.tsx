@@ -445,8 +445,8 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
           'flex items-center w-full border transition-all duration-200',
           'rounded-lg',
           focused
-            ? 'border-[#1A535C]/25 bg-white shadow-[0_2px_12px_rgba(20,62,71,0.08)]'
-            : 'border-border bg-muted hover:bg-[#EFECE5] hover:border-[#DCD9D2]'
+            ? 'border-[#F15025] bg-card shadow-[0_0_0_3px_rgba(241,80,37,0.11)]'
+            : 'border-transparent bg-[hsl(38,20%,95.5%)] hover:border-[hsl(35,15%,88%)] dark:bg-white/[0.05] dark:hover:border-white/10'
         )}
       >
         <Search className={cn('text-muted-foreground flex-shrink-0', compact ? 'w-3.5 h-3.5 ml-2.5' : 'w-4 h-4 ml-3')} />

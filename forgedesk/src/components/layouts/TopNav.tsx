@@ -148,26 +148,10 @@ export function TopNav() {
 
   return (
     <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
-      {/* ── Row 1: Floating capsule-bar (doen.-stijl) ── */}
-      <div
-        className="relative flex items-center gap-2.5 h-[60px] px-4 md:px-5 bg-[linear-gradient(180deg,#FCFCFA_0%,#F8F7F5_100%)] dark:bg-[linear-gradient(180deg,hsl(190_28%_11%)_0%,hsl(190_35%_7%)_100%)]"
-      >
-        {/* Subtle Flame warmth from right (notifications/avatar zone) — iets sterker in dark voor diepte */}
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-[420px] opacity-100 dark:opacity-100"
-          style={{ background: 'radial-gradient(ellipse at 100% 50%, rgba(241, 80, 37, 0.05) 0%, transparent 70%)' }}
-        />
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-[420px] hidden dark:block"
-          style={{ background: 'radial-gradient(ellipse at 100% 50%, rgba(241, 80, 37, 0.10) 0%, transparent 70%)' }}
-        />
-        <div
-          className="pointer-events-none absolute inset-y-0 left-0 w-[280px] hidden dark:block"
-          style={{ background: 'radial-gradient(ellipse at 0% 50%, rgba(26, 83, 92, 0.18) 0%, transparent 70%)' }}
-        />
-
-        {/* Logo — eigen floating pill */}
-        <NavLink to="/" className="group relative flex items-center justify-center flex-shrink-0 h-10 px-3.5 rounded-2xl bg-card ring-1 ring-black/[0.04] dark:ring-white/[0.06] shadow-[0_1px_2px_rgba(20,30,40,0.06),0_6px_16px_-6px_rgba(20,30,40,0.10)] hover:shadow-[0_2px_4px_rgba(20,30,40,0.08),0_10px_24px_-8px_rgba(20,30,40,0.16)] transition-shadow duration-200">
+      {/* ── Row 1: Cohesieve balk (doen.-stijl) ── */}
+      <div className="relative flex items-center gap-2.5 h-[56px] px-3.5 bg-card border-b border-border">
+        {/* Logo */}
+        <NavLink to="/" className="relative flex items-center flex-shrink-0 opacity-95 hover:opacity-100 transition-opacity">
           <img src="/logos/doen-logo.svg" alt="doen." className="h-[22px] dark:hidden" />
           <img
             src="/logos/doen-logo-wit.svg"
@@ -176,6 +160,9 @@ export function TopNav() {
             style={{ filter: 'drop-shadow(0 0 16px rgba(241, 80, 37, 0.18))' }}
           />
         </NavLink>
+
+        {/* Divider na logo */}
+        <div className="hidden lg:block w-px h-[22px] bg-border flex-none" />
 
         {/* Quick-add — mobile only */}
         <div className="relative lg:hidden" style={{ zIndex: 40 }}>
@@ -213,14 +200,16 @@ export function TopNav() {
           )}
         </div>
 
-        {/* ── Module-nav: segmented-control track met sliding pill — desktop ── */}
-        <nav ref={navRef} className="relative hidden lg:flex items-center h-10 gap-0.5 p-1 rounded-2xl bg-black/[0.04] dark:bg-white/[0.05] ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
-          {/* Sliding indicator — witte "selected segment"-pill achter het actieve item */}
+        {/* ── Module-nav: directe modules, actief = witte pill + flame-underline (glijdt mee) ── */}
+        <nav ref={navRef} className="relative hidden lg:flex items-center gap-px flex-1 min-w-0">
+          {/* Sliding highlight — witte pill (rand + schaduw) met flame-underline */}
           <div
             ref={indicatorRef}
-            className="absolute top-1/2 -mt-4 left-0 h-8 rounded-xl bg-card shadow-[0_1px_2px_rgba(20,30,40,0.10),0_2px_8px_rgba(20,30,40,0.06)] ring-1 ring-black/[0.04] dark:ring-white/[0.06] transition-all duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
+            className="absolute top-1/2 -mt-[17px] left-0 h-[34px] rounded-lg bg-card border border-border shadow-[0_1px_2px_rgba(130,100,60,0.10)] transition-all duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{ opacity: 0 }}
-          />
+          >
+            <span className="absolute left-[11px] right-[11px] -bottom-px h-[2px] rounded-[2px] bg-[#F15025]" />
+          </div>
 
           {primaryItems.map((item) => {
             const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
@@ -232,23 +221,14 @@ export function TopNav() {
                 end={item.path === '/'}
                 data-active={isActive}
                 className={cn(
-                  'group/tab relative flex items-center justify-center text-[13px] font-semibold tracking-[-0.01em] transition-colors duration-200 whitespace-nowrap',
-                  isActive ? 'text-foreground' : 'text-foreground/70 hover:text-foreground',
+                  'group relative flex items-center gap-[7px] h-[34px] px-[11px] rounded-lg text-[13.5px] font-semibold tracking-[-0.1px] whitespace-nowrap transition-colors duration-150',
+                  isActive
+                    ? 'text-[#1A535C] dark:text-foreground'
+                    : 'text-[#1A535C]/60 hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:text-foreground/65 dark:hover:text-foreground dark:hover:bg-white/[0.05]',
                 )}
               >
-                <span
-                  data-tab-content
-                  className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1 rounded-[10px] transition-colors',
-                    !isActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
-                  )}
-                >
-                  <Icon
-                    className={cn('w-[15px] h-[15px] transition-opacity duration-200', isActive ? '' : 'opacity-50')}
-                    style={isActive ? { color: item.color } : undefined}
-                  />
-                  <span>{item.label}<span className="text-[#F15025]">.</span></span>
-                </span>
+                <Icon className={cn('w-4 h-4 flex-none', isActive ? 'opacity-100' : 'opacity-80')} />
+                <span>{item.label}<span className={cn('transition-colors', isActive ? 'text-[#F15025]' : 'text-[#1A535C]/40 group-hover:text-[#F15025] dark:text-foreground/40')}>.</span></span>
               </NavLink>
             )
           })}
@@ -262,21 +242,14 @@ export function TopNav() {
                 data-active={overigActive}
                 aria-expanded={overigOpen}
                 className={cn(
-                  'group/tab relative flex items-center text-[13px] font-semibold tracking-[-0.01em] transition-colors duration-200 whitespace-nowrap',
-                  overigActive ? 'text-foreground' : 'text-foreground/70 hover:text-foreground',
+                  'group relative flex items-center gap-1 h-[34px] px-[11px] rounded-lg text-[13.5px] font-semibold tracking-[-0.1px] whitespace-nowrap transition-colors duration-150',
+                  overigActive
+                    ? 'text-[#1A535C] dark:text-foreground'
+                    : 'text-[#1A535C]/60 hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:text-foreground/65 dark:hover:text-foreground dark:hover:bg-white/[0.05]',
                 )}
               >
-                <span
-                  data-tab-content
-                  className={cn(
-                    'inline-flex items-center gap-1 px-3 py-1 rounded-[10px] transition-colors',
-                    !overigActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
-                    overigOpen && 'bg-[rgba(26,83,92,0.06)]',
-                  )}
-                >
-                  <span>Overig<span className="text-[#F15025]">.</span></span>
-                  <ChevronDown className={cn('w-3 h-3 text-muted-foreground transition-transform duration-200', overigOpen && 'rotate-180')} />
-                </span>
+                <span>Overig<span className={cn('transition-colors', overigActive ? 'text-[#F15025]' : 'text-[#1A535C]/40 group-hover:text-[#F15025] dark:text-foreground/40')}>.</span></span>
+                <ChevronDown className={cn('w-[13px] h-[13px] -ml-0.5 opacity-55 transition-transform duration-200', overigOpen && 'rotate-180')} />
               </button>
 
               {overigOpen && (
@@ -307,14 +280,6 @@ export function TopNav() {
           )}
         </nav>
 
-        {/* Spacer duwt search + acties naar rechts */}
-        <div className="flex-1" />
-
-        {/* Search — desktop, rechts uitgelijnd */}
-        <div className="relative hidden md:flex justify-end flex-shrink-0">
-          <GlobalSearch className="w-[170px] xl:w-[220px]" />
-        </div>
-
         {/* Mobile search */}
         {mobileSearchOpen && (
           <div className="absolute inset-x-0 top-0 h-[50px] z-40 bg-background flex items-center gap-2 px-4 md:hidden">
@@ -325,8 +290,13 @@ export function TopNav() {
           </div>
         )}
 
-        {/* Right actions — eigen floating pill */}
-        <div className="relative flex items-center gap-0.5 ml-auto md:ml-0 md:h-10 md:px-1 md:rounded-2xl md:bg-card md:ring-1 md:ring-black/[0.04] md:shadow-[0_1px_2px_rgba(20,30,40,0.06),0_6px_16px_-6px_rgba(20,30,40,0.10)]">
+        {/* Right cluster — search + icons + avatar (gap 5px) */}
+        <div className="relative flex items-center gap-[5px] ml-auto md:ml-0">
+          {/* Search — desktop */}
+          <div className="hidden md:flex flex-shrink-0">
+            <GlobalSearch className="w-[190px] xl:w-[230px]" />
+          </div>
+
           <button
             onClick={() => setMobileSearchOpen(true)}
             className="w-7 h-7 rounded-md md:hidden flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.04] transition-all"
@@ -343,10 +313,10 @@ export function TopNav() {
             type="button"
             onClick={toggleStickyHeader}
             className={cn(
-              'tap-press hidden md:inline-flex items-center justify-center w-8 h-8 rounded-[10px] transition-colors duration-150 active:scale-[0.94]',
+              'tap-press hidden md:inline-flex items-center justify-center w-[34px] h-[34px] rounded-lg transition-colors duration-150 active:scale-[0.94]',
               stickyHeader
                 ? 'text-[#F15025] bg-[#F15025]/10 hover:bg-[#F15025]/15 dark:bg-[#F15025]/15 dark:hover:bg-[#F15025]/20'
-                : 'text-foreground/70 hover:text-foreground hover:bg-black/[0.04] dark:text-[hsl(var(--muted-foreground))] dark:hover:text-[hsl(var(--foreground))] dark:hover:bg-[hsl(var(--muted))]',
+                : 'text-[#1A535C]/60 hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:text-foreground/65 dark:hover:text-foreground dark:hover:bg-white/[0.05]',
             )}
             title={stickyHeader ? 'Header losmaken' : 'Header vastpinnen'}
             aria-label={stickyHeader ? 'Header losmaken' : 'Header vastpinnen'}
@@ -358,31 +328,22 @@ export function TopNav() {
           {/* Dark-mode toggle — desktop */}
           <DarkModeToggle className="hidden md:inline-flex" />
 
-          <div className="hidden md:block w-px h-4 bg-[#E5E4E0] dark:bg-border mx-2" />
+          <div className="hidden md:block w-px h-[22px] bg-border mx-0.5" />
 
-          {/* User dropdown — desktop */}
+          {/* User dropdown — lichte warm-pill met petrol vierkant-avatar */}
           <div ref={userMenuRef} className="relative hidden md:block">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className={cn(
-                'flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg transition-all duration-200',
-                'hover:bg-black/[0.04]',
-                userMenuOpen && 'bg-black/[0.06]',
+                'flex items-center gap-2 h-[34px] pl-[3px] pr-[9px] rounded-lg border transition-colors duration-150',
+                userMenuOpen
+                  ? 'bg-card border-border'
+                  : 'bg-[hsl(38,20%,95.5%)] border-transparent hover:bg-card hover:border-border dark:bg-white/[0.05] dark:hover:bg-white/[0.08]',
               )}
             >
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center"
-                style={{
-                  background: 'linear-gradient(145deg, #1A535C 0%, #143E47 100%)',
-                  boxShadow: '0 1px 2px rgba(20,62,71,0.15), inset 0 1px 0 rgba(255,255,255,0.12)',
-                }}
-              >
-                <span className="text-[11px] font-bold text-white">{userInitial}</span>
-              </div>
-              <div className="hidden xl:block text-left min-w-0">
-                <p className="text-[11px] font-medium text-foreground truncate max-w-[90px] leading-tight">{userName}</p>
-              </div>
-              <ChevronDown className={cn('w-2.5 h-2.5 text-muted-foreground transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
+              <span className="w-[27px] h-[27px] rounded-[7px] flex items-center justify-center bg-[#1A535C] text-white font-bold text-[13px]">{userInitial}</span>
+              <span className="hidden xl:block text-[13.5px] font-semibold text-[#1A535C] dark:text-foreground truncate max-w-[90px] leading-none">{userName}</span>
+              <ChevronDown className={cn('w-[13px] h-[13px] text-[#1A535C]/60 dark:text-foreground/55 transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
             </button>
 
             {userMenuOpen && (
