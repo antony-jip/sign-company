@@ -5,6 +5,7 @@ import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { useEmailCompose } from '@/hooks/useEmailCompose'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -2409,7 +2410,7 @@ export function QuoteCreation() {
                             <button key={opt.label} onClick={() => { email.setEmailScheduleDate(opt.datum); email.setEmailScheduleTime(opt.tijd) }} className="text-xs px-2.5 py-1 border border-border rounded-md hover:bg-background text-foreground/70 transition-colors">{opt.label}</button>
                           ))
                         })()}
-                        <input type="date" value={email.emailScheduleDate} onChange={(e) => email.setEmailScheduleDate(e.target.value)} className="text-xs px-2 py-1 border border-border rounded-md w-32" />
+                        <DatePicker value={email.emailScheduleDate} onChange={(v) => email.setEmailScheduleDate(v)} asInput className="text-xs h-8 w-32" />
                         <input type="time" value={email.emailScheduleTime} onChange={(e) => email.setEmailScheduleTime(e.target.value)} className="text-xs px-2 py-1 border border-border rounded-md w-20" />
                       </div>
                     )}

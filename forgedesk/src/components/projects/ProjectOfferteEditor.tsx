@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -279,7 +280,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
               </div>
               <div className="space-y-2">
                 <Label>Geldig tot</Label>
-                <Input type="date" value={geldigTot} onChange={e => setGeldigTot(e.target.value)} />
+                <DatePicker value={geldigTot} onChange={v => setGeldigTot(v)} asInput />
               </div>
             </div>
 
