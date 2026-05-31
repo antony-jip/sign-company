@@ -116,6 +116,8 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const [filling, setFilling] = useState(false)
   // De offerte is optioneel: na het project vraagt Daan of er een offerte bij moet.
   const [offerteKeuze, setOfferteKeuze] = useState<'idle' | 'ja' | 'nee'>('idle')
+  const [offerteError, setOfferteError] = useState<string>()
+  const [offerteRetry, setOfferteRetry] = useState(0)
 
   const fetchKlanten = useCallback(() => {
     getKlanten().then(setKlanten).catch(() => {})
@@ -168,6 +170,13 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   )
 
   const hasProject = ordered.some((a) => a.type === 'project')
+
+  // De (lege) offerte die op "ja" wordt aangemaakt: gebruik Daans voorstel als dat er
+  // is, anders een kale offerte. De gebruiker vult 'm daarna zelf in de editor.
+  const offerteActie = useMemo(
+    () => baseOrdered.find((a) => a.type === 'offerte') ?? { type: 'offerte', data: {} as Record<string, unknown> },
+    [baseOrdered],
+  )
   const klantNaamCheck = resolvedKlant?.naam ?? klantNaam ?? ''
   // Geldige projectnaam: niet leeg, niet de klantnaam, niet de "Nieuw project"-default.
   const projectNaamReady =
@@ -540,9 +549,40 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               </div>
             )}
 
-            {/* Contactpersoon gekozen — de offerte wordt aangemaakt + geopend (commit 2). */}
+            {/* Contactpersoon gekozen — maak een lege offerte (klant/project/contact
+                gekoppeld) en open 'm in de volle editor zodat de gebruiker 'm zelf vult. */}
             {projectDone && offerteKeuze === 'ja' && !!contactpersoonId && (
-              <p className="text-xs text-muted-foreground mt-3">Klaar om de offerte aan te maken…</p>
+              <div className="mt-3">
+                {offerteError ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-red-600 dark:text-red-400">{offerteError}</p>
+                    <button
+                      onClick={() => { setOfferteError(undefined); setOfferteRetry((n) => n + 1) }}
+                      className="text-xs font-medium text-petrol hover:underline underline-offset-2"
+                    >
+                      Opnieuw proberen
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-flame" />
+                      Offerte klaarzetten en openen…
+                    </div>
+                    <ForgieActieKaart
+                      key={offerteRetry}
+                      actie={{ ...offerteActie, data: { ...offerteActie.data, contactpersoon_id: contactpersoonId } }}
+                      silent
+                      autoStart
+                      onCreated={(_type, id) => navigate(`/offertes/${id}`)}
+                      onCancel={() => setOfferteKeuze('nee')}
+                      onError={(msg) => setOfferteError(msg)}
+                      pendingKlantId={resolvedKlant?.id}
+                      pendingProjectId={createdIds.project}
+                    />
+                  </>
+                )}
+              </div>
             )}
 
             {/* Geen offerte: alleen het project; toon de samenvattingslink. */}
