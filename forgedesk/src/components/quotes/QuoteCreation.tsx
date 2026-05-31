@@ -76,6 +76,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur, OfferteItem } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
+import { berekenOfferteTotalen } from '@/utils/offerteTotalen'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
@@ -1037,18 +1038,12 @@ export function QuoteCreation() {
     try {
       const klant = klanten.find((k) => k.id === selectedKlantId)
       const verplichtePrijsItemsLocal = items.filter((i) => i.soort === 'prijs' && !i.is_optioneel)
-      const rawSub = round2(verplichtePrijsItemsLocal.reduce((sum, item) => {
-        const data = getActivePriceData(item)
-        const bruto = data.aantal * data.eenheidsprijs
-        return sum + round2(bruto - bruto * (data.korting_percentage / 100))
-      }, 0))
-      const effectiefSub = round2(rawSub + afrondingskorting + urenCorrectieBedrag)
-      const effectiefBtw = round2(effectiefSub * (rawSub > 0 ? round2(verplichtePrijsItemsLocal.reduce((sum, item) => {
-        const data = getActivePriceData(item)
-        const bruto = data.aantal * data.eenheidsprijs
-        const netto = round2(bruto - bruto * (data.korting_percentage / 100))
-        return sum + round2(netto * (data.btw_percentage / 100))
-      }, 0)) / rawSub : 0.21))
+      const _offTot = berekenOfferteTotalen(
+        verplichtePrijsItemsLocal.map(getActivePriceData),
+        { afrondingskorting, urenCorrectieBedrag },
+      )
+      const effectiefSub = _offTot.subtotaal
+      const effectiefBtw = _offTot.btw_bedrag
 
       const currentId = editOfferteId || autoSaveIdRef.current
       const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
