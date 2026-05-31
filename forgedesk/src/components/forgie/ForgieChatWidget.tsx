@@ -137,9 +137,8 @@ export function ForgieChatWidget() {
           style={{
             right: 16,
             bottom: 80,
-            width: 340,
-            maxWidth: 'calc(100vw - 2rem)',
-            maxHeight: '60vh',
+            width: 'min(440px, calc(100vw - 2rem))',
+            maxHeight: 'min(80vh, 760px)',
             borderRadius: 12,
             border: '0.5px solid #E6E4E0',
             boxShadow: '0 8px 32px rgba(120, 90, 50, 0.12)',
