@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -502,7 +503,7 @@ export function DealDetail() {
               </div>
               <div>
                 <Label>Verwachte sluitdatum</Label>
-                <Input type="date" value={verwachteSluitdatum} onChange={(e) => setVerwachteSluitdatum(e.target.value)} />
+                <DatePicker value={verwachteSluitdatum} onChange={(v) => setVerwachteSluitdatum(v)} asInput />
               </div>
             </CardContent>
           </Card>
@@ -553,7 +554,7 @@ export function DealDetail() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Input value={volgendeActie} onChange={(e) => setVolgendeActie(e.target.value)} placeholder="Bijv. Offerte versturen" />
-              <Input type="date" value={volgendeActieDatum} onChange={(e) => setVolgendeActieDatum(e.target.value)} />
+              <DatePicker value={volgendeActieDatum} onChange={(v) => setVolgendeActieDatum(v)} asInput />
             </CardContent>
           </Card>
 

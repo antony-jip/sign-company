@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { EmptyState } from '@/components/ui/empty-state'
+import { DatePicker } from '@/components/ui/date-picker'
 import { toast } from 'sonner'
 import {
   Plus,
@@ -1679,11 +1680,11 @@ export function QuotesPipeline() {
             </div>
             <div className="space-y-1.5">
               <label className="text-[12px] font-medium text-foreground/70">Deadline</label>
-              <input
-                type="date"
+              <DatePicker
                 value={taakDeadline}
-                onChange={(e) => setTaakDeadline(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
+                onChange={(v) => setTaakDeadline(v)}
+                asInput
+                className="w-full"
               />
             </div>
             <div className="space-y-1.5">

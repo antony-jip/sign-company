@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -355,7 +356,7 @@ export function CustomerSelector({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="geldig-tot" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Geldig tot</Label>
-                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
+                  <DatePicker value={geldigTot} onChange={(v) => setGeldigTot(v)} asInput className="text-[13px] font-mono h-10 rounded-lg" />
                 </div>
               </div>
             </div>
