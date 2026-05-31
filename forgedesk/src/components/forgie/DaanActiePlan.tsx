@@ -273,9 +273,9 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               <p className="text-xs text-red-600 dark:text-red-400 mt-2">{error}</p>
             )}
 
-            {/* Contactpersoon-keuze (verplicht) binnen de gekoppelde/nieuwe klant. */}
+            {/* Contactpersoon-keuze (verplicht). Een klik selecteert én bevestigt. */}
             {needsKlant && !started && (
-              <div className="mt-3 pt-3 border-t border-border/40">
+              <div className="mt-3 pt-3 border-t border-border/40 max-h-64 overflow-y-auto">
                 <KlantContactSelector
                   contactOnly={!!resolvedKlant && !createNew}
                   autoSelect="singleOnly"
@@ -286,6 +286,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
                   }}
                   contactpersoonId={contactpersoonId}
                   onContactpersoonChange={setContactpersoonId}
+                  onContactpersoonPicked={(id) => { setContactpersoonId(id); setStarted(true) }}
                   klanten={klanten}
                   onKlantenRefresh={fetchKlanten}
                 />

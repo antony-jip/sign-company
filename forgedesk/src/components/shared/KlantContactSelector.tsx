@@ -22,6 +22,9 @@ interface KlantContactSelectorProps {
   onKlantChange: (klantId: string, klant: Klant | null) => void
   contactpersoonId?: string
   onContactpersoonChange?: (cpId: string) => void
+  /** Vuurt alleen bij een expliciete klik op een contactpersoon (niet bij
+   *  auto-select of inline aanmaken). Voor "klik = bevestigen"-flows. */
+  onContactpersoonPicked?: (cpId: string) => void
   onContactpersoonResolved?: (cp: ResolvedContactpersoon | null) => void
   pinnedContactpersoonId?: string
   vestigingId?: string
@@ -51,6 +54,7 @@ export function KlantContactSelector({
   onKlantChange,
   contactpersoonId = '',
   onContactpersoonChange,
+  onContactpersoonPicked,
   onContactpersoonResolved,
   pinnedContactpersoonId,
   vestigingId = '',
@@ -523,7 +527,7 @@ export function KlantContactSelector({
                 {visibleCps.map((cp) => (
                   <button
                     key={cp.id}
-                    onClick={() => onContactpersoonChange(cp.id)}
+                    onClick={() => { onContactpersoonChange(cp.id); onContactpersoonPicked?.(cp.id) }}
                     className="w-full text-left rounded-lg px-3 py-2 transition-all flex items-center gap-2"
                     style={{
                       border: contactpersoonId === cp.id ? '1px solid #1A535C' : '0.5px solid #E6E4E0',
@@ -539,9 +543,9 @@ export function KlantContactSelector({
                     >
                       {cp.naam[0]?.toUpperCase()}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 truncate">
                       <span className="text-[13px] font-medium" style={{ color: '#191919' }}>{cp.naam}</span>
-                      {cp.email && <span className="text-[11px] ml-1.5 truncate" style={{ color: '#5A5A55' }}>{cp.email}</span>}
+                      {cp.email && <span className="text-[11px] ml-1.5" style={{ color: '#5A5A55' }}>{cp.email}</span>}
                       {cp.functie && <span className="text-[11px] ml-1.5" style={{ color: '#A0A098' }}>({cp.functie})</span>}
                     </div>
                     {cp.is_primair && (
