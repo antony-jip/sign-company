@@ -3,8 +3,6 @@ import {
   assertId, getLocalData, setLocalData, generateId, now,
   withUserId, getOrgId, sanitizeDates, getMaxNummer,
 } from './supabaseHelpers'
-import { berekenCalculatieTotalen } from '@/utils/calculatieBerekening'
-import { berekenOfferteTotalen } from '@/utils/offerteTotalen'
 import type {
   Klant,
   Offerte,
@@ -319,52 +317,6 @@ export async function createOfferteItem(item: Omit<OfferteItem, 'id' | 'created_
   items.push(newItem)
   setLocalData('offerte_items', items)
   return newItem
-}
-
-/**
- * Vult een (lege) offerte met de regels uit een calculatie-concept: per BTW-tarief
- * één offerte-item (met calculatie_regels, zodat het later bijstelbaar is, net als
- * een handmatige calculatie), en zet daarna de totalen via dezelfde offerte-roll-up
- * (berekenOfferteTotalen) die de editor ook gebruikt — zodat de bedragen identiek zijn.
- */
-export async function vulOfferteMetCalculatie(offerteId: string, regels: CalculatieRegel[]): Promise<void> {
-  if (regels.length === 0) return
-
-  const perBtw = new Map<number, CalculatieRegel[]>()
-  for (const r of regels) {
-    const lijst = perBtw.get(r.btw_percentage) ?? []
-    lijst.push(r)
-    perBtw.set(r.btw_percentage, lijst)
-  }
-
-  const itemRegels: Array<{ aantal: number; eenheidsprijs: number; korting_percentage: number; btw_percentage: number }> = []
-  let volgorde = 1
-  for (const [btw, groep] of perBtw) {
-    const verkoop = berekenCalculatieTotalen(groep).totaalVerkoop
-    const beschrijving = groep.map((r) => r.product_naam).filter(Boolean).join(' + ') || 'Calculatie'
-    await createOfferteItem({
-      offerte_id: offerteId,
-      beschrijving,
-      aantal: 1,
-      eenheidsprijs: verkoop,
-      btw_percentage: btw,
-      korting_percentage: 0,
-      totaal: verkoop,
-      volgorde,
-      soort: 'prijs',
-      calculatie_regels: groep,
-      heeft_calculatie: true,
-    })
-    itemRegels.push({ aantal: 1, eenheidsprijs: verkoop, korting_percentage: 0, btw_percentage: btw })
-    volgorde++
-  }
-
-  const totalen = berekenOfferteTotalen(itemRegels)
-  await updateOfferte(offerteId, {
-    subtotaal: totalen.subtotaal,
-    btw_bedrag: totalen.btw_bedrag,
-    totaal: totalen.totaal,
-  })
 }
 
 export async function updateOfferteItem(id: string, updates: Partial<OfferteItem>): Promise<OfferteItem> {
