@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DatePicker } from '@/components/ui/date-picker'
 import { createOfferte, createOfferteItem, updateOfferte, getKlanten, getCalculatieTemplates, getMedewerkers, createTaak, updateTaak, createProject, createKlant, uploadTaakBijlage } from '@/services/supabaseService'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
@@ -15,7 +16,7 @@ import { berekenMarkupPercentage, berekenVerkoopVanMarkup } from '@/utils/margeB
 import { logger } from '../../utils/logger'
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
-import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus, Calendar, UserPlus, Paperclip, Image } from 'lucide-react'
+import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus, UserPlus, Paperclip, Image } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -600,10 +601,10 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             </div>
             <div className="flex-[2] min-w-0">
               <label className="text-[10px] text-muted-foreground mb-1 block">Deadline</label>
-              <input
-                type="date"
+              <DatePicker
                 value={deadline}
-                onChange={e => setDeadline(e.target.value)}
+                onChange={v => setDeadline(v)}
+                asInput
                 className={`${inputClass} font-mono`}
               />
             </div>
@@ -648,12 +649,11 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                       <option key={m.id} value={m.naam}>{m.naam}</option>
                     ))}
                   </select>
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <input
-                    type="date"
+                  <DatePicker
                     value={taakDatum}
-                    onChange={e => setTaakDatum(e.target.value)}
-                    className="h-8 px-2 py-1 text-[11px] font-mono border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol"
+                    onChange={v => setTaakDatum(v)}
+                    asInput
+                    className="w-[140px] h-8 px-2 text-[11px] font-mono"
                   />
                 </div>
                 <div className="flex items-center gap-2">

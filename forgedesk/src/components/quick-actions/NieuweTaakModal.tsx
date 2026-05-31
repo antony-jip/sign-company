@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Calendar } from 'lucide-react'
+import { DatePicker } from '@/components/ui/date-picker'
 import { logger } from '@/utils/logger'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { createTaak, getProjecten, getMedewerkers } from '@/services/supabaseService'
@@ -106,13 +106,12 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
 
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              <input
-                type="date"
+              <DatePicker
                 value={deadline}
-                onChange={e => setDeadline(e.target.value)}
-                className={`w-full pl-8 ${selectClass} font-mono`}
+                onChange={v => setDeadline(v)}
                 min={new Date().toISOString().split('T')[0]}
+                asInput
+                className={`w-full ${selectClass} font-mono`}
               />
             </div>
 

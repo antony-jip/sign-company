@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { logger } from '@/utils/logger'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DatePicker } from '@/components/ui/date-picker'
 import { createProject, getKlanten } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
@@ -155,10 +156,10 @@ export function NieuwProjectModal({ open, onOpenChange }: Props) {
           <div className="flex gap-3 items-end">
             <div className="flex-[2] min-w-0">
               <label className="text-[10px] text-muted-foreground mb-1 block">Deadline</label>
-              <input
-                type="date"
+              <DatePicker
                 value={deadline}
-                onChange={e => setDeadline(e.target.value)}
+                onChange={v => setDeadline(v)}
+                asInput
                 className={`${inputClass} font-mono`}
               />
             </div>
