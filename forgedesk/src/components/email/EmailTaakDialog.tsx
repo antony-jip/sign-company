@@ -59,7 +59,6 @@ export function EmailTaakDialog({
   const displayDeadline = formData.deadline
     ? new Date(formData.deadline).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
     : 'Geen deadline'
-  useEffect(() => { if (!open) setDatePickerOpen(false) }, [open])
 
   const actieveMedewerkers = medewerkers.filter((m) => m.status === 'actief')
 
