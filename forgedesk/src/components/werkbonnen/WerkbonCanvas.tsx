@@ -159,8 +159,8 @@ export function WerkbonCanvas({
       className={cn(
         'relative w-full select-none overflow-hidden rounded-lg transition-colors',
         isDragOver
-          ? 'bg-[#FDE8E4] border-2 border-dashed border-[#F15025]'
-          : 'bg-[#F8F7F5] border border-[#EBEBEB]',
+          ? 'bg-[#FDE8E4] dark:bg-[#F15025]/10 border-2 border-dashed border-[#F15025]'
+          : 'bg-[#F8F7F5] dark:bg-[#0E2025] border border-[#EBEBEB] dark:border-white/[0.08]',
       )}
       style={{
         aspectRatio: `${CANVAS_WERKRUIMTE_MM.breedte} / ${CANVAS_WERKRUIMTE_MM.hoogte}`,
@@ -188,7 +188,7 @@ export function WerkbonCanvas({
       )}
 
       {isDragOver && (
-        <div className="absolute inset-0 flex items-center justify-center text-[14px] font-medium text-[#1A1A1A] pointer-events-none select-none">
+        <div className="absolute inset-0 flex items-center justify-center text-[14px] font-medium text-[#1A1A1A] dark:text-[#E8E8E8] pointer-events-none select-none">
           Laat los om toe te voegen<span className="text-[#F15025]">.</span>
         </div>
       )}
