@@ -200,7 +200,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
 
   return (
     <div ref={containerRef} className="relative flex items-center gap-1.5">
-      <div className="w-px h-5 bg-border mx-0.5 hidden md:block" aria-hidden />
+      <div className="w-px h-5 bg-border mx-1.5 hidden md:block" aria-hidden />
       <button
         onClick={() => { hapticLight(); setView('klant'); setOpen(true) }}
         className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"

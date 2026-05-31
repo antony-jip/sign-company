@@ -1425,28 +1425,26 @@ export function EmailReader({
                     <span>Beantwoorden</span>
                   </button>
                   <button onClick={() => { hapticLight(); handleReply('reply-all') }}
-                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
+                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
                     title="Allen beantwoorden"
                     aria-label="Allen beantwoorden">
                     <ReplyAll className="h-3.5 w-3.5" strokeWidth={1.75} />
                     <span className="hidden md:inline">Allen</span>
                   </button>
                   <button onClick={() => { hapticLight(); handleReply('forward') }}
-                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
+                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
                     title="Doorsturen (f)"
                     aria-label="Doorsturen">
                     <Forward className="h-3.5 w-3.5" strokeWidth={1.75} />
                     <span className="hidden md:inline">Doorsturen</span>
                   </button>
 
-                  {/* Acties vanuit deze mail — inline, altijd zichtbaar, rechts */}
+                  {/* Acties vanuit deze mail — inline naast reply, eigen kleur-familie (flame) */}
                   {onOpenContextPanel && (
-                    <div className="ml-auto">
-                      <EmailActionsPopover
-                        email={email}
-                        onOpenProjectDialog={() => onOpenContextPanel('project')}
-                      />
-                    </div>
+                    <EmailActionsPopover
+                      email={email}
+                      onOpenProjectDialog={() => onOpenContextPanel('project')}
+                    />
                   )}
                 </div>
               </div>
