@@ -648,3 +648,30 @@ Twee bugs uit Antony's lokale test gefixt na fase-3-merge-prep:
 4. **`textEstimate` overshoot 4mm op omschrijving-deel** (8 base-pad vs.
    4 in renderTekstBlok). Mirror-fout, maar veilig kant op: leidt tot iets
    conservatievere estimate, geen clipping risico.
+
+---
+
+## Daan offerte vullen (stap 4b) — gate-review `feat/daan-offerte-fill`
+
+**Verdict:** AKKOORD-MET-OPMERKINGEN (geen blokkades). RLS/org correct (offerte_items
+isoleert via parent-offerte, migratie 057; geen migratie nodig), fill draait
+client-side onder de ingelogde sessie, geen dubbele fill, bedragen kloppen ook bij 9%.
+
+**Open opmerkingen uit gate-review:**
+
+1. **Offerte-totalen-roll-up: 1 van 6 call-sites geconverteerd.** `berekenOfferteTotalen`
+   (`src/utils/offerteTotalen.ts`) vervangt alleen de autosave-roll-up in
+   `QuoteCreation.tsx` (~r.1038). Dezelfde inline formule staat nog op ~r.426-437,
+   1229-1239, 1355-1356, 1384-1385 en 1564-1565. Geen drift nu (gedrag identiek aan
+   main, bewezen door `tests/utils/offerteTotalen.test.ts`), maar wel toekomstig risico:
+   een wijziging in de util raakt die sites niet. Apart commit (buiten 4b-scope) om ze
+   te laten landen. ⚠️ De PDF-variant (~r.1564) gebruikt bewust géén `urenCorrectieBedrag`
+   — niet zomaar samenvoegen.
+2. **Test-gat (triviaal):** geen test op negatieve `urenCorrectieBedrag` of de
+   `rawSub === 0` → 0.21-fallback-tak. Eén regel werk, laag risico.
+3. **Half-gevulde offerte bij fout halverwege** (`vulOfferteMetCalculatie`, gemengde BTW,
+   tweede item faalt): één item + totalen nog 0; `DaanActiePlan` toont "Offerte vullen
+   mislukt" (failedType='offerte'), de skeleton-offerte blijft staan. Geen data-corruptie;
+   acceptabel voor v1 — gebruiker loopt 'm na in de editor. Geen RPC/transactie beschikbaar.
+4. **Beschrijving-fallback** (`offerteService.ts`, `product_naam.join(' + ')`) kan lang
+   worden bij veel regels in één tarief. Cosmetisch.
