@@ -548,7 +548,13 @@ REGELS:
 - Als data uit een CSV import komt, vermeld dat het historische/geïmporteerde data betreft
 - Geef bedragen altijd in euro's met twee decimalen
 - Bij opsommingen: maximaal 10 items, daarna "en nog X meer"
-- Gebruik **dikgedrukt** voor belangrijke getallen en namen`
+- Gebruik **dikgedrukt** voor belangrijke getallen en namen
+
+VRAAG OF OPDRACHT (belangrijk):
+- Een VRAAG over data ("hoeveel offertes had ik?", "wat staat er open?") beantwoord je gewoon in tekst. Roep dan GEEN tool aan.
+- Een duidelijke OPDRACHT om iets aan te maken ("maak een offerte/project/klant/taak voor…") handel je af met de tool 'stel_actie_voor': geef het type en de velden die de gebruiker noemt. Verzin GEEN waarden die je niet hebt en reken NIETS uit. Zet bij een tool-aanroep ook altijd een korte, leesbare bevestigingszin in je tekst, bv. "Ik zou nu een offerte aanmaken voor KWS Vegetables — klopt dat?".
+- TWIJFEL je of een bericht een vraag of een opdracht is (bv. alleen een losse naam zonder werkwoord)? Roep dan GEEN tool aan, maar stel een korte verhelderende wedervraag in tekst, bv. "Bedoel je dat ik die offerte moet aanmaken?".
+- Je voert zelf niets uit en slaat niets op; je stelt alleen een actie voor die de gebruiker daarna zelf bevestigt.`
 
     // Build messages with conversation history
     const messages: Array<{ role: string; content: string }> = []
@@ -560,6 +566,29 @@ REGELS:
       }
     }
     messages.push({ role: 'user', content: question })
+
+    // Tool waarmee Daan een actie kan VOORSTELLEN (niet uitvoeren). De vorm
+    // { type, data } sluit aan op de bestaande ForgieActieKaart in de frontend.
+    const actieTool = {
+      name: 'stel_actie_voor',
+      description:
+        'Stel voor om een record aan te maken wanneer de gebruiker daar een duidelijke opdracht toe geeft. ' +
+        'Voer niets uit en sla niets op; dit is alleen een voorstel dat de gebruiker daarna zelf bevestigt. ' +
+        'Verwachte velden in "data" per type: ' +
+        'klant: bedrijfsnaam, contactpersoon, email, telefoon. ' +
+        'project: naam, klant_naam, beschrijving, status. ' +
+        'offerte: onderwerp, klant_naam, project_naam. ' +
+        'taak: titel, beschrijving, project_naam, prioriteit, deadline. ' +
+        'Vul alleen velden die de gebruiker noemt; verzin niets en reken niets uit.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['klant', 'project', 'offerte', 'taak'] },
+          data: { type: 'object', description: 'De ingevulde velden voor dit type, leesbaar (namen, geen ids).' },
+        },
+        required: ['type', 'data'],
+      },
+    }
 
     // Call Anthropic API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -574,6 +603,8 @@ REGELS:
         max_tokens: 2048,
         system: systemPrompt,
         messages,
+        tools: [actieTool],
+        tool_choice: { type: 'auto' },
       }),
     })
 
@@ -589,10 +620,24 @@ REGELS:
     }
 
     const data = await response.json() as {
-      content: Array<{ type: string; text: string }>
+      content: Array<{ type: string; text?: string; name?: string; input?: unknown }>
       usage: { input_tokens: number; output_tokens: number }
     }
-    const resultText = data.content?.[0]?.text || ''
+    const blocks = data.content || []
+
+    // Verzamel alle tekstblokken (gedrag blijft gelijk als er geen tool_use is).
+    const textParts = blocks.filter((b) => b.type === 'text' && b.text).map((b) => b.text as string)
+
+    // Verzamel voorgestelde acties uit tool_use-blokken; { type, data } sluit aan op ForgieActieKaart.
+    const acties = blocks
+      .filter((b) => b.type === 'tool_use' && b.name === 'stel_actie_voor')
+      .map((b) => b.input as { type?: string; data?: Record<string, unknown> })
+      .filter((input) => input && typeof input.type === 'string' && input.data && typeof input.data === 'object')
+      .map((input) => ({ type: input.type as string, data: input.data as Record<string, unknown> }))
+
+    const resultText =
+      textParts.join('\n').trim() ||
+      (acties.length > 0 ? 'Ik heb een actie voor je klaargezet.' : '')
 
     // Update usage tracking
     try {
@@ -625,6 +670,7 @@ REGELS:
       answer: resultText,
       usage: currentUsage.geschatte_kosten,
       limiet: MONTHLY_LIMIT,
+      ...(acties.length > 0 ? { acties } : {}),
     })
   } catch (error: unknown) {
     console.error('AI Chat API fout:', error)

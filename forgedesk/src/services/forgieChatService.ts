@@ -7,10 +7,16 @@ export interface ForgieChatMessage {
   created_at?: string
 }
 
+export interface ForgieActie {
+  type: string
+  data: Record<string, unknown>
+}
+
 export interface ForgieChatResult {
   answer: string
   usage: number
   limiet: number
+  acties?: ForgieActie[]
 }
 
 export interface ForgieImport {
