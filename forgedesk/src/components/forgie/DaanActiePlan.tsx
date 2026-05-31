@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { getKlanten } from '@/services/supabaseService'
+import { vulOfferteMetCalculatie } from '@/services/offerteService'
 import type { Klant } from '@/types'
 import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import {
@@ -112,6 +113,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const [failedType, setFailedType] = useState<string | null>(null)
   const [error, setError] = useState<string>()
   const [cancelled, setCancelled] = useState(false)
+  const [filling, setFilling] = useState(false)
 
   const fetchKlanten = useCallback(() => {
     getKlanten().then(setKlanten).catch(() => {})
@@ -208,12 +210,27 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
     )
   }, [])
 
-  const handleCreated = useCallback((type: string, id: string) => {
-    setCreatedIds((prev) => ({ ...prev, [type]: id }))
+  const handleCreated = useCallback(async (type: string, id: string) => {
     if (type === 'project') setPendingProjectId(id)
+    // Offerte met regels: vul 'm via het calculatie->offerte-pad (zelfde roll-up als de editor).
+    if (type === 'offerte' && concept && concept.regels.length > 0) {
+      setFilling(true)
+      setBusyType('offerte')
+      try {
+        await vulOfferteMetCalculatie(id, concept.regels)
+      } catch {
+        setFilling(false)
+        setBusyType(null)
+        setFailedType('offerte')
+        setError('Offerte vullen mislukt')
+        return
+      }
+      setFilling(false)
+    }
+    setCreatedIds((prev) => ({ ...prev, [type]: id }))
     setBusyType(null)
     setCurrentIndex((i) => i + 1)
-  }, [])
+  }, [concept])
 
   const handleStatusChange = useCallback((status: string, type: string) => {
     setBusyType(status === 'creating' ? type : null)
@@ -257,10 +274,11 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
           : busyType === t
             ? 'busy'
             : 'pending'
-      rows.push({ type: t, label: stepLabel(t, state), state })
+      const label = t === 'offerte' && state === 'busy' && filling ? 'Offerte vullen…' : stepLabel(t, state)
+      rows.push({ type: t, label, state })
     })
     return rows
-  }, [resolvedKlant, contactNaam, ordered, createdIds, failedType, busyType])
+  }, [resolvedKlant, contactNaam, ordered, createdIds, failedType, busyType, filling])
 
   // Diepste aangemaakte record voor de samenvattingslink: offerte > project.
   const linkType = createdIds.offerte ? 'offerte' : createdIds.project ? 'project' : undefined
