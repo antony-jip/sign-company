@@ -41,7 +41,7 @@ const navItems: NavItem[] = [
 ]
 
 // Meest gebruikte modules staan los in de balk; de rest komt onder "Overig".
-const PRIMARY_LABELS = ['Dashboard', 'Projecten', 'Klanten', 'Offertes', 'Planning', 'Werkbonnen', 'Email']
+const PRIMARY_LABELS = ['Dashboard', 'Projecten', 'Taken', 'Offertes', 'Planning', 'Werkbonnen', 'Email']
 
 const quickAddItems = [
   { label: 'Nieuw Project', icon: FolderKanban, path: '/projecten/nieuw', color: '#7EB5A6' },
@@ -78,7 +78,11 @@ export function TopNav() {
   }, [settings?.sidebar_items])
 
   // Splits de zichtbare modules in een vaste primaire set + een "Overig"-rest.
-  const primaryItems = useMemo(() => visibleItems.filter((i) => PRIMARY_LABELS.includes(i.label)), [visibleItems])
+  // Primair volgt de PRIMARY_LABELS-volgorde; Overig houdt de menu-volgorde aan.
+  const primaryItems = useMemo(
+    () => PRIMARY_LABELS.map((label) => visibleItems.find((i) => i.label === label)).filter(Boolean) as NavItem[],
+    [visibleItems],
+  )
   const overigItems = useMemo(() => visibleItems.filter((i) => !PRIMARY_LABELS.includes(i.label)), [visibleItems])
   const overigActive = overigItems.some((i) => location.pathname.startsWith(i.path))
 
