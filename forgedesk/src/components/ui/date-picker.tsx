@@ -139,7 +139,7 @@ export function DatePicker({
       <PopoverContent
         align={align}
         side={side}
-        className={cn('w-[320px] p-4 rounded-2xl border-border shadow-lg', contentClassName)}
+        className={cn('w-[356px] p-4 rounded-2xl border-border shadow-lg', contentClassName)}
       >
         <div className="flex items-center justify-between mb-4">
           <span className="font-heading font-extrabold lowercase tracking-tight text-[22px] leading-none text-foreground">
@@ -172,7 +172,7 @@ export function DatePicker({
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+        <div className="grid grid-cols-7 gap-1 mb-1.5">
           {weekDayLabels.map((label, i) => (
             <div
               key={i}
@@ -183,7 +183,7 @@ export function DatePicker({
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1.5">
+        <div className="grid grid-cols-7 gap-1">
           {days.map((d) => {
             const inMonth = isSameMonth(d, viewMonth)
             const isToday = isSameDay(d, today)
@@ -196,7 +196,7 @@ export function DatePicker({
                 onClick={() => handleSelect(d)}
                 disabled={outOfRange}
                 className={cn(
-                  'group relative box-border min-w-0 appearance-none aspect-square rounded-xl border flex items-center justify-center transition-colors',
+                  'group relative box-border min-w-0 appearance-none h-10 rounded-lg border flex items-center justify-center transition-colors',
                   outOfRange
                     ? 'border-border/50 text-muted-foreground/40 cursor-not-allowed'
                     : isSelected
