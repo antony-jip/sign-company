@@ -332,43 +332,46 @@ export function TopNav() {
         {/* Sliding indicator */}
         <div
           ref={indicatorRef}
-          className="absolute bottom-0 left-0 h-[2.5px] rounded-t-full bg-[#1A535C] transition-all duration-300 ease-out"
-          style={{ opacity: 0, boxShadow: '0 0 8px rgba(26, 83, 92, 0.3)' }}
+          className="absolute bottom-0 left-0 h-[2px] rounded-t-full bg-[#1A535C] transition-all duration-300 ease-out"
+          style={{ opacity: 0 }}
         />
 
-        {visibleItems.map((item) => {
-          const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
-          const Icon = item.icon
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === '/'}
-              data-active={isActive}
-              className={cn(
-                'group/tab relative flex flex-1 items-center justify-center text-[13px] font-semibold tracking-[-0.01em] transition-all duration-200 whitespace-nowrap',
-                isActive
-                  ? 'text-foreground'
-                  : 'text-foreground/70 hover:text-foreground',
-              )}
-            >
-              <span
-                data-tab-content
+        {/* Strakke, gecentreerde cluster: natuurlijke breedte, mx-auto centreert
+            zolang het past en klapt naar links bij overflow (geen geclipte items). */}
+        <div className="flex items-stretch gap-1 mx-auto">
+          {visibleItems.map((item) => {
+            const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
+            const Icon = item.icon
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.path === '/'}
+                data-active={isActive}
                 className={cn(
-                  'inline-flex items-center gap-2 px-3 py-1 rounded-md transition-colors',
-                  !isActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
+                  'group/tab relative flex items-center justify-center text-[13px] font-semibold tracking-[-0.01em] transition-colors duration-200 whitespace-nowrap',
+                  isActive
+                    ? 'text-foreground'
+                    : 'text-foreground/70 hover:text-foreground',
                 )}
               >
-                <Icon
-                  className={cn('w-[16px] h-[16px] transition-all duration-200', isActive ? '' : 'opacity-55')}
-                  style={isActive ? { color: item.color, filter: `drop-shadow(0 1px 3px ${item.color}40)` } : undefined}
-                />
-                <span>{item.label}<span className="text-[#F15025]">.</span></span>
-              </span>
-            </NavLink>
-          )
-        })}
-
+                <span
+                  data-tab-content
+                  className={cn(
+                    'inline-flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors',
+                    !isActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
+                  )}
+                >
+                  <Icon
+                    className={cn('w-[15px] h-[15px] transition-opacity duration-200', isActive ? '' : 'opacity-50')}
+                    style={isActive ? { color: item.color } : undefined}
+                  />
+                  <span>{item.label}<span className="text-[#F15025]">.</span></span>
+                </span>
+              </NavLink>
+            )
+          })}
+        </div>
       </nav>
 
       {/* ── Mobile nav dropdown ── */}
