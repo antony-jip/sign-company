@@ -11,6 +11,7 @@ export type ForgieAction =
   | 'translate-en'
   | 'translate-nl'
   | 'generate-reply'
+  | 'write-email'
 
 export interface ForgieResult {
   result: string

@@ -74,6 +74,7 @@ const PROMPTS: Record<string, string> = {
   'translate-en': 'Vertaal deze email naar het Engels. Behoud de toon. Antwoord alleen met de vertaling.\n\nEmail:\n{text}',
   'translate-nl': 'Vertaal deze email naar het Nederlands. Behoud de toon. Antwoord alleen met de vertaling.\n\nEmail:\n{text}',
   'generate-reply': 'Schrijf een kort en professioneel antwoord op deze email in het Nederlands. Antwoord alleen met de reply-tekst.\n\nEmail:\n{text}',
+  'write-email': 'Schrijf een volledige, professionele e-mail in het Nederlands op basis van de opdracht van de gebruiker. Gebruik een passende aanhef en afsluiting en schrijf zo uitgebreid en informatief als de opdracht vraagt. Antwoord alleen met de e-mailtekst, zonder onderwerp-regel.\n\nContext (onderwerp en ontvanger):\n{context}\n\nOpdracht van de gebruiker:\n{text}',
 }
 
 async function verifyUser(req: VercelRequest): Promise<string> {
