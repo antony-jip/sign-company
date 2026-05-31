@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Calendar as CalendarIcon, Flag, User2, Loader2, Paperclip, Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Medewerker, Project, TaakPrioriteit } from '@/types'
@@ -58,8 +59,6 @@ export function EmailTaakDialog({
   const displayDeadline = formData.deadline
     ? new Date(formData.deadline).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
     : 'Geen deadline'
-
-  const [datePickerOpen, setDatePickerOpen] = useState(false)
   useEffect(() => { if (!open) setDatePickerOpen(false) }, [open])
 
   const actieveMedewerkers = medewerkers.filter((m) => m.status === 'actief')
@@ -97,22 +96,16 @@ export function EmailTaakDialog({
               <Flag className={cn('absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none', PRIORITEIT_FLAG_COLORS[formData.prioriteit])} />
             </div>
 
-            <button
-              type="button"
-              onClick={() => setDatePickerOpen((v) => !v)}
-              className={pillBase}
-            >
-              <CalendarIcon className="w-3 h-3 text-foreground/70" />
-              <span className={cn(!formData.deadline && 'text-muted-foreground')}>{displayDeadline}</span>
-            </button>
-            {datePickerOpen && (
-              <input
-                type="date"
-                value={formData.deadline}
-                onChange={(e) => { update('deadline', e.target.value); setDatePickerOpen(false) }}
-                className="h-7 px-2 rounded-full border border-border bg-white text-[12px] text-foreground font-mono focus:outline-none focus:border-[#1A535C]"
-              />
-            )}
+            <DatePicker
+              value={formData.deadline}
+              onChange={(v) => update('deadline', v)}
+              trigger={
+                <button type="button" className={pillBase}>
+                  <CalendarIcon className="w-3 h-3 text-foreground/70" />
+                  <span className={cn(!formData.deadline && 'text-muted-foreground')}>{displayDeadline}</span>
+                </button>
+              }
+            />
 
             {actieveMedewerkers.length > 0 ? (
               <div className="relative">

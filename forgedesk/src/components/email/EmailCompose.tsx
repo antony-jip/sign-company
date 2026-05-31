@@ -19,6 +19,7 @@ type ToSuggestion =
 import { callForgie, type ForgieAction } from '@/services/forgieService'
 import { logger } from '../../utils/logger'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Switch } from '@/components/ui/switch'
 import { getWachtendeEmailNaarAdres } from '@/services/emailService'
 
@@ -880,12 +881,12 @@ export function EmailCompose({
                         </button>
                       ) : (
                         <div className="px-3.5 py-2.5 space-y-2">
-                          <input
-                            type="date"
+                          <DatePicker
                             value={customScheduleDate}
-                            onChange={e => setCustomScheduleDate(e.target.value)}
+                            onChange={v => setCustomScheduleDate(v)}
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full px-2.5 py-1.5 text-[13px] text-foreground bg-background rounded-lg border border-border outline-none focus:border-[#1A535C] transition-colors font-mono"
+                            asInput
+                            className="w-full font-mono"
                           />
                           <input
                             type="time"
