@@ -114,6 +114,8 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const [error, setError] = useState<string>()
   const [cancelled, setCancelled] = useState(false)
   const [filling, setFilling] = useState(false)
+  // De offerte is optioneel: na het project vraagt Daan of er een offerte bij moet.
+  const [offerteKeuze, setOfferteKeuze] = useState<'idle' | 'ja' | 'nee'>('idle')
 
   const fetchKlanten = useCallback(() => {
     getKlanten().then(setKlanten).catch(() => {})
@@ -157,10 +159,11 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
     }
   }, [needsKlant, klantNaam])
 
-  // De uit te voeren keten. Bij een project/offerte wordt de klant buiten de keten
-  // geresolveerd/aangemaakt (via de selector), dus die stap zit niet in de keten.
+  // De uit te voeren keten. De klant wordt buiten de keten geresolveerd/aangemaakt
+  // (via de selector), dus die stap zit niet in de keten. De offerte zit er evenmin
+  // in: die is optioneel en wordt pas ná het project aangeboden (zie offerteKeuze).
   const ordered = useMemo(
-    () => (needsKlant ? baseOrdered.filter((a) => a.type !== 'klant') : baseOrdered),
+    () => (needsKlant ? baseOrdered.filter((a) => a.type !== 'klant' && a.type !== 'offerte') : baseOrdered),
     [baseOrdered, needsKlant],
   )
 
@@ -246,6 +249,8 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const done = currentIndex >= ordered.length
   const halted = cancelled || !!failedType
   const activeActie = started && !done && !halted ? ordered[currentIndex] : undefined
+  // Het project staat: nu mag Daan een offerte aanbieden.
+  const projectDone = done && !halted && !!createdIds.project
 
   // Naam + contactpersoon_id meegeven aan project/offerte (de kaart leest ze uit data).
   const cardActie = !activeActie
@@ -379,7 +384,8 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               </div>
             )}
 
-            {/* Contactpersoon-keuze (verplicht). Een klik selecteert én bevestigt. */}
+            {/* Contactpersoon-keuze — optioneel voor een kaal project; verplicht zodra
+                je er een offerte bij maakt (dan vraagt Daan er opnieuw om). */}
             {needsKlant && !started && (
               <div className="mt-3 pt-3 border-t border-border/40 max-h-64 overflow-y-auto">
                 <KlantContactSelector
@@ -396,7 +402,6 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
                   onContactpersoonPicked={(id, naam) => {
                     setContactpersoonId(id)
                     if (naam) setContactNaam(naam)
-                    if (klantReady && projectNaamReady && conceptReady) setStarted(true)
                   }}
                   klanten={klanten}
                   onKlantenRefresh={fetchKlanten}
@@ -464,10 +469,6 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               <div className="mt-3">
                 {hasProject && !projectNaamReady ? (
                   <p className="text-[11px] text-muted-foreground mb-2">Geef het project een naam.</p>
-                ) : !conceptReady ? (
-                  <p className="text-[11px] text-muted-foreground mb-2">Maak de offerte-regels eerst compleet.</p>
-                ) : needsKlant && klantReady && !contactReady ? (
-                  <p className="text-[11px] text-muted-foreground mb-2">Kies eerst een contactpersoon.</p>
                 ) : null}
                 <div className="flex items-center justify-end gap-3">
                   <button
@@ -478,7 +479,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
                   </button>
                   <button
                     onClick={() => setStarted(true)}
-                    disabled={!klantReady || !contactReady || !projectNaamReady || !conceptReady}
+                    disabled={!klantReady || !projectNaamReady}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-flame text-white text-sm font-semibold shadow-sm hover:bg-flame/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Bevestigen
@@ -492,9 +493,62 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               <p className="text-xs text-muted-foreground mt-2">Geannuleerd.</p>
             )}
 
-            {done && linkRoute && (
+            {/* Project staat — bied de offerte optioneel aan (ontstaat nooit automatisch). */}
+            {projectDone && hasProject && offerteKeuze === 'idle' && (
+              <div className="mt-3 pt-3 border-t border-border/40">
+                <p className="text-sm text-foreground mb-2">Wil je hier ook een offerte bij maken?</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setOfferteKeuze('ja')}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-flame text-white text-xs font-semibold shadow-sm hover:bg-flame/90 transition-colors"
+                  >
+                    Ja, offerte erbij
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setOfferteKeuze('nee')}
+                    className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5"
+                  >
+                    Nee, klaar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Ja → contactpersoon is nu verplicht; kies 'm als dat nog niet is gebeurd. */}
+            {projectDone && offerteKeuze === 'ja' && !contactpersoonId && (
+              <div className="mt-3 pt-3 border-t border-border/40 max-h-64 overflow-y-auto">
+                <p className="text-xs text-muted-foreground mb-2">Kies een contactpersoon voor de offerte.</p>
+                <KlantContactSelector
+                  contactOnly
+                  autoSelect="singleOnly"
+                  requireContactEmail
+                  klantId={resolvedKlant?.id ?? ''}
+                  onKlantChange={(_id, klant) => {
+                    if (klant) setResolvedKlant({ id: klant.id, naam: klant.bedrijfsnaam })
+                  }}
+                  contactpersoonId={contactpersoonId}
+                  onContactpersoonChange={setContactpersoonId}
+                  onContactpersoonResolved={(cp) => { if (cp?.naam) setContactNaam(cp.naam) }}
+                  onContactpersoonPicked={(id, naam) => {
+                    setContactpersoonId(id)
+                    if (naam) setContactNaam(naam)
+                  }}
+                  klanten={klanten}
+                  onKlantenRefresh={fetchKlanten}
+                />
+              </div>
+            )}
+
+            {/* Contactpersoon gekozen — de offerte wordt aangemaakt + geopend (commit 2). */}
+            {projectDone && offerteKeuze === 'ja' && !!contactpersoonId && (
+              <p className="text-xs text-muted-foreground mt-3">Klaar om de offerte aan te maken…</p>
+            )}
+
+            {/* Geen offerte: alleen het project; toon de samenvattingslink. */}
+            {((offerteKeuze === 'nee' && linkRoute) || (done && !hasProject && linkRoute)) && (
               <button
-                onClick={() => navigate(linkRoute)}
+                onClick={() => navigate(linkRoute!)}
                 className="mt-3 flex items-center gap-1.5 text-xs font-medium text-petrol hover:gap-2 transition-all"
               >
                 Bekijk {linkType === 'offerte' ? 'de offerte' : 'het project'}
