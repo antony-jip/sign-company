@@ -139,6 +139,8 @@ export function DatePicker({
       <PopoverContent
         align={align}
         side={side}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
         className={cn('w-[356px] p-4 rounded-2xl border-border shadow-lg', contentClassName)}
       >
         <div className="flex items-center justify-between mb-4">
