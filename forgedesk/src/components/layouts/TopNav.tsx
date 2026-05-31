@@ -40,8 +40,16 @@ const navItems: NavItem[] = [
   { label: 'Financieel', icon: PiggyBank, path: '/financieel', color: '#2D6B48' },
 ]
 
-// Meest gebruikte modules staan los in de balk; de rest komt onder "Overig".
-const PRIMARY_LABELS = ['Dashboard', 'Projecten', 'Taken', 'Offertes', 'Planning', 'Werkbonnen', 'Email']
+// Modules zijn semantisch gegroepeerd; Dashboard en Email staan los in de balk.
+const NAV_GROUPS: { label: string; itemLabels: string[] }[] = [
+  { label: 'Werk', itemLabels: ['Projecten', 'Planning', 'Werkbonnen', 'Taken'] },
+  { label: 'Verkoop', itemLabels: ['Klanten', 'Offertes'] },
+  { label: 'Geld', itemLabels: ['Facturen', 'Inkoopfacturen', 'Financieel'] },
+]
+
+type NavEntry =
+  | { type: 'item'; item: NavItem }
+  | { type: 'group'; label: string; items: NavItem[] }
 
 const quickAddItems = [
   { label: 'Nieuw Project', icon: FolderKanban, path: '/projecten/nieuw', color: '#7EB5A6' },
@@ -61,12 +69,11 @@ export function TopNav() {
   const navigate = useNavigate()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [quickAddOpen, setQuickAddOpen] = useState(false)
-  const [overigOpen, setOverigOpen] = useState(false)
+  const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const quickAddRef = useRef<HTMLDivElement>(null)
-  const overigRef = useRef<HTMLDivElement>(null)
   const navRef = useRef<HTMLElement>(null)
   const indicatorRef = useRef<HTMLDivElement>(null)
 
@@ -77,30 +84,37 @@ export function TopNav() {
     return navItems.filter(item => normalized.includes(item.label) || item.label === 'Dashboard')
   }, [settings?.sidebar_items])
 
-  // Splits de zichtbare modules in een vaste primaire set + een "Overig"-rest.
-  // Primair volgt de PRIMARY_LABELS-volgorde; Overig houdt de menu-volgorde aan.
-  const primaryItems = useMemo(
-    () => PRIMARY_LABELS.map((label) => visibleItems.find((i) => i.label === label)).filter(Boolean) as NavItem[],
-    [visibleItems],
-  )
-  const overigItems = useMemo(() => visibleItems.filter((i) => !PRIMARY_LABELS.includes(i.label)), [visibleItems])
-  const overigActive = overigItems.some((i) => location.pathname.startsWith(i.path))
+  // Bouw de balk: Dashboard los, dan de semantische groepen, dan Email los.
+  // Lege groepen (alles uitgezet in settings) vallen vanzelf weg.
+  const navEntries: NavEntry[] = useMemo(() => {
+    const find = (label: string) => visibleItems.find((i) => i.label === label)
+    const out: NavEntry[] = []
+    const dash = find('Dashboard')
+    if (dash) out.push({ type: 'item', item: dash })
+    for (const g of NAV_GROUPS) {
+      const items = g.itemLabels.map(find).filter((i): i is NavItem => !!i)
+      if (items.length) out.push({ type: 'group', label: g.label, items })
+    }
+    const email = find('Email')
+    if (email) out.push({ type: 'item', item: email })
+    return out
+  }, [visibleItems])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false)
       if (quickAddRef.current && !quickAddRef.current.contains(e.target as Node)) setQuickAddOpen(false)
-      if (overigRef.current && !overigRef.current.contains(e.target as Node)) setOverigOpen(false)
+      if (navRef.current && !navRef.current.contains(e.target as Node)) setOpenGroup(null)
     }
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') { setUserMenuOpen(false); setQuickAddOpen(false); setOverigOpen(false); setMobileOpen(false) }
+      if (e.key === 'Escape') { setUserMenuOpen(false); setQuickAddOpen(false); setOpenGroup(null); setMobileOpen(false) }
     }
     document.addEventListener('mousedown', handleClick)
     document.addEventListener('keydown', handleEscape)
     return () => { document.removeEventListener('mousedown', handleClick); document.removeEventListener('keydown', handleEscape) }
   }, [])
 
-  useEffect(() => { setMobileOpen(false); setOverigOpen(false) }, [location.pathname])
+  useEffect(() => { setMobileOpen(false); setOpenGroup(null) }, [location.pathname])
 
   const updateIndicator = useCallback(() => {
     if (!navRef.current || !indicatorRef.current) return
@@ -222,89 +236,103 @@ export function TopNav() {
             style={{ opacity: 0 }}
           />
 
-          {primaryItems.map((item) => {
-            const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
-            const Icon = item.icon
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/'}
-                data-active={isActive}
-                className={cn(
-                  'group/tab relative flex items-center justify-center text-[13px] font-semibold tracking-[-0.01em] transition-colors duration-200 whitespace-nowrap',
-                  isActive ? 'text-foreground' : 'text-foreground/70 hover:text-foreground',
-                )}
-              >
-                <span
-                  data-tab-content
+          {navEntries.map((entry) => {
+            // Losse module (Dashboard, Email)
+            if (entry.type === 'item') {
+              const item = entry.item
+              const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
+              const Icon = item.icon
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path === '/'}
+                  data-active={isActive}
                   className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1 rounded-[10px] transition-colors',
-                    !isActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
+                    'group/tab relative flex items-center justify-center text-[13px] font-semibold tracking-[-0.01em] transition-colors duration-200 whitespace-nowrap',
+                    isActive ? 'text-foreground' : 'text-foreground/70 hover:text-foreground',
                   )}
                 >
-                  <Icon
-                    className={cn('w-[15px] h-[15px] transition-opacity duration-200', isActive ? '' : 'opacity-50')}
-                    style={isActive ? { color: item.color } : undefined}
-                  />
-                  <span>{item.label}<span className="text-[#F15025]">.</span></span>
-                </span>
-              </NavLink>
+                  <span
+                    data-tab-content
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-3 py-1 rounded-[10px] transition-colors',
+                      !isActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
+                    )}
+                  >
+                    <Icon
+                      className={cn('w-[15px] h-[15px] transition-opacity duration-200', isActive ? '' : 'opacity-50')}
+                      style={isActive ? { color: item.color } : undefined}
+                    />
+                    <span>{item.label}<span className="text-[#F15025]">.</span></span>
+                  </span>
+                </NavLink>
+              )
+            }
+
+            // Groep met mega-menu (hover opent; klik werkt ook)
+            const groupActive = entry.items.some((i) => location.pathname.startsWith(i.path))
+            const isOpen = openGroup === entry.label
+            return (
+              <div
+                key={entry.label}
+                className="relative flex items-stretch"
+                onMouseEnter={() => setOpenGroup(entry.label)}
+                onMouseLeave={() => setOpenGroup((g) => (g === entry.label ? null : g))}
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenGroup((g) => (g === entry.label ? null : entry.label))}
+                  data-active={groupActive}
+                  aria-expanded={isOpen}
+                  className={cn(
+                    'group/tab relative flex items-center text-[13px] font-semibold tracking-[-0.01em] transition-colors duration-200 whitespace-nowrap',
+                    groupActive ? 'text-foreground' : 'text-foreground/70 hover:text-foreground',
+                  )}
+                >
+                  <span
+                    data-tab-content
+                    className={cn(
+                      'inline-flex items-center gap-1 px-3 py-1 rounded-[10px] transition-colors',
+                      !groupActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
+                      isOpen && 'bg-[rgba(26,83,92,0.06)]',
+                    )}
+                  >
+                    <span>{entry.label}<span className="text-[#F15025]">.</span></span>
+                    <ChevronDown className={cn('w-3 h-3 text-muted-foreground transition-transform duration-200', isOpen && 'rotate-180')} />
+                  </span>
+                </button>
+
+                {/* pt-2 = onzichtbare brug, zodat de muis van knop naar menu geen gat raakt */}
+                {isOpen && (
+                  <div className="absolute left-0 top-full pt-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="w-56 overflow-hidden rounded-[14px] bg-popover border border-border shadow-[0_16px_48px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.06)] py-1.5">
+                      {entry.items.map((item) => {
+                        const itemActive = location.pathname.startsWith(item.path)
+                        const Icon = item.icon
+                        return (
+                          <NavLink
+                            key={item.path}
+                            to={item.path}
+                            onClick={() => setOpenGroup(null)}
+                            className={cn(
+                              'mx-1.5 flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] text-[13px] font-medium transition-colors',
+                              itemActive ? 'text-foreground bg-[rgba(26,83,92,0.06)]' : 'text-foreground/75 hover:text-foreground hover:bg-muted',
+                            )}
+                          >
+                            <span className="w-7 h-7 rounded-[9px] flex items-center justify-center flex-shrink-0" style={{ background: `${item.color}14` }}>
+                              <Icon className="w-4 h-4" style={{ color: item.color }} />
+                            </span>
+                            <span>{item.label}<span className="text-[#F15025]">.</span></span>
+                          </NavLink>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             )
           })}
-
-          {/* Overig — minder gebruikte modules in een strak lijstje */}
-          {overigItems.length > 0 && (
-            <div ref={overigRef} className="relative flex items-stretch">
-              <button
-                type="button"
-                onClick={() => setOverigOpen((o) => !o)}
-                data-active={overigActive}
-                aria-expanded={overigOpen}
-                className={cn(
-                  'group/tab relative flex items-center text-[13px] font-semibold tracking-[-0.01em] transition-colors duration-200 whitespace-nowrap',
-                  overigActive ? 'text-foreground' : 'text-foreground/70 hover:text-foreground',
-                )}
-              >
-                <span
-                  data-tab-content
-                  className={cn(
-                    'inline-flex items-center gap-1 px-3 py-1 rounded-[10px] transition-colors',
-                    !overigActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
-                    overigOpen && 'bg-[rgba(26,83,92,0.06)]',
-                  )}
-                >
-                  <span>Overig<span className="text-[#F15025]">.</span></span>
-                  <ChevronDown className={cn('w-3 h-3 text-muted-foreground transition-transform duration-200', overigOpen && 'rotate-180')} />
-                </span>
-              </button>
-
-              {overigOpen && (
-                <div className="absolute left-0 top-full mt-2 w-52 z-50 overflow-hidden rounded-[14px] bg-popover border border-border shadow-[0_16px_48px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.06)]">
-                  <div className="py-1.5">
-                    {overigItems.map((item) => {
-                      const isActive = location.pathname.startsWith(item.path)
-                      const Icon = item.icon
-                      return (
-                        <NavLink
-                          key={item.path}
-                          to={item.path}
-                          onClick={() => setOverigOpen(false)}
-                          className={cn(
-                            'flex items-center gap-2.5 px-3.5 py-2 text-[13px] font-medium transition-colors',
-                            isActive ? 'text-foreground bg-[rgba(26,83,92,0.06)]' : 'text-foreground/75 hover:text-foreground hover:bg-muted',
-                          )}
-                        >
-                          <Icon className="w-4 h-4" style={{ color: isActive ? item.color : undefined, opacity: isActive ? 1 : 0.6 }} />
-                          <span>{item.label}<span className="text-[#F15025]">.</span></span>
-                        </NavLink>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </nav>
 
         {/* Spacer duwt search + acties naar rechts */}
