@@ -188,6 +188,9 @@
   }
 
   .dark {
+    /* Laat native controls (date/time picker-iconen, popups, scrollbars)
+       dark-themed renderen — anders blijven de webkit picker-indicators donker. */
+    color-scheme: dark;
     /* Deep-petrol dark theme — matched aan brand (#1A535C = hsl 187 56% 23%) */
     --background: 190 35% 5%;            /* #08161A deepest petrol-black */
     --foreground: 190 8% 90%;            /* #E1E7E8 koel off-white */
