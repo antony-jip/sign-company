@@ -24,7 +24,7 @@ interface KlantContactSelectorProps {
   onContactpersoonChange?: (cpId: string) => void
   /** Vuurt alleen bij een expliciete klik op een contactpersoon (niet bij
    *  auto-select of inline aanmaken). Voor "klik = bevestigen"-flows. */
-  onContactpersoonPicked?: (cpId: string) => void
+  onContactpersoonPicked?: (cpId: string, naam?: string) => void
   onContactpersoonResolved?: (cp: ResolvedContactpersoon | null) => void
   pinnedContactpersoonId?: string
   vestigingId?: string
@@ -527,7 +527,7 @@ export function KlantContactSelector({
                 {visibleCps.map((cp) => (
                   <button
                     key={cp.id}
-                    onClick={() => { onContactpersoonChange(cp.id); onContactpersoonPicked?.(cp.id) }}
+                    onClick={() => { onContactpersoonChange(cp.id); onContactpersoonPicked?.(cp.id, cp.naam) }}
                     className="w-full text-left rounded-lg px-3 py-2 transition-all flex items-center gap-2"
                     style={{
                       border: contactpersoonId === cp.id ? '1px solid #1A535C' : '0.5px solid #E6E4E0',

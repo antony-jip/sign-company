@@ -4,10 +4,15 @@ import {
   FolderOpen, FileText, CheckSquare, Users,
   Check, Loader2, Circle, ArrowRight, Sparkles, AlertCircle,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { getKlanten } from '@/services/supabaseService'
 import type { Klant } from '@/types'
 import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
+import {
+  bouwCalculatieConceptViaCatalogus,
+  type ConceptInputRegel,
+  type CalculatieConcept,
+} from '@/utils/calculatieConcept'
 import { ForgieActieKaart } from './ForgieActieKaart'
 import type { ForgieActie } from '@/services/forgieChatService'
 
@@ -77,15 +82,27 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
     return (fromRef ?? fromKlant) as string | undefined
   }, [baseOrdered])
 
+  // Ruwe offerte-regels (uit de opdracht); de calculator maakt er een concept van.
+  const offerteRuweRegels = useMemo(() => {
+    const r = baseOrdered.find((a) => a.type === 'offerte')?.data.regels
+    return Array.isArray(r) ? (r as ConceptInputRegel[]) : []
+  }, [baseOrdered])
+  const hasRegels = offerteRuweRegels.length > 0
+
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [resolving, setResolving] = useState(needsKlant && !!klantNaam)
   const [resolvedKlant, setResolvedKlant] = useState<{ id: string; naam: string }>()
   const [klantMatches, setKlantMatches] = useState<Klant[] | null>(null)
   const [createNew, setCreateNew] = useState(false)
   const [contactpersoonId, setContactpersoonId] = useState('')
+  const [contactNaam, setContactNaam] = useState<string>()
   const [projectNaam, setProjectNaam] = useState(
     () => String(baseOrdered.find((a) => a.type === 'project')?.data.naam ?? ''),
   )
+
+  const [regels, setRegels] = useState<ConceptInputRegel[]>(() => offerteRuweRegels)
+  const [concept, setConcept] = useState<CalculatieConcept | null>(null)
+  const [conceptLoading, setConceptLoading] = useState(hasRegels)
 
   const [started, setStarted] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -160,6 +177,37 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
     if (kn && norm(projectNaam) === norm(kn)) setProjectNaam('')
   }, [resolvedKlant, klantNaam])
 
+  // Bouw het calculatie-concept (regels -> catalogus-match + totalen) en de vragen.
+  // Pure rekenlogica uit stap 2; het model rekent niet. Herberekent bij een antwoord.
+  useEffect(() => {
+    if (regels.length === 0) {
+      setConcept(null)
+      setConceptLoading(false)
+      return
+    }
+    let abort = false
+    setConceptLoading(true)
+    bouwCalculatieConceptViaCatalogus({ klant: klantNaam ?? '', regels })
+      .then((c) => { if (!abort) { setConcept(c); setConceptLoading(false) } })
+      .catch(() => { if (!abort) setConceptLoading(false) })
+    return () => { abort = true }
+  }, [regels, klantNaam])
+
+  // Antwoord op een vraag verfijnt de bijbehorende ruwe regel -> concept herberekent.
+  const answerVraag = useCallback((veld: string, value: string) => {
+    const m = veld.match(/regel\[(\d+)\]\.(\w+)/)
+    if (!m) return
+    const idx = Number(m[1])
+    const field = m[2]
+    setRegels((prev) =>
+      prev.map((r, i) => {
+        if (i !== idx) return r
+        if (field === 'marge') return { ...r, marge_type: value } as ConceptInputRegel
+        return { ...r, omschrijving: value } as ConceptInputRegel
+      }),
+    )
+  }, [])
+
   const handleCreated = useCallback((type: string, id: string) => {
     setCreatedIds((prev) => ({ ...prev, [type]: id }))
     if (type === 'project') setPendingProjectId(id)
@@ -191,11 +239,14 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
         ? { ...activeActie, data: { ...activeActie.data, contactpersoon_id: contactpersoonId } }
         : activeActie
 
-  // Stepper-rijen: de (eventueel) gekoppelde klant als done-rij, dan de keten.
+  // Stepper-rijen: de (eventueel) gekoppelde klant + contactpersoon als done-rij, dan de keten.
   const displaySteps = useMemo(() => {
     const rows: { type: string; label: string; state: StepState }[] = []
     if (resolvedKlant) {
       rows.push({ type: 'klant', label: `Klant gekoppeld — ${resolvedKlant.naam}`, state: 'done' })
+    }
+    if (contactNaam) {
+      rows.push({ type: 'contactpersoon', label: `Contactpersoon — ${contactNaam}`, state: 'done' })
     }
     ordered.forEach((actie) => {
       const t = actie.type
@@ -209,7 +260,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
       rows.push({ type: t, label: stepLabel(t, state), state })
     })
     return rows
-  }, [resolvedKlant, ordered, createdIds, failedType, busyType])
+  }, [resolvedKlant, contactNaam, ordered, createdIds, failedType, busyType])
 
   // Diepste aangemaakte record voor de samenvattingslink: offerte > project.
   const linkType = createdIds.offerte ? 'offerte' : createdIds.project ? 'project' : undefined
@@ -218,6 +269,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const showChooser = !!klantMatches && !resolvedKlant && !createNew
   const klantReady = !needsKlant || !!resolvedKlant
   const contactReady = !needsKlant || !!contactpersoonId
+  const conceptReady = !hasRegels || (!!concept && concept.klaar)
   const showConfirm = !started && !done && !cancelled && ordered.length > 0
 
   return (
@@ -322,13 +374,56 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
                   }}
                   contactpersoonId={contactpersoonId}
                   onContactpersoonChange={setContactpersoonId}
-                  onContactpersoonPicked={(id) => {
+                  onContactpersoonResolved={(cp) => { if (cp?.naam) setContactNaam(cp.naam) }}
+                  onContactpersoonPicked={(id, naam) => {
                     setContactpersoonId(id)
-                    if (klantReady && projectNaamReady) setStarted(true)
+                    if (naam) setContactNaam(naam)
+                    if (klantReady && projectNaamReady && conceptReady) setStarted(true)
                   }}
                   klanten={klanten}
                   onKlantenRefresh={fetchKlanten}
                 />
+              </div>
+            )}
+
+            {/* Offerte-inhoud: concept + vragen (geen gok). Bevestigen pas als alles helder is. */}
+            {hasRegels && !started && (
+              <div className="mt-3 pt-3 border-t border-border/40">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                  Offerte
+                </label>
+                {conceptLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-petrol" />
+                    Calculatie opbouwen…
+                  </div>
+                ) : concept && concept.vragen.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {concept.vragen.map((v) => (
+                      <div key={v.veld} className="text-xs">
+                        <p className="text-foreground mb-1.5">{v.vraag}</p>
+                        {v.opties && v.opties.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {v.opties.map((opt) => (
+                              <button
+                                key={opt}
+                                onClick={() => answerVraag(v.veld, opt)}
+                                className="px-2.5 py-1 rounded-lg border border-border/60 hover:border-petrol hover:bg-petrol-light/40 text-foreground transition-colors"
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : concept && concept.klaar && concept.regels.length > 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {concept.regels.length} regel{concept.regels.length > 1 ? 's' : ''} ·{' '}
+                    {formatCurrency(concept.totalen.totaalVerkoop)} excl. btw
+                  </p>
+                ) : null}
               </div>
             )}
 
@@ -351,6 +446,8 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               <div className="mt-3">
                 {hasProject && !projectNaamReady ? (
                   <p className="text-[11px] text-muted-foreground mb-2">Geef het project een naam.</p>
+                ) : !conceptReady ? (
+                  <p className="text-[11px] text-muted-foreground mb-2">Maak de offerte-regels eerst compleet.</p>
                 ) : needsKlant && klantReady && !contactReady ? (
                   <p className="text-[11px] text-muted-foreground mb-2">Kies eerst een contactpersoon.</p>
                 ) : null}
@@ -363,7 +460,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
                   </button>
                   <button
                     onClick={() => setStarted(true)}
-                    disabled={!klantReady || !contactReady || !projectNaamReady}
+                    disabled={!klantReady || !contactReady || !projectNaamReady || !conceptReady}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-flame text-white text-sm font-semibold shadow-sm hover:bg-flame/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Bevestigen
