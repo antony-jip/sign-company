@@ -198,14 +198,14 @@ export function DatePicker({
                 className={cn(
                   'group relative box-border min-w-0 appearance-none h-10 rounded-lg border flex items-center justify-center transition-colors',
                   outOfRange
-                    ? 'border-border/50 text-muted-foreground/40 cursor-not-allowed'
+                    ? 'border-border/30 text-muted-foreground/40 cursor-not-allowed'
                     : isSelected
                       ? 'border-primary bg-primary text-primary-foreground'
                       : isToday
-                        ? 'border-border text-primary hover:bg-primary hover:text-primary-foreground'
+                        ? 'border-border/50 text-primary hover:bg-primary hover:text-primary-foreground'
                         : !inMonth
-                          ? 'border-border text-muted-foreground/50 hover:bg-primary/10'
-                          : 'border-border text-foreground hover:bg-primary/10',
+                          ? 'border-border/40 text-muted-foreground/50 hover:bg-primary/10'
+                          : 'border-border/50 text-foreground hover:bg-primary/10',
                 )}
               >
                 <span className="text-[15px] leading-none" style={monoFont}>
