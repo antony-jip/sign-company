@@ -1321,10 +1321,33 @@ export function EmailReader({
             </div>
           </div>
 
-          {/* Right: Navigation only — AI + reply acties staan in de actie-zone onder de afzender */}
+          {/* Right: AI-helpers + navigatie */}
           <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-10 w-10 md:h-8 md:w-auto px-0 md:px-3 gap-1.5 text-[13px] text-foreground/70 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] rounded-[10px] transition-colors duration-150 disabled:opacity-50"
+              onClick={handleSummarize}
+              disabled={summaryLoading}
+              title="Samenvatten (⌘⇧S)"
+            >
+              {summaryLoading ? <Loader2 className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 animate-spin" /> : <Sparkles className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />}
+              <span className="hidden md:inline">Samenvatten</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-10 w-10 md:h-8 md:w-auto px-0 md:px-3 gap-1.5 text-[13px] text-foreground/70 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] rounded-[10px] transition-colors duration-150 disabled:opacity-50"
+              onClick={handleGenerateReplyFromReader}
+              disabled={forgieLoading}
+              title="Beantwoord met AI (⌘⇧R)"
+            >
+              {forgieLoading ? <Loader2 className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 animate-spin" /> : <Sparkles className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />}
+              <span className="hidden md:inline">Beantwoord</span>
+            </Button>
             {emailIndex !== undefined && emailTotal !== undefined && (
               <span className="hidden md:contents">
+                <div className="w-px h-5 bg-border mx-2" />
                 <span className="text-[12px] text-muted-foreground font-mono tabular-nums">{emailIndex + 1}/{emailTotal}</span>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-[10px]" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
                   <ChevronUp className="h-3.5 w-3.5" />
@@ -1393,7 +1416,7 @@ export function EmailReader({
                   </div>
                 </div>
 
-                {/* Tier 1 — engage met de mail: reply + AI-helpers, één familie (petrol) */}
+                {/* Reply-acties */}
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button onClick={() => { hapticLight(); handleReply('reply') }}
                     className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-9 md:h-8 px-3.5 rounded-button text-[13px] font-semibold text-white bg-[#1A535C] hover:bg-[#0F3C44] transition-colors duration-150"
@@ -1415,30 +1438,11 @@ export function EmailReader({
                     <Forward className="h-3.5 w-3.5" strokeWidth={1.75} />
                     <span className="hidden md:inline">Doorsturen</span>
                   </button>
-
-                  <div className="w-px h-5 bg-border mx-1 hidden md:block" aria-hidden />
-
-                  {/* AI-helpers (Daan) — uitnodigende zachte pillen */}
-                  <button onClick={handleSummarize} disabled={summaryLoading}
-                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-3 rounded-button text-[12px] font-medium text-[#1A535C]/80 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 disabled:opacity-50"
-                    title="Samenvatten (⌘⇧S)"
-                    aria-label="Samenvatten">
-                    {summaryLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                    <span className="hidden md:inline">Samenvatten</span>
-                  </button>
-                  <button onClick={handleGenerateReplyFromReader} disabled={forgieLoading}
-                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-3 rounded-button text-[12px] font-medium text-[#1A535C]/80 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 disabled:opacity-50"
-                    title="Beantwoord met AI (⌘⇧R)"
-                    aria-label="Beantwoord met AI">
-                    {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                    <span className="hidden md:inline">Beantwoord met AI</span>
-                  </button>
                 </div>
 
-                {/* Tier 2 — vanuit deze mail aanmaken (rustiger, eigen regel) */}
+                {/* Aanmaken vanuit deze mail — eigen regel */}
                 {onOpenContextPanel && (
                   <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground/70 mr-1 hidden md:inline">Vanuit deze mail</span>
                     <EmailActionsPopover
                       email={email}
                       onOpenProjectDialog={() => onOpenContextPanel('project')}
