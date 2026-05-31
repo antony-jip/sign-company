@@ -141,7 +141,8 @@ const STATUS_HEX: Record<string, string> = {
   gefactureerd: '#2D6B48',
 }
 function statusHex(s: string): string {
-  return STATUS_HEX[s] ?? '#5A5A55'
+  // Eén kleur per status: balk + dot volgen de design-systeem-tekstkleur.
+  return getStatusTextColor(s)
 }
 
 /** Map database statuses to spectrum fases for correct colors */
@@ -651,7 +652,7 @@ export function ProjectsList() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
-                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
+                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A4A52] dark:text-foreground">
                     Projecten<span className="text-[#F15025]">.</span>
                   </h1>
                   <Skeleton className="h-4 w-12" />
@@ -769,7 +770,7 @@ export function ProjectsList() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-4">
-                <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
+                <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A4A52] dark:text-foreground">
                   Projecten<span className="text-[#F15025]">.</span>
                 </h1>
                 <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
@@ -829,13 +830,13 @@ export function ProjectsList() {
                     <div className="flex items-baseline justify-between gap-3 mb-2">
                       <span className="inline-flex items-center gap-2">
                         <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'actief' && 'doen-pulse')} strokeWidth={1.75} />
-                        <span className="font-heading text-[14px] font-bold text-foreground">
+                        <span className="font-heading text-[14px] font-bold text-[#1A4A52] dark:text-foreground">
                           {tile.label}<span className="text-[#F15025]">.</span>
                         </span>
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="font-heading font-bold text-[28px] leading-none text-foreground tabular-nums">
+                      <span className="font-heading font-bold text-[28px] leading-none text-[#1A4A52] dark:text-foreground tabular-nums">
                         {tile.count}
                       </span>
                       <span
@@ -1109,7 +1110,7 @@ export function ProjectsList() {
                     >
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="min-w-0 flex-1">
-                          <p className="text-[15px] font-semibold text-foreground truncate">{project.naam}</p>
+                          <p className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground truncate">{project.naam}</p>
                           {klantNaam && <p className="text-xs text-muted-foreground mt-0.5 truncate">{klantNaam}</p>}
                         </div>
                         <span
@@ -1129,7 +1130,7 @@ export function ProjectsList() {
                             return <span className="font-mono text-[11px] font-medium" style={{ color }}>{dagen}d</span>
                           })()}
                           {bedrag > 0 && (
-                            <span className="font-mono font-medium text-foreground">{formatCurrency(bedrag)}</span>
+                            <span className="font-mono font-medium text-foreground/80">{formatCurrency(bedrag)}</span>
                           )}
                         </div>
                       </div>
@@ -1142,20 +1143,20 @@ export function ProjectsList() {
               <div
                 className="hidden md:block rounded-2xl"
                 style={{
-                  backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-                  border: '1px solid rgba(26,83,92,0.08)',
-                  boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
                   clipPath: 'inset(0 round 16px)',
                 }}
               >
                 <table className="w-full">
                   <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
-                    <tr className="border-b-2 border-border">
+                    <tr className="border-b border-border">
                       <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                         <Checkbox
                           checked={selectedIds.size > 0 && selectedIds.size === gefilterdeProjecten.length}
                           onCheckedChange={toggleSelectAll}
                           aria-label="Selecteer alle projecten"
+                          className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                         />
                       </th>
                       {leadColumns.flatMap((col, idx) => {
@@ -1175,7 +1176,7 @@ export function ProjectsList() {
                           >
                             <button
                               onClick={() => handleSort('naam')}
-                              className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground/70 transition-colors"
+                              className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground hover:text-foreground/70 transition-colors"
                             >
                               Project
                               {sortField === 'naam' ? (
@@ -1199,7 +1200,7 @@ export function ProjectsList() {
                               dragColRef.current = null
                             }}
                           >
-                            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Klant</span>
+                            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Klant</span>
                           </th>
                         )
                         if (idx === 0) {
@@ -1210,12 +1211,12 @@ export function ProjectsList() {
                         return [cell]
                       })}
                       <th className="text-left py-3.5 pr-4 w-[150px]">
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Status</span>
                       </th>
                       <th className="text-right py-3.5 pr-4 w-[110px] hidden xl:table-cell">
                         <button
                           onClick={() => handleSort('bedrag')}
-                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground/70 transition-colors ml-auto"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground hover:text-foreground/70 transition-colors ml-auto"
                         >
                           Bedrag
                           {sortField === 'bedrag' ? (
@@ -1228,7 +1229,7 @@ export function ProjectsList() {
                       <th className="text-right py-3.5 pr-4 w-[80px] hidden lg:table-cell">
                         <button
                           onClick={() => handleSort('created_at')}
-                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground/70 transition-colors ml-auto"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground hover:text-foreground/70 transition-colors ml-auto"
                         >
                           Datum
                           {sortField === 'created_at' ? (
@@ -1239,7 +1240,7 @@ export function ProjectsList() {
                         </button>
                       </th>
                       <th className="text-left py-3.5 pr-4 w-[120px] hidden xl:table-cell">
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Team</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Team</span>
                       </th>
                       <th className="py-3.5 pr-5 w-[44px]"></th>
                     </tr>
@@ -1282,13 +1283,14 @@ export function ProjectsList() {
                           {/* Checkbox + left-edge status stripe */}
                           <td
                             className="py-3.5 pl-5 pr-3 align-middle"
-                            style={{ boxShadow: `inset 3px 0 0 0 ${statusHex(project.status)}` }}
+                            style={{ boxShadow: `inset 2px 0 0 0 ${statusHex(project.status)}` }}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Checkbox
                               checked={selectedIds.has(project.id)}
                               onCheckedChange={() => toggleProjectSelection(project.id)}
                               aria-label={`Selecteer ${project.naam}`}
+                              className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                             />
                           </td>
 
@@ -1299,17 +1301,17 @@ export function ProjectsList() {
                                   <div className="flex items-baseline gap-2.5">
                                     <Link
                                       to={`/projecten/${project.id}`}
-                                      className="text-[15px] font-semibold text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
+                                      className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       {project.naam}
                                     </Link>
                                     {project.project_nummer && (
-                                      <span className="text-[11px] text-muted-foreground/70 font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
+                                      <span className="text-[11px] text-[#1A4A52]/45 dark:text-muted-foreground/70 font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
                                     )}
                                   </div>
                                   {project.beschrijving && (
-                                    <p className="text-[11px] text-muted-foreground/70 truncate max-w-[320px] mt-0.5">
+                                    <p className="text-[11px] text-[#1A4A52]/55 dark:text-muted-foreground/70 truncate max-w-[320px] mt-0.5">
                                       {project.beschrijving}
                                     </p>
                                   )}
@@ -1319,24 +1321,16 @@ export function ProjectsList() {
                               <td key="klant" className="py-3.5 pr-4 hidden lg:table-cell">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   {(() => {
-                                    const c = klantNaam.charCodeAt(0) % 5
-                                    const avatarColors = [
-                                      'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
-                                      'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
-                                      'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
-                                      'bg-muted text-foreground/70',
-                                      'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
-                                    ]
                                     return (
-                                      <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
+                                      <span className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none bg-[#1A4A52]/[0.08] text-[#1A4A52] dark:bg-white/[0.06] dark:text-foreground/80">
                                         {klantNaam.charAt(0)}
                                       </span>
                                     )
                                   })()}
                                   <div className="min-w-0">
-                                    <span className="text-[13px] text-foreground/80 truncate block leading-tight">{klantNaam}</span>
+                                    <span className="text-[13px] text-[#1A4A52]/70 dark:text-foreground/70 truncate block leading-tight">{klantNaam}</span>
                                     {(project.vestiging_naam || contactpersoon) && (
-                                      <span className="text-[11px] text-muted-foreground/70 truncate block">
+                                      <span className="text-[11px] text-[#1A4A52]/50 dark:text-muted-foreground/70 truncate block">
                                         {project.vestiging_naam || contactpersoon}
                                       </span>
                                     )}
@@ -1516,8 +1510,8 @@ export function ProjectsList() {
                                 <span className={cn(
                                   'font-mono tabular-nums',
                                   bedrag >= 10000
-                                    ? 'text-[15px] font-bold text-foreground'
-                                    : 'text-sm text-foreground/80'
+                                    ? 'text-[15px] font-bold text-[#1A4A52] dark:text-foreground'
+                                    : 'text-sm text-muted-foreground'
                                 )}>
                                   {formatted}
                                 </span>
@@ -1532,7 +1526,7 @@ export function ProjectsList() {
                               onChange={(d) => handleDatumChange(project.id, d)}
                               align="end"
                               trigger={
-                                <button className="text-[12px] font-mono tabular-nums text-muted-foreground/80 hover:text-foreground/70 transition-colors">
+                                <button className="text-[12px] font-mono tabular-nums text-[#1A4A52]/55 dark:text-muted-foreground/80 hover:text-[#1A4A52] dark:hover:text-foreground/70 transition-colors">
                                   {new Date(project.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                                 </button>
                               }
@@ -1632,7 +1626,7 @@ export function ProjectsList() {
               autoFocus
             />
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5 block">Deadline</label>
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground mb-1.5 block">Deadline</label>
               <div className="flex items-center gap-2">
                 <DatePicker
                   value={quickTaakDeadline}
@@ -1668,7 +1662,7 @@ export function ProjectsList() {
               </div>
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5 block">Toewijzen aan</label>
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground mb-1.5 block">Toewijzen aan</label>
               <div className="flex flex-wrap gap-1.5">
                 {medewerkers.filter((m) => m.status === 'actief').map((mw) => {
                   const selected = quickTaakToegewezen === mw.naam

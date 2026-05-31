@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Checkbox } from '@/components/ui/checkbox'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { exportCSV, exportExcel } from '@/lib/export'
 import {
   getInkoopfacturen,
@@ -559,11 +560,12 @@ export function InkoopfacturenLayout() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
-              <tr className="border-b-2 border-border">
+              <tr className="border-b border-border">
                 <th className="py-3.5 pl-5 pr-3 w-10">
                   <Checkbox
                     checked={filtered.length > 0 && selectedIds.size === filtered.length}
                     onCheckedChange={toggleSelectAll}
+                    className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                   />
                 </th>
                 <th className="text-left py-3.5 pr-4">
@@ -656,42 +658,41 @@ export function InkoopfacturenLayout() {
                     >
                       <td
                         className="py-3.5 pl-5 pr-3 w-10"
-                        style={{ boxShadow: `inset 3px 0 0 0 ${stripeHex}` }}
+                        style={{ boxShadow: `inset 2px 0 0 0 ${stripeHex}` }}
                         onClick={e => e.stopPropagation()}
                       >
                         <Checkbox
                           checked={selectedIds.has(factuur.id)}
                           onCheckedChange={() => toggleSelect(factuur.id)}
+                          className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                         />
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="text-[13px] text-foreground/80">
+                        <span className="text-[13px] text-muted-foreground">
                           {formatDatum(factuur.factuur_datum || factuur.created_at)}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="text-[13px] font-medium text-foreground">
+                        <span className="text-[13px] font-medium text-[#1A4A52] dark:text-foreground">
                           {factuur.leverancier_naam || factuur.email_van || '-'}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4 hidden md:table-cell">
-                        <span className="text-[13px] font-mono text-foreground/80">
+                        <span className="text-[13px] font-mono text-muted-foreground">
                           {factuur.factuur_nummer || '-'}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4 text-right">
-                        <span className="font-mono tabular-nums text-sm text-foreground/80">
+                        <span className="font-mono tabular-nums text-sm text-muted-foreground">
                           {formatCurrency(factuur.totaal)}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span
-                          className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg"
-                          style={{ backgroundColor: config.bg, color: config.text }}
-                        >
-                          {config.dot && <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />}
-                          {config.label}<span className="text-[#F15025]">.</span>
-                        </span>
+                        <StatusBadge
+                          status={factuur.status}
+                          label={config.label}
+                          color={factuur.status === 'verwerkt' || factuur.status === 'toegewezen' ? stripeHex : undefined}
+                        />
                       </td>
                     </tr>
                   )

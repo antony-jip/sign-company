@@ -1725,7 +1725,7 @@ export function TasksLayout() {
                             checked={allDaySelected}
                             onCheckedChange={() => toggleTaskGroupSelected(dayTaskIds)}
                             aria-label={`Selecteer alle taken op ${DAY_LABELS[i]} ${day.getDate()}`}
-                            className="h-3.5 w-3.5"
+                            className="h-3.5 w-3.5 border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                           />
                         )}
                         <span className={cn(
@@ -1760,7 +1760,7 @@ export function TasksLayout() {
                         disabled={laneTaskIds.length === 0}
                         onCheckedChange={() => toggleTaskGroupSelected(laneTaskIds)}
                         aria-label={`Selecteer alle taken van ${lane.label}`}
-                        className="h-3.5 w-3.5 flex-shrink-0"
+                        className="h-3.5 w-3.5 flex-shrink-0 border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                       />
                       <button
                         type="button"
@@ -1782,7 +1782,7 @@ export function TasksLayout() {
                         )}
                         <span className={cn(
                           'text-[13px] font-semibold truncate',
-                          isUnassigned ? 'text-[#C03A18]' : 'text-foreground'
+                          isUnassigned ? 'text-[#C03A18]' : 'text-[#1A4A52] dark:text-foreground'
                         )}>
                           {lane.label}
                         </span>
@@ -1826,7 +1826,7 @@ export function TasksLayout() {
                                         checked={isSelected}
                                         onCheckedChange={() => toggleTaskSelected(t.id)}
                                         aria-label={`Selecteer ${t.titel}`}
-                                        className="h-3 w-3"
+                                        className="h-3 w-3 border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                                       />
                                     </div>
                                     <button

@@ -81,6 +81,7 @@ import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemp
 import { getFactuurBijlageCounts } from '@/services/factuurBijlagenService'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { round2 } from '@/utils/budgetUtils'
 import { toast } from 'sonner'
 import { exportCSV, exportExcel } from '@/lib/export'
@@ -1759,13 +1760,13 @@ export function FacturenLayout() {
               className="doen-row doen-slate-surface p-4 rounded-xl cursor-pointer active:scale-[0.99] transition-all"
               style={{
                 animationDelay: `${paginatedFacturen.indexOf(factuur) * 25}ms`,
-                boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025), inset 3px 0 0 0 ${mobileStripeHex}`,
+                boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025), inset 2px 0 0 0 ${mobileStripeHex}`,
               }}
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[15px] font-semibold text-foreground">{factuur.nummer}</span>
+                    <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground">{factuur.nummer}</span>
                     {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
                       <span className="text-[10px] text-muted-foreground/80 font-mono bg-background px-1.5 py-0.5 rounded font-semibold">
                         {TYPE_CONFIG[factuur.factuur_type].label}
@@ -1776,15 +1777,12 @@ export function FacturenLayout() {
                     {factuur.klant_naam || 'Onbekende klant'}
                   </p>
                 </div>
-                <span
-                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg flex-shrink-0"
-                  style={{ backgroundColor: config.bg, color: config.text }}
-                >
-                  {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />
-                  )}
-                  {config.label}<span className="text-[#F15025]">.</span>
-                </span>
+                <StatusBadge
+                  status={factuur.status}
+                  label={config.label}
+                  className="flex-shrink-0"
+                  {...(factuur.status === 'vervallen' ? { color: '#C0451A' } : {})}
+                />
               </div>
               <div className="flex items-center justify-between text-[12px] text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -1808,7 +1806,7 @@ export function FacturenLayout() {
                   )}
                   <span className={cn(
                     'font-mono tabular-nums',
-                    factuur.totaal >= 10000 ? 'text-[15px] font-bold text-foreground' : 'text-sm text-foreground/80'
+                    factuur.totaal >= 10000 ? 'text-[15px] font-bold text-[#1A4A52] dark:text-foreground' : 'text-sm text-foreground/80'
                   )}>{formatCurrency(factuur.totaal)}</span>
                 </div>
               </div>
@@ -1825,12 +1823,13 @@ export function FacturenLayout() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
-              <tr className="border-b-2 border-border">
+              <tr className="border-b border-border">
                 <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                   <Checkbox
                     checked={filteredFacturen.length > 0 && selectedIds.size === filteredFacturen.length}
                     onCheckedChange={toggleSelectAll}
                     aria-label="Selecteer alles"
+                    className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                   />
                 </th>
                 <th className="text-left py-3.5 pr-4">
@@ -1911,20 +1910,21 @@ export function FacturenLayout() {
                   >
                     <td
                       className="py-3.5 pl-5 pr-3 align-middle"
-                      style={{ boxShadow: `inset 3px 0 0 0 ${stripeHex}` }}
+                      style={{ boxShadow: `inset 2px 0 0 0 ${stripeHex}` }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Checkbox
                         checked={selectedIds.has(factuur.id)}
                         onCheckedChange={() => toggleSelect(factuur.id)}
                         aria-label={`Selecteer ${factuur.nummer}`}
+                        className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                       />
                     </td>
                     <td className="py-3.5 pr-4">
                       <div className="flex items-baseline gap-2.5">
                         <button
                           onClick={() => setViewingFactuur(factuur)}
-                          className="text-[15px] font-semibold text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all"
+                          className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all"
                         >
                           {factuur.nummer}
                         </button>
@@ -1956,7 +1956,7 @@ export function FacturenLayout() {
                         <div className="min-w-0">
                           <a
                             href={`/klanten/${factuur.klant_id}`}
-                            className="text-[13px] text-foreground/80 truncate block leading-tight hover:text-[#1A535C] transition-colors"
+                            className="text-[13px] text-muted-foreground truncate block leading-tight hover:text-[#1A535C] transition-colors"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {factuur.klant_naam || 'Onbekende klant'}
@@ -1965,7 +1965,7 @@ export function FacturenLayout() {
                       </div>
                     </td>
                     <td className="py-3.5 pr-4 max-w-[220px] hidden md:table-cell">
-                      <span className="text-[13px] text-foreground/70 truncate block">
+                      <span className="text-[13px] text-muted-foreground truncate block">
                         {factuur.titel}
                       </span>
                     </td>
@@ -2017,7 +2017,7 @@ export function FacturenLayout() {
                           <span className={cn(
                             'font-mono tabular-nums',
                             factuur.totaal >= 10000
-                              ? 'text-[15px] font-bold text-foreground'
+                              ? 'text-[15px] font-bold text-[#1A4A52] dark:text-foreground'
                               : 'text-sm text-foreground/80'
                           )}>
                             {formatCurrency(factuur.totaal)}
@@ -2026,18 +2026,11 @@ export function FacturenLayout() {
                       })()}
                     </td>
                     <td className="py-3.5 pr-4">
-                      <span
-                        className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg transition-all"
-                        style={{
-                          backgroundColor: config.bg,
-                          color: config.text,
-                        }}
-                      >
-                        {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />
-                        )}
-                        {config.label}<span className="text-[#F15025]">.</span>
-                      </span>
+                      <StatusBadge
+                        status={factuur.status}
+                        label={config.label}
+                        {...(factuur.status === 'vervallen' ? { color: '#C0451A' } : {})}
+                      />
                     </td>
                     <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
                       {isOverdue && (

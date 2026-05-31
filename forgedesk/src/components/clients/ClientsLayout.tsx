@@ -668,12 +668,13 @@ export function ClientsLayout() {
         >
             <table className="w-full table-fixed">
               <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
-                <tr className="border-b-2 border-border">
+                <tr className="border-b border-border">
                   <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                     <Checkbox
                       checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
                       onCheckedChange={toggleSelectAll}
                       aria-label="Selecteer alles"
+                      className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                     />
                   </th>
                   <th className="text-left py-3.5 pr-4">
@@ -711,13 +712,14 @@ export function ClientsLayout() {
                   >
                     <td
                       className="py-3.5 pl-5 pr-3 align-middle"
-                      style={{ boxShadow: `inset 3px 0 0 0 ${stripeHex}` }}
+                      style={{ boxShadow: `inset 2px 0 0 0 ${stripeHex}` }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Checkbox
                         checked={selectedIds.has(klant.id)}
                         onCheckedChange={() => toggleSelect(klant.id)}
                         aria-label={`Selecteer ${klant.bedrijfsnaam}`}
+                        className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                       />
                     </td>
                     <td className="py-3.5 pr-4">
@@ -738,7 +740,7 @@ export function ClientsLayout() {
                           )
                         })()}
                         <div className="min-w-0">
-                          <span className="text-[15px] font-semibold text-foreground group-hover:text-[#1A535C] truncate block transition-colors">
+                          <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] truncate block transition-colors">
                             {klant.bedrijfsnaam}
                           </span>
                           {(klant.klant_labels || []).length > 0 && (
@@ -774,7 +776,7 @@ export function ClientsLayout() {
                       </span>
                     </td>
                     <td className="py-3.5 pr-4">
-                      <span className="text-[13px] text-foreground/70">
+                      <span className="text-[13px] text-muted-foreground">
                         {klant.stad}
                       </span>
                     </td>

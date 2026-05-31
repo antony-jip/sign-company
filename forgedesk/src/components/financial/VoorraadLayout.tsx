@@ -18,6 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import type { VoorraadArtikel, VoorraadMutatie, Leverancier, Project } from '@/types'
 import {
   getVoorraadArtikelen, createVoorraadArtikel, updateVoorraadArtikel, deleteVoorraadArtikel,
@@ -540,8 +541,8 @@ export function VoorraadLayout() {
                     <tr key={art.id} className="group hover:bg-bg-hover transition-colors duration-150 cursor-pointer" onClick={() => openDetailView(art)}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-foreground">{art.naam}</span>
-                          {!art.actief && <Badge variant="secondary" className="text-2xs">Inactief</Badge>}
+                          <span className="text-sm font-semibold text-[#1A4A52] dark:text-foreground">{art.naam}</span>
+                          {!art.actief && <StatusBadge status="inactief" label="Inactief" />}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground font-mono">{art.sku || '-'}</td>

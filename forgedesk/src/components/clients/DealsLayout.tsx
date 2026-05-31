@@ -19,6 +19,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { cn, formatCurrency, formatDate, getInitials } from '@/lib/utils'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import type { Deal, Klant, Medewerker } from '@/types'
 import {
   getDeals, createDeal, updateDeal, deleteDeal,
@@ -451,11 +452,11 @@ export function DealsLayout() {
                 <tbody className="divide-y divide-border/50">
                   {gefilterd.map((deal) => (
                     <tr key={deal.id} className="group hover:bg-bg-hover transition-colors duration-150 cursor-pointer" onClick={() => navigateWithTab({ path: `/deals/${deal.id}`, label: deal.titel || 'Deal', id: `/deals/${deal.id}` })}>
-                      <td className="px-4 py-3 text-sm font-semibold text-foreground">{deal.titel}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-[#1A4A52] dark:text-foreground">{deal.titel}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getKlantNaam(deal.klant_id)}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(deal.verwachte_waarde)}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-[#1A4A52] dark:text-foreground">{formatCurrency(deal.verwachte_waarde)}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className="text-xs">{columns.find((c) => c.key === deal.fase)?.label || deal.fase}</Badge>
+                        <StatusBadge status={deal.fase} label={columns.find((c) => c.key === deal.fase)?.label || deal.fase} />
                       </td>
                       <td className="px-4 py-3">
                         <span className={cn(

@@ -54,6 +54,7 @@ import {
   deleteVerlof,
 } from '@/services/supabaseService';
 import type { Medewerker, Verlof } from '@/types';
+import { StatusBadge } from '@/components/shared/StatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn, getInitials } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -483,7 +484,7 @@ export function TeamLayout() {
                               {getInitials(m.naam)}
                             </div>
                             <div>
-                              <p className="font-medium text-sm">{m.naam}</p>
+                              <p className="font-medium text-sm text-[#1A4A52] dark:text-foreground">{m.naam}</p>
                               <p className="text-2xs text-muted-foreground capitalize">{m.rol}</p>
                             </div>
                           </div>
@@ -558,7 +559,7 @@ export function TeamLayout() {
                       const mw = medewerkers.find((m) => m.id === v.medewerker_id);
                       return (
                         <tr key={v.id} className="border-b last:border-0">
-                          <td className="py-2 pr-4 font-medium">{mw?.naam || 'Onbekend'}</td>
+                          <td className="py-2 pr-4 font-medium text-[#1A4A52] dark:text-foreground">{mw?.naam || 'Onbekend'}</td>
                           <td className="py-2 pr-4">
                             <Badge className={cn('text-xs',
                               v.type === 'vakantie' && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
@@ -573,13 +574,10 @@ export function TeamLayout() {
                           <td className="py-2 pr-4 text-muted-foreground">{v.start_datum}</td>
                           <td className="py-2 pr-4 text-muted-foreground">{v.eind_datum}</td>
                           <td className="py-2 pr-4">
-                            <Badge className={cn('text-xs',
-                              v.status === 'goedgekeurd' && 'bg-emerald-100 text-emerald-700',
-                              v.status === 'aangevraagd' && 'bg-amber-100 text-amber-700',
-                              v.status === 'afgewezen' && 'bg-red-100 text-red-700',
-                            )}>
-                              {v.status.charAt(0).toUpperCase() + v.status.slice(1)}
-                            </Badge>
+                            <StatusBadge
+                              status={v.status}
+                              label={v.status.charAt(0).toUpperCase() + v.status.slice(1)}
+                            />
                           </td>
                           <td className="py-2 text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -741,7 +739,7 @@ export function TeamLayout() {
                             <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-white text-2xs font-semibold', avatarColor(m.naam))}>
                               {getInitials(m.naam)}
                             </div>
-                            <span className="font-medium text-sm truncate">{m.naam}</span>
+                            <span className="font-medium text-sm truncate text-[#1A4A52] dark:text-foreground">{m.naam}</span>
                           </div>
                         </td>
                         {alleVaardigheden.map((v) => (
@@ -799,7 +797,7 @@ export function TeamLayout() {
                         {getInitials(m.naam)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{m.naam}</p>
+                        <p className="font-semibold text-sm truncate text-[#1A4A52] dark:text-foreground">{m.naam}</p>
                         <p className="text-xs text-muted-foreground">{m.functie} · {m.afdeling}</p>
                       </div>
                       <Badge variant="outline" className={cn('text-2xs', ROL_KLEUREN[m.rol])}>
@@ -926,7 +924,7 @@ export function TeamLayout() {
                     {getInitials(m.naam)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-semibold">{m.naam}</p>
+                    <p className="truncate text-base font-semibold text-[#1A4A52] dark:text-foreground">{m.naam}</p>
                     <p className="truncate text-sm text-muted-foreground">{m.functie}</p>
                     <p className="truncate text-sm text-muted-foreground">{m.afdeling}</p>
                   </div>
@@ -937,17 +935,10 @@ export function TeamLayout() {
                   <Badge variant="outline" className={cn('text-xs', ROL_KLEUREN[m.rol])}>
                     {ROL_LABELS[m.rol]}
                   </Badge>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      'text-xs',
-                      m.status === 'actief'
-                        ? 'border-green-200 bg-green-100 text-green-800'
-                        : 'border-border bg-muted text-muted-foreground'
-                    )}
-                  >
-                    {m.status === 'actief' ? 'Actief' : 'Inactief'}
-                  </Badge>
+                  <StatusBadge
+                    status={m.status}
+                    label={m.status === 'actief' ? 'Actief' : 'Inactief'}
+                  />
                 </div>
 
                 {/* Contact info */}

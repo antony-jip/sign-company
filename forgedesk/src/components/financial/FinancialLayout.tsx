@@ -30,7 +30,8 @@ import {
 import { getFacturen, getOffertes } from '@/services/supabaseService'
 import { getInkoopfacturen } from '@/services/inkoopfactuurService'
 import type { Factuur, Offerte, InkoopFactuur } from '@/types'
-import { formatCurrency, getStatusColor } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { GeneralLedgerSettings } from './GeneralLedgerSettings'
 import { VATCodesSettings } from './VATCodesSettings'
 import { DiscountsSettings } from './DiscountsSettings'
@@ -432,7 +433,7 @@ export function FinancialLayout() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b-2 border-border">
+                      <tr className="border-b border-border">
                         <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Nummer</th>
                         <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Klant</th>
                         <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Titel</th>
@@ -450,16 +451,17 @@ export function FinancialLayout() {
                           <td className="py-3 px-4 font-mono text-[12px] text-muted-foreground">
                             {offerte.nummer}
                           </td>
-                          <td className="py-3 px-4 font-medium text-foreground text-[13px]">
+                          <td className="py-3 px-4 font-medium text-[#1A4A52] dark:text-foreground text-[13px]">
                             {offerte.klant_naam}
                           </td>
                           <td className="py-3 px-4 text-foreground/70 text-[13px]">
                             {offerte.titel}
                           </td>
                           <td className="py-3 px-4">
-                            <Badge className={getStatusColor(offerte.status)}>
-                              {offerte.status.charAt(0).toUpperCase() + offerte.status.slice(1)}
-                            </Badge>
+                            <StatusBadge
+                              status={offerte.status}
+                              label={offerte.status.charAt(0).toUpperCase() + offerte.status.slice(1)}
+                            />
                           </td>
                           <td className="py-3 px-4 text-right font-semibold font-mono text-[13px] text-foreground">
                             {formatCurrency(offerte.totaal)}

@@ -46,6 +46,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Offerte, OfferteItem, Klant, Project, Medewerker } from '@/types'
 import { SendOfferteDialog } from './SendOfferteDialog'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { isFollowUpNodig } from '@/utils/offerteFollowUp'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import {
@@ -1384,11 +1385,12 @@ export function QuotesPipeline() {
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
-                          <tr className="border-b-2 border-border">
+                          <tr className="border-b border-border">
                             <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                               <Checkbox
                                 checked={sortedListOffertes.length > 0 && selectedIds.size === sortedListOffertes.length}
                                 onCheckedChange={toggleSelectAll}
+                                className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                               />
                             </th>
                             <th className="text-left py-3.5 pr-4"><SortHeader column="nummer" label="Offerte" /></th>
@@ -1421,10 +1423,10 @@ export function QuotesPipeline() {
                               >
                                 <td
                                   className="py-3.5 pl-5 pr-3 align-middle"
-                                  style={{ boxShadow: `inset 3px 0 0 0 ${stripeHex}` }}
+                                  style={{ boxShadow: `inset 2px 0 0 0 ${stripeHex}` }}
                                   onClick={e => e.stopPropagation()}
                                 >
-                                  <Checkbox checked={selectedIds.has(offerte.id)} onCheckedChange={() => toggleSelect(offerte.id)} />
+                                  <Checkbox checked={selectedIds.has(offerte.id)} onCheckedChange={() => toggleSelect(offerte.id)} className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white" />
                                 </td>
                                 {/* Offerte */}
                                 <td className="py-3.5 pr-4">
@@ -1433,7 +1435,7 @@ export function QuotesPipeline() {
                                       <Link
                                         to={`/offertes/${offerte.id}/bewerken`}
                                         onClick={e => e.stopPropagation()}
-                                        className="text-[15px] font-semibold text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
+                                        className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
                                       >
                                         {offerte.titel || offerte.nummer}
                                       </Link>
@@ -1463,7 +1465,7 @@ export function QuotesPipeline() {
                                       )
                                     })()}
                                     <div className="min-w-0">
-                                      <span className="text-[13px] text-foreground/80 truncate block leading-tight">{offerte.klant_naam || 'Onbekend'}</span>
+                                      <span className="text-[13px] text-muted-foreground truncate block leading-tight">{offerte.klant_naam || 'Onbekend'}</span>
                                     </div>
                                   </div>
                                 </td>
@@ -1472,15 +1474,7 @@ export function QuotesPipeline() {
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <button className="text-left group/status inline-flex items-center gap-1">
-                                        <span
-                                          className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg transition-all group-hover/status:shadow-sm"
-                                          style={{ backgroundColor: STATUS_BADGE_STYLES[offerte.status]?.bg ?? '#EEEEED', color: STATUS_BADGE_STYLES[offerte.status]?.text ?? '#5A5A55' }}
-                                        >
-                                          {(offerte.status === 'verzonden' || offerte.status === 'bekeken') && (
-                                            <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />
-                                          )}
-                                          {STATUS_LABELS[offerte.status] || offerte.status}<span className="text-[#F15025]">.</span>
-                                        </span>
+                                        <StatusBadge status={offerte.status} label={STATUS_LABELS[offerte.status] || offerte.status} />
                                         <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity -ml-0.5" />
                                       </button>
                                     </DropdownMenuTrigger>

@@ -9,12 +9,12 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import type { Bestelbon, Leverancier, Project } from '@/types'
 import {
   getBestelbonnen, deleteBestelbon, getLeveranciers, getProjecten,
@@ -253,13 +253,11 @@ export function BestelbonnenLayout() {
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-orange-600 dark:text-orange-400">{bst.bestelbon_nummer}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-foreground/80">{getLeverancierNaam(bst.leverancier_id)}</td>
-                      <td className="px-4 py-3 text-sm text-foreground/80">{getProjectNaam(bst.project_id)}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{getLeverancierNaam(bst.leverancier_id)}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{getProjectNaam(bst.project_id)}</td>
                       <td className="px-4 py-3 text-sm font-mono text-muted-foreground dark:text-muted-foreground">{bst.besteld_op ? formatDate(bst.besteld_op) : '-'}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="secondary" className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
-                          <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', cfg.dot)} />{cfg.label}
-                        </Badge>
+                        <StatusBadge status={bst.status} label={cfg.label} />
                       </td>
                       <td className="px-4 py-3 text-sm font-semibold font-mono text-foreground">{formatCurrency(bedragen[bst.id] || 0)}</td>
                       <td className="px-4 py-3">

@@ -45,6 +45,7 @@ import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import type { Project, Offerte, OfferteItem, Tijdregistratie, Factuur, Uitgave } from '@/types'
 import { cn, formatCurrency } from '@/lib/utils'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
@@ -189,6 +190,8 @@ export function NacalculatieLayout() {
         kleur: 'bg-green-500',
         tekstKleur: 'text-green-700 dark:text-green-400',
         badgeKleur: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+        statusKey: 'winstgevend',
+        badgeColor: '#3A7D52',
         label: 'Winstgevend',
         icon: TrendingUp,
       }
@@ -198,6 +201,8 @@ export function NacalculatieLayout() {
         kleur: 'bg-orange-500',
         tekstKleur: 'text-orange-700 dark:text-orange-400',
         badgeKleur: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+        statusKey: 'krap',
+        badgeColor: '#8A7A4A',
         label: 'Krap',
         icon: AlertTriangle,
       }
@@ -206,6 +211,8 @@ export function NacalculatieLayout() {
       kleur: 'bg-red-500',
       tekstKleur: 'text-red-700 dark:text-red-400',
       badgeKleur: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+      statusKey: 'verliesgevend',
+      badgeColor: '#C0451A',
       label: 'Verliesgevend',
       icon: TrendingDown,
     }
@@ -526,16 +533,15 @@ export function NacalculatieLayout() {
                 <tbody>
                   {gefilterdeData.map((regel) => {
                     const status = getStatusIndicator(regel.margePercentage)
-                    const StatusIcon = status.icon
                     return (
                       <tr
                         key={regel.projectId}
                         className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-muted/50 transition-colors"
                       >
-                        <td className="py-3 px-4 font-medium text-foreground dark:text-white">
+                        <td className="py-3 px-4 font-medium text-[#1A4A52] dark:text-foreground">
                           {regel.projectNaam}
                         </td>
-                        <td className="py-3 px-4 text-foreground/70 dark:text-muted-foreground/50">
+                        <td className="py-3 px-4 text-muted-foreground">
                           {regel.klantNaam}
                         </td>
                         <td className="py-3 px-4 text-right font-mono text-foreground dark:text-white">
@@ -567,10 +573,9 @@ export function NacalculatieLayout() {
                           {regel.margePercentage.toFixed(1)}%
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <Badge className={cn('gap-1', status.badgeKleur)}>
-                            <StatusIcon className="w-3 h-3" />
-                            {status.label}
-                          </Badge>
+                          <span className="inline-flex justify-center">
+                            <StatusBadge status={status.statusKey} label={status.label} color={status.badgeColor} />
+                          </span>
                         </td>
                         <td className="py-3 px-4 text-center">
                           <Button
@@ -615,10 +620,10 @@ export function NacalculatieLayout() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium text-foreground dark:text-white truncate">
+                        <span className="font-medium text-[#1A4A52] dark:text-foreground truncate">
                           {regel.projectNaam}
                         </span>
-                        <span className="text-xs text-muted-foreground/60 dark:text-muted-foreground hidden sm:inline">
+                        <span className="text-xs text-muted-foreground hidden sm:inline">
                           {regel.klantNaam}
                         </span>
                       </div>

@@ -14,8 +14,9 @@ import {
   Image,
   File,
 } from 'lucide-react'
-import { cn, formatDate, getStatusColor } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { getDocumenten, deleteDocument } from '@/services/supabaseService'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { DocumentFolders } from './DocumentFolders'
 import { DocumentsPipeline } from './DocumentsPipeline'
 import { DocumentUpload } from './DocumentUpload'
@@ -47,6 +48,13 @@ function formatFileSize(bytes: number): string {
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+const statusLabels: Record<string, string> = {
+  concept: 'Concept',
+  review: 'In review',
+  definitief: 'Definitief',
+  gearchiveerd: 'Gearchiveerd',
 }
 
 function getTypeLabel(type: string): string {
@@ -311,9 +319,8 @@ function DocumentGrid({ documents }: { documents: Document[] }) {
                   <Badge variant="outline" className="text-2xs px-1.5 py-0">
                     {getTypeLabel(doc.type)}
                   </Badge>
-                  <Badge className={cn('text-2xs px-1.5 py-0', getStatusColor(doc.status))}>
-                    {doc.status}
-                  </Badge>
+                  <StatusBadge status={doc.status} label={statusLabels[doc.status] || doc.status} className="text-2xs" />
+
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-xs text-muted-foreground">
@@ -381,7 +388,7 @@ function DocumentList({ documents }: { documents: Document[] }) {
             >
               <div className="col-span-5 flex items-center gap-3 min-w-0">
                 <Icon className={cn('w-5 h-5 flex-shrink-0', iconColor)} />
-                <span className="text-sm font-medium truncate">{doc.naam}</span>
+                <span className="text-sm font-medium truncate text-[#1A4A52] dark:text-foreground">{doc.naam}</span>
               </div>
               <div className="col-span-2">
                 <Badge variant="outline" className="text-xs">
@@ -395,9 +402,7 @@ function DocumentList({ documents }: { documents: Document[] }) {
                 {formatDate(doc.updated_at)}
               </div>
               <div className="col-span-2">
-                <Badge className={cn('text-xs', getStatusColor(doc.status))}>
-                  {doc.status}
-                </Badge>
+                <StatusBadge status={doc.status} label={statusLabels[doc.status] || doc.status} />
               </div>
             </div>
           )

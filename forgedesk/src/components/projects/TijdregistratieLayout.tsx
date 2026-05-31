@@ -59,6 +59,7 @@ import {
 import type { Tijdregistratie, Project, Klant } from "@/types";
 import { round2 } from "@/utils/budgetUtils";
 import { cn, formatCurrency } from "@/lib/utils";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { toast } from "sonner";
 import { exportCSV, exportExcel } from "@/lib/export";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1069,7 +1070,7 @@ export function TijdregistratieLayout() {
                           <div className="font-medium">{formatDatumKort(reg.datum)}</div>
                         </td>
                         <td className="py-3 pr-4">
-                          <div className="font-medium max-w-[200px] truncate">
+                          <div className="font-medium max-w-[200px] truncate text-[#1A4A52] dark:text-foreground">
                             {reg.project_naam}
                           </div>
                           <div className="text-xs text-muted-foreground lg:hidden max-w-[200px] truncate">
@@ -1096,9 +1097,7 @@ export function TijdregistratieLayout() {
                         </td>
                         <td className="py-3 pr-4 text-center">
                           {reg.gefactureerd ? (
-                            <Badge className="badge-paars text-2xs">
-                              Gefact.
-                            </Badge>
+                            <StatusBadge status="gefactureerd" label="Gefact." className="justify-center" />
                           ) : reg.facturabel ? (
                             <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
                           ) : (

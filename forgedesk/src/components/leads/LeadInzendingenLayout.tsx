@@ -6,12 +6,12 @@ import {
   ArrowLeft, Loader2, Eye, CheckCircle, Inbox, UserPlus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
-import { cn, formatDateTime } from '@/lib/utils'
+import { formatDateTime } from '@/lib/utils'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import type { LeadInzending, LeadFormulier } from '@/types'
 import {
   getAllLeadInzendingen, getLeadFormulieren, updateLeadInzending,
@@ -164,10 +164,10 @@ export function LeadInzendingenLayout() {
                     <tr key={inz.id} className="group hover:bg-bg-hover transition-colors duration-150 cursor-pointer" onClick={() => handleViewDetail(inz)}>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{formatDateTime(inz.created_at)}</td>
                       <td className="px-4 py-3 text-sm">{getFormulierNaam(inz.formulier_id)}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-foreground">{info.naam}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[#1A4A52] dark:text-foreground">{info.naam}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{info.email}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="secondary" className={cn('text-xs', cfg.color)}>{cfg.label}</Badge>
+                        <StatusBadge status={inz.status} label={cfg.label} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100">

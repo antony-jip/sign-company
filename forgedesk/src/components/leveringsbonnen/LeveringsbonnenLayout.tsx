@@ -9,12 +9,12 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import { cn, formatDate } from '@/lib/utils'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import type { Leveringsbon, Klant, Project } from '@/types'
 import {
   getLeveringsbonnen, deleteLeveringsbon, getKlanten, getProjecten,
@@ -234,14 +234,12 @@ export function LeveringsbonnenLayout() {
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-teal-600 dark:text-teal-400">{lb.leveringsbon_nummer}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-foreground/80">{getKlantNaam(lb.klant_id)}</td>
-                      <td className="px-4 py-3 text-sm text-foreground/80">{getProjectNaam(lb.project_id)}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{getKlantNaam(lb.klant_id)}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{getProjectNaam(lb.project_id)}</td>
                       <td className="px-4 py-3 text-sm font-mono text-muted-foreground dark:text-muted-foreground">{lb.datum ? formatDate(lb.datum) : '-'}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground max-w-[200px] truncate">{lb.locatie_adres || '-'}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="secondary" className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
-                          <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', cfg.dot)} />{cfg.label}
-                        </Badge>
+                        <StatusBadge status={lb.status} label={cfg.label} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

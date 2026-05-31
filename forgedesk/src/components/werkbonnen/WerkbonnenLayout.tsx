@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { cn } from '@/lib/utils'
 // ModuleHeader removed — using DOEN inline header
 import { EmptyState } from '@/components/ui/empty-state'
@@ -457,11 +458,12 @@ export function WerkbonnenLayout() {
         >
             <table className="w-full table-fixed">
               <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
-                <tr className="border-b-2 border-border">
+                <tr className="border-b border-border">
                   <th className="w-[44px] py-3.5 pl-5 pr-0">
                     <Checkbox
                       checked={gefilterd.length > 0 && selectedIds.size === gefilterd.length}
                       onCheckedChange={toggleSelectAll}
+                      className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                     />
                   </th>
                   <th className="text-left py-3.5 pl-2 pr-4">
@@ -507,18 +509,19 @@ export function WerkbonnenLayout() {
                     >
                       <td
                         className="py-3.5 pl-5 pr-0"
-                        style={{ boxShadow: `inset 3px 0 0 0 ${stripeHex}` }}
+                        style={{ boxShadow: `inset 2px 0 0 0 ${stripeHex}` }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Checkbox
                           checked={selectedIds.has(wb.id)}
                           onCheckedChange={() => toggleWerkbonSelection(wb.id)}
+                          className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                         />
                       </td>
                       <td className="py-3.5 pl-2 pr-4">
                         <div className="min-w-0">
                           <div className="flex items-baseline gap-2.5">
-                            <span className="text-[15px] font-semibold text-foreground group-hover:text-[#1A535C] transition-colors">{wb.werkbon_nummer}</span>
+                            <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] transition-colors">{wb.werkbon_nummer}</span>
                           </div>
                           {wb.titel && <p className="text-[11px] text-muted-foreground/70 truncate max-w-[240px] mt-0.5">{wb.titel}</p>}
                         </div>
@@ -541,11 +544,11 @@ export function WerkbonnenLayout() {
                               </span>
                             )
                           })()}
-                          <span className="text-[13px] text-foreground/80 truncate block leading-tight">{getKlantNaam(wb.klant_id)}</span>
+                          <span className="text-[13px] text-muted-foreground truncate block leading-tight">{getKlantNaam(wb.klant_id)}</span>
                         </div>
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="text-[13px] text-foreground/70 truncate block">{ref}</span>
+                        <span className="text-[13px] text-muted-foreground truncate block">{ref}</span>
                       </td>
                       <td className="py-3.5 pr-4 text-right">
                         <span className="text-[12px] font-mono tabular-nums text-muted-foreground/80">
@@ -553,13 +556,11 @@ export function WerkbonnenLayout() {
                         </span>
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span
-                          className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg transition-all"
-                          style={{ backgroundColor: cfg.bg, color: cfg.text }}
-                        >
-                          {wb.status === 'definitief' && <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />}
-                          {cfg.label}<span className="text-[#F15025]">.</span>
-                        </span>
+                        <StatusBadge
+                          status={wb.status}
+                          label={cfg.label}
+                          color={wb.status === 'definitief' ? '#F15025' : undefined}
+                        />
                       </td>
                       <td className="py-3.5 pr-4 text-center">
                         <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-background text-foreground/70">
