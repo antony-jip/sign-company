@@ -148,9 +148,9 @@ export function TopNav() {
 
   return (
     <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
-      {/* ── Row 1: Utility bar ── */}
+      {/* ── Row 1: Floating capsule-bar (doen.-stijl) ── */}
       <div
-        className="relative flex items-center h-[50px] px-5 md:px-6 border-b border-border/40 bg-[linear-gradient(180deg,#FCFCFA_0%,#F8F7F5_100%)] dark:bg-[linear-gradient(180deg,hsl(190_28%_11%)_0%,hsl(190_35%_7%)_100%)] dark:shadow-[inset_0_-1px_0_rgba(255,255,255,0.02),inset_0_1px_0_rgba(255,255,255,0.03)]"
+        className="relative flex items-center gap-2.5 h-[60px] px-4 md:px-5 bg-[linear-gradient(180deg,#FCFCFA_0%,#F8F7F5_100%)] dark:bg-[linear-gradient(180deg,hsl(190_28%_11%)_0%,hsl(190_35%_7%)_100%)]"
       >
         {/* Subtle Flame warmth from right (notifications/avatar zone) — iets sterker in dark voor diepte */}
         <div
@@ -166,8 +166,8 @@ export function TopNav() {
           style={{ background: 'radial-gradient(ellipse at 0% 50%, rgba(26, 83, 92, 0.18) 0%, transparent 70%)' }}
         />
 
-        {/* Logo */}
-        <NavLink to="/" className="relative flex items-center mr-5 flex-shrink-0 opacity-95 hover:opacity-100 transition-opacity">
+        {/* Logo — eigen floating pill */}
+        <NavLink to="/" className="group relative flex items-center justify-center flex-shrink-0 h-10 px-3.5 rounded-2xl bg-card ring-1 ring-black/[0.04] dark:ring-white/[0.06] shadow-[0_1px_2px_rgba(20,30,40,0.06),0_6px_16px_-6px_rgba(20,30,40,0.10)] hover:shadow-[0_2px_4px_rgba(20,30,40,0.08),0_10px_24px_-8px_rgba(20,30,40,0.16)] transition-shadow duration-200">
           <img src="/logos/doen-logo.svg" alt="doen." className="h-[22px] dark:hidden" />
           <img
             src="/logos/doen-logo-wit.svg"
@@ -213,12 +213,12 @@ export function TopNav() {
           )}
         </div>
 
-        {/* ── Module-nav: meest gebruikt + Overig — desktop ── */}
-        <nav ref={navRef} className="relative hidden lg:flex items-stretch h-full gap-1.5">
-          {/* Sliding indicator — iOS "segment"-pill achter het actieve item */}
+        {/* ── Module-nav: segmented-control track met sliding pill — desktop ── */}
+        <nav ref={navRef} className="relative hidden lg:flex items-center h-10 gap-0.5 p-1 rounded-2xl bg-black/[0.04] dark:bg-white/[0.05] ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+          {/* Sliding indicator — witte "selected segment"-pill achter het actieve item */}
           <div
             ref={indicatorRef}
-            className="absolute top-1/2 -mt-[15px] left-0 h-[30px] rounded-[10px] bg-white dark:bg-white/[0.08] shadow-[0_1px_2px_rgba(20,30,40,0.08),0_2px_6px_rgba(20,30,40,0.05)] ring-1 ring-black/[0.03] dark:ring-white/[0.05] transition-all duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
+            className="absolute top-1/2 -mt-4 left-0 h-8 rounded-xl bg-card shadow-[0_1px_2px_rgba(20,30,40,0.10),0_2px_8px_rgba(20,30,40,0.06)] ring-1 ring-black/[0.04] dark:ring-white/[0.06] transition-all duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{ opacity: 0 }}
           />
 
@@ -255,7 +255,7 @@ export function TopNav() {
 
           {/* Overig — minder gebruikte modules in een strak lijstje */}
           {overigItems.length > 0 && (
-            <div ref={overigRef} className="relative flex items-stretch">
+            <div ref={overigRef} className="relative flex items-center">
               <button
                 type="button"
                 onClick={() => setOverigOpen((o) => !o)}
@@ -325,8 +325,8 @@ export function TopNav() {
           </div>
         )}
 
-        {/* Right actions */}
-        <div className="relative flex items-center gap-0.5 ml-auto md:ml-0">
+        {/* Right actions — eigen floating pill */}
+        <div className="relative flex items-center gap-0.5 ml-auto md:ml-0 md:h-10 md:px-1 md:rounded-2xl md:bg-card md:ring-1 md:ring-black/[0.04] md:shadow-[0_1px_2px_rgba(20,30,40,0.06),0_6px_16px_-6px_rgba(20,30,40,0.10)]">
           <button
             onClick={() => setMobileSearchOpen(true)}
             className="w-7 h-7 rounded-md md:hidden flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.04] transition-all"
