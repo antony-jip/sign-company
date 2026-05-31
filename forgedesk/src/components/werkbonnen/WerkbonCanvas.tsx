@@ -45,6 +45,7 @@ export function WerkbonCanvas({
   onFilesDropped,
 }: WerkbonCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [scale, setScale] = useState<number>(3)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
@@ -121,15 +122,29 @@ export function WerkbonCanvas({
     setIsDragOver(false)
   }, [])
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    const files = Array.from(e.dataTransfer.files || []).filter(
+  const handleFiles = useCallback((fileList: FileList | null) => {
+    const files = Array.from(fileList || []).filter(
       (f) => f.type.startsWith('image/') || f.type === 'application/pdf',
     )
     if (files.length === 0) return
     void onFilesDropped(itemId, files)
   }, [itemId, onFilesDropped])
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    handleFiles(e.dataTransfer.files)
+  }, [handleFiles])
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFiles(e.target.files)
+    e.target.value = ''
+  }, [handleFiles])
+
+  const openFilePicker = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    fileInputRef.current?.click()
+  }, [])
 
   const snapPx = CANVAS_SNAP_GRID_MM * scale
 
@@ -151,10 +166,25 @@ export function WerkbonCanvas({
         aspectRatio: `${CANVAS_WERKRUIMTE_MM.breedte} / ${CANVAS_WERKRUIMTE_MM.hoogte}`,
       }}
     >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        multiple
+        className="hidden"
+        onChange={handleInputChange}
+      />
+
       {isEmpty && !isDragOver && (
-        <div className="absolute inset-0 flex items-center justify-center text-[13px] text-[#9B9B95] pointer-events-none select-none">
-          Sleep een foto, logo of PDF op het werkblad
-        </div>
+        <button
+          type="button"
+          onClick={openFilePicker}
+          aria-label="Kies een foto, logo of PDF om toe te voegen"
+          className="absolute inset-0 flex items-center justify-center text-[13px] text-[#9B9B95] select-none cursor-pointer rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]"
+        >
+          Sleep een foto, logo of PDF op het werkblad, of{' '}
+          <span className="ml-1 font-medium text-[#F15025] underline underline-offset-2">kies een bestand</span>
+        </button>
       )}
 
       {isDragOver && (
