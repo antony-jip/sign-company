@@ -15,7 +15,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+        sans: ['"Inter"', '"IBM Plex Sans"', 'system-ui', 'sans-serif'],
         heading: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
         mono: ['"IBM Plex Mono"', '"DM Mono"', '"Space Grotesk"', 'ui-monospace', 'monospace'],
       },
