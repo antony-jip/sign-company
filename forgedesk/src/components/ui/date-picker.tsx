@@ -82,7 +82,7 @@ export function DatePicker({
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(base)
       d.setDate(base.getDate() + i)
-      return format(d, 'EEEEE', { locale: nl })
+      return format(d, 'EEEEEE', { locale: nl })
     })
   })()
 
@@ -113,6 +113,10 @@ export function DatePicker({
   const displayValue = selected && isValid(selected)
     ? format(selected, 'd MMM yyyy', { locale: nl })
     : ''
+  const footerLabel = selected && isValid(selected)
+    ? format(selected, 'EEE d MMMM yyyy', { locale: nl })
+    : ''
+  const monoFont = { fontFamily: '"DM Mono", ui-monospace, monospace' }
 
   const renderedTrigger = trigger ?? (
     <button
@@ -135,49 +139,51 @@ export function DatePicker({
       <PopoverContent
         align={align}
         side={side}
-        className={cn('w-[268px] p-3 rounded-xl border-border shadow-lg', contentClassName)}
+        className={cn('w-[320px] p-4 rounded-2xl border-border shadow-lg', contentClassName)}
       >
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[13px] font-semibold text-foreground capitalize">{monthLabel}</span>
-          <div className="flex items-center gap-0.5">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-heading font-extrabold lowercase tracking-tight text-[22px] leading-none text-foreground">
+            {monthLabel}
+          </span>
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setViewMonth(addMonths(viewMonth, -1))}
-              className="h-7 w-7 inline-flex items-center justify-center rounded-md text-foreground/70 hover:bg-background transition-colors"
+              className="h-9 w-9 inline-flex items-center justify-center rounded-xl border border-border text-foreground/70 hover:bg-primary/10 hover:text-foreground transition-colors"
               aria-label="Vorige maand"
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={handleToday}
-              className="h-7 px-2 inline-flex items-center text-[11px] font-medium rounded-md text-foreground/70 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors"
+              className="h-9 px-4 inline-flex items-center rounded-xl border border-border text-[13px] font-medium text-foreground/80 hover:bg-primary/10 hover:text-foreground transition-colors"
             >
-              Vandaag
+              vandaag
             </button>
             <button
               type="button"
               onClick={() => setViewMonth(addMonths(viewMonth, 1))}
-              className="h-7 w-7 inline-flex items-center justify-center rounded-md text-foreground/70 hover:bg-background transition-colors"
+              className="h-9 w-9 inline-flex items-center justify-center rounded-xl border border-border text-foreground/70 hover:bg-primary/10 hover:text-foreground transition-colors"
               aria-label="Volgende maand"
             >
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-0.5 mb-1">
+        <div className="grid grid-cols-7 gap-1.5 mb-1.5">
           {weekDayLabels.map((label, i) => (
             <div
               key={i}
-              className="text-[10px] font-medium text-muted-foreground uppercase text-center py-1"
+              className="text-[12px] font-medium text-muted-foreground text-center"
             >
               {label}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-0.5">
+        <div className="grid grid-cols-7 gap-1.5">
           {days.map((d) => {
             const inMonth = isSameMonth(d, viewMonth)
             const isToday = isSameDay(d, today)
@@ -190,23 +196,42 @@ export function DatePicker({
                 onClick={() => handleSelect(d)}
                 disabled={outOfRange}
                 className={cn(
-                  'h-8 rounded-md text-[12px] tabular-nums transition-colors flex items-center justify-center',
+                  'group relative box-border min-w-0 appearance-none aspect-square rounded-xl border flex items-center justify-center transition-colors',
                   outOfRange
-                    ? 'text-[#D4D2CE] cursor-not-allowed'
+                    ? 'border-border/50 text-muted-foreground/40 cursor-not-allowed'
                     : isSelected
-                      ? 'bg-[#1A535C] text-white font-semibold hover:bg-[#1A535C]/90'
-                      : !inMonth
-                        ? 'text-[#C5C2BD] hover:bg-background'
-                        : isToday
-                          ? 'text-[#1A535C] font-semibold ring-1 ring-inset ring-[#1A535C]/30 hover:bg-[#1A535C]/[0.06]'
-                          : 'text-foreground hover:bg-background',
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : isToday
+                        ? 'border-border text-primary hover:bg-primary hover:text-primary-foreground'
+                        : !inMonth
+                          ? 'border-border text-muted-foreground/50 hover:bg-primary/10'
+                          : 'border-border text-foreground hover:bg-primary/10',
                 )}
               >
-                {format(d, 'd')}
+                <span className="text-[15px] leading-none" style={monoFont}>
+                  {format(d, 'd')}
+                </span>
+                {isToday && (
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'absolute bottom-1.5 h-1 w-1 rounded-full',
+                      isSelected ? 'bg-primary-foreground' : 'bg-primary group-hover:bg-primary-foreground',
+                    )}
+                  />
+                )}
               </button>
             )
           })}
         </div>
+
+        {footerLabel && (
+          <div className="mt-3.5 pt-3 border-t border-border">
+            <span className="text-[13px] font-medium text-petrol dark:text-petrol-light">
+              {footerLabel}<span className="text-primary"> .</span>
+            </span>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   )
