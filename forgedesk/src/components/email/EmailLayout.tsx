@@ -199,7 +199,7 @@ export function EmailLayout() {
 
   // ─── Compose state ───
   const [composeDefaults, setComposeDefaults] = useState<{
-    to?: string; subject?: string; body?: string
+    to?: string; subject?: string; body?: string; replyToText?: string
   }>({})
   const [composeProjectId, setComposeProjectId] = useState<string | null>(null)
   // Ref-mirror zodat handleSendEmail (lege deps) de actuele waarde leest
@@ -1254,7 +1254,7 @@ export function EmailLayout() {
     })
   }, [loadEmailBody, selectedFolder, toggleCheckEmail])
 
-  const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string }) => {
+  const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string; replyToText?: string }) => {
     viewTransition(() => {
       setComposeDefaults(defaults || {})
       // Verse compose-sessie: vorige project-koppelingskeuze niet hergebruiken
@@ -1269,6 +1269,7 @@ export function EmailLayout() {
       to: extractSenderEmail(email.van),
       subject: email.onderwerp.startsWith('Re: ') ? email.onderwerp : `Re: ${email.onderwerp}`,
       body: `\n\n---------- Oorspronkelijk bericht ----------\nVan: ${email.van}\nDatum: ${email.datum}\n\n${email.inhoud?.replace(/<[^>]*>/g, '') || ''}`,
+      replyToText: `Van: ${email.van}\nOnderwerp: ${email.onderwerp}\n\n${email.inhoud?.replace(/<[^>]*>/g, '').trim() || ''}`,
     })
   }, [handleCompose])
 
@@ -2137,6 +2138,7 @@ export function EmailLayout() {
             defaultTo={composeDefaults.to}
             defaultSubject={composeDefaults.subject}
             defaultBody={composeDefaults.body}
+            replyToText={composeDefaults.replyToText}
             onSend={handleSendEmail}
             allEmails={emails}
             onToChange={setComposeToAddress}

@@ -34,6 +34,8 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
+  /** Platte tekst van de originele mail — aanwezig betekent: dit is een reply. */
+  replyToText?: string
   onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
   allEmails?: Email[]
   onToChange?: (to: string) => void
@@ -83,12 +85,14 @@ export function EmailCompose({
   defaultTo = '',
   defaultSubject = '',
   defaultBody = '',
+  replyToText,
   onSend,
   allEmails = [],
   onToChange,
   onRegisterActions,
   onForgieLoadingChange,
 }: EmailComposeProps) {
+  const isReply = !!(replyToText && replyToText.trim())
   const navigate = useNavigate()
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
   const { organisatieId } = useAuth()
@@ -145,6 +149,7 @@ export function EmailCompose({
   const [forgieLoading, setForgieLoading] = useState(false)
   const [writeBriefOpen, setWriteBriefOpen] = useState(false)
   const [writeBrief, setWriteBrief] = useState('')
+  const [replyAiOpen, setReplyAiOpen] = useState(false)
 
   // Schedule send
   const [showScheduleMenu, setShowScheduleMenu] = useState(false)
@@ -344,16 +349,28 @@ export function EmailCompose({
     setWriteBriefOpen(true)
   }, [])
 
+  // Plaatst gegenereerde tekst: bij reply bovenaan, boven het citaat; anders vervangt het de body.
+  const applyGenerated = useCallback((result: string) => {
+    if (!editorRef.current) return
+    const html = result.replace(/\n/g, '<br>')
+    if (isReply) {
+      // Editor bevat al handtekening + citaat; zet het antwoord er bovenop.
+      editorRef.current.innerHTML = `${html}<br><br>${editorRef.current.innerHTML}`
+    } else {
+      editorRef.current.innerHTML = `${html}${signatureHtml}`
+    }
+  }, [isReply, signatureHtml])
+
   const handleGenerateFromBrief = useCallback(async () => {
     const brief = writeBrief.trim()
     if (!brief || !editorRef.current) return
     setForgieLoading(true)
     try {
-      const context = `Onderwerp: ${subject || '(nog geen)'}\nAan: ${to || '(onbekend)'}`
+      const context = isReply
+        ? `Antwoord op deze e-mail:\n${replyToText}`
+        : `Onderwerp: ${subject || '(nog geen)'}\nAan: ${to || '(onbekend)'}`
       const response = await callForgie('write-email', brief, context)
-      if (response?.result && editorRef.current) {
-        editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
-      }
+      if (response?.result) applyGenerated(response.result)
       setWriteBriefOpen(false)
       setWriteBrief('')
     } catch (err) {
@@ -362,7 +379,22 @@ export function EmailCompose({
     } finally {
       setForgieLoading(false)
     }
-  }, [writeBrief, subject, to, signatureHtml])
+  }, [writeBrief, isReply, replyToText, subject, to, applyGenerated])
+
+  // Reply uit context: genereer een antwoord op basis van de originele mail.
+  const handleReplyFromContext = useCallback(async () => {
+    if (!editorRef.current || !replyToText) return
+    setForgieLoading(true)
+    try {
+      const response = await callForgie('generate-reply', replyToText)
+      if (response?.result) applyGenerated(response.result)
+    } catch (err) {
+      logger.error('AI reply generation failed:', err)
+      toast.error('Daan kon geen antwoord genereren')
+    } finally {
+      setForgieLoading(false)
+    }
+  }, [replyToText, applyGenerated])
 
   // AI rewrite actions
   const handleForgieRewrite = useCallback(async (action: ForgieAction, label: string) => {
@@ -747,21 +779,54 @@ export function EmailCompose({
               </div>
 
               <div className="relative">
-                <button
-                  onClick={handleForgieWrite}
-                  disabled={forgieLoading}
-                  className="flex items-center gap-1.5 text-[12px] text-[#F15025] hover:underline transition-colors duration-150 disabled:opacity-40"
-                >
-                  {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  Schrijf mijn e-mail
-                </button>
+                {isReply ? (
+                  <button
+                    onClick={() => setReplyAiOpen(v => !v)}
+                    disabled={forgieLoading}
+                    className="flex items-center gap-1.5 text-[12px] text-[#F15025] hover:underline transition-colors duration-150 disabled:opacity-40"
+                  >
+                    {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    Beantwoord met AI
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleForgieWrite}
+                    disabled={forgieLoading}
+                    className="flex items-center gap-1.5 text-[12px] text-[#F15025] hover:underline transition-colors duration-150 disabled:opacity-40"
+                  >
+                    {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    Schrijf mijn e-mail
+                  </button>
+                )}
+                {replyAiOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setReplyAiOpen(false)} />
+                    <div className="absolute left-0 top-full mt-2 w-[230px] bg-card rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-border z-50 py-1.5">
+                      <button
+                        onClick={() => { setReplyAiOpen(false); handleReplyFromContext() }}
+                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-background transition-colors flex items-center gap-2"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-[#F15025]" />
+                        Uit context mail
+                      </button>
+                      <button
+                        onClick={() => { setReplyAiOpen(false); setWriteBriefOpen(true) }}
+                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-background transition-colors flex items-center gap-2"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                        Eigen input geven
+                      </button>
+                    </div>
+                  </>
+                )}
                 {writeBriefOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setWriteBriefOpen(false)} />
                     <div className="absolute left-0 top-full mt-2 w-[340px] max-w-[calc(100vw-2rem)] bg-card rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-border z-50 p-3.5 space-y-2.5">
                       <div className="flex items-center gap-1.5">
                         <Sparkles className="h-3.5 w-3.5 text-[#F15025]" />
-                        <p className="text-[13px] font-semibold text-foreground">Wat voor mail wil je schrijven?</p>
+                        <p className="text-[13px] font-semibold text-foreground">{isReply ? 'Wat wil je antwoorden?' : 'Wat voor mail wil je schrijven?'}</p>
                       </div>
                       <textarea
                         value={writeBrief}
@@ -769,7 +834,7 @@ export function EmailCompose({
                         onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleGenerateFromBrief() }}
                         rows={3}
                         autoFocus
-                        placeholder="Bijv. Offerte opvolgen bij de klant — vriendelijk, kort, vraag of er nog vragen zijn."
+                        placeholder={isReply ? 'Bijv. Bevestig de afspraak en vraag om het juiste leveradres.' : 'Bijv. Offerte opvolgen bij de klant — vriendelijk, kort, vraag of er nog vragen zijn.'}
                         className="w-full text-[13px] text-foreground bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-[#1A535C] resize-none"
                       />
                       <p className="text-[11px] text-muted-foreground">Daan schrijft in jouw tone of voice. <span className="text-muted-foreground/70">⌘↵ om te genereren</span></p>
