@@ -2766,10 +2766,10 @@ export function ProjectDetail() {
             </div>
             <div className="space-y-2">
               <Label>Startdatum</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={kopieStartDatum}
-                onChange={(e) => setKopieStartDatum(e.target.value)}
+                onChange={(v) => setKopieStartDatum(v)}
+                asInput
               />
             </div>
             <div className="bg-background dark:bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
@@ -2815,7 +2815,7 @@ export function ProjectDetail() {
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <Label className="text-sm">Datum</Label>
-                <Input type="date" value={montageDatum} onChange={(e) => setMontageDatum(e.target.value)} className="mt-1 h-9" />
+                <DatePicker value={montageDatum} onChange={(v) => setMontageDatum(v)} asInput className="mt-1 h-9" />
               </div>
               <div>
                 <Label className="text-sm">Start</Label>

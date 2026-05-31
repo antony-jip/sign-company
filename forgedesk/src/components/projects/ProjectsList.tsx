@@ -1634,11 +1634,11 @@ export function ProjectsList() {
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5 block">Deadline</label>
               <div className="flex items-center gap-2">
-                <input
-                  type="date"
+                <DatePicker
                   value={quickTaakDeadline}
-                  onChange={(e) => setQuickTaakDeadline(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+                  onChange={(v) => setQuickTaakDeadline(v)}
+                  asInput
+                  className="flex-1"
                 />
                 <div className="flex gap-1">
                   {[
