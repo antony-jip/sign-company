@@ -3,6 +3,7 @@ import { logger } from '@/utils/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -659,11 +660,11 @@ export function TeamLayout() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-2">
                   <Label>Van</Label>
-                  <Input type="date" value={verlofForm.start_datum} onChange={(e) => setVerlofForm((p) => ({ ...p, start_datum: e.target.value }))} />
+                  <DatePicker value={verlofForm.start_datum} onChange={(v) => setVerlofForm((p) => ({ ...p, start_datum: v }))} asInput />
                 </div>
                 <div className="grid gap-2">
                   <Label>Tot</Label>
-                  <Input type="date" value={verlofForm.eind_datum} onChange={(e) => setVerlofForm((p) => ({ ...p, eind_datum: e.target.value }))} />
+                  <DatePicker value={verlofForm.eind_datum} onChange={(v) => setVerlofForm((p) => ({ ...p, eind_datum: v }))} asInput />
                 </div>
               </div>
               <div className="grid gap-2">
@@ -1156,11 +1157,10 @@ export function TeamLayout() {
             {/* Start datum */}
             <div className="grid gap-2">
               <Label htmlFor="start_datum">Start datum</Label>
-              <Input
-                id="start_datum"
-                type="date"
+              <DatePicker
                 value={form.start_datum}
-                onChange={(e) => setForm((f) => ({ ...f, start_datum: e.target.value }))}
+                onChange={(v) => setForm((f) => ({ ...f, start_datum: v }))}
+                asInput
               />
             </div>
 

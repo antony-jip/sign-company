@@ -19,6 +19,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
@@ -295,7 +296,7 @@ export function PortaalAlerts() {
           <div className="space-y-3 py-2">
             <div>
               <Label className="text-sm">Datum</Label>
-              <Input type="date" value={montageDatum} onChange={e => setMontageDatum(e.target.value)} className="mt-1" />
+              <DatePicker value={montageDatum} onChange={v => setMontageDatum(v)} asInput className="mt-1" />
             </div>
             <div>
               <Label className="text-sm">Locatie</Label>
