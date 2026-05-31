@@ -199,7 +199,7 @@ export function TakenOfferteGrid({
                   onChange={(e) => setQuickBedrag(e.target.value)}
                   placeholder="0,00"
                   disabled={quickSubmitting}
-                  className="w-full h-8 pl-6 pr-2 text-sm font-mono text-right border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-[#F15025]/30 focus:border-[#F15025] disabled:opacity-50"
+                  className="w-full h-8 pl-6 pr-2 text-sm font-mono text-right text-foreground border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-[#F15025]/30 focus:border-[#F15025] disabled:opacity-50"
                 />
               </div>
               <button

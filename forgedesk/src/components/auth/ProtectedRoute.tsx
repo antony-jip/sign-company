@@ -10,31 +10,28 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isOnboardingPath = ONBOARDING_ROUTES.some(r => location.pathname.startsWith(r))
 
   const loader = (
-    <div className="flex items-center justify-center h-screen bg-background dark:bg-background">
+    <div className="flex items-center justify-center h-screen bg-background">
       <style>{`
         @keyframes doen-loader-pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.45); opacity: 0.55; }
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.55; }
         }
-        .doen-loader-dot {
-          display: inline-block;
+        .doen-loader-logo {
           animation: doen-loader-pulse 1.35s ease-in-out infinite;
-          transform-origin: center;
         }
       `}</style>
-      <p
+      <img
+        src="/logos/doen-logo.svg"
+        alt="doen."
         aria-label="Laden"
-        style={{
-          fontFamily: '"Bricolage Grotesque", sans-serif',
-          fontWeight: 800,
-          fontSize: 72,
-          color: '#1A535C',
-          letterSpacing: '-0.04em',
-          lineHeight: 1,
-        }}
-      >
-        doen<span className="doen-loader-dot" style={{ color: '#F15025' }}>.</span>
-      </p>
+        className="doen-loader-logo w-[180px] dark:hidden"
+      />
+      <img
+        src="/logos/doen-logo-wit.svg"
+        alt="doen."
+        aria-hidden
+        className="doen-loader-logo w-[180px] hidden dark:block"
+      />
     </div>
   )
 
