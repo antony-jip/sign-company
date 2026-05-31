@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, MapPin, ReceiptText, Loader2, X } from 'lucide-react'
+import { Plus, Search, MapPin, ReceiptText, X } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import {
   getWerkbonnen,
@@ -156,9 +157,18 @@ export function WerkbonnenLayoutMobile() {
 
       <div className="flex-1 overflow-y-auto pb-[calc(4rem+env(safe-area-inset-bottom))]">
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
+          <ul className="divide-y divide-[#EBEBEB] bg-white">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <li key={i} className="px-5 py-3.5">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <Skeleton className="h-3.5 w-20" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="mt-1.5 h-3 w-2/5" />
+              </li>
+            ))}
+          </ul>
         ) : filteredWerkbonnen.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
             <div className="w-20 h-20 rounded-full bg-white border border-border flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
