@@ -260,11 +260,11 @@ export function QuoteHeader({
             {email.showVerstuurKeuze && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => email.setShowVerstuurKeuze(false)} />
-                <div className="absolute right-0 top-full mt-2 z-50 w-72 doen-slate-surface rounded-xl shadow-[0_8px_28px_rgba(20,62,71,0.12)] overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 z-50 w-72 doen-slate-surface rounded-[16px] shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] overflow-hidden">
                   <button
                     onClick={handleKeuzePortaal}
                     disabled={email.isSendingPortaal || !selectedProjectId}
-                    className="w-full text-left px-4 py-3 hover:bg-white/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-b border-[rgba(26,83,92,0.08)]"
+                    className="w-full text-left px-4 py-3 hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-b border-[rgba(26,83,92,0.08)]"
                   >
                     <div className="flex items-start gap-3">
                       <div className="h-9 w-9 rounded-lg bg-[#1A535C] flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(20,62,71,0.2)]">
@@ -287,7 +287,7 @@ export function QuoteHeader({
                   </button>
                   <button
                     onClick={handleKeuzeEmail}
-                    className="w-full text-left px-4 py-3 hover:bg-white/60 transition-colors"
+                    className="w-full text-left px-4 py-3 hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                   >
                     <div className="flex items-start gap-3">
                       <div className="h-9 w-9 rounded-lg bg-[#F15025] flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(241,80,37,0.25)]">
@@ -319,11 +319,11 @@ export function QuoteHeader({
               {showActionsMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowActionsMenu(false)} />
-                  <div className="absolute right-0 top-full mt-1 z-50 doen-slate-surface rounded-xl shadow-[0_8px_28px_rgba(20,62,71,0.12)] py-1 w-52">
+                  <div className="absolute right-0 top-full mt-1 z-50 doen-slate-surface rounded-[16px] shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] py-1 w-52">
                     <button
                       onClick={() => { handleDupliceerOfferte(); setShowActionsMenu(false) }}
                       disabled={isDuplicating}
-                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 disabled:opacity-50 transition-colors"
+                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] flex items-center gap-2 disabled:opacity-50 transition-colors"
                     >
                       <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                       {isDuplicating ? 'Dupliceren…' : 'Dupliceer offerte'}
@@ -331,7 +331,7 @@ export function QuoteHeader({
                     <button
                       onClick={() => { setShowKopieerNaarKlant?.(true); setShowActionsMenu(false) }}
                       disabled={isDuplicating}
-                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 disabled:opacity-50 transition-colors"
+                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] flex items-center gap-2 disabled:opacity-50 transition-colors"
                     >
                       <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                       Kopieer naar andere klant
@@ -339,14 +339,14 @@ export function QuoteHeader({
                     <button
                       onClick={() => { versioning.handleNieuweVersie(); setShowActionsMenu(false) }}
                       disabled={versioning.isSavingVersie}
-                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 disabled:opacity-50 transition-colors"
+                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] flex items-center gap-2 disabled:opacity-50 transition-colors"
                     >
                       <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                       {versioning.isSavingVersie ? 'Opslaan…' : `Nieuwe versie (v${versioning.versieNummer})`}
                     </button>
                     <button
                       onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }}
-                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] flex items-center gap-2 transition-colors"
                     >
                       <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                       Klant wijzigen
@@ -354,7 +354,7 @@ export function QuoteHeader({
                     {onWerkbon && (
                       <button
                         onClick={() => { onWerkbon(); setShowActionsMenu(false) }}
-                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 transition-colors"
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] flex items-center gap-2 transition-colors"
                       >
                         <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
                         Werkbon maken
@@ -363,7 +363,7 @@ export function QuoteHeader({
                     {onOpdrachtbevestiging && (
                       <button
                         onClick={() => { onOpdrachtbevestiging(); setShowActionsMenu(false) }}
-                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 transition-colors"
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] flex items-center gap-2 transition-colors"
                       >
                         <FileCheck className="h-3.5 w-3.5 text-muted-foreground" />
                         Opdrachtbevestiging
@@ -389,7 +389,7 @@ export function QuoteHeader({
                 </h3>
                 <button
                   onClick={() => setShowKopieerNaarKlant(false)}
-                  className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-white/60 transition-colors"
+                  className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                 >
                   <X className="h-4 w-4 text-foreground/70" />
                 </button>
@@ -415,7 +415,7 @@ export function QuoteHeader({
                         key={k.id}
                         onClick={() => handleDupliceerOfferte(k.id)}
                         disabled={isDuplicating}
-                        className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-white/60 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-50 flex items-center gap-2"
                       >
                         <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                         <span className="truncate text-foreground">{k.bedrijfsnaam || '(naamloos)'}</span>

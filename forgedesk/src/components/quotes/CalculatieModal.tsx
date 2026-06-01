@@ -352,7 +352,7 @@ export function CalculatieModal({
                 Template laden
               </Button>
               {showTemplates && (
-                <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border dark:border-border rounded-lg shadow-lg p-2 min-w-[250px]">
+                <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border/70 rounded-[14px] shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1.5 min-w-[250px]">
                   <p className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/60 px-2 py-1">
                     Kies een template:
                   </p>
@@ -360,7 +360,7 @@ export function CalculatieModal({
                     <button
                       key={t.id}
                       onClick={() => laadTemplate(t)}
-                      className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted dark:hover:bg-muted transition-colors"
+                      className="w-full text-left px-2.5 py-2 text-sm rounded-[8px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                     >
                       <span className="font-medium">{t.naam}</span>
                       {t.beschrijving && (
@@ -377,7 +377,7 @@ export function CalculatieModal({
                       onClose()
                       navigate('/instellingen', { state: { tab: 'calculatie' } })
                     }}
-                    className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted dark:hover:bg-muted transition-colors flex items-center gap-2 text-muted-foreground"
+                    className="w-full text-left px-2.5 py-2 text-sm rounded-[8px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors flex items-center gap-2 text-muted-foreground"
                   >
                     <Settings className="h-3.5 w-3.5" />
                     Templates beheren

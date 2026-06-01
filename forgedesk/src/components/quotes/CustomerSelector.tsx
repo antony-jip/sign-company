@@ -193,14 +193,14 @@ export function CustomerSelector({
                       <Input value={klantSearch} onChange={(e) => { setKlantSearch(e.target.value); setShowKlantResults(true); setShowNieuwBedrijf(false) }} onFocus={() => setShowKlantResults(true)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-10 rounded-lg text-[13px]" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
                     </div>
                     {showKlantResults && !showNieuwBedrijf && (
-                      <div className="absolute z-50 w-full mt-1 rounded-lg border bg-background shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '1px solid hsl(var(--border))' }}>
+                      <div className="absolute z-50 w-full mt-1 rounded-[12px] border bg-popover shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] max-h-[320px] overflow-y-auto" style={{ border: '1px solid hsl(var(--border))' }}>
                         <button className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[hsl(var(--status-green-bg))]/50 transition-colors border-b" style={{ borderColor: '#EBEBEB' }} onClick={() => { setShowNieuwBedrijf(true); setNbData((p) => ({ ...p, bedrijfsnaam: klantSearch })) }}>
                           <Plus className="w-4 h-4" /><span className="text-[13px] font-medium">Nieuw bedrijf toevoegen{klantSearch.trim() ? `: "${klantSearch.trim()}"` : ''}</span>
                         </button>
                         {filteredKlanten.length === 0 ? (
                           <div className="py-4 text-center text-[13px]" style={{ color: '#9B9B95' }}>Geen klanten gevonden</div>
                         ) : filteredKlanten.map((klant) => (
-                          <button key={klant.id} className="w-full text-left px-3 py-2 hover:bg-muted transition-colors border-b last:border-0" style={{ borderColor: '#EBEBEB' }} onClick={() => { setSelectedKlantId(klant.id); setKlantSearch(''); setShowKlantResults(false) }}>
+                          <button key={klant.id} className="w-full text-left px-3 py-2 hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors border-b last:border-0" style={{ borderColor: '#EBEBEB' }} onClick={() => { setSelectedKlantId(klant.id); setKlantSearch(''); setShowKlantResults(false) }}>
                             <p className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>{klant.bedrijfsnaam}</p>
                             <div className="flex items-center gap-2">
                               {klant.contactpersoon && <span className="text-[11px]" style={{ color: '#6B6B66' }}>{klant.contactpersoon}</span>}

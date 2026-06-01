@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MoreHorizontal, ExternalLink, ChevronDown, MapPin, Phone, Mail, type LucideIcon } from 'lucide-react'
+import { MoreHorizontal, ExternalLink, MapPin, Phone, Mail, type LucideIcon } from 'lucide-react'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import type { Klant, Project, Contactpersoon } from '@/types'
@@ -211,10 +212,10 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
       <div className="border-t border-[rgba(26,83,92,0.1)] pt-4">
         <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.1em] mb-2">Contactpersoon</h4>
         <div className="relative">
-          <select
+          <Select
             value={project.contactpersoon_id || ''}
-            onChange={async (e) => {
-              const cpId = e.target.value || null
+            onValueChange={async (v) => {
+              const cpId = v && v !== '__none__' ? v : null
               try {
                 await onContactpersoonChange(cpId)
                 const cp = cpId ? contactpersonen.find(c => c.id === cpId) : null
@@ -223,23 +224,26 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
                 logger.error('Kon contactpersoon niet wijzigen:', err)
               }
             }}
-            className="w-full text-[13px] font-medium text-foreground bg-white hover:bg-white border border-[rgba(26,83,92,0.12)] rounded-lg pl-9 pr-9 py-2.5 outline-none cursor-pointer transition-colors appearance-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)]"
           >
-            <option value="">Selecteer contactpersoon…</option>
-            {contactpersonen.map((cp) => (
-              <option key={cp.id} value={cp.id}>{cp.naam}{cp.functie ? ` · ${cp.functie}` : ''}</option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full h-auto py-2.5 pl-9 pr-3 rounded-lg border-[rgba(26,83,92,0.12)] bg-white dark:bg-card text-[13px] font-medium text-foreground">
+              <SelectValue placeholder="Selecteer contactpersoon…" />
+            </SelectTrigger>
+            <SelectContent>
+              {projectCp && <SelectItem value="__none__">Geen contactpersoon</SelectItem>}
+              {contactpersonen.map((cp) => (
+                <SelectItem key={cp.id} value={cp.id}>{cp.naam}{cp.functie ? ` · ${cp.functie}` : ''}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {/* Mini cp-avatar links in select */}
           {projectCp && (
             <div
-              className="absolute left-2 top-1/2 -translate-y-1/2 h-6 w-6 rounded-md flex items-center justify-center text-white text-[10px] font-bold pointer-events-none"
+              className="absolute left-2 top-1/2 -translate-y-1/2 h-6 w-6 rounded-md flex items-center justify-center text-white text-[10px] font-bold pointer-events-none z-10"
               style={{ background: 'linear-gradient(135deg, #3A6B8C 0%, #2A5580 100%)' }}
             >
               {getInitial(projectCp.naam)}
             </div>
           )}
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         </div>
 
         {/* Inline-edit blok voor geselecteerde contactpersoon */}

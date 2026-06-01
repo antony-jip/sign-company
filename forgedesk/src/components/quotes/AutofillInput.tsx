@@ -165,16 +165,16 @@ export function AutofillInput({
         className={className}
       />
       {shouldShowDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-background dark:bg-card border border-border dark:border-border rounded-lg shadow-lg max-h-48 overflow-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-popover border border-border/70 rounded-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1 max-h-48 overflow-auto">
           {allSuggestions.map((suggestion, i) => (
             <button
               key={suggestion.text}
               type="button"
               className={cn(
-                'w-full text-left px-3 py-2 text-sm transition-colors',
+                'w-full text-left px-2.5 py-2 rounded-[8px] text-sm transition-colors',
                 i === focusedIndex
-                  ? 'bg-accent text-accent-foreground'
-                  : 'hover:bg-muted dark:hover:bg-muted'
+                  ? 'bg-[hsl(38,20%,95.5%)] dark:bg-white/[0.06]'
+                  : 'hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06]'
               )}
               onMouseDown={(e) => {
                 e.preventDefault()

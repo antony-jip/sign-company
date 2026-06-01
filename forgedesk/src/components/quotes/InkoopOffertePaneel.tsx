@@ -354,12 +354,12 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
                   className="h-9 text-sm"
                 />
                 {showLeverancierSuggesties && leverancierSuggesties.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-popover border border-border/70 rounded-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1 max-h-40 overflow-auto">
                     {leverancierSuggesties.map((naam) => (
                       <button
                         key={naam}
                         type="button"
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
+                        className="w-full text-left px-2.5 py-2 rounded-[8px] text-sm hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                         onMouseDown={(e) => {
                           e.preventDefault()
                           setLeverancierNaam(naam)

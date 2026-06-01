@@ -84,13 +84,13 @@ function TabContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-50 bg-popover border border-border/70 rounded-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
       style={{ left: x, top: y }}
     >
       {items.map(item => (
         <button
           key={item.label}
-          className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors"
+          className="w-full text-left px-2.5 py-1.5 rounded-[7px] text-xs hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
           onClick={() => {
             item.action()
             onClose()
