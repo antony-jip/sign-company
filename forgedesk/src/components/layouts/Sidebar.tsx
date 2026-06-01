@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 
 interface NavItem {
   label: string
@@ -166,39 +167,34 @@ export function Sidebar() {
     const Icon = item.icon
 
     return (
-      <NavLink
-        key={item.path}
-        to={item.path}
-        className="relative flex flex-col items-center justify-center w-full py-2.5 gap-1 group/rail"
-      >
-        {/* Hover bg */}
-        <div className="doen-sidebar-item-hover" style={{ borderRadius: '12px', insetInline: '8px' }} />
+      <TooltipProvider key={item.path} delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <NavLink
+              to={item.path}
+              className="relative flex items-center justify-center w-full h-11 group/rail"
+            >
+              {/* Hover fill — lichtere petrol-tint squircle */}
+              <div className="doen-sidebar-item-hover" style={{ borderRadius: '12px', insetInline: '10px' }} />
 
-        {active && (
-          <div className="absolute inset-x-[8px] inset-y-0.5 rounded-[12px] doen-sidebar-active-pill" />
-        )}
+              {/* Actief — donker-petrol squircle */}
+              {active && (
+                <div className="absolute inset-x-[10px] inset-y-0 rounded-[12px] doen-sidebar-active-pill" />
+              )}
 
-        {active && <div className="doen-sidebar-flame-accent" />}
-
-        <div
-          className={cn(
-            'relative z-10 transition-all duration-300 ease-out',
-            !active && 'group-hover/rail:scale-110',
-          )}
-        >
-          <Icon className="h-[22px] w-[22px]" strokeWidth={1.75} color={item.color} />
-        </div>
-
-        <span
-          className={cn(
-            'relative z-10 text-center leading-tight transition-all duration-300',
-            active ? 'text-foreground font-semibold' : 'text-muted-foreground font-medium group-hover/rail:text-foreground',
-          )}
-          style={{ fontSize: '9px' }}
-        >
-          {item.label}
-        </span>
-      </NavLink>
+              <div
+                className={cn(
+                  'relative z-10 transition-transform duration-300 ease-out',
+                  !active && 'group-hover/rail:scale-110',
+                )}
+              >
+                <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.2 : 1.8} color={active ? '#FFFFFF' : '#8FA0A4'} />
+              </div>
+            </NavLink>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={10}>{item.label}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     )
   }
 
@@ -240,21 +236,21 @@ export function Sidebar() {
           )}
           style={{
             backgroundColor: active
-              ? `${item.color}22`
+              ? 'rgba(255,255,255,0.16)'
               : `${item.color}12`,
           }}
         >
           <Icon
             className="h-[17px] w-[17px]"
             strokeWidth={active ? 2.25 : 1.75}
-            color={item.color}
+            color={active ? '#FFFFFF' : item.color}
           />
         </div>
 
         {/* Label */}
         <span className={cn(
           'relative z-10 truncate transition-all duration-300 tracking-[-0.01em]',
-          active ? 'text-foreground font-semibold' : 'text-foreground/70 font-medium group-hover/nav:text-foreground',
+          active ? 'text-white font-semibold' : 'text-foreground/70 font-medium group-hover/nav:text-foreground',
         )}>
           {item.label}
         </span>
@@ -282,7 +278,7 @@ export function Sidebar() {
           )}
         >
           {collapsed ? (
-            <img src="/logos/doen-app-icon.svg" alt="doen." className="h-16 w-16 transition-transform duration-300 group-hover/logo:scale-105" />
+            <img src="/logos/doen-app-icon.svg" alt="doen." className="h-12 w-12 transition-transform duration-300 group-hover/logo:scale-105" />
           ) : (
             <img src="/logos/doen-logo.svg" alt="doen." className="h-6 transition-transform duration-300 group-hover/logo:translate-x-0.5" />
           )}

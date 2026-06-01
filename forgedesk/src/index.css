@@ -978,8 +978,8 @@ tbody tr:hover {
    SIDEBAR — Doen. vertical navigation
    ================================================================ */
 .doen-sidebar {
-  background: #F8F7F5;
-  border-right: 0.5px solid #EBEBEB;
+  background: linear-gradient(180deg, #E9EEEF 0%, #DDE7E8 100%);
+  border-right: 0.5px solid rgba(26, 83, 92, 0.10);
   position: relative;
 }
 /* Subtle noise texture overlay */
@@ -1006,13 +1006,14 @@ tbody tr:hover {
   z-index: 0;
 }
 
-/* Active pill — soft teal tint on light */
+/* Active pill — donker-petrol squircle (zelfde als de e-mail-rail) */
 .doen-sidebar-active-pill {
-  background: rgba(26, 83, 92, 0.08);
-  border: 0.5px solid rgba(26, 83, 92, 0.14);
+  background: linear-gradient(180deg, #1F606A 0%, #164850 100%);
+  border: none;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    0 1px 2px rgba(26, 83, 92, 0.04);
+    0 3px 10px -2px rgba(26, 83, 92, 0.45),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
 }
 
 .dark .doen-sidebar {
@@ -1075,8 +1076,8 @@ tbody tr:hover {
   inset: 0;
   border-radius: 11px;
   opacity: 0;
-  background: linear-gradient(90deg, rgba(26,83,92,0.05) 0%, rgba(26,83,92,0.01) 100%);
-  transition: opacity 0.2s ease;
+  background: rgba(26, 83, 92, 0.07);
+  transition: opacity 0.18s ease;
 }
 .group\/nav:hover .doen-sidebar-item-hover,
 .group\/rail:hover .doen-sidebar-item-hover {

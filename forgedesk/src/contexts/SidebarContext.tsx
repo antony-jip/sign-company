@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
-export const RAIL_WIDTH = 88
+export const RAIL_WIDTH = 64
 export const EXPANDED_WIDTH = 244
 
 export type LayoutMode = 'sidebar' | 'topnav'

@@ -1646,7 +1646,7 @@ export function EmailLayout() {
       {/* Desktop folder-icon-sidebar — iOS-inspired met subtiele petrol-infusie:
           zachte verticale gradient, petrol-tinted hairlines, cooler grey iconen,
           en hover-state in petrol ipv neutraal zwart. */}
-      <div className="hidden md:flex w-[60px] bg-gradient-to-b from-[#F4F7F7] via-[#F1F5F5] to-[#ECF1F2] dark:from-[hsl(190_40%_6%)] dark:via-[hsl(190_38%_5%)] dark:to-[hsl(190_42%_4%)] border-r border-[#1A535C]/[0.08] dark:border-[#1A535C]/[0.22] flex-col flex-shrink-0 relative">
+      <div className="hidden md:flex w-[64px] bg-gradient-to-b from-[#E9EEEF] via-[#E4EBEC] to-[#DDE7E8] dark:from-[hsl(190_40%_6%)] dark:via-[hsl(190_38%_5%)] dark:to-[hsl(190_42%_4%)] border-r border-[#1A535C]/[0.10] dark:border-[#1A535C]/[0.22] flex-col flex-shrink-0 relative">
         {/* Subtiele binnen-highlight aan de linkerkant — geeft diepte */}
         <div className="absolute inset-y-0 left-0 w-px bg-white/40 dark:bg-white/[0.04] pointer-events-none" aria-hidden />
 
