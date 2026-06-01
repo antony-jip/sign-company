@@ -1,8 +1,10 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Wrench, CheckSquare, CalendarDays, type LucideIcon } from 'lucide-react'
+import { ArrowRight, ArrowRightToLine, Wrench, CheckSquare, CalendarDays, type LucideIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
+import { updateTaak } from '@/services/supabaseService'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
 import { cn } from '@/lib/utils'
 import type { Taak, MontageAfspraak, CalendarEvent, Klant, Project, Medewerker } from '@/types'
@@ -46,6 +48,10 @@ interface VandaagItem {
   context: string
   toegewezenAan: Medewerker | null
   href: string
+  /** Rauwe taak.id voor de "naar morgen"-sneltoets; alleen gevuld bij type=taak. */
+  taakId?: string
+  /** Huidige deadline van de taak (ISO) voor de undo-actie. */
+  taakDeadline?: string
 }
 
 function isToday(dateStr: string | undefined | null): boolean {
@@ -104,7 +110,44 @@ function Avatar({ medewerker, medewerkers }: { medewerker: Medewerker; medewerke
 export function VandaagBlok() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { taken, montages, events, klanten, projecten, medewerkers } = useDashboardData()
+  const { taken, montages, events, klanten, projecten, medewerkers, refresh } = useDashboardData()
+
+  // Sneltoets "naar morgen": optimistische server-update + 5s undo. We
+  // bewaren de oorspronkelijke deadline lokaal zodat de undo-knop hem kan
+  // herstellen. Daarna roepen we refresh() aan om de dashboard-state weer
+  // synchroon te trekken — de rij verdwijnt dan vanzelf uit "Vandaag".
+  const handleMoveToTomorrow = useCallback(async (taakId: string, originalDeadline: string | undefined) => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const yyyy = tomorrow.getFullYear()
+    const mm = String(tomorrow.getMonth() + 1).padStart(2, '0')
+    const dd = String(tomorrow.getDate()).padStart(2, '0')
+    const tomorrowStr = `${yyyy}-${mm}-${dd}`
+    const timePart = originalDeadline?.includes('T') ? originalDeadline.split('T')[1] : null
+    const newDeadline = timePart ? `${tomorrowStr}T${timePart}` : tomorrowStr
+    try {
+      await updateTaak(taakId, { deadline: newDeadline })
+      refresh()
+      toast.success(<>Verplaatst naar morgen<span style={{ color: '#F15025' }}>.</span></>, {
+        duration: 5000,
+        action: originalDeadline
+          ? {
+              label: 'Ongedaan',
+              onClick: async () => {
+                try {
+                  await updateTaak(taakId, { deadline: originalDeadline })
+                  refresh()
+                } catch {
+                  toast.error('Kon niet ongedaan maken')
+                }
+              },
+            }
+          : undefined,
+      })
+    } catch {
+      toast.error('Kon taak niet verplaatsen')
+    }
+  }, [refresh])
 
   const currentMedewerker = useMemo(
     () => medewerkers.find(m => m.user_id === user?.id) ?? null,
@@ -160,6 +203,8 @@ export function VandaagBlok() {
           context,
           toegewezenAan: findMedewerker(t.toegewezen_aan, medewerkers),
           href: t.project_id ? `/projecten/${t.project_id}` : '/taken',
+          taakId: t.id,
+          taakDeadline: t.deadline,
         }
       })
 
@@ -228,24 +273,15 @@ export function VandaagBlok() {
             const typeStyle = TYPE_STYLES[item.type]
             const TypeIcon = typeStyle.icon
             return (
-              <li key={item.id}>
+              <li
+                key={item.id}
+                className="group relative"
+                style={{ ['--row-hover-bg' as string]: typeStyle.hoverBg } as React.CSSProperties}
+              >
                 <button
                   type="button"
                   onClick={() => navigate(item.href)}
-                  className="group relative w-full flex items-center gap-3 sm:gap-3.5 py-2 px-3 rounded-lg text-left transition-colors focus-visible:outline-none"
-                  style={{ background: 'transparent' }}
-                  onMouseEnter={e => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = typeStyle.hoverBg
-                  }}
-                  onMouseLeave={e => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-                  }}
-                  onFocus={e => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = typeStyle.hoverBg
-                  }}
-                  onBlur={e => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-                  }}
+                  className="relative w-full flex items-center gap-3 sm:gap-3.5 py-2 px-3 rounded-lg text-left transition-colors focus-visible:outline-none bg-transparent group-hover:bg-[var(--row-hover-bg)] focus-visible:bg-[var(--row-hover-bg)]"
                 >
                   <span
                     aria-hidden
@@ -286,8 +322,27 @@ export function VandaagBlok() {
                       <Avatar medewerker={item.toegewezenAan} medewerkers={medewerkers} />
                     )}
                   </span>
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all flex-shrink-0" />
+                  {item.type !== 'taak' && (
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all flex-shrink-0" />
+                  )}
+                  {item.type === 'taak' && (
+                    <span className="w-4 flex-shrink-0" aria-hidden />
+                  )}
                 </button>
+                {item.type === 'taak' && item.taakId && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleMoveToTomorrow(item.taakId!, item.taakDeadline)
+                    }}
+                    title="Naar morgen"
+                    aria-label={`Verplaats "${item.titel}" naar morgen`}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-10 inline-flex items-center justify-center w-6 h-6 rounded-md opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-[#1A535C] hover:bg-[#1A535C]/10 focus-visible:bg-[#1A535C]/10 focus-visible:outline-none"
+                  >
+                    <ArrowRightToLine className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </li>
             )
           })}
