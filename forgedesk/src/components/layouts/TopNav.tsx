@@ -178,24 +178,22 @@ export function TopNav() {
             <span className="hidden sm:inline">Nieuw</span>
           </button>
           {quickAddOpen && (
-            <div className="absolute left-0 top-full mt-2 w-52 bg-card border border-border rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 overflow-hidden">
-              <div className="px-3 py-2 border-b border-border/40">
+            <div className="absolute left-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1.5">
+              <div className="px-2.5 pt-1.5 pb-1">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Snel aanmaken</span>
               </div>
-              <div className="py-1">
-                {quickAddItems.map((item) => (
-                  <button
-                    key={item.path}
-                    onClick={() => { setQuickAddOpen(false); navigate(item.path) }}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 text-[13px] text-foreground hover:bg-background transition-colors"
-                  >
-                    <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `${item.color}15` }}>
-                      <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} />
-                    </div>
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                ))}
-              </div>
+              {quickAddItems.map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => { setQuickAddOpen(false); navigate(item.path) }}
+                  className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                >
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `${item.color}15` }}>
+                    <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} />
+                  </div>
+                  <span>{item.label}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -205,15 +203,14 @@ export function TopNav() {
           {/* Sliding highlight — witte pill (rand + schaduw) met flame-underline */}
           <div
             ref={indicatorRef}
-            className="absolute top-1/2 -mt-[17px] left-0 h-[34px] rounded-lg bg-card border border-border shadow-[0_1px_2px_rgba(130,100,60,0.10)] transition-all duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
+            className="absolute top-1/2 -mt-[17px] left-0 h-[34px] rounded-[10px] bg-[hsl(38,20%,94%)] dark:bg-white/[0.07] transition-all duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{ opacity: 0 }}
           >
-            <span className="absolute left-[11px] right-[11px] -bottom-px h-[2px] rounded-[2px] bg-[#F15025]" />
+            <span className="absolute left-[13px] right-[13px] -bottom-px h-[2px] rounded-[2px] bg-[#F15025]" />
           </div>
 
           {primaryItems.map((item) => {
             const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
-            const Icon = item.icon
             return (
               <NavLink
                 key={item.path}
@@ -221,14 +218,13 @@ export function TopNav() {
                 end={item.path === '/'}
                 data-active={isActive}
                 className={cn(
-                  'group relative flex items-center gap-[7px] h-[34px] px-[11px] rounded-lg text-[13.5px] font-semibold tracking-[-0.1px] whitespace-nowrap transition-colors duration-150',
+                  'group relative flex items-center h-[34px] px-[13px] rounded-[10px] text-[13px] font-semibold tracking-[-0.1px] whitespace-nowrap transition-colors duration-150',
                   isActive
                     ? 'text-[#1A535C] dark:text-foreground'
-                    : 'text-[#1A535C]/60 hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:text-foreground/65 dark:hover:text-foreground dark:hover:bg-white/[0.05]',
+                    : 'text-[#1A535C]/55 hover:text-[#1A535C] dark:text-foreground/55 dark:hover:text-foreground',
                 )}
               >
-                <Icon className={cn('w-4 h-4 flex-none', isActive ? 'opacity-100' : 'opacity-80')} />
-                <span>{item.label}<span className={cn('transition-colors', isActive ? 'text-[#F15025]' : 'text-[#1A535C]/40 group-hover:text-[#F15025] dark:text-foreground/40')}>.</span></span>
+                <span>{item.label}<span className={cn('transition-colors', isActive ? 'text-[#F15025]' : 'text-transparent group-hover:text-[#F15025]')}>.</span></span>
               </NavLink>
             )
           })}
@@ -242,38 +238,36 @@ export function TopNav() {
                 data-active={overigActive}
                 aria-expanded={overigOpen}
                 className={cn(
-                  'group relative flex items-center gap-1 h-[34px] px-[11px] rounded-lg text-[13.5px] font-semibold tracking-[-0.1px] whitespace-nowrap transition-colors duration-150',
+                  'group relative flex items-center gap-1 h-[34px] px-[13px] rounded-[10px] text-[13px] font-semibold tracking-[-0.1px] whitespace-nowrap transition-colors duration-150',
                   overigActive
                     ? 'text-[#1A535C] dark:text-foreground'
-                    : 'text-[#1A535C]/60 hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:text-foreground/65 dark:hover:text-foreground dark:hover:bg-white/[0.05]',
+                    : 'text-[#1A535C]/55 hover:text-[#1A535C] dark:text-foreground/55 dark:hover:text-foreground',
                 )}
               >
-                <span>Overig<span className={cn('transition-colors', overigActive ? 'text-[#F15025]' : 'text-[#1A535C]/40 group-hover:text-[#F15025] dark:text-foreground/40')}>.</span></span>
+                <span>Overig<span className={cn('transition-colors', overigActive ? 'text-[#F15025]' : 'text-transparent group-hover:text-[#F15025]')}>.</span></span>
                 <ChevronDown className={cn('w-[13px] h-[13px] -ml-0.5 opacity-55 transition-transform duration-200', overigOpen && 'rotate-180')} />
               </button>
 
               {overigOpen && (
-                <div className="absolute left-0 top-full mt-2 w-52 z-50 overflow-hidden rounded-[14px] bg-popover border border-border shadow-[0_16px_48px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.06)]">
-                  <div className="py-1.5">
-                    {overigItems.map((item) => {
-                      const isActive = location.pathname.startsWith(item.path)
-                      const Icon = item.icon
-                      return (
-                        <NavLink
-                          key={item.path}
-                          to={item.path}
-                          onClick={() => setOverigOpen(false)}
-                          className={cn(
-                            'flex items-center gap-2.5 px-3.5 py-2 text-[13px] font-medium transition-colors',
-                            isActive ? 'text-foreground bg-[rgba(26,83,92,0.06)]' : 'text-foreground/75 hover:text-foreground hover:bg-muted',
-                          )}
-                        >
-                          <Icon className="w-4 h-4" style={{ color: isActive ? item.color : undefined, opacity: isActive ? 1 : 0.6 }} />
-                          <span>{item.label}<span className="text-[#F15025]">.</span></span>
-                        </NavLink>
-                      )
-                    })}
-                  </div>
+                <div className="absolute left-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1.5">
+                  {overigItems.map((item) => {
+                    const isActive = location.pathname.startsWith(item.path)
+                    const Icon = item.icon
+                    return (
+                      <NavLink
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setOverigOpen(false)}
+                        className={cn(
+                          'flex items-center gap-2.5 px-2.5 py-2 rounded-[9px] text-[13px] font-medium transition-colors',
+                          isActive ? 'text-foreground bg-[hsl(38,20%,95.5%)] dark:bg-white/[0.06]' : 'text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06]',
+                        )}
+                      >
+                        <Icon className="w-4 h-4" style={{ color: isActive ? item.color : undefined, opacity: isActive ? 1 : 0.6 }} />
+                        <span>{item.label}<span className="text-[#F15025]">.</span></span>
+                      </NavLink>
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -348,38 +342,41 @@ export function TopNav() {
 
             {userMenuOpen && (
               <div
-                className="absolute right-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[14px] bg-popover border border-border shadow-[0_16px_48px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.06)]"
+                className="absolute right-0 top-full mt-2 w-60 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1.5"
               >
-                <div className="px-4 py-3.5 border-b border-border">
-                  <p className="text-[13px] font-semibold text-foreground truncate">{userName}</p>
-                  <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
+                <div className="flex items-center gap-2.5 px-2 py-2">
+                  <span className="w-9 h-9 rounded-[9px] flex items-center justify-center bg-[#1A535C] text-white font-bold text-[14px] flex-shrink-0">{userInitial}</span>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-foreground truncate leading-tight">{userName}</p>
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
+                  </div>
                 </div>
-                <div className="py-1">
-                  <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen') }}
-                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200">
-                    <Settings className="w-4 h-4 text-muted-foreground" /> Profiel
-                  </button>
-                  <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen?tab=abonnement') }}
-                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200">
-                    <CreditCard className="w-4 h-4 text-muted-foreground" /> Abonnement
-                  </button>
-                  <button onClick={() => { setUserMenuOpen(false); navigate('/kennisbank') }}
-                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200">
-                    <BookOpen className="w-4 h-4 text-muted-foreground" /> Kennisbank
-                  </button>
-                </div>
-                <div className="py-1 border-t border-border">
-                  <button onClick={() => { setUserMenuOpen(false); setLayoutMode('sidebar') }}
-                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200">
-                    <Monitor className="w-4 h-4 text-muted-foreground" /> Zijbalk navigatie
-                  </button>
-                </div>
-                <div className="py-1 border-t border-border">
-                  <button onClick={() => { setUserMenuOpen(false); logout() }}
-                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#F15025] hover:bg-[#F15025]/[0.06] transition-all duration-200">
-                    <LogOut className="w-4 h-4" /> Uitloggen
-                  </button>
-                </div>
+
+                <div className="h-px bg-border/50 mx-2 my-1" />
+
+                <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen') }}
+                  className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors">
+                  <Settings className="w-[17px] h-[17px] text-muted-foreground" /> Profiel
+                </button>
+                <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen?tab=abonnement') }}
+                  className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors">
+                  <CreditCard className="w-[17px] h-[17px] text-muted-foreground" /> Abonnement
+                </button>
+                <button onClick={() => { setUserMenuOpen(false); navigate('/kennisbank') }}
+                  className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors">
+                  <BookOpen className="w-[17px] h-[17px] text-muted-foreground" /> Kennisbank
+                </button>
+                <button onClick={() => { setUserMenuOpen(false); setLayoutMode('sidebar') }}
+                  className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors">
+                  <Monitor className="w-[17px] h-[17px] text-muted-foreground" /> Zijbalk navigatie
+                </button>
+
+                <div className="h-px bg-border/50 mx-2 my-1" />
+
+                <button onClick={() => { setUserMenuOpen(false); logout() }}
+                  className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-[#F15025] hover:bg-[#F15025]/[0.07] transition-colors">
+                  <LogOut className="w-[17px] h-[17px]" /> Uitloggen
+                </button>
               </div>
             )}
           </div>

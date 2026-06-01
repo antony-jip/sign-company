@@ -377,60 +377,55 @@ export function Sidebar() {
               {userPopoverOpen && popoverPos && (
                 <div
                   data-user-popover
-                  className="fixed z-50 w-56 overflow-hidden rounded-[14px] bg-popover border border-border shadow-[0_16px_48px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.06)]"
+                  className="fixed z-50 w-60 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1.5"
                   style={{
                     left: popoverPos.left,
                     bottom: popoverPos.bottom,
                   }}
                 >
-                  <div className="px-4 py-3.5 border-b border-border">
-                    <p className="text-[13px] font-semibold text-foreground truncate">{userName}</p>
-                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
+                  <div className="flex items-center gap-2.5 px-2 py-2">
+                    <span className="w-9 h-9 rounded-[9px] flex items-center justify-center bg-[#1A535C] text-white font-bold text-[14px] flex-shrink-0">{userInitial}</span>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground truncate leading-tight">{userName}</p>
+                      <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
+                    </div>
                   </div>
 
-                  <div className="py-1">
-                    <button
-                      onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200"
-                    >
-                      <SlidersHorizontal className="h-4 w-4" strokeWidth={1.75} color="#9B9B95" />
-                      Profiel
-                    </button>
-                    <button
-                      onClick={() => { setUserPopoverOpen(false); navigate('/instellingen?tab=abonnement') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200"
-                    >
-                      <CreditCard className="w-4 h-4 text-muted-foreground" />
-                      Abonnement
-                    </button>
-                    <button
-                      onClick={() => { setUserPopoverOpen(false); navigate('/kennisbank') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200"
-                    >
-                      <BookOpen className="w-4 h-4 text-muted-foreground" />
-                      Kennisbank
-                    </button>
-                  </div>
+                  <div className="h-px bg-border/50 mx-2 my-1" />
 
-                  <div className="py-1 border-t border-border">
-                    <button
-                      onClick={() => { setUserPopoverOpen(false); setLayoutMode('topnav') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200"
-                    >
-                      <PanelTop className="w-4 h-4 text-muted-foreground" />
-                      Top navigatie
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                  >
+                    <SlidersHorizontal className="w-[17px] h-[17px] text-muted-foreground" /> Profiel
+                  </button>
+                  <button
+                    onClick={() => { setUserPopoverOpen(false); navigate('/instellingen?tab=abonnement') }}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                  >
+                    <CreditCard className="w-[17px] h-[17px] text-muted-foreground" /> Abonnement
+                  </button>
+                  <button
+                    onClick={() => { setUserPopoverOpen(false); navigate('/kennisbank') }}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                  >
+                    <BookOpen className="w-[17px] h-[17px] text-muted-foreground" /> Kennisbank
+                  </button>
+                  <button
+                    onClick={() => { setUserPopoverOpen(false); setLayoutMode('topnav') }}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                  >
+                    <PanelTop className="w-[17px] h-[17px] text-muted-foreground" /> Top navigatie
+                  </button>
 
-                  <div className="py-1 border-t border-border">
-                    <button
-                      onClick={() => { setUserPopoverOpen(false); logout() }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#F15025] hover:bg-[#F15025]/[0.06] transition-all duration-200"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Uitloggen
-                    </button>
-                  </div>
+                  <div className="h-px bg-border/50 mx-2 my-1" />
+
+                  <button
+                    onClick={() => { setUserPopoverOpen(false); logout() }}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-[#F15025] hover:bg-[#F15025]/[0.07] transition-colors"
+                  >
+                    <LogOut className="w-[17px] h-[17px]" /> Uitloggen
+                  </button>
                 </div>
               )}
             </div>
