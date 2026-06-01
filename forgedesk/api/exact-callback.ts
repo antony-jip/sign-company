@@ -311,6 +311,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       settingsUpdate.exact_document_type_naam = defaultDocumentType.description
     }
 
+    // First-OAuth-wins voor exact_owner_user_id. Andere admins in dezelfde
+    // org kunnen niet zelf opnieuw verbinden zonder de eigenaar zijn
+    // sessie te invalideren (Exact's single-session-policy per
+    // bedrijfsaccount). De eigenaar blijft staan tot iemand met DB-rechten
+    // hem expliciet leegmaakt.
+    const orgIdForOwner = await getOrgIdForUser(supabase, user_id)
+    if (orgIdForOwner) {
+      const { data: existing } = await supabase
+        .from('app_settings')
+        .select('exact_owner_user_id')
+        .eq('organisatie_id', orgIdForOwner)
+        .maybeSingle()
+      const currentOwner = (existing as { exact_owner_user_id?: string | null } | null)?.exact_owner_user_id
+      if (!currentOwner) {
+        settingsUpdate.exact_owner_user_id = user_id
+      }
+    }
+
     await updateAppSettingsOrgFirst(supabase, user_id, settingsUpdate)
 
     await logAuditEvent(supabase, {
