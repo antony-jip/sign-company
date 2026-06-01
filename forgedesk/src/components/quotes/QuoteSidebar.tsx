@@ -421,10 +421,10 @@ export function QuoteSidebar({
                                     Klaar om te factureren<span className="text-white">.</span>
                                   </p>
                                 </div>
-                                <p className="text-[10px] text-white/70 uppercase tracking-wider">Offerte bedrag incl BTW</p>
-                                <p className="text-[22px] font-extrabold text-white font-mono tabular-nums leading-tight">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
+                                <p className="text-[10px] text-white/70 uppercase tracking-wider">Offerte bedrag ex BTW</p>
+                                <p className="text-[22px] font-extrabold text-white font-mono tabular-nums leading-tight">{formatCurrency(subtotaal)}</p>
                                 <div className="flex items-center gap-3 mt-1">
-                                  <p className="text-[11px] text-white/70"><span className="font-mono">{formatCurrency(subtotaal)}</span> excl BTW</p>
+                                  <p className="text-[11px] text-white/70"><span className="font-mono">{formatCurrency(round2(subtotaal + btwBedrag))}</span> incl btw</p>
                                   <span className="text-white/40">·</span>
                                   <p className="text-[11px] text-white/70"><span className="font-mono">+{formatCurrency(btwBedrag)}</span> BTW</p>
                                 </div>
@@ -463,7 +463,7 @@ export function QuoteSidebar({
                             style={{ background: 'radial-gradient(circle, rgba(241,80,37,0.18) 0%, transparent 70%)' }}
                           />
                           <p className="relative text-[10px] uppercase tracking-widest text-white/75 font-semibold">
-                            Totaal incl BTW<span className="text-[#F15025]">.</span>
+                            Totaal ex BTW<span className="text-[#F15025]">.</span>
                           </p>
                           {isEditingTotaal ? (
                             <div className="relative mt-1">
@@ -477,8 +477,7 @@ export function QuoteSidebar({
                                     if (e.key === 'Enter') {
                                       const val = parseFloat(gewenstTotaal)
                                       if (!isNaN(val) && val > 0) {
-                                        const gemBtw = subtotaal > 0 ? btwBedrag / subtotaal : 0.21
-                                        const kortingExcl = round2((val / (1 + gemBtw)) - subtotaal)
+                                        const kortingExcl = round2(val - subtotaal)
                                         setAfrondingskorting(kortingExcl)
                                       }
                                       setIsEditingTotaal(false)
@@ -488,7 +487,7 @@ export function QuoteSidebar({
                                   autoFocus
                                   step={0.01}
                                   className="bg-white/15 text-white font-extrabold font-mono tabular-nums text-[22px] rounded px-2 py-0.5 w-36 border-0 outline-none placeholder:text-white/40"
-                                  placeholder={round2(subtotaal + btwBedrag).toFixed(2)}
+                                  placeholder={round2(subtotaal).toFixed(2)}
                                 />
                               </div>
                               <p className="text-[10px] text-white/55 mt-0.5">Enter = bevestig · Esc = annuleer</p>
@@ -496,15 +495,18 @@ export function QuoteSidebar({
                           ) : (
                             <button
                               onClick={() => {
-                                setGewenstTotaal(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))).toFixed(2))
+                                setGewenstTotaal(round2(subtotaal + afrondingskorting + urenCorrectieBedrag).toFixed(2))
                                 setIsEditingTotaal(true)
                               }}
                               className="relative text-[24px] font-extrabold font-mono tabular-nums text-white mt-0.5 hover:text-white/85 transition-colors cursor-pointer text-left block"
                               title="Klik om totaal aan te passen"
                             >
-                              {formatCurrency(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))))}
+                              {formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}
                             </button>
                           )}
+                          <p className="relative text-[11px] text-white/65 mt-1">
+                            incl. btw <span className="font-mono tabular-nums">{formatCurrency(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))))}</span>
+                          </p>
                           {afrondingskorting !== 0 && (
                             <div className="relative flex items-center justify-between mt-1.5">
                               <p className="text-[11px] text-white/70">Korting: <span className="font-mono">{formatCurrency(afrondingskorting)}</span> excl BTW</p>

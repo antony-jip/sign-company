@@ -225,7 +225,7 @@ export function KpiStrip() {
 
     const openStatussen = new Set(['verzonden', 'bekeken', 'wijziging_gevraagd'])
     const pijplijn = offertes.filter(o => openStatussen.has(o.status) && o.verstuurd_op)
-    const pijplijnBedrag = pijplijn.reduce((s, o) => s + (o.totaal || 0), 0)
+    const pijplijnBedrag = pijplijn.reduce((s, o) => s + (o.subtotaal || 0), 0)
 
     const montagesWeek = montages.filter(m => {
       const d = new Date(m.datum)

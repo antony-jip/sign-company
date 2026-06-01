@@ -31,7 +31,7 @@ export function OpvolgenBlok() {
         id: o.id,
         klantNaam: o.klant_naam || 'Klant',
         nummer: o.nummer,
-        bedrag: o.totaal || 0,
+        bedrag: o.subtotaal || 0,
         dagen: daysSince(o.verstuurd_op as string),
       }))
       .sort((a, b) => b.dagen - a.dagen)

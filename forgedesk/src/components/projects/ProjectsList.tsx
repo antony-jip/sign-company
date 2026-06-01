@@ -398,7 +398,7 @@ export function ProjectsList() {
 
   function getProjectBedrag(projectId: string): number {
     const projOffertes = getProjectOffertes(projectId)
-    return projOffertes.reduce((sum, o) => sum + (o.totaal || 0), 0)
+    return projOffertes.reduce((sum, o) => sum + (o.subtotaal || 0), 0)
   }
 
   function getDagenOpen(project: Project): number | null {

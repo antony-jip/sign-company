@@ -610,13 +610,13 @@ export function OfferteDetail() {
               </Badge>
             </button>
             {statusOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+              <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border/70 rounded-[14px] shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1.5 min-w-[170px]">
                 {STATUS_OPTIONS.map((opt) => (
                   <button
                     key={opt.key}
                     onClick={() => handleStatusChange(opt.key)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${
-                      offerte.status === opt.key ? 'text-primary font-medium' : 'text-foreground'
+                    className={`w-full text-left px-2.5 py-2 rounded-[9px] text-sm transition-colors hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] ${
+                      offerte.status === opt.key ? 'text-[#F15025] font-semibold' : 'text-foreground/80'
                     }`}
                   >
                     {opt.label}
@@ -1127,8 +1127,12 @@ export function OfferteDetail() {
               ))}
             <div className="totalen-groot mt-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Totaal incl. BTW</span>
-                <span className="display-number display-number-md font-mono text-foreground">{formatCurrency(totaal)}</span>
+                <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Totaal ex. BTW</span>
+                <span className="display-number display-number-md font-mono text-foreground">{formatCurrency(round2(subtotaal))}</span>
+              </div>
+              <div className="flex justify-between items-center mt-1.5">
+                <span className="text-[11px] text-muted-foreground">incl. btw</span>
+                <span className="text-sm font-medium font-mono tabular-nums text-muted-foreground">{formatCurrency(totaal)}</span>
               </div>
             </div>
           </div>
