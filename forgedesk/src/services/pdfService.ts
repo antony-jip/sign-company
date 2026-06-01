@@ -364,7 +364,8 @@ function addClientInfo(
   doc: jsPDF,
   klant: Partial<Klant>,
   startY: number,
-  docStyle?: DocumentStyle | null
+  docStyle?: DocumentStyle | null,
+  includeDebiteurnr = true
 ): number {
   const margins = getMargins(docStyle)
   const bodyFont = getBodyFont(docStyle)
@@ -394,7 +395,7 @@ function addClientInfo(
     doc.text(`${klant.postcode || ''} ${klant.stad || ''}`.trim(), margins.left, y)
     y += 5
   }
-  if (klant.debiteurennummer) {
+  if (klant.debiteurennummer && includeDebiteurnr) {
     doc.text(`Debiteurnr. ${klant.debiteurennummer}`, margins.left, y)
     y += 5
   }
@@ -1280,8 +1281,9 @@ export function generateFactuurPDF(
     doc.restoreGraphicsState()
   }
 
-  // Klant-adresblok (item 1): naam · t.a.v. · adres · postcode plaats · Debiteurnr.
-  y = addClientInfo(doc, klant, y, docStyle)
+  // Klant-adresblok (item 1): naam · t.a.v. · adres · postcode plaats.
+  // Debiteurnr. staat al in het meta-grid hieronder, dus niet dubbel in de aanhef.
+  y = addClientInfo(doc, klant, y, docStyle, false)
 
   // Titel "factuur." — lowercase + afsluitende dot, accentkleur, geen nummer.
   // Type-correct: creditnota wordt "creditfactuur.", voorschot "voorschotfactuur.".
@@ -1396,6 +1398,9 @@ export function generateFactuurPDF(
   let totalsY = finalY + 8
 
   const totalsX = pageWidth - margins.right - 55
+  // Lijn de bedragen uit op de rechterrand van de items-tabel: die kolom heeft
+  // 4mm cellpadding, dus de tabel-bedragen eindigen 4mm vóór de paginamarge.
+  const totalsRight = pageWidth - margins.right - 4
 
   doc.setFontSize(baseFontSize - 0.5)
   doc.setFont(bodyFont, 'normal')
@@ -1403,7 +1408,7 @@ export function generateFactuurPDF(
   doc.setTextColor(120, 120, 115)
   doc.text('Subtotaal', totalsX, totalsY)
   doc.setTextColor(...textColor)
-  doc.text(formatCurrency(factuurData.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
+  doc.text(formatCurrency(factuurData.subtotaal), totalsRight, totalsY, { align: 'right' })
   totalsY += 6
 
   // BTW-label: toon het percentage alleen bij precies één tarief. Bij meerdere
@@ -1416,14 +1421,14 @@ export function generateFactuurPDF(
   doc.setTextColor(120, 120, 115)
   doc.text(btwLabel, totalsX, totalsY)
   doc.setTextColor(...textColor)
-  doc.text(formatCurrency(factuurData.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
+  doc.text(formatCurrency(factuurData.btw_bedrag), totalsRight, totalsY, { align: 'right' })
   totalsY += 6
 
   // Hairline boven het totaal
   totalsY += 2
   doc.setDrawColor(225, 225, 228)
   doc.setLineWidth(0.3)
-  doc.line(totalsX, totalsY, pageWidth - margins.right, totalsY)
+  doc.line(totalsX, totalsY, totalsRight, totalsY)
   totalsY += 6
 
   // Totaal — bold, groter, in brand kleur (of rood bij creditnota)
@@ -1431,7 +1436,7 @@ export function generateFactuurPDF(
   doc.setFontSize(baseFontSize + 3)
   doc.setTextColor(...effectiveBrand)
   doc.text('Totaal', totalsX, totalsY)
-  doc.text(formatCurrency(factuurData.totaal), pageWidth - margins.right, totalsY, { align: 'right' })
+  doc.text(formatCurrency(factuurData.totaal), totalsRight, totalsY, { align: 'right' })
 
   // Helpers voor onderstaande tekst-secties met auto page-break
   const advanceY = (delta: number): number => {
