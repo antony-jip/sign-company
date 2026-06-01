@@ -37,6 +37,11 @@ export function AppLayout() {
   // Email-module verbreedt naar edge-to-edge (geen 1400px cap) zodat de
   // folder-rail tegen de viewport-rand kan plakken.
   const isEmailRoute = location.pathname.startsWith('/email')
+  // App-achtige, scherm-vullende views: geen paginapadding (edge-to-edge),
+  // consistent in topnav- én sidebar-modus.
+  const isFullBleed = ['/email', '/planning', '/taken', '/montage', '/kalender'].some(
+    (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
+  )
   useTabShortcuts()
 
   const [stickyHeader, setStickyHeader] = useState<boolean>(() =>
@@ -61,7 +66,7 @@ export function AppLayout() {
           <TrialBanner />
           <InkoopAILimietBanner variant="globaal" />
           <main className="flex-1 overflow-hidden flex flex-col min-h-0" style={{ position: 'relative', zIndex: 0 }}>
-            {isEmailRoute ? (
+            {isFullBleed ? (
               <>
                 <div className="flex-shrink-0">
                   {!hideTopNav && <TopNav />}
@@ -103,7 +108,10 @@ export function AppLayout() {
           <Header />
           <TabBar />
           <main className="flex-1 overflow-hidden flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 p-4 md:p-8 pb-20 md:pb-8 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter">
+            <div className={cn(
+              'flex-1 min-h-0 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter',
+              isFullBleed ? 'p-0' : 'p-4 md:p-8 pb-20 md:pb-8',
+            )}>
               <Outlet />
             </div>
           </main>
