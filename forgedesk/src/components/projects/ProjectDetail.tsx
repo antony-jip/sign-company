@@ -2159,7 +2159,7 @@ export function ProjectDetail() {
       {/* ══════════ FLOATING ACTIONS (top-right, glass on scroll) ══════════ */}
       <div
         className={cn(
-          "absolute top-4 right-6 z-30 flex items-center gap-2 rounded-xl transition-all",
+          "absolute top-4 right-6 z-20 flex items-center gap-2 rounded-xl transition-all",
           scrolled && "bg-card/70 backdrop-blur-md border border-border/60 shadow-[0_2px_8px_rgba(0,0,0,0.06)] px-2 py-1.5"
         )}
       >
