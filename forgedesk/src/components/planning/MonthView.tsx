@@ -25,18 +25,13 @@ interface MonthViewProps {
 
 const dayHeaders = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo']
 
-function getEventColor(type: CalendarEvent['type']): string {
+function getEventStyle(type: CalendarEvent['type']): React.CSSProperties {
   switch (type) {
-    case 'meeting':
-      return 'bg-blue-500 text-white'
     case 'deadline':
-      return 'bg-red-500 text-white'
-    case 'herinnering':
-      return 'bg-yellow-500 text-white'
-    case 'persoonlijk':
-      return 'bg-green-500 text-white'
+      // semantisch: deadline blijft rood (urgent)
+      return { backgroundColor: 'rgba(241,80,37,0.09)', borderLeftColor: '#F15025', color: '#C03A18' }
     default:
-      return 'bg-muted-foreground text-white'
+      return { backgroundColor: 'rgba(26,83,92,0.07)', borderLeftColor: '#1A535C', color: '#1A535C' }
   }
 }
 
@@ -120,10 +115,8 @@ export function MonthView({ currentDate, selectedDate, events, onSelectDate }: M
                 {dayEvents.slice(0, maxVisible).map((event) => (
                   <div
                     key={event.id}
-                    className={cn(
-                      'px-1.5 py-0.5 rounded text-2xs font-medium truncate leading-tight',
-                      getEventColor(event.type)
-                    )}
+                    className="px-1.5 py-0.5 rounded-none border-l-2 text-2xs font-medium truncate leading-tight"
+                    style={{ borderLeftWidth: 2, ...getEventStyle(event.type) }}
                     title={`${event.titel} - ${format(parseISO(event.start_datum), 'HH:mm')}`}
                   >
                     {event.titel}

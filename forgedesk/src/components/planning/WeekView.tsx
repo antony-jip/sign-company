@@ -28,18 +28,13 @@ const HOUR_END = 20
 const HOUR_HEIGHT = 60 // pixels per hour
 const hours = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i)
 
-function getEventColor(type: CalendarEvent['type']): string {
+function getEventStyle(type: CalendarEvent['type']): React.CSSProperties {
   switch (type) {
-    case 'meeting':
-      return 'bg-blue-500/90 border-blue-600 text-white'
     case 'deadline':
-      return 'bg-red-500/90 border-red-600 text-white'
-    case 'herinnering':
-      return 'bg-yellow-500/90 border-yellow-600 text-white'
-    case 'persoonlijk':
-      return 'bg-green-500/90 border-green-600 text-white'
+      // semantisch: deadline blijft rood (urgent)
+      return { backgroundColor: 'rgba(241,80,37,0.09)', borderLeftColor: '#F15025', color: '#C03A18' }
     default:
-      return 'bg-muted-foreground/90 border-border text-white'
+      return { backgroundColor: 'rgba(26,83,92,0.07)', borderLeftColor: '#1A535C', color: '#1A535C' }
   }
 }
 
@@ -171,11 +166,8 @@ export function WeekView({ currentDate, selectedDate, events, onSelectDate }: We
                   return (
                     <div
                       key={event.id}
-                      className={cn(
-                        'absolute left-0.5 right-1 rounded-lg px-2 py-1 border-l-3 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity z-10',
-                        getEventColor(event.type)
-                      )}
-                      style={{ top, height, borderLeftWidth: 3 }}
+                      className="absolute left-0.5 right-1 rounded-none px-2 py-1 border-l-3 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity z-10"
+                      style={{ top, height, borderLeftWidth: 3, ...getEventStyle(event.type) }}
                       title={`${event.titel}\n${format(parseISO(event.start_datum), 'HH:mm')} - ${format(parseISO(event.eind_datum), 'HH:mm')}`}
                     >
                       <p className="text-xs font-semibold truncate leading-tight">

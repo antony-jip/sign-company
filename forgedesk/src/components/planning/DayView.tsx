@@ -23,18 +23,13 @@ const HOUR_END = 20
 const HOUR_HEIGHT = 80 // taller for more detail
 const hours = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i)
 
-function getEventColor(type: CalendarEvent['type']): string {
+function getEventStyle(type: CalendarEvent['type']): React.CSSProperties {
   switch (type) {
-    case 'meeting':
-      return 'bg-blue-500/90 border-blue-600 text-white'
     case 'deadline':
-      return 'bg-red-500/90 border-red-600 text-white'
-    case 'herinnering':
-      return 'bg-yellow-500/90 border-yellow-600 text-white'
-    case 'persoonlijk':
-      return 'bg-green-500/90 border-green-600 text-white'
+      // semantisch: deadline blijft rood (urgent)
+      return { backgroundColor: 'rgba(241,80,37,0.09)', borderLeftColor: '#F15025', color: '#C03A18' }
     default:
-      return 'bg-muted-foreground/90 border-border text-white'
+      return { backgroundColor: 'rgba(26,83,92,0.07)', borderLeftColor: '#1A535C', color: '#1A535C' }
   }
 }
 
@@ -84,7 +79,7 @@ export function DayView({ currentDate, events }: DayViewProps) {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="border-b py-4 px-6 flex-shrink-0">
-        <h2 className="text-lg font-semibold">
+        <h2 className="text-lg font-semibold text-[#1A4A52] dark:text-foreground">
           {format(currentDate, 'EEEE d MMMM yyyy', { locale: nl })}
         </h2>
         {isTodayDate && (
@@ -141,11 +136,8 @@ export function DayView({ currentDate, events }: DayViewProps) {
               return (
                 <div
                   key={event.id}
-                  className={cn(
-                    'absolute left-2 right-4 rounded-lg px-4 py-2 border-l-4 overflow-hidden cursor-pointer hover:opacity-95 transition-opacity shadow-sm z-10',
-                    getEventColor(event.type)
-                  )}
-                  style={{ top, height, borderLeftWidth: 4 }}
+                  className="absolute left-2 right-4 rounded-none px-4 py-2 border-l-4 overflow-hidden cursor-pointer hover:opacity-95 transition-opacity shadow-[0_1px_2px_rgba(0,0,0,0.04)] z-10"
+                  style={{ top, height, borderLeftWidth: 4, ...getEventStyle(event.type) }}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
