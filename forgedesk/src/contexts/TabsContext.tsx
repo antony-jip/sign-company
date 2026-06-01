@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { confirm } from '@/components/shared/ConfirmDialog'
 
@@ -125,6 +125,14 @@ export function TabsProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
 
+  // `useNavigate` returns a new reference whenever `location.pathname` changes
+  // in react-router-dom 6.30 (non-data routers). Pinning it in a ref keeps the
+  // tab callbacks below referentially stable, otherwise every navigation
+  // recreates them — and consumers that rebuild on those refs spiral into an
+  // infinite update loop on /facturen.
+  const navigateRef = useRef(navigate)
+  useEffect(() => { navigateRef.current = navigate }, [navigate])
+
   // Keep a ref so async callbacks can read current tabs without stale closures
   const tabsRef = useRef(tabs)
   useEffect(() => { tabsRef.current = tabs }, [tabs])
@@ -168,39 +176,38 @@ export function TabsProvider({ children }: { children: ReactNode }) {
   const openTab = useCallback(
     (tab: Omit<AppTab, 'id'> & { id?: string }) => {
       const id = tab.id ?? tab.path
-      setTabs(prev => {
-        const existing = prev.find((t: AppTab) => t.id === id)
-        if (existing) {
-          setActiveTabId(id)
-          isSwitchingTabRef.current = true
-          navigate(existing.path)
-          return prev
-        }
-        const newTab: AppTab = { ...tab, id, isDirty: false }
-        const next = [...prev, newTab]
-        saveTabs(next)
-        setActiveTabId(id)
+      const prev = tabsRef.current
+      const existing = prev.find((t: AppTab) => t.id === id)
+
+      if (existing) {
         isSwitchingTabRef.current = true
-        navigate(newTab.path)
-        return next
-      })
+        setActiveTabId(id)
+        navigateRef.current(existing.path)
+        return
+      }
+
+      const newTab: AppTab = { ...tab, id, isDirty: false }
+      const next = [...prev, newTab]
+      saveTabs(next)
+      setTabs(next)
+      isSwitchingTabRef.current = true
+      setActiveTabId(id)
+      navigateRef.current(newTab.path)
     },
-    [navigate]
+    []
   )
 
   // ── New blank tab (like Cmd+T in a browser) ────────────────────────
   const newTab = useCallback(() => {
     const id = nextTabId()
     const tab: AppTab = { id, path: '/', label: 'Dashboard', isDirty: false }
-    setTabs(prev => {
-      const next = [...prev, tab]
-      saveTabs(next)
-      return next
-    })
-    setActiveTabId(id)
+    const next = [...tabsRef.current, tab]
+    saveTabs(next)
+    setTabs(next)
     isSwitchingTabRef.current = true
-    navigate('/')
-  }, [navigate])
+    setActiveTabId(id)
+    navigateRef.current('/')
+  }, [])
 
   // ── Close tab ──────────────────────────────────────────────────────
   const closeTab = useCallback(
@@ -227,28 +234,27 @@ export function TabsProvider({ children }: { children: ReactNode }) {
         const fresh: AppTab = { id: nextTabId(), path: '/', label: 'Dashboard', isDirty: false }
         const result = [fresh]
         saveTabs(result)
-        setActiveTabId(fresh.id)
-        isSwitchingTabRef.current = true
-        navigate('/')
         setTabs(result)
+        isSwitchingTabRef.current = true
+        setActiveTabId(fresh.id)
+        navigateRef.current('/')
         return
       }
 
       saveTabs(next)
+      setTabs(next)
 
       // If we closed the active tab, activate an adjacent one
       if (activeTabIdRef.current === id) {
         const currentIdx = tabsRef.current.findIndex((t: AppTab) => t.id === id)
         const newIdx = Math.min(currentIdx, next.length - 1)
         const newActive = next[newIdx]
-        setActiveTabId(newActive.id)
         isSwitchingTabRef.current = true
-        navigate(newActive.path)
+        setActiveTabId(newActive.id)
+        navigateRef.current(newActive.path)
       }
-
-      setTabs(next)
     },
-    [navigate]
+    []
   )
 
   const closeOtherTabs = useCallback(
@@ -286,26 +292,23 @@ export function TabsProvider({ children }: { children: ReactNode }) {
     }
     const fresh: AppTab = { id: nextTabId(), path: '/', label: 'Dashboard', isDirty: false }
     saveTabs([fresh])
-    setActiveTabId(fresh.id)
-    isSwitchingTabRef.current = true
-    navigate('/')
     setTabs([fresh])
-  }, [navigate])
+    isSwitchingTabRef.current = true
+    setActiveTabId(fresh.id)
+    navigateRef.current('/')
+  }, [])
 
   // ── Switch to existing tab ─────────────────────────────────────────
   const setActiveTabFn = useCallback(
     (id: string) => {
+      const tab = tabsRef.current.find((t: AppTab) => t.id === id)
       setActiveTabId(id)
-      setTabs(prev => {
-        const tab = prev.find((t: AppTab) => t.id === id)
-        if (tab) {
-          isSwitchingTabRef.current = true
-          navigate(tab.path)
-        }
-        return prev
-      })
+      if (tab) {
+        isSwitchingTabRef.current = true
+        navigateRef.current(tab.path)
+      }
     },
-    [navigate]
+    []
   )
 
   const setTabDirty = useCallback((id: string, dirty: boolean) => {
@@ -334,22 +337,37 @@ export function TabsProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const value = useMemo(
+    () => ({
+      tabs,
+      activeTabId,
+      openTab,
+      newTab,
+      closeTab,
+      closeOtherTabs,
+      closeAllTabs,
+      setActiveTab: setActiveTabFn,
+      setTabDirty,
+      updateTabLabel,
+      reorderTabs,
+    }),
+    [
+      tabs,
+      activeTabId,
+      openTab,
+      newTab,
+      closeTab,
+      closeOtherTabs,
+      closeAllTabs,
+      setActiveTabFn,
+      setTabDirty,
+      updateTabLabel,
+      reorderTabs,
+    ],
+  )
+
   return (
-    <TabsContext.Provider
-      value={{
-        tabs,
-        activeTabId,
-        openTab,
-        newTab,
-        closeTab,
-        closeOtherTabs,
-        closeAllTabs,
-        setActiveTab: setActiveTabFn,
-        setTabDirty,
-        updateTabLabel,
-        reorderTabs,
-      }}
-    >
+    <TabsContext.Provider value={value}>
       {children}
     </TabsContext.Provider>
   )
