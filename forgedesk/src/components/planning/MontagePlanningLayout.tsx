@@ -1407,7 +1407,7 @@ export function MontagePlanningLayout() {
     // Zelfde box-look als /taken: uniform lichte petrol-vulling + petrol accent-stripe.
     // (Afgerond houdt eigen surface; conflict/urgent-states blijven via ring/cfg zichtbaar.)
     const cardStyle: React.CSSProperties = { borderLeftColor: '#1A535C' };
-    if (!isAfgerond) cardStyle.backgroundColor = 'rgba(26,83,92,0.07)';
+    if (!isAfgerond) cardStyle.backgroundColor = 'rgba(26,83,92,0.035)';
     if (isPersonal) cardStyle.minHeight = `${getCardMinHeight(afspraak.start_tijd, afspraak.eind_tijd)}px`;
 
     return (
@@ -1434,7 +1434,7 @@ export function MontagePlanningLayout() {
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "bg-card border border-border border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] group/card relative",
+          "bg-card border border-border/40 border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] group/card relative",
           isTimegrid ? "h-full overflow-hidden rounded-none" : "rounded-none mb-1.5 hover:-translate-y-[1px]",
           isAfgerond && "[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)]",
           hasConflict && "ring-1 ring-[#F0C8BC]",
@@ -1507,10 +1507,10 @@ export function MontagePlanningLayout() {
             {tijdspanne && (
               <span
                 className={cn(
-                  "inline-flex items-center gap-0.5 text-[10px] rounded px-1 py-px font-mono tabular-nums",
-                  hasConflict && "ring-1 ring-[#F0C8BC]"
+                  "inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums",
+                  hasConflict ? "rounded px-1 py-px ring-1 ring-[#F0C8BC] text-[#C03A18]" : "text-muted-foreground"
                 )}
-                style={{ backgroundColor: hasConflict ? '#FDE8E2' : 'rgba(26,83,92,0.10)', color: hasConflict ? '#C03A18' : '#1A535C' }}
+                style={hasConflict ? { backgroundColor: '#FDE8E2' } : undefined}
                 title={hasConflict ? 'Overlap met andere afspraak' : undefined}
               >
                 {hasConflict ? <AlertTriangle className="h-2 w-2" /> : <Clock className="h-2 w-2" />}
@@ -1573,7 +1573,7 @@ export function MontagePlanningLayout() {
         <span className="text-base leading-none">{w.emoji}</span>
         <span className="text-[10px] text-muted-foreground tabular-nums">{w.maxTemp}°</span>
         {w.precipitationProb > 30 && (
-          <span className={cn("text-[10px] tabular-nums", w.precipitationProb > 50 ? "text-[#3A5A9A] font-semibold" : "text-muted-foreground")}>
+          <span className="text-[10px] tabular-nums text-muted-foreground">
             {w.precipitationProb}%
           </span>
         )}
@@ -3164,10 +3164,10 @@ export function MontagePlanningLayout() {
                     onDragEnd={() => { setDraggingProjectId(null); setDragOverDate(null); }}
                     onClick={() => openNewDialogFromProject(project)}
                     className={cn(
-                      "group/card relative w-full text-left border rounded-none transition-all duration-200 cursor-grab active:cursor-grabbing select-none",
+                      "group/card relative w-full text-left border-l-2 rounded-none transition-colors duration-150 cursor-grab active:cursor-grabbing select-none hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.05]",
                       isPrio
-                        ? "bg-[#F15025]/[0.07] hover:bg-[#F15025]/[0.11] border-l-[3px] border-l-[#F15025] border-y-[#F0EFEC] border-r-[#F0EFEC]"
-                        : "bg-[#1A535C]/[0.06] hover:bg-[#1A535C]/[0.10] border-l-[3px] border-l-[#1A535C] border-y-border border-r-border",
+                        ? "border-l-[#F15025]"
+                        : "border-l-[#1A535C]/35",
                       draggingProjectId === project.id && "opacity-50"
                     )}
                     style={{ padding: '8px 10px' }}
