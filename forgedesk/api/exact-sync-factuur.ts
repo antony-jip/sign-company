@@ -148,7 +148,18 @@ async function getValidToken(user_id: string): Promise<string> {
     })
 
     if (!refreshRes.ok) {
-      await updateAppSettingsOrgFirst(supabaseAdmin, user_id, { exact_online_connected: false })
+      if (refreshRes.status === 400 || refreshRes.status === 401) {
+        // Per-user token-status. Bij invalid_grant heeft Exact DEZE user
+        // uitgegooid — vaak doordat een collega zojuist opnieuw OAuth'de
+        // op hetzelfde Exact-bedrijfsaccount (Exact staat geen twee
+        // gelijktijdige sessies toe). Verwijder alleen DEZE user's
+        // tokens; raak de org-brede `exact_online_connected` niet aan.
+        // Smaller behavior shift t.o.v. voorheen: deze sync flipte de
+        // org-flag bij ELKE refresh-failure (ook netwerk/5xx). Nu pas
+        // bij expliciete 400/401 van Exact — consistent met de andere
+        // endpoints.
+        await supabaseAdmin.from('exact_tokens').delete().eq('user_id', user_id)
+      }
       throw new Error('Token vernieuwen mislukt. Verbind Exact Online opnieuw.')
     }
 

@@ -152,9 +152,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const errorBody = await tokenResponse.text()
       console.error('Exact token refresh error:', tokenResponse.status, errorBody)
 
-      // Als refresh token verlopen is, markeer als disconnected
       if (tokenResponse.status === 400 || tokenResponse.status === 401) {
-        await updateAppSettingsOrgFirst(supabase, user_id, { exact_online_connected: false })
+        // Per-user token-status. Bij invalid_grant heeft Exact DEZE user
+        // uitgegooid — vaak doordat een collega zojuist opnieuw OAuth'de
+        // op hetzelfde Exact-bedrijfsaccount (Exact staat geen twee
+        // gelijktijdige sessies toe). Verwijder alleen DEZE user's
+        // tokens; raak de org-brede `exact_online_connected` niet aan.
+        await supabase.from('exact_tokens').delete().eq('user_id', user_id)
       }
 
       return res.status(502).json({
