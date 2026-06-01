@@ -1,6 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+import * as Sentry from '@sentry/node'
+
+// ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0,
+    sendDefaultPii: false,
+  })
+}
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -139,6 +150,14 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
       // gelijktijdige sessies toe). Verwijder alleen DEZE user's
       // tokens; raak de org-brede `exact_online_connected` niet aan.
       await supabaseAdmin.from('exact_tokens').delete().eq('user_id', userId)
+      console.error('[Exact] invalid_grant — token rejected', {
+        userId, endpoint: 'exact-btw-codes.ts', status: refreshRes.status,
+      })
+      Sentry.captureException(new Error('Exact invalid_grant'), {
+        level: 'warning',
+        tags: { exact_endpoint: 'exact-btw-codes', oauth_error: 'invalid_grant' },
+        extra: { user_id: userId, status: refreshRes.status },
+      })
     }
     throw new Error('Token refresh mislukt. Verbind Exact Online opnieuw via Instellingen.')
   }
