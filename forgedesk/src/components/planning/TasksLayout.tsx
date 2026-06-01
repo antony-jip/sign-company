@@ -90,22 +90,23 @@ const PRIORITEIT_ORDER: Record<string, number> = { kritiek: 4, hoog: 3, medium: 
 
 // Theme-aware via CSS-vars (zie .prio-* in index.css). bg/border/text
 // switchen automatisch per theme — pastel in light, gedimde versie in dark.
+// Binair: belangrijk (kritiek) = flame met lichte tint; de rest = rustig lichtblauw.
 const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; text: string; dot: string }> = {
-  kritiek: { border: 'var(--prio-kritiek-border)', bg: 'var(--prio-kritiek-bg)', text: 'var(--prio-kritiek-text)', dot: '#E04A28' },
-  hoog:    { border: 'var(--prio-hoog-border)',    bg: 'var(--prio-hoog-bg)',    text: 'var(--prio-hoog-text)',    dot: '#C49A30' },
-  medium:  { border: 'var(--prio-medium-border)',  bg: 'var(--prio-medium-bg)',  text: 'var(--prio-medium-text)',  dot: '#4A7AC7' },
-  laag:    { border: 'var(--prio-laag-border)',    bg: 'var(--prio-laag-bg)',    text: 'var(--prio-laag-text)',    dot: '#B0ADA8' },
+  kritiek: { border: '#F15025', bg: 'rgba(241,80,37,0.09)',  text: '#C03A18', dot: '#F15025' },
+  hoog:    { border: '#1A535C', bg: 'rgba(26,83,92,0.07)',   text: '#1A535C', dot: '#1A535C' },
+  medium:  { border: '#1A535C', bg: 'rgba(26,83,92,0.07)',   text: '#1A535C', dot: '#1A535C' },
+  laag:    { border: '#1A535C', bg: 'rgba(26,83,92,0.07)',   text: '#1A535C', dot: '#1A535C' },
 }
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'text-[#C03A18]', hoog: 'text-[#8A6A2A]', medium: 'text-[#3A5A9A]', laag: 'text-muted-foreground/80',
+  kritiek: 'text-[#C03A18]', hoog: 'text-[#3A5A9A]', medium: 'text-[#3A5A9A]', laag: 'text-[#3A5A9A]',
 }
 
 const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'border-[#E04A28] hover:border-[#C03A18]',
-  hoog: 'border-[#C49A30] hover:border-[#8A6A2A]',
+  kritiek: 'border-[#F15025] hover:border-[#C03A18]',
+  hoog: 'border-[#4A7AC7] hover:border-[#3A5A9A]',
   medium: 'border-[#4A7AC7] hover:border-[#3A5A9A]',
-  laag: 'border-border hover:border-[#6B6B66]',
+  laag: 'border-[#4A7AC7] hover:border-[#3A5A9A]',
 }
 
 // Deterministic project color from name
@@ -1165,11 +1166,11 @@ export function TasksLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-122px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-card">
+      <div className="flex flex-col h-full bg-card">
         {/* Sticky toolbar skeleton */}
-        <div className="sticky top-0 z-20 bg-card border-b border-border shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
+        <div className="sticky top-0 z-20 bg-card border-b border-border px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           <div className="flex items-baseline gap-2">
-            <h1 className="text-[17px] font-bold text-foreground tracking-[-0.3px]">
+            <h1 className="text-[17px] font-bold text-[#1A4A52] dark:text-foreground tracking-[-0.3px]">
               Taken<span className="text-[#F15025]">.</span>
             </h1>
             <Skeleton className="h-3 w-10" />
@@ -1189,7 +1190,7 @@ export function TasksLayout() {
         </div>
 
         {/* Day headers skeleton */}
-        <div className="flex border-b-2 border-border bg-background flex-shrink-0">
+        <div className="flex border-b border-border bg-background flex-shrink-0">
           <div className="w-14 flex-shrink-0" />
           {Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="flex-1 min-w-0 text-center py-3 border-l border-border/30">
@@ -1232,12 +1233,12 @@ export function TasksLayout() {
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100dvh-122px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-card">
+      <div className="flex flex-col h-full bg-card">
         {/* === Sticky toolbar — 1 rij === */}
-        <div className="sticky top-0 z-20 bg-card/75 backdrop-blur-xl border-b border-border shadow-[0_1px_8px_-2px_rgba(0,0,0,0.05)] px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
+        <div className="sticky top-0 z-20 bg-card border-b border-border px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           {/* Titel + counter */}
           <div className="flex items-baseline gap-2">
-            <h1 className="text-[17px] font-bold text-foreground tracking-[-0.3px]">
+            <h1 className="text-[17px] font-bold text-[#1A4A52] dark:text-foreground tracking-[-0.3px]">
               Taken<span className="text-[#F15025]">.</span>
             </h1>
             <span
@@ -1434,8 +1435,8 @@ export function TasksLayout() {
               <div className="w-12 h-12 rounded-full bg-[#1A535C]/[0.08] flex items-center justify-center mb-3">
                 <CalendarIcon className="w-5 h-5 text-[#1A535C]" />
               </div>
-              <p className="text-[15px] font-semibold text-foreground">Geen taken deze week</p>
-              <p className="text-[12px] text-foreground/70 mt-1 max-w-[280px]">Klik op een tijdslot om er een in te plannen, of sleep een taak hierheen.</p>
+              <p className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground">Geen taken deze week</p>
+              <p className="text-[12px] text-muted-foreground mt-1 max-w-[280px]">Klik op een tijdslot om er een in te plannen, of sleep een taak hierheen.</p>
             </div>
           )}
           <div className="flex" style={{ minHeight: HOURS.length * HOUR_HEIGHT }}>
@@ -1553,8 +1554,8 @@ export function TasksLayout() {
                   className={cn(
                     'group/cell relative p-2 transition-colors flex flex-col min-h-0',
                     !isCurrentMonth ? 'bg-background text-muted-foreground/80' : 'bg-card',
-                    isToday && '[background:linear-gradient(180deg,rgba(26,83,92,0.06)_0%,rgba(26,83,92,0)_55%)]',
-                    isDropHere && '[background:linear-gradient(180deg,rgba(241,80,37,0.10)_0%,rgba(241,80,37,0.03)_100%)] shadow-[inset_0_2px_0_#F15025]'
+                    isToday && 'bg-[#1A535C]/[0.04]',
+                    isDropHere && 'bg-[#F15025]/[0.06] shadow-[inset_0_2px_0_#F15025]'
                   )}
                   onClick={(e) => {
                     if (!isCurrentMonth || isAddingHere) return
@@ -1639,8 +1640,8 @@ export function TasksLayout() {
                           }}
                           onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
                           className={cn(
-                            'group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-semibold leading-tight px-2 py-[3px] rounded-none cursor-grab active:cursor-grabbing hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)] transition-shadow',
-                            isDone && '[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)] line-through'
+                            'group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-semibold leading-tight px-2 py-[3px] rounded-none cursor-grab active:cursor-grabbing hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow',
+                            isDone && 'bg-[#E8F0F0] dark:bg-[#1A535C]/15 line-through'
                           )}
                           style={isDone
                             ? { color: '#6B6B66', boxShadow: 'inset 2px 0 0 0 #1A535C' }
@@ -1813,7 +1814,7 @@ export function TasksLayout() {
                                   <div
                                     key={t.id}
                                     className={cn(
-                                      'group relative flex items-start gap-1.5 rounded-md border-l-2 transition-shadow hover:shadow-sm',
+                                      'group relative flex items-start gap-1.5 rounded-none border-l-2 transition-shadow hover:shadow-sm',
                                       isSelected && 'ring-2 ring-[#1A535C]/40'
                                     )}
                                     style={{ borderLeftColor: pc.border, backgroundColor: pc.bg }}
@@ -1873,7 +1874,7 @@ export function TasksLayout() {
       {/* === FLOATING ACTION BUTTON — DOEN. Clears MobileBottomNav (h-14) on mobile. === */}
       <div className="fixed right-4 md:right-6 z-50 flex flex-col items-end gap-3 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)] md:bottom-6">
         {fabOpen && (
-          <div className="w-80 rounded-2xl bg-card shadow-[0_4px_24px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.06] p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="w-80 rounded-xl bg-card border border-border shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18)] p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-foreground">Snel toevoegen</span>
               <button className="p-1 rounded-lg hover:bg-muted transition-all" onClick={() => setFabOpen(false)}>
@@ -2335,7 +2336,7 @@ function DayColumn({
                   value={hourAddTitle}
                   onChange={(e) => setHourAddTitle(e.target.value)}
                   placeholder={`Taak om ${String(hour).padStart(2, '0')}:00...`}
-                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 bg-card shadow-lg focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/20 text-foreground placeholder:text-muted-foreground/80 transition-all"
+                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/20 text-foreground placeholder:text-muted-foreground/80 transition-all"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && hourAddTitle.trim()) {
                       onQuickAddAtTime(hour, hourAddTitle.trim())
@@ -2464,9 +2465,9 @@ function DayColumn({
               left: 0,
               right: 0,
               height: heightPx,
-              background: 'linear-gradient(135deg, rgba(126, 181, 166, 0.12), rgba(126, 181, 166, 0.06))',
+              background: 'rgba(126, 181, 166, 0.10)',
               borderLeft: '3px solid rgba(126, 181, 166, 0.4)',
-              borderRadius: '4px',
+              borderRadius: '8px',
             }}
             title={tooltipText}
           >
@@ -2617,13 +2618,13 @@ function TaskCard({
         'group relative rounded-none transition-all duration-200 ease-out select-none',
         scheduled ? 'h-full' : '',
         !isResizing && 'cursor-grab active:cursor-grabbing',
-        'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:z-10',
+        'hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:z-10',
         isPast && !isDone && 'opacity-55',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
         isResizing && 'ring-2 ring-[#1A535C]/30 z-30',
         isSelected && 'ring-2 ring-[#1A535C] z-20',
         isDimmedForBulkDrag && 'opacity-40',
-        isDone && '[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)]'
+        isDone && 'bg-[#E8F0F0] dark:bg-[#1A535C]/15'
       )}
       style={{
         ...(heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : {}),
@@ -2755,7 +2756,7 @@ function EditTaskDialog({
             value={formData.titel}
             onChange={(e) => updateField('titel', e.target.value)}
             placeholder="Titel van de taak"
-            className="border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-foreground placeholder:text-muted-foreground placeholder:font-medium focus-visible:ring-0 tracking-[-0.3px] flex-1 min-w-0"
+            className="border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-[#1A4A52] dark:text-foreground placeholder:text-muted-foreground placeholder:font-medium focus-visible:ring-0 tracking-[-0.3px] flex-1 min-w-0"
           />
           {formData.project_id && (
             <button
