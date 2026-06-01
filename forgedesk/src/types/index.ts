@@ -775,6 +775,8 @@ export interface AppSettings {
   exact_online_client_id?: string;
   exact_online_client_secret?: string;
   exact_online_connected?: boolean;
+  /** Eerste user die OAuth deed; niet-eigenaars kunnen niet zelf re-OAuth doen (Exact's single-session-policy). */
+  exact_owner_user_id?: string | null;
   exact_administratie_id?: string;
   exact_verkoopboek?: string;
   exact_grootboek?: string;

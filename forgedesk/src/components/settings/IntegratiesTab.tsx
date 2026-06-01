@@ -80,6 +80,17 @@ export function IntegratiesTab() {
   const [docTypesLoading, setDocTypesLoading] = useState(false)
   const [docTypesError, setDocTypesError] = useState<string | null>(null)
 
+  // Per-user koppeling-status. exact_owner_user_id is de eerste user die
+  // OAuth deed; de UI verbergt de "Verbinden"-knop voor andere admins zodat
+  // ze niet per ongeluk de actieve Exact-sessie van de eigenaar invalideren
+  // (Exact Online staat geen twee gelijktijdige sessies per bedrijfsaccount
+  // toe). De feitelijke connected-status voor de huidige user komt uit
+  // /api/exact-token-status — niet uit de org-brede `exact_online_connected`
+  // boolean, die alleen "iemand in de org heeft ooit gekoppeld" zegt.
+  const [exactOwnerUserId, setExactOwnerUserId] = useState<string | null>(null)
+  const [exactEigenTokens, setExactEigenTokens] = useState<boolean | null>(null)
+  const [exactTokensVerlopen, setExactTokensVerlopen] = useState(false)
+
   // KvK API state
   const [kvkApiKey, setKvkApiKey] = useState('')
   const [kvkSaving, setKvkSaving] = useState(false)
@@ -94,6 +105,7 @@ export function IntegratiesTab() {
       setExactClientId(s.exact_online_client_id ?? '')
       setExactClientSecret(isEncrypted(s.exact_online_client_secret ?? '') ? '' : (s.exact_online_client_secret ?? ''))
       setExactConnected(s.exact_online_connected ?? false)
+      setExactOwnerUserId(s.exact_owner_user_id ?? null)
       setExactAdministratieId(s.exact_administratie_id ?? '')
       setExactVerkoopboek(s.exact_verkoopboek ?? '80')
       setExactGrootboek(s.exact_grootboek ?? '8090')
@@ -119,6 +131,7 @@ export function IntegratiesTab() {
       // Refresh de settings zodat de badge meteen groen wordt
       getAppSettings(user.id).then((s) => {
         setExactConnected(s.exact_online_connected ?? false)
+        setExactOwnerUserId(s.exact_owner_user_id ?? null)
         setExactAdministratieId(s.exact_administratie_id ?? '')
         setExactDocumentTypeId(s.exact_document_type_id ?? null)
         setExactDocumentTypeNaam(s.exact_document_type_naam ?? '')
@@ -137,6 +150,51 @@ export function IntegratiesTab() {
     url.searchParams.delete('reason')
     window.history.replaceState({}, '', url.toString())
   }, [user?.id, refreshSettings])
+
+  // Per-user token-status ophalen. Re-run wanneer `exactConnected` flipt
+  // (b.v. na een succesvolle OAuth-callback) zodat de badge en knop direct
+  // het nieuwe beeld tonen.
+  useEffect(() => {
+    if (!user?.id) return
+    let cancelled = false
+    async function fetchStatus() {
+      try {
+        const { data: sess } = await supabase.auth.getSession()
+        const token = sess?.session?.access_token
+        if (!token) {
+          if (!cancelled) setExactEigenTokens(false)
+          return
+        }
+        const res = await fetch('/api/exact-token-status', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) {
+          if (!cancelled) setExactEigenTokens(false)
+          return
+        }
+        const data = await res.json() as { heeftTokens: boolean; verlopen: boolean }
+        if (!cancelled) {
+          setExactEigenTokens(data.heeftTokens)
+          setExactTokensVerlopen(data.verlopen)
+        }
+      } catch {
+        if (!cancelled) setExactEigenTokens(false)
+      }
+    }
+    fetchStatus()
+    return () => { cancelled = true }
+  }, [user?.id, exactConnected])
+
+  const isExactEigenaar = !exactOwnerUserId || exactOwnerUserId === user?.id
+  // Badge-status. Voor de eigenaar: leidend is per-user `exactEigenTokens`
+  // (de waarheid uit /api/exact-token-status). Voor niet-eigenaren bestaat
+  // er geen eigen tokens-rij waaraan we kunnen aflezen of "iemand anders"
+  // gekoppeld is — daarom valt de badge bij hen terug op de org-brede
+  // `exact_online_connected` boolean (informatief). Tijdens de loading
+  // van de status-fetch tonen we de org-flag als best-effort fallback.
+  const exactBadgeVerbonden = isExactEigenaar
+    ? (exactEigenTokens ?? exactConnected)
+    : exactConnected
 
   const loadDocumentTypes = useCallback(async () => {
     if (!exactConnected) return
@@ -164,12 +222,23 @@ export function IntegratiesTab() {
     }
   }, [exactConnected])
 
+  // Alleen DocumentTypes ophalen als deze user zelf geldige tokens heeft.
+  // Bij niet-eigenaars zonder eigen exact_tokens-rij zou de call een 401
+  // van Exact triggeren en (na commit 2) hun token-rij verwijderen — voor
+  // niets, want ze koppelen niet zelf.
   useEffect(() => {
-    if (exactConnected) loadDocumentTypes()
-  }, [exactConnected, loadDocumentTypes])
+    if (exactConnected && exactEigenTokens) loadDocumentTypes()
+  }, [exactConnected, exactEigenTokens, loadDocumentTypes])
 
   const handleExactConnect = async () => {
     if (!user?.id) return
+    // Defense-in-depth: niet-eigenaars zien de knop niet, maar wie hem
+    // toch triggert (URL-hack, oud state) moet hier alsnog stoppen om
+    // de Exact-sessie van de eigenaar niet onbedoeld te invalideren.
+    if (!isExactEigenaar) {
+      toast.error('Alleen de eigenaar van de Exact-koppeling kan opnieuw verbinden')
+      return
+    }
     setExactSaving(true)
     try {
       // Sla eerst eventuele wijzigingen in client_id/secret op zodat de
@@ -311,12 +380,12 @@ export function IntegratiesTab() {
                 <h3 className="text-base font-semibold text-foreground">Exact Online</h3>
                 <Badge
                   className={
-                    exactConnected
+                    exactBadgeVerbonden
                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                       : 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground/60'
                   }
                 >
-                  {exactConnected ? (
+                  {exactBadgeVerbonden ? (
                     <span className="flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
                       Verbonden
@@ -509,19 +578,29 @@ export function IntegratiesTab() {
                 )}
               </div>
 
+              {!isExactEigenaar && exactConnected && (
+                <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                  Exact Online is gekoppeld door een collega. Je kunt facturen
+                  syncen met je eigen tokens, maar opnieuw verbinden zou de
+                  actieve sessie verbreken — alleen de eigenaar kan dat doen.
+                </div>
+              )}
+
               <div className="flex justify-end gap-2">
                 <Button onClick={handleExactSave} disabled={exactSaving} size="sm" variant="outline">
                   {exactSaving ? 'Opslaan...' : 'Opslaan'}
                 </Button>
-                <Button
-                  size="sm"
-                  disabled={!exactClientId || !exactClientSecret || exactSaving}
-                  onClick={handleExactConnect}
-                  className="gap-1.5"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  {exactConnected ? 'Opnieuw verbinden' : 'Verbinden'}
-                </Button>
+                {isExactEigenaar && (
+                  <Button
+                    size="sm"
+                    disabled={!exactClientId || !exactClientSecret || exactSaving}
+                    onClick={handleExactConnect}
+                    className="gap-1.5"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    {exactEigenTokens ? 'Opnieuw verbinden' : 'Verbinden'}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
