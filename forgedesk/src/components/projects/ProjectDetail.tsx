@@ -3013,10 +3013,11 @@ export function ProjectDetail() {
           onOpenChange={(open) => { if (!open) setObPreviewOfferte(null) }}
           title={`Opdrachtbevestiging ${obPreviewOfferte.nummer}`}
           generatePdf={async () => {
+            if (!user) throw new Error('Niet ingelogd')
             const [offerteItems, profile, docStyle] = await Promise.all([
               getOfferteItems(obPreviewOfferte.id),
-              getProfile(),
-              getDocumentStyle(),
+              getProfile(user.id),
+              getDocumentStyle(user.id),
             ])
             const doc = await generateOpdrachtbevestigingPDF(
               obPreviewOfferte,
