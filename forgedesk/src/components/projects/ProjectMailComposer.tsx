@@ -1,12 +1,20 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
-import { Paperclip, Send, X, FileText, Image as ImageIcon, File, Bold, Italic, Underline, List, Link as LinkIcon, Clock, Loader2 } from 'lucide-react'
+import { Paperclip, Send, X, FileText, Image as ImageIcon, File, Bold, Italic, Underline, List, Link as LinkIcon, Loader2, Receipt, CreditCard, Wrench, Check, Plus, ChevronDown, MessagesSquare, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { sendEmail } from '@/services/gmailService'
 import { logWijziging } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Project, Klant, Contactpersoon } from '@/types'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
+import { getDocumentenByProject } from '@/services/documentenService'
+import { getOffertesByProject, getOfferteItems } from '@/services/offerteService'
+import { getFacturenByProject, getFactuurItems } from '@/services/factuurService'
+import { getWerkbonnenByProject, getWerkbonItems, getWerkbonFotos } from '@/services/werkbonService'
+import { generateOffertePDF, generateFactuurPDF } from '@/services/pdfService'
+import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
+import { getEmailsVoorProject, koppelEmailAanProject, type ProjectMail } from '@/services/emailProjectService'
+import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem } from '@/types'
 
 interface ProjectMailComposerProps {
   project: Project
@@ -18,12 +26,18 @@ interface ProjectMailComposerProps {
   onOpenChange: (open: boolean) => void
 }
 
+type BijlageBron = 'upload' | 'bestand' | 'offerte' | 'factuur' | 'werkbon'
+
 interface Bijlage {
   id: string
   filename: string
-  base64: string
   size: number
   mimeType: string
+  bron: BijlageBron
+  bronId?: string
+  base64?: string
+  storagePath?: string
+  bucket?: string
 }
 
 interface DraftPayload {
@@ -64,6 +78,44 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
+
+function base64Size(b64: string): number {
+  return Math.round((b64.length * 3) / 4)
+}
+
+function formatThreadDatum(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return iso
+  }
+}
+
+function mailPreview(m: ProjectMail): string {
+  const raw = m.body_text || (m.body_html ? m.body_html.replace(/<[^>]+>/g, ' ') : '')
+  const clean = raw.replace(/\s+/g, ' ').trim()
+  return clean.length > 280 ? `${clean.slice(0, 280)}…` : clean
+}
+
+function bronAccent(bron: BijlageBron): { bg: string; border: string } {
+  switch (bron) {
+    case 'offerte': return { bg: 'rgba(58,107,140,0.08)', border: 'rgba(58,107,140,0.25)' }
+    case 'factuur': return { bg: 'rgba(26,83,92,0.08)', border: 'rgba(26,83,92,0.25)' }
+    case 'werkbon': return { bg: 'rgba(154,90,72,0.08)', border: 'rgba(154,90,72,0.25)' }
+    case 'bestand': return { bg: '#F0EEEA', border: '#E4E1DB' }
+    default: return { bg: 'hsl(var(--background))', border: 'hsl(var(--border))' }
+  }
+}
+
+function bijlageIcon(bron: BijlageBron, mimeType: string) {
+  switch (bron) {
+    case 'offerte': return <Receipt className="h-3.5 w-3.5" style={{ color: '#3A6B8C' }} />
+    case 'factuur': return <CreditCard className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />
+    case 'werkbon': return <Wrench className="h-3.5 w-3.5" style={{ color: '#9A5A48' }} />
+    default: return getFileIcon(mimeType)
+  }
+}
+
 
 interface EmailChipsInputProps {
   value: string[]
@@ -133,7 +185,8 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   { project, klant, contactpersoon, userId, medewerkerNaam, open, onOpenChange },
   ref,
 ) {
-  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, profile, primaireKleur } = useAppSettings()
+  const documentStyle = useDocumentStyle()
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -158,8 +211,26 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const [body, setBody] = useState(defaultBody)
   const [bijlagen, setBijlagen] = useState<Bijlage[]>([])
   const [isSending, setIsSending] = useState(false)
-  const [opvolgen, setOpvolgen] = useState(true)
+  const [opvolgen, setOpvolgen] = useState(false)
   const [draftRestored, setDraftRestored] = useState(false)
+
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerLoading, setPickerLoading] = useState(false)
+  const [pickerLoaded, setPickerLoaded] = useState(false)
+  const [projectDocs, setProjectDocs] = useState<Document[]>([])
+  const [projectOffertes, setProjectOffertes] = useState<Offerte[]>([])
+  const [projectFacturen, setProjectFacturen] = useState<Factuur[]>([])
+  const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
+  const [bezigItemId, setBezigItemId] = useState<string | null>(null)
+  const pickerRef = useRef<HTMLDivElement>(null)
+
+  const [threadMails, setThreadMails] = useState<ProjectMail[]>([])
+  const [threadId, setThreadId] = useState<string | null>(null)
+  const [threadOpen, setThreadOpen] = useState(true)
+
+  const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [scheduleAt, setScheduleAt] = useState('')
+  const scheduleRef = useRef<HTMLDivElement>(null)
 
   const wasOpenRef = useRef(false)
   useEffect(() => {
@@ -176,7 +247,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
           setShowCcBcc(draft.showCcBcc || (draft.ccEmails?.length > 0 || draft.bccEmails?.length > 0))
           setSubject(draft.subject ?? defaultSubject)
           setBody(draft.body ?? defaultBody)
-          setOpvolgen(draft.opvolgen ?? true)
+          setOpvolgen(draft.opvolgen ?? false)
           setDraftRestored(true)
           restored = true
         }
@@ -188,13 +259,15 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         setShowCcBcc(false)
         setSubject(defaultSubject)
         setBody(defaultBody)
-        setOpvolgen(true)
+        setOpvolgen(false)
         setBijlagen([])
       }
     } else if (!open) {
       setToEmails(defaultEmail ? [defaultEmail] : [])
       setSubject(defaultSubject)
       setBody(defaultBody)
+      setPickerOpen(false)
+      setScheduleOpen(false)
     }
     wasOpenRef.current = open
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -257,6 +330,35 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     },
   }), [onOpenChange])
 
+  // Projectbronnen + gesprek laden zodra de composer opent
+  useEffect(() => {
+    if (open) {
+      loadProjectData()
+      loadThread()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  // Picker sluiten bij klik buiten
+  useEffect(() => {
+    if (!pickerOpen) return
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setPickerOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [pickerOpen])
+
+  // Inplan-popover sluiten bij klik buiten
+  useEffect(() => {
+    if (!scheduleOpen) return
+    const handler = (e: MouseEvent) => {
+      if (scheduleRef.current && !scheduleRef.current.contains(e.target as Node)) setScheduleOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [scheduleOpen])
+
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files) return
@@ -269,7 +371,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         const base64 = await fileToBase64(file)
         setBijlagen((prev) => [
           ...prev,
-          { id: crypto.randomUUID(), filename: file.name, base64, size: file.size, mimeType: file.type || 'application/octet-stream' },
+          { id: crypto.randomUUID(), filename: file.name, base64, size: file.size, mimeType: file.type || 'application/octet-stream', bron: 'upload' },
         ])
       } catch (err) {
         logger.error('Bijlage inladen mislukt:', err)
@@ -278,6 +380,192 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     }
     e.target.value = ''
   }
+
+  const isToegevoegd = (bronId: string) => bijlagen.some((b) => b.bronId === bronId)
+  const verwijderBron = (bronId: string) => setBijlagen((prev) => prev.filter((b) => b.bronId !== bronId))
+
+  async function loadProjectData() {
+    if (pickerLoaded || pickerLoading) return
+    setPickerLoading(true)
+    try {
+      const [docs, offs, facs, wbs] = await Promise.all([
+        getDocumentenByProject(project.id).catch(() => [] as Document[]),
+        getOffertesByProject(project.id).catch(() => [] as Offerte[]),
+        getFacturenByProject(project.id).catch(() => [] as Factuur[]),
+        getWerkbonnenByProject(project.id).catch(() => [] as Werkbon[]),
+      ])
+      setProjectDocs(docs)
+      setProjectOffertes(offs)
+      setProjectFacturen(facs)
+      setProjectWerkbonnen(wbs)
+      setPickerLoaded(true)
+    } finally {
+      setPickerLoading(false)
+    }
+  }
+
+  async function loadThread() {
+    try {
+      const mails = await getEmailsVoorProject(project.id)
+      setThreadMails(mails)
+      setThreadId((prev) => prev || (mails[0]?.thread_id ?? null))
+    } catch {
+      /* stil — RLS kan niets opleveren */
+    }
+  }
+
+  function toggleBestand(d: Document) {
+    if (isToegevoegd(d.id)) { verwijderBron(d.id); return }
+    setBijlagen((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        filename: d.naam,
+        size: d.grootte,
+        mimeType: d.type || 'application/octet-stream',
+        storagePath: d.storage_path,
+        bucket: 'documenten',
+        bron: 'bestand',
+        bronId: d.id,
+      },
+    ])
+  }
+
+  async function toggleOfferte(o: Offerte) {
+    if (isToegevoegd(o.id)) { verwijderBron(o.id); return }
+    setBezigItemId(o.id)
+    try {
+      const items = await getOfferteItems(o.id)
+      const doc = await generateOffertePDF(o, items, klant || {}, { ...profile, primaireKleur: primaireKleur || '#2563eb' }, documentStyle)
+      const base64 = doc.output('datauristring').split(',')[1]
+      setBijlagen((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), filename: `${o.nummer}.pdf`, size: base64Size(base64), mimeType: 'application/pdf', base64, bron: 'offerte', bronId: o.id },
+      ])
+    } catch (err) {
+      logger.error('Offerte-PDF genereren mislukt:', err)
+      toast.error('Kon offerte-PDF niet genereren')
+    } finally {
+      setBezigItemId(null)
+    }
+  }
+
+  async function toggleFactuur(f: Factuur) {
+    if (isToegevoegd(f.id)) { verwijderBron(f.id); return }
+    setBezigItemId(f.id)
+    try {
+      if (f.pdf_storage_path) {
+        setBijlagen((prev) => [
+          ...prev,
+          { id: crypto.randomUUID(), filename: `Factuur-${f.nummer}.pdf`, size: 0, mimeType: 'application/pdf', storagePath: f.pdf_storage_path, bucket: 'facturen', bron: 'factuur', bronId: f.id },
+        ])
+      } else {
+        const items = await getFactuurItems(f.id)
+        const pdfItems: OfferteItem[] = items.map((item, idx) => ({
+          id: item.id,
+          offerte_id: '',
+          beschrijving: item.beschrijving,
+          aantal: item.aantal,
+          eenheidsprijs: item.eenheidsprijs,
+          btw_percentage: item.btw_percentage,
+          korting_percentage: item.korting_percentage,
+          totaal: item.totaal,
+          volgorde: idx + 1,
+          created_at: new Date().toISOString(),
+        }))
+        const factuurData = {
+          nummer: f.nummer,
+          titel: f.titel,
+          datum: f.factuurdatum,
+          vervaldatum: f.vervaldatum,
+          subtotaal: f.subtotaal,
+          btw_bedrag: f.btw_bedrag,
+          totaal: f.totaal,
+          notities: f.notities || undefined,
+          betaalvoorwaarden: f.voorwaarden || undefined,
+          factuur_type: f.factuur_type || 'standaard',
+          betaal_link: f.betaal_link || undefined,
+          outro_tekst: f.outro_tekst || undefined,
+        }
+        const doc = generateFactuurPDF(factuurData, pdfItems, klant || {}, { ...profile, primaireKleur: primaireKleur || '#2563eb' }, documentStyle)
+        const base64 = doc.output('datauristring').split(',')[1]
+        setBijlagen((prev) => [
+          ...prev,
+          { id: crypto.randomUUID(), filename: `Factuur-${f.nummer}.pdf`, size: base64Size(base64), mimeType: 'application/pdf', base64, bron: 'factuur', bronId: f.id },
+        ])
+      }
+    } catch (err) {
+      logger.error('Factuur-PDF genereren mislukt:', err)
+      toast.error('Kon factuur-PDF niet genereren')
+    } finally {
+      setBezigItemId(null)
+    }
+  }
+
+  async function toggleWerkbon(w: Werkbon) {
+    if (isToegevoegd(w.id)) { verwijderBron(w.id); return }
+    setBezigItemId(w.id)
+    try {
+      const [items, fotos] = await Promise.all([getWerkbonItems(w.id), getWerkbonFotos(w.id)])
+      const doc = await generateWerkbonInstructiePDF(
+        {
+          werkbon_nummer: w.werkbon_nummer,
+          titel: w.titel,
+          datum: w.datum,
+          locatie_adres: w.locatie_adres,
+          locatie_stad: w.locatie_stad,
+          locatie_postcode: w.locatie_postcode,
+          contact_naam: w.contact_naam,
+          contact_telefoon: w.contact_telefoon,
+          toon_briefpapier: w.toon_briefpapier ?? true,
+          status: w.status,
+          uren_gewerkt: w.uren_gewerkt,
+          monteur_opmerkingen: w.monteur_opmerkingen,
+          klant_handtekening: w.klant_handtekening,
+          klant_naam_getekend: w.klant_naam_getekend,
+        },
+        items,
+        klant || {},
+        project.naam || '',
+        { ...profile, primaireKleur: primaireKleur || '#2563eb' },
+        documentStyle,
+        { fotos },
+      )
+      const base64 = doc.output('datauristring').split(',')[1]
+      setBijlagen((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), filename: `Werkbon-${w.werkbon_nummer}.pdf`, size: base64Size(base64), mimeType: 'application/pdf', base64, bron: 'werkbon', bronId: w.id },
+      ])
+    } catch (err) {
+      logger.error('Werkbon-PDF genereren mislukt:', err)
+      toast.error('Kon werkbon-PDF niet genereren')
+    } finally {
+      setBezigItemId(null)
+    }
+  }
+
+  const cats = [
+    {
+      key: 'bestanden', label: 'Bestanden', color: '#6B6B66', count: projectDocs.length,
+      tabIcon: <FileText className="h-3.5 w-3.5" />,
+      items: projectDocs.map((d) => ({ id: d.id, label: d.naam, icon: getFileIcon(d.type || ''), onToggle: () => toggleBestand(d) })),
+    },
+    {
+      key: 'offertes', label: 'Offertes', color: '#3A6B8C', count: projectOffertes.length,
+      tabIcon: <Receipt className="h-3.5 w-3.5" />,
+      items: projectOffertes.map((o) => ({ id: o.id, label: o.titel || `Offerte ${o.nummer}`, icon: <Receipt className="h-3.5 w-3.5" style={{ color: '#3A6B8C' }} />, onToggle: () => toggleOfferte(o) })),
+    },
+    {
+      key: 'facturen', label: 'Facturen', color: '#1A535C', count: projectFacturen.length,
+      tabIcon: <CreditCard className="h-3.5 w-3.5" />,
+      items: projectFacturen.map((f) => ({ id: f.id, label: f.titel || `Factuur ${f.nummer}`, icon: <CreditCard className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />, onToggle: () => toggleFactuur(f) })),
+    },
+    {
+      key: 'werkbonnen', label: 'Werkbonnen', color: '#9A5A48', count: projectWerkbonnen.length,
+      tabIcon: <Wrench className="h-3.5 w-3.5" />,
+      items: projectWerkbonnen.map((w) => ({ id: w.id, label: w.titel || `Werkbon ${w.werkbon_nummer}`, icon: <Wrench className="h-3.5 w-3.5" style={{ color: '#9A5A48' }} />, onToggle: () => toggleWerkbon(w) })),
+    },
+  ].filter((c) => c.count > 0)
 
   const wrapSelection = useCallback((before: string, after: string) => {
     const t = textareaRef.current
@@ -318,7 +606,20 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     setBody(next)
   }, [body])
 
-  async function handleSend() {
+  function handleSchedule() {
+    if (!scheduleAt) {
+      toast.error('Kies een datum en tijd')
+      return
+    }
+    const when = new Date(scheduleAt)
+    if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now()) {
+      toast.error('Kies een tijdstip in de toekomst')
+      return
+    }
+    handleSend(when.toISOString())
+  }
+
+  async function handleSend(scheduledAt?: string) {
     if (toEmails.length === 0) {
       toast.error('Vul minimaal één ontvanger in')
       return
@@ -329,11 +630,11 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     }
     setIsSending(true)
     try {
-      const attachments = bijlagen.map((b) => ({
-        filename: b.filename,
-        content: b.base64,
-        encoding: 'base64' as const,
-      }))
+      const attachments = bijlagen.map((b) =>
+        b.storagePath
+          ? { filename: b.filename, storagePath: b.storagePath, bucket: b.bucket || 'documenten', cleanupAfter: false }
+          : { filename: b.filename, content: b.base64 || '', encoding: 'base64' as const },
+      )
 
       const escapeHtml = (s: string) => s
         .replace(/&/g, '&amp;')
@@ -347,13 +648,24 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#1A1A1A">${bodyHtml}${signaturImg}</div>`
 
       const toStr = toEmails.join(', ')
+      const sendThreadId = threadId || crypto.randomUUID()
       await sendEmail(toStr, subject.trim(), body, {
         attachments,
         html,
         cc: ccEmails.length > 0 ? ccEmails.join(', ') : undefined,
         bcc: bccEmails.length > 0 ? bccEmails.join(', ') : undefined,
         wacht_op_reactie: opvolgen,
+        thread_id: sendThreadId,
+        scheduledAt: scheduledAt || undefined,
       })
+
+      // Koppel de thread aan dit project zodat het bericht in het gesprek bewaart
+      try {
+        await koppelEmailAanProject(sendThreadId, project.id)
+        setThreadId(sendThreadId)
+      } catch (koppelErr) {
+        logger.error('Email aan project koppelen mislukt:', koppelErr)
+      }
 
       if (userId) {
         logWijziging({
@@ -369,14 +681,20 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       // Clear draft op succes
       try { localStorage.removeItem(draftKey) } catch { /* ignore */ }
 
-      toast.success(<>Email verstuurd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(scheduledAt
+        ? <>Email ingepland<span style={{ color: '#F15025' }}>.</span></>
+        : <>Email verstuurd<span style={{ color: '#F15025' }}>.</span></>)
       setBijlagen([])
       setBody(defaultBody)
       setSubject(defaultSubject)
       setCcEmails([])
       setBccEmails([])
       setShowCcBcc(false)
-      onOpenChange(false)
+      setOpvolgen(false)
+      setScheduleOpen(false)
+      setScheduleAt('')
+      // Venster open houden + gesprek verversen zodat het verzonden bericht in de thread verschijnt
+      loadThread()
     } catch (err) {
       logger.error('Email verzenden mislukt:', err)
       toast.error('Email kon niet verzonden worden. Controleer SMTP-instellingen.')
@@ -396,23 +714,30 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
 
   const canSend = toEmails.length > 0 && subject.trim().length > 0 && !isSending
 
+  const initiaal = (defaultNaam || defaultEmail || '?').trim().charAt(0).toUpperCase()
+  const contactEmailLower = (defaultEmail || '').toLowerCase()
+
   return (
     <div
       ref={containerRef}
-      className="bg-white rounded-2xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden"
+      className="bg-white rounded-2xl border border-border shadow-[0_8px_30px_rgba(0,0,0,0.08)] overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Mail</span>
-          {defaultNaam && (
-            <span className="text-[12px] text-foreground/70">naar {defaultNaam}</span>
-          )}
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-to-b from-[#1A535C]/[0.05] to-transparent">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="h-9 w-9 rounded-full bg-[#1A535C] text-white text-[13px] font-semibold flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(26,83,92,0.3)]">
+            {initiaal}
+          </span>
+          <div className="min-w-0">
+            <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#1A535C]">Nieuw bericht</div>
+            <div className="text-[13px] font-semibold text-foreground truncate leading-tight">{defaultNaam || 'Nieuwe ontvanger'}</div>
+            {defaultEmail && <div className="text-[11px] text-muted-foreground truncate leading-tight">{defaultEmail}</div>}
+          </div>
         </div>
         <button
           type="button"
           onClick={() => onOpenChange(false)}
-          className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex-shrink-0"
           aria-label="Mail-composer sluiten"
         >
           <X className="h-4 w-4" />
@@ -421,41 +746,78 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
 
       {/* Body */}
       <div className="px-5 py-4 space-y-3">
-        <div className="flex items-start gap-3 border-b border-border pb-2">
-          <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground w-24 flex-shrink-0 pt-1">Aan</label>
-          <EmailChipsInput value={toEmails} onChange={setToEmails} placeholder="naam@bedrijf.nl" />
-          {!showCcBcc && (
+        {threadMails.length > 0 && (
+          <div className="rounded-xl border border-border/70 overflow-hidden bg-white">
             <button
               type="button"
-              onClick={() => setShowCcBcc(true)}
-              className="text-[11px] text-muted-foreground hover:text-[#1A535C] transition-colors flex-shrink-0 pt-1"
+              onClick={() => setThreadOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-2 bg-muted/30 hover:bg-muted/50 transition-colors"
             >
-              Cc Bcc
+              <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                <MessagesSquare className="h-3.5 w-3.5" />
+                Gesprek
+                <span className="font-mono text-[9px] bg-muted px-1.5 py-0.5 rounded-full">{threadMails.length}</span>
+              </span>
+              <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", threadOpen && "rotate-180")} />
             </button>
-          )}
-        </div>
-
-        {showCcBcc && (
-          <>
-            <div className="flex items-start gap-3 border-b border-border pb-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground w-24 flex-shrink-0 pt-1">Cc</label>
-              <EmailChipsInput value={ccEmails} onChange={setCcEmails} placeholder="cc@bedrijf.nl" />
-            </div>
-            <div className="flex items-start gap-3 border-b border-border pb-2">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground w-24 flex-shrink-0 pt-1">Bcc</label>
-              <EmailChipsInput value={bccEmails} onChange={setBccEmails} placeholder="bcc@bedrijf.nl" />
-            </div>
-          </>
+            {threadOpen && (
+              <div className="max-h-[220px] overflow-y-auto px-3 py-2.5 space-y-2">
+                {[...threadMails].reverse().map((m) => {
+                  const incoming = !!contactEmailLower && (m.van || '').toLowerCase().includes(contactEmailLower)
+                  return (
+                    <div key={m.id} className={cn("flex", incoming ? "justify-start" : "justify-end")}>
+                      <div className={cn("max-w-[80%] rounded-2xl px-3 py-2", incoming ? "bg-muted text-foreground rounded-tl-sm" : "bg-[#1A535C] text-white rounded-tr-sm")}>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[10px] font-semibold truncate opacity-90">{m.from_name || m.van}</span>
+                          <span className={cn("text-[9px] font-mono", incoming ? "text-muted-foreground" : "text-white/70")}>{formatThreadDatum(m.datum)}</span>
+                        </div>
+                        <div className="text-[12px] leading-snug whitespace-pre-wrap break-words">{mailPreview(m) || '(geen tekst)'}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         )}
 
-        <div className="flex items-center gap-3 border-b border-border pb-2">
-          <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground w-24 flex-shrink-0">Onderwerp</label>
-          <input
-            type="text"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[13px] font-medium text-foreground placeholder:text-muted-foreground"
-          />
+        <div className="rounded-xl border border-border/70 divide-y divide-border/50 overflow-hidden bg-muted/20">
+          <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[88px] flex-shrink-0 whitespace-nowrap">Aan</label>
+            <EmailChipsInput value={toEmails} onChange={setToEmails} placeholder="naam@bedrijf.nl" />
+            {!showCcBcc && (
+              <button
+                type="button"
+                onClick={() => setShowCcBcc(true)}
+                className="text-[11px] font-medium text-muted-foreground hover:text-[#1A535C] transition-colors flex-shrink-0 px-1.5 py-0.5 rounded-md hover:bg-[#1A535C]/[0.06]"
+              >
+                Cc/Bcc
+              </button>
+            )}
+          </div>
+
+          {showCcBcc && (
+            <>
+              <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[88px] flex-shrink-0 whitespace-nowrap">Cc</label>
+                <EmailChipsInput value={ccEmails} onChange={setCcEmails} placeholder="cc@bedrijf.nl" />
+              </div>
+              <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[88px] flex-shrink-0 whitespace-nowrap">Bcc</label>
+                <EmailChipsInput value={bccEmails} onChange={setBccEmails} placeholder="bcc@bedrijf.nl" />
+              </div>
+            </>
+          )}
+
+          <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[88px] flex-shrink-0 whitespace-nowrap">Onderwerp</label>
+            <input
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[13px] font-medium text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
         </div>
 
         {/* Body-blok: textarea + handtekening visueel als één 'mailbox' */}
@@ -481,35 +843,38 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
           )}
         </div>
 
-        {/* Bijlagen-lijst */}
+        {/* Bijlagen-chips */}
         {bijlagen.length > 0 && (
-          <div className="space-y-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {bijlagen.map((b) => {
-              const isImage = b.mimeType.startsWith('image/')
+              const accent = bronAccent(b.bron)
+              const isImage = b.mimeType.startsWith('image/') && !!b.base64
               return (
-                <div key={b.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border bg-background">
+                <span
+                  key={b.id}
+                  className="inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded-lg border max-w-full animate-in fade-in zoom-in-95 duration-150"
+                  style={{ borderColor: accent.border, backgroundColor: accent.bg }}
+                >
                   {isImage ? (
                     <img
                       src={`data:${b.mimeType};base64,${b.base64}`}
                       alt={b.filename}
-                      className="h-8 w-8 object-cover rounded flex-shrink-0 border border-border"
+                      className="h-5 w-5 object-cover rounded flex-shrink-0"
                     />
                   ) : (
-                    <div className="h-8 w-8 flex items-center justify-center bg-white rounded flex-shrink-0 border border-border">
-                      {getFileIcon(b.mimeType)}
-                    </div>
+                    <span className="flex-shrink-0">{bijlageIcon(b.bron, b.mimeType)}</span>
                   )}
-                  <span className="text-[12px] text-foreground truncate flex-1">{b.filename}</span>
-                  <span className="text-[10px] font-mono tabular-nums text-muted-foreground">{formatBytes(b.size)}</span>
+                  <span className="text-[11px] font-medium text-foreground truncate max-w-[160px]">{b.filename}</span>
+                  {b.size > 0 && <span className="text-[9px] font-mono tabular-nums text-muted-foreground">{formatBytes(b.size)}</span>}
                   <button
                     type="button"
                     onClick={() => setBijlagen((prev) => prev.filter((x) => x.id !== b.id))}
-                    className="text-muted-foreground hover:text-[#C03A18] transition-colors"
+                    className="h-4 w-4 rounded flex items-center justify-center text-muted-foreground hover:text-[#C03A18] hover:bg-white/70 transition-colors flex-shrink-0"
                     aria-label="Bijlage verwijderen"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-3 w-3" />
                   </button>
-                </div>
+                </span>
               )
             })}
           </div>
@@ -524,61 +889,155 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         />
       </div>
 
-      {/* Toolbar + verstuur */}
-      <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-background">
-        <div className="flex items-center gap-0.5">
-          <button type="button" onClick={() => wrapSelection('**', '**')} title="Bold" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
+      {/* Actiebalk: opmaak + toevoegen links · opvolgen + inplannen + versturen rechts */}
+      <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-t border-border bg-gradient-to-b from-transparent to-[#1A535C]/[0.02]">
+        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 border border-border/60 p-0.5">
+          <button type="button" onClick={() => wrapSelection('**', '**')} title="Bold" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
             <Bold className="h-3.5 w-3.5" />
           </button>
-          <button type="button" onClick={() => wrapSelection('_', '_')} title="Cursief" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
+          <button type="button" onClick={() => wrapSelection('_', '_')} title="Cursief" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
             <Italic className="h-3.5 w-3.5" />
           </button>
-          <button type="button" onClick={() => wrapSelection('__', '__')} title="Onderstreept" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
+          <button type="button" onClick={() => wrapSelection('__', '__')} title="Onderstreept" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
             <Underline className="h-3.5 w-3.5" />
           </button>
-          <div className="w-px h-5 bg-border mx-1" />
-          <button type="button" onClick={insertList} title="Lijst" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
+          <div className="w-px h-4 bg-border mx-0.5" />
+          <button type="button" onClick={insertList} title="Lijst" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
             <List className="h-3.5 w-3.5" />
           </button>
-          <button type="button" onClick={insertLink} title="Link toevoegen" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
+          <button type="button" onClick={insertLink} title="Link toevoegen" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
             <LinkIcon className="h-3.5 w-3.5" />
           </button>
-          <div className="w-px h-5 bg-border mx-1" />
-          <button type="button" onClick={() => fileInputRef.current?.click()} title="Bijlage toevoegen" className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground transition-colors">
+          <div className="w-px h-4 bg-border mx-0.5" />
+          <button type="button" onClick={() => fileInputRef.current?.click()} title="Eigen bestand toevoegen" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
             <Paperclip className="h-3.5 w-3.5" />
           </button>
+        </div>
+
+        {pickerLoaded && cats.length > 0 && (
+          <div className="relative" ref={pickerRef}>
+            <button
+              type="button"
+              onClick={() => setPickerOpen((v) => !v)}
+              title="Toevoegen vanuit project"
+              className={cn(
+                "flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-lg text-[11px] font-semibold border transition-all",
+                pickerOpen
+                  ? "bg-[#1A535C] text-white border-[#1A535C] shadow-[0_2px_8px_rgba(26,83,92,0.25)]"
+                  : "bg-white text-[#1A535C] border-[#1A535C]/30 hover:border-[#1A535C]/60 hover:bg-[#1A535C]/[0.04]",
+              )}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Toevoegen vanuit project</span>
+              <ChevronDown className={cn("h-3 w-3 transition-transform", pickerOpen && "rotate-180")} />
+            </button>
+
+            {pickerOpen && (
+              <div className="absolute bottom-full mb-2 left-0 z-50 w-[320px] rounded-2xl border border-border bg-white shadow-[0_12px_40px_rgba(0,0,0,0.16)] overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-150">
+                <div className="px-3 py-2 border-b border-border/60 bg-gradient-to-b from-[#1A535C]/[0.05] to-transparent">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#1A535C]">Toevoegen vanuit project</span>
+                </div>
+                <div className="max-h-[320px] overflow-y-auto py-1">
+                  {cats.map((c) => (
+                    <div key={c.key}>
+                      <div className="sticky top-0 z-10 px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground bg-white/95 backdrop-blur-sm">{c.label}</div>
+                      {c.items.map((it) => {
+                        const added = isToegevoegd(it.id)
+                        const busy = bezigItemId === it.id
+                        return (
+                          <button
+                            key={it.id}
+                            type="button"
+                            onClick={it.onToggle}
+                            disabled={busy}
+                            className={cn(
+                              "group w-full flex items-center gap-2.5 px-3 py-1.5 text-left transition-colors disabled:opacity-60",
+                              added ? "bg-[#1A535C]/[0.05]" : "hover:bg-[#1A535C]/[0.05]",
+                            )}
+                          >
+                            <span className="h-7 w-7 rounded-md border border-border bg-white flex items-center justify-center flex-shrink-0">{it.icon}</span>
+                            <span className="flex-1 min-w-0 text-[12px] text-foreground truncate">{it.label}</span>
+                            {busy ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-[#1A535C] flex-shrink-0" />
+                            ) : added ? (
+                              <span className="h-5 w-5 rounded-full bg-[#1A535C] flex items-center justify-center flex-shrink-0"><Check className="h-3 w-3 text-white" /></span>
+                            ) : (
+                              <span className="h-5 w-5 rounded-full border border-border flex items-center justify-center flex-shrink-0 text-muted-foreground group-hover:border-[#1A535C]/40 group-hover:text-[#1A535C] transition-colors"><Plus className="h-3 w-3" /></span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         </div>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setOpvolgen((v) => !v)}
-            className="inline-flex items-center gap-2 text-[12px] text-foreground/70 hover:text-foreground transition-colors px-2"
+            className={cn(
+              "inline-flex items-center gap-2 h-8 px-2.5 rounded-lg text-[12px] font-medium border transition-all",
+              opvolgen
+                ? "bg-[#1A535C]/[0.06] text-[#1A535C] border-[#1A535C]/25"
+                : "text-foreground/70 border-transparent hover:bg-muted/60",
+            )}
             title="Markeer als 'wacht op reactie' voor opvolging"
           >
             <span className={cn("relative inline-block h-4 w-7 rounded-full transition-colors", opvolgen ? "bg-[#1A535C]" : "bg-[#D4D2CC]")}>
               <span className={cn("absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all", opvolgen ? "left-3.5" : "left-0.5")} />
             </span>
             Opvolgen
-            <span className="text-[10px] font-mono text-muted-foreground/80">⌘+Enter</span>
           </button>
+
+          <div className="relative" ref={scheduleRef}>
+            <button
+              type="button"
+              onClick={() => setScheduleOpen((v) => !v)}
+              disabled={!canSend}
+              title="Later versturen"
+              className={cn(
+                "h-9 w-9 rounded-xl border flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                scheduleOpen ? "bg-[#1A535C] text-white border-[#1A535C]" : "border-border bg-white text-muted-foreground hover:text-foreground hover:border-[#1A535C]/40",
+              )}
+            >
+              <Clock className="h-4 w-4" />
+            </button>
+            {scheduleOpen && (
+              <div className="absolute bottom-full mb-2 right-0 z-50 w-[260px] rounded-2xl border border-border bg-white shadow-[0_12px_40px_rgba(0,0,0,0.16)] p-3 animate-in fade-in slide-in-from-bottom-1 duration-150">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#1A535C] mb-2">Later versturen</div>
+                <input
+                  type="datetime-local"
+                  value={scheduleAt}
+                  onChange={(e) => setScheduleAt(e.target.value)}
+                  className="w-full rounded-lg border border-border px-2.5 py-1.5 text-[12px] text-foreground outline-none focus:border-[#1A535C]/50 focus:ring-2 focus:ring-[#1A535C]/15"
+                />
+                <button
+                  type="button"
+                  onClick={handleSchedule}
+                  disabled={!scheduleAt || isSending}
+                  className="mt-2 w-full h-8 rounded-lg bg-[#1A535C] text-white text-[12px] font-semibold hover:bg-[#16454d] transition-colors disabled:opacity-50"
+                >
+                  Inplannen
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
-            disabled
-            title="Inplannen (binnenkort)"
-            className="h-9 w-9 rounded-lg border border-border bg-white flex items-center justify-center text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Clock className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!canSend}
             className={cn(
-              "inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white transition-all min-w-[110px] justify-center",
+              "inline-flex items-center gap-1.5 h-9 px-4 rounded-xl text-[13px] font-semibold text-white transition-all min-w-[120px] justify-center active:scale-[0.98]",
               !canSend
                 ? "bg-[#9B9B95] cursor-not-allowed"
-                : "bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px]"
+                : "bg-gradient-to-b from-[#F15025] to-[#E04518] shadow-[0_2px_8px_rgba(241,80,37,0.3)] hover:shadow-[0_6px_18px_rgba(241,80,37,0.4)] hover:-translate-y-[1px]"
             )}
           >
             {isSending ? (
