@@ -11,10 +11,15 @@ import { getDocumentenByProject } from '@/services/documentenService'
 import { getOffertesByProject, getOfferteItems } from '@/services/offerteService'
 import { getFacturenByProject, getFactuurItems } from '@/services/factuurService'
 import { getWerkbonnenByProject, getWerkbonItems, getWerkbonFotos } from '@/services/werkbonService'
-import { generateOffertePDF, generateFactuurPDF } from '@/services/pdfService'
+import { generateOffertePDF, generateOpdrachtbevestigingPDF, generateFactuurPDF } from '@/services/pdfService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { getEmailsVoorProject, koppelEmailAanProject, type ProjectMail } from '@/services/emailProjectService'
+import { uploadEmailAttachment, deleteFile } from '@/services/storageService'
+import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem } from '@/types'
+
+const MAX_BIJLAGE_BYTES = 20 * 1024 * 1024
+const MAX_BIJLAGEN_TOTAAL_BYTES = 25 * 1024 * 1024
 
 interface ProjectMailComposerProps {
   project: Project
@@ -65,6 +70,13 @@ async function fileToBase64(file: File): Promise<string> {
     reader.onerror = reject
     reader.readAsDataURL(file)
   })
+}
+
+function base64ToBlob(base64: string, mimeType: string): Blob {
+  const bin = atob(base64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return new Blob([bytes], { type: mimeType || 'application/octet-stream' })
 }
 
 function getFileIcon(mimeType: string) {
@@ -362,13 +374,19 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files) return
+    let lopendTotaal = bijlagen.reduce((sum, b) => sum + (b.size || 0), 0)
     for (const file of Array.from(files)) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`${file.name} is groter dan 10MB`)
+      if (file.size > MAX_BIJLAGE_BYTES) {
+        toast.error(`${file.name} is groter dan ${MAX_BIJLAGE_BYTES / 1024 / 1024}MB`)
         continue
+      }
+      if (lopendTotaal + file.size > MAX_BIJLAGEN_TOTAAL_BYTES) {
+        toast.error(`Totale bijlagegrootte overschrijdt ${MAX_BIJLAGEN_TOTAAL_BYTES / 1024 / 1024}MB`)
+        break
       }
       try {
         const base64 = await fileToBase64(file)
+        lopendTotaal += file.size
         setBijlagen((prev) => [
           ...prev,
           { id: crypto.randomUUID(), filename: file.name, base64, size: file.size, mimeType: file.type || 'application/octet-stream', bron: 'upload' },
@@ -445,6 +463,26 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     } catch (err) {
       logger.error('Offerte-PDF genereren mislukt:', err)
       toast.error('Kon offerte-PDF niet genereren')
+    } finally {
+      setBezigItemId(null)
+    }
+  }
+
+  async function toggleOpdrachtbevestiging(o: Offerte) {
+    const obId = `${o.id}-ob`
+    if (isToegevoegd(obId)) { verwijderBron(obId); return }
+    setBezigItemId(obId)
+    try {
+      const items = await getOfferteItems(o.id)
+      const doc = await generateOpdrachtbevestigingPDF(o, items, klant || {}, { ...profile, primaireKleur: primaireKleur || '#2563eb' }, documentStyle)
+      const base64 = doc.output('datauristring').split(',')[1]
+      setBijlagen((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), filename: `Opdrachtbevestiging-${o.nummer}.pdf`, size: base64Size(base64), mimeType: 'application/pdf', base64, bron: 'offerte', bronId: obId },
+      ])
+    } catch (err) {
+      logger.error('Opdrachtbevestiging-PDF genereren mislukt:', err)
+      toast.error('Kon opdrachtbevestiging-PDF niet genereren')
     } finally {
       setBezigItemId(null)
     }
@@ -556,6 +594,11 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       items: projectOffertes.map((o) => ({ id: o.id, label: o.titel || `Offerte ${o.nummer}`, icon: <Receipt className="h-3.5 w-3.5" style={{ color: '#3A6B8C' }} />, onToggle: () => toggleOfferte(o) })),
     },
     {
+      key: 'opdrachtbevestigingen', label: 'Opdrachtbevestigingen', color: '#C03A18', count: projectOffertes.length,
+      tabIcon: <Receipt className="h-3.5 w-3.5" />,
+      items: projectOffertes.map((o) => ({ id: `${o.id}-ob`, label: o.titel || `Opdrachtbevestiging ${o.nummer}`, icon: <Receipt className="h-3.5 w-3.5" style={{ color: '#C03A18' }} />, onToggle: () => toggleOpdrachtbevestiging(o) })),
+    },
+    {
       key: 'facturen', label: 'Facturen', color: '#1A535C', count: projectFacturen.length,
       tabIcon: <CreditCard className="h-3.5 w-3.5" />,
       items: projectFacturen.map((f) => ({ id: f.id, label: f.titel || `Factuur ${f.nummer}`, icon: <CreditCard className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />, onToggle: () => toggleFactuur(f) })),
@@ -628,13 +671,40 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       toast.error('Vul een onderwerp in')
       return
     }
+    const totaalBytes = bijlagen.reduce((sum, b) => sum + (b.size || 0), 0)
+    if (totaalBytes > MAX_BIJLAGEN_TOTAAL_BYTES) {
+      toast.error(`Totale bijlagegrootte overschrijdt ${MAX_BIJLAGEN_TOTAAL_BYTES / 1024 / 1024}MB`)
+      return
+    }
     setIsSending(true)
+    // base64-bijlagen worden naar tijdelijke storage geüpload zodat de
+    // request-body klein blijft (Vercel ~4.5MB body-limiet). De server downloadt
+    // ze en ruimt ze na verzending op (cleanupAfter). tempPaths houdt de
+    // geüploade paden bij voor client-side opruimen als verzenden faalt.
+    const tempPaths: string[] = []
     try {
-      const attachments = bijlagen.map((b) =>
-        b.storagePath
-          ? { filename: b.filename, storagePath: b.storagePath, bucket: b.bucket || 'documenten', cleanupAfter: false }
-          : { filename: b.filename, content: b.base64 || '', encoding: 'base64' as const },
-      )
+      let attachments: Array<{ filename: string; storagePath?: string; bucket?: string; cleanupAfter?: boolean; content?: string; encoding?: 'base64' }>
+      try {
+        attachments = await Promise.all(
+          bijlagen.map(async (b) => {
+            if (b.storagePath) {
+              return { filename: b.filename, storagePath: b.storagePath, bucket: b.bucket || 'documenten', cleanupAfter: false }
+            }
+            const base64 = b.base64 || ''
+            if (isSupabaseConfigured()) {
+              const path = await uploadEmailAttachment(base64ToBlob(base64, b.mimeType), b.filename, userId || 'onbekend')
+              tempPaths.push(path)
+              return { filename: b.filename, storagePath: path, bucket: 'documenten', cleanupAfter: true }
+            }
+            return { filename: b.filename, content: base64, encoding: 'base64' as const }
+          }),
+        )
+      } catch (uploadErr) {
+        await Promise.allSettled(tempPaths.map((p) => deleteFile(p).catch(() => null)))
+        logger.error('Bijlage uploaden mislukt:', uploadErr)
+        toast.error(uploadErr instanceof Error ? uploadErr.message : 'Bijlage uploaden mislukt')
+        return
+      }
 
       const escapeHtml = (s: string) => s
         .replace(/&/g, '&amp;')
@@ -696,6 +766,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       // Venster open houden + gesprek verversen zodat het verzonden bericht in de thread verschijnt
       loadThread()
     } catch (err) {
+      if (tempPaths.length) await Promise.allSettled(tempPaths.map((p) => deleteFile(p).catch(() => null)))
       logger.error('Email verzenden mislukt:', err)
       toast.error('Email kon niet verzonden worden. Controleer SMTP-instellingen.')
     } finally {
