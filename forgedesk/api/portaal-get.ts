@@ -101,6 +101,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Haal portaal instellingen op (nodig voor gesloten/verlopen pagina's ook).
     // Org-first via portaal.organisatie_id (sinds 047), user_id-fallback voor legacy.
     const portaalOrgId = (portaal.organisatie_id as string | null) ?? null
+    // Bedrijfs-branding is org-breed: profiel van de organisatie-eigenaar i.p.v.
+    // de maker, zodat de portal van elk teamlid dezelfde branding toont.
+    let bedrijfUserId = portaal.user_id as string
+    if (portaalOrgId) {
+      const { data: brandOrg } = await supabaseAdmin
+        .from('organisaties')
+        .select('eigenaar_id')
+        .eq('id', portaalOrgId)
+        .maybeSingle()
+      if (brandOrg?.eigenaar_id) bedrijfUserId = brandOrg.eigenaar_id as string
+    }
     let appSettingsEarly: { portaal_instellingen: unknown } | null = null
     if (portaalOrgId) {
       const { data } = await supabaseAdmin
@@ -145,7 +156,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('bedrijfsnaam, bedrijfs_telefoon, bedrijfs_email, logo_url')
-        .eq('id', portaal.user_id)
+        .eq('id', bedrijfUserId)
         .single()
       return res.status(200).json({
         status: 'gesloten',
@@ -162,7 +173,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('bedrijfsnaam, bedrijfs_telefoon, bedrijfs_email, logo_url')
-        .eq('id', portaal.user_id)
+        .eq('id', bedrijfUserId)
         .single()
       return res.status(200).json({
         status: 'verlopen',
@@ -210,7 +221,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       supabaseAdmin
         .from('profiles')
         .select('bedrijfsnaam, logo_url, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website')
-        .eq('id', portaal.user_id)
+        .eq('id', bedrijfUserId)
         .single(),
       docStylePromise,
       supabaseAdmin
@@ -402,11 +413,29 @@ async function handleGoedkeuringToken(supabase: any, token: string, res: VercelR
 
   if (!gk) return null
 
+  // Bedrijfs-branding is org-breed: profiel van de organisatie-eigenaar i.p.v.
+  // de maker (tekening_goedkeuringen heeft geen organisatie_id-kolom).
+  let bedrijfUserId = gk.user_id as string
+  const { data: gkOwner } = await supabase
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', gk.user_id)
+    .maybeSingle()
+  const brandOrgId = (gkOwner?.organisatie_id as string | null) ?? null
+  if (brandOrgId) {
+    const { data: brandOrg } = await supabase
+      .from('organisaties')
+      .select('eigenaar_id')
+      .eq('id', brandOrgId)
+      .maybeSingle()
+    if (brandOrg?.eigenaar_id) bedrijfUserId = brandOrg.eigenaar_id as string
+  }
+
   if (gk.token_verloopt_op && new Date(gk.token_verloopt_op) < new Date()) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('bedrijfsnaam, bedrijfs_telefoon, bedrijfs_email, logo_url')
-      .eq('id', gk.user_id)
+      .eq('id', bedrijfUserId)
       .single()
     return res.status(200).json({
       status: 'verlopen',
@@ -433,11 +462,11 @@ async function handleGoedkeuringToken(supabase: any, token: string, res: VercelR
     .update(trackingUpdates)
     .eq('id', gk.id)
 
-  // Haal bedrijfsprofiel op
+  // Haal bedrijfsprofiel op (org-eigenaar)
   const { data: profile } = await supabase
     .from('profiles')
     .select('bedrijfsnaam, logo_url, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website')
-    .eq('id', gk.user_id)
+    .eq('id', bedrijfUserId)
     .single()
 
   // docStyle org-first via profile.organisatie_id (tekening_goedkeuringen

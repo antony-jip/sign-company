@@ -137,11 +137,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('factuur_id', factuurDbId)
       .order('volgorde', { ascending: true })
 
-    // Bedrijfsprofiel
+    // Bedrijfsprofiel — org-breed: lees het profiel van de organisatie-eigenaar
+    // i.p.v. de maker, zodat elk teamlid dezelfde bedrijfs-/betaalgegevens stuurt.
+    let bedrijfUserId = userId
+    const bedrijfOrgId = (factuur.organisatie_id as string | null) ?? null
+    if (bedrijfOrgId) {
+      const { data: org } = await supabaseAdmin
+        .from('organisaties')
+        .select('eigenaar_id')
+        .eq('id', bedrijfOrgId)
+        .maybeSingle()
+      if (org?.eigenaar_id) bedrijfUserId = org.eigenaar_id as string
+    }
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('bedrijfsnaam, bedrijfs_adres, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website, kvk_nummer, btw_nummer, iban, logo_url')
-      .eq('id', userId)
+      .eq('id', bedrijfUserId)
       .maybeSingle()
 
     // Klant
