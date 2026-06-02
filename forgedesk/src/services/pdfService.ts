@@ -527,6 +527,7 @@ export async function generateOffertePDF(
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const titel = options?.documentTitel || 'Offerte'
+  const isOpdrachtbevestiging = titel === 'Opdrachtbevestiging'
 
   // Wrap doc.addPage zodat ELKE nieuwe pagina (van autoTable, manual flowText page-breaks,
   // bijlage-loop, etc.) automatisch het briefpapier als achtergrond krijgt VÓÓR de content.
@@ -614,17 +615,33 @@ export async function generateOffertePDF(
   y += 14
   doc.setFontSize(baseFontSize)
 
-  // Introductietekst (optioneel) — komt onder het metadata blok, boven de items
-  if (offerte.intro_tekst && offerte.intro_tekst.trim()) {
+  // Introductietekst — bij opdrachtbevestiging een vaste tekst, anders de
+  // offerte-intro (optioneel). Komt onder het metadata blok, boven de items.
+  const introTekst = isOpdrachtbevestiging
+    ? 'Bedankt voor je opdracht. We gaan er direct mee aan de slag. Heb je vragen of wil je iets aanpassen? Laat het weten, dan regelen we dat.'
+    : (offerte.intro_tekst?.trim() || '')
+  if (introTekst) {
     doc.setFont(bodyFont, 'normal')
     doc.setFontSize(baseFontSize)
     doc.setTextColor(...textColor)
     const introLines = doc.splitTextToSize(
-      offerte.intro_tekst.trim(),
+      introTekst,
       pageWidth - margins.left - margins.right
     )
     doc.text(introLines, margins.left, y)
     y += introLines.length * 5 + 8
+  }
+
+  // Levertijd-regel — alleen op de opdrachtbevestiging, direct onder de intro.
+  if (isOpdrachtbevestiging) {
+    doc.setFontSize(baseFontSize)
+    doc.setTextColor(...textColor)
+    doc.setFont(bodyFont, 'bold')
+    doc.text('Levertijd:', margins.left, y)
+    const levertijdLabelWidth = doc.getTextWidth('Levertijd:')
+    doc.setFont(bodyFont, 'normal')
+    doc.text('in overleg', margins.left + levertijdLabelWidth + 1.5, y)
+    y += 13
   }
 
   // FIX 13: Split verplichte en optionele items
@@ -773,6 +790,8 @@ export async function generateOffertePDF(
   const tableMarginLeft = Math.max(0, margins.left - 4)
   const tableMarginRight = Math.max(0, margins.right - 4)
 
+  // Itemtabel wordt verborgen op de opdrachtbevestiging.
+  if (!isOpdrachtbevestiging) {
   autoTable(doc, {
     startY: y,
     head: [[
@@ -806,6 +825,7 @@ export async function generateOffertePDF(
     // Briefpapier op vervolgpagina's wordt automatisch getekend door de
     // doc.addPage wrapper bovenaan generateOffertePDF.
   })
+  }
 
   // Totals
   const finalY = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || y + 20
@@ -853,8 +873,8 @@ export async function generateOffertePDF(
   doc.text(formatCurrency(offerte.totaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY -= 5 // compenseer zodat onderstaande logica niet stuk gaat (delta wordt later +20)
 
-  // FIX 13: Optionele items sectie
-  if (optioneleItems.length > 0) {
+  // FIX 13: Optionele items sectie — verborgen op de opdrachtbevestiging.
+  if (!isOpdrachtbevestiging && optioneleItems.length > 0) {
     totalsY += 20
     // Check page space
     if (totalsY > doc.internal.pageSize.getHeight() - 60) {
@@ -944,8 +964,9 @@ export async function generateOffertePDF(
 
   const contentWidth = pageWidth - margins.left - margins.right
 
-  // Outro tekst (optioneel) — staat na de totalen, voor notities/voorwaarden
-  if (offerte.outro_tekst && offerte.outro_tekst.trim()) {
+  // Outro tekst (optioneel) — staat na de totalen, voor notities/voorwaarden.
+  // Verborgen op de opdrachtbevestiging.
+  if (!isOpdrachtbevestiging && offerte.outro_tekst && offerte.outro_tekst.trim()) {
     advanceY(15)
     doc.setFont(bodyFont, 'normal')
     doc.setFontSize(baseFontSize)
@@ -954,8 +975,8 @@ export async function generateOffertePDF(
     totalsY = flowText(outroLines, margins.left, totalsY, 5)
   }
 
-  // Notes
-  if (offerte.notities) {
+  // Notes — verborgen op de opdrachtbevestiging.
+  if (!isOpdrachtbevestiging && offerte.notities) {
     advanceY(20)
     drawSectionHeader('Opmerkingen:')
     doc.setFont(bodyFont, 'normal')
@@ -966,8 +987,8 @@ export async function generateOffertePDF(
     totalsY += 5
   }
 
-  // Terms and conditions
-  if (offerte.voorwaarden) {
+  // Terms and conditions — verborgen op de opdrachtbevestiging.
+  if (!isOpdrachtbevestiging && offerte.voorwaarden) {
     advanceY(15)
     drawSectionHeader('Voorwaarden:')
     doc.setFont(bodyFont, 'normal')
