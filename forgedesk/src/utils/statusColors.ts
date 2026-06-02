@@ -36,6 +36,8 @@ export function getStatusBadgeClass(status: string): string {
     'gepauzeerd':   'badge-grijs',
     'on-hold':      'badge-grijs',
     'te-plannen':   'badge-flame',
+    'akkoord-klant':'badge-petrol',
+    'ingepland':    'badge-blauw',
     'geannuleerd':  'badge-flame',
 
     // Taken
@@ -106,6 +108,8 @@ export function getStatusLabel(status: string): string {
     'gepauzeerd':    'Gepauzeerd',
     'on-hold':       'On-hold',
     'te-plannen':    'Te plannen',
+    'akkoord-klant': 'Akkoord klant',
+    'ingepland':     'Ingepland',
     'geannuleerd':   'Geannuleerd',
     'todo':          'Open',
     'bezig':         'Bezig',
@@ -145,6 +149,8 @@ export function getRowAccentClass(status: string): string {
     'opgeleverd':  'border-l-[#2D6B48]',
     'te-factureren':'border-l-[#2D6B48]',
     'gefactureerd':'border-l-[#2D6B48]',
+    'akkoord-klant':'border-l-[#1A535C]',
+    'ingepland':   'border-l-[#2A5580]',
 
     // Flame
     'verstuurd':   'border-l-[#F15025]',
@@ -204,6 +210,7 @@ export function getStatusPillTone(status: string): PillTone {
     'gepauzeerd':     'cream',
 
     'actief':         'mist',
+    'ingepland':      'mist',
     'in-uitvoering':  'mist',
     'productie':      'mist',
     'montage':        'mist',
@@ -225,6 +232,7 @@ export function getStatusPillTone(status: string): PillTone {
     'gecrediteerd':   'lavender',
 
     'afgerond':       'sage',
+    'akkoord-klant':  'sage',
     'opgeleverd':     'sage',
     'goedgekeurd':    'sage',
     'betaald':        'sage',

@@ -957,17 +957,18 @@ export function MontagePlanningLayout() {
         const created = await createMontageAfspraak(payload);
         logCreate({ user, medewerkers, entityType: 'montage', entityId: created.id });
         setAfspraken((prev) => [...prev, created]);
-        // Auto-update project from "te-plannen" to "gepland"
+        // Montage aangemaakt -> project automatisch op "ingepland" (alleen vooruit)
         if (formData.project_id) {
           const project = projecten.find((p) => p.id === formData.project_id);
-          if (project && project.status === "te-plannen") {
-            await updateProject(project.id, { status: "gepland" }).catch(() => null);
+          const vanaf = ["te-plannen", "gepland", "in-review", "akkoord-klant", "actief"];
+          if (project && vanaf.includes(project.status)) {
+            await updateProject(project.id, { status: "ingepland" }).catch(() => null);
             if (user?.id) {
               const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
-              logWijziging({ userId: user.id, entityType: 'project', entityId: project.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: 'te-plannen', nieuweWaarde: 'gepland' })
+              logWijziging({ userId: user.id, entityType: 'project', entityId: project.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: project.status, nieuweWaarde: 'ingepland' })
             }
             setProjecten((prev) =>
-              prev.map((p) => p.id === project.id ? { ...p, status: "gepland" as const } : p)
+              prev.map((p) => p.id === project.id ? { ...p, status: "ingepland" as const } : p)
             );
           }
         }

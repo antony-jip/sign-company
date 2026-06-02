@@ -675,3 +675,29 @@ client-side onder de ingelogde sessie, geen dubbele fill, bedragen kloppen ook b
    acceptabel voor v1 — gebruiker loopt 'm na in de editor. Geen RPC/transactie beschikbaar.
 4. **Beschrijving-fallback** (`offerteService.ts`, `product_naam.join(' + ')`) kan lang
    worden bij veel regels in één tarief. Cosmetisch.
+
+---
+
+## Mail-composer + cron storagePath + project status-flow (akkoord-klant / ingepland) — 2026-06-02
+
+GATE-REVIEW senior-backend-reviewer: **AKKOORD-MET-OPMERKINGEN** (geen blokkades).
+
+1. **Geplande "Opvolgen" landt niet in Wacht-tab.** `ingeplande_berichten` slaat
+   `wacht_op_reactie` niet op (insert in `api/send-email.ts`), en de cron-`emails`-insert
+   (`api/cron-verzend-geplande-berichten.ts`) laat het veld weg. De directe route zet het wel
+   + draait de Sales-Inbox "vervangen-niet-stapelen". Geplande opvolging werkt dus nog niet
+   end-to-end. Bekende beperking (gepland-pad is nieuw, geen regressie).
+2. **Inline base64-afbeeldingen → CID niet geconverteerd in de cron** (`:139`), anders dan
+   `api/send-email.ts:259-276`. Geplande mails met geplakte afbeeldingen kunnen groot/afgewezen
+   worden. Pre-existing, nu relevanter doordat de composer rijkere content stuurt.
+3. **Re-send risico bij cron (pre-existing):** volgorde sendMail -> status='verzonden' ->
+   emails-insert. Faalt de status-update na geslaagde sendMail, dan opnieuw verzonden bij
+   volgende run. storagePath maakt mails zwaarder/trager -> iets hogere timeoutkans.
+   Overweeg: status flippen vóór sendMail, of idempotency-guard.
+4. **Dubbele goedkeur-logica** in `ForgeQuotePreview` en `OfferteDetail` -> beide naar
+   `akkoord-klant`. Allebei alleen-vooruit met dezelfde vanaf-set; geen terugdraai-risico,
+   wel logica op twee plekken.
+
+Goed bevonden: storagePath-cleanup veilig (cleanupAfter:false voor projectbijlagen, cron doet
+geen remove); migratie 118 idempotent + behoudt alle statussen; api/* blijft standalone;
+thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisatie_id.

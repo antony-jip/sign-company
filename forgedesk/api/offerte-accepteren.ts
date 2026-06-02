@@ -179,6 +179,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? (await supabaseAdmin.from('portaal_items').select('project_id').eq('id', portaalItems[0].id).single()).data?.project_id
       : null
 
+    // Project automatisch op 'akkoord-klant' zetten bij klant-akkoord (alleen vooruit).
+    const projIdVoorStatus = offerte.project_id || projectId
+    if (projIdVoorStatus) {
+      const { data: proj } = await supabaseAdmin.from('projecten').select('status').eq('id', projIdVoorStatus).maybeSingle()
+      if (proj && ['gepland', 'in-review', 'te-plannen'].includes(proj.status)) {
+        await supabaseAdmin.from('projecten').update({ status: 'akkoord-klant' }).eq('id', projIdVoorStatus)
+      }
+    }
+
     await supabaseAdmin.from('notificaties').insert([
       {
         id: crypto.randomUUID(),

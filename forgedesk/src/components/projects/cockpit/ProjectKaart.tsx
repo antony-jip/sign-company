@@ -43,6 +43,8 @@ const statusIcons: Record<string, { color: string; bg: string }> = {
   gepland:         { color: 'text-mod-klanten-text',     bg: 'bg-mod-klanten-light border-mod-klanten-border' },
   actief:          { color: 'text-mod-projecten-text',      bg: 'bg-mod-projecten-light border-mod-projecten-border' },
   'in-review':     { color: 'text-mod-taken-text',    bg: 'bg-mod-taken-light border-mod-taken-border' },
+  'akkoord-klant': { color: 'text-mod-projecten-text',      bg: 'bg-mod-projecten-light border-mod-projecten-border' },
+  'ingepland':     { color: 'text-mod-klanten-text',     bg: 'bg-mod-klanten-light border-mod-klanten-border' },
   afgerond:        { color: 'text-mod-projecten-text',      bg: 'bg-mod-projecten-light border-mod-projecten-border' },
   'on-hold':       { color: 'text-flame-text',    bg: 'bg-flame-light border-flame-border' },
   'te-factureren': { color: 'text-mod-email-text',  bg: 'bg-mod-email-light border-mod-email-border' },
@@ -57,8 +59,10 @@ function getStatusBadgeStyle(status: string): { bg: string; color: string } {
       return { bg: '#EEEEED', color: '#5A5A55' }
     case 'actief':
     case 'afgerond':
+    case 'akkoord-klant':
       return { bg: '#E2F0F0', color: '#1A535C' }
     case 'in-review':
+    case 'ingepland':
       return { bg: '#EEEEED', color: '#5A5A55' }
     case 'on-hold':
       return { bg: '#FDE8E1', color: '#D4453A' }

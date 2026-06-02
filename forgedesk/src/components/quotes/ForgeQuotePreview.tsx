@@ -165,13 +165,13 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           if (fetchedOfferte.project_id) {
             // Activate existing project
             const project = await getProject(fetchedOfferte.project_id)
-            if (project && project.status === 'gepland') {
-              await updateProject(project.id, { status: 'actief' })
+            if (project && ['gepland', 'in-review', 'te-plannen'].includes(project.status)) {
+              await updateProject(project.id, { status: 'akkoord-klant' })
               if (user?.id) {
                 const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
-                logWijziging({ userId: user.id, entityType: 'project', entityId: project.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: 'gepland', nieuweWaarde: 'actief' })
+                logWijziging({ userId: user.id, entityType: 'project', entityId: project.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: project.status, nieuweWaarde: 'akkoord-klant' })
               }
-              toast.success(`Project "${project.naam}" is nu actief`)
+              toast.success(`Project "${project.naam}" staat nu op Akkoord klant`)
             }
           } else {
             // Auto-create project from approved quote

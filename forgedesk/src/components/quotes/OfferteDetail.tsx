@@ -14,6 +14,8 @@ import {
   createPortaalItem,
   getPortaalByProject,
   getPortaalItems,
+  getProject,
+  updateProject,
 } from '@/services/supabaseService'
 import type { Offerte, OfferteItem, Klant, OfferteActiviteit } from '@/types'
 import { cn, formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils'
@@ -390,6 +392,22 @@ export function OfferteDetail() {
       const updated = await updateOfferte(offerte.id, updates)
       setOfferte(updated)
       setStatusOpen(false)
+
+      // Project automatisch mee laten lopen (alleen vooruit): offerte verstuurd -> in-review, akkoord -> akkoord-klant
+      if (offerte.project_id && (newStatus === 'verzonden' || newStatus === 'goedgekeurd')) {
+        try {
+          const project = await getProject(offerte.project_id)
+          const doel = newStatus === 'goedgekeurd' ? 'akkoord-klant' : 'in-review'
+          const vanaf = newStatus === 'goedgekeurd'
+            ? ['gepland', 'in-review', 'te-plannen']
+            : ['gepland', 'te-plannen']
+          if (project && vanaf.includes(project.status)) {
+            await updateProject(project.id, { status: doel })
+          }
+        } catch (projErr) {
+          logger.error('Projectstatus sync mislukt:', projErr)
+        }
+      }
       // Audit log
       if (user?.id) {
         const naam = user.user_metadata?.voornaam ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim() : user.email || ''

@@ -319,6 +319,8 @@ const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
   actief: 'Actief',
   'in-review': 'In review',
+  'akkoord-klant': 'Akkoord klant',
+  'ingepland': 'Ingepland',
   afgerond: 'Afgerond',
   'on-hold': 'On-hold',
   'te-factureren': 'Te factureren',
@@ -331,6 +333,8 @@ const statusOpties = [
   { value: 'te-plannen', label: 'Te plannen' },
   { value: 'gepland', label: 'Gepland' },
   { value: 'in-review', label: 'In review' },
+  { value: 'akkoord-klant', label: 'Akkoord klant' },
+  { value: 'ingepland', label: 'Ingepland' },
   { value: 'te-factureren', label: 'Te factureren' },
   { value: 'gefactureerd', label: 'Gefactureerd' },
   { value: 'on-hold', label: 'On-hold' },
@@ -343,6 +347,8 @@ function getStatusDotColor(status: string): string {
     case 'gepland': return 'bg-[#2A5580]'
     case 'te-plannen': return 'bg-[#F15025]'
     case 'in-review': return 'bg-[#5A5A55]'
+    case 'akkoord-klant': return 'bg-[#1A535C]'
+    case 'ingepland': return 'bg-[#2A5580]'
     case 'afgerond': return 'bg-[#1A535C]'
     case 'on-hold': return 'bg-[#5A5A55]'
     case 'te-factureren': return 'bg-[#2D6B48]'

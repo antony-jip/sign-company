@@ -62,6 +62,8 @@ const statusOpties = [
   { value: 'te-plannen', label: 'Te plannen' },
   { value: 'gepland', label: 'Gepland' },
   { value: 'in-review', label: 'In review' },
+  { value: 'akkoord-klant', label: 'Akkoord klant' },
+  { value: 'ingepland', label: 'Ingepland' },
   { value: 'te-factureren', label: 'Te factureren' },
   { value: 'gefactureerd', label: 'Gefactureerd' },
   { value: 'on-hold', label: 'On-hold' },
@@ -72,6 +74,8 @@ const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
   actief: 'Actief',
   'in-review': 'In review',
+  'akkoord-klant': 'Akkoord klant',
+  'ingepland': 'Ingepland',
   afgerond: 'Afgerond',
   'on-hold': 'On-hold',
   'te-factureren': 'Te factureren',
@@ -87,7 +91,10 @@ function getStatusTextColor(status: string): string {
       return '#8A7A4A'
     case 'actief':
     case 'in-review':
+    case 'ingepland':
       return '#3A5A9A'
+    case 'akkoord-klant':
+      return '#1A535C'
     case 'te-factureren':
     case 'gefactureerd':
     case 'afgerond':
@@ -106,6 +113,8 @@ function getStatusDotColor(status: string): string {
     case 'gepland': return 'bg-[#2A5580]'
     case 'te-plannen': return 'bg-[#F15025]'
     case 'in-review': return 'bg-[#5A5A55]'
+    case 'akkoord-klant': return 'bg-[#1A535C]'
+    case 'ingepland': return 'bg-[#2A5580]'
     case 'afgerond': return 'bg-[#1A535C]'
     case 'on-hold': return 'bg-[#5A5A55]'
     case 'te-factureren': return 'bg-[#2D6B48]'
@@ -120,13 +129,15 @@ function getStatusDotColor(status: string): string {
 /** Workflow-proximity ordering — given a current status, which transitions are most likely next */
 const STATUS_WORKFLOW: Record<string, string[]> = {
   'te-plannen':    ['gepland', 'actief', 'on-hold'],
-  gepland:         ['actief', 'te-plannen', 'on-hold'],
-  actief:          ['in-review', 'te-factureren', 'on-hold', 'te-plannen'],
-  'in-review':     ['actief', 'te-factureren', 'te-plannen'],
-  'te-factureren': ['gefactureerd', 'actief'],
+  gepland:         ['in-review', 'akkoord-klant', 'on-hold'],
+  'in-review':     ['akkoord-klant', 'actief', 'on-hold'],
+  'akkoord-klant': ['actief', 'ingepland', 'on-hold'],
+  actief:          ['ingepland', 'afgerond', 'in-review', 'on-hold'],
+  ingepland:       ['actief', 'afgerond', 'on-hold'],
+  afgerond:        ['te-factureren', 'actief'],
+  'te-factureren': ['gefactureerd', 'afgerond'],
   gefactureerd:    ['afgerond', 'te-factureren'],
   'on-hold':       ['actief', 'te-plannen'],
-  afgerond:        ['actief'],
 }
 
 /** Hex codes for status indicators — unified across left-edge stripe and inline dot */

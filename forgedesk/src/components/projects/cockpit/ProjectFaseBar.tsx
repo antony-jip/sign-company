@@ -1,22 +1,24 @@
 import { motion } from 'framer-motion'
-import { Calendar, Hammer, Eye, Receipt, Smile } from 'lucide-react'
+import { Calendar, Hammer, Eye, Receipt, Smile, CheckCircle2 } from 'lucide-react'
 import type { Project } from '@/types'
 import { formatAmount, cn } from '@/lib/utils'
 
 const FASES = [
-  { key: 'gepland',        label: 'Gepland',        caption: 'klaar om te starten', Icon: Calendar },
-  { key: 'actief',         label: 'Actief',         caption: 'aan het werk',     Icon: Hammer   },
-  { key: 'in-review',      label: 'Review',         caption: 'klaar voor goedkeuring', Icon: Eye },
-  { key: 'te-factureren',  label: 'Te factureren',  caption: 'klaar om te incasseren', Icon: Receipt },
-  { key: 'afgerond',       label: 'Gedaan',         caption: 'voltooid',         Icon: Smile    },
+  { key: 'gepland',        label: 'Gepland',        caption: 'klaar om te starten',    Icon: Calendar     },
+  { key: 'in-review',      label: 'In review',      caption: 'offerte gestuurd',       Icon: Eye          },
+  { key: 'akkoord-klant',  label: 'Akkoord klant',  caption: 'klant akkoord, te plannen', Icon: CheckCircle2 },
+  { key: 'actief',         label: 'Actief',         caption: 'aan het werk',           Icon: Hammer       },
+  { key: 'ingepland',      label: 'Ingepland',      caption: 'montage ingepland',      Icon: Receipt      },
+  { key: 'afgerond',       label: 'Gedaan',         caption: 'klaar om te factureren', Icon: Smile        },
 ] as const
 
 function faseIndex(status: string): number {
   const idx = FASES.findIndex(f => f.key === status)
   if (idx >= 0) return idx
   if (status === 'te-plannen') return 0
-  if (status === 'on-hold') return 1
-  if (status === 'gefactureerd') return 4
+  if (status === 'on-hold') return 3
+  if (status === 'te-factureren') return 5
+  if (status === 'gefactureerd') return 5
   return 1
 }
 

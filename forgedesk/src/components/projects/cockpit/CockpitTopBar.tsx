@@ -32,6 +32,8 @@ const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
   actief: 'Actief',
   'in-review': 'In review',
+  'akkoord-klant': 'Akkoord klant',
+  'ingepland': 'Ingepland',
   afgerond: 'Afgerond',
   'on-hold': 'On-hold',
   'te-factureren': 'Te factureren',
