@@ -701,3 +701,7 @@ GATE-REVIEW senior-backend-reviewer: **AKKOORD-MET-OPMERKINGEN** (geen blokkades
 Goed bevonden: storagePath-cleanup veilig (cleanupAfter:false voor projectbijlagen, cron doet
 geen remove); migratie 118 idempotent + behoudt alle statussen; api/* blijft standalone;
 thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisatie_id.
+
+> Update: opmerking 1 (geplande Opvolgen) opgelost — `wacht_op_reactie` wordt nu
+> opgeslagen op `ingeplande_berichten` (migratie 119) en door de cron op de
+> `emails`-rij gezet, inclusief de "vervangen-niet-stapelen" Sales-Inbox-logica.

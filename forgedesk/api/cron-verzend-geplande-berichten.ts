@@ -35,6 +35,12 @@ function decryptPassword(encrypted: string): string {
   return decrypted
 }
 
+function extractBareEmail(address: string): string {
+  const trimmed = address.trim()
+  const match = trimmed.match(/<([^>]+)>/)
+  return (match?.[1] || trimmed).toLowerCase()
+}
+
 interface UserCreds {
   gmail_address: string
   password: string
@@ -185,7 +191,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // (gelijk aan de directe-verzendroute in api/send-email.ts).
         try {
           const effectiveThreadId = bericht.thread_id || crypto.randomUUID()
-          await supabaseAdmin.from('emails').insert({
+          const wachtOpReactie = bericht.wacht_op_reactie ?? false
+          const { data: insertedMail } = await supabaseAdmin.from('emails').insert({
             user_id: bericht.user_id,
             message_id: sentMessageId,
             in_reply_to: bericht.in_reply_to || null,
@@ -206,8 +213,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             has_attachments: bijlagen.length > 0,
             gmail_id: '',
             cached_at: new Date().toISOString(),
+            wacht_op_reactie: wachtOpReactie,
             beantwoord: false,
-          })
+          }).select('id').single()
+
+          // Sales Inbox: vervangen-niet-stapelen — sluit eerdere openstaande
+          // wacht-mails naar hetzelfde adres af (gelijk aan api/send-email.ts).
+          if (wachtOpReactie && insertedMail?.id) {
+            const bareEmail = extractBareEmail(bericht.ontvanger)
+            if (bareEmail) {
+              await supabaseAdmin
+                .from('emails')
+                .update({ wacht_op_reactie: false, vervangen_door_email_id: insertedMail.id })
+                .eq('user_id', bericht.user_id)
+                .eq('wacht_op_reactie', true)
+                .eq('beantwoord', false)
+                .neq('id', insertedMail.id)
+                .ilike('aan', `%${bareEmail}%`)
+            }
+          }
         } catch (saveErr) {
           console.error('[cron] Verzonden mail opslaan mislukt:', bericht.id, saveErr)
         }

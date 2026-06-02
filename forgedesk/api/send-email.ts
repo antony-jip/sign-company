@@ -217,6 +217,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           status: 'wachtend',
           in_reply_to: in_reply_to || null,
           thread_id: thread_id || null,
+          wacht_op_reactie,
         })
         .select('id')
         .single()
