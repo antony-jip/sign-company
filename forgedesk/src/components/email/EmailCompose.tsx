@@ -79,6 +79,11 @@ function getFileTypeColor(name: string): string {
   }
 }
 
+// Een sleep-actie bevat bestanden (niet bv. tekst-selectie of een afbeelding ín de editor).
+function dragHasFiles(e: React.DragEvent): boolean {
+  return Array.from(e.dataTransfer.types).includes('Files')
+}
+
 export function EmailCompose({
   open,
   onOpenChange,
@@ -125,6 +130,8 @@ export function EmailCompose({
   const [attachments, setAttachments] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+  // Teller tegen flikkeren: dragleave vuurt ook bij het passeren van child-elementen.
+  const dragDepth = useRef(0)
 
   // Blob-URLs voor image-thumbnails. Vernieuwt zodra `attachments` muteert; cleanup revoked oude URLs nadat React de nieuwe heeft gerendered.
   const imagePreviewUrls = useMemo(() => {
@@ -526,17 +533,61 @@ export function EmailCompose({
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    if (!dragHasFiles(e)) return
+    e.preventDefault()
+    dragDepth.current += 1
+    setIsDragging(true)
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (!dragHasFiles(e)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!dragHasFiles(e)) return
+    dragDepth.current -= 1
+    if (dragDepth.current <= 0) {
+      dragDepth.current = 0
+      setIsDragging(false)
+    }
+  }, [])
+
   const handleDrop = useCallback((e: React.DragEvent) => {
+    dragDepth.current = 0
+    if (!dragHasFiles(e)) return
     e.preventDefault()
     setIsDragging(false)
     const files = Array.from(e.dataTransfer.files)
-    setAttachments(prev => [...prev, ...files])
+    if (files.length) setAttachments(prev => [...prev, ...files])
   }, [])
 
   if (!open) return null
 
   return (
-    <div className="flex flex-col h-full bg-white min-w-0 [&:focus-visible]:shadow-none">
+    <div
+      className="relative flex flex-col h-full bg-white min-w-0 [&:focus-visible]:shadow-none"
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+        {/* Sleep-overlay — dekt het hele paneel zodat je overal kunt droppen */}
+        {isDragging && (
+          <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
+            <div className="absolute inset-3 rounded-2xl border-2 border-dashed border-[#1A535C]/40 bg-[#1A535C]/[0.05] backdrop-blur-[1px]" />
+            <div className="relative flex flex-col items-center gap-2.5 text-[#1A535C]">
+              <div className="h-14 w-14 rounded-2xl bg-white shadow-[0_4px_20px_rgba(26,83,92,0.18)] flex items-center justify-center">
+                <Paperclip className="h-6 w-6" />
+              </div>
+              <p className="text-[15px] font-semibold leading-none">Sleep bestanden hierheen</p>
+              <p className="text-[12px] text-[#1A535C]/70 leading-none">om ze als bijlage toe te voegen</p>
+            </div>
+          </div>
+        )}
+
         {/* Panel header — title + back affordance, matches list-header pattern */}
         <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-border/60 flex-shrink-0">
           <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
@@ -865,15 +916,9 @@ export function EmailCompose({
               ref={editorRef}
               contentEditable
               suppressContentEditableWarning
-              className={cn(
-                'min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 [&_img]:max-w-[200px]',
-                isDragging && 'ring-2 ring-[#1A535C]/20 ring-inset rounded-xl bg-[#1A535C]/[0.02]',
-              )}
+              className="min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 [&_img]:max-w-[200px]"
               data-placeholder="Schrijf je bericht..."
               style={{ caretColor: '#1A535C', boxShadow: 'none', outline: 'none' }}
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault()
@@ -887,25 +932,29 @@ export function EmailCompose({
 
             {/* Attachments */}
             {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 py-4">
+              <div className="flex flex-wrap gap-2.5 py-4">
                 {attachments.map((file, i) => {
                   const previewUrl = imagePreviewUrls.get(file)
                   return (
-                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background text-[14px] group">
+                    <div
+                      key={i}
+                      className="group inline-flex items-center gap-2.5 pl-2 pr-2.5 py-2 rounded-xl bg-[#F4F3F0] border border-border/50 hover:border-border transition-colors duration-150"
+                    >
                       {previewUrl ? (
-                        <img src={previewUrl} alt={file.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                        <img src={previewUrl} alt={file.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
                       ) : (
-                        <div className={cn('w-6 h-6 rounded text-white text-[8px] font-bold flex items-center justify-center', getFileTypeColor(file.name))}>
+                        <div className={cn('w-9 h-9 rounded-lg text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0', getFileTypeColor(file.name))}>
                           {getFileExt(file.name)}
                         </div>
                       )}
-                      <span className="text-foreground/70 max-w-[150px] truncate text-[13px]">{file.name}</span>
-                      <span className="text-muted-foreground text-[11px]">{formatFileSize(file.size)}</span>
+                      <span className="text-foreground/90 max-w-[200px] truncate text-[13.5px] leading-none">{file.name}</span>
+                      <span className="text-muted-foreground text-[12px] leading-none flex-shrink-0">{formatFileSize(file.size)}</span>
                       <button
                         onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="ml-0.5 h-5 w-5 flex items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-black/[0.06] hover:text-foreground transition-all duration-150 flex-shrink-0"
+                        title="Bijlage verwijderen"
                       >
-                        <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   )
