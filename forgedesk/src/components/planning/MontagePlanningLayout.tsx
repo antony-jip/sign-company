@@ -440,6 +440,18 @@ export function MontagePlanningLayout() {
 
   const todayStr = formatDate(new Date());
   const weather = useWeekWeather(weekDates);
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('doen_planning_teplannen_collapsed') === '1';
+  });
+  function toggleSidebar() {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('doen_planning_teplannen_collapsed', next ? '1' : '0'); } catch { /* noop */ }
+      return next;
+    });
+  }
   const feestdagen = useMemo(() => getNederlandseFeestdagen(year), [year]);
 
   const loadData = useCallback(async () => {
@@ -1406,7 +1418,7 @@ export function MontagePlanningLayout() {
 
     // Zelfde box-look als /taken: uniform lichte petrol-vulling + petrol accent-stripe.
     // (Afgerond houdt eigen surface; conflict/urgent-states blijven via ring/cfg zichtbaar.)
-    const cardStyle: React.CSSProperties = { borderLeftColor: '#1A535C' };
+    const cardStyle: React.CSSProperties = { borderLeftColor: isAfgerond ? '#CBC9C4' : '#1A535C' };
     if (!isAfgerond) cardStyle.backgroundColor = 'rgba(26,83,92,0.035)';
     if (isPersonal) cardStyle.minHeight = `${getCardMinHeight(afspraak.start_tijd, afspraak.eind_tijd)}px`;
 
@@ -1436,7 +1448,7 @@ export function MontagePlanningLayout() {
         className={cn(
           "bg-card border border-border/40 border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] group/card relative",
           isTimegrid ? "h-full overflow-hidden rounded-none" : "rounded-none mb-1.5 hover:-translate-y-[1px]",
-          isAfgerond && "[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)]",
+          isAfgerond && "bg-[hsl(40,10%,96.5%)]",
           hasConflict && "ring-1 ring-[#F0C8BC]",
           draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30"
         )}
@@ -1449,9 +1461,9 @@ export function MontagePlanningLayout() {
             onClick={(e) => { e.stopPropagation(); toggleAfgerond(afspraak); }}
             title="Markeer als gepland"
             aria-label="Markeer als gepland"
-            className="absolute top-1 right-1 rounded-full p-0.5 transition-opacity z-10 opacity-100 text-[#2A8A8A] hover:bg-[#2A8A8A]/10"
+            className="absolute top-1 right-1 rounded-full p-0.5 transition-opacity z-10 opacity-100 text-muted-foreground/70 hover:bg-muted"
           >
-            <CheckCircle2 className="h-3.5 w-3.5 fill-[#2A8A8A] text-white" />
+            <CheckCircle2 className="h-3.5 w-3.5 fill-[#B4BEB9] text-white" />
           </button>
         ) : (() => {
           const project = afspraak.project_id ? projecten.find((p) => p.id === afspraak.project_id) : null;
@@ -1659,7 +1671,7 @@ export function MontagePlanningLayout() {
           {werkdagen.map((date) => {
             const w = getWeatherForDate(weather, date);
             return (
-              <div key={formatDate(date)} className="border-r last:border-r-0 border-border">
+              <div key={formatDate(date)} className="border-r last:border-r-0 border-border/50">
                 {renderWeatherCell(w)}
               </div>
             );
@@ -1683,7 +1695,7 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "group relative text-center py-1.5 border-r last:border-r-0 border-border",
+                  "group relative text-center py-1.5 border-r last:border-r-0 border-border/50",
                   feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-card",
                   isToday && "border-t-2 border-t-[#F15025]"
                 )}
@@ -1749,7 +1761,7 @@ export function MontagePlanningLayout() {
                 <div
                   key={dateStr}
                   className={cn(
-                    "border-r last:border-r-0 border-border p-1.5 space-y-1 min-h-[42px] transition-colors",
+                    "border-r last:border-r-0 border-border/50 p-1.5 space-y-1 min-h-[42px] transition-colors",
                     isDragOver && "bg-[#1A535C]/[0.06] ring-1 ring-inset ring-[#1A535C]/30"
                   )}
                   onDragOver={(e) => {
@@ -1828,7 +1840,7 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "relative border-r last:border-r-0 border-border transition-colors",
+                  "relative border-r last:border-r-0 border-border/50 transition-colors",
                   feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/20" : isToday ? "bg-[#1A535C]/[0.02]" : "bg-card",
                   !feestdagInfo && dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
                   feestdagInfo && dragOverDate === dateStr && "ring-2 ring-[#C03A18]/30 ring-inset"
@@ -3109,16 +3121,50 @@ export function MontagePlanningLayout() {
 
   return (
     <div className="flex h-[calc(100vh-60px)] overflow-hidden bg-background">
-      {/* ── Left sidebar: Team ── */}
-      <div className="w-[200px] shrink-0 bg-card border-r border-border flex flex-col rounded-none">
+      {/* ── Left sidebar: Te plannen (inklapbaar) ── */}
+      <div className={cn(
+        "shrink-0 bg-card border-r border-border flex flex-col rounded-none transition-[width] duration-200",
+        sidebarCollapsed ? "w-11" : "w-[200px]"
+      )}>
+        {sidebarCollapsed ? (
+          <div className="flex flex-col items-center pt-4 gap-3">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              title="Te plannen tonen"
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            {tePlannenProjecten.length > 0 && (
+              <span
+                className="text-[10px] font-bold flex items-center justify-center tabular-nums"
+                style={{ backgroundColor: '#FDE8E2', color: '#F15025', minWidth: '20px', height: '20px', padding: '0 5px' }}
+              >
+                {tePlannenProjecten.length}
+              </span>
+            )}
+          </div>
+        ) : (
+        <>
         {/* Compacte paginatitel */}
-        <div className="px-4 pt-5 pb-3 flex items-baseline gap-2 shrink-0">
-          <h1 className="text-[17px] font-bold tracking-[-0.3px] text-[#1A4A52] dark:text-foreground leading-none">
-            Planning<span className="text-[#F15025]">.</span>
-          </h1>
-          <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
-            {stats.totaalWeek}
-          </span>
+        <div className="px-4 pt-5 pb-3 flex items-center justify-between gap-2 shrink-0">
+          <div className="flex items-baseline gap-2 min-w-0">
+            <h1 className="text-[17px] font-bold tracking-[-0.3px] text-[#1A4A52] dark:text-foreground leading-none">
+              Planning<span className="text-[#F15025]">.</span>
+            </h1>
+            <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
+              {stats.totaalWeek}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            title="Te plannen inklappen"
+            className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors shrink-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Te plannen section */}
@@ -3207,6 +3253,8 @@ export function MontagePlanningLayout() {
             <span className="font-mono tabular-nums">{stats.monteursBeschikbaar}</span> beschikbaar<span className="text-[#F15025]">.</span>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* ── Right content: member's week planning ── */}
