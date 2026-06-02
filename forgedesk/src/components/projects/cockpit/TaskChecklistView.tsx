@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { Check, Trash2 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import type { Taak, Medewerker } from '@/types'
 
@@ -7,6 +7,7 @@ interface TaskChecklistViewProps {
   medewerkers: Medewerker[]
   onStatusChange: (taakId: string, status: Taak['status']) => void
   onTaskClick?: (taak: Taak) => void
+  onTaakDelete?: (taak: Taak) => Promise<void> | void
 }
 
 const statusStyle: Record<string, { label: string; color: string }> = {
@@ -34,7 +35,7 @@ function formatDeadline(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })
 }
 
-export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskClick }: TaskChecklistViewProps) {
+export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskClick, onTaakDelete }: TaskChecklistViewProps) {
   const sorted = [...taken].sort((a, b) => {
     if (a.status === 'klaar' && b.status !== 'klaar') return 1
     if (a.status !== 'klaar' && b.status === 'klaar') return -1
@@ -121,6 +122,21 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
                 >
                   <span className="text-white text-[7px] font-bold">{getInitials(taak.toegewezen_aan)}</span>
                 </div>
+              )}
+
+              {onTaakDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void onTaakDelete(taak)
+                  }}
+                  title={`Taak "${taak.titel}" verwijderen`}
+                  aria-label={`Taak "${taak.titel}" verwijderen`}
+                  className="opacity-0 group-hover:opacity-100 focus:opacity-100 h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground/70 hover:bg-[hsl(var(--status-flame-bg))] hover:text-[#C03A18] transition-all flex-shrink-0"
+                >
+                  <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+                </button>
               )}
             </div>
           )

@@ -89,6 +89,7 @@ import {
   getDocumenten,
   createTaak,
   updateTaak,
+  deleteTaak,
   getOffertesByProject,
   createOfferte,
   createOfferteItem,
@@ -1439,6 +1440,22 @@ export function ProjectDetail() {
               } catch (err) {
                 logger.error('Kon taak status niet wijzigen:', err)
                 toast.error('Kon status niet wijzigen')
+              }
+            }}
+            onTaakDelete={async (taak) => {
+              const ok = await confirm({
+                message: `Taak "${taak.titel}" verwijderen? Dit kan niet ongedaan worden gemaakt.`,
+                variant: 'destructive',
+                confirmLabel: 'Verwijderen',
+              })
+              if (!ok) return
+              try {
+                await deleteTaak(taak.id)
+                setProjectTaken((prev) => prev.filter((t) => t.id !== taak.id))
+                toast.success(`Taak "${taak.titel}" verwijderd`)
+              } catch (err) {
+                logger.error('Taak verwijderen mislukt:', err)
+                toast.error('Kon taak niet verwijderen')
               }
             }}
             onOpdrachtbevestiging={(offerte) => setObPreviewOfferte(offerte)}
