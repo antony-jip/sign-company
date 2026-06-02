@@ -115,6 +115,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     for (const bericht of due) {
       try {
+        // Atomic claim: alleen verwerken als deze run de 'wachtend'-rij pakt.
+        // Voorkomt dubbel verzenden bij overlappende cron-runs of wanneer de
+        // status-update na verzenden faalt (rij is dan geen 'wachtend' meer).
+        const { data: claimed } = await supabaseAdmin
+          .from('ingeplande_berichten')
+          .update({ status: 'verwerken' })
+          .eq('id', bericht.id)
+          .eq('status', 'wachtend')
+          .select('id')
+          .maybeSingle()
+        if (!claimed) continue
+
         const creds = await getUserCreds(bericht.user_id)
         if (!creds) {
           throw new Error('Geen email instellingen gevonden voor user')
@@ -142,8 +154,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           mailOptions.references = bericht.in_reply_to
         }
 
+        // Inline base64-afbeeldingen -> CID-attachments (multipart/related),
+        // gelijk aan api/send-email.ts. Voorkomt grote/afgewezen mails.
+        const inlineAttachments: Array<{ filename: string; content: Buffer; cid: string; contentType: string; contentDisposition: 'inline' }> = []
         if (bericht.html) {
-          mailOptions.html = bericht.html
+          let imgIndex = 0
+          const processedHtml = (bericht.html as string).replace(
+            /<img([^>]*)src="data:(image\/(png|jpeg|jpg|gif|webp|svg\+xml));base64,([^"]+)"([^>]*)>/gi,
+            (_m: string, before: string, mimeType: string, ext: string, b64Data: string, after: string) => {
+              const cid = `inline-${crypto.randomUUID()}@forgedesk`
+              const extension = ext.replace('+xml', '').replace('jpeg', 'jpg')
+              inlineAttachments.push({
+                filename: `inline-${imgIndex++}.${extension}`,
+                content: Buffer.from(b64Data, 'base64'),
+                cid,
+                contentType: mimeType,
+                contentDisposition: 'inline',
+              })
+              return `<img${before}src="cid:${cid}"${after}>`
+            }
+          )
+          mailOptions.html = processedHtml
           mailOptions.text = bericht.body || bericht.onderwerp
         } else {
           mailOptions.text = bericht.body
@@ -159,22 +190,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           storagePath?: string
           bucket?: string
         }>
-        if (bijlagen.length) {
-          const built: Array<{ filename: string; content: Buffer }> = []
-          for (const a of bijlagen) {
-            if (a.storagePath) {
-              const bucket = a.bucket ?? 'documenten'
-              const { data, error: dlError } = await supabaseAdmin.storage.from(bucket).download(a.storagePath)
-              if (dlError || !data) {
-                throw new Error(`Bijlage "${a.filename}" kon niet worden opgehaald`)
-              }
-              built.push({ filename: a.filename, content: Buffer.from(await data.arrayBuffer()) })
-            } else if (a.content) {
-              built.push({ filename: a.filename, content: Buffer.from(a.content, 'base64') })
+        const built: Array<{ filename: string; content: Buffer; cid?: string; contentType?: string; contentDisposition?: 'inline' }> = [...inlineAttachments]
+        for (const a of bijlagen) {
+          if (a.storagePath) {
+            const bucket = a.bucket ?? 'documenten'
+            const { data, error: dlError } = await supabaseAdmin.storage.from(bucket).download(a.storagePath)
+            if (dlError || !data) {
+              throw new Error(`Bijlage "${a.filename}" kon niet worden opgehaald`)
             }
+            built.push({ filename: a.filename, content: Buffer.from(await data.arrayBuffer()) })
+          } else if (a.content) {
+            built.push({ filename: a.filename, content: Buffer.from(a.content, 'base64') })
           }
-          if (built.length) mailOptions.attachments = built
         }
+        if (built.length) mailOptions.attachments = built
 
         const sendResult = await transporter.sendMail(mailOptions)
         const sentMessageId = (sendResult as { messageId?: string }).messageId || null

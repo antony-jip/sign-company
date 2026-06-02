@@ -705,3 +705,8 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
 > Update: opmerking 1 (geplande Opvolgen) opgelost — `wacht_op_reactie` wordt nu
 > opgeslagen op `ingeplande_berichten` (migratie 119) en door de cron op de
 > `emails`-rij gezet, inclusief de "vervangen-niet-stapelen" Sales-Inbox-logica.
+
+> Update: opmerkingen 2 en 3 opgelost — de cron converteert nu inline base64-
+> afbeeldingen naar CID-attachments (gelijk aan api/send-email.ts), en claimt een
+> bericht atomair (wachtend -> verwerken, migratie 120) vóór verzenden zodat
+> overlappende runs of een gefaalde status-update geen dubbele mail veroorzaken.
