@@ -38,6 +38,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Flag,
+  Flame,
   Hash,
   X,
   GripVertical,
@@ -936,6 +937,20 @@ export function TasksLayout() {
     }
   }
 
+  async function handleTogglePrio(taak: Taak) {
+    const newPrio: TaakPrioriteit = taak.prioriteit === 'kritiek' ? 'medium' : 'kritiek'
+    const ok = await runOptimistic({
+      snapshot: taken,
+      apply: (prev) => prev.map((t) => t.id === taak.id ? { ...t, prioriteit: newPrio } : t),
+      commit: async () => {
+        const updated = await updateTaak(taak.id, { prioriteit: newPrio })
+        return (prev: Taak[]) => prev.map((t) => t.id === updated.id ? updated : t)
+      },
+      errorMessage: 'Kon prioriteit niet bijwerken',
+    })
+    if (!ok) logger.error('Fout bij prioriteitswijziging')
+  }
+
   async function handleToggleComplete(taak: Taak) {
     const newStatus: TaakStatus = taak.status === 'klaar' ? 'todo' : 'klaar'
     const ok = await runOptimistic({
@@ -1484,6 +1499,7 @@ export function TasksLayout() {
                   onDropTargetChange={setDropTarget}
                   onDrop={handleDropTask}
                   onToggle={handleToggleComplete}
+                  onTogglePrio={handleTogglePrio}
                   onEdit={openEditDialog}
                   onDelete={handleDeleteDirect}
                   onQuickAdd={(title) => handleDayQuickAdd(day, title)}
@@ -2113,7 +2129,7 @@ function DayColumn({
   day, dayIndex, isToday, isPast, tasks, projectMap, klantMap, offerteMap, nowLineTop,
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
-  onToggle, onEdit, onDelete, onQuickAdd, onQuickAddAtTime, onResize,
+  onToggle, onTogglePrio, onEdit, onDelete, onQuickAdd, onQuickAddAtTime, onResize,
   selectedTaskIds,
   montageAfspraken = [],
   hourHeight: HOUR_HEIGHT,
@@ -2134,6 +2150,7 @@ function DayColumn({
   onDropTargetChange: (target: { dayIndex: number; hour: number } | null) => void
   onDrop: (taakId: string, dayIndex: number, hour: number) => void
   onToggle: (taak: Taak) => void
+  onTogglePrio: (taak: Taak) => void
   onEdit: (taak: Taak) => void
   onDelete: (taak: Taak) => void
   onQuickAdd: (title: string) => void
@@ -2426,6 +2443,7 @@ function DayColumn({
               onDragStart={() => onDragStart(taak.id)}
               onDragEnd={onDragEnd}
               onToggle={() => onToggle(taak)}
+              onTogglePrio={() => onTogglePrio(taak)}
               onEdit={() => onEdit(taak)}
               onDelete={() => onDelete(taak)}
               onResizeStart={(e) => handleResizeStart(e, taak.id, baseHeightPx || HOUR_HEIGHT)}
@@ -2498,6 +2516,7 @@ function DayColumn({
               onDragStart={() => onDragStart(taak.id)}
               onDragEnd={onDragEnd}
               onToggle={() => onToggle(taak)}
+              onTogglePrio={() => onTogglePrio(taak)}
               onEdit={() => onEdit(taak)}
               onDelete={() => onDelete(taak)}
             />
@@ -2541,7 +2560,7 @@ function DayColumn({
 // === TASK CARD ===
 
 function TaskCard({
-  taak, projectNaam, klantNaam, offerteInfo, isPast, scheduled, heightPx, isResizing, isSelected, isDimmedForBulkDrag, onDragStart, onDragEnd, onToggle, onEdit, onDelete, onResizeStart,
+  taak, projectNaam, klantNaam, offerteInfo, isPast, scheduled, heightPx, isResizing, isSelected, isDimmedForBulkDrag, onDragStart, onDragEnd, onToggle, onTogglePrio, onEdit, onDelete, onResizeStart,
 }: {
   taak: Taak
   projectNaam?: string
@@ -2556,6 +2575,7 @@ function TaskCard({
   onDragStart: () => void
   onDragEnd: () => void
   onToggle: () => void
+  onTogglePrio?: () => void
   onEdit: () => void
   onDelete: () => void
   onResizeStart?: (e: React.MouseEvent) => void
@@ -2563,6 +2583,7 @@ function TaskCard({
   const isDone = taak.status === 'klaar'
   const [justCompleted, setJustCompleted] = useState(false)
   const pc = PRIORITEIT_COLORS[taak.prioriteit]
+  const isPriority = taak.prioriteit === 'kritiek'
   const hour = getHourFromDeadline(taak.deadline ?? "")
 
   function handleToggle(e: React.MouseEvent) {
@@ -2665,10 +2686,23 @@ function TaskCard({
           >
             {taak.titel}
           </p>
+          {/* Prioriteit — flame-toggle: oranje box markeert prioriteit */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onTogglePrio?.() }}
+            className={cn(
+              'ml-auto p-1 rounded-md transition-all flex-shrink-0',
+              isPriority
+                ? 'text-[#F15025] opacity-100'
+                : 'text-muted-foreground/70 opacity-0 group-hover:opacity-100 hover:text-[#F15025]'
+            )}
+            title={isPriority ? 'Prioriteit weghalen' : 'Markeer als prioriteit'}
+          >
+            <Flame className={cn('w-3.5 h-3.5', isPriority && 'fill-[#F15025]')} />
+          </button>
           {/* Delete — hover only, ruimte + grotere hit area */}
           <button
             onClick={handleDeleteClick}
-            className="ml-auto p-1.5 -mr-1 rounded-md text-transparent group-hover:text-muted-foreground hover:!text-[#C03A18] hover:bg-[#C03A18]/8 transition-all flex-shrink-0"
+            className="p-1.5 -mr-1 rounded-md text-transparent group-hover:text-muted-foreground hover:!text-[#C03A18] hover:bg-[#C03A18]/8 transition-all flex-shrink-0"
             title="Verwijderen"
           >
             <Trash2 className="w-3.5 h-3.5" />
