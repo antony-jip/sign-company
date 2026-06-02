@@ -148,17 +148,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const bijlagen = (bericht.bijlagen || []) as Array<{
           filename: string
-          content: string
-          encoding: 'base64'
+          content?: string
+          encoding?: 'base64'
+          storagePath?: string
+          bucket?: string
         }>
         if (bijlagen.length) {
-          mailOptions.attachments = bijlagen.map((a) => ({
-            filename: a.filename,
-            content: Buffer.from(a.content, 'base64'),
-          }))
+          const built: Array<{ filename: string; content: Buffer }> = []
+          for (const a of bijlagen) {
+            if (a.storagePath) {
+              const bucket = a.bucket ?? 'documenten'
+              const { data, error: dlError } = await supabaseAdmin.storage.from(bucket).download(a.storagePath)
+              if (dlError || !data) {
+                throw new Error(`Bijlage "${a.filename}" kon niet worden opgehaald`)
+              }
+              built.push({ filename: a.filename, content: Buffer.from(await data.arrayBuffer()) })
+            } else if (a.content) {
+              built.push({ filename: a.filename, content: Buffer.from(a.content, 'base64') })
+            }
+          }
+          if (built.length) mailOptions.attachments = built
         }
 
-        await transporter.sendMail(mailOptions)
+        const sendResult = await transporter.sendMail(mailOptions)
+        const sentMessageId = (sendResult as { messageId?: string }).messageId || null
 
         await supabaseAdmin
           .from('ingeplande_berichten')
@@ -167,6 +180,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             verzonden_op: new Date().toISOString(),
           })
           .eq('id', bericht.id)
+
+        // Persist verzonden mail zodat ie in de conversatie-thread verschijnt
+        // (gelijk aan de directe-verzendroute in api/send-email.ts).
+        try {
+          const effectiveThreadId = bericht.thread_id || crypto.randomUUID()
+          await supabaseAdmin.from('emails').insert({
+            user_id: bericht.user_id,
+            message_id: sentMessageId,
+            in_reply_to: bericht.in_reply_to || null,
+            thread_id: effectiveThreadId,
+            map: 'verzonden',
+            imap_folder: 'SENT',
+            from_address: creds.gmail_address,
+            from_name: creds.fromName || '',
+            van: fromAddress,
+            aan: bericht.ontvanger,
+            onderwerp: bericht.onderwerp,
+            body_html: bericht.html || null,
+            body_text: bericht.body || bericht.onderwerp,
+            inhoud: bericht.html || bericht.body || '',
+            datum: new Date().toISOString(),
+            gelezen: true,
+            bijlagen: bijlagen.length,
+            has_attachments: bijlagen.length > 0,
+            gmail_id: '',
+            cached_at: new Date().toISOString(),
+            beantwoord: false,
+          })
+        } catch (saveErr) {
+          console.error('[cron] Verzonden mail opslaan mislukt:', bericht.id, saveErr)
+        }
 
         verzonden++
         console.log('[cron] Bericht verzonden:', bericht.id)
