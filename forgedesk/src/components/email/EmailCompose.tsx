@@ -84,6 +84,26 @@ function dragHasFiles(e: React.DragEvent): boolean {
   return Array.from(e.dataTransfer.types).includes('Files')
 }
 
+// Document-glyph in plaats van een plat gekleurd vierkant: portret-vorm met
+// gevouwen hoek leest direct als "bestand" en oogt verzorgder.
+function FileGlyph({ name }: { name: string }) {
+  return (
+    <div
+      className={cn(
+        'relative w-7 h-9 rounded-[5px] flex items-end justify-center pb-1 flex-shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.14)]',
+        getFileTypeColor(name),
+      )}
+    >
+      {/* Gevouwen hoek rechtsboven */}
+      <span
+        className="absolute top-0 right-0 w-2.5 h-2.5 bg-white/25"
+        style={{ clipPath: 'polygon(0 0, 100% 100%, 100% 0)' }}
+      />
+      <span className="text-[6.5px] font-bold text-white tracking-[0.04em] leading-none">{getFileExt(name)}</span>
+    </div>
+  )
+}
+
 export function EmailCompose({
   open,
   onOpenChange,
@@ -930,35 +950,44 @@ export function EmailCompose({
             {/* AI Text Selection Toolbar */}
             <AIContentEditableToolbar editorRef={editorRef} />
 
-            {/* Attachments */}
+            {/* Attachments — getinte sectie zodat de frosted-glass chips ergens op rusten */}
             {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2.5 py-4">
-                {attachments.map((file, i) => {
-                  const previewUrl = imagePreviewUrls.get(file)
-                  return (
-                    <div
-                      key={i}
-                      className="group inline-flex items-center gap-2.5 pl-2 pr-2.5 py-2 rounded-xl bg-[#F4F3F0] border border-border/50 hover:border-border transition-colors duration-150"
-                    >
-                      {previewUrl ? (
-                        <img src={previewUrl} alt={file.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
-                      ) : (
-                        <div className={cn('w-9 h-9 rounded-lg text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0', getFileTypeColor(file.name))}>
-                          {getFileExt(file.name)}
-                        </div>
-                      )}
-                      <span className="text-foreground/90 max-w-[200px] truncate text-[13.5px] leading-none">{file.name}</span>
-                      <span className="text-muted-foreground text-[12px] leading-none flex-shrink-0">{formatFileSize(file.size)}</span>
-                      <button
-                        onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}
-                        className="ml-0.5 h-5 w-5 flex items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-black/[0.06] hover:text-foreground transition-all duration-150 flex-shrink-0"
-                        title="Bijlage verwijderen"
+              <div className="mt-2 mb-4 rounded-2xl bg-gradient-to-br from-[#1A535C]/[0.07] via-[#F7F6F3]/80 to-[#F15025]/[0.06] border border-border/40 p-4">
+                <div className="flex items-center gap-1.5 mb-2.5 text-muted-foreground">
+                  <Paperclip className="h-3.5 w-3.5" />
+                  <span className="text-[12px] font-medium">
+                    {attachments.length} {attachments.length === 1 ? 'bijlage' : 'bijlagen'}
+                    <span className="text-muted-foreground/60"> · {formatFileSize(attachments.reduce((sum, f) => sum + f.size, 0))}</span>
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((file, i) => {
+                    const previewUrl = imagePreviewUrls.get(file)
+                    return (
+                      <div
+                        key={i}
+                        className="group relative flex items-center gap-2.5 w-[228px] pl-2.5 pr-2 py-2 rounded-xl bg-gradient-to-b from-white/75 to-white/40 backdrop-blur-md border border-white/70 ring-1 ring-black/[0.04] shadow-[0_4px_16px_rgba(16,24,40,0.08)] hover:ring-[#1A535C]/20 hover:shadow-[0_6px_20px_rgba(26,83,92,0.12)] transition-all duration-200 before:absolute before:inset-x-0 before:top-0 before:h-px before:rounded-t-xl before:bg-white/80 before:pointer-events-none"
                       >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )
-                })}
+                        {previewUrl ? (
+                          <img src={previewUrl} alt={file.name} className="w-7 h-9 rounded-[5px] object-cover flex-shrink-0 ring-1 ring-black/5" />
+                        ) : (
+                          <FileGlyph name={file.name} />
+                        )}
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="text-foreground text-[13px] font-medium leading-tight truncate">{file.name}</span>
+                          <span className="text-muted-foreground text-[11px] leading-tight mt-0.5">{formatFileSize(file.size)}</span>
+                        </div>
+                        <button
+                          onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}
+                          className="h-6 w-6 flex items-center justify-center rounded-lg text-muted-foreground/70 opacity-0 group-hover:opacity-100 hover:bg-[#F15025]/10 hover:text-[#F15025] transition-all duration-150 flex-shrink-0"
+                          title="Bijlage verwijderen"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
