@@ -78,6 +78,34 @@ export async function uploadFile(file: File, path: string): Promise<string> {
   return data.path
 }
 
+/** Max grootte voor een losse mailbijlage (20MB). */
+const MAX_EMAIL_ATTACHMENT_SIZE = 20 * 1024 * 1024
+
+/**
+ * Upload een mailbijlage naar een tijdelijk pad in de documenten-bucket en geef
+ * het storage-pad terug. Bewust GEEN MIME-allowlist (mailbijlagen mogen elk type
+ * zijn, bv. .ai/.eps/.zip), wel een eigen 20MB-limiet. api/send-email downloadt
+ * het bestand server-side en verwijdert het na verzending (cleanupAfter), zodat
+ * de request-body klein blijft (Vercel ~4.5MB body-limiet).
+ */
+export async function uploadEmailAttachment(data: Blob, filename: string, userId: string): Promise<string> {
+  if (data.size > MAX_EMAIL_ATTACHMENT_SIZE) {
+    throw new Error(`Bijlage "${filename}" is groter dan ${MAX_EMAIL_ATTACHMENT_SIZE / 1024 / 1024}MB`)
+  }
+  if (!isSupabaseConfigured() || !supabase) {
+    throw new Error('Supabase Storage niet geconfigureerd — kan bijlage niet versturen')
+  }
+  const safeName = filename.replace(/[^\w.\-]+/g, '_')
+  const path = `email-bijlagen/${userId}/${crypto.randomUUID()}-${safeName}`
+  const { data: res, error } = await supabase.storage.from(BUCKET).upload(path, data, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: data.type || 'application/octet-stream',
+  })
+  if (error) throw error
+  return res.path
+}
+
 async function uploadFileToLocalStorage(file: File, path: string): Promise<string> {
   if (file.size > MAX_LOCAL_FILE_SIZE) {
     throw new Error(

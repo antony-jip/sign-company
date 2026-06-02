@@ -189,7 +189,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           encoding?: 'base64'
           storagePath?: string
           bucket?: string
+          cleanupAfter?: boolean
         }>
+        const cleanupTargets: Array<{ bucket: string; path: string }> = []
         const built: Array<{ filename: string; content: Buffer; cid?: string; contentType?: string; contentDisposition?: 'inline' }> = [...inlineAttachments]
         for (const a of bijlagen) {
           if (a.storagePath) {
@@ -199,6 +201,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               throw new Error(`Bijlage "${a.filename}" kon niet worden opgehaald`)
             }
             built.push({ filename: a.filename, content: Buffer.from(await data.arrayBuffer()) })
+            const shouldCleanup = a.cleanupAfter ?? (bucket === 'documenten')
+            if (shouldCleanup) cleanupTargets.push({ bucket, path: a.storagePath })
           } else if (a.content) {
             built.push({ filename: a.filename, content: Buffer.from(a.content, 'base64') })
           }
@@ -263,6 +267,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         } catch (saveErr) {
           console.error('[cron] Verzonden mail opslaan mislukt:', bericht.id, saveErr)
+        }
+
+        // Tijdelijke bijlagen opruimen (gelijk aan api/send-email.ts). Niet fataal:
+        // mail is al verstuurd, maar hangende bestanden lekken storage.
+        if (cleanupTargets.length > 0) {
+          const byBucket = new Map<string, string[]>()
+          for (const t of cleanupTargets) {
+            const list = byBucket.get(t.bucket) ?? []
+            list.push(t.path)
+            byBucket.set(t.bucket, list)
+          }
+          for (const [bucket, paths] of byBucket) {
+            supabaseAdmin.storage.from(bucket).remove(paths).catch((cleanupErr) => {
+              console.error(`[cron] Storage cleanup mislukt voor bucket ${bucket}:`, cleanupErr)
+            })
+          }
         }
 
         verzonden++
