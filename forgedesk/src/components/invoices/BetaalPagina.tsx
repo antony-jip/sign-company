@@ -445,8 +445,20 @@ export function BetaalPagina() {
           </Button>
         </div>
 
+        {/* Creditfactuur: geen betaling, bedrag wordt verrekend/teruggestort */}
+        {factuur.totaal < 0 && (
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-foreground">Creditfactuur<span style={{ color: '#F15025' }}>.</span></h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Dit is een creditfactuur van {formatCurrency(factuur.totaal)}. Dit bedrag wordt verrekend met een openstaande factuur of teruggestort. U hoeft niets te betalen.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Mollie online betaling */}
-        {!isBetaald && mollieEnabled && (
+        {!isBetaald && mollieEnabled && factuur.totaal > 0 && (
           <Card className="border-blue-200 bg-blue-50/50">
             <CardContent className="p-6 space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Direct online betalen</h3>
@@ -470,7 +482,7 @@ export function BetaalPagina() {
         )}
 
         {/* Betaalinformatie + QR (IBAN / bankoverschrijving) */}
-        {!isBetaald && (
+        {!isBetaald && factuur.totaal > 0 && (
           <Card>
             <CardContent className="p-6 space-y-6">
               <h3 className="text-lg font-semibold text-foreground">

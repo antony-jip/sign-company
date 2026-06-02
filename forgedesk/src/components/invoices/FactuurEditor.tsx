@@ -742,6 +742,10 @@ export function FactuurEditor() {
   const btwBedrag = useMemo(() => calcBtwBedrag(validItems), [validItems])
   const totaal = useMemo(() => round2(subtotaal + btwBedrag), [subtotaal, btwBedrag])
 
+  // Een negatief totaal is per definitie een creditfactuur, ook zonder dat je
+  // expliciet vanuit een originele factuur crediteert.
+  const isCredit = isCreditFactuur || totaal < 0
+
   const currentStatus = existingFactuur?.status || 'concept'
   const isVervallen = existingFactuur ? existingFactuur.vervaldatum < getTodayString() && currentStatus !== 'betaald' && currentStatus !== 'gecrediteerd' : false
   const isReadOnly = !!(existingFactuur && (currentStatus === 'betaald' || currentStatus === 'gecrediteerd'))
@@ -878,7 +882,7 @@ export function FactuurEditor() {
           betaal_token: betaalToken,
           betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
           betaal_link: betaalLink,
-          factuur_type: isCreditFactuur ? 'creditnota' : 'standaard',
+          factuur_type: isCredit ? 'creditnota' : 'standaard',
           kostenplaats_id: kostenplaatsId || undefined,
           werkbon_id: werkbonId || undefined,
           credit_voor_factuur_id: creditVoorFactuurId || undefined,
@@ -1059,7 +1063,7 @@ export function FactuurEditor() {
       totaal,
       notities: notities || undefined,
       betaalvoorwaarden: voorwaarden || undefined,
-      factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur?.factuur_type || 'standaard') as string,
+      factuur_type: (isCredit ? 'creditnota' : existingFactuur?.factuur_type || 'standaard') as string,
       betaal_link: existingFactuur?.betaal_link || undefined,
       credit_voor_nummer: creditVoorNummer || undefined,
       outro_tekst: outroTekst || undefined,
@@ -1108,7 +1112,7 @@ export function FactuurEditor() {
           subtotaal,
           btw_bedrag: btwBedrag,
           totaal,
-          factuur_type: isCreditFactuur ? 'creditnota' : (existingFactuur?.factuur_type || 'standaard'),
+          factuur_type: isCredit ? 'creditnota' : (existingFactuur?.factuur_type || 'standaard'),
           notities: notities || '',
           voorwaarden: voorwaarden || '',
           kostenplaats_code: selectedKostenplaats ? `${selectedKostenplaats.code} - ${selectedKostenplaats.naam}` : undefined,
@@ -1231,7 +1235,7 @@ export function FactuurEditor() {
           totaal,
           notities: notities || undefined,
           betaalvoorwaarden: voorwaarden || undefined,
-          factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
+          factuur_type: (isCredit ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
           betaal_link: existingFactuur.betaal_link || undefined,
           outro_tekst: outroTekst || undefined,
         }
@@ -1601,7 +1605,7 @@ export function FactuurEditor() {
             totaal,
             notities: notities || undefined,
             betaalvoorwaarden: voorwaarden || undefined,
-            factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
+            factuur_type: (isCredit ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
             betaal_link: existingFactuur.betaal_link || undefined,
             outro_tekst: outroTekst || undefined,
           }
@@ -2022,6 +2026,11 @@ export function FactuurEditor() {
               <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
                 <Euro className="h-4 w-4" />
                 Financieel
+                {isCredit && (
+                  <span className="ml-auto inline-flex items-center text-[11px] font-semibold text-[#C03A18] bg-[#FDE8E2] rounded px-1.5 py-0.5">
+                    Creditfactuur<span className="text-[#F15025]">.</span>
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -2276,8 +2285,8 @@ export function FactuurEditor() {
                       value={item.eenheidsprijs}
                       onChange={(e) => handleUpdateItem(item.id, 'eenheidsprijs', parseFloat(e.target.value) || 0)}
                       className="text-sm text-right"
-                      min={0}
                       step="0.01"
+                      title="Negatief bedrag (-) = creditregel"
                       disabled={isReadOnly}
                     />
                     <Input
