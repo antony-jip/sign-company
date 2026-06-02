@@ -28,7 +28,6 @@ import {
   getNotificaties,
   markNotificatieGelezen,
   markAlleNotificatiesGelezen,
-  createNotificatie,
 } from "@/services/supabaseService";
 import supabase from "@/services/supabaseClient";
 import type { Notificatie } from "@/types";
@@ -169,94 +168,6 @@ function formatTijdGeleden(dateString: string): string {
   return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
 }
 
-function minsAgo(minutes: number): string {
-  return new Date(Date.now() - minutes * 60_000).toISOString();
-}
-
-const demoNotificaties: Omit<Notificatie, "id" | "created_at">[] = [
-  {
-    user_id: "",
-    type: "offerte_bekeken",
-    titel: "Offerte bekeken",
-    bericht:
-      "Klant Van der Berg B.V. heeft offerte OFF-2024-0892 voor gevelreclame bekeken.",
-    link: "/offertes/OFF-2024-0892",
-    gelezen: false,
-  },
-  {
-    user_id: "",
-    type: "betaling_ontvangen",
-    titel: "Betaling ontvangen",
-    bericht:
-      "Betaling van \u20AC 4.250,00 ontvangen van Bakkerij Jansen voor factuur FAC-2024-0341.",
-    link: "/facturen/FAC-2024-0341",
-    gelezen: false,
-  },
-  {
-    user_id: "",
-    type: "deadline_nadert",
-    titel: "Deadline nadert",
-    bericht:
-      "Project lichtreclame voor Restaurant De Gouden Leeuw moet over 2 dagen worden opgeleverd.",
-    link: "/projecten/PRJ-2024-0156",
-    gelezen: false,
-  },
-  {
-    user_id: "",
-    type: "factuur_vervallen",
-    titel: "Factuur vervallen",
-    bericht:
-      "Factuur FAC-2024-0298 van \u20AC 1.875,00 voor Sportcentrum Oost is 14 dagen over de betaaltermijn.",
-    link: "/facturen/FAC-2024-0298",
-    gelezen: false,
-  },
-  {
-    user_id: "",
-    type: "montage_gepland",
-    titel: "Montage ingepland",
-    bericht:
-      "Montage van reclamebord bij Autobedrijf Kuipers is ingepland op donderdag 20 februari om 09:00.",
-    link: "/planning/MON-2024-0067",
-    gelezen: false,
-  },
-  {
-    user_id: "",
-    type: "nieuwe_email",
-    titel: "Nieuw e-mailbericht",
-    bericht:
-      "Nieuw bericht van info@vandelft-architecten.nl over offerte-aanvraag bewegwijzering kantoorpand.",
-    link: "/berichten/MSG-2024-1102",
-    gelezen: true,
-  },
-  {
-    user_id: "",
-    type: "taak_voltooid",
-    titel: "Taak voltooid",
-    bericht:
-      "Ontwerp voor freesletters Kapsalon Stijlvol is goedgekeurd door de klant.",
-    link: "/taken/TAAK-2024-0445",
-    gelezen: true,
-  },
-  {
-    user_id: "",
-    type: "offerte_verlopen",
-    titel: "Offerte verlopen",
-    bericht:
-      "Offerte OFF-2024-0845 voor raambelettering Bloemenwinkel Flora is verlopen na 30 dagen.",
-    link: "/offertes/OFF-2024-0845",
-    gelezen: true,
-  },
-  {
-    user_id: "",
-    type: "algemeen",
-    titel: "Systeemmelding",
-    bericht:
-      "Het maandelijkse rapport voor januari 2026 is beschikbaar in het dashboard.",
-    link: "/rapporten/januari-2026",
-    gelezen: true,
-  },
-];
-
 // Toast voor nieuwe notificatie
 function NotificatieToast({
   notificatie,
@@ -337,25 +248,9 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
   const laadNotificaties = useCallback(async () => {
     try {
       const data = await getNotificaties();
-      if (data && data.length > 0) {
-        setNotificaties(data);
-      } else {
-        setLaden(true);
-        const aangemaakteNotificaties: Notificatie[] = [];
-        for (const demo of demoNotificaties) {
-          const nieuw = await createNotificatie(demo);
-          if (nieuw) {
-            aangemaakteNotificaties.push(nieuw);
-          }
-        }
-        if (aangemaakteNotificaties.length > 0) {
-          setNotificaties(aangemaakteNotificaties);
-        }
-        setLaden(false);
-      }
+      setNotificaties(data || []);
     } catch (err) {
       logger.error('Load notificaties failed:', err);
-      setLaden(false);
     }
   }, []);
 
@@ -363,26 +258,13 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
     let cancelled = false;
 
     const load = async () => {
+      setLaden(true);
       try {
         const data = await getNotificaties();
-        if (cancelled) return;
-        if (data && data.length > 0) {
-          setNotificaties(data);
-        } else {
-          setLaden(true);
-          const aangemaakteNotificaties: Notificatie[] = [];
-          for (const demo of demoNotificaties) {
-            const nieuw = await createNotificatie(demo);
-            if (cancelled) return;
-            if (nieuw) aangemaakteNotificaties.push(nieuw);
-          }
-          if (!cancelled && aangemaakteNotificaties.length > 0) {
-            setNotificaties(aangemaakteNotificaties);
-          }
-          if (!cancelled) setLaden(false);
-        }
+        if (!cancelled) setNotificaties(data || []);
       } catch (err) {
         logger.error('Load notificaties failed:', err);
+      } finally {
         if (!cancelled) setLaden(false);
       }
     };
