@@ -1,13 +1,35 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ListChecks, Receipt, Plus, Trash2 } from 'lucide-react'
-import { formatAmount } from '@/lib/utils'
+import { ListChecks, Receipt, Plus, Trash2, Wrench, CalendarDays, MapPin } from 'lucide-react'
+import { formatAmount, getInitials } from '@/lib/utils'
 import { getStatusPillClass, getStatusPillTone, getStatusLabel, type PillTone } from '@/utils/statusColors'
 import { TaskChecklistView } from './TaskChecklistView'
-import type { Taak, Offerte, Medewerker } from '@/types'
+import type { Taak, Offerte, Medewerker, MontageAfspraak } from '@/types'
 
 function parseBedrag(s: string): number {
   return parseFloat(s.replace(',', '.')) || 0
+}
+
+const montageStatusLabel: Record<MontageAfspraak['status'], string> = {
+  gepland:    'Gepland',
+  onderweg:   'Onderweg',
+  bezig:      'Bezig',
+  afgerond:   'Afgerond',
+  uitgesteld: 'Uitgesteld',
+}
+
+function monteurColor(name: string): string {
+  const colors = [
+    'from-[#7EB5A6] to-[#5E9586]',
+    'from-[#9B8EC4] to-[#7B6EA4]',
+    'from-[#C4A882] to-[#A48862]',
+    'from-[#8BAFD4] to-[#6B8FB4]',
+    'from-[#E8866A] to-[#C8664A]',
+    'from-[#D4836A] to-[#B4634A]',
+  ]
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return colors[Math.abs(hash) % colors.length]
 }
 
 const toneAccent: Record<PillTone, string> = {
@@ -22,6 +44,7 @@ const toneAccent: Record<PillTone, string> = {
 interface TakenOfferteGridProps {
   taken: Taak[]
   offertes: Offerte[]
+  montageAfspraken?: MontageAfspraak[]
   medewerkers: Medewerker[]
   projectId: string
   onNewTaak: () => void
@@ -36,6 +59,7 @@ interface TakenOfferteGridProps {
 export function TakenOfferteGrid({
   taken,
   offertes,
+  montageAfspraken = [],
   medewerkers,
   onNewTaak,
   onNewOfferte,
@@ -87,6 +111,62 @@ export function TakenOfferteGrid({
             Taak
           </button>
         </div>
+
+        {montageAfspraken.length > 0 && (
+          <div className="mb-3 space-y-2">
+            {montageAfspraken.map((m) => (
+              <div
+                key={m.id}
+                className="rounded-xl border border-[rgba(26,83,92,0.16)] bg-[rgba(26,83,92,0.045)] px-3 py-2.5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Wrench className="h-3 w-3 text-[#1A535C]" strokeWidth={2} />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#1A535C]">Montage</span>
+                  </div>
+                  <span className="text-[11px] text-foreground/70 flex-shrink-0">
+                    {montageStatusLabel[m.status] || 'Gepland'}<span className="text-[#F15025]">.</span>
+                  </span>
+                </div>
+
+                <p className="text-[13px] font-semibold text-foreground truncate mt-1">{m.titel}</p>
+
+                <div className="flex items-center gap-1.5 text-[11px] text-foreground/70 mt-1">
+                  <CalendarDays className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+                  <span className="font-mono text-foreground">
+                    {new Date(m.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                    {' '}
+                    {m.start_tijd}–{m.eind_tijd}
+                  </span>
+                </div>
+
+                {m.locatie && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-foreground/70 mt-1">
+                    <MapPin className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+                    <span className="truncate">{m.locatie}</span>
+                  </div>
+                )}
+
+                {m.monteurs && m.monteurs.length > 0 && (
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <div className="flex -space-x-1.5">
+                      {m.monteurs.map((monteur) => (
+                        <div
+                          key={monteur}
+                          className={`h-5 w-5 rounded-full bg-gradient-to-br ${monteurColor(monteur)} flex items-center justify-center ring-2 ring-white`}
+                          title={monteur}
+                        >
+                          <span className="text-white text-[7px] font-bold">{getInitials(monteur)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground truncate">{m.monteurs.join(', ')}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {taken.length > 0 ? (
           <div className="max-h-[300px] overflow-y-auto -mx-1 px-1">

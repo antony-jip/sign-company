@@ -1424,6 +1424,7 @@ export function ProjectDetail() {
           <TakenOfferteGrid
             taken={projectTaken}
             offertes={projectOffertes}
+            montageAfspraken={projectMontages}
             medewerkers={alleMedewerkers}
             projectId={id!}
             onNewTaak={() => setNieuweTaakOpen(true)}
