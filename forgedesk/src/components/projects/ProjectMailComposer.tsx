@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
 import { Paperclip, Send, X, FileText, Image as ImageIcon, File, Bold, Italic, Underline, List, Link as LinkIcon, Loader2, Receipt, CreditCard, Wrench, Check, Plus, ChevronDown, MessagesSquare, Clock } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { sendEmail } from '@/services/gmailService'
@@ -818,31 +818,40 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       {/* Body */}
       <div className="px-5 py-4 space-y-3">
         {threadMails.length > 0 && (
-          <div className="rounded-xl border border-border/70 overflow-hidden bg-white">
+          <div>
             <button
               type="button"
               onClick={() => setThreadOpen((v) => !v)}
-              className="w-full flex items-center justify-between px-3 py-2 bg-muted/30 hover:bg-muted/50 transition-colors"
+              className="w-full flex items-center justify-between px-1 py-1.5 hover:opacity-70 transition-opacity"
             >
-              <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                <MessagesSquare className="h-3.5 w-3.5" />
+              <span className="flex items-center gap-2 text-[11px] font-semibold text-[#1A535C]">
+                <MessagesSquare className="h-3.5 w-3.5" strokeWidth={1.75} />
                 Gesprek
-                <span className="font-mono text-[9px] bg-muted px-1.5 py-0.5 rounded-full">{threadMails.length}</span>
+                <span className="font-mono text-[10px] font-medium text-[#6B6B66] bg-white border border-[#EBEBEB] px-1.5 py-0.5 rounded-full">{threadMails.length}</span>
               </span>
-              <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", threadOpen && "rotate-180")} />
+              <ChevronDown className={cn("h-4 w-4 text-[#9B9B95] transition-transform", threadOpen && "rotate-180")} />
             </button>
             {threadOpen && (
-              <div className="max-h-[220px] overflow-y-auto px-3 py-2.5 space-y-2">
+              <div className="max-h-[260px] overflow-y-auto px-1 pb-1 pt-2 space-y-4">
                 {[...threadMails].reverse().map((m) => {
                   const incoming = !!contactEmailLower && (m.van || '').toLowerCase().includes(contactEmailLower)
+                  const naam = m.from_name || m.van || ''
                   return (
-                    <div key={m.id} className={cn("flex", incoming ? "justify-start" : "justify-end")}>
-                      <div className={cn("max-w-[80%] rounded-2xl px-3 py-2", incoming ? "bg-muted text-foreground rounded-tl-sm" : "bg-[#1A535C] text-white rounded-tr-sm")}>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-[10px] font-semibold truncate opacity-90">{m.from_name || m.van}</span>
-                          <span className={cn("text-[9px] font-mono", incoming ? "text-muted-foreground" : "text-white/70")}>{formatThreadDatum(m.datum)}</span>
+                    <div key={m.id} className={cn("flex items-end gap-2.5", incoming ? "justify-start" : "justify-end")}>
+                      {incoming && (
+                        <div className="h-7 w-7 rounded-full bg-[#3A6B8C] flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-[9px] font-bold">{getInitials(naam)}</span>
                         </div>
-                        <div className="text-[12px] leading-snug whitespace-pre-wrap break-words">{mailPreview(m) || '(geen tekst)'}</div>
+                      )}
+                      <div className={cn(
+                        "max-w-[76%] rounded-2xl px-3.5 py-2.5 border",
+                        incoming ? "bg-white border-[#EBEBEB] rounded-bl-md" : "bg-[#1A535C]/[0.07] border-[#1A535C]/10 rounded-br-md",
+                      )}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={cn("text-[10px] font-semibold truncate", incoming ? "text-[#1A1A1A]" : "text-[#1A535C]")}>{naam}</span>
+                          <span className="text-[9px] font-mono flex-shrink-0 text-[#9B9B95]">{formatThreadDatum(m.datum)}</span>
+                        </div>
+                        <div className="text-[12.5px] leading-relaxed whitespace-pre-wrap break-words text-[#1A1A1A]">{mailPreview(m) || '(geen tekst)'}</div>
                       </div>
                     </div>
                   )
