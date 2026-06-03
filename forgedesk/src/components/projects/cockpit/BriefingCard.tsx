@@ -18,6 +18,11 @@ export function BriefingCard({ beschrijving, projectNaam, klantNaam, onSave }: B
   const [isGenerating, setIsGenerating] = useState(false)
   const savedRef = useRef(beschrijving)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const textRef = useRef(beschrijving)
+
+  useEffect(() => {
+    textRef.current = text
+  }, [text])
 
   useEffect(() => {
     setText(beschrijving)
@@ -46,7 +51,7 @@ export function BriefingCard({ beschrijving, projectNaam, klantNaam, onSave }: B
   useEffect(() => {
     if (text === savedRef.current) return
     if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => { flush(text) }, AUTOSAVE_DELAY_MS)
+    timerRef.current = setTimeout(() => { timerRef.current = null; flush(text) }, AUTOSAVE_DELAY_MS)
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
@@ -54,11 +59,9 @@ export function BriefingCard({ beschrijving, projectNaam, klantNaam, onSave }: B
 
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
-        if (text !== savedRef.current) {
-          onSave(text).catch(() => {})
-        }
+      if (timerRef.current) clearTimeout(timerRef.current)
+      if (textRef.current !== savedRef.current) {
+        onSave(textRef.current).catch(() => {})
       }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
