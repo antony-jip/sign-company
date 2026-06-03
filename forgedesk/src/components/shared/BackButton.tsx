@@ -68,10 +68,9 @@ export function BackButton({ fallbackPath, label }: BackButtonProps) {
   return (
     <button
       onClick={handleClick}
-      className="inline-flex items-center gap-1.5 text-[13px] font-medium rounded-lg px-2 py-1 -ml-2 transition-colors hover:bg-muted"
-      style={{ color: '#5A5A55' }}
+      className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#1A535C] rounded-lg px-2 py-1 -ml-1.5 hover:bg-[rgba(26,83,92,0.08)] transition-colors"
     >
-      <ArrowLeft className="w-[18px] h-[18px]" />
+      <ArrowLeft className="w-[18px] h-[18px] text-[#F15025] transition-transform group-hover:-translate-x-0.5" />
       {displayLabel}
     </button>
   )

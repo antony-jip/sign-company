@@ -157,9 +157,9 @@ export function ProjectKaart({
         <div className="flex items-center gap-1.5 text-[12px]">
           <Link
             to="/projecten"
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            className="group inline-flex items-center gap-1.5 font-semibold text-[#1A535C] rounded-lg px-2 py-1 -ml-1.5 hover:bg-[rgba(26,83,92,0.08)] transition-colors"
           >
-            <ArrowLeft className="h-3 w-3" />
+            <ArrowLeft className="h-3.5 w-3.5 text-[#F15025] transition-transform group-hover:-translate-x-0.5" />
             Projecten
           </Link>
           {klant && (
