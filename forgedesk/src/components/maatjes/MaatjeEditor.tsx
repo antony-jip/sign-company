@@ -495,7 +495,8 @@ export function MaatjeEditor({
     : ''
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex flex-col bg-[#0E2025] animate-in fade-in-0 duration-200">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#0E2025] animate-in fade-in-0 duration-200 sm:items-center sm:justify-center sm:bg-black/55 sm:p-6 sm:backdrop-blur-sm">
+      <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#0E2025] sm:h-auto sm:max-h-[92vh] sm:max-w-5xl sm:rounded-2xl sm:shadow-[0_30px_90px_rgba(0,0,0,0.55)] sm:animate-in sm:zoom-in-95 sm:duration-200">
       {/* Topbalk */}
       <div className="flex items-center justify-between gap-3 bg-[#1A535C] px-4 pt-3 pb-2">
         <button type="button" onClick={onAnnuleren} className="text-[13px] font-medium text-white/80 hover:text-white">
@@ -569,7 +570,7 @@ export function MaatjeEditor({
               src={fotoUrl}
               alt="Maatje"
               onLoad={redraw}
-              className="block max-h-[calc(100vh-280px)] max-w-full select-none object-contain"
+              className="block max-h-[calc(100vh-280px)] max-w-full select-none object-contain sm:max-h-[58vh]"
               draggable={false}
             />
             <canvas
@@ -684,6 +685,7 @@ export function MaatjeEditor({
             />
           ))}
         </div>
+      </div>
       </div>
     </div>,
     document.body,
