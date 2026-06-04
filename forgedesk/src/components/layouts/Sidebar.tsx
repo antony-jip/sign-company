@@ -67,9 +67,10 @@ const NAV_GROUPS: NavGroup[] = [
 // Flat list for rail mode
 const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...FINANCIEEL_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS]
 
-// Lean standaardset op mobiel wanneer de gebruiker nog geen eigen menukeuze
-// heeft gemaakt. Meer modules toevoegen kan via Instellingen -> Navigatie.
-const MOBIELE_STANDAARD_LABELS = ['Projecten', 'Planning', 'Werkbonnen', 'Maatjes']
+// Mobiel is bewust lean: alleen het hoogstnodige voor de buitendienst
+// (projecten, mail, maatje) plus Instellingen. De rest doe je op desktop.
+// Geldt altijd op mobiel, los van de desktop-menukeuze.
+const MOBIELE_NAV_LABELS = ['Projecten', 'Email', 'Maatjes']
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768)
@@ -105,8 +106,8 @@ export function Sidebar() {
     const heeftVoorkeur = Array.isArray(sidebarItems) && sidebarItems.length > 0
     const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
     return (label: string) => {
-      if (label === 'Maatjes') return isMobieleNav
-      if (isMobieleNav && !heeftVoorkeur) return MOBIELE_STANDAARD_LABELS.includes(label) || label === 'Instellingen'
+      if (isMobieleNav) return MOBIELE_NAV_LABELS.includes(label) || label === 'Instellingen'
+      if (label === 'Maatjes') return false
       if (!heeftVoorkeur) return true
       return normalized.includes(label) || label === 'Instellingen'
     }
