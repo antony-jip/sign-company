@@ -45,6 +45,10 @@ const navItems: NavItem[] = [
 // Meest gebruikte modules staan los in de balk; de rest komt onder "Overig".
 const PRIMARY_LABELS = ['Dashboard', 'Projecten', 'Taken', 'Offertes', 'Planning', 'Werkbonnen', 'Email']
 
+// Lean standaardset op mobiel wanneer de gebruiker nog geen eigen menukeuze
+// heeft gemaakt. Meer modules toevoegen kan via Instellingen -> Navigatie.
+const MOBIELE_STANDAARD_LABELS = ['Dashboard', 'Projecten', 'Planning', 'Werkbonnen', 'Maatjes']
+
 const quickAddItems = [
   { label: 'Nieuw Project', icon: FolderKanban, path: '/projecten/nieuw', color: '#7EB5A6' },
   { label: 'Nieuwe Offerte', icon: FileText, path: '/offertes/nieuw', color: '#9B8EC4' },
@@ -80,6 +84,7 @@ export function TopNav() {
     const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
     return navItems.filter(item => {
       if (item.label === 'Maatjes') return isMobieleNav
+      if (isMobieleNav && !heeftVoorkeur) return MOBIELE_STANDAARD_LABELS.includes(item.label)
       if (!heeftVoorkeur) return true
       return normalized.includes(item.label) || item.label === 'Dashboard'
     })

@@ -67,6 +67,10 @@ const NAV_GROUPS: NavGroup[] = [
 // Flat list for rail mode
 const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...FINANCIEEL_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS]
 
+// Lean standaardset op mobiel wanneer de gebruiker nog geen eigen menukeuze
+// heeft gemaakt. Meer modules toevoegen kan via Instellingen -> Navigatie.
+const MOBIELE_STANDAARD_LABELS = ['Projecten', 'Planning', 'Werkbonnen', 'Maatjes']
+
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768)
   useEffect(() => {
@@ -102,6 +106,7 @@ export function Sidebar() {
     const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
     return (label: string) => {
       if (label === 'Maatjes') return isMobieleNav
+      if (isMobieleNav && !heeftVoorkeur) return MOBIELE_STANDAARD_LABELS.includes(label) || label === 'Instellingen'
       if (!heeftVoorkeur) return true
       return normalized.includes(label) || label === 'Instellingen'
     }
