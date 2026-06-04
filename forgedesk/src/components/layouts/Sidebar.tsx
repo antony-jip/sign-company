@@ -97,7 +97,7 @@ export function Sidebar() {
     const sidebarItems = settings?.sidebar_items
     if (!Array.isArray(sidebarItems) || sidebarItems.length === 0) return () => true
     const normalized = sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s)
-    return (label: string) => normalized.includes(label) || label === 'Instellingen'
+    return (label: string) => normalized.includes(label) || label === 'Instellingen' || label === 'Maatjes'
   }, [settings?.sidebar_items])
 
   const filteredNavItems = useMemo(() => ALL_NAV_ITEMS.filter(i => isItemVisible(i.label)), [isItemVisible])

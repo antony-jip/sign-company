@@ -75,7 +75,7 @@ export function TopNav() {
     const sidebarItems = settings?.sidebar_items
     if (!Array.isArray(sidebarItems) || sidebarItems.length === 0) return navItems
     const normalized = sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s)
-    return navItems.filter(item => normalized.includes(item.label) || item.label === 'Dashboard')
+    return navItems.filter(item => normalized.includes(item.label) || item.label === 'Dashboard' || item.label === 'Maatjes')
   }, [settings?.sidebar_items])
 
   // Splits de zichtbare modules in een vaste primaire set + een "Overig"-rest.
