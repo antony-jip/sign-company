@@ -97,12 +97,10 @@ export function MaatjeEditor({
   }, [annotaties])
 
   const undo = useCallback(() => {
-    setHistorie((prev) => {
-      if (prev.length === 0) return prev
-      setAnnotaties(prev[prev.length - 1])
-      return prev.slice(0, -1)
-    })
-  }, [])
+    if (historie.length === 0) return
+    setAnnotaties(historie[historie.length - 1])
+    setHistorie((prev) => prev.slice(0, -1))
+  }, [historie])
 
   const naarNorm = useCallback((e: React.PointerEvent): MaatjePunt => {
     const canvas = canvasRef.current
@@ -130,21 +128,20 @@ export function MaatjeEditor({
   }, [naarNorm])
 
   const onPointerUp = useCallback(() => {
-    setConcept((c) => {
-      if (!c) return null
-      const afstand = Math.hypot(c.naar.x - c.van.x, c.naar.y - c.van.y)
-      if (afstand < 0.02) return null
-      const id = crypto.randomUUID()
-      snapshot()
-      if (tool === 'maatlijn') {
-        setAnnotaties((prev) => [...prev, { id, type: 'maatlijn', kleur, van: c.van, naar: c.naar, cm: null }])
-        setBewerkLabel({ id, soort: 'cm', waarde: '' })
-      } else if (tool === 'pijl') {
-        setAnnotaties((prev) => [...prev, { id, type: 'pijl', kleur, van: c.van, naar: c.naar }])
-      }
-      return null
-    })
-  }, [snapshot, tool, kleur])
+    if (!concept) return
+    const c = concept
+    setConcept(null)
+    const afstand = Math.hypot(c.naar.x - c.van.x, c.naar.y - c.van.y)
+    if (afstand < 0.02) return
+    const nieuwId = crypto.randomUUID()
+    snapshot()
+    if (tool === 'maatlijn') {
+      setAnnotaties((prev) => [...prev, { id: nieuwId, type: 'maatlijn', kleur, van: c.van, naar: c.naar, cm: null }])
+      setBewerkLabel({ id: nieuwId, soort: 'cm', waarde: '' })
+    } else if (tool === 'pijl') {
+      setAnnotaties((prev) => [...prev, { id: nieuwId, type: 'pijl', kleur, van: c.van, naar: c.naar }])
+    }
+  }, [concept, snapshot, tool, kleur])
 
   const bevestigLabel = useCallback(() => {
     if (!bewerkLabel) return
