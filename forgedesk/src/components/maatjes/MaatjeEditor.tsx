@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Ruler, ArrowUpRight, Type, Undo2, Check, Trash2, Pencil, Link2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -456,8 +457,8 @@ export function MaatjeEditor({
     ? geselecteerd.type === 'maatlijn' ? 'Maatlijn' : geselecteerd.type === 'pijl' ? 'Pijl' : 'Tekst'
     : ''
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#0E2025]">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#0E2025]">
       {/* Topbalk */}
       <div className="flex items-center justify-between gap-3 bg-[#1A535C] px-4 py-3">
         <button type="button" onClick={onAnnuleren} className="text-[13px] font-medium text-white/80 hover:text-white">
@@ -623,6 +624,7 @@ export function MaatjeEditor({
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

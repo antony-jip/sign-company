@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -52,9 +53,9 @@ export function MaatjeKoppelSheet({ aantal, onKoppel, onSluiten }: MaatjeKoppelS
     }
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-end bg-black/20 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] flex flex-col justify-end bg-black/20 backdrop-blur-sm"
       onClick={sluitViaAchtergrond}
     >
       <div
@@ -106,6 +107,7 @@ export function MaatjeKoppelSheet({ aantal, onKoppel, onSluiten }: MaatjeKoppelS
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

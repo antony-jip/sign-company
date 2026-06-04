@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Camera, Check, Link2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -257,8 +258,8 @@ export function MaatjeKladblok() {
         </div>
       )}
 
-      {selectieModus && (
-        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 bg-[#1A535C] px-4 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.15)]">
+      {selectieModus && createPortal(
+        <div className="safe-area-bottom fixed inset-x-0 bottom-0 z-[60] flex items-center justify-between gap-3 bg-[#1A535C] px-4 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.15)]">
           <button
             type="button"
             onClick={verlaatSelectie}
@@ -277,7 +278,8 @@ export function MaatjeKladblok() {
           >
             Koppel aan project
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {koppelOpen && (
