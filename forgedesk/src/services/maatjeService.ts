@@ -167,8 +167,15 @@ export async function koppelMaatjes(ids: string[], projectId: string): Promise<v
   assertId(projectId, 'project_id')
   if (ids.length === 0) return
   if (isSupabaseConfigured() && supabase) {
-    const { error } = await supabase.from('maatjes').update({ project_id: projectId }).in('id', ids)
+    const { data, error } = await supabase
+      .from('maatjes')
+      .update({ project_id: projectId })
+      .in('id', ids)
+      .select('id')
     if (error) throw error
+    // Geen geraakte rijen = RLS/permissie-probleem; maak dat zichtbaar i.p.v.
+    // stil 'slagen'.
+    if (!data || data.length === 0) throw new Error('Koppelen had geen effect — controleer rechten of migratie 121')
     return
   }
   const alle = getLocalData<Maatje>('maatjes')

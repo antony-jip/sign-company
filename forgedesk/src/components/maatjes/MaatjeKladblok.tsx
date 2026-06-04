@@ -153,7 +153,8 @@ export function MaatjeKladblok() {
       await laadMaatjes()
     } catch (err) {
       logger.error('Koppelen mislukt:', err)
-      toast.error('Koppelen mislukt')
+      const reden = err instanceof Error ? err.message : 'onbekende fout'
+      toast.error(`Koppelen mislukt: ${reden}`)
     }
   }, [selectie, verlaatSelectie, laadMaatjes])
 
