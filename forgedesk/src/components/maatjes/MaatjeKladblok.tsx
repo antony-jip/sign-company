@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Camera, Check, Link2, Trash2 } from 'lucide-react'
+import { Camera, Check, Link2, Trash2, CloudOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '@/utils/logger'
@@ -17,6 +17,7 @@ import {
   getMaatjeWeergaveUrl,
 } from '@/services/maatjeService'
 import { comprimeerFoto, FotoVerwerkingsFout } from '@/utils/beeldCompressie'
+import { wachtrijToevoegen, wachtrijAlles, wachtrijVerwijderen } from '@/utils/maatjeOfflineQueue'
 import { MaatjeEditor } from './MaatjeEditor'
 import { MaatjeKoppelSheet } from './MaatjeKoppelSheet'
 
@@ -88,6 +89,7 @@ export function MaatjeKladblok() {
   const [selectieModus, setSelectieModus] = useState(false)
   const [selectie, setSelectie] = useState<Set<string>>(new Set())
   const [koppelOpen, setKoppelOpen] = useState(false)
+  const [wachtAantal, setWachtAantal] = useState(0)
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
   const laadMaatjes = useCallback(async () => {
@@ -101,7 +103,37 @@ export function MaatjeKladblok() {
     }
   }, [])
 
+  const verversWachtrij = useCallback(async () => {
+    setWachtAantal((await wachtrijAlles()).length)
+  }, [])
+
+  const flushWachtrij = useCallback(async () => {
+    const items = await wachtrijAlles()
+    if (items.length === 0) return
+    let geslaagd = 0
+    for (const item of items) {
+      try {
+        await createMaatje({ titel: item.titel, annotaties: item.annotaties }, item.origineel, item.render)
+        await wachtrijVerwijderen(item.id)
+        geslaagd++
+      } catch (err) {
+        logger.error('Upload uit wachtrij mislukt:', err)
+        break // waarschijnlijk weer offline — stoppen
+      }
+    }
+    await verversWachtrij()
+    if (geslaagd > 0) { tik(12); await laadMaatjes() }
+  }, [laadMaatjes, verversWachtrij])
+
   useEffect(() => { laadMaatjes() }, [laadMaatjes])
+
+  useEffect(() => {
+    verversWachtrij()
+    const flushAlsOnline = () => { if (typeof navigator === 'undefined' || navigator.onLine) flushWachtrij() }
+    flushAlsOnline()
+    window.addEventListener('online', flushAlsOnline)
+    return () => window.removeEventListener('online', flushAlsOnline)
+  }, [verversWachtrij, flushWachtrij])
 
   const opCameraBestand = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -208,14 +240,34 @@ export function MaatjeKladblok() {
       meldOpgeslagen()
       setEditor(null)
     } else {
-      await createMaatje({ titel: data.titel, annotaties: data.annotaties }, huidig.fotoBron as Blob, data.render)
-      meldOpgeslagen()
+      const origineel = huidig.fotoBron as Blob
+      try {
+        await createMaatje({ titel: data.titel, annotaties: data.annotaties }, origineel, data.render)
+        meldOpgeslagen()
+      } catch (err) {
+        // Offline? Bewaar lokaal en upload zodra er weer verbinding is.
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          await wachtrijToevoegen({
+            id: crypto.randomUUID(),
+            titel: data.titel,
+            annotaties: data.annotaties,
+            origineel,
+            render: data.render,
+            aangemaakt: Date.now(),
+          })
+          tik(12)
+          toast.success(<span>Opgeslagen — upload zodra je online bent<span className="text-[#F15025]">.</span></span>)
+          await verversWachtrij()
+        } else {
+          throw err
+        }
+      }
       setEditor(null)
       // Bewaren → terug naar camera voor de volgende opname
       setTimeout(() => cameraInputRef.current?.click(), 0)
     }
     await laadMaatjes()
-  }, [editor, laadMaatjes])
+  }, [editor, laadMaatjes, verversWachtrij])
 
   const koppelVanuitEditor = useCallback(async (data: { annotaties: MaatjeAnnotatie[]; titel: string | null; render: Blob }) => {
     const huidig = editor
@@ -271,6 +323,13 @@ export function MaatjeKladblok() {
         className="hidden"
         onChange={opCameraBestand}
       />
+
+      {wachtAantal > 0 && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-[#FDF1E8] px-3 py-2.5 text-[13px] font-medium text-[#9A5A2E]">
+          <CloudOff className="h-4 w-4 flex-shrink-0" strokeWidth={1.75} />
+          {wachtAantal} foto{wachtAantal > 1 ? "'s" : ''} wacht op upload. Wordt automatisch verstuurd zodra je online bent.
+        </div>
+      )}
 
       {laden ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
