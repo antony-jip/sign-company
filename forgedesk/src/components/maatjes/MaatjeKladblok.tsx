@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Camera, Check, Link2 } from 'lucide-react'
+import { Camera, Check, Link2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '@/utils/logger'
+import { confirm } from '@/components/shared/ConfirmDialog'
 import type { Maatje, MaatjeAnnotatie } from '@/types'
 import {
   getLosseMaatjes,
   createMaatje,
   updateMaatje,
   koppelMaatjes,
+  verwijderMaatje,
   getMaatjeWeergaveUrl,
 } from '@/services/maatjeService'
 import { comprimeerFoto, FotoVerwerkingsFout } from '@/utils/beeldCompressie'
@@ -159,6 +161,27 @@ export function MaatjeKladblok() {
     }
   }, [selectie, verlaatSelectie, laadMaatjes])
 
+  const verwijderGeselecteerde = useCallback(async () => {
+    const ids = Array.from(selectie)
+    if (ids.length === 0) return
+    const ok = await confirm({
+      title: 'Maatjes verwijderen',
+      message: `${ids.length} maatje${ids.length > 1 ? 's' : ''} definitief verwijderen? De foto's gaan verloren.`,
+      variant: 'destructive',
+      confirmLabel: 'Verwijderen',
+    })
+    if (!ok) return
+    try {
+      await Promise.all(ids.map((id) => verwijderMaatje(id)))
+      toast.success(<span>{ids.length} verwijderd<span className="text-[#F15025]">.</span></span>)
+      verlaatSelectie()
+      await laadMaatjes()
+    } catch (err) {
+      logger.error('Verwijderen mislukt:', err)
+      toast.error('Verwijderen mislukt')
+    }
+  }, [selectie, verlaatSelectie, laadMaatjes])
+
   const bewaarVanuitEditor = useCallback(async (data: { annotaties: MaatjeAnnotatie[]; titel: string | null; render: Blob }) => {
     const huidig = editor
     if (!huidig) return
@@ -270,14 +293,25 @@ export function MaatjeKladblok() {
           <span className="text-[13px] font-medium text-white">
             {selectie.size === 0 ? 'Tik maatjes aan' : `${selectie.size} geselecteerd`}
           </span>
-          <button
-            type="button"
-            onClick={() => setKoppelOpen(true)}
-            disabled={selectie.size === 0}
-            className="rounded-lg bg-[#F15025] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
-          >
-            Koppel aan project
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={verwijderGeselecteerde}
+              disabled={selectie.size === 0}
+              aria-label="Verwijderen"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/15 disabled:opacity-40"
+            >
+              <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setKoppelOpen(true)}
+              disabled={selectie.size === 0}
+              className="rounded-lg bg-[#F15025] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+            >
+              Koppel aan project
+            </button>
+          </div>
         </div>,
         document.body,
       )}
