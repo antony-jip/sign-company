@@ -27,6 +27,10 @@ const KLEUR_VOLGORDE: MaatjeKleur[] = ['flame', 'petrol', 'groen', 'wit']
 const HANDLE_RAAK = 18
 const LIJN_RAAK = 16
 const HANDLE_TEKEN_R = 7
+const PULSE_DUUR = 1100
+// Onder deze genormaliseerde verplaatsing geldt een aanraking als 'tik'
+// (bewerken) i.p.v. 'sleep' (verplaatsen).
+const TIK_DREMPEL = 0.008
 
 const TOOL_HINT: Record<Gereedschap, string> = {
   maatlijn: 'Sleep om een maatlijn te tekenen. Tik een element aan om te bewerken.',
@@ -36,10 +40,37 @@ const TOOL_HINT: Record<Gereedschap, string> = {
 
 type Punt = { x: number; y: number }
 type RaakSoort = 'endpoint-van' | 'endpoint-naar' | 'geheel'
-interface SleepInfo { soort: RaakSoort; id: string; laatste: MaatjePunt; gesnapshot: boolean }
+interface SleepInfo { soort: RaakSoort; id: string; start: MaatjePunt; laatste: MaatjePunt; bewogen: boolean }
 
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n))
+}
+
+// Flame-gloed over het geselecteerde element; alpha animeert voor een
+// duidelijke knipper bij (her)selectie.
+function tekenGloed(ctx: CanvasRenderingContext2D, a: MaatjeAnnotatie, w: number, h: number, alpha: number) {
+  const toPx = (pt: MaatjePunt): Punt => ({ x: pt.x * w, y: pt.y * h })
+  const basis = Math.min(w, h)
+  ctx.save()
+  ctx.globalAlpha = Math.max(0, Math.min(1, alpha))
+  ctx.strokeStyle = '#F15025'
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.lineWidth = Math.max(10, basis * 0.022)
+  if (a.type === 'tekst') {
+    const pos = toPx(a.positie)
+    const fontPx = Math.max(14, basis * 0.045)
+    const tw = Math.max(20, (a.tekst.length || 3) * fontPx * 0.55)
+    ctx.strokeRect(pos.x - 9, pos.y - 9, tw + 18, fontPx + 18)
+  } else {
+    const v = toPx(a.van)
+    const n = toPx(a.naar)
+    ctx.beginPath()
+    ctx.moveTo(v.x, v.y)
+    ctx.lineTo(n.x, n.y)
+    ctx.stroke()
+  }
+  ctx.restore()
 }
 
 function afstand(a: Punt, b: Punt): number {
@@ -67,6 +98,9 @@ export function MaatjeEditor({
   const imgRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sleepRef = useRef<SleepInfo | null>(null)
+  const pulseRef = useRef<number | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const redrawRef = useRef<() => void>(() => {})
 
   const [fotoUrl, setFotoUrl] = useState('')
   const [annotaties, setAnnotaties] = useState<MaatjeAnnotatie[]>(beginAnnotaties)
@@ -141,7 +175,16 @@ export function MaatjeEditor({
     ctx.clearRect(0, 0, w, h)
     const concAnn = conceptAlsAnnotatie()
     tekenAnnotaties(ctx, concAnn ? [...annotaties, concAnn] : annotaties, w, h)
-    if (geselecteerd) tekenHandles(ctx, geselecteerd, w, h)
+    if (geselecteerd) {
+      if (pulseRef.current != null) {
+        const t = (performance.now() - pulseRef.current) / PULSE_DUUR
+        if (t >= 0 && t < 1) {
+          const alpha = (1 - t) * (0.35 + 0.35 * Math.cos(t * Math.PI * 8))
+          if (alpha > 0.02) tekenGloed(ctx, geselecteerd, w, h, alpha)
+        }
+      }
+      tekenHandles(ctx, geselecteerd, w, h)
+    }
   }, [annotaties, conceptAlsAnnotatie, geselecteerd, tekenHandles])
 
   useEffect(() => { redraw() }, [redraw])
@@ -153,6 +196,30 @@ export function MaatjeEditor({
     obs.observe(img)
     return () => obs.disconnect()
   }, [redraw])
+
+  useEffect(() => { redrawRef.current = redraw })
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }, [])
+
+  // Start een korte knipper-animatie op het geselecteerde element.
+  const startPulse = useCallback(() => {
+    pulseRef.current = performance.now()
+    if (rafRef.current != null) return
+    const loop = () => {
+      redrawRef.current()
+      if (pulseRef.current != null && performance.now() - pulseRef.current < PULSE_DUUR) {
+        rafRef.current = requestAnimationFrame(loop)
+      } else {
+        pulseRef.current = null
+        rafRef.current = null
+        redrawRef.current()
+      }
+    }
+    rafRef.current = requestAnimationFrame(loop)
+  }, [])
+
+  const stopPulse = useCallback(() => {
+    pulseRef.current = null
+  }, [])
 
   const snapshot = useCallback(() => {
     setHistorie((prev) => [...prev, annotaties])
@@ -216,8 +283,9 @@ export function MaatjeEditor({
     const hit = raak(pPx, rm.w, rm.h)
     if (hit) {
       setGeselecteerdeId(hit.id)
+      startPulse()
       canvasRef.current?.setPointerCapture(e.pointerId)
-      sleepRef.current = { soort: hit.soort, id: hit.id, laatste: pNorm, gesnapshot: false }
+      sleepRef.current = { soort: hit.soort, id: hit.id, start: pNorm, laatste: pNorm, bewogen: false }
       return
     }
 
@@ -232,9 +300,10 @@ export function MaatjeEditor({
     }
     // maatlijn / pijl: nieuwe vorm tekenen
     setGeselecteerdeId(null)
+    stopPulse()
     canvasRef.current?.setPointerCapture(e.pointerId)
     setConcept({ van: pNorm, naar: pNorm })
-  }, [bewerk, naarNorm, rectMaat, raak, tool, kleur, snapshot])
+  }, [bewerk, naarNorm, rectMaat, raak, tool, kleur, snapshot, startPulse, stopPulse])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (concept) {
@@ -244,8 +313,13 @@ export function MaatjeEditor({
     }
     const sleep = sleepRef.current
     if (!sleep) return
-    if (!sleep.gesnapshot) { snapshot(); sleep.gesnapshot = true }
     const pNorm = naarNorm(e)
+    if (!sleep.bewogen) {
+      // Onder de drempel blijft het een tik (bewerken), geen sleep.
+      if (Math.abs(pNorm.x - sleep.start.x) <= TIK_DREMPEL && Math.abs(pNorm.y - sleep.start.y) <= TIK_DREMPEL) return
+      sleep.bewogen = true
+      snapshot()
+    }
     if (sleep.soort === 'endpoint-van') {
       setAnnotaties((prev) => prev.map((a) => (a.id === sleep.id && a.type !== 'tekst' ? { ...a, van: pNorm } : a)))
     } else if (sleep.soort === 'endpoint-naar') {
@@ -267,7 +341,22 @@ export function MaatjeEditor({
   }, [concept, naarNorm, snapshot])
 
   const onPointerUp = useCallback(() => {
-    if (sleepRef.current) { sleepRef.current = null; return }
+    const sleep = sleepRef.current
+    if (sleep) {
+      sleepRef.current = null
+      // Tik (geen sleep) op een bestaand element → meteen bewerken.
+      if (!sleep.bewogen) {
+        const a = annotaties.find((x) => x.id === sleep.id)
+        if (a && a.type === 'maatlijn') {
+          snapshot()
+          setBewerk({ id: a.id, soort: 'cm', waarde: a.cm != null ? String(a.cm) : '' })
+        } else if (a && a.type === 'tekst') {
+          snapshot()
+          setBewerk({ id: a.id, soort: 'tekst', waarde: a.tekst })
+        }
+      }
+      return
+    }
     if (!concept) return
     const c = concept
     setConcept(null)
@@ -277,12 +366,14 @@ export function MaatjeEditor({
     if (tool === 'maatlijn') {
       setAnnotaties((prev) => [...prev, { id, type: 'maatlijn', kleur, van: c.van, naar: c.naar, cm: null }])
       setGeselecteerdeId(id)
+      startPulse()
       setBewerk({ id, soort: 'cm', waarde: '' })
     } else if (tool === 'pijl') {
       setAnnotaties((prev) => [...prev, { id, type: 'pijl', kleur, van: c.van, naar: c.naar }])
       setGeselecteerdeId(id)
+      startPulse()
     }
-  }, [concept, snapshot, tool, kleur])
+  }, [annotaties, concept, snapshot, tool, kleur, startPulse])
 
   const kiesGereedschap = useCallback((g: Gereedschap) => {
     setTool(g)
@@ -426,7 +517,7 @@ export function MaatjeEditor({
       {/* Cm- / tekst-popup — bovenin zodat het toetsenbord het niet bedekt */}
       {bewerk && (
         <>
-          <div className="absolute inset-0 z-20 bg-black/40" onClick={bevestigBewerk} />
+          <div className="absolute inset-0 z-20 bg-black/25" onClick={bevestigBewerk} />
           <div className="absolute inset-x-0 top-20 z-30 flex justify-center px-4">
             <div className="flex w-full max-w-sm items-center gap-2 rounded-2xl bg-white p-3 shadow-[0_8px_30px_rgba(0,0,0,0.25)]">
               <input
