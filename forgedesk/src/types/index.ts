@@ -1182,6 +1182,55 @@ export interface ProjectFoto {
   created_at: string;
 }
 
+// ============ MAATJE (buitendienst-foto met annotaties) ============
+
+export type MaatjeKleur = 'flame' | 'petrol' | 'groen' | 'wit';
+
+interface MaatjeAnnotatieBasis {
+  id: string;
+  kleur: MaatjeKleur;
+}
+
+// Coordinaten genormaliseerd (0..1) zodat ze schaal-onafhankelijk zijn.
+export interface MaatjePunt {
+  x: number;
+  y: number;
+}
+
+export interface MaatjeMaatlijn extends MaatjeAnnotatieBasis {
+  type: 'maatlijn';
+  van: MaatjePunt;
+  naar: MaatjePunt;
+  cm: number | null;
+}
+
+export interface MaatjePijl extends MaatjeAnnotatieBasis {
+  type: 'pijl';
+  van: MaatjePunt;
+  naar: MaatjePunt;
+}
+
+export interface MaatjeTekst extends MaatjeAnnotatieBasis {
+  type: 'tekst';
+  positie: MaatjePunt;
+  tekst: string;
+}
+
+export type MaatjeAnnotatie = MaatjeMaatlijn | MaatjePijl | MaatjeTekst;
+
+export interface Maatje {
+  id: string;
+  organisatie_id: string;
+  project_id: string | null;
+  titel: string | null;
+  foto_origineel_url: string;
+  foto_render_url: string | null;
+  annotaties: MaatjeAnnotatie[];
+  aangemaakt_door: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // ============ VERLOF & BESCHIKBAARHEID (Feature 3) ============
 
 export interface Verlof {
