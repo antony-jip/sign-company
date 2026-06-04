@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, LogOut, Menu, X,
   Moon, Sun, CreditCard, PanelTop,
   LayoutDashboard, CircleUserRound, BookOpen,
-  Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox,
+  Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox, Ruler,
   TrendingUp, Calendar, ListChecks, Send, Globe, SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react'
@@ -34,6 +34,7 @@ const WERK_ITEMS: NavItem[] = [
   { label: 'Offertes', icon: FileText, path: '/offertes', color: '#F15025' },
   { label: 'Klanten', icon: Building2, path: '/klanten', color: '#3A6B8C' },
   { label: 'Werkbonnen', icon: Wrench, path: '/werkbonnen', color: '#C44830' },
+  { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#F15025' },
   { label: 'Visualizer', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
 ]
 
