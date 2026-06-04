@@ -45,7 +45,7 @@ import {
   User2,
   CalendarDays,
 } from 'lucide-react'
-import { List as TabList, Wrench as TabWrench, Euro as TabEuro, PenLine as TabPenLine, Mail as TabMail } from 'lucide-react'
+import { List as TabList, Wrench as TabWrench, Euro as TabEuro, PenLine as TabPenLine, Mail as TabMail, Ruler as TabRuler } from 'lucide-react'
 import { getEmailsVoorProject, type ProjectMail } from '@/services/emailProjectService'
 import { sanitizeEmailHTML } from '@/lib/sanitize'
 import { callForgie } from '@/services/forgieService'
@@ -133,6 +133,7 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 // ProjectTasksTable removed — using TaskChecklistView in TakenOfferteGrid
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
+import { ProjectMaatjesTab } from '@/components/maatjes/ProjectMaatjesTab'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import { PakbonVanProjectDialog } from '@/components/leveringsbonnen/PakbonVanProjectDialog'
@@ -358,7 +359,7 @@ function getStatusDotColor(status: string): string {
   }
 }
 
-type ProjectTab = 'overzicht' | 'werkbon' | 'financieel' | 'email' | 'notities'
+type ProjectTab = 'overzicht' | 'werkbon' | 'financieel' | 'email' | 'notities' | 'maatjes'
 
 
 
@@ -407,7 +408,7 @@ export function ProjectDetail() {
   }, [])
   const [activeTab, setActiveTab] = useState<ProjectTab>(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab')
-    return (['overzicht', 'werkbon', 'financieel', 'email', 'notities'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
+    return (['overzicht', 'werkbon', 'financieel', 'email', 'notities', 'maatjes'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
   })
   const handleTabChange = (tab: ProjectTab) => {
     setActiveTab(tab)
@@ -1328,6 +1329,7 @@ export function ProjectDetail() {
             { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectFacturen.length,     Icon: TabEuro    },
             { key: 'email' as ProjectTab,      label: 'E-mail',     count: projectEmails.length,       Icon: TabMail    },
             { key: 'notities' as ProjectTab,   label: 'Notities',   count: 0,                          Icon: TabPenLine },
+            { key: 'maatjes' as ProjectTab,    label: 'Maatjes',    count: 0,                          Icon: TabRuler   },
           ]).map((tab) => {
             const TabIcon = tab.Icon
             const isActive = activeTab === tab.key
@@ -2175,6 +2177,10 @@ export function ProjectDetail() {
           )}
         </div>
       </div>
+      )}
+
+      {activeTab === 'maatjes' && (
+        <ProjectMaatjesTab projectId={id!} />
       )}
 
       </div>
