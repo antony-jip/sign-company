@@ -18,6 +18,26 @@ export function MaatjeKoppelSheet({ aantal, onKoppel, onSluiten }: MaatjeKoppelS
   const [bezigId, setBezigId] = useState<string | null>(null)
   const [sleepY, setSleepY] = useState(0)
   const sleepStartRef = useRef<number | null>(null)
+  // Houd de sheet boven het mobiele toetsenbord: visualViewport krimpt als het
+  // toetsenbord opent, dan tillen we de sheet op zodat de zoekbalk zichtbaar blijft.
+  const [toetsenbordHoogte, setToetsenbordHoogte] = useState(0)
+  const [zichtbareHoogte, setZichtbareHoogte] = useState(0)
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => {
+      setToetsenbordHoogte(Math.max(0, window.innerHeight - vv.height - vv.offsetTop))
+      setZichtbareHoogte(vv.height)
+    }
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
   // Negeer een achtergrond-tik vlak na openen: voorkomt dat de tik die de
   // sheet opende 'doorklikt' naar de verse achtergrond en 'm meteen sluit.
   const geopendRef = useRef(Date.now())
@@ -74,11 +94,16 @@ export function MaatjeKoppelSheet({ aantal, onKoppel, onSluiten }: MaatjeKoppelS
   return createPortal(
     <div
       className="fixed inset-0 z-[70] flex flex-col justify-end bg-black/30 backdrop-blur-sm animate-in fade-in-0 duration-200 sm:items-center sm:justify-center"
+      style={{ bottom: toetsenbordHoogte }}
       onClick={sluitViaAchtergrond}
     >
       <div
         className="flex max-h-[80vh] w-full flex-col rounded-t-2xl bg-white p-5 shadow-[0_-8px_40px_rgba(0,0,0,0.18)] animate-in slide-in-from-bottom-4 duration-300 sm:max-w-md sm:max-h-[70vh] sm:rounded-2xl sm:shadow-[0_24px_60px_rgba(0,0,0,0.22)]"
-        style={{ transform: `translateY(${sleepY}px)`, transition: sleepStartRef.current != null ? 'none' : 'transform 0.2s ease' }}
+        style={{
+          transform: `translateY(${sleepY}px)`,
+          transition: sleepStartRef.current != null ? 'none' : 'transform 0.2s ease',
+          maxHeight: toetsenbordHoogte > 0 && zichtbareHoogte > 0 ? `${zichtbareHoogte - 24}px` : undefined,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
