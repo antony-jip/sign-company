@@ -1,19 +1,23 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { MousePointer2, Ruler, ArrowUpRight, Type, Undo2, Check, Trash2, Pencil } from 'lucide-react'
+import { Ruler, ArrowUpRight, Type, Undo2, Check, Trash2, Pencil, Link2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import type { MaatjeAnnotatie, MaatjeKleur, MaatjePunt } from '@/types'
 import { MAATJE_KLEUREN, renderMaatje, tekenAnnotaties } from '@/utils/maatjeAnnotaties'
 
-type Gereedschap = 'select' | 'maatlijn' | 'pijl' | 'tekst'
+type Gereedschap = 'maatlijn' | 'pijl' | 'tekst'
+
+interface MaatjeOpslag { annotaties: MaatjeAnnotatie[]; titel: string | null; render: Blob }
 
 interface MaatjeEditorProps {
   /** Gecomprimeerde foto: blob (verse opname) of signed URL (heropenen). */
   fotoBron: Blob | string
   beginAnnotaties?: MaatjeAnnotatie[]
   beginTitel?: string | null
-  onBewaren: (data: { annotaties: MaatjeAnnotatie[]; titel: string | null; render: Blob }) => void | Promise<void>
+  onBewaren: (data: MaatjeOpslag) => void | Promise<void>
+  /** Indien aanwezig: toont "Koppel aan project" en bewaart + koppelt in één keer. */
+  onKoppelen?: (data: MaatjeOpslag) => void | Promise<void>
   onAnnuleren: () => void
 }
 
@@ -25,10 +29,9 @@ const LIJN_RAAK = 16
 const HANDLE_TEKEN_R = 7
 
 const TOOL_HINT: Record<Gereedschap, string> = {
-  select: 'Tik een element aan om te verplaatsen, bij te stellen of te verwijderen.',
-  maatlijn: 'Sleep om een maatlijn te tekenen, typ daarna de maat.',
-  pijl: 'Sleep om een pijl te tekenen.',
-  tekst: 'Tik om tekst te plaatsen.',
+  maatlijn: 'Sleep om een maatlijn te tekenen. Tik een element aan om te bewerken.',
+  pijl: 'Sleep om een pijl te tekenen. Tik een element aan om te bewerken.',
+  tekst: 'Tik om tekst te plaatsen. Tik een element aan om te bewerken.',
 }
 
 type Punt = { x: number; y: number }
@@ -58,6 +61,7 @@ export function MaatjeEditor({
   beginAnnotaties = [],
   beginTitel = null,
   onBewaren,
+  onKoppelen,
   onAnnuleren,
 }: MaatjeEditorProps) {
   const imgRef = useRef<HTMLImageElement>(null)
@@ -137,8 +141,8 @@ export function MaatjeEditor({
     ctx.clearRect(0, 0, w, h)
     const concAnn = conceptAlsAnnotatie()
     tekenAnnotaties(ctx, concAnn ? [...annotaties, concAnn] : annotaties, w, h)
-    if (tool === 'select' && geselecteerd) tekenHandles(ctx, geselecteerd, w, h)
-  }, [annotaties, conceptAlsAnnotatie, tool, geselecteerd, tekenHandles])
+    if (geselecteerd) tekenHandles(ctx, geselecteerd, w, h)
+  }, [annotaties, conceptAlsAnnotatie, geselecteerd, tekenHandles])
 
   useEffect(() => { redraw() }, [redraw])
 
@@ -203,7 +207,21 @@ export function MaatjeEditor({
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (bewerk) return
     const pNorm = naarNorm(e)
+    const rm = rectMaat()
+    if (!rm) return
 
+    // Tik altijd eerst op een bestaand element (ongeacht de actieve tool):
+    // selecteren + verslepen. Zo is alles direct bewerkbaar.
+    const pPx: Punt = { x: pNorm.x * rm.w, y: pNorm.y * rm.h }
+    const hit = raak(pPx, rm.w, rm.h)
+    if (hit) {
+      setGeselecteerdeId(hit.id)
+      canvasRef.current?.setPointerCapture(e.pointerId)
+      sleepRef.current = { soort: hit.soort, id: hit.id, laatste: pNorm, gesnapshot: false }
+      return
+    }
+
+    // Lege ruimte:
     if (tool === 'tekst') {
       const id = crypto.randomUUID()
       snapshot()
@@ -212,26 +230,11 @@ export function MaatjeEditor({
       setBewerk({ id, soort: 'tekst', waarde: '' })
       return
     }
-
-    if (tool === 'maatlijn' || tool === 'pijl') {
-      canvasRef.current?.setPointerCapture(e.pointerId)
-      setConcept({ van: pNorm, naar: pNorm })
-      return
-    }
-
-    // select
-    const rm = rectMaat()
-    if (!rm) return
-    const pPx: Punt = { x: pNorm.x * rm.w, y: pNorm.y * rm.h }
-    const hit = raak(pPx, rm.w, rm.h)
-    if (hit) {
-      setGeselecteerdeId(hit.id)
-      canvasRef.current?.setPointerCapture(e.pointerId)
-      sleepRef.current = { soort: hit.soort, id: hit.id, laatste: pNorm, gesnapshot: false }
-    } else {
-      setGeselecteerdeId(null)
-    }
-  }, [bewerk, naarNorm, tool, kleur, snapshot, rectMaat, raak])
+    // maatlijn / pijl: nieuwe vorm tekenen
+    setGeselecteerdeId(null)
+    canvasRef.current?.setPointerCapture(e.pointerId)
+    setConcept({ van: pNorm, naar: pNorm })
+  }, [bewerk, naarNorm, rectMaat, raak, tool, kleur, snapshot])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (concept) {
@@ -284,7 +287,6 @@ export function MaatjeEditor({
   const kiesGereedschap = useCallback((g: Gereedschap) => {
     setTool(g)
     setConcept(null)
-    if (g !== 'select') setGeselecteerdeId(null)
   }, [])
 
   const kiesKleur = useCallback((k: MaatjeKleur) => {
@@ -331,20 +333,21 @@ export function MaatjeEditor({
     setBewerk(null)
   }, [bewerk])
 
-  const bewaren = useCallback(async () => {
+  const voltooi = useCallback(async (actie: 'bewaren' | 'koppelen') => {
     setBezig(true)
     try {
       const render = await renderMaatje(fotoBron, annotaties)
-      await onBewaren({ annotaties, titel: titel.trim() || null, render })
+      const payload: MaatjeOpslag = { annotaties, titel: titel.trim() || null, render }
+      if (actie === 'koppelen' && onKoppelen) await onKoppelen(payload)
+      else await onBewaren(payload)
     } catch (err) {
-      logger.error('Maatje bewaren mislukt:', err)
-      toast.error('Bewaren mislukt')
+      logger.error('Maatje opslaan mislukt:', err)
+      toast.error('Opslaan mislukt')
       setBezig(false)
     }
-  }, [fotoBron, annotaties, titel, onBewaren])
+  }, [fotoBron, annotaties, titel, onBewaren, onKoppelen])
 
   const gereedschappen: { key: Gereedschap; label: string; Icon: typeof Ruler }[] = [
-    { key: 'select', label: 'Selecteren', Icon: MousePointer2 },
     { key: 'maatlijn', label: 'Maatlijn', Icon: Ruler },
     { key: 'pijl', label: 'Pijl', Icon: ArrowUpRight },
     { key: 'tekst', label: 'Tekst', Icon: Type },
@@ -365,17 +368,30 @@ export function MaatjeEditor({
           value={titel}
           onChange={(e) => setTitel(e.target.value)}
           placeholder="Naam (optioneel)"
-          className="max-w-[55%] flex-1 bg-transparent text-center text-[14px] font-semibold text-white placeholder:text-white/40 focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent text-center text-[14px] font-semibold text-white placeholder:text-white/40 focus:outline-none"
         />
-        <button
-          type="button"
-          onClick={bewaren}
-          disabled={bezig}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[#F15025] px-3.5 py-1.5 text-[13px] font-semibold text-white disabled:opacity-50"
-        >
-          <Check className="h-4 w-4" strokeWidth={2.25} />
-          {bezig ? 'Bewaren...' : 'Bewaren'}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {onKoppelen && (
+            <button
+              type="button"
+              onClick={() => voltooi('koppelen')}
+              disabled={bezig}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-white/15 disabled:opacity-50"
+            >
+              <Link2 className="h-4 w-4" strokeWidth={2} />
+              Koppel
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => voltooi('bewaren')}
+            disabled={bezig}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#F15025] px-3.5 py-1.5 text-[13px] font-semibold text-white disabled:opacity-50"
+          >
+            <Check className="h-4 w-4" strokeWidth={2.25} />
+            {bezig ? '...' : 'Bewaren'}
+          </button>
+        </div>
       </div>
 
       {/* Foto + annotatie-overlay */}
@@ -436,7 +452,7 @@ export function MaatjeEditor({
       {/* Onderbalk */}
       <div className="bg-[#13343A]">
         {/* Selectie-actiebalk */}
-        {tool === 'select' && geselecteerd && !bewerk && (
+        {geselecteerd && !bewerk && (
           <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-2">
             <span className="text-[12px] font-semibold text-white/90">{selectieLabel} geselecteerd</span>
             <div className="flex items-center gap-2">
