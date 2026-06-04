@@ -458,7 +458,7 @@ export function MaatjeEditor({
     : ''
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex flex-col bg-[#0E2025]">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#0E2025] animate-in fade-in-0 duration-200">
       {/* Topbalk */}
       <div className="flex items-center justify-between gap-3 bg-[#1A535C] px-4 pt-3 pb-2">
         <button type="button" onClick={onAnnuleren} className="text-[13px] font-medium text-white/80 hover:text-white">
@@ -533,9 +533,9 @@ export function MaatjeEditor({
       {/* Cm- / tekst-popup — bovenin zodat het toetsenbord het niet bedekt */}
       {bewerk && (
         <>
-          <div className="absolute inset-0 z-20 bg-black/25" onClick={sluitBewerkViaAchtergrond} />
+          <div className="absolute inset-0 z-20 bg-black/25 animate-in fade-in-0 duration-150" onClick={sluitBewerkViaAchtergrond} />
           <div className="absolute inset-x-0 top-20 z-30 flex justify-center px-4">
-            <div className="flex w-full max-w-sm items-center gap-2 rounded-2xl bg-white p-3 shadow-[0_8px_30px_rgba(0,0,0,0.25)]">
+            <div className="flex w-full max-w-sm items-center gap-2 rounded-2xl bg-white p-3 shadow-[0_8px_30px_rgba(0,0,0,0.25)] animate-in fade-in-0 zoom-in-95 duration-150">
               <input
                 autoFocus
                 value={bewerk.waarde}
@@ -595,8 +595,8 @@ export function MaatjeEditor({
                 onClick={() => kiesGereedschap(key)}
                 aria-label={label}
                 className={cn(
-                  'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
-                  tool === key ? 'bg-[#F15025] text-white' : 'text-white/70 hover:bg-white/10',
+                  'flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-150 active:scale-90',
+                  tool === key ? 'bg-[#F15025] text-white shadow-[0_2px_10px_rgba(241,80,37,0.4)]' : 'text-white/70 hover:bg-white/10',
                 )}
               >
                 <Icon className="h-5 w-5" strokeWidth={1.75} />

@@ -54,12 +54,12 @@ function MaatjeKaart({
       type="button"
       onClick={() => onKlik(maatje)}
       className={cn(
-        'group relative block overflow-hidden rounded-xl bg-white text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]',
+        'group relative block overflow-hidden rounded-xl bg-white text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] active:scale-[0.98]',
         geselecteerd && 'ring-2 ring-[#F15025]',
       )}
     >
       <div className="aspect-square w-full bg-[#F8F7F5]">
-        {url && <img src={url} alt={maatje.titel ?? 'Maatje'} className="h-full w-full object-cover" />}
+        {url && <img src={url} alt={maatje.titel ?? 'Maatje'} className="h-full w-full object-cover animate-in fade-in-0 duration-500" />}
       </div>
       {maatje.titel && (
         <div className="truncate px-2.5 py-2 text-[12px] font-medium text-[#1A1A1A]">{maatje.titel}</div>
@@ -255,7 +255,11 @@ export function MaatjeKladblok() {
       />
 
       {laden ? (
-        <p className="py-16 text-center text-[13px] text-[#9B9B95]">Laden...</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="aspect-square w-full animate-pulse rounded-xl bg-[#EFEDEA]" />
+          ))}
+        </div>
       ) : maatjes.length === 0 ? (
         <div className="py-16 text-center">
           <p className="text-[14px] text-[#6B6B66]">Nog geen maatjes in het kladblok.</p>
@@ -282,7 +286,7 @@ export function MaatjeKladblok() {
       )}
 
       {selectieModus && createPortal(
-        <div className="safe-area-bottom fixed inset-x-0 bottom-0 z-[60] flex items-center justify-between gap-3 bg-[#1A535C] px-4 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.15)]">
+        <div className="safe-area-bottom fixed inset-x-0 bottom-0 z-[60] flex items-center justify-between gap-3 bg-[#1A535C] px-4 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.15)] animate-in slide-in-from-bottom-4 duration-200">
           <button
             type="button"
             onClick={verlaatSelectie}

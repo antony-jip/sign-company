@@ -57,7 +57,7 @@ function MaatjeBeheerKaart({
         className="block w-full text-left"
       >
         <div className="aspect-square w-full bg-[#F8F7F5]">
-          {url && <img src={url} alt={maatje.titel ?? 'Maatje'} className="h-full w-full object-cover" />}
+          {url && <img src={url} alt={maatje.titel ?? 'Maatje'} className="h-full w-full object-cover animate-in fade-in-0 duration-500" />}
         </div>
       </button>
       <div className="flex items-center justify-between gap-2 px-2.5 py-2">
@@ -231,7 +231,11 @@ export function MaatjeBeheer() {
       </div>
 
       {laden ? (
-        <p className="py-16 text-center text-[13px] text-[#9B9B95]">Laden...</p>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="aspect-square w-full animate-pulse rounded-xl bg-[#EFEDEA]" />
+          ))}
+        </div>
       ) : zichtbaar.length === 0 ? (
         <div className="py-16 text-center">
           <p className="text-[14px] text-[#6B6B66]">Geen losse maatjes{filterNaam ? ` van ${filterNaam}` : ''}.</p>

@@ -55,11 +55,11 @@ export function MaatjeKoppelSheet({ aantal, onKoppel, onSluiten }: MaatjeKoppelS
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex flex-col justify-end bg-black/20 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] flex flex-col justify-end bg-black/30 backdrop-blur-sm animate-in fade-in-0 duration-200 sm:items-center sm:justify-center"
       onClick={sluitViaAchtergrond}
     >
       <div
-        className="flex max-h-[80vh] flex-col rounded-t-2xl bg-white p-5"
+        className="flex max-h-[80vh] w-full flex-col rounded-t-2xl bg-white p-5 shadow-[0_-8px_40px_rgba(0,0,0,0.18)] animate-in slide-in-from-bottom-4 duration-300 sm:max-w-md sm:max-h-[70vh] sm:rounded-2xl sm:shadow-[0_24px_60px_rgba(0,0,0,0.22)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
