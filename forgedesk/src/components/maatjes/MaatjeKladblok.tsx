@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '@/utils/logger'
 import { confirm } from '@/components/shared/ConfirmDialog'
+import { tik } from '@/utils/haptics'
 import type { Maatje, MaatjeAnnotatie } from '@/types'
 import {
   getLosseMaatjes,
@@ -26,6 +27,7 @@ interface EditorState {
 }
 
 function meldOpgeslagen() {
+  tik(12)
   toast.success(
     <span>Opgeslagen<span className="text-[#F15025]">.</span></span>,
   )
@@ -133,6 +135,7 @@ export function MaatjeKladblok() {
 
   const opKaartKlik = useCallback((m: Maatje) => {
     if (selectieModus) {
+      tik(8)
       setSelectie((prev) => {
         const next = new Set(prev)
         if (next.has(m.id)) next.delete(m.id)
@@ -148,6 +151,7 @@ export function MaatjeKladblok() {
     const ids = Array.from(selectie)
     try {
       await koppelMaatjes(ids, projectId)
+      tik([12, 40, 12])
       toast.success(
         <span>{ids.length} maatje{ids.length > 1 ? 's' : ''} gekoppeld<span className="text-[#F15025]">.</span></span>,
       )
@@ -173,6 +177,7 @@ export function MaatjeKladblok() {
     if (!ok) return
     try {
       await Promise.all(ids.map((id) => verwijderMaatje(id)))
+      tik(25)
       toast.success(<span>{ids.length} verwijderd<span className="text-[#F15025]">.</span></span>)
       verlaatSelectie()
       await laadMaatjes()
@@ -273,14 +278,19 @@ export function MaatjeKladblok() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {maatjes.map((m) => (
-            <MaatjeKaart
+          {maatjes.map((m, i) => (
+            <div
               key={m.id}
-              maatje={m}
-              selectieModus={selectieModus}
-              geselecteerd={selectie.has(m.id)}
-              onKlik={opKaartKlik}
-            />
+              className="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-300"
+              style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}
+            >
+              <MaatjeKaart
+                maatje={m}
+                selectieModus={selectieModus}
+                geselecteerd={selectie.has(m.id)}
+                onKlik={opKaartKlik}
+              />
+            </div>
           ))}
         </div>
       )}

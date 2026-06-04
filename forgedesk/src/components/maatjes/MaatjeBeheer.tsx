@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '@/utils/logger'
 import { confirm } from '@/components/shared/ConfirmDialog'
+import { tik } from '@/utils/haptics'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import type { Maatje, MaatjeAnnotatie } from '@/types'
@@ -119,6 +120,7 @@ export function MaatjeBeheer() {
   )
 
   const toggle = useCallback((id: string) => {
+    tik(8)
     setSelectie((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -155,6 +157,7 @@ export function MaatjeBeheer() {
     const ids = Array.from(selectie)
     try {
       await koppelMaatjes(ids, projectId)
+      tik([12, 40, 12])
       toast.success(<span>{ids.length} maatje{ids.length > 1 ? 's' : ''} gekoppeld<span className="text-[#F15025]">.</span></span>)
       setKoppelOpen(false)
       setSelectie(new Set())
@@ -178,6 +181,7 @@ export function MaatjeBeheer() {
     if (!ok) return
     try {
       await Promise.all(ids.map((id) => verwijderMaatje(id)))
+      tik(25)
       toast.success(<span>{ids.length} verwijderd<span className="text-[#F15025]">.</span></span>)
       setSelectie(new Set())
       await laadMaatjes()
@@ -243,15 +247,20 @@ export function MaatjeBeheer() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {zichtbaar.map((m) => (
-            <MaatjeBeheerKaart
+          {zichtbaar.map((m, i) => (
+            <div
               key={m.id}
-              maatje={m}
-              maker={naamVanMaker(m.aangemaakt_door)}
-              geselecteerd={selectie.has(m.id)}
-              onToggle={toggle}
-              onOpenen={openen}
-            />
+              className="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-300"
+              style={{ animationDelay: `${Math.min(i, 15) * 30}ms` }}
+            >
+              <MaatjeBeheerKaart
+                maatje={m}
+                maker={naamVanMaker(m.aangemaakt_door)}
+                geselecteerd={selectie.has(m.id)}
+                onToggle={toggle}
+                onOpenen={openen}
+              />
+            </div>
           ))}
         </div>
       )}
