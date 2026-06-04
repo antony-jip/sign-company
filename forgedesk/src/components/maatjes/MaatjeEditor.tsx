@@ -101,6 +101,7 @@ export function MaatjeEditor({
   const pulseRef = useRef<number | null>(null)
   const rafRef = useRef<number | null>(null)
   const redrawRef = useRef<() => void>(() => {})
+  const bewerkOpenRef = useRef(0)
 
   const [fotoUrl, setFotoUrl] = useState('')
   const [annotaties, setAnnotaties] = useState<MaatjeAnnotatie[]>(beginAnnotaties)
@@ -199,6 +200,7 @@ export function MaatjeEditor({
 
   useEffect(() => { redrawRef.current = redraw })
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }, [])
+  useEffect(() => { if (bewerk) bewerkOpenRef.current = Date.now() }, [bewerk])
 
   // Start een korte knipper-animatie op het geselecteerde element.
   const startPulse = useCallback(() => {
@@ -424,6 +426,12 @@ export function MaatjeEditor({
     setBewerk(null)
   }, [bewerk])
 
+  // Negeer achtergrond-tik vlak na openen (touch click-through).
+  const sluitBewerkViaAchtergrond = useCallback(() => {
+    if (Date.now() - bewerkOpenRef.current < 350) return
+    bevestigBewerk()
+  }, [bevestigBewerk])
+
   const voltooi = useCallback(async (actie: 'bewaren' | 'koppelen') => {
     setBezig(true)
     try {
@@ -517,7 +525,7 @@ export function MaatjeEditor({
       {/* Cm- / tekst-popup — bovenin zodat het toetsenbord het niet bedekt */}
       {bewerk && (
         <>
-          <div className="absolute inset-0 z-20 bg-black/25" onClick={bevestigBewerk} />
+          <div className="absolute inset-0 z-20 bg-black/25" onClick={sluitBewerkViaAchtergrond} />
           <div className="absolute inset-x-0 top-20 z-30 flex justify-center px-4">
             <div className="flex w-full max-w-sm items-center gap-2 rounded-2xl bg-white p-3 shadow-[0_8px_30px_rgba(0,0,0,0.25)]">
               <input

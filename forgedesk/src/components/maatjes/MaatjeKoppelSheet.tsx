@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -15,6 +15,14 @@ export function MaatjeKoppelSheet({ aantal, onKoppel, onSluiten }: MaatjeKoppelS
   const [projecten, setProjecten] = useState<Project[]>([])
   const [zoek, setZoek] = useState('')
   const [bezigId, setBezigId] = useState<string | null>(null)
+  // Negeer een achtergrond-tik vlak na openen: voorkomt dat de tik die de
+  // sheet opende 'doorklikt' naar de verse achtergrond en 'm meteen sluit.
+  const geopendRef = useRef(Date.now())
+
+  const sluitViaAchtergrond = () => {
+    if (Date.now() - geopendRef.current < 350) return
+    onSluiten()
+  }
 
   useEffect(() => {
     let actief = true
@@ -47,7 +55,7 @@ export function MaatjeKoppelSheet({ aantal, onKoppel, onSluiten }: MaatjeKoppelS
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col justify-end bg-black/20 backdrop-blur-sm"
-      onClick={onSluiten}
+      onClick={sluitViaAchtergrond}
     >
       <div
         className="flex max-h-[80vh] flex-col rounded-t-2xl bg-white p-5"
