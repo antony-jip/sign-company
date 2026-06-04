@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Camera } from 'lucide-react'
+import { Camera, Check } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { logger } from '@/utils/logger'
 import type { Maatje, MaatjeAnnotatie } from '@/types'
 import {
   getLosseMaatjes,
   createMaatje,
   updateMaatje,
+  koppelMaatjes,
   getMaatjeWeergaveUrl,
 } from '@/services/maatjeService'
 import { comprimeerFoto, FotoVerwerkingsFout } from '@/utils/beeldCompressie'
 import { MaatjeEditor } from './MaatjeEditor'
+import { MaatjeKoppelSheet } from './MaatjeKoppelSheet'
 
 interface EditorState {
   fotoBron: Blob | string
@@ -25,7 +28,17 @@ function meldOpgeslagen() {
   )
 }
 
-function MaatjeKaart({ maatje, onOpenen }: { maatje: Maatje; onOpenen: (m: Maatje) => void }) {
+function MaatjeKaart({
+  maatje,
+  selectieModus,
+  geselecteerd,
+  onKlik,
+}: {
+  maatje: Maatje
+  selectieModus: boolean
+  geselecteerd: boolean
+  onKlik: (m: Maatje) => void
+}) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
     let actief = true
@@ -36,14 +49,27 @@ function MaatjeKaart({ maatje, onOpenen }: { maatje: Maatje; onOpenen: (m: Maatj
   return (
     <button
       type="button"
-      onClick={() => onOpenen(maatje)}
-      className="group block overflow-hidden rounded-xl bg-white text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+      onClick={() => onKlik(maatje)}
+      className={cn(
+        'group relative block overflow-hidden rounded-xl bg-white text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]',
+        geselecteerd && 'ring-2 ring-[#F15025]',
+      )}
     >
       <div className="aspect-square w-full bg-[#F8F7F5]">
         {url && <img src={url} alt={maatje.titel ?? 'Maatje'} className="h-full w-full object-cover" />}
       </div>
       {maatje.titel && (
         <div className="truncate px-2.5 py-2 text-[12px] font-medium text-[#1A1A1A]">{maatje.titel}</div>
+      )}
+      {selectieModus && (
+        <span
+          className={cn(
+            'absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors',
+            geselecteerd ? 'border-[#F15025] bg-[#F15025] text-white' : 'border-white bg-black/20 text-transparent',
+          )}
+        >
+          <Check className="h-3.5 w-3.5" strokeWidth={3} />
+        </span>
       )}
     </button>
   )
@@ -53,6 +79,9 @@ export function MaatjeKladblok() {
   const [maatjes, setMaatjes] = useState<Maatje[]>([])
   const [laden, setLaden] = useState(true)
   const [editor, setEditor] = useState<EditorState | null>(null)
+  const [selectieModus, setSelectieModus] = useState(false)
+  const [selectie, setSelectie] = useState<Set<string>>(new Set())
+  const [koppelOpen, setKoppelOpen] = useState(false)
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
   const laadMaatjes = useCallback(async () => {
@@ -94,6 +123,40 @@ export function MaatjeKladblok() {
     setEditor({ fotoBron: url, annotaties: m.annotaties ?? [], titel: m.titel, maatjeId: m.id })
   }, [])
 
+  const verlaatSelectie = useCallback(() => {
+    setSelectieModus(false)
+    setSelectie(new Set())
+  }, [])
+
+  const opKaartKlik = useCallback((m: Maatje) => {
+    if (selectieModus) {
+      setSelectie((prev) => {
+        const next = new Set(prev)
+        if (next.has(m.id)) next.delete(m.id)
+        else next.add(m.id)
+        return next
+      })
+    } else {
+      opMaatjeOpenen(m)
+    }
+  }, [selectieModus, opMaatjeOpenen])
+
+  const koppelGeselecteerde = useCallback(async (projectId: string) => {
+    const ids = Array.from(selectie)
+    try {
+      await koppelMaatjes(ids, projectId)
+      toast.success(
+        <span>{ids.length} maatje{ids.length > 1 ? 's' : ''} gekoppeld<span className="text-[#F15025]">.</span></span>,
+      )
+      setKoppelOpen(false)
+      verlaatSelectie()
+      await laadMaatjes()
+    } catch (err) {
+      logger.error('Koppelen mislukt:', err)
+      toast.error('Koppelen mislukt')
+    }
+  }, [selectie, verlaatSelectie, laadMaatjes])
+
   const bewaarVanuitEditor = useCallback(async (data: { annotaties: MaatjeAnnotatie[]; titel: string | null; render: Blob }) => {
     const huidig = editor
     if (!huidig) return
@@ -112,20 +175,31 @@ export function MaatjeKladblok() {
   }, [editor, laadMaatjes])
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 md:px-8">
+    <div className={cn('mx-auto w-full max-w-4xl px-4 py-6 md:px-8', selectieModus && 'pb-24')}>
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-[26px] font-extrabold tracking-[-0.3px] text-[#1A1A1A]">Maatjes</h1>
           <p className="mt-1 text-[13px] text-[#6B6B66]">Kladblok met losse maatjes, nog niet gekoppeld.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => cameraInputRef.current?.click()}
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#F15025] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)] transition-transform active:scale-[0.97]"
-        >
-          <Camera className="h-4 w-4" strokeWidth={2} />
-          Foto maken
-        </button>
+        <div className="flex shrink-0 items-center gap-4">
+          {maatjes.length > 0 && !selectieModus && (
+            <button
+              type="button"
+              onClick={() => setSelectieModus(true)}
+              className="text-[13px] font-medium text-[#1A535C] hover:underline"
+            >
+              Selecteren
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#F15025] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)] transition-transform active:scale-[0.97]"
+          >
+            <Camera className="h-4 w-4" strokeWidth={2} />
+            Foto maken
+          </button>
+        </div>
       </div>
 
       <input
@@ -153,9 +227,46 @@ export function MaatjeKladblok() {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {maatjes.map((m) => (
-            <MaatjeKaart key={m.id} maatje={m} onOpenen={opMaatjeOpenen} />
+            <MaatjeKaart
+              key={m.id}
+              maatje={m}
+              selectieModus={selectieModus}
+              geselecteerd={selectie.has(m.id)}
+              onKlik={opKaartKlik}
+            />
           ))}
         </div>
+      )}
+
+      {selectieModus && (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 bg-[#1A535C] px-4 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.15)]">
+          <button
+            type="button"
+            onClick={verlaatSelectie}
+            className="text-[13px] font-medium text-white/80 hover:text-white"
+          >
+            Annuleren
+          </button>
+          <span className="text-[13px] font-semibold text-white">
+            {selectie.size} geselecteerd
+          </span>
+          <button
+            type="button"
+            onClick={() => setKoppelOpen(true)}
+            disabled={selectie.size === 0}
+            className="rounded-lg bg-[#F15025] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+          >
+            Koppelen
+          </button>
+        </div>
+      )}
+
+      {koppelOpen && (
+        <MaatjeKoppelSheet
+          aantal={selectie.size}
+          onKoppel={koppelGeselecteerde}
+          onSluiten={() => setKoppelOpen(false)}
+        />
       )}
 
       {editor && (
