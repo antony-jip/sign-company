@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Ruler, ArrowUpRight, Type, Undo2, Check, Trash2, Pencil, Link2 } from 'lucide-react'
+import { Ruler, ArrowUpRight, Type, Undo2, Check, Trash2, Pencil, Link2, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -460,16 +460,10 @@ export function MaatjeEditor({
   return createPortal(
     <div className="fixed inset-0 z-[60] flex flex-col bg-[#0E2025]">
       {/* Topbalk */}
-      <div className="flex items-center justify-between gap-3 bg-[#1A535C] px-4 py-3">
+      <div className="flex items-center justify-between gap-3 bg-[#1A535C] px-4 pt-3 pb-2">
         <button type="button" onClick={onAnnuleren} className="text-[13px] font-medium text-white/80 hover:text-white">
           Annuleren
         </button>
-        <input
-          value={titel}
-          onChange={(e) => setTitel(e.target.value)}
-          placeholder="Naam (optioneel)"
-          className="min-w-0 flex-1 bg-transparent text-center text-[14px] font-semibold text-white placeholder:text-white/40 focus:outline-none"
-        />
         <div className="flex shrink-0 items-center gap-2">
           {onKoppelen && (
             <button
@@ -494,6 +488,19 @@ export function MaatjeEditor({
         </div>
       </div>
 
+      {/* Naam-veld (optioneel) — eigen rij, duidelijk leesbaar */}
+      <div className="bg-[#1A535C] px-4 pb-3">
+        <div className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2">
+          <Tag className="h-4 w-4 flex-shrink-0 text-white/55" strokeWidth={1.75} />
+          <input
+            value={titel}
+            onChange={(e) => setTitel(e.target.value)}
+            placeholder="Geef dit maatje een naam (optioneel)"
+            className="min-w-0 flex-1 bg-transparent text-[14px] font-medium text-white placeholder:text-white/45 focus:outline-none"
+          />
+        </div>
+      </div>
+
       {/* Foto + annotatie-overlay */}
       <div className="relative flex flex-1 items-center justify-center overflow-hidden p-2">
         {/* Tool-hint */}
@@ -508,7 +515,7 @@ export function MaatjeEditor({
               src={fotoUrl}
               alt="Maatje"
               onLoad={redraw}
-              className="block max-h-[calc(100vh-200px)] max-w-full select-none object-contain"
+              className="block max-h-[calc(100vh-280px)] max-w-full select-none object-contain"
               draggable={false}
             />
             <canvas
