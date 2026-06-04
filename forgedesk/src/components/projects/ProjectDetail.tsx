@@ -134,6 +134,7 @@ import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 // ProjectTasksTable removed — using TaskChecklistView in TakenOfferteGrid
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { ProjectMaatjesTab } from '@/components/maatjes/ProjectMaatjesTab'
+import { getProjectMaatjes } from '@/services/maatjeService'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import { PakbonVanProjectDialog } from '@/components/leveringsbonnen/PakbonVanProjectDialog'
@@ -155,7 +156,7 @@ import { ActiviteitFeed, buildActivityFeed, type ActivityEvent } from './cockpit
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto, AuditLogEntry, Contactpersoon, ContactpersoonRecord } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto, AuditLogEntry, Contactpersoon, ContactpersoonRecord, Maatje } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
@@ -545,6 +546,7 @@ export function ProjectDetail() {
   const [projectFacturen, setProjectFacturen] = useState<Factuur[]>([])
   const [projectUitgaven, setProjectUitgaven] = useState<Uitgave[]>([])
   const [projectEmails, setProjectEmails] = useState<ProjectMail[]>([])
+  const [projectMaatjes, setProjectMaatjes] = useState<Maatje[]>([])
   const [emailsLoading, setEmailsLoading] = useState(false)
   const [expandedMailId, setExpandedMailId] = useState<string | null>(null)
   const [aiSummary, setAiSummary] = useState<string | null>(null)
@@ -913,6 +915,11 @@ export function ProjectDetail() {
           // Check if visualisaties exist for conditional rendering
           getSigningVisualisatiesByProject(id).then(viz => {
             if (!cancelled) setHasVisualisaties(viz.length > 0)
+          }).catch(() => {})
+
+          // Gekoppelde maatjes — tab verschijnt alleen als er minstens één is
+          getProjectMaatjes(id).then(m => {
+            if (!cancelled) setProjectMaatjes(m)
           }).catch(() => {})
         }
 
@@ -1329,7 +1336,9 @@ export function ProjectDetail() {
             { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectFacturen.length,     Icon: TabEuro    },
             { key: 'email' as ProjectTab,      label: 'E-mail',     count: projectEmails.length,       Icon: TabMail    },
             { key: 'notities' as ProjectTab,   label: 'Notities',   count: 0,                          Icon: TabPenLine },
-            { key: 'maatjes' as ProjectTab,    label: 'Maatjes',    count: 0,                          Icon: TabRuler   },
+            ...(projectMaatjes.length > 0
+              ? [{ key: 'maatjes' as ProjectTab, label: 'Maatjes', count: projectMaatjes.length, Icon: TabRuler }]
+              : []),
           ]).map((tab) => {
             const TabIcon = tab.Icon
             const isActive = activeTab === tab.key
