@@ -174,6 +174,23 @@ export function MaatjeKladblok() {
     await laadMaatjes()
   }, [editor, laadMaatjes])
 
+  const koppelVanuitEditor = useCallback(async (data: { annotaties: MaatjeAnnotatie[]; titel: string | null; render: Blob }) => {
+    const huidig = editor
+    if (!huidig) return
+    let id: string
+    if (huidig.maatjeId) {
+      await updateMaatje(huidig.maatjeId, { titel: data.titel, annotaties: data.annotaties }, data.render)
+      id = huidig.maatjeId
+    } else {
+      const nieuw = await createMaatje({ titel: data.titel, annotaties: data.annotaties }, huidig.fotoBron as Blob, data.render)
+      id = nieuw.id
+    }
+    setEditor(null)
+    await laadMaatjes()
+    setSelectie(new Set([id]))
+    setKoppelOpen(true)
+  }, [editor, laadMaatjes])
+
   return (
     <div className={cn('mx-auto w-full max-w-4xl px-4 py-6 md:px-8', selectieModus && 'pb-24')}>
       <div className="mb-6 flex items-start justify-between gap-4">
@@ -276,6 +293,7 @@ export function MaatjeKladblok() {
           beginAnnotaties={editor.annotaties}
           beginTitel={editor.titel}
           onBewaren={bewaarVanuitEditor}
+          onKoppelen={koppelVanuitEditor}
           onAnnuleren={() => setEditor(null)}
         />
       )}
