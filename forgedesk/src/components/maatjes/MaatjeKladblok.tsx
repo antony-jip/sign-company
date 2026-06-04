@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Camera, Check } from 'lucide-react'
+import { Camera, Check, Link2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '@/utils/logger'
@@ -181,14 +181,15 @@ export function MaatjeKladblok() {
           <h1 className="text-[26px] font-extrabold tracking-[-0.3px] text-[#1A1A1A]">Maatjes</h1>
           <p className="mt-1 text-[13px] text-[#6B6B66]">Kladblok met losse maatjes, nog niet gekoppeld.</p>
         </div>
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="flex shrink-0 items-center gap-3">
           {maatjes.length > 0 && !selectieModus && (
             <button
               type="button"
               onClick={() => setSelectieModus(true)}
-              className="text-[13px] font-medium text-[#1A535C] hover:underline"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#1A535C]/30 px-3 py-2.5 text-[13px] font-semibold text-[#1A535C] transition-colors hover:bg-[#1A535C]/[0.06]"
             >
-              Selecteren
+              <Link2 className="h-4 w-4" strokeWidth={2} />
+              Koppelen
             </button>
           )}
           <button
@@ -247,8 +248,8 @@ export function MaatjeKladblok() {
           >
             Annuleren
           </button>
-          <span className="text-[13px] font-semibold text-white">
-            {selectie.size} geselecteerd
+          <span className="text-[13px] font-medium text-white">
+            {selectie.size === 0 ? 'Tik maatjes aan' : `${selectie.size} geselecteerd`}
           </span>
           <button
             type="button"
@@ -256,7 +257,7 @@ export function MaatjeKladblok() {
             disabled={selectie.size === 0}
             className="rounded-lg bg-[#F15025] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
           >
-            Koppelen
+            Koppel aan project
           </button>
         </div>
       )}
