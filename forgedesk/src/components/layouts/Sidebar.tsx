@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebar, RAIL_WIDTH, EXPANDED_WIDTH } from '@/contexts/SidebarContext'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -93,12 +94,18 @@ export function Sidebar() {
   const userPopoverRef = useRef<HTMLDivElement>(null)
   const userButtonRef = useRef<HTMLButtonElement>(null)
 
+  // Maatje is een buitendienst-feature: alleen op mobiel tonen.
+  const isMobieleNav = useMediaQuery('(max-width: 767px)')
   const isItemVisible = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
-    if (!Array.isArray(sidebarItems) || sidebarItems.length === 0) return () => true
-    const normalized = sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s)
-    return (label: string) => normalized.includes(label) || label === 'Instellingen' || label === 'Maatjes'
-  }, [settings?.sidebar_items])
+    const heeftVoorkeur = Array.isArray(sidebarItems) && sidebarItems.length > 0
+    const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
+    return (label: string) => {
+      if (label === 'Maatjes') return isMobieleNav
+      if (!heeftVoorkeur) return true
+      return normalized.includes(label) || label === 'Instellingen'
+    }
+  }, [settings?.sidebar_items, isMobieleNav])
 
   const filteredNavItems = useMemo(() => ALL_NAV_ITEMS.filter(i => isItemVisible(i.label)), [isItemVisible])
 

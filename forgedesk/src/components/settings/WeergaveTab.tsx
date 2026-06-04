@@ -38,7 +38,6 @@ const ALL_SIDEBAR_ITEMS = [
   { label: 'Facturen', section: 'Werk' },
   { label: 'Klanten', section: 'Werk' },
   { label: 'Werkbonnen', section: 'Werk' },
-  { label: 'Maatjes', section: 'Werk' },
   { label: 'Planning', section: 'Planning' },
   { label: 'Taken', section: 'Planning' },
   { label: 'Email', section: 'Communicatie' },

@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSidebar } from '@/contexts/SidebarContext'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
@@ -71,12 +72,18 @@ export function TopNav() {
   const navRef = useRef<HTMLElement>(null)
   const indicatorRef = useRef<HTMLDivElement>(null)
 
+  // Maatje is een buitendienst-feature: alleen op mobiel tonen.
+  const isMobieleNav = useMediaQuery('(max-width: 1023px)')
   const visibleItems = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
-    if (!Array.isArray(sidebarItems) || sidebarItems.length === 0) return navItems
-    const normalized = sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s)
-    return navItems.filter(item => normalized.includes(item.label) || item.label === 'Dashboard' || item.label === 'Maatjes')
-  }, [settings?.sidebar_items])
+    const heeftVoorkeur = Array.isArray(sidebarItems) && sidebarItems.length > 0
+    const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
+    return navItems.filter(item => {
+      if (item.label === 'Maatjes') return isMobieleNav
+      if (!heeftVoorkeur) return true
+      return normalized.includes(item.label) || item.label === 'Dashboard'
+    })
+  }, [settings?.sidebar_items, isMobieleNav])
 
   // Splits de zichtbare modules in een vaste primaire set + een "Overig"-rest.
   // Primair volgt de PRIMARY_LABELS-volgorde; Overig houdt de menu-volgorde aan.
