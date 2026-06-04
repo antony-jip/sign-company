@@ -42,6 +42,7 @@ const FORGEdeskDashboard = lazy(() => import('@/components/dashboard/FORGEdeskDa
 
 // Maatjes
 const MaatjeKladblok = lazy(() => import('@/components/maatjes/MaatjeKladblok'), 'MaatjeKladblok')
+const MaatjeBeheer = lazy(() => import('@/components/maatjes/MaatjeBeheer'), 'MaatjeBeheer')
 
 // Projects
 const ProjectsList = lazy(() => import('@/components/projects/ProjectsList'), 'ProjectsList')
@@ -77,6 +78,11 @@ const MontagePlanningLayoutMobile = lazy(() => import('@/components/planning/Mon
 function PlanningRoute() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
   return isDesktop ? <PlanningLayout /> : <MontagePlanningLayoutMobile />
+}
+function MaatjesRoute() {
+  // Mobiel = kladblok (foto's maken/koppelen), desktop = beheer per medewerker.
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
+  return isDesktop ? <MaatjeBeheer /> : <MaatjeKladblok />
 }
 const TasksLayout = lazy(() => import('@/components/planning/TasksLayout'), 'TasksLayout')
 const TasksLayoutMobile = lazy(() => import('@/components/planning/TasksLayoutMobile'), 'TasksLayoutMobile')
@@ -243,7 +249,7 @@ function AppContent() {
         <Route path="projecten" element={<ProjectsList />} />
         <Route path="projecten/nieuw" element={<ProjectCreate />} />
         <Route path="projecten/:id" element={<ProjectDetail />} />
-        <Route path="maatjes" element={<MaatjeKladblok />} />
+        <Route path="maatjes" element={<MaatjesRoute />} />
         <Route path="klanten" element={<ClientsLayout />} />
         <Route path="klanten/importeren" element={<Navigate to="/importeren" replace />} />
         <Route path="klanten/:id" element={<ClientProfile />} />
