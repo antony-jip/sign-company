@@ -99,15 +99,15 @@ export function Sidebar() {
   const userPopoverRef = useRef<HTMLDivElement>(null)
   const userButtonRef = useRef<HTMLButtonElement>(null)
 
-  // Maatje is een buitendienst-feature: alleen op mobiel tonen.
   const isMobieleNav = useMediaQuery('(max-width: 767px)')
   const isItemVisible = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
     const heeftVoorkeur = Array.isArray(sidebarItems) && sidebarItems.length > 0
     const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
     return (label: string) => {
+      // Maatjes altijd zichtbaar (mobiel = kladblok, desktop = beheer).
+      if (label === 'Maatjes') return true
       if (isMobieleNav) return MOBIELE_NAV_LABELS.includes(label) || label === 'Instellingen'
-      if (label === 'Maatjes') return false
       if (!heeftVoorkeur) return true
       return normalized.includes(label) || label === 'Instellingen'
     }

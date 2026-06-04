@@ -84,8 +84,9 @@ export function TopNav() {
     const heeftVoorkeur = Array.isArray(sidebarItems) && sidebarItems.length > 0
     const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
     return navItems.filter(item => {
+      // Maatjes is altijd zichtbaar: mobiel als capture-tool, desktop als beheer.
+      if (item.label === 'Maatjes') return true
       if (isMobieleNav) return MOBIELE_NAV_LABELS.includes(item.label)
-      if (item.label === 'Maatjes') return false
       if (!heeftVoorkeur) return true
       return normalized.includes(item.label) || item.label === 'Dashboard'
     })
