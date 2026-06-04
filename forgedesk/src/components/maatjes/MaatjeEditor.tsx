@@ -103,6 +103,10 @@ export function MaatjeEditor({
   const rafRef = useRef<number | null>(null)
   const redrawRef = useRef<() => void>(() => {})
   const bewerkOpenRef = useRef(0)
+  // Zoom & pan: actieve pointers en pinch-startpunt.
+  const pointersRef = useRef<Map<number, Punt>>(new Map())
+  const pinchRef = useRef<{ startAfstand: number; startSchaal: number; startMid: Punt; startTx: number; startTy: number } | null>(null)
+  const [zoom, setZoom] = useState({ schaal: 1, tx: 0, ty: 0 })
 
   const [fotoUrl, setFotoUrl] = useState('')
   const [annotaties, setAnnotaties] = useState<MaatjeAnnotatie[]>(beginAnnotaties)
@@ -275,6 +279,23 @@ export function MaatjeEditor({
   }, [annotaties, geselecteerd])
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pointersRef.current.size >= 2) {
+      // Twee vingers → zoom/pan; lopend tekenen/selecteren afbreken.
+      setConcept(null)
+      sleepRef.current = null
+      const pts = [...pointersRef.current.values()]
+      const a = pts[0]
+      const b = pts[1]
+      pinchRef.current = {
+        startAfstand: Math.hypot(b.x - a.x, b.y - a.y) || 1,
+        startSchaal: zoom.schaal,
+        startMid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+        startTx: zoom.tx,
+        startTy: zoom.ty,
+      }
+      return
+    }
     if (bewerk) return
     const pNorm = naarNorm(e)
     const rm = rectMaat()
@@ -306,9 +327,22 @@ export function MaatjeEditor({
     stopPulse()
     canvasRef.current?.setPointerCapture(e.pointerId)
     setConcept({ van: pNorm, naar: pNorm })
-  }, [bewerk, naarNorm, rectMaat, raak, tool, kleur, snapshot, startPulse, stopPulse])
+  }, [bewerk, naarNorm, rectMaat, raak, tool, kleur, snapshot, startPulse, stopPulse, zoom])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (pointersRef.current.has(e.pointerId)) pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pointersRef.current.size >= 2 && pinchRef.current) {
+      const pts = [...pointersRef.current.values()]
+      const a = pts[0]
+      const b = pts[1]
+      const afst = Math.hypot(b.x - a.x, b.y - a.y) || 1
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+      const p = pinchRef.current
+      const schaal = Math.max(1, Math.min(5, p.startSchaal * (afst / p.startAfstand)))
+      if (schaal <= 1.02) setZoom({ schaal: 1, tx: 0, ty: 0 })
+      else setZoom({ schaal, tx: p.startTx + (mid.x - p.startMid.x), ty: p.startTy + (mid.y - p.startMid.y) })
+      return
+    }
     if (concept) {
       const pNorm = naarNorm(e)
       setConcept((c) => (c ? { van: c.van, naar: pNorm } : c))
@@ -343,7 +377,10 @@ export function MaatjeEditor({
     }
   }, [concept, naarNorm, snapshot])
 
-  const onPointerUp = useCallback(() => {
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
+    pointersRef.current.delete(e.pointerId)
+    if (pointersRef.current.size < 2) pinchRef.current = null
+    if (pointersRef.current.size >= 1) return // nog vingers neer (einde pinch) → niet tekenen
     const sleep = sleepRef.current
     if (sleep) {
       sleepRef.current = null
@@ -508,8 +545,25 @@ export function MaatjeEditor({
           {TOOL_HINT[tool]}
         </div>
 
+        {zoom.schaal > 1 && (
+          <button
+            type="button"
+            onClick={() => setZoom({ schaal: 1, tx: 0, ty: 0 })}
+            className="absolute right-3 top-3 z-10 rounded-full bg-black/45 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-sm transition-transform active:scale-90"
+          >
+            Zoom terug
+          </button>
+        )}
+
         {fotoUrl && (
-          <div className="relative inline-block max-h-full max-w-full">
+          <div
+            className="relative inline-block max-h-full max-w-full"
+            style={{
+              transform: `translate(${zoom.tx}px, ${zoom.ty}px) scale(${zoom.schaal})`,
+              transformOrigin: 'center center',
+              touchAction: 'none',
+            }}
+          >
             <img
               ref={imgRef}
               src={fotoUrl}
