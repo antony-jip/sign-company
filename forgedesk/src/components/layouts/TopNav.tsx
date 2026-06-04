@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText,
   Mail, Calendar, Settings,
-  Receipt, CheckSquare, ClipboardCheck, Inbox,
+  Receipt, CheckSquare, ClipboardCheck, Inbox, Ruler,
   LogOut, ChevronDown, Menu, X, Search,
   Plus, Moon, Sun, Monitor, CreditCard, Sparkles, PiggyBank, BookOpen,
   Pin, PinOff,
@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
   { label: 'Inkoopfacturen', icon: Inbox, path: '/inkoopfacturen', color: '#C44830' },
   { label: 'Taken', icon: CheckSquare, path: '/taken', color: '#C4A882' },
   { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen', color: '#D4836A' },
+  { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#E8866A' },
   { label: 'Planning', icon: Calendar, path: '/planning', color: '#7EB5A6' },
   { label: 'Email', icon: Mail, path: '/email', color: '#8BAFD4' },
   { label: 'Financieel', icon: PiggyBank, path: '/financieel', color: '#2D6B48' },
