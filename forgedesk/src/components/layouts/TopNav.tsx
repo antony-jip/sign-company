@@ -403,6 +403,30 @@ export function TopNav() {
         </div>
       </div>
 
+      {/* ── Mobiele module-nav: lean items als duidelijke, zichtbare tabs ── */}
+      <nav className="lg:hidden flex items-center gap-1.5 overflow-x-auto bg-card border-b border-border px-3 py-2">
+        {visibleItems.map((item) => {
+          const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
+          const Icon = item.icon
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === '/'}
+              className={cn(
+                'flex flex-shrink-0 items-center gap-1.5 px-3.5 py-2 rounded-full text-[13.5px] font-semibold whitespace-nowrap transition-colors',
+                isActive
+                  ? 'bg-[#F15025]/10 text-[#1A535C] dark:bg-[#F15025]/15 dark:text-foreground'
+                  : 'text-[#1A535C]/55 hover:text-[#1A535C] dark:text-foreground/55',
+              )}
+            >
+              <Icon className="w-4 h-4" style={{ opacity: isActive ? 1 : 0.55 }} />
+              <span>{item.label}<span className={cn(isActive ? 'text-[#F15025]' : 'text-transparent')}>.</span></span>
+            </NavLink>
+          )
+        })}
+      </nav>
+
       {/* ── Mobile nav dropdown ── */}
       {mobileOpen && (
         <div className="lg:hidden border-t border-border/40 bg-card/98 backdrop-blur-md max-h-[75vh] overflow-y-auto">

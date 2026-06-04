@@ -4,7 +4,6 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { TopNav } from './TopNav'
-import { MobileBottomNav } from './MobileBottomNav'
 import { ForgieChatWidget } from '@/components/forgie/ForgieChatWidget'
 import { FloatingQuickActions } from '@/components/dashboard/FloatingQuickActions'
 import { FloatingEmailButton } from '@/components/shared/FloatingEmailButton'
@@ -82,13 +81,12 @@ export function AppLayout() {
                   {!hideTopNav && <TopNav />}
                   <TabBar />
                 </div>
-                <div className="w-full px-4 md:px-8 py-6 md:py-8 pb-20 md:pb-8 page-content-enter">
+                <div className="w-full px-4 md:px-8 py-6 md:py-8 pb-8 page-content-enter">
                   <Outlet />
                 </div>
               </div>
             )}
           </main>
-          <MobileBottomNav />
         </div>
         <FloatingQuickActions />
         <FloatingEmailButton />
@@ -110,12 +108,11 @@ export function AppLayout() {
           <main className="flex-1 overflow-hidden flex flex-col min-h-0">
             <div className={cn(
               'flex-1 min-h-0 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter',
-              isFullBleed ? 'p-0' : 'p-4 md:p-8 pb-20 md:pb-8',
+              isFullBleed ? 'p-0' : 'p-4 md:p-8',
             )}>
               <Outlet />
             </div>
           </main>
-          <MobileBottomNav />
         </div>
       </div>
       <FloatingQuickActions />
