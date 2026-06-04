@@ -12,6 +12,7 @@ import {
   getLosseMaatjes,
   updateMaatje,
   koppelMaatjes,
+  ontkoppelMaatjes,
   verwijderMaatje,
   getMaatjeWeergaveUrl,
 } from '@/services/maatjeService'
@@ -155,17 +156,29 @@ export function MaatjeBeheer() {
 
   const koppelGeselecteerde = useCallback(async (projectId: string) => {
     const ids = Array.from(selectie)
+    setMaatjes((prev) => prev.filter((m) => !ids.includes(m.id)))
+    setKoppelOpen(false)
+    setSelectie(new Set())
     try {
       await koppelMaatjes(ids, projectId)
       tik([12, 40, 12])
-      toast.success(<span>{ids.length} maatje{ids.length > 1 ? 's' : ''} gekoppeld<span className="text-[#F15025]">.</span></span>)
-      setKoppelOpen(false)
-      setSelectie(new Set())
-      await laadMaatjes()
+      toast.success(
+        <span>{ids.length} maatje{ids.length > 1 ? 's' : ''} gekoppeld<span className="text-[#F15025]">.</span></span>,
+        {
+          action: {
+            label: 'Ongedaan maken',
+            onClick: async () => {
+              try { await ontkoppelMaatjes(ids) } catch (e) { logger.error('Ontkoppelen mislukt:', e) }
+              await laadMaatjes()
+            },
+          },
+        },
+      )
     } catch (err) {
       logger.error('Koppelen mislukt:', err)
       const reden = err instanceof Error ? err.message : 'onbekende fout'
       toast.error(`Koppelen mislukt: ${reden}`)
+      await laadMaatjes()
     }
   }, [selectie, laadMaatjes])
 
@@ -179,15 +192,16 @@ export function MaatjeBeheer() {
       confirmLabel: 'Verwijderen',
     })
     if (!ok) return
+    setMaatjes((prev) => prev.filter((m) => !ids.includes(m.id)))
+    setSelectie(new Set())
     try {
       await Promise.all(ids.map((id) => verwijderMaatje(id)))
       tik(25)
       toast.success(<span>{ids.length} verwijderd<span className="text-[#F15025]">.</span></span>)
-      setSelectie(new Set())
-      await laadMaatjes()
     } catch (err) {
       logger.error('Verwijderen mislukt:', err)
       toast.error('Verwijderen mislukt')
+      await laadMaatjes()
     }
   }, [selectie, laadMaatjes])
 

@@ -185,6 +185,21 @@ export async function koppelMaatjes(ids: string[], projectId: string): Promise<v
   setLocalData('maatjes', alle)
 }
 
+/** Ontkoppel maatjes (zet project_id terug op null) — voor undo. */
+export async function ontkoppelMaatjes(ids: string[]): Promise<void> {
+  if (ids.length === 0) return
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('maatjes').update({ project_id: null }).in('id', ids)
+    if (error) throw error
+    return
+  }
+  const alle = getLocalData<Maatje>('maatjes')
+  for (const m of alle) {
+    if (ids.includes(m.id)) m.project_id = null
+  }
+  setLocalData('maatjes', alle)
+}
+
 export async function verwijderMaatje(id: string): Promise<void> {
   assertId(id, 'maatje_id')
   if (isSupabaseConfigured() && supabase) {
