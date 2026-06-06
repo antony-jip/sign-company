@@ -16,6 +16,7 @@ import {
   verwijderMaatje,
   getMaatjeWeergaveUrl,
 } from '@/services/maatjeService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { comprimeerFoto, FotoVerwerkingsFout } from '@/utils/beeldCompressie'
 import { wachtrijToevoegen, wachtrijAlles, wachtrijVerwijderen } from '@/utils/maatjeOfflineQueue'
 import { MaatjeEditor } from './MaatjeEditor'
@@ -83,8 +84,8 @@ function MaatjeKaart({
 }
 
 export function MaatjeKladblok() {
-  const [maatjes, setMaatjes] = useState<Maatje[]>([])
-  const [laden, setLaden] = useState(true)
+  const [maatjes, setMaatjes] = useState<Maatje[]>(() => getCached<Maatje[]>('losseMaatjes') ?? [])
+  const [laden, setLaden] = useState(() => getCached('losseMaatjes') === undefined)
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [selectieModus, setSelectieModus] = useState(false)
   const [selectie, setSelectie] = useState<Set<string>>(new Set())
@@ -94,7 +95,7 @@ export function MaatjeKladblok() {
 
   const laadMaatjes = useCallback(async () => {
     try {
-      setMaatjes(await getLosseMaatjes())
+      setMaatjes(await fetchQuery('losseMaatjes', getLosseMaatjes))
     } catch (err) {
       logger.error('Maatjes laden mislukt:', err)
       toast.error('Kon maatjes niet laden')

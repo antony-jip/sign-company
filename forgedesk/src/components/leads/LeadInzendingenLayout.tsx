@@ -16,6 +16,7 @@ import type { LeadInzending, LeadFormulier } from '@/types'
 import {
   getAllLeadInzendingen, getLeadFormulieren, updateLeadInzending,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 
 type FilterStatus = 'alle' | LeadInzending['status']
 
@@ -27,9 +28,9 @@ const STATUS_CONFIG: Record<LeadInzending['status'], { label: string; color: str
 
 export function LeadInzendingenLayout() {
   const navigate = useNavigate()
-  const [inzendingen, setInzendingen] = useState<LeadInzending[]>([])
-  const [formulieren, setFormulieren] = useState<LeadFormulier[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [inzendingen, setInzendingen] = useState<LeadInzending[]>(() => getCached<LeadInzending[]>('leadInzendingen') ?? [])
+  const [formulieren, setFormulieren] = useState<LeadFormulier[]>(() => getCached<LeadFormulier[]>('leadFormulieren') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('leadInzendingen') === undefined)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedInzending, setSelectedInzending] = useState<LeadInzending | null>(null)
@@ -39,8 +40,8 @@ export function LeadInzendingenLayout() {
     async function loadData() {
       try {
         const [iData, fData] = await Promise.all([
-          getAllLeadInzendingen().catch(() => []),
-          getLeadFormulieren().catch(() => []),
+          fetchQuery('leadInzendingen', getAllLeadInzendingen).catch(() => []),
+          fetchQuery('leadFormulieren', getLeadFormulieren).catch(() => []),
         ])
         if (cancelled) return
         setInzendingen(iData)

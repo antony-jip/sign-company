@@ -37,8 +37,9 @@ import {
 import { AlertCircle, Activity, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
-import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
-import type { Klant, Project } from '@/types'
+import { getKlanten, getProjectCountsByKlant, deleteKlant } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
+import type { Klant } from '@/types'
 import { klantStatusConfig } from '@/types'
 import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
@@ -74,9 +75,9 @@ export function ClientsLayout() {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editingKlant, setEditingKlant] = useState<Klant | undefined>(undefined)
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
+  const [projectCounts, setProjectCounts] = useState<Record<string, number>>(() => getCached<Record<string, number>>('projectCounts') ?? {})
+  const [loading, setLoading] = useState(() => getCached('klanten') === undefined)
   const [sortField, setSortField] = useState<SortField>('bedrijfsnaam')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [labelFilter, setLabelFilter] = useState<string>('alle')
@@ -84,11 +85,10 @@ export function ClientsLayout() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const fetchData = useCallback(() => {
-    setLoading(true)
-    Promise.all([getKlanten(), getProjecten()])
-      .then(([k, p]) => {
+    Promise.all([fetchQuery('klanten', getKlanten), fetchQuery('projectCounts', getProjectCountsByKlant)])
+      .then(([k, counts]) => {
         setKlanten(k)
-        setProjecten(p)
+        setProjectCounts(counts)
       })
       .catch(logger.error)
       .finally(() => setLoading(false))
@@ -96,12 +96,14 @@ export function ClientsLayout() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    Promise.all([getKlanten(), getProjecten()])
-      .then(([k, p]) => {
+    // Skeleton alleen bij de allereerste load (geen cache). Daarna tonen
+    // we de gecachete lijst direct en revalideren stil op de achtergrond.
+    if (getCached('klanten') === undefined) setLoading(true)
+    Promise.all([fetchQuery('klanten', getKlanten), fetchQuery('projectCounts', getProjectCountsByKlant)])
+      .then(([k, counts]) => {
         if (!cancelled) {
           setKlanten(k)
-          setProjecten(p)
+          setProjectCounts(counts)
         }
       })
       .catch(logger.error)
@@ -110,13 +112,6 @@ export function ClientsLayout() {
   }, [])
 
   // Count projects per client
-  const projectCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    projecten.forEach((p) => {
-      counts[p.klant_id] = (counts[p.klant_id] || 0) + 1
-    })
-    return counts
-  }, [projecten])
 
   // Filtered + sorted clients
   const filteredKlanten = useMemo(() => {

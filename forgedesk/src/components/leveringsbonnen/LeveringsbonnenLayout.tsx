@@ -19,6 +19,7 @@ import type { Leveringsbon, Klant, Project } from '@/types'
 import {
   getLeveringsbonnen, deleteLeveringsbon, getKlanten, getProjecten,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { getRowAccentClass } from '@/utils/statusColors'
 
 // ============ TYPES ============
@@ -43,10 +44,10 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
 export function LeveringsbonnenLayout() {
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
-  const [leveringsbonnen, setLeveringsbonnen] = useState<Leveringsbon[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [leveringsbonnen, setLeveringsbonnen] = useState<Leveringsbon[]>(() => getCached<Leveringsbon[]>('leveringsbonnen') ?? [])
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('leveringsbonnen') === undefined)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -56,11 +57,11 @@ export function LeveringsbonnenLayout() {
     let cancelled = false
     async function loadData() {
       try {
-        setIsLoading(true)
+        if (getCached('leveringsbonnen') === undefined) setIsLoading(true)
         const [lbData, klData, projData] = await Promise.all([
-          getLeveringsbonnen().catch(() => []),
-          getKlanten().catch(() => []),
-          getProjecten().catch(() => []),
+          fetchQuery('leveringsbonnen', getLeveringsbonnen).catch(() => []),
+          fetchQuery('klanten', getKlanten).catch(() => []),
+          fetchQuery('projecten', getProjecten).catch(() => []),
         ])
         if (cancelled) return
         setLeveringsbonnen(lbData)

@@ -56,6 +56,7 @@ import {
   createFactuur,
   createFactuurItem,
 } from "@/services/supabaseService";
+import { getCached, fetchQuery } from "@/lib/queryCache";
 import type { Tijdregistratie, Project, Klant } from "@/types";
 import { round2 } from "@/utils/budgetUtils";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -178,10 +179,10 @@ const EMPTY_FORM: FormData = {
 
 export function TijdregistratieLayout() {
   const { user } = useAuth();
-  const [registraties, setRegistraties] = useState<Tijdregistratie[]>([]);
-  const [projecten, setProjecten] = useState<Project[]>([]);
-  const [klanten, setKlanten] = useState<Klant[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [registraties, setRegistraties] = useState<Tijdregistratie[]>(() => getCached<Tijdregistratie[]>('tijdregistraties') ?? []);
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? []);
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? []);
+  const [loading, setLoading] = useState(() => getCached('tijdregistraties') === undefined);
   const [activeFilter, setActiveFilter] = useState<FilterType>("deze_week");
   const [factureerBezig, setFactureerBezig] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -204,12 +205,12 @@ export function TijdregistratieLayout() {
   const timerPausedElapsedRef = useRef<number>(0);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
+    if (getCached('tijdregistraties') === undefined) setLoading(true);
     try {
       const [regData, projData, klantData] = await Promise.all([
-        getTijdregistraties(),
-        getProjecten(),
-        getKlanten(),
+        fetchQuery('tijdregistraties', getTijdregistraties),
+        fetchQuery('projecten', getProjecten),
+        fetchQuery('klanten', getKlanten),
       ]);
 
       setRegistraties(regData || []);

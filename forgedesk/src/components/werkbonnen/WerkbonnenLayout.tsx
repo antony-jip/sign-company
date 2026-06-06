@@ -22,6 +22,7 @@ import type { Werkbon, Klant, Project, Offerte } from '@/types'
 import {
   getWerkbonnen, deleteWerkbon, getKlanten, getProjecten, getOffertes, getWerkbonItems,
 } from '@/services/supabaseService'
+import { getCached, setCached, fetchQuery } from '@/lib/queryCache'
 
 type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond' | 'vandaag'
 
@@ -48,12 +49,12 @@ function isToday(dateStr?: string | null): boolean {
 export function WerkbonnenLayout() {
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
-  const [werkbonnen, setWerkbonnen] = useState<Werkbon[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [itemCounts, setItemCounts] = useState<Record<string, number>>({})
-  const [isLoading, setIsLoading] = useState(true)
+  const [werkbonnen, setWerkbonnen] = useState<Werkbon[]>(() => getCached<Werkbon[]>('werkbonnen') ?? [])
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? [])
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
+  const [itemCounts, setItemCounts] = useState<Record<string, number>>(() => getCached<Record<string, number>>('werkbonItemCounts') ?? {})
+  const [isLoading, setIsLoading] = useState(() => getCached('werkbonnen') === undefined)
   const [searchQuery, setSearchQuery] = useState('')
   const deferredSearch = useDeferredValue(searchQuery)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
@@ -66,18 +67,20 @@ export function WerkbonnenLayout() {
     let cancelled = false
     async function loadData() {
       try {
-        setIsLoading(true)
+        if (getCached('werkbonnen') === undefined) setIsLoading(true)
         const [wbs, kl, pr, off] = await Promise.all([
-          getWerkbonnen(),
-          getKlanten(),
-          getProjecten(),
-          getOffertes(),
+          fetchQuery('werkbonnen', getWerkbonnen),
+          fetchQuery('klanten', getKlanten),
+          fetchQuery('projecten', getProjecten),
+          fetchQuery('offertes', getOffertes),
         ])
         if (cancelled) return
         setWerkbonnen(wbs)
         setKlanten(kl)
         setProjecten(pr)
         setOffertes(off)
+        // Lijst staat; skeleton mag weg. De item-tellingen vullen stil bij.
+        setIsLoading(false)
 
         // Tel items per werkbon
         const counts: Record<string, number> = {}
@@ -91,6 +94,7 @@ export function WerkbonnenLayout() {
           }
         }
         setItemCounts(counts)
+        setCached('werkbonItemCounts', counts)
       } catch (err) {
         logger.error('Load werkbonnen failed:', err)
         if (!cancelled) toast.error('Fout bij laden werkbonnen')

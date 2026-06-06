@@ -22,6 +22,7 @@ import {
   getLeveranciers, createLeverancier, updateLeverancier, deleteLeverancier,
   getUitgavenByLeverancier,
 } from '@/services/supabaseService'
+import { getCached, setCached, fetchQuery } from '@/lib/queryCache'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '@/utils/logger'
 
@@ -53,9 +54,9 @@ export function LeveranciersLayout() {
   const { user } = useAuth()
   const userId = user?.id || ''
 
-  const [leveranciers, setLeveranciers] = useState<Leverancier[]>([])
-  const [uitgavenCounts, setUitgavenCounts] = useState<Record<string, { count: number; totaal: number }>>({})
-  const [isLoading, setIsLoading] = useState(true)
+  const [leveranciers, setLeveranciers] = useState<Leverancier[]>(() => getCached<Leverancier[]>('leveranciers') ?? [])
+  const [uitgavenCounts, setUitgavenCounts] = useState<Record<string, { count: number; totaal: number }>>(() => getCached<Record<string, { count: number; totaal: number }>>('leverancierUitgavenCounts') ?? {})
+  const [isLoading, setIsLoading] = useState(() => getCached('leveranciers') === undefined)
   const [searchQuery, setSearchQuery] = useState('')
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -69,8 +70,8 @@ export function LeveranciersLayout() {
     let cancelled = false
     async function loadData() {
       try {
-        setIsLoading(true)
-        const levs = await getLeveranciers()
+        if (getCached('leveranciers') === undefined) setIsLoading(true)
+        const levs = await fetchQuery('leveranciers', getLeveranciers)
         if (cancelled) return
         setLeveranciers(levs)
 
@@ -90,6 +91,7 @@ export function LeveranciersLayout() {
           }
         }
         setUitgavenCounts(counts)
+        setCached('leverancierUitgavenCounts', counts)
       } catch (err) {
         logger.error('Fout bij laden leveranciers:', err)
         if (!cancelled) toast.error('Fout bij laden leveranciers')

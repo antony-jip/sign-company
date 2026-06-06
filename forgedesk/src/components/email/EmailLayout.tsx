@@ -12,6 +12,7 @@ import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
 import type { IMAPEmailSummary } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
+import { getCached, setCached } from '@/lib/queryCache'
 import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht } from '@/services/emailService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -83,7 +84,7 @@ export function EmailLayout() {
   const { emailFetchLimit } = useAppSettings()
 
   // ─── Core state ───
-  const [emails, setEmails] = useState<Email[]>([])
+  const [emails, setEmails] = useState<Email[]>(() => getCached<Email[]>('emails') ?? [])
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   const [selectedFolder, setSelectedFolder] = useState<EmailFolder>('inbox')
   const [viewMode, setViewMode] = useState<ViewMode>('idle')
@@ -188,7 +189,7 @@ export function EmailLayout() {
   const [folderDrawerOpen, setFolderDrawerOpen] = useState(false)
 
   // ─── Loading state ───
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(() => getCached('emails') === undefined)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null)
   const [nowTick, setNowTick] = useState(() => Date.now())
@@ -281,7 +282,9 @@ export function EmailLayout() {
   // ─── Read emails from Supabase (fast, no IMAP needed) ───
   async function readFromSupabase(): Promise<Email[]> {
     const raw = await getEmails(fetchLimitRef.current).catch(() => [])
-    return normalizeEmails(raw)
+    const normalized = normalizeEmails(raw)
+    setCached('emails', normalized)
+    return normalized
   }
 
   // ─── Trigger IMAP sync (background, writes to Supabase) ───

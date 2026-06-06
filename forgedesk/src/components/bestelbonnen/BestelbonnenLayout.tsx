@@ -20,6 +20,7 @@ import {
   getBestelbonnen, deleteBestelbon, getLeveranciers, getProjecten,
   getBestelbonRegels,
 } from '@/services/supabaseService'
+import { getCached, setCached, fetchQuery } from '@/lib/queryCache'
 import { round2 } from '@/utils/budgetUtils'
 import { getRowAccentClass } from '@/utils/statusColors'
 
@@ -49,11 +50,11 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
 export function BestelbonnenLayout() {
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
-  const [bestelbonnen, setBestelbonnen] = useState<Bestelbon[]>([])
-  const [leveranciers, setLeveranciers] = useState<Leverancier[]>([])
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [bedragen, setBedragen] = useState<Record<string, number>>({})
-  const [isLoading, setIsLoading] = useState(true)
+  const [bestelbonnen, setBestelbonnen] = useState<Bestelbon[]>(() => getCached<Bestelbon[]>('bestelbonnen') ?? [])
+  const [leveranciers, setLeveranciers] = useState<Leverancier[]>(() => getCached<Leverancier[]>('leveranciers') ?? [])
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? [])
+  const [bedragen, setBedragen] = useState<Record<string, number>>(() => getCached<Record<string, number>>('bestelbonBedragen') ?? {})
+  const [isLoading, setIsLoading] = useState(() => getCached('bestelbonnen') === undefined)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -63,11 +64,11 @@ export function BestelbonnenLayout() {
     let cancelled = false
     async function loadData() {
       try {
-        setIsLoading(true)
+        if (getCached('bestelbonnen') === undefined) setIsLoading(true)
         const [bstData, levData, projData] = await Promise.all([
-          getBestelbonnen().catch(() => []),
-          getLeveranciers().catch(() => []),
-          getProjecten().catch(() => []),
+          fetchQuery('bestelbonnen', getBestelbonnen).catch(() => []),
+          fetchQuery('leveranciers', getLeveranciers).catch(() => []),
+          fetchQuery('projecten', getProjecten).catch(() => []),
         ])
         if (cancelled) return
 
@@ -86,6 +87,7 @@ export function BestelbonnenLayout() {
         setLeveranciers(levData)
         setProjecten(projData)
         setBedragen(bedragenMap)
+        setCached('bestelbonBedragen', bedragenMap)
       } finally {
         if (!cancelled) setIsLoading(false)
       }

@@ -46,6 +46,7 @@ import { PaginationControls } from '@/components/ui/pagination-controls'
 import { DatePicker } from '@/components/ui/date-picker'
 import { AlertCircle, Activity, Receipt, CheckCircle } from 'lucide-react'
 import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getMedewerkers as fetchMedewerkers, createOfferte, createOfferteItem, updateOfferte, updateOfferteItem, getOfferteItems, deleteOfferte } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { ProjectImportDialog } from './ProjectImportDialog'
 import { useAuth } from '@/contexts/AuthContext'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
@@ -170,10 +171,10 @@ function getSpectrumFase(dbStatus: string) {
 export function ProjectsList() {
   const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? [])
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('projecten') === undefined)
   const [zoekterm, setZoekterm] = useState('')
   const [statusFilter, setStatusFilter] = useState('alle')
   const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'created_at'>('created_at')
@@ -309,11 +310,11 @@ export function ProjectsList() {
 
   const fetchData = React.useCallback(async () => {
     try {
-      setIsLoading(true)
+      if (getCached('projecten') === undefined) setIsLoading(true)
       const [projectenData, klantenData, offertesData, medewerkersData] = await Promise.all([
-        getProjecten(),
-        getKlanten(),
-        getOffertes(),
+        fetchQuery('projecten', getProjecten),
+        fetchQuery('klanten', getKlanten),
+        fetchQuery('offertes', getOffertes),
         fetchMedewerkers(),
       ])
       setProjecten(projectenData)

@@ -25,6 +25,7 @@ import {
   getVoorraadMutaties, createVoorraadMutatie,
   getLeveranciers, getProjecten,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '@/utils/logger'
 
@@ -55,10 +56,10 @@ const CATEGORIEEN = [
 // ============ COMPONENT ============
 
 export function VoorraadLayout() {
-  const [artikelen, setArtikelen] = useState<VoorraadArtikel[]>([])
-  const [leveranciers, setLeveranciers] = useState<Leverancier[]>([])
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [artikelen, setArtikelen] = useState<VoorraadArtikel[]>(() => getCached<VoorraadArtikel[]>('voorraadArtikelen') ?? [])
+  const [leveranciers, setLeveranciers] = useState<Leverancier[]>(() => getCached<Leverancier[]>('leveranciers') ?? [])
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('voorraadArtikelen') === undefined)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategorie, setFilterCategorie] = useState('alle')
 
@@ -99,11 +100,11 @@ export function VoorraadLayout() {
     let cancelled = false
     async function loadData() {
       try {
-        setIsLoading(true)
+        if (getCached('voorraadArtikelen') === undefined) setIsLoading(true)
         const [artData, levData, projData] = await Promise.all([
-          getVoorraadArtikelen().catch(() => []),
-          getLeveranciers().catch(() => []),
-          getProjecten().catch(() => []),
+          fetchQuery('voorraadArtikelen', getVoorraadArtikelen).catch(() => []),
+          fetchQuery('leveranciers', getLeveranciers).catch(() => []),
+          fetchQuery('projecten', getProjecten).catch(() => []),
         ])
         if (cancelled) return
         setArtikelen(artData)

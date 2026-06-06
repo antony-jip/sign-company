@@ -17,6 +17,7 @@ import {
   extractInkoopfactuur,
   getInkoopAIUsage,
 } from '@/services/inkoopfactuurService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus } from '@/types'
 
@@ -60,8 +61,8 @@ function formatDatum(d: string | null): string {
 
 export function InkoopfacturenLayout() {
   const navigate = useNavigate()
-  const [facturen, setFacturen] = useState<InkoopFactuur[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [facturen, setFacturen] = useState<InkoopFactuur[]>(() => getCached<InkoopFactuur[]>('inkoopfacturen') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('inkoopfacturen') === undefined)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [wachtendCount, setWachtendCount] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
@@ -80,7 +81,7 @@ export function InkoopfacturenLayout() {
 
   async function refreshData() {
     const [data, count, config] = await Promise.all([
-      getInkoopfacturen().catch(() => []),
+      fetchQuery('inkoopfacturen', getInkoopfacturen).catch(() => []),
       countWachtendOpReview().catch(() => 0),
       getInboxConfig().catch(() => null),
     ])
@@ -225,9 +226,9 @@ export function InkoopfacturenLayout() {
     let cancelled = false
     async function loadData() {
       try {
-        setIsLoading(true)
+        if (getCached('inkoopfacturen') === undefined) setIsLoading(true)
         const [data, count, config] = await Promise.all([
-          getInkoopfacturen().catch(() => []),
+          fetchQuery('inkoopfacturen', getInkoopfacturen).catch(() => []),
           countWachtendOpReview().catch(() => 0),
           getInboxConfig().catch(() => null),
         ])

@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, getMedewerkers, updateTaak } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import type { Taak, Medewerker } from '@/types'
@@ -15,15 +16,15 @@ type ActiveTab = 'dag' | 'maand'
 
 export function TasksLayoutMobile() {
   const { user } = useAuth()
-  const [taken, setTaken] = useState<Taak[]>([])
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
+  const [taken, setTaken] = useState<Taak[]>(() => getCached<Taak[]>('taken') ?? [])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? [])
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
   const [activeTab, setActiveTab] = useState<ActiveTab>('dag')
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => getCached('taken') === undefined)
 
   useEffect(() => {
-    Promise.all([getTaken(), getMedewerkers()])
+    Promise.all([fetchQuery('taken', getTaken), fetchQuery('medewerkers', getMedewerkers)])
       .then(([t, m]) => { setTaken(t); setMedewerkers(m) })
       .catch((err) => {
         logger.error('TasksLayoutMobile load failed', err)

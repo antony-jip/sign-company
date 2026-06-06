@@ -42,6 +42,7 @@ import {
   getMedewerkers,
   getVoorraadArtikelen,
 } from '@/services/supabaseService';
+import { getCached, fetchQuery } from '@/lib/queryCache';
 import type {
   Klant,
   Project,
@@ -118,26 +119,26 @@ export function RapportagesLayout() {
   const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings();
   const documentStyle = useDocumentStyle();
   const [periode, setPeriode] = useState<Periode>('dit_jaar');
-  const [facturen, setFacturen] = useState<Factuur[]>([]);
-  const [projecten, setProjecten] = useState<Project[]>([]);
-  const [offertes, setOffertes] = useState<Offerte[]>([]);
-  const [tijdregistraties, setTijdregistraties] = useState<Tijdregistratie[]>([]);
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
-  const [voorraadArtikelen, setVoorraadArtikelen] = useState<VoorraadArtikel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [facturen, setFacturen] = useState<Factuur[]>(() => getCached<Factuur[]>('facturen') ?? []);
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? []);
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? []);
+  const [tijdregistraties, setTijdregistraties] = useState<Tijdregistratie[]>(() => getCached<Tijdregistratie[]>('tijdregistraties') ?? []);
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? []);
+  const [voorraadArtikelen, setVoorraadArtikelen] = useState<VoorraadArtikel[]>(() => getCached<VoorraadArtikel[]>('voorraadArtikelen') ?? []);
+  const [loading, setLoading] = useState(() => getCached('facturen') === undefined);
 
   // Fetch data on mount
   useEffect(() => {
     async function fetchData() {
-      setLoading(true);
+      if (getCached('facturen') === undefined) setLoading(true);
       try {
         const [facturenData, projectenData, offertesData, tijdData, mwData, vaData] = await Promise.all([
-          getFacturen(),
-          getProjecten(),
-          getOffertes(),
-          getTijdregistraties(),
-          getMedewerkers().catch(() => []),
-          getVoorraadArtikelen().catch(() => []),
+          fetchQuery('facturen', getFacturen),
+          fetchQuery('projecten', getProjecten),
+          fetchQuery('offertes', getOffertes),
+          fetchQuery('tijdregistraties', getTijdregistraties),
+          fetchQuery('medewerkers', getMedewerkers).catch(() => []),
+          fetchQuery('voorraadArtikelen', getVoorraadArtikelen).catch(() => []),
         ]);
 
         setFacturen(facturenData);

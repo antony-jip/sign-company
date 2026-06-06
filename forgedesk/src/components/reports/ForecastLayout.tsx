@@ -12,6 +12,7 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { getFacturen, getDeals } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Factuur, Deal } from '@/types'
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -30,9 +31,9 @@ function getMonthLabel(key: string): string {
 // ─── Component ──────────────────────────────────────────────────────
 
 export function ForecastLayout() {
-  const [facturen, setFacturen] = useState<Factuur[]>([])
-  const [deals, setDeals] = useState<Deal[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [facturen, setFacturen] = useState<Factuur[]>(() => getCached<Factuur[]>('facturen') ?? [])
+  const [deals, setDeals] = useState<Deal[]>(() => getCached<Deal[]>('deals') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('facturen') === undefined)
   const [forecastPeriod, setForecastPeriod] = useState<'6' | '12'>('6')
 
   useEffect(() => {
@@ -40,8 +41,8 @@ export function ForecastLayout() {
     async function loadData() {
       try {
         const [fData, dData] = await Promise.all([
-          getFacturen().catch(() => []),
-          getDeals().catch(() => []),
+          fetchQuery('facturen', getFacturen).catch(() => []),
+          fetchQuery('deals', getDeals).catch(() => []),
         ])
         if (cancelled) return
         setFacturen(fData)

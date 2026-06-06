@@ -41,6 +41,7 @@ import {
   getFacturen,
   getUitgaven,
 } from '@/services/supabaseService'
+import { getCached, setCached, fetchQuery } from '@/lib/queryCache'
 import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import type { Project, Offerte, OfferteItem, Tijdregistratie, Factuur, Uitgave } from '@/types'
@@ -71,12 +72,12 @@ interface NacalculatieRegel {
 // ============ COMPONENT ============
 
 export function NacalculatieLayout() {
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [alleOfferteItems, setAlleOfferteItems] = useState<Record<string, OfferteItem[]>>({})
-  const [tijdregistraties, setTijdregistraties] = useState<Tijdregistratie[]>([])
-  const [uitgaven, setUitgaven] = useState<Uitgave[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('nacalcProjecten') ?? [])
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('nacalcOffertes') ?? [])
+  const [alleOfferteItems, setAlleOfferteItems] = useState<Record<string, OfferteItem[]>>(() => getCached<Record<string, OfferteItem[]>>('nacalcItems') ?? {})
+  const [tijdregistraties, setTijdregistraties] = useState<Tijdregistratie[]>(() => getCached<Tijdregistratie[]>('tijdregistraties') ?? [])
+  const [uitgaven, setUitgaven] = useState<Uitgave[]>(() => getCached<Uitgave[]>('uitgaven') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('nacalcProjecten') === undefined)
   const [selectedProjectId, setSelectedProjectId] = useState<string>('alle')
   const [detailProjectId, setDetailProjectId] = useState<string | null>(null)
 
@@ -84,10 +85,10 @@ export function NacalculatieLayout() {
     async function loadData() {
       try {
         const [proj, off, tijd, uitg] = await Promise.all([
-          getProjecten(),
-          getOffertes(),
-          getTijdregistraties(),
-          getUitgaven(),
+          fetchQuery('projecten', getProjecten),
+          fetchQuery('offertes', getOffertes),
+          fetchQuery('tijdregistraties', getTijdregistraties),
+          fetchQuery('uitgaven', getUitgaven),
         ])
 
         const afgerondeProjecten = proj.filter((p) => p.status === 'afgerond')
@@ -112,6 +113,9 @@ export function NacalculatieLayout() {
         setAlleOfferteItems(itemsMap)
         setTijdregistraties(tijd)
         setUitgaven(uitg)
+        setCached('nacalcProjecten', afgerondeProjecten)
+        setCached('nacalcOffertes', goedgekeurdeOffertes)
+        setCached('nacalcItems', itemsMap)
       } catch (err) {
         logger.error('Fout bij laden nacalculatie data:', err)
         toast.error('Fout bij laden nacalculatie data')

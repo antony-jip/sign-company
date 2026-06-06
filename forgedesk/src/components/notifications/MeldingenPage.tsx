@@ -17,6 +17,7 @@ import {
   markAlleNotificatiesGelezen,
   deleteNotificatie,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Notificatie } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -80,15 +81,15 @@ function getDagGroep(dateString: string): string {
 }
 
 export function MeldingenPage() {
-  const [notificaties, setNotificaties] = useState<Notificatie[]>([])
-  const [laden, setLaden] = useState(true)
+  const [notificaties, setNotificaties] = useState<Notificatie[]>(() => getCached<Notificatie[]>('notificaties') ?? [])
+  const [laden, setLaden] = useState(() => getCached('notificaties') === undefined)
   const [filter, setFilter] = useState<FilterType>('alle')
   const [zoekterm, setZoekterm] = useState('')
   const navigate = useNavigate()
 
   const laadNotificaties = useCallback(async () => {
     try {
-      const data = await getNotificaties()
+      const data = await fetchQuery('notificaties', getNotificaties)
       setNotificaties(data || [])
     } catch (err) {
       // ignore

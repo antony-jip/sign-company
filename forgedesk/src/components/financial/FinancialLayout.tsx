@@ -29,6 +29,7 @@ import {
 } from 'recharts'
 import { getFacturen, getOffertes } from '@/services/supabaseService'
 import { getInkoopfacturen } from '@/services/inkoopfactuurService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Factuur, Offerte, InkoopFactuur } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -47,17 +48,17 @@ function formatTooltipValue(value: number) {
 export function FinancialLayout() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overzicht')
-  const [facturen, setFacturen] = useState<Factuur[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [inkoopfacturen, setInkoopfacturen] = useState<InkoopFactuur[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [facturen, setFacturen] = useState<Factuur[]>(() => getCached<Factuur[]>('facturen') ?? [])
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
+  const [inkoopfacturen, setInkoopfacturen] = useState<InkoopFactuur[]>(() => getCached<InkoopFactuur[]>('inkoopfacturen') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('facturen') === undefined)
 
   useEffect(() => {
     let cancelled = false
     Promise.all([
-      getFacturen(),
-      getOffertes(),
-      getInkoopfacturen().catch(() => []),
+      fetchQuery('facturen', getFacturen),
+      fetchQuery('offertes', getOffertes),
+      fetchQuery('inkoopfacturen', getInkoopfacturen).catch(() => []),
     ]).then(([fac, off, inkoop]) => {
       if (cancelled) return
       setFacturen(fac)

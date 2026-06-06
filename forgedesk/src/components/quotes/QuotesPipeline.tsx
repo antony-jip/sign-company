@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { getOffertes, updateOfferte, deleteOfferte, getKlant, getOfferteItems, getProject, createTaak, getMedewerkers } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { sendPortaalHerinneringEmail } from '@/services/portaalNotificatieService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -228,8 +229,8 @@ export function QuotesPipeline() {
   const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
   const { toonConversieRate, toonDagenOpen, toonFollowUpIndicatoren, valuta } = useAppSettings()
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('offertes') === undefined)
   const [error, setError] = useState<string | null>(null)
   const runOptimistic = useOptimisticState(setOffertes)
   const [searchQuery, setSearchQuery] = useState('')
@@ -309,9 +310,10 @@ export function QuotesPipeline() {
 
   const loadOffertes = useCallback(async () => {
     try {
-      setIsLoading(true)
+      // Skeleton alleen als de cache koud is; anders stil revalideren.
+      if (getCached('offertes') === undefined) setIsLoading(true)
       setError(null)
-      const data = await getOffertes()
+      const data = await fetchQuery('offertes', getOffertes)
       setOffertes(data)
     } catch (err) {
       logger.error('Fout bij ophalen offertes:', err)

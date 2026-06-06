@@ -21,6 +21,7 @@ import {
   getKlanten,
   updateMontageAfspraak,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import type { Klant, Medewerker, MontageAfspraak } from '@/types'
@@ -241,9 +242,9 @@ function MontageCard({
 
 export function MontagePlanningLayoutMobile() {
   const { user } = useAuth()
-  const [afspraken, setAfspraken] = useState<MontageAfspraak[]>([])
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
+  const [afspraken, setAfspraken] = useState<MontageAfspraak[]>(() => getCached<MontageAfspraak[]>('montageAfspraken') ?? [])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? [])
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
   const [scope, setScopeState] = useState<'mijn' | 'iedereen'>(() => {
     try {
@@ -257,10 +258,10 @@ export function MontagePlanningLayoutMobile() {
     } catch (err) { return false }
   })
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => getCached('montageAfspraken') === undefined)
 
   useEffect(() => {
-    Promise.all([getMontageAfspraken(), getMedewerkers(), getKlanten()])
+    Promise.all([fetchQuery('montageAfspraken', getMontageAfspraken), fetchQuery('medewerkers', getMedewerkers), fetchQuery('klanten', getKlanten)])
       .then(([a, m, k]) => { setAfspraken(a); setMedewerkers(m); setKlanten(k) })
       .catch((err) => {
         logger.error('MontagePlanningLayoutMobile load failed', err)

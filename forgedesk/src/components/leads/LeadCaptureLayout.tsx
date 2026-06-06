@@ -18,12 +18,13 @@ import {
   getLeadFormulieren, deleteLeadFormulier, updateLeadFormulier,
   getAllLeadInzendingen,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 
 export function LeadCaptureLayout() {
   const navigate = useNavigate()
-  const [formulieren, setFormulieren] = useState<LeadFormulier[]>([])
-  const [inzendingen, setInzendingen] = useState<LeadInzending[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [formulieren, setFormulieren] = useState<LeadFormulier[]>(() => getCached<LeadFormulier[]>('leadFormulieren') ?? [])
+  const [inzendingen, setInzendingen] = useState<LeadInzending[]>(() => getCached<LeadInzending[]>('leadInzendingen') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('leadFormulieren') === undefined)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<LeadFormulier | null>(null)
 
@@ -32,8 +33,8 @@ export function LeadCaptureLayout() {
     async function loadData() {
       try {
         const [fData, iData] = await Promise.all([
-          getLeadFormulieren().catch(() => []),
-          getAllLeadInzendingen().catch(() => []),
+          fetchQuery('leadFormulieren', getLeadFormulieren).catch(() => []),
+          fetchQuery('leadInzendingen', getAllLeadInzendingen).catch(() => []),
         ])
         if (cancelled) return
         setFormulieren(fData)

@@ -73,6 +73,7 @@ import {
 import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak } from "@/types";
 import { ClipboardCheck } from "lucide-react";
 import { uploadMontageBijlage } from '@/services/storageService';
+import { getCached, fetchQuery } from '@/lib/queryCache';
 import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -301,13 +302,13 @@ export function MontagePlanningLayout() {
     setViewModeState(mode);
     try { localStorage.setItem(PLANNING_VIEWMODE_KEY, mode); } catch { /* ignore */ }
   }, []);
-  const [afspraken, setAfspraken] = useState<MontageAfspraak[]>([]);
+  const [afspraken, setAfspraken] = useState<MontageAfspraak[]>(() => getCached<MontageAfspraak[]>('montageAfspraken') ?? []);
   const runOptimistic = useOptimisticState(setAfspraken);
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
-  const [projecten, setProjecten] = useState<Project[]>([]);
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? []);
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? []);
   // Taken in /planning — sommige collega's plannen hier hun losse taken
   // naast de montage-afspraken in.
-  const [taken, setTaken] = useState<Taak[]>([]);
+  const [taken, setTaken] = useState<Taak[]>(() => getCached<Taak[]>('taken') ?? []);
   // Drag-state voor taken (los van afspraak-drag bovenin).
   const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null);
   const [taakDragOverDate, setTaakDragOverDate] = useState<string | null>(null);
@@ -315,7 +316,7 @@ export function MontagePlanningLayout() {
   const [editingAfspraak, setEditingAfspraak] =
     useState<MontageAfspraak | null>(null);
   const [formData, setFormData] = useState<MontageFormData>(EMPTY_FORM);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => getCached('montageAfspraken') === undefined);
   const initialScope = useMemo(() => readScopeFromStorage(), []);
   const [scopeMode, setScopeModeState] = useState<ScopeMode>(initialScope.mode);
   const [selectedMonteur, setSelectedMonteurState] = useState<string>(
@@ -367,8 +368,8 @@ export function MontagePlanningLayout() {
   const [resizingId, setResizingId] = useState<string | null>(null);
   const resizeStartY = useRef(0);
   const resizeStartMinutes = useRef(0);
-  const [klanten, setKlanten] = useState<Klant[]>([]);
-  const [offertes, setOffertes] = useState<Offerte[]>([]);
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? []);
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? []);
   const [werkbonDialogOpen, setWerkbonDialogOpen] = useState(false);
   const [werkbonMontage, setWerkbonMontage] = useState<MontageAfspraak | null>(null);
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([]);
@@ -455,15 +456,15 @@ export function MontagePlanningLayout() {
   const feestdagen = useMemo(() => getNederlandseFeestdagen(year), [year]);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
+    if (getCached('montageAfspraken') === undefined) setLoading(true);
     try {
       const [afsprakenData, medewerkerData, projectData, klantenData, offertesData, takenData] = await Promise.all([
-        getMontageAfspraken().catch(() => []),
-        getMedewerkers().catch(() => []),
-        getProjecten().catch(() => []),
-        getKlanten().catch(() => []),
-        getOffertes().catch(() => []),
-        getTaken().catch(() => []),
+        fetchQuery('montageAfspraken', getMontageAfspraken).catch(() => []),
+        fetchQuery('medewerkers', getMedewerkers).catch(() => []),
+        fetchQuery('projecten', getProjecten).catch(() => []),
+        fetchQuery('klanten', getKlanten).catch(() => []),
+        fetchQuery('offertes', getOffertes).catch(() => []),
+        fetchQuery('taken', getTaken).catch(() => []),
       ]);
 
       setAfspraken(afsprakenData || []);

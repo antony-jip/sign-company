@@ -67,6 +67,7 @@ import { logWijziging } from '@/utils/auditLogger'
 import { CompletionPromptModal } from '@/components/shared/CompletionPromptModal'
 import { DatePicker } from '@/components/ui/date-picker'
 import { updateProject, getProject } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import { Checkbox } from '@/components/ui/checkbox'
 import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
@@ -197,13 +198,13 @@ function formatHourLabel(hour: number): string {
 export function TasksLayout() {
   const { user } = useAuth()
 
-  const [taken, setTaken] = useState<Taak[]>([])
+  const [taken, setTaken] = useState<Taak[]>(() => getCached<Taak[]>('taken') ?? [])
   const runOptimistic = useOptimisticState(setTaken)
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [montageAfspraken, setMontageAfspraken] = useState<MontageAfspraak[]>([])
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? [])
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
+  const [montageAfspraken, setMontageAfspraken] = useState<MontageAfspraak[]>(() => getCached<MontageAfspraak[]>('montageAfspraken') ?? [])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? [])
 
   const medewerkerNaam = (() => {
     if (!user) return ''
@@ -216,7 +217,7 @@ export function TasksLayout() {
   })()
 
   const [showMontage, setShowMontage] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(() => getCached('taken') === undefined)
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
 
   const [weekOffset, setWeekOffset] = useState(0)
@@ -591,9 +592,9 @@ export function TasksLayout() {
   useEffect(() => {
     let cancelled = false
     async function loadData() {
-      setIsLoading(true)
+      if (getCached('taken') === undefined) setIsLoading(true)
       try {
-        const [takenData, projectenData, klantenData, montageData, offertesData, medewerkersData] = await Promise.all([getTaken(), getProjecten(), getKlanten(), getMontageAfspraken(), getOffertes(), getMedewerkers()])
+        const [takenData, projectenData, klantenData, montageData, offertesData, medewerkersData] = await Promise.all([fetchQuery('taken', getTaken), fetchQuery('projecten', getProjecten), fetchQuery('klanten', getKlanten), fetchQuery('montageAfspraken', getMontageAfspraken), fetchQuery('offertes', getOffertes), fetchQuery('medewerkers', getMedewerkers)])
         if (!cancelled) {
           setTaken(takenData)
           setProjecten(projectenData)

@@ -10,6 +10,7 @@ import {
   getProjecten,
   getOffertes,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import type { Werkbon, Klant, Project, Offerte } from '@/types'
@@ -46,16 +47,16 @@ function buildMapsUrl(adres?: string, postcode?: string, stad?: string): string 
 
 export function WerkbonnenLayoutMobile() {
   const navigate = useNavigate()
-  const [werkbonnen, setWerkbonnen] = useState<Werkbon[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [loading, setLoading] = useState(true)
+  const [werkbonnen, setWerkbonnen] = useState<Werkbon[]>(() => getCached<Werkbon[]>('werkbonnen') ?? [])
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? [])
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
+  const [loading, setLoading] = useState(() => getCached('werkbonnen') === undefined)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<StatusFilter>('alle')
 
   useEffect(() => {
-    Promise.all([getWerkbonnen(), getKlanten(), getProjecten(), getOffertes()])
+    Promise.all([fetchQuery('werkbonnen', getWerkbonnen), fetchQuery('klanten', getKlanten), fetchQuery('projecten', getProjecten), fetchQuery('offertes', getOffertes)])
       .then(([w, k, p, o]) => { setWerkbonnen(w); setKlanten(k); setProjecten(p); setOffertes(o) })
       .catch((err) => {
         logger.error('WerkbonnenLayoutMobile load failed', err)

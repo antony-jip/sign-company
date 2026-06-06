@@ -26,6 +26,7 @@ import {
   getLeveranciers, createLeverancier,
   getProjecten,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '@/utils/logger'
 
@@ -91,10 +92,10 @@ export function UitgavenLayout() {
   const { user } = useAuth()
   const userId = user?.id || ''
 
-  const [uitgaven, setUitgaven] = useState<Uitgave[]>([])
-  const [leveranciers, setLeveranciers] = useState<Leverancier[]>([])
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [uitgaven, setUitgaven] = useState<Uitgave[]>(() => getCached<Uitgave[]>('uitgaven') ?? [])
+  const [leveranciers, setLeveranciers] = useState<Leverancier[]>(() => getCached<Leverancier[]>('leveranciers') ?? [])
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('uitgaven') === undefined)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [filterCategorie, setFilterCategorie] = useState<FilterCategorie>('alle')
@@ -115,11 +116,11 @@ export function UitgavenLayout() {
     let cancelled = false
     async function loadData() {
       try {
-        setIsLoading(true)
+        if (getCached('uitgaven') === undefined) setIsLoading(true)
         const [uitg, lev, proj] = await Promise.all([
-          getUitgaven(),
-          getLeveranciers(),
-          getProjecten(),
+          fetchQuery('uitgaven', getUitgaven),
+          fetchQuery('leveranciers', getLeveranciers),
+          fetchQuery('projecten', getProjecten),
         ])
         if (cancelled) return
         setUitgaven(uitg)

@@ -19,21 +19,22 @@ import {
   getInkoopOffertes,
   deleteInkoopOfferte,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { InkoopOfferte } from '@/types'
 import { logger } from '../../utils/logger'
 
 export function InkoopOffertesPage() {
   const { user } = useAuth()
-  const [offertes, setOffertes] = useState<InkoopOfferte[]>([])
+  const [offertes, setOffertes] = useState<InkoopOfferte[]>(() => getCached<InkoopOfferte[]>('inkoopOffertes') ?? [])
   const [expandedOffertes, setExpandedOffertes] = useState<Set<string>>(new Set())
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(() => getCached('inkoopOffertes') === undefined)
 
   const loadOffertes = useCallback(async () => {
     if (!user?.id) return
-    setIsLoading(true)
+    if (getCached('inkoopOffertes') === undefined) setIsLoading(true)
     try {
-      const data = await getInkoopOffertes(user.id)
+      const data = await fetchQuery('inkoopOffertes', () => getInkoopOffertes(user.id))
       setOffertes(data)
     } catch (err) {
       logger.error('Inkoop offertes laden mislukt:', err)

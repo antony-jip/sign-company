@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 import { getDocumenten, deleteDocument } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { DocumentFolders } from './DocumentFolders'
 import { DocumentsPipeline } from './DocumentsPipeline'
@@ -97,11 +98,11 @@ export function DocumentsLayout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [uploadOpen, setUploadOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [documenten, setDocumenten] = useState<Document[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [documenten, setDocumenten] = useState<Document[]>(() => getCached<Document[]>('documenten') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('documenten') === undefined)
 
   useEffect(() => {
-    getDocumenten().then((d) => {
+    fetchQuery('documenten', getDocumenten).then((d) => {
       setDocumenten(d)
       setIsLoading(false)
     })

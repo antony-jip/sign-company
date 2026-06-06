@@ -16,6 +16,7 @@ import {
   verwijderMaatje,
   getMaatjeWeergaveUrl,
 } from '@/services/maatjeService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { MaatjeEditor } from './MaatjeEditor'
 import { MaatjeKoppelSheet } from './MaatjeKoppelSheet'
 
@@ -85,8 +86,8 @@ function MaatjeBeheerKaart({
 
 export function MaatjeBeheer() {
   const { medewerkers } = useMedewerkers()
-  const [maatjes, setMaatjes] = useState<Maatje[]>([])
-  const [laden, setLaden] = useState(true)
+  const [maatjes, setMaatjes] = useState<Maatje[]>(() => getCached<Maatje[]>('losseMaatjes') ?? [])
+  const [laden, setLaden] = useState(() => getCached('losseMaatjes') === undefined)
   const [filterNaam, setFilterNaam] = useState('')
   const [selectie, setSelectie] = useState<Set<string>>(new Set())
   const [koppelOpen, setKoppelOpen] = useState(false)
@@ -94,7 +95,7 @@ export function MaatjeBeheer() {
 
   const laadMaatjes = useCallback(async () => {
     try {
-      setMaatjes(await getLosseMaatjes())
+      setMaatjes(await fetchQuery('losseMaatjes', getLosseMaatjes))
     } catch (err) {
       logger.error('Maatjes laden mislukt:', err)
       toast.error('Kon maatjes niet laden')

@@ -49,6 +49,7 @@ import {
   createPortaalItem,
   getMedewerkers,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
 import type { ProjectPortaal, PortaalItem, Notificatie, Medewerker } from '@/types'
@@ -142,10 +143,10 @@ interface ActiviteitItem {
 export function PortalenOverzicht() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [portalen, setPortalen] = useState<PortaalEnriched[]>([])
-  const [notificaties, setNotificaties] = useState<Notificatie[]>([])
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
-  const [loading, setLoading] = useState(true)
+  const [portalen, setPortalen] = useState<PortaalEnriched[]>(() => getCached<PortaalEnriched[]>('portalen') ?? [])
+  const [notificaties, setNotificaties] = useState<Notificatie[]>(() => getCached<Notificatie[]>('notificaties') ?? [])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => (getCached<Medewerker[]>('medewerkers') ?? []).filter(mw => mw.status === 'actief'))
+  const [loading, setLoading] = useState(() => getCached('portalen') === undefined)
   const [filter, setFilter] = useState<FilterType>('alle')
 
   // Taak dialog state
@@ -168,7 +169,7 @@ export function PortalenOverzicht() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [p, n, m] = await Promise.all([getAllPortalen(), getNotificaties(), getMedewerkers()])
+      const [p, n, m] = await Promise.all([fetchQuery('portalen', getAllPortalen), fetchQuery('notificaties', getNotificaties), fetchQuery('medewerkers', getMedewerkers)])
       setPortalen(p)
       setNotificaties(n)
       setMedewerkers(m.filter(mw => mw.status === 'actief'))

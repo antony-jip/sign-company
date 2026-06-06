@@ -77,6 +77,7 @@ import {
   getOffertesByProject,
   getFacturenByProject,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate, Project } from '@/types'
 import { getFactuurBijlageCounts } from '@/services/factuurBijlagenService'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -313,12 +314,12 @@ export function FacturenLayout() {
   const documentStyle = useDocumentStyle()
 
   // Data state
-  const [facturen, setFacturen] = useState<Factuur[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
+  const [facturen, setFacturen] = useState<Factuur[]>(() => getCached<Factuur[]>('facturen') ?? [])
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
   const [teFacturerenProjecten, setTeFacturerenProjecten] = useState<(Project & { offerteBedrag: number; alGefactureerd: number })[]>([])
   const [bijlageCounts, setBijlageCounts] = useState<Map<string, number>>(new Map())
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(() => getCached('facturen') === undefined)
 
   // Filter & sort state
   const [searchQuery, setSearchQuery] = useState('')
@@ -375,11 +376,13 @@ export function FacturenLayout() {
     let cancelled = false
     async function loadData() {
       try {
-        setIsLoading(true)
+        // Skeleton alleen bij koude cache; anders tonen we direct de
+        // gecachete lijst en revalideren stil.
+        if (getCached('facturen') === undefined) setIsLoading(true)
         const [facturenData, klantenData, offertesData, herinneringData, bijlageCountsData] = await Promise.all([
-          getFacturen().catch(() => []),
-          getKlanten().catch(() => []),
-          getOffertes().catch(() => []),
+          fetchQuery('facturen', getFacturen).catch(() => []),
+          fetchQuery('klanten', getKlanten).catch(() => []),
+          fetchQuery('offertes', getOffertes).catch(() => []),
           getHerinneringTemplates().catch(() => []),
           getFactuurBijlageCounts().catch(() => new Map<string, number>()),
         ])
@@ -390,11 +393,14 @@ export function FacturenLayout() {
           setOffertes(offertesData)
           setHerinneringTemplates(herinneringData)
           setBijlageCounts(bijlageCountsData)
+          // Primaire lijst staat — skeleton mag direct weg. De zware
+          // "te factureren"-verrijking hieronder laadt stil bij.
+          setIsLoading(false)
         }
 
         // Fetch te factureren projects with enriched data
         try {
-          const projectenData = await getProjecten()
+          const projectenData = await fetchQuery('projecten', getProjecten)
           const tfProjecten = projectenData.filter((p) => p.status === 'te-factureren')
           const enriched = await Promise.all(
             tfProjecten.map(async (project) => {

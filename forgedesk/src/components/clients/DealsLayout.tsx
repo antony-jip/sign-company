@@ -25,6 +25,7 @@ import {
   getDeals, createDeal, updateDeal, deleteDeal,
   getKlanten, getMedewerkers,
 } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { round2 } from '@/utils/budgetUtils'
 import { MODULE_COLORS } from '@/lib/moduleColors'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -62,10 +63,10 @@ export function DealsLayout() {
   const { navigateWithTab } = useNavigateWithTab()
   const { pipelineStappen } = useAppSettings()
 
-  const [deals, setDeals] = useState<Deal[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [deals, setDeals] = useState<Deal[]>(() => getCached<Deal[]>('deals') ?? [])
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? [])
+  const [isLoading, setIsLoading] = useState(() => getCached('deals') === undefined)
   const [viewMode, setViewMode] = useState<ViewMode>('kanban')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterBron, setFilterBron] = useState('alle')
@@ -87,11 +88,11 @@ export function DealsLayout() {
     let cancelled = false
     async function loadData() {
       try {
-        setIsLoading(true)
+        if (getCached('deals') === undefined) setIsLoading(true)
         const [dData, kData, mData] = await Promise.all([
-          getDeals().catch(() => []),
-          getKlanten().catch(() => []),
-          getMedewerkers().catch(() => []),
+          fetchQuery('deals', getDeals).catch(() => []),
+          fetchQuery('klanten', getKlanten).catch(() => []),
+          fetchQuery('medewerkers', getMedewerkers).catch(() => []),
         ])
         if (cancelled) return
         setDeals(dData)
