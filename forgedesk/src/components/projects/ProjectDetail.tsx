@@ -146,6 +146,7 @@ import { getFase } from '@/utils/projectFases'
 import { PortaalCompactBlock } from './cockpit/PortaalCompactBlock'
 import { ActiviteitCard } from './cockpit/ActiviteitCard'
 import { KlantCard } from './cockpit/KlantCard'
+import { TeamCard } from './cockpit/TeamCard'
 import { ProjectMailComposer, type ProjectMailComposerHandle } from './ProjectMailComposer'
 import { ActiesCard } from './cockpit/ActiesCard'
 import { confirm } from '@/components/shared/ConfirmDialog'
@@ -1370,6 +1371,29 @@ export function ProjectDetail() {
               </span>
             </>
           )}
+          <span className="text-muted-foreground/70">·</span>
+          <DatePicker
+            value={project.eind_datum}
+            onChange={async (d) => {
+              try {
+                const updated = await updateProject(id!, { eind_datum: d || undefined })
+                setProject(updated)
+                toast.success('Deadline ingesteld')
+              } catch (err) {
+                logger.error('updateProject eind_datum:', err)
+                toast.error('Kon deadline niet wijzigen')
+              }
+            }}
+            align="start"
+            trigger={
+              <button className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground hover:text-[#1A535C] transition-colors" title="Deadline instellen">
+                <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.75} />
+                {project.eind_datum
+                  ? <span className="font-medium text-foreground/80">deadline {new Date(project.eind_datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span>
+                  : <span className="text-muted-foreground/60">+ deadline</span>}
+              </button>
+            }
+          />
         </div>
 
         {/* TAB BAR — flame underline, duotone icoon per tab */}
@@ -1445,7 +1469,7 @@ export function ProjectDetail() {
           <ProjectFaseBar
             status={project.status}
             totaalBedrag={totaalBedrag}
-            deadline={project.deadline}
+            deadline={project.eind_datum}
             onStatusChange={async (newStatus) => {
               try {
                 const oudeStatus = project.status
@@ -1670,6 +1694,20 @@ export function ProjectDetail() {
               }}
             />
           )}
+
+          <TeamCard
+            teamLeden={project.team_leden || []}
+            medewerkers={alleMedewerkers}
+            onChange={async (ids) => {
+              try {
+                const updated = await updateProject(id!, { team_leden: ids })
+                setProject(updated)
+              } catch (err) {
+                logger.error('updateProject team_leden:', err)
+                toast.error('Kon team niet bijwerken')
+              }
+            }}
+          />
 
           <ActiesCard
             onOfferte={openNieuweOfferte}
