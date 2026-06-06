@@ -24,8 +24,8 @@ interface ActieTile {
 export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbon, onBevestiging }: ActiesCardProps) {
   const tiles: ActieTile[] = [
     { key: 'offerte',  label: 'Offerte',  sublabel: 'Stuur een prijsopgave', icon: Receipt,       color: '#F15025', onClick: onOfferte },
-    { key: 'werkbon',  label: 'Werkbon',  sublabel: 'Voor de monteur',       icon: ClipboardList, color: '#C44830', onClick: onWerkbon },
-    { key: 'montage',  label: 'Montage',  sublabel: 'Plan de uitvoering',    icon: Wrench,        color: '#9A5A48', onClick: onMontage },
+    { key: 'werkbon',  label: 'Werkbon',  sublabel: 'Voor de monteur',       icon: ClipboardList, color: '#1A535C', onClick: onWerkbon },
+    { key: 'montage',  label: 'Montage',  sublabel: 'Plan de uitvoering',    icon: Wrench,        color: '#1A535C', onClick: onMontage },
     { key: 'factuur',  label: 'Factuur',  sublabel: 'Verstuur de rekening',  icon: CreditCard,    color: '#2D6B48', onClick: onFactuur },
   ]
 
@@ -83,7 +83,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
                   <p className="text-[14px] font-bold text-foreground leading-tight tracking-[-0.01em] truncate">
                     {tile.label}
                   </p>
-                  <p className="text-[11.5px] text-foreground/70 mt-0.5 leading-tight truncate">
+                  <p className="text-[11.5px] text-foreground/60 mt-1 leading-snug line-clamp-2 min-h-[2.1em]">
                     {tile.sublabel}
                   </p>
                 </div>
