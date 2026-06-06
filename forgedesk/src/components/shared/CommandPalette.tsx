@@ -308,7 +308,7 @@ export function CommandPalette() {
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-xl mx-4 rounded-2xl shadow-lg border border-border dark:border-border overflow-hidden bg-card"
+        className="relative w-full max-w-xl mx-4 rounded-2xl shadow-[0_24px_80px_-12px_rgba(0,0,0,0.35),0_8px_24px_-8px_rgba(0,0,0,0.20)] border border-border/60 dark:border-white/10 overflow-hidden bg-card/85 supports-[backdrop-filter]:bg-card/80 backdrop-blur-2xl backdrop-saturate-150"
         style={{
           animation: 'commandPaletteSlideIn 150ms ease-out forwards',
         }}

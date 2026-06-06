@@ -61,7 +61,7 @@ export function Header() {
 
   return (
     <header
-      className="h-11 flex items-center justify-between px-5 flex-shrink-0 z-10 transition-all duration-200 relative bg-card border-b border-border"
+      className="doen-toolbar h-11 flex items-center justify-between px-5 flex-shrink-0 z-10 transition-all duration-200 relative bg-card border-b border-border"
       style={{ boxShadow: scrolled ? '0 1px 3px rgba(0,0,0,0.04)' : 'none' }}
     >
       {/* Mobile search overlay */}

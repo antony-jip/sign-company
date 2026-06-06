@@ -52,7 +52,7 @@ export function MobileBottomNav() {
           className="fixed inset-0 z-40 md:hidden"
           onClick={() => setMoreOpen(false)}
         >
-          <div className="absolute bottom-16 left-3 right-3 bg-card/95 backdrop-blur-lg border border-border/60 rounded-2xl shadow-2xl shadow-[rgba(120,90,50,0.14)] overflow-hidden animate-scale-in">
+          <div className="absolute bottom-16 left-3 right-3 bg-card/80 backdrop-blur-xl backdrop-saturate-150 border border-border/60 rounded-2xl shadow-2xl shadow-[rgba(120,90,50,0.14)] overflow-hidden animate-scale-in">
             {MORE_ITEMS.map((item) => {
               const Icon = item.icon
               const isActive = location.pathname.startsWith(item.path)
@@ -78,7 +78,7 @@ export function MobileBottomNav() {
       )}
 
       {/* Bottom nav bar */}
-      <nav className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-card/95 backdrop-blur-lg border-t border-border/50 safe-area-bottom">
+      <nav className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-card/80 backdrop-blur-xl backdrop-saturate-150 border-t border-border/50 safe-area-bottom">
         <div className="flex items-center justify-around h-14 px-1">
           {PRIMARY_ITEMS.map((item) => {
             const Icon = item.icon

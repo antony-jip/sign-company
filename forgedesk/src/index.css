@@ -342,7 +342,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', 'IBM Plex Sans', system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'IBM Plex Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -402,6 +402,38 @@
   ::selection {
     background: hsl(186 53% 23% / 0.18);
     color: hsl(var(--foreground));
+  }
+
+  /* ================================================================
+     macOS-native feel — de app moet als desktop-app voelen, niet als
+     een webpagina in een venster. Tekst-content (klanten, offertes,
+     facturen) blijft gewoon selecteerbaar; alleen de chrome verandert.
+     ================================================================ */
+
+  /* Geen rubber-band/overscroll-bounce op de app-shell. */
+  html, body {
+    overscroll-behavior: none;
+  }
+
+  /* Chrome is niet selecteerbaar — zoals in een native app. */
+  nav, button, [role="button"], [role="tab"], [role="menuitem"], label,
+  .doen-sidebar {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* UI-iconen niet als webpagina-afbeelding sleepbaar. */
+  button img, button svg, nav img, nav svg, a svg, label svg {
+    -webkit-user-drag: none;
+  }
+
+  /* Alleen in de geïnstalleerde app: macOS-pijlcursor i.p.v. het
+     web-handje op knoppen/links. In de browser blijft het web-gedrag. */
+  @media (display-mode: standalone) {
+    button, [role="button"], [role="tab"], [role="menuitem"],
+    a[href], summary, select, label {
+      cursor: default !important;
+    }
   }
 }
 
@@ -3005,3 +3037,119 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 }
 
 /* doen-duo-icon CSS retired — Phosphor migrated out to Lucide stroke icons. */
+
+/* ================================================================
+   APPLE / iOS FEEL — DOEN MATERIAL  (standaard-thema, warm)
+   ----------------------------------------------------------------
+   Apple HIG vertaald naar het DOEN-palet: translucente "materials"
+   op de chrome, hairline-scheidingen, zachte focus-glow en iOS-radii.
+   Volledig additief en omkeerbaar — verwijder dit blok om terug te
+   gaan. Niet het koele data-theme="glass"; dit blijft warm petrol/cream.
+   ================================================================ */
+
+/* Toolbars (TopNav + page-Header): translucent material, zoals een
+   iOS-navigatiebalk. Content schemert er warm doorheen. */
+.doen-toolbar {
+  background: rgba(248, 247, 245, 0.72) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid rgba(26, 83, 92, 0.10) !important;
+}
+.dark .doen-toolbar {
+  background: rgba(8, 22, 26, 0.70) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Menus / selects / context-menus: iOS-popover material met hairline
+   en zachte warme schaduw. */
+[data-radix-select-content],
+[role="menu"] {
+  background: rgba(250, 249, 247, 0.86) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+  border: 0.5px solid rgba(26, 83, 92, 0.12) !important;
+  border-radius: 13px !important;
+  box-shadow:
+    0 10px 34px -6px rgba(120, 90, 50, 0.20),
+    0 2px 8px rgba(120, 90, 50, 0.08),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.55) !important;
+}
+.dark [data-radix-select-content],
+.dark [role="menu"] {
+  background: rgba(16, 34, 39, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow:
+    0 10px 34px -6px rgba(0, 0, 0, 0.55),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.06) !important;
+}
+/* iOS-rijen: zachte radius op menu-items/opties. */
+[data-radix-select-content] [role="option"],
+[role="menu"] [role="menuitem"] {
+  border-radius: 8px;
+}
+
+/* Dialogs / sheets: iOS continuous corners. */
+[role="dialog"] {
+  border-radius: 20px;
+}
+
+/* Focus: zachte petrol-glow i.p.v. harde ring. :where() houdt de
+   specificity op 0, zodat componenten met een eigen ring ongemoeid
+   blijven en alleen kale velden de glow krijgen. */
+:where(input, textarea, select, [role="combobox"], [role="tab"]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3.5px hsl(186 53% 23% / 0.16);
+  border-color: hsl(186 53% 23% / 0.45);
+}
+.dark :where(input, textarea, select, [role="combobox"], [role="tab"]):focus-visible {
+  box-shadow: 0 0 0 3.5px hsl(14 88% 55% / 0.20);
+  border-color: hsl(14 88% 55% / 0.45);
+}
+
+/* Apple-respect: "Verminder transparantie" → val terug op vaste vlakken. */
+@media (prefers-reduced-transparency: reduce) {
+  .doen-toolbar {
+    background: hsl(var(--card)) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  [data-radix-select-content],
+  [role="menu"] {
+    background: hsl(var(--popover)) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Toasts in dark: frosted notification-material (overschrijft de inline
+   light-stijl van de Toaster via !important). */
+.dark [data-sonner-toast] {
+  background: rgba(16, 34, 39, 0.82) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.10) !important;
+  color: #E1E7E8 !important;
+  box-shadow:
+    0 12px 36px -8px rgba(0, 0, 0, 0.55),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Native-tint: op Apple tinten native checkboxes/radio's/cursors mee in
+   het merk (zoals een echte macOS-app de accent-kleur respecteert). */
+:root { accent-color: #1A535C; }
+.dark body { accent-color: #F15025; }
+input, textarea, [contenteditable="true"] { caret-color: #1A535C; }
+.dark input, .dark textarea, .dark [contenteditable="true"] { caret-color: #F15025; }
+
+/* iOS overlay-scrollbars: dun, translucent, zwevende thumb. */
+.doen-toolbar ~ * ::-webkit-scrollbar,
+main ::-webkit-scrollbar { width: 8px; height: 8px; }
+main ::-webkit-scrollbar-thumb {
+  background: rgba(26, 83, 92, 0.22);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+main ::-webkit-scrollbar-thumb:hover { background: rgba(26, 83, 92, 0.38); background-clip: content-box; }
+.dark main ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.16); background-clip: content-box; }
+.dark main ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.28); background-clip: content-box; }

@@ -164,7 +164,7 @@ export function TopNav() {
   return (
     <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
       {/* ── Row 1: Cohesieve balk (doen.-stijl) ── */}
-      <div className="relative flex items-center gap-2.5 h-[56px] px-3.5 bg-card border-b border-border">
+      <div className="doen-toolbar relative flex items-center gap-2.5 h-[56px] px-3.5 bg-card border-b border-border">
         {/* Logo */}
         <NavLink to="/" className="relative flex items-center flex-shrink-0 opacity-95 hover:opacity-100 transition-opacity">
           <img src="/logos/doen-logo.svg" alt="doen." className="h-[22px] dark:hidden" />
