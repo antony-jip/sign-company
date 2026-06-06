@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 import {
   LayoutGrid, Folder, Users, FileText, Receipt, FileSignature, CheckSquare,
   ClipboardCheck, Calendar, Mail, Wallet, Search, Bell, Sun, CloudRain, CloudSun,
-  Sparkles, Send, DollarSign, Eye, Upload, Plus, Download, AlertCircle,
+  Sparkles, Send, DollarSign, Eye, Upload, Plus, Download, AlertCircle, Moon,
   Activity, CheckCircle2, ArrowUpRight, Wrench, ChevronRight, Image as ImageIcon,
   Pencil, Camera, Inbox, Archive, Paperclip, Pin, Clock, FileEdit, Trash2,
   CalendarClock, ArrowLeft, MoreHorizontal, Copy, ChevronDown, ChevronsRight,
@@ -26,17 +26,20 @@ const CARD = '#FFFFFF'
 type View = 'dashboard' | 'projecten' | 'detail' | 'klanten' | 'offerte' | 'email' | 'factuur' | 'inkoop' | 'taken' | 'planning'
 
 type NavItem = { icon: LucideIcon; label: string; activeOn: View[] }
-const nav: NavItem[] = [
+// Meest gebruikte modules staan los in de balk; de rest komt onder "Overig".
+const primaryNav: NavItem[] = [
   { icon: LayoutGrid, label: 'Dashboard', activeOn: ['dashboard'] },
   { icon: Folder, label: 'Projecten', activeOn: ['projecten', 'detail'] },
-  { icon: Users, label: 'Klanten', activeOn: ['klanten'] },
+  { icon: CheckSquare, label: 'Taken', activeOn: ['taken'] },
   { icon: FileText, label: 'Offertes', activeOn: ['offerte'] },
+  { icon: Calendar, label: 'Planning', activeOn: ['planning'] },
+  { icon: ClipboardCheck, label: 'Werkbonnen', activeOn: [] },
+  { icon: Mail, label: 'Email', activeOn: ['email'] },
+]
+const overigNav: NavItem[] = [
+  { icon: Users, label: 'Klanten', activeOn: ['klanten'] },
   { icon: Receipt, label: 'Facturen', activeOn: ['factuur'] },
   { icon: FileSignature, label: 'Inkoopfacturen', activeOn: ['inkoop'] },
-  { icon: CheckSquare, label: 'Taken', activeOn: ['taken'] },
-  { icon: ClipboardCheck, label: 'Werkbonnen', activeOn: [] },
-  { icon: Calendar, label: 'Planning', activeOn: ['planning'] },
-  { icon: Mail, label: 'Email', activeOn: ['email'] },
   { icon: Wallet, label: 'Financieel', activeOn: [] },
 ]
 
@@ -243,7 +246,7 @@ const viewMeta: Record<View, { titel: string; sub: string; bullets: string[] }> 
     titel: 'Projecten',
     sub: 'Alle lopende opdrachten op één plek, gesorteerd zoals jij wil.',
     bullets: [
-      'Filter per status: actief, gepland, in review, te factureren, on-hold',
+      'Filter per status: actief, te plannen, gepland, in review, akkoord klant, te factureren, on-hold',
       'Filter op leeftijd: hoe lang staat een project al open?',
       'Groepeer per status, klant of geen groepering',
       'Status-KPI cards bovenaan: met aandacht, actief, te factureren, afgerond',
@@ -423,9 +426,11 @@ function FeatureList({ view }: { view: View }) {
    ────────────────────────────────────────────────────────────── */
 
 function TopNav({ view, setView }: { view: View; setView: (v: View) => void }) {
+  const [overigOpen, setOverigOpen] = useState(false)
+  const overigActive = overigNav.some((i) => i.activeOn.includes(view))
   return (
     <div
-      className="flex items-center gap-1 md:gap-2 px-4 md:px-6 pt-4 pb-0 overflow-x-auto"
+      className="flex items-center gap-1 md:gap-2 px-4 md:px-6 pt-4 pb-0 overflow-visible"
       style={{ borderBottom: `1px solid ${LINE}` }}
     >
       <button
@@ -437,26 +442,88 @@ function TopNav({ view, setView }: { view: View; setView: (v: View) => void }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logos/doen-logo.svg" alt="doen." className="h-5 w-auto" />
       </button>
-      <div className="hidden lg:flex items-center gap-1 flex-1 overflow-hidden">
-        {nav.map((item) => <NavTab key={item.label} item={item} view={view} setView={setView} compact={false} />)}
+
+      {/* Desktop: primaire modules + Overig-dropdown */}
+      <div className="hidden lg:flex items-center gap-1 flex-1">
+        {primaryNav.map((item) => <NavTab key={item.label} item={item} view={view} setView={setView} compact={false} />)}
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setOverigOpen((o) => !o)}
+            aria-expanded={overigOpen}
+            className="inline-flex items-center gap-1 px-2.5 pt-2 pb-3 -mb-px text-[12px] font-semibold whitespace-nowrap transition-colors cursor-pointer hover:text-[#1A535C]"
+            style={{
+              color: overigActive ? INK : '#6B6B66',
+              borderBottom: overigActive ? `2px solid ${PETROL}` : '2px solid transparent',
+            }}
+          >
+            Overig<span style={{ color: overigActive ? FLAME : 'transparent' }}>.</span>
+            <ChevronDown className="w-3 h-3 transition-transform" style={{ opacity: 0.55, transform: overigOpen ? 'rotate(180deg)' : 'none' }} />
+          </button>
+          {overigOpen && (
+            <div
+              className="absolute left-0 top-full mt-1.5 z-50 w-52 rounded-[12px] p-1.5"
+              style={{ backgroundColor: CARD, border: `1px solid ${LINE}`, boxShadow: '0 12px 30px -8px rgba(19,62,69,0.20)' }}
+            >
+              {overigNav.map((item) => {
+                const Icon = item.icon
+                const target: View | null = item.activeOn[0] ?? null
+                const active = item.activeOn.includes(view)
+                return (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => { if (target) setView(target); setOverigOpen(false) }}
+                    disabled={!target}
+                    className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[12.5px] font-semibold text-left transition-colors ${target ? 'cursor-pointer hover:bg-[rgba(26,83,92,0.05)]' : 'cursor-not-allowed opacity-50'}`}
+                    style={{ color: active ? PETROL : INK }}
+                  >
+                    <Icon className="w-3.5 h-3.5" style={{ color: active ? PETROL : MUTED }} strokeWidth={1.9} />
+                    {item.label}<span style={{ color: FLAME }}>.</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
-      <div className="flex lg:hidden items-center gap-1 flex-1 overflow-hidden">
-        {nav.slice(0, 5).map((item) => <NavTab key={item.label} item={item} view={view} setView={setView} compact={true} />)}
+
+      {/* Mobiel: eerste vijf modules compact */}
+      <div className="flex lg:hidden items-center gap-1 flex-1 overflow-x-auto">
+        {primaryNav.slice(0, 5).map((item) => <NavTab key={item.label} item={item} view={view} setView={setView} compact={true} />)}
       </div>
+
+      {/* Zoekbalk */}
       <div
-        className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md mr-2 ml-auto"
+        className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md mr-1.5 ml-auto"
         style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}
       >
         <Search className="w-3.5 h-3.5" style={{ color: '#9B9B95' }} />
         <span className="font-mono text-[11px]" style={{ color: '#9B9B95' }}>Zoeken…</span>
       </div>
-      <Bell className="hidden md:block w-4 h-4 mr-2" style={{ color: MUTED }} strokeWidth={1.8} />
+
+      {/* Notificatie-pill */}
       <span
-        className="inline-flex items-center gap-2 pl-1 pr-2 py-1 rounded-full shrink-0"
-        style={{ border: `1px solid ${LINE}` }}
+        className="hidden lg:inline-flex items-center gap-1.5 h-8 pl-2 pr-3 rounded-full mr-1.5 shrink-0 text-white"
+        style={{ backgroundColor: FLAME, boxShadow: '0 4px 12px rgba(241,80,37,0.28)' }}
       >
-        <span className="w-6 h-6 rounded-full inline-flex items-center justify-center font-mono text-[10px] font-bold text-white" style={{ backgroundColor: PETROL }}>J</span>
+        <Bell className="w-3.5 h-3.5" strokeWidth={2} />
+        <span className="text-[11px] font-semibold whitespace-nowrap">5 nieuwe notificaties</span>
+      </span>
+
+      {/* Pin + dark-mode */}
+      <Pin className="hidden md:block w-4 h-4 mr-1.5" style={{ color: MUTED }} strokeWidth={1.8} />
+      <Moon className="hidden md:block w-4 h-4 mr-2" style={{ color: MUTED }} strokeWidth={1.8} />
+
+      {/* Gebruiker */}
+      <span
+        className="inline-flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg shrink-0"
+        style={{ border: `1px solid ${LINE}`, backgroundColor: CARD }}
+      >
+        <span className="w-6 h-6 rounded-[7px] inline-flex items-center justify-center font-mono text-[10px] font-bold text-white" style={{ backgroundColor: PETROL }}>J</span>
         <span className="text-[12px] font-semibold hidden md:inline" style={{ color: INK }}>Jan</span>
+        <ChevronDown className="hidden md:block w-3 h-3" style={{ color: MUTED, opacity: 0.6 }} />
       </span>
     </div>
   )
@@ -834,29 +901,31 @@ function KpiCard({ label, value, sub, tone, icon }: { label: string; value: stri
    PROJECTEN VIEW — list with KPI strip + filters + table
    ────────────────────────────────────────────────────────────── */
 
-type ProjStatus = 'te-factureren' | 'actief' | 'gepland' | 'afgerond'
+type ProjStatus = 'te-factureren' | 'actief' | 'in-review' | 'te-plannen' | 'gepland' | 'afgerond'
 const statusMeta: Record<ProjStatus, { label: string; color: string }> = {
-  'te-factureren': { label: 'Te factureren.', color: '#2D6B48' },
-  actief:           { label: 'Actief.',         color: '#3A6B8C' },
-  gepland:          { label: 'Gepland.',        color: '#9A5A48' },
-  afgerond:         { label: 'Afgerond.',       color: '#2D6B48' },
+  'te-factureren': { label: 'Te factureren.', color: '#3A7D52' },
+  actief:           { label: 'Actief.',         color: '#3A5A9A' },
+  'in-review':      { label: 'In review.',      color: '#3A5A9A' },
+  'te-plannen':     { label: 'Te plannen.',     color: '#8A7A4A' },
+  gepland:          { label: 'Gepland.',        color: '#8A7A4A' },
+  afgerond:         { label: 'Afgerond.',       color: '#3A7D52' },
 }
 
 const projecten: { naam: string; sub?: string; ref: string; klant: string; klantInitial: string; status: ProjStatus; bedrag: string; datum: string }[] = [
   { naam: 'Inkooporder: 3721-Marlborough', sub: 'Snijden',                ref: 'PRJ-2026-045', klant: 'Van Meer Yacht Service',  klantInitial: 'V', status: 'te-factureren', bedrag: '€ 48,40',  datum: '18 mei' },
   { naam: 'Geveltekst / Stalen letters',  sub: 'Voor consument Amsterdam', ref: 'PRJ-2026-044', klant: 'De Vries Reclame',         klantInitial: 'D', status: 'actief',        bedrag: '—',         datum: '16 mei' },
-  { naam: 'Bordje De Wit',                                                ref: 'PRJ-2026-043', klant: 'De Wit Bouw',              klantInitial: 'D', status: 'actief',        bedrag: '—',         datum: '16 mei' },
+  { naam: 'Bordje De Wit',                                                ref: 'PRJ-2026-043', klant: 'De Wit Bouw',              klantInitial: 'D', status: 'in-review',     bedrag: '—',         datum: '16 mei' },
   { naam: 'Ordernr. 125330',              sub: 'Boottekst',                ref: 'PRJ-2026-042', klant: 'Jachtwerf Kemper',         klantInitial: 'J', status: 'gepland',       bedrag: '€ 73,51',  datum: '16 mei' },
-  { naam: 'Doek voor hek',                                                ref: 'PRJ-2026-041', klant: 'Bouwbedrijf Atelier 9',    klantInitial: 'A', status: 'gepland',       bedrag: '€ 824,74', datum: '15 mei' },
+  { naam: 'Doek voor hek',                                                ref: 'PRJ-2026-041', klant: 'Bouwbedrijf Atelier 9',    klantInitial: 'A', status: 'te-plannen',    bedrag: '€ 824,74', datum: '15 mei' },
   { naam: 'Koekoeken',                                                     ref: 'PRJ-2026-040', klant: 'Café De Zon',              klantInitial: 'C', status: 'afgerond',      bedrag: '€ 206,18', datum: '14 mei' },
   { naam: 'Gevelreclame',                                                  ref: 'PRJ-2026-039', klant: 'Bakkerij Steeg',           klantInitial: 'B', status: 'actief',        bedrag: '—',         datum: '14 mei' },
 ]
 
 const kpis = [
-  { icon: AlertCircle, label: 'Met aandacht.', value: '46', sub: 'in-review of >30d open', tone: FLAME },
-  { icon: Activity,    label: 'Actief.',        value: '67', sub: 'in uitvoering',           tone: FLAME },
-  { icon: Receipt,     label: 'Te factureren.', value: '4',  sub: 'wachten op factuur',      tone: FLAME },
-  { icon: CheckCircle2,label: 'Afgerond.',      value: '14', sub: 'klaar.',                  tone: FLAME },
+  { icon: AlertCircle, label: 'Met aandacht.', value: '39', sub: 'in-review of >30d open', tone: PETROL },
+  { icon: Activity,    label: 'Actief.',        value: '53', sub: 'in uitvoering',           tone: PETROL },
+  { icon: Receipt,     label: 'Te factureren.', value: '8',  sub: 'wachten op factuur',      tone: PETROL },
+  { icon: CheckCircle2,label: 'Afgerond.',      value: '14', sub: 'klaar.',                  tone: PETROL },
 ]
 
 function ProjectenView({ setView }: { setView: (v: View) => void }) {
@@ -866,7 +935,7 @@ function ProjectenView({ setView }: { setView: (v: View) => void }) {
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <h1 className="font-heading font-bold tracking-tight leading-none flex items-baseline gap-3" style={{ fontSize: 'clamp(28px, 4vw, 44px)', color: INK }}>
           Projecten<span style={{ color: FLAME }}>.</span>
-          <span className="font-mono text-[13px] font-semibold" style={{ color: MUTED }}>124</span>
+          <span className="font-mono text-[13px] font-semibold" style={{ color: MUTED }}>159</span>
         </h1>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-[12px] font-semibold" style={{ color: MUTED, border: `1px solid ${LINE}`, backgroundColor: CARD }}>
@@ -916,13 +985,15 @@ function ProjectenView({ setView }: { setView: (v: View) => void }) {
         </div>
         <div className="flex items-center gap-5 mb-3 overflow-x-auto whitespace-nowrap">
           {[
-            { l: 'Alle', n: '124', active: true },
-            { l: 'Actief', n: '67' },
-            { l: 'Gepland', n: '19' },
-            { l: 'In review', n: '2' },
-            { l: 'Te factureren', n: '4' },
-            { l: 'Gefactureerd', n: '15' },
-            { l: 'On-hold', n: '3' },
+            { l: 'Alle', n: '159', active: true },
+            { l: 'Actief', n: '53' },
+            { l: 'Te plannen', n: '6' },
+            { l: 'Gepland', n: '38' },
+            { l: 'In review', n: '5' },
+            { l: 'Akkoord klant', n: '1' },
+            { l: 'Te factureren', n: '8' },
+            { l: 'Gefactureerd', n: '30' },
+            { l: 'On-hold', n: '4' },
             { l: 'Afgerond', n: '14' },
           ].map((f) => (
             <span key={f.l} className="text-[12px] font-semibold inline-flex items-baseline gap-1.5" style={{ color: f.active ? INK : MUTED, borderBottom: f.active ? `2px solid ${PETROL}` : '2px solid transparent', paddingBottom: 4 }}>
