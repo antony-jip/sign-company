@@ -45,7 +45,7 @@ import { exportCSV, exportExcel } from '@/lib/export'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 import { DatePicker } from '@/components/ui/date-picker'
 import { AlertCircle, Activity, Receipt, CheckCircle } from 'lucide-react'
-import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getMedewerkers as fetchMedewerkers } from '@/services/supabaseService'
+import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getMedewerkers as fetchMedewerkers, createOfferte, createOfferteItem, updateOfferte, updateOfferteItem, getOfferteItems, deleteOfferte } from '@/services/supabaseService'
 import { ProjectImportDialog } from './ProjectImportDialog'
 import { useAuth } from '@/contexts/AuthContext'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
@@ -410,6 +410,104 @@ export function ProjectsList() {
   function getProjectBedrag(projectId: string): number {
     const projOffertes = getProjectOffertes(projectId)
     return projOffertes.reduce((sum, o) => sum + (o.subtotaal || 0), 0)
+  }
+
+  // Inline bedrag-edit vanuit de lijst: snel een ex-btw prijs neerzetten. Bij een
+  // project zonder offerte maakt dit een concept-offerte (1 regel, +21% btw); bij
+  // één offerte werkt het de prijs bij. Meerdere/regels → naar de offerte-editor.
+  const [editingBedragId, setEditingBedragId] = useState<string | null>(null)
+  const [bedragInput, setBedragInput] = useState('')
+  const [savingBedrag, setSavingBedrag] = useState(false)
+
+  function parseBedragInput(s: string): number {
+    return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
+  }
+
+  function startEditBedrag(project: Project) {
+    const b = getProjectBedrag(project.id)
+    setBedragInput(b > 0 ? b.toFixed(2).replace('.', ',') : '')
+    setEditingBedragId(project.id)
+  }
+
+  async function handleSetProjectBedrag(project: Project, bedragExBtw: number) {
+    if (savingBedrag) return
+    const subtotaal = Math.round(bedragExBtw * 100) / 100
+
+    // Leeg/0 ingevuld → prijs wissen. Verwijdert alleen een enkele concept-quick-
+    // offerte zodat het project weer "—" toont; verstuurde/akkoorde of meerdere
+    // offertes raken we niet aan (open dan de offerte).
+    if (subtotaal <= 0) {
+      const projOffertes = getProjectOffertes(project.id)
+      if (projOffertes.length === 0) { setEditingBedragId(null); return }
+      const enige = projOffertes[0]
+      if (projOffertes.length === 1 && enige.status === 'concept' && !enige.geconverteerd_naar_factuur_id) {
+        setSavingBedrag(true)
+        try {
+          await deleteOfferte(enige.id)
+          const all = await getOffertes()
+          setOffertes(all)
+          toast.success('Prijs verwijderd')
+        } catch (err) {
+          logger.error('Kon prijs niet verwijderen:', err)
+          toast.error('Kon prijs niet verwijderen')
+        } finally {
+          setSavingBedrag(false)
+          setEditingBedragId(null)
+        }
+        return
+      }
+      toast.info('Kan de prijs hier niet wissen — open de offerte')
+      setEditingBedragId(null)
+      return
+    }
+
+    if (subtotaal === getProjectBedrag(project.id)) { setEditingBedragId(null); return }
+    const btw = Math.round(subtotaal * 0.21 * 100) / 100
+    const totaal = Math.round((subtotaal + btw) * 100) / 100
+    setSavingBedrag(true)
+    try {
+      const projOffertes = getProjectOffertes(project.id)
+      if (projOffertes.length === 0) {
+        const titel = project.naam || 'Offerte'
+        const klantNaam = klanten.find((k) => k.id === project.klant_id)?.bedrijfsnaam || ''
+        const offerte = await createOfferte({
+          klant_id: project.klant_id,
+          klant_naam: klantNaam,
+          project_id: project.id,
+          titel,
+          nummer: '',
+          status: 'concept',
+          subtotaal, btw_bedrag: btw, totaal,
+          geldig_tot: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+          notities: '', voorwaarden: '',
+        })
+        await createOfferteItem({ offerte_id: offerte.id, beschrijving: titel, aantal: 1, eenheidsprijs: subtotaal, btw_percentage: 21, korting_percentage: 0, totaal: subtotaal, volgorde: 0, soort: 'prijs' })
+      } else if (projOffertes.length === 1) {
+        const off = projOffertes[0]
+        await updateOfferte(off.id, { subtotaal, btw_bedrag: btw, totaal })
+        const items = await getOfferteItems(off.id).catch(() => [])
+        if (items.length === 1) {
+          await updateOfferteItem(items[0].id, { eenheidsprijs: subtotaal, totaal: subtotaal, aantal: 1, btw_percentage: 21 })
+        } else if (items.length === 0) {
+          await createOfferteItem({ offerte_id: off.id, beschrijving: off.titel || project.naam || 'Prijs', aantal: 1, eenheidsprijs: subtotaal, btw_percentage: 21, korting_percentage: 0, totaal: subtotaal, volgorde: 0, soort: 'prijs' })
+        } else {
+          toast.info('Open de offerte om meerdere regels aan te passen')
+          return
+        }
+      } else {
+        toast.info('Meerdere offertes — open het project om de prijs aan te passen')
+        return
+      }
+      const all = await getOffertes()
+      setOffertes(all)
+      toast.success('Bedrag opgeslagen')
+    } catch (err) {
+      logger.error('Kon projectbedrag niet opslaan:', err)
+      toast.error('Kon bedrag niet opslaan')
+    } finally {
+      setSavingBedrag(false)
+      setEditingBedragId(null)
+    }
   }
 
   function getDagenOpen(project: Project): number | null {
@@ -1511,21 +1609,58 @@ export function ProjectsList() {
                             </DropdownMenu>
                           </td>
 
-                          {/* Bedrag */}
-                          <td className="py-3.5 pr-4 text-right hidden xl:table-cell">
+                          {/* Bedrag — inline bewerkbaar (ex btw) */}
+                          <td className="py-3.5 pr-4 text-right hidden xl:table-cell" onClick={(e) => e.stopPropagation()}>
                             {(() => {
                               const bedrag = getProjectBedrag(project.id)
-                              if (bedrag <= 0) return <span className="text-xs text-muted-foreground/70">&mdash;</span>
-                              const formatted = formatCurrency(bedrag)
+                              if (editingBedragId === project.id) {
+                                return (
+                                  <div className="relative inline-block">
+                                    <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[12px] text-muted-foreground font-mono pointer-events-none">€</span>
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      autoFocus
+                                      value={bedragInput}
+                                      disabled={savingBedrag}
+                                      placeholder="0,00"
+                                      onChange={(e) => setBedragInput(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') { e.preventDefault(); void handleSetProjectBedrag(project, parseBedragInput(bedragInput)) }
+                                        else if (e.key === 'Escape') setEditingBedragId(null)
+                                      }}
+                                      onBlur={() => void handleSetProjectBedrag(project, parseBedragInput(bedragInput))}
+                                      className="w-[110px] h-7 pl-5 pr-2 text-sm font-mono text-right text-foreground border border-[#F15025] rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-[#F15025]/30 disabled:opacity-50"
+                                    />
+                                  </div>
+                                )
+                              }
+                              if (bedrag <= 0) {
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditBedrag(project)}
+                                    title="Prijs toevoegen (ex btw)"
+                                    className="text-xs font-medium text-muted-foreground/50 hover:text-[#F15025] transition-colors px-1.5 py-0.5 rounded"
+                                  >
+                                    + prijs
+                                  </button>
+                                )
+                              }
                               return (
-                                <span className={cn(
-                                  'font-mono tabular-nums',
-                                  bedrag >= 10000
-                                    ? 'text-[15px] font-bold text-[#1A4A52] dark:text-foreground'
-                                    : 'text-sm text-muted-foreground'
-                                )}>
-                                  {formatted}
-                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => startEditBedrag(project)}
+                                  title="Prijs aanpassen (ex btw)"
+                                  className={cn(
+                                    'font-mono tabular-nums rounded px-1 -mr-1 hover:bg-[rgba(241,80,37,0.08)] transition-colors',
+                                    bedrag >= 10000
+                                      ? 'text-[15px] font-bold text-[#1A4A52] dark:text-foreground'
+                                      : 'text-sm text-muted-foreground'
+                                  )}
+                                >
+                                  {formatCurrency(bedrag)}
+                                </button>
                               )
                             })()}
                           </td>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MoreHorizontal, ExternalLink, MapPin, Phone, Mail, type LucideIcon } from 'lucide-react'
+import { MoreHorizontal, ExternalLink, MapPin, Phone, Mail, Pencil, Plus, type LucideIcon } from 'lucide-react'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -15,6 +15,7 @@ interface KlantCardProps {
   onContactpersoonChange: (cpId: string | null) => Promise<void>
   onContactpersoonAdd: (cp: Contactpersoon) => Promise<void>
   onContactpersoonEdit?: (cp: Contactpersoon) => Promise<void>
+  onEditKlant?: () => void
   onMail?: () => void
 }
 
@@ -22,7 +23,7 @@ function getInitial(name?: string | null): string {
   return (name || '?').trim().charAt(0).toUpperCase() || '?'
 }
 
-export function KlantCard({ klant, project, contactpersonen, onContactpersoonChange, onContactpersoonAdd, onContactpersoonEdit, onMail }: KlantCardProps) {
+export function KlantCard({ klant, project, contactpersonen, onContactpersoonChange, onContactpersoonAdd, onContactpersoonEdit, onEditKlant, onMail }: KlantCardProps) {
   const { navigateWithTab } = useNavigateWithTab()
   const [showNieuwCp, setShowNieuwCp] = useState(false)
   const [nieuwCpNaam, setNieuwCpNaam] = useState('')
@@ -156,8 +157,17 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {onEditKlant && (
+              <DropdownMenuItem onClick={onEditKlant}>
+                <Pencil className="mr-2 h-3.5 w-3.5" />
+                Klant bewerken
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
-              <Link to={`/klanten/${klant.id}`}>Klant openen</Link>
+              <Link to={`/klanten/${klant.id}`}>
+                <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                Klant openen
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -181,8 +191,8 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
             {klant.bedrijfsnaam || klant.contactpersoon}
           </Link>
           {klant.debiteurennummer && (
-            <p className="font-mono text-[11px] text-muted-foreground mt-1">
-              Deb.<span className="text-[#F15025]">.</span> {klant.debiteurennummer}
+            <p className="font-mono text-[11px] text-muted-foreground mt-1 tracking-tight">
+              Deb. {klant.debiteurennummer}
             </p>
           )}
         </div>
@@ -309,9 +319,10 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
         {projectCp && onContactpersoonEdit && !editCpOpen && (
           <button
             onClick={openEditCp}
-            className="w-full mt-2 text-[12px] text-foreground/70 hover:text-foreground transition-colors text-left px-2 py-1"
+            className="w-full mt-2 inline-flex items-center gap-1.5 text-[12px] text-foreground/70 hover:text-foreground transition-colors text-left px-2 py-1"
           >
-            ✎ Bewerk {projectCp.naam}
+            <Pencil className="h-3 w-3 flex-shrink-0" strokeWidth={2} />
+            Bewerk {projectCp.naam}
           </button>
         )}
 
@@ -319,9 +330,10 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
         {!showNieuwCp ? (
           <button
             onClick={() => setShowNieuwCp(true)}
-            className="w-full mt-2 text-[12px] text-foreground/70 hover:text-foreground transition-colors text-left px-2 py-1"
+            className="w-full mt-2 inline-flex items-center gap-1.5 text-[12px] text-foreground/70 hover:text-foreground transition-colors text-left px-2 py-1"
           >
-            + Nieuw contactpersoon
+            <Plus className="h-3 w-3 flex-shrink-0" strokeWidth={2} />
+            Nieuw contactpersoon
           </button>
         ) : (
           <div className="mt-3 space-y-1.5">

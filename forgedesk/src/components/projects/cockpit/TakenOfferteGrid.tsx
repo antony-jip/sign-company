@@ -54,6 +54,7 @@ interface TakenOfferteGridProps {
   onOpdrachtbevestiging?: (offerte: Offerte) => void
   onOfferteDelete?: (offerte: Offerte) => Promise<void> | void
   onQuickOfferte?: (bedrag: number) => Promise<void>
+  onUpdateOffertePrice?: (offerte: Offerte, bedragInclBtw: number) => Promise<void>
 }
 
 export function TakenOfferteGrid({
@@ -67,10 +68,14 @@ export function TakenOfferteGrid({
   onTaakDelete,
   onOfferteDelete,
   onQuickOfferte,
+  onUpdateOffertePrice,
 }: TakenOfferteGridProps) {
   const navigate = useNavigate()
   const [quickBedrag, setQuickBedrag] = useState('')
   const [quickSubmitting, setQuickSubmitting] = useState(false)
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
+  const [priceInput, setPriceInput] = useState('')
+  const [savingPrice, setSavingPrice] = useState(false)
 
   const quickValue = parseBedrag(quickBedrag)
   const canQuickSubmit = quickValue > 0 && !quickSubmitting
@@ -84,6 +89,24 @@ export function TakenOfferteGrid({
       setQuickBedrag('')
     } finally {
       setQuickSubmitting(false)
+    }
+  }
+
+  function startEditPrice(offerte: Offerte) {
+    setPriceInput(offerte.totaal ? offerte.totaal.toFixed(2).replace('.', ',') : '')
+    setEditingPriceId(offerte.id)
+  }
+
+  async function submitEditPrice(offerte: Offerte) {
+    if (!onUpdateOffertePrice) { setEditingPriceId(null); return }
+    const bedrag = parseBedrag(priceInput)
+    if (bedrag <= 0 || bedrag === offerte.totaal) { setEditingPriceId(null); return }
+    setSavingPrice(true)
+    try {
+      await onUpdateOffertePrice(offerte, bedrag)
+      setEditingPriceId(null)
+    } finally {
+      setSavingPrice(false)
     }
   }
 
@@ -247,10 +270,42 @@ export function TakenOfferteGrid({
                         </span>
                       </div>
                     </div>
-                    <span className="font-mono text-[15px] tabular-nums flex-shrink-0 mt-0.5">
-                      <span className="text-muted-foreground">€</span>
-                      <span className="text-foreground font-bold ml-0.5">{formatAmount(offerte.totaal)}</span>
-                    </span>
+                    {onUpdateOffertePrice && offerte.status === 'concept' ? (
+                      editingPriceId === offerte.id ? (
+                        <div className="relative flex-shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
+                          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[12px] text-muted-foreground font-mono pointer-events-none">€</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            autoFocus
+                            value={priceInput}
+                            disabled={savingPrice}
+                            onChange={(e) => setPriceInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') { e.preventDefault(); void submitEditPrice(offerte) }
+                              else if (e.key === 'Escape') { setEditingPriceId(null) }
+                            }}
+                            onBlur={() => void submitEditPrice(offerte)}
+                            className="w-[96px] h-7 pl-5 pr-1.5 text-[14px] font-mono font-bold text-right text-foreground border border-[#F15025] rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-[#F15025]/30 disabled:opacity-50"
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); startEditPrice(offerte) }}
+                          title="Prijs aanpassen"
+                          className="font-mono text-[15px] tabular-nums flex-shrink-0 mt-0.5 rounded-md px-1 -mr-1 hover:bg-[rgba(241,80,37,0.08)] transition-colors"
+                        >
+                          <span className="text-muted-foreground">€</span>
+                          <span className="text-foreground font-bold ml-0.5 border-b border-dashed border-[#F15025]/30">{formatAmount(offerte.totaal)}</span>
+                        </button>
+                      )
+                    ) : (
+                      <span className="font-mono text-[15px] tabular-nums flex-shrink-0 mt-0.5">
+                        <span className="text-muted-foreground">€</span>
+                        <span className="text-foreground font-bold ml-0.5">{formatAmount(offerte.totaal)}</span>
+                      </span>
+                    )}
                     {onOfferteDelete && !offerte.geconverteerd_naar_factuur_id && (
                       <button
                         type="button"

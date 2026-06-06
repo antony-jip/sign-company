@@ -94,6 +94,7 @@ import {
   createOfferte,
   createOfferteItem,
   updateOfferte,
+  updateOfferteItem,
   deleteOfferte,
   createDocument,
   deleteDocument,
@@ -137,6 +138,7 @@ import { ProjectMaatjesTab } from '@/components/maatjes/ProjectMaatjesTab'
 import { getProjectMaatjes } from '@/services/maatjeService'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
+import { AddEditClient } from '@/components/clients/AddEditClient'
 import { PakbonVanProjectDialog } from '@/components/leveringsbonnen/PakbonVanProjectDialog'
 // SpectrumBar removed — using text-based phase in header
 import { getFase } from '@/utils/projectFases'
@@ -428,6 +430,7 @@ export function ProjectDetail() {
 
   const [project, setProject] = useState<Project | null>(null)
   const [klant, setKlant] = useState<Klant | null>(null)
+  const [editKlantOpen, setEditKlantOpen] = useState(false)
   const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([])
   const [projectTaken, setProjectTaken] = useState<Taak[]>([])
   const [projectDocumenten, setProjectDocumenten] = useState<Document[]>([])
@@ -514,6 +517,47 @@ export function ProjectDetail() {
     } catch (err) {
       logger.error('Fout bij aanmaken snelle offerte:', err)
       toast.error('Kon offerte niet aanmaken')
+      throw err
+    }
+  }
+
+  // Inline prijs-edit van een concept-offerte vanuit de cockpit. WYSIWYG op het
+  // getoonde (incl. btw) bedrag; ex-btw + 21% wordt eruit afgeleid. Alleen voor
+  // simpele 1-regel offertes — meerdere regels gaan naar de volledige editor.
+  const handleUpdateOffertePrice = async (offerte: Offerte, bedragInclBtw: number) => {
+    if (!id) return
+    const totaal = Math.round(bedragInclBtw * 100) / 100
+    const subtotaal = Math.round((totaal / 1.21) * 100) / 100
+    const btw = Math.round((totaal - subtotaal) * 100) / 100
+    try {
+      const items = await getOfferteItems(offerte.id).catch(() => [])
+      if (items.length > 1) {
+        toast.info('Open de offerte om meerdere regels aan te passen')
+        navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })
+        return
+      }
+      await updateOfferte(offerte.id, { subtotaal, btw_bedrag: btw, totaal })
+      if (items.length === 1) {
+        await updateOfferteItem(items[0].id, { eenheidsprijs: subtotaal, totaal: subtotaal, aantal: 1, btw_percentage: 21 })
+      } else {
+        await createOfferteItem({
+          offerte_id: offerte.id,
+          beschrijving: offerte.titel || project?.naam || 'Prijs',
+          aantal: 1,
+          eenheidsprijs: subtotaal,
+          btw_percentage: 21,
+          korting_percentage: 0,
+          totaal: subtotaal,
+          volgorde: 0,
+          soort: 'prijs',
+        })
+      }
+      const offertes = await getOffertesByProject(id)
+      setProjectOffertes(offertes)
+      toast.success('Prijs bijgewerkt')
+    } catch (err) {
+      logger.error('Kon offerteprijs niet bijwerken:', err)
+      toast.error('Kon prijs niet bijwerken')
       throw err
     }
   }
@@ -1347,17 +1391,17 @@ export function ProjectDetail() {
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
                 className={cn(
-                  'relative inline-flex items-center gap-2 px-3 py-2.5 text-[13.5px] transition-colors -mb-px',
+                  'relative inline-flex items-center gap-2 px-3.5 py-2.5 text-[14px] rounded-t-lg transition-all duration-200 -mb-px',
                   isActive
-                    ? 'text-foreground font-semibold'
-                    : 'text-foreground/70 hover:text-foreground'
+                    ? 'text-[#1A535C] font-bold bg-[#1A535C]/[0.05]'
+                    : 'text-foreground/55 font-medium hover:text-foreground hover:bg-foreground/[0.035]'
                 )}
               >
-                <TabIcon className="h-4 w-4 flex-shrink-0" strokeWidth={1.75} />
+                <TabIcon className="h-4 w-4 flex-shrink-0 transition-colors" strokeWidth={isActive ? 2.1 : 1.75} />
                 {tab.label}
                 {tab.count > 0 && (
                   <span className={cn(
-                    'font-mono text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums',
+                    'font-mono text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums transition-colors',
                     isActive
                       ? 'bg-[#1A535C] text-white'
                       : 'bg-[rgba(26,83,92,0.08)] text-foreground/70'
@@ -1366,7 +1410,7 @@ export function ProjectDetail() {
                 {isActive && (
                   <span
                     aria-hidden
-                    className="absolute bottom-0 left-2 right-2 h-[2px] rounded-t-full bg-[#F15025]"
+                    className="absolute bottom-0 left-2.5 right-2.5 h-[2.5px] rounded-t-full bg-[#F15025]"
                   />
                 )}
               </button>
@@ -1441,6 +1485,7 @@ export function ProjectDetail() {
             onNewTaak={() => setNieuweTaakOpen(true)}
             onNewOfferte={openNieuweOfferte}
             onQuickOfferte={handleQuickOfferte}
+            onUpdateOffertePrice={handleUpdateOffertePrice}
             onTaakStatusChange={async (taakId, newStatus) => {
               try {
                 await updateTaak(taakId, { status: newStatus })
@@ -1618,6 +1663,7 @@ export function ProjectDetail() {
                   ))
                 }
               }}
+              onEditKlant={() => setEditKlantOpen(true)}
               onMail={() => {
                 setMailComposerOpen(true)
                 setTimeout(() => mailComposerRef.current?.scrollIntoView(), 80)
@@ -2205,6 +2251,23 @@ export function ProjectDetail() {
         {(() => {
           const activeOfferte = projectOffertes.find(o => !['afgewezen', 'verlopen', 'gefactureerd'].includes(o.status)) || projectOffertes[0]
           if (!activeOfferte) {
+            // In de factureer-fase (Gedaan / te-factureren) is de logische
+            // volgende stap een factuur, niet nog een offerte.
+            const factureerFase = ['afgerond', 'te-factureren', 'gefactureerd'].includes(project.status)
+            if (factureerFase) {
+              return (
+                <button
+                  onClick={() => {
+                    const params = new URLSearchParams({ klant_id: project.klant_id || '', project_id: id || '', titel: project.naam || '' })
+                    navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
+                  }}
+                  className="btn-primary-flame"
+                >
+                  <Receipt className="h-3.5 w-3.5" />
+                  Factuur maken
+                </button>
+              )
+            }
             return (
               <button onClick={openNieuweOfferte} className="btn-primary-flame">
                 <Pencil className="h-3.5 w-3.5" />
@@ -2278,6 +2341,16 @@ export function ProjectDetail() {
           klantId={project.klant_id}
           klant={klant}
           offertes={projectOffertes}
+        />
+      )}
+
+      {/* Klant bewerken dialog */}
+      {klant && (
+        <AddEditClient
+          open={editKlantOpen}
+          onOpenChange={setEditKlantOpen}
+          klant={klant}
+          onSaved={(updated) => { setKlant(updated); setEditKlantOpen(false) }}
         />
       )}
 
