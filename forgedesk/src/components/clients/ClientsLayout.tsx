@@ -46,6 +46,7 @@ import { AddEditClient } from './AddEditClient'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import { PaginationControls } from '@/components/ui/pagination-controls'
 // ModuleHeader removed — using DOEN inline header
 import { confirm } from '@/components/shared/ConfirmDialog'
 
@@ -83,6 +84,8 @@ export function ClientsLayout() {
   const [labelFilter, setLabelFilter] = useState<string>('alle')
   const [klantStatusFilter, setKlantStatusFilter] = useState<string>('alle')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 50
 
   const fetchData = useCallback(() => {
     Promise.all([fetchQuery('klanten', getKlanten), fetchQuery('projectCounts', getProjectCountsByKlant)])
@@ -174,6 +177,15 @@ export function ClientsLayout() {
 
     return result
   }, [klanten, searchQuery, statusFilter, labelFilter, klantStatusFilter, sortField, sortDir])
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1) }, [searchQuery, statusFilter, labelFilter, klantStatusFilter, sortField, sortDir])
+
+  const totalPages = Math.ceil(filteredKlanten.length / PAGE_SIZE)
+  const paginatedKlanten = useMemo(
+    () => filteredKlanten.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredKlanten, currentPage]
+  )
 
   function handleSort(field: SortField) {
     if (field === sortField) {
@@ -618,7 +630,7 @@ export function ClientsLayout() {
           </div>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-          {filteredKlanten.map((klant) => (
+          {paginatedKlanten.map((klant) => (
             <ClientCard
               key={klant.id}
               klant={klant}
@@ -691,7 +703,7 @@ export function ClientsLayout() {
                 </tr>
               </thead>
               <tbody>
-                {filteredKlanten.map((klant, i) => {
+                {paginatedKlanten.map((klant, i) => {
                   const stripeHex = klantNeedsAttention(klant) ? '#F15025' : klantStatusHex(klant.status)
                   return (
                   <tr
@@ -790,6 +802,17 @@ export function ClientsLayout() {
             </table>
         </div>
         </>
+      )}
+
+      {/* Paginatie */}
+      {!loading && filteredKlanten.length > 0 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredKlanten.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+        />
       )}
 
       {/* Add/Edit client dialog */}
