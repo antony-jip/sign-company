@@ -3153,3 +3153,68 @@ main ::-webkit-scrollbar-thumb {
 main ::-webkit-scrollbar-thumb:hover { background: rgba(26, 83, 92, 0.38); background-clip: content-box; }
 .dark main ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.16); background-clip: content-box; }
 .dark main ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.28); background-clip: content-box; }
+
+/* ================================================================
+   DASHBOARD-PANEEL — smooth, cohesief oppervlak (licht + dark)
+   ----------------------------------------------------------------
+   Vervangt het vlakke bg-card+border op de dashboard-panelen. In dark
+   een licht-opgetild petrol-vlak met warme glow, hairline en zachte
+   diepte (Apple-material), zodat panelen niet als harde zwarte boxen
+   lezen maar als één rustig laagje.
+   ================================================================ */
+.doen-panel {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.5);
+  box-shadow: var(--shadow-sm);
+}
+.dark .doen-panel {
+  background:
+    radial-gradient(ellipse 70% 60% at 0% 0%, rgba(36, 117, 128, 0.10), transparent 70%),
+    radial-gradient(ellipse 90% 70% at 100% 100%, rgba(241, 80, 37, 0.045), transparent 65%),
+    hsl(190 28% 10%);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 10px 30px -12px rgba(0, 0, 0, 0.55);
+}
+/* Interactieve panelen (KPI-kaarten): subtiele lift bij hover. */
+.dark .doen-panel.group:hover,
+.dark a.doen-panel:hover,
+.dark button.doen-panel:hover {
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 40px -14px rgba(0, 0, 0, 0.6);
+}
+
+/* Hero: dimensionale gradient i.p.v. vlak vlak. Licht = petrol, dark =
+   warme maroon met lift linksboven en diepte rechtsonder. */
+.doen-hero { background-color: #1A535C; }
+.dark .doen-hero {
+  background-image:
+    radial-gradient(ellipse 85% 90% at 12% 0%, #5C2417 0%, transparent 68%),
+    linear-gradient(135deg, #4A1810 0%, #371108 100%);
+}
+
+/* ================================================================
+   TABEL-RIJ HOVER — verfijnd, rustig (Apple-feel)
+   ----------------------------------------------------------------
+   Eén centrale, subtiele achtergrond-highlight voor datatabel-rijen.
+   Geen scale/translate (geeft rendering-artefacten in tabellen) —
+   alleen een zachte background-fade. Petrol-getint in light, een
+   neutrale wash in dark, beide nauwelijks zichtbaar maar voelbaar.
+
+   Scoping: `:where(table tbody tr)` heeft specificiteit 0, zodat
+   ELKE component-specifieke hover/selected-achtergrond hiervan wint.
+   Beperkt tot echte <table>-elementen, dus div-based mini-tabellen
+   (PDF-preview) blijven onaangeroerd. Nooit !important.
+   ================================================================ */
+:where(table tbody tr) {
+  transition: background-color 150ms ease;
+}
+:where(table tbody tr):hover {
+  background-color: rgba(26, 83, 92, 0.035);
+}
+.dark :where(table tbody tr):hover {
+  background-color: rgba(255, 255, 255, 0.035);
+}

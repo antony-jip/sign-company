@@ -101,7 +101,7 @@ function OfferteDetailSkeleton() {
       <Skeleton className="h-1 w-full rounded-t-lg" />
 
       {/* Pipeline */}
-      <div className="flex items-center gap-2 py-3 px-2 bg-card rounded-xl border border-border/50">
+      <div className="doen-panel flex items-center gap-2 py-3 px-2 rounded-xl">
         {Array.from({ length: 5 }).map((_, idx) => (
           <div key={idx} className="flex items-center gap-2 flex-1">
             {idx > 0 && <Skeleton className="h-[2px] flex-1 min-w-4" />}
@@ -116,7 +116,7 @@ function OfferteDetailSkeleton() {
       {/* Client + Details grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Klant card */}
-        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+        <div className="doen-panel rounded-xl p-3.5 space-y-2.5">
           <Skeleton className="h-8 w-full rounded-lg mb-3" />
           <Skeleton className="h-5 w-3/5" />
           <Skeleton className="h-4 w-2/5" />
@@ -129,7 +129,7 @@ function OfferteDetailSkeleton() {
         </div>
 
         {/* Details card */}
-        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+        <div className="doen-panel rounded-xl p-3.5 space-y-2.5">
           <Skeleton className="h-8 w-full rounded-lg mb-3" />
           {Array.from({ length: 4 }).map((_, idx) => (
             <div key={idx} className="flex justify-between">
@@ -141,12 +141,12 @@ function OfferteDetailSkeleton() {
       </div>
 
       {/* Titel */}
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="doen-panel rounded-xl p-5">
         <Skeleton className="h-6 w-2/3" />
       </div>
 
       {/* Items table */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="doen-panel rounded-xl overflow-hidden">
         <div className="px-5 py-3 border-b border-border bg-muted/30">
           <Skeleton className="h-4 w-32" />
         </div>
@@ -191,7 +191,7 @@ function OfferteDetailSkeleton() {
       </div>
 
       {/* Notities */}
-      <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+      <div className="doen-panel rounded-xl p-3.5 space-y-2">
         <Skeleton className="h-8 w-full rounded-lg mb-3" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-11/12" />
@@ -199,7 +199,7 @@ function OfferteDetailSkeleton() {
       </div>
 
       {/* Voorwaarden / activiteit */}
-      <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+      <div className="doen-panel rounded-xl p-3.5 space-y-2.5">
         <Skeleton className="h-8 w-full rounded-lg mb-3" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-5/6" />
@@ -806,7 +806,7 @@ export function OfferteDetail() {
         const isModRequested = offerte.status === 'wijziging_gevraagd'
 
         return (
-          <div className="flex items-center gap-0 py-3 px-2 overflow-x-auto scrollbar-hide bg-card rounded-xl border border-border/50">
+          <div className="doen-panel flex items-center gap-0 py-3 px-2 overflow-x-auto scrollbar-hide rounded-xl">
             {pipelineSteps.map((step, idx) => {
               const isActive = step.key === offerte.status
               const isPast = currentIdx >= 0 && idx < currentIdx
@@ -866,7 +866,7 @@ export function OfferteDetail() {
       {/* Client + Details grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Klant info */}
-        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+        <div className="doen-panel rounded-xl p-3.5 space-y-2.5">
           <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5" />
@@ -906,7 +906,7 @@ export function OfferteDetail() {
         </div>
 
         {/* Details */}
-        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+        <div className="doen-panel rounded-xl p-3.5 space-y-2.5">
           <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5" />
@@ -971,7 +971,7 @@ export function OfferteDetail() {
 
         {/* Klant activiteit */}
         {(offerte.eerste_bekeken_op || offerte.geaccepteerd_door || offerte.wijziging_opmerking) && (
-          <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+          <div className="doen-panel rounded-xl p-3.5 space-y-2.5">
             <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
               <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary flex items-center gap-2">
                 <Eye className="h-3.5 w-3.5" />
@@ -1033,7 +1033,7 @@ export function OfferteDetail() {
       </div>
 
       {/* Titel */}
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="doen-panel rounded-xl p-5">
         <h2 className="text-lg font-bold tracking-[-0.02em] text-foreground">
           {isEditing ? (
             <Input
@@ -1049,7 +1049,7 @@ export function OfferteDetail() {
 
       {/* Intro tekst */}
       {(isEditing || offerte.intro_tekst) && (
-        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+        <div className="doen-panel rounded-xl p-3.5 space-y-2">
           <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Intro tekst
@@ -1069,7 +1069,7 @@ export function OfferteDetail() {
       )}
 
       {/* Offerte Regels */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="doen-panel rounded-xl overflow-hidden">
         <div className="px-5 py-3 border-b border-border bg-muted/30">
           <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">Offerte Regels</h3>
         </div>
@@ -1159,7 +1159,7 @@ export function OfferteDetail() {
 
       {/* Outro tekst */}
       {(isEditing || offerte.outro_tekst) && (
-        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+        <div className="doen-panel rounded-xl p-3.5 space-y-2">
           <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Outro tekst
@@ -1180,7 +1180,7 @@ export function OfferteDetail() {
 
       {/* Notities (edit mode) */}
       {isEditing && (
-        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+        <div className="doen-panel rounded-xl p-3.5 space-y-2">
           <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Notities
@@ -1197,7 +1197,7 @@ export function OfferteDetail() {
 
       {/* Notities (view mode) */}
       {!isEditing && offerte.notities && (
-        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+        <div className="doen-panel rounded-xl p-3.5 space-y-2">
           <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Notities
@@ -1208,7 +1208,7 @@ export function OfferteDetail() {
       )}
 
       {/* Activiteit log */}
-      <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+      <div className="doen-panel rounded-xl p-3.5 space-y-2.5">
         <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
           <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
             Activiteit
@@ -1240,12 +1240,12 @@ export function OfferteDetail() {
       </div>
 
       {/* Signing Visualisaties */}
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="doen-panel rounded-xl p-5">
         <VisualisatieGallery offerte_id={offerte.id} klant_id={offerte.klant_id} />
       </div>
 
       {/* Audit Log */}
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="doen-panel rounded-xl p-5">
         <AuditLogPanel entityType="offerte" entityId={offerte.id} />
       </div>
 

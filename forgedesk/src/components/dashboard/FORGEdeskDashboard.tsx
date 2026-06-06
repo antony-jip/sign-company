@@ -204,7 +204,7 @@ function FORGEdeskDashboardInner() {
         <main className="flex-1 min-w-0 space-y-5">
           {/* ── Hero — petrol card met omzet-overlay rechts ── */}
           <section
-            className="relative rounded-2xl overflow-hidden bg-[#1A535C] dark:bg-[#4A1810]"
+            className="doen-hero relative rounded-2xl overflow-hidden"
           >
             <div className="relative flex flex-col md:flex-row">
               <div className="flex-1 px-7 py-7 sm:px-9 sm:py-9">

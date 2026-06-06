@@ -2174,7 +2174,7 @@ export function ProjectDetail() {
             </p>
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+          <div className="doen-panel rounded-xl divide-y divide-border overflow-hidden">
             {projectEmails.map((mail) => {
               const senderLabel = (mail.from_name || mail.van || '').replace(/<[^>]+>/g, '').trim() || mail.van
               const preview = (mail.body_text || '').replace(/\s+/g, ' ').trim().slice(0, 140)

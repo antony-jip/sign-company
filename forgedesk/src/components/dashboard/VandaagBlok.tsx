@@ -400,7 +400,7 @@ export function VandaagBlok() {
 
   return (
     <section
-      className="rounded-xl p-6 sm:p-7 bg-card border border-border/50"
+      className="doen-panel rounded-xl p-6 sm:p-7"
       style={{
         backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
         boxShadow: 'var(--shadow-sm)',
