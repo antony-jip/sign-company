@@ -1421,7 +1421,6 @@ export function MontagePlanningLayout() {
     // Zelfde box-look als /taken: uniform lichte petrol-vulling + petrol accent-stripe.
     // (Afgerond houdt eigen surface; conflict/urgent-states blijven via ring/cfg zichtbaar.)
     const cardStyle: React.CSSProperties = { borderLeftColor: isAfgerond ? '#CBC9C4' : '#1A535C' };
-    if (!isAfgerond) cardStyle.backgroundColor = 'rgba(26,83,92,0.035)';
     if (isPersonal) cardStyle.minHeight = `${getCardMinHeight(afspraak.start_tijd, afspraak.eind_tijd)}px`;
 
     return (
@@ -1448,9 +1447,10 @@ export function MontagePlanningLayout() {
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "bg-card border border-border/40 border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] group/card relative",
+          "border border-border/40 border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] group/card relative",
           isTimegrid ? "h-full overflow-hidden rounded-none" : "rounded-none mb-1.5 hover:-translate-y-[1px]",
-          isAfgerond && "bg-[hsl(40,10%,96.5%)]",
+          !isAfgerond && "bg-[rgba(26,83,92,0.04)] dark:bg-[hsl(190,24%,13%)]",
+          isAfgerond && "bg-[hsl(40,10%,96.5%)] dark:bg-[hsl(190,20%,9%)]",
           hasConflict && "ring-1 ring-[#F0C8BC]",
           draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30"
         )}
