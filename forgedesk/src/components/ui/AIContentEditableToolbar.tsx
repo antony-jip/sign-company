@@ -241,7 +241,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
     >
       {/* Preview panel */}
       {(preview || loading) && (
-        <div className="mb-2 w-[320px] bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+        <div className="mb-2 w-[320px] bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] overflow-hidden">
           <div className="px-3 py-2 border-b border-border flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs font-medium text-foreground">AI Suggestie</span>
@@ -304,7 +304,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
       {!preview && !loading && (
         <>
           {showCustomInput && (
-            <div className="mb-2 w-[280px] bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+            <div className="mb-2 w-[280px] bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] overflow-hidden">
               <div className="p-2 flex items-center gap-2">
                 <input
                   ref={customInputRef}
@@ -327,7 +327,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
           )}
 
           {showActions && (
-            <div className="mb-2 w-[280px] bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] overflow-hidden p-1.5">
+            <div className="mb-2 w-[280px] bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] overflow-hidden p-1.5">
               {!skipTone && (
                 <TooltipProvider delayDuration={150}>
                   <Tooltip>
@@ -384,7 +384,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
           {!showActions && !showCustomInput && (
             <button
               onClick={() => setShowActions(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] text-xs font-medium text-foreground hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all group"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-white dark:bg-popover dark:border dark:border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.06)] text-xs font-medium text-foreground hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all group"
               title={
                 toneActive
                   ? 'AI herschrijven · jouw schrijfstijl actief'

@@ -33,7 +33,7 @@ export function InfoButton({
           type="button"
           aria-label={label}
           className={cn(
-            'inline-flex items-center justify-center rounded-full text-muted-hex hover:text-text-sec focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol/40 focus-visible:ring-offset-1 focus-visible:ring-offset-[#F8F7F5] transition-colors align-middle',
+            'inline-flex items-center justify-center rounded-full text-muted-hex hover:text-text-sec focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol/40 focus-visible:ring-offset-1 focus-visible:ring-offset-[#F8F7F5] dark:focus-visible:ring-offset-popover transition-colors align-middle',
             size === 'md' ? 'w-5 h-5' : 'w-4 h-4',
             className,
           )}
@@ -44,7 +44,7 @@ export function InfoButton({
       <PopoverContent
         align={align}
         sideOffset={6}
-        className="max-w-[260px] p-4 rounded-xl border-0 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-[13px] text-ink/85 leading-relaxed"
+        className="max-w-[260px] p-4 rounded-xl border-0 bg-white dark:bg-popover dark:border dark:border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-[13px] text-ink/85 dark:text-foreground leading-relaxed"
       >
         {children}
       </PopoverContent>
