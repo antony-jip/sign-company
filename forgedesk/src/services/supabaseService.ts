@@ -171,11 +171,29 @@ export {
 // ============ CONVERSIE FUNCTIES ============
 // Deze blijven hier omdat ze cross-domain afhankelijkheden hebben
 
-import { assertId, round2 } from './supabaseHelpers'
+import { assertId, round2, supabase, isSupabaseConfigured, withUserId, getOrgId, generateId, now } from './supabaseHelpers'
 import { createFactuur, createFactuurItem, generateFactuurNummer } from './factuurService'
 import { getOfferte, getOfferteItems, updateOfferte } from './offerteService'
 import { getWerkbon, getWerkbonRegels, updateWerkbon } from './werkbonService'
 import type { Factuur, FactuurItem, Werkbon } from '@/types'
+
+async function insertFactuurItems(items: Omit<FactuurItem, 'id' | 'created_at'>[]): Promise<void> {
+  if (items.length === 0) return
+  if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
+    const rows = await Promise.all(
+      items.map(async (item) =>
+        ({ ...await withUserId({ ...item, id: generateId(), created_at: now() }), organisatie_id: _orgId })
+      )
+    )
+    const { error } = await supabase.from('factuur_items').insert(rows)
+    if (error) throw error
+    return
+  }
+  for (const item of items) {
+    await createFactuurItem(item)
+  }
+}
 
 export async function convertOfferteToFactuur(
   offerteId: string,
@@ -209,19 +227,18 @@ export async function convertOfferteToFactuur(
     factuur_type: 'standaard',
     contactpersoon_id: offerte.contactpersoon_id,
   } as Omit<Factuur, 'id' | 'created_at' | 'updated_at'>)
-  for (const item of items) {
-    await createFactuurItem({
-      user_id: userId,
-      factuur_id: factuur.id,
-      beschrijving: item.beschrijving,
-      aantal: item.aantal,
-      eenheidsprijs: round2(item.eenheidsprijs),
-      btw_percentage: item.btw_percentage,
-      korting_percentage: item.korting_percentage,
-      totaal: round2(item.totaal),
-      volgorde: item.volgorde,
-    } as Omit<FactuurItem, 'id' | 'created_at'>)
-  }
+  const factuurItems = items.map((item) => ({
+    user_id: userId,
+    factuur_id: factuur.id,
+    beschrijving: item.beschrijving,
+    aantal: item.aantal,
+    eenheidsprijs: round2(item.eenheidsprijs),
+    btw_percentage: item.btw_percentage,
+    korting_percentage: item.korting_percentage,
+    totaal: round2(item.totaal),
+    volgorde: item.volgorde,
+  } as Omit<FactuurItem, 'id' | 'created_at'>))
+  await insertFactuurItems(factuurItems)
   await updateOfferte(offerteId, { status: 'gefactureerd', geconverteerd_naar_factuur_id: factuur.id })
   return factuur
 }
@@ -264,21 +281,19 @@ export async function convertWerkbonToFactuur(
     contactpersoon_id: werkbon.contactpersoon_id,
   } as Omit<Factuur, 'id' | 'created_at' | 'updated_at'>)
   let volgorde = 0
-  for (const regel of factureerbaar) {
-    await createFactuurItem({
-      user_id: userId,
-      factuur_id: factuur.id,
-      beschrijving: regel.omschrijving,
-      aantal: regel.aantal || 1,
-      eenheidsprijs: round2(regel.type === 'arbeid' ? (regel.uurtarief || 0) : (regel.prijs_per_eenheid || 0)),
-      btw_percentage: 21,
-      korting_percentage: 0,
-      totaal: round2(regel.totaal),
-      volgorde: volgorde++,
-    } as Omit<FactuurItem, 'id' | 'created_at'>)
-  }
+  const factuurItems = factureerbaar.map((regel) => ({
+    user_id: userId,
+    factuur_id: factuur.id,
+    beschrijving: regel.omschrijving,
+    aantal: regel.aantal || 1,
+    eenheidsprijs: round2(regel.type === 'arbeid' ? (regel.uurtarief || 0) : (regel.prijs_per_eenheid || 0)),
+    btw_percentage: 21,
+    korting_percentage: 0,
+    totaal: round2(regel.totaal),
+    volgorde: volgorde++,
+  } as Omit<FactuurItem, 'id' | 'created_at'>))
   if (kmTotaal > 0) {
-    await createFactuurItem({
+    factuurItems.push({
       user_id: userId,
       factuur_id: factuur.id,
       beschrijving: `Kilometervergoeding (${werkbon.kilometers} km x €${werkbon.km_tarief})`,
@@ -290,6 +305,7 @@ export async function convertWerkbonToFactuur(
       volgorde: volgorde++,
     } as Omit<FactuurItem, 'id' | 'created_at'>)
   }
+  await insertFactuurItems(factuurItems)
   await updateWerkbon(werkbonId, { status: 'gefactureerd' } as Partial<Werkbon>)
   return factuur
 }

@@ -229,9 +229,30 @@ export async function getWerkbonItems(werkbonId: string): Promise<WerkbonItem[]>
     const { data, error } = await supabase.from('werkbon_items').select('*').eq('werkbon_id', werkbonId).order('volgorde')
     if (error) throw error
     const items = data || []
+    const itemIds = items.map((i) => i.id)
+    const afbPerItem = new Map<string, WerkbonAfbeelding[]>()
+    if (itemIds.length > 0) {
+      const { data: afbData, error: afbError } = await supabase
+        .from('werkbon_afbeeldingen')
+        .select('*')
+        .in('werkbon_item_id', itemIds)
+        .order('created_at')
+      if (afbError) throw afbError
+      const sorteer = (a: WerkbonAfbeelding, b: WerkbonAfbeelding) => {
+        const ordA = a.layout?.volgorde ?? Number.MAX_SAFE_INTEGER
+        const ordB = b.layout?.volgorde ?? Number.MAX_SAFE_INTEGER
+        if (ordA !== ordB) return ordA - ordB
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      }
+      for (const afb of (afbData || []) as WerkbonAfbeelding[]) {
+        const lijst = afbPerItem.get(afb.werkbon_item_id) ?? []
+        lijst.push(afb)
+        afbPerItem.set(afb.werkbon_item_id, lijst)
+      }
+      for (const lijst of afbPerItem.values()) lijst.sort(sorteer)
+    }
     for (const item of items) {
-      const afb = await getWerkbonAfbeeldingen(item.id)
-      item.afbeeldingen = afb
+      item.afbeeldingen = afbPerItem.get(item.id) ?? []
     }
     return items
   }

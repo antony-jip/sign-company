@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthContext'
 import { getProjecten, getOffertes, getFacturen, getTaken, getMontageAfspraken, getKlanten, getMedewerkers, getEvents } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Project, Offerte, Factuur, Taak, MontageAfspraak, Klant, Medewerker, CalendarEvent } from '@/types'
 
 interface DashboardData {
@@ -20,27 +21,27 @@ const DashboardDataContext = createContext<DashboardData | null>(null)
 
 export function DashboardDataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [facturen, setFacturen] = useState<Factuur[]>([])
-  const [taken, setTaken] = useState<Taak[]>([])
-  const [montages, setMontages] = useState<MontageAfspraak[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? [])
+  const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
+  const [facturen, setFacturen] = useState<Factuur[]>(() => getCached<Factuur[]>('facturen') ?? [])
+  const [taken, setTaken] = useState<Taak[]>(() => getCached<Taak[]>('taken') ?? [])
+  const [montages, setMontages] = useState<MontageAfspraak[]>(() => getCached<MontageAfspraak[]>('montageAfspraken') ?? [])
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? [])
   const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(() => getCached('klanten') === undefined)
 
   const fetchAll = useCallback(async () => {
     if (!user?.id) return
     try {
       const [p, o, f, t, m, k, md, e] = await Promise.all([
-        getProjecten(),
-        getOffertes(),
-        getFacturen(),
-        getTaken(),
-        getMontageAfspraken(),
-        getKlanten(),
-        getMedewerkers(),
+        fetchQuery('projecten', getProjecten),
+        fetchQuery('offertes', getOffertes),
+        fetchQuery('facturen', getFacturen),
+        fetchQuery('taken', getTaken),
+        fetchQuery('montageAfspraken', getMontageAfspraken),
+        fetchQuery('klanten', getKlanten),
+        fetchQuery('medewerkers', getMedewerkers),
         getEvents(),
       ])
       setProjecten(p)
