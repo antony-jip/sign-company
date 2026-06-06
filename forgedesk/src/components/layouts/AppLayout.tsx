@@ -12,6 +12,7 @@ import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import { TabBar } from '@/components/layouts/TabBar'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
+import { prefetchCore } from '@/lib/coreData'
 import { cn } from '@/lib/utils'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { WifiOff } from 'lucide-react'
@@ -42,6 +43,19 @@ export function AppLayout() {
     (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
   )
   useTabShortcuts()
+
+  useEffect(() => {
+    // Warm de kern-datasets één keer op de achtergrond, zodat navigatie
+    // naar Klanten/Offertes/Facturen/Taken/Projecten uit geheugen komt.
+    // Tijdens idle, zodat de dashboard-load niet vertraagt.
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback
+    const id = ric ? ric(() => prefetchCore(), { timeout: 1500 }) : window.setTimeout(prefetchCore, 600)
+    return () => {
+      const cic = (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback
+      if (ric && cic) cic(id as number)
+      else window.clearTimeout(id as number)
+    }
+  }, [])
 
   const [stickyHeader, setStickyHeader] = useState<boolean>(() =>
     typeof window !== 'undefined' && window.localStorage.getItem('doen_topnav_sticky') === '1'

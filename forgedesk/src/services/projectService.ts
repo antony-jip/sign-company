@@ -36,6 +36,27 @@ export async function getProjecten(limit = 5000): Promise<Project[]> {
   }))
 }
 
+// Lichtgewicht: alleen klant_id ophalen om projecten per klant te tellen.
+// Vermijdt de zware getProjecten()-query (select('*') + join) die anders
+// puur voor tellingen alle projectvelden over de lijn haalt.
+export async function getProjectCountsByKlant(): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {}
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('projecten')
+      .select('klant_id')
+    if (error) throw error
+    for (const row of (data || []) as Array<{ klant_id?: string | null }>) {
+      if (row.klant_id) counts[row.klant_id] = (counts[row.klant_id] || 0) + 1
+    }
+    return counts
+  }
+  for (const p of getLocalData<Project>('projecten')) {
+    if (p.klant_id) counts[p.klant_id] = (counts[p.klant_id] || 0) + 1
+  }
+  return counts
+}
+
 export async function getProject(id: string): Promise<Project | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {

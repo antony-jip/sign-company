@@ -87,7 +87,7 @@ export {
 } from './factuurService'
 
 export {
-  getProjecten, getProject, getProjectenByKlant, createProject, updateProject, deleteProject,
+  getProjecten, getProject, getProjectenByKlant, getProjectCountsByKlant, createProject, updateProject, deleteProject,
   getTaken, getTaak, getTakenByProject, createTaak, uploadTaakBijlage, updateTaak, deleteTaak,
   getTijdregistratiesByProject,
   getProjectToewijzingen, getProjectToewijzingenVoorMedewerker, createProjectToewijzing, deleteProjectToewijzing,

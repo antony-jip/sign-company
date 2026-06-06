@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { signIn, signUp, signOut, getSession, onAuthStateChange, type AuthSession } from '@/services/authService'
 import { getProfile, getOrganisatie, createMedewerker } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
+import { clearQueryCache } from '@/lib/queryCache'
 import type { TeamRol, Organisatie } from '@/types'
 import { logger } from '@/utils/logger'
 
@@ -267,10 +268,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user?.id) await fetchOrgData(user.id)
   }
 
+  useEffect(() => {
+    // Org-wissel: gooi de query-cache weg zodat data van de vorige
+    // organisatie nooit blijft hangen. Op de eerste mount is de cache
+    // toch leeg, dus dit is onschadelijk.
+    clearQueryCache()
+  }, [organisatieId])
+
   const logout = async () => {
     try {
       await signOut()
     } finally {
+      clearQueryCache()
       setUser(null)
       setSession(null)
       setOrganisatieId(null)
