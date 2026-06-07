@@ -1016,4 +1016,141 @@ kunt ze gebundeld op een factuur zetten.
 
 **Gerelateerde modules:** Projecten, Facturen, Nacalculatie, Rapportages.
 
+## Instellingen
+
+**Waar in de app:** route `/instellingen` (menu-item "Instellingen"). De
+instellingen zijn opgedeeld in tabbladen.
+
+**Wat het doet:** Hier regel je alles rondom je account, je bedrijf, je team en
+hoe de app eruitziet en werkt. De belangrijkste tabbladen:
+
+- **Profiel** — je persoonlijke gegevens (naam, functie, telefoon). Deze
+  verschijnen als afzender in je documenten en e-mails. *Mijn e-mailadres
+  wijzigen?* Dat gaat niet hier, maar via accountbeheer.
+- **Bedrijf** — bedrijfsnaam, adres, contactgegevens en wettelijke nummers
+  (KvK, btw) en bankgegevens. *Wie ziet dit?* Het wordt gebruikt op je
+  documenten richting klanten.
+- **Team** — teamleden uitnodigen, rollen instellen en medewerkers
+  (de)activeren.
+- **Huisstijl / briefpapier** — logo, kleuren en de opmaak van je offertes,
+  facturen en werkbonnen. *Waar stel ik mijn logo in?* Hier.
+- **Portaal** — instellingen voor het klantportaal, zoals de geldigheid van de
+  link en de e-mails die de klant ontvangt.
+- **Integraties** — koppelingen met externe systemen, waaronder Exact Online en
+  de betaalkoppelingen.
+- **Kennisbank** — de artikelen beheren die in de kennisbank staan en die Daan
+  gebruikt.
+- **Calculatie** — vaste calculaties en offertesjablonen voor sneller offreren.
+- **Kostenplaatsen** — codes voor je boekhouding die je aan facturen kunt
+  koppelen.
+- **Abonnement** — je plan, facturatie en de status van je proefperiode.
+- **Daan** — de instellingen van de AI-assistent, zoals bedrijfscontext en
+  toon, en het creditverbruik.
+- **Visualizer** — instellingen en credits voor de visualizer.
+- **Beveiliging** — je actieve sessies en wachtwoord.
+- **Weergave** — voorkeuren voor hoe de app eruitziet en welke menu-items je
+  ziet.
+- **E-mail / communicatie** — je eigen mailaccount koppelen, je handtekening,
+  e-mailsjablonen en de opvolging van offertes en facturen.
+
+**Veelvoorkomende vragen:**
+- *Waar stel ik mijn logo en huisstijl in?* Onder Huisstijl/briefpapier.
+- *Waar koppel ik mijn e-mail?* Onder E-mail/communicatie.
+- *Waar nodig ik teamleden uit?* Onder Team.
+- *Waar zie ik mijn abonnement en proefperiode?* Onder Abonnement.
+- *Waar koppel ik Exact?* Onder Integraties.
+
+**Tips:**
+- Vul eerst Profiel, Bedrijf en Huisstijl in; dat zorgt dat je offertes en
+  facturen er meteen verzorgd uitzien.
+
+**Gerelateerde modules:** alle modules; instellingen werken door in de hele app.
+
+---
+
+## Importeren
+
+**Waar in de app:** route `/importeren` (menu-item "Importeren").
+
+**Wat het doet:** Hiermee zet je in één keer bestaande gegevens in doen., zoals
+klanten, contactpersonen en eerdere projecten/offertes/facturen, via een
+Excel- of CSV-bestand. Handig als je overstapt van een ander systeem.
+
+**Belangrijkste acties:**
+- Bedrijfsdata importeren (klanten en bijbehorende gegevens).
+- Contactpersonen importeren.
+- De importgeschiedenis bekijken (hoeveel verwerkt, overgeslagen of met fouten).
+
+**Veelvoorkomende vragen:**
+- *In welk formaat moet mijn bestand?* Een CSV/Excel volgens de aangegeven
+  kolommen; de app toont het verwachte formaat.
+- *Wat gebeurt er met dubbele klanten?* Die worden overgeslagen; dat zie je
+  terug in de importgeschiedenis.
+- *Kan ik een import ongedaan maken?* Je kunt importdata weer verwijderen; doe
+  dat zorgvuldig, dit is niet zomaar terug te draaien.
+- *Wie ziet de geïmporteerde gegevens?* Iedereen in je organisatie, net als bij
+  handmatig ingevoerde gegevens.
+
+**Tips:**
+- Test eerst met een klein bestand en controleer daarna de importgeschiedenis op
+  fouten.
+
+**Gerelateerde modules:** Klanten, Projecten, Offertes, Facturen.
+
+---
+
+## Onboarding (eerste keer instellen)
+
+**Waar in de app:** de welkomstpagina (`/welkom`) en de instelwizard
+(`/onboarding`), die je direct na registratie doorloopt.
+
+**Wat het doet:** De onboarding helpt je je bedrijf in een paar stappen klaar te
+zetten: je bedrijfsgegevens en logo, je team uitnodigen en je eerste offerte
+maken. De belofte is dat je binnen ongeveer een half uur je eerste offerte de
+deur uit hebt.
+
+**Belangrijkste acties:**
+- Je bedrijfsgegevens en logo invullen.
+- Teamleden uitnodigen.
+- Een eerste offerte maken.
+
+**Veelvoorkomende vragen:**
+- *Moet ik alles meteen invullen?* Nee, je kunt stappen later afmaken in de
+  instellingen.
+- *Hoe maak ik mijn eerste offerte?* De wizard begeleidt je erdoorheen; daarna
+  kan het ook altijd via de module Offertes.
+
+**Tips:**
+- Stel eerst je logo en bedrijfsgegevens in, dan staat je eerste offerte er
+  meteen netjes uit.
+
+**Gerelateerde modules:** Instellingen, Team, Offertes.
+
+---
+
+## Exact Online koppelen
+
+**Waar in de app:** Instellingen, tabblad Integraties.
+
+**Wat het doet:** Je kunt doen. koppelen aan Exact Online om je facturen door te
+zetten naar je boekhouding. De koppeling is **eenrichtingsverkeer**: gegevens
+gaan van doen. naar Exact, niet andersom.
+
+**Belangrijkste acties:**
+- De koppeling met Exact opzetten en autoriseren.
+- Facturen vanuit doen. naar Exact sturen.
+
+**Veelvoorkomende vragen:**
+- *Welke kant op synchroniseert het?* Alleen van doen. naar Exact.
+- *Wordt de betaald-status uit Exact teruggehaald?* Nee. Omdat het
+  eenrichtingsverkeer is, vink je de betaald-status in doen. zelf af.
+- *Wat als de koppeling verlopen is?* Dan moet je opnieuw verbinden via
+  Integraties.
+
+**Tips:**
+- Houd er rekening mee dat een factuur die je in doen. verwijdert, niet
+  automatisch uit Exact verdwijnt.
+
+**Gerelateerde modules:** Facturen, Instellingen.
+
 <!-- EINDE -->
