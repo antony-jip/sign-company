@@ -362,4 +362,151 @@ af, en de factuur wordt gekoppeld aan je uitgaven.
 **Gerelateerde modules:** Facturen, Leveranciers, Uitgaven (Financieel),
 Voorraad.
 
+## Projecten
+
+**Waar in de app:** route `/projecten` (menu-item "Projecten"). Een nieuw
+project maak je op `/projecten/nieuw`, een project open je op `/projecten/:id`.
+
+**Wat het doet:** Het project is de plek waar al het werk voor één klus
+samenkomt: van offerte en akkoord tot productie, montage en factuur. In het
+projectoverzicht zie je al je projecten met status, fase, klant, deadline en
+geplande montage. In het project zelf (het cockpit) heb je alles van die klus
+op één scherm.
+
+**Belangrijkste acties:**
+- Een nieuw project aanmaken voor een klant.
+- Zoeken en filteren op status; met het filter "Met aandacht" zie je projecten
+  die op jou wachten.
+- Vanuit het project een offerte, werkbon, montageafspraak of factuur maken.
+- Documenten uploaden en met de klant delen via het portaal.
+
+**Het project-cockpit:** Het cockpit (het overzicht binnen een project) bundelt
+onder andere:
+- een **fase-balk** die laat zien waar het project staat in het traject;
+- een **"wat nu"-suggestie** met de logische volgende stap;
+- een **acties-kaart** met snelknoppen (offerte, werkbon, montage, factuur);
+- een overzicht van **taken en offertes**;
+- een **montage-sectie** met geplande afspraken en monteurs;
+- een **klantkaart** met contactgegevens;
+- een **bestanden-sectie** en een **activiteitenoverzicht**;
+- een **portaal-paneel** dat toont wat de klant in het portaal gedaan heeft.
+
+**Veelvoorkomende vragen:**
+- *Wat betekent het filter "Met aandacht"?* Dat zijn projecten die op een actie
+  van jou wachten, bijvoorbeeld een offerte die nog akkoord moet krijgen of een
+  werkbon die nog afgemeld moet worden.
+- *Hoe maak ik een werkbon voor de monteur?* Vanuit het project via de
+  acties-kaart; je kiest welke onderdelen meegaan.
+- *Kan een project meerdere klanten hebben?* Nee, één project hoort bij één
+  klant. Een klant kan wel meerdere projecten hebben.
+- *Waar zie ik wat de klant in het portaal gedaan heeft?* In het portaal-paneel
+  van het cockpit.
+- *Hoe plan ik montage in?* Vanuit het project via de acties-kaart, of in de
+  module Planning.
+
+**Tips:**
+- Volg de "wat nu"-suggestie als leidraad; die wijst naar de logische volgende
+  stap.
+- Upload tekeningen en foto's in het project, dan staat alles bij elkaar en kun
+  je het direct met de klant delen.
+
+**Gerelateerde modules:** Offertes, Werkbonnen, Planning, Facturen,
+Klantportaal, Tijdregistratie, Nacalculatie.
+
+---
+
+## Werkbonnen
+
+**Waar in de app:** route `/werkbonnen` (menu-item "Werkbonnen"); een werkbon
+open je op `/werkbonnen/:id`. Op de telefoon heeft de monteur een
+vereenvoudigde weergave.
+
+**Wat het doet:** Een werkbon is de werkinstructie voor de monteur op locatie.
+Hij bevat klant- en locatiegegevens, wat er gedaan moet worden, foto's of
+tekeningen van het eindresultaat, en ruimte voor de terugkoppeling en
+handtekening van de monteur.
+
+**Belangrijkste acties:**
+- Een nieuwe werkbon maken, los of vanuit een project (dan kies je welke
+  onderdelen meegaan).
+- Foto's, een logo of een pdf op de werkbon plaatsen en het formaat aanpassen
+  (klein, normaal of groot).
+- De werkbon als pdf bekijken en delen.
+- De terugkoppeling van de monteur verwerken (gewerkte uren, opmerkingen,
+  foto's) en de werkbon afronden.
+
+**Veelvoorkomende vragen:**
+- *Hoe voeg ik foto's aan een werkbon toe?* Sleep een bestand op de werkbon of
+  kies een bestand, en pas daarna de plaats en het formaat aan.
+- *Wat is het verschil tussen een werkbon en een leveringsbon?* Een werkbon is
+  de instructie voor de monteur; een leveringsbon (pakbon) is het bewijs van
+  wat er bij de klant geleverd is.
+- *Kan de monteur de werkbon op de telefoon gebruiken?* Ja, op mobiel is er een
+  vereenvoudigde weergave voor de monteur.
+- *Hoe rond ik een werkbon af?* Verwerk de terugkoppeling van de monteur en zet
+  de werkbon op afgerond/afgetekend.
+
+**Tips:**
+- Voeg duidelijke foto's of een tekening toe; dat voorkomt vragen op locatie.
+- Maak werkbonnen vanuit het project, dan staan de klant- en projectgegevens er
+  meteen goed op.
+
+**Gerelateerde modules:** Projecten, Planning, Leveringsbonnen.
+
+---
+
+## Bestelbonnen
+
+**Waar in de app:** route `/bestelbonnen` (menu-item "Bestelbonnen"); een
+bestelbon open je op `/bestelbonnen/:id`.
+
+**Wat het doet:** Een bestelbon is je inkoopbestelling naar een leverancier
+voor materiaal of onderdelen. Je legt vast wat je bestelt, koppelt het aan een
+project en houdt bij wat er binnen is.
+
+**Belangrijkste acties:**
+- Een nieuwe bestelbon maken met regels (omschrijving, aantal, prijs).
+- De bestelbon koppelen aan een project.
+- De status bijwerken (van concept naar besteld en ontvangen).
+- De bestelbon als pdf downloaden om naar de leverancier te sturen.
+
+**Veelvoorkomende vragen:**
+- *Naar wie stuur ik de bestelbon?* Naar je leverancier; download de pdf en
+  mail die.
+- *Kan ik een bestelbon aan een project koppelen?* Ja, dan zie je de
+  inkoopkosten terug bij het project.
+
+**Tips:**
+- Houd de ontvangststatus bij, zodat je weet wat er nog moet komen.
+
+**Gerelateerde modules:** Projecten, Leveranciers, Leveringsbonnen, Voorraad.
+
+---
+
+## Leveringsbonnen (pakbonnen)
+
+**Waar in de app:** route `/leveringsbonnen` (menu-item "Leveringsbonnen"); een
+leveringsbon open je op `/leveringsbonnen/:id`.
+
+**Wat het doet:** Een leveringsbon (pakbon) is de lijst van wat je bij de klant
+aflevert. Hij dient als bewijs van levering en kan door de klant worden
+afgetekend.
+
+**Belangrijkste acties:**
+- Een nieuwe leveringsbon maken, los of vanuit een project.
+- Regels invullen met omschrijving, aantal en eenheid.
+- De leveringsbon als pdf afdrukken of downloaden.
+- De status bijwerken (van concept naar geleverd en getekend).
+
+**Veelvoorkomende vragen:**
+- *Wat is het verschil met een werkbon?* De werkbon is de instructie voor de
+  monteur; de leveringsbon is het bewijs van wat er geleverd is.
+- *Kan ik regels overnemen uit een project?* Ja, je kunt een leveringsbon
+  vanuit een project maken.
+
+**Tips:**
+- Laat de klant de leveringsbon aftekenen als bevestiging van ontvangst.
+
+**Gerelateerde modules:** Projecten, Werkbonnen, Bestelbonnen.
+
 <!-- EINDE -->
