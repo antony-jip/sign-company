@@ -1624,7 +1624,7 @@ export function MontagePlanningLayout() {
     return (
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Header: member name + week nav */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-card">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(26,83,92,0.08)] bg-card">
           <div className="flex items-center gap-3">
             <User className="h-5 w-5 text-muted-foreground" />
             <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground">
@@ -1668,12 +1668,12 @@ export function MontagePlanningLayout() {
         </div>
 
         {/* Weather strip */}
-        <div className="grid border-b border-border bg-background" style={{ gridTemplateColumns: gridTemplate }}>
-          <div className="border-r border-border" />
+        <div className="grid border-b border-[rgba(26,83,92,0.08)] bg-background" style={{ gridTemplateColumns: gridTemplate }}>
+          <div className="border-r border-[rgba(26,83,92,0.08)]" />
           {werkdagen.map((date) => {
             const w = getWeatherForDate(weather, date);
             return (
-              <div key={formatDate(date)} className="border-r last:border-r-0 border-border/50">
+              <div key={formatDate(date)} className="border-r last:border-r-0 border-[rgba(26,83,92,0.06)]">
                 {renderWeatherCell(w)}
               </div>
             );
@@ -1681,8 +1681,8 @@ export function MontagePlanningLayout() {
         </div>
 
         {/* Day column headers (sticky) */}
-        <div className="grid border-b border-border bg-card sticky top-0 z-20" style={{ gridTemplateColumns: gridTemplate }}>
-          <div className="border-r border-border py-1.5 px-2 flex items-center">
+        <div className="grid border-b border-[rgba(26,83,92,0.08)] bg-card sticky top-0 z-20" style={{ gridTemplateColumns: gridTemplate }}>
+          <div className="border-r border-[rgba(26,83,92,0.08)] py-1.5 px-2 flex items-center">
             <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Tijd</span>
           </div>
           {werkdagen.map((date) => {
@@ -1697,7 +1697,7 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "group relative text-center py-1.5 border-r last:border-r-0 border-border/50",
+                  "group relative text-center py-1.5 border-r last:border-r-0 border-[rgba(26,83,92,0.06)]",
                   feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-card",
                   isToday && "border-t-2 border-t-[#F15025]"
                 )}
@@ -1750,8 +1750,8 @@ export function MontagePlanningLayout() {
 
         {/* Taken-rij (member view) — taken met deadline op deze dag */}
         {Object.values(takenPerDag).some(arr => arr.length > 0) && (
-          <div className="grid border-b border-border bg-[#FAF9F6]" style={{ gridTemplateColumns: gridTemplate }}>
-            <div className="border-r border-border py-2 px-2 flex items-center gap-1">
+          <div className="grid border-b border-[rgba(26,83,92,0.08)] bg-[#FAF9F6]" style={{ gridTemplateColumns: gridTemplate }}>
+            <div className="border-r border-[rgba(26,83,92,0.08)] py-2 px-2 flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3 text-[#1A535C]" />
               <span className="text-[9px] font-semibold text-[#1A535C] uppercase tracking-widest">Taken</span>
             </div>
@@ -1763,7 +1763,7 @@ export function MontagePlanningLayout() {
                 <div
                   key={dateStr}
                   className={cn(
-                    "border-r last:border-r-0 border-border/50 p-1.5 space-y-1 min-h-[42px] transition-colors",
+                    "border-r last:border-r-0 border-[rgba(26,83,92,0.06)] p-1.5 space-y-1 min-h-[42px] transition-colors",
                     isDragOver && "bg-[#1A535C]/[0.06] ring-1 ring-inset ring-[#1A535C]/30"
                   )}
                   onDragOver={(e) => {
@@ -1814,7 +1814,7 @@ export function MontagePlanningLayout() {
         {/* Time-grid: hour rail + 5 day columns with absolute-positioned cards */}
         <div className="grid flex-1 overflow-y-auto" style={{ gridTemplateColumns: gridTemplate }}>
           {/* Hour rail */}
-          <div className="border-r border-border relative bg-card" style={{ height: gridHeight }}>
+          <div className="border-r border-[rgba(26,83,92,0.08)] relative bg-card" style={{ height: gridHeight }}>
             {Array.from({ length: totalHours + 1 }, (_, i) => {
               const hour = START_HOUR + i;
               return (
@@ -1842,7 +1842,7 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "relative border-r last:border-r-0 border-border/50 transition-colors",
+                  "relative border-r last:border-r-0 border-[rgba(26,83,92,0.06)] transition-colors",
                   feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/20" : isToday ? "bg-[#1A535C]/[0.02]" : "bg-card",
                   !feestdagInfo && dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
                   feestdagInfo && dragOverDate === dateStr && "ring-2 ring-[#C03A18]/30 ring-inset"
@@ -1905,7 +1905,7 @@ export function MontagePlanningLayout() {
                 {Array.from({ length: totalHours }, (_, i) => (
                   <div
                     key={i}
-                    className="absolute left-0 right-0 border-t border-border/50 pointer-events-none"
+                    className="absolute left-0 right-0 border-t border-[rgba(26,83,92,0.06)] pointer-events-none"
                     style={{ top: i * HOUR_HEIGHT }}
                   />
                 ))}
@@ -2037,7 +2037,7 @@ export function MontagePlanningLayout() {
     return (
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-card">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(26,83,92,0.08)] bg-card">
           <div className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-muted-foreground mr-1" />
             <button className="p-1.5 rounded-full hover:bg-muted transition-colors" onClick={() => navigateMonth(-1)} title="Vorige maand">
@@ -2066,7 +2066,7 @@ export function MontagePlanningLayout() {
         </div>
 
         {/* Day-of-week labels */}
-        <div className="grid grid-cols-7 border-b border-border bg-background">
+        <div className="grid grid-cols-7 border-b border-[rgba(26,83,92,0.08)] bg-background">
           {['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'].map((d) => (
             <div key={d} className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               {d}
@@ -2094,7 +2094,7 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "group relative border-b border-r border-border p-1.5 min-h-[96px] flex flex-col gap-0.5 transition-colors",
+                  "group relative border-b border-r border-[rgba(26,83,92,0.08)] p-1.5 min-h-[96px] flex flex-col gap-0.5 transition-colors",
                   !isCurrentMonth && "bg-background/40",
                   isCurrentMonth && isWeekend && "bg-background/60",
                   feestdagInfo && "bg-[hsl(var(--status-flame-bg))]/40",
@@ -2216,7 +2216,7 @@ export function MontagePlanningLayout() {
     return (
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-card">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(26,83,92,0.08)] bg-card">
           <div className="flex items-center gap-3">
             <Users className="h-5 w-5 text-muted-foreground" />
             <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground">Team overzicht</span>
@@ -2282,7 +2282,7 @@ export function MontagePlanningLayout() {
             toekomstige refactor ze binnen de scroll-container plaatst — dan blijft het
             gedrag hetzelfde zonder aanvullende wijziging. */}
         {/* Weather strip */}
-        <div className="grid sticky top-0 z-10 border-b border-border bg-background" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
+        <div className="grid sticky top-0 z-10 border-b border-[rgba(26,83,92,0.08)] bg-background" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
           <div />
           {werkdagen.map((date) => {
             const w = getWeatherForDate(weather, date);
@@ -2295,7 +2295,7 @@ export function MontagePlanningLayout() {
         </div>
 
         {/* Day column headers */}
-        <div className="grid sticky top-0 z-10 bg-card border-b border-border" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
+        <div className="grid sticky top-0 z-10 bg-card border-b border-[rgba(26,83,92,0.08)]" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
           <div className="py-1.5 px-3 bg-card">
             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Monteur</span>
           </div>
@@ -2344,10 +2344,10 @@ export function MontagePlanningLayout() {
             Drag-tussen-dagen werkt door deadline van de taak te updaten. */}
         {Object.values(takenPerDag).some(arr => arr.length > 0) && (
           <div
-            className="grid border-b border-border bg-[#FAF9F6]"
+            className="grid border-b border-[rgba(26,83,92,0.08)] bg-[#FAF9F6]"
             style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
           >
-            <div className="py-2 px-3 flex items-center gap-1.5 border-r border-border">
+            <div className="py-2 px-3 flex items-center gap-1.5 border-r border-[rgba(26,83,92,0.08)]">
               <CheckCircle2 className="h-3.5 w-3.5 text-[#1A535C]" />
               <span className="text-[11px] font-semibold text-[#1A535C] uppercase tracking-widest">Taken</span>
             </div>
@@ -2434,10 +2434,10 @@ export function MontagePlanningLayout() {
               <Fragment key={group.key}>
                 {isGroupedMode && (
                   <div
-                    className="grid border-b border-border bg-background/60"
+                    className="grid border-b border-[rgba(26,83,92,0.08)] bg-background/60"
                     style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
                   >
-                    <div className="flex items-center gap-1.5 px-2 py-1.5 border-r border-border">
+                    <div className="flex items-center gap-1.5 px-2 py-1.5 border-r border-[rgba(26,83,92,0.08)]">
                       <button
                         type="button"
                         onClick={() => toggleLaneCollapsed(groupCollapseKey)}
@@ -2466,12 +2466,12 @@ export function MontagePlanningLayout() {
                   return (
                     <div
                       key={monteur.id}
-                      className={cn("grid border-b border-border", idx % 2 === 1 && "bg-[#FAFAF9]")}
+                      className={cn("grid border-b border-[rgba(26,83,92,0.08)]", idx % 2 === 1 && "bg-[#FAFAF9]")}
                       style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
                     >
                 {/* Monteur label */}
                 <div className={cn(
-                  "flex items-center gap-1.5 border-r border-border sticky left-0 bg-inherit z-10",
+                  "flex items-center gap-1.5 border-r border-[rgba(26,83,92,0.08)] sticky left-0 bg-inherit z-10",
                   isCollapsed ? "px-2 py-1" : "px-3 py-2"
                 )}>
                   <button
@@ -2572,11 +2572,11 @@ export function MontagePlanningLayout() {
             const unassignedHasConflict = unassigned.some((a) => conflictAfspraakIds.has(a.id));
             return (
               <div
-                className="grid border-b border-border bg-[hsl(var(--status-flame-bg))]/20"
+                className="grid border-b border-[rgba(26,83,92,0.08)] bg-[hsl(var(--status-flame-bg))]/20"
                 style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
               >
                 <div className={cn(
-                  "flex items-center gap-1.5 border-r border-border",
+                  "flex items-center gap-1.5 border-r border-[rgba(26,83,92,0.08)]",
                   isCollapsed ? "px-2 py-1" : "px-3 py-2"
                 )}>
                   <button
@@ -3069,7 +3069,7 @@ export function MontagePlanningLayout() {
     return (
       <div className="flex h-full overflow-hidden bg-background">
         {/* Sidebar (Te plannen) */}
-        <div className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-border bg-card p-3 gap-2">
+        <div className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-[rgba(26,83,92,0.08)] bg-card p-3 gap-2">
           <Skeleton className="h-5 w-28 mb-2" />
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="rounded-none border border-border p-3 space-y-2">
@@ -3081,7 +3081,7 @@ export function MontagePlanningLayout() {
         {/* Main grid */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Toolbar */}
-          <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card flex-shrink-0">
+          <div className="flex items-center gap-3 px-4 py-2 border-b border-[rgba(26,83,92,0.08)] bg-card flex-shrink-0">
             <Skeleton className="h-7 w-20 rounded-md" />
             <Skeleton className="h-7 w-7 rounded-md" />
             <Skeleton className="h-7 w-7 rounded-md" />
@@ -3093,7 +3093,7 @@ export function MontagePlanningLayout() {
           {/* Day-strip + monteur lanes */}
           <div className="flex-1 overflow-hidden">
             <div className="flex border-b-2 border-border bg-[#FAFAF9]">
-              <div className="w-32 flex-shrink-0 border-r border-border" />
+              <div className="w-32 flex-shrink-0 border-r border-[rgba(26,83,92,0.08)]" />
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex-1 min-w-0 text-center py-3 border-l border-border/30 space-y-1">
                   <Skeleton className="h-3 w-10 mx-auto" />
@@ -3102,8 +3102,8 @@ export function MontagePlanningLayout() {
               ))}
             </div>
             {Array.from({ length: 4 }).map((_, laneIdx) => (
-              <div key={laneIdx} className="flex border-b border-border">
-                <div className="w-32 flex-shrink-0 p-2 flex items-center gap-2 border-r border-border">
+              <div key={laneIdx} className="flex border-b border-[rgba(26,83,92,0.08)]">
+                <div className="w-32 flex-shrink-0 p-2 flex items-center gap-2 border-r border-[rgba(26,83,92,0.08)]">
                   <Skeleton className="h-7 w-7 rounded-full" />
                   <Skeleton className="h-3 w-16" />
                 </div>
@@ -3125,7 +3125,7 @@ export function MontagePlanningLayout() {
     <div className="flex h-full overflow-hidden bg-background">
       {/* ── Left sidebar: Te plannen (inklapbaar) ── */}
       <div className={cn(
-        "shrink-0 bg-card border-r border-border flex flex-col rounded-none transition-[width] duration-200",
+        "shrink-0 bg-card border-r border-[rgba(26,83,92,0.08)] flex flex-col rounded-none transition-[width] duration-200",
         sidebarCollapsed ? "w-11" : "w-[200px]"
       )}>
         {sidebarCollapsed ? (
@@ -3262,7 +3262,7 @@ export function MontagePlanningLayout() {
       {/* ── Right content: member's week planning ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Scope pills */}
-        <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card">
+        <div className="flex items-center gap-3 px-4 py-2 border-b border-[rgba(26,83,92,0.08)] bg-card">
           <div className="inline-flex items-center gap-0.5 rounded-none p-0.5 bg-background border border-border">
           <button
             type="button"
