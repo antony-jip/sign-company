@@ -302,7 +302,11 @@ export function SupportInboxPage() {
                 </button>
                 <div className="min-w-0">
                   <p className="text-[14px] font-bold text-foreground truncate leading-tight">{activeGesprek.org_naam}</p>
-                  <p className="text-[11px] text-muted-foreground leading-tight">{activeGesprek.status === 'open' ? 'Open gesprek' : 'Afgerond'}</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight truncate">
+                    {activeGesprek.klant_email
+                      ? <a href={`mailto:${activeGesprek.klant_email}`} className="text-petrol hover:underline">{activeGesprek.klant_email}</a>
+                      : (activeGesprek.status === 'open' ? 'Open gesprek' : 'Afgerond')}
+                  </p>
                 </div>
               </div>
               {activeGesprek.status === 'open' ? (

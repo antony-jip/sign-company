@@ -21,6 +21,7 @@ export interface SupportGesprek {
   status: 'open' | 'afgerond'
   aangemaakt_op: string
   laatste_bericht_op: string
+  klant_email?: string | null
 }
 
 export interface InboxGesprek extends SupportGesprek {
@@ -57,7 +58,7 @@ export async function getEigenOpenGesprek(): Promise<{ gesprek: SupportGesprek; 
   return { gesprek: gesprek as SupportGesprek, berichten: (berichten || []) as SupportBericht[] }
 }
 
-export async function verstuurSupportBericht(bericht: string): Promise<{ gesprek_id: string; bericht: SupportBericht }> {
+export async function verstuurSupportBericht(bericht: string): Promise<{ gesprek_id: string; bericht: SupportBericht; offline?: boolean }> {
   const token = await getAuthToken()
   const res = await fetch('/api/support-bericht', {
     method: 'POST',
@@ -69,6 +70,20 @@ export async function verstuurSupportBericht(bericht: string): Promise<{ gesprek
     throw new Error(e?.error || 'Versturen mislukt')
   }
   return res.json()
+}
+
+// Klant laat e-mail achter wanneer support offline is.
+export async function verstuurKlantEmail(gesprekId: string, email: string): Promise<void> {
+  const token = await getAuthToken()
+  const res = await fetch('/api/support-bericht', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ gesprek_id: gesprekId, email }),
+  })
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(e?.error || 'Versturen mislukt')
+  }
 }
 
 // ── Admin ──

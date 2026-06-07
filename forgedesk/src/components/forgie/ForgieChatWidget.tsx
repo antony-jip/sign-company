@@ -12,6 +12,7 @@ import {
   ADMIN_USER_ID,
   getEigenOpenGesprek,
   verstuurSupportBericht,
+  verstuurKlantEmail,
   getSupportInbox,
   getSupportThread,
   verstuurSupportAntwoord,
@@ -62,6 +63,10 @@ function SupportKlantView({ isOpen, onAdminReply }: { isOpen: boolean; onAdminRe
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [fout, setFout] = useState<string | null>(null)
+  const [offline, setOffline] = useState(false)
+  const [emailInput, setEmailInput] = useState('')
+  const [emailSending, setEmailSending] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   const isOpenRef = useRef(isOpen)
 
@@ -92,7 +97,10 @@ function SupportKlantView({ isOpen, onAdminReply }: { isOpen: boolean; onAdminRe
         (payload) => {
           const nieuw = payload.new as SupportBericht
           setBerichten(prev => (prev.some(b => b.id === nieuw.id) ? prev : [...prev, nieuw]))
-          if (nieuw.afzender === 'admin' && !isOpenRef.current) onAdminReply()
+          if (nieuw.afzender === 'admin') {
+            setOffline(false)
+            if (!isOpenRef.current) onAdminReply()
+          }
         }
       )
       .subscribe()
@@ -113,6 +121,7 @@ function SupportKlantView({ isOpen, onAdminReply }: { isOpen: boolean; onAdminRe
       const res = await verstuurSupportBericht(tekst)
       if (!gesprekId) setGesprekId(res.gesprek_id)
       setBerichten(prev => (prev.some(b => b.id === res.bericht.id) ? prev : [...prev, res.bericht]))
+      if (res.offline) setOffline(true)
     } catch (e) {
       setInput(tekst)
       setFout(e instanceof Error ? e.message : 'Versturen mislukt')
@@ -120,6 +129,21 @@ function SupportKlantView({ isOpen, onAdminReply }: { isOpen: boolean; onAdminRe
       setSending(false)
     }
   }, [input, sending, gesprekId])
+
+  const handleEmail = useCallback(async () => {
+    const adres = emailInput.trim()
+    if (!adres || !gesprekId || emailSending) return
+    setEmailSending(true)
+    setFout(null)
+    try {
+      await verstuurKlantEmail(gesprekId, adres)
+      setEmailSent(true)
+    } catch (e) {
+      setFout(e instanceof Error ? e.message : 'Versturen mislukt')
+    } finally {
+      setEmailSending(false)
+    }
+  }, [emailInput, gesprekId, emailSending])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -157,6 +181,35 @@ function SupportKlantView({ isOpen, onAdminReply }: { isOpen: boolean; onAdminRe
                   </div>
                 </div>
               )
+            )}
+            {offline && (
+              <div className="rounded-xl border border-border/60 bg-muted/40 p-3 space-y-2">
+                <p className="text-[12px] text-foreground leading-relaxed">
+                  We zijn er nu even niet<span className="text-flame">.</span> Laat je e-mail achter, dan nemen we contact met je op — of wacht gerust, we chatten hier verder zodra we terug zijn.
+                </p>
+                {emailSent ? (
+                  <p className="text-[12px] font-medium text-petrol">Bedankt, we nemen contact op<span className="text-flame">.</span></p>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={e => setEmailInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleEmail() } }}
+                      placeholder="jouw@email.nl"
+                      disabled={emailSending}
+                      className="flex-1 px-3 py-2 text-[13px] text-foreground bg-card rounded-lg outline-none border border-border/60 focus:border-petrol placeholder:text-muted-foreground/70"
+                    />
+                    <button
+                      onClick={handleEmail}
+                      disabled={!emailInput.trim() || emailSending}
+                      className="flex-shrink-0 flex items-center justify-center h-9 px-3 rounded-lg bg-flame text-white text-[12px] font-semibold shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40"
+                    >
+                      {emailSending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Stuur'}
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
             {fout && <p className="text-[11px] text-flame px-1">{fout}</p>}
           </>
@@ -292,6 +345,20 @@ export function ForgieChatWidget() {
       document.removeEventListener('mousedown', handleClick)
     }
   }, [isOpen])
+
+  // Heartbeat: markeer de support-beheerder als 'online' zolang de app open is.
+  useEffect(() => {
+    if (!isAdminOrg || !supabase || !user?.id) return
+    const ping = () => {
+      supabase!
+        .from('support_presence')
+        .upsert({ gebruiker_id: user.id, laatste_actief: new Date().toISOString() })
+        .then(() => {}, () => {})
+    }
+    ping()
+    const iv = setInterval(ping, 60000)
+    return () => clearInterval(iv)
+  }, [isAdminOrg, user?.id])
 
   // ── Admin: inbox laden + realtime ──
   const loadInbox = useCallback(async () => {
