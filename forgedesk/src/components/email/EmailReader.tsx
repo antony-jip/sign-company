@@ -909,7 +909,7 @@ export function EmailReader({
                 </button>
               )}
               {/* Reply-mode segmented control — iOS-style pill */}
-              <div className="hidden md:flex items-center ml-2.5 flex-shrink-0 bg-muted rounded-button p-[2px]">
+              <div className="hidden md:flex items-center ml-2.5 flex-shrink-0 bg-[#1A535C]/[0.06] rounded-button p-[2px]">
                 <button
                   onClick={() => {
                     setReplyMode('reply')
@@ -1018,14 +1018,14 @@ export function EmailReader({
                     <div className="absolute left-0 top-full mt-1.5 w-[230px] bg-card rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-border z-50 py-1.5">
                       <button
                         onClick={() => { setReplyAiOpen(false); handleForgieWrite() }}
-                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-background transition-colors flex items-center gap-2"
+                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-[#1A535C]/[0.06] transition-colors flex items-center gap-2"
                       >
                         <Sparkles className="h-3.5 w-3.5 text-[#F15025]" />
                         Uit context mail
                       </button>
                       <button
                         onClick={() => { setReplyAiOpen(false); setReplyBriefOpen(true) }}
-                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-background transition-colors flex items-center gap-2"
+                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-[#1A535C]/[0.06] transition-colors flex items-center gap-2"
                       >
                         <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
                         Eigen input geven
@@ -1145,18 +1145,18 @@ export function EmailReader({
                   <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
                   <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
                 </div>
-                <div className="w-px h-5 bg-muted mr-2" />
+                <div className="w-px h-5 bg-[#1A535C]/10 mr-2" />
                 <div className="flex items-center gap-px">
                   <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
                   <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
                   <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
                 </div>
-                <div className="w-px h-5 bg-muted mx-1" />
+                <div className="w-px h-5 bg-[#1A535C]/10 mx-1" />
                 <div className="flex items-center gap-px">
                   <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
                   <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
                 </div>
-                <div className="w-px h-5 bg-muted mx-1" />
+                <div className="w-px h-5 bg-[#1A535C]/10 mx-1" />
                 <div className="flex items-center gap-px">
                   <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Link"><Link2 className="h-4 w-4" /></button>
                   <button onClick={() => replyFileInputRef.current?.click()} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
@@ -1208,7 +1208,7 @@ export function EmailReader({
                           <button
                             key={opt.label}
                             onClick={() => handleScheduleSend(opt.getDate().toISOString(), opt.label)}
-                            className="w-full px-3.5 py-2.5 text-left text-[13px] text-foreground hover:bg-background transition-colors duration-150 flex items-center justify-between"
+                            className="w-full px-3.5 py-2.5 text-left text-[13px] text-foreground hover:bg-[#1A535C]/[0.06] transition-colors duration-150 flex items-center justify-between"
                           >
                             <span>{opt.label}</span>
                             <span className="text-[11px] text-muted-foreground font-mono">
@@ -1225,7 +1225,7 @@ export function EmailReader({
                                 tomorrow.setDate(tomorrow.getDate() + 1)
                                 setCustomScheduleDate(tomorrow.toISOString().split('T')[0])
                               }}
-                              className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A535C] hover:bg-background transition-colors duration-150 flex items-center gap-2"
+                              className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 flex items-center gap-2"
                             >
                               <Clock className="h-3.5 w-3.5" />
                               Kies datum en tijd...
