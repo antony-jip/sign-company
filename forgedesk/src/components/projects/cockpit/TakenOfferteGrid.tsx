@@ -47,6 +47,8 @@ interface TakenOfferteGridProps {
   montageAfspraken?: MontageAfspraak[]
   medewerkers: Medewerker[]
   projectId: string
+  onMontageEdit?: (m: MontageAfspraak) => void
+  onMontageDelete?: (m: MontageAfspraak) => Promise<void> | void
   onNewTaak: () => void
   onNewOfferte: () => void
   onTaakStatusChange: (taakId: string, newStatus: Taak['status']) => Promise<void>
@@ -62,6 +64,8 @@ export function TakenOfferteGrid({
   offertes,
   montageAfspraken = [],
   medewerkers,
+  onMontageEdit,
+  onMontageDelete,
   onNewTaak,
   onNewOfferte,
   onTaakStatusChange,
@@ -76,6 +80,9 @@ export function TakenOfferteGrid({
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
   const [priceInput, setPriceInput] = useState('')
   const [savingPrice, setSavingPrice] = useState(false)
+
+  // Montage-monteurs worden als medewerker-id opgeslagen; toon de naam i.p.v. de id.
+  const monteurNaam = (idOrNaam: string) => medewerkers.find((mw) => mw.id === idOrNaam)?.naam || idOrNaam
 
   const quickValue = parseBedrag(quickBedrag)
   const canQuickSubmit = quickValue > 0 && !quickSubmitting
@@ -140,16 +147,30 @@ export function TakenOfferteGrid({
             {montageAfspraken.map((m) => (
               <div
                 key={m.id}
-                className="rounded-xl border border-[rgba(26,83,92,0.16)] bg-[rgba(26,83,92,0.045)] px-3 py-2.5"
+                onClick={onMontageEdit ? () => onMontageEdit(m) : undefined}
+                className={`group relative rounded-xl border border-[rgba(26,83,92,0.16)] bg-[rgba(26,83,92,0.045)] px-3 py-2.5${onMontageEdit ? ' cursor-pointer hover:bg-[rgba(26,83,92,0.08)] transition-colors' : ''}`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <Wrench className="h-3 w-3 text-[#1A535C]" strokeWidth={2} />
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-[#1A535C]">Montage</span>
                   </div>
-                  <span className="text-[11px] text-foreground/70 flex-shrink-0">
-                    {montageStatusLabel[m.status] || 'Gepland'}<span className="text-[#F15025]">.</span>
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-foreground/70 flex-shrink-0">
+                      {montageStatusLabel[m.status] || 'Gepland'}<span className="text-[#F15025]">.</span>
+                    </span>
+                    {onMontageDelete && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); void onMontageDelete(m) }}
+                        title="Montage verwijderen"
+                        aria-label="Montage verwijderen"
+                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground/70 hover:bg-[hsl(var(--status-flame-bg))] hover:text-[#C03A18] transition-all flex-shrink-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-[13px] font-semibold text-foreground truncate mt-1">{m.titel}</p>
@@ -173,17 +194,20 @@ export function TakenOfferteGrid({
                 {m.monteurs && m.monteurs.length > 0 && (
                   <div className="flex items-center gap-1.5 mt-1.5">
                     <div className="flex -space-x-1.5">
-                      {m.monteurs.map((monteur) => (
-                        <div
-                          key={monteur}
-                          className={`h-5 w-5 rounded-full bg-gradient-to-br ${monteurColor(monteur)} flex items-center justify-center ring-2 ring-white`}
-                          title={monteur}
-                        >
-                          <span className="text-white text-[7px] font-bold">{getInitials(monteur)}</span>
-                        </div>
-                      ))}
+                      {m.monteurs.map((monteur) => {
+                        const naam = monteurNaam(monteur)
+                        return (
+                          <div
+                            key={monteur}
+                            className={`h-5 w-5 rounded-full bg-gradient-to-br ${monteurColor(naam)} flex items-center justify-center ring-2 ring-white`}
+                            title={naam}
+                          >
+                            <span className="text-white text-[7px] font-bold">{getInitials(naam)}</span>
+                          </div>
+                        )
+                      })}
                     </div>
-                    <span className="text-[11px] text-muted-foreground truncate">{m.monteurs.join(', ')}</span>
+                    <span className="text-[11px] text-muted-foreground truncate">{m.monteurs.map(monteurNaam).join(', ')}</span>
                   </div>
                 )}
               </div>

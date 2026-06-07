@@ -120,6 +120,8 @@ import {
   getUitgavenByProject,
   getMontageAfsprakenByProject,
   createMontageAfspraak,
+  updateMontageAfspraak,
+  deleteMontageAfspraak,
   getSigningVisualisatiesByProject,
   getOfferteItems,
   getProfile,
@@ -626,6 +628,7 @@ export function ProjectDetail() {
   }, [aiSummaryLoading, projectEmails])
   const [hasVisualisaties, setHasVisualisaties] = useState(false)
   const [montageDialogOpen, setMontageDialogOpen] = useState(false)
+  const [editingMontageId, setEditingMontageId] = useState<string | null>(null)
   const [montageTitel, setMontageTitel] = useState('')
   const [montageDatum, setMontageDatum] = useState('')
   const [montageStartTijd, setMontageStartTijd] = useState('08:00')
@@ -662,6 +665,7 @@ export function ProjectDetail() {
   }, [project?.beschrijving])
 
   const handleOpenMontageDialog = () => {
+    setEditingMontageId(null)
     setMontageTitel(project?.naam ? `Montage: ${project.naam}` : '')
     setMontageLocatie(klant?.adres ? `${klant.adres}${klant.stad ? `, ${klant.stad}` : ''}` : '')
     setMontageDatum('')
@@ -674,6 +678,37 @@ export function ProjectDetail() {
     setMontageDialogOpen(true)
   }
 
+  const handleEditMontage = (m: MontageAfspraak) => {
+    setEditingMontageId(m.id)
+    setMontageTitel(m.titel || '')
+    setMontageLocatie(m.locatie || '')
+    setMontageDatum(m.datum || '')
+    setMontageStartTijd(m.start_tijd || '08:00')
+    setMontageEindTijd(m.eind_tijd || '17:00')
+    setMontageNotities(m.notities || '')
+    setMontageMonteurs(m.monteurs || [])
+    setMontageBijlagen(m.bijlagen || [])
+    setMontageWerkbonId(m.werkbon_id || '')
+    setMontageDialogOpen(true)
+  }
+
+  const handleDeleteMontage = async (m: MontageAfspraak) => {
+    const ok = await confirm({
+      message: `Montage "${m.titel}" verwijderen? Dit kan niet ongedaan worden gemaakt.`,
+      variant: 'destructive',
+      confirmLabel: 'Verwijderen',
+    })
+    if (!ok) return
+    try {
+      await deleteMontageAfspraak(m.id)
+      setProjectMontages(prev => prev.filter(x => x.id !== m.id))
+      toast.success(`Montage "${m.titel}" verwijderd`)
+    } catch (err) {
+      logger.error('Montage verwijderen mislukt:', err)
+      toast.error('Kon montage niet verwijderen')
+    }
+  }
+
   const handleSaveMontage = async () => {
     if (!montageTitel.trim()) { toast.error('Vul een titel in'); return }
     if (!montageDatum) { toast.error('Selecteer een datum'); return }
@@ -681,6 +716,29 @@ export function ProjectDetail() {
 
     try {
       setIsSavingMontage(true)
+      const werkbonNummer = montageWerkbonId ? projectWerkbonnen.find(w => w.id === montageWerkbonId)?.werkbon_nummer : undefined
+
+      if (editingMontageId) {
+        const updated = await updateMontageAfspraak(editingMontageId, {
+          titel: montageTitel,
+          datum: montageDatum,
+          start_tijd: montageStartTijd,
+          eind_tijd: montageEindTijd,
+          locatie: montageLocatie,
+          monteurs: montageMonteurs,
+          notities: montageNotities,
+          werkbon_id: montageWerkbonId || undefined,
+          werkbon_nummer: werkbonNummer,
+          bijlagen: montageBijlagen.length > 0 ? montageBijlagen : undefined,
+        })
+        setProjectMontages(prev => prev.map(x => x.id === editingMontageId ? updated : x))
+        setMontageDialogOpen(false)
+        setEditingMontageId(null)
+        toast.success('Montage bijgewerkt')
+        setDirty(false)
+        return
+      }
+
       const newMontage = await createMontageAfspraak({
         user_id: user?.id || '',
         project_id: id || '',
@@ -697,7 +755,7 @@ export function ProjectDetail() {
         materialen: [],
         notities: montageNotities,
         werkbon_id: montageWerkbonId || undefined,
-        werkbon_nummer: montageWerkbonId ? projectWerkbonnen.find(w => w.id === montageWerkbonId)?.werkbon_nummer : undefined,
+        werkbon_nummer: werkbonNummer,
         bijlagen: montageBijlagen.length > 0 ? montageBijlagen : undefined,
         status: 'gepland',
       })
@@ -707,8 +765,8 @@ export function ProjectDetail() {
       toast.success('Montage ingepland')
       setDirty(false)
     } catch (err) {
-      logger.error('Kon montage niet inplannen:', err)
-      toast.error('Kon montage niet inplannen')
+      logger.error('Kon montage niet opslaan:', err)
+      toast.error(editingMontageId ? 'Kon montage niet bijwerken' : 'Kon montage niet inplannen')
     } finally {
       setIsSavingMontage(false)
     }
@@ -1506,6 +1564,8 @@ export function ProjectDetail() {
             montageAfspraken={projectMontages}
             medewerkers={alleMedewerkers}
             projectId={id!}
+            onMontageEdit={handleEditMontage}
+            onMontageDelete={handleDeleteMontage}
             onNewTaak={() => setNieuweTaakOpen(true)}
             onNewOfferte={openNieuweOfferte}
             onQuickOfferte={handleQuickOfferte}
@@ -2946,15 +3006,17 @@ export function ProjectDetail() {
       </Dialog>
 
       {/* Montage inplannen dialog */}
-      <Dialog open={montageDialogOpen} onOpenChange={setMontageDialogOpen}>
+      <Dialog open={montageDialogOpen} onOpenChange={(open) => { setMontageDialogOpen(open); if (!open) setEditingMontageId(null) }}>
         <DialogContent className="max-w-[560px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wrench className="h-5 w-5 text-blue-500" />
-              Montage inplannen
+              {editingMontageId ? 'Montage wijzigen' : 'Montage inplannen'}
             </DialogTitle>
             <DialogDescription>
-              Plan een montage in voor {project?.naam || 'dit project'}.
+              {editingMontageId
+                ? `Wijzig de montage voor ${project?.naam || 'dit project'}.`
+                : `Plan een montage in voor ${project?.naam || 'dit project'}.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -3142,10 +3204,10 @@ export function ProjectDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setMontageDialogOpen(false)}>Annuleren</Button>
+            <Button variant="outline" onClick={() => { setMontageDialogOpen(false); setEditingMontageId(null) }}>Annuleren</Button>
             <Button onClick={handleSaveMontage} disabled={isSavingMontage}>
               {isSavingMontage ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Wrench className="h-4 w-4 mr-1" />}
-              Inplannen
+              {editingMontageId ? 'Opslaan' : 'Inplannen'}
             </Button>
           </DialogFooter>
         </DialogContent>
