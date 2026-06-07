@@ -5,12 +5,14 @@ import {
   Moon, Sun, CreditCard, PanelTop,
   LayoutDashboard, CircleUserRound, BookOpen,
   Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox, Ruler,
-  TrendingUp, Calendar, ListChecks, Send, Globe, SlidersHorizontal,
+  TrendingUp, Calendar, ListChecks, Send, Globe, SlidersHorizontal, LifeBuoy,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebar, RAIL_WIDTH, EXPANDED_WIDTH } from '@/contexts/SidebarContext'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useSupportAttentie } from '@/hooks/useSupportInbox'
+import { ADMIN_ORG_ID } from '@/services/supportChatService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -56,6 +58,7 @@ const COMMUNICATIE_ITEMS: NavItem[] = [
 ]
 
 const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: '#5A5A55' }
+const SUPPORT_ITEM: NavItem = { label: 'Support', icon: LifeBuoy, path: '/support', color: '#F15025' }
 
 const NAV_GROUPS: NavGroup[] = [
   { section: 'WERK', items: WERK_ITEMS },
@@ -87,7 +90,9 @@ function useIsDesktop() {
 export function Sidebar() {
   const isDesktop = useIsDesktop()
   const { isCollapsed, toggleSidebar, setLayoutMode } = useSidebar()
-  const { user, logout } = useAuth()
+  const { user, logout, organisatieId } = useAuth()
+  const isAdminOrg = organisatieId === ADMIN_ORG_ID
+  const supportAttentie = useSupportAttentie('support-nav', isAdminOrg)
   const { theme, toggleTheme } = useTheme()
   const { settings } = useAppSettings()
   const location = useLocation()
@@ -314,6 +319,20 @@ export function Sidebar() {
               {filteredNavItems.filter(i => PLANNING_ITEMS.some(p => p.path === i.path)).map(renderRailItem)}
               {railDivider('div-3')}
               {filteredNavItems.filter(i => COMMUNICATIE_ITEMS.some(c => c.path === i.path)).map(renderRailItem)}
+              {isAdminOrg && (
+                <>
+                  {railDivider('div-support')}
+                  <div className="relative w-full">
+                    {renderRailItem(SUPPORT_ITEM)}
+                    {supportAttentie > 0 && (
+                      <span
+                        className="absolute top-1 right-2 rounded-full pointer-events-none"
+                        style={{ width: 8, height: 8, backgroundColor: '#F15025', border: '1.5px solid var(--background, #fff)' }}
+                      />
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="px-0">
@@ -325,6 +344,22 @@ export function Sidebar() {
                   </div>
                 </div>
               ))}
+              {isAdminOrg && (
+                <div className="mt-7">
+                  <div className="doen-sidebar-section">SUPPORT</div>
+                  <div className="space-y-[1px] relative">
+                    {renderExpandedItem(SUPPORT_ITEM)}
+                    {supportAttentie > 0 && (
+                      <span
+                        className="absolute right-5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center text-white font-bold pointer-events-none"
+                        style={{ minWidth: 18, height: 18, padding: '0 5px', fontSize: 10, borderRadius: 999, backgroundColor: '#F15025' }}
+                      >
+                        {supportAttentie}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </nav>

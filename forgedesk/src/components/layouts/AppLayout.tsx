@@ -39,7 +39,7 @@ export function AppLayout() {
   const isEmailRoute = location.pathname.startsWith('/email')
   // App-achtige, scherm-vullende views: geen paginapadding (edge-to-edge),
   // consistent in topnav- én sidebar-modus.
-  const isFullBleed = ['/email', '/planning', '/taken', '/montage', '/kalender'].some(
+  const isFullBleed = ['/email', '/planning', '/taken', '/montage', '/kalender', '/support'].some(
     (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
   )
   useTabShortcuts()

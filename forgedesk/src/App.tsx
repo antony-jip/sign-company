@@ -162,6 +162,7 @@ const MeldingenPage = lazy(() => import('@/components/notifications/MeldingenPag
 // AI / Daan
 const FORGEdeskAIChat = lazy(() => import('@/components/forgie/FORGEdeskAIChat'), 'FORGEdeskAIChat')
 const ForgieChatPage = lazy(() => import('@/components/forgie/ForgieChatPage'), 'ForgieChatPage')
+const SupportInboxPage = lazy(() => import('@/components/support/SupportInboxPage'), 'SupportInboxPage')
 
 // Visualizer
 const VisualizerLayout = lazy(() => import('@/components/visualizer/VisualizerLayout'), 'VisualizerLayout')
@@ -284,6 +285,7 @@ function AppContent() {
         <Route path="importeren" element={<DataImportPage />} />
         <Route path="ai" element={<FORGEdeskAIChat />} />
         <Route path="forgie" element={<ForgieChatPage />} />
+        <Route path="support" element={<SupportInboxPage />} />
         <Route path="kennisbank" element={<KennisbankPage />} />
         <Route path="changelog" element={<ChangelogPage />} />
         <Route path="werkbonnen" element={<WerkbonnenRoute />} />
