@@ -14,6 +14,7 @@ import {
   Monitor,
   Plus,
   Mail,
+  PanelLeft,
 } from 'lucide-react'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { usePalette, APP_THEMES, ACCENT_PALETTES } from '@/contexts/PaletteContext'
