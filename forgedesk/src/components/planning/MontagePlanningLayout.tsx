@@ -3122,7 +3122,7 @@ export function MontagePlanningLayout() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-60px)] overflow-hidden bg-background">
+    <div className="flex h-full overflow-hidden bg-background">
       {/* ── Left sidebar: Te plannen (inklapbaar) ── */}
       <div className={cn(
         "shrink-0 bg-card border-r border-border flex flex-col rounded-none transition-[width] duration-200",
