@@ -868,4 +868,152 @@ bericht komt binnen bij het supportteam, dat je in een chat antwoordt.
 
 **Gerelateerde modules:** Daan.
 
+## Financieel
+
+**Waar in de app:** route `/financieel` (menu-item "Financieel"). Voorraad heeft
+ook een eigen ingang op `/voorraad`.
+
+**Wat het doet:** Het financiële overzicht van je bedrijf met je belangrijkste
+cijfers, plus het beheer van uitgaven, leveranciers en voorraad.
+
+**Belangrijkste acties:**
+- Je kerncijfers bekijken (omzet, openstaand, kosten).
+- **Uitgaven** vastleggen en op betaald zetten.
+- **Leveranciers** beheren (met onder andere KvK-, btw- en IBAN-gegevens; een
+  KvK-zoekfunctie vult gegevens automatisch).
+- **Voorraad** beheren: artikelen, mutaties (inkoop, verbruik, correctie,
+  retour) en een minimumvoorraad met waarschuwing.
+
+**Veelvoorkomende vragen:**
+- *Hoe leg ik een uitgave vast?* Maak een nieuwe uitgave aan met bedrag,
+  leverancier en status.
+- *Hoe voeg ik een leverancier toe?* Via de leveranciers; met de KvK-zoekfunctie
+  vul je de gegevens snel in.
+- *Wat betekent een rode voorraadwaarde?* Dat de voorraad onder het minimum is;
+  tijd om bij te bestellen.
+- *Hoe registreer ik materiaalverbruik?* Boek een mutatie van het type verbruik
+  op het artikel.
+
+**Tips:**
+- Houd voorraadmutaties bij; dat geeft een eerlijker beeld van je marge in de
+  nacalculatie.
+
+**Gerelateerde modules:** Facturen, Inkoopfacturen, Bestelbonnen, Rapportages,
+Nacalculatie.
+
+---
+
+## Rapportages
+
+**Waar in de app:** route `/rapportages` (menu-item "Rapportages").
+
+**Wat het doet:** Overzichten en analyses van je bedrijf, zoals omzet, marge en
+uren, over een gekozen periode. Je kunt rapporten exporteren.
+
+**Belangrijkste acties:**
+- Een periode kiezen (zoals deze maand, dit kwartaal of dit jaar).
+- Rapporten bekijken over omzet, marge, uren, klanten en projecten.
+- Exporteren naar Excel of CSV.
+
+**Veelvoorkomende vragen:**
+- *Hoe maak ik een rapport over dit kwartaal?* Kies de periode en bekijk het
+  rapport; exporteer het eventueel.
+- *Waarom staan mijn uren op nul?* Dan zijn er geen uren geregistreerd in die
+  periode (zie Tijdregistratie).
+- *Kan ik een rapport exporteren?* Ja, naar Excel of CSV.
+
+**Tips:**
+- Gebruik het maandrapport voor je cashflow en het jaarrapport voor de grote
+  lijn.
+
+**Gerelateerde modules:** Facturen, Tijdregistratie, Nacalculatie, Forecast.
+
+---
+
+## Forecast (prognose)
+
+**Waar in de app:** route `/forecast` (menu-item "Forecast").
+
+**Wat het doet:** Een omzetprognose op basis van je historische cijfers en je
+openstaande deals. Het toont onder andere de waarde van je pijplijn en een
+gewogen verwachting op basis van winkansen.
+
+**Belangrijkste acties:**
+- De prognoseperiode kiezen.
+- De pijplijnwaarde en de gewogen waarde bekijken.
+
+**Veelvoorkomende vragen:**
+- *Hoe betrouwbaar is de prognose?* Het is een inschatting op basis van je
+  historie en deals; hoe beter je je deals en winkansen bijhoudt, hoe beter de
+  prognose.
+- *Wat is de gewogen waarde?* De pijplijnwaarde gecorrigeerd voor de winkans.
+- *Waarom verandert mijn prognose?* Omdat je deals erbij komen, wint of
+  verliest.
+
+**Tips:**
+- Houd de winkansen van je deals actueel; daar bouwt de prognose op verder.
+
+**Gerelateerde modules:** Deals, Facturen, Rapportages.
+
+---
+
+## Nacalculatie
+
+**Waar in de app:** route `/nacalculatie` (menu-item "Nacalculatie").
+
+**Wat het doet:** Na afronding van een project vergelijk je hier het
+offertebedrag met de werkelijke kosten (uren, materiaal en uitgaven). Zo zie je
+per project of het winstgevend was en hoeveel marge er overbleef.
+
+**Belangrijkste acties:**
+- Afgeronde projecten bekijken met hun marge.
+- Per project de opbouw van de werkelijke kosten inzien.
+- Exporteren naar Excel of CSV.
+
+**Veelvoorkomende vragen:**
+- *Hoe wordt de marge berekend?* Het offertebedrag min de werkelijke kosten
+  (uren, materiaal en uitgaven), als percentage.
+- *Waarom is mijn marge negatief?* Dan waren de werkelijke kosten hoger dan het
+  offertebedrag; goed signaal om je prijzen of scope te bekijken.
+- *Waarom staan mijn uren op nul?* Er zijn geen uren op het project geregistreerd
+  (zie Tijdregistratie).
+
+**Tips:**
+- Registreer uren en materiaal consequent; anders klopt de nacalculatie niet.
+
+**Gerelateerde modules:** Offertes, Tijdregistratie, Financieel, Projecten.
+
+---
+
+## Tijdregistratie
+
+**Waar in de app:** route `/tijdregistratie` (menu-item "Tijdregistratie").
+
+**Wat het doet:** Hier registreer je gewerkte uren per project, met een timer of
+handmatig. Je geeft per registratie aan of de uren factureerbaar zijn, en je
+kunt ze gebundeld op een factuur zetten.
+
+**Belangrijkste acties:**
+- Uren registreren met de timer (start, pauze, stop) of handmatig invoeren.
+- Per registratie aangeven of die factureerbaar is.
+- Geselecteerde uren in één keer op een factuur zetten.
+- Filteren (bijvoorbeeld deze week, deze maand of factureerbaar) en exporteren.
+
+**Veelvoorkomende vragen:**
+- *Hoe gebruik ik de timer?* Kies een project, start de timer en stop hem als je
+  klaar bent; de registratie verschijnt in de lijst.
+- *Wat is het verschil tussen factureerbaar en niet-factureerbaar?*
+  Factureerbare uren reken je door aan de klant; niet-factureerbare uren zijn
+  intern.
+- *Hoe maak ik in één keer een factuur van meerdere uren?* Selecteer de
+  registraties en kies om er een factuur van te maken.
+- *Kan ik uren met terugwerkende kracht invoeren?* Ja, voer ze handmatig in met
+  de juiste datum.
+
+**Tips:**
+- Registreer uren dagelijks; dat geeft een eerlijk beeld in je rapportages en
+  nacalculatie.
+
+**Gerelateerde modules:** Projecten, Facturen, Nacalculatie, Rapportages.
+
 <!-- EINDE -->
