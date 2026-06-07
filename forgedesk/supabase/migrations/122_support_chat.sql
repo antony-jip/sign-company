@@ -10,7 +10,7 @@
 --
 -- RLS:
 --   - Klant ziet/schrijft alleen gesprekken van de eigen organisatie
---   - Admin-org (ce6843e3-5cd9-4043-9461-55071bc91eb7) ziet/schrijft alles
+--   - Admin-org (226bf02a-ebb2-4b4c-ae51-cdc9919e4229) ziet/schrijft alles
 --
 -- Schrijven gebeurt in de praktijk via service-role API routes
 -- (support-bericht.ts / support-inbox.ts) die RLS bypassen. De policies
@@ -64,8 +64,8 @@ CREATE POLICY "Klant beheert eigen support_gesprekken" ON support_gesprekken
 -- Admin-org: alles
 CREATE POLICY "Admin org beheert alle support_gesprekken" ON support_gesprekken
   FOR ALL
-  USING (auth_organisatie_id() = 'ce6843e3-5cd9-4043-9461-55071bc91eb7')
-  WITH CHECK (auth_organisatie_id() = 'ce6843e3-5cd9-4043-9461-55071bc91eb7');
+  USING (auth_organisatie_id() = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229')
+  WITH CHECK (auth_organisatie_id() = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229');
 
 -- ── RLS: support_berichten ──────────────────────────────────
 
@@ -90,8 +90,8 @@ CREATE POLICY "Klant beheert eigen support_berichten" ON support_berichten
 -- Admin-org: alles
 CREATE POLICY "Admin org beheert alle support_berichten" ON support_berichten
   FOR ALL
-  USING (auth_organisatie_id() = 'ce6843e3-5cd9-4043-9461-55071bc91eb7')
-  WITH CHECK (auth_organisatie_id() = 'ce6843e3-5cd9-4043-9461-55071bc91eb7');
+  USING (auth_organisatie_id() = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229')
+  WITH CHECK (auth_organisatie_id() = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229');
 
 -- ── Realtime ────────────────────────────────────────────────
 

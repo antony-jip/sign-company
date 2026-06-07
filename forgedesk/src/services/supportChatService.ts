@@ -1,6 +1,6 @@
 import supabase from './supabaseClient'
 
-export const ADMIN_ORG_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
+export const ADMIN_ORG_ID = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229'
 
 export interface SupportBericht {
   id: string

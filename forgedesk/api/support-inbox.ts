@@ -8,7 +8,7 @@ const supabaseAdmin = createClient(
 )
 
 // doen. / Sign Company admin-org.
-const ADMIN_ORG_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
+const ADMIN_ORG_ID = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229'
 
 // ── Auth helper (inline; Vercel bundelt geen api/_helpers/ imports) ──
 async function verifyUser(req: VercelRequest): Promise<string> {
