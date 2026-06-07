@@ -1420,7 +1420,8 @@ export function MontagePlanningLayout() {
 
     // Zelfde box-look als /taken: uniform lichte petrol-vulling + petrol accent-stripe.
     // (Afgerond houdt eigen surface; conflict/urgent-states blijven via ring/cfg zichtbaar.)
-    const cardStyle: React.CSSProperties = { borderLeftColor: isAfgerond ? '#CBC9C4' : '#1A535C' };
+    const cardStyle: React.CSSProperties = { borderLeftColor: isAfgerond ? '#CBC9C4' : (cfg?.dot ?? '#1A535C') };
+    if (!isAfgerond) cardStyle.backgroundColor = cfg?.bg ?? 'rgba(26,83,92,0.04)';
     if (isPersonal) cardStyle.minHeight = `${getCardMinHeight(afspraak.start_tijd, afspraak.eind_tijd)}px`;
 
     return (
@@ -1447,9 +1448,8 @@ export function MontagePlanningLayout() {
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "border border-border/40 border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] group/card relative",
+          "border border-border/40 border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_4px_14px_rgba(20,62,71,0.10)] group/card relative",
           isTimegrid ? "h-full overflow-hidden rounded-none" : "rounded-none mb-1.5 hover:-translate-y-[1px]",
-          !isAfgerond && "bg-[rgba(26,83,92,0.04)] dark:bg-[hsl(190,24%,13%)]",
           isAfgerond && "bg-[hsl(40,10%,96.5%)] dark:bg-[hsl(190,20%,9%)]",
           hasConflict && "ring-1 ring-[#F0C8BC]",
           draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30"
@@ -3214,7 +3214,7 @@ export function MontagePlanningLayout() {
                     className={cn(
                       "group/card relative w-full text-left border-l-2 rounded-none transition-colors duration-150 cursor-grab active:cursor-grabbing select-none hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.05]",
                       isPrio
-                        ? "border-l-[#F15025]"
+                        ? "border-l-[#F15025] bg-[rgba(241,80,37,0.05)]"
                         : "border-l-[#1A535C]/35",
                       draggingProjectId === project.id && "opacity-50"
                     )}
