@@ -211,13 +211,13 @@ export function Sidebar() {
                     !active && 'text-[#1A535C] dark:text-[#7FB5BF] group-hover/rail:text-[var(--mc)]',
                   )}
                   style={active ? { color: item.color } : ({ ['--mc']: item.color } as React.CSSProperties)}
-                  strokeWidth={active ? 2.2 : 1.8}
+                  strokeWidth={1.6}
                 />
               </div>
 
-              {/* Actief — module-kleur dot */}
+              {/* Actief — flame dot */}
               {active && (
-                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 rounded-full" style={{ width: 5, height: 5, backgroundColor: item.color }} />
+                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 rounded-full" style={{ width: 5, height: 5, backgroundColor: '#F15025' }} />
               )}
             </NavLink>
           </TooltipTrigger>
@@ -251,11 +251,11 @@ export function Sidebar() {
           ? <div className="doen-sidebar-active-surface" />
           : <div className="doen-sidebar-item-hover" />}
 
-        {/* Module-colour accent bar (active) */}
+        {/* Flame accent bar (active) */}
         {active && (
           <span
             className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-r-[3px]"
-            style={{ width: 2.5, height: 18, background: item.color, boxShadow: `0 0 6px ${item.color}33` }}
+            style={{ width: 2.5, height: 18, background: '#F15025', boxShadow: '0 0 6px rgba(241,80,37,0.30)' }}
           />
         )}
 
@@ -266,7 +266,7 @@ export function Sidebar() {
             !active && 'text-[#1A535C]/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-[var(--mc)]',
           )}
           style={active ? { color: item.color } : ({ ['--mc']: item.color } as React.CSSProperties)}
-          strokeWidth={active ? 2.1 : 1.75}
+          strokeWidth={1.6}
         />
 
         {/* Label */}
