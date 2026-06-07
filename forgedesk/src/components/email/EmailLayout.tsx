@@ -1781,8 +1781,8 @@ export function EmailLayout() {
       {/* Email list (idle view) */}
       {selectedFolder !== 'gepland' && (<>
         {/* Sticky header + toolbar — desktop only */}
-        <div className="sticky top-0 z-20 bg-white border-b border-border flex-shrink-0 hidden md:block">
-          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border/60">
+        <div className="sticky top-0 z-20 bg-white border-b border-[rgba(26,83,92,0.08)] flex-shrink-0 hidden md:block">
+          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[rgba(26,83,92,0.06)]">
             <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
               {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}
             </h1>
@@ -1881,7 +1881,7 @@ export function EmailLayout() {
         </div>
 
         {/* Search bar — desktop only; mobile uses de topbar pill. */}
-        <div className="hidden md:block px-4 py-2 border-b border-border bg-white">
+        <div className="hidden md:block px-4 py-2 border-b border-[rgba(26,83,92,0.08)] bg-white">
           <div className="flex items-center gap-2 h-9 px-3 bg-background rounded-lg focus-within:ring-2 focus-within:ring-[#1A535C]/20 transition-shadow">
             <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <input

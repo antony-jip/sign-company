@@ -187,15 +187,15 @@ export const EmailListItem = memo(function EmailListItem({
         onMouseLeave={handleMouseLeave}
         className={cn(
           'group relative flex items-center gap-2.5 pl-3 pr-3 h-[46px] cursor-pointer select-none',
-          'border-b border-border/55',
+          'border-b border-[rgba(26,83,92,0.06)]',
           'transition-all duration-150 ease-out',
           isActive
             ? 'bg-[#1A535C]/[0.06]'
             : isChecked
               ? 'bg-[#1A535C]/[0.03]'
               : isUnread
-                ? 'bg-white hover:bg-background active:bg-[#1A535C]/[0.05]'
-                : 'hover:bg-background active:bg-[#1A535C]/[0.05]',
+                ? 'bg-white hover:bg-[rgba(26,83,92,0.04)] active:bg-[#1A535C]/[0.05]'
+                : 'hover:bg-[rgba(26,83,92,0.04)] active:bg-[#1A535C]/[0.05]',
           isFocused && !isActive && 'bg-background',
         )}
       >
@@ -348,10 +348,10 @@ export const EmailListItem = memo(function EmailListItem({
       onTouchEnd={handleTouchEnd}
       className={cn(
         'group relative flex items-start gap-3 px-4 py-4 cursor-pointer transition-colors duration-100 ease-out select-none',
-        'border-b border-border/55 last:border-b-0',
+        'border-b border-[rgba(26,83,92,0.06)] last:border-b-0',
         isActive
           ? 'bg-[#1A535C]/[0.05]'
-          : 'hover:bg-background active:bg-muted/60 md:active:bg-[#1A535C]/[0.05]',
+          : 'hover:bg-[rgba(26,83,92,0.04)] active:bg-muted/60 md:active:bg-[#1A535C]/[0.05]',
         isFocused && !isActive && 'bg-muted/30',
         !isActive && (isUnread ? 'bg-white' : 'bg-white md:bg-transparent'),
         swipeX > SWIPE_THRESHOLD && 'bg-emerald-100',
