@@ -1,10 +1,15 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 /**
  * Renders basic markdown formatting in Daan chat messages.
- * Supports: **bold**, *italic*, `code`
+ * Supports: [label](/route) links, **bold**, *italic*, `code`
+ *
+ * Internal routes (href starts with "/") render as a React Router Link so
+ * navigation stays within the SPA. onNavigate lets a caller react to a click,
+ * e.g. the chat widget closing itself so the destination is visible.
  */
-export function renderForgieMarkdown(text: string): React.ReactNode {
+export function renderForgieMarkdown(text: string, onNavigate?: () => void): React.ReactNode {
   // Split text into lines to preserve whitespace-pre-wrap behavior
   const lines = text.split('\n')
 
@@ -13,17 +18,19 @@ export function renderForgieMarkdown(text: string): React.ReactNode {
       {lines.map((line, lineIdx) => (
         <React.Fragment key={lineIdx}>
           {lineIdx > 0 && '\n'}
-          {parseLine(line)}
+          {parseLine(line, onNavigate)}
         </React.Fragment>
       ))}
     </>
   )
 }
 
-function parseLine(line: string): React.ReactNode[] {
+const LINK_CLASS = 'text-petrol dark:text-white underline underline-offset-2 hover:opacity-80 font-medium'
+
+function parseLine(line: string, onNavigate?: () => void): React.ReactNode[] {
   const parts: React.ReactNode[] = []
-  // Match **bold**, *italic*, and `code` patterns
-  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g
+  // Match [label](href), **bold**, *italic*, and `code` patterns
+  const regex = /(\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g
   let lastIndex = 0
   let match: RegExpExecArray | null
 
@@ -33,17 +40,34 @@ function parseLine(line: string): React.ReactNode[] {
       parts.push(line.slice(lastIndex, match.index))
     }
 
-    if (match[2]) {
-      // **bold**
-      parts.push(<strong key={match.index}>{match[2]}</strong>)
-    } else if (match[3]) {
-      // *italic*
-      parts.push(<em key={match.index}>{match[3]}</em>)
+    if (match[3] !== undefined) {
+      // [label](href)
+      const label = match[2]
+      const href = match[3]
+      if (/^https?:\/\//i.test(href)) {
+        parts.push(
+          <a key={match.index} href={href} target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
+            {label}
+          </a>
+        )
+      } else {
+        parts.push(
+          <Link key={match.index} to={href} onClick={onNavigate} className={LINK_CLASS}>
+            {label}
+          </Link>
+        )
+      }
     } else if (match[4]) {
+      // **bold**
+      parts.push(<strong key={match.index}>{match[4]}</strong>)
+    } else if (match[5]) {
+      // *italic*
+      parts.push(<em key={match.index}>{match[5]}</em>)
+    } else if (match[6]) {
       // `code`
       parts.push(
         <code key={match.index} className="bg-muted px-1 py-0.5 rounded text-xs">
-          {match[4]}
+          {match[6]}
         </code>
       )
     }

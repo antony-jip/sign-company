@@ -794,7 +794,7 @@ export function ForgieChatWidget() {
                         <div className="flex gap-2.5 justify-start">
                           <DaanAvatar />
                           <div className="max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed bg-white dark:bg-card text-foreground border border-border/60 shadow-sm rounded-2xl rounded-bl-md">
-                            {renderForgieMarkdown(msg.content)}
+                            {renderForgieMarkdown(msg.content, () => setIsOpen(false))}
                           </div>
                         </div>
                       )}
