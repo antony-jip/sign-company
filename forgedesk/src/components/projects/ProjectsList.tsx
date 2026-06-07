@@ -158,6 +158,45 @@ function statusHex(s: string): string {
   return getStatusTextColor(s)
 }
 
+// 6-staps "reis" (zelfde fases als de project-cockpit): waar staat dit project?
+function projectFaseIndex(status: string): number {
+  switch (status) {
+    case 'te-plannen':
+    case 'gepland': return 0
+    case 'in-review': return 1
+    case 'akkoord-klant': return 2
+    case 'actief':
+    case 'on-hold': return 3
+    case 'ingepland': return 4
+    case 'te-factureren':
+    case 'gefactureerd':
+    case 'afgerond':
+    case 'opgeleverd': return 5
+    default: return 1
+  }
+}
+
+// De volgende concrete stap per status — de "wat nu" direct in de lijst.
+const NEXT_TONE_COLOR: Record<string, string> = {
+  flame: '#F15025', petrol: '#1A535C', done: '#2D6B48', muted: '#8A8985',
+}
+function projectNextAction(status: string): { label: string; tone: keyof typeof NEXT_TONE_COLOR } {
+  switch (status) {
+    case 'te-plannen': return { label: 'inplannen', tone: 'flame' }
+    case 'gepland': return { label: 'stuur offerte', tone: 'flame' }
+    case 'in-review': return { label: 'opvolgen', tone: 'petrol' }
+    case 'akkoord-klant': return { label: 'werkbon maken', tone: 'flame' }
+    case 'actief': return { label: 'plan montage', tone: 'petrol' }
+    case 'ingepland': return { label: 'uitvoeren', tone: 'petrol' }
+    case 'te-factureren': return { label: 'maak factuur', tone: 'flame' }
+    case 'gefactureerd': return { label: 'verstuurd', tone: 'done' }
+    case 'afgerond':
+    case 'opgeleverd': return { label: 'klaar', tone: 'done' }
+    case 'on-hold': return { label: 'on-hold', tone: 'muted' }
+    default: return { label: '', tone: 'muted' }
+  }
+}
+
 /** Map database statuses to spectrum fases for correct colors */
 const STATUS_TO_FASE: Record<string, string> = {
   gepland: 'goedgekeurd',
@@ -1322,7 +1361,7 @@ export function ProjectsList() {
                         return [cell]
                       })}
                       <th className="text-left py-3.5 pr-4 w-[150px]">
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Status</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Reis</span>
                       </th>
                       <th className="text-right py-3.5 pr-4 w-[110px] hidden xl:table-cell">
                         <button
@@ -1420,11 +1459,26 @@ export function ProjectsList() {
                                       <span className="text-[11px] text-[#1A4A52]/45 dark:text-muted-foreground/70 font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
                                     )}
                                   </div>
-                                  {project.beschrijving && (
-                                    <p className="text-[11px] text-[#1A4A52]/55 dark:text-muted-foreground/70 truncate max-w-[320px] mt-0.5">
-                                      {project.beschrijving}
-                                    </p>
-                                  )}
+                                  {(() => {
+                                    const na = projectNextAction(project.status)
+                                    if (!na.label && !project.beschrijving) return null
+                                    return (
+                                      <div className="flex items-center gap-1.5 mt-0.5 text-[11px] max-w-[340px] min-w-0">
+                                        {na.label && (
+                                          <span className="inline-flex items-center gap-1 font-semibold flex-shrink-0" style={{ color: NEXT_TONE_COLOR[na.tone] }}>
+                                            <span aria-hidden>{na.tone === 'done' ? '✓' : '→'}</span>
+                                            {na.label}
+                                          </span>
+                                        )}
+                                        {na.label && project.beschrijving && (
+                                          <span className="text-muted-foreground/40 flex-shrink-0">·</span>
+                                        )}
+                                        {project.beschrijving && (
+                                          <span className="text-[#1A4A52]/55 dark:text-muted-foreground/70 truncate">{project.beschrijving}</span>
+                                        )}
+                                      </div>
+                                    )
+                                  })()}
                                 </div>
                               </td>
                             ) : (
@@ -1548,18 +1602,37 @@ export function ProjectsList() {
                           <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <button className="text-left group/status inline-flex items-center gap-2 hover:bg-muted/60 rounded-md px-1.5 py-1 -mx-1.5 -my-1 transition-colors">
-                                  <span
-                                    className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', project.status === 'actief' && 'doen-pulse')}
-                                    style={{ backgroundColor: statusHex(project.status) }}
-                                  />
-                                  <span
-                                    className="text-[13px] font-medium"
-                                    style={{ color: getStatusTextColor(project.status) }}
-                                  >
-                                    {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
+                                <button className="text-left group/status inline-flex flex-col items-start gap-1.5 hover:bg-muted/60 rounded-md px-1.5 py-1 -mx-1.5 -my-1 transition-colors">
+                                  {/* Reis — 6-punts fase-indicator: waar staat dit project? */}
+                                  {(() => {
+                                    const cur = projectFaseIndex(project.status)
+                                    const kleur = statusHex(project.status)
+                                    return (
+                                      <span className="inline-flex items-center gap-[3px]" title={`Fase ${cur + 1} van 6`}>
+                                        {Array.from({ length: 6 }).map((_, i) => (
+                                          <span
+                                            key={i}
+                                            className="rounded-full transition-colors"
+                                            style={{
+                                              width: i === cur ? 6 : 5,
+                                              height: i === cur ? 6 : 5,
+                                              backgroundColor: i <= cur ? kleur : 'rgba(26,83,92,0.14)',
+                                              boxShadow: i === cur ? `0 0 0 2px ${kleur}22` : undefined,
+                                            }}
+                                          />
+                                        ))}
+                                      </span>
+                                    )
+                                  })()}
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <span
+                                      className="text-[13px] font-medium"
+                                      style={{ color: getStatusTextColor(project.status) }}
+                                    >
+                                      {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
+                                    </span>
+                                    <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity" />
                                   </span>
-                                  <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" className="w-44">
