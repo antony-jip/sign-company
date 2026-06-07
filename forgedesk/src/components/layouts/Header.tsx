@@ -3,9 +3,11 @@ import { useLocation } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { useTabs } from '@/contexts/TabsContext'
 import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
+import { cn } from '@/lib/utils'
 
 const ROUTE_NAMES: Record<string, string> = {
   '': 'Dashboard',
@@ -33,8 +35,13 @@ export function Header() {
   const location = useLocation()
   const { user } = useAuth()
   const { profile } = useAppSettings()
+  const { tabs } = useTabs()
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  // De tabbalk verschijnt pas vanaf 2 tabbladen; dan draagt die de onderrand.
+  // Anders draagt de header zelf de onderrand, zodat de topbalk altijd één
+  // samenhangend vlak met één onderrand is.
+  const tabBarVisible = tabs.length > 1
 
   useEffect(() => {
     const main = document.querySelector('main')
@@ -61,8 +68,11 @@ export function Header() {
 
   return (
     <header
-      className="doen-toolbar h-11 flex items-center justify-between px-5 flex-shrink-0 z-10 transition-all duration-200 relative bg-card border-b border-border"
-      style={{ boxShadow: scrolled ? '0 1px 3px rgba(0,0,0,0.04)' : 'none' }}
+      className={cn(
+        'doen-toolbar h-11 flex items-center justify-between px-5 flex-shrink-0 z-10 transition-all duration-200 relative bg-[#F8F7F5] dark:bg-background',
+        !tabBarVisible && 'border-b border-border',
+      )}
+      style={{ boxShadow: scrolled && !tabBarVisible ? '0 1px 3px rgba(0,0,0,0.04)' : 'none' }}
     >
       {/* Mobile search overlay */}
       {mobileSearchOpen && (

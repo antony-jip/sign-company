@@ -150,7 +150,7 @@ export function TabBar() {
   return (
     <>
       <div
-        className="tab-bar flex items-center gap-[3px] h-[38px] px-[14px] bg-[#F8F7F5] dark:bg-background border-b border-border"
+        className="tab-bar flex items-center gap-[3px] h-[38px] px-5 bg-[#F8F7F5] dark:bg-background border-b border-border"
       >
         {/* Scroll left */}
         {showScrollButtons && (
