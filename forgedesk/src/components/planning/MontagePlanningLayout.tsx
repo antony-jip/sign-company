@@ -2154,8 +2154,8 @@ export function MontagePlanningLayout() {
                         key={a.id}
                         type="button"
                         onClick={() => openEditDialog(a)}
-                        className="text-left text-[10px] truncate rounded px-1 py-0.5 hover:opacity-80 transition-opacity"
-                        style={{ backgroundColor: cfg?.bg || '#F0EFEC', color: cfg?.text || '#1A1A1A' }}
+                        className="text-left text-[10px] truncate rounded-none border-l-2 pl-1.5 pr-1 py-0.5 hover:opacity-80 transition-opacity"
+                        style={{ backgroundColor: cfg?.bg || '#F0EFEC', color: cfg?.text || '#1A1A1A', borderLeftColor: cfg?.dot || '#1A535C' }}
                         title={`${a.titel} (${a.start_tijd}–${a.eind_tijd})`}
                       >
                         <span className="font-mono mr-1 opacity-70">{a.start_tijd}</span>{a.titel}
