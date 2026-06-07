@@ -915,10 +915,10 @@ export function ProjectsList() {
             {/* KPI tiles — triage entry-points, clickable filter targets */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {([
-                { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'in-review of >30d open',  count: stats.metAandacht,   Icon: AlertCircle },
-                { key: 'actief',        label: 'Actief',        sub: 'in uitvoering',           count: stats.actief,        Icon: Activity    },
-                { key: 'te-factureren', label: 'Te factureren', sub: 'wachten op factuur',      count: stats.teFactureren,  Icon: Receipt     },
-                { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar.',                  count: stats.afgerond,      Icon: CheckCircle },
+                { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'in-review of >30d open',  count: stats.metAandacht,   Icon: AlertCircle, accent: '#F15025' },
+                { key: 'actief',        label: 'Actief',        sub: 'in uitvoering',           count: stats.actief,        Icon: Activity,    accent: '#3A5A9A' },
+                { key: 'te-factureren', label: 'Te factureren', sub: 'wachten op factuur',      count: stats.teFactureren,  Icon: Receipt,     accent: '#2D6B48' },
+                { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar.',                  count: stats.afgerond,      Icon: CheckCircle, accent: '#1A535C' },
               ] as const).map(tile => {
                 const isActive = statusFilter === tile.key
                 const TileIcon = tile.Icon
@@ -927,7 +927,7 @@ export function ProjectsList() {
                     key={tile.key}
                     type="button"
                     onClick={() => setStatusFilter(isActive ? 'alle' : tile.key)}
-                    className="group relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
+                    className="group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
                     style={{
                       backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
                       border: isActive ? '1px solid rgba(26,83,92,0.22)' : '1px solid rgba(26,83,92,0.08)',
@@ -939,7 +939,7 @@ export function ProjectsList() {
                   >
                     <div className="flex items-baseline justify-between gap-3 mb-2">
                       <span className="inline-flex items-center gap-2">
-                        <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'actief' && 'doen-pulse')} strokeWidth={1.75} />
+                        <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'actief' && 'doen-pulse')} style={{ color: tile.accent }} strokeWidth={1.9} />
                         <span className="font-heading text-[14px] font-bold text-[#1A4A52] dark:text-foreground">
                           {tile.label}<span className="text-[#F15025]">.</span>
                         </span>
@@ -1382,18 +1382,17 @@ export function ProjectsList() {
                           )}
                         <tr
                           className={cn(
-                            'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
+                            'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
                             needsAttention(project) && !selectedIds.has(project.id) && 'bg-[rgba(241,80,37,0.025)]',
-                            'hover:bg-background',
-                            selectedIds.has(project.id) && 'bg-[#1A535C]/[0.03]'
+                            'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
+                            selectedIds.has(project.id) && 'bg-[#1A535C]/[0.05]'
                           )}
-                          style={{ animationDelay: `${i * 25}ms` }}
+                          style={{ animationDelay: `${i * 25}ms`, ['--row-accent' as string]: statusHex(project.status) } as React.CSSProperties}
                           onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                         >
-                          {/* Checkbox + left-edge status stripe */}
+                          {/* Checkbox + left-edge status accent (via .doen-row CSS) */}
                           <td
                             className="py-3.5 pl-5 pr-3 align-middle"
-                            style={{ boxShadow: `inset 2px 0 0 0 ${statusHex(project.status)}` }}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Checkbox

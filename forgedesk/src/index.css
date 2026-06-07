@@ -3066,6 +3066,14 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 @media (prefers-reduced-motion: reduce) {
   .doen-pulse, .doen-row { animation: none; }
 }
+/* Per-status colour accent on the left edge — strengthens on hover */
+.doen-row > td:first-child {
+  box-shadow: inset 2px 0 0 0 var(--row-accent, transparent);
+  transition: box-shadow .2s ease;
+}
+.doen-row:hover > td:first-child {
+  box-shadow: inset 3px 0 0 0 var(--row-accent, transparent);
+}
 
 /* doen-duo-icon CSS retired — Phosphor migrated out to Lucide stroke icons. */
 
