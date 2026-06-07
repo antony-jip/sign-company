@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 import { useSidebar, RAIL_WIDTH, EXPANDED_WIDTH } from '@/contexts/SidebarContext'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useSupportAttentie } from '@/hooks/useSupportInbox'
-import { ADMIN_ORG_ID } from '@/services/supportChatService'
+import { ADMIN_USER_ID } from '@/services/supportChatService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -90,9 +90,9 @@ function useIsDesktop() {
 export function Sidebar() {
   const isDesktop = useIsDesktop()
   const { isCollapsed, toggleSidebar, setLayoutMode } = useSidebar()
-  const { user, logout, organisatieId } = useAuth()
-  const isAdminOrg = organisatieId === ADMIN_ORG_ID
-  const supportAttentie = useSupportAttentie('support-nav', isAdminOrg)
+  const { user, logout } = useAuth()
+  const isSupportAdmin = user?.id === ADMIN_USER_ID
+  const supportAttentie = useSupportAttentie('support-nav', isSupportAdmin)
   const { theme, toggleTheme } = useTheme()
   const { settings } = useAppSettings()
   const location = useLocation()
@@ -319,7 +319,7 @@ export function Sidebar() {
               {filteredNavItems.filter(i => PLANNING_ITEMS.some(p => p.path === i.path)).map(renderRailItem)}
               {railDivider('div-3')}
               {filteredNavItems.filter(i => COMMUNICATIE_ITEMS.some(c => c.path === i.path)).map(renderRailItem)}
-              {isAdminOrg && (
+              {isSupportAdmin && (
                 <>
                   {railDivider('div-support')}
                   <div className="relative w-full">
@@ -344,7 +344,7 @@ export function Sidebar() {
                   </div>
                 </div>
               ))}
-              {isAdminOrg && (
+              {isSupportAdmin && (
                 <div className="mt-7">
                   <div className="doen-sidebar-section">SUPPORT</div>
                   <div className="space-y-[1px] relative">

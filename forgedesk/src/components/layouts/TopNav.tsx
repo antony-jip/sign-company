@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSupportAttentie } from '@/hooks/useSupportInbox'
-import { ADMIN_ORG_ID } from '@/services/supportChatService'
+import { ADMIN_USER_ID } from '@/services/supportChatService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -65,9 +65,9 @@ const quickAddItems = [
 ]
 
 export function TopNav() {
-  const { user, logout, organisatieId } = useAuth()
-  const isAdminOrg = organisatieId === ADMIN_ORG_ID
-  const supportAttentie = useSupportAttentie('support-topnav', isAdminOrg)
+  const { user, logout } = useAuth()
+  const isSupportAdmin = user?.id === ADMIN_USER_ID
+  const supportAttentie = useSupportAttentie('support-topnav', isSupportAdmin)
   const { theme, toggleTheme } = useTheme()
   const { settings } = useAppSettings()
   const { setLayoutMode } = useSidebar()
@@ -107,8 +107,8 @@ export function TopNav() {
   )
   const overigItems = useMemo(() => {
     const rest = visibleItems.filter((i) => !PRIMARY_LABELS.includes(i.label))
-    return isAdminOrg ? [...rest, SUPPORT_ITEM] : rest
-  }, [visibleItems, isAdminOrg])
+    return isSupportAdmin ? [...rest, SUPPORT_ITEM] : rest
+  }, [visibleItems, isSupportAdmin])
   const overigActive = overigItems.some((i) => location.pathname.startsWith(i.path))
 
   useEffect(() => {

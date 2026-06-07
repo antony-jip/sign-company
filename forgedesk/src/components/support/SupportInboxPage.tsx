@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useSupportInbox } from '@/hooks/useSupportInbox'
-import { ADMIN_ORG_ID } from '@/services/supportChatService'
+import { ADMIN_USER_ID } from '@/services/supportChatService'
 
 type StatusFilter = 'alle' | 'open' | 'afgerond'
 type LeftTab = 'gesprekken' | 'accounts'
@@ -18,7 +18,7 @@ function formatTijd(iso: string): string {
 }
 
 export function SupportInboxPage() {
-  const { organisatieId } = useAuth()
+  const { user } = useAuth()
   const isMobile = useMediaQuery('(max-width: 767px)')
   const {
     inbox, accounts, activeGesprek, berichten, sending, attentie,
@@ -119,7 +119,7 @@ export function SupportInboxPage() {
     }
   }, [composeText, sending, broadcast])
 
-  if (organisatieId && organisatieId !== ADMIN_ORG_ID) {
+  if (user && user.id !== ADMIN_USER_ID) {
     return <Navigate to="/" replace />
   }
 

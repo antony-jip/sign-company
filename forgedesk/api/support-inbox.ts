@@ -7,7 +7,9 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
-// doen. / Sign Company admin-org.
+// Support wordt door één persoon beheerd: deze auth-user (niet de hele org).
+const ADMIN_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
+// Org van de support-beheerder — alleen om de eigen org uit de klant-lijst te filteren.
 const ADMIN_ORG_ID = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229'
 
 // ── Auth helper (inline; Vercel bundelt geen api/_helpers/ imports) ──
@@ -20,35 +22,32 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   return user.id
 }
 
-// Admin-gate: alleen leden van de admin-org mogen verder.
+// Admin-gate: alleen de support-beheerder (één specifieke user) mag verder.
 async function assertAdmin(userId: string): Promise<void> {
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('organisatie_id')
-    .eq('id', userId)
-    .maybeSingle()
-  if ((profile?.organisatie_id as string | null) !== ADMIN_ORG_ID) {
+  if (userId !== ADMIN_USER_ID) {
     throw new Error('Geen toegang')
   }
 }
 
-// Notificeer alle gebruikers van een organisatie (belletje), ook als ze Daan niet gebruiken.
+// Notificeer alleen de eigenaar van de klant-org — één melding per bericht, geen org-spam.
 async function notifyOrg(orgId: string, tekst: string): Promise<void> {
-  const { data: profielen } = await supabaseAdmin
-    .from('profiles')
-    .select('id')
-    .eq('organisatie_id', orgId)
-  if (!profielen || profielen.length === 0) return
+  const { data: org } = await supabaseAdmin
+    .from('organisaties')
+    .select('eigenaar_id')
+    .eq('id', orgId)
+    .maybeSingle()
+  const ownerId = (org?.eigenaar_id as string | null) ?? null
+  if (!ownerId) return
   const preview = tekst.length > 140 ? tekst.slice(0, 137) + '…' : tekst
-  const rows = profielen.map(p => ({
-    user_id: p.id,
+  await supabaseAdmin.from('notificaties').insert({
+    user_id: ownerId,
     organisatie_id: orgId,
     type: 'algemeen',
     titel: 'Nieuw bericht van doen. support',
     bericht: preview,
+    link: '/',
     gelezen: false,
-  }))
-  await supabaseAdmin.from('notificaties').insert(rows)
+  })
 }
 
 async function getOrgNaam(orgId: string): Promise<string> {

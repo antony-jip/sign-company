@@ -9,7 +9,7 @@ import {
   type ForgieActie,
 } from '@/services/forgieChatService'
 import {
-  ADMIN_ORG_ID,
+  ADMIN_USER_ID,
   getEigenOpenGesprek,
   verstuurSupportBericht,
   getSupportInbox,
@@ -190,8 +190,9 @@ function SupportKlantView({ isOpen, onAdminReply }: { isOpen: boolean; onAdminRe
 
 export function ForgieChatWidget() {
   const { forgieEnabled } = useAppSettings()
-  const { organisatieId } = useAuth()
-  const isAdminOrg = organisatieId === ADMIN_ORG_ID
+  const { user } = useAuth()
+  // Support wordt door één persoon beheerd (auth-user), niet de hele org.
+  const isAdminOrg = user?.id === ADMIN_USER_ID
   const isMobile = useMediaQuery('(max-width: 767px)')
 
   const [isOpen, setIsOpen] = useState(false)

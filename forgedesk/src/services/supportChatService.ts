@@ -1,5 +1,8 @@
 import supabase from './supabaseClient'
 
+// Support wordt door één persoon beheerd: deze auth-user (niet de hele org).
+export const ADMIN_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
+// Org van de support-beheerder — alleen gebruikt om de eigen org uit de klant-lijst te filteren.
 export const ADMIN_ORG_ID = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229'
 
 export interface SupportBericht {
