@@ -130,6 +130,7 @@ export function WatNuBanner({
       className="flex items-center justify-between px-4 py-2.5 rounded-lg"
       style={{
         backgroundColor: `${config.kleur}0D`,
+        boxShadow: `inset 2px 0 0 0 ${config.kleur}`,
       }}
     >
       <div className="flex items-center gap-2.5 min-w-0">
@@ -145,9 +146,9 @@ export function WatNuBanner({
             <button
               key={actie.label}
               onClick={actie.onClick}
-              className={`h-7 px-3 text-[11px] font-medium rounded-md transition-all ${
+              className={`h-7 px-3 text-[11px] font-medium rounded-md transition-all hover:-translate-y-[1px] ${
                 actie.primary
-                  ? 'text-white shadow-sm'
+                  ? 'text-white shadow-sm hover:shadow-md'
                   : 'border border-[hsl(35,15%,83%)] text-foreground hover:bg-[hsl(35,15%,96%)]'
               }`}
               style={actie.primary ? { backgroundColor: config.kleur } : undefined}

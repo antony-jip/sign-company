@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
+import { avatarTint } from '@/utils/avatarTint'
 import type { Klant, Project, Contactpersoon } from '@/types'
 
 interface KlantCardProps {
@@ -46,6 +47,9 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
     ? `${klant.adres}${klant.postcode || klant.stad ? `, ${[klant.postcode, klant.stad].filter(Boolean).join(' ')}` : ''}`
     : null
   const mapsUrl = adresLabel ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresLabel)}` : null
+  // Per-klant kleur — dezelfde tint als in de lijstweergaven, zodat een klant
+  // overal in de app dezelfde identiteitskleur heeft.
+  const klantKleur = avatarTint(klant.bedrijfsnaam || klant.contactpersoon || '').fg
 
   const handleMail = () => {
     if (!displayEmail) return
@@ -136,7 +140,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
         href={href}
         target={href.startsWith('http') ? '_blank' : undefined}
         rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-        className="group flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/60 transition-colors"
+        className="group flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[rgba(26,83,92,0.05)] transition-colors"
       >
         {content}
       </a>
@@ -152,7 +156,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
         </h3>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/60 transition-colors">
+            <button className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-[rgba(26,83,92,0.05)] transition-colors">
               <MoreHorizontal className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
@@ -176,9 +180,10 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
       {/* Klant identiteit */}
       <div className="flex items-start gap-3 mb-4">
         <div
-          className="flex items-center justify-center h-10 w-10 rounded-xl text-white text-[15px] font-extrabold flex-shrink-0 shadow-[0_2px_8px_rgba(58,107,140,0.25)]"
+          className="flex items-center justify-center h-10 w-10 rounded-xl text-white text-[15px] font-extrabold flex-shrink-0"
           style={{
-            background: 'linear-gradient(135deg, #3A6B8C 0%, #2A5580 50%, #F15025 200%)',
+            background: `linear-gradient(135deg, ${klantKleur} 0%, ${klantKleur} 55%, #F15025 240%)`,
+            boxShadow: `0 2px 8px ${klantKleur}40`,
           }}
         >
           {getInitial(klant.bedrijfsnaam || klant.contactpersoon)}
@@ -209,7 +214,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
         {displayEmail && (
           <button
             onClick={handleMail}
-            className="w-full group flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/60 transition-colors text-left"
+            className="w-full group flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[rgba(26,83,92,0.05)] transition-colors text-left"
           >
             <Mail className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" strokeWidth={1.75} />
             <span className="flex-1 min-w-0 truncate text-[13px] text-foreground">{displayEmail}</span>
