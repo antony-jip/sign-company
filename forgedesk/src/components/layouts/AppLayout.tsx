@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Sidebar } from './Sidebar'
@@ -71,6 +71,21 @@ export function AppLayout() {
     }
   }, [])
 
+  // Auto-hide top chrome (Header + tabs) in sidebar layout: collapsed by
+  // default for a full-screen content view, slides in when the mouse reaches
+  // the top edge. A short close-delay avoids flicker at the hover boundary.
+  const [topHovered, setTopHovered] = useState(false)
+  const topCloseTimer = useRef<number | null>(null)
+  const openTop = () => {
+    if (topCloseTimer.current) { window.clearTimeout(topCloseTimer.current); topCloseTimer.current = null }
+    setTopHovered(true)
+  }
+  const closeTop = () => {
+    if (topCloseTimer.current) window.clearTimeout(topCloseTimer.current)
+    topCloseTimer.current = window.setTimeout(() => setTopHovered(false), 180)
+  }
+  useEffect(() => () => { if (topCloseTimer.current) window.clearTimeout(topCloseTimer.current) }, [])
+
   if (layoutMode === 'topnav') {
     return (
       <>
@@ -117,16 +132,44 @@ export function AppLayout() {
           <OfflineBanner />
           <TrialBanner />
           <InkoopAILimietBanner variant="globaal" />
-          <Header />
-          <TabBar />
-          <main className="flex-1 overflow-hidden flex flex-col min-h-0">
-            <div className={cn(
-              'flex-1 min-h-0 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter',
-              isFullBleed ? 'p-0' : 'p-4 md:p-8',
-            )}>
-              <Outlet />
+          <div className="relative flex-1 flex flex-col min-h-0">
+            {/* Hover-trigger aan de bovenrand: opent de ingeklapte topbalk */}
+            <div
+              className="absolute top-0 inset-x-0 h-2.5 z-40 flex justify-center"
+              onMouseEnter={openTop}
+            >
+              <div
+                className={cn(
+                  'mt-1 h-1 w-20 rounded-full bg-foreground/15 transition-opacity duration-200',
+                  topHovered ? 'opacity-0' : 'opacity-100',
+                )}
+              />
             </div>
-          </main>
+
+            {/* Auto-hide topbalk: Header + tabs, glijdt in bij hover */}
+            <div
+              className={cn(
+                'absolute top-0 inset-x-0 z-30 bg-background border-b border-border/60 transition-transform duration-300 ease-out',
+                topHovered
+                  ? 'translate-y-0 shadow-[0_8px_24px_rgba(0,0,0,0.06)]'
+                  : '-translate-y-full pointer-events-none',
+              )}
+              onMouseEnter={openTop}
+              onMouseLeave={closeTop}
+            >
+              <Header />
+              <TabBar />
+            </div>
+
+            <main className="flex-1 overflow-hidden flex flex-col min-h-0">
+              <div className={cn(
+                'flex-1 min-h-0 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter',
+                isFullBleed ? 'p-0' : 'p-4 md:p-8',
+              )}>
+                <Outlet />
+              </div>
+            </main>
+          </div>
         </div>
       </div>
       <FloatingQuickActions />
