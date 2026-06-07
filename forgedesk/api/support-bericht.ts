@@ -7,6 +7,10 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
+// Klantberichten notificeren alleen deze ene support-beheerder (niet de hele org).
+const ADMIN_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
+const ADMIN_ORG_ID = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229'
+
 // ── Auth helper (inline; Vercel bundelt geen api/_helpers/ imports) ──
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -87,6 +91,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('support_gesprekken')
       .update({ laatste_bericht_op: nu, status: 'open' })
       .eq('id', gesprekId)
+
+    // Melding alleen naar de support-beheerder (belletje + bulletje), niet de hele org.
+    try {
+      await supabaseAdmin.from('notificaties').insert({
+        user_id: ADMIN_USER_ID,
+        organisatie_id: ADMIN_ORG_ID,
+        type: 'algemeen',
+        titel: `Support — ${orgNaam}`,
+        bericht: tekst.length > 140 ? tekst.slice(0, 137) + '…' : tekst,
+        link: '/support',
+        gelezen: false,
+      })
+    } catch (notifyErr) {
+      console.error('[support-bericht] notify', (notifyErr as Error).message)
+    }
 
     return res.status(200).json({ gesprek_id: gesprekId, bericht: nieuwBericht })
   } catch (err) {
