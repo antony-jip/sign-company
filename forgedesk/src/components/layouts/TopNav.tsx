@@ -6,10 +6,12 @@ import {
   Receipt, CheckSquare, ClipboardCheck, Inbox, Ruler,
   LogOut, ChevronDown, Menu, X, Search,
   Plus, Moon, Sun, Monitor, CreditCard, Sparkles, PiggyBank, BookOpen,
-  Pin, PinOff,
+  Pin, PinOff, LifeBuoy,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useSupportAttentie } from '@/hooks/useSupportInbox'
+import { ADMIN_ORG_ID } from '@/services/supportChatService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -45,6 +47,9 @@ const navItems: NavItem[] = [
 // Meest gebruikte modules staan los in de balk; de rest komt onder "Overig".
 const PRIMARY_LABELS = ['Dashboard', 'Projecten', 'Taken', 'Offertes', 'Planning', 'Werkbonnen', 'Email']
 
+// Admin-only: support-inbox, leeft onder "Overig".
+const SUPPORT_ITEM: NavItem = { label: 'Support', icon: LifeBuoy, path: '/support', color: '#F15025' }
+
 // Mobiel is bewust lean: alleen het hoogstnodige voor de buitendienst
 // (projecten, mail, maatje). De rest doe je op desktop. Geldt altijd op
 // mobiel, los van de desktop-menukeuze.
@@ -60,7 +65,9 @@ const quickAddItems = [
 ]
 
 export function TopNav() {
-  const { user, logout } = useAuth()
+  const { user, logout, organisatieId } = useAuth()
+  const isAdminOrg = organisatieId === ADMIN_ORG_ID
+  const supportAttentie = useSupportAttentie('support-topnav', isAdminOrg)
   const { theme, toggleTheme } = useTheme()
   const { settings } = useAppSettings()
   const { setLayoutMode } = useSidebar()
@@ -98,7 +105,10 @@ export function TopNav() {
     () => PRIMARY_LABELS.map((label) => visibleItems.find((i) => i.label === label)).filter(Boolean) as NavItem[],
     [visibleItems],
   )
-  const overigItems = useMemo(() => visibleItems.filter((i) => !PRIMARY_LABELS.includes(i.label)), [visibleItems])
+  const overigItems = useMemo(() => {
+    const rest = visibleItems.filter((i) => !PRIMARY_LABELS.includes(i.label))
+    return isAdminOrg ? [...rest, SUPPORT_ITEM] : rest
+  }, [visibleItems, isAdminOrg])
   const overigActive = overigItems.some((i) => location.pathname.startsWith(i.path))
 
   useEffect(() => {
@@ -260,6 +270,9 @@ export function TopNav() {
                 )}
               >
                 <span>Overig<span className={cn('transition-colors', overigActive ? 'text-[#F15025]' : 'text-transparent group-hover:text-[#F15025]')}>.</span></span>
+                {supportAttentie > 0 && (
+                  <span className="absolute top-1 right-1.5 rounded-full" style={{ width: 7, height: 7, backgroundColor: '#F15025' }} />
+                )}
                 <ChevronDown className={cn('w-[13px] h-[13px] -ml-0.5 opacity-55 transition-transform duration-200', overigOpen && 'rotate-180')} />
               </button>
 
@@ -280,6 +293,11 @@ export function TopNav() {
                       >
                         <Icon className="w-4 h-4" style={{ color: isActive ? item.color : undefined, opacity: isActive ? 1 : 0.6 }} />
                         <span>{item.label}<span className="text-[#F15025]">.</span></span>
+                        {item.path === '/support' && supportAttentie > 0 && (
+                          <span className="ml-auto inline-flex items-center justify-center text-white font-bold" style={{ minWidth: 16, height: 16, padding: '0 4px', fontSize: 10, borderRadius: 999, backgroundColor: '#F15025' }}>
+                            {supportAttentie}
+                          </span>
+                        )}
                       </NavLink>
                     )
                   })}
