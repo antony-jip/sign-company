@@ -205,12 +205,19 @@ export function Sidebar() {
                   !active && 'group-hover/rail:scale-110',
                 )}
               >
-                <Icon className="h-[19px] w-[19px] text-[#1A535C] dark:text-[#7FB5BF]" strokeWidth={active ? 2.2 : 1.8} />
+                <Icon
+                  className={cn(
+                    'h-[19px] w-[19px] transition-colors duration-200',
+                    !active && 'text-[#1A535C] dark:text-[#7FB5BF] group-hover/rail:text-[var(--mc)]',
+                  )}
+                  style={active ? { color: item.color } : ({ ['--mc']: item.color } as React.CSSProperties)}
+                  strokeWidth={active ? 2.2 : 1.8}
+                />
               </div>
 
-              {/* Actief — oranje dot */}
+              {/* Actief — module-kleur dot */}
               {active && (
-                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 rounded-full" style={{ width: 5, height: 5, backgroundColor: '#F15025' }} />
+                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 rounded-full" style={{ width: 5, height: 5, backgroundColor: item.color }} />
               )}
             </NavLink>
           </TooltipTrigger>
@@ -235,40 +242,40 @@ export function Sidebar() {
         key={item.path}
         to={item.path}
         className={cn(
-          'relative flex items-center gap-3 py-[9px] px-4 mx-2 rounded-[11px] group/nav',
+          'relative flex items-center gap-[11px] py-[8.5px] px-4 mx-2 rounded-[11px] group/nav',
           isBottom ? 'text-[13px]' : 'text-[13.5px]',
         )}
       >
-        {/* Hover sweep background */}
-        <div className="doen-sidebar-item-hover" />
+        {/* Background — frosted surface when active, soft sweep on hover */}
+        {active
+          ? <div className="doen-sidebar-active-surface" />
+          : <div className="doen-sidebar-item-hover" />}
 
-        {/* Icon — rounded container with module color tint */}
-        <div
-          className={cn(
-            'relative z-10 w-[30px] h-[30px] rounded-[8px] flex items-center justify-center flex-shrink-0 transition-all duration-300',
-            active
-              ? 'bg-[#1A535C]/15 dark:bg-[#7FB5BF]/15'
-              : 'bg-[#1A535C]/[0.08] dark:bg-[#7FB5BF]/10 group-hover/nav:bg-[#1A535C]/15',
-          )}
-        >
-          <Icon
-            className="h-[17px] w-[17px] text-[#1A535C] dark:text-[#7FB5BF]"
-            strokeWidth={active ? 2.25 : 1.75}
+        {/* Module-colour accent bar (active) */}
+        {active && (
+          <span
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-r-[3px]"
+            style={{ width: 2.5, height: 18, background: item.color, boxShadow: `0 0 6px ${item.color}33` }}
           />
-        </div>
+        )}
+
+        {/* Icon — bare glyph; idle muted, active + hover in the module colour */}
+        <Icon
+          className={cn(
+            'relative z-10 h-[18px] w-[18px] flex-shrink-0 transition-colors duration-200',
+            !active && 'text-[#1A535C]/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-[var(--mc)]',
+          )}
+          style={active ? { color: item.color } : ({ ['--mc']: item.color } as React.CSSProperties)}
+          strokeWidth={active ? 2.1 : 1.75}
+        />
 
         {/* Label */}
         <span className={cn(
-          'relative z-10 truncate transition-all duration-300 tracking-[-0.01em]',
-          active ? 'text-foreground font-semibold' : 'text-foreground/70 font-medium group-hover/nav:text-foreground',
+          'relative z-10 truncate transition-colors duration-200 tracking-[-0.01em]',
+          active ? 'text-[#1A535C] dark:text-foreground font-semibold' : 'text-foreground/65 font-medium group-hover/nav:text-foreground/90',
         )}>
           {item.label}
         </span>
-
-        {/* Active — oranje dot */}
-        {active && (
-          <div className="relative z-10 ml-auto doen-sidebar-active-dot" />
-        )}
       </NavLink>
     )
   }
