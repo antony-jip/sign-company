@@ -509,4 +509,148 @@ afgetekend.
 
 **Gerelateerde modules:** Projecten, Werkbonnen, Bestelbonnen.
 
+## Planning (montage)
+
+**Waar in de app:** route `/planning` (menu-item "Planning"). Op de telefoon is
+er een aparte mobiele weergave.
+
+**Wat het doet:** De planning is uitsluitend voor **montage**: het inplannen van
+fysieke klussen op locatie. Je ziet een week- of maandweergave met een baan per
+monteur (of per rolgroep), waarin je afspraken kunt verslepen. De planning
+waarschuwt voor dubbele boekingen en toont het weer en sluitings-/feestdagen.
+
+> **Let op het verschil:** Planning gaat alléén over montage. Al het andere werk
+> (offertes opvolgen, inkoop, administratie) hoort thuis in **Taken**.
+
+**Belangrijkste acties:**
+- Wisselen tussen week- en maandweergave.
+- Een nieuwe montageafspraak maken (titel, datum, tijd, monteurs).
+- Afspraken verslepen tussen monteurs en dagen.
+- De banen groeperen per rol (monteurs, productie, verkoop, overig) en lege
+  banen verbergen.
+- De weekplanning afdrukken.
+- Vanuit een afspraak een werkbon maken.
+
+**Veelvoorkomende vragen:**
+- *Hoe plan ik een montage in?* Maak een nieuwe afspraak of sleep er een naar
+  de juiste dag en monteur.
+- *Wat betekent het rode waarschuwingsteken op een afspraak?* Een conflict: die
+  monteur heeft op dat moment al een andere afspraak.
+- *Waarom zie ik de planning van mijn collega's?* doen. is transparant binnen je
+  bedrijf; iedereen ziet ieders planning.
+- *Hoe maak ik vanuit de planning een werkbon?* Open de afspraak en maak daar de
+  werkbon aan.
+- *Waarom staat hier geen offerte-opvolging of administratie?* Dat is geen
+  montage; daarvoor gebruik je Taken.
+
+**Tips:**
+- Gebruik de weerinformatie bij het plannen van buitenwerk.
+- Verberg lege banen voor overzicht, of toon ze juist allemaal als je de
+  capaciteit wilt plannen.
+
+**Gerelateerde modules:** Taken, Werkbonnen, Projecten, Team.
+
+---
+
+## Taken
+
+**Waar in de app:** route `/taken` (menu-item "Taken"). Op de telefoon is er een
+aparte mobiele weergave.
+
+**Wat het doet:** Taken is voor al het werk **rondom** de montage: offertes
+opvolgen, inkoop regelen, administratie, terugbellen, enzovoort. Je beheert je
+taken in een week-, maand- of baanweergave (per persoon), met prioriteiten en
+statussen.
+
+> **Let op het verschil:** Taken is alles behalve montage. De fysieke montage
+> zelf plan je in **Planning**.
+
+**Belangrijkste acties:**
+- Een nieuwe taak maken met een prioriteit (van laag tot kritiek).
+- Taken toewijzen aan jezelf of een collega.
+- Filteren op persoon (standaard "Iedereen") en op project of losse taken.
+- Wisselen tussen week-, maand- en baanweergave.
+- Een taak op klaar zetten of verwijderen (verwijderen kun je nog 5 seconden
+  ongedaan maken via de melding).
+
+**Veelvoorkomende vragen:**
+- *Waarom zie ik taken van anderen?* doen. is transparant; iedereen ziet en
+  plant ieders taken. Filter op jezelf als je alleen je eigen taken wilt zien.
+- *Wat is het verschil tussen een projecttaak en een losse taak?* Een
+  projecttaak hoort bij een project, een losse taak staat op zichzelf.
+- *Ik heb per ongeluk een taak verwijderd, kan ik dat terugdraaien?* Ja, klik
+  binnen 5 seconden op "Ongedaan maken" in de melding.
+- *Hoort een montageafspraak hier ook?* Nee, montage plan je in Planning.
+
+**Tips:**
+- Gebruik prioriteiten om je dag te ordenen; kritieke taken vallen op.
+- Filter op jezelf voor focus, of laat "Iedereen" staan om het teamoverzicht te
+  houden.
+
+**Gerelateerde modules:** Planning, Projecten, Offertes, Klanten.
+
+---
+
+## Team en medewerkers
+
+**Waar in de app:** route `/team` (menu-item "Team"); teaminstellingen ook via
+Instellingen.
+
+**Wat het doet:** Hier beheer je je teamleden: wie er in je organisatie zit,
+hun rol en hun status. Je nodigt nieuwe collega's uit en beheert verlof en
+beschikbaarheid.
+
+**Belangrijkste acties:**
+- Een nieuw teamlid uitnodigen via het e-mailadres.
+- De rol van een medewerker instellen of wijzigen (zoals admin, medewerker,
+  monteur, verkoop of productie).
+- Een medewerker deactiveren.
+- Verlof en beschikbaarheid bijhouden.
+
+**Veelvoorkomende vragen:**
+- *Hoe nodig ik een collega uit?* Voer het e-mailadres in en kies een rol; de
+  collega krijgt een uitnodiging per e-mail om een account aan te maken.
+- *Wat bepaalt de rol?* De rol bepaalt onder andere in welke groep iemand in de
+  planning valt en welke toegang iemand heeft.
+- *Wat gebeurt er als ik een medewerker deactiveer?* Die persoon kan niet meer
+  inloggen, maar de gegevens blijven bewaard.
+- *Hoeveel gebruikers zitten er in het abonnement?* Het tarief van €79 per maand
+  is inclusief een aantal gebruikers; voor meer gebruikers is hello@doen.team het
+  contactadres. (Exacte aantallen: controleer de pagina Abonnement.)
+
+**Tips:**
+- Een rol kun je later altijd aanpassen.
+- Houd verlof bij, dan houdt de planning daar rekening mee.
+
+**Gerelateerde modules:** Planning, Taken, Instellingen.
+
+---
+
+## Booking (online afspraken)
+
+**Waar in de app:** beheer op route `/booking` (menu-item "Booking"). De
+openbare boekingspagina voor klanten staat op `/boeken/:userId` (geen inloggen
+nodig).
+
+**Wat het doet:** Met booking laat je klanten zelf online een afspraak inplannen
+via een openbare link. Je stelt beschikbare tijdsloten in; klanten kiezen een
+moment en jij bevestigt.
+
+**Belangrijkste acties:**
+- Beschikbare tijdsloten toevoegen (dag, tijd, medewerker).
+- De openbare boekingslink kopiëren en delen.
+- Binnengekomen afspraken bevestigen of annuleren.
+
+**Veelvoorkomende vragen:**
+- *Hoe deel ik mijn boekingslink?* Kopieer de link in het booking-beheer en
+  plak die in een e-mail, op je website of in een bericht.
+- *Wat gebeurt er als een klant boekt?* De afspraak komt binnen met de status
+  gepland; jij bevestigt hem daarna.
+- *Hoeft de klant in te loggen?* Nee, de boekingspagina is openbaar.
+
+**Tips:**
+- Zet alleen tijdsloten open die je echt beschikbaar hebt.
+
+**Gerelateerde modules:** Planning, Team.
+
 <!-- EINDE -->
