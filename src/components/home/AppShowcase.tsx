@@ -9,7 +9,7 @@ import {
   Activity, CheckCircle2, ArrowUpRight, Wrench, ChevronRight, Image as ImageIcon,
   Pencil, Camera, Inbox, Archive, Paperclip, Pin, Clock, FileEdit, Trash2,
   CalendarClock, ArrowLeft, MoreHorizontal, Copy, ChevronDown, ChevronsRight,
-  RefreshCw, Tag, Reply, ReplyAll, Forward, ChevronUp,
+  RefreshCw, Tag, Reply, ReplyAll, Forward, ChevronUp, Ruler,
   type LucideIcon,
 } from 'lucide-react'
 import SerifItalic from '@/components/SerifItalic'
@@ -22,6 +22,11 @@ const MUTED = '#6B6B66'
 const LINE = 'rgba(26,83,92,0.08)'
 const BG = '#F8F7F5'
 const CARD = '#FFFFFF'
+// Apple-feel "material": zachte diepte met hairline-rand i.p.v. harde border.
+const HAIRLINE = 'rgba(26,83,92,0.10)'
+const PANEL_SHADOW = '0 1px 2px rgba(20,40,40,0.04), 0 8px 24px -16px rgba(19,62,69,0.20)'
+// Dashboard-hero: dimensionale petrol-gradient (lift linksboven, diepte rechtsonder).
+const HERO_GRADIENT = 'radial-gradient(ellipse 90% 110% at 0% 0%, #237580 0%, transparent 60%), linear-gradient(135deg, #1A535C 0%, #103740 100%)'
 
 type View = 'dashboard' | 'projecten' | 'detail' | 'klanten' | 'offerte' | 'email' | 'factuur' | 'inkoop' | 'taken' | 'planning'
 
@@ -40,6 +45,7 @@ const overigNav: NavItem[] = [
   { icon: Users, label: 'Klanten', activeOn: ['klanten'] },
   { icon: Receipt, label: 'Facturen', activeOn: ['factuur'] },
   { icon: FileSignature, label: 'Inkoopfacturen', activeOn: ['inkoop'] },
+  { icon: Ruler, label: 'Maatjes', activeOn: [] },
   { icon: Wallet, label: 'Financieel', activeOn: [] },
 ]
 
@@ -634,7 +640,7 @@ function DashboardView({ setView }: { setView: (v: View) => void }) {
         {/* Welcome hero card */}
         <div
           className="rounded-[14px] p-5 md:p-7 relative overflow-hidden grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-5"
-          style={{ backgroundColor: PETROL_DEEP, color: '#FFFFFF' }}
+          style={{ background: HERO_GRADIENT, color: '#FFFFFF', boxShadow: '0 10px 30px -14px rgba(16,55,64,0.55)' }}
         >
           <div className="relative">
             <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase mb-3" style={{ color: '#A8C5C8' }}>
@@ -700,7 +706,7 @@ function DashboardView({ setView }: { setView: (v: View) => void }) {
 
         {/* Vandaag + Opvolgen */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-3 md:gap-4">
-          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <div className="flex items-center justify-between mb-4">
               <p className="font-heading text-[18px] font-bold tracking-tight" style={{ color: INK }}>
                 Vandaag<span style={{ color: FLAME }}>.</span>
@@ -736,7 +742,7 @@ function DashboardView({ setView }: { setView: (v: View) => void }) {
             </button>
           </div>
 
-          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <div className="flex items-center justify-between mb-3 flex-wrap gap-1">
               <p className="font-heading text-[18px] font-bold tracking-tight" style={{ color: INK }}>
                 Opvolgen<span style={{ color: FLAME }}>.</span>
@@ -773,7 +779,7 @@ function DashboardView({ setView }: { setView: (v: View) => void }) {
       </div>
 
       <aside className="hidden xl:flex flex-col gap-4">
-        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
           <div className="flex items-center justify-between mb-3">
             <p className="font-heading text-[15px] font-bold" style={{ color: INK }}>
               Deze week<span style={{ color: FLAME }}>.</span>{' '}
@@ -818,7 +824,7 @@ function DashboardView({ setView }: { setView: (v: View) => void }) {
           </div>
         </div>
 
-        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
           <p className="font-heading text-[15px] font-bold mb-3" style={{ color: INK }}>
             Activiteit<span style={{ color: FLAME }}>.</span>{' '}
             <span className="text-[11px] italic font-normal" style={{ color: MUTED, fontFamily: '"Instrument Serif", Georgia, serif' }}>portaal-logs</span>
@@ -849,7 +855,7 @@ function DashboardView({ setView }: { setView: (v: View) => void }) {
           </ul>
         </div>
 
-        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
           <div className="flex items-center justify-between mb-3">
             <p className="font-heading text-[15px] font-bold" style={{ color: INK }}>
               Gedaan<span style={{ color: FLAME }}>.</span>{' '}
@@ -877,7 +883,7 @@ function DashboardView({ setView }: { setView: (v: View) => void }) {
 
 function KpiCard({ label, value, sub, tone, icon }: { label: string; value: string; sub: string; tone: string; icon: React.ReactNode }) {
   return (
-    <div className="rounded-[12px] p-4 relative" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+    <div className="rounded-[12px] p-4 relative" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
       <div className="flex items-start justify-between mb-3">
         <span className="w-7 h-7 rounded-full inline-flex items-center justify-center" style={{ backgroundColor: `${tone}15`, color: tone }}>
           {icon}
@@ -952,7 +958,7 @@ function ProjectenView({ setView }: { setView: (v: View) => void }) {
         {kpis.map((k) => {
           const Icon = k.icon
           return (
-            <div key={k.label} className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+            <div key={k.label} className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
               <div className="flex items-center gap-2 mb-3">
                 <Icon className="w-3.5 h-3.5" style={{ color: k.tone }} strokeWidth={2} />
                 <span className="font-mono text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: INK }}>{k.label}</span>
@@ -967,7 +973,7 @@ function ProjectenView({ setView }: { setView: (v: View) => void }) {
       </div>
 
       {/* Filter / search bar */}
-      <div className="rounded-[12px] p-4 mb-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+      <div className="rounded-[12px] p-4 mb-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <div className="flex items-center gap-2 flex-1 min-w-[200px] px-3 py-1.5 rounded-md" style={{ border: `1px solid ${LINE}`, backgroundColor: BG }}>
             <Search className="w-3.5 h-3.5" style={{ color: '#9B9B95' }} />
@@ -1018,7 +1024,7 @@ function ProjectenView({ setView }: { setView: (v: View) => void }) {
       </div>
 
       {/* Table */}
-      <div className="rounded-[12px] overflow-x-auto" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+      <div className="rounded-[12px] overflow-x-auto" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
         <div className="grid grid-cols-[1.4fr_1.2fr_1fr_0.7fr_0.5fr_0.3fr] gap-3 px-5 py-3 font-mono text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: MUTED, borderBottom: `1px solid ${LINE}`, minWidth: 760 }}>
           <span>Project ↑↓</span>
           <span>Klant</span>
@@ -1093,7 +1099,7 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
         </div>
 
         {/* Briefing card */}
-        <div className="rounded-[12px] p-5" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+        <div className="rounded-[12px] p-5" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
           <div className="flex items-center justify-between mb-4">
             <p className="font-heading text-[16px] font-bold tracking-tight inline-flex items-baseline gap-2" style={{ color: INK }}>
               <FileText className="w-3.5 h-3.5" style={{ color: PETROL }} strokeWidth={2} />
@@ -1112,7 +1118,7 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
 
         {/* Taken + Offertes */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="rounded-[12px] p-5" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-5" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <div className="flex items-center justify-between mb-3">
               <p className="font-heading text-[15px] font-bold inline-flex items-baseline gap-2" style={{ color: INK }}>
                 <CheckSquare className="w-3.5 h-3.5" style={{ color: '#2D6B48' }} strokeWidth={2} />
@@ -1129,7 +1135,7 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
             </div>
           </div>
 
-          <div className="rounded-[12px] p-5" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-5" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <div className="flex items-center justify-between mb-3">
               <p className="font-heading text-[15px] font-bold inline-flex items-baseline gap-2" style={{ color: INK }}>
                 <FileText className="w-3.5 h-3.5" style={{ color: FLAME }} strokeWidth={2} />
@@ -1159,7 +1165,7 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
         </div>
 
         {/* Activiteit (collapsed) */}
-        <div className="rounded-[12px] p-4 flex items-center justify-between" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+        <div className="rounded-[12px] p-4 flex items-center justify-between" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
           <p className="font-heading text-[14px] font-bold inline-flex items-baseline gap-2" style={{ color: INK }}>
             <ChevronRight className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
             <Activity className="w-3.5 h-3.5" style={{ color: PETROL }} strokeWidth={2} />
@@ -1204,7 +1210,7 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
         </div>
 
         {/* Acties */}
-        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
           <div className="flex items-center justify-between mb-3">
             <p className="font-heading text-[14px] font-bold" style={{ color: INK }}>Acties<span style={{ color: FLAME }}>.</span></p>
             <p className="text-[10px] italic" style={{ color: MUTED, fontFamily: '"Instrument Serif", Georgia, serif' }}>wat is de volgende stap?</p>
@@ -1240,7 +1246,7 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
         </div>
 
         {/* Bestanden */}
-        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
           <div className="flex items-center justify-between mb-3">
             <p className="font-heading text-[14px] font-bold inline-flex items-baseline gap-1.5" style={{ color: INK }}>
               <FileText className="w-3.5 h-3.5" style={{ color: PETROL }} strokeWidth={2} />
@@ -1258,7 +1264,7 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
         </div>
 
         {/* Situatiefoto's */}
-        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
           <p className="font-heading text-[14px] font-bold inline-flex items-baseline gap-1.5 mb-3" style={{ color: INK }}>
             <Camera className="w-3.5 h-3.5" style={{ color: FLAME }} strokeWidth={2} />
             Situatiefoto&apos;s<span style={{ color: FLAME }}>.</span>
@@ -1581,7 +1587,7 @@ function FactuurView() {
         {/* LEFT */}
         <div className="space-y-4">
           {/* Klant */}
-          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <p className="font-heading text-[14px] font-bold inline-flex items-baseline gap-1.5 mb-3" style={{ color: PETROL }}>
               <Folder className="w-3.5 h-3.5" strokeWidth={2} />
               Klant
@@ -1612,7 +1618,7 @@ function FactuurView() {
           </div>
 
           {/* Factuurgegevens */}
-          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <p className="font-heading text-[14px] font-bold inline-flex items-baseline gap-1.5 mb-3" style={{ color: PETROL }}>
               <FileText className="w-3.5 h-3.5" strokeWidth={2} />
               Factuurgegevens
@@ -1638,7 +1644,7 @@ function FactuurView() {
           </div>
 
           {/* Financieel */}
-          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <p className="font-heading text-[14px] font-bold inline-flex items-baseline gap-1.5 mb-3" style={{ color: PETROL }}>
               <Wallet className="w-3.5 h-3.5" strokeWidth={2} />
               Financieel
@@ -1660,14 +1666,14 @@ function FactuurView() {
 
         {/* RIGHT */}
         <div className="space-y-4">
-          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <p className="font-heading text-[14px] font-bold mb-3" style={{ color: INK }}>Intro tekst</p>
             <div className="rounded-[8px] p-3 text-[12.5px]" style={{ backgroundColor: BG, border: `1px solid ${LINE}`, color: '#9B9B95', minHeight: 80 }}>
               Optionele intro tekst bovenaan de factuur…
             </div>
           </div>
 
-          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <div className="flex items-center justify-between mb-4">
               <p className="font-heading text-[14px] font-bold" style={{ color: INK }}>Factuurregels (1)</p>
               <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md text-[11px] font-semibold" style={{ color: PETROL, border: `1px solid ${LINE}` }}>
@@ -1703,7 +1709,7 @@ function FactuurView() {
             </p>
           </div>
 
-          <div className="rounded-[12px] p-4 flex items-center justify-between" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4 flex items-center justify-between" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <p className="text-[13px]" style={{ color: INK }}>
               <span className="font-bold">Extra tekst</span>{' '}
               <span className="italic" style={{ color: MUTED, fontFamily: '"Instrument Serif", Georgia, serif' }}>outro, voorwaarden en notities</span>
@@ -1957,7 +1963,7 @@ function OfferteView() {
         {/* LEFT — main */}
         <div className="space-y-4">
           {/* Introductietekst */}
-          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <p className="font-heading text-[15px] font-bold mb-3 inline-flex items-baseline gap-2" style={{ color: INK }}>
               Introductietekst<span style={{ color: FLAME }}>.</span>
               <span className="text-[11px] italic font-normal" style={{ color: MUTED, fontFamily: '"Instrument Serif", Georgia, serif' }}>optioneel</span>
@@ -1981,7 +1987,7 @@ function OfferteView() {
           </div>
 
           {/* Offerte-items */}
-          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <p className="font-heading text-[15px] font-bold mb-4 inline-flex items-baseline gap-2" style={{ color: INK }}>
               Offerte-items<span style={{ color: FLAME }}>.</span>
               <span className="text-[10px] font-mono w-4 h-4 rounded-full inline-flex items-center justify-center text-white" style={{ backgroundColor: FLAME }}>1</span>
@@ -2097,7 +2103,7 @@ function OfferteView() {
           </div>
 
           {/* Afsluittekst */}
-          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <p className="font-heading text-[15px] font-bold mb-3 inline-flex items-baseline gap-2" style={{ color: INK }}>
               Afsluittekst<span style={{ color: FLAME }}>.</span>
               <span className="text-[11px] italic font-normal" style={{ color: MUTED, fontFamily: '"Instrument Serif", Georgia, serif' }}>optioneel</span>
@@ -2121,7 +2127,7 @@ function OfferteView() {
           </div>
 
           {/* Notities & voorwaarden */}
-          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4 md:p-5" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <p className="font-heading text-[15px] font-bold mb-4" style={{ color: INK }}>
               Notities &amp; voorwaarden<span style={{ color: FLAME }}>.</span>
             </p>
@@ -2147,7 +2153,7 @@ function OfferteView() {
         {/* RIGHT */}
         <div className="space-y-4">
           {/* Klant card */}
-          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <div className="flex items-center justify-between mb-3">
               <div className="inline-flex items-center gap-2.5">
                 <span className="w-9 h-9 rounded-full inline-flex items-center justify-center font-mono text-[13px] font-bold text-white" style={{ backgroundColor: '#3A6B8C' }}>D</span>
@@ -2189,18 +2195,18 @@ function OfferteView() {
 
           {/* Subtotaal + BTW */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-[10px] p-3" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+            <div className="rounded-[10px] p-3" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
               <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-1" style={{ color: MUTED }}>Subtotaal</p>
               <p className="font-mono text-[15px] font-bold tabular-nums" style={{ color: INK }}>€ 0,00</p>
             </div>
-            <div className="rounded-[10px] p-3" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+            <div className="rounded-[10px] p-3" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
               <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-1" style={{ color: MUTED }}>BTW</p>
               <p className="font-mono text-[15px] font-bold tabular-nums" style={{ color: INK }}>€ 0,00</p>
             </div>
           </div>
 
           {/* Inkoop & verkoop */}
-          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-3" style={{ color: MUTED }}>Inkoop &amp; verkoop<span style={{ color: FLAME }}>.</span></p>
             <div className="flex items-center justify-between py-1.5 text-[13px]" style={{ color: INK }}>
               <span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} /> Inkoop</span>
@@ -2224,7 +2230,7 @@ function OfferteView() {
           </div>
 
           {/* Inkoop card (collapsible-feel) */}
-          <div className="rounded-[12px] p-3 flex items-center gap-3" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div className="rounded-[12px] p-3 flex items-center gap-3" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <span className="w-9 h-9 rounded-[8px] inline-flex items-center justify-center" style={{ backgroundColor: 'rgba(241,80,37,0.10)' }}>
               <DollarSign className="w-4 h-4" style={{ color: FLAME }} strokeWidth={2} />
             </span>
@@ -2288,7 +2294,7 @@ function InkoopView() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {inkoopKpis.map((k) => (
-          <div key={k.label} className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div key={k.label} className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <div className="inline-flex items-center gap-2 mb-3">
               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: k.dot }} />
               <span className="font-mono text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: INK }}>{k.label}</span>
@@ -2302,7 +2308,7 @@ function InkoopView() {
       </div>
 
       {/* Filter bar */}
-      <div className="rounded-[12px] p-4 mb-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+      <div className="rounded-[12px] p-4 mb-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <div className="flex items-center gap-2 flex-1 min-w-[200px] px-3 py-1.5 rounded-md" style={{ border: `1px solid ${LINE}`, backgroundColor: BG }}>
             <Search className="w-3.5 h-3.5" style={{ color: '#9B9B95' }} />
@@ -2337,7 +2343,7 @@ function InkoopView() {
       </div>
 
       {/* Table */}
-      <div className="rounded-[12px] overflow-x-auto" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+      <div className="rounded-[12px] overflow-x-auto" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
         <div className="grid grid-cols-[0.6fr_2fr_1fr_0.8fr_0.8fr] gap-3 px-5 py-3 font-mono text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: MUTED, borderBottom: `1px solid ${LINE}`, minWidth: 720 }}>
           <span>Datum</span>
           <span>Leverancier</span>
@@ -2761,7 +2767,7 @@ function KlantenView() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {klantKpis.map((k) => (
-          <div key={k.label} className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+          <div key={k.label} className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
             <div className="inline-flex items-center gap-2 mb-3">
               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: k.dot }} />
               <span className="font-mono text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: INK }}>{k.label}</span>
@@ -2775,7 +2781,7 @@ function KlantenView() {
       </div>
 
       {/* Filter bar */}
-      <div className="rounded-[12px] p-4 mb-4" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+      <div className="rounded-[12px] p-4 mb-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
         {/* Top: search + view toggle + sort + export */}
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <div className="flex items-center gap-2 flex-1 min-w-[180px] px-3 py-1.5 rounded-md" style={{ border: `1px solid ${LINE}`, backgroundColor: BG }}>
@@ -2843,7 +2849,7 @@ function KlantenView() {
       </div>
 
       {/* Table */}
-      <div className="rounded-[12px] overflow-x-auto" style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}>
+      <div className="rounded-[12px] overflow-x-auto" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
         <div className="grid grid-cols-[40px_2fr_1.6fr_1fr_1fr_0.5fr] gap-3 px-5 py-3 font-mono text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: MUTED, borderBottom: `1px solid ${LINE}`, minWidth: 820 }}>
           <span />
           <span>Bedrijfsnaam</span>
