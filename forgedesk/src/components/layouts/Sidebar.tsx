@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, LogOut, Menu, X,
+  LogOut, Menu, X,
   Moon, Sun, CreditCard, PanelTop,
   LayoutDashboard, CircleUserRound, BookOpen,
   Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox, Ruler,
@@ -89,7 +89,7 @@ function useIsDesktop() {
 
 export function Sidebar() {
   const isDesktop = useIsDesktop()
-  const { isCollapsed, toggleSidebar, setLayoutMode } = useSidebar()
+  const { isCollapsed, setLayoutMode } = useSidebar()
   const { user, logout } = useAuth()
   const isSupportAdmin = user?.id === ADMIN_USER_ID
   const supportAttentie = useSupportAttentie('support-nav', isSupportAdmin)
@@ -98,6 +98,9 @@ export function Sidebar() {
   const location = useLocation()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  // Altijd rail; alleen bij hover open (overlay). Geen ingeklapte/gepinde modus.
+  const expanded = hovered
   const [userPopoverOpen, setUserPopoverOpen] = useState(false)
   const [popoverPos, setPopoverPos] = useState<{ left: number; bottom: number } | null>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
@@ -196,19 +199,19 @@ export function Sidebar() {
               {/* Hover fill — lichtere petrol-tint squircle */}
               <div className="doen-sidebar-item-hover" style={{ borderRadius: '12px', insetInline: '10px' }} />
 
-              {/* Actief — donker-petrol squircle */}
-              {active && (
-                <div className="absolute inset-x-[10px] inset-y-0 rounded-[12px] doen-sidebar-active-pill" />
-              )}
-
               <div
                 className={cn(
                   'relative z-10 transition-transform duration-300 ease-out',
                   !active && 'group-hover/rail:scale-110',
                 )}
               >
-                <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.2 : 1.8} color={active ? '#FFFFFF' : '#8FA0A4'} />
+                <Icon className="h-[19px] w-[19px] text-[#1A535C] dark:text-[#7FB5BF]" strokeWidth={active ? 2.2 : 1.8} />
               </div>
+
+              {/* Actief — oranje dot */}
+              {active && (
+                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 rounded-full" style={{ width: 5, height: 5, backgroundColor: '#F15025' }} />
+              )}
             </NavLink>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={10}>{item.label}</TooltipContent>
@@ -239,42 +242,30 @@ export function Sidebar() {
         {/* Hover sweep background */}
         <div className="doen-sidebar-item-hover" />
 
-        {/* Active pill */}
-        {active && (
-          <div className="absolute inset-0 rounded-[12px] doen-sidebar-active-pill" />
-        )}
-
-        {/* Flame left accent */}
-        {active && <div className="doen-sidebar-flame-accent" style={{ left: '4px' }} />}
-
         {/* Icon — rounded container with module color tint */}
         <div
           className={cn(
             'relative z-10 w-[30px] h-[30px] rounded-[8px] flex items-center justify-center flex-shrink-0 transition-all duration-300',
-            !active && 'group-hover/nav:brightness-105',
+            active
+              ? 'bg-[#1A535C]/15 dark:bg-[#7FB5BF]/15'
+              : 'bg-[#1A535C]/[0.08] dark:bg-[#7FB5BF]/10 group-hover/nav:bg-[#1A535C]/15',
           )}
-          style={{
-            backgroundColor: active
-              ? 'rgba(255,255,255,0.16)'
-              : `${item.color}12`,
-          }}
         >
           <Icon
-            className="h-[17px] w-[17px]"
+            className="h-[17px] w-[17px] text-[#1A535C] dark:text-[#7FB5BF]"
             strokeWidth={active ? 2.25 : 1.75}
-            color={active ? '#FFFFFF' : item.color}
           />
         </div>
 
         {/* Label */}
         <span className={cn(
           'relative z-10 truncate transition-all duration-300 tracking-[-0.01em]',
-          active ? 'text-white font-semibold' : 'text-foreground/70 font-medium group-hover/nav:text-foreground',
+          active ? 'text-foreground font-semibold' : 'text-foreground/70 font-medium group-hover/nav:text-foreground',
         )}>
           {item.label}
         </span>
 
-        {/* Active dot */}
+        {/* Active — oranje dot */}
         {active && (
           <div className="relative z-10 ml-auto doen-sidebar-active-dot" />
         )}
@@ -284,7 +275,7 @@ export function Sidebar() {
 
   // ── Sidebar content ──
   const sidebarContent = (forMobile = false) => {
-    const collapsed = forMobile ? false : isCollapsed
+    const collapsed = forMobile ? false : !expanded
 
     return (
       <div className="flex flex-col h-full">
@@ -335,7 +326,7 @@ export function Sidebar() {
               )}
             </div>
           ) : (
-            <div className="px-0">
+            <div className="px-0 animate-in fade-in duration-200">
               {filteredGroups.map((group, gi) => (
                 <div key={group.section} className={gi > 0 ? 'mt-7' : ''}>
                   <div className="doen-sidebar-section">{group.section}</div>
@@ -376,26 +367,6 @@ export function Sidebar() {
 
           {/* Instellingen — Importeren leeft nu onder Instellingen → Importeren */}
           {collapsed ? renderRailItem(SETTINGS_ITEM) : renderExpandedItem(SETTINGS_ITEM, true)}
-
-          {/* Collapse toggle */}
-          {!forMobile && (
-            collapsed ? (
-              <button
-                onClick={toggleSidebar}
-                className="w-9 h-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground hover:bg-black/[0.04] transition-all duration-300 mt-2"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={toggleSidebar}
-                className="flex items-center gap-2 h-8 px-4 mx-2 rounded-[10px] text-muted-foreground hover:text-foreground hover:bg-black/[0.04] transition-all duration-300 mt-2"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                <span className="text-[12px] font-medium">Inklappen</span>
-              </button>
-            )
-          )}
 
           {/* User avatar */}
           {user && (
@@ -513,14 +484,21 @@ export function Sidebar() {
         {sidebarContent(true)}
       </aside>
 
-      {/* Desktop sidebar — only rendered on md+ to prevent mobile layout issues */}
+      {/* Desktop sidebar — rail die bij hover opent (overlay, content schuift niet) */}
       {isDesktop && (
-        <aside
-          className="flex flex-col flex-shrink-0 h-screen doen-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
-          style={{ width: isCollapsed ? RAIL_WIDTH : EXPANDED_WIDTH }}
-        >
-          {sidebarContent(false)}
-        </aside>
+        <div className="flex-shrink-0 h-screen" style={{ width: RAIL_WIDTH }}>
+          <aside
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            className={cn(
+              'fixed inset-y-0 left-0 z-40 flex flex-col h-screen doen-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden',
+              hovered && 'doen-sidebar-glass',
+            )}
+            style={{ width: expanded ? EXPANDED_WIDTH : RAIL_WIDTH }}
+          >
+            {sidebarContent(false)}
+          </aside>
+        </div>
       )}
     </>
   )
