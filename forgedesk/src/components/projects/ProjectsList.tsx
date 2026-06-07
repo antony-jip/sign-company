@@ -176,27 +176,6 @@ function projectFaseIndex(status: string): number {
   }
 }
 
-// De volgende concrete stap per status — de "wat nu" direct in de lijst.
-const NEXT_TONE_COLOR: Record<string, string> = {
-  flame: '#F15025', petrol: '#1A535C', done: '#2D6B48', muted: '#8A8985',
-}
-function projectNextAction(status: string): { label: string; tone: keyof typeof NEXT_TONE_COLOR } {
-  switch (status) {
-    case 'te-plannen': return { label: 'inplannen', tone: 'flame' }
-    case 'gepland': return { label: 'stuur offerte', tone: 'flame' }
-    case 'in-review': return { label: 'opvolgen', tone: 'petrol' }
-    case 'akkoord-klant': return { label: 'werkbon maken', tone: 'flame' }
-    case 'actief': return { label: 'plan montage', tone: 'petrol' }
-    case 'ingepland': return { label: 'uitvoeren', tone: 'petrol' }
-    case 'te-factureren': return { label: 'maak factuur', tone: 'flame' }
-    case 'gefactureerd': return { label: 'verstuurd', tone: 'done' }
-    case 'afgerond':
-    case 'opgeleverd': return { label: 'klaar', tone: 'done' }
-    case 'on-hold': return { label: 'on-hold', tone: 'muted' }
-    default: return { label: '', tone: 'muted' }
-  }
-}
-
 /** Map database statuses to spectrum fases for correct colors */
 const STATUS_TO_FASE: Record<string, string> = {
   gepland: 'goedgekeurd',
@@ -1361,7 +1340,7 @@ export function ProjectsList() {
                         return [cell]
                       })}
                       <th className="text-left py-3.5 pr-4 w-[150px]">
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Reis</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Status</span>
                       </th>
                       <th className="text-right py-3.5 pr-4 w-[110px] hidden xl:table-cell">
                         <button
@@ -1459,26 +1438,11 @@ export function ProjectsList() {
                                       <span className="text-[11px] text-[#1A4A52]/45 dark:text-muted-foreground/70 font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
                                     )}
                                   </div>
-                                  {(() => {
-                                    const na = projectNextAction(project.status)
-                                    if (!na.label && !project.beschrijving) return null
-                                    return (
-                                      <div className="flex items-center gap-1.5 mt-0.5 text-[11px] max-w-[340px] min-w-0">
-                                        {na.label && (
-                                          <span className="inline-flex items-center gap-1 font-semibold flex-shrink-0" style={{ color: NEXT_TONE_COLOR[na.tone] }}>
-                                            <span aria-hidden>{na.tone === 'done' ? '✓' : '→'}</span>
-                                            {na.label}
-                                          </span>
-                                        )}
-                                        {na.label && project.beschrijving && (
-                                          <span className="text-muted-foreground/40 flex-shrink-0">·</span>
-                                        )}
-                                        {project.beschrijving && (
-                                          <span className="text-[#1A4A52]/55 dark:text-muted-foreground/70 truncate">{project.beschrijving}</span>
-                                        )}
-                                      </div>
-                                    )
-                                  })()}
+                                  {project.beschrijving && (
+                                    <p className="text-[11px] text-[#1A4A52]/55 dark:text-muted-foreground/70 truncate max-w-[320px] mt-0.5">
+                                      {project.beschrijving}
+                                    </p>
+                                  )}
                                 </div>
                               </td>
                             ) : (
