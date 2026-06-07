@@ -1784,7 +1784,7 @@ export function EmailLayout() {
         <div className="sticky top-0 z-20 bg-white border-b border-[rgba(26,83,92,0.08)] flex-shrink-0 hidden md:block">
           <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[rgba(26,83,92,0.06)]">
             <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
-              {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}
+              {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}<span className="text-[#F15025]">.</span>
             </h1>
             <button
               type="button"
@@ -1955,13 +1955,13 @@ export function EmailLayout() {
               scroll. Virtualizer rendert echte headers absolute, dus deze
               overlay vult de gap. */}
           {activeGroup && (
-            <div className="sticky top-0 z-10 px-4 pt-3 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-foreground/70 bg-card/85 backdrop-blur-xl border-b border-black/[0.05] -mb-[36px]">
+            <div className="sticky top-0 z-10 px-4 pt-3 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#1A535C]/55 dark:text-foreground/60 bg-card/85 backdrop-blur-xl border-b border-black/[0.05] -mb-[36px]">
               {activeGroup === 'Vandaag' ? (
                 <>
                   <span className="md:hidden">Eerder vandaag</span>
                   <span className="hidden md:inline">{activeGroup}</span>
                 </>
-              ) : activeGroup}
+              ) : activeGroup}<span className="text-[#F15025] tracking-normal">.</span>
             </div>
           )}
 
@@ -2027,15 +2027,15 @@ export function EmailLayout() {
                       }}
                     >
                       {it.type === 'header-pinned' ? (
-                        <div className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-foreground/70">
-                          Vastgepind
+                        <div className="px-4 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#1A535C]/50 dark:text-foreground/55">
+                          Vastgepind<span className="text-[#F15025] tracking-normal">.</span>
                         </div>
                       ) : it.type === 'header-group' ? (() => {
                         const groupIds = emailsByGroup.get(it.group) || []
                         const allGroupChecked = groupIds.length > 0 && groupIds.every(id => checkedEmails.has(id))
                         const someGroupChecked = !allGroupChecked && groupIds.some(id => checkedEmails.has(id))
                         return (
-                          <div className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-foreground/70 flex items-center gap-2">
+                          <div className="px-4 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#1A535C]/50 dark:text-foreground/55 flex items-center gap-2">
                             <input
                               type="checkbox"
                               checked={allGroupChecked}
@@ -2044,12 +2044,14 @@ export function EmailLayout() {
                               className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-[#1A535C]"
                               onClick={(e) => e.stopPropagation()}
                             />
-                            {it.group === 'Vandaag' ? (
-                              <>
-                                <span className="md:hidden">Eerder vandaag</span>
-                                <span className="hidden md:inline">{it.group}</span>
-                              </>
-                            ) : it.group}
+                            <span>
+                              {it.group === 'Vandaag' ? (
+                                <>
+                                  <span className="md:hidden">Eerder vandaag</span>
+                                  <span className="hidden md:inline">{it.group}</span>
+                                </>
+                              ) : it.group}<span className="text-[#F15025] tracking-normal">.</span>
+                            </span>
                           </div>
                         )
                       })() : (
@@ -2186,15 +2188,27 @@ export function EmailLayout() {
 
         {/* Empty state — desktop only, getoond wanneer geen mail is geselecteerd */}
         {viewMode === 'idle' && (
-          <div className="hidden md:flex flex-1 flex-col items-center justify-center text-center px-8 bg-background">
-            <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-              <Mail className="h-6 w-6 text-muted-foreground/80" />
+          <div
+            className="hidden md:flex flex-1 flex-col items-center justify-center text-center px-8 relative overflow-hidden"
+            style={{
+              backgroundImage:
+                'radial-gradient(ellipse 70% 55% at 50% 32%, rgba(26,83,92,0.05), transparent 70%), radial-gradient(ellipse 60% 50% at 50% 100%, rgba(241,80,37,0.045), transparent 65%)',
+            }}
+          >
+            <div className="relative mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-[0_4px_20px_rgba(26,83,92,0.10),inset_0_0_0_0.5px_rgba(255,255,255,0.8)]">
+                <Mail className="h-7 w-7 text-[#1A535C]" strokeWidth={1.6} />
+              </div>
+              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#F15025] ring-[3px] ring-background" />
             </div>
-            <h3 className="font-heading text-[16px] font-bold text-foreground tracking-[-0.01em] mb-1.5">
-              Geen mail geselecteerd
+            <h3 className="font-heading text-[18px] font-bold text-foreground tracking-[-0.01em] mb-2">
+              Niets geopend<span className="text-[#F15025]">.</span>
             </h3>
-            <p className="text-[13px] text-foreground/70 max-w-[260px] leading-relaxed">
-              Klik een email in de lijst om hem te lezen.
+            <p
+              className="text-[14px] text-muted-foreground max-w-[280px] leading-relaxed"
+              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            >
+              kies een bericht uit de lijst, dan lees je het hier rustig na.
             </p>
           </div>
         )}
