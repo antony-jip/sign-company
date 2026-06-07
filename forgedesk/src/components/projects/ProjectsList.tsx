@@ -157,6 +157,22 @@ function statusHex(s: string): string {
   return getStatusTextColor(s)
 }
 
+// Zachte, stabiele avatar-tint per klant — rustige identiteit uit het DOEN-palet.
+const KLANT_AVATAR_TINTS: { bg: string; fg: string }[] = [
+  { bg: 'rgba(26,83,92,0.10)',  fg: '#1A535C' },
+  { bg: 'rgba(58,107,140,0.12)', fg: '#3A6B8C' },
+  { bg: 'rgba(45,107,72,0.12)',  fg: '#2D6B48' },
+  { bg: 'rgba(154,90,72,0.12)',  fg: '#9A5A48' },
+  { bg: 'rgba(106,90,138,0.13)', fg: '#6A5A8A' },
+  { bg: 'rgba(196,72,48,0.11)',  fg: '#C44830' },
+  { bg: 'rgba(138,122,74,0.14)', fg: '#8A7A4A' },
+]
+function klantTint(naam: string): { bg: string; fg: string } {
+  let hash = 0
+  for (let i = 0; i < naam.length; i++) hash = naam.charCodeAt(i) + ((hash << 5) - hash)
+  return KLANT_AVATAR_TINTS[Math.abs(hash) % KLANT_AVATAR_TINTS.length]
+}
+
 /** Map database statuses to spectrum fases for correct colors */
 const STATUS_TO_FASE: Record<string, string> = {
   gepland: 'goedgekeurd',
@@ -930,9 +946,9 @@ export function ProjectsList() {
                     className="group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
                     style={{
                       backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-                      border: isActive ? '1px solid rgba(26,83,92,0.22)' : '1px solid rgba(26,83,92,0.08)',
+                      border: isActive ? `1px solid ${tile.accent}66` : '1px solid rgba(26,83,92,0.08)',
                       boxShadow: isActive
-                        ? '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.06)'
+                        ? `0 1px 2px ${tile.accent}14, 0 10px 26px ${tile.accent}24`
                         : '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
                     }}
                     aria-pressed={isActive}
@@ -1430,8 +1446,12 @@ export function ProjectsList() {
                               <td key="klant" className="py-3.5 pr-4 hidden lg:table-cell">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   {(() => {
+                                    const tint = klantTint(klantNaam)
                                     return (
-                                      <span className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none bg-[#1A4A52]/[0.08] text-[#1A4A52] dark:bg-white/[0.06] dark:text-foreground/80">
+                                      <span
+                                        className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none"
+                                        style={{ backgroundColor: tint.bg, color: tint.fg }}
+                                      >
                                         {klantNaam.charAt(0)}
                                       </span>
                                     )
