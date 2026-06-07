@@ -82,6 +82,7 @@ import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemp
 import { getFactuurBijlageCounts } from '@/services/factuurBijlagenService'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { avatarTint } from '@/utils/avatarTint'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { round2 } from '@/utils/budgetUtils'
 import { toast } from 'sonner'
@@ -1691,20 +1692,20 @@ export function FacturenLayout() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Klant</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Project</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground text-xs">Offertebedrag</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground text-xs">Al gefactureerd</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground text-xs">Nog te factureren</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground text-xs"></th>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Klant</th>
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Project</th>
+                    <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Offertebedrag</th>
+                    <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Al gefactureerd</th>
+                    <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Nog te factureren</th>
+                    <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {teFacturerenProjecten.map((project) => {
                     const nogTeFactureren = round2(project.offerteBedrag - project.alGefactureerd)
                     return (
-                      <tr key={project.id} className="border-b last:border-b-0 hover:bg-muted/30 transition-colors">
+                      <tr key={project.id} className="border-b border-border last:border-b-0 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] transition-colors">
                         <td className="px-4 py-3 text-sm">{project.klant_naam || '-'}</td>
                         <td className="px-4 py-3 text-sm font-medium">{project.naam}</td>
                         <td className="px-4 py-3 text-sm text-right tabular-nums">
@@ -1839,34 +1840,34 @@ export function FacturenLayout() {
                   />
                 </th>
                 <th className="text-left py-3.5 pr-4">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Nummer</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Nummer</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 w-[160px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Klant</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Klant</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 hidden md:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Titel</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Titel</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[80px] hidden sm:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Datum</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Datum</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[70px] hidden xl:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Open</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Open</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[90px] hidden lg:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Vervaldatum</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Vervaldatum</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[110px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Bedrag</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Bedrag</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 w-[150px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Status</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[70px] hidden lg:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Verlopen</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Verlopen</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 hidden lg:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Online</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Online</span>
                 </th>
                 <th className="text-center py-3.5 px-2 w-10 hidden md:table-cell" aria-label="Bijlagen" />
                 <th className="w-10 py-3.5 pr-4 hidden md:table-cell" />
@@ -1908,15 +1909,15 @@ export function FacturenLayout() {
                   <tr
                     key={factuur.id}
                     className={cn(
-                      'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
+                      'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
                       attention && !selectedIds.has(factuur.id) && 'bg-[rgba(241,80,37,0.025)]',
-                      'hover:bg-background',
-                      selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.03]'
+                      'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
+                      selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.05]'
                     )}
+                    style={{ ['--row-accent' as string]: stripeHex } as React.CSSProperties}
                   >
                     <td
                       className="py-3.5 pl-5 pr-3 align-middle"
-                      style={{ boxShadow: `inset 2px 0 0 0 ${stripeHex}` }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Checkbox
@@ -1945,16 +1946,12 @@ export function FacturenLayout() {
                       <div className="flex items-center gap-2.5 min-w-0">
                         {(() => {
                           const naam = factuur.klant_naam || 'Onbekend'
-                          const c = naam.charCodeAt(0) % 5
-                          const avatarColors = [
-                            'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
-                            'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
-                            'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
-                            'bg-muted text-foreground/70',
-                            'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
-                          ]
+                          const t = avatarTint(naam)
                           return (
-                            <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
+                            <span
+                              className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none"
+                              style={{ backgroundColor: t.bg, color: t.fg }}
+                            >
                               {naam.charAt(0)}
                             </span>
                           )

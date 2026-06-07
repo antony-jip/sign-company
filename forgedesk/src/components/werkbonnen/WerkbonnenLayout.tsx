@@ -23,6 +23,7 @@ import {
   getWerkbonnen, deleteWerkbon, getKlanten, getProjecten, getOffertes, getWerkbonItems,
 } from '@/services/supabaseService'
 import { getCached, setCached, fetchQuery } from '@/lib/queryCache'
+import { avatarTint } from '@/utils/avatarTint'
 
 type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond' | 'vandaag'
 
@@ -34,12 +35,13 @@ const STATUS_CONFIG: Record<string, { label: string; text: string; bg: string }>
 
 const WERKBON_STATUS_HEX: Record<string, string> = {
   concept: '#5A5A55',
-  definitief: '#F15025',
-  afgerond: '#2D6B48',
+  definitief: '#3A5A9A',
+  afgerond: '#3A7D52',
 }
 function werkbonStatusHex(s: string): string {
   return WERKBON_STATUS_HEX[s] ?? '#5A5A55'
 }
+
 function isToday(dateStr?: string | null): boolean {
   if (!dateStr) return false
   const today = new Date().toISOString().split('T')[0]
@@ -318,10 +320,10 @@ export function WerkbonnenLayout() {
         {/* KPI tiles — clickable triage entry-points */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
-            { key: 'definitief' as FilterStatus, label: 'In uitvoering', sub: 'lopende werkbonnen',  count: statusCounts['definitief'] || 0, Icon: Wrench,    pulse: true  },
-            { key: 'vandaag'    as FilterStatus, label: 'Vandaag',       sub: 'ingepland vandaag',   count: vandaagCount,                    Icon: Sun,       pulse: false },
-            { key: 'concept'    as FilterStatus, label: 'Open',          sub: 'wacht op uitvoering', count: statusCounts['concept'] || 0,    Icon: Clipboard, pulse: false },
-            { key: 'afgerond'   as FilterStatus, label: 'Afgetekend',    sub: 'klaar.',              count: statusCounts['afgerond'] || 0,   Icon: Flag,      pulse: false },
+            { key: 'definitief' as FilterStatus, label: 'In uitvoering', sub: 'lopende werkbonnen',  count: statusCounts['definitief'] || 0, Icon: Wrench,    pulse: true,  accent: '#3A5A9A' },
+            { key: 'vandaag'    as FilterStatus, label: 'Vandaag',       sub: 'ingepland vandaag',   count: vandaagCount,                    Icon: Sun,       pulse: false, accent: '#F15025' },
+            { key: 'concept'    as FilterStatus, label: 'Open',          sub: 'wacht op uitvoering', count: statusCounts['concept'] || 0,    Icon: Clipboard, pulse: false, accent: '#5A5A55' },
+            { key: 'afgerond'   as FilterStatus, label: 'Afgetekend',    sub: 'klaar.',              count: statusCounts['afgerond'] || 0,   Icon: Flag,      pulse: false, accent: '#3A7D52' },
           ]).map((tile) => {
             const isActive = filterStatus === tile.key
             const TileIcon = tile.Icon
@@ -330,22 +332,26 @@ export function WerkbonnenLayout() {
                 key={tile.key}
                 type="button"
                 onClick={() => setFilterStatus(isActive ? 'alle' : tile.key)}
-                className={cn(
-                  'group doen-slate-surface relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
-                  isActive && 'doen-slate-surface-active'
-                )}
+                className="group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
+                style={{
+                  backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
+                  border: isActive ? `1px solid ${tile.accent}66` : '1px solid rgba(26,83,92,0.08)',
+                  boxShadow: isActive
+                    ? `0 1px 2px ${tile.accent}14, 0 10px 26px ${tile.accent}24`
+                    : '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
+                }}
                 aria-pressed={isActive}
               >
                 <div className="flex items-baseline justify-between gap-3 mb-2">
                   <span className="inline-flex items-center gap-2">
-                    <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.pulse && 'doen-pulse')} strokeWidth={1.75} />
-                    <span className="font-heading text-[14px] font-bold text-foreground">
+                    <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.pulse && 'doen-pulse')} style={{ color: tile.accent }} strokeWidth={1.9} />
+                    <span className="font-heading text-[14px] font-bold text-[#1A4A52] dark:text-foreground">
                       {tile.label}<span className="text-[#F15025]">.</span>
                     </span>
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-heading font-bold text-[28px] leading-none text-foreground tabular-nums">
+                  <span className="font-heading font-bold text-[28px] leading-none text-[#1A4A52] dark:text-foreground tabular-nums">
                     {tile.count}
                   </span>
                   <span
@@ -471,22 +477,22 @@ export function WerkbonnenLayout() {
                     />
                   </th>
                   <th className="text-left py-3.5 pl-2 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Nummer</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Nummer</span>
                   </th>
                   <th className="text-left py-3.5 pr-4 w-[160px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Klant</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Klant</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Offerte / Project</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Offerte / Project</span>
                   </th>
                   <th className="text-right py-3.5 pr-4 w-[90px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Datum</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Datum</span>
                   </th>
                   <th className="text-left py-3.5 pr-4 w-[150px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Status</span>
                   </th>
                   <th className="text-center py-3.5 pr-4 w-[70px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Items</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Items</span>
                   </th>
                   <th className="w-[80px] py-3.5 pr-4" />
                 </tr>
@@ -503,17 +509,16 @@ export function WerkbonnenLayout() {
                     <tr
                       key={wb.id}
                       className={cn(
-                        'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
+                        'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
                         attention && !selectedIds.has(wb.id) && 'bg-[rgba(241,80,37,0.025)]',
-                        'hover:bg-background',
-                        selectedIds.has(wb.id) && 'bg-[#1A535C]/[0.03]',
+                        'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
+                        selectedIds.has(wb.id) && 'bg-[#1A535C]/[0.05]',
                       )}
-                      style={{ animationDelay: `${i * 25}ms` }}
+                      style={{ animationDelay: `${i * 25}ms`, ['--row-accent' as string]: stripeHex } as React.CSSProperties}
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}
                     >
                       <td
-                        className="py-3.5 pl-5 pr-0"
-                        style={{ boxShadow: `inset 2px 0 0 0 ${stripeHex}` }}
+                        className="py-3.5 pl-5 pr-0 align-middle"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Checkbox
@@ -534,16 +539,12 @@ export function WerkbonnenLayout() {
                         <div className="flex items-center gap-2.5 min-w-0">
                           {(() => {
                             const naam = getKlantNaam(wb.klant_id)
-                            const c = naam.charCodeAt(0) % 5
-                            const avatarColors = [
-                              'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
-                              'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
-                              'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
-                              'bg-muted text-foreground/70',
-                              'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
-                            ]
+                            const tint = avatarTint(naam)
                             return (
-                              <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
+                              <span
+                                className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none"
+                                style={{ backgroundColor: tint.bg, color: tint.fg }}
+                              >
                                 {naam.charAt(0)}
                               </span>
                             )
@@ -563,7 +564,7 @@ export function WerkbonnenLayout() {
                         <StatusBadge
                           status={wb.status}
                           label={cfg.label}
-                          color={wb.status === 'definitief' ? '#F15025' : undefined}
+                          color={stripeHex}
                         />
                       </td>
                       <td className="py-3.5 pr-4 text-center">

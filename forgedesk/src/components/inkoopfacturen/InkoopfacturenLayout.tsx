@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { avatarTint } from '@/utils/avatarTint'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Checkbox } from '@/components/ui/checkbox'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -570,19 +571,19 @@ export function InkoopfacturenLayout() {
                   />
                 </th>
                 <th className="text-left py-3.5 pr-4">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Datum</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Datum</span>
                 </th>
                 <th className="text-left py-3.5 pr-4">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Leverancier</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Leverancier</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 hidden md:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Nummer</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Nummer</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[110px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Bedrag</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Bedrag</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 w-[150px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Status</span>
                 </th>
               </tr>
             </thead>
@@ -649,17 +650,16 @@ export function InkoopfacturenLayout() {
                     <tr
                       key={factuur.id}
                       onClick={() => openLightbox(factuur, idx)}
-                      style={{ animationDelay: `${idx * 25}ms` }}
+                      style={{ animationDelay: `${idx * 25}ms`, ['--row-accent' as string]: stripeHex } as React.CSSProperties}
                       className={cn(
-                        'border-b border-border last:border-0 hover:bg-background cursor-pointer transition-colors doen-row group',
+                        'border-b border-border last:border-0 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] cursor-pointer transition-colors doen-row group',
                         attention && !selectedIds.has(factuur.id) && 'bg-[rgba(241,80,37,0.025)]',
-                        selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.03]',
+                        selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.05]',
                         isDimmed && 'opacity-45'
                       )}
                     >
                       <td
                         className="py-3.5 pl-5 pr-3 w-10"
-                        style={{ boxShadow: `inset 2px 0 0 0 ${stripeHex}` }}
                         onClick={e => e.stopPropagation()}
                       >
                         <Checkbox
@@ -674,9 +674,23 @@ export function InkoopfacturenLayout() {
                         </span>
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="text-[13px] font-medium text-[#1A4A52] dark:text-foreground">
-                          {factuur.leverancier_naam || factuur.email_van || '-'}
-                        </span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {(() => {
+                            const naam = factuur.leverancier_naam || factuur.email_van || '-'
+                            const t = avatarTint(naam)
+                            return (
+                              <span
+                                className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none"
+                                style={{ backgroundColor: t.bg, color: t.fg }}
+                              >
+                                {naam.charAt(0)}
+                              </span>
+                            )
+                          })()}
+                          <span className="text-[13px] font-medium text-[#1A4A52] dark:text-foreground truncate">
+                            {factuur.leverancier_naam || factuur.email_van || '-'}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3.5 pr-4 hidden md:table-cell">
                         <span className="text-[13px] font-mono text-muted-foreground">

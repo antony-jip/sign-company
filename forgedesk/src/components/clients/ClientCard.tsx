@@ -15,7 +15,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Building2,
   FolderKanban,
   Pin,
   MoreHorizontal,
@@ -27,6 +26,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
+import { avatarTint } from '@/utils/avatarTint'
 import type { Klant } from '@/types'
 import { klantStatusConfig } from '@/types'
 
@@ -47,7 +47,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all duration-200 rounded-xl border-black/[0.06] hover:shadow-lg hover:border-[#8BAFD4]/40 dark:hover:border-[#8BAFD4]/30 group",
+        "cursor-pointer transition-all duration-200 rounded-xl border-black/[0.06] hover:shadow-lg hover:border-[#1A535C]/20 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] group",
         selected && "ring-2 ring-primary border-primary/30"
       )}
       onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.contactpersoon || 'Klant', id: `/klanten/${klant.id}` })}
@@ -67,9 +67,17 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
                 />
               </div>
             ) : null}
-            <div className="w-10 h-10 rounded-lg bg-[#8BAFD4]/15 dark:bg-[#8BAFD4]/20 flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-5 h-5 text-[#8BAFD4] dark:text-[#8BAFD4]" />
-            </div>
+            {(() => {
+              const tint = avatarTint(klant.bedrijfsnaam)
+              return (
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold uppercase select-none"
+                  style={{ backgroundColor: tint.bg, color: tint.fg }}
+                >
+                  {(klant.bedrijfsnaam || '?').charAt(0)}
+                </div>
+              )
+            })()}
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-base text-foreground dark:text-white truncate">

@@ -67,6 +67,7 @@ import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOptimisticState } from '@/hooks/useOptimistic'
+import { avatarTint } from '@/utils/avatarTint'
 import { Timer, PenLine, Heart, Hourglass } from 'lucide-react'
 
 type ViewMode = 'pipeline' | 'lijst'
@@ -831,7 +832,7 @@ export function QuotesPipeline() {
     <button
       onClick={() => handleListSort(column)}
       className={cn(
-        'flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors',
+        'flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground hover:text-foreground transition-colors',
         align === 'right' && 'ml-auto',
       )}
     >
@@ -880,10 +881,10 @@ export function QuotesPipeline() {
             {/* KPI tiles — clickable status-filter shortcuts */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {([
-                { key: 'wacht_op_reactie', label: 'Opvolgen',  sub: 'wacht op reactie',         count: offerteKpis.opvolgen, Icon: Timer    },
-                { key: 'concept',          label: 'Concept',   sub: 'nog niet verstuurd',       count: offerteKpis.concept,  Icon: PenLine  },
-                { key: 'goedgekeurd',      label: 'Akkoord',   sub: 'klaar om te factureren',   count: offerteKpis.akkoord,  Icon: Heart    },
-                { key: 'verlopen',         label: 'Verlopen',  sub: 'geldigheid voorbij.',      count: offerteKpis.verlopen, Icon: Hourglass },
+                { key: 'wacht_op_reactie', label: 'Opvolgen',  sub: 'wacht op reactie',         count: offerteKpis.opvolgen, Icon: Timer,     accent: '#F15025' },
+                { key: 'concept',          label: 'Concept',   sub: 'nog niet verstuurd',       count: offerteKpis.concept,  Icon: PenLine,   accent: '#5A5A55' },
+                { key: 'goedgekeurd',      label: 'Akkoord',   sub: 'klaar om te factureren',   count: offerteKpis.akkoord,  Icon: Heart,     accent: '#2D6B48' },
+                { key: 'verlopen',         label: 'Verlopen',  sub: 'geldigheid voorbij.',      count: offerteKpis.verlopen, Icon: Hourglass, accent: '#1A535C' },
               ] as const).map((tile) => {
                 const isActive = statusFilter === tile.key
                 const TileIcon = tile.Icon
@@ -893,14 +894,14 @@ export function QuotesPipeline() {
                     type="button"
                     onClick={() => setStatusFilter(isActive ? 'alle' : tile.key as StatusFilter)}
                     className={cn(
-                      'group doen-slate-surface relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
-                      isActive && 'doen-slate-surface-active'
+                      'group doen-slate-surface relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2'
                     )}
+                    style={isActive ? { borderColor: tile.accent, boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px ${tile.accent}1F` } : undefined}
                     aria-pressed={isActive}
                   >
                     <div className="flex items-baseline justify-between gap-3 mb-2">
                       <span className="inline-flex items-center gap-2">
-                        <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'wacht_op_reactie' && 'doen-pulse')} strokeWidth={1.75} />
+                        <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'wacht_op_reactie' && 'doen-pulse')} strokeWidth={1.75} style={{ color: tile.accent }} />
                         <span className="font-heading text-[14px] font-bold text-foreground">
                           {tile.label}<span className="text-[#F15025]">.</span>
                         </span>
@@ -1189,11 +1190,16 @@ export function QuotesPipeline() {
                                 onDragStart={e => handleDragStart(e, offerte.id)}
                                 onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                                 className={cn(
-                                  'bg-card rounded-xl p-3.5 space-y-2 shadow-[0_1px_2px_rgba(15,15,15,0.04)] hover:shadow-[0_10px_28px_-12px_rgba(15,15,15,0.18),0_2px_6px_-2px_rgba(15,15,15,0.04)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer active:cursor-grabbing active:translate-y-0',
+                                  'relative bg-card rounded-xl pl-4 pr-3.5 py-3.5 space-y-2 shadow-[0_1px_2px_rgba(15,15,15,0.04)] hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] hover:shadow-[0_10px_28px_-12px_rgba(15,15,15,0.18),0_2px_6px_-2px_rgba(15,15,15,0.04)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer active:cursor-grabbing active:translate-y-0',
                                   needsFollowUp ? 'ring-1 ring-[#F15025]/35' : 'ring-1 ring-black/[0.04]',
                                   isPaused && 'opacity-55 saturate-50',
                                 )}
                               >
+                                <span
+                                  aria-hidden
+                                  className="absolute left-0 top-1.5 bottom-1.5 w-[2.5px] rounded-r-full opacity-70 group-hover:opacity-100 transition-opacity"
+                                  style={{ backgroundColor: offerteStatusHex(offerte.status) }}
+                                />
                                 {/* Top row */}
                                 <div className="flex items-center justify-between gap-1">
                                   <span className="text-[11px] font-mono font-medium text-[#1A535C]">{offerte.nummer}</span>
@@ -1225,7 +1231,21 @@ export function QuotesPipeline() {
                                   </div>
                                 </div>
                                 {/* Client */}
-                                <p className="text-[12px] text-foreground/70 truncate">{offerte.klant_naam || 'Onbekende klant'}</p>
+                                {(() => {
+                                  const klantNaam = offerte.klant_naam || 'Onbekende klant'
+                                  const tint = avatarTint(klantNaam)
+                                  return (
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span
+                                        className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none"
+                                        style={{ backgroundColor: tint.bg, color: tint.fg }}
+                                      >
+                                        {klantNaam.charAt(0)}
+                                      </span>
+                                      <p className="text-[12px] text-foreground/70 truncate">{klantNaam}</p>
+                                    </div>
+                                  )
+                                })()}
                                 {/* Amount + date */}
                                 <div className="flex items-center justify-between pt-2 border-t border-border">
                                   <span className="text-[14px] font-bold font-mono tabular-nums text-foreground">{formatEur(offerte.totaal)}</span>
@@ -1351,7 +1371,7 @@ export function QuotesPipeline() {
                       return (
                         <div
                           key={offerte.id}
-                          className="doen-row doen-slate-surface rounded-xl p-4 active:scale-[0.99] transition-transform"
+                          className="doen-row doen-slate-surface rounded-xl p-4 active:scale-[0.99] hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] transition-all duration-200"
                           style={{
                             animationDelay: `${i * 30}ms`,
                             boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025), inset 3px 0 0 0 ${stripeHex}`,
@@ -1397,7 +1417,7 @@ export function QuotesPipeline() {
                             </th>
                             <th className="text-left py-3.5 pr-4"><SortHeader column="nummer" label="Offerte" /></th>
                             <th className="text-left py-3.5 pr-4 w-[160px] hidden lg:table-cell"><SortHeader column="klant_naam" label="Klant" /></th>
-                            <th className="text-left py-3.5 pr-4 w-[150px]"><span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Status</span></th>
+                            <th className="text-left py-3.5 pr-4 w-[150px]"><span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Status</span></th>
                             <th className="text-right py-3.5 pr-4 w-[110px] hidden xl:table-cell"><SortHeader column="totaal" label="Bedrag" align="right" /></th>
                             <th className="text-right py-3.5 pr-4 w-[80px] hidden md:table-cell"><SortHeader column="created_at" label="Datum" align="right" /></th>
                             <th className="text-right py-3.5 pr-4 w-[70px] hidden lg:table-cell"><SortHeader column="days_open" label="Dagen" align="right" /></th>
@@ -1415,17 +1435,16 @@ export function QuotesPipeline() {
                               <tr
                                 key={offerte.id}
                                 className={cn(
-                                  'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
+                                  'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
                                   attention && !selectedIds.has(offerte.id) && 'bg-[rgba(241,80,37,0.025)]',
-                                  'hover:bg-background',
-                                  selectedIds.has(offerte.id) && 'bg-[#1A535C]/[0.03]',
+                                  'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
+                                  selectedIds.has(offerte.id) && 'bg-[#1A535C]/[0.05]',
                                 )}
-                                style={{ animationDelay: `${i * 25}ms` }}
+                                style={{ animationDelay: `${i * 25}ms`, ['--row-accent' as string]: stripeHex } as React.CSSProperties}
                                 onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                               >
                                 <td
                                   className="py-3.5 pl-5 pr-3 align-middle"
-                                  style={{ boxShadow: `inset 2px 0 0 0 ${stripeHex}` }}
                                   onClick={e => e.stopPropagation()}
                                 >
                                   <Checkbox checked={selectedIds.has(offerte.id)} onCheckedChange={() => toggleSelect(offerte.id)} className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white" />
@@ -1452,22 +1471,18 @@ export function QuotesPipeline() {
                                   <div className="flex items-center gap-2.5 min-w-0">
                                     {(() => {
                                       const naam = offerte.klant_naam || 'Onbekend'
-                                      const c = naam.charCodeAt(0) % 5
-                                      const avatarColors = [
-                                        'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
-                                        'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
-                                        'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
-                                        'bg-muted text-foreground/70',
-                                        'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
-                                      ]
+                                      const tint = avatarTint(naam)
                                       return (
-                                        <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
+                                        <span
+                                          className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none"
+                                          style={{ backgroundColor: tint.bg, color: tint.fg }}
+                                        >
                                           {naam.charAt(0)}
                                         </span>
                                       )
                                     })()}
                                     <div className="min-w-0">
-                                      <span className="text-[13px] text-muted-foreground truncate block leading-tight">{offerte.klant_naam || 'Onbekend'}</span>
+                                      <span className="text-[13px] text-[#1A4A52]/70 dark:text-foreground/70 truncate block leading-tight">{offerte.klant_naam || 'Onbekend'}</span>
                                     </div>
                                   </div>
                                 </td>

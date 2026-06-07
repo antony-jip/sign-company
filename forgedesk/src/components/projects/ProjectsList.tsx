@@ -35,6 +35,7 @@ import {
 import { MedewerkerSelector } from '@/components/shared/MedewerkerSelector'
 import { Button } from '@/components/ui/button'
 import { getFase } from '@/utils/projectFases'
+import { avatarTint } from '@/utils/avatarTint'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   cn,
@@ -155,22 +156,6 @@ const STATUS_HEX: Record<string, string> = {
 function statusHex(s: string): string {
   // Eén kleur per status: balk + dot volgen de design-systeem-tekstkleur.
   return getStatusTextColor(s)
-}
-
-// Zachte, stabiele avatar-tint per klant — rustige identiteit uit het DOEN-palet.
-const KLANT_AVATAR_TINTS: { bg: string; fg: string }[] = [
-  { bg: 'rgba(26,83,92,0.10)',  fg: '#1A535C' },
-  { bg: 'rgba(58,107,140,0.12)', fg: '#3A6B8C' },
-  { bg: 'rgba(45,107,72,0.12)',  fg: '#2D6B48' },
-  { bg: 'rgba(154,90,72,0.12)',  fg: '#9A5A48' },
-  { bg: 'rgba(106,90,138,0.13)', fg: '#6A5A8A' },
-  { bg: 'rgba(196,72,48,0.11)',  fg: '#C44830' },
-  { bg: 'rgba(138,122,74,0.14)', fg: '#8A7A4A' },
-]
-function klantTint(naam: string): { bg: string; fg: string } {
-  let hash = 0
-  for (let i = 0; i < naam.length; i++) hash = naam.charCodeAt(i) + ((hash << 5) - hash)
-  return KLANT_AVATAR_TINTS[Math.abs(hash) % KLANT_AVATAR_TINTS.length]
 }
 
 /** Map database statuses to spectrum fases for correct colors */
@@ -1446,7 +1431,7 @@ export function ProjectsList() {
                               <td key="klant" className="py-3.5 pr-4 hidden lg:table-cell">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   {(() => {
-                                    const tint = klantTint(klantNaam)
+                                    const tint = avatarTint(klantNaam)
                                     return (
                                       <span
                                         className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none"

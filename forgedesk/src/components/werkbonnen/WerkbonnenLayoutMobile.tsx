@@ -17,11 +17,11 @@ import type { Werkbon, Klant, Project, Offerte } from '@/types'
 
 type StatusFilter = 'alle' | Werkbon['status']
 
-const STATUS_CONFIG: Record<Werkbon['status'], { label: string; text: string; bg: string; dot: string }> = {
-  concept: { label: 'Open', text: '#5A5A55', bg: '#EEEEED', dot: '#9B9B95' },
-  definitief: { label: 'In uitvoering', text: '#C03A18', bg: '#FDE8E2', dot: '#F15025' },
-  afgerond: { label: 'Afgetekend', text: '#1A535C', bg: '#E2F0F0', dot: '#2A8A8A' },
-  gefactureerd: { label: 'Gefactureerd', text: '#3A5A9A', bg: '#E8EEF9', dot: '#4A7AC7' },
+const STATUS_CONFIG: Record<Werkbon['status'], { label: string; accent: string }> = {
+  concept: { label: 'Open', accent: '#5A5A55' },
+  definitief: { label: 'In uitvoering', accent: '#3A5A9A' },
+  afgerond: { label: 'Afgetekend', accent: '#3A7D52' },
+  gefactureerd: { label: 'Gefactureerd', accent: '#3A5A9A' },
 }
 
 const FILTER_PILLS: { value: StatusFilter; label: string }[] = [
@@ -208,18 +208,23 @@ export function WerkbonnenLayoutMobile() {
                   <button
                     type="button"
                     onClick={() => navigate(`/werkbonnen/${wb.id}`)}
-                    className="w-full text-left px-5 py-3.5 active:bg-background transition-colors"
+                    className="group relative w-full text-left px-5 py-3.5 active:bg-[rgba(26,83,92,0.04)] transition-colors"
                   >
+                    <span
+                      className="absolute left-0 top-0 bottom-0 w-[2.5px] rounded-r-sm opacity-70 group-active:opacity-100 transition-opacity"
+                      style={{ backgroundColor: cfg.accent }}
+                      aria-hidden
+                    />
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <span className="text-[12px] font-mono font-semibold text-foreground/70 tabular-nums">
                         {wb.werkbon_nummer || 'concept'}
                       </span>
                       <span
-                        className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold flex-shrink-0"
-                        style={{ color: cfg.text, backgroundColor: cfg.bg }}
+                        className="inline-flex items-center gap-1.5 text-[12px] font-medium flex-shrink-0 whitespace-nowrap"
+                        style={{ color: cfg.accent }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.dot }} />
-                        {cfg.label}
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.accent }} />
+                        {cfg.label}<span className="text-[#F15025]">.</span>
                       </span>
                     </div>
                     <h3 className="text-[15px] font-medium text-foreground leading-snug truncate">

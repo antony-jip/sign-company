@@ -36,6 +36,7 @@ import {
 } from 'lucide-react'
 import { AlertCircle, Activity, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { avatarTint } from '@/utils/avatarTint'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjectCountsByKlant, deleteKlant } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
@@ -685,19 +686,19 @@ export function ClientsLayout() {
                     />
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Bedrijfsnaam</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Bedrijfsnaam</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Email</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Email</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Telefoon</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Telefoon</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Stad</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Stad</span>
                   </th>
                   <th className="text-center py-3.5 pr-4 w-[80px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Projecten</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Projecten</span>
                   </th>
                   <th className="w-10 py-3.5 pr-4" />
                 </tr>
@@ -711,7 +712,7 @@ export function ClientsLayout() {
                     className={cn(
                       'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
                       klantNeedsAttention(klant) && !selectedIds.has(klant.id) && 'bg-[rgba(241,80,37,0.025)]',
-                      'hover:bg-background',
+                      'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
                       selectedIds.has(klant.id) && 'bg-[#1A535C]/[0.03]'
                     )}
                     style={{ animationDelay: `${i * 25}ms` }}
@@ -732,16 +733,12 @@ export function ClientsLayout() {
                     <td className="py-3.5 pr-4">
                       <div className="flex items-center gap-2.5 min-w-0">
                         {(() => {
-                          const c = klant.bedrijfsnaam.charCodeAt(0) % 5
-                          const avatarColors = [
-                            'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
-                            'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
-                            'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
-                            'bg-muted text-foreground/70',
-                            'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
-                          ]
+                          const tint = avatarTint(klant.bedrijfsnaam)
                           return (
-                            <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
+                            <span
+                              className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none"
+                              style={{ backgroundColor: tint.bg, color: tint.fg }}
+                            >
                               {klant.bedrijfsnaam.charAt(0)}
                             </span>
                           )
