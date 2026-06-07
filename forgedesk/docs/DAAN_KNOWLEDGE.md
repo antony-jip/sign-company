@@ -653,4 +653,219 @@ moment en jij bevestigt.
 
 **Gerelateerde modules:** Planning, Team.
 
+## Email
+
+**Waar in de app:** route `/email` (menu-item "Email"); een nieuw bericht maak
+je op `/email/compose`.
+
+**Wat het doet:** Een volwaardige e-mailclient die werkt met je eigen
+mailaccount (via IMAP/SMTP). Je leest en beantwoordt mail in doen., met
+klantinformatie ernaast, en Daan helpt je bij het schrijven en herschrijven.
+Daarnaast is er de **Sales Inbox** met een tabblad **"Opvolgen"** voor mail
+waar je nog een reactie op verwacht.
+
+**Belangrijkste acties:**
+- E-mail lezen, beantwoorden en nieuwe berichten schrijven.
+- Een bericht markeren om op te volgen (komt in het tabblad "Opvolgen").
+- E-mail laten herschrijven door Daan (bijvoorbeeld korter, formeler of
+  vertaald).
+- Een bericht inplannen om later te versturen.
+- Sjablonen gebruiken voor terugkerende e-mails.
+
+**De Sales Inbox / Opvolgen:** Markeer een verstuurde mail als "Opvolgen" als je
+een antwoord verwacht. Komt er een reactie binnen, dan probeert doen. die
+automatisch te koppelen en verdwijnt de mail uit je opvolglijst. Deze koppeling
+gebeurt op afzender en is niet waterdicht, dus controleer af en toe zelf.
+
+**Veelvoorkomende vragen:**
+- *Werkt doen. met mijn eigen e-mailadres?* Ja, je koppelt je eigen
+  mailaccount; het instellen daarvan doe je in de instellingen.
+- *Wat doet het tabblad "Opvolgen"?* Daar staan de verstuurde mails waar je nog
+  een reactie op wacht.
+- *Kan Daan mijn e-mail herschrijven?* Ja, selecteer de tekst en kies een
+  herschrijfactie, zoals korter of formeler.
+- *Kan ik een e-mail later laten versturen?* Ja, je kunt een bericht inplannen.
+- *Kan ik vaste sjablonen gebruiken?* Ja, sjablonen beheer je in de
+  instellingen.
+
+**Tips:**
+- Markeer cold-acquisitie-mails als "Opvolgen" zodat je geen reactie mist.
+- Laat Daan een eerste versie schrijven en pas die zelf aan; dat scheelt tijd.
+
+**Gerelateerde modules:** Klanten, Daan, Instellingen (e-mail), Klantportaal.
+
+---
+
+## Klantportaal
+
+**Waar in de app:** beheer op route `/portalen` (menu-item "Portalen"). Voor de
+klant opent het portaal op een openbare link `/portaal/:token` (geen inloggen
+nodig).
+
+**Wat het doet:** Het klantportaal is de online plek waar jouw klant de
+voortgang van zijn project ziet. In een tijdlijn verschijnen berichten,
+offertes, facturen, afbeeldingen en tekeningen. De klant kan reageren, offertes
+en tekeningen goedkeuren en facturen online betalen.
+
+**Belangrijkste acties (jij, in het beheer):**
+- Een portaal voor een project aanmaken en de link met de klant delen.
+- Items (berichten, offertes, facturen, afbeeldingen, tekeningen) toevoegen.
+- Het portaal in je eigen huisstijl zetten (header-achtergrond en logo).
+- Zien wanneer de klant iets bekeken of goedgekeurd heeft.
+
+**Belangrijkste acties (de klant):**
+- De tijdlijn van het project bekijken.
+- Een offerte of tekening goedkeuren (of een wijziging vragen).
+- Een factuur als pdf downloaden en online betalen.
+- Reageren op een item.
+
+**Veelvoorkomende vragen:**
+- *Moet de klant inloggen?* Nee, het portaal opent via een beveiligde link.
+- *Wat ziet de klant?* Alleen de items die jij in zijn portaal hebt gezet.
+- *Kan ik het portaal in mijn eigen huisstijl zetten?* De header-achtergrond en
+  het logo zijn aanpasbaar; de rest houdt de doen.-stijl ("powered by doen.").
+- *Hoe weet ik of de klant de offerte gezien heeft?* Dat zie je terug in het
+  beheer en in het project-cockpit.
+- *Hoe betaalt de klant een factuur?* Via de betaallink bij het factuur-item in
+  het portaal.
+
+**Tips:**
+- Deel foto's van de voortgang in het portaal; dat geeft de klant vertrouwen en
+  scheelt belletjes.
+
+**Gerelateerde modules:** Projecten, Offertes, Facturen, Email.
+
+---
+
+## Documenten
+
+**Waar in de app:** route `/documenten` (menu-item "Documenten").
+
+**Wat het doet:** Het centrale archief voor je bestanden, zoals pdf's,
+tekeningen en afbeeldingen. Hier beheer je ook je briefpapier/sjablonen.
+
+**Belangrijkste acties:**
+- Bestanden uploaden en downloaden.
+- Bestanden ordenen en terugvinden via zoeken.
+
+**Veelvoorkomende vragen:**
+- *Waar bewaar ik algemene bestanden?* In Documenten; bestanden die bij één
+  project horen, zet je in dat project.
+- *Hoe deel ik een bestand met een klant?* Via het klantportaal.
+
+**Tips:**
+- Bewaar je briefpapier hier zodat het in je offertes en facturen gebruikt
+  wordt.
+
+**Gerelateerde modules:** Projecten, Klantportaal, Instellingen (huisstijl).
+
+---
+
+## Kennisbank
+
+**Waar in de app:** route `/kennisbank` (menu-item "Kennisbank").
+
+**Wat het doet:** De interne kennisbank van je bedrijf: artikelen met uitleg,
+werkwijzen en tips, geordend per onderwerp. Daan gebruikt deze artikelen ook om
+vragen te beantwoorden.
+
+**Belangrijkste acties:**
+- Door categorieën en artikelen bladeren.
+- Artikelen lezen over hoe je iets in doen. doet.
+
+**Veelvoorkomende vragen:**
+- *Waar vind ik uitleg over een module?* In de kennisbank, of vraag het direct
+  aan Daan.
+- *Kan mijn team artikelen toevoegen?* Ja, de kennisbank beheer je zelf (via de
+  instellingen).
+
+**Tips:**
+- Stel je vraag eerst aan Daan; die doorzoekt onder andere de kennisbank.
+
+**Gerelateerde modules:** Daan, Instellingen (kennisbank).
+
+---
+
+## Visualizer
+
+**Waar in de app:** route `/visualizer` (menu-item "Visualizer").
+
+**Wat het doet:** Met de visualizer maak je realistische voorbeeldafbeeldingen
+(mockups) van je signing-ontwerpen. Je beschrijft of uploadt je ontwerp en
+kiest een beeldverhouding; de app genereert een mockup die je aan de klant kunt
+laten zien. Dit werkt met credits.
+
+**Belangrijkste acties:**
+- Een visualisatie genereren op basis van een beschrijving of afbeelding.
+- Een beeldverhouding kiezen.
+- De mockup opslaan, downloaden en aan een project of offerte koppelen.
+
+**Veelvoorkomende vragen:**
+- *Wat kost een visualisatie?* Het werkt met credits; je verbruik en saldo zie
+  je in de app.
+- *Kan ik een mockup aan een offerte koppelen?* Ja, dat maakt je voorstel
+  sterker.
+- *Werkt het op mobiel?* Genereren kan, maar voor het mooiste resultaat werk je
+  op een groter scherm.
+
+**Tips:**
+- Beschrijf je ontwerp zo concreet mogelijk (materiaal, kleur, plaatsing) voor
+  een beter resultaat.
+
+**Gerelateerde modules:** Projecten, Offertes, Klantportaal.
+
+---
+
+## Daan (de AI-assistent)
+
+**Waar in de app:** route `/ai` (menu-item voor Daan); daarnaast is Daan
+beschikbaar als chatvenster binnen de app.
+
+**Wat het doet:** Daan is de AI-assistent van doen. Daan beantwoordt vragen over
+je eigen gegevens (klanten, projecten, offertes, taken), helpt teksten schrijven
+(zoals e-mails), kan helpen bij het opzetten van offertes en kan voorstellen om
+records aan te maken. Daan doorzoekt ook de kennisbank.
+
+**Belangrijkste acties:**
+- Vragen stellen over je klanten, projecten, offertes, facturen en taken.
+- Teksten laten schrijven of herschrijven (bijvoorbeeld een e-mail of
+  introductietekst).
+- Daan iets laten klaarzetten, zoals een concept of een nieuw record, dat jij
+  daarna bevestigt.
+
+**Veelvoorkomende vragen:**
+- *Wat kan ik aan Daan vragen?* Vragen over je eigen gegevens en hulp bij
+  teksten. Bijvoorbeeld: "Hoeveel offertes staan er open?" of "Schrijf een
+  herinneringsmail voor deze klant."
+- *Verstuurt Daan zelf e-mails?* Nee, Daan schrijft de tekst; versturen doe je
+  zelf.
+- *Kan Daan dingen voor me aanmaken?* Daan kan iets klaarzetten dat jij daarna
+  bevestigt.
+- *Wat als Daan iets niet weet?* Dan zegt Daan dat eerlijk en verwijst je naar
+  "Medewerker spreken" voor hulp van een mens.
+
+**Tips:**
+- Stel concrete vragen; hoe duidelijker je vraag, hoe beter het antwoord.
+
+**Gerelateerde modules:** Email, Kennisbank, Klanten, Projecten, Offertes,
+Taken.
+
+---
+
+## Hulp en "Medewerker spreken"
+
+**Wat het doet:** Kom je er met Daan niet uit, of is er iets stuk? Dan kun je via
+**"Medewerker spreken"** een echt persoon van de doen.-support bereiken. Je
+bericht komt binnen bij het supportteam, dat je in een chat antwoordt.
+
+**Veelvoorkomende vragen:**
+- *Hoe bereik ik een mens?* Via de knop "Medewerker spreken".
+- *Wat is het e-mailadres van doen.?* hello@doen.team.
+
+**Tips:**
+- Gebruik "Medewerker spreken" bij bugs, foutmeldingen of vragen die Daan niet
+  zeker kan beantwoorden.
+
+**Gerelateerde modules:** Daan.
+
 <!-- EINDE -->
