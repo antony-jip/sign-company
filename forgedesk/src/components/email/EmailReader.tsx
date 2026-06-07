@@ -1142,24 +1142,24 @@ export function EmailReader({
             <div className="sticky bottom-0 z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 pl-3 pr-3 md:pl-5 md:pr-3 py-2.5 border-t border-black/[0.06] bg-card/85 backdrop-blur-xl shadow-[0_-1px_0_rgba(0,0,0,0.02),0_-8px_24px_-12px_rgba(0,0,0,0.08)]">
               <div className="flex items-center">
                 <div className="flex items-center gap-px mr-2">
-                  <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-muted transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-muted transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
                 </div>
                 <div className="w-px h-5 bg-muted mr-2" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-muted transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-muted transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-muted transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
                 </div>
                 <div className="w-px h-5 bg-muted mx-1" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-muted transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-muted transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
                 </div>
                 <div className="w-px h-5 bg-muted mx-1" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-muted transition-colors duration-150" title="Link"><Link2 className="h-4 w-4" /></button>
-                  <button onClick={() => replyFileInputRef.current?.click()} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-muted transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
+                  <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Link"><Link2 className="h-4 w-4" /></button>
+                  <button onClick={() => replyFileInputRef.current?.click()} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
                   <input
                     ref={replyFileInputRef}
                     type="file"
@@ -1292,7 +1292,7 @@ export function EmailReader({
           <div className="flex items-center gap-0.5"><Button
               variant="ghost"
               size="sm"
-              className="tap-press h-10 md:h-8 w-10 md:w-auto px-0 md:px-2.5 gap-1.5 text-foreground/70 hover:text-foreground hover:bg-muted rounded-button"
+              className="tap-press h-10 md:h-8 w-10 md:w-auto px-0 md:px-2.5 gap-1.5 text-foreground/70 hover:text-foreground hover:bg-[#1A535C]/[0.06] rounded-button"
               onClick={() => { hapticLight(); onBack?.() }}
             >
               <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
@@ -1300,7 +1300,7 @@ export function EmailReader({
             </Button>
             <div className="w-1 hidden md:block" />
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-muted rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onArchive?.(email) }}>
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-[#1A535C]/[0.06] rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onArchive?.(email) }}>
                 <Archive className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Archiveren</TooltipContent></Tooltip>
@@ -1310,7 +1310,7 @@ export function EmailReader({
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Verwijderen</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-muted rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onToggleRead?.(email) }}>
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-[#1A535C]/[0.06] rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onToggleRead?.(email) }}>
                 <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Markeer als ongelezen</TooltipContent></Tooltip>
@@ -1323,7 +1323,7 @@ export function EmailReader({
                     'tap-press h-10 w-10 md:h-8 md:w-8 rounded-button transition-colors duration-150',
                     email?.snoozed_until
                       ? 'text-[#1A535C] hover:bg-[#1A535C]/[0.08]'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                      : 'text-muted-foreground hover:text-foreground hover:bg-[#1A535C]/[0.06]',
                   )}
                   onClick={() => { hapticLight(); setSnoozeMenuOpen((v) => !v) }}
                 >
@@ -1337,7 +1337,7 @@ export function EmailReader({
                       <button
                         type="button"
                         onClick={() => { setSnoozeMenuOpen(false); onUnsnooze?.(email) }}
-                        className="w-full text-left px-3 py-2 text-[13px] text-[#C0451A] hover:bg-muted transition-colors duration-150"
+                        className="w-full text-left px-3 py-2 text-[13px] text-[#C0451A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
                       >
                         Niet meer snoozen
                       </button>
@@ -1349,7 +1349,7 @@ export function EmailReader({
                       key={opt.hours}
                       type="button"
                       onClick={() => { setSnoozeMenuOpen(false); onSnooze?.(email, opt.hours) }}
-                      className="w-full text-left px-3 py-2 text-[13px] text-foreground/70 hover:bg-muted transition-colors duration-150"
+                      className="w-full text-left px-3 py-2 text-[13px] text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
                     >
                       {opt.label}
                     </button>
@@ -1366,7 +1366,7 @@ export function EmailReader({
                     'tap-press h-10 w-10 md:h-8 md:w-8 transition-colors duration-150',
                     (email?.labels?.length ?? 0) > 0
                       ? 'text-[#1A535C] hover:bg-[#1A535C]/[0.08]'
-                      : 'text-muted-foreground hover:text-foreground/70 hover:bg-muted',
+                      : 'text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06]',
                   )}
                   onClick={() => { hapticLight(); setLabelMenuOpen((v) => !v) }}
                 >
@@ -1382,7 +1382,7 @@ export function EmailReader({
                         key={label}
                         type="button"
                         onClick={() => onToggleLabel?.(email, label)}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-foreground/70 hover:bg-muted transition-colors duration-150"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
                       >
                         <span className={cn('w-2.5 h-2.5 rounded-full flex-shrink-0', color)} />
                         <span className="flex-1 text-left capitalize">{label}</span>
@@ -1423,10 +1423,10 @@ export function EmailReader({
               <span className="hidden md:contents">
                 <div className="w-px h-5 bg-border mx-2" />
                 <span className="text-[12px] text-muted-foreground font-mono tabular-nums">{emailIndex + 1}/{emailTotal}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-[10px]" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-[#1A535C]/[0.08] rounded-[10px]" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
                   <ChevronUp className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-[10px]" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-[#1A535C]/[0.08] rounded-[10px]" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
                   <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
               </span>
@@ -1468,7 +1468,7 @@ export function EmailReader({
                         'p-1 rounded-button transition-colors duration-150',
                         email.pinned
                           ? 'text-[#1A535C] hover:bg-[#1A535C]/10'
-                          : 'text-muted-foreground/80 hover:text-[#1A535C] hover:bg-muted',
+                          : 'text-muted-foreground/80 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06]',
                       )}
                     >
                       <Pin className={cn('h-3.5 w-3.5', email.pinned && 'fill-[#1A535C] -rotate-45')} />
@@ -1559,7 +1559,7 @@ export function EmailReader({
                             'w-full flex items-start gap-3 px-3.5 py-2.5 text-left transition-colors',
                             isCurrent
                               ? 'bg-[#1A535C]/[0.05]'
-                              : 'bg-background hover:bg-muted cursor-pointer',
+                              : 'bg-background hover:bg-[#1A535C]/[0.06] cursor-pointer',
                           )}
                         >
                           <div className="flex-shrink-0 mt-1.5">
@@ -1672,7 +1672,7 @@ export function EmailReader({
                         type="button"
                         onClick={handleDownloadAllAttachments}
                         disabled={downloadingAll}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-foreground/70 hover:text-foreground/80 hover:bg-muted disabled:opacity-60 disabled:cursor-wait transition-colors duration-150"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-foreground/70 hover:text-foreground/80 hover:bg-[#1A535C]/[0.06] disabled:opacity-60 disabled:cursor-wait transition-colors duration-150"
                         title="Alle bijlagen downloaden"
                       >
                         {downloadingAll ? (
@@ -1704,7 +1704,7 @@ export function EmailReader({
                               }
                             }}
                             className={cn(
-                              'group/att relative flex flex-col rounded-xl overflow-hidden bg-background hover:bg-muted transition-colors duration-150 cursor-pointer text-left',
+                              'group/att relative flex flex-col rounded-xl overflow-hidden bg-background hover:bg-[#1A535C]/[0.06] transition-colors duration-150 cursor-pointer text-left',
                               (isDownloading || isPreviewing) && 'opacity-60 cursor-wait',
                             )}
                             title={`Preview ${att.filename}`}
@@ -1775,7 +1775,7 @@ export function EmailReader({
                               }
                             }}
                             className={cn(
-                              'flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-background hover:bg-muted transition-colors duration-150 cursor-pointer group/att text-left max-w-[280px]',
+                              'flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-background hover:bg-[#1A535C]/[0.06] transition-colors duration-150 cursor-pointer group/att text-left max-w-[280px]',
                               (isDownloading || isPreviewing) && 'opacity-60 cursor-wait',
                             )}
                             title={`Preview ${att.filename}`}
@@ -1857,7 +1857,7 @@ export function EmailReader({
                   <button
                     type="button"
                     onClick={() => handleDownloadAttachment(previewAtt.filename)}
-                    className="p-2 rounded-lg hover:bg-muted transition-colors"
+                    className="p-2 rounded-lg hover:bg-[#1A535C]/[0.06] transition-colors"
                     title="Downloaden"
                     aria-label="Downloaden"
                   >
@@ -1866,7 +1866,7 @@ export function EmailReader({
                   <button
                     type="button"
                     onClick={closePreview}
-                    className="p-2 rounded-lg hover:bg-muted transition-colors"
+                    className="p-2 rounded-lg hover:bg-[#1A535C]/[0.06] transition-colors"
                     title="Sluiten"
                     aria-label="Sluiten"
                   >
