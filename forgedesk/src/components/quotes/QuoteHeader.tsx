@@ -111,7 +111,7 @@ export function QuoteHeader({
   })()
 
   return (
-    <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-md border-b border-[rgba(26,83,92,0.08)] px-4 md:px-8 py-4 mb-6 -mx-4 md:-mx-6">
+    <div className="bg-background border-b border-[rgba(26,83,92,0.08)] px-4 md:px-8 py-4 mb-6 -mx-4 md:-mx-6">
 
       {/* Row 0: breadcrumb */}
       <div className="flex items-center gap-1.5 text-[12px] mb-2">
