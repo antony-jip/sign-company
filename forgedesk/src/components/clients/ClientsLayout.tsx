@@ -383,8 +383,8 @@ export function ClientsLayout() {
                 type="button"
                 onClick={() => setStatusFilter(isActive ? 'alle' : tile.key)}
                 className={cn(
-                  'group doen-slate-surface relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
-                  isActive && 'doen-slate-surface-active'
+                  'group doen-stat-tile relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
+                  isActive && 'doen-stat-tile-active'
                 )}
                 aria-pressed={isActive}
               >

@@ -3041,6 +3041,29 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
     0 8px 24px rgba(26,83,92,0.25);
 }
 
+/* Stat-/KPI-tegel — warme diffuse surface, identiek op elke lijstpagina */
+.doen-stat-tile {
+  background-image:
+    radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%),
+    radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%);
+  border: 1px solid rgba(26,83,92,0.08);
+  box-shadow: 0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025);
+}
+.dark .doen-stat-tile {
+  background-image:
+    radial-gradient(ellipse 65% 50% at 0% 0%, rgba(127,181,191,0.05), transparent 70%),
+    radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.05), transparent 65%);
+  border-color: rgba(255,255,255,0.06);
+}
+.doen-stat-tile-active {
+  border-color: rgba(26,83,92,0.22);
+  box-shadow: 0 1px 2px rgba(20,62,71,0.04), 0 10px 26px rgba(20,62,71,0.06);
+}
+.dark .doen-stat-tile-active {
+  border-color: hsl(187 56% 35%);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 26px rgba(26,83,92,0.25);
+}
+
 /* ProjectFaseBar — "nog te bereiken" fase-tinten. Petrol-met-opacity is op
    donkere surface onleesbaar; in dark mode een koel off-white gebruiken. */
 :root {

@@ -58,7 +58,7 @@ import {
   History,
   ArrowRightLeft,
 } from 'lucide-react'
-import { Folder, FileText, Mail as MailLg } from 'lucide-react'
+import { Folder, Mail as MailLg } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   cn,
