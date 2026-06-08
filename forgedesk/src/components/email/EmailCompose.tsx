@@ -18,6 +18,7 @@ type ToSuggestion =
   | { kind: 'contactpersoon'; cp: Contactpersoon; klantNaam: string; klantId: string }
 import { callForgie, type ForgieAction } from '@/services/forgieService'
 import { logger } from '../../utils/logger'
+import { sendInBackground } from '@/utils/sendInBackground'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Switch } from '@/components/ui/switch'
@@ -504,47 +505,59 @@ export function EmailCompose({
       toast.error('Vul een onderwerp in')
       return
     }
-    setIsSending(true)
-    try {
-      const html = editorRef.current?.innerHTML || ''
-      const body = editorRef.current?.innerText || ''
 
-      const attachmentPayload = await buildAttachmentPayload()
-      await onSend?.({ to, subject, body, html, wacht_op_reactie: wachtOpReactie, attachments: attachmentPayload })
-      toast.success(wachtOpReactie ? 'Email verzonden — toegevoegd aan Opvolgen' : 'Email verzonden')
-      setAttachments([])
-      setWachtOpReactie(false)
-      setHintMail(null)
-      onOpenChange(false)
-    } catch (err) {
-      logger.error('Email send failed:', err)
-      toast.error('Verzenden mislukt')
-    } finally {
-      setIsSending(false)
-    }
+    // Lees alles uit voordat het venster sluit; daarna draait het versturen
+    // op de achtergrond zodat de UI direct vrij is.
+    const html = editorRef.current?.innerHTML || ''
+    const body = editorRef.current?.innerText || ''
+    const capturedWacht = wachtOpReactie
+    const buildPayload = buildAttachmentPayload
+
+    setIsSending(true)
+    setAttachments([])
+    setWachtOpReactie(false)
+    setHintMail(null)
+    onOpenChange(false)
+
+    sendInBackground(
+      async () => {
+        const attachmentPayload = await buildPayload()
+        await onSend?.({ to, subject, body, html, wacht_op_reactie: capturedWacht, attachments: attachmentPayload })
+      },
+      {
+        loading: 'Email wordt verzonden...',
+        success: capturedWacht ? 'Email verzonden — toegevoegd aan Opvolgen' : 'Email verzonden',
+      }
+    )
   }, [to, subject, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie])
 
   const handleScheduleSend = useCallback(async (scheduledAt: string, label: string) => {
     if (!to.trim()) { toast.error('Vul een ontvanger in'); return }
     if (!subject.trim()) { toast.error('Vul een onderwerp in'); return }
+
+    const html = editorRef.current?.innerHTML || ''
+    const body = editorRef.current?.innerText || ''
+    const capturedWacht = wachtOpReactie
+    const buildPayload = buildAttachmentPayload
+
     setIsSending(true)
     setShowScheduleMenu(false)
-    try {
-      const html = editorRef.current?.innerHTML || ''
-      const body = editorRef.current?.innerText || ''
-      const attachmentPayload = await buildAttachmentPayload()
-      await onSend?.({ to, subject, body, html, scheduledAt, wacht_op_reactie: wachtOpReactie, attachments: attachmentPayload })
-      toast.success(`Email ingepland: ${label}`)
-      setAttachments([])
-      setWachtOpReactie(false)
-      setHintMail(null)
-      onOpenChange(false)
-    } catch (err) {
-      logger.error('Email schedule failed:', err)
-      toast.error('Inplannen mislukt')
-    } finally {
-      setIsSending(false)
-    }
+    setAttachments([])
+    setWachtOpReactie(false)
+    setHintMail(null)
+    onOpenChange(false)
+
+    sendInBackground(
+      async () => {
+        const attachmentPayload = await buildPayload()
+        await onSend?.({ to, subject, body, html, scheduledAt, wacht_op_reactie: capturedWacht, attachments: attachmentPayload })
+      },
+      {
+        loading: 'Bezig met inplannen...',
+        success: `Email ingepland: ${label}`,
+        error: 'Inplannen mislukt',
+      }
+    )
   }, [to, subject, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

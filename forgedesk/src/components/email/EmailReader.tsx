@@ -22,6 +22,7 @@ import { downloadEmailAttachment, downloadAllEmailAttachments } from '@/services
 import { uploadEmailBijlage } from '@/services/storageService'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
+import { sendInBackground } from '@/utils/sendInBackground'
 import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -719,43 +720,44 @@ export function EmailReader({
   const handleSend = useCallback(async () => {
     if (!onSendReply) return
     setIsSending(true)
-    try {
-      const payload = await buildReplyPayload()
-      if (!payload) return
-      await onSendReply(payload)
-      clearDraft()
-      setReplyMode(null)
-      setReplyAttachments([])
-      setForwardOriginalAttachments([])
-      toast.success('Email verzonden')
-    } catch (err) {
-      logger.error('Fout bij verzenden email:', err)
-      toast.error('Verzenden mislukt')
-    } finally {
+    const payload = await buildReplyPayload()
+    if (!payload) {
       setIsSending(false)
+      return
     }
-  }, [onSendReply, buildReplyPayload])
+    // Sluit het antwoordvenster direct; de mail gaat op de achtergrond weg.
+    clearDraft()
+    setReplyMode(null)
+    setReplyAttachments([])
+    setForwardOriginalAttachments([])
+    setIsSending(false)
+
+    sendInBackground(
+      async () => { await onSendReply(payload) },
+      { loading: 'Email wordt verzonden...', success: 'Email verzonden' }
+    )
+  }, [onSendReply, buildReplyPayload, clearDraft])
 
   const handleScheduleSend = useCallback(async (scheduledAt: string, label: string) => {
     if (!onSendReply) return
     setIsSending(true)
     setShowScheduleMenu(false)
-    try {
-      const payload = await buildReplyPayload()
-      if (!payload) return
-      await onSendReply({ ...payload, scheduledAt })
-      clearDraft()
-      setReplyMode(null)
-      setReplyAttachments([])
-      setForwardOriginalAttachments([])
-      toast.success(`Email ingepland: ${label}`)
-    } catch (err) {
-      logger.error('Email schedule failed:', err)
-      toast.error('Inplannen mislukt')
-    } finally {
+    const payload = await buildReplyPayload()
+    if (!payload) {
       setIsSending(false)
+      return
     }
-  }, [onSendReply, buildReplyPayload])
+    clearDraft()
+    setReplyMode(null)
+    setReplyAttachments([])
+    setForwardOriginalAttachments([])
+    setIsSending(false)
+
+    sendInBackground(
+      async () => { await onSendReply({ ...payload, scheduledAt }) },
+      { loading: 'Bezig met inplannen...', success: `Email ingepland: ${label}`, error: 'Inplannen mislukt' }
+    )
+  }, [onSendReply, buildReplyPayload, clearDraft])
 
   const handleForgieWrite = useCallback(async () => {
     if (!email || !editorRef.current) return

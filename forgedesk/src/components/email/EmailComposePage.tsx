@@ -27,6 +27,7 @@ import { sendEmail } from '@/services/gmailService'
 import { toast } from 'sonner'
 import { cn, formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
+import { sendInBackground } from '@/utils/sendInBackground'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 
 export function EmailComposePage() {
@@ -168,29 +169,31 @@ export function EmailComposePage() {
       return
     }
 
+    const body = editorRef.current?.innerText || ''
+    const html = editorRef.current?.innerHTML || ''
+    const toAddr = to.trim()
+    const subj = subject.trim()
+    const offerteId = offerte?.id
+
     setIsSending(true)
-    try {
-      const body = editorRef.current?.innerText || ''
-      const html = editorRef.current?.innerHTML || ''
+    navigate(offerteId ? `/offertes/${offerteId}/bewerken` : '/offertes')
 
-      await sendEmail(to.trim(), subject.trim(), body, { html })
-
-      // Update offerte status to verzonden
-      if (offerte?.id) {
-        await updateOfferte(offerte.id, {
-          status: 'verzonden',
-          verstuurd_op: new Date().toISOString(),
-        })
+    sendInBackground(
+      async () => {
+        await sendEmail(toAddr, subj, body, { html })
+        if (offerteId) {
+          await updateOfferte(offerteId, {
+            status: 'verzonden',
+            verstuurd_op: new Date().toISOString(),
+          })
+        }
+      },
+      {
+        loading: 'Offerte wordt verstuurd...',
+        success: 'Offerte verstuurd naar klant',
+        error: 'Kon email niet verzenden',
       }
-
-      toast.success('Offerte verstuurd naar klant')
-      navigate(offerte?.id ? `/offertes/${offerte.id}/bewerken` : '/offertes')
-    } catch (err) {
-      logger.error('Failed to send email:', err)
-      toast.error('Kon email niet verzenden')
-    } finally {
-      setIsSending(false)
-    }
+    )
   }
 
   if (isLoading) {
