@@ -199,14 +199,12 @@ export function AfwezigheidPopover({
             <span className="text-muted-foreground/50 text-[12px]">t/m</span>
             <DatePicker value={eind} onChange={setEind} asInput placeholder="Tot" min={start || undefined} className="text-[12px]" />
           </div>
-          {type === 'bijzonder' && (
-            <input
-              value={opmerking}
-              onChange={(e) => setOpmerking(e.target.value)}
-              placeholder="Omschrijving (bv. Tandarts)"
-              className="mt-2 w-full rounded-lg border border-[rgba(26,83,92,0.14)] bg-[#FAFBFB] dark:bg-white/[0.04] px-2.5 py-1.5 text-[12px] outline-none placeholder:text-muted-foreground/45 focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/15 transition-colors"
-            />
-          )}
+          <input
+            value={opmerking}
+            onChange={(e) => setOpmerking(e.target.value)}
+            placeholder="Omschrijving — bijv. Tandarts (optioneel)"
+            className="mt-2 w-full rounded-lg border border-[rgba(26,83,92,0.14)] bg-[#FAFBFB] dark:bg-white/[0.04] px-2.5 py-1.5 text-[12px] outline-none placeholder:text-muted-foreground/45 focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/15 transition-colors"
+          />
           <button
             type="button"
             onClick={addAfwezigheid}
@@ -227,10 +225,11 @@ export function AfwezigheidPopover({
                 const periode = a.start_datum === a.eind_datum ? formatKort(a.start_datum) : `${formatKort(a.start_datum)} – ${formatKort(a.eind_datum)}`
                 return (
                   <div key={a.id} className="group/afw flex items-center justify-between gap-2">
-                    <div className="min-w-0 text-[12px]">
-                      <span className="font-medium text-foreground">{a.type === 'bijzonder' && a.opmerking ? a.opmerking : label}</span>
+                    <div className="min-w-0 truncate text-[12px]">
+                      <span className="font-medium text-foreground">{label}</span>
                       <span className="text-[#F15025]">.</span>
                       <span className="ml-1.5 font-mono tabular-nums text-muted-foreground/70">{periode}</span>
+                      {a.opmerking && <span className="ml-1.5 text-muted-foreground/60">· {a.opmerking}</span>}
                     </div>
                     <button
                       type="button"

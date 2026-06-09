@@ -1831,7 +1831,7 @@ export function MontagePlanningLayout() {
     void nowTick;
 
     return (
-      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-w-0 overflow-y-auto">
         {/* Day headers — weer + dag + datum (sticky, één strakke rij) */}
         <div className="grid border-b border-[rgba(26,83,92,0.08)] bg-card sticky top-0 z-20" style={{ gridTemplateColumns: gridTemplate }}>
           <div className="px-2 flex items-center">
@@ -1986,7 +1986,7 @@ export function MontagePlanningLayout() {
         )}
 
         {/* Time-grid: hour rail + 5 day columns with absolute-positioned cards */}
-        <div className="grid flex-1 overflow-y-auto" style={{ gridTemplateColumns: gridTemplate }}>
+        <div className="grid" style={{ gridTemplateColumns: gridTemplate }}>
           {/* Hour rail */}
           <div className="border-r border-[rgba(26,83,92,0.08)] relative bg-card" style={{ height: gridHeight }}>
             {Array.from({ length: totalHours + 1 }, (_, i) => {
