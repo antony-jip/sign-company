@@ -187,24 +187,24 @@ export const EmailListItem = memo(function EmailListItem({
         onMouseLeave={handleMouseLeave}
         className={cn(
           'group relative flex items-center gap-2.5 pl-3 pr-3 h-[46px] cursor-pointer select-none',
-          'border-b border-[rgba(26,83,92,0.06)]',
+          'border-b border-[rgba(26,83,92,0.06)] dark:border-white/[0.06]',
           'transition-all duration-150 ease-out',
           isActive
-            ? 'bg-[#1A535C]/[0.06]'
+            ? 'bg-[#1A535C]/[0.06] dark:bg-[#2A7A86]/[0.14]'
             : isChecked
-              ? 'bg-[#1A535C]/[0.03]'
+              ? 'bg-[#1A535C]/[0.03] dark:bg-[#2A7A86]/[0.08]'
               : isUnread
-                ? 'bg-white hover:bg-[rgba(26,83,92,0.04)] active:bg-[#1A535C]/[0.05]'
-                : 'hover:bg-[rgba(26,83,92,0.04)] active:bg-[#1A535C]/[0.05]',
+                ? 'bg-white dark:bg-white/[0.03] hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.05] active:bg-[#1A535C]/[0.05]'
+                : 'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.05] active:bg-[#1A535C]/[0.05]',
           isFocused && !isActive && 'bg-background',
         )}
       >
         {/* Unread indicator — subtle left accent */}
         {isUnread && !isActive && (
-          <div className="absolute left-0 top-[13px] bottom-[13px] w-[2.5px] rounded-r-full bg-[#1A535C]" />
+          <div className="absolute left-0 top-[13px] bottom-[13px] w-[2.5px] rounded-r-full bg-[#1A535C] dark:bg-[#2A7A86]" />
         )}
         {isActive && (
-          <div className="absolute left-0 top-[8px] bottom-[8px] w-[2.5px] rounded-r-full bg-[#1A535C]" />
+          <div className="absolute left-0 top-[8px] bottom-[8px] w-[2.5px] rounded-r-full bg-[#1A535C] dark:bg-[#2A7A86]" />
         )}
 
         {/* Checkbox */}
@@ -256,14 +256,14 @@ export const EmailListItem = memo(function EmailListItem({
           ))}
           <span className={cn(
             'tracking-[-0.005em] transition-colors duration-200',
-            isUnread ? 'font-semibold text-foreground' : 'font-normal text-[#2A2A26]',
+            isUnread ? 'font-semibold text-foreground' : 'font-normal text-[#2A2A26] dark:text-muted-foreground',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
           {preview && (
             <span className={cn(
               'font-normal hidden md:inline ml-2 transition-colors duration-200',
-              isUnread ? 'text-[#7A7975]' : 'text-muted-foreground',
+              isUnread ? 'text-[#7A7975] dark:text-muted-foreground' : 'text-muted-foreground',
             )}>
               {preview}
             </span>
@@ -280,7 +280,7 @@ export const EmailListItem = memo(function EmailListItem({
             <span className={cn(
               'font-mono tabular-nums min-w-[52px] text-right transition-colors duration-200',
               stackedSizes.date,
-              isUnread ? 'text-[#1A535C] font-semibold' : 'text-[#8A8985]',
+              isUnread ? 'text-[#1A535C] dark:text-[#7FB5BF] font-semibold' : 'text-[#8A8985] dark:text-muted-foreground/70',
             )}>
               {formatShortDate(email.datum)}
             </span>
@@ -348,14 +348,14 @@ export const EmailListItem = memo(function EmailListItem({
       onTouchEnd={handleTouchEnd}
       className={cn(
         'group relative flex items-start gap-3 px-4 py-4 cursor-pointer transition-colors duration-100 ease-out select-none',
-        'border-b border-[rgba(26,83,92,0.06)] last:border-b-0',
+        'border-b border-[rgba(26,83,92,0.06)] dark:border-white/[0.06] last:border-b-0',
         isActive
-          ? 'bg-[#1A535C]/[0.05]'
-          : 'hover:bg-[rgba(26,83,92,0.04)] active:bg-muted/60 md:active:bg-[#1A535C]/[0.05]',
+          ? 'bg-[#1A535C]/[0.05] dark:bg-[#2A7A86]/[0.14]'
+          : 'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.05] active:bg-muted/60 md:active:bg-[#1A535C]/[0.05]',
         isFocused && !isActive && 'bg-muted/30',
-        !isActive && (isUnread ? 'bg-white' : 'bg-white md:bg-transparent'),
-        swipeX > SWIPE_THRESHOLD && 'bg-emerald-100',
-        swipeX < -SWIPE_THRESHOLD && 'bg-red-100',
+        !isActive && (isUnread ? 'bg-white dark:bg-white/[0.03]' : 'bg-white md:bg-transparent dark:bg-transparent'),
+        swipeX > SWIPE_THRESHOLD && 'bg-emerald-100 dark:bg-emerald-900/40',
+        swipeX < -SWIPE_THRESHOLD && 'bg-red-100 dark:bg-red-900/40',
       )}
       style={{
         WebkitTapHighlightColor: 'transparent',
@@ -363,6 +363,11 @@ export const EmailListItem = memo(function EmailListItem({
         transition: isDragging ? 'none' : 'transform 150ms ease-out, background-color 100ms ease-out',
       }}
     >
+      {/* Actieve mail — zachte petrol left-accent (alleen dark; light gebruikt bg-tint) */}
+      {isActive && (
+        <div className="absolute left-0 top-2 bottom-2 w-[2.5px] rounded-r-full bg-[#2A7A86] hidden dark:block" aria-hidden />
+      )}
+
       {/* Checkbox — overlays the avatar on hover */}
       <div className="relative flex-shrink-0 mt-0.5">
         {/* Avatar — rond, groter */}
@@ -432,7 +437,7 @@ export const EmailListItem = memo(function EmailListItem({
           ))}
           <span className={cn(
             'truncate text-[14.5px] leading-snug tracking-[-0.005em] transition-colors duration-200',
-            isUnread ? 'font-bold text-foreground' : 'font-semibold text-[#3A3A36]',
+            isUnread ? 'font-bold text-foreground' : 'font-semibold text-[#3A3A36] dark:text-muted-foreground',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
@@ -467,7 +472,7 @@ export const EmailListItem = memo(function EmailListItem({
 
       {/* Unread indicator dot — desktop only; mobile uses the Flame strip */}
       {isUnread && (
-        <div className="hidden md:block w-[5px] h-[5px] rounded-full bg-[#1A535C] flex-shrink-0" />
+        <div className="hidden md:block w-[5px] h-[5px] rounded-full bg-[#1A535C] dark:bg-[#7FB5BF] flex-shrink-0" />
       )}
     </div>
 

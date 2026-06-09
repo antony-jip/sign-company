@@ -170,6 +170,26 @@ const STATUS_CONFIG: Record<
   uitgesteld: { label: "Uitgesteld", text: "#C03A18", bg: "#FDE8E2", border: "#F0C8BC", dot: "#E04A28" },
 };
 
+// Dark-aware kaart/pill-classes — STATUS_CONFIG levert light-pastels via
+// inline style; in dark mode moeten bg en tekst via classes schakelen,
+// anders krijg je witte tekst op pastel (onleesbaar).
+const STATUS_CARD_BG: Record<MontageAfspraak["status"], string> = {
+  gepland: "bg-[#E8EEF9] dark:bg-[rgba(74,122,199,0.16)]",
+  onderweg: "bg-[#F5F2E8] dark:bg-[rgba(196,154,48,0.15)]",
+  bezig: "bg-[#E8F2EC] dark:bg-[rgba(74,163,102,0.15)]",
+  afgerond: "",
+  uitgesteld: "bg-[#FDE8E2] dark:bg-[rgba(224,74,40,0.15)]",
+};
+const STATUS_PILL_CLASSES: Record<MontageAfspraak["status"], string> = {
+  gepland: "bg-[#E8EEF9] text-[#3A5A9A] dark:bg-[rgba(74,122,199,0.20)] dark:text-[#7FA8E6]",
+  onderweg: "bg-[#F5F2E8] text-[#8A6A2A] dark:bg-[rgba(196,154,48,0.18)] dark:text-[#D4B566]",
+  bezig: "bg-[#E8F2EC] text-[#3A7D52] dark:bg-[rgba(74,163,102,0.18)] dark:text-[#7AAF85]",
+  afgerond: "bg-[#E2F0F0] text-[#1A535C] dark:bg-[rgba(42,138,138,0.18)] dark:text-[#5FB5C0]",
+  uitgesteld: "bg-[#FDE8E2] text-[#C03A18] dark:bg-[rgba(224,74,40,0.18)] dark:text-[#FF8866]",
+};
+const PRIO_CARD_BG_CLASS = "bg-[rgba(241,80,37,0.06)] dark:bg-[rgba(241,80,37,0.15)]";
+const FALLBACK_CARD_BG_CLASS = "bg-[rgba(26,83,92,0.04)] dark:bg-[rgba(95,181,192,0.10)]";
+
 const DAG_NAMEN = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 const DAG_NAMEN_LANG = [
   "Maandag",
@@ -328,7 +348,7 @@ function DagNotitiePopover({
           <button
             type="button"
             title={`${notitie} — klik om te bewerken`}
-            className="mx-auto mt-1 flex max-w-[95%] items-center gap-1 rounded-full bg-[#F15025]/[0.07] px-2 py-[2px] text-[10px] font-medium leading-tight text-[#1A535C] ring-1 ring-inset ring-[#F15025]/15 hover:bg-[#F15025]/[0.12] transition-colors"
+            className="mx-auto mt-1 flex max-w-[95%] items-center gap-1 rounded-full bg-[#F15025]/[0.07] dark:bg-[#F15025]/[0.12] px-2 py-[2px] text-[10px] font-medium leading-tight text-[#1A535C] dark:text-foreground/80 ring-1 ring-inset ring-[#F15025]/15 dark:ring-[#F15025]/25 hover:bg-[#F15025]/[0.12] dark:hover:bg-[#F15025]/[0.18] transition-colors"
           >
             <StickyNote className="h-2.5 w-2.5 shrink-0 text-[#F15025]" />
             <span className="truncate">{notitie}</span>
@@ -337,7 +357,7 @@ function DagNotitiePopover({
           <button
             type="button"
             title={`Notitie voor ${label}`}
-            className="mx-auto mt-1 flex items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-medium leading-tight text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-all"
+            className="mx-auto mt-1 flex items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-medium leading-tight text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:text-[#1A535C] dark:hover:text-foreground hover:bg-[#1A535C]/[0.06] dark:hover:bg-white/[0.06] transition-all"
           >
             <StickyNote className="h-2.5 w-2.5 shrink-0" />
             notitie
@@ -351,7 +371,7 @@ function DagNotitiePopover({
           </span>
           <div className="leading-tight">
             <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/60">Dagnotitie</div>
-            <div className="text-[12px] font-semibold text-[#1A535C]">{label}</div>
+            <div className="text-[12px] font-semibold text-[#1A535C] dark:text-foreground">{label}</div>
           </div>
         </div>
         <div className="px-3.5 pb-3">
@@ -372,7 +392,7 @@ function DagNotitiePopover({
             }}
             rows={2}
             placeholder="Bijv. ZZP'er werkt vandaag"
-            className="w-full resize-none rounded-lg border border-[rgba(26,83,92,0.14)] bg-[#FAFBFB] px-2.5 py-2 text-[12.5px] leading-snug outline-none placeholder:text-muted-foreground/45 focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/15 transition-colors"
+            className="w-full resize-none rounded-lg border border-[rgba(26,83,92,0.14)] dark:border-white/15 bg-[#FAFBFB] dark:bg-white/[0.05] px-2.5 py-2 text-[12.5px] leading-snug outline-none placeholder:text-muted-foreground/45 focus:border-[#1A535C] dark:focus:border-white/25 focus:bg-white dark:focus:bg-card focus:ring-2 focus:ring-[#1A535C]/15 dark:focus:ring-white/10 transition-colors"
           />
           <div className="mt-2.5 flex items-center justify-end gap-1">
             {notitie && (
@@ -1627,8 +1647,10 @@ export function MontagePlanningLayout() {
     const cfg = STATUS_CONFIG[status];
     return (
       <span
-        className="text-[13px] font-semibold px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5"
-        style={{ backgroundColor: cfg.bg, color: cfg.text }}
+        className={cn(
+          "text-[13px] font-semibold px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5",
+          STATUS_PILL_CLASSES[status],
+        )}
       >
         <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.dot }} />
         {cfg.label}<span className="text-[#F15025]">.</span>
@@ -1678,9 +1700,14 @@ export function MontagePlanningLayout() {
 
     // Zelfde box-look als /taken: uniform lichte petrol-vulling + petrol accent-stripe.
     // Prioriteit: flame accent-stripe + lichte flame-vulling zodat het opvalt.
+    // Achtergrond via classes (STATUS_CARD_BG) zodat dark mode meeschakelt.
     const cardStyle: React.CSSProperties = { borderLeftColor: isAfgerond ? '#CBC9C4' : isPrio ? '#F15025' : (cfg?.dot ?? '#1A535C') };
-    if (!isAfgerond) cardStyle.backgroundColor = isPrio ? 'rgba(241,80,37,0.06)' : (cfg?.bg ?? 'rgba(26,83,92,0.04)');
     if (isPersonal) cardStyle.minHeight = `${getCardMinHeight(afspraak.start_tijd, afspraak.eind_tijd)}px`;
+    const cardBgClass = isAfgerond
+      ? null
+      : isPrio
+        ? PRIO_CARD_BG_CLASS
+        : (STATUS_CARD_BG[afspraak.status] || FALLBACK_CARD_BG_CLASS);
 
     return (
       <div
@@ -1693,7 +1720,7 @@ export function MontagePlanningLayout() {
           // Custom drag image for smooth feel
           const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
           ghost.style.width = `${e.currentTarget.offsetWidth}px`;
-          ghost.style.background = '#fff';
+          ghost.style.background = document.documentElement.classList.contains('dark') ? 'hsl(190 32% 12%)' : '#fff';
           ghost.style.borderRadius = '12px';
           ghost.style.boxShadow = '0 12px 32px rgba(0,0,0,0.18)';
           ghost.style.opacity = '0.92';
@@ -1706,11 +1733,12 @@ export function MontagePlanningLayout() {
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "border border-border/40 border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_4px_14px_rgba(20,62,71,0.10)] group/card relative",
+          "border border-border/40 border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_4px_14px_rgba(20,62,71,0.10)] dark:hover:shadow-[0_4px_14px_rgba(0,0,0,0.40)] group/card relative",
           isTimegrid ? "h-full overflow-hidden rounded-none" : "rounded-none mb-1.5 hover:-translate-y-[1px]",
           isAfgerond && "bg-[hsl(40,10%,96.5%)] dark:bg-[hsl(190,20%,9%)]",
-          hasConflict && "ring-1 ring-[#F0C8BC]",
-          draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30"
+          cardBgClass,
+          hasConflict && "ring-1 ring-[#F0C8BC] dark:ring-[#E04A28]/40",
+          draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30 dark:ring-[#5FB5C0]/40"
         )}
         style={cardStyle}
         onClick={() => openEditDialog(afspraak)}
@@ -1794,9 +1822,10 @@ export function MontagePlanningLayout() {
               <span
                 className={cn(
                   "inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums",
-                  hasConflict ? "rounded px-1 py-px ring-1 ring-[#F0C8BC] text-[#C03A18]" : "text-muted-foreground"
+                  hasConflict
+                    ? "rounded px-1 py-px ring-1 ring-[#F0C8BC] text-[#C03A18] bg-[#FDE8E2] dark:bg-[rgba(224,74,40,0.18)] dark:text-[#FF8866] dark:ring-[#E04A28]/40"
+                    : "text-muted-foreground"
                 )}
-                style={hasConflict ? { backgroundColor: '#FDE8E2' } : undefined}
                 title={hasConflict ? 'Overlap met andere afspraak' : undefined}
               >
                 {hasConflict ? <AlertTriangle className="h-2 w-2" /> : <Clock className="h-2 w-2" />}
@@ -1810,7 +1839,7 @@ export function MontagePlanningLayout() {
                   e.stopPropagation();
                   window.open(`/werkbonnen/${afspraak.werkbon_id}`, "_blank");
                 }}
-                className="inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums text-foreground/70 hover:text-[#1A535C] transition-colors"
+                className="inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums text-foreground/70 hover:text-[#1A535C] dark:hover:text-foreground transition-colors"
                 title={`Open werkbon ${afspraak.werkbon_nummer || ''}`}
               >
                 <FileText className="h-2.5 w-2.5 opacity-70" />
@@ -1823,7 +1852,7 @@ export function MontagePlanningLayout() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-0.5 text-[10px] text-[#1A535C] hover:underline truncate max-w-[120px]"
+                className="inline-flex items-center gap-0.5 text-[10px] text-[#1A535C] dark:text-[#5AABB5] hover:underline truncate max-w-[120px]"
               >
                 <MapPin className="h-2 w-2 shrink-0" />
                 <span className="truncate">{afspraak.locatie}</span>
@@ -1926,7 +1955,7 @@ export function MontagePlanningLayout() {
                   </span>
                   <span className={cn(
                     "text-[11px] font-mono tabular-nums",
-                    feestdagInfo ? "text-[#C03A18]/70" : isToday ? "text-[#1A535C]/80" : "text-muted-foreground/70"
+                    feestdagInfo ? "text-[#C03A18]/70 dark:text-[#DA7B70]" : isToday ? "text-[#1A535C]/80 dark:text-[#5AABB5]" : "text-muted-foreground/70"
                   )}>
                     {date.getDate()} {date.toLocaleDateString("nl-NL", { month: "short" })}
                   </span>
@@ -1959,7 +1988,7 @@ export function MontagePlanningLayout() {
                   </span>
                 )}
                 {afwezig?.afwezig && (
-                  <span className="mx-auto mt-1 flex max-w-[95%] items-center justify-center gap-1 rounded-full bg-[#1A535C]/[0.07] px-2 py-[2px] text-[10px] font-medium leading-tight text-[#1A535C] ring-1 ring-inset ring-[#1A535C]/15">
+                  <span className="mx-auto mt-1 flex max-w-[95%] items-center justify-center gap-1 rounded-full bg-[#1A535C]/[0.07] dark:bg-white/[0.06] px-2 py-[2px] text-[10px] font-medium leading-tight text-[#1A535C] dark:text-foreground/80 ring-1 ring-inset ring-[#1A535C]/15 dark:ring-white/15">
                     <CalendarOff className="h-2.5 w-2.5 shrink-0" />
                     <span className="truncate">{afwezig.label}</span>
                   </span>
@@ -1989,10 +2018,10 @@ export function MontagePlanningLayout() {
 
         {/* Taken-rij (member view) — taken met deadline op deze dag */}
         {Object.values(takenPerDag).some(arr => arr.length > 0) && (
-          <div className="grid border-b border-[rgba(26,83,92,0.08)] bg-[#FAF9F6]" style={{ gridTemplateColumns: gridTemplate }}>
-            <div className="border-r border-[rgba(26,83,92,0.08)] py-2 px-2 flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-[#1A535C]" />
-              <span className="text-[9px] font-semibold text-[#1A535C] uppercase tracking-widest">Taken</span>
+          <div className="grid border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 bg-[#FAF9F6] dark:bg-white/[0.04]" style={{ gridTemplateColumns: gridTemplate }}>
+            <div className="border-r border-[rgba(26,83,92,0.08)] dark:border-white/10 py-2 px-2 flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-[#1A535C] dark:text-[#5AABB5]" />
+              <span className="text-[9px] font-semibold text-[#1A535C] dark:text-muted-foreground uppercase tracking-widest">Taken</span>
             </div>
             {werkdagen.map((date) => {
               const dateStr = formatDate(date);
@@ -2159,7 +2188,7 @@ export function MontagePlanningLayout() {
                   return (
                     <div className="absolute left-0 right-0 z-0 pointer-events-none" style={{ top, height }}>
                       <div className={cn("h-full w-full rounded-sm", AFWEZIG_GLASS)} />
-                      <span className="absolute left-1.5 top-0.5 text-[10px] font-medium text-[#1A535C]/60 tabular-nums">{afwezig.label}</span>
+                      <span className="absolute left-1.5 top-0.5 text-[10px] font-medium text-[#1A535C]/60 dark:text-[#5AABB5]/80 tabular-nums">{afwezig.label}</span>
                     </div>
                   );
                 })()}
@@ -2253,7 +2282,7 @@ export function MontagePlanningLayout() {
 
                 {/* Empty-state hint */}
                 {!feestdagInfo && dayAfspraken.length === 0 && (draggingAfspraakId || draggingProjectId) && (
-                  <div className="absolute inset-2 flex items-center justify-center text-[#1A535C] text-xs font-medium border-2 border-dashed border-[#1A535C]/30 rounded-xl bg-[#1A535C]/[0.04] pointer-events-none">
+                  <div className="absolute inset-2 flex items-center justify-center text-[#1A535C] dark:text-[#5AABB5] text-xs font-medium border-2 border-dashed border-[#1A535C]/30 dark:border-white/20 rounded-xl bg-[#1A535C]/[0.04] dark:bg-white/[0.04] pointer-events-none">
                     Hier neerzetten
                   </div>
                 )}
@@ -2378,7 +2407,7 @@ export function MontagePlanningLayout() {
                   <span
                     className={cn(
                       "text-[12px] font-mono tabular-nums",
-                      isToday && "text-[#1A535C] font-bold",
+                      isToday && "text-[#1A535C] dark:text-[#5AABB5] font-bold",
                       !isToday && isCurrentMonth && "text-foreground",
                       !isToday && !isCurrentMonth && "text-muted-foreground/80",
                       feestdagInfo && "text-[#C03A18] font-semibold"
@@ -2408,8 +2437,11 @@ export function MontagePlanningLayout() {
                         key={a.id}
                         type="button"
                         onClick={() => openEditDialog(a)}
-                        className="text-left text-[10px] truncate rounded-none border-l-2 pl-1.5 pr-1 py-0.5 hover:opacity-80 transition-opacity"
-                        style={{ backgroundColor: cfg?.bg || '#F0EFEC', color: cfg?.text || '#1A1A1A', borderLeftColor: cfg?.dot || '#1A535C' }}
+                        className={cn(
+                          "text-left text-[10px] truncate rounded-none border-l-2 pl-1.5 pr-1 py-0.5 hover:opacity-80 transition-opacity",
+                          STATUS_PILL_CLASSES[a.status] || "bg-[#F0EFEC] text-[#1A1A1A] dark:bg-white/[0.06] dark:text-foreground",
+                        )}
+                        style={{ borderLeftColor: cfg?.dot || '#1A535C' }}
                         title={`${a.titel} (${a.start_tijd}–${a.eind_tijd})`}
                       >
                         <span className="font-mono mr-1 opacity-70">{a.start_tijd}</span>{a.titel}
@@ -2438,7 +2470,7 @@ export function MontagePlanningLayout() {
                         draggingTaakId === t.id && "opacity-50"
                       )}
                     >
-                      <CheckCircle2 className="h-2.5 w-2.5 text-[#1A535C] flex-shrink-0" />
+                      <CheckCircle2 className="h-2.5 w-2.5 text-[#1A535C] dark:text-[#5AABB5] flex-shrink-0" />
                       <span className="truncate">{t.titel}</span>
                     </div>
                   ))}
@@ -2513,7 +2545,7 @@ export function MontagePlanningLayout() {
                   <span className={cn("text-[12px] font-bold", feestdagInfo ? "text-[#C03A18]" : isToday ? "text-[#1A535C]" : "text-[#1A4A52] dark:text-foreground")}>
                     {DAG_NAMEN[dayIdx]}
                   </span>
-                  <span className={cn("text-[11px] font-mono tabular-nums", feestdagInfo ? "text-[#C03A18]/70" : isToday ? "text-[#1A535C]" : "text-muted-foreground/80")}>
+                  <span className={cn("text-[11px] font-mono tabular-nums", feestdagInfo ? "text-[#C03A18]/70 dark:text-[#DA7B70]" : isToday ? "text-[#1A535C] dark:text-[#5AABB5]" : "text-muted-foreground/80")}>
                     {date.getDate()}/{date.getMonth() + 1}
                   </span>
                 </div>
@@ -2540,12 +2572,12 @@ export function MontagePlanningLayout() {
             Drag-tussen-dagen werkt door deadline van de taak te updaten. */}
         {Object.values(takenPerDag).some(arr => arr.length > 0) && (
           <div
-            className="grid border-b border-[rgba(26,83,92,0.08)] bg-[#FAF9F6]"
+            className="grid border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 bg-[#FAF9F6] dark:bg-white/[0.04]"
             style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
           >
-            <div className="py-2 px-3 flex items-center gap-1.5 border-r border-[rgba(26,83,92,0.08)]">
-              <CheckCircle2 className="h-3.5 w-3.5 text-[#1A535C]" />
-              <span className="text-[11px] font-semibold text-[#1A535C] uppercase tracking-widest">Taken</span>
+            <div className="py-2 px-3 flex items-center gap-1.5 border-r border-[rgba(26,83,92,0.08)] dark:border-white/10">
+              <CheckCircle2 className="h-3.5 w-3.5 text-[#1A535C] dark:text-[#5AABB5]" />
+              <span className="text-[11px] font-semibold text-[#1A535C] dark:text-muted-foreground uppercase tracking-widest">Taken</span>
             </div>
             {werkdagen.map((date) => {
               const dateStr = formatDate(date);
@@ -2762,7 +2794,7 @@ export function MontagePlanningLayout() {
                       }}
                     >
                       {!isCollapsed && afwezig?.afwezig && dayAfspraken.length === 0 && (
-                        <div className="px-1 pt-0.5 text-[10px] font-medium text-[#1A535C]/55 truncate">{afwezig.label}</div>
+                        <div className="px-1 pt-0.5 text-[10px] font-medium text-[#1A535C]/55 dark:text-[#5AABB5]/70 truncate">{afwezig.label}</div>
                       )}
                       {!isCollapsed && dayAfspraken.map((a) => renderMontageCard(a))}
                     </div>
@@ -2882,7 +2914,7 @@ export function MontagePlanningLayout() {
                         id: `/projecten/${formData.project_id}`,
                       });
                     }}
-                    className="inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] hover:text-[#143F46] hover:underline shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30 focus-visible:ring-offset-1"
+                    className="inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] dark:text-[#5AABB5] hover:text-[#143F46] dark:hover:text-foreground hover:underline shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30 dark:focus-visible:ring-white/20 focus-visible:ring-offset-1"
                   >
                     Open project
                     <ArrowUpRight className="h-3.5 w-3.5" />
@@ -3174,14 +3206,14 @@ export function MontagePlanningLayout() {
                       )}
                       <span className="text-[13px] text-foreground truncate flex-1">{bijlage.naam}</span>
                       <span className="text-[10px] text-muted-foreground uppercase font-medium flex-shrink-0">{bijlage.type}</span>
-                      <button type="button" title="Bekijken" onClick={() => window.open(bijlage.url, '_blank')} className="text-muted-foreground hover:text-[#1A535C] transition-colors flex-shrink-0">
+                      <button type="button" title="Bekijken" onClick={() => window.open(bijlage.url, '_blank')} className="text-muted-foreground hover:text-[#1A535C] dark:hover:text-foreground transition-colors flex-shrink-0">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
                         title="Printen"
                         onClick={() => { const w = window.open(bijlage.url, '_blank'); if (w) { w.addEventListener('load', () => w.print()) } }}
-                        className="text-muted-foreground hover:text-[#1A535C] transition-colors flex-shrink-0"
+                        className="text-muted-foreground hover:text-[#1A535C] dark:hover:text-foreground transition-colors flex-shrink-0"
                       >
                         <Printer className="h-3.5 w-3.5" />
                       </button>
@@ -3247,7 +3279,7 @@ export function MontagePlanningLayout() {
                   <button
                     type="button"
                     onClick={handleAfronden}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-[#1A535C] border border-[#1A535C]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-[#1A535C] dark:text-[#5AABB5] border border-[#1A535C]/30 dark:border-[#5AABB5]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Afronden
@@ -3259,7 +3291,7 @@ export function MontagePlanningLayout() {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-[#1A535C] border border-[#1A535C]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-[#1A535C] dark:text-[#5AABB5] border border-[#1A535C]/30 dark:border-[#5AABB5]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Afronden
@@ -3371,8 +3403,8 @@ export function MontagePlanningLayout() {
             </button>
             {tePlannenProjecten.length > 0 && (
               <span
-                className="text-[10px] font-bold flex items-center justify-center tabular-nums"
-                style={{ backgroundColor: '#FDE8E2', color: '#F15025', minWidth: '20px', height: '20px', padding: '0 5px' }}
+                className="text-[10px] font-bold flex items-center justify-center tabular-nums bg-[#FDE8E2] text-[#F15025] dark:bg-[rgba(241,80,37,0.20)] dark:text-[#FF8866]"
+                style={{ minWidth: '20px', height: '20px', padding: '0 5px' }}
               >
                 {tePlannenProjecten.length}
               </span>
@@ -3405,8 +3437,8 @@ export function MontagePlanningLayout() {
           <div className="px-3 py-2.5 flex items-center justify-between border-l-2 border-l-[#1A535C] shrink-0">
             <h2 className="text-[11px] font-bold text-[#F15025] uppercase tracking-wider">Te plannen</h2>
             <span
-              className="text-[11px] font-bold flex items-center justify-center rounded-none"
-              style={{ backgroundColor: '#FDE8E2', color: '#F15025', minWidth: '24px', height: '24px', padding: '0 6px' }}
+              className="text-[11px] font-bold flex items-center justify-center rounded-none bg-[#FDE8E2] text-[#F15025] dark:bg-[rgba(241,80,37,0.20)] dark:text-[#FF8866]"
+              style={{ minWidth: '24px', height: '24px', padding: '0 6px' }}
             >
               {tePlannenProjecten.length}
             </span>

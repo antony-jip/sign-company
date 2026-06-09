@@ -193,7 +193,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
     }
   }, [taakForm, user, medewerkers])
 
-  const inputCls = "w-full px-3 py-2 text-[13px] bg-white rounded-[8px] outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground/80"
+  const inputCls = "w-full px-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-[8px] outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground/80"
   const labelCls = "text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground block mb-1"
 
   // Breedte morpht per view voor smooth animation
@@ -484,11 +484,11 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
 function FormFrame({ title, onBack, onClose, children }: { title: string; onBack: () => void; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="animate-in fade-in slide-in-from-right-2 duration-150">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-black/[0.06]">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-black/[0.06] dark:border-white/[0.08]">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1 px-2 py-1 rounded-[8px] text-[12px] text-foreground/70 hover:text-foreground hover:bg-black/[0.04] transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded-[8px] text-[12px] text-foreground/70 hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
         >
           <ArrowLeft className="h-3 w-3" />
           Terug

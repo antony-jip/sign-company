@@ -58,7 +58,7 @@ function eur(n: number): string {
 }
 
 function fmtDate(d?: string): string {
-  if (!d) return '—'
+  if (!d) return '–'
   return new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
@@ -110,7 +110,7 @@ function processKlantQuery(q: string, data: KlantData): { text: string; data?: R
             type: 'table',
             headers: ['Omschrijving', 'Datum', 'Bedrag'],
             rows: projAct.map(a => ({
-              cells: [a.omschrijving || '—', fmtDate(a.datum), a.bedrag ? eur(a.bedrag) : '—']
+              cells: [a.omschrijving || '–', fmtDate(a.datum), a.bedrag ? eur(a.bedrag) : '–']
             }))
           }
         }
@@ -183,7 +183,7 @@ function processKlantQuery(q: string, data: KlantData): { text: string; data?: R
             type: 'table',
             headers: ['Omschrijving', 'Datum', 'Bedrag', 'Status'],
             rows: offAct.map(a => ({
-              cells: [a.omschrijving || '—', fmtDate(a.datum), a.bedrag ? eur(a.bedrag) : '—', a.status || '—']
+              cells: [a.omschrijving || '–', fmtDate(a.datum), a.bedrag ? eur(a.bedrag) : '–', a.status || '–']
             }))
           }
         }
@@ -196,7 +196,7 @@ function processKlantQuery(q: string, data: KlantData): { text: string; data?: R
         type: 'table',
         headers: ['Nummer', 'Titel', 'Status', 'Bedrag'],
         rows: all.map(o => ({
-          cells: [o.nummer, o.titel || '—', statusLabel(o.status), eur(o.totaal)]
+          cells: [o.nummer, o.titel || '–', statusLabel(o.status), eur(o.totaal)]
         }))
       } : undefined
     }
@@ -242,7 +242,7 @@ function processKlantQuery(q: string, data: KlantData): { text: string; data?: R
         type: 'table',
         headers: ['Deal', 'Fase', 'Waarde', 'Status'],
         rows: all.map(d => ({
-          cells: [d.titel, d.fase || '—', eur(d.verwachte_waarde || 0), statusLabel(d.status)]
+          cells: [d.titel, d.fase || '–', eur(d.verwachte_waarde || 0), statusLabel(d.status)]
         }))
       }
     }
@@ -309,7 +309,7 @@ function processKlantQuery(q: string, data: KlantData): { text: string; data?: R
         type: 'table',
         headers: ['Type', 'Omschrijving', 'Datum', 'Bedrag', 'Status'],
         rows: acts.map(a => ({
-          cells: [a.type, a.omschrijving || '—', fmtDate(a.datum), a.bedrag ? eur(a.bedrag) : '—', a.status || '—']
+          cells: [a.type, a.omschrijving || '–', fmtDate(a.datum), a.bedrag ? eur(a.bedrag) : '–', a.status || '–']
         }))
       }
     }
@@ -510,7 +510,7 @@ export function KlantAIChat({ klantId, klantNaam, projecten, offertes, facturen,
                 <button
                   key={s.label}
                   onClick={() => handleSend(s.label)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-background hover:bg-muted/60 text-xs text-foreground transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-background hover:bg-muted/60 text-xs text-foreground transition-colors duration-150"
                 >
                   {s.icon}
                   {s.label}
@@ -606,7 +606,7 @@ export function KlantAIChat({ klantId, klantNaam, projecten, offertes, facturen,
               <button
                 key={s.label}
                 onClick={() => handleSend(s.label)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full border bg-background hover:bg-muted/60 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full border bg-background hover:bg-muted/60 text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
               >
                 {s.icon}
                 {s.label}

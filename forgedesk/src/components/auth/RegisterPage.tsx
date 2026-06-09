@@ -84,7 +84,7 @@ export function RegisterPage() {
       <DoenAuthHeader rightSlot={
         <p className="text-[13px] text-foreground/70 hidden sm:block">
           Al een account?{' '}
-          <Link to="/login" className="text-[#1A535C] font-semibold hover:underline underline-offset-4">
+          <Link to="/login" className="text-[#1A535C] dark:text-[#8FC3CC] font-semibold hover:underline underline-offset-4">
             Inloggen
           </Link>
         </p>
@@ -97,14 +97,14 @@ export function RegisterPage() {
           animate="show"
           className="lg:col-span-7 lg:pt-6"
         >
-          <motion.p variants={item} className="text-[11px] uppercase tracking-[0.22em] font-semibold text-[#1A535C]/70 mb-5">
-            <span className="inline-block w-6 h-px bg-[#1A535C]/40 align-middle mr-3" />
+          <motion.p variants={item} className="text-[11px] uppercase tracking-[0.22em] font-semibold text-[#1A535C]/70 dark:text-[#8FC3CC]/80 mb-5">
+            <span className="inline-block w-6 h-px bg-[#1A535C]/40 dark:bg-[#8FC3CC]/40 align-middle mr-3" />
             Aanmelden
           </motion.p>
 
           <motion.h1
             variants={item}
-            className="font-heading font-extrabold tracking-[-0.025em] text-[#191919]"
+            className="font-heading font-extrabold tracking-[-0.025em] text-[#191919] dark:text-foreground"
             style={{ lineHeight: 1.02 }}
           >
             <span className="block text-[40px] sm:text-[52px] lg:text-[60px] xl:text-[68px]">
@@ -126,13 +126,13 @@ export function RegisterPage() {
 
           <motion.div variants={item} className="mt-8 max-w-[460px]">
             <div className="flex items-baseline gap-3">
-              <span className="font-heading text-[26px] sm:text-[28px] font-extrabold tracking-tight text-[#1A535C] leading-none tabular-nums">
+              <span className="font-heading text-[26px] sm:text-[28px] font-extrabold tracking-tight text-[#1A535C] dark:text-[#8FC3CC] leading-none tabular-nums">
                 €<CountUp target={79} duration={900} delay={400} />
               </span>
               <span className="text-[13px] text-foreground/70 font-medium">/maand</span>
             </div>
             <p className="mt-2.5 text-[13px] text-foreground/70 leading-[1.55]">
-              Tot <span className="font-semibold text-[#191919]">10 gebruikers</span> inbegrepen
+              Tot <span className="font-semibold text-[#191919] dark:text-foreground">10 gebruikers</span> inbegrepen
               <span className="mx-2 text-[#F15025]">·</span>
               30 dagen gratis
               <span className="mx-2 text-[#F15025]">·</span>
@@ -152,7 +152,7 @@ export function RegisterPage() {
           className="lg:col-span-5 lg:pt-2 w-full"
         >
           <DoenFormCard accentColor="#F15025">
-            <h2 className="font-heading text-[22px] font-extrabold text-[#191919] tracking-[-0.02em] mb-1">
+            <h2 className="font-heading text-[22px] font-extrabold text-[#191919] dark:text-foreground tracking-[-0.02em] mb-1">
               Aan de slag<span style={{ color: '#F15025' }}>.</span>
             </h2>
             <p className="text-[13.5px] text-foreground/70 mb-6">
@@ -172,7 +172,7 @@ export function RegisterPage() {
                     placeholder="naam@bedrijf.nl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all"
+                    className="pl-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-[#1A535C]/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all"
                     disabled={isLoading}
                     autoComplete="email"
                     autoFocus
@@ -192,7 +192,7 @@ export function RegisterPage() {
                     placeholder="Minimaal 10 tekens, sterk"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-12 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all"
+                    className="pl-10 pr-12 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-[#1A535C]/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all"
                     disabled={isLoading}
                     autoComplete="new-password"
                   />
@@ -221,7 +221,7 @@ export function RegisterPage() {
                     placeholder="Herhaal je wachtwoord"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`pl-10 pr-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white focus-visible:ring-[#1A535C]/20 transition-all ${!passwordsMatch ? 'border-[#C03A18] focus-visible:ring-[#C03A18]/20' : ''}`}
+                    className={`pl-10 pr-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-[#1A535C]/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all ${!passwordsMatch ? 'border-[#C03A18] focus-visible:ring-[#C03A18]/20' : ''}`}
                     disabled={isLoading}
                     autoComplete="new-password"
                     aria-invalid={!passwordsMatch}
@@ -263,7 +263,7 @@ export function RegisterPage() {
 
             <p className="text-center text-[12px] text-muted-foreground mt-5 sm:hidden">
               Al een account?{' '}
-              <Link to="/login" className="text-[#1A535C] font-semibold hover:underline">
+              <Link to="/login" className="text-[#1A535C] dark:text-[#8FC3CC] font-semibold hover:underline">
                 Inloggen
               </Link>
             </p>
@@ -280,7 +280,7 @@ export function RegisterPage() {
           >
             Hoe het werkt
           </p>
-          <h2 className="font-heading text-[28px] sm:text-[36px] lg:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919]">
+          <h2 className="font-heading text-[28px] sm:text-[36px] lg:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919] dark:text-foreground">
             Klant tot factuur. In één flow<span style={{ color: '#F15025' }}>.</span>
           </h2>
           <p className="mt-3 text-[15px] sm:text-[16px] text-foreground/70 max-w-[520px] mx-auto leading-[1.6]">
@@ -300,7 +300,7 @@ export function RegisterPage() {
           >
             Waarom doen
           </p>
-          <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919]">
+          <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919] dark:text-foreground">
             Drie redenen om vandaag te beginnen<span style={{ color: '#F15025' }}>.</span>
           </h2>
         </div>
@@ -329,7 +329,7 @@ export function RegisterPage() {
           >
             Overstappen
           </p>
-          <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919]">
+          <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919] dark:text-foreground">
             Eenvoudig overzetten uit ieder pakket<span style={{ color: '#F15025' }}>.</span>
           </h2>
           <p className="mt-3 text-[14px] sm:text-[15px] text-foreground/70 max-w-[520px] mx-auto leading-[1.6]">
@@ -365,7 +365,7 @@ export function RegisterPage() {
 
         <p className="mt-8 text-center text-[12px] text-muted-foreground">
           Onbekend exportformaat? Mail{' '}
-          <a href="mailto:hello@doen.team" className="text-[#1A535C] font-semibold hover:underline underline-offset-4">
+          <a href="mailto:hello@doen.team" className="text-[#1A535C] dark:text-[#8FC3CC] font-semibold hover:underline underline-offset-4">
             hello@doen.team
           </a>
           . We kijken samen wat het beste werkt.
@@ -374,7 +374,7 @@ export function RegisterPage() {
 
       {/* CONVERSION SECTION 3 — Final close: zero-risk reframe + scroll back to form */}
       <section className="relative z-10 max-w-[820px] w-full mx-auto px-6 sm:px-10 py-12 sm:py-16 text-center">
-        <h2 className="font-heading text-[30px] sm:text-[42px] lg:text-[52px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919]">
+        <h2 className="font-heading text-[30px] sm:text-[42px] lg:text-[52px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919] dark:text-foreground">
           Beginnen kost je niks<span style={{ color: '#F15025' }}>.</span>
         </h2>
         <p className="mt-5 text-[15px] sm:text-[17px] text-foreground/70 leading-[1.6] max-w-[560px] mx-auto">
@@ -413,8 +413,8 @@ function MigrationOption({
 }) {
   return (
     <div
-      className={`relative bg-white rounded-2xl p-7 sm:p-8 border ${
-        highlight ? 'border-[#1A535C]/30' : 'border-border'
+      className={`relative bg-white dark:bg-card rounded-2xl p-7 sm:p-8 border ${
+        highlight ? 'border-[#1A535C]/30 dark:border-[#4E96A3]/35' : 'border-border dark:border-white/10'
       } shadow-[0_2px_24px_-8px_rgba(26,83,92,0.08)] flex flex-col`}
     >
       <div className="flex items-start justify-between gap-3 mb-4">
@@ -426,7 +426,7 @@ function MigrationOption({
         </p>
         <span
           className={`text-[10px] font-bold uppercase tracking-[0.12em] px-2.5 py-1 rounded-full whitespace-nowrap ${
-            highlight ? 'text-white' : 'text-[#1A535C]'
+            highlight ? 'text-white' : 'text-[#1A535C] dark:text-[#8FC3CC]'
           }`}
           style={{
             background: highlight ? '#1A535C' : '#1A535C14',
@@ -436,7 +436,7 @@ function MigrationOption({
           {badge}
         </span>
       </div>
-      <h3 className="font-heading text-[18px] sm:text-[20px] font-extrabold tracking-tight text-[#191919] leading-[1.25] mb-5">
+      <h3 className="font-heading text-[18px] sm:text-[20px] font-extrabold tracking-tight text-[#191919] dark:text-foreground leading-[1.25] mb-5">
         {title}
       </h3>
       <ul className="space-y-3">
@@ -469,8 +469,8 @@ function ConversionCard({
 }) {
   return (
     <div
-      className={`relative bg-white rounded-2xl p-6 sm:p-7 border ${
-        highlight ? 'border-[#F15025]/30' : 'border-border'
+      className={`relative bg-white dark:bg-card rounded-2xl p-6 sm:p-7 border ${
+        highlight ? 'border-[#F15025]/30 dark:border-[#F15025]/40' : 'border-border dark:border-white/10'
       } shadow-[0_2px_24px_-8px_rgba(26,83,92,0.08)]`}
     >
       {highlight && (
@@ -487,7 +487,7 @@ function ConversionCard({
       >
         {kicker}
       </p>
-      <h3 className="font-heading text-[20px] sm:text-[22px] font-extrabold tracking-tight text-[#191919] leading-tight">
+      <h3 className="font-heading text-[20px] sm:text-[22px] font-extrabold tracking-tight text-[#191919] dark:text-foreground leading-tight">
         {title}
       </h3>
       <p className="mt-3 text-[14px] text-foreground/70 leading-[1.55]">{body}</p>
@@ -511,14 +511,27 @@ export function DoenAuthShell({ children }: { children: React.ReactNode }) {
         }
       `}</style>
 
-      {/* Soft gradient layers */}
+      {/* Soft gradient layers — light */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none dark:hidden"
         style={{
           backgroundImage: `
             radial-gradient(ellipse 80% 60% at 100% 0%, rgba(241,80,37,0.06), transparent 60%),
             radial-gradient(ellipse 70% 50% at 0% 100%, rgba(26,83,92,0.07), transparent 60%),
             linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 30%)
+          `,
+        }}
+        aria-hidden
+      />
+      {/* Gradient layers — dark: diepe petrol-nacht met flame-glow */}
+      <div
+        className="absolute inset-0 pointer-events-none hidden dark:block"
+        style={{
+          backgroundImage: `
+            radial-gradient(ellipse 80% 60% at 100% 0%, rgba(241,80,37,0.14), transparent 60%),
+            radial-gradient(ellipse 70% 50% at 0% 100%, rgba(58,162,178,0.12), transparent 60%),
+            radial-gradient(ellipse 60% 45% at 50% 115%, rgba(241,80,37,0.07), transparent 70%),
+            linear-gradient(180deg, rgba(6,18,22,0.6) 0%, transparent 35%)
           `,
         }}
         aria-hidden
@@ -575,7 +588,7 @@ function CursorFlameSpot() {
     <div
       ref={ref}
       aria-hidden
-      className="fixed top-0 left-0 w-[400px] h-[400px] rounded-full pointer-events-none z-0 mix-blend-multiply"
+      className="fixed top-0 left-0 w-[400px] h-[400px] rounded-full pointer-events-none z-0 mix-blend-multiply dark:mix-blend-screen"
       style={{
         background: 'radial-gradient(circle, rgba(241,80,37,0.10) 0%, rgba(241,80,37,0.04) 35%, transparent 70%)',
         willChange: 'transform',
@@ -647,7 +660,7 @@ export function DoenFormCard({
   accentColor?: string
 }) {
   return (
-    <div className="relative bg-card/95 backdrop-blur-sm rounded-2xl p-6 sm:p-7 shadow-[0_4px_40px_-12px_rgba(26,83,92,0.18)] border border-white/60 max-w-[440px] lg:ml-auto">
+    <div className="relative bg-card/95 backdrop-blur-sm rounded-2xl p-6 sm:p-7 shadow-[0_4px_40px_-12px_rgba(26,83,92,0.18)] dark:shadow-[0_4px_50px_-12px_rgba(241,80,37,0.18),0_2px_24px_-8px_rgba(0,0,0,0.5)] border border-white/60 dark:border-white/15 max-w-[440px] lg:ml-auto">
       <div
         className="absolute top-0 left-6 right-6 h-px"
         style={{

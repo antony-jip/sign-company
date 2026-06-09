@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Plus, Search, Pencil, Trash2, BookOpen, Tag, ChevronDown, ChevronRight, X, FolderOpen } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -252,14 +253,14 @@ export function KennisbankTab() {
         </div>
 
         <div className="flex items-center gap-2 pt-2">
-          <button
+          <Button
+            size="sm"
             onClick={handleSaveArticle}
             disabled={isSaving}
-            className="h-9 px-5 text-[13px] font-semibold text-white rounded-lg transition-all hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: '#1A535C' }}
+            className="px-5 text-[13px] rounded-lg"
           >
             {isSaving ? 'Opslaan...' : isNew ? 'Artikel aanmaken' : 'Opslaan'}
-          </button>
+          </Button>
           <button onClick={closeEditor} className="h-9 px-4 text-[13px] font-medium rounded-lg text-foreground/70">
             Annuleren
           </button>
@@ -279,8 +280,7 @@ export function KennisbankTab() {
         </div>
         <button
           onClick={openNewArticle}
-          className="inline-flex items-center gap-1.5 h-9 px-4 text-[13px] font-semibold text-white rounded-lg transition-all hover:opacity-90"
-          style={{ backgroundColor: '#F15025' }}
+          className="inline-flex items-center gap-1.5 h-9 px-4 text-[13px] font-semibold text-white rounded-lg transition-all bg-flame hover:bg-flame/90"
         >
           <Plus className="h-3.5 w-3.5" /> Nieuw artikel
         </button>
@@ -338,7 +338,7 @@ export function KennisbankTab() {
                 onKeyDown={e => { if (e.key === 'Enter') handleSaveCategory(); if (e.key === 'Escape') { setShowCatEditor(false); setEditingCat(null) } }}
               />
               <div className="flex items-center gap-1">
-                <button onClick={handleSaveCategory} className="h-7 px-2 text-[11px] font-semibold rounded text-white" style={{ backgroundColor: '#1A535C' }}>
+                <button onClick={handleSaveCategory} className="h-7 px-2 text-[11px] font-semibold rounded text-white bg-petrol hover:bg-petrol/90">
                   {editingCat ? 'Bijwerken' : 'Toevoegen'}
                 </button>
                 {editingCat && (

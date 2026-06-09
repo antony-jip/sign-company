@@ -142,7 +142,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                'px-3 py-1.5 rounded-full text-xs font-medium transition-colors duration-150',
                 filter === f
                   ? 'bg-primary/12 text-accent dark:bg-primary/20 dark:text-primary ring-1 ring-primary/25'
                   : 'bg-muted/60 text-muted-foreground hover:bg-muted'

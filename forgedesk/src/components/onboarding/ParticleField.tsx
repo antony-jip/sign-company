@@ -7,24 +7,34 @@ type Particle = {
   vy: number
   radius: number
   opacity: number
-  color: string
+  roll: number
   phase: number
 }
 
 const PETROL = '26, 83, 92'
+const PETROL_GLOW = '94, 180, 192'
 const CREME = '220, 214, 200'
+const WARM_SAND = '230, 204, 168'
 const FLAME = '241, 80, 37'
-const LINK_COLOR = PETROL
 const LINK_MAX_DIST = 120
 const LINK_MAX_OPACITY = 0.12
 const MOUSE_PULL_RADIUS = 150
 const MOUSE_PULL_STRENGTH = 0.25
 
-function pickColor(): string {
-  const r = Math.random()
-  if (r < 0.6) return PETROL
-  if (r < 0.9) return CREME
-  return FLAME
+function isDarkTheme(): boolean {
+  return document.documentElement.classList.contains('dark')
+}
+
+// In dark: warmere mix met meer flame-gloed, minder crème. Subtiel houden.
+function particleColor(roll: number, dark: boolean): { rgb: string; alphaMul: number } {
+  if (dark) {
+    if (roll < 0.5) return { rgb: PETROL_GLOW, alphaMul: 0.8 }
+    if (roll < 0.75) return { rgb: WARM_SAND, alphaMul: 0.5 }
+    return { rgb: FLAME, alphaMul: 1.3 }
+  }
+  if (roll < 0.6) return { rgb: PETROL, alphaMul: 1 }
+  if (roll < 0.9) return { rgb: CREME, alphaMul: 1 }
+  return { rgb: FLAME, alphaMul: 1 }
 }
 
 function targetCount(width: number, height: number): number {
@@ -40,7 +50,7 @@ function spawn(width: number, height: number): Particle {
     vy: (Math.random() - 0.5) * 0.5,
     radius: 1 + Math.random() * 2,
     opacity: 0.15 + Math.random() * 0.25,
-    color: pickColor(),
+    roll: Math.random(),
     phase: Math.random() * Math.PI * 2,
   }
 }
@@ -94,6 +104,7 @@ export function ParticleField() {
 
     const draw = (now: number) => {
       const t = now - startTime
+      const dark = isDarkTheme()
       ctx.clearRect(0, 0, width, height)
 
       for (const p of particles) {
@@ -120,6 +131,8 @@ export function ParticleField() {
       }
 
       ctx.lineWidth = 0.5
+      const linkColor = dark ? PETROL_GLOW : PETROL
+      const linkMaxOpacity = dark ? 0.1 : LINK_MAX_OPACITY
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const a = particles[i]
@@ -128,8 +141,8 @@ export function ParticleField() {
           const dy = a.y - b.y
           const d = Math.hypot(dx, dy)
           if (d < LINK_MAX_DIST) {
-            const alpha = (1 - d / LINK_MAX_DIST) * LINK_MAX_OPACITY
-            ctx.strokeStyle = `rgba(${LINK_COLOR}, ${alpha})`
+            const alpha = (1 - d / LINK_MAX_DIST) * linkMaxOpacity
+            ctx.strokeStyle = `rgba(${linkColor}, ${alpha})`
             ctx.beginPath()
             ctx.moveTo(a.x, a.y)
             ctx.lineTo(b.x, b.y)
@@ -139,9 +152,11 @@ export function ParticleField() {
       }
 
       for (const p of particles) {
-        ctx.shadowBlur = p.radius * 2.5
-        ctx.shadowColor = `rgba(${p.color}, ${p.opacity})`
-        ctx.fillStyle = `rgba(${p.color}, ${p.opacity})`
+        const { rgb, alphaMul } = particleColor(p.roll, dark)
+        const alpha = Math.min(0.6, p.opacity * alphaMul)
+        ctx.shadowBlur = p.radius * (dark ? 3.5 : 2.5)
+        ctx.shadowColor = `rgba(${rgb}, ${alpha})`
+        ctx.fillStyle = `rgba(${rgb}, ${alpha})`
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
         ctx.fill()

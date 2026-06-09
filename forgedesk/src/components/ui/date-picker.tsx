@@ -126,7 +126,7 @@ export function DatePicker({
       type="button"
       disabled={disabled}
       className={cn(
-        'flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3.5 py-2.5 text-[13px] ring-offset-background transition-all duration-150 hover:border-text-tertiary/50 focus-visible:outline-none focus-visible:border-[#1A535C] focus-visible:ring-2 focus-visible:ring-[rgba(26,83,92,0.12)] focus-visible:shadow-[0_0_0_2px_rgba(26,83,92,0.12)] disabled:cursor-not-allowed disabled:opacity-50',
+        'flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3.5 py-2.5 text-[13px] ring-offset-background transition-all duration-150 hover:border-text-tertiary/50 focus-visible:outline-none focus-visible:border-petrol dark:focus-visible:border-petrol-light focus-visible:ring-2 focus-visible:ring-petrol/[0.12] focus-visible:shadow-[0_0_0_2px_rgba(26,83,92,0.12)] disabled:cursor-not-allowed disabled:opacity-50',
         !displayValue && 'text-muted-foreground',
         asInput && className,
       )}
@@ -211,7 +211,7 @@ export function DatePicker({
                       outOfRange
                         ? 'text-muted-foreground/35 cursor-not-allowed'
                         : isSelected
-                          ? 'bg-[#1A535C] text-white font-medium'
+                          ? 'bg-petrol text-white font-medium dark:bg-petrol-light dark:text-petrol'
                           : isToday
                             ? 'text-[#F15025] font-semibold hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06]'
                             : !inMonth
@@ -227,7 +227,7 @@ export function DatePicker({
                         aria-hidden
                         className={cn(
                           'absolute bottom-1 h-1 w-1 rounded-full',
-                          isSelected ? 'bg-white' : 'bg-[#F15025]',
+                          isSelected ? 'bg-white dark:bg-petrol' : 'bg-[#F15025]',
                         )}
                       />
                     )}

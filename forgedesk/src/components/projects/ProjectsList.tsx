@@ -1063,13 +1063,13 @@ export function ProjectsList() {
                       className={cn(
                         'relative px-3 py-1.5 rounded-lg text-[13px] transition-all duration-150',
                         isActive
-                          ? 'font-semibold text-[#1A535C] bg-[#1A535C]/[0.07]'
+                          ? 'font-semibold text-[#1A535C] dark:text-foreground bg-[#1A535C]/[0.07] dark:bg-white/[0.06]'
                           : 'text-muted-foreground hover:text-foreground/70 hover:bg-background'
                       )}
                     >
                       {optie.label}
                       {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-40">{count}</span>}
-                      {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-[#1A535C] rounded-full" />}
+                      {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-[#1A535C] dark:bg-[#5AABB5] rounded-full" />}
                     </button>
                   )
                 })}
@@ -1100,7 +1100,7 @@ export function ProjectsList() {
                         className={cn(
                           'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors',
                           isActive
-                            ? 'text-[#1A535C] font-bold'
+                            ? 'text-[#1A535C] dark:text-foreground font-bold'
                             : 'text-muted-foreground/80 hover:text-foreground/70'
                         )}
                       >
@@ -1129,7 +1129,7 @@ export function ProjectsList() {
                         className={cn(
                           'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors',
                           isActive
-                            ? 'text-[#1A535C] font-bold'
+                            ? 'text-[#1A535C] dark:text-foreground font-bold'
                             : 'text-muted-foreground/80 hover:text-foreground/70'
                         )}
                       >
@@ -1144,20 +1144,20 @@ export function ProjectsList() {
 
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
-            <div className="flex items-center gap-4 px-5 py-3 bg-[#1A535C]/[0.06] rounded-xl ring-1 ring-[#1A535C]/10">
+            <div className="flex items-center gap-4 px-5 py-3 bg-[#1A535C]/[0.06] dark:bg-white/[0.05] rounded-xl ring-1 ring-[#1A535C]/10 dark:ring-white/10">
               <span className="text-sm text-foreground font-medium">
-                <span className="font-mono font-bold text-[#1A535C]">{selectedIds.size}</span> geselecteerd
+                <span className="font-mono font-bold text-[#1A535C] dark:text-foreground">{selectedIds.size}</span> geselecteerd
               </span>
               <button
                 onClick={toggleSelectAll}
-                className="text-xs font-medium text-[#1A535C] hover:underline transition-colors"
+                className="text-xs font-medium text-[#1A535C] dark:text-foreground hover:underline transition-colors"
               >
                 {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
               </button>
               <div className="flex-1" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A535C] bg-card px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all">
+                  <button className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A535C] dark:text-foreground bg-card px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all">
                     Status wijzigen
                     <ChevronDown className="w-3 h-3" />
                   </button>
@@ -1285,7 +1285,7 @@ export function ProjectsList() {
                           checked={selectedIds.size > 0 && selectedIds.size === gefilterdeProjecten.length}
                           onCheckedChange={toggleSelectAll}
                           aria-label="Selecteer alle projecten"
-                          className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                          className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                         />
                       </th>
                       {leadColumns.flatMap((col, idx) => {
@@ -1389,9 +1389,9 @@ export function ProjectsList() {
                         <React.Fragment key={project.id}>
                           {showGroupHeader && (
                             <tr>
-                              <td colSpan={9} className="py-2.5 pl-5 pr-5 bg-[#F0F3F4]/60 border-b border-[#E5EAEC]">
+                              <td colSpan={9} className="py-2.5 pl-5 pr-5 bg-[#F0F3F4]/60 dark:bg-white/[0.04] border-b border-[#E5EAEC] dark:border-white/10">
                                 <span className="inline-flex items-baseline gap-2">
-                                  <span className="font-heading text-[12px] font-bold text-[#3A6770] uppercase tracking-wider">
+                                  <span className="font-heading text-[12px] font-bold text-[#3A6770] dark:text-muted-foreground uppercase tracking-wider">
                                     {projectGroupLabel(currentGroupKey)}
                                   </span>
                                   <span className="font-mono text-[11px] text-muted-foreground tabular-nums">{groupCount}</span>
@@ -1404,7 +1404,7 @@ export function ProjectsList() {
                             'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
                             needsAttention(project) && !selectedIds.has(project.id) && 'bg-[rgba(241,80,37,0.025)]',
                             'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
-                            selectedIds.has(project.id) && 'bg-[#1A535C]/[0.05]'
+                            selectedIds.has(project.id) && 'bg-[#1A535C]/[0.05] dark:bg-white/[0.05]'
                           )}
                           style={{ animationDelay: `${i * 25}ms`, ['--row-accent' as string]: statusHex(project.status) } as React.CSSProperties}
                           onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
@@ -1418,7 +1418,7 @@ export function ProjectsList() {
                               checked={selectedIds.has(project.id)}
                               onCheckedChange={() => toggleProjectSelection(project.id)}
                               aria-label={`Selecteer ${project.naam}`}
-                              className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                              className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 dark:group-hover:border-white/35 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                             />
                           </td>
 
@@ -1429,7 +1429,7 @@ export function ProjectsList() {
                                   <div className="flex items-baseline gap-2.5">
                                     <Link
                                       to={`/projecten/${project.id}`}
-                                      className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
+                                      className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] dark:group-hover:text-foreground underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 dark:group-hover:decoration-white/20 underline transition-all truncate"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       {project.naam}
@@ -1641,7 +1641,7 @@ export function ProjectsList() {
                                         >
                                           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: statusHex(s.value) }} />
                                           {s.label}
-                                          {isCurrent && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C]" />}
+                                          {isCurrent && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C] dark:text-[#5AABB5]" />}
                                         </DropdownMenuItem>
                                       </React.Fragment>
                                     )
@@ -1793,7 +1793,7 @@ export function ProjectsList() {
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ListPlus className="w-4 h-4 text-[#1A535C]" />
+              <ListPlus className="w-4 h-4 text-[#1A535C] dark:text-[#5AABB5]" />
               Snelle taak
             </DialogTitle>
             <DialogDescription>
@@ -1810,7 +1810,7 @@ export function ProjectsList() {
               placeholder="Wat moet er gebeuren?"
               value={quickTaakTitel}
               onChange={(e) => setQuickTaakTitel(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+              className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] dark:focus:border-white/25 focus:ring-2 focus:ring-[#1A535C]/10 dark:focus:ring-white/10 transition-all"
               autoFocus
             />
             <div>
@@ -1838,7 +1838,7 @@ export function ProjectsList() {
                         className={cn(
                           'px-2 py-1.5 rounded-md text-[11px] font-medium transition-all',
                           quickTaakDeadline === val
-                            ? 'bg-[#1A535C]/[0.08] text-[#1A535C] font-semibold'
+                            ? 'bg-[#1A535C]/[0.08] dark:bg-white/[0.06] text-[#1A535C] dark:text-foreground font-semibold'
                             : 'bg-background text-foreground/70 hover:bg-muted'
                         )}
                       >
@@ -1856,11 +1856,11 @@ export function ProjectsList() {
                   const selected = quickTaakToegewezen === mw.naam
                   const c = mw.naam.charCodeAt(0) % 5
                   const colors = [
-                    'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
-                    'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
-                    'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
+                    'bg-[hsl(var(--status-green-bg))] text-[#3A7D52] dark:text-[#7AAF85]',
+                    'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A] dark:text-[#7AA4CC]',
+                    'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A] dark:text-[#D4B566]',
                     'bg-muted text-foreground/70',
-                    'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
+                    'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A] dark:text-[#A07ACC]',
                   ]
                   return (
                     <button
@@ -1870,7 +1870,7 @@ export function ProjectsList() {
                       className={cn(
                         'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium transition-all border',
                         selected
-                          ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]'
+                          ? 'border-[#1A535C] dark:border-white/25 bg-[#1A535C]/[0.08] dark:bg-white/[0.06] text-[#1A535C] dark:text-foreground'
                           : 'border-transparent bg-background text-foreground/70 hover:bg-muted'
                       )}
                     >

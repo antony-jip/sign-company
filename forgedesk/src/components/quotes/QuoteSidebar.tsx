@@ -40,7 +40,7 @@ import {
 import type { Klant, Factuur } from '@/types'
 import type { InkoopRegel } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency, getStatusColor } from '@/lib/utils'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import type { SidebarSectionId } from '@/hooks/useSidebarLayout'
@@ -294,11 +294,11 @@ export function QuoteSidebar({
 
                             {klantPanelOpen && (
                               <div className="px-4 py-3 space-y-2.5">
-                                <div className="text-[11px] space-y-0.5" style={{ color: '#6B6B66' }}>
-                                  {selectedKlant.telefoon && <p className="flex items-center gap-1.5 font-mono"><Phone className="h-3 w-3" style={{ color: '#9B9B95' }} />{selectedKlant.telefoon}</p>}
-                                  {selectedKlant.email && <p className="flex items-center gap-1.5"><Mail className="h-3 w-3" style={{ color: '#9B9B95' }} />{selectedKlant.email}</p>}
+                                <div className="text-[11px] space-y-0.5 text-[#6B6B66] dark:text-muted-foreground">
+                                  {selectedKlant.telefoon && <p className="flex items-center gap-1.5 font-mono"><Phone className="h-3 w-3 text-[#9B9B95] dark:text-muted-foreground" />{selectedKlant.telefoon}</p>}
+                                  {selectedKlant.email && <p className="flex items-center gap-1.5"><Mail className="h-3 w-3 text-[#9B9B95] dark:text-muted-foreground" />{selectedKlant.email}</p>}
                                   {(selectedKlant.adres || selectedKlant.stad) && (
-                                    <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3" style={{ color: '#9B9B95' }} />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
+                                    <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3 text-[#9B9B95] dark:text-muted-foreground" />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
                                   )}
                                 </div>
 
@@ -308,41 +308,41 @@ export function QuoteSidebar({
                                 {/* Mergt JSONB+DB en biedt primary-fallback gratis. Vereist QuoteSidebar refactor — losse follow-up. */}
                                 {selectedKlant.contactpersonen?.length > 0 && (
                                   <div className="space-y-1">
-                                    <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Contactpersoon</label>
+                                    <label className="text-[10px] font-semibold uppercase tracking-wider text-[#9B9B95] dark:text-muted-foreground">Contactpersoon</label>
                                     <Select value={selectedContactId} onValueChange={(val) => contact.handleSelectContact(val)}>
                                       <SelectTrigger className="h-8 text-[12px] rounded-lg" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}><SelectValue placeholder="Selecteer..." /></SelectTrigger>
                                       <SelectContent>
                                         {selectedKlant.contactpersonen.map((cp) => (
                                           <SelectItem key={cp.id} value={cp.id}>
-                                            <div className="flex items-center gap-1.5"><span>{cp.naam}</span>{cp.is_primair && <span className="text-[10px]" style={{ color: '#1A535C' }}>(primair)</span>}</div>
+                                            <div className="flex items-center gap-1.5"><span>{cp.naam}</span>{cp.is_primair && <span className="text-[10px] text-[#1A535C] dark:text-petrol-light">(primair)</span>}</div>
                                           </SelectItem>
                                         ))}
-                                        <SelectItem value="__new__"><span style={{ color: '#1A535C' }}>+ Nieuw</span></SelectItem>
+                                        <SelectItem value="__new__"><span className="text-[#1A535C] dark:text-petrol-light">+ Nieuw</span></SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
                                 )}
 
                                 {(selectedKlant.debiteurennummer || selectedKlant.btw_nummer) && (
-                                  <div className="text-[11px] font-mono space-y-0.5 pt-2" style={{ color: '#6B6B66', borderTop: '0.5px solid hsl(var(--border))' }}>
+                                  <div className="text-[11px] font-mono space-y-0.5 pt-2 text-[#6B6B66] dark:text-muted-foreground" style={{ borderTop: '0.5px solid hsl(var(--border))' }}>
                                     {selectedKlant.debiteurennummer && <p>Deb.nr: {selectedKlant.debiteurennummer}</p>}
                                     {selectedKlant.btw_nummer && <p>BTW: {selectedKlant.btw_nummer}</p>}
                                   </div>
                                 )}
 
                                 <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: '0.5px solid hsl(var(--border))' }}>
-                                  {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: '#E2F0E8', color: '#2D6B48' }}><Phone className="h-3 w-3" />Bellen</a>}
-                                  {selectedKlant.email && <a href="#" onClick={(e) => { e.preventDefault(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(selectedKlant.email)}`, label: 'Nieuwe email', id: `/email/compose-${selectedKlant.email}` }) }} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}><Mail className="h-3 w-3" />Email</a>}
-                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: 'hsl(var(--border))', color: '#6B6B66' }}><ExternalLink className="h-3 w-3" />Profiel</Link>
+                                  {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors bg-[#E2F0E8] dark:bg-[#2D6B48]/20 text-[#2D6B48] dark:text-[#7AAF85]"><Phone className="h-3 w-3" />Bellen</a>}
+                                  {selectedKlant.email && <a href="#" onClick={(e) => { e.preventDefault(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(selectedKlant.email)}`, label: 'Nieuwe email', id: `/email/compose-${selectedKlant.email}` }) }} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer bg-[#E2F0F0] dark:bg-[#1A535C]/30 text-[#1A535C] dark:text-[#5AABB5]"><Mail className="h-3 w-3" />Email</a>}
+                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors bg-border text-[#6B6B66] dark:text-muted-foreground"><ExternalLink className="h-3 w-3" />Profiel</Link>
                                 </div>
                               </div>
                             )}
                           </div>
                         ) : (
                           <div className="rounded-xl p-5 text-center" style={{ border: '1.5px dashed hsl(var(--border))', backgroundColor: 'hsl(var(--background))' }}>
-                            <Building2 className="h-7 w-7 mx-auto mb-1.5" style={{ color: '#9B9B95' }} />
-                            <p className="text-[12px]" style={{ color: '#9B9B95' }}>Geen klant geselecteerd</p>
-                            <button className="mt-2 h-7 px-3 text-[11px] font-semibold rounded-lg text-white transition-all hover:opacity-90" style={{ backgroundColor: '#1A535C' }} onClick={() => setShowKlantSelector(true)}>Klant kiezen</button>
+                            <Building2 className="h-7 w-7 mx-auto mb-1.5 text-[#9B9B95] dark:text-muted-foreground" />
+                            <p className="text-[12px] text-[#9B9B95] dark:text-muted-foreground">Geen klant geselecteerd</p>
+                            <button className="mt-2 h-7 px-3 text-[11px] font-semibold rounded-lg text-white bg-petrol hover:bg-petrol/90 transition-all" onClick={() => setShowKlantSelector(true)}>Klant kiezen</button>
                           </div>
                         )}
                       </>
@@ -379,13 +379,7 @@ export function QuoteSidebar({
                                     <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
                                     <span className="text-[12.5px] font-semibold text-foreground">{linkedFactuur.nummer}</span>
                                   </div>
-                                  <Badge className={cn('text-[10px] font-semibold',
-                                    linkedFactuur.status === 'betaald' && 'bg-[hsl(var(--status-green-bg))] text-[#2D6B48] border-[#2D6B48]/20',
-                                    linkedFactuur.status === 'verzonden' && 'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A] border-[#3A5A9A]/20',
-                                    linkedFactuur.status === 'concept' && 'bg-muted text-foreground/70 border-[#6B6B66]/15',
-                                    linkedFactuur.status === 'vervallen' && 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18] border-[#C03A18]/20',
-                                    linkedFactuur.status === 'gecrediteerd' && 'bg-[hsl(var(--status-amber-bg))] text-[#D4621A] border-[#D4621A]/20',
-                                  )}>
+                                  <Badge className={cn('text-[10px] font-semibold', getStatusColor(linkedFactuur.status))}>
                                     {linkedFactuur.status.charAt(0).toUpperCase() + linkedFactuur.status.slice(1)}
                                   </Badge>
                                 </div>
@@ -455,12 +449,11 @@ export function QuoteSidebar({
                     {/* ── SAMENVATTING ── */}
                     {sectionId === 'samenvatting' && (
                       <div className="doen-slate-surface rounded-2xl overflow-hidden">
-                        <div className="p-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1A535C 0%, #0F3D44 100%)' }}>
-                          {/* Decorative flame glow */}
+                        <div className="p-4 relative overflow-hidden dark:shadow-[0_0_28px_rgba(241,80,37,0.14),inset_0_1px_0_rgba(255,255,255,0.05)]" style={{ background: 'linear-gradient(135deg, #1A535C 0%, #0F3D44 100%)' }}>
+                          {/* Decorative flame glow — smeult sterker in dark */}
                           <div
                             aria-hidden
-                            className="absolute -top-8 -right-8 w-32 h-32 rounded-full"
-                            style={{ background: 'radial-gradient(circle, rgba(241,80,37,0.18) 0%, transparent 70%)' }}
+                            className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[radial-gradient(circle,rgba(241,80,37,0.18)_0%,transparent_70%)] dark:bg-[radial-gradient(circle,rgba(241,80,37,0.34)_0%,transparent_70%)]"
                           />
                           <p className="relative text-[10px] uppercase tracking-widest text-white/75 font-semibold">
                             Totaal ex BTW<span className="text-[#F15025]">.</span>

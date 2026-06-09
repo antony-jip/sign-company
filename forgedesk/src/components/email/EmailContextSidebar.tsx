@@ -429,7 +429,7 @@ export function EmailContextSidebar({
             <button
               type="button"
               onClick={onClose}
-              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white transition-colors"
+              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white dark:hover:bg-white/10 transition-colors"
               title="Sluiten"
             >
               <X className="h-3.5 w-3.5" />
@@ -445,7 +445,7 @@ export function EmailContextSidebar({
               <button
                 onClick={handleAnalyzeInbox}
                 disabled={analysisLoading}
-                className="w-full bg-white rounded-xl p-3.5 flex items-center gap-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-150 group disabled:opacity-70"
+                className="w-full bg-white dark:bg-card rounded-xl p-3.5 flex items-center gap-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-150 group disabled:opacity-70"
                 style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
               >
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#1A535C12' }}>
@@ -464,7 +464,7 @@ export function EmailContextSidebar({
             ) : (
               <div className="space-y-1.5">
                 {analysisResult.map((cat, i) => (
-                  <div key={i} className="bg-white rounded-xl px-3.5 py-3 flex items-center gap-3" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <div key={i} className="bg-white dark:bg-card rounded-xl px-3.5 py-3 flex items-center gap-3" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cat.bg }}>
                       <cat.icon className="h-3.5 w-3.5" style={{ color: cat.color }} />
                     </div>
@@ -495,7 +495,7 @@ export function EmailContextSidebar({
             <div className="space-y-1.5">
               <button
                 onClick={() => onCompose?.()}
-                className="w-full bg-white rounded-xl px-3.5 py-3 flex items-center gap-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-150 group"
+                className="w-full bg-white dark:bg-card rounded-xl px-3.5 py-3 flex items-center gap-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-150 group"
                 style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
               >
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#F15025]/10">
@@ -506,7 +506,7 @@ export function EmailContextSidebar({
               {!showIdleTaakForm ? (
                 <button
                   onClick={() => setShowIdleTaakForm(true)}
-                  className="w-full bg-white rounded-xl px-3.5 py-3 flex items-center gap-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-150 group"
+                  className="w-full bg-white dark:bg-card rounded-xl px-3.5 py-3 flex items-center gap-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-150 group"
                   style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
                 >
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#1A535C]/10">
@@ -515,7 +515,7 @@ export function EmailContextSidebar({
                   <span className="text-[12px] font-medium text-foreground/70 group-hover:text-foreground transition-colors duration-150">Taak aanmaken</span>
                 </button>
               ) : (
-                <div className="bg-white rounded-xl p-3.5 space-y-2" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <div className="bg-white dark:bg-card rounded-xl p-3.5 space-y-2" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Nieuwe taak</span>
                     <button onClick={() => setShowIdleTaakForm(false)} className="text-muted-foreground hover:text-foreground transition-colors duration-150">
@@ -555,7 +555,7 @@ export function EmailContextSidebar({
   // wrappers zodat klant/taak als centered modals verschijnen ipv sidebar-panels.
   function renderInlinePanelContent(panel: 'klant' | 'taak') {
     if (panel === 'klant' || panel === 'taak') {
-      const inputCls = "w-full px-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground"
+      const inputCls = "w-full px-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground"
       const configs = {
         klant: {
           onSave: klantSearchMode ? undefined : handleSaveKlant,
@@ -566,7 +566,7 @@ export function EmailContextSidebar({
                 <input
                   value={klantForm.bedrijfsnaam}
                   onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
-                  className="w-full pl-9 pr-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground"
+                  className="w-full pl-9 pr-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-lg outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground"
                   placeholder="Zoek klant..."
                   autoFocus
                 />
@@ -738,7 +738,7 @@ export function EmailContextSidebar({
           <button
             type="button"
             onClick={onClose}
-            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white transition-colors"
+            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white dark:hover:bg-white/10 transition-colors"
             title="Sluiten"
           >
             <X className="h-3.5 w-3.5" />
@@ -754,7 +754,7 @@ export function EmailContextSidebar({
             <span className="text-[12px] text-muted-foreground">Contact zoeken...</span>
           </div>
         ) : linkedKlant ? (
-          <div className="bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div className="bg-white dark:bg-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-[14px] font-bold"
                 style={{ background: avatarStyle.bg, color: avatarStyle.text }}>
@@ -816,7 +816,7 @@ export function EmailContextSidebar({
           </div>
         ) : hasContact && activePanel !== 'klant' ? (
           /* ── Onbekend contact — snelkoppeling ── */
-          <div className="bg-white rounded-xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <div className="bg-white dark:bg-card rounded-xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-[13px] font-bold"
                 style={{ background: avatarStyle.bg, color: avatarStyle.text }}>
@@ -869,21 +869,21 @@ export function EmailContextSidebar({
             <div className="space-y-0.5">
               <button
                 onClick={() => openPanel('klant')}
-                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-foreground hover:bg-white hover:text-[#1A535C] transition-colors"
+                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-foreground hover:bg-white dark:hover:bg-white/[0.06] hover:text-[#1A535C] dark:hover:text-[#7FB5BF] transition-colors"
               >
                 <UserPlus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-[#1A535C] transition-colors" />
                 <span className="flex-1 text-left">Klant aanmaken</span>
               </button>
               <button
                 onClick={() => openPanel('project')}
-                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-foreground hover:bg-white hover:text-[#1A535C] transition-colors"
+                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-foreground hover:bg-white dark:hover:bg-white/[0.06] hover:text-[#1A535C] dark:hover:text-[#7FB5BF] transition-colors"
               >
                 <FolderPlus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-[#1A535C] transition-colors" />
                 <span className="flex-1 text-left">Project aanmaken</span>
               </button>
               <button
                 onClick={() => openPanel('taak')}
-                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-foreground hover:bg-white hover:text-[#1A535C] transition-colors"
+                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-foreground hover:bg-white dark:hover:bg-white/[0.06] hover:text-[#1A535C] dark:hover:text-[#7FB5BF] transition-colors"
               >
                 <ListPlus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-[#1A535C] transition-colors" />
                 <span className="flex-1 text-left">Taak aanmaken</span>
@@ -894,7 +894,7 @@ export function EmailContextSidebar({
 
         {/* ── KLANT MODAL ── */}
         <Dialog open={activePanel === 'klant'} onOpenChange={(open) => !open && setActivePanel('none')} modal={false}>
-          <DialogContent className="max-w-md bg-white rounded-2xl p-0">
+          <DialogContent className="max-w-md bg-white dark:bg-card rounded-2xl p-0">
             <div className="px-6 pt-6 pb-5">
               <DialogHeader className="mb-4">
                 <DialogTitle className="text-[20px] font-bold tracking-tight text-foreground">
@@ -910,7 +910,7 @@ export function EmailContextSidebar({
 
         {/* ── TAAK MODAL ── */}
         <Dialog open={activePanel === 'taak'} onOpenChange={(open) => !open && setActivePanel('none')} modal={false}>
-          <DialogContent className="max-w-md bg-white rounded-2xl p-0">
+          <DialogContent className="max-w-md bg-white dark:bg-card rounded-2xl p-0">
             <div className="px-6 pt-6 pb-5">
               <DialogHeader className="mb-4">
                 <DialogTitle className="text-[20px] font-bold tracking-tight text-foreground">
@@ -926,7 +926,7 @@ export function EmailContextSidebar({
 
         {/* ── PROJECT MODAL ── */}
         <Dialog open={activePanel === 'project'} onOpenChange={(open) => !open && setActivePanel('none')} modal={false}>
-          <DialogContent className="max-w-2xl bg-white rounded-2xl p-0">
+          <DialogContent className="max-w-2xl bg-white dark:bg-card rounded-2xl p-0">
             <div className="px-8 pt-7 pb-6">
               <DialogHeader className="mb-5">
                 <DialogTitle className="text-[22px] font-bold tracking-tight text-foreground">

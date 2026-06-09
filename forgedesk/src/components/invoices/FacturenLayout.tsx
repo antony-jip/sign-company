@@ -110,6 +110,7 @@ import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 import { berekenDagenOpen, getAgingColor, getAgingBgColor } from '@/utils/spectrumUtils'
 import { useTrialGuard } from '@/hooks/useTrialGuard'
 import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
+import { confirm } from '@/components/shared/ConfirmDialog'
 
 // ============ TYPES ============
 
@@ -834,6 +835,13 @@ export function FacturenLayout() {
 
   const handleDeleteFactuur = useCallback(
     async (factuur: Factuur) => {
+      const confirmed = await confirm({
+        title: 'Factuur verwijderen?',
+        message: `${factuur.nummer} wordt definitief verwijderd. Dit kan niet ongedaan worden.`,
+        variant: 'destructive',
+        confirmLabel: 'Verwijderen'
+      })
+      if (!confirmed) return
       try {
         await deleteFactuur(factuur.id)
       } catch (err) {
@@ -1469,13 +1477,13 @@ export function FacturenLayout() {
       <div className="flex items-center gap-1 mb-4">
         <button
           onClick={() => { setTopTab('facturen'); setSearchParams({}) }}
-          className={`px-4 py-2 rounded-lg text-[14px] font-semibold transition-all ${topTab === 'facturen' ? 'bg-[#1A535C]/[0.07] text-[#1A535C]' : 'text-muted-foreground hover:text-foreground/70'}`}
+          className={`px-4 py-2 rounded-lg text-[14px] font-semibold transition-all duration-150 ${topTab === 'facturen' ? 'bg-[#1A535C]/[0.07] dark:bg-white/[0.06] text-[#1A535C] dark:text-foreground' : 'text-muted-foreground hover:text-foreground/70'}`}
         >
           Facturen
         </button>
         <button
           onClick={() => { setTopTab('inkoop'); setSearchParams({ tab: 'inkoop' }) }}
-          className={`px-4 py-2 rounded-lg text-[14px] font-semibold transition-all ${topTab === 'inkoop' ? 'bg-[#C44830]/[0.07] text-[#C44830]' : 'text-muted-foreground hover:text-foreground/70'}`}
+          className={`px-4 py-2 rounded-lg text-[14px] font-semibold transition-all duration-150 ${topTab === 'inkoop' ? 'bg-[#C44830]/[0.07] dark:bg-[#C44830]/[0.18] text-[#C44830] dark:text-[#E0735C]' : 'text-muted-foreground hover:text-foreground/70'}`}
         >
           Inkoopfacturen
         </button>
@@ -1506,7 +1514,7 @@ export function FacturenLayout() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setOfferteDialogOpen(true)}
-              className="hidden sm:inline-flex items-center gap-2 text-[13px] font-medium text-foreground/70 hover:text-foreground hover:bg-card px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all"
+              className="hidden sm:inline-flex items-center gap-2 text-[13px] font-medium text-foreground/70 hover:text-foreground hover:bg-card px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all duration-150"
             >
               <FileInput className="w-4 h-4" />
               Vanuit offerte
@@ -1574,8 +1582,8 @@ export function FacturenLayout() {
 
         {/* Business fact-strip */}
         <div className="flex items-center gap-5 flex-wrap text-[12.5px]">
-          <span className="inline-flex items-center gap-1.5 text-[#8A7A4A]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
+          <span className="inline-flex items-center gap-1.5 text-[#8A7A4A] dark:text-[#D4B566]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A] dark:bg-[#D4B566]" />
             <span className="font-mono font-medium">{statistics.gemiddeldeBetaaltermijn}</span>
             <span className="text-foreground/70">gem. betaaltermijn (dgn)</span>
           </span>
@@ -1593,7 +1601,7 @@ export function FacturenLayout() {
               placeholder="Zoek op nummer, titel of klant..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+              className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all duration-150"
             />
             <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
           </div>
@@ -1605,9 +1613,9 @@ export function FacturenLayout() {
                 key={option.value}
                 onClick={() => handleSort(option.value)}
                 className={cn(
-                  'px-2 py-1.5 rounded-lg text-xs transition-colors',
+                  'px-2 py-1.5 rounded-lg text-xs transition-colors duration-150',
                   sortField === option.value
-                    ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                    ? 'text-[#1A535C] dark:text-foreground font-semibold bg-[#1A535C]/[0.07] dark:bg-white/[0.06]'
                     : 'text-muted-foreground hover:text-foreground/70 hover:bg-background'
                 )}
               >
@@ -1625,14 +1633,14 @@ export function FacturenLayout() {
           <div className="hidden sm:flex items-center gap-1 ml-auto">
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all duration-150"
             >
               <Download className="w-3.5 h-3.5" />
               CSV
             </button>
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-background px-3 py-2 rounded-lg transition-all duration-150"
             >
               <FileText className="w-3.5 h-3.5" />
               Excel
@@ -1651,9 +1659,9 @@ export function FacturenLayout() {
                   key={option.value}
                   onClick={() => setFilterStatus(option.value)}
                   className={cn(
-                    'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
+                    'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all duration-150',
                     isActive
-                      ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                      ? 'text-[#1A535C] dark:text-foreground font-semibold bg-[#1A535C]/[0.07] dark:bg-white/[0.06]'
                       : 'text-muted-foreground hover:text-foreground/70'
                   )}
                 >
@@ -1705,7 +1713,7 @@ export function FacturenLayout() {
                   {teFacturerenProjecten.map((project) => {
                     const nogTeFactureren = round2(project.offerteBedrag - project.alGefactureerd)
                     return (
-                      <tr key={project.id} className="border-b border-border last:border-b-0 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] transition-colors">
+                      <tr key={project.id} className="border-b border-border last:border-b-0 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] transition-colors duration-150">
                         <td className="px-4 py-3 text-sm">{project.klant_naam || '-'}</td>
                         <td className="px-4 py-3 text-sm font-medium">{project.naam}</td>
                         <td className="px-4 py-3 text-sm text-right tabular-nums">
@@ -1798,8 +1806,8 @@ export function FacturenLayout() {
                     <span
                       className={cn(
                         'text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
-                        mobileDagenOpen > 90 ? 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18]' :
-                        mobileDagenOpen > 30 ? 'bg-[hsl(var(--status-amber-bg))] text-[#D4621A]' :
+                        mobileDagenOpen > 90 ? 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18] dark:text-[#FF8866]' :
+                        mobileDagenOpen > 30 ? 'bg-[hsl(var(--status-amber-bg))] text-[#D4621A] dark:text-[#D4B566]' :
                         'text-muted-foreground'
                       )}
                     >
@@ -1836,7 +1844,7 @@ export function FacturenLayout() {
                     checked={filteredFacturen.length > 0 && selectedIds.size === filteredFacturen.length}
                     onCheckedChange={toggleSelectAll}
                     aria-label="Selecteer alles"
-                    className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                    className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors duration-150 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                   />
                 </th>
                 <th className="text-left py-3.5 pr-4">
@@ -1912,7 +1920,7 @@ export function FacturenLayout() {
                       'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
                       attention && !selectedIds.has(factuur.id) && 'bg-[rgba(241,80,37,0.025)]',
                       'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
-                      selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.05]'
+                      selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.05] dark:bg-white/[0.05]'
                     )}
                     style={{ ['--row-accent' as string]: stripeHex } as React.CSSProperties}
                   >
@@ -1924,14 +1932,14 @@ export function FacturenLayout() {
                         checked={selectedIds.has(factuur.id)}
                         onCheckedChange={() => toggleSelect(factuur.id)}
                         aria-label={`Selecteer ${factuur.nummer}`}
-                        className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                        className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors duration-150 group-hover:border-[#1A4A52]/45 dark:group-hover:border-white/35 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                       />
                     </td>
                     <td className="py-3.5 pr-4">
                       <div className="flex items-baseline gap-2.5">
                         <button
                           onClick={() => setViewingFactuur(factuur)}
-                          className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all"
+                          className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all duration-150"
                         >
                           {factuur.nummer}
                         </button>
@@ -1959,7 +1967,7 @@ export function FacturenLayout() {
                         <div className="min-w-0">
                           <a
                             href={`/klanten/${factuur.klant_id}`}
-                            className="text-[13px] text-muted-foreground truncate block leading-tight hover:text-[#1A535C] transition-colors"
+                            className="text-[13px] text-muted-foreground truncate block leading-tight hover:text-[#1A535C] dark:hover:text-foreground transition-colors duration-150"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {factuur.klant_naam || 'Onbekende klant'}
@@ -1986,8 +1994,8 @@ export function FacturenLayout() {
                           <span
                             className={cn(
                               'inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
-                              urgent ? 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18]' :
-                              warning ? 'bg-[hsl(var(--status-amber-bg))] text-[#D4621A]' :
+                              urgent ? 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18] dark:text-[#FF8866]' :
+                              warning ? 'bg-[hsl(var(--status-amber-bg))] text-[#D4621A] dark:text-[#D4B566]' :
                               'text-muted-foreground'
                             )}
                           >
@@ -2040,10 +2048,10 @@ export function FacturenLayout() {
                         <div className="flex items-center gap-1 justify-end">
                           <span className="text-[11px] font-semibold font-mono text-[#C03A18]">{getDagenVerlopen(factuur)}d</span>
                           <div className="flex gap-0.5">
-                            {factuur.herinnering_1_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#FEA060]" title="Herinnering 1" />}
+                            {factuur.herinnering_1_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#FEA060] dark:bg-[#FFB380]" title="Herinnering 1" />}
                             {factuur.herinnering_2_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#F15025]" title="Herinnering 2" />}
-                            {factuur.herinnering_3_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18]" title="Herinnering 3" />}
-                            {factuur.aanmaning_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#8A1A0A]" title="Aanmaning" />}
+                            {factuur.herinnering_3_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18] dark:bg-[#DA7B70]" title="Herinnering 3" />}
+                            {factuur.aanmaning_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#8A1A0A] dark:bg-[#C0451A]" title="Aanmaning" />}
                           </div>
                         </div>
                       )}
@@ -2052,8 +2060,8 @@ export function FacturenLayout() {
                       <div className="flex items-center gap-2">
                         {factuur.online_bekeken ? (
                           <div className="flex items-center gap-1.5" title={factuur.online_bekeken_op ? `Bekeken op ${new Date(factuur.online_bekeken_op).toLocaleString('nl-NL')}` : 'Online bekeken'}>
-                            <Globe className="h-3.5 w-3.5 text-[#1A535C]" />
-                            <span className="text-[11px] text-[#1A535C] font-semibold">Bekeken</span>
+                            <Globe className="h-3.5 w-3.5 text-[#1A535C] dark:text-[#5AABB5]" />
+                            <span className="text-[11px] text-[#1A535C] dark:text-[#5AABB5] font-semibold">Bekeken</span>
                           </div>
                         ) : factuur.betaal_link ? (
                           <span className="text-[11px] text-muted-foreground/70">—</span>
@@ -2063,10 +2071,10 @@ export function FacturenLayout() {
                             className={cn(
                               'w-2 h-2 rounded-full flex-shrink-0',
                               !factuur.exact_synced_at
-                                ? 'bg-[#D0D0CC]'
+                                ? 'bg-[#D0D0CC] dark:bg-white/25'
                                 : factuur.exact_bijlage_gesynced_op
-                                  ? 'bg-[#2D6B48]'
-                                  : 'bg-[#FEA060]',
+                                  ? 'bg-[#2D6B48] dark:bg-[#4A9960]'
+                                  : 'bg-[#FEA060] dark:bg-[#FFB380]',
                             )}
                             title={
                               !factuur.exact_synced_at
@@ -2083,7 +2091,7 @@ export function FacturenLayout() {
                       {(bijlageCounts.get(factuur.id) ?? 0) > 0 && (
                         <button
                           onClick={() => setViewingFactuur(factuur)}
-                          className="inline-flex items-center gap-1 text-[11px] text-foreground/70 hover:text-[#1A535C] transition-colors"
+                          className="inline-flex items-center gap-1 text-[11px] text-foreground/70 hover:text-[#1A535C] dark:hover:text-foreground transition-colors duration-150"
                           title={`${bijlageCounts.get(factuur.id)} bijlage(n)`}
                         >
                           <Paperclip className="h-3.5 w-3.5" />
@@ -2095,7 +2103,7 @@ export function FacturenLayout() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
+                            className="p-1.5 rounded-lg hover:bg-muted transition-all duration-150 opacity-0 group-hover:opacity-100"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
@@ -2628,7 +2636,7 @@ export function FacturenLayout() {
                             {formData.items.length > 1 && (
                               <button
                                 onClick={() => handleRemoveLineItem(item.id)}
-                                className="text-muted-foreground/60 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                className="text-muted-foreground/60 hover:text-red-500 transition-all duration-150 opacity-0 group-hover:opacity-100"
                               >
                                 <X className="h-4 w-4" />
                               </button>
@@ -2713,7 +2721,7 @@ export function FacturenLayout() {
                 {goedgekeurdeOffertes.map((offerte) => (
                   <div
                     key={offerte.id}
-                    className="p-4 rounded-xl border border-border hover:border-primary/40 transition-all"
+                    className="p-4 rounded-xl border border-border hover:border-primary/40 transition-all duration-150"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">

@@ -345,7 +345,7 @@ export function ClientsLayout() {
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
             <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-              Klanten<span className="text-[#F15025]">.</span>
+              Klanten<span className="text-flame">.</span>
             </h1>
             <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {filteredKlanten.length === klanten.length ? (
@@ -360,7 +360,7 @@ export function ClientsLayout() {
           </div>
           <Button
             onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }}
-            className="inline-flex items-center gap-2 bg-[#F15025] text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+            className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
           >
             <UserPlus className="w-4 h-4 opacity-80" />
             <span className="hidden md:inline">Nieuwe klant</span>
@@ -383,7 +383,7 @@ export function ClientsLayout() {
                 type="button"
                 onClick={() => setStatusFilter(isActive ? 'alle' : tile.key)}
                 className={cn(
-                  'group doen-stat-tile relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
+                  'group doen-stat-tile relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame/30 focus-visible:ring-offset-2',
                   isActive && 'doen-stat-tile-active'
                 )}
                 aria-pressed={isActive}
@@ -392,7 +392,7 @@ export function ClientsLayout() {
                   <span className="inline-flex items-center gap-2">
                     <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'actief' && 'doen-pulse')} strokeWidth={1.75} />
                     <span className="font-heading text-[14px] font-bold text-foreground">
-                      {tile.label}<span className="text-[#F15025]">.</span>
+                      {tile.label}<span className="text-flame">.</span>
                     </span>
                   </span>
                 </div>
@@ -424,7 +424,7 @@ export function ClientsLayout() {
               placeholder="Zoek op naam, email, stad, tag..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+              className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-petrol dark:focus:border-white/25 focus:ring-2 focus:ring-petrol/10 dark:focus:ring-white/10 transition-all"
             />
             <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
           </div>
@@ -461,7 +461,7 @@ export function ClientsLayout() {
                 className={cn(
                   'px-2 py-1.5 rounded-lg text-xs transition-colors',
                   sortField === field
-                    ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                    ? 'text-petrol dark:text-foreground font-semibold bg-petrol/[0.07] dark:bg-white/[0.06]'
                     : 'text-muted-foreground hover:text-foreground/70 hover:bg-background'
                 )}
               >
@@ -525,13 +525,13 @@ export function ClientsLayout() {
                   className={cn(
                     'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
                     isActive
-                      ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                      ? 'text-petrol dark:text-foreground font-semibold bg-petrol/[0.07] dark:bg-white/[0.06]'
                       : 'text-muted-foreground hover:text-foreground/70'
                   )}
                 >
                   {labels[f]}
                   {counts[f] > 0 && <span className="ml-1 font-mono text-[11px] opacity-50">{counts[f]}</span>}
-                  {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-[#1A535C] rounded-full" />}
+                  {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-petrol dark:bg-[#5AABB5] rounded-full" />}
                 </button>
               )
             })}
@@ -554,12 +554,12 @@ export function ClientsLayout() {
               className={cn(
                 'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
                 labelFilter === opt.value
-                  ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                  ? 'text-petrol dark:text-foreground font-semibold bg-petrol/[0.07] dark:bg-white/[0.06]'
                   : 'text-muted-foreground hover:text-foreground/70'
               )}
             >
               {opt.label}
-              {labelFilter === opt.value && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-[#1A535C] rounded-full" />}
+              {labelFilter === opt.value && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-petrol dark:bg-[#5AABB5] rounded-full" />}
             </button>
           ))}
         </div>
@@ -578,7 +578,7 @@ export function ClientsLayout() {
               className={cn(
                 'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all flex items-center gap-1.5',
                 klantStatusFilter === opt.value
-                  ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                  ? 'text-petrol dark:text-foreground font-semibold bg-petrol/[0.07] dark:bg-white/[0.06]'
                   : 'text-muted-foreground hover:text-foreground/70'
               )}
             >
@@ -586,7 +586,7 @@ export function ClientsLayout() {
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: opt.color }} />
               )}
               {opt.label}
-              {klantStatusFilter === opt.value && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-[#1A535C] rounded-full" />}
+              {klantStatusFilter === opt.value && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-petrol dark:bg-[#5AABB5] rounded-full" />}
             </button>
           ))}
         </div>
@@ -609,12 +609,12 @@ export function ClientsLayout() {
         /* ==================== GRID VIEW ==================== */
         <>
         {selectedIds.size > 0 && (
-          <div className="bg-[#1A535C]/[0.06] rounded-xl ring-1 ring-[#1A535C]/10 px-5 py-3 flex items-center gap-3 mb-3">
+          <div className="bg-petrol/[0.06] dark:bg-white/[0.05] rounded-xl ring-1 ring-petrol/10 dark:ring-white/10 px-5 py-3 flex items-center gap-3 mb-3">
             <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{selectedIds.size}</span>
-              <span className="text-sm font-semibold text-[#1A535C]">{selectedIds.size} klant{selectedIds.size === 1 ? '' : 'en'} geselecteerd</span>
+              <span className="w-7 h-7 rounded-lg bg-petrol text-white flex items-center justify-center text-xs font-bold">{selectedIds.size}</span>
+              <span className="text-sm font-semibold text-petrol dark:text-foreground">{selectedIds.size} klant{selectedIds.size === 1 ? '' : 'en'} geselecteerd</span>
             </div>
-            <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
+            <button onClick={toggleSelectAll} className="text-xs font-semibold text-petrol dark:text-foreground px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
               {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
             </button>
             <div className="flex-1" />
@@ -625,7 +625,7 @@ export function ClientsLayout() {
               <Trash2 className="w-3 h-3" />
               Verwijder ({selectedIds.size})
             </button>
-            <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-card/40 transition-all">
+            <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-petrol dark:text-foreground hover:bg-card/40 transition-all">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -648,12 +648,12 @@ export function ClientsLayout() {
         /* ==================== LIST VIEW ==================== */
         <>
         {selectedIds.size > 0 && (
-          <div className="bg-[#1A535C]/[0.06] rounded-xl ring-1 ring-[#1A535C]/10 px-5 py-3 flex items-center gap-3 mb-3">
+          <div className="bg-petrol/[0.06] dark:bg-white/[0.05] rounded-xl ring-1 ring-petrol/10 dark:ring-white/10 px-5 py-3 flex items-center gap-3 mb-3">
             <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{selectedIds.size}</span>
-              <span className="text-sm font-semibold text-[#1A535C]">{selectedIds.size} klant{selectedIds.size === 1 ? '' : 'en'} geselecteerd</span>
+              <span className="w-7 h-7 rounded-lg bg-petrol text-white flex items-center justify-center text-xs font-bold">{selectedIds.size}</span>
+              <span className="text-sm font-semibold text-petrol dark:text-foreground">{selectedIds.size} klant{selectedIds.size === 1 ? '' : 'en'} geselecteerd</span>
             </div>
-            <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
+            <button onClick={toggleSelectAll} className="text-xs font-semibold text-petrol dark:text-foreground px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
               {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
             </button>
             <div className="flex-1" />
@@ -664,7 +664,7 @@ export function ClientsLayout() {
               <Trash2 className="w-3 h-3" />
               Verwijder ({selectedIds.size})
             </button>
-            <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-card/40 transition-all">
+            <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-petrol dark:text-foreground hover:bg-card/40 transition-all">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -682,23 +682,23 @@ export function ClientsLayout() {
                       checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
                       onCheckedChange={toggleSelectAll}
                       aria-label="Selecteer alles"
-                      className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                      className="border-petrol/25 dark:border-white/20 rounded-sm transition-colors data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                     />
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Bedrijfsnaam</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-petrol/55 dark:text-muted-foreground">Bedrijfsnaam</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Email</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-petrol/55 dark:text-muted-foreground">Email</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Telefoon</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-petrol/55 dark:text-muted-foreground">Telefoon</span>
                   </th>
                   <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Stad</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-petrol/55 dark:text-muted-foreground">Stad</span>
                   </th>
                   <th className="text-center py-3.5 pr-4 w-[80px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Projecten</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-petrol/55 dark:text-muted-foreground">Projecten</span>
                   </th>
                   <th className="w-10 py-3.5 pr-4" />
                 </tr>
@@ -711,9 +711,9 @@ export function ClientsLayout() {
                     key={klant.id}
                     className={cn(
                       'doen-row border-b border-border last:border-0 cursor-pointer transition-all duration-200 group',
-                      klantNeedsAttention(klant) && !selectedIds.has(klant.id) && 'bg-[rgba(241,80,37,0.025)]',
-                      'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
-                      selectedIds.has(klant.id) && 'bg-[#1A535C]/[0.03]'
+                      klantNeedsAttention(klant) && !selectedIds.has(klant.id) && 'bg-flame/[0.025]',
+                      'hover:bg-petrol/[0.04] dark:hover:bg-white/[0.03]',
+                      selectedIds.has(klant.id) && 'bg-petrol/[0.03] dark:bg-white/[0.05]'
                     )}
                     style={{ animationDelay: `${i * 25}ms` }}
                     onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || 'Klant', id: `/klanten/${klant.id}` })}
@@ -727,7 +727,7 @@ export function ClientsLayout() {
                         checked={selectedIds.has(klant.id)}
                         onCheckedChange={() => toggleSelect(klant.id)}
                         aria-label={`Selecteer ${klant.bedrijfsnaam}`}
-                        className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                        className="border-petrol/25 dark:border-white/20 rounded-sm transition-colors group-hover:border-petrol/45 dark:group-hover:border-white/35 data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                       />
                     </td>
                     <td className="py-3.5 pr-4">
@@ -744,23 +744,23 @@ export function ClientsLayout() {
                           )
                         })()}
                         <div className="min-w-0">
-                          <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] truncate block transition-colors">
+                          <span className="text-[15px] font-semibold text-petrol dark:text-foreground group-hover:text-petrol dark:group-hover:text-foreground truncate block transition-colors">
                             {klant.bedrijfsnaam}
                           </span>
                           {(klant.klant_labels || []).length > 0 && (
                             <div className="flex items-center gap-1 mt-0.5">
                               {(klant.klant_labels || []).map((label) => {
                                 const dotColors: Record<string, string> = {
-                                  vooruit_betalen: 'bg-[#FEA060]',
-                                  niet_helpen: 'bg-[#C03A18]',
-                                  voorrang: 'bg-[#2D6B48]',
-                                  grote_klant: 'bg-[#3A5A9A]',
-                                  wanbetaler: 'bg-[#C03A18]',
+                                  vooruit_betalen: 'bg-[#FEA060] dark:bg-[#FFB380]',
+                                  niet_helpen: 'bg-[#C03A18] dark:bg-[#DA7B70]',
+                                  voorrang: 'bg-[#2D6B48] dark:bg-[#4A9960]',
+                                  grote_klant: 'bg-[#3A5A9A] dark:bg-[#7AA4CC]',
+                                  wanbetaler: 'bg-[#C03A18] dark:bg-[#DA7B70]',
                                 }
                                 return (
                                   <span
                                     key={label}
-                                    className={`w-1.5 h-1.5 rounded-full ${dotColors[label] || 'bg-[#C0BDB8]'}`}
+                                    className={`w-1.5 h-1.5 rounded-full ${dotColors[label] || 'bg-[#C0BDB8] dark:bg-white/30'}`}
                                   />
                                 )
                               })}

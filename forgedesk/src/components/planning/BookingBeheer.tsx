@@ -314,11 +314,11 @@ export function BookingBeheer() {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label>Van</Label>
-                <Input type="time" value={slotForm.start_tijd} onChange={(e) => setSlotForm(p => ({ ...p, start_tijd: e.target.value }))} />
+                <Input type="time" value={slotForm.start_tijd} onChange={(e) => setSlotForm(p => ({ ...p, start_tijd: e.target.value }))} className="[color-scheme:light] dark:[color-scheme:dark]" />
               </div>
               <div className="grid gap-2">
                 <Label>Tot</Label>
-                <Input type="time" value={slotForm.eind_tijd} onChange={(e) => setSlotForm(p => ({ ...p, eind_tijd: e.target.value }))} />
+                <Input type="time" value={slotForm.eind_tijd} onChange={(e) => setSlotForm(p => ({ ...p, eind_tijd: e.target.value }))} className="[color-scheme:light] dark:[color-scheme:dark]" />
               </div>
             </div>
             <div className="grid gap-2">

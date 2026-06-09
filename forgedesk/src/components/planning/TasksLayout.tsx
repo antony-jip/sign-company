@@ -104,6 +104,27 @@ const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
   kritiek: 'text-[#C03A18]', hoog: 'text-[#3A5A9A]', medium: 'text-[#3A5A9A]', laag: 'text-[#3A5A9A]',
 }
 
+// Dark-aware kaart-classes — PRIORITEIT_COLORS zijn light-hexen voor inline
+// styles; in dark mode moeten bg, tekst en accent-stripe via classes schakelen.
+const PRIO_CARD_BG: Record<TaakPrioriteit, string> = {
+  kritiek: 'bg-[rgba(241,80,37,0.09)] dark:bg-[rgba(241,80,37,0.15)]',
+  hoog: 'bg-[rgba(26,83,92,0.07)] dark:bg-[rgba(95,181,192,0.10)]',
+  medium: 'bg-[rgba(26,83,92,0.07)] dark:bg-[rgba(95,181,192,0.10)]',
+  laag: 'bg-[rgba(26,83,92,0.07)] dark:bg-[rgba(95,181,192,0.10)]',
+}
+const PRIO_CARD_STRIPE: Record<TaakPrioriteit, string> = {
+  kritiek: 'border-l-2 border-l-[#F15025]',
+  hoog: 'border-l-2 border-l-[#1A535C] dark:border-l-[#5FB5C0]',
+  medium: 'border-l-2 border-l-[#1A535C] dark:border-l-[#5FB5C0]',
+  laag: 'border-l-2 border-l-[#1A535C] dark:border-l-[#5FB5C0]',
+}
+const PRIO_CARD_TEXT: Record<TaakPrioriteit, string> = {
+  kritiek: 'text-[#C03A18] dark:text-[#FF8866]',
+  hoog: 'text-[#1A535C] dark:text-[#9FC5CC]',
+  medium: 'text-[#1A535C] dark:text-[#9FC5CC]',
+  laag: 'text-[#1A535C] dark:text-[#9FC5CC]',
+}
+
 const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
   kritiek: 'border-[#F15025] hover:border-[#C03A18]',
   hoog: 'border-[#4A7AC7] hover:border-[#3A5A9A]',
@@ -1299,8 +1320,8 @@ export function TasksLayout() {
                 className={cn(
                   'h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0',
                   mijnActief
-                    ? 'bg-[#1A535C]/[0.12] text-[#1A535C] ring-2 ring-[#1A535C]/30'
-                    : 'border border-border text-foreground/70 hover:border-[#1A535C]/40 hover:text-[#1A535C]'
+                    ? 'bg-[#1A535C]/[0.12] dark:bg-white/[0.08] text-[#1A535C] dark:text-foreground ring-2 ring-[#1A535C]/30 dark:ring-white/15'
+                    : 'border border-border text-foreground/70 hover:border-[#1A535C]/40 dark:hover:border-white/25 hover:text-[#1A535C] dark:hover:text-foreground'
                 )}
               >
                 {getLaneInitials(currentMedewerker.naam)}
@@ -1343,7 +1364,7 @@ export function TasksLayout() {
               <ChevronLeft className="w-4 h-4 text-foreground/70" />
             </button>
             <button
-              className="text-[13px] px-2 py-1 font-semibold text-foreground min-w-[140px] text-center hover:text-[#1A535C] transition-colors"
+              className="text-[13px] px-2 py-1 font-semibold text-foreground min-w-[140px] text-center hover:text-[#1A535C] dark:hover:text-foreground/80 transition-colors"
               onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
               title="Spring naar vandaag"
             >
@@ -1359,7 +1380,7 @@ export function TasksLayout() {
           </div>
           {!(viewMode === 'maand' ? monthOffset === 0 : isCurrentWeek) && (
             <button
-              className="text-[12px] py-1 font-medium text-[#1A535C] hover:text-[#0F3A40] transition-colors"
+              className="text-[12px] py-1 font-medium text-[#1A535C] dark:text-[#5AABB5] hover:text-[#0F3A40] dark:hover:text-foreground transition-colors"
               onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
             >
               Vandaag
@@ -1403,13 +1424,13 @@ export function TasksLayout() {
                 key={i}
                 className={cn(
                   'flex-1 min-w-0 text-center py-4 border-l border-border transition-colors',
-                  isToday && 'bg-[#1A535C]/[0.04]'
+                  isToday && 'bg-[#1A535C]/[0.04] dark:bg-white/[0.03]'
                 )}
               >
                 <div className="flex flex-col items-center gap-1">
                   <span className={cn(
                     'text-[11px] font-semibold tracking-[0.06em] uppercase',
-                    isToday ? 'text-[#1A535C]' : isPast ? 'text-muted-foreground/80' : 'text-muted-foreground'
+                    isToday ? 'text-[#1A535C] dark:text-[#5AABB5]' : isPast ? 'text-muted-foreground/80' : 'text-muted-foreground'
                   )}>
                     {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
                   </span>
@@ -1426,7 +1447,7 @@ export function TasksLayout() {
                     {isPast && dayTasks.length > 0 ? (
                       <button
                         onClick={() => togglePastDay(dayKey)}
-                        className="inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground hover:text-[#1A535C] transition-colors px-1 py-0.5 rounded hover:bg-[#1A535C]/[0.06]"
+                        className="inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground hover:text-[#1A535C] dark:hover:text-foreground transition-colors px-1 py-0.5 rounded hover:bg-[#1A535C]/[0.06] dark:hover:bg-white/[0.06]"
                         title={isExpanded ? 'Verberg verlopen taken' : 'Toon verlopen taken'}
                       >
                         <span className="font-mono">{dayTasks.length}</span>
@@ -1448,8 +1469,8 @@ export function TasksLayout() {
         <div ref={scrollRef} onMouseDown={handleGridMouseDown} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-card">
           {weekTotal === 0 && !isLoading && (
             <div className="sticky top-24 z-10 flex flex-col items-center pointer-events-none mx-auto max-w-md text-center">
-              <div className="w-12 h-12 rounded-full bg-[#1A535C]/[0.08] flex items-center justify-center mb-3">
-                <CalendarIcon className="w-5 h-5 text-[#1A535C]" />
+              <div className="w-12 h-12 rounded-full bg-[#1A535C]/[0.08] dark:bg-white/[0.06] flex items-center justify-center mb-3">
+                <CalendarIcon className="w-5 h-5 text-[#1A535C] dark:text-[#5AABB5]" />
               </div>
               <p className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground">Geen taken deze week</p>
               <p className="text-[12px] text-muted-foreground mt-1 max-w-[280px]">Klik op een tijdslot om er een in te plannen, of sleep een taak hierheen.</p>
@@ -1571,7 +1592,7 @@ export function TasksLayout() {
                   className={cn(
                     'group/cell relative p-2 transition-colors flex flex-col min-h-0',
                     !isCurrentMonth ? 'bg-background text-muted-foreground/80' : 'bg-card',
-                    isToday && 'bg-[#1A535C]/[0.04]',
+                    isToday && 'bg-[#1A535C]/[0.04] dark:bg-white/[0.03]',
                     isDropHere && 'bg-[#F15025]/[0.06] shadow-[inset_0_2px_0_#F15025]'
                   )}
                   onClick={(e) => {
@@ -1658,11 +1679,10 @@ export function TasksLayout() {
                           onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
                           className={cn(
                             'group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-semibold leading-tight px-2 py-[3px] rounded-none cursor-grab active:cursor-grabbing hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow',
-                            isDone && 'bg-[#E8F0F0] dark:bg-[#1A535C]/15 line-through'
+                            isDone
+                              ? 'bg-[#E8F0F0] dark:bg-[#1A535C]/15 line-through text-[#6B6B66] dark:text-muted-foreground/70 border-l-2 border-l-[#1A535C] dark:border-l-[#5FB5C0]/60'
+                              : cn(PRIO_CARD_BG[t.prioriteit], PRIO_CARD_TEXT[t.prioriteit], PRIO_CARD_STRIPE[t.prioriteit])
                           )}
-                          style={isDone
-                            ? { color: '#6B6B66', boxShadow: 'inset 2px 0 0 0 #1A535C' }
-                            : { backgroundColor: pc.bg, color: pc.text, boxShadow: `inset 2px 0 0 0 ${pc.border}` }}
                           onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
                           title={t.titel}
                         >
@@ -1727,13 +1747,13 @@ export function TasksLayout() {
                     key={i}
                     className={cn(
                       'flex-1 min-w-0 text-center py-4 border-l border-border',
-                      isToday && 'bg-[#1A535C]/[0.04]'
+                      isToday && 'bg-[#1A535C]/[0.04] dark:bg-white/[0.03]'
                     )}
                   >
                     <div className="flex flex-col items-center gap-1">
                       <span className={cn(
                         'text-[11px] font-semibold tracking-[0.06em] uppercase',
-                        isToday ? 'text-[#1A535C]' : 'text-muted-foreground'
+                        isToday ? 'text-[#1A535C] dark:text-[#5AABB5]' : 'text-muted-foreground'
                       )}>
                         {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
                       </span>
@@ -1743,7 +1763,7 @@ export function TasksLayout() {
                             checked={allDaySelected}
                             onCheckedChange={() => toggleTaskGroupSelected(dayTaskIds)}
                             aria-label={`Selecteer alle taken op ${DAY_LABELS[i]} ${day.getDate()}`}
-                            className="h-3.5 w-3.5 border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                            className="h-3.5 w-3.5 border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                           />
                         )}
                         <span className={cn(
@@ -1778,7 +1798,7 @@ export function TasksLayout() {
                         disabled={laneTaskIds.length === 0}
                         onCheckedChange={() => toggleTaskGroupSelected(laneTaskIds)}
                         aria-label={`Selecteer alle taken van ${lane.label}`}
-                        className="h-3.5 w-3.5 flex-shrink-0 border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                        className="h-3.5 w-3.5 flex-shrink-0 border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                       />
                       <button
                         type="button"
@@ -1818,23 +1838,23 @@ export function TasksLayout() {
                           key={dayIdx}
                           className={cn(
                             'flex-1 min-w-0 border-l border-border p-1.5 min-h-[56px]',
-                            isToday && 'bg-[#1A535C]/[0.02]'
+                            isToday && 'bg-[#1A535C]/[0.02] dark:bg-white/[0.02]'
                           )}
                         >
                           {!isCollapsed && cellTasks.length > 0 && (
                             <div className="space-y-1">
                               {cellTasks.map((t) => {
-                                const pc = PRIORITEIT_COLORS[t.prioriteit]
                                 const hour = getHourFromDeadline(t.deadline ?? '')
                                 const isSelected = selectedTaskIds.has(t.id)
                                 return (
                                   <div
                                     key={t.id}
                                     className={cn(
-                                      'group relative flex items-start gap-1.5 rounded-none border-l-2 transition-shadow hover:shadow-sm',
-                                      isSelected && 'ring-2 ring-[#1A535C]/40'
+                                      'group relative flex items-start gap-1.5 rounded-none transition-shadow hover:shadow-sm',
+                                      PRIO_CARD_BG[t.prioriteit],
+                                      PRIO_CARD_STRIPE[t.prioriteit],
+                                      isSelected && 'ring-2 ring-[#1A535C]/40 dark:ring-[#5FB5C0]/40'
                                     )}
-                                    style={{ borderLeftColor: pc.border, backgroundColor: pc.bg }}
                                   >
                                     <div
                                       className="pt-1 pl-1.5 flex-shrink-0"
@@ -1844,16 +1864,16 @@ export function TasksLayout() {
                                         checked={isSelected}
                                         onCheckedChange={() => toggleTaskSelected(t.id)}
                                         aria-label={`Selecteer ${t.titel}`}
-                                        className="h-3 w-3 border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                                        className="h-3 w-3 border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 dark:group-hover:border-white/35 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                                       />
                                     </div>
                                     <button
                                       onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
                                       className={cn(
                                         'flex-1 min-w-0 text-left text-[11px] leading-tight truncate pr-1.5 py-1',
+                                        PRIO_CARD_TEXT[t.prioriteit],
                                         t.status === 'klaar' && 'line-through opacity-50'
                                       )}
-                                      style={{ color: pc.text }}
                                       title={t.titel}
                                     >
                                       {hour !== null && (
@@ -2083,7 +2103,7 @@ function NietVergetenStrip() {
         {items.length > 0 && <span className="text-[10px] text-muted-foreground font-mono">{items.length}</span>}
       </button>
       {open && (
-        <div className="mt-2 bg-[#FFF9E6]/60 rounded-md px-3 py-2 border border-[#F5E6A3]/30">
+        <div className="mt-2 bg-[#FFF9E6]/60 dark:bg-amber-400/10 rounded-md px-3 py-2 border border-[#F5E6A3]/30 dark:border-amber-300/20">
           {items.length > 0 && (
             <ul className="space-y-0.5 mb-2">
               {items.map((item, idx) => (
@@ -2112,10 +2132,10 @@ function NietVergetenStrip() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Typ iets om te onthouden..."
-              className="flex-1 text-[12px] bg-transparent border-none outline-none placeholder:text-[#C4A060]/50 text-foreground/70"
+              className="flex-1 text-[12px] bg-transparent border-none outline-none placeholder:text-[#C4A060]/50 dark:placeholder:text-amber-200/40 text-foreground/70"
             />
             {input.trim() && (
-              <button type="submit" className="text-[10px] font-medium text-[#8A7A4A] hover:text-[#6B5A2A] transition-colors">
+              <button type="submit" className="text-[10px] font-medium text-[#8A7A4A] dark:text-amber-200 hover:text-[#6B5A2A] dark:hover:text-amber-100 transition-colors">
                 + Voeg toe
               </button>
             )}
@@ -2304,7 +2324,7 @@ function DayColumn({
   return (
     <div className={cn(
       'flex-1 min-w-0 border-l border-border relative',
-      isToday && 'bg-[#1A535C]/[0.015]'
+      isToday && 'bg-[#1A535C]/[0.015] dark:bg-white/[0.02]'
     )}>
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
@@ -2322,7 +2342,7 @@ function DayColumn({
             style={{ height: HOUR_HEIGHT }}
             className={cn(
               'group/hour border-b border-border transition-all duration-200 relative',
-              isDropHere && 'bg-[#1A535C]/[0.06]'
+              isDropHere && 'bg-[#1A535C]/[0.06] dark:bg-white/[0.05]'
             )}
             onDragOver={(e) => handleDragOver(e, hour)}
             onDrop={(e) => handleDrop(e, hour)}
@@ -2337,9 +2357,9 @@ function DayColumn({
                   height: HOUR_HEIGHT / 2 - 4,
                 }}
               >
-                <div className="w-full h-full rounded-lg border-2 border-dashed border-[#1A535C]/25 bg-[#1A535C]/[0.04] flex items-center justify-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-[#1A535C]/40" />
-                  <span className="text-[11px] text-[#1A535C]/50 font-semibold font-mono">
+                <div className="w-full h-full rounded-lg border-2 border-dashed border-[#1A535C]/25 dark:border-white/20 bg-[#1A535C]/[0.04] dark:bg-white/[0.04] flex items-center justify-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#1A535C]/40 dark:text-foreground/40" />
+                  <span className="text-[11px] text-[#1A535C]/50 dark:text-foreground/60 font-semibold font-mono">
                     {formatHourLabel(dropTarget!.hour)}
                   </span>
                 </div>
@@ -2354,7 +2374,7 @@ function DayColumn({
                   value={hourAddTitle}
                   onChange={(e) => setHourAddTitle(e.target.value)}
                   placeholder={`Taak om ${String(hour).padStart(2, '0')}:00...`}
-                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/20 text-foreground placeholder:text-muted-foreground/80 transition-all"
+                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 dark:border-white/15 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:border-[#1A535C] dark:focus:border-white/25 focus:ring-2 focus:ring-[#1A535C]/20 dark:focus:ring-white/10 text-foreground placeholder:text-muted-foreground/80 transition-all"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && hourAddTitle.trim()) {
                       onQuickAddAtTime(hour, hourAddTitle.trim())
@@ -2491,11 +2511,11 @@ function DayColumn({
             title={tooltipText}
           >
             <div className="px-2 py-1 overflow-hidden">
-              <div className="text-xs text-[#1A535C]/50 truncate font-medium">
+              <div className="text-xs text-[#1A535C]/50 dark:text-[#7EB5A6]/70 truncate font-medium">
                 {afspraak.titel}
               </div>
               {afspraak.locatie && (
-                <div className="text-xs text-[#1A535C]/30 truncate">
+                <div className="text-xs text-[#1A535C]/30 dark:text-[#7EB5A6]/50 truncate">
                   {afspraak.locatie}
                 </div>
               )}
@@ -2547,7 +2567,7 @@ function DayColumn({
           ) : (
             <button
               onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground/80/40 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all duration-200"
+              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground/80/40 hover:text-[#1A535C] dark:hover:text-foreground hover:bg-[#1A535C]/[0.05] dark:hover:bg-white/[0.05] transition-all duration-200"
             >
               <Plus className="w-3 h-3" />
             </button>
@@ -2643,15 +2663,14 @@ function TaskCard({
         'hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:z-10',
         isPast && !isDone && 'opacity-55',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
-        isResizing && 'ring-2 ring-[#1A535C]/30 z-30',
-        isSelected && 'ring-2 ring-[#1A535C] z-20',
+        isResizing && 'ring-2 ring-[#1A535C]/30 dark:ring-[#5FB5C0]/40 z-30',
+        isSelected && 'ring-2 ring-[#1A535C] dark:ring-[#5FB5C0] z-20',
         isDimmedForBulkDrag && 'opacity-40',
-        isDone && 'bg-[#E8F0F0] dark:bg-[#1A535C]/15'
+        isDone
+          ? 'bg-[#E8F0F0] dark:bg-[#1A535C]/15'
+          : cn(PRIO_CARD_BG[taak.prioriteit], PRIO_CARD_STRIPE[taak.prioriteit])
       )}
-      style={{
-        ...(heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : {}),
-        ...(isDone ? {} : { backgroundColor: pc.bg, boxShadow: `inset 2px 0 0 0 ${pc.border}` }),
-      }}
+      style={heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : undefined}
       onClick={onEdit}
     >
       {/* Checkbox — Priority Pulse: cirkel met binnen-dot in priority-kleur, groeit bij hover */}
@@ -2680,10 +2699,9 @@ function TaskCard({
           <p
             className={cn(
               'text-[13px] font-semibold leading-tight truncate flex-1',
-              isDone && 'line-through',
+              isDone ? 'line-through text-[#6B6B66] dark:text-muted-foreground/70' : PRIO_CARD_TEXT[taak.prioriteit],
               isCompact && 'text-[11px]'
             )}
-            style={{ color: isDone ? '#6B6B66' : pc.text }}
           >
             {taak.titel}
           </p>
@@ -2703,14 +2721,19 @@ function TaskCard({
           {/* Delete — hover only, ruimte + grotere hit area */}
           <button
             onClick={handleDeleteClick}
-            className="p-1.5 -mr-1 rounded-md text-transparent group-hover:text-muted-foreground hover:!text-[#C03A18] hover:bg-[#C03A18]/8 transition-all flex-shrink-0"
+            className="p-1.5 -mr-1 rounded-md text-transparent group-hover:text-muted-foreground hover:!text-[#C03A18] dark:hover:!text-[#DA7B70] hover:bg-[#C03A18]/8 transition-all flex-shrink-0"
             title="Verwijderen"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
         {!isCompact && (
-          <div className="flex items-center gap-2 mt-1 overflow-hidden" style={{ color: isDone ? '#9B9B95' : pc.text, opacity: isDone ? 1 : 0.7 }}>
+          <div
+            className={cn(
+              'flex items-center gap-2 mt-1 overflow-hidden',
+              isDone ? 'text-[#9B9B95] dark:text-muted-foreground/60' : cn(PRIO_CARD_TEXT[taak.prioriteit], 'opacity-70'),
+            )}
+          >
             {scheduled && hour !== null && (
               <span className="text-[11px] font-mono tabular-nums">{formatHourLabel(hour)}</span>
             )}
@@ -2737,8 +2760,8 @@ function TaskCard({
 
       {/* Completion animation overlay */}
       {justCompleted && (
-        <div className="absolute inset-0 bg-[#1A535C]/10 flex items-center justify-center pointer-events-none">
-          <Check className="w-4 h-4 text-[#1A535C]" strokeWidth={3} />
+        <div className="absolute inset-0 bg-[#1A535C]/10 dark:bg-white/[0.08] flex items-center justify-center pointer-events-none">
+          <Check className="w-4 h-4 text-[#1A535C] dark:text-[#5AABB5]" strokeWidth={3} />
         </div>
       )}
     </div>
@@ -2797,7 +2820,7 @@ function EditTaskDialog({
             <button
               type="button"
               onClick={() => { onOpenChange(false); navigate(`/projecten/${formData.project_id}`) }}
-              className="flex-shrink-0 inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] hover:text-[#0F3A40] transition-colors mt-1"
+              className="flex-shrink-0 inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] dark:text-[#5AABB5] hover:text-[#0F3A40] dark:hover:text-foreground transition-colors mt-1"
               title="Open project in nieuw tabblad"
             >
               Open project
@@ -2900,7 +2923,7 @@ function EditTaskDialog({
         <div className="px-7 pb-5">
           <div className="flex items-center flex-wrap gap-3">
             <Label className="text-xs uppercase tracking-[0.05em] text-muted-foreground font-semibold m-0">Bijlagen</Label>
-            <label className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-dashed border-border bg-transparent text-xs font-medium text-foreground/70 hover:border-[#1A535C] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors cursor-pointer">
+            <label className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-dashed border-border bg-transparent text-xs font-medium text-foreground/70 hover:border-[#1A535C] dark:hover:border-white/25 hover:text-[#1A535C] dark:hover:text-foreground hover:bg-[#1A535C]/[0.03] dark:hover:bg-white/[0.04] transition-colors cursor-pointer">
               <Plus className="h-3.5 w-3.5" />
               Toevoegen
               <input
@@ -2985,7 +3008,7 @@ function EditTaskDialog({
               <button
                 type="button"
                 onClick={onAfronden}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-[13px] font-medium text-[#1A535C] border border-[#1A535C]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-[13px] font-medium text-[#1A535C] dark:text-[#5AABB5] border border-[#1A535C]/30 dark:border-[#5AABB5]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Afronden

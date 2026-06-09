@@ -111,7 +111,7 @@ export function QuoteHeader({
   })()
 
   return (
-    <div className="bg-background border-b border-[rgba(26,83,92,0.08)] px-4 md:px-8 py-4 mb-6 -mx-4 md:-mx-6">
+    <div className="bg-background border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 px-4 md:px-8 py-4 mb-6 -mx-4 md:-mx-6">
 
       {/* Row 0: breadcrumb */}
       <div className="flex items-center gap-1.5 text-[12px] mb-2">
@@ -134,7 +134,7 @@ export function QuoteHeader({
           return (
             <button
               onClick={handleBack}
-              className="inline-flex items-center gap-1 text-muted-foreground hover:text-[#1A535C] transition-colors group"
+              className="inline-flex items-center gap-1 text-muted-foreground hover:text-petrol dark:hover:text-petrol-light transition-colors group"
             >
               <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
               {backLabel}
@@ -142,7 +142,7 @@ export function QuoteHeader({
           )
         })()}
         <span className="text-muted-foreground/70">·</span>
-        <span className="font-mono text-[11px] font-medium text-foreground/70 bg-[rgba(26,83,92,0.05)] border border-[rgba(26,83,92,0.08)] rounded-md px-1.5 py-0.5">
+        <span className="font-mono text-[11px] font-medium text-foreground/70 bg-[rgba(26,83,92,0.05)] dark:bg-white/[0.05] border border-[rgba(26,83,92,0.08)] dark:border-white/10 rounded-md px-1.5 py-0.5">
           {offerteNummer}
         </span>
         {versioning.versieNummer > 1 && (
@@ -221,7 +221,7 @@ export function QuoteHeader({
           {/* PDF */}
           <button
             onClick={() => { hapticLight(); handleDownloadPdf() }}
-            className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-3.5 text-[13px] font-medium rounded-xl border border-[rgba(26,83,92,0.12)] bg-white text-foreground/70 hover:text-[#1A535C] hover:border-[rgba(26,83,92,0.25)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] transition-all"
+            className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-3.5 text-[13px] font-medium rounded-xl border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-card text-foreground/70 hover:text-[#1A535C] dark:hover:text-petrol-light hover:border-[rgba(26,83,92,0.25)] dark:hover:border-white/20 hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] transition-all"
             aria-label="PDF downloaden"
           >
             <Download className="h-4 w-4 md:h-3.5 md:w-3.5" />
@@ -264,7 +264,7 @@ export function QuoteHeader({
                   <button
                     onClick={handleKeuzePortaal}
                     disabled={email.isSendingPortaal || !selectedProjectId}
-                    className="w-full text-left px-4 py-3 hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-b border-[rgba(26,83,92,0.08)]"
+                    className="w-full text-left px-4 py-3 hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-b border-[rgba(26,83,92,0.08)] dark:border-white/10"
                   >
                     <div className="flex items-start gap-3">
                       <div className="h-9 w-9 rounded-lg bg-[#1A535C] flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(20,62,71,0.2)]">
@@ -277,8 +277,8 @@ export function QuoteHeader({
                           <p className="text-[10.5px] text-[#C0451A] mt-1">Koppel eerst een project</p>
                         )}
                         {email.isSendingPortaal && (
-                          <p className="text-[10.5px] text-[#1A535C] mt-1 flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#1A535C] animate-pulse" />
+                          <p className="text-[10.5px] text-[#1A535C] dark:text-petrol-light mt-1 flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#1A535C] dark:bg-petrol-light animate-pulse" />
                             Delen…
                           </p>
                         )}
@@ -310,7 +310,7 @@ export function QuoteHeader({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-10 w-10 md:h-9 md:w-9 rounded-xl border-[rgba(26,83,92,0.12)] hover:border-[rgba(26,83,92,0.25)] hover:bg-white hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] transition-all"
+                className="h-10 w-10 md:h-9 md:w-9 rounded-xl border-[rgba(26,83,92,0.12)] dark:border-white/10 hover:border-[rgba(26,83,92,0.25)] dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/[0.06] hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] transition-all"
                 onClick={() => { hapticLight(); setShowActionsMenu(!showActionsMenu) }}
                 aria-label="Meer acties"
               >
@@ -383,7 +383,7 @@ export function QuoteHeader({
           <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => setShowKopieerNaarKlant(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div className="pointer-events-auto doen-slate-surface rounded-2xl shadow-[0_8px_32px_rgba(20,62,71,0.16)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(26,83,92,0.08)]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(26,83,92,0.08)] dark:border-white/10">
                 <h3 className="font-heading text-[16px] font-bold text-foreground">
                   Kopieer naar klant<span className="text-[#F15025]">.</span>
                 </h3>
@@ -403,7 +403,7 @@ export function QuoteHeader({
                     placeholder="Zoek klant…"
                     value={kopieerZoek || ''}
                     onChange={(e) => setKopieerZoek(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] outline-none transition-colors"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:border-[#1A535C] dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 outline-none transition-colors"
                   />
                 </div>
                 <div className="max-h-[280px] overflow-y-auto space-y-0.5">

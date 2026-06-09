@@ -88,16 +88,18 @@ const CLOSED_STATUS_COLUMNS = [
   { key: 'verlopen', label: 'Verlopen', color: 'from-mod-offertes-light/30 to-mod-offertes-light/10', accent: 'bg-mod-offertes-text', headerBg: 'bg-mod-offertes-light/60' },
 ]
 
-const STATUS_BADGE_STYLES: Record<string, { bg: string; text: string }> = {
-  concept: { bg: '#EEEEED', text: '#5A5A55' },
-  verzonden: { bg: '#FDE8E2', text: '#C03A18' },
-  bekeken: { bg: '#EEE8F5', text: '#5A4A78' },
-  goedgekeurd: { bg: '#E2F0F0', text: '#1A535C' },
-  afgewezen: { bg: '#FDE8E2', text: '#C03A18' },
-  verlopen: { bg: '#EEEEED', text: '#5A5A55' },
-  gefactureerd: { bg: '#E4F0EA', text: '#2D6B48' },
-  wijziging_gevraagd: { bg: '#FDE8E2', text: '#C03A18' },
+const STATUS_BADGE_CLASSES: Record<string, string> = {
+  concept: 'bg-[#EEEEED] text-[#5A5A55] dark:bg-[rgba(138,138,138,0.22)] dark:text-[#A0A0A0]',
+  verzonden: 'bg-[#FDE8E2] text-[#C03A18] dark:bg-[rgba(241,80,37,0.22)] dark:text-[#F18060]',
+  bekeken: 'bg-[#EEE8F5] text-[#5A4A78] dark:bg-[rgba(90,74,120,0.22)] dark:text-[#9A7ACC]',
+  goedgekeurd: 'bg-[#E2F0F0] text-[#1A535C] dark:bg-[rgba(26,83,92,0.22)] dark:text-[#5AABB5]',
+  afgewezen: 'bg-[#FDE8E2] text-[#C03A18] dark:bg-[rgba(241,80,37,0.22)] dark:text-[#F18060]',
+  verlopen: 'bg-[#EEEEED] text-[#5A5A55] dark:bg-[rgba(138,138,138,0.22)] dark:text-[#A0A0A0]',
+  gefactureerd: 'bg-[#E4F0EA] text-[#2D6B48] dark:bg-[rgba(45,107,72,0.22)] dark:text-[#7AAF85]',
+  wijziging_gevraagd: 'bg-[#FDE8E2] text-[#C03A18] dark:bg-[rgba(241,80,37,0.22)] dark:text-[#F18060]',
 }
+
+const STATUS_BADGE_FALLBACK = 'bg-[#EEEEED] text-[#5A5A55] dark:bg-[rgba(138,138,138,0.22)] dark:text-[#A0A0A0]'
 
 const STATUS_LABELS: Record<string, string> = {
   concept: 'Concept',
@@ -1190,14 +1192,14 @@ export function QuotesPipeline() {
                                 onDragStart={e => handleDragStart(e, offerte.id)}
                                 onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                                 className={cn(
-                                  'relative bg-card rounded-xl pl-4 pr-3.5 py-3.5 space-y-2 shadow-[0_1px_2px_rgba(15,15,15,0.04)] hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] hover:shadow-[0_10px_28px_-12px_rgba(15,15,15,0.18),0_2px_6px_-2px_rgba(15,15,15,0.04)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer active:cursor-grabbing active:translate-y-0',
+                                  'relative bg-card rounded-xl pl-4 pr-3.5 py-3.5 space-y-2 shadow-[0_1px_2px_rgba(15,15,15,0.04)] hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] hover:shadow-[0_10px_28px_-12px_rgba(15,15,15,0.18),0_2px_6px_-2px_rgba(15,15,15,0.04)] hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer active:cursor-grabbing active:translate-y-0',
                                   needsFollowUp ? 'ring-1 ring-[#F15025]/35' : 'ring-1 ring-black/[0.04]',
                                   isPaused && 'opacity-55 saturate-50',
                                 )}
                               >
                                 <span
                                   aria-hidden
-                                  className="absolute left-0 top-1.5 bottom-1.5 w-[2.5px] rounded-r-full opacity-70 group-hover:opacity-100 transition-opacity"
+                                  className="absolute left-0 top-1.5 bottom-1.5 w-[2.5px] rounded-r-full opacity-70 group-hover:opacity-100 transition-opacity duration-150"
                                   style={{ backgroundColor: offerteStatusHex(offerte.status) }}
                                 />
                                 {/* Top row */}
@@ -1306,21 +1308,21 @@ export function QuotesPipeline() {
 
           {/* ── Bulk action bar ── */}
           {viewMode === 'lijst' && selectedIds.size > 0 && (
-            <div className="bg-[#1A535C]/[0.06] rounded-xl ring-1 ring-[#1A535C]/10 px-5 py-3 flex items-center gap-3">
+            <div className="bg-[#1A535C]/[0.06] dark:bg-white/[0.05] rounded-xl ring-1 ring-[#1A535C]/10 dark:ring-white/10 px-5 py-3 flex items-center gap-3">
               <div className="flex items-center gap-2.5">
                 <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{selectedIds.size}</span>
                 <div>
-                  <span className="text-sm font-semibold text-[#1A535C]">{selectedIds.size} offerte{selectedIds.size === 1 ? '' : 's'} geselecteerd</span>
-                  <span className="text-[10px] text-[#1A535C]/50 ml-2">van {filteredOffertes.length}</span>
+                  <span className="text-sm font-semibold text-[#1A535C] dark:text-foreground">{selectedIds.size} offerte{selectedIds.size === 1 ? '' : 's'} geselecteerd</span>
+                  <span className="text-[10px] text-[#1A535C]/50 dark:text-muted-foreground ml-2">van {filteredOffertes.length}</span>
                 </div>
               </div>
-              <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
+              <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] dark:text-foreground px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
                 {selectedIds.size === filteredOffertes.length ? 'Deselecteer alles' : 'Selecteer alles'}
               </button>
               <div className="flex-1" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-[#1A535C]/10 text-[#1A535C] hover:shadow-sm transition-all">
+                  <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-[#1A535C]/10 dark:ring-white/10 text-[#1A535C] dark:text-foreground hover:shadow-sm transition-all">
                     <ArrowUpDown className="w-3 h-3" /> Status wijzigen <ChevronDown className="w-3 h-3 opacity-50" />
                   </button>
                 </DropdownMenuTrigger>
@@ -1339,7 +1341,7 @@ export function QuotesPipeline() {
               >
                 <Trash2 className="w-3 h-3" /> Verwijderen
               </button>
-              <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-card/40 transition-all">
+              <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] dark:text-foreground hover:bg-card/40 transition-all">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -1384,9 +1386,7 @@ export function QuotesPipeline() {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-[12px] text-foreground/70">{offerte.klant_naam || 'Onbekend'}</span>
-                            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium rounded-md px-2 py-0.5"
-                              style={{ backgroundColor: STATUS_BADGE_STYLES[offerte.status]?.bg ?? '#EEEEED', color: STATUS_BADGE_STYLES[offerte.status]?.text ?? '#5A5A55' }}
-                            >
+                            <span className={cn('ml-auto inline-flex items-center gap-1 text-[11px] font-medium rounded-md px-2 py-0.5', STATUS_BADGE_CLASSES[offerte.status] ?? STATUS_BADGE_FALLBACK)}>
                               {STATUS_LABELS[offerte.status] || offerte.status}<span className="text-[#F15025]">.</span>
                             </span>
                           </div>
@@ -1412,7 +1412,7 @@ export function QuotesPipeline() {
                               <Checkbox
                                 checked={sortedListOffertes.length > 0 && selectedIds.size === sortedListOffertes.length}
                                 onCheckedChange={toggleSelectAll}
-                                className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                                className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
                               />
                             </th>
                             <th className="text-left py-3.5 pr-4"><SortHeader column="nummer" label="Offerte" /></th>
@@ -1438,7 +1438,7 @@ export function QuotesPipeline() {
                                   'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
                                   attention && !selectedIds.has(offerte.id) && 'bg-[rgba(241,80,37,0.025)]',
                                   'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
-                                  selectedIds.has(offerte.id) && 'bg-[#1A535C]/[0.05]',
+                                  selectedIds.has(offerte.id) && 'bg-[#1A535C]/[0.05] dark:bg-white/[0.05]',
                                 )}
                                 style={{ animationDelay: `${i * 25}ms`, ['--row-accent' as string]: stripeHex } as React.CSSProperties}
                                 onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
@@ -1447,7 +1447,7 @@ export function QuotesPipeline() {
                                   className="py-3.5 pl-5 pr-3 align-middle"
                                   onClick={e => e.stopPropagation()}
                                 >
-                                  <Checkbox checked={selectedIds.has(offerte.id)} onCheckedChange={() => toggleSelect(offerte.id)} className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white" />
+                                  <Checkbox checked={selectedIds.has(offerte.id)} onCheckedChange={() => toggleSelect(offerte.id)} className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 dark:group-hover:border-white/35 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white" />
                                 </td>
                                 {/* Offerte */}
                                 <td className="py-3.5 pr-4">
@@ -1492,7 +1492,7 @@ export function QuotesPipeline() {
                                     <DropdownMenuTrigger asChild>
                                       <button className="text-left group/status inline-flex items-center gap-1">
                                         <StatusBadge status={offerte.status} label={STATUS_LABELS[offerte.status] || offerte.status} />
-                                        <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity -ml-0.5" />
+                                        <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity duration-150 -ml-0.5" />
                                       </button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="start" className="w-44">
@@ -1563,12 +1563,12 @@ export function QuotesPipeline() {
                                 {/* Actions */}
                                 <td className="py-3.5 pr-4">
                                   <div className="flex items-center gap-0.5 justify-end">
-                                    <Link to={`/offertes/${offerte.id}/preview`} onClick={e => e.stopPropagation()} className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100" title="Preview">
+                                    <Link to={`/offertes/${offerte.id}/preview`} onClick={e => e.stopPropagation()} className="p-1.5 rounded-lg hover:bg-muted transition-all duration-150 opacity-0 group-hover:opacity-100" title="Preview">
                                       <Eye className="w-3.5 h-3.5 text-muted-foreground" />
                                     </Link>
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
-                                        <button onClick={e => e.stopPropagation()} className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100">
+                                        <button onClick={e => e.stopPropagation()} className="p-1.5 rounded-lg hover:bg-muted transition-all duration-150 opacity-0 group-hover:opacity-100">
                                           <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
                                         </button>
                                       </DropdownMenuTrigger>

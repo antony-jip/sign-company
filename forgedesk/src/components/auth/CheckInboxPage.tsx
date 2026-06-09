@@ -32,27 +32,27 @@ export function CheckInboxPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#FEFDFB' }}>
+    <div className="min-h-screen flex items-center justify-center p-5 bg-[#FEFDFB] dark:bg-background">
       <div className="w-full max-w-md text-center">
         {/* Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center mx-auto mb-6">
-          <Mail className="w-7 h-7 text-neutral-700" />
+        <div className="w-16 h-16 rounded-2xl bg-white dark:bg-card border border-neutral-200 dark:border-white/10 flex items-center justify-center mx-auto mb-6">
+          <Mail className="w-7 h-7 text-neutral-700 dark:text-muted-foreground" />
         </div>
 
-        <h1 className="text-2xl font-bold text-black mb-2" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
+        <h1 className="text-2xl font-bold text-black dark:text-foreground mb-2" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
           Check je inbox!
         </h1>
 
-        <p className="text-[15px] text-neutral-600 mb-8 leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <p className="text-[15px] text-neutral-600 dark:text-muted-foreground mb-8 leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>
           We hebben een bevestigingsmail gestuurd naar{' '}
-          {email && <span className="font-semibold text-black">{email}</span>}
+          {email && <span className="font-semibold text-black dark:text-foreground">{email}</span>}
           {!email && 'je emailadres'}. Klik op de link in de mail om je account te activeren.
         </p>
 
         <Button
           onClick={handleResend}
           variant="outline"
-          className="h-11 rounded-xl border-neutral-300 hover:bg-white text-[14px] font-medium px-6"
+          className="h-11 rounded-xl border-neutral-300 hover:bg-white dark:border-white/15 dark:hover:bg-white/10 text-[14px] font-medium px-6"
           disabled={isResending || cooldown > 0}
         >
           {isResending ? (
@@ -67,13 +67,13 @@ export function CheckInboxPage() {
           )}
         </Button>
 
-        <p className="text-sm text-neutral-500 mt-6 mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <p className="text-sm text-neutral-500 dark:text-muted-foreground/70 mt-6 mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
           Tip: Check ook je spam folder.
         </p>
 
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-black font-medium transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-black dark:text-muted-foreground dark:hover:text-foreground font-medium transition-colors"
           style={{ fontFamily: 'Inter, sans-serif' }}
         >
           <ArrowLeft className="w-4 h-4" />

@@ -887,11 +887,11 @@ export function EmailReader({
   // Body blijft zichtbaar eronder; geen mode-switch meer (was: full-screen takeover).
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const inlineReplyForm = replyMode ? (
-    <div className="bg-white">
+    <div className="bg-white dark:bg-card">
           {/* ─── Compose fields (iOS-style: hairlines, ruime padding, duidelijke labels) ─── */}
-          <div className="bg-white flex-shrink-0">
+          <div className="bg-white dark:bg-card flex-shrink-0">
             {/* Aan field */}
-            <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06]">
+            <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06] dark:border-white/[0.08]">
               <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Aan</span>
               <div className="flex-1 flex items-center gap-2 min-w-0">
                 <input
@@ -911,7 +911,7 @@ export function EmailReader({
                 </button>
               )}
               {/* Reply-mode segmented control — iOS-style pill */}
-              <div className="hidden md:flex items-center ml-2.5 flex-shrink-0 bg-[#1A535C]/[0.06] rounded-button p-[2px]">
+              <div className="hidden md:flex items-center ml-2.5 flex-shrink-0 bg-[#1A535C]/[0.06] dark:bg-white/[0.06] rounded-button p-[2px]">
                 <button
                   onClick={() => {
                     setReplyMode('reply')
@@ -920,7 +920,7 @@ export function EmailReader({
                   className={cn(
                     'flex items-center justify-center w-6 h-5 rounded-[5px] transition-all duration-200',
                     replyMode === 'reply'
-                      ? 'bg-card text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
+                      ? 'bg-card dark:bg-white/10 text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                   title="Beantwoorden"
@@ -935,7 +935,7 @@ export function EmailReader({
                   className={cn(
                     'flex items-center justify-center w-6 h-5 rounded-[5px] transition-all duration-200',
                     replyMode === 'reply-all'
-                      ? 'bg-card text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
+                      ? 'bg-card dark:bg-white/10 text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                   title="Allen beantwoorden"
@@ -950,7 +950,7 @@ export function EmailReader({
                   className={cn(
                     'flex items-center justify-center w-6 h-5 rounded-[5px] transition-all duration-200',
                     replyMode === 'forward'
-                      ? 'bg-card text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
+                      ? 'bg-card dark:bg-white/10 text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                   title="Doorsturen"
@@ -963,7 +963,7 @@ export function EmailReader({
             {/* CC / BCC fields */}
             {showCcBcc && (
               <>
-                <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06]">
+                <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06] dark:border-white/[0.08]">
                   <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Cc</span>
                   <input
                     type="text"
@@ -973,7 +973,7 @@ export function EmailReader({
                     placeholder="cc@voorbeeld.nl"
                   />
                 </div>
-                <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06]">
+                <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06] dark:border-white/[0.08]">
                   <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Bcc</span>
                   <input
                     type="text"
@@ -987,7 +987,7 @@ export function EmailReader({
             )}
 
             {/* Subject */}
-            <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06]">
+            <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06] dark:border-white/[0.08]">
               <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Onderwerp</span>
               <input
                 type="text"
@@ -999,7 +999,7 @@ export function EmailReader({
             </div>
 
             {/* AI suggestion — subtler text-link op zelfde aligning kolom */}
-            <div className="flex items-center px-5 md:px-7 py-2 border-b border-black/[0.06]">
+            <div className="flex items-center px-5 md:px-7 py-2 border-b border-black/[0.06] dark:border-white/[0.08]">
               <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Daan</span>
               <div className="relative">
                 <button
@@ -1068,7 +1068,7 @@ export function EmailReader({
           </div>
 
           {/* ─── Editor + toolbar ─── */}
-          <div className="bg-white">
+          <div className="bg-white dark:bg-card">
             {/* Editor */}
             <div
               ref={editorRef}
@@ -1094,7 +1094,7 @@ export function EmailReader({
                   return (
                     <div
                       key={`fwd-${att.filename}-${i}`}
-                      className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-lg border border-[#1A535C]/20 text-[12px] text-foreground/70"
+                      className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white dark:bg-white/[0.04] rounded-lg border border-[#1A535C]/20 dark:border-white/10 text-[12px] text-foreground/70"
                       title={`Doorgestuurd: ${att.filename}`}
                     >
                       <div className={cn(
@@ -1119,7 +1119,7 @@ export function EmailReader({
                 {replyAttachments.map((file, i) => {
                   const previewUrl = replyImagePreviewUrls.get(file)
                   return (
-                    <div key={i} className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-lg border border-border text-[12px] text-foreground/70">
+                    <div key={i} className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white dark:bg-white/[0.04] rounded-lg border border-border text-[12px] text-foreground/70">
                       {previewUrl ? (
                         <img src={previewUrl} alt={file.name} className="w-6 h-6 rounded object-cover flex-shrink-0" />
                       ) : (
@@ -1141,7 +1141,7 @@ export function EmailReader({
             )}
 
             {/* ─── Toolbar (sticky bottom — iOS-style frosted material) ─── */}
-            <div className="sticky bottom-0 z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 pl-3 pr-3 md:pl-5 md:pr-3 py-2.5 border-t border-black/[0.06] bg-card/85 backdrop-blur-xl shadow-[0_-1px_0_rgba(0,0,0,0.02),0_-8px_24px_-12px_rgba(0,0,0,0.08)]">
+            <div className="sticky bottom-0 z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 pl-3 pr-3 md:pl-5 md:pr-3 py-2.5 border-t border-black/[0.06] dark:border-white/[0.08] bg-card/85 backdrop-blur-xl shadow-[0_-1px_0_rgba(0,0,0,0.02),0_-8px_24px_-12px_rgba(0,0,0,0.08)]">
               <div className="flex items-center">
                 <div className="flex items-center gap-px mr-2">
                   <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
@@ -1199,7 +1199,7 @@ export function EmailReader({
                   {showScheduleMenu && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => { setShowScheduleMenu(false); setShowCustomSchedule(false) }} />
-                      <div className="absolute bottom-full right-0 mb-2 w-[220px] bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.10)] z-50 py-1.5 overflow-hidden">
+                      <div className="absolute bottom-full right-0 mb-2 w-[220px] bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.10)] z-50 py-1.5 overflow-hidden">
                         <p className="px-3.5 py-1.5 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Inplannen</p>
                         {[
                           { label: 'Over 1 uur', getDate: () => { const d = new Date(); d.setHours(d.getHours() + 1); return d } },
@@ -1289,7 +1289,7 @@ export function EmailReader({
     <div className="flex flex-col h-full min-w-0">
         {/* Top action bar — sticky, grouped */}
         <TooltipProvider delayDuration={300}>
-        <div className="flex items-center justify-between gap-2 px-2 md:px-5 h-12 border-b border-black/[0.06] flex-shrink-0 bg-card/85 backdrop-blur-xl sticky top-0 z-10">
+        <div className="flex items-center justify-between gap-2 px-2 md:px-5 h-12 border-b border-black/[0.06] dark:border-white/[0.08] flex-shrink-0 bg-card/85 dark:bg-[#1A535C]/[0.15] backdrop-blur-xl sticky top-0 z-10">
           {/* Left: Back + email-acties (markeer + organize) */}
           <div className="flex items-center gap-0.5"><Button
               variant="ghost"
@@ -1333,7 +1333,7 @@ export function EmailReader({
                 </Button>
               </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">{email?.snoozed_until ? 'Gesnoozed' : 'Snooze'}</TooltipContent></Tooltip>
               {snoozeMenuOpen && email && (
-                <div className="absolute top-full right-0 mt-1 min-w-[180px] bg-white rounded-lg shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-border py-1 z-50">
+                <div className="absolute top-full right-0 mt-1 min-w-[180px] bg-white dark:bg-popover rounded-lg shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-border py-1 z-50">
                   {email.snoozed_until && (
                     <>
                       <button
@@ -1376,7 +1376,7 @@ export function EmailReader({
                 </Button>
               </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Labels</TooltipContent></Tooltip>
               {labelMenuOpen && email && (
-                <div className="absolute top-full right-0 mt-1 min-w-[180px] bg-white rounded-lg shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-border py-1 z-50">
+                <div className="absolute top-full right-0 mt-1 min-w-[180px] bg-white dark:bg-popover rounded-lg shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-border py-1 z-50">
                   {Object.entries(labelColors).map(([label, color]) => {
                     const active = email.labels?.includes(label) ?? false
                     return (
@@ -1438,13 +1438,13 @@ export function EmailReader({
         </TooltipProvider>
 
         {/* Scrollable email content */}
-        <div className="flex-1 overflow-y-auto bg-white">
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-card">
           <div className="w-full">
             {/* Header: subject + sender + reply actions */}
             {/* In reply-mode collapsen we naar één compacte regel — sender + onderwerp
                 staan toch al in de Aan/Ond-velden van het formulier eronder. */}
             {replyMode ? (
-              <div className="flex items-center gap-3 px-5 md:px-7 py-3 border-b border-black/[0.06]">
+              <div className="flex items-center gap-3 px-5 md:px-7 py-3 border-b border-black/[0.06] dark:border-white/[0.08]">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatarStyle.bg }}>
                   <span className="text-[11px] font-semibold leading-none tracking-tight" style={{ color: avatarStyle.text }}>{senderName[0]?.toUpperCase()}</span>
                 </div>
@@ -1643,7 +1643,7 @@ export function EmailReader({
                         [&_div]:!ml-0 [&_div]:max-w-full
                         [&_p]:!ml-0 [&_p]:mb-2
                         [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3
-                        [&_a]:text-[#1A535C] [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_a]:break-all
+                        [&_a]:text-[#1A535C] dark:[&_a]:text-[#7FB5BF] [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_a]:break-all
                         [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:text-[14px] [&_blockquote]:text-muted-foreground [&_blockquote]:my-3
                         [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h1]:!ml-0
                         [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:!ml-0
@@ -1711,7 +1711,7 @@ export function EmailReader({
                             )}
                             title={`Preview ${att.filename}`}
                           >
-                            <div className="relative aspect-square w-full bg-[#EFEEEA] flex items-center justify-center">
+                            <div className="relative aspect-square w-full bg-[#EFEEEA] dark:bg-white/[0.06] flex items-center justify-center">
                               {thumbUrl ? (
                                 <img
                                   src={thumbUrl}
@@ -1738,7 +1738,7 @@ export function EmailReader({
                                     e.stopPropagation()
                                     handleDownloadAttachment(att.filename)
                                   }}
-                                  className="absolute top-1.5 right-1.5 p-1.5 rounded-lg bg-card/85 hover:bg-white opacity-0 group-hover/att:opacity-100 transition-opacity duration-150 shadow-sm"
+                                  className="absolute top-1.5 right-1.5 p-1.5 rounded-lg bg-card/85 hover:bg-white dark:hover:bg-white/20 opacity-0 group-hover/att:opacity-100 transition-opacity duration-150 shadow-sm"
                                   title={`Download ${att.filename}`}
                                   aria-label={`Download ${att.filename}`}
                                 >
@@ -1803,7 +1803,7 @@ export function EmailReader({
                                   e.stopPropagation()
                                   handleDownloadAttachment(att.filename)
                                 }}
-                                className="ml-1 p-1 rounded hover:bg-[#E8E7E4] flex-shrink-0"
+                                className="ml-1 p-1 rounded hover:bg-[#E8E7E4] dark:hover:bg-white/10 flex-shrink-0"
                                 title={`Download ${att.filename}`}
                                 aria-label={`Download ${att.filename}`}
                               >
@@ -1848,7 +1848,7 @@ export function EmailReader({
             onClick={closePreview}
           >
             <div
-              className="relative max-w-[92vw] max-h-[92vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              className="relative max-w-[92vw] max-h-[92vh] bg-white dark:bg-card rounded-2xl shadow-2xl overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-border">

@@ -30,19 +30,19 @@ export function EmailMobileTopBar({
           type="button"
           onClick={onOpenDrawer}
           aria-label="Open mappen"
-          className="tap-press flex items-center justify-center w-9 h-9 rounded-full text-[#5F5E5A] hover:bg-white/60 active:bg-card/80 transition-colors flex-shrink-0"
+          className="tap-press flex items-center justify-center w-9 h-9 rounded-full text-[#5F5E5A] dark:text-muted-foreground hover:bg-white/60 dark:hover:bg-white/10 active:bg-card/80 transition-colors flex-shrink-0"
         >
           <Menu className="h-5 w-5" />
         </button>
 
         <div className="flex-1 flex items-center gap-2 min-w-0">
-          <Search className="h-4 w-4 text-[#888780] flex-shrink-0" />
+          <Search className="h-4 w-4 text-[#888780] dark:text-muted-foreground flex-shrink-0" />
           <input
             type="text"
             value={searchInput}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Zoeken in mail"
-            className="flex-1 min-w-0 bg-transparent text-[14px] text-foreground outline-none placeholder:text-[#888780]"
+            className="flex-1 min-w-0 bg-transparent text-[14px] text-foreground outline-none placeholder:text-[#888780] dark:placeholder:text-muted-foreground"
           />
         </div>
 
@@ -60,11 +60,11 @@ export function EmailMobileTopBar({
       </div>
 
       <div className="px-2 pt-3 pb-1 flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-wider text-[#888780] font-medium">
+        <span className="text-[11px] uppercase tracking-wider text-[#888780] dark:text-muted-foreground font-medium">
           {selectedFolderLabel}
         </span>
         {selectedFolder === 'inbox' && todayUnreadCount > 0 && (
-          <span className="text-[11px] text-[#888780]">
+          <span className="text-[11px] text-[#888780] dark:text-muted-foreground">
             vandaag · <span className="text-foreground font-medium">{todayUnreadCount}</span> nieuwe
           </span>
         )}

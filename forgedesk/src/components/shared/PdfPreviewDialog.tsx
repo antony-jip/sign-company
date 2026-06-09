@@ -100,7 +100,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[92vh] flex flex-col p-0 gap-0 rounded-2xl border-none shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] bg-background">
+      <DialogContent className="max-w-5xl h-[92vh] flex flex-col p-0 gap-0 rounded-2xl border-none shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(241,80,37,0.10)] bg-background">
         {/* Header */}
         <DialogHeader className="px-8 pt-6 pb-0 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -116,7 +116,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
               <button
                 onClick={handleOpenNewTab}
                 disabled={!blobUrl}
-                className="h-8 px-3 text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/5 rounded-lg transition-colors disabled:opacity-30 flex items-center gap-1.5"
+                className="h-8 px-3 text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/5 dark:text-[#5FB5C0] dark:hover:bg-[#5FB5C0]/10 rounded-lg transition-colors disabled:opacity-30 flex items-center gap-1.5"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 Open
@@ -124,7 +124,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
               <button
                 onClick={handleDownload}
                 disabled={!blobUrl}
-                className="h-8 px-3 text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/5 rounded-lg transition-colors disabled:opacity-30 flex items-center gap-1.5"
+                className="h-8 px-3 text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/5 dark:text-[#5FB5C0] dark:hover:bg-[#5FB5C0]/10 rounded-lg transition-colors disabled:opacity-30 flex items-center gap-1.5"
               >
                 <Download className="h-3.5 w-3.5" />
                 Download
@@ -136,11 +136,11 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
         {/* Toolbar */}
         {numPages > 0 && (
           <div className="flex items-center justify-center gap-4 px-8 py-3 flex-shrink-0">
-            <div className="flex items-center gap-1 bg-white rounded-lg px-1 py-1 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+            <div className="flex items-center gap-1 bg-white dark:bg-secondary rounded-lg px-1 py-1 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
               <button
                 onClick={prevPage}
                 disabled={currentPage <= 1}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background transition-colors disabled:opacity-20"
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background dark:hover:bg-white/[0.08] transition-colors disabled:opacity-20"
               >
                 <ChevronLeft className="h-4 w-4 text-foreground" />
               </button>
@@ -150,7 +150,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
               <button
                 onClick={nextPage}
                 disabled={currentPage >= numPages}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background transition-colors disabled:opacity-20"
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background dark:hover:bg-white/[0.08] transition-colors disabled:opacity-20"
               >
                 <ChevronRight className="h-4 w-4 text-foreground" />
               </button>
@@ -158,11 +158,11 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
 
             <div className="w-px h-5 bg-border" />
 
-            <div className="flex items-center gap-1 bg-white rounded-lg px-1 py-1 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+            <div className="flex items-center gap-1 bg-white dark:bg-secondary rounded-lg px-1 py-1 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
               <button
                 onClick={zoomOut}
                 disabled={scale <= 0.4}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background transition-colors disabled:opacity-20"
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background dark:hover:bg-white/[0.08] transition-colors disabled:opacity-20"
               >
                 <ZoomOut className="h-3.5 w-3.5 text-foreground" />
               </button>
@@ -172,7 +172,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
               <button
                 onClick={zoomIn}
                 disabled={scale >= 3}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background transition-colors disabled:opacity-20"
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-background dark:hover:bg-white/[0.08] transition-colors disabled:opacity-20"
               >
                 <ZoomIn className="h-3.5 w-3.5 text-foreground" />
               </button>
@@ -181,7 +181,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
         )}
 
         {/* PDF Content */}
-        <div className="flex-1 min-h-0 overflow-auto mx-8 mb-6 rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <div className="flex-1 min-h-0 overflow-auto mx-8 mb-6 rounded-xl bg-white dark:bg-black/30 shadow-[0_1px_3px_rgba(0,0,0,0.03)] dark:shadow-none">
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-full gap-3">
               <Loader2 className="h-6 w-6 animate-spin text-[#1A535C]" />
@@ -220,7 +220,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
                 <Page
                   pageNumber={currentPage}
                   scale={scale}
-                  className="shadow-[0_2px_8px_rgba(0,0,0,0.06)] rounded-sm"
+                  className="shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.6)] dark:ring-1 dark:ring-white/10 rounded-sm"
                   loading={
                     <div className="flex items-center justify-center py-20">
                       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

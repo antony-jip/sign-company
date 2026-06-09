@@ -187,7 +187,7 @@ function ProjectDetailSkeleton() {
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-3 w-32" />
           </div>
-          <div className="flex items-center gap-1 border-b border-[rgba(26,83,92,0.12)] mt-5">
+          <div className="flex items-center gap-1 border-b border-border mt-5">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="px-3 py-2.5">
                 <Skeleton className="h-4 w-20" />
@@ -1351,7 +1351,7 @@ export function ProjectDetail() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#1A535C] rounded-lg px-2 py-1 -ml-1.5 hover:bg-[rgba(26,83,92,0.08)] transition-colors"
+                className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#1A535C] dark:text-petrol-light rounded-lg px-2 py-1 -ml-1.5 hover:bg-[rgba(26,83,92,0.08)] dark:hover:bg-white/[0.06] transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5 text-[#F15025] group-hover:-translate-x-0.5 transition-transform" />
                 {fromLabel}
@@ -1359,7 +1359,7 @@ export function ProjectDetail() {
             )
           })()}
           <span className="text-muted-foreground/70">·</span>
-          <span className="font-mono text-[11px] font-medium text-foreground/70 bg-[rgba(26,83,92,0.05)] border border-[rgba(26,83,92,0.08)] rounded-md px-1.5 py-0.5">
+          <span className="font-mono text-[11px] font-medium text-foreground/70 bg-[rgba(26,83,92,0.05)] dark:bg-white/[0.05] border border-[rgba(26,83,92,0.08)] dark:border-white/10 rounded-md px-1.5 py-0.5">
             {project.project_nummer || `PRJ-${id?.slice(0, 8).toUpperCase()}`}
           </span>
         </div>
@@ -1455,7 +1455,7 @@ export function ProjectDetail() {
         </div>
 
         {/* TAB BAR — flame underline, duotone icoon per tab */}
-        <div className="flex items-center gap-1 border-b border-[rgba(26,83,92,0.12)] mt-5 sticky top-0 z-10 bg-background">
+        <div className="flex items-center gap-1 border-b border-border mt-5 sticky top-0 z-10 bg-background">
           {([
             { key: 'overzicht' as ProjectTab,  label: 'Overzicht',  count: 0,                          Icon: TabList    },
             { key: 'werkbon' as ProjectTab,    label: 'Werkbon',    count: projectWerkbonnen.length,   Icon: TabWrench  },
@@ -1475,7 +1475,7 @@ export function ProjectDetail() {
                 className={cn(
                   'relative inline-flex items-center gap-2 px-3.5 py-2.5 text-[14px] rounded-t-lg transition-all duration-200 -mb-px',
                   isActive
-                    ? 'text-[#1A535C] font-bold bg-[#1A535C]/[0.05]'
+                    ? 'text-[#1A535C] dark:text-foreground font-bold bg-[#1A535C]/[0.05] dark:bg-white/[0.05]'
                     : 'text-foreground/55 font-medium hover:text-foreground hover:bg-foreground/[0.035]'
                 )}
               >
@@ -1486,7 +1486,7 @@ export function ProjectDetail() {
                     'font-mono text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums transition-colors',
                     isActive
                       ? 'bg-[#1A535C] text-white'
-                      : 'bg-[rgba(26,83,92,0.08)] text-foreground/70'
+                      : 'bg-[rgba(26,83,92,0.08)] dark:bg-white/[0.06] text-foreground/70'
                   )}>{tab.count}</span>
                 )}
                 {isActive && (
@@ -1631,11 +1631,11 @@ export function ProjectDetail() {
             return (
               <div className="doen-slate-surface rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <Send className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
+                  <Send className="h-4 w-4 text-[#1A535C] dark:text-petrol-light" strokeWidth={1.75} />
                   <h3 className="font-heading text-[15px] font-bold text-foreground">
                     Verzonden<span className="text-[#F15025]">.</span>
                   </h3>
-                  <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">{verzonden.length}</span>
+                  <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] dark:bg-white/[0.06] text-[#1A535C] dark:text-petrol-light rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">{verzonden.length}</span>
                 </div>
                 <div className="space-y-1">
                   {verzonden.slice(0, 5).map((o) => (
@@ -2604,7 +2604,7 @@ export function ProjectDetail() {
                 onChange={(e) => setNieuweTaakBeschrijving(e.target.value)}
                 placeholder="Briefing toevoegen…"
                 rows={5}
-                className="resize-y bg-background border border-border focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] text-[14px] leading-relaxed rounded-lg"
+                className="resize-y bg-background border border-border focus-visible:border-[#1A535C] dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 text-[14px] leading-relaxed rounded-lg"
               />
             </div>
           </div>
@@ -3031,11 +3031,11 @@ export function ProjectDetail() {
               </div>
               <div>
                 <Label className="text-sm">Start</Label>
-                <Input type="time" value={montageStartTijd} onChange={(e) => setMontageStartTijd(e.target.value)} className="mt-1 h-9" />
+                <Input type="time" value={montageStartTijd} onChange={(e) => setMontageStartTijd(e.target.value)} className="mt-1 h-9 [color-scheme:light] dark:[color-scheme:dark]" />
               </div>
               <div>
                 <Label className="text-sm">Eind</Label>
-                <Input type="time" value={montageEindTijd} onChange={(e) => setMontageEindTijd(e.target.value)} className="mt-1 h-9" />
+                <Input type="time" value={montageEindTijd} onChange={(e) => setMontageEindTijd(e.target.value)} className="mt-1 h-9 [color-scheme:light] dark:[color-scheme:dark]" />
               </div>
             </div>
             <div>

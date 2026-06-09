@@ -22,8 +22,6 @@ import {
 const PETROL = '#1A535C'
 const PETROL_DARK = '#143F46'
 const FLAME = '#F15025'
-const MUTED = '#6B6B66'
-const MUTED_SOFT = '#9B9B95'
 
 function Sparkle({ cx, cy, size }: { cx: number; cy: number; size: number }) {
   const s = size
@@ -62,8 +60,7 @@ function FlowNode({
   const haloOpacity = useTransform(progress, [0, 0.3, 0.8, 1], [0, 0.55, 0, 0])
   const haloScale = useTransform(progress, [0, 0.3, 0.9, 1], [0.8, 1.8, 2.3, 2.3])
 
-  const bg = tone === 'dark' ? PETROL_DARK : '#FFFFFF'
-  const iconColor = tone === 'dark' ? '#FFFFFF' : PETROL
+  const bg = tone === 'dark' ? PETROL_DARK : 'hsl(var(--card))'
 
   return (
     <motion.div
@@ -91,12 +88,13 @@ function FlowNode({
           }}
         />
         <motion.div
-          className="relative rounded-full flex items-center justify-center"
+          className={`relative rounded-full flex items-center justify-center ${
+            tone === 'light' ? 'border-[1.5px] border-[#1A535C] dark:border-[#3D7A85]' : ''
+          }`}
           style={{
             width: size,
             height: size,
             backgroundColor: bg,
-            border: tone === 'light' ? `1.5px solid ${PETROL}` : 'none',
             boxShadow:
               tone === 'dark'
                 ? '0 4px 12px rgba(20,63,70,0.2), 0 12px 36px rgba(20,63,70,0.3)'
@@ -104,7 +102,10 @@ function FlowNode({
             scale,
           }}
         >
-          <Icon className="w-[22px] h-[22px]" style={{ color: iconColor }} strokeWidth={1.5} />
+          <Icon
+            className={`w-[22px] h-[22px] ${tone === 'dark' ? 'text-white' : 'text-[#1A535C] dark:text-[#9FCAD2]'}`}
+            strokeWidth={1.5}
+          />
         </motion.div>
       </div>
       {labelPosition === 'below' && <LabelBlock label={label} subtitle={subtitle} dir="below" />}
@@ -115,17 +116,14 @@ function FlowNode({
 function LabelBlock({ label, subtitle, dir }: { label: string; subtitle?: string; dir: 'above' | 'below' }) {
   return (
     <div className={`${dir === 'above' ? 'mb-2' : 'mt-2.5'} text-center whitespace-nowrap`}>
-      <p
-        className="font-heading font-extrabold text-[13px] md:text-[16px] tracking-tight leading-none"
-        style={{ color: PETROL }}
-      >
+      <p className="font-heading font-extrabold text-[13px] md:text-[16px] tracking-tight leading-none text-[#1A535C] dark:text-[#9FCAD2]">
         {label}
         <span style={{ color: FLAME }}>.</span>
       </p>
       {subtitle && (
         <p
-          className="font-mono text-[8px] md:text-[9px] font-bold tracking-[0.12em] uppercase mt-1"
-          style={{ color: MUTED_SOFT, fontFamily: '"DM Mono", ui-monospace, monospace' }}
+          className="font-mono text-[8px] md:text-[9px] font-bold tracking-[0.12em] uppercase mt-1 text-[#9B9B95] dark:text-muted-foreground/70"
+          style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
         >
           {subtitle}
         </p>
@@ -189,7 +187,7 @@ function ProjectNode({
           </motion.svg>
         </div>
         <div className="mt-2.5 text-center">
-          <p className="font-heading font-extrabold text-[14px] md:text-[17px] tracking-tight leading-none" style={{ color: PETROL }}>
+          <p className="font-heading font-extrabold text-[14px] md:text-[17px] tracking-tight leading-none text-[#1A535C] dark:text-[#9FCAD2]">
             Project<span style={{ color: FLAME }}>.</span>
           </p>
         </div>
@@ -273,7 +271,7 @@ function PortaalNode({
         </motion.div>
       </motion.div>
       <div className="mt-2.5 text-center whitespace-nowrap">
-        <p className="font-heading font-extrabold text-[13px] md:text-[15px] tracking-tight leading-none" style={{ color: PETROL }}>
+        <p className="font-heading font-extrabold text-[13px] md:text-[15px] tracking-tight leading-none text-[#1A535C] dark:text-[#9FCAD2]">
           Portaal<span style={{ color: FLAME }}>.</span>
         </p>
       </div>
@@ -301,7 +299,7 @@ function PhaseLine({ index, slot, text }: { index: MotionValue<number>; slot: nu
       <span className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: FLAME, fontFamily: '"DM Mono", ui-monospace, monospace' }}>
         {String(slot + 1).padStart(2, '0')}
       </span>
-      <span className="font-sans text-[13px] md:text-[15px] leading-snug" style={{ color: MUTED }}>
+      <span className="font-sans text-[13px] md:text-[15px] leading-snug text-[#6B6B66] dark:text-muted-foreground">
         {text}
       </span>
     </motion.div>
@@ -359,12 +357,13 @@ function MobileStep({ step, index, isLast }: { step: MobileStepData; index: numb
           initial={{ scale: 0.6 }}
           animate={inView ? { scale: 1 } : {}}
           transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.2) + 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 rounded-full flex items-center justify-center"
+          className={`relative z-10 rounded-full flex items-center justify-center ${
+            !isDark && !isPortaal ? 'border-[1.5px] border-[#1A535C] dark:border-[#3D7A85]' : ''
+          }`}
           style={{
             width: 48,
             height: 48,
-            backgroundColor: isDark ? PETROL_DARK : isPortaal ? FLAME : '#FFFFFF',
-            border: !isDark && !isPortaal ? `1.5px solid ${PETROL}` : 'none',
+            backgroundColor: isDark ? PETROL_DARK : isPortaal ? FLAME : 'hsl(var(--card))',
             boxShadow: isDark
               ? '0 6px 20px rgba(20,63,70,0.25)'
               : isPortaal
@@ -372,7 +371,10 @@ function MobileStep({ step, index, isLast }: { step: MobileStepData; index: numb
               : '0 2px 10px rgba(26,83,92,0.08), 0 6px 16px rgba(26,83,92,0.05)',
           }}
         >
-          <Icon className="w-5 h-5" style={{ color: isDark || isPortaal ? '#FFFFFF' : PETROL }} strokeWidth={1.8} />
+          <Icon
+            className={`w-5 h-5 ${isDark || isPortaal ? 'text-white' : 'text-[#1A535C] dark:text-[#9FCAD2]'}`}
+            strokeWidth={1.8}
+          />
           {isDark && inView && (
             <motion.span
               aria-hidden
@@ -389,8 +391,8 @@ function MobileStep({ step, index, isLast }: { step: MobileStepData; index: numb
             initial={{ scaleY: 0 }}
             animate={inView ? { scaleY: 1 } : {}}
             transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.2) + 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="w-px flex-1 mt-1 origin-top"
-            style={{ backgroundColor: 'rgba(26,83,92,0.22)', minHeight: 52 }}
+            className="w-px flex-1 mt-1 origin-top bg-[#1A535C]/[0.22] dark:bg-white/15"
+            style={{ minHeight: 52 }}
           />
         )}
       </div>
@@ -398,11 +400,11 @@ function MobileStep({ step, index, isLast }: { step: MobileStepData; index: numb
         <p className="font-mono text-[10px] font-bold tracking-[0.18em]" style={{ color: FLAME, fontFamily: '"DM Mono", ui-monospace, monospace' }}>
           {step.nr}
         </p>
-        <h3 className="font-heading text-[18px] font-extrabold tracking-tight leading-tight mt-0.5" style={{ color: PETROL }}>
+        <h3 className="font-heading text-[18px] font-extrabold tracking-tight leading-tight mt-0.5 text-[#1A535C] dark:text-[#9FCAD2]">
           {step.label}
           <span style={{ color: FLAME }}>.</span>
         </h3>
-        <p className="text-[13px] mt-1 leading-relaxed" style={{ color: MUTED }}>
+        <p className="text-[13px] mt-1 leading-relaxed text-[#6B6B66] dark:text-muted-foreground">
           {step.subtitle}
         </p>
       </div>
@@ -493,8 +495,8 @@ export function AuthProcesVisual() {
               <span className="font-mono text-[12px] font-bold" style={{ color: FLAME, fontFamily: '"DM Mono", ui-monospace, monospace' }}>
                 0{i + 1}
               </span>
-              <p className="text-[15px]" style={{ color: PETROL }}>
-                <strong>{t}.</strong> <span style={{ color: MUTED }}>{d}</span>
+              <p className="text-[15px] text-[#1A535C] dark:text-[#9FCAD2]">
+                <strong>{t}.</strong> <span className="text-[#6B6B66] dark:text-muted-foreground">{d}</span>
               </p>
             </li>
           ))}

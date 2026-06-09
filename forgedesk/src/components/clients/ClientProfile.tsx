@@ -537,7 +537,7 @@ export function ClientProfile() {
             </Badge>
             <button
               onClick={() => setEditDialogOpen(true)}
-              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors duration-150"
               title="Bewerken"
             >
               <Pencil className="w-4 h-4 text-muted-foreground/60" />
@@ -670,7 +670,7 @@ export function ClientProfile() {
             </CardTitle>
             <button
               onClick={openAddContact}
-              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors duration-150"
               title="Contactpersoon toevoegen"
             >
               <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-blue-500" />
@@ -694,10 +694,10 @@ export function ClientProfile() {
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {cp.email || cp.telefoon || cp.functie || '\u2014'}
+                        {cp.email || cp.telefoon || cp.functie || '\u2013'}
                       </p>
                     </div>
-                    <Pencil className="w-3 h-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    <Pencil className="w-3 h-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0" />
                   </div>
                 ))}
                 {/* Imported contactpersonen (show up to 2 total) */}
@@ -705,7 +705,7 @@ export function ClientProfile() {
                   <div key={ic.id} className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{`${ic.voornaam} ${ic.achternaam}`.trim()}</p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {ic.email || ic.telefoon || '\u2014'}
+                      {ic.email || ic.telefoon || '\u2013'}
                     </p>
                   </div>
                 ))}
@@ -743,7 +743,7 @@ export function ClientProfile() {
             </CardTitle>
             <button
               onClick={openAddVestiging}
-              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors duration-150"
               title="Vestiging toevoegen"
             >
               <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-green-500" />
@@ -771,7 +771,7 @@ export function ClientProfile() {
                     {[v.adres, v.postcode, v.stad].filter(Boolean).join(', ')}
                   </p>
                 </div>
-                <Pencil className="w-3 h-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                <Pencil className="w-3 h-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0" />
               </div>
             ))}
           </CardContent>
@@ -851,7 +851,7 @@ export function ClientProfile() {
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
                     activeTab === tab.key
                       ? 'bg-primary text-white shadow-md shadow-primary/25'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -879,7 +879,7 @@ export function ClientProfile() {
             <Card>
               {clientProjecten.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <Folder className="mb-3 inline-block h-12 w-12" strokeWidth={1.5} style={{ color: 'rgba(26,83,92,0.5)' }} />
+                  <Folder className="mb-3 inline-block h-12 w-12 text-[rgba(26,83,92,0.5)] dark:text-petrol-light/40" strokeWidth={1.5} />
                   <p
                     className="text-muted-foreground"
                     style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
@@ -892,12 +892,12 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Omschrijving</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">PM</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden lg:table-cell">Deadline</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Waarde</th>
-                        <th className="text-center py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Downloads</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Status</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Omschrijving</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label hidden md:table-cell">PM</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label hidden lg:table-cell">Deadline</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Waarde</th>
+                        <th className="text-center py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Downloads</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
@@ -911,7 +911,7 @@ export function ClientProfile() {
                             <tr
                               key={project.id}
                               className={cn(
-                                'hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors border-l-4',
+                                'hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors duration-150 border-l-4',
                                 getStatusBorderColor(project.status)
                               )}
                               onClick={() => navigate(`/projecten/${project.id}`)}
@@ -927,7 +927,7 @@ export function ClientProfile() {
                               <td className="py-3 px-4">
                                 <div>
                                   <div className="flex items-center gap-1.5">
-                                    <p className="text-sm font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                    <p className="text-sm font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-150">
                                       {project.naam}
                                     </p>
                                   </div>
@@ -951,7 +951,7 @@ export function ClientProfile() {
                                     </span>
                                   </div>
                                 ) : (
-                                  <span className="text-sm text-muted-foreground">—</span>
+                                  <span className="text-sm text-muted-foreground">–</span>
                                 )}
                               </td>
 
@@ -998,7 +998,7 @@ export function ClientProfile() {
                                     ]
                                     exportCSV(project.naam.replace(/\s+/g, '-').toLowerCase(), headers, rows)
                                   }}
-                                  className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors inline-flex"
+                                  className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors duration-150 inline-flex"
                                   title="Download CSV"
                                 >
                                   <FileText className="w-4 h-4 text-muted-foreground hover:text-blue-600" />
@@ -1032,18 +1032,18 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Nummer</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Titel</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Totaal</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Geldig tot</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Nummer</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Titel</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Status</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Totaal</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label hidden md:table-cell">Geldig tot</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
                       {clientOffertes.map((offerte) => (
                         <tr
                           key={offerte.id}
-                          className="hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
+                          className="hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors duration-150"
                           onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
                         >
                           <td className="py-3 px-4">
@@ -1093,29 +1093,24 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Titel</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Fase</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Waarde</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Kans</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Titel</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Fase</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Status</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Waarde</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label hidden md:table-cell">Kans</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
                       {clientDeals.map((deal) => (
                         <tr
                           key={deal.id}
-                          className="hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
+                          className="hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors duration-150"
                           onClick={() => navigate(`/deals/${deal.id}`)}
                         >
                           <td className="py-3 px-4 text-sm font-medium">{deal.titel}</td>
                           <td className="py-3 px-4 text-sm capitalize text-muted-foreground">{deal.fase}</td>
                           <td className="py-3 px-4">
-                            <Badge className={cn('text-xs capitalize',
-                              deal.status === 'gewonnen' ? 'bg-emerald-100 text-emerald-700' :
-                              deal.status === 'verloren' ? 'bg-red-100 text-red-700' :
-                              deal.status === 'on-hold' ? 'bg-amber-100 text-amber-700' :
-                              'bg-blue-100 text-blue-700'
-                            )}>
+                            <Badge className={cn('text-xs capitalize', getStatusColor(deal.status))}>
                               {deal.status}
                             </Badge>
                           </td>
@@ -1143,18 +1138,18 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Nummer</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Titel</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Totaal</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Datum</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Nummer</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Titel</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Status</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Totaal</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label hidden md:table-cell">Datum</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
                       {clientFacturen.map((factuur) => (
                         <tr
                           key={factuur.id}
-                          className="hover:bg-background dark:hover:bg-muted/50 transition-colors cursor-pointer"
+                          className="hover:bg-background dark:hover:bg-muted/50 transition-colors duration-150 cursor-pointer"
                           onClick={() => navigate(`/facturen/${factuur.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
                         >
                           <td className="py-3 px-4">
@@ -1164,12 +1159,7 @@ export function ClientProfile() {
                           </td>
                           <td className="py-3 px-4 text-sm">{factuur.titel}</td>
                           <td className="py-3 px-4">
-                            <Badge className={cn('text-xs capitalize',
-                              factuur.status === 'betaald' ? 'bg-emerald-100 text-emerald-700' :
-                              factuur.status === 'vervallen' ? 'bg-red-100 text-red-700' :
-                              factuur.status === 'verzonden' ? 'bg-blue-100 text-blue-700' :
-                              'bg-muted text-foreground/70'
-                            )}>
+                            <Badge className={cn('text-xs capitalize', getStatusColor(factuur.status))}>
                               {factuur.status}
                             </Badge>
                           </td>
@@ -1199,7 +1189,7 @@ export function ClientProfile() {
                     <thead>
                       <tr className="border-b">
                         {['Datum', 'Project', 'Medewerker', 'Uren', 'Beschrijving'].map((h) => (
-                          <th key={h} className="px-4 py-2 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">{h}</th>
+                          <th key={h} className="px-4 py-2 text-left text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1233,7 +1223,7 @@ export function ClientProfile() {
               {clientEmails.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <MailLg className="mb-3 inline-block h-12 w-12" strokeWidth={1.5} style={{ color: 'rgba(26,83,92,0.5)' }} />
+                    <MailLg className="mb-3 inline-block h-12 w-12 text-[rgba(26,83,92,0.5)] dark:text-petrol-light/40" strokeWidth={1.5} />
                     <p
                       className="text-muted-foreground"
                       style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
@@ -1247,7 +1237,7 @@ export function ClientProfile() {
                   <Card
                     key={email.id}
                     className={cn(
-                      'cursor-pointer hover:shadow-md transition-shadow',
+                      'cursor-pointer hover:shadow-md transition-shadow duration-150',
                       !email.gelezen && 'border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20'
                     )}
                   >
@@ -1306,7 +1296,7 @@ export function ClientProfile() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {clientDocumenten.map((doc) => (
-                    <Card key={doc.id} className="hover:shadow-md transition-shadow">
+                    <Card key={doc.id} className="hover:shadow-md transition-shadow duration-150">
                       <CardContent className="pt-6">
                         <div className="flex items-start gap-3">
                           <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
@@ -1423,21 +1413,21 @@ export function ClientProfile() {
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             onClick={() => openEditContact(cp)}
-                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors"
+                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors duration-150"
                             title="Bewerken"
                           >
                             <Pencil className="w-3.5 h-3.5 text-muted-foreground/60" />
                           </button>
                           <button
                             onClick={() => openMoveDialog(cp)}
-                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors"
+                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors duration-150"
                             title="Verplaats naar ander bedrijf"
                           >
                             <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground/60" />
                           </button>
                           <button
                             onClick={() => handleDeleteContact(cp.id)}
-                            className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
                             title="Verwijderen"
                           >
                             <Trash2 className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-red-500" />
@@ -1487,7 +1477,7 @@ export function ClientProfile() {
                                   toast.success('Contactpersoon verwijderd')
                                 }
                               }}
-                              className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
                               title="Verwijderen"
                             >
                               <Trash2 className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-red-500" />
@@ -1686,7 +1676,7 @@ export function ClientProfile() {
                 placeholder="Straatnaam 123"
               />
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="vest-postcode">Postcode</Label>
                 <Input
@@ -1696,7 +1686,7 @@ export function ClientProfile() {
                   placeholder="1234 AB"
                 />
               </div>
-              <div className="space-y-2 col-span-2">
+              <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="vest-stad">Stad</Label>
                 <Input
                   id="vest-stad"
@@ -1826,7 +1816,7 @@ export function ClientProfile() {
                     key={k.id}
                     onClick={() => setSelectedMoveKlant(k)}
                     className={cn(
-                      'w-full text-left px-3 py-2 rounded-md text-sm transition-colors',
+                      'w-full text-left px-3 py-2 rounded-md text-sm transition-colors duration-150',
                       selectedMoveKlant?.id === k.id
                         ? 'bg-primary text-primary-foreground'
                         : 'hover:bg-muted dark:hover:bg-muted'

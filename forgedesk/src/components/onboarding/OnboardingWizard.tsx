@@ -29,7 +29,7 @@ const MONO = { fontFamily: '"DM Mono", ui-monospace, monospace' } as const
 function Wordmark() {
   return (
     <div className="inline-flex items-baseline gap-[1px] font-heading">
-      <span className="text-[17px] font-bold tracking-tight text-ink">doen</span>
+      <span className="text-[17px] font-bold tracking-tight text-ink dark:text-foreground">doen</span>
       <motion.span
         initial={{ opacity: 0, scale: 0.6 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -57,13 +57,13 @@ function OnboardingProgress({ currentStep }: { currentStep: number }) {
               idx === currentStep
                 ? 'text-flame font-semibold'
                 : idx < currentStep
-                  ? 'text-ink/50'
-                  : 'text-muted-hex'
+                  ? 'text-ink/50 dark:text-foreground/50'
+                  : 'text-muted-hex dark:text-muted-foreground/70'
             }
           >
             0{idx + 1}
           </span>
-          {idx < 2 && <span className="text-muted-hex/50">·</span>}
+          {idx < 2 && <span className="text-muted-hex/50 dark:text-muted-foreground/40">·</span>}
         </span>
       ))}
     </div>
@@ -80,24 +80,25 @@ const stepTransition = {
 }
 
 const inputClass =
-  'h-10 rounded-lg bg-white/60 border border-sand text-[13px] focus:ring-0 focus:border-petrol transition-colors'
+  'h-10 rounded-lg bg-white/60 dark:bg-white/[0.06] border border-sand dark:border-white/10 text-[13px] focus:ring-0 focus:border-petrol dark:focus:border-[#4E96A3] transition-colors'
 
 const labelStyle = {
   fontSize: 11,
   fontWeight: 500,
-  color: '#5A5A55',
   letterSpacing: '0.02em',
 } as const
 
+const labelClass = 'text-text-sec dark:text-muted-foreground'
+
 const stepLabelClass =
-  'text-[11px] uppercase tracking-wider text-muted-hex mb-3 block'
+  'text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70 mb-3 block'
 
 function StepCard({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ maxWidth: 480 }} className="mx-auto w-full">
       <motion.div
         {...stepTransition}
-        className="rounded-xl bg-white p-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
+        className="rounded-xl bg-white dark:bg-card p-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)] dark:border dark:border-white/10"
       >
         {children}
       </motion.div>
@@ -122,13 +123,13 @@ function StepHeading({
         {label}
       </span>
       <h2
-        className="font-heading text-ink mb-1"
+        className="font-heading text-ink dark:text-foreground mb-1"
         style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.15 }}
       >
         {heading}
         <span className="text-flame">{punctuation}</span>
       </h2>
-      <p className="text-[13px] text-text-sec mb-6" style={{ lineHeight: 1.55 }}>
+      <p className="text-[13px] text-text-sec dark:text-muted-foreground mb-6" style={{ lineHeight: 1.55 }}>
         {subtitle}
       </p>
     </>
@@ -202,7 +203,7 @@ function StepBedrijfsgegevens({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label style={labelStyle}>Voornaam</Label>
+            <Label style={labelStyle} className={labelClass}>Voornaam</Label>
             <Input
               value={gegevens.voornaam}
               onChange={(e) => update('voornaam', e.target.value)}
@@ -212,9 +213,9 @@ function StepBedrijfsgegevens({
             />
           </div>
           <div className="space-y-1.5">
-            <Label style={labelStyle}>
+            <Label style={labelStyle} className={labelClass}>
               Achternaam{' '}
-              <span style={{ color: '#A0A098', fontWeight: 400 }}>optioneel</span>
+              <span className="text-muted-hex dark:text-muted-foreground/70 font-normal">optioneel</span>
             </Label>
             <Input
               value={gegevens.achternaam}
@@ -226,7 +227,7 @@ function StepBedrijfsgegevens({
         </div>
 
         <div className="space-y-1.5">
-          <Label style={labelStyle}>Bedrijfsnaam</Label>
+          <Label style={labelStyle} className={labelClass}>Bedrijfsnaam</Label>
           <Input
             value={gegevens.naam}
             onChange={(e) => update('naam', e.target.value)}
@@ -237,9 +238,9 @@ function StepBedrijfsgegevens({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label style={labelStyle}>
+            <Label style={labelStyle} className={labelClass}>
               KVK-nummer{' '}
-              <span style={{ color: '#A0A098', fontWeight: 400 }}>optioneel</span>
+              <span className="text-muted-hex dark:text-muted-foreground/70 font-normal">optioneel</span>
             </Label>
             <Input
               value={gegevens.kvk_nummer}
@@ -249,9 +250,9 @@ function StepBedrijfsgegevens({
             />
           </div>
           <div className="space-y-1.5">
-            <Label style={labelStyle}>
+            <Label style={labelStyle} className={labelClass}>
               BTW-nummer{' '}
-              <span style={{ color: '#A0A098', fontWeight: 400 }}>optioneel</span>
+              <span className="text-muted-hex dark:text-muted-foreground/70 font-normal">optioneel</span>
             </Label>
             <Input
               value={gegevens.btw_nummer}
@@ -263,7 +264,7 @@ function StepBedrijfsgegevens({
         </div>
 
         <div className="space-y-1.5">
-          <Label style={labelStyle}>Adres</Label>
+          <Label style={labelStyle} className={labelClass}>Adres</Label>
           <div className="grid grid-cols-3 gap-2">
             <Input
               value={gegevens.adres}
@@ -288,7 +289,7 @@ function StepBedrijfsgegevens({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label style={labelStyle}>Email</Label>
+            <Label style={labelStyle} className={labelClass}>Email</Label>
             <Input
               value={gegevens.email}
               onChange={(e) => update('email', e.target.value)}
@@ -297,7 +298,7 @@ function StepBedrijfsgegevens({
             />
           </div>
           <div className="space-y-1.5">
-            <Label style={labelStyle}>Telefoon</Label>
+            <Label style={labelStyle} className={labelClass}>Telefoon</Label>
             <Input
               value={gegevens.telefoon}
               onChange={(e) => update('telefoon', e.target.value)}
@@ -369,17 +370,17 @@ function StepBeginnen({
               onClick={() => setKeuze(id)}
               className={`w-full text-left rounded-lg px-5 py-4 flex items-center gap-3 transition-all ${
                 selected
-                  ? 'bg-petrol-light border-petrol border'
-                  : 'bg-white border border-sand hover:border-petrol/40'
+                  ? 'bg-petrol-light dark:bg-petrol/25 border-petrol dark:border-[#4E96A3] border'
+                  : 'bg-white dark:bg-white/[0.04] border border-sand dark:border-white/10 hover:border-petrol/40 dark:hover:border-[#4E96A3]/50'
               }`}
             >
               <Icon
-                className={`w-5 h-5 flex-shrink-0 ${selected ? 'text-petrol' : 'text-muted-hex'}`}
+                className={`w-5 h-5 flex-shrink-0 ${selected ? 'text-petrol dark:text-[#8FC3CC]' : 'text-muted-hex dark:text-muted-foreground/70'}`}
                 strokeWidth={1.75}
               />
               <div>
-                <p className="text-[14px] font-semibold text-ink">{title}</p>
-                <p className="text-[12px] text-text-sec mt-0.5">{description}</p>
+                <p className="text-[14px] font-semibold text-ink dark:text-foreground">{title}</p>
+                <p className="text-[12px] text-text-sec dark:text-muted-foreground mt-0.5">{description}</p>
               </div>
             </button>
           )
@@ -388,7 +389,7 @@ function StepBeginnen({
 
       <p className="text-center mt-4">
         <button
-          className="text-[11px] uppercase tracking-wider text-muted-hex hover:text-ink transition-colors"
+          className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70 hover:text-ink dark:hover:text-foreground transition-colors"
           style={MONO}
           onClick={() => toast('Importeren is binnenkort beschikbaar.')}
         >
@@ -400,7 +401,7 @@ function StepBeginnen({
         <button
           onClick={onBack}
           disabled={isSaving}
-          className="h-11 px-5 flex-1 rounded-lg bg-transparent border border-sand text-text-sec hover:border-text-sec text-[13px] font-medium flex items-center justify-center gap-2 transition-colors"
+          className="h-11 px-5 flex-1 rounded-lg bg-transparent border border-sand dark:border-white/15 text-text-sec dark:text-muted-foreground hover:border-text-sec dark:hover:border-white/30 text-[13px] font-medium flex items-center justify-center gap-2 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Terug
@@ -770,7 +771,7 @@ export function OnboardingWizard() {
     return (
       <div className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden">
         <ParticleField />
-        <Loader2 className="relative z-10 w-6 h-6 animate-spin text-muted-hex" />
+        <Loader2 className="relative z-10 w-6 h-6 animate-spin text-muted-hex dark:text-muted-foreground/70" />
       </div>
     )
   }

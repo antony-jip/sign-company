@@ -94,7 +94,7 @@ export function IngeplandeBerichtenLijst() {
               <div
                 key={b.id}
                 className={cn(
-                  'border border-border rounded-xl px-4 py-3 bg-white',
+                  'border border-border rounded-xl px-4 py-3 bg-white dark:bg-white/[0.04]',
                   !isWachtend && 'opacity-60',
                 )}
               >

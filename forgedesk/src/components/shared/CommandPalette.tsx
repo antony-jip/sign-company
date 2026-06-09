@@ -299,7 +299,7 @@ export function CommandPalette() {
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm dark:bg-black/60 dark:backdrop-blur-md"
         onClick={close}
         style={{
           animation: 'commandPaletteBackdropIn 150ms ease-out forwards',
@@ -308,7 +308,7 @@ export function CommandPalette() {
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-xl mx-4 rounded-2xl shadow-[0_24px_80px_-12px_rgba(0,0,0,0.35),0_8px_24px_-8px_rgba(0,0,0,0.20)] border border-border/60 dark:border-white/10 overflow-hidden bg-card/85 supports-[backdrop-filter]:bg-card/80 backdrop-blur-2xl backdrop-saturate-150"
+        className="relative w-full max-w-xl mx-4 rounded-2xl shadow-[0_24px_80px_-12px_rgba(0,0,0,0.35),0_8px_24px_-8px_rgba(0,0,0,0.20)] dark:shadow-[0_24px_80px_-12px_rgba(0,0,0,0.65),0_0_32px_-8px_rgba(241,80,37,0.12)] border border-border/60 dark:border-white/10 overflow-hidden bg-card/85 supports-[backdrop-filter]:bg-card/80 dark:bg-popover/90 dark:supports-[backdrop-filter]:bg-popover/85 backdrop-blur-2xl backdrop-saturate-150"
         style={{
           animation: 'commandPaletteSlideIn 150ms ease-out forwards',
         }}
@@ -392,8 +392,8 @@ export function CommandPalette() {
                       transition-colors duration-75
                       ${
                         isSelected
-                          ? 'bg-[hsl(var(--status-flame-bg))] dark:bg-primary/10 text-[#C03A18] dark:text-primary'
-                          : 'text-foreground/70 dark:text-muted-foreground/50 hover:bg-background dark:hover:bg-muted/50'
+                          ? 'bg-[hsl(var(--status-flame-bg))] dark:bg-white/[0.07] text-[#C03A18] dark:text-primary'
+                          : 'text-foreground/70 dark:text-muted-foreground hover:bg-background dark:hover:bg-white/[0.04]'
                       }
                     `}
                     onClick={() => selectItem(item)}

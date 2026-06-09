@@ -2134,7 +2134,7 @@ export function QuoteCreation() {
                 <button
                   key={tmpl.label}
                   onClick={() => setIntroTekst(tmpl.tekst)}
-                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] bg-white hover:bg-[rgba(26,83,92,0.05)] hover:border-[rgba(26,83,92,0.22)] text-foreground/70 hover:text-[#1A535C] transition-colors"
+                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 text-foreground/70 hover:text-[#1A535C] dark:hover:text-foreground transition-colors"
                 >
                   {tmpl.label}
                 </button>
@@ -2145,7 +2145,7 @@ export function QuoteCreation() {
               onChange={(e) => setIntroTekst(e.target.value)}
               placeholder="Beste ..., hierbij ontvangt u onze offerte voor..."
               rows={3}
-              className="resize-y text-sm bg-white border border-[rgba(26,83,92,0.12)] focus:bg-white focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] rounded-lg transition-colors"
+              className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-[#1A535C] dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
             />
           </div>
 
@@ -2220,7 +2220,7 @@ export function QuoteCreation() {
                 <button
                   key={tmpl.label}
                   onClick={() => setOutroTekst(tmpl.tekst)}
-                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] bg-white hover:bg-[rgba(26,83,92,0.05)] hover:border-[rgba(26,83,92,0.22)] text-foreground/70 hover:text-[#1A535C] transition-colors"
+                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 text-foreground/70 hover:text-[#1A535C] dark:hover:text-foreground transition-colors"
                 >
                   {tmpl.label}
                 </button>
@@ -2231,7 +2231,7 @@ export function QuoteCreation() {
               onChange={(e) => setOutroTekst(e.target.value)}
               placeholder="Wij zien uw reactie graag tegemoet."
               rows={2}
-              className="resize-y text-sm bg-white border border-[rgba(26,83,92,0.12)] focus:bg-white focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] rounded-lg transition-colors"
+              className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-[#1A535C] dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
             />
           </div>
 
@@ -2251,7 +2251,7 @@ export function QuoteCreation() {
                     onChange={(e) => setNotities(e.target.value)}
                     placeholder="Interne notities of opmerkingen voor de klant..."
                     rows={4}
-                    className="text-sm bg-white border border-[rgba(26,83,92,0.12)] focus:bg-white focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] rounded-lg transition-colors"
+                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-[#1A535C] dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -2260,7 +2260,7 @@ export function QuoteCreation() {
                     value={voorwaarden}
                     onChange={(e) => setVoorwaarden(e.target.value)}
                     rows={4}
-                    className="text-sm bg-white border border-[rgba(26,83,92,0.12)] focus:bg-white focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] rounded-lg transition-colors"
+                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-[#1A535C] dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
                   />
                 </div>
               </div>
@@ -2278,7 +2278,7 @@ export function QuoteCreation() {
                   <h3 className="font-heading text-[15px] font-bold text-foreground">
                     Email versturen<span className="text-[#F15025]">.</span>
                   </h3>
-                  <button onClick={() => email.setShowEmailCompose(false)} className="text-muted-foreground hover:text-foreground hover:bg-white/60 transition-colors h-7 w-7 rounded-md flex items-center justify-center">
+                  <button onClick={() => email.setShowEmailCompose(false)} className="text-muted-foreground hover:text-foreground hover:bg-white/60 dark:hover:bg-white/10 transition-colors h-7 w-7 rounded-md flex items-center justify-center">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -2288,23 +2288,23 @@ export function QuoteCreation() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">Aan</span>
-                      <input value={email.emailTo} onChange={(e) => email.setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
+                      <input value={email.emailTo} onChange={(e) => email.setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-[#1A535C] dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">CC</span>
-                      <input value={email.emailCc} onChange={(e) => email.setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
+                      <input value={email.emailCc} onChange={(e) => email.setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-[#1A535C] dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">BCC</span>
-                      <input value={email.emailBcc} onChange={(e) => email.setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
+                      <input value={email.emailBcc} onChange={(e) => email.setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-[#1A535C] dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
                     </div>
                   </div>
 
                   {/* Onderwerp */}
-                  <input value={email.emailSubject} onChange={(e) => email.setEmailSubject(e.target.value)} placeholder="Onderwerp…" className="w-full text-[14px] font-semibold px-3 py-2.5 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
+                  <input value={email.emailSubject} onChange={(e) => email.setEmailSubject(e.target.value)} placeholder="Onderwerp…" className="w-full text-[14px] font-semibold px-3 py-2.5 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-[#1A535C] dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
 
                   {/* Bericht */}
-                  <div className="border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus-within:border-[#1A535C] focus-within:ring-[3px] focus-within:ring-[rgba(26,83,92,0.12)] transition-colors overflow-hidden">
+                  <div className="border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus-within:border-[#1A535C] dark:focus-within:border-white/30 focus-within:ring-[3px] focus-within:ring-[rgba(26,83,92,0.12)] dark:focus-within:ring-white/10 transition-colors overflow-hidden">
                     {/* Toolbar */}
                     <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border/30">
                       {[
@@ -2406,7 +2406,7 @@ export function QuoteCreation() {
                           ))
                         })()}
                         <DatePicker value={email.emailScheduleDate} onChange={(v) => email.setEmailScheduleDate(v)} asInput className="text-xs h-8 w-32" />
-                        <input type="time" value={email.emailScheduleTime} onChange={(e) => email.setEmailScheduleTime(e.target.value)} className="text-xs px-2 py-1 border border-border rounded-md w-20" />
+                        <input type="time" value={email.emailScheduleTime} onChange={(e) => email.setEmailScheduleTime(e.target.value)} className="text-xs px-2 py-1 border border-border rounded-md w-20 [color-scheme:light] dark:[color-scheme:dark]" />
                       </div>
                     )}
                   </div>

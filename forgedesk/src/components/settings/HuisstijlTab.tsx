@@ -856,7 +856,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
           <>
           {/* Template keuze */}
           <Section title="Template" icon={LayoutTemplate} defaultOpen={true}>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {DOCUMENT_TEMPLATES.map((tmpl) => {
                 const isActive = style.template === tmpl.id
                 return (

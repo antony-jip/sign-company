@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -30,7 +31,6 @@ import {
   X,
   Minus,
   Plus,
-  Loader2,
   UserCircle,
   Trash2,
 } from 'lucide-react'
@@ -59,11 +59,11 @@ const EMAIL_TABS: SubTab[] = [
 
 const STANDAARD_TEMPLATES = [
   { naam: 'Offerte + tekening', onderwerp: 'Offerte + tekening [projectnaam]', body: 'Beste [naam],\n\nBedankt voor je aanvraag. Hierbij de offerte en tekening voor [projectnaam].\n\nKijk het op je gemak door. Mocht je vragen hebben of willen aanpassen, laat het gerust weten.\n\nHoor graag van je!' },
-  { naam: 'Offerte opvolging', onderwerp: 'Even checken — offerte [projectnaam]', body: 'Hoi [naam],\n\nIk wilde even checken of je de offerte voor [projectnaam] hebt kunnen bekijken.\n\nHeb je nog vragen, of kan ik ergens bij helpen? Laat het gerust weten, dan plan ik het in.\n\nGroet!' },
+  { naam: 'Offerte opvolging', onderwerp: 'Even checken: offerte [projectnaam]', body: 'Hoi [naam],\n\nIk wilde even checken of je de offerte voor [projectnaam] hebt kunnen bekijken.\n\nHeb je nog vragen, of kan ik ergens bij helpen? Laat het gerust weten, dan plan ik het in.\n\nGroet!' },
   { naam: 'Project update', onderwerp: 'Update [projectnaam]', body: 'Hoi [naam],\n\nEen korte update over [projectnaam]:\n\n- [punt 1]\n- [punt 2]\n\nVolgende stap is [stap 1]. Verwacht dat dit rond [datum] klaar is.\n\nVragen? Laat het weten!' },
   { naam: 'Bedankt voor opdracht', onderwerp: 'Bedankt voor de opdracht!', body: 'Hoi [naam],\n\nTop, bedankt voor de opdracht! We gaan ermee aan de slag.\n\nDe planning ziet er als volgt uit:\n- Productie: [datum]\n- Montage: [datum]\n\nIk hou je op de hoogte. Mocht je in de tussentijd nog iets hebben, je weet me te vinden.' },
-  { naam: 'Betaalherinnering', onderwerp: 'Herinnering factuur [nummer]', body: 'Hoi [naam],\n\nKleine herinnering — we zien dat de volgende factuur nog openstaat:\n\nFactuurnummer: [nummer]\nBedrag: [bedrag]\nVervaldatum: [vervaldatum]\n\nKan gebeuren natuurlijk. Zou je ernaar willen kijken? Bij vragen hoor ik het graag.' },
-  { naam: 'Montage inplannen', onderwerp: 'Montage inplannen [projectnaam]', body: 'Hoi [naam],\n\nGoed nieuws — [projectnaam] is klaar voor montage!\n\nWe willen graag een datum inplannen. Wanneer zou het uitkomen? Dan stemmen we dat af met ons team.\n\nLaat het even weten!' },
+  { naam: 'Betaalherinnering', onderwerp: 'Herinnering factuur [nummer]', body: 'Hoi [naam],\n\nKleine herinnering, we zien dat de volgende factuur nog openstaat:\n\nFactuurnummer: [nummer]\nBedrag: [bedrag]\nVervaldatum: [vervaldatum]\n\nKan gebeuren natuurlijk. Zou je ernaar willen kijken? Bij vragen hoor ik het graag.' },
+  { naam: 'Montage inplannen', onderwerp: 'Montage inplannen [projectnaam]', body: 'Hoi [naam],\n\nGoed nieuws: [projectnaam] is klaar voor montage!\n\nWe willen graag een datum inplannen. Wanneer zou het uitkomen? Dan stemmen we dat af met ons team.\n\nLaat het even weten!' },
 ]
 
 function EmailTemplatesBeheerTab() {
@@ -147,7 +147,19 @@ function EmailTemplatesBeheerTab() {
     }
   }
 
-  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+  if (isLoading) return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-4 w-72" />
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <Skeleton key={i} className="h-[60px] w-full rounded-lg" />
+        ))}
+      </CardContent>
+    </Card>
+  )
 
   const isEditing = editId || showNew
 
@@ -370,7 +382,7 @@ function SignatureImageUpload({
           </div>
           <div className="text-left">
             <p className="text-sm font-medium">{isUploading ? 'Uploaden...' : 'Afbeelding toevoegen'}</p>
-            <p className="text-xs text-muted-foreground">PNG, JPG of SVG — bijv. bedrijfslogo of foto</p>
+            <p className="text-xs text-muted-foreground">PNG, JPG of SVG · bijv. bedrijfslogo of foto</p>
           </div>
         </button>
       )}

@@ -479,7 +479,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
             <X className={cn(compact ? 'w-3 h-3' : 'w-3.5 h-3.5')} />
           </button>
         ) : (
-          <kbd className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono text-muted-foreground border border-[#D4D2CE]/60 bg-white/50', compact ? 'mr-2' : 'mr-2.5')}>
+          <kbd className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono text-muted-foreground border border-[#D4D2CE]/60 bg-white/50 dark:border-white/10 dark:bg-white/[0.06]', compact ? 'mr-2' : 'mr-2.5')}>
             <span className="text-[11px]">⌘</span>K
           </kbd>
         )}
@@ -489,7 +489,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/60 rounded-xl shadow-2xl shadow-black/10 z-50 overflow-hidden max-h-[420px] overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/60 rounded-xl shadow-2xl shadow-black/10 dark:bg-popover/90 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-[0_24px_80px_-12px_rgba(0,0,0,0.6),0_0_24px_-6px_rgba(241,80,37,0.10)] z-50 overflow-hidden max-h-[420px] overflow-y-auto"
         >
           {isLoading && categories.length === 0 ? (
             <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
@@ -543,8 +543,8 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
                         className={cn(
                           'w-full flex items-center gap-3 px-3 py-2 text-left transition-colors',
                           myIndex === activeIndex
-                            ? 'bg-primary/8 dark:bg-primary/12'
-                            : 'hover:bg-muted/40'
+                            ? 'bg-primary/8 dark:bg-white/[0.07]'
+                            : 'hover:bg-muted/40 dark:hover:bg-white/[0.04]'
                         )}
                       >
                         <div className="flex-1 min-w-0">

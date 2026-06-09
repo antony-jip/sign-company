@@ -194,7 +194,7 @@
     /* Deep-petrol dark theme — matched aan brand (#1A535C = hsl 187 56% 23%) */
     --background: 190 35% 5%;            /* #08161A deepest petrol-black */
     --foreground: 190 8% 90%;            /* #E1E7E8 koel off-white */
-    --card: 190 30% 8%;                  /* #0E2025 lifted petrol-surface */
+    --card: 190 32% 9%;                  /* lifted petrol-surface, iets rijker */
     --card-foreground: 190 8% 90%;
     --sidebar-background: 190 40% 4%;    /* #061216 deepest */
     --sidebar-foreground: 190 8% 90%;
@@ -204,21 +204,21 @@
     --secondary: 190 25% 12%;            /* #15282D subtle surface */
     --secondary-foreground: 190 8% 75%;
     --muted: 190 25% 12%;
-    --muted-foreground: 190 12% 72%;     /* #A8BCBF — beter leesbaar in dark */
+    --muted-foreground: 190 14% 74%;     /* warmer grijs, beter leesbaar in dark */
     --accent: 14 88% 55%;                /* Flame */
     --accent-foreground: 0 0% 100%;
     --border: 190 25% 20%;               /* iets lichter petrol-hairline voor card-separation */
     --input: 190 25% 18%;
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --popover: 190 30% 8%;
+    --popover: 190 30% 11%;              /* overlay-laag bóven card — elevation via lightness */
     --popover-foreground: 190 8% 90%;
-    --ring: 187 56% 35%;                 /* petrol ring */
+    --ring: 187 60% 45%;                 /* luminous petrol ring, zichtbaar op donker */
 
     /* Semantic UI tokens — dark */
     --border-subtle: 190 25% 18%;
     --text-placeholder: 190 8% 45%;
-    --text-tertiary: 190 10% 62%;
+    --text-tertiary: 190 12% 64%;
 
     /* Taak-prioriteit dark — gedimde tints, leesbare text op donker */
     --prio-kritiek-bg: rgba(224, 74, 40, 0.18);
@@ -261,12 +261,13 @@
     --wm-glass-border: rgba(255, 255, 255, 0.06);
     --wm-glow: 0 0 40px rgba(241, 80, 37, 0.08);
 
-    /* Elevation — dark */
+    /* Elevation — dark: diepte via licht (inset rim-light + petrol-rand),
+       niet alleen via zwarte schaduw. Hogere lagen vangen meer licht. */
     --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.3);
-    --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.6), 0 4px 12px -4px rgba(0,0,0,0.4);
-    --shadow-xl: 0 20px 60px -12px rgba(0,0,0,0.7), 0 8px 24px -8px rgba(0,0,0,0.4);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+    --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.6), 0 4px 12px -4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(95,181,192,0.07);
+    --shadow-xl: 0 20px 60px -12px rgba(0,0,0,0.7), 0 8px 24px -8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07), 0 0 0 1px rgba(95,181,192,0.09);
     --shadow-glow: 0 0 0 1px rgba(241,80,37,0.10), 0 4px 24px -4px rgba(241,80,37,0.15);
     --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.04);
     --surface-raised: 30 12% 11%;
@@ -313,14 +314,26 @@
     outline-color: hsl(187 56% 50%);
   }
 
-  /* Primary CTA "lift" — flame/petrol buttons krijgen subtiele glow in dark */
+  /* Primary CTA "lift" — flame/petrol buttons gloeien in dark als smeulende
+     kolen: brede zachte glow + rim-light bovenrand. Matcht zowel hex-classes
+     als de petrol/flame-tokens. */
   .dark button[class*="bg-[#F15025]"]:not(:disabled):hover,
-  .dark a[class*="bg-[#F15025]"]:hover {
-    box-shadow: 0 4px 16px -2px rgba(241, 80, 37, 0.35), 0 0 24px -4px rgba(241, 80, 37, 0.18);
+  .dark a[class*="bg-[#F15025]"]:hover,
+  .dark button[class*="bg-flame"]:not(:disabled):hover,
+  .dark a[class*="bg-flame"]:hover {
+    box-shadow:
+      0 6px 20px -2px rgba(241, 80, 37, 0.42),
+      0 0 32px -4px rgba(241, 80, 37, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10);
   }
   .dark button[class*="bg-[#1A535C]"]:not(:disabled):hover,
-  .dark a[class*="bg-[#1A535C]"]:hover {
-    box-shadow: 0 4px 16px -2px rgba(26, 83, 92, 0.40), 0 0 24px -4px rgba(95, 181, 192, 0.15);
+  .dark a[class*="bg-[#1A535C]"]:hover,
+  .dark button[class*="bg-petrol"]:not(:disabled):hover,
+  .dark a[class*="bg-petrol"]:hover {
+    box-shadow:
+      0 6px 20px -2px rgba(26, 83, 92, 0.50),
+      0 0 32px -4px rgba(95, 181, 192, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10);
   }
 
   /* PDF/print altijd light — klant ontvangt PDF, mag nooit donker */
@@ -628,73 +641,73 @@ input:focus, textarea:focus, select:focus {
   /* Success: betaald, afgerond, actief */
   .badge-success { background: #E8F5EC; color: #4A9960; }
   .badge-success::before { background: #4A9960; }
-  .dark .badge-success { background: rgba(74, 153, 96, 0.15); color: #7AAF85; }
+  .dark .badge-success { background: rgba(74, 153, 96, 0.22); color: #7AAF85; }
   .dark .badge-success::before { background: #7AAF85; }
 
   /* Warning: verlopen, in afwachting, on-hold */
   .badge-warning { background: #F8F0E0; color: #B8883A; }
   .badge-warning::before { background: #B8883A; }
-  .dark .badge-warning { background: rgba(184, 136, 58, 0.15); color: #D4AA60; }
+  .dark .badge-warning { background: rgba(184, 136, 58, 0.22); color: #D4AA60; }
   .dark .badge-warning::before { background: #D4AA60; }
 
   /* Danger: overdue, verloren, geannuleerd */
   .badge-danger { background: #FAE8E6; color: #C45B4F; }
   .badge-danger::before { background: #C45B4F; }
-  .dark .badge-danger { background: rgba(196, 91, 79, 0.15); color: #DA7B70; }
+  .dark .badge-danger { background: rgba(196, 91, 79, 0.22); color: #DA7B70; }
   .dark .badge-danger::before { background: #DA7B70; }
 
   /* Info: verzonden, gepland, bekeken */
   .badge-info { background: #E8EFF8; color: #4A7AB5; }
   .badge-info::before { background: #4A7AB5; }
-  .dark .badge-info { background: rgba(74, 122, 181, 0.15); color: #7AA4CC; }
+  .dark .badge-info { background: rgba(74, 122, 181, 0.22); color: #7AA4CC; }
   .dark .badge-info::before { background: #7AA4CC; }
 
   /* Neutral: concept, draft, onbekend */
   .badge-neutral { background: #F0F0EE; color: #8A8A8A; }
   .badge-neutral::before { background: #8A8A8A; }
-  .dark .badge-neutral { background: rgba(138, 138, 138, 0.15); color: #A0A0A0; }
+  .dark .badge-neutral { background: rgba(138, 138, 138, 0.22); color: #A0A0A0; }
   .dark .badge-neutral::before { background: #A0A0A0; }
 
   /* Purple: gecrediteerd, speciaal */
   .badge-purple { background: #EEE8F8; color: #7A5AB5; }
   .badge-purple::before { background: #7A5AB5; }
-  .dark .badge-purple { background: rgba(122, 90, 181, 0.15); color: #A07ACC; }
+  .dark .badge-purple { background: rgba(122, 90, 181, 0.22); color: #A07ACC; }
   .dark .badge-purple::before { background: #A07ACC; }
 
   /* DOEN status badges with Flame dot */
   .badge-flame { background: #FDE8E2; color: #C03A18; }
   .badge-flame::before { background: #F15025; }
-  .dark .badge-flame { background: rgba(241, 80, 37, 0.15); color: #F18060; }
+  .dark .badge-flame { background: rgba(241, 80, 37, 0.22); color: #F18060; }
   .dark .badge-flame::before { background: #F15025; }
 
   .badge-petrol { background: #E2F0F0; color: #1A535C; }
   .badge-petrol::before { background: #1A535C; }
-  .dark .badge-petrol { background: rgba(26, 83, 92, 0.15); color: #5AABB5; }
+  .dark .badge-petrol { background: rgba(26, 83, 92, 0.22); color: #5AABB5; }
   .dark .badge-petrol::before { background: #5AABB5; }
 
   .badge-groen { background: #E8F2EC; color: #3A7D52; }
   .badge-groen::before { background: #2D6B48; }
-  .dark .badge-groen { background: rgba(45, 107, 72, 0.15); color: #7AAF85; }
+  .dark .badge-groen { background: rgba(45, 107, 72, 0.22); color: #7AAF85; }
   .dark .badge-groen::before { background: #7AAF85; }
 
   .badge-blauw { background: #E8EEF9; color: #3A5A9A; }
   .badge-blauw::before { background: #3A6B8C; }
-  .dark .badge-blauw { background: rgba(58, 107, 140, 0.15); color: #7AA4CC; }
+  .dark .badge-blauw { background: rgba(58, 107, 140, 0.22); color: #7AA4CC; }
   .dark .badge-blauw::before { background: #7AA4CC; }
 
   .badge-paars { background: #EEE8F9; color: #6A4A9A; }
   .badge-paars::before { background: #6A5A8A; }
-  .dark .badge-paars { background: rgba(106, 90, 138, 0.15); color: #A07ACC; }
+  .dark .badge-paars { background: rgba(106, 90, 138, 0.22); color: #A07ACC; }
   .dark .badge-paars::before { background: #A07ACC; }
 
   .badge-grijs { background: #F0F0EE; color: #8A8A8A; }
   .badge-grijs::before { background: #8A8A8A; }
-  .dark .badge-grijs { background: rgba(138, 138, 138, 0.15); color: #A0A0A0; }
+  .dark .badge-grijs { background: rgba(138, 138, 138, 0.22); color: #A0A0A0; }
   .dark .badge-grijs::before { background: #A0A0A0; }
 
   .badge-warm-paars { background: #EEE8F5; color: #5A4A78; }
   .badge-warm-paars::before { background: #5A4A78; }
-  .dark .badge-warm-paars { background: rgba(90, 74, 120, 0.15); color: #9A7ACC; }
+  .dark .badge-warm-paars { background: rgba(90, 74, 120, 0.22); color: #9A7ACC; }
   .dark .badge-warm-paars::before { background: #9A7ACC; }
 
   /* Pastel pills — voor status-labels in UI (badges, headers, accenten) */
@@ -1125,9 +1138,22 @@ tbody tr:hover {
   background: rgba(26, 83, 92, 0.07);
   transition: opacity 0.18s ease;
 }
+.dark .doen-sidebar-item-hover {
+  background: rgba(255, 255, 255, 0.06);
+}
 .group\/nav:hover .doen-sidebar-item-hover,
 .group\/rail:hover .doen-sidebar-item-hover {
   opacity: 1;
+}
+
+/* Sidebar divider — licht/donker bewust, inline zwart-gradients waren
+   onzichtbaar in dark mode */
+.doen-sidebar-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.07) 20%, rgba(0, 0, 0, 0.07) 80%, transparent 100%);
+}
+.dark .doen-sidebar-divider {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 20%, rgba(255, 255, 255, 0.08) 80%, transparent 100%);
 }
 
 /* Active dot — static (iOS-clean: no idle pulse) */
@@ -2875,9 +2901,9 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 
 .dark .skeleton-warm {
   background: linear-gradient(90deg,
-    hsl(190 30% 14%) 25%,
-    hsl(190 35% 19%) 37%,
-    hsl(190 30% 14%) 63%);
+    hsl(190 32% 12%) 25%,
+    hsl(190 38% 22%) 37%,
+    hsl(190 32% 12%) 63%);
   background-size: 200% 100%;
 }
 
@@ -3234,7 +3260,7 @@ main ::-webkit-scrollbar-thumb:hover { background: rgba(26, 83, 92, 0.38); backg
     radial-gradient(ellipse 70% 60% at 0% 0%, rgba(36, 117, 128, 0.10), transparent 70%),
     radial-gradient(ellipse 90% 70% at 100% 100%, rgba(241, 80, 37, 0.045), transparent 65%),
     hsl(190 28% 10%);
-  border-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(95, 181, 192, 0.10);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
     0 10px 30px -12px rgba(0, 0, 0, 0.55);
@@ -3249,9 +3275,22 @@ main ::-webkit-scrollbar-thumb:hover { background: rgba(26, 83, 92, 0.38); backg
     0 16px 40px -14px rgba(0, 0, 0, 0.6);
 }
 
-/* Hero: dimensionale gradient i.p.v. vlak vlak. Licht = petrol, dark =
-   warme maroon met lift linksboven en diepte rechtsonder. */
-.doen-hero { background-color: #1A535C; }
+/* Lichte brand-wash voor dashboard-panelen. Als losse class zodat
+   .dark .doen-panel (specifieker) de wash automatisch vervangt door
+   het eigen dark-oppervlak — inline backgroundImage deed dat niet. */
+.doen-wash {
+  background-image:
+    radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26, 83, 92, 0.06), transparent 70%),
+    radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241, 80, 37, 0.06), transparent 65%);
+}
+
+/* Hero: dimensionale gradient i.p.v. vlak vlak. Licht = petrol met
+   subtiele lichtval rechtsboven, dark = warme maroon met lift
+   linksboven en diepte rechtsonder. */
+.doen-hero {
+  background-color: #1A535C;
+  background-image: radial-gradient(ellipse 90% 130% at 88% -20%, rgba(255, 255, 255, 0.07), transparent 55%);
+}
 .dark .doen-hero {
   background-image:
     radial-gradient(ellipse 85% 90% at 12% 0%, #5C2417 0%, transparent 68%),
@@ -3279,4 +3318,27 @@ main ::-webkit-scrollbar-thumb:hover { background: rgba(26, 83, 92, 0.38); backg
 }
 .dark :where(table tbody tr):hover {
   background-color: rgba(255, 255, 255, 0.035);
+}
+
+/* ================================================================
+   DARK TOASTS — petrol-glass met flame-ember accent
+   ----------------------------------------------------------------
+   De Toaster in App.tsx zet light-styling via inline `toastOptions.style`
+   (sonner biedt geen theme-aware inline styles). Inline wint van CSS,
+   daarom hier bewust !important: één gecontroleerde override-plek.
+   ================================================================ */
+.dark [data-sonner-toast] {
+  background: rgba(14, 32, 37, 0.88) !important;
+  border: 0.5px solid rgba(95, 181, 192, 0.20) !important;
+  color: hsl(190 8% 90%) !important;
+  box-shadow:
+    0 12px 36px -8px rgba(0, 0, 0, 0.60),
+    0 0 24px -6px rgba(241, 80, 37, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+.dark [data-sonner-toast][data-type="success"] {
+  border-color: rgba(122, 175, 133, 0.30) !important;
+}
+.dark [data-sonner-toast][data-type="error"] {
+  border-color: rgba(255, 136, 102, 0.35) !important;
 }

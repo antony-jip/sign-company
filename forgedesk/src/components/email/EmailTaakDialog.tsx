@@ -40,7 +40,7 @@ const PRIORITEIT_LABELS: Record<TaakPrioriteit, string> = {
 }
 
 const pillBase =
-  'h-7 px-2.5 inline-flex items-center gap-1.5 rounded-full border border-border bg-white text-[12px] font-medium text-foreground hover:border-border hover:bg-background transition-colors cursor-pointer'
+  'h-7 px-2.5 inline-flex items-center gap-1.5 rounded-full border border-border bg-white dark:bg-white/[0.05] text-[12px] font-medium text-foreground hover:border-border hover:bg-background transition-colors cursor-pointer'
 
 export function EmailTaakDialog({
   open,
@@ -156,7 +156,7 @@ export function EmailTaakDialog({
               onChange={(e) => update('beschrijving', e.target.value)}
               placeholder="Briefing toevoegen…"
               data-gramm="false"
-              className="w-full border-0 shadow-none px-3 py-2.5 min-h-[140px] max-h-[300px] resize-none overflow-y-auto bg-background hover:bg-muted focus:bg-white rounded-lg text-[13px] leading-relaxed text-foreground placeholder:text-foreground/70 outline-none focus:ring-1 focus:ring-[#1A535C]/20 transition-colors"
+              className="w-full border-0 shadow-none px-3 py-2.5 min-h-[140px] max-h-[300px] resize-none overflow-y-auto bg-background hover:bg-muted focus:bg-white dark:focus:bg-white/[0.06] rounded-lg text-[13px] leading-relaxed text-foreground placeholder:text-foreground/70 outline-none focus:ring-1 focus:ring-[#1A535C]/20 transition-colors"
             />
           </div>
 

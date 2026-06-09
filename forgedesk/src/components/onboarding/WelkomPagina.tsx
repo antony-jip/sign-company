@@ -31,38 +31,38 @@ const cards = [
     title: 'Offertes die opvallen.',
     emphasis: 'PDF in 4 minuten. Mooier dan de concurrent.',
     Icon: FileText,
-    bg: 'bg-mod-offertes-light/60',
-    border: 'border-mod-offertes-border/50',
+    bg: 'bg-mod-offertes-light/60 dark:bg-white/[0.04]',
+    border: 'border-mod-offertes-border/50 dark:border-mod-offertes/25',
     hoverBorder: 'hover:border-mod-offertes',
-    accent: 'text-mod-offertes-text',
+    accent: 'text-mod-offertes-text dark:text-[#FF8B66]',
     iconColor: 'text-mod-offertes',
   },
   {
     title: 'Je team weet wat te doen.',
     emphasis: 'Monteur opent de app, ziet klus. Geen belletjes meer.',
     Icon: Wrench,
-    bg: 'bg-mod-planning-light/70',
-    border: 'border-mod-planning-border/50',
-    hoverBorder: 'hover:border-mod-planning',
-    accent: 'text-mod-planning-text',
-    iconColor: 'text-mod-planning',
+    bg: 'bg-mod-planning-light/70 dark:bg-white/[0.04]',
+    border: 'border-mod-planning-border/50 dark:border-mod-planning/30',
+    hoverBorder: 'hover:border-mod-planning dark:hover:border-mod-planning/70',
+    accent: 'text-mod-planning-text dark:text-[#D49A85]',
+    iconColor: 'text-mod-planning dark:text-[#C98D7A]',
   },
   {
     title: 'Klanten zien zelf hoe ver je bent.',
     emphasis: "Portaal met foto's, statusupdates, goedkeuringen.",
     Icon: Eye,
-    bg: 'bg-mod-klanten-light/60',
-    border: 'border-mod-klanten-border/50',
-    hoverBorder: 'hover:border-mod-klanten',
-    accent: 'text-mod-klanten-text',
-    iconColor: 'text-mod-klanten',
+    bg: 'bg-mod-klanten-light/60 dark:bg-white/[0.04]',
+    border: 'border-mod-klanten-border/50 dark:border-mod-klanten/30',
+    hoverBorder: 'hover:border-mod-klanten dark:hover:border-mod-klanten/70',
+    accent: 'text-mod-klanten-text dark:text-[#7FB0D4]',
+    iconColor: 'text-mod-klanten dark:text-[#6FA3C8]',
   },
 ]
 
 function Wordmark() {
   return (
     <div className="inline-flex items-baseline gap-[1px] font-heading">
-      <span className="text-[17px] font-bold tracking-tight text-ink">doen</span>
+      <span className="text-[17px] font-bold tracking-tight text-ink dark:text-foreground">doen</span>
       <motion.span
         initial={{ opacity: 0, scale: 0.6 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -108,7 +108,7 @@ export function WelkomPagina() {
 
         <motion.h1
           variants={item}
-          className="font-heading font-extrabold text-ink mb-2"
+          className="font-heading font-extrabold text-ink dark:text-foreground mb-2"
           style={{ fontSize: '34px', letterSpacing: '-0.5px', lineHeight: 1.1, fontWeight: 800 }}
         >
           Je hele bedrijf. Eén plek<span className="text-flame">.</span>
@@ -116,18 +116,18 @@ export function WelkomPagina() {
 
         <motion.p
           variants={item}
-          className="text-[15px] text-text-sec mb-6"
+          className="text-[15px] text-text-sec dark:text-muted-foreground mb-6"
         >
           Welkom{voornaam ? `, ${voornaam}` : ''}.
         </motion.p>
 
         <motion.p
           variants={item}
-          className="text-[15px] text-text-sec mb-10 max-w-lg"
+          className="text-[15px] text-text-sec dark:text-muted-foreground mb-10 max-w-lg"
           style={{ lineHeight: 1.55 }}
         >
           Portaal voor je klanten. Offertes, projecten en planning op één plek. Koppelingen met Exact en Mollie.{' '}
-          <span className="text-petrol font-medium">Aangedreven door Claude.</span>
+          <span className="text-petrol dark:text-[#7FC0CB] font-medium">Aangedreven door Claude.</span>
         </motion.p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
@@ -146,7 +146,7 @@ export function WelkomPagina() {
               <p className={`font-heading font-semibold text-[15px] ${c.accent} mb-1 pr-8`}>
                 {c.title}
               </p>
-              <p className="text-[13px] text-ink/70 pr-8" style={{ lineHeight: 1.45 }}>
+              <p className="text-[13px] text-ink/70 dark:text-foreground/70 pr-8" style={{ lineHeight: 1.45 }}>
                 {c.emphasis}
               </p>
               <ArrowRight
@@ -165,7 +165,7 @@ export function WelkomPagina() {
             <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
           </Button>
           <span
-            className="text-[11px] uppercase tracking-wider text-muted-hex"
+            className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70"
             style={MONO}
           >
             ± 2 min
@@ -176,13 +176,13 @@ export function WelkomPagina() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.4 }}
-          className="text-[11px] uppercase tracking-wider text-muted-hex"
+          className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70"
           style={MONO}
         >
           account aangemaakt<span className="text-flame">.</span>
-          <span className="mx-1.5 text-muted-hex/60">∙</span>
+          <span className="mx-1.5 text-muted-hex/60 dark:text-muted-foreground/40">∙</span>
           proefperiode gestart<span className="text-flame">.</span>
-          <span className="mx-1.5 text-muted-hex/60">∙</span>
+          <span className="mx-1.5 text-muted-hex/60 dark:text-muted-foreground/40">∙</span>
           30 dagen klaar voor jou<span className="text-flame">.</span>
         </motion.p>
       </motion.div>

@@ -36,36 +36,36 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#FEFDFB' }}>
+    <div className="min-h-screen flex items-center justify-center p-5 bg-[#FEFDFB] dark:bg-background">
       <div className="w-full max-w-md text-center">
-        <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center mx-auto mb-6">
-          <Lock className="w-6 h-6 text-neutral-700" />
+        <div className="w-14 h-14 rounded-2xl bg-white dark:bg-card border border-neutral-200 dark:border-white/10 flex items-center justify-center mx-auto mb-6">
+          <Lock className="w-6 h-6 text-neutral-700 dark:text-muted-foreground" />
         </div>
 
-        <h1 className="text-2xl font-bold text-black mb-2" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Nieuw wachtwoord</h1>
-        <p className="text-[15px] text-neutral-600 mb-8">Kies een nieuw wachtwoord voor je account.</p>
+        <h1 className="text-2xl font-bold text-black dark:text-foreground mb-2" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Nieuw wachtwoord</h1>
+        <p className="text-[15px] text-neutral-600 dark:text-muted-foreground mb-8">Kies een nieuw wachtwoord voor je account.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-neutral-700">Nieuw wachtwoord</Label>
+            <Label className="text-xs font-medium text-neutral-700 dark:text-muted-foreground">Nieuw wachtwoord</Label>
             <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Minimaal 10 tekens, sterk"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
+              className="h-11 rounded-xl border-neutral-200 bg-white dark:border-white/10 dark:bg-white/[0.06] text-sm focus:border-black focus:ring-black dark:focus:border-white/40 dark:focus:ring-white/20"
               autoFocus
             />
             <PasswordStrengthMeter check={passwordCheck} hasInput={password.length > 0} />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-neutral-700">Bevestig wachtwoord</Label>
+            <Label className="text-xs font-medium text-neutral-700 dark:text-muted-foreground">Bevestig wachtwoord</Label>
             <Input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Herhaal je wachtwoord"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
+              className="h-11 rounded-xl border-neutral-200 bg-white dark:border-white/10 dark:bg-white/[0.06] text-sm focus:border-black focus:ring-black dark:focus:border-white/40 dark:focus:ring-white/20"
             />
           </div>
           <Button

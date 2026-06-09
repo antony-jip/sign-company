@@ -194,16 +194,16 @@ export function TopNav() {
           <button
             onClick={() => setQuickAddOpen(!quickAddOpen)}
             className={cn(
-              'h-6 px-2 rounded-md flex items-center gap-1.5 transition-all duration-200 text-[11px] font-medium',
-              'bg-black/[0.04] text-foreground/70 hover:bg-black/[0.06] hover:text-foreground',
-              quickAddOpen && 'bg-black/[0.06] text-foreground',
+              'h-[34px] px-3 rounded-lg flex items-center gap-1.5 transition-all duration-200 text-[11px] font-medium',
+              'bg-black/[0.04] text-foreground/70 hover:bg-black/[0.06] hover:text-foreground dark:bg-white/[0.05] dark:hover:bg-white/[0.08]',
+              quickAddOpen && 'bg-black/[0.06] text-foreground dark:bg-white/[0.08]',
             )}
           >
             <Plus className={cn('w-3 h-3 transition-transform duration-200', quickAddOpen && 'rotate-45')} />
             <span className="hidden sm:inline">Nieuw</span>
           </button>
           {quickAddOpen && (
-            <div className="absolute left-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1.5">
+            <div className="absolute left-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(241,80,37,0.10)] p-1.5">
               <div className="px-2.5 pt-1.5 pb-1">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Snel aanmaken</span>
               </div>
@@ -231,7 +231,7 @@ export function TopNav() {
             className="absolute top-1/2 -mt-[17px] left-0 h-[34px] rounded-[10px] bg-[hsl(38,20%,94%)] dark:bg-white/[0.07] transition-all duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{ opacity: 0 }}
           >
-            <span className="absolute left-[13px] right-[13px] -bottom-px h-[2px] rounded-[2px] bg-[#F15025]" />
+            <span className="absolute left-[13px] right-[13px] -bottom-px h-[2px] rounded-[2px] bg-[#F15025] dark:shadow-[0_0_8px_1px_rgba(241,80,37,0.25)]" />
           </div>
 
           {primaryItems.map((item) => {
@@ -277,7 +277,7 @@ export function TopNav() {
               </button>
 
               {overigOpen && (
-                <div className="absolute left-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1.5">
+                <div className="absolute left-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(241,80,37,0.10)] p-1.5">
                   {overigItems.map((item) => {
                     const isActive = location.pathname.startsWith(item.path)
                     const Icon = item.icon
@@ -311,7 +311,7 @@ export function TopNav() {
         {mobileSearchOpen && (
           <div className="absolute inset-x-0 top-0 h-[50px] z-40 bg-background flex items-center gap-2 px-4 md:hidden">
             <GlobalSearch className="flex flex-1" />
-            <button onClick={() => setMobileSearchOpen(false)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.04]">
+            <button onClick={() => setMobileSearchOpen(false)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -326,7 +326,7 @@ export function TopNav() {
 
           <button
             onClick={() => setMobileSearchOpen(true)}
-            className="w-7 h-7 rounded-md md:hidden flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.04] transition-all"
+            className="w-7 h-7 rounded-md md:hidden flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-all"
           >
             <Search className="w-3.5 h-3.5" />
           </button>
@@ -375,7 +375,7 @@ export function TopNav() {
 
             {userMenuOpen && (
               <div
-                className="absolute right-0 top-full mt-2 w-60 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1.5"
+                className="absolute right-0 top-full mt-2 w-60 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(241,80,37,0.10)] p-1.5"
               >
                 <div className="flex items-center gap-2.5 px-2 py-2">
                   <span className="w-9 h-9 rounded-[9px] flex items-center justify-center bg-[#1A535C] text-white font-bold text-[14px] flex-shrink-0">{userInitial}</span>
@@ -415,7 +415,7 @@ export function TopNav() {
           </div>
 
           {/* Mobile hamburger */}
-          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-black/[0.04] lg:hidden order-2 md:order-none"
+          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06] lg:hidden order-2 md:order-none"
             onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>

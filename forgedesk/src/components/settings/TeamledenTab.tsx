@@ -32,6 +32,7 @@ import {
 import { Users, UserPlus, MoreHorizontal, Shield, UserCheck, UserX, Mail, Loader2, RefreshCw, Camera, Inbox } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Skeleton } from '@/components/ui/skeleton'
 import supabase, { isSupabaseConfigured } from '@/services/supabaseClient'
 import { uploadAvatar } from '@/services/supabaseService'
 import { toast } from 'sonner'
@@ -363,8 +364,17 @@ export function TeamledenTab() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <div className="divide-y divide-border">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-3 w-52" />
+                  </div>
+                  <Skeleton className="h-8 w-28 rounded-lg" />
+                </div>
+              ))}
             </div>
           ) : (
             <>

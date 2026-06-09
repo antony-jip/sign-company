@@ -186,7 +186,7 @@ export function EmailProjectKoppelingPanel({
   }, [query, suggestions, searchResults])
 
   return (
-    <div className="bg-white rounded-xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+    <div className="bg-white dark:bg-card rounded-xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
       <div className="flex items-center justify-between mb-2.5">
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</span>
         {(linkedProject || pickerOpen) && (

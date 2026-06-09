@@ -73,6 +73,8 @@ export function getStatusBadgeClass(status: string): string {
     // Overig
     'review':       'badge-grijs',
     'geweigerd':    'badge-flame',
+    'gewonnen':     'badge-groen',
+    'verloren':     'badge-flame',
   }
 
   return map[status.toLowerCase()] ?? 'badge-grijs'

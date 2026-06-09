@@ -244,7 +244,7 @@ export function EmailComposePage() {
       </div>
 
       {/* Email form */}
-      <div className="rounded-xl border border-black/[0.06] bg-card overflow-hidden shadow-sm">
+      <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] bg-card overflow-hidden shadow-sm">
         <div className="p-6 space-y-4">
           {/* To */}
           <div className="flex items-center gap-3">

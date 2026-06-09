@@ -22,7 +22,7 @@ const highlights = ['Projecten', 'Offertes', 'Facturen', 'Taken']
 function Wordmark() {
   return (
     <div className="inline-flex items-baseline gap-[1px] font-heading">
-      <span className="text-[17px] font-bold tracking-tight text-ink">doen</span>
+      <span className="text-[17px] font-bold tracking-tight text-ink dark:text-foreground">doen</span>
       <span className="text-[17px] font-bold text-flame leading-none">.</span>
     </div>
   )
@@ -137,15 +137,15 @@ export function TeamWelkomPagina() {
         {/* ── Stap 1: Intro ── */}
         {stap === 'intro' && (
           <>
-            <h1 className="font-heading text-ink mb-3" style={HEADING_STYLE}>
+            <h1 className="font-heading text-ink dark:text-foreground mb-3" style={HEADING_STYLE}>
               Welkom bij het team<span className="text-flame">.</span>
             </h1>
-            <p className="text-[15px] text-text-sec mb-8 max-w-lg" style={{ lineHeight: 1.55 }}>
+            <p className="text-[15px] text-text-sec dark:text-muted-foreground mb-8 max-w-lg" style={{ lineHeight: 1.55 }}>
               Je bent uitgenodigd om samen te werken in doen. Het platform waar jullie team projecten, offertes en facturen beheert.
             </p>
             <ul className="space-y-2 mb-10">
               {highlights.map((label) => (
-                <li key={label} className="text-[15px] text-ink">
+                <li key={label} className="text-[15px] text-ink dark:text-foreground">
                   {label}<span className="text-flame">.</span>
                 </li>
               ))}
@@ -158,11 +158,11 @@ export function TeamWelkomPagina() {
                 Aan de slag
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
               </Button>
-              <span className="text-[11px] uppercase tracking-wider text-muted-hex" style={MONO}>± 1 min</span>
+              <span className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70" style={MONO}>± 1 min</span>
             </div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-hex" style={MONO}>
+            <p className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70" style={MONO}>
               uitnodiging ontvangen<span className="text-flame">.</span>
-              <span className="mx-1.5 text-muted-hex/60">∙</span>
+              <span className="mx-1.5 text-muted-hex/60 dark:text-muted-foreground/40">∙</span>
               team klaar voor jou<span className="text-flame">.</span>
             </p>
           </>
@@ -171,15 +171,15 @@ export function TeamWelkomPagina() {
         {/* ── Stap 2: Wachtwoord ── */}
         {stap === 'wachtwoord' && (
           <>
-            <h1 className="font-heading text-ink mb-3" style={HEADING_STYLE}>
+            <h1 className="font-heading text-ink dark:text-foreground mb-3" style={HEADING_STYLE}>
               Kies een wachtwoord<span className="text-flame">.</span>
             </h1>
-            <p className="text-[15px] text-text-sec mb-8 max-w-lg" style={{ lineHeight: 1.55 }}>
+            <p className="text-[15px] text-text-sec dark:text-muted-foreground mb-8 max-w-lg" style={{ lineHeight: 1.55 }}>
               Je gebruikt dit straks om in te loggen bij doen.
             </p>
             <div className="max-w-md space-y-4 mb-8">
               <div className="space-y-1.5">
-                <Label className="text-[13px] font-medium text-ink">Wachtwoord</Label>
+                <Label className="text-[13px] font-medium text-ink dark:text-foreground">Wachtwoord</Label>
                 <Input
                   type="password"
                   value={wachtwoord}
@@ -191,7 +191,7 @@ export function TeamWelkomPagina() {
                 <PasswordStrengthMeter check={passwordCheck} hasInput={wachtwoord.length > 0} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[13px] font-medium text-ink">Wachtwoord bevestigen</Label>
+                <Label className="text-[13px] font-medium text-ink dark:text-foreground">Wachtwoord bevestigen</Label>
                 <Input
                   type="password"
                   value={wachtwoordBevestiging}
@@ -212,11 +212,11 @@ export function TeamWelkomPagina() {
                 Doorgaan
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
               </Button>
-              <span className="text-[11px] uppercase tracking-wider text-muted-hex" style={MONO}>± 30 sec</span>
+              <span className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70" style={MONO}>± 30 sec</span>
             </div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-hex" style={MONO}>
+            <p className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70" style={MONO}>
               stap 2 van 4<span className="text-flame">.</span>
-              <span className="mx-1.5 text-muted-hex/60">∙</span>
+              <span className="mx-1.5 text-muted-hex/60 dark:text-muted-foreground/40">∙</span>
               wachtwoord vereist<span className="text-flame">.</span>
             </p>
           </>
@@ -225,16 +225,16 @@ export function TeamWelkomPagina() {
         {/* ── Stap 3: Profiel ── */}
         {stap === 'profiel' && (
           <>
-            <h1 className="font-heading text-ink mb-3" style={HEADING_STYLE}>
+            <h1 className="font-heading text-ink dark:text-foreground mb-3" style={HEADING_STYLE}>
               Stel je voor<span className="text-flame">.</span>
             </h1>
-            <p className="text-[15px] text-text-sec mb-8 max-w-lg" style={{ lineHeight: 1.55 }}>
+            <p className="text-[15px] text-text-sec dark:text-muted-foreground mb-8 max-w-lg" style={{ lineHeight: 1.55 }}>
               Zodat je team weet wie je bent.
             </p>
             <div className="max-w-md space-y-4 mb-8">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-[13px] font-medium text-ink">Voornaam *</Label>
+                  <Label className="text-[13px] font-medium text-ink dark:text-foreground">Voornaam *</Label>
                   <Input
                     value={voornaam}
                     onChange={(e) => setVoornaam(e.target.value)}
@@ -244,7 +244,7 @@ export function TeamWelkomPagina() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[13px] font-medium text-ink">Achternaam</Label>
+                  <Label className="text-[13px] font-medium text-ink dark:text-foreground">Achternaam</Label>
                   <Input
                     value={achternaam}
                     onChange={(e) => setAchternaam(e.target.value)}
@@ -254,7 +254,7 @@ export function TeamWelkomPagina() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[13px] font-medium text-ink">Functie</Label>
+                <Label className="text-[13px] font-medium text-ink dark:text-foreground">Functie</Label>
                 <Input
                   value={functie}
                   onChange={(e) => setFunctie(e.target.value)}
@@ -263,7 +263,7 @@ export function TeamWelkomPagina() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[13px] font-medium text-ink">Telefoonnummer</Label>
+                <Label className="text-[13px] font-medium text-ink dark:text-foreground">Telefoonnummer</Label>
                 <Input
                   value={telefoon}
                   onChange={(e) => setTelefoon(e.target.value)}
@@ -282,11 +282,11 @@ export function TeamWelkomPagina() {
                 Doorgaan
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
               </Button>
-              <span className="text-[11px] uppercase tracking-wider text-muted-hex" style={MONO}>± 1 min</span>
+              <span className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70" style={MONO}>± 1 min</span>
             </div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-hex" style={MONO}>
+            <p className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70" style={MONO}>
               stap 3 van 4<span className="text-flame">.</span>
-              <span className="mx-1.5 text-muted-hex/60">∙</span>
+              <span className="mx-1.5 text-muted-hex/60 dark:text-muted-foreground/40">∙</span>
               bijna klaar<span className="text-flame">.</span>
             </p>
           </>
@@ -295,15 +295,15 @@ export function TeamWelkomPagina() {
         {/* ── Stap 4: E-mail koppelen ── */}
         {stap === 'email' && (
           <>
-            <h1 className="font-heading text-ink mb-3" style={HEADING_STYLE}>
+            <h1 className="font-heading text-ink dark:text-foreground mb-3" style={HEADING_STYLE}>
               Email koppelen<span className="text-flame">.</span>
             </h1>
-            <p className="text-[15px] text-text-sec mb-8 max-w-lg" style={{ lineHeight: 1.55 }}>
+            <p className="text-[15px] text-text-sec dark:text-muted-foreground mb-8 max-w-lg" style={{ lineHeight: 1.55 }}>
               Koppel je e-mailadres om mails te versturen vanuit doen.
             </p>
             <div className="max-w-md space-y-4 mb-6">
               <div className="space-y-1.5">
-                <Label className="text-[13px] font-medium text-ink">E-mailadres</Label>
+                <Label className="text-[13px] font-medium text-ink dark:text-foreground">E-mailadres</Label>
                 <Input
                   type="email"
                   value={emailAdres}
@@ -314,7 +314,7 @@ export function TeamWelkomPagina() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[13px] font-medium text-ink">App-wachtwoord</Label>
+                <Label className="text-[13px] font-medium text-ink dark:text-foreground">App-wachtwoord</Label>
                 <Input
                   type="password"
                   value={emailWachtwoord}
@@ -322,13 +322,13 @@ export function TeamWelkomPagina() {
                   placeholder="App-specifiek wachtwoord"
                   className="h-11 rounded-lg"
                 />
-                <p className="text-[11px] text-muted-hex">
+                <p className="text-[11px] text-muted-hex dark:text-muted-foreground/70">
                   Voor Gmail: maak een app-wachtwoord aan via Google Account &gt; Beveiliging &gt; App-wachtwoorden
                 </p>
               </div>
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-petrol-light">
-                <CheckCircle2 className="w-4 h-4 text-petrol flex-shrink-0 mt-0.5" />
-                <p className="text-[12px] text-petrol leading-snug">
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-petrol-light dark:bg-petrol/20">
+                <CheckCircle2 className="w-4 h-4 text-petrol dark:text-[#8FC3CC] flex-shrink-0 mt-0.5" />
+                <p className="text-[12px] text-petrol dark:text-[#8FC3CC] leading-snug">
                   Elk teamlid kan een eigen e-mailadres koppelen. Mails worden verstuurd vanuit jouw adres.
                 </p>
               </div>
@@ -347,15 +347,15 @@ export function TeamWelkomPagina() {
                 <Button
                   variant="ghost"
                   onClick={handleSkipEmail}
-                  className="text-[13px] text-text-sec hover:text-ink"
+                  className="text-[13px] text-text-sec hover:text-ink dark:text-muted-foreground dark:hover:text-foreground"
                 >
                   Later instellen
                 </Button>
               </div>
             </div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-hex" style={MONO}>
+            <p className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70" style={MONO}>
               stap 4 van 4<span className="text-flame">.</span>
-              <span className="mx-1.5 text-muted-hex/60">∙</span>
+              <span className="mx-1.5 text-muted-hex/60 dark:text-muted-foreground/40">∙</span>
               klaar zo<span className="text-flame">.</span>
             </p>
           </>

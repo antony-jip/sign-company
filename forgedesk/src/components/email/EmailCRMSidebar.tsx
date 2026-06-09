@@ -287,7 +287,7 @@ export const CRMSidebar = memo(function CRMSidebar({
               <input
                 value={klantForm.bedrijfsnaam}
                 onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
-                className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80"
+                className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
                 placeholder="Zoek klant op naam of email..."
                 autoFocus
               />
@@ -341,7 +341,7 @@ export const CRMSidebar = memo(function CRMSidebar({
               <div key={key} className="relative">
                 <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/80" />
                 <input value={klantForm[key]} onChange={e => setKlantForm(f => ({ ...f, [key]: e.target.value }))}
-                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80"
+                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
                   placeholder={placeholder} />
               </div>
             ))}
@@ -361,10 +361,10 @@ export const CRMSidebar = memo(function CRMSidebar({
               </div>
             )}
             <input value={offerteForm.titel} onChange={e => setOfferteForm(f => ({ ...f, titel: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
               placeholder="Titel *" />
             <textarea value={offerteForm.notities} onChange={e => setOfferteForm(f => ({ ...f, notities: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
               placeholder="Notities" />
           </>
         ),
@@ -382,10 +382,10 @@ export const CRMSidebar = memo(function CRMSidebar({
               </div>
             )}
             <input value={projectForm.naam} onChange={e => setProjectForm(f => ({ ...f, naam: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
               placeholder="Projectnaam *" />
             <textarea value={projectForm.beschrijving} onChange={e => setProjectForm(f => ({ ...f, beschrijving: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
               placeholder="Beschrijving" />
           </>
         ),
@@ -403,10 +403,10 @@ export const CRMSidebar = memo(function CRMSidebar({
               </div>
             )}
             <input value={taakForm.titel} onChange={e => setTaakForm(f => ({ ...f, titel: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
               placeholder="Taak titel *" />
             <textarea value={taakForm.beschrijving} onChange={e => setTaakForm(f => ({ ...f, beschrijving: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
               placeholder="Beschrijving" />
           </>
         ),
@@ -415,7 +415,7 @@ export const CRMSidebar = memo(function CRMSidebar({
 
     const cfg = panelConfig[activePanel]
     return (
-      <div className="bg-white rounded-[10px] border border-border overflow-hidden" style={{ boxShadow: `0 2px 12px -2px ${cfg.accent}15` }}>
+      <div className="bg-white dark:bg-card rounded-[10px] border border-border overflow-hidden" style={{ boxShadow: `0 2px 12px -2px ${cfg.accent}15` }}>
         <div className="flex items-center justify-between px-3.5 py-2.5" style={{ background: `${cfg.accent}0C`, borderBottom: `1px solid ${cfg.accent}15` }}>
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.accent }} />

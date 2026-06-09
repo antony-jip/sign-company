@@ -93,7 +93,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     naam: 'Gevelreclame (freesletters)',
     beschrijving: 'Freesletters met ontwerp, productie en montage op gevel',
     kleur: 'blue',
-    icon: '—',
+    icon: '–',
     regels: [
       { product_naam: 'Ontwerp & DTP', categorie: 'Arbeid', eenheid: 'uur', aantal: 2, inkoop_prijs: 40, verkoop_prijs: 75, marge_percentage: 87.5 },
       { product_naam: 'Freesletters acrylaat 20mm', categorie: 'Materiaal', eenheid: 'stuks', aantal: 10, inkoop_prijs: 12, verkoop_prijs: 28, marge_percentage: 133 },
@@ -106,7 +106,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     naam: 'Autobelettering',
     beschrijving: 'Voertuigbelettering met gegoten folie, print en applicatie',
     kleur: 'orange',
-    icon: '—',
+    icon: '–',
     regels: [
       { product_naam: 'Ontwerp & DTP', categorie: 'Arbeid', eenheid: 'uur', aantal: 3, inkoop_prijs: 40, verkoop_prijs: 75, marge_percentage: 87.5 },
       { product_naam: 'Carwrap folie (gegoten)', categorie: 'Materiaal', eenheid: 'm\u00B2', aantal: 6, inkoop_prijs: 18, verkoop_prijs: 42, marge_percentage: 133 },
@@ -119,7 +119,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     naam: 'Lichtreclame (LED)',
     beschrijving: 'Verlichte doosletters of lichtbak met LED-verlichting',
     kleur: 'yellow',
-    icon: '—',
+    icon: '–',
     regels: [
       { product_naam: 'Ontwerp & DTP', categorie: 'Arbeid', eenheid: 'uur', aantal: 3, inkoop_prijs: 40, verkoop_prijs: 75, marge_percentage: 87.5 },
       { product_naam: 'Doosletters aluminium', categorie: 'Materiaal', eenheid: 'stuks', aantal: 8, inkoop_prijs: 45, verkoop_prijs: 95, marge_percentage: 111 },
@@ -133,7 +133,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     naam: 'Raambelettering',
     beschrijving: 'Raamfolie met print of gesneden tekst/logo',
     kleur: 'emerald',
-    icon: '—',
+    icon: '–',
     regels: [
       { product_naam: 'Ontwerp & DTP', categorie: 'Arbeid', eenheid: 'uur', aantal: 1.5, inkoop_prijs: 40, verkoop_prijs: 75, marge_percentage: 87.5 },
       { product_naam: 'Raamfolie (gesneden)', categorie: 'Materiaal', eenheid: 'm\u00B2', aantal: 3, inkoop_prijs: 15, verkoop_prijs: 35, marge_percentage: 133 },
@@ -144,7 +144,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     naam: 'Spandoek / Banner',
     beschrijving: 'Geprint spandoek met ringen of frame',
     kleur: 'purple',
-    icon: '—',
+    icon: '–',
     regels: [
       { product_naam: 'Ontwerp & DTP', categorie: 'Arbeid', eenheid: 'uur', aantal: 1, inkoop_prijs: 40, verkoop_prijs: 75, marge_percentage: 87.5 },
       { product_naam: 'Spandoekdoek 510gr PVC', categorie: 'Materiaal', eenheid: 'm\u00B2', aantal: 4, inkoop_prijs: 8, verkoop_prijs: 22, marge_percentage: 175 },
@@ -156,7 +156,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     naam: 'Signing / Bewegwijzering',
     beschrijving: 'Informatie- en routeborden met panelen en montage',
     kleur: 'teal',
-    icon: '—',
+    icon: '–',
     regels: [
       { product_naam: 'Ontwerp & DTP', categorie: 'Arbeid', eenheid: 'uur', aantal: 3, inkoop_prijs: 40, verkoop_prijs: 75, marge_percentage: 87.5 },
       { product_naam: 'Dibond plaat 3mm', categorie: 'Materiaal', eenheid: 'm\u00B2', aantal: 2, inkoop_prijs: 28, verkoop_prijs: 55, marge_percentage: 96 },
@@ -546,7 +546,7 @@ function StartSection({
       </Card>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <button
           onClick={() => onNavigate('producten')}
           className="p-4 rounded-xl border border-border dark:border-border hover:border-blue-300 dark:hover:border-blue-800 transition-all text-left hover:shadow-sm"
@@ -1718,7 +1718,7 @@ function OfferteTemplatesSubSection({
               </p>
               <p className="text-xs text-purple-600 dark:text-purple-400">
                 Een <strong>calculatie template</strong> berekent de kostprijs met inkoop, marge en verkoop.
-                Een <strong>offerte template</strong> bevat de offerte-regels zoals de klant ze ziet —
+                Een <strong>offerte template</strong> bevat de offerte-regels zoals de klant ze ziet:
                 met omschrijving, aantal en prijs. Gebruik offerte templates voor terugkerende opdrachten.
               </p>
             </div>

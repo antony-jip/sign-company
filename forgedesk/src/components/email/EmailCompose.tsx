@@ -601,7 +601,7 @@ export function EmailCompose({
 
   return (
     <div
-      className="relative flex flex-col h-full bg-white min-w-0 [&:focus-visible]:shadow-none"
+      className="relative flex flex-col h-full bg-white dark:bg-card min-w-0 [&:focus-visible]:shadow-none"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -611,12 +611,12 @@ export function EmailCompose({
         {isDragging && (
           <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
             <div className="absolute inset-3 rounded-2xl border-2 border-dashed border-[#1A535C]/40 bg-[#1A535C]/[0.05] backdrop-blur-[1px]" />
-            <div className="relative flex flex-col items-center gap-2.5 text-[#1A535C]">
-              <div className="h-14 w-14 rounded-2xl bg-white shadow-[0_4px_20px_rgba(26,83,92,0.18)] flex items-center justify-center">
+            <div className="relative flex flex-col items-center gap-2.5 text-[#1A535C] dark:text-[#7FB5BF]">
+              <div className="h-14 w-14 rounded-2xl bg-white dark:bg-card shadow-[0_4px_20px_rgba(26,83,92,0.18)] flex items-center justify-center">
                 <Paperclip className="h-6 w-6" />
               </div>
               <p className="text-[15px] font-semibold leading-none">Sleep bestanden hierheen</p>
-              <p className="text-[12px] text-[#1A535C]/70 leading-none">om ze als bijlage toe te voegen</p>
+              <p className="text-[12px] text-[#1A535C]/70 dark:text-[#7FB5BF]/70 leading-none">om ze als bijlage toe te voegen</p>
             </div>
           </div>
         )}
@@ -671,7 +671,7 @@ export function EmailCompose({
               </div>
               {/* Autocomplete dropdown */}
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute left-0 top-full mt-1 w-80 bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1 overflow-hidden">
+                <div className="absolute left-0 top-full mt-1 w-80 bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1 overflow-hidden">
                   {suggestions.map((item, idx) => {
                     if (item.kind === 'klant') {
                       const k = item.klant
@@ -779,7 +779,7 @@ export function EmailCompose({
                 {showTemplateMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => { setShowTemplateMenu(false); setShowSaveTemplate(false) }} />
-                    <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1.5 overflow-hidden max-h-[360px] overflow-y-auto">
+                    <div className="absolute left-0 top-full mt-2 w-64 bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1.5 overflow-hidden max-h-[360px] overflow-y-auto">
                       {dbTemplates.length > 0 ? (
                         dbTemplates.map(tmpl => (
                           <button
@@ -847,7 +847,7 @@ export function EmailCompose({
                 {showMergeFields && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowMergeFields(false)} />
-                    <div className="absolute left-0 top-full mt-2 w-44 bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1.5 overflow-hidden">
+                    <div className="absolute left-0 top-full mt-2 w-44 bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1.5 overflow-hidden">
                       {mergeFields.map(field => (
                         <button
                           key={field.id}
@@ -979,7 +979,7 @@ export function EmailCompose({
                     return (
                       <div
                         key={i}
-                        className="group relative flex items-center gap-2.5 w-[228px] pl-2.5 pr-2 py-2 rounded-xl bg-gradient-to-b from-white/75 to-white/40 backdrop-blur-md border border-white/70 ring-1 ring-black/[0.04] shadow-[0_4px_16px_rgba(16,24,40,0.08)] hover:ring-[#1A535C]/20 hover:shadow-[0_6px_20px_rgba(26,83,92,0.12)] transition-all duration-200 before:absolute before:inset-x-0 before:top-0 before:h-px before:rounded-t-xl before:bg-white/80 before:pointer-events-none"
+                        className="group relative flex items-center gap-2.5 w-[228px] pl-2.5 pr-2 py-2 rounded-xl bg-gradient-to-b from-white/75 to-white/40 dark:from-white/[0.08] dark:to-white/[0.04] backdrop-blur-md border border-white/70 dark:border-white/15 ring-1 ring-black/[0.04] dark:ring-white/[0.04] shadow-[0_4px_16px_rgba(16,24,40,0.08)] hover:ring-[#1A535C]/20 hover:shadow-[0_6px_20px_rgba(26,83,92,0.12)] transition-all duration-200 before:absolute before:inset-x-0 before:top-0 before:h-px before:rounded-t-xl before:bg-white/80 dark:before:bg-white/10 before:pointer-events-none"
                       >
                         {previewUrl ? (
                           <img src={previewUrl} alt={file.name} className="w-7 h-9 rounded-[5px] object-cover flex-shrink-0 ring-1 ring-black/5" />
@@ -1030,7 +1030,7 @@ export function EmailCompose({
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto justify-end md:justify-start">
             {/* Sales Inbox v1: opvolg-toggle */}
-            <label className="inline-flex items-center gap-1.5 text-[12px] text-[#67645E] cursor-pointer select-none" title="Vlag deze mail om op te volgen">
+            <label className="inline-flex items-center gap-1.5 text-[12px] text-[#67645E] dark:text-muted-foreground cursor-pointer select-none" title="Vlag deze mail om op te volgen">
               <Switch checked={wachtOpReactie} onCheckedChange={setWachtOpReactie} />
               <span>Opvolgen</span>
             </label>
@@ -1050,7 +1050,7 @@ export function EmailCompose({
               {showScheduleMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => { setShowScheduleMenu(false); setShowCustomSchedule(false) }} />
-                  <div className="absolute bottom-full right-0 mb-2 w-[220px] bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.10)] z-50 py-1.5 overflow-hidden">
+                  <div className="absolute bottom-full right-0 mb-2 w-[220px] bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.10)] z-50 py-1.5 overflow-hidden">
                     <p className="px-3.5 py-1.5 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Inplannen</p>
                     {[
                       { label: 'Over 1 uur', getDate: () => { const d = new Date(); d.setHours(d.getHours() + 1); return d } },
