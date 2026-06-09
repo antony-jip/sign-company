@@ -112,6 +112,9 @@ export function Sidebar() {
       return next
     })
   }
+  // Samenstelbaar menu: bewerk-modus + Overig mega-menu (vóór `expanded` i.v.m. gebruik).
+  const [editMode, setEditMode] = useState(false)
+  const [overigOpen, setOverigOpen] = useState(false)
   const expanded = isPinned ? false : (hovered || overigOpen || editMode)
   const [userPopoverOpen, setUserPopoverOpen] = useState(false)
   const [popoverPos, setPopoverPos] = useState<{ left: number; bottom: number } | null>(null)
@@ -141,10 +144,7 @@ export function Sidebar() {
       .filter(g => g.items.length > 0)
   }, [isItemVisible])
 
-  // ── Samenstelbaar menu ──
-  const [editMode, setEditMode] = useState(false)
-  const [overigOpen, setOverigOpen] = useState(false)
-
+  // ── Samenstelbaar menu (editMode/overigOpen zijn hierboven gedeclareerd) ──
   // Items die niet in het hoofdmenu staan, gegroepeerd per sectie → "Overig".
   const overigGroups = useMemo(() => {
     if (isMobieleNav) return []
