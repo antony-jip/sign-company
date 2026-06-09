@@ -203,9 +203,20 @@ export function AfwezigheidPopover({
               disabled={patroonBezig || !patroonGewijzigd}
               className="mt-4 w-full rounded-lg bg-[#1A535C] px-3 py-2.5 text-[13px] font-semibold text-white hover:bg-[#16444c] disabled:opacity-40 transition-colors"
             >
-              {patroonBezig ? 'Opslaan...' : 'Weekpatroon opslaan'}
+              {patroonBezig ? 'Opslaan...' : patroon ? 'Wijzigingen opslaan' : 'Weekpatroon opslaan'}
             </button>
-            <p className="mt-2.5 text-[11.5px] leading-snug text-muted-foreground/60">Deze vrije dag(en) komen elke week automatisch terug.</p>
+            <div className="mt-2.5 flex items-center justify-between gap-2">
+              <p className="text-[11.5px] leading-snug text-muted-foreground/60">Deze vrije dag(en) komen elke week automatisch terug.</p>
+              {patroon && (
+                <button
+                  type="button"
+                  onClick={async () => { await onDeletePatroon(patroon.id); setDagen(0); setTijdelijk(false); setVan(''); setTot('') }}
+                  className="shrink-0 text-[11.5px] font-medium text-[#C03A18] hover:underline"
+                >
+                  Verwijderen
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="px-6 pb-6">

@@ -875,6 +875,22 @@ export function MontagePlanningLayout() {
     return ids;
   }, [conflicts]);
 
+  // Afspraken die op een vrije/afwezige dag van een toegewezen monteur vallen.
+  const afwezigConflicts = useMemo(() => {
+    const found: { monteurNaam: string; titel: string; label: string }[] = [];
+    for (const a of weekAfsprakenAll) {
+      if (a.status === "afgerond" || a.status === "uitgesteld") continue;
+      const dayIdx = (new Date(a.datum + "T00:00:00").getDay() + 6) % 7;
+      for (const m of a.monteurs) {
+        const status = resolveAfwezig(afwezigIndex, m, a.datum, dayIdx);
+        if (status.afwezig) {
+          found.push({ monteurNaam: monteurMap[m]?.naam || "?", titel: a.titel, label: status.label });
+        }
+      }
+    }
+    return found;
+  }, [weekAfsprakenAll, afwezigIndex, monteurMap]);
+
   const monteurs = useMemo(
     () => medewerkers.filter((m) => m.status === "actief"),
     [medewerkers]
@@ -887,8 +903,9 @@ export function MontagePlanningLayout() {
         .filter((a) => a.status !== "afgerond" && a.status !== "uitgesteld")
         .flatMap((a) => a.monteurs)
     );
+    const todayDayIdx = (new Date(todayStr + "T00:00:00").getDay() + 6) % 7;
     const beschikbaar = monteurs.filter(
-      (m) => !bezetteMonteurs.has(m.id)
+      (m) => !bezetteMonteurs.has(m.id) && !resolveAfwezig(afwezigIndex, m.id, todayStr, todayDayIdx).afwezig
     ).length;
 
     return {
@@ -896,7 +913,7 @@ export function MontagePlanningLayout() {
       geplandVandaag: vandaagAfspraken.length,
       monteursBeschikbaar: beschikbaar,
     };
-  }, [weekAfsprakenAll, afspraken, todayStr, monteurs]);
+  }, [weekAfsprakenAll, afspraken, todayStr, monteurs, afwezigIndex]);
 
   // Projects with status "te-plannen" for the sidebar
   const tePlannenProjecten = useMemo(() => {
@@ -3020,6 +3037,28 @@ export function MontagePlanningLayout() {
                   </div>
                 );
               })()}
+
+              {/* Live afwezigheid-waarschuwing (informatief, blokkeert niet) */}
+              {formData.datum && formData.monteurs.length > 0 && (() => {
+                const dayIdx = (new Date(formData.datum + "T00:00:00").getDay() + 6) % 7;
+                const afwezigen = formData.monteurs
+                  .map((m) => ({ m, status: resolveAfwezig(afwezigIndex, m, formData.datum, dayIdx) }))
+                  .filter((x) => x.status.afwezig);
+                if (afwezigen.length === 0) return null;
+                return (
+                  <div className="mt-2 rounded-lg border border-[#F0C8BC] bg-[hsl(var(--status-flame-bg))]/60 p-3">
+                    <div className="flex items-center gap-1.5 text-[12px] font-semibold text-[#C03A18] mb-1">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Let op: afwezig op deze dag
+                    </div>
+                    {afwezigen.map(({ m, status }) => (
+                      <p key={m} className="text-[11px] text-[#C03A18]/85">
+                        {monteurMap[m]?.naam || "?"}: {status.label}
+                      </p>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="space-y-1.5">
@@ -3602,6 +3641,19 @@ export function MontagePlanningLayout() {
               <span className="font-semibold">{conflicts.length} overlap{conflicts.length !== 1 ? "s" : ""}</span>
               {conflicts.slice(0, 2).map((c, idx) => (
                 <span key={idx} className="ml-2">{c.monteurNaam}: {c.afspraak1.titel} / {c.afspraak2.titel}</span>
+              ))}
+            </span>
+          </div>
+        )}
+
+        {/* Afwezigheid-banner: afspraken op een vrije/afwezige dag */}
+        {afwezigConflicts.length > 0 && (
+          <div className="bg-[hsl(var(--status-flame-bg))] border-b border-[#F0C8BC] px-4 py-2 flex items-center gap-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-[#C03A18] shrink-0" />
+            <span className="text-xs text-[#C03A18]">
+              <span className="font-semibold">{afwezigConflicts.length} ingepland op vrije/afwezige dag</span>
+              {afwezigConflicts.slice(0, 2).map((c, idx) => (
+                <span key={idx} className="ml-2">{c.monteurNaam} ({c.label}): {c.titel}</span>
               ))}
             </span>
           </div>
