@@ -771,14 +771,30 @@ export function MontagePlanningLayout() {
     }
   }, []);
 
-  const handleDeleteAfwezigheid = useCallback(async (id: string) => {
-    try {
-      await deleteAfwezigheid(id);
-      setAfwezigheden((prev) => prev.filter((a) => a.id !== id));
-    } catch (err) {
-      logger.error('Kon afwezigheid niet verwijderen:', err);
-      toast.error('Kon afwezigheid niet verwijderen');
-    }
+  const handleDeleteAfwezigheid = useCallback((id: string) => {
+    setAfwezigheden((prev) => {
+      const item = prev.find((a) => a.id === id);
+      if (!item) return prev;
+      let undone = false;
+      const timer = setTimeout(async () => {
+        if (undone) return;
+        try {
+          await deleteAfwezigheid(id);
+        } catch (err) {
+          logger.error('Kon afwezigheid niet verwijderen:', err);
+          toast.error('Kon afwezigheid niet verwijderen');
+          setAfwezigheden((cur) => (cur.some((a) => a.id === id) ? cur : [...cur, item]));
+        }
+      }, 5000);
+      toast('Afwezigheid verwijderd', {
+        action: {
+          label: 'Ongedaan maken',
+          onClick: () => { undone = true; clearTimeout(timer); setAfwezigheden((cur) => (cur.some((a) => a.id === id) ? cur : [...cur, item])); },
+        },
+        duration: 5000,
+      });
+      return prev.filter((a) => a.id !== id);
+    });
   }, []);
 
   // Helper voor entry-points: render een AfwezigheidPopover voor één monteur.
@@ -2035,7 +2051,7 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "relative border-r last:border-r-0 border-[rgba(26,83,92,0.06)] transition-colors",
-                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/20" : afwezig?.afwezig ? AFWEZIG_GLASS : isToday ? "bg-[#1A535C]/[0.02]" : "bg-card",
+                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/20" : afwezig?.afwezig && !afwezig.start_tijd ? AFWEZIG_GLASS : isToday ? "bg-[#1A535C]/[0.02]" : "bg-card",
                   !feestdagInfo && dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
                   feestdagInfo && dragOverDate === dateStr && "ring-2 ring-[#C03A18]/30 ring-inset"
                 )}
@@ -2101,6 +2117,20 @@ export function MontagePlanningLayout() {
                     style={{ top: i * HOUR_HEIGHT }}
                   />
                 ))}
+
+                {/* Dagdeel-afwezigheid: glass-blok over alleen die uren */}
+                {afwezig?.afwezig && afwezig.start_tijd && afwezig.eind_tijd && (() => {
+                  const sMin = timeToMinutes(afwezig.start_tijd);
+                  const eMin = timeToMinutes(afwezig.eind_tijd);
+                  const top = (sMin - START_HOUR * 60) * (HOUR_HEIGHT / 60);
+                  const height = Math.max(10, (eMin - sMin) * (HOUR_HEIGHT / 60));
+                  return (
+                    <div className="absolute left-0 right-0 z-0 pointer-events-none" style={{ top, height }}>
+                      <div className={cn("h-full w-full rounded-sm", AFWEZIG_GLASS)} />
+                      <span className="absolute left-1.5 top-0.5 text-[10px] font-medium text-[#1A535C]/60 tabular-nums">{afwezig.label}</span>
+                    </div>
+                  );
+                })()}
 
                 {/* Current time indicator */}
                 {isToday && nowInRange && (

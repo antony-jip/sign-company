@@ -45,7 +45,7 @@ interface Props {
   onSavePatroon: (data: { id?: string; vrije_dagen: number; geldig_van: string | null; geldig_tot: string | null }) => Promise<void>
   onDeletePatroon: (id: string) => Promise<void>
   onAddAfwezigheid: (data: { type: AfwezigheidType; start_datum: string; eind_datum: string; start_tijd: string | null; eind_tijd: string | null; opmerking?: string }) => Promise<void>
-  onDeleteAfwezigheid: (id: string) => Promise<void>
+  onDeleteAfwezigheid: (id: string) => void
 }
 
 const inputCls = "rounded-lg border border-[rgba(26,83,92,0.14)] bg-[#FAFBFB] dark:bg-white/[0.04] px-2.5 py-2 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/45 focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/15 transition-colors"
@@ -222,13 +222,16 @@ export function AfwezigheidPopover({
           <div className="px-6 pb-6">
             {/* Type */}
             <div className="text-[12px] font-semibold text-foreground mb-2">Soort</div>
-            <div className="flex items-center gap-4 text-[13px] mb-4">
+            <div className="flex gap-1.5 mb-4">
               {TYPE_OPTIES.map((t) => (
                 <button
                   key={t.value}
                   type="button"
                   onClick={() => setType(t.value)}
-                  className={cn('transition-colors', type === t.value ? 'font-semibold text-[#1A535C] dark:text-foreground' : 'font-medium text-muted-foreground hover:text-foreground')}
+                  className={cn(
+                    'flex-1 rounded-lg py-1.5 text-[12px] font-medium transition-colors',
+                    type === t.value ? 'bg-[#1A535C] text-white' : 'bg-[hsl(38,20%,95.5%)] text-muted-foreground hover:text-foreground dark:bg-white/[0.06]'
+                  )}
                 >
                   {t.label}
                 </button>
