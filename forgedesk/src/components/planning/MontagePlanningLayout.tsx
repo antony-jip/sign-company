@@ -951,6 +951,18 @@ export function MontagePlanningLayout() {
     }
   }
 
+  async function toggleAfspraakPrio(afspraak: MontageAfspraak) {
+    const newPrio = !afspraak.prioriteit;
+    setAfspraken((prev) => prev.map((a) => a.id === afspraak.id ? { ...a, prioriteit: newPrio } : a));
+    try {
+      await updateMontageAfspraak(afspraak.id, { prioriteit: newPrio });
+    } catch (err) {
+      logger.error('Prio updaten mislukt:', err);
+      toast.error('Kon prioriteit niet bijwerken');
+      setAfspraken((prev) => prev.map((a) => a.id === afspraak.id ? { ...a, prioriteit: afspraak.prioriteit } : a));
+    }
+  }
+
   function navigateWeek(direction: -1 | 1) {
     setCurrentMonday((prev) => {
       const next = new Date(prev);
@@ -1658,15 +1670,16 @@ export function MontagePlanningLayout() {
     const cfg = STATUS_CONFIG[afspraak.status];
     const isAfgerond = afspraak.status === 'afgerond';
     const isFadingOut = isAfgerond && recentlyAfgerond.has(afspraak.id);
+    const isPrio = !!afspraak.prioriteit && !isAfgerond;
     const isPersonal = opts?.variant === 'personal';
     const isTimegrid = opts?.variant === 'timegrid';
     const isCompact = isPersonal || isTimegrid;
     const tijdspanne = formatTijdspanne(afspraak.start_tijd, afspraak.eind_tijd);
 
     // Zelfde box-look als /taken: uniform lichte petrol-vulling + petrol accent-stripe.
-    // (Afgerond houdt eigen surface; conflict/urgent-states blijven via ring/cfg zichtbaar.)
-    const cardStyle: React.CSSProperties = { borderLeftColor: isAfgerond ? '#CBC9C4' : (cfg?.dot ?? '#1A535C') };
-    if (!isAfgerond) cardStyle.backgroundColor = cfg?.bg ?? 'rgba(26,83,92,0.04)';
+    // Prioriteit: flame accent-stripe + lichte flame-vulling zodat het opvalt.
+    const cardStyle: React.CSSProperties = { borderLeftColor: isAfgerond ? '#CBC9C4' : isPrio ? '#F15025' : (cfg?.dot ?? '#1A535C') };
+    if (!isAfgerond) cardStyle.backgroundColor = isPrio ? 'rgba(241,80,37,0.06)' : (cfg?.bg ?? 'rgba(26,83,92,0.04)');
     if (isPersonal) cardStyle.minHeight = `${getCardMinHeight(afspraak.start_tijd, afspraak.eind_tijd)}px`;
 
     return (
@@ -1751,8 +1764,22 @@ export function MontagePlanningLayout() {
             </DropdownMenu>
           );
         })()}
+        {!isAfgerond && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); toggleAfspraakPrio(afspraak); }}
+            title={isPrio ? 'Prioriteit weghalen' : 'Prioriteit geven'}
+            aria-label={isPrio ? 'Prioriteit weghalen' : 'Prioriteit geven'}
+            className={cn(
+              "absolute top-1 right-7 rounded-full p-0.5 transition-all z-10",
+              isPrio ? "opacity-100 text-[#F15025]" : "opacity-0 group-hover/card:opacity-100 text-muted-foreground/70 hover:text-[#F15025]"
+            )}
+          >
+            <Flame className={cn("h-3.5 w-3.5", isPrio && "fill-[#F15025]")} />
+          </button>
+        )}
         <div className={cn("min-w-0", isAfgerond && "opacity-60")}>
-          <div className="flex items-start justify-between gap-1 pr-5">
+          <div className={cn("flex items-start justify-between gap-1", isAfgerond ? "pr-5" : "pr-12")}>
             <div className={cn(
               "text-[12px] font-semibold text-[#1A535C] dark:text-foreground leading-tight truncate",
               isAfgerond && "line-through"

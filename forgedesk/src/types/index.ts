@@ -1152,6 +1152,7 @@ export interface MontageAfspraak {
   locatie: string;
   monteurs: string[];
   status: 'gepland' | 'onderweg' | 'bezig' | 'afgerond' | 'uitgesteld';
+  prioriteit?: boolean;
   materialen: string[];
   notities: string;
   werkbon_id?: string;
