@@ -32,7 +32,6 @@ import {
   List,
   Clock,
   MapPin,
-  Users,
   Wrench,
   Truck,
   PlayCircle,
@@ -2464,66 +2463,8 @@ export function MontagePlanningLayout() {
 
     return (
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(26,83,92,0.08)] bg-card">
-          <div className="flex items-center gap-3">
-            <Users className="h-5 w-5 text-muted-foreground" />
-            <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground">Team overzicht</span>
-            <div className="flex items-center gap-1 ml-4">
-              <button className="p-1.5 rounded-full hover:bg-muted transition-colors" onClick={() => navigateWeek(-1)}>
-                <ChevronLeft className="h-4 w-4 text-foreground/70" />
-              </button>
-              <button
-                onClick={goToCurrentWeek}
-                className="text-[13px] font-bold px-3 py-1 rounded-none hover:bg-[#1A535C]/[0.07] transition-colors text-[#1A535C] font-mono tabular-nums"
-              >
-                Week {weekNumber}
-              </button>
-              <button className="p-1.5 rounded-full hover:bg-muted transition-colors" onClick={() => navigateWeek(1)}>
-                <ChevronRight className="h-4 w-4 text-foreground/70" />
-              </button>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={laneGrouping} onValueChange={(v) => handleLaneGroupingChange(v as LaneGrouping)}>
-              <SelectTrigger
-                className="hidden sm:flex h-auto w-auto gap-1.5 px-3 py-1.5 rounded-none text-[13px] font-medium text-foreground/70 border-0 bg-transparent hover:text-[#1A535C] hover:bg-muted focus:ring-0 focus:ring-offset-0"
-                title="Banen groeperen"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Geen groepering</SelectItem>
-                <SelectItem value="rol">Groeperen op rol</SelectItem>
-              </SelectContent>
-            </Select>
-            <button
-              onClick={toggleHideEmptyLanes}
-              aria-pressed={!hideEmptyLanes}
-              title={hideEmptyLanes ? 'Toon ook medewerkers zonder afspraken deze week' : 'Verberg lege banen deze week'}
-              className={cn(
-                "hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-none text-[13px] font-medium transition-colors",
-                !hideEmptyLanes
-                  ? "text-[#1A535C] bg-[#1A535C]/[0.10] hover:bg-[#1A535C]/[0.12]"
-                  : "text-foreground/70 hover:text-[#1A535C] hover:bg-muted"
-              )}
-            >
-              <Eye className="h-3.5 w-3.5" />
-              Alle banen
-            </button>
-            <button onClick={printWeekplanning} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-none text-[13px] font-medium text-foreground/70 hover:text-[#1A535C] hover:bg-muted transition-colors">
-              <Printer className="h-3.5 w-3.5" />
-              Print week
-            </button>
-            <button
-              onClick={openNewDialog}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Nieuw
-            </button>
-          </div>
-        </div>
+        {/* Geen aparte Team-header meer — scope, week-nav, groepering, banen,
+            print en Nieuw staan nu in de gedeelde hoofd-toolbar hierboven. */}
 
         {/* Weather strip + dag-headers staan buiten de onderstaande overflow-y-auto,
             dus blijven ze automatisch zichtbaar tijdens verticaal scrollen door lanes.
@@ -3600,8 +3541,8 @@ export function MontagePlanningLayout() {
             </Select>
           </div>
 
-          {/* Week-navigatie */}
-          {viewMode !== 'maand' && selectedMonteur !== 'alle' && (
+          {/* Week-navigatie (week-view, alle scopes) */}
+          {viewMode !== 'maand' && (
             <>
               <div className="h-4 w-px bg-[rgba(26,83,92,0.12)] dark:bg-white/10" />
               <div className="flex items-center gap-0.5">
@@ -3660,19 +3601,51 @@ export function MontagePlanningLayout() {
             </button>
           </div>
 
-          {viewMode !== 'maand' && selectedMonteur !== 'alle' && (
+          {/* View-specifieke acties */}
+          {viewMode !== 'maand' && (
             <>
               <div className="h-4 w-px bg-[rgba(26,83,92,0.12)] dark:bg-white/10" />
-              {monteurMap[selectedMonteur] && renderAfwezigheidPopover(monteurMap[selectedMonteur], (
-                <button
-                  type="button"
-                  title="Afwezigheid / vrije dagen instellen"
-                  className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <CalendarOff className="h-3.5 w-3.5" />
-                  Afwezigheid
-                </button>
-              ))}
+
+              {selectedMonteur === 'alle' ? (
+                <>
+                  <Select value={laneGrouping} onValueChange={(v) => handleLaneGroupingChange(v as LaneGrouping)}>
+                    <SelectTrigger
+                      className="hidden md:flex h-auto w-auto gap-1 border-0 bg-transparent px-0 py-0 text-[13px] font-medium text-muted-foreground hover:text-foreground shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-50"
+                      title="Banen groeperen"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Geen groepering</SelectItem>
+                      <SelectItem value="rol">Groeperen op rol</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <button
+                    onClick={toggleHideEmptyLanes}
+                    aria-pressed={!hideEmptyLanes}
+                    title={hideEmptyLanes ? 'Toon ook medewerkers zonder afspraken' : 'Verberg lege banen'}
+                    className={cn(
+                      "hidden md:flex items-center gap-1.5 text-[13px] transition-colors",
+                      !hideEmptyLanes ? "font-semibold text-[#1A535C] dark:text-foreground" : "font-medium text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    Alle banen
+                  </button>
+                </>
+              ) : (
+                monteurMap[selectedMonteur] && renderAfwezigheidPopover(monteurMap[selectedMonteur], (
+                  <button
+                    type="button"
+                    title="Afwezigheid / vrije dagen instellen"
+                    className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <CalendarOff className="h-3.5 w-3.5" />
+                    Afwezigheid
+                  </button>
+                ))
+              )}
+
               <button
                 onClick={printWeekplanning}
                 className="hidden sm:flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
