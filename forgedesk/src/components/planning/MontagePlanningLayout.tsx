@@ -97,6 +97,10 @@ import { useNavigateWithTab } from "@/hooks/useNavigateWithTab";
 const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
 const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__';
 const HIDE_EMPTY_LANES_KEY = 'doen_planning_hide_empty_lanes';
+
+// Vrije/afwezige dag: heel licht petrol-blue frosted-glass blok, full-bleed
+// zodat het strak boven en onder aansluit binnen de cel/kolom.
+const AFWEZIG_GLASS = "bg-gradient-to-b from-[#1A535C]/[0.08] to-[#1A535C]/[0.035] backdrop-blur-[2px]";
 const LANE_GROUPING_KEY = 'doen_planning_lane_grouping';
 const PLANNING_FILTER_KEY = 'doen_planning_filter_v1';
 const PLANNING_SCOPE_KEY = 'doen_planning_scope_v1';
@@ -1840,6 +1844,7 @@ export function MontagePlanningLayout() {
             const dayAfspraken = viewAfspraken.filter((a) => a.datum === dateStr);
             const afgerond = dayAfspraken.filter((a) => a.status === "afgerond").length;
             const feestdagInfo = isFeestdag(dateStr, feestdagen);
+            const afwezig = !feestdagInfo ? resolveAfwezig(afwezigIndex, selectedMonteur, dateStr, dayIdx) : null;
             const w = getWeatherForDate(weather, date);
             const allesAf = dayAfspraken.length > 0 && afgerond === dayAfspraken.length;
 
@@ -1890,6 +1895,9 @@ export function MontagePlanningLayout() {
 
                 {feestdagInfo && (
                   <div className="text-[10px] font-semibold text-[#C03A18] mt-0.5">{feestdagInfo.naam}</div>
+                )}
+                {afwezig?.afwezig && (
+                  <div className="text-[10px] font-semibold text-[#1A535C]/70 mt-0.5 truncate">{afwezig.label}</div>
                 )}
                 {!feestdagInfo && (
                   <DagNotitiePopover
@@ -2000,6 +2008,7 @@ export function MontagePlanningLayout() {
             const dateStr = formatDate(date);
             const isToday = dateStr === todayStr;
             const feestdagInfo = isFeestdag(dateStr, feestdagen);
+            const afwezig = !feestdagInfo ? resolveAfwezig(afwezigIndex, selectedMonteur, dateStr, (date.getDay() + 6) % 7) : null;
             const dayAfspraken = viewAfspraken
               .filter((a) => a.datum === dateStr)
               .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
@@ -2009,7 +2018,7 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "relative border-r last:border-r-0 border-[rgba(26,83,92,0.06)] transition-colors",
-                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/20" : isToday ? "bg-[#1A535C]/[0.02]" : "bg-card",
+                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/20" : afwezig?.afwezig ? AFWEZIG_GLASS : isToday ? "bg-[#1A535C]/[0.02]" : "bg-card",
                   !feestdagInfo && dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
                   feestdagInfo && dragOverDate === dateStr && "ring-2 ring-[#C03A18]/30 ring-inset"
                 )}
@@ -2669,8 +2678,8 @@ export function MontagePlanningLayout() {
                   {!isCollapsed && renderAfwezigheidPopover(monteur, (
                     <button
                       type="button"
-                      title={`Afwezigheid · ${monteur.naam}`}
-                      className="shrink-0 p-1 rounded-md text-muted-foreground/60 opacity-0 group-hover/lane:opacity-100 hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-all"
+                      title={`Afwezigheid / vrije dagen · ${monteur.naam}`}
+                      className="shrink-0 p-1 rounded-md text-muted-foreground/70 hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                     >
                       <CalendarOff className="h-3.5 w-3.5" />
                     </button>
@@ -2702,7 +2711,7 @@ export function MontagePlanningLayout() {
                       className={cn(
                         "border-l border-border transition-all duration-200",
                         isCollapsed ? "min-h-[30px]" : "p-1 min-h-[60px]",
-                        feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/15" : afwezig?.afwezig ? "bg-[#1A535C]/[0.05]" : isToday && "bg-[#1A535C]/[0.02]",
+                        feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/15" : afwezig?.afwezig ? AFWEZIG_GLASS : isToday && "bg-[#1A535C]/[0.02]",
                         !feestdagInfo && !isCollapsed && dragOverDate !== dragKey && "hover:bg-[#1A535C]/[0.03]",
                         !feestdagInfo && dragOverDate === dragKey && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
                         feestdagInfo && dragOverDate === dragKey && "ring-2 ring-[#C03A18]/30 ring-inset"
@@ -3558,6 +3567,16 @@ export function MontagePlanningLayout() {
           {viewMode !== 'maand' && selectedMonteur !== 'alle' && (
             <>
               <div className="h-4 w-px bg-[rgba(26,83,92,0.12)] dark:bg-white/10" />
+              {monteurMap[selectedMonteur] && renderAfwezigheidPopover(monteurMap[selectedMonteur], (
+                <button
+                  type="button"
+                  title="Afwezigheid / vrije dagen instellen"
+                  className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <CalendarOff className="h-3.5 w-3.5" />
+                  Afwezigheid
+                </button>
+              ))}
               <button
                 onClick={printWeekplanning}
                 className="hidden sm:flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
