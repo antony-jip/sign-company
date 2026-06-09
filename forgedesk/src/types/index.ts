@@ -1268,6 +1268,47 @@ export interface DagNotitie {
   updated_at?: string;
 }
 
+// ============ AFWEZIGHEID & STRUCTUREEL VRIJ (planning) ============
+
+// Terugkerend wekelijks vrij. vrije_dagen = bitmask ma..zo (bit0..bit6).
+// geldig_van/geldig_tot NULL = permanent; gezet = tijdelijke periode.
+export interface VrijPatroon {
+  id: string;
+  organisatie_id?: string;
+  medewerker_id: string;
+  vrije_dagen: number;
+  geldig_van?: string | null;
+  geldig_tot?: string | null;
+  opmerking?: string;
+  aangemaakt_door?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export type AfwezigheidType = 'vakantie' | 'ziek' | 'bijzonder' | 'vrij';
+
+// Datumbereik-afwezigheid (start/eind inclusief).
+export interface Afwezigheid {
+  id: string;
+  organisatie_id?: string;
+  medewerker_id: string;
+  type: AfwezigheidType;
+  start_datum: string;
+  eind_datum: string;
+  opmerking?: string;
+  aangemaakt_door?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+// Resolver-resultaat per (monteur, datum).
+export interface AfwezigStatus {
+  afwezig: boolean;
+  type: AfwezigheidType | 'structureel' | null;
+  label: string;
+  opmerking?: string;
+}
+
 // ============ GEBRUIKERSRECHTEN (Feature 4) ============
 
 export interface ProjectToewijzing {
