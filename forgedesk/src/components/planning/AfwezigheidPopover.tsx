@@ -51,7 +51,7 @@ export function AfwezigheidPopover({
 }: Props) {
   const [open, setOpen] = useState(false)
   const patroon = patronen[0]
-  const [mode, setMode] = useState<'patroon' | 'afwezig'>(patronen.length ? 'afwezig' : 'patroon')
+  const [mode, setMode] = useState<'patroon' | 'afwezig'>('afwezig')
 
   const [dagen, setDagen] = useState(patroon?.vrije_dagen ?? 0)
   const [tijdelijk, setTijdelijk] = useState(!!(patroon?.geldig_van || patroon?.geldig_tot))
@@ -70,7 +70,7 @@ export function AfwezigheidPopover({
 
   const handleOpenChange = (o: boolean) => {
     if (o) {
-      setMode(patronen.length ? 'afwezig' : 'patroon')
+      setMode('afwezig')
       setDagen(patroon?.vrije_dagen ?? 0)
       setTijdelijk(!!(patroon?.geldig_van || patroon?.geldig_tot))
       setVan(patroon?.geldig_van ?? '')
