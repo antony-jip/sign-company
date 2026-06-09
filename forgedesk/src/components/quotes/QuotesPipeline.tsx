@@ -896,7 +896,7 @@ export function QuotesPipeline() {
                     type="button"
                     onClick={() => setStatusFilter(isActive ? 'alle' : tile.key as StatusFilter)}
                     className={cn(
-                      'group doen-slate-surface relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2'
+                      'group doen-stat-tile relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2'
                     )}
                     style={isActive ? { borderColor: tile.accent, boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px ${tile.accent}1F` } : undefined}
                     aria-pressed={isActive}

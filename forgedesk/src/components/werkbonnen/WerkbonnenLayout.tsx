@@ -332,14 +332,11 @@ export function WerkbonnenLayout() {
                 key={tile.key}
                 type="button"
                 onClick={() => setFilterStatus(isActive ? 'alle' : tile.key)}
-                className="group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
-                style={{
-                  backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-                  border: isActive ? `1px solid ${tile.accent}66` : '1px solid rgba(26,83,92,0.08)',
-                  boxShadow: isActive
-                    ? `0 1px 2px ${tile.accent}14, 0 10px 26px ${tile.accent}24`
-                    : '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
-                }}
+                className="doen-stat-tile group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
+                style={isActive ? {
+                  border: `1px solid ${tile.accent}66`,
+                  boxShadow: `0 1px 2px ${tile.accent}14, 0 10px 26px ${tile.accent}24`,
+                } : undefined}
                 aria-pressed={isActive}
               >
                 <div className="flex items-baseline justify-between gap-3 mb-2">

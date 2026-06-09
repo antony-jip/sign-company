@@ -946,14 +946,11 @@ export function ProjectsList() {
                     key={tile.key}
                     type="button"
                     onClick={() => setStatusFilter(isActive ? 'alle' : tile.key)}
-                    className="group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
-                    style={{
-                      backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-                      border: isActive ? `1px solid ${tile.accent}66` : '1px solid rgba(26,83,92,0.08)',
-                      boxShadow: isActive
-                        ? `0 1px 2px ${tile.accent}14, 0 10px 26px ${tile.accent}24`
-                        : '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
-                    }}
+                    className="doen-stat-tile group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
+                    style={isActive ? {
+                      border: `1px solid ${tile.accent}66`,
+                      boxShadow: `0 1px 2px ${tile.accent}14, 0 10px 26px ${tile.accent}24`,
+                    } : undefined}
                     aria-pressed={isActive}
                   >
                     <div className="flex items-baseline justify-between gap-3 mb-2">
@@ -982,14 +979,7 @@ export function ProjectsList() {
           </div>
 
           {/* Toolbar card — search, filters, export in one slate surface */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-              border: '1px solid rgba(26,83,92,0.08)',
-              boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
-            }}
-          >
+          <div className="doen-panel doen-wash rounded-2xl p-5">
             <div className="flex items-center gap-5">
               {/* Search with keyboard hint */}
               <div className="relative max-w-[280px] flex-1">
@@ -1193,14 +1183,7 @@ export function ProjectsList() {
 
           {/* Table */}
           {gefilterdeProjecten.length === 0 ? (
-            <div
-              className="py-20 text-center rounded-2xl"
-              style={{
-                backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-                border: '1px solid rgba(26,83,92,0.08)',
-                boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
-              }}
-            >
+            <div className="doen-panel doen-wash py-20 text-center rounded-2xl">
               <EmptyState
                 module="projecten"
                 title="Nog geen projecten"
@@ -1229,12 +1212,10 @@ export function ProjectsList() {
                     <div
                       key={`mobile-${project.id}`}
                       onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
-                      className="doen-row rounded-xl p-4 cursor-pointer active:scale-[0.99] transition-all"
+                      className="doen-panel doen-wash doen-row rounded-xl p-4 cursor-pointer active:scale-[0.99] transition-all"
                       style={{
                         animationDelay: `${i * 30}ms`,
-                        backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-                        border: `1px solid rgba(26,83,92,0.08)`,
-                        boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025), inset 3px 0 0 0 ${statusHex(project.status)}`,
+                        boxShadow: `var(--shadow-sm), inset 3px 0 0 0 ${statusHex(project.status)}`,
                       }}
                     >
                       <div className="flex items-start justify-between gap-3 mb-2">
