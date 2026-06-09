@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useMemo, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LogOut, Menu, X,
@@ -15,7 +15,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useSupportAttentie } from '@/hooks/useSupportInbox'
 import { ADMIN_USER_ID } from '@/services/supportChatService'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTheme } from '@/contexts/ThemeContext'
+import { usePalette } from '@/contexts/PaletteContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
@@ -94,7 +94,8 @@ export function Sidebar() {
   const { user, logout } = useAuth()
   const isSupportAdmin = user?.id === ADMIN_USER_ID
   const supportAttentie = useSupportAttentie('support-nav', isSupportAdmin)
-  const { theme, toggleTheme } = useTheme()
+  const { appThemeId, setAppThemeId } = usePalette()
+  const isDarkTheme = appThemeId === 'dark'
   const { settings, updateSettings } = useAppSettings()
   const location = useLocation()
   const navigate = useNavigate()
@@ -143,6 +144,36 @@ export function Sidebar() {
       .map(g => ({ ...g, items: g.items.filter(i => isItemVisible(i.label)) }))
       .filter(g => g.items.length > 0)
   }, [isItemVisible])
+
+  // ── Glijdende actieve-indicator (expanded, desktop) ──
+  // Eén frosted surface die met een spring tussen items glijdt i.p.v.
+  // per item een eigen vlak. Posities via rects (robuust bij scroll en
+  // de inklap-animatie van bewerk-modus); ResizeObserver hermeet.
+  const navListRef = useRef<HTMLDivElement>(null)
+  const itemRefs = useRef(new Map<string, HTMLAnchorElement>())
+  const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null)
+
+  const mainNavActivePath = useMemo(() => {
+    const all = [...filteredGroups.flatMap(g => g.items), ...(isSupportAdmin ? [SUPPORT_ITEM] : [])]
+    return all.find(i => (i.path === '/' ? location.pathname === '/' : location.pathname.startsWith(i.path)))?.path ?? null
+  }, [filteredGroups, isSupportAdmin, location.pathname])
+
+  useLayoutEffect(() => {
+    if (!expanded) return
+    const wrap = navListRef.current
+    const measure = () => {
+      const el = mainNavActivePath ? itemRefs.current.get(mainNavActivePath) : null
+      if (!wrap || !el) { setIndicator(null); return }
+      const wrapRect = wrap.getBoundingClientRect()
+      const elRect = el.getBoundingClientRect()
+      setIndicator({ top: elRect.top - wrapRect.top, height: elRect.height })
+    }
+    measure()
+    if (!wrap || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(wrap)
+    return () => ro.disconnect()
+  }, [expanded, mainNavActivePath, filteredGroups, isSupportAdmin])
 
   // ── Samenstelbaar menu (editMode/overigOpen zijn hierboven gedeclareerd) ──
   // Items die niet in het hoofdmenu staan, gegroepeerd per sectie → "Overig".
@@ -255,10 +286,13 @@ export function Sidebar() {
           <TooltipTrigger asChild>
             <NavLink
               to={item.path}
-              className="relative flex items-center justify-center w-full h-11 group/rail"
+              className="relative flex items-center justify-center w-full h-11 group/rail transition-transform duration-200 active:scale-[0.94]"
             >
-              {/* Hover fill — lichtere petrol-tint squircle */}
-              <div className="doen-sidebar-item-hover" style={{ borderRadius: '12px', insetInline: '10px' }} />
+              {/* Actief — petrol pill (zelfde canon als de e-mail-rail);
+                  idle hover — lichtere petrol-tint squircle */}
+              {active
+                ? <div className="doen-sidebar-active-pill absolute rounded-[12px]" style={{ insetInline: '10px', insetBlock: '4px' }} />
+                : <div className="doen-sidebar-item-hover" style={{ borderRadius: '12px', insetInline: '10px', insetBlock: '4px' }} />}
 
               <div
                 className={cn(
@@ -269,17 +303,14 @@ export function Sidebar() {
                 <Icon
                   className={cn(
                     'h-[19px] w-[19px] transition-colors duration-200',
-                    !active && 'text-[#1A535C] dark:text-[#7FB5BF] group-hover/rail:text-[var(--mc)]',
+                    active
+                      ? 'text-white'
+                      : 'text-[#8FA0A4] dark:text-[#6A8085] group-hover/rail:text-[var(--mc)]',
                   )}
-                  style={active ? { color: item.color } : ({ ['--mc']: item.color } as React.CSSProperties)}
-                  strokeWidth={1.6}
+                  style={active ? undefined : ({ ['--mc']: item.color } as React.CSSProperties)}
+                  strokeWidth={active ? 2.2 : 1.6}
                 />
               </div>
-
-              {/* Actief — flame dot */}
-              {active && (
-                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 rounded-full" style={{ width: 5, height: 5, backgroundColor: '#F15025' }} />
-              )}
             </NavLink>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={10}>{item.label}</TooltipContent>
@@ -290,19 +321,28 @@ export function Sidebar() {
 
   // ── Rail divider ──
   const railDivider = (key: string) => (
-    <div key={key} className="w-6 mx-auto my-2.5" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent)' }} />
+    <div key={key} className="w-6 mx-auto my-2.5 doen-sidebar-divider" />
   )
 
   // ── Expanded item ──
-  const renderExpandedItem = (item: NavItem, isBottom = false) => {
+  // withIndicator: de actieve surface wordt door de glijdende indicator
+  // gerenderd (desktop); het item tekent dan alleen nog zijn hover-sweep.
+  const renderExpandedItem = (item: NavItem, isBottom = false, withIndicator = false) => {
     const active = isActivePath(item.path)
     const Icon = item.icon
     const isRemoving = removing.has(item.label)
+    const ownActive = active && (isBottom || !withIndicator || indicator === null)
 
     return (
       <NavLink
         key={item.path}
         to={item.path}
+        ref={withIndicator && !isBottom
+          ? (el: HTMLAnchorElement | null) => {
+              if (el) itemRefs.current.set(item.path, el)
+              else itemRefs.current.delete(item.path)
+            }
+          : undefined}
         className={cn(
           'relative flex items-center gap-[11px] px-4 mx-2 rounded-[11px] group/nav overflow-hidden transition-all duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
           isBottom ? 'text-[13px]' : 'text-[13.5px]',
@@ -310,16 +350,13 @@ export function Sidebar() {
         )}
       >
         {/* Background — frosted surface when active, soft sweep on hover */}
-        {active
+        {ownActive
           ? <div className="doen-sidebar-active-surface" />
           : <div className="doen-sidebar-item-hover" />}
 
         {/* Flame accent bar (active) */}
-        {active && (
-          <span
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-r-[3px]"
-            style={{ width: 2.5, height: 18, background: '#F15025', boxShadow: '0 0 6px rgba(241,80,37,0.30)' }}
-          />
+        {ownActive && (
+          <span className="doen-sidebar-flame-accent z-10" />
         )}
 
         {/* Icon — bare glyph; idle muted, active + hover in the module colour */}
@@ -370,19 +407,25 @@ export function Sidebar() {
           )}
         >
           {collapsed ? (
-            <img src="/logos/doen-app-icon.svg" alt="doen." className="h-12 w-12 transition-transform duration-300 group-hover/logo:scale-105" />
+            <>
+              <img src="/logos/doen-app-icon.svg" alt="doen." className="h-10 w-10 transition-transform duration-300 group-hover/logo:scale-105 dark:hidden" />
+              <img src="/logos/doen-app-icon-wit.svg" alt="doen." className="h-10 w-10 transition-transform duration-300 group-hover/logo:scale-105 hidden dark:block" />
+            </>
           ) : (
-            <img src="/logos/doen-logo.svg" alt="doen." className="h-6 transition-transform duration-300 group-hover/logo:translate-x-0.5" />
+            <>
+              <img src="/logos/doen-logo.svg" alt="doen." className="h-6 transition-transform duration-300 group-hover/logo:translate-x-0.5 dark:hidden" />
+              <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-6 transition-transform duration-300 group-hover/logo:translate-x-0.5 hidden dark:block" />
+            </>
           )}
         </NavLink>
 
         {/* Separator */}
-        <div className={cn(collapsed ? 'mx-4' : 'mx-5')}>
-          <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.07) 20%, rgba(0,0,0,0.07) 80%, transparent 100%)' }} />
+        <div className={cn(collapsed ? 'mx-3' : 'mx-5')}>
+          <div className="doen-sidebar-divider" />
         </div>
 
         {/* Main navigation — scrollt bij overflow (veel items / kleine viewport) */}
-        <nav className="flex-1 flex flex-col justify-start pt-4 overflow-y-auto min-h-0">
+        <nav className="flex-1 flex flex-col justify-start pt-4 overflow-y-auto overflow-x-hidden min-h-0">
           {collapsed ? (
             <div className="flex flex-col items-center gap-0">
               {filteredNavItems.filter(i => WERK_ITEMS.some(w => w.path === i.path)).map(renderRailItem)}
@@ -408,12 +451,26 @@ export function Sidebar() {
               )}
             </div>
           ) : (
-            <div className="px-0 animate-in fade-in duration-200">
+            <div
+              ref={forMobile ? undefined : navListRef}
+              className="relative px-0 animate-in fade-in duration-200"
+            >
+              {/* Glijdende actieve surface — spring-curve tussen items */}
+              {!forMobile && indicator && (
+                <div
+                  aria-hidden
+                  className="absolute left-2 right-2 pointer-events-none transition-[top,height] duration-[320ms] ease-[cubic-bezier(0.3,0.9,0.25,1)]"
+                  style={{ top: indicator.top, height: indicator.height }}
+                >
+                  <div className="doen-sidebar-active-surface" />
+                  <span className="doen-sidebar-flame-accent" />
+                </div>
+              )}
               {filteredGroups.map((group, gi) => (
                 <div key={group.section} className={gi > 0 ? 'mt-7' : ''}>
                   <div className="doen-sidebar-section">{group.section}</div>
                   <div className="space-y-[1px]">
-                    {group.items.map(item => renderExpandedItem(item))}
+                    {group.items.map(item => renderExpandedItem(item, false, !forMobile))}
                   </div>
                 </div>
               ))}
@@ -421,7 +478,7 @@ export function Sidebar() {
                 <div className="mt-7">
                   <div className="doen-sidebar-section">SUPPORT</div>
                   <div className="space-y-[1px] relative">
-                    {renderExpandedItem(SUPPORT_ITEM)}
+                    {renderExpandedItem(SUPPORT_ITEM, false, !forMobile)}
                     {supportAttentie > 0 && (
                       <span
                         className="absolute right-5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center text-white font-bold pointer-events-none"
@@ -544,7 +601,7 @@ export function Sidebar() {
 
           {/* Divider */}
           <div className={cn('mb-3', collapsed ? 'w-6 mx-auto' : 'mx-5')}>
-            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.05) 20%, rgba(0,0,0,0.05) 80%, transparent 100%)' }} />
+            <div className="doen-sidebar-divider" />
           </div>
 
           {/* Instellingen — Importeren leeft nu onder Instellingen → Importeren */}
@@ -557,21 +614,18 @@ export function Sidebar() {
                 ref={userButtonRef}
                 onClick={() => setUserPopoverOpen(!userPopoverOpen)}
                 className={cn(
-                  'flex items-center transition-all duration-300 rounded-[12px] hover:bg-black/[0.04]',
-                  collapsed ? 'w-11 h-11 justify-center' : 'gap-3 h-[52px] px-4 mx-2 w-[calc(100%-16px)]',
+                  'flex items-center transition-all duration-300 rounded-[12px] hover:bg-black/[0.04] dark:hover:bg-white/[0.05]',
+                  collapsed ? 'w-11 h-11 justify-center' : 'gap-2.5 h-11 px-3 mx-2 w-[calc(100%-16px)]',
                 )}
               >
                 <div
-                  className="w-[34px] h-[34px] rounded-full flex items-center justify-center flex-shrink-0 doen-sidebar-avatar"
+                  className="w-[30px] h-[30px] rounded-full flex items-center justify-center flex-shrink-0 doen-sidebar-avatar"
                   style={{ background: 'linear-gradient(145deg, rgba(26,83,92,0.12), rgba(26,83,92,0.04))' }}
                 >
-                  <span className="text-[13px] font-bold text-[#1A535C]">{userInitial}</span>
+                  <span className="text-[12px] font-bold text-[#1A535C] dark:text-[#7FB5BF]">{userInitial}</span>
                 </div>
                 {!collapsed && (
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-foreground text-[13px] font-medium truncate leading-tight">{userName}</p>
-                    <p className="text-muted-foreground text-[10px] truncate leading-tight mt-0.5">{user.email}</p>
-                  </div>
+                  <p className="flex-1 min-w-0 text-left text-foreground text-[13px] font-medium truncate leading-tight">{userName}</p>
                 )}
               </button>
 
@@ -612,6 +666,15 @@ export function Sidebar() {
                     className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                   >
                     <BookOpen className="w-[17px] h-[17px] text-muted-foreground" /> Kennisbank
+                  </button>
+                  <button
+                    onClick={() => setAppThemeId(isDarkTheme ? 'normaal' : 'dark')}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                  >
+                    {isDarkTheme
+                      ? <Sun className="w-[17px] h-[17px] text-muted-foreground" />
+                      : <Moon className="w-[17px] h-[17px] text-muted-foreground" />}
+                    {isDarkTheme ? 'Lichte modus' : 'Donkere modus'}
                   </button>
                   <button
                     onClick={() => { setUserPopoverOpen(false); setLayoutMode('topnav') }}
