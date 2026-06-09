@@ -3,7 +3,7 @@ import {
   assertId, getLocalData, setLocalData, generateId, now,
   withUserId, getOrgId, sanitizeDates,
 } from './supabaseHelpers'
-import type { CalendarEvent, MontageAfspraak, Verlof, Bedrijfssluitingsdag, DagNotitie } from '@/types'
+import type { CalendarEvent, MontageAfspraak, Verlof, Bedrijfssluitingsdag, DagNotitie, VrijPatroon, Afwezigheid } from '@/types'
 
 // ============ EVENTS (CALENDAR) ============
 
@@ -312,4 +312,106 @@ export async function deleteDagNotitie(datum: string): Promise<void> {
   }
   const items = getLocalData<DagNotitie>('dagNotities')
   setLocalData('dagNotities', items.filter((n) => n.datum !== datum))
+}
+
+// ============ STRUCTUREEL VRIJ (terugkerende weekpatronen, org-breed) ============
+
+export async function getVrijPatronen(): Promise<VrijPatroon[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('planning_vrij_patronen').select('*').order('created_at')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<VrijPatroon>('vrijPatronen')
+}
+
+export async function createVrijPatroon(patroon: Omit<VrijPatroon, 'id' | 'created_at'>): Promise<VrijPatroon> {
+  const nieuw: VrijPatroon = { ...sanitizeDates(patroon), id: generateId(), created_at: now() } as VrijPatroon
+  if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('planning_vrij_patronen').insert({ ...nieuw, organisatie_id: _orgId }).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<VrijPatroon>('vrijPatronen')
+  items.push(nieuw)
+  setLocalData('vrijPatronen', items)
+  return nieuw
+}
+
+export async function updateVrijPatroon(id: string, updates: Partial<VrijPatroon>): Promise<VrijPatroon> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('planning_vrij_patronen').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<VrijPatroon>('vrijPatronen')
+  const index = items.findIndex((p) => p.id === id)
+  if (index === -1) throw new Error('Patroon niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('vrijPatronen', items)
+  return items[index]
+}
+
+export async function deleteVrijPatroon(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('planning_vrij_patronen').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<VrijPatroon>('vrijPatronen')
+  setLocalData('vrijPatronen', items.filter((p) => p.id !== id))
+}
+
+// ============ AFWEZIGHEID (datumbereik: vakantie/ziek/bijzonder/vrij, org-breed) ============
+
+export async function getAfwezigheid(): Promise<Afwezigheid[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('planning_afwezigheid').select('*').order('start_datum')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Afwezigheid>('afwezigheid')
+}
+
+export async function createAfwezigheid(afwezig: Omit<Afwezigheid, 'id' | 'created_at'>): Promise<Afwezigheid> {
+  const nieuw: Afwezigheid = { ...sanitizeDates(afwezig), id: generateId(), created_at: now() } as Afwezigheid
+  if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('planning_afwezigheid').insert({ ...nieuw, organisatie_id: _orgId }).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Afwezigheid>('afwezigheid')
+  items.push(nieuw)
+  setLocalData('afwezigheid', items)
+  return nieuw
+}
+
+export async function updateAfwezigheid(id: string, updates: Partial<Afwezigheid>): Promise<Afwezigheid> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('planning_afwezigheid').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Afwezigheid>('afwezigheid')
+  const index = items.findIndex((a) => a.id === id)
+  if (index === -1) throw new Error('Afwezigheid niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('afwezigheid', items)
+  return items[index]
+}
+
+export async function deleteAfwezigheid(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('planning_afwezigheid').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Afwezigheid>('afwezigheid')
+  setLocalData('afwezigheid', items.filter((a) => a.id !== id))
 }
