@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
   CalendarDays,
+  CalendarOff,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -44,7 +45,6 @@ import {
   X,
   AlertTriangle,
   Printer,
-  User,
   Paperclip,
   FileText,
   Image,
@@ -71,8 +71,10 @@ import {
   getTaken,
   updateTaak,
 } from "@/services/supabaseService";
-import { getDagNotities, upsertDagNotitie, deleteDagNotitie } from "@/services/planningService";
-import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie } from "@/types";
+import { getDagNotities, upsertDagNotitie, deleteDagNotitie, getVrijPatronen, createVrijPatroon, updateVrijPatroon, deleteVrijPatroon, getAfwezigheid, createAfwezigheid, deleteAfwezigheid } from "@/services/planningService";
+import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie, VrijPatroon, Afwezigheid, AfwezigheidType } from "@/types";
+import { buildAfwezigheidIndex, resolveAfwezig } from "@/utils/afwezigheid";
+import { AfwezigheidPopover } from "./AfwezigheidPopover";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { ClipboardCheck } from "lucide-react";
 import { uploadMontageBijlage } from '@/services/storageService';
@@ -418,6 +420,8 @@ export function MontagePlanningLayout() {
   // naast de montage-afspraken in.
   const [taken, setTaken] = useState<Taak[]>(() => getCached<Taak[]>('taken') ?? []);
   const [dagNotities, setDagNotities] = useState<DagNotitie[]>(() => getCached<DagNotitie[]>('dagNotities') ?? []);
+  const [vrijPatronen, setVrijPatronen] = useState<VrijPatroon[]>(() => getCached<VrijPatroon[]>('vrijPatronen') ?? []);
+  const [afwezigheden, setAfwezigheden] = useState<Afwezigheid[]>(() => getCached<Afwezigheid[]>('afwezigheid') ?? []);
   // Drag-state voor taken (los van afspraak-drag bovenin).
   const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null);
   const [taakDragOverDate, setTaakDragOverDate] = useState<string | null>(null);
@@ -567,7 +571,7 @@ export function MontagePlanningLayout() {
   const loadData = useCallback(async () => {
     if (getCached('montageAfspraken') === undefined) setLoading(true);
     try {
-      const [afsprakenData, medewerkerData, projectData, klantenData, offertesData, takenData, dagNotitiesData] = await Promise.all([
+      const [afsprakenData, medewerkerData, projectData, klantenData, offertesData, takenData, dagNotitiesData, vrijPatronenData, afwezigheidData] = await Promise.all([
         fetchQuery('montageAfspraken', getMontageAfspraken).catch(() => []),
         fetchQuery('medewerkers', getMedewerkers).catch(() => []),
         fetchQuery('projecten', getProjecten).catch(() => []),
@@ -575,6 +579,8 @@ export function MontagePlanningLayout() {
         fetchQuery('offertes', getOffertes).catch(() => []),
         fetchQuery('taken', getTaken).catch(() => []),
         fetchQuery('dagNotities', getDagNotities).catch(() => []),
+        fetchQuery('vrijPatronen', getVrijPatronen).catch(() => []),
+        fetchQuery('afwezigheid', getAfwezigheid).catch(() => []),
       ]);
 
       setAfspraken(afsprakenData || []);
@@ -584,6 +590,8 @@ export function MontagePlanningLayout() {
       setOffertes(offertesData || []);
       setTaken(takenData || []);
       setDagNotities(dagNotitiesData || []);
+      setVrijPatronen(vrijPatronenData || []);
+      setAfwezigheden(afwezigheidData || []);
     } catch (err) {
       logger.error('Kon montageplanning niet laden:', err)
       toast.error('Kon montageplanning niet laden');
@@ -716,6 +724,73 @@ export function MontagePlanningLayout() {
       toast.error('Kon notitie niet opslaan');
     }
   }, []);
+
+  // Afwezigheid: index voor snelle per-cel lookups (zoals dagNotitieMap).
+  const afwezigIndex = useMemo(
+    () => buildAfwezigheidIndex(vrijPatronen, afwezigheden),
+    [vrijPatronen, afwezigheden]
+  );
+
+  const handleSavePatroon = useCallback(async (mwId: string, data: { id?: string; vrije_dagen: number; geldig_van: string | null; geldig_tot: string | null }) => {
+    try {
+      if (data.id) {
+        const saved = await updateVrijPatroon(data.id, data);
+        setVrijPatronen((prev) => prev.map((p) => (p.id === data.id ? saved : p)));
+      } else {
+        const saved = await createVrijPatroon({ medewerker_id: mwId, vrije_dagen: data.vrije_dagen, geldig_van: data.geldig_van, geldig_tot: data.geldig_tot });
+        setVrijPatronen((prev) => [...prev, saved]);
+      }
+    } catch (err) {
+      logger.error('Kon weekpatroon niet opslaan:', err);
+      toast.error('Kon weekpatroon niet opslaan');
+    }
+  }, []);
+
+  const handleDeletePatroon = useCallback(async (id: string) => {
+    try {
+      await deleteVrijPatroon(id);
+      setVrijPatronen((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      logger.error('Kon weekpatroon niet verwijderen:', err);
+      toast.error('Kon weekpatroon niet verwijderen');
+    }
+  }, []);
+
+  const handleAddAfwezigheid = useCallback(async (mwId: string, data: { type: AfwezigheidType; start_datum: string; eind_datum: string; opmerking?: string }) => {
+    try {
+      const saved = await createAfwezigheid({ medewerker_id: mwId, ...data });
+      setAfwezigheden((prev) => [...prev, saved]);
+      toast.success('Afwezigheid toegevoegd');
+    } catch (err) {
+      logger.error('Kon afwezigheid niet opslaan:', err);
+      toast.error('Kon afwezigheid niet opslaan');
+    }
+  }, []);
+
+  const handleDeleteAfwezigheid = useCallback(async (id: string) => {
+    try {
+      await deleteAfwezigheid(id);
+      setAfwezigheden((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      logger.error('Kon afwezigheid niet verwijderen:', err);
+      toast.error('Kon afwezigheid niet verwijderen');
+    }
+  }, []);
+
+  // Helper voor entry-points: render een AfwezigheidPopover voor één monteur.
+  const renderAfwezigheidPopover = useCallback((monteur: Medewerker, trigger: React.ReactNode, defaultDatum?: string) => (
+    <AfwezigheidPopover
+      monteur={monteur}
+      patronen={vrijPatronen.filter((p) => p.medewerker_id === monteur.id)}
+      afwezigheden={afwezigheden.filter((a) => a.medewerker_id === monteur.id && a.eind_datum >= todayStr).sort((a, b) => a.start_datum.localeCompare(b.start_datum))}
+      defaultDatum={defaultDatum}
+      trigger={trigger}
+      onSavePatroon={(data) => handleSavePatroon(monteur.id, data)}
+      onDeletePatroon={handleDeletePatroon}
+      onAddAfwezigheid={(data) => handleAddAfwezigheid(monteur.id, data)}
+      onDeleteAfwezigheid={handleDeleteAfwezigheid}
+    />
+  ), [vrijPatronen, afwezigheden, todayStr, handleSavePatroon, handleDeletePatroon, handleAddAfwezigheid, handleDeleteAfwezigheid]);
 
   // Drop een taak op een dag → deadline updaten (optimistic).
   const handleDropTaakOnDate = useCallback(async (taakId: string, dateStr: string) => {
@@ -1753,23 +1828,10 @@ export function MontagePlanningLayout() {
 
     return (
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        {/* Weather strip */}
-        <div className="grid border-b border-[rgba(26,83,92,0.08)] bg-background" style={{ gridTemplateColumns: gridTemplate }}>
-          <div className="border-r border-[rgba(26,83,92,0.08)]" />
-          {werkdagen.map((date) => {
-            const w = getWeatherForDate(weather, date);
-            return (
-              <div key={formatDate(date)} className="border-r last:border-r-0 border-[rgba(26,83,92,0.06)]">
-                {renderWeatherCell(w)}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Day column headers (sticky) */}
+        {/* Day headers — weer + dag + datum (sticky, één strakke rij) */}
         <div className="grid border-b border-[rgba(26,83,92,0.08)] bg-card sticky top-0 z-20" style={{ gridTemplateColumns: gridTemplate }}>
-          <div className="border-r border-[rgba(26,83,92,0.08)] py-1.5 px-2 flex items-center">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Tijd</span>
+          <div className="px-2 flex items-center">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">Tijd</span>
           </div>
           {werkdagen.map((date) => {
             const dateStr = formatDate(date);
@@ -1778,44 +1840,54 @@ export function MontagePlanningLayout() {
             const dayAfspraken = viewAfspraken.filter((a) => a.datum === dateStr);
             const afgerond = dayAfspraken.filter((a) => a.status === "afgerond").length;
             const feestdagInfo = isFeestdag(dateStr, feestdagen);
+            const w = getWeatherForDate(weather, date);
+            const allesAf = dayAfspraken.length > 0 && afgerond === dayAfspraken.length;
 
             return (
               <div
                 key={dateStr}
                 className={cn(
-                  "group relative text-center py-1.5 border-r last:border-r-0 border-[rgba(26,83,92,0.06)]",
+                  "group relative text-center px-2 py-2",
                   feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-card",
                   isToday && "border-t-2 border-t-[#F15025]"
                 )}
               >
                 <div className="flex items-baseline justify-center gap-1.5">
                   <span className={cn(
-                    "text-[13px] font-bold",
+                    "text-[13px] font-bold tracking-[-0.2px]",
                     feestdagInfo ? "text-[#C03A18]" : isToday ? "text-[#1A535C]" : "text-[#1A4A52] dark:text-foreground"
                   )}>
                     {DAG_NAMEN_LANG[dayIdx]}
                   </span>
                   <span className={cn(
                     "text-[11px] font-mono tabular-nums",
-                    feestdagInfo ? "text-[#C03A18]/70" : isToday ? "text-[#1A535C]" : "text-muted-foreground/80"
+                    feestdagInfo ? "text-[#C03A18]/70" : isToday ? "text-[#1A535C]/80" : "text-muted-foreground/70"
                   )}>
                     {date.getDate()} {date.toLocaleDateString("nl-NL", { month: "short" })}
                   </span>
                   {!feestdagInfo && dayAfspraken.length > 0 && (
                     <span
-                      className="inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums"
+                      className={cn(
+                        "inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums",
+                        allesAf ? "text-[#0F6E56]" : "text-muted-foreground/70"
+                      )}
                       title={`${afgerond} van ${dayAfspraken.length} afgerond`}
                     >
-                      <CheckCircle2 className={cn(
-                        "h-3 w-3",
-                        afgerond === dayAfspraken.length ? "text-[#0F6E56]" : "text-muted-foreground/80"
-                      )} />
-                      <span className={cn(afgerond === dayAfspraken.length ? "text-[#0F6E56]" : "text-muted-foreground/80")}>
-                        {afgerond}/{dayAfspraken.length}
-                      </span>
+                      <CheckCircle2 className="h-3 w-3" />
+                      {afgerond}/{dayAfspraken.length}
                     </span>
                   )}
                 </div>
+
+                {/* Weer — subtiele regel onder de dag */}
+                {w && !feestdagInfo && (
+                  <div className="mt-0.5 flex items-center justify-center gap-1 text-[10px] tabular-nums text-muted-foreground/55">
+                    <span className="text-[11px] leading-none opacity-70 grayscale">{w.emoji}</span>
+                    <span>{w.maxTemp}°</span>
+                    {w.precipitationProb > 30 && <span className="text-muted-foreground/40">· {w.precipitationProb}%</span>}
+                  </div>
+                )}
+
                 {feestdagInfo && (
                   <div className="text-[10px] font-semibold text-[#C03A18] mt-0.5">{feestdagInfo.naam}</div>
                 )}
@@ -2565,7 +2637,7 @@ export function MontagePlanningLayout() {
                     >
                 {/* Monteur label */}
                 <div className={cn(
-                  "flex items-center gap-1.5 border-r border-[rgba(26,83,92,0.08)] sticky left-0 bg-inherit z-10",
+                  "group/lane flex items-center gap-1.5 border-r border-[rgba(26,83,92,0.08)] sticky left-0 bg-inherit z-10",
                   isCollapsed ? "px-2 py-1" : "px-3 py-2"
                 )}>
                   <button
@@ -2594,6 +2666,15 @@ export function MontagePlanningLayout() {
                       </div>
                     )}
                   </div>
+                  {!isCollapsed && renderAfwezigheidPopover(monteur, (
+                    <button
+                      type="button"
+                      title={`Afwezigheid · ${monteur.naam}`}
+                      className="shrink-0 p-1 rounded-md text-muted-foreground/60 opacity-0 group-hover/lane:opacity-100 hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-all"
+                    >
+                      <CalendarOff className="h-3.5 w-3.5" />
+                    </button>
+                  ))}
                   {isCollapsed && (
                     <div className="flex items-center gap-1 shrink-0">
                       {laneHasConflict && (
@@ -2609,6 +2690,7 @@ export function MontagePlanningLayout() {
                   const dateStr = formatDate(date);
                   const isToday = dateStr === todayStr;
                   const feestdagInfo = isFeestdag(dateStr, feestdagen);
+                  const afwezig = !feestdagInfo ? resolveAfwezig(afwezigIndex, monteur.id, dateStr, (date.getDay() + 6) % 7) : null;
                   const dayAfspraken = monteurAfspraken
                     .filter((a) => a.datum === dateStr)
                     .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
@@ -2620,7 +2702,7 @@ export function MontagePlanningLayout() {
                       className={cn(
                         "border-l border-border transition-all duration-200",
                         isCollapsed ? "min-h-[30px]" : "p-1 min-h-[60px]",
-                        feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/15" : isToday && "bg-[#1A535C]/[0.02]",
+                        feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/15" : afwezig?.afwezig ? "bg-[#1A535C]/[0.05]" : isToday && "bg-[#1A535C]/[0.02]",
                         !feestdagInfo && !isCollapsed && dragOverDate !== dragKey && "hover:bg-[#1A535C]/[0.03]",
                         !feestdagInfo && dragOverDate === dragKey && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
                         feestdagInfo && dragOverDate === dragKey && "ring-2 ring-[#C03A18]/30 ring-inset"
@@ -2649,6 +2731,9 @@ export function MontagePlanningLayout() {
                         handleDragDrop(id, dateStr, monteur.id);
                       }}
                     >
+                      {!isCollapsed && afwezig?.afwezig && dayAfspraken.length === 0 && (
+                        <div className="px-1 pt-0.5 text-[10px] font-medium text-[#1A535C]/55 truncate">{afwezig.label}</div>
+                      )}
                       {!isCollapsed && dayAfspraken.map((a) => renderMontageCard(a))}
                     </div>
                   );
@@ -3355,89 +3440,103 @@ export function MontagePlanningLayout() {
 
       {/* ── Right content: member's week planning ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Scope pills */}
-        <div className="flex items-center gap-3 px-4 py-2 border-b border-[rgba(26,83,92,0.08)] bg-card">
-          <div className="inline-flex items-center gap-0.5 rounded-none p-0.5 bg-background border border-border">
-          <button
-            type="button"
-            onClick={setScopeAlle}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-none text-[13px] font-medium px-3 py-1 transition-colors",
-              scopeMode === 'alle'
-                ? "bg-[#1A535C]/[0.10] text-[#1A535C]"
-                : "text-foreground/70 hover:text-[#1A535C]"
-            )}
-          >
-            <Users className="h-3.5 w-3.5" />
-            Iedereen
-          </button>
-          <button
-            type="button"
-            onClick={() => eigenMedewerker && setScopeMijn(eigenMedewerker.id)}
-            disabled={!eigenMedewerker}
-            title={!eigenMedewerker ? 'Geen gekoppeld medewerker-profiel' : undefined}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-none text-[13px] font-medium px-3 py-1 transition-colors",
-              scopeMode === 'mijn'
-                ? "bg-[#1A535C]/[0.10] text-[#1A535C]"
-                : "text-foreground/70 hover:text-[#1A535C]",
-              !eigenMedewerker && "opacity-50 cursor-not-allowed hover:text-foreground/70"
-            )}
-          >
-            <User className="h-3.5 w-3.5" />
-            Mijn week
-          </button>
-          <Select
-            value={scopeMode === 'medewerker' && selectedMonteur !== 'alle' ? selectedMonteur : ''}
-            onValueChange={(v) => setSelectedMonteur(v)}
-          >
-            <SelectTrigger
+        {/* Toolbar */}
+        <div className="flex items-center gap-4 px-4 py-2.5 border-b border-[rgba(26,83,92,0.08)] bg-card">
+          {/* Scope — wie zie je */}
+          <div className="flex items-center gap-3.5 text-[13px]">
+            <button
+              type="button"
+              onClick={setScopeAlle}
               className={cn(
-                "inline-flex items-center gap-1.5 h-auto w-auto rounded-none text-[13px] font-medium px-3 py-1 border-0 transition-colors focus:ring-0 focus:ring-offset-0",
-                scopeMode === 'medewerker'
-                  ? "bg-[#1A535C]/[0.10] text-[#1A535C]"
-                  : "text-foreground/70 hover:text-[#1A535C] bg-transparent"
+                "transition-colors",
+                scopeMode === 'alle'
+                  ? "font-semibold text-[#1A535C] dark:text-foreground"
+                  : "font-medium text-muted-foreground hover:text-foreground"
               )}
             >
-              <User className="h-3.5 w-3.5 mr-1" />
-              <SelectValue placeholder="Per persoon" />
-            </SelectTrigger>
-            <SelectContent>
-              {monteurs.map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  {m.naam}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              Iedereen
+            </button>
+            <button
+              type="button"
+              onClick={() => eigenMedewerker && setScopeMijn(eigenMedewerker.id)}
+              disabled={!eigenMedewerker}
+              title={!eigenMedewerker ? 'Geen gekoppeld medewerker-profiel' : undefined}
+              className={cn(
+                "transition-colors",
+                scopeMode === 'mijn'
+                  ? "font-semibold text-[#1A535C] dark:text-foreground"
+                  : "font-medium text-muted-foreground hover:text-foreground",
+                !eigenMedewerker && "opacity-40 cursor-not-allowed hover:text-muted-foreground"
+              )}
+            >
+              Mijn week
+            </button>
+            <Select
+              value={scopeMode === 'medewerker' && selectedMonteur !== 'alle' ? selectedMonteur : ''}
+              onValueChange={(v) => setSelectedMonteur(v)}
+            >
+              <SelectTrigger
+                className={cn(
+                  "inline-flex items-center gap-1 h-auto w-auto rounded-md border-0 bg-transparent px-0 py-0 text-[13px] shadow-none transition-colors focus:ring-0 focus:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-50",
+                  scopeMode === 'medewerker'
+                    ? "font-semibold text-[#1A535C] dark:text-foreground"
+                    : "font-medium text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <SelectValue placeholder="Per persoon" />
+              </SelectTrigger>
+              <SelectContent>
+                {monteurs.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.naam}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
+          {/* Week-navigatie */}
           {viewMode !== 'maand' && selectedMonteur !== 'alle' && (
-            <div className="flex items-center gap-1">
-              <button className="p-1.5 rounded-full hover:bg-muted transition-colors" onClick={() => navigateWeek(-1)}>
-                <ChevronLeft className="h-4 w-4 text-foreground/70" />
-              </button>
-              <button
-                onClick={goToCurrentWeek}
-                className="text-[13px] font-bold px-3 py-1 rounded-none hover:bg-[#1A535C]/[0.07] transition-colors text-[#1A535C] font-mono tabular-nums"
-              >
-                Week {weekNumber}
-              </button>
-              <button className="p-1.5 rounded-full hover:bg-muted transition-colors" onClick={() => navigateWeek(1)}>
-                <ChevronRight className="h-4 w-4 text-foreground/70" />
-              </button>
-            </div>
+            <>
+              <div className="h-4 w-px bg-[rgba(26,83,92,0.12)] dark:bg-white/10" />
+              <div className="flex items-center gap-0.5">
+                <button
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                  onClick={() => navigateWeek(-1)}
+                  title="Vorige week"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={goToCurrentWeek}
+                  title="Naar huidige week"
+                  className="px-2 py-0.5 rounded-md text-[13px] font-semibold text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                >
+                  Week <span className="font-mono tabular-nums">{weekNumber}</span>
+                </button>
+                <button
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                  onClick={() => navigateWeek(1)}
+                  title="Volgende week"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </>
           )}
 
           <div className="flex-1" />
 
-          <div className="inline-flex rounded-none border border-border p-0.5 bg-background">
+          {/* Week / Maand */}
+          <div className="flex items-center gap-3.5 text-[13px]">
             <button
               type="button"
               onClick={() => setViewMode('week')}
               className={cn(
-                "px-2.5 py-1 rounded-none text-[12px] font-medium transition-colors",
-                viewMode === 'week' ? "bg-[#1A535C]/[0.10] text-[#1A535C]" : "text-foreground/70 hover:text-[#1A535C]"
+                "transition-colors",
+                viewMode === 'week'
+                  ? "font-semibold text-[#1A535C] dark:text-foreground"
+                  : "font-medium text-muted-foreground hover:text-foreground"
               )}
             >
               Week
@@ -3446,8 +3545,10 @@ export function MontagePlanningLayout() {
               type="button"
               onClick={() => setViewMode('maand')}
               className={cn(
-                "px-2.5 py-1 rounded-none text-[12px] font-medium transition-colors",
-                viewMode === 'maand' ? "bg-[#1A535C]/[0.10] text-[#1A535C]" : "text-foreground/70 hover:text-[#1A535C]"
+                "transition-colors",
+                viewMode === 'maand'
+                  ? "font-semibold text-[#1A535C] dark:text-foreground"
+                  : "font-medium text-muted-foreground hover:text-foreground"
               )}
             >
               Maand
@@ -3456,23 +3557,20 @@ export function MontagePlanningLayout() {
 
           {viewMode !== 'maand' && selectedMonteur !== 'alle' && (
             <>
-              <button onClick={printWeekplanning} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-none text-[13px] font-medium text-foreground/70 hover:text-[#1A535C] hover:bg-muted transition-colors">
+              <div className="h-4 w-px bg-[rgba(26,83,92,0.12)] dark:bg-white/10" />
+              <button
+                onClick={printWeekplanning}
+                className="hidden sm:flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Printer className="h-3.5 w-3.5" />
                 Print
               </button>
               <button
                 onClick={() => openNewDialog()}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[0_1px_4px_rgba(241,80,37,0.2)] transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_1px_3px_rgba(241,80,37,0.25)] hover:bg-[#E0481D] transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Nieuw
-              </button>
-              <button
-                className="p-1.5 rounded-full hover:bg-muted transition-colors"
-                onClick={goToCurrentWeek}
-                title="Vandaag"
-              >
-                <CalendarDays className="h-4 w-4 text-foreground/70" />
               </button>
             </>
           )}
