@@ -6,7 +6,7 @@ import {
   LayoutDashboard, CircleUserRound, BookOpen,
   Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox, Ruler,
   TrendingUp, Calendar, ListChecks, Send, Globe, SlidersHorizontal, LifeBuoy,
-  Pin, PinOff,
+  Pin, PinOff, Pencil, Plus, LayoutGrid, Check,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -95,7 +95,7 @@ export function Sidebar() {
   const isSupportAdmin = user?.id === ADMIN_USER_ID
   const supportAttentie = useSupportAttentie('support-nav', isSupportAdmin)
   const { theme, toggleTheme } = useTheme()
-  const { settings } = useAppSettings()
+  const { settings, updateSettings } = useAppSettings()
   const location = useLocation()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -112,7 +112,7 @@ export function Sidebar() {
       return next
     })
   }
-  const expanded = isPinned ? false : hovered
+  const expanded = isPinned ? false : (hovered || overigOpen || editMode)
   const [userPopoverOpen, setUserPopoverOpen] = useState(false)
   const [popoverPos, setPopoverPos] = useState<{ left: number; bottom: number } | null>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
@@ -140,6 +140,44 @@ export function Sidebar() {
       .map(g => ({ ...g, items: g.items.filter(i => isItemVisible(i.label)) }))
       .filter(g => g.items.length > 0)
   }, [isItemVisible])
+
+  // ── Samenstelbaar menu ──
+  const [editMode, setEditMode] = useState(false)
+  const [overigOpen, setOverigOpen] = useState(false)
+
+  // Items die niet in het hoofdmenu staan, gegroepeerd per sectie → "Overig".
+  const overigGroups = useMemo(() => {
+    if (isMobieleNav) return []
+    return NAV_GROUPS
+      .map(g => ({ ...g, items: g.items.filter(i => !isItemVisible(i.label)) }))
+      .filter(g => g.items.length > 0)
+  }, [isItemVisible, isMobieleNav])
+  const heeftOverig = overigGroups.length > 0
+
+  // Huidige selectie als concrete lijst (default = alles).
+  const curatedLabels = useMemo(() => {
+    const pref = settings?.sidebar_items
+    if (Array.isArray(pref) && pref.length > 0) return pref.map((s: string) => s === 'Kalender' ? 'Planning' : s)
+    return ALL_NAV_ITEMS.map(i => i.label)
+  }, [settings?.sidebar_items])
+
+  const removeFromMenu = (label: string) => {
+    if (label === 'Maatjes') return
+    updateSettings({ sidebar_items: curatedLabels.filter(l => l !== label) })
+  }
+  const addToMenu = (label: string) => {
+    if (curatedLabels.includes(label)) return
+    updateSettings({ sidebar_items: [...curatedLabels, label] })
+  }
+
+  // Overig sluiten bij navigatie of Escape.
+  useEffect(() => { setOverigOpen(false); setEditMode(false) }, [location.pathname])
+  useEffect(() => {
+    if (!overigOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOverigOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [overigOpen])
 
   useEffect(() => { setMobileOpen(false) }, [location.pathname])
 
@@ -288,6 +326,18 @@ export function Sidebar() {
         )}>
           {item.label}
         </span>
+
+        {/* Bewerk-modus: verwijderen naar Overig */}
+        {editMode && !isBottom && item.label !== 'Maatjes' && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFromMenu(item.label) }}
+            title={`${item.label} naar Overig`}
+            className="relative z-20 ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-[#C03A18]/10 text-[#C03A18] hover:bg-[#C03A18]/20 transition-colors"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
       </NavLink>
     )
   }
@@ -370,6 +420,23 @@ export function Sidebar() {
                   </div>
                 </div>
               )}
+
+              {/* Overig — opent het mega-menu met niet-gekozen items */}
+              {heeftOverig && (
+                <div className="mt-7">
+                  <div className="doen-sidebar-section">OVERIG</div>
+                  <button
+                    type="button"
+                    onClick={() => setOverigOpen(v => !v)}
+                    className="relative flex w-full items-center gap-[11px] py-[8.5px] px-4 mx-2 rounded-[11px] group/nav text-[13.5px]"
+                  >
+                    {overigOpen ? <div className="doen-sidebar-active-surface" /> : <div className="doen-sidebar-item-hover" />}
+                    <LayoutGrid className="relative z-10 h-[18px] w-[18px] flex-shrink-0 text-[#1A535C]/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-[#1A535C] transition-colors" strokeWidth={1.6} />
+                    <span className="relative z-10 truncate font-medium tracking-[-0.01em] text-foreground/65 group-hover/nav:text-foreground/90">Overig</span>
+                    <span className="relative z-10 ml-auto rounded-full bg-[#1A535C]/[0.07] px-1.5 text-[10px] font-mono tabular-nums text-[#1A535C]/60">{overigGroups.reduce((n, g) => n + g.items.length, 0)}</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </nav>
@@ -379,6 +446,22 @@ export function Sidebar() {
           'flex-shrink-0',
           collapsed ? 'pb-4 pt-2 flex flex-col items-center gap-1' : 'pb-4 pt-2 space-y-[2px]',
         )}>
+          {/* Menu aanpassen — bewerk-modus aan/uit (alleen uitgeklapt) */}
+          {!forMobile && !collapsed && (
+            <button
+              type="button"
+              onClick={() => setEditMode(v => !v)}
+              aria-pressed={editMode}
+              className={cn(
+                'flex items-center gap-2.5 h-8 px-3 mx-2 w-[calc(100%-16px)] rounded-lg text-[12px] font-medium transition-colors',
+                editMode ? 'text-[#1A535C] bg-[#1A535C]/[0.07]' : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-black/[0.03]',
+              )}
+            >
+              {editMode ? <Check className="w-3.5 h-3.5 flex-shrink-0" /> : <Pencil className="w-3.5 h-3.5 flex-shrink-0" />}
+              <span>{editMode ? 'Klaar met aanpassen' : 'Menu aanpassen'}</span>
+            </button>
+          )}
+
           {/* Pin toggle — menu smal vastzetten of weer laten uitklappen bij hover */}
           {!forMobile && (collapsed ? (
             <TooltipProvider delayDuration={0}>
@@ -559,6 +642,74 @@ export function Sidebar() {
             {sidebarContent(false)}
           </aside>
         </div>
+      )}
+
+      {/* Overig mega-menu — schuift uit naast de sidebar */}
+      {isDesktop && (
+        <>
+          {overigOpen && (
+            <div
+              className="fixed inset-0 z-30 bg-black/[0.04] animate-in fade-in duration-200"
+              onClick={() => setOverigOpen(false)}
+              aria-hidden="true"
+            />
+          )}
+          <div
+            className={cn(
+              'fixed inset-y-0 z-40 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+              overigOpen ? 'translate-x-0 opacity-100' : '-translate-x-3 opacity-0 pointer-events-none',
+            )}
+            style={{ left: expanded ? EXPANDED_WIDTH : RAIL_WIDTH }}
+          >
+            <div className="flex h-full w-[300px] flex-col overflow-y-auto border-l border-black/5 doen-sidebar-glass py-5 px-2.5">
+              <div className="mb-3 flex items-center justify-between px-3">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">Overig</span>
+                <button
+                  type="button"
+                  onClick={() => setOverigOpen(false)}
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-black/[0.04] transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              {overigGroups.map((group, gi) => (
+                <div key={group.section} className={gi > 0 ? 'mt-5' : ''}>
+                  <div className="doen-sidebar-section">{group.section}</div>
+                  <div className="space-y-[1px]">
+                    {group.items.map(item => {
+                      const Icon = item.icon
+                      return (
+                        <div key={item.path} className="group/ov relative flex items-center rounded-[11px]">
+                          <NavLink
+                            to={item.path}
+                            onClick={() => setOverigOpen(false)}
+                            className="relative flex flex-1 items-center gap-[11px] py-[8.5px] px-4 rounded-[11px] group/nav"
+                          >
+                            <div className="doen-sidebar-item-hover" />
+                            <Icon
+                              className="relative z-10 h-[18px] w-[18px] flex-shrink-0 text-[#1A535C]/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-[var(--mc)] transition-colors duration-200"
+                              style={{ ['--mc']: item.color } as React.CSSProperties}
+                              strokeWidth={1.6}
+                            />
+                            <span className="relative z-10 truncate text-[13.5px] font-medium tracking-[-0.01em] text-foreground/65 group-hover/nav:text-foreground/90">{item.label}</span>
+                          </NavLink>
+                          <button
+                            type="button"
+                            onClick={() => addToMenu(item.label)}
+                            title={`${item.label} aan menu toevoegen`}
+                            className="absolute right-2 z-20 flex h-6 w-6 items-center justify-center rounded-full text-[#1A535C]/55 opacity-0 group-hover/ov:opacity-100 hover:bg-[#1A535C]/10 hover:text-[#1A535C] transition-all"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </>
   )
