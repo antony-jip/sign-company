@@ -1731,9 +1731,6 @@ export function MontagePlanningLayout() {
   // === MEMBER WEEK VIEW (time-grid: hour rail × 5 day columns) ===
   function renderMemberWeekView() {
     const werkdagen = weekDates.slice(0, 5); // Ma t/m Vr
-    const selectedName = selectedMonteur === "alle"
-      ? null
-      : monteurMap[selectedMonteur]?.naam || "Onbekend";
 
     // Get afspraken for selected monteur (or all)
     const viewAfspraken = selectedMonteur === "alle"
@@ -1756,50 +1753,6 @@ export function MontagePlanningLayout() {
 
     return (
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        {/* Header: member name + week nav */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(26,83,92,0.08)] bg-card">
-          <div className="flex items-center gap-3">
-            <User className="h-5 w-5 text-muted-foreground" />
-            <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground">
-              {selectedName || "Overzicht"}
-            </span>
-            <div className="flex items-center gap-1 ml-4">
-              <button className="p-1.5 rounded-full hover:bg-muted transition-colors" onClick={() => navigateWeek(-1)}>
-                <ChevronLeft className="h-4 w-4 text-foreground/70" />
-              </button>
-              <button
-                onClick={goToCurrentWeek}
-                className="text-[13px] font-bold px-3 py-1 rounded-none hover:bg-[#1A535C]/[0.07] transition-colors text-[#1A535C] font-mono tabular-nums"
-              >
-                Week {weekNumber}
-              </button>
-              <button className="p-1.5 rounded-full hover:bg-muted transition-colors" onClick={() => navigateWeek(1)}>
-                <ChevronRight className="h-4 w-4 text-foreground/70" />
-              </button>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={printWeekplanning} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-none text-[13px] font-medium text-foreground/70 hover:text-[#1A535C] hover:bg-muted transition-colors">
-              <Printer className="h-3.5 w-3.5" />
-              Print
-            </button>
-            <button
-              onClick={() => openNewDialog()}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[0_1px_4px_rgba(241,80,37,0.2)] transition-all"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Nieuw
-            </button>
-            <button
-              className="p-1.5 rounded-full hover:bg-muted transition-colors"
-              onClick={goToCurrentWeek}
-              title="Vandaag"
-            >
-              <CalendarDays className="h-4 w-4 text-foreground/70" />
-            </button>
-          </div>
-        </div>
-
         {/* Weather strip */}
         <div className="grid border-b border-[rgba(26,83,92,0.08)] bg-background" style={{ gridTemplateColumns: gridTemplate }}>
           <div className="border-r border-[rgba(26,83,92,0.08)]" />
@@ -3459,6 +3412,23 @@ export function MontagePlanningLayout() {
           </Select>
           </div>
 
+          {viewMode !== 'maand' && selectedMonteur !== 'alle' && (
+            <div className="flex items-center gap-1">
+              <button className="p-1.5 rounded-full hover:bg-muted transition-colors" onClick={() => navigateWeek(-1)}>
+                <ChevronLeft className="h-4 w-4 text-foreground/70" />
+              </button>
+              <button
+                onClick={goToCurrentWeek}
+                className="text-[13px] font-bold px-3 py-1 rounded-none hover:bg-[#1A535C]/[0.07] transition-colors text-[#1A535C] font-mono tabular-nums"
+              >
+                Week {weekNumber}
+              </button>
+              <button className="p-1.5 rounded-full hover:bg-muted transition-colors" onClick={() => navigateWeek(1)}>
+                <ChevronRight className="h-4 w-4 text-foreground/70" />
+              </button>
+            </div>
+          )}
+
           <div className="flex-1" />
 
           <div className="inline-flex rounded-none border border-border p-0.5 bg-background">
@@ -3483,6 +3453,29 @@ export function MontagePlanningLayout() {
               Maand
             </button>
           </div>
+
+          {viewMode !== 'maand' && selectedMonteur !== 'alle' && (
+            <>
+              <button onClick={printWeekplanning} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-none text-[13px] font-medium text-foreground/70 hover:text-[#1A535C] hover:bg-muted transition-colors">
+                <Printer className="h-3.5 w-3.5" />
+                Print
+              </button>
+              <button
+                onClick={() => openNewDialog()}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[0_1px_4px_rgba(241,80,37,0.2)] transition-all"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Nieuw
+              </button>
+              <button
+                className="p-1.5 rounded-full hover:bg-muted transition-colors"
+                onClick={goToCurrentWeek}
+                title="Vandaag"
+              >
+                <CalendarDays className="h-4 w-4 text-foreground/70" />
+              </button>
+            </>
+          )}
         </div>
         {/* Conflict banner */}
         {conflicts.length > 0 && (
