@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   CalendarDays,
   CalendarOff,
+  MoreHorizontal,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -83,7 +84,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getNederlandseFeestdagen, isFeestdag } from "@/utils/feestdagen";
 import { confirm } from '@/components/shared/ConfirmDialog';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { useAuth } from "@/contexts/AuthContext";
 import { logCreate, logWijziging } from "@/utils/auditLogger";
 import { getFase } from "@/utils/projectFases";
@@ -3487,59 +3488,25 @@ export function MontagePlanningLayout() {
       {/* ── Right content: member's week planning ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center gap-4 px-4 py-2.5 border-b border-[rgba(26,83,92,0.08)] bg-card">
-          {/* Scope — wie zie je */}
-          <div className="flex items-center gap-3.5 text-[13px]">
-            <button
-              type="button"
-              onClick={setScopeAlle}
-              className={cn(
-                "transition-colors",
-                scopeMode === 'alle'
-                  ? "font-semibold text-[#1A535C] dark:text-foreground"
-                  : "font-medium text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Iedereen
-            </button>
-            <button
-              type="button"
-              onClick={() => eigenMedewerker && setScopeMijn(eigenMedewerker.id)}
-              disabled={!eigenMedewerker}
-              title={!eigenMedewerker ? 'Geen gekoppeld medewerker-profiel' : undefined}
-              className={cn(
-                "transition-colors",
-                scopeMode === 'mijn'
-                  ? "font-semibold text-[#1A535C] dark:text-foreground"
-                  : "font-medium text-muted-foreground hover:text-foreground",
-                !eigenMedewerker && "opacity-40 cursor-not-allowed hover:text-muted-foreground"
-              )}
-            >
-              Mijn week
-            </button>
-            <Select
-              value={scopeMode === 'medewerker' && selectedMonteur !== 'alle' ? selectedMonteur : ''}
-              onValueChange={(v) => setSelectedMonteur(v)}
-            >
-              <SelectTrigger
-                className={cn(
-                  "inline-flex items-center gap-1 h-auto w-auto rounded-md border-0 bg-transparent px-0 py-0 text-[13px] shadow-none transition-colors focus:ring-0 focus:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-50",
-                  scopeMode === 'medewerker'
-                    ? "font-semibold text-[#1A535C] dark:text-foreground"
-                    : "font-medium text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <SelectValue placeholder="Per persoon" />
-              </SelectTrigger>
-              <SelectContent>
-                {monteurs.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.naam}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[rgba(26,83,92,0.08)] bg-card">
+          {/* Scope — één dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="flex items-center gap-1 text-[14px] font-semibold text-[#1A535C] dark:text-foreground hover:opacity-75 transition-opacity">
+                {scopeMode === 'alle' ? 'Iedereen' : scopeMode === 'mijn' ? 'Mijn week' : (monteurMap[selectedMonteur]?.naam ?? 'Per persoon')}
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuItem onClick={setScopeAlle}>Iedereen</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => eigenMedewerker && setScopeMijn(eigenMedewerker.id)} disabled={!eigenMedewerker}>Mijn week</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Per persoon</DropdownMenuLabel>
+              {monteurs.map((m) => (
+                <DropdownMenuItem key={m.id} onClick={() => setSelectedMonteur(m.id)}>{m.naam}</DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Week-navigatie (week-view, alle scopes) */}
           {viewMode !== 'maand' && (
@@ -3573,95 +3540,71 @@ export function MontagePlanningLayout() {
 
           <div className="flex-1" />
 
-          {/* Week / Maand */}
-          <div className="flex items-center gap-3.5 text-[13px]">
+          {/* Week / Maand — compacte segmented toggle */}
+          <div className="flex rounded-lg bg-[hsl(38,20%,95.5%)] dark:bg-white/[0.06] p-0.5 text-[12px]">
             <button
               type="button"
               onClick={() => setViewMode('week')}
-              className={cn(
-                "transition-colors",
-                viewMode === 'week'
-                  ? "font-semibold text-[#1A535C] dark:text-foreground"
-                  : "font-medium text-muted-foreground hover:text-foreground"
-              )}
+              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'week' ? "bg-white dark:bg-white/[0.12] text-[#1A535C] dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
               Week
             </button>
             <button
               type="button"
               onClick={() => setViewMode('maand')}
-              className={cn(
-                "transition-colors",
-                viewMode === 'maand'
-                  ? "font-semibold text-[#1A535C] dark:text-foreground"
-                  : "font-medium text-muted-foreground hover:text-foreground"
-              )}
+              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'maand' ? "bg-white dark:bg-white/[0.12] text-[#1A535C] dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
               Maand
             </button>
           </div>
 
-          {/* View-specifieke acties */}
-          {viewMode !== 'maand' && (
-            <>
-              <div className="h-4 w-px bg-[rgba(26,83,92,0.12)] dark:bg-white/10" />
+          {/* Afwezigheid — compact icoon (persoon-view) */}
+          {viewMode !== 'maand' && selectedMonteur !== 'alle' && monteurMap[selectedMonteur] && renderAfwezigheidPopover(monteurMap[selectedMonteur], (
+            <button
+              type="button"
+              title="Afwezigheid / vrije dagen"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <CalendarOff className="h-4 w-4" />
+            </button>
+          ))}
 
-              {selectedMonteur === 'alle' ? (
+          {/* Primaire actie */}
+          <button
+            onClick={() => openNewDialog()}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_1px_3px_rgba(241,80,37,0.25)] hover:bg-[#E0481D] transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nieuw
+          </button>
+
+          {/* Overflow — secundaire acties */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" title="Meer" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors">
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {selectedMonteur === 'alle' && viewMode !== 'maand' && (
                 <>
-                  <Select value={laneGrouping} onValueChange={(v) => handleLaneGroupingChange(v as LaneGrouping)}>
-                    <SelectTrigger
-                      className="hidden md:flex h-auto w-auto gap-1 border-0 bg-transparent px-0 py-0 text-[13px] font-medium text-muted-foreground hover:text-foreground shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-50"
-                      title="Banen groeperen"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Geen groepering</SelectItem>
-                      <SelectItem value="rol">Groeperen op rol</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <button
-                    onClick={toggleHideEmptyLanes}
-                    aria-pressed={!hideEmptyLanes}
-                    title={hideEmptyLanes ? 'Toon ook medewerkers zonder afspraken' : 'Verberg lege banen'}
-                    className={cn(
-                      "hidden md:flex items-center gap-1.5 text-[13px] transition-colors",
-                      !hideEmptyLanes ? "font-semibold text-[#1A535C] dark:text-foreground" : "font-medium text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    Alle banen
-                  </button>
+                  <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Banen</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={laneGrouping} onValueChange={(v) => handleLaneGroupingChange(v as LaneGrouping)}>
+                    <DropdownMenuRadioItem value="none">Geen groepering</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="rol">Groeperen op rol</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                  <DropdownMenuCheckboxItem checked={!hideEmptyLanes} onCheckedChange={() => toggleHideEmptyLanes()}>
+                    Toon lege banen
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
                 </>
-              ) : (
-                monteurMap[selectedMonteur] && renderAfwezigheidPopover(monteurMap[selectedMonteur], (
-                  <button
-                    type="button"
-                    title="Afwezigheid / vrije dagen instellen"
-                    className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <CalendarOff className="h-3.5 w-3.5" />
-                    Afwezigheid
-                  </button>
-                ))
               )}
-
-              <button
-                onClick={printWeekplanning}
-                className="hidden sm:flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Printer className="h-3.5 w-3.5" />
-                Print
-              </button>
-              <button
-                onClick={() => openNewDialog()}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_1px_3px_rgba(241,80,37,0.25)] hover:bg-[#E0481D] transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Nieuw
-              </button>
-            </>
-          )}
+              <DropdownMenuItem onClick={printWeekplanning}>
+                <Printer className="h-4 w-4 mr-2 opacity-70" />
+                Print week
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         {/* Conflict banner */}
         {conflicts.length > 0 && (
