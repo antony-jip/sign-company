@@ -165,6 +165,17 @@ export function Sidebar() {
     if (label === 'Maatjes') return
     updateSettings({ sidebar_items: curatedLabels.filter(l => l !== label) })
   }
+
+  // Verwijder-animatie: eerst uitfaden/dichtklappen, dan pas echt uit selectie halen.
+  const [removing, setRemoving] = useState<Set<string>>(() => new Set())
+  const handleRemoveAnimated = (label: string) => {
+    if (label === 'Maatjes') return
+    setRemoving(prev => new Set(prev).add(label))
+    setTimeout(() => {
+      removeFromMenu(label)
+      setRemoving(prev => { const n = new Set(prev); n.delete(label); return n })
+    }, 260)
+  }
   const addToMenu = (label: string) => {
     if (curatedLabels.includes(label)) return
     updateSettings({ sidebar_items: [...curatedLabels, label] })
@@ -286,14 +297,16 @@ export function Sidebar() {
   const renderExpandedItem = (item: NavItem, isBottom = false) => {
     const active = isActivePath(item.path)
     const Icon = item.icon
+    const isRemoving = removing.has(item.label)
 
     return (
       <NavLink
         key={item.path}
         to={item.path}
         className={cn(
-          'relative flex items-center gap-[11px] py-[8.5px] px-4 mx-2 rounded-[11px] group/nav',
+          'relative flex items-center gap-[11px] px-4 mx-2 rounded-[11px] group/nav overflow-hidden transition-all duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
           isBottom ? 'text-[13px]' : 'text-[13.5px]',
+          isRemoving ? 'max-h-0 py-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-h-12 py-[8.5px]',
         )}
       >
         {/* Background — frosted surface when active, soft sweep on hover */}
@@ -331,7 +344,7 @@ export function Sidebar() {
         {editMode && !isBottom && item.label !== 'Maatjes' && (
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFromMenu(item.label) }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemoveAnimated(item.label) }}
             title={`${item.label} naar Overig`}
             className="relative z-20 ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-[#C03A18]/10 text-[#C03A18] hover:bg-[#C03A18]/20 transition-colors"
           >
