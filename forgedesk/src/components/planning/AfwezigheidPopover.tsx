@@ -31,6 +31,11 @@ function formatKort(datum: string): string {
   return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
 }
 
+function vandaagISO(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 interface Props {
   monteur: Medewerker
   patronen: VrijPatroon[]
@@ -61,8 +66,8 @@ export function AfwezigheidPopover({
 
   const [type, setType] = useState<AfwezigheidType>('vrij')
   const [dagdeel, setDagdeel] = useState<Dagdeel>('heel')
-  const [start, setStart] = useState(defaultDatum ?? '')
-  const [eind, setEind] = useState(defaultDatum ?? '')
+  const [start, setStart] = useState(defaultDatum ?? vandaagISO())
+  const [eind, setEind] = useState(defaultDatum ?? vandaagISO())
   const [tijdVan, setTijdVan] = useState('09:00')
   const [tijdTot, setTijdTot] = useState('11:00')
   const [opmerking, setOpmerking] = useState('')
@@ -77,8 +82,8 @@ export function AfwezigheidPopover({
       setTot(patroon?.geldig_tot ?? '')
       setType('vrij')
       setDagdeel('heel')
-      setStart(defaultDatum ?? '')
-      setEind(defaultDatum ?? '')
+      setStart(defaultDatum ?? vandaagISO())
+      setEind(defaultDatum ?? vandaagISO())
       setTijdVan('09:00')
       setTijdTot('11:00')
       setOpmerking('')
@@ -87,6 +92,11 @@ export function AfwezigheidPopover({
   }
 
   const toggleDag = (idx: number) => setDagen((d) => d ^ (1 << idx))
+
+  const handleStartChange = (v: string) => {
+    setStart(v)
+    if (!eind || eind < v) setEind(v)
+  }
 
   const patroonGewijzigd =
     dagen !== (patroon?.vrije_dagen ?? 0) ||
@@ -114,8 +124,8 @@ export function AfwezigheidPopover({
     setAfwBezig(true)
     try {
       await onAddAfwezigheid({ type, start_datum: start, eind_datum: eindDatum, start_tijd: st, eind_tijd: et, opmerking: opmerking.trim() || undefined })
-      setStart(defaultDatum ?? '')
-      setEind(defaultDatum ?? '')
+      setStart(defaultDatum ?? vandaagISO())
+      setEind(defaultDatum ?? vandaagISO())
       setOpmerking('')
       setDagdeel('heel')
     } finally {
@@ -234,13 +244,13 @@ export function AfwezigheidPopover({
 
             {dagdeel === 'heel' ? (
               <div className="flex items-center gap-2">
-                <DatePicker value={start} onChange={setStart} asInput placeholder="Van" className="text-[13px]" />
+                <DatePicker value={start} onChange={handleStartChange} asInput placeholder="Van" className="text-[13px]" />
                 <span className="text-muted-foreground/50 text-[13px]">t/m</span>
                 <DatePicker value={eind} onChange={setEind} asInput placeholder="Tot" min={start || undefined} className="text-[13px]" />
               </div>
             ) : (
               <div className="flex flex-wrap items-center gap-2">
-                <DatePicker value={start} onChange={setStart} asInput placeholder="Op datum" className="text-[13px]" />
+                <DatePicker value={start} onChange={handleStartChange} asInput placeholder="Op datum" className="text-[13px]" />
                 {dagdeel === 'tijd' && (
                   <div className="flex items-center gap-1.5">
                     <input type="time" value={tijdVan} onChange={(e) => setTijdVan(e.target.value)} className={cn(inputCls, "py-1.5 [color-scheme:light] dark:[color-scheme:dark]")} />
