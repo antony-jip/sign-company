@@ -1258,6 +1258,16 @@ export interface Bedrijfssluitingsdag {
   updated_at?: string;
 }
 
+export interface DagNotitie {
+  id: string;
+  organisatie_id?: string;
+  datum: string;
+  notitie: string;
+  aangemaakt_door?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 // ============ GEBRUIKERSRECHTEN (Feature 4) ============
 
 export interface ProjectToewijzing {

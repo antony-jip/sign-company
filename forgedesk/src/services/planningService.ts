@@ -3,7 +3,7 @@ import {
   assertId, getLocalData, setLocalData, generateId, now,
   withUserId, getOrgId, sanitizeDates,
 } from './supabaseHelpers'
-import type { CalendarEvent, MontageAfspraak, Verlof, Bedrijfssluitingsdag } from '@/types'
+import type { CalendarEvent, MontageAfspraak, Verlof, Bedrijfssluitingsdag, DagNotitie } from '@/types'
 
 // ============ EVENTS (CALENDAR) ============
 
@@ -265,4 +265,51 @@ export async function deleteBedrijfssluitingsdag(id: string): Promise<void> {
   }
   const items = getLocalData<Bedrijfssluitingsdag>('bedrijfssluitingsdagen')
   setLocalData('bedrijfssluitingsdagen', items.filter((d) => d.id !== id))
+}
+
+// ============ DAGNOTITIES (org-breed, één per dag) ============
+
+export async function getDagNotities(): Promise<DagNotitie[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('planning_dag_notities').select('*').order('datum')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<DagNotitie>('dagNotities')
+}
+
+// Upsert op (organisatie_id, datum): precies één notitie per dag, org-breed.
+export async function upsertDagNotitie(datum: string, notitie: string): Promise<DagNotitie> {
+  if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase
+      .from('planning_dag_notities')
+      .upsert({ datum, notitie, organisatie_id: _orgId }, { onConflict: 'organisatie_id,datum' })
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<DagNotitie>('dagNotities')
+  const bestaand = items.find((n) => n.datum === datum)
+  if (bestaand) {
+    bestaand.notitie = notitie
+    bestaand.updated_at = now()
+    setLocalData('dagNotities', items)
+    return bestaand
+  }
+  const nieuw: DagNotitie = { id: generateId(), datum, notitie, created_at: now() }
+  items.push(nieuw)
+  setLocalData('dagNotities', items)
+  return nieuw
+}
+
+export async function deleteDagNotitie(datum: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('planning_dag_notities').delete().eq('datum', datum)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<DagNotitie>('dagNotities')
+  setLocalData('dagNotities', items.filter((n) => n.datum !== datum))
 }

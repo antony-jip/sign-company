@@ -54,6 +54,7 @@ import {
   Check,
   Flame,
   ChevronDown,
+  StickyNote,
 } from "lucide-react";
 import {
   getMontageAfspraken,
@@ -70,7 +71,9 @@ import {
   getTaken,
   updateTaak,
 } from "@/services/supabaseService";
-import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak } from "@/types";
+import { getDagNotities, upsertDagNotitie, deleteDagNotitie } from "@/services/planningService";
+import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie } from "@/types";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { ClipboardCheck } from "lucide-react";
 import { uploadMontageBijlage } from '@/services/storageService';
 import { getCached, fetchQuery } from '@/lib/queryCache';
@@ -284,6 +287,111 @@ const EMPTY_FORM: MontageFormData = {
   werkbon_id: "",
 };
 
+// Org-brede dagnotitie onder de dag-header. Toont de notitie als subtiel
+// petrol-regeltje; klikken opent een popover om te bewerken. Lege dagen
+// tonen pas bij hover een fijne 'notitie'-affordance. Leeg opslaan wist.
+function DagNotitiePopover({
+  datum,
+  notitie,
+  label,
+  onSave,
+}: {
+  datum: string;
+  notitie: string;
+  label: string;
+  onSave: (datum: string, tekst: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(notitie);
+
+  const commit = (next: string) => {
+    if (next.trim() !== notitie.trim()) onSave(datum, next);
+  };
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        if (o) setDraft(notitie);
+        else commit(draft);
+        setOpen(o);
+      }}
+    >
+      <PopoverTrigger asChild>
+        {notitie ? (
+          <button
+            type="button"
+            title={`${notitie} — klik om te bewerken`}
+            className="mx-auto mt-1 flex max-w-[95%] items-center gap-1 rounded-full bg-[#F15025]/[0.07] px-2 py-[2px] text-[10px] font-medium leading-tight text-[#1A535C] ring-1 ring-inset ring-[#F15025]/15 hover:bg-[#F15025]/[0.12] transition-colors"
+          >
+            <StickyNote className="h-2.5 w-2.5 shrink-0 text-[#F15025]" />
+            <span className="truncate">{notitie}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            title={`Notitie voor ${label}`}
+            className="mx-auto mt-1 flex items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-medium leading-tight text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-all"
+          >
+            <StickyNote className="h-2.5 w-2.5 shrink-0" />
+            notitie
+          </button>
+        )}
+      </PopoverTrigger>
+      <PopoverContent align="center" className="w-64 overflow-hidden rounded-xl border-[rgba(26,83,92,0.12)] p-0 shadow-[0_8px_28px_-6px_rgba(26,83,92,0.28)]">
+        <div className="flex items-center gap-2 px-3.5 pt-3 pb-2">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#F15025]/10">
+            <StickyNote className="h-3 w-3 text-[#F15025]" />
+          </span>
+          <div className="leading-tight">
+            <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/60">Dagnotitie</div>
+            <div className="text-[12px] font-semibold text-[#1A535C]">{label}</div>
+          </div>
+        </div>
+        <div className="px-3.5 pb-3">
+          <textarea
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                commit(draft);
+                setOpen(false);
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setOpen(false);
+              }
+            }}
+            rows={2}
+            placeholder="Bijv. ZZP'er werkt vandaag"
+            className="w-full resize-none rounded-lg border border-[rgba(26,83,92,0.14)] bg-[#FAFBFB] px-2.5 py-2 text-[12.5px] leading-snug outline-none placeholder:text-muted-foreground/45 focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/15 transition-colors"
+          />
+          <div className="mt-2.5 flex items-center justify-end gap-1">
+            {notitie && (
+              <button
+                type="button"
+                onClick={() => { onSave(datum, ""); setOpen(false); }}
+                className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-[#C03A18] hover:bg-[#C03A18]/[0.08] transition-colors"
+              >
+                Verwijderen
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => { commit(draft); setOpen(false); }}
+              className="rounded-lg bg-[#1A535C] px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm hover:bg-[#16444c] active:scale-[0.98] transition-all"
+            >
+              Opslaan
+            </button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function MontagePlanningLayout() {
   const { user } = useAuth();
   const { navigateWithTab } = useNavigateWithTab();
@@ -309,6 +417,7 @@ export function MontagePlanningLayout() {
   // Taken in /planning — sommige collega's plannen hier hun losse taken
   // naast de montage-afspraken in.
   const [taken, setTaken] = useState<Taak[]>(() => getCached<Taak[]>('taken') ?? []);
+  const [dagNotities, setDagNotities] = useState<DagNotitie[]>(() => getCached<DagNotitie[]>('dagNotities') ?? []);
   // Drag-state voor taken (los van afspraak-drag bovenin).
   const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null);
   const [taakDragOverDate, setTaakDragOverDate] = useState<string | null>(null);
@@ -458,13 +567,14 @@ export function MontagePlanningLayout() {
   const loadData = useCallback(async () => {
     if (getCached('montageAfspraken') === undefined) setLoading(true);
     try {
-      const [afsprakenData, medewerkerData, projectData, klantenData, offertesData, takenData] = await Promise.all([
+      const [afsprakenData, medewerkerData, projectData, klantenData, offertesData, takenData, dagNotitiesData] = await Promise.all([
         fetchQuery('montageAfspraken', getMontageAfspraken).catch(() => []),
         fetchQuery('medewerkers', getMedewerkers).catch(() => []),
         fetchQuery('projecten', getProjecten).catch(() => []),
         fetchQuery('klanten', getKlanten).catch(() => []),
         fetchQuery('offertes', getOffertes).catch(() => []),
         fetchQuery('taken', getTaken).catch(() => []),
+        fetchQuery('dagNotities', getDagNotities).catch(() => []),
       ]);
 
       setAfspraken(afsprakenData || []);
@@ -473,6 +583,7 @@ export function MontagePlanningLayout() {
       setKlanten(klantenData || []);
       setOffertes(offertesData || []);
       setTaken(takenData || []);
+      setDagNotities(dagNotitiesData || []);
     } catch (err) {
       logger.error('Kon montageplanning niet laden:', err)
       toast.error('Kon montageplanning niet laden');
@@ -583,6 +694,28 @@ export function MontagePlanningLayout() {
     }
     return map;
   }, [taken, weekDates, selectedMonteur]);
+
+  const dagNotitieMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const n of dagNotities) map[n.datum] = n.notitie;
+    return map;
+  }, [dagNotities]);
+
+  const handleSaveDagNotitie = useCallback(async (datum: string, tekst: string) => {
+    const trimmed = tekst.trim();
+    try {
+      if (!trimmed) {
+        await deleteDagNotitie(datum);
+        setDagNotities((prev) => prev.filter((n) => n.datum !== datum));
+        return;
+      }
+      const saved = await upsertDagNotitie(datum, trimmed);
+      setDagNotities((prev) => [...prev.filter((n) => n.datum !== datum), saved]);
+    } catch (err) {
+      logger.error('Kon dagnotitie niet opslaan:', err);
+      toast.error('Kon notitie niet opslaan');
+    }
+  }, []);
 
   // Drop een taak op een dag → deadline updaten (optimistic).
   const handleDropTaakOnDate = useCallback(async (taakId: string, dateStr: string) => {
@@ -1732,6 +1865,14 @@ export function MontagePlanningLayout() {
                 </div>
                 {feestdagInfo && (
                   <div className="text-[10px] font-semibold text-[#C03A18] mt-0.5">{feestdagInfo.naam}</div>
+                )}
+                {!feestdagInfo && (
+                  <DagNotitiePopover
+                    datum={dateStr}
+                    notitie={dagNotitieMap[dateStr] ?? ""}
+                    label={`${DAG_NAMEN_LANG[dayIdx]} ${date.getDate()} ${date.toLocaleDateString("nl-NL", { month: "short" })}`}
+                    onSave={handleSaveDagNotitie}
+                  />
                 )}
                 {!feestdagInfo && (
                   <button
