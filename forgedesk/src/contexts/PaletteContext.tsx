@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 
 // ================================================================
 // APP THEMES — 2 thema's: Normaal (licht) en Dark
@@ -57,6 +58,18 @@ export const PALETTES: never[] = []
 
 const THEME_STORAGE_KEY = 'doen_app_theme'
 const ACCENT_STORAGE_KEY = 'doen_accent'
+
+// Klant-facing publieke routes zijn alleen voor light mode ontworpen;
+// de OS-voorkeur van een bezoeker mag daar geen dark theme activeren.
+const LIGHT_ONLY_ROUTE_PREFIXES = [
+  '/offerte-bekijken',
+  '/betalen',
+  '/betaald',
+  '/boeken',
+  '/portaal',
+  '/formulier',
+  '/goedkeuring',
+]
 
 interface PaletteContextType {
   appThemeId: string
@@ -132,7 +145,12 @@ export function PaletteProvider({ children }: { children: ReactNode }) {
   })
   const accentId = 'petrol'
 
-  const appTheme = APP_THEMES.find(t => t.id === appThemeId) ?? APP_THEMES[0]
+  const { pathname } = useLocation()
+  const forceLight = LIGHT_ONLY_ROUTE_PREFIXES.some(prefix => pathname.startsWith(prefix))
+
+  const appTheme = forceLight
+    ? APP_THEMES[0]
+    : APP_THEMES.find(t => t.id === appThemeId) ?? APP_THEMES[0]
   const accent = ACCENT_PALETTES[0] // petrol
 
   const setAppThemeId = useCallback((id: string) => {
