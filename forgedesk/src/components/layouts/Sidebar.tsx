@@ -6,7 +6,7 @@ import {
   LayoutDashboard, CircleUserRound, BookOpen,
   Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox, Ruler,
   TrendingUp, Calendar, ListChecks, Send, Globe, SlidersHorizontal, LifeBuoy,
-  Pin, PinOff, Pencil, Plus, LayoutGrid, Check,
+  Pin, PinOff, Pencil, Plus, LayoutGrid, Check, ChevronRight,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -446,61 +446,87 @@ export function Sidebar() {
           'flex-shrink-0',
           collapsed ? 'pb-4 pt-2 flex flex-col items-center gap-1' : 'pb-4 pt-2 space-y-[2px]',
         )}>
-          {/* Menu aanpassen — bewerk-modus aan/uit (alleen uitgeklapt) */}
-          {!forMobile && !collapsed && (
-            <button
-              type="button"
-              onClick={() => setEditMode(v => !v)}
-              aria-pressed={editMode}
-              className={cn(
-                'flex items-center gap-2.5 h-8 px-3 mx-2 w-[calc(100%-16px)] rounded-lg text-[12px] font-medium transition-colors',
-                editMode ? 'text-[#1A535C] bg-[#1A535C]/[0.07]' : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-black/[0.03]',
-              )}
-            >
-              {editMode ? <Check className="w-3.5 h-3.5 flex-shrink-0" /> : <Pencil className="w-3.5 h-3.5 flex-shrink-0" />}
-              <span>{editMode ? 'Klaar met aanpassen' : 'Menu aanpassen'}</span>
-            </button>
-          )}
-
-          {/* Pin toggle — menu smal vastzetten of weer laten uitklappen bij hover */}
+          {/* Utilities — compacte icoon-rij (bewerken · Overig · vastzetten) */}
           {!forMobile && (collapsed ? (
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={togglePinned}
-                    aria-pressed={isPinned}
-                    className={cn(
-                      'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
-                      isPinned
-                        ? 'text-[#1A535C]/70 hover:text-[#1A535C]'
-                        : 'text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-black/[0.03]',
-                    )}
-                  >
-                    {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="right">{isPinned ? 'Menu losmaken' : 'Menu vastzetten'}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <button
-              type="button"
-              onClick={togglePinned}
-              aria-pressed={isPinned}
-              className={cn(
-                'flex items-center gap-2.5 h-8 px-3 mx-2 w-[calc(100%-16px)] rounded-lg text-[12px] font-medium transition-colors',
-                isPinned
-                  ? 'text-[#1A535C]/80 hover:text-[#1A535C]'
-                  : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-black/[0.03]',
+            <div className="flex flex-col items-center gap-1">
+              {heeftOverig && (
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setOverigOpen(v => !v)}
+                        aria-pressed={overigOpen}
+                        className={cn(
+                          'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
+                          overigOpen ? 'text-[#1A535C] bg-[#1A535C]/[0.08]' : 'text-muted-foreground/45 hover:text-[#1A535C] hover:bg-black/[0.03]',
+                        )}
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Overig</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
-            >
-              {isPinned
-                ? <PinOff className="w-3.5 h-3.5 flex-shrink-0" />
-                : <Pin className="w-3.5 h-3.5 flex-shrink-0" />}
-              <span>{isPinned ? 'Menu losmaken' : 'Menu vastzetten'}</span>
-            </button>
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={togglePinned}
+                      aria-pressed={isPinned}
+                      className={cn(
+                        'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
+                        isPinned ? 'text-[#1A535C]/70 hover:text-[#1A535C]' : 'text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-black/[0.03]',
+                      )}
+                    >
+                      {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{isPinned ? 'Menu losmaken' : 'Menu vastzetten'}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          ) : (
+            <div className="flex items-center gap-0.5 mx-4 mb-1">
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setEditMode(v => !v)}
+                      aria-pressed={editMode}
+                      className={cn(
+                        'flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
+                        editMode ? 'text-[#1A535C] bg-[#1A535C]/[0.08]' : 'text-muted-foreground/45 hover:text-foreground/80 hover:bg-black/[0.03]',
+                      )}
+                    >
+                      {editMode ? <Check className="w-4 h-4" /> : <Pencil className="w-[15px] h-[15px]" />}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{editMode ? 'Klaar met aanpassen' : 'Menu aanpassen'}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={togglePinned}
+                      aria-pressed={isPinned}
+                      className={cn(
+                        'flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
+                        isPinned ? 'text-[#1A535C]/80 hover:text-[#1A535C] bg-[#1A535C]/[0.05]' : 'text-muted-foreground/45 hover:text-foreground/80 hover:bg-black/[0.03]',
+                      )}
+                    >
+                      {isPinned ? <PinOff className="w-[15px] h-[15px]" /> : <Pin className="w-[15px] h-[15px]" />}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{isPinned ? 'Menu losmaken' : 'Menu vastzetten'}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           ))}
 
           {/* Divider */}
