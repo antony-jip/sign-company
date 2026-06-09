@@ -6,6 +6,7 @@ import {
   LayoutDashboard, CircleUserRound, BookOpen,
   Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox, Ruler,
   TrendingUp, Calendar, ListChecks, Send, Globe, SlidersHorizontal, LifeBuoy,
+  Pin, PinOff,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -99,8 +100,19 @@ export function Sidebar() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [hovered, setHovered] = useState(false)
-  // Altijd rail; alleen bij hover open (overlay). Geen ingeklapte/gepinde modus.
-  const expanded = hovered
+  // Gepind = rail blijft smal vast (hover klapt niet uit). Standaard uit, zodat
+  // het bestaande hover-uitklap-gedrag behouden blijft.
+  const [isPinned, setIsPinned] = useState(() => {
+    try { return localStorage.getItem('doen_sidebar_pinned') === 'true' } catch { return false }
+  })
+  const togglePinned = () => {
+    setIsPinned(prev => {
+      const next = !prev
+      try { localStorage.setItem('doen_sidebar_pinned', String(next)) } catch { /* no-op */ }
+      return next
+    })
+  }
+  const expanded = isPinned ? false : hovered
   const [userPopoverOpen, setUserPopoverOpen] = useState(false)
   const [popoverPos, setPopoverPos] = useState<{ left: number; bottom: number } | null>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
@@ -367,6 +379,47 @@ export function Sidebar() {
           'flex-shrink-0',
           collapsed ? 'pb-4 pt-2 flex flex-col items-center gap-1' : 'pb-4 pt-2 space-y-[2px]',
         )}>
+          {/* Pin toggle — menu smal vastzetten of weer laten uitklappen bij hover */}
+          {!forMobile && (collapsed ? (
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={togglePinned}
+                    aria-pressed={isPinned}
+                    className={cn(
+                      'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
+                      isPinned
+                        ? 'text-[#1A535C]/70 hover:text-[#1A535C]'
+                        : 'text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-black/[0.03]',
+                    )}
+                  >
+                    {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{isPinned ? 'Menu losmaken' : 'Menu vastzetten'}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <button
+              type="button"
+              onClick={togglePinned}
+              aria-pressed={isPinned}
+              className={cn(
+                'flex items-center gap-2.5 h-8 px-3 mx-2 w-[calc(100%-16px)] rounded-lg text-[12px] font-medium transition-colors',
+                isPinned
+                  ? 'text-[#1A535C]/80 hover:text-[#1A535C]'
+                  : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-black/[0.03]',
+              )}
+            >
+              {isPinned
+                ? <PinOff className="w-3.5 h-3.5 flex-shrink-0" />
+                : <Pin className="w-3.5 h-3.5 flex-shrink-0" />}
+              <span>{isPinned ? 'Menu losmaken' : 'Menu vastzetten'}</span>
+            </button>
+          ))}
+
           {/* Divider */}
           <div className={cn('mb-3', collapsed ? 'w-6 mx-auto' : 'mx-5')}>
             <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.05) 20%, rgba(0,0,0,0.05) 80%, transparent 100%)' }} />
