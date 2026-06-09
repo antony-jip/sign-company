@@ -198,7 +198,7 @@ function FORGEdeskDashboardInner() {
   const dateCaps = dateStr.toUpperCase()
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 pb-8">
+    <div className="w-full px-4 md:px-8 pb-8">
       <div className="flex flex-col xl:flex-row gap-6">
         {/* ── Main column ── */}
         <main className="flex-1 min-w-0 space-y-5">
@@ -237,8 +237,7 @@ function FORGEdeskDashboardInner() {
                 <div
                   className="hidden md:flex flex-col justify-center px-7 py-6 sm:px-8 w-[280px] lg:w-[420px] xl:w-[480px] relative overflow-hidden"
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    borderLeft: '1px solid rgba(255,255,255,0.08)',
+                    borderLeft: '1px solid rgba(255,255,255,0.10)',
                   }}
                 >
                   <div className="relative z-10">

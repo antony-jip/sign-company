@@ -41,13 +41,7 @@ export function OpvolgenBlok() {
   const totaalBedrag = useMemo(() => items.reduce((s, i) => s + i.bedrag, 0), [items])
 
   return (
-    <section
-      className="doen-panel rounded-xl p-6 sm:p-8"
-      style={{
-        backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-        boxShadow: 'var(--shadow-sm)',
-      }}
-    >
+    <section className="doen-panel doen-wash rounded-xl p-6 sm:p-7">
       <header className="flex items-baseline justify-between gap-4 mb-5">
         <div className="flex items-baseline gap-3 min-w-0">
           <h2 className="font-heading text-[14px] font-bold text-foreground">
@@ -68,13 +62,22 @@ export function OpvolgenBlok() {
       </header>
 
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">Geen offertes wachten op reactie.</p>
+        <p
+          className="text-sm text-muted-foreground py-2"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+        >
+          Geen offertes wachten op reactie<span className="text-[#F15025]">.</span>
+        </p>
       ) : (
-        <ul className="divide-y divide-[#EBEBEB]">
+        <ul className="divide-y divide-border/60">
           {items.map(item => {
             const urgent = item.dagen >= 15
             const middle = item.dagen >= 8 && item.dagen < 15
-            const ageColor = urgent ? '#F15025' : middle ? '#6B6B66' : '#9B9B95'
+            const ageClass = urgent
+              ? 'text-foreground font-medium'
+              : middle
+                ? 'text-muted-foreground'
+                : 'text-muted-foreground/70'
 
             return (
               <li key={item.id}>
@@ -94,12 +97,9 @@ export function OpvolgenBlok() {
                   <span className="font-mono text-sm text-foreground w-24 text-right flex-shrink-0">
                     {formatCurrency(item.bedrag)}
                   </span>
-                  <span
-                    className="text-sm w-20 text-right flex-shrink-0"
-                    style={{ color: ageColor }}
-                  >
+                  <span className={`text-sm w-20 text-right flex-shrink-0 ${ageClass}`}>
                     {item.dagen} dagen
-                    <span style={{ color: urgent ? '#F15025' : ageColor }}>.</span>
+                    <span className={urgent ? 'text-[#F15025] font-bold' : ''}>.</span>
                   </span>
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                 </button>
@@ -113,7 +113,7 @@ export function OpvolgenBlok() {
         <button
           type="button"
           onClick={() => navigate('/offertes')}
-          className="text-sm text-[#1A535C] hover:underline focus-visible:outline-none focus-visible:underline"
+          className="text-sm text-petrol dark:text-petrol-light hover:underline focus-visible:outline-none focus-visible:underline"
         >
           Alle offertes →
         </button>

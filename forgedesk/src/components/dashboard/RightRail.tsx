@@ -5,9 +5,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
 import { isAdminUser } from '@/utils/authHelpers'
-import { formatCurrency, cn } from '@/lib/utils'
-import { formatDistanceToNow, getISOWeek } from 'date-fns'
-import { nl } from 'date-fns/locale'
+import { formatCurrency, formatTijdKort, cn } from '@/lib/utils'
+import { getISOWeek } from 'date-fns'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ActiviteitLog } from './ActiviteitLog'
 import type { Medewerker, Klant } from '@/types'
@@ -262,14 +261,7 @@ function DezeWeekCard() {
   }, [montages, events, klanten, medewerkers, weekStart, filterNaam])
 
   return (
-    <section
-      className="rounded-xl p-6"
-      style={{
-        backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-        border: '1px solid rgba(26,83,92,0.08)',
-        boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
-      }}
-    >
+    <section className="doen-panel doen-wash rounded-xl p-6">
       <header className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-baseline gap-2 min-w-0">
           <h2 className="font-heading text-[14px] font-bold text-foreground">
@@ -350,7 +342,15 @@ function DezeWeekCard() {
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">Geen afspraken deze week.</p>
+        <p
+          className="text-sm text-muted-foreground py-2"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+        >
+          {filterNaam
+            ? `Geen afspraken voor ${filterNaam.split(' ')[0]} deze week`
+            : 'Geen afspraken deze week'}
+          <span className="text-[#F15025]">.</span>
+        </p>
       ) : (
         <ul className="space-y-3 max-h-[280px] overflow-y-auto pr-1 -mr-2">
           {items.map(item => {
@@ -399,8 +399,8 @@ interface ActivityItem {
   fallbackInitials: string
   fallbackBg: string
   fallbackColor: string
-  tekst: string
-  tijd: string
+  label: string
+  detail: string
   sortDate: Date
   href: string
 }
@@ -442,8 +442,8 @@ function TeamCard() {
           fallbackInitials: (o.klant_naam || '?').slice(0, 2).toUpperCase(),
           fallbackBg: 'rgba(26,83,92,0.08)',
           fallbackColor: '#1A535C',
-          tekst: `Offerte verstuurd · ${o.klant_naam || 'Onbekend'}`,
-          tijd: formatDistanceToNow(new Date(o.verstuurd_op!), { addSuffix: false, locale: nl }),
+          label: 'Offerte verstuurd',
+          detail: o.klant_naam || 'Onbekend',
           sortDate: new Date(o.verstuurd_op!),
           href: `/offertes/${o.id}`,
         })
@@ -458,8 +458,8 @@ function TeamCard() {
           fallbackInitials: (o.klant_naam || '?').slice(0, 2).toUpperCase(),
           fallbackBg: '#E8F2EC',
           fallbackColor: '#3A7D52',
-          tekst: `Offerte goedgekeurd · ${o.klant_naam || 'Onbekend'}`,
-          tijd: formatDistanceToNow(new Date(o.akkoord_op!), { addSuffix: false, locale: nl }),
+          label: 'Offerte goedgekeurd',
+          detail: o.klant_naam || 'Onbekend',
           sortDate: new Date(o.akkoord_op!),
           href: `/offertes/${o.id}`,
         })
@@ -475,8 +475,8 @@ function TeamCard() {
           fallbackInitials: 'MO',
           fallbackBg: '#FDE8E4',
           fallbackColor: '#F15025',
-          tekst: `Montage afgerond · ${m.klant_naam || m.titel}`,
-          tijd: formatDistanceToNow(new Date(m.updated_at), { addSuffix: false, locale: nl }),
+          label: 'Montage afgerond',
+          detail: m.klant_naam || m.titel,
           sortDate: new Date(m.updated_at),
           href: '/planning',
         })
@@ -491,8 +491,8 @@ function TeamCard() {
           fallbackInitials: '€',
           fallbackBg: '#E8F2EC',
           fallbackColor: '#3A7D52',
-          tekst: `Factuur betaald · ${formatCurrency(f.totaal || 0)}`,
-          tijd: formatDistanceToNow(new Date(f.betaaldatum!), { addSuffix: false, locale: nl }),
+          label: 'Factuur betaald',
+          detail: formatCurrency(f.totaal || 0),
           sortDate: new Date(f.betaaldatum!),
           href: `/facturen/${f.id}`,
         })
@@ -504,14 +504,7 @@ function TeamCard() {
   if (!admin) return null
 
   return (
-    <section
-      className="rounded-xl p-6"
-      style={{
-        backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-        border: '1px solid rgba(26,83,92,0.08)',
-        boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
-      }}
-    >
+    <section className="doen-panel doen-wash rounded-xl p-6">
       <header className="flex items-baseline justify-between mb-4">
         <h2 className="font-heading text-[14px] font-bold text-foreground">
           Gedaan<span className="text-[#F15025]">.</span>
@@ -528,7 +521,12 @@ function TeamCard() {
       </header>
 
       {activiteit.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">Nog geen activiteit deze week.</p>
+        <p
+          className="text-sm text-muted-foreground py-2"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+        >
+          Nog geen activiteit deze week<span className="text-[#F15025]">.</span>
+        </p>
       ) : (
         <ul className="space-y-3 max-h-[200px] overflow-y-auto pr-1 -mr-2">
           {activiteit.map(item => (
@@ -549,13 +547,15 @@ function TeamCard() {
                   </span>
                 )}
                 <span className="flex-1 min-w-0">
-                  <span className="block text-[12px] text-foreground truncate">
-                    <span className="font-medium">{item.medewerker?.naam.split(' ')[0] || '·'}</span>
+                  <span className="block text-[12px] font-medium text-foreground truncate">
+                    {item.medewerker ? item.medewerker.naam.split(' ')[0] : item.label}
                   </span>
-                  <span className="block text-[11px] text-muted-foreground truncate">{item.tekst}</span>
+                  <span className="block text-[11px] text-muted-foreground truncate">
+                    {item.medewerker ? `${item.label} · ${item.detail}` : item.detail}
+                  </span>
                 </span>
-                <span className="text-[10px] font-mono text-muted-foreground flex-shrink-0">
-                  {item.tijd}
+                <span className="text-[10px] font-mono tabular-nums text-muted-foreground flex-shrink-0">
+                  {formatTijdKort(item.sortDate)}
                 </span>
               </button>
             </li>
@@ -571,7 +571,7 @@ function TeamCard() {
 
 export function RightRail() {
   return (
-    <aside className="space-y-4 w-full xl:w-[320px] xl:flex-shrink-0">
+    <aside className="space-y-5 w-full xl:w-[320px] xl:flex-shrink-0">
       <DezeWeekCard />
       <ActiviteitLog />
       <TeamCard />

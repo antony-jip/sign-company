@@ -33,6 +33,18 @@ export function formatDateTime(date: string | Date): string {
   }
 }
 
+// Compacte relatieve tijd voor dichte feeds: "nu", "8m", "2u", "3d", "5w".
+export function formatTijdKort(date: Date): string {
+  const mins = Math.floor((Date.now() - date.getTime()) / 60000)
+  if (mins < 1) return 'nu'
+  if (mins < 60) return `${mins}m`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}u`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d`
+  return `${Math.floor(days / 7)}w`
+}
+
 export function getInitials(name: string): string {
   if (!name || !name.trim()) return '?'
   return name.split(' ').filter(n => n.length > 0).map(n => n[0]).join('').toUpperCase().slice(0, 2)

@@ -2,9 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Send, Eye, CheckCircle2, AlertCircle, Receipt } from 'lucide-react'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
-import { formatCurrency } from '@/lib/utils'
-import { formatDistanceToNow } from 'date-fns'
-import { nl } from 'date-fns/locale'
+import { formatCurrency, formatTijdKort } from '@/lib/utils'
 
 type EventType = 'offerte_verstuurd' | 'offerte_bekeken' | 'akkoord' | 'wijziging' | 'factuur_betaald'
 
@@ -95,14 +93,7 @@ export function ActiviteitLog() {
   }, [offertes, facturen])
 
   return (
-    <section
-      className="rounded-xl p-5"
-      style={{
-        backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-        border: '1px solid rgba(26,83,92,0.08)',
-        boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
-      }}
-    >
+    <section className="doen-panel doen-wash rounded-xl p-5">
       <header className="flex items-baseline justify-between gap-4 mb-3">
         <div className="flex items-baseline gap-3 min-w-0">
           <h2 className="font-heading text-[14px] font-bold text-foreground">
@@ -118,7 +109,12 @@ export function ActiviteitLog() {
       </header>
 
       {events.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">Nog geen activiteit.</p>
+        <p
+          className="text-sm text-muted-foreground py-2"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+        >
+          Nog geen activiteit<span className="text-[#F15025]">.</span>
+        </p>
       ) : (
         <ul className="space-y-1 max-h-[220px] overflow-y-auto pr-1 -mr-2">
           {events.map(e => {
@@ -146,8 +142,8 @@ export function ActiviteitLog() {
                       {e.klant}
                     </span>
                   </span>
-                  <span className="text-[11px] font-mono text-muted-foreground flex-shrink-0">
-                    {formatDistanceToNow(e.date, { addSuffix: false, locale: nl })}
+                  <span className="text-[11px] font-mono tabular-nums text-muted-foreground flex-shrink-0">
+                    {formatTijdKort(e.date)}
                   </span>
                 </button>
               </li>

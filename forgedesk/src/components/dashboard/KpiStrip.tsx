@@ -23,7 +23,7 @@ interface Kpi {
   accent: string
   bg: string
   subColor: string
-  urgent: boolean
+  trend: number[]
 }
 
 type FactCategory = 'ai' | 'finance' | 'planning' | 'sales' | 'vibe'
@@ -123,11 +123,8 @@ function DoenVibeCard() {
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="doen-panel group relative rounded-xl p-5 flex flex-col gap-3 text-left transition-all overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
-      style={{
-        backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-        minHeight: 168,
-      }}
+      className="doen-panel doen-wash group relative rounded-xl p-5 flex flex-col gap-3 text-left transition-all overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
+      style={{ minHeight: 168 }}
       aria-label={`${meta.label} — klik voor volgende doen-fact`}
     >
       {/* Decoratief Sparkles drift-bg, héél subtiel */}
@@ -199,15 +196,16 @@ function endOfWeek(d: Date): Date {
   return s
 }
 
-function Sparkline({ color, urgent }: { color: string; urgent: boolean }) {
-  const heights = urgent ? [3, 5, 4, 7, 8, 10, 12] : [4, 6, 5, 8, 7, 9, 11]
+// Echte week-data (laatste 7 weken), geschaald naar 3-12px staafjes.
+function Sparkline({ color, values }: { color: string; values: number[] }) {
+  const max = Math.max(...values, 1)
   return (
     <div className="flex items-end gap-[2px] h-3" aria-hidden>
-      {heights.map((h, i) => (
+      {values.map((v, i) => (
         <span
           key={i}
           className="w-[3px] rounded-[1px]"
-          style={{ height: `${h}px`, backgroundColor: color, opacity: 0.3 + (i / heights.length) * 0.7 }}
+          style={{ height: `${3 + Math.round((v / max) * 9)}px`, backgroundColor: color, opacity: 0.3 + (i / values.length) * 0.7 }}
         />
       ))}
     </div>
@@ -236,6 +234,32 @@ export function KpiStrip() {
     })
     const weekBedrag = facturenWeek.reduce((s, f) => s + (f.totaal || 0), 0)
 
+    // Trend over de laatste 7 weken (oud → nieuw) voor de sparklines.
+    const bucketStarts = Array.from({ length: 7 }, (_, i) => {
+      const ws = startOfWeek(now)
+      ws.setDate(ws.getDate() - 7 * (6 - i))
+      return ws
+    })
+    const bucketIdx = (dateStr: string | undefined | null): number => {
+      if (!dateStr) return -1
+      const d = new Date(dateStr)
+      if (Number.isNaN(d.getTime()) || d < bucketStarts[0]) return -1
+      for (let i = 6; i >= 0; i--) {
+        if (d >= bucketStarts[i]) return i
+      }
+      return -1
+    }
+    const pijplijnTrend = Array(7).fill(0)
+    offertes.forEach(o => {
+      const i = bucketIdx(o.verstuurd_op)
+      if (i >= 0) pijplijnTrend[i] += o.subtotaal || 0
+    })
+    const weekTrend = Array(7).fill(0)
+    facturen.forEach(f => {
+      const i = bucketIdx(f.factuurdatum || f.created_at)
+      if (i >= 0) weekTrend[i] += f.totaal || 0
+    })
+
     return [
       {
         label: 'In pijplijn',
@@ -245,7 +269,7 @@ export function KpiStrip() {
         accent: '#1A535C',
         bg: 'rgba(26,83,92,0.08)',
         subColor: 'hsl(var(--muted-foreground))',
-        urgent: false,
+        trend: pijplijnTrend,
       },
       {
         label: 'Deze week',
@@ -255,7 +279,7 @@ export function KpiStrip() {
         accent: '#3A7D52',
         bg: '#E8F2EC',
         subColor: 'hsl(var(--muted-foreground))',
-        urgent: false,
+        trend: weekTrend,
       },
     ]
   }, [facturen, offertes, montages])
@@ -265,13 +289,11 @@ export function KpiStrip() {
       <DoenVibeCard />
       {kpis.map(kpi => {
         const Icon = kpi.icon
+        const [euros, cents] = formatCurrency(kpi.bedrag).replace(/^€\s*/, '').split(',')
         return (
           <div
             key={kpi.label}
-            className="doen-panel rounded-xl p-5 flex flex-col gap-3"
-            style={{
-              backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-            }}
+            className="doen-panel doen-wash rounded-xl p-5 flex flex-col gap-3"
           >
             <div className="flex items-start justify-between">
               <span
@@ -288,7 +310,10 @@ export function KpiStrip() {
             <div>
               <p className="font-heading font-bold text-[28px] leading-[1.1] text-foreground">
                 <span className="text-[18px] text-muted-foreground mr-1">€</span>
-                <span className="font-mono">{formatCurrency(kpi.bedrag).replace(/^€\s*/, '')}</span>
+                <span className="font-mono">{euros}</span>
+                {cents !== undefined && (
+                  <span className="font-mono text-[16px] font-medium text-muted-foreground">,{cents}</span>
+                )}
               </p>
             </div>
 
@@ -296,7 +321,7 @@ export function KpiStrip() {
               <span className="text-[12px]" style={{ color: kpi.subColor }}>
                 {kpi.sub}
               </span>
-              <Sparkline color={kpi.accent} urgent={kpi.urgent} />
+              <Sparkline color={kpi.accent} values={kpi.trend} />
             </div>
           </div>
         )

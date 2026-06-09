@@ -399,13 +399,7 @@ export function VandaagBlok() {
   }, [items])
 
   return (
-    <section
-      className="doen-panel rounded-xl p-6 sm:p-7"
-      style={{
-        backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
-        boxShadow: 'var(--shadow-sm)',
-      }}
-    >
+    <section className="doen-panel doen-wash rounded-xl p-6 sm:p-7">
       <header className="flex items-baseline justify-between gap-4 mb-3">
         <div className="flex items-baseline gap-3 min-w-0">
           <h2 className="font-heading text-[14px] font-bold text-foreground">
@@ -426,17 +420,12 @@ export function VandaagBlok() {
         )}
       </header>
 
-      {/* ── Dag-toggle: segmented control met sliding pill ── */}
-      {/* De container krijgt een doorlopende petrol-gradient zodat elke dag
-          op zijn eigen positie iets anders gekleurd is — links lichter,
-          rechts dieper. De sliding pill bovenop blijft het focus-element. */}
+      {/* ── Dag-toggle: stille container, de sliding pill is het enige
+          kleur-element zodat de control de kaart niet domineert. ── */}
       <div
-        className="relative flex items-stretch mb-4 p-[2px] rounded-[10px] ring-1 ring-[#1A535C]/[0.08]"
+        className="relative flex items-stretch mb-4 p-[2px] rounded-[10px] bg-petrol/[0.05]"
         role="tablist"
         aria-label="Kies een dag"
-        style={{
-          background: 'linear-gradient(90deg, rgba(26,83,92,0.04) 0%, rgba(26,83,92,0.08) 35%, rgba(26,83,92,0.13) 70%, rgba(20,62,69,0.18) 100%)',
-        }}
       >
         <div
           aria-hidden
@@ -476,10 +465,15 @@ export function VandaagBlok() {
       </div>
 
       {items.length === 0 ? (
-        <p key={`empty-${selectedDayIndex}`} className="text-sm text-muted-foreground py-3 animate-fade-in">
+        <p
+          key={`empty-${selectedDayIndex}`}
+          className="text-sm text-muted-foreground py-3 animate-fade-in"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+        >
           {selectedDayIndex === todayIndex
-            ? 'Niets ingepland voor vandaag.'
-            : `Niets ingepland voor ${WEEKDAY_LABELS_FULL[selectedDayIndex].toLowerCase()}.`}
+            ? 'Niets ingepland voor vandaag'
+            : `Niets ingepland voor ${WEEKDAY_LABELS_FULL[selectedDayIndex].toLowerCase()}`}
+          <span className="text-[#F15025]">.</span>
         </p>
       ) : (
         <ul key={`items-${selectedDayIndex}`} className="-mx-2">
@@ -623,7 +617,7 @@ export function VandaagBlok() {
         <button
           type="button"
           onClick={() => navigate('/planning')}
-          className="text-sm text-[#1A535C] hover:underline focus-visible:outline-none focus-visible:underline"
+          className="text-sm text-petrol dark:text-petrol-light hover:underline focus-visible:outline-none focus-visible:underline"
         >
           Volledige planning →
         </button>
