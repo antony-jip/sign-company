@@ -1954,10 +1954,15 @@ export function MontagePlanningLayout() {
                 )}
 
                 {feestdagInfo && (
-                  <div className="text-[10px] font-semibold text-[#C03A18] mt-0.5">{feestdagInfo.naam}</div>
+                  <span className="mx-auto mt-1 flex max-w-[95%] items-center justify-center gap-1 rounded-full bg-[#C03A18]/[0.08] px-2 py-[2px] text-[10px] font-medium leading-tight text-[#C03A18] ring-1 ring-inset ring-[#C03A18]/15">
+                    <span className="truncate">{feestdagInfo.naam}</span>
+                  </span>
                 )}
                 {afwezig?.afwezig && (
-                  <div className="text-[10px] font-semibold text-[#1A535C]/70 mt-0.5 truncate">{afwezig.label}</div>
+                  <span className="mx-auto mt-1 flex max-w-[95%] items-center justify-center gap-1 rounded-full bg-[#1A535C]/[0.07] px-2 py-[2px] text-[10px] font-medium leading-tight text-[#1A535C] ring-1 ring-inset ring-[#1A535C]/15">
+                    <CalendarOff className="h-2.5 w-2.5 shrink-0" />
+                    <span className="truncate">{afwezig.label}</span>
+                  </span>
                 )}
                 {!feestdagInfo && (
                   <DagNotitiePopover
