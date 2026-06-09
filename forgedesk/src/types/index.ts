@@ -1288,6 +1288,8 @@ export interface VrijPatroon {
 export type AfwezigheidType = 'vakantie' | 'ziek' | 'bijzonder' | 'vrij';
 
 // Datumbereik-afwezigheid (start/eind inclusief).
+// start_tijd/eind_tijd (HH:mm) optioneel: gezet = alleen dat dagdeel,
+// NULL = hele dag.
 export interface Afwezigheid {
   id: string;
   organisatie_id?: string;
@@ -1295,6 +1297,8 @@ export interface Afwezigheid {
   type: AfwezigheidType;
   start_datum: string;
   eind_datum: string;
+  start_tijd?: string | null;
+  eind_tijd?: string | null;
   opmerking?: string;
   aangemaakt_door?: string;
   created_at: string;
@@ -1307,6 +1311,8 @@ export interface AfwezigStatus {
   type: AfwezigheidType | 'structureel' | null;
   label: string;
   opmerking?: string;
+  start_tijd?: string | null;
+  eind_tijd?: string | null;
 }
 
 // ============ GEBRUIKERSRECHTEN (Feature 4) ============

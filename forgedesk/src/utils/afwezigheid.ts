@@ -49,11 +49,15 @@ export function resolveAfwezig(
   if (ranges) {
     for (const a of ranges) {
       if (a.start_datum <= dateStr && dateStr <= a.eind_datum) {
+        const basis = a.type === 'bijzonder' && a.opmerking ? a.opmerking : TYPE_LABEL[a.type]
+        const dagdeel = a.start_tijd && a.eind_tijd ? ` ${a.start_tijd}–${a.eind_tijd}` : ''
         return {
           afwezig: true,
           type: a.type,
-          label: a.type === 'bijzonder' && a.opmerking ? a.opmerking : TYPE_LABEL[a.type],
+          label: basis + dagdeel,
           opmerking: a.opmerking,
+          start_tijd: a.start_tijd,
+          eind_tijd: a.eind_tijd,
         }
       }
     }

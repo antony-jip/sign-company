@@ -760,7 +760,7 @@ export function MontagePlanningLayout() {
     }
   }, []);
 
-  const handleAddAfwezigheid = useCallback(async (mwId: string, data: { type: AfwezigheidType; start_datum: string; eind_datum: string; opmerking?: string }) => {
+  const handleAddAfwezigheid = useCallback(async (mwId: string, data: { type: AfwezigheidType; start_datum: string; eind_datum: string; start_tijd?: string | null; eind_tijd?: string | null; opmerking?: string }) => {
     try {
       const saved = await createAfwezigheid({ medewerker_id: mwId, ...data });
       setAfwezigheden((prev) => [...prev, saved]);
