@@ -742,3 +742,11 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
   altijd GEEN, gedocumenteerd in UI-helptekst; creditnota met negatieve regels
   testen tegen echte e-Boekhouden API vóór livegang; ledger-paginatie boven 500;
   NaN-guard op opgeslagen ledger-ids; 429-specifieke melding op mutatie-call.
+- Fase 3 (SnelStart) gate: AKKOORD-MET-OPMERKINGEN. Gefixt in review-commit:
+  relatiecode-normalisatie (voorloopnullen), 400 bij BTW-verschil > 5 cent
+  i.p.v. inconsistent doorboeken, waarschuwing-veld uit sync-response wordt nu
+  als warning-toast getoond (dekt alle drie pakketten). Open punten:
+  updateAppSettingsOrgFirst heeft geen insert-fallback (bestaand patroon,
+  meenemen bij helpers-consolidatie); grootboeken-select ongefilterd tot echte
+  response-shape bekend is; SnelStart payload-shapes verifiëren tegen
+  Ontwikkeling&Test-administratie vóór livegang + certificering + env var.

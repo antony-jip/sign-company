@@ -190,8 +190,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const klantNaam = (klant?.bedrijfsnaam as string | null) || (factuur.klant_naam as string | null) || 'Onbekende klant'
     const debiteurennummer = ((klant?.debiteurennummer as string | null) ?? '').trim()
     // SnelStart relatiecodes zijn numeriek; niet-numerieke debiteurennummers
-    // kunnen niet als filter of code gebruikt worden.
-    const relatiecode = /^\d+$/.test(debiteurennummer) ? debiteurennummer : ''
+    // kunnen niet als filter of code gebruikt worden. Normaliseren via
+    // Number() zodat voorloopnullen ("007" → "7") correct matchen.
+    const relatiecode = /^\d+$/.test(debiteurennummer) ? String(Number(debiteurennummer)) : ''
 
     // 4. Relatie opzoeken (op relatiecode, anders exacte naam), anders aanmaken
     let relatieId: string | null = null
@@ -289,7 +290,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (btwGroepen.length > 0) {
       const somAfgerond = btwGroepen.reduce((acc, g) => acc + g.btwBedrag, 0)
       const verschil = rond2((factuur.btw_bedrag as number) - somAfgerond)
-      if (verschil !== 0 && Math.abs(verschil) <= 0.05) {
+      if (Math.abs(verschil) > 0.05) {
+        // Meer dan centafronding: factuur is intern inconsistent — niet
+        // doorboeken naar SnelStart, maar het echte dataprobleem melden.
+        return res.status(400).json({
+          error: `BTW-bedrag van de factuur (€${(factuur.btw_bedrag as number).toFixed(2)}) wijkt meer dan 5 cent af van de som van de regels (€${somAfgerond.toFixed(2)}). Controleer de factuurregels.`,
+        })
+      }
+      if (verschil !== 0) {
         btwGroepen[btwGroepen.length - 1].btwBedrag = rond2(btwGroepen[btwGroepen.length - 1].btwBedrag + verschil)
       }
     }

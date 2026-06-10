@@ -1744,7 +1744,7 @@ export function FactuurEditor() {
         const errData = await res.json().catch(() => ({}))
         throw new Error(errData.error || 'Sync mislukt')
       }
-      const data = await res.json() as { extern_id: string }
+      const data = await res.json() as { extern_id: string; waarschuwing?: string }
 
       setExistingFactuur({
         ...existingFactuur,
@@ -1753,7 +1753,11 @@ export function FactuurEditor() {
         boekhoud_synced_at: new Date().toISOString(),
       })
 
-      toast.success(`Factuur gesynchroniseerd met ${pakketNaam}`, { id: toastId })
+      if (data.waarschuwing) {
+        toast.warning(data.waarschuwing, { id: toastId, duration: 10000 })
+      } else {
+        toast.success(`Factuur gesynchroniseerd met ${pakketNaam}`, { id: toastId })
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Sync mislukt'
       toast.error(msg, { id: toastId })
