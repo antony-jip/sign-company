@@ -288,12 +288,22 @@ export function EmailLayout() {
   }
 
   // ─── Trigger IMAP sync (background, writes to Supabase) ───
+  // Incrementele sync levert max ~600 nieuwe mails per call (oudste eerst);
+  // bij een grote achterstand geeft de API `remaining` terug en halen we
+  // door tot alles binnen is (met een ruime veiligheidsgrens).
   async function triggerImapSync(folder: string): Promise<{ total: number; synced: number }> {
-    const result = await fetchEmailsFromIMAP(folder, fetchLimitRef.current, 0)
-    if (result.errors) {
-      logger.warn('[Email] Sync errors:', result.errors)
+    let total = 0
+    let synced = 0
+    for (let i = 0; i < 10; i++) {
+      const result = await fetchEmailsFromIMAP(folder, fetchLimitRef.current, 0)
+      if (result.errors) {
+        logger.warn('[Email] Sync errors:', result.errors)
+      }
+      total = result.total || 0
+      synced += result.synced || 0
+      if (!result.remaining || result.remaining <= 0) break
     }
-    return { total: result.total || 0, synced: result.synced || 0 }
+    return { total, synced }
   }
 
   // ─── Initial load: Supabase first, then IMAP sync in background ───
@@ -1302,7 +1312,7 @@ export function EmailLayout() {
     handleSelectEmail(threadedEmails[0])
   }, [isDesktop, isLoading, viewMode, selectedFolder, threadedEmails, handleSelectEmail])
 
-  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
+  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
     try {
       // Genereer thread_id client-side zodat we een eventueel gekoppeld
       // project direct na verzenden kunnen aanhaken — de backend accepteert
@@ -1330,7 +1340,7 @@ export function EmailLayout() {
     }
   }, [])
 
-  const handleSendReply = useCallback(async (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
+  const handleSendReply = useCallback(async (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
     try {
       // Threading: geef message_id en thread_id mee zodat de verzonden
       // mail aan dezelfde thread wordt gekoppeld als de originele mail.

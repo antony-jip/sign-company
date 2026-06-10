@@ -219,20 +219,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ synced: 0, total: 0, fetched: 0 })
     }
 
-    // ─── Always fetch last N by sequence number ───
-    // This is simpler and more reliable than UID-based incremental sync.
-    // No source download — bodies are fetched on-demand via read-email API.
-    const fetchCount = Math.min(limit, total)
-    const startSeq = Math.max(1, total - fetchCount + 1)
-    const fetchRange = `${startSeq}:${total}`
+    // ─── Sync-modus: UID-incrementeel waar mogelijk ───
+    // Met een geldige sync-state halen we alleen UIDs boven de waterlijn op
+    // (oudste eerst, zodat last_seen_uid contigu opschuift; bij meer dan
+    // MAX_PER_RUN komt de rest in de volgende call — response.remaining).
+    // Zonder state (eerste keer, UIDVALIDITY-wissel, of migratie 131 nog
+    // niet gedraaid) bootstrappen we met het oude laatste-N-gedrag.
+    const uidValidity = Number(mailbox.uidValidity ?? 0)
+    const MAX_PER_RUN = 600
+
+    const { data: syncState } = await supabaseAdmin
+      .from('email_sync_state')
+      .select('uidvalidity, last_seen_uid')
+      .eq('user_id', user_id)
+      .eq('folder', mapValue)
+      .maybeSingle()
+
+    const stateBruikbaar = !!syncState
+      && Number(syncState.uidvalidity) === uidValidity
+      && Number(syncState.last_seen_uid) > 0
+
+    let fetchQuery: { seq?: string; uid?: string } | null = null
+    let incremental = false
+    let remaining = 0
+
+    if (stateBruikbaar) {
+      incremental = true
+      const lastSeen = Number(syncState!.last_seen_uid)
+      const nieuweUids = ((await client.search({ uid: `${lastSeen + 1}:*` }, { uid: true })) || [])
+        .filter((u: number) => u > lastSeen)
+        .sort((a: number, b: number) => a - b)
+      remaining = Math.max(0, nieuweUids.length - MAX_PER_RUN)
+      const teHalen = nieuweUids.slice(0, MAX_PER_RUN)
+      if (teHalen.length > 0) fetchQuery = { uid: teHalen.join(',') }
+    } else {
+      const fetchCount = Math.min(limit, total)
+      const startSeq = Math.max(1, total - fetchCount + 1)
+      fetchQuery = { seq: `${startSeq}:${total}` }
+    }
 
     const newEmails: Array<Record<string, unknown>> = []
+    let minUidGezien = 0
+    let maxUidGezien = 0
 
-    for await (const message of client.fetch(
-      { seq: fetchRange },
+    if (fetchQuery) for await (const message of client.fetch(
+      fetchQuery,
       { envelope: true, flags: true, uid: true, bodyStructure: true }
     )) {
       if (!message.envelope) continue
+
+      if (message.uid) {
+        if (!minUidGezien || message.uid < minUidGezien) minUidGezien = message.uid
+        if (message.uid > maxUidGezien) maxUidGezien = message.uid
+      }
 
       const from = message.envelope.from?.[0]
       const toAddresses = (message.envelope.to || []).map((t: { address?: string; name?: string }) => ({
@@ -269,6 +308,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         gmail_id: String(message.uid),
         cached_at: new Date().toISOString(),
       })
+    }
+
+    // ─── Flags-resync: leesstatus van recente mails ophalen ───
+    // De upsert hieronder raakt bestaande rijen niet aan (ignoreDuplicates),
+    // dus mails die elders (telefoon, webmail) gelezen zijn worden hier
+    // bijgewerkt. Bewust één richting (ongelezen → gelezen): doen. zet zelf
+    // geen \Seen op IMAP, dus andersom zou lokaal-gelezen mail terugflippen.
+    const seenByUid = new Map<number, boolean>()
+    try {
+      const flagsCount = Math.min(Math.max(limit, 100), 300, total)
+      const flagsStart = Math.max(1, total - flagsCount + 1)
+      for await (const msg of client.fetch({ seq: `${flagsStart}:${total}` }, { uid: true, flags: true })) {
+        if (msg.uid) seenByUid.set(msg.uid, msg.flags?.has('\\Seen') || false)
+      }
+    } catch (flagErr) {
+      console.warn('[fetch-emails] flags-resync overgeslagen:', flagErr instanceof Error ? flagErr.message : flagErr)
     }
 
     await client.logout()
@@ -393,6 +448,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // ─── Flags toepassen: elders-gelezen mails ook hier op gelezen ───
+    if (seenByUid.size > 0) {
+      try {
+        const { data: bestaande } = await supabaseAdmin
+          .from('emails')
+          .select('id, uid, gelezen')
+          .eq('user_id', user_id)
+          .eq('imap_folder', imapFolder)
+          .eq('gelezen', false)
+          .in('uid', [...seenByUid.keys()])
+        const markeerGelezen = (bestaande || [])
+          .filter((row) => seenByUid.get(Number(row.uid)) === true)
+          .map((row) => row.id)
+        if (markeerGelezen.length > 0) {
+          await supabaseAdmin.from('emails').update({ gelezen: true }).in('id', markeerGelezen)
+        }
+      } catch (flagErr) {
+        console.warn('[fetch-emails] flags toepassen mislukt:', flagErr instanceof Error ? flagErr.message : flagErr)
+      }
+    }
+
+    // ─── Sync-state bijwerken ───
+    // last_seen_uid schuift op naar de hoogste opgehaalde UID; bij bootstrap
+    // wordt ook de backfill-ondergrens gezet zodat fase-1b weet waar oudere
+    // mail begint. Mislukt dit (migratie 131 niet gedraaid), dan blijft
+    // alles werken in bootstrap-modus.
+    if (maxUidGezien > 0 || !stateBruikbaar) {
+      const nieuweLastSeen = Math.max(stateBruikbaar ? Number(syncState!.last_seen_uid) : 0, maxUidGezien)
+      const stateRow: Record<string, unknown> = {
+        user_id,
+        folder: mapValue,
+        imap_folder: imapFolder,
+        uidvalidity: uidValidity,
+        last_seen_uid: nieuweLastSeen,
+        updated_at: new Date().toISOString(),
+      }
+      if (!stateBruikbaar) {
+        stateRow.backfill_low_uid = minUidGezien > 0 ? minUidGezien : null
+        stateRow.backfill_done = false
+      }
+      const { error: stateErr } = await supabaseAdmin
+        .from('email_sync_state')
+        .upsert(stateRow, { onConflict: 'user_id,folder' })
+      if (stateErr) {
+        console.warn('[fetch-emails] sync-state opslaan mislukt (migratie 131 gedraaid?):', stateErr.message)
+      }
+    }
+
     // ─── Sales Inbox auto-match v2 ───
     // Retroactieve sweep: alle inkomende mails uit laatste 72u tegen alle
     // wachtende outbounds van laatste 60d, in 2 parallel SELECTs + N UPDATEs.
@@ -494,6 +597,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       synced,
       total,
       fetched: newEmails.length,
+      incremental,
+      remaining: remaining > 0 ? remaining : undefined,
       errors: errors.length > 0 ? errors : undefined,
     })
   } catch (error: unknown) {

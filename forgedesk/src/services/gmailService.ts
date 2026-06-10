@@ -324,7 +324,7 @@ export async function fetchEmailsFromIMAP(
   limit?: number,
   offset?: number,
   userId?: string
-): Promise<{ emails: IMAPEmailSummary[]; total: number; synced?: number; errors?: string[] }> {
+): Promise<{ emails: IMAPEmailSummary[]; total: number; synced?: number; incremental?: boolean; remaining?: number; errors?: string[] }> {
   const token = await getAuthToken()
 
   const response = await fetch('/api/fetch-emails', {
