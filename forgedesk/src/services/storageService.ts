@@ -218,6 +218,45 @@ export async function uploadEmailBijlage(file: File): Promise<{ filename: string
   return { filename: file.name, storagePath, size: file.size }
 }
 
+/** Max grootte voor een grote bijlage die via downloadlink meegaat (100MB).
+    Let op: de Supabase "global file size limit" moet dit ook toestaan. */
+const MAX_GROTE_BIJLAGE_SIZE = 100 * 1024 * 1024
+/** Downloadlinks voor grote bijlagen blijven 30 dagen geldig. */
+export const GROTE_BIJLAGE_TTL_SECONDEN = 30 * 24 * 60 * 60
+
+/**
+ * Upload een grote mailbijlage naar een NIET-tijdelijk pad en geef een
+ * signed download-URL (30 dagen geldig) terug. Het bestand gaat niet als
+ * SMTP-attachment mee maar als link in de mailbody — zoals Outlook grote
+ * bestanden via OneDrive deelt. Opruimen gebeurt door de dagelijkse
+ * attachment-cleanup-cron (>35 dagen oud).
+ */
+export async function uploadGroteBijlage(file: File): Promise<{ filename: string; size: number; url: string }> {
+  if (!isSupabaseConfigured() || !supabase) {
+    throw new Error('Supabase Storage is niet geconfigureerd')
+  }
+  if (file.size > MAX_GROTE_BIJLAGE_SIZE) {
+    throw new Error(`"${file.name}" is groter dan ${MAX_GROTE_BIJLAGE_SIZE / 1024 / 1024}MB — te groot, ook voor een downloadlink`)
+  }
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Niet ingelogd')
+  const safeName = file.name.replace(/[^\w.\-]+/g, '_')
+  const storagePath = `email-bijlagen-groot/${session.user.id}/${crypto.randomUUID()}-${safeName}`
+  const { error } = await supabase.storage.from(BUCKET).upload(storagePath, file, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: file.type || 'application/octet-stream',
+  })
+  if (error) throw new Error(`Upload mislukt: ${error.message}`)
+  const { data: signed, error: signErr } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(storagePath, GROTE_BIJLAGE_TTL_SECONDEN)
+  if (signErr || !signed?.signedUrl) {
+    throw new Error(`Downloadlink aanmaken mislukt: ${signErr?.message ?? 'onbekende fout'}`)
+  }
+  return { filename: file.name, size: file.size, url: signed.signedUrl }
+}
+
 export async function deleteFile(path: string): Promise<void> {
   if (!isSupabaseConfigured() || !supabase) {
     const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')

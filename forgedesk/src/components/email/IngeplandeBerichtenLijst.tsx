@@ -115,6 +115,16 @@ export function IngeplandeBerichtenLijst() {
                           {STATUS_LABEL[b.status]}
                         </span>
                       )}
+                      {b.bron === 'outbox' && (
+                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#1A535C]/10 text-[#1A535C]">
+                          Outbox
+                        </span>
+                      )}
+                      {isWachtend && (b.retry_count ?? 0) > 0 && (
+                        <span className="text-[11px] text-muted-foreground">
+                          poging {(b.retry_count ?? 0) + 1}
+                        </span>
+                      )}
                     </div>
                     <p className="text-[13px] font-medium text-foreground truncate">
                       Aan: {b.ontvanger}

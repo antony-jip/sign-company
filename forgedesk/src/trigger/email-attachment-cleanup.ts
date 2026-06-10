@@ -5,6 +5,12 @@ const STORAGE_BUCKET = "email-attachments";
 const TTL_DAYS = 30;
 const BATCH_SIZE = 100;
 
+// Grote bijlagen die als downloadlink zijn verstuurd (zie uploadGroteBijlage):
+// link is 30 dagen geldig, bestand leeft 35 dagen.
+const GROTE_BIJLAGEN_BUCKET = "documenten";
+const GROTE_BIJLAGEN_PREFIX = "email-bijlagen-groot";
+const GROTE_BIJLAGEN_TTL_DAYS = 35;
+
 /**
  * Verwijdert verlopen email-attachment-cache rijen + bijbehorende
  * Storage-objects. Run dagelijks om 03:00 Europe/Amsterdam (rustig
@@ -68,12 +74,51 @@ export const emailAttachmentCleanupCron = schedules.task({
       logger.info("Batch opgeruimd", { batch: expired.length, totaal: totalDeleted });
     }
 
+    // Grote bijlagen (downloadlinks in verzonden mails, documenten-bucket):
+    // links zijn 30 dagen geldig, bestanden gaan na 35 dagen weg zodat een
+    // net-verstuurde link nooit dood is. Pad: email-bijlagen-groot/{userId}/...
+    metadata.set("status", "cleaning-grote-bijlagen");
+    let groteBijlagenDeleted = 0;
+    const groteCutoff = Date.now() - GROTE_BIJLAGEN_TTL_DAYS * 24 * 60 * 60 * 1000;
+    const { data: userDirs, error: dirErr } = await supabase.storage
+      .from(GROTE_BIJLAGEN_BUCKET)
+      .list(GROTE_BIJLAGEN_PREFIX, { limit: 1000 });
+    if (dirErr) {
+      logger.warn("Grote-bijlagen map lijst mislukt (niet-fataal)", { error: dirErr.message });
+    } else {
+      for (const dir of userDirs ?? []) {
+        if (dir.id) continue; // bestanden op root-niveau slaan we over; we verwachten user-mappen
+        const folder = `${GROTE_BIJLAGEN_PREFIX}/${dir.name}`;
+        const { data: files, error: listErr } = await supabase.storage
+          .from(GROTE_BIJLAGEN_BUCKET)
+          .list(folder, { limit: 1000 });
+        if (listErr) {
+          logger.warn("Grote-bijlagen lijst mislukt", { folder, error: listErr.message });
+          continue;
+        }
+        const verlopen = (files ?? [])
+          .filter((f) => f.created_at && new Date(f.created_at).getTime() < groteCutoff)
+          .map((f) => `${folder}/${f.name}`);
+        if (verlopen.length === 0) continue;
+        const { error: removeErr } = await supabase.storage
+          .from(GROTE_BIJLAGEN_BUCKET)
+          .remove(verlopen);
+        if (removeErr) {
+          logger.warn("Grote-bijlagen verwijderen mislukt", { folder, error: removeErr.message });
+          totalStorageErrors += verlopen.length;
+        } else {
+          groteBijlagenDeleted += verlopen.length;
+        }
+      }
+    }
+
     metadata.set("status", "completed");
     logger.info("Email attachment cleanup klaar", {
       totalDeleted,
+      groteBijlagenDeleted,
       totalStorageErrors,
       ttlDays: TTL_DAYS,
     });
-    return { totalDeleted, totalStorageErrors, ttlDays: TTL_DAYS };
+    return { totalDeleted, groteBijlagenDeleted, totalStorageErrors, ttlDays: TTL_DAYS };
   },
 });

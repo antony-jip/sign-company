@@ -4,6 +4,44 @@ import {
   withUserId, getOrgId,
 } from './supabaseHelpers'
 import type { Email, InternEmailNotitie } from '@/types'
+import { parseZoekQuery } from '@/utils/emailZoek'
+
+// ============ HISTORIE-BACKFILL ============
+
+export type BackfillTarget = '1jaar' | '5jaar' | 'alles'
+
+/** Hoe ver de historie-backfill teruggaat (instelling leeft op email_sync_state). */
+export async function getBackfillTarget(): Promise<BackfillTarget> {
+  if (!isSupabaseConfigured() || !supabase) return '1jaar'
+  const { data } = await supabase
+    .from('email_sync_state')
+    .select('backfill_target')
+    .eq('folder', 'inbox')
+    .maybeSingle()
+  return (data?.backfill_target as BackfillTarget) || '1jaar'
+}
+
+/**
+ * Zet het backfill-doel voor inbox + verzonden en heropent de backfill
+ * (backfill_done = false) zodat een ruimer doel direct verder graaft.
+ */
+export async function setBackfillTarget(target: BackfillTarget): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase) return
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Niet ingelogd')
+  const nu = new Date().toISOString()
+  const rows = ['inbox', 'verzonden'].map((folder) => ({
+    user_id: session.user.id,
+    folder,
+    backfill_target: target,
+    backfill_done: false,
+    updated_at: nu,
+  }))
+  const { error } = await supabase
+    .from('email_sync_state')
+    .upsert(rows, { onConflict: 'user_id,folder' })
+  if (error) throw new Error(error.message)
+}
 
 // ============ EMAIL CACHING ============
 
@@ -46,15 +84,83 @@ export async function getEmails(limit = 200): Promise<Email[]> {
   return getLocalData<Email>('emails')
 }
 
-export async function searchEmailsFTS(query: string, limit = 50): Promise<Email[]> {
-  if (!query.trim() || !isSupabaseConfigured() || !supabase) return []
-  const tsQuery = query.trim().split(/\s+/).map(w => `${w}:*`).join(' & ')
-  const { data, error } = await supabase
+/**
+ * Server-side tellers voor de mappenlijst — onafhankelijk van hoeveel mails
+ * de client geladen heeft (met duizenden mails in de DB telt de client
+ * anders alleen zijn eigen venster).
+ */
+export async function getMapTellers(): Promise<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number } | null> {
+  if (!isSupabaseConfigured() || !supabase) return null
+  const [inboxQ, conceptenQ, geplandQ, gesnoozedQ] = await Promise.all([
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('map', 'inbox').eq('gelezen', false),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('map', 'concepten'),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('map', 'gepland'),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).not('snoozed_until', 'is', null),
+  ])
+  if (inboxQ.error || conceptenQ.error || geplandQ.error || gesnoozedQ.error) return null
+  return {
+    inboxOngelezen: inboxQ.count ?? 0,
+    concepten: conceptenQ.count ?? 0,
+    gepland: geplandQ.count ?? 0,
+    gesnoozed: gesnoozedQ.count ?? 0,
+  }
+}
+
+export interface EmailPageCursor {
+  datum: string
+  id: string
+}
+
+/**
+ * Keyset-paginatie per map: de volgende pagina ouder dan de cursor
+ * (datum, id) — stabiel bij nieuwe mail bovenin, geen offset-drift.
+ * De data komt uit de eigen DB; de historie-backfill vult die aan.
+ */
+export async function getEmailsPage(map: string, cursor: EmailPageCursor | null, limit = 100): Promise<Email[]> {
+  if (!isSupabaseConfigured() || !supabase) return []
+  let q = supabase
     .from('emails_list_view')
     .select(LIST_VIEW_COLUMNS)
-    .textSearch('fts', tsQuery)
+    .eq('map', map)
     .order('datum', { ascending: false })
+    .order('id', { ascending: false })
     .limit(limit)
+  if (cursor) {
+    q = q.or(`datum.lt."${cursor.datum}",and(datum.eq."${cursor.datum}",id.lt."${cursor.id}")`)
+  }
+  const { data, error } = await q
+  if (error) throw error
+  return (data || []).map(e => ({
+    ...e,
+    inhoud: '',
+    body_html: null,
+  }))
+}
+
+export async function searchEmailsFTS(query: string, limit = 50, offset = 0): Promise<Email[]> {
+  if (!query.trim() || !isSupabaseConfigured() || !supabase) return []
+  const filters = parseZoekQuery(query)
+
+  let q = supabase
+    .from('emails_list_view')
+    .select(LIST_VIEW_COLUMNS)
+    .order('datum', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (filters.tekst) {
+    const tsQuery = filters.tekst.split(/\s+/).map(w => `${w}:*`).join(' & ')
+    q = q.textSearch('fts', tsQuery)
+  }
+  if (filters.van) {
+    // Sanitize: PostgREST or-syntax gebruikt komma's en haakjes als structuur
+    const veilig = filters.van.replace(/[,%()"]/g, '')
+    if (veilig) q = q.or(`van.ilike.%${veilig}%,from_address.ilike.%${veilig}%`)
+  }
+  if (filters.voor) q = q.lt('datum', filters.voor)
+  if (filters.na) q = q.gte('datum', filters.na)
+  if (filters.bijlage !== undefined) q = q.eq('has_attachments', filters.bijlage)
+
+  const { data, error } = await q
   if (error) throw error
   return (data || []).map(e => ({
     ...e,

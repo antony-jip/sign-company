@@ -9,11 +9,10 @@ import {
   Rows3, StretchHorizontal, Clock, Moon, Menu, Edit3, ChevronLeft,
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
-import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
-import type { IMAPEmailSummary } from '@/services/gmailService'
+import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, backfillEmailsFromIMAP } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
-import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht } from '@/services/emailService'
+import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers } from '@/services/emailService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
@@ -59,24 +58,13 @@ const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 
 // Mobile drawer surfaces these two as primary; the rest sits below a divider.
 const PRIMARY_FOLDER_IDS = new Set<EmailFolder>(['inbox', 'sales-wacht'])
 
-// ─── Helper: convert IMAP message to Email ───
-function imapToEmail(msg: IMAPEmailSummary, folder: string, userId: string): Email {
-  return {
-    id: String(msg.uid),
-    user_id: userId,
-    gmail_id: String(msg.uid),
-    van: msg.fromName ? `${msg.fromName} <${msg.from}>` : msg.from,
-    aan: msg.to,
-    onderwerp: msg.subject,
-    inhoud: '',
-    datum: msg.date,
-    gelezen: msg.isRead,
-    labels: [],
-    bijlagen: msg.hasAttachments ? 1 : 0,
-    map: folder === 'INBOX' ? 'inbox' : folder.toLowerCase(),
-    created_at: msg.date,
-    updated_at: msg.date,
-  }
+// Mappen die in de DB (kolom `map`) leven en dus DB-gepagineerd kunnen
+// worden; afgeleide mappen (sales/gesnoozed/gepland) filteren client-side.
+const DB_MAP_FOLDERS: Partial<Record<EmailFolder, string>> = {
+  inbox: 'inbox',
+  verzonden: 'verzonden',
+  concepten: 'concepten',
+  prullenbak: 'prullenbak',
 }
 
 export function EmailLayout() {
@@ -288,13 +276,51 @@ export function EmailLayout() {
   }
 
   // ─── Trigger IMAP sync (background, writes to Supabase) ───
+  // Incrementele sync levert max ~600 nieuwe mails per call (oudste eerst);
+  // bij een grote achterstand geeft de API `remaining` terug en halen we
+  // door tot alles binnen is (met een ruime veiligheidsgrens).
   async function triggerImapSync(folder: string): Promise<{ total: number; synced: number }> {
-    const result = await fetchEmailsFromIMAP(folder, fetchLimitRef.current, 0)
-    if (result.errors) {
-      logger.warn('[Email] Sync errors:', result.errors)
+    let total = 0
+    let synced = 0
+    for (let i = 0; i < 10; i++) {
+      const result = await fetchEmailsFromIMAP(folder, fetchLimitRef.current, 0)
+      if (result.errors) {
+        logger.warn('[Email] Sync errors:', result.errors)
+      }
+      total = result.total || 0
+      synced += result.synced || 0
+      if (!result.remaining || result.remaining <= 0) break
     }
-    return { total: result.total || 0, synced: result.synced || 0 }
+    return { total, synced }
   }
+
+  // ─── Historie-backfill: rustig op de achtergrond oudere mail binnenhalen ───
+  // Max 8 batches (±2400 mails) per map per sessie, met pauze tussen batches
+  // zodat de IMAP-server en de UI er geen last van hebben. Stopt vanzelf op
+  // backfill_done (cutoff bereikt of UID 1) of als de state nog niet klaar is.
+  const backfillStartedRef = useRef(false)
+  const runBackfillAchtergrond = useCallback(async () => {
+    if (backfillStartedRef.current) return
+    backfillStartedRef.current = true
+    let opgehaald = 0
+    try {
+      for (const map of ['inbox', 'verzonden']) {
+        for (let i = 0; i < 8; i++) {
+          const r = await backfillEmailsFromIMAP(map)
+          opgehaald += r.synced || 0
+          if (r.done || r.pending) break
+          await new Promise((rust) => setTimeout(rust, 1500))
+        }
+      }
+      if (opgehaald > 0) {
+        const fresh = await readFromSupabase()
+        if (fresh.length > 0) setEmails(fresh)
+        logger.log(`[Email] Backfill: ${opgehaald} oudere mails binnengehaald`)
+      }
+    } catch (err) {
+      logger.warn('[Email] Backfill gestopt:', err instanceof Error ? err.message : err)
+    }
+  }, [])
 
   // ─── Initial load: Supabase first, then IMAP sync in background ───
   const initialLoadDone = useRef(false)
@@ -318,6 +344,7 @@ export function EmailLayout() {
               // Re-read from Supabase after sync
               const fresh = await readFromSupabase()
               if (fresh.length > 0) setEmails(fresh)
+              void runBackfillAchtergrond()
             })
             .catch((err) => {
               logger.warn('[Email] Achtergrond IMAP sync mislukt:', err?.message || err)
@@ -333,6 +360,7 @@ export function EmailLayout() {
           // Read synced emails from Supabase
           const synced = await readFromSupabase()
           setEmails(synced)
+          void runBackfillAchtergrond()
         } catch (err) {
           logger.error('IMAP sync failed:', err)
           setUseIMAP(false)
@@ -368,27 +396,54 @@ export function EmailLayout() {
     }
   }, [selectedFolder, loadSalesEmails])
 
-  // ─── Server-side full-text search ───
+  // ─── Server-side full-text search (gepagineerd, 50 per keer) ───
+  const SEARCH_PAGE_SIZE = 50
+  const searchHasMoreRef = useRef(false)
+  const searchLoadingMoreRef = useRef(false)
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults(null)
+      searchHasMoreRef.current = false
       return
     }
     let cancelled = false
     setIsSearching(true)
-    searchEmailsFTS(searchQuery).then(results => {
+    searchEmailsFTS(searchQuery, SEARCH_PAGE_SIZE, 0).then(results => {
       if (!cancelled) {
         setSearchResults(results as Email[])
+        searchHasMoreRef.current = results.length === SEARCH_PAGE_SIZE
         setIsSearching(false)
       }
     }).catch(() => {
       if (!cancelled) {
         setSearchResults(null)
+        searchHasMoreRef.current = false
         setIsSearching(false)
       }
     })
     return () => { cancelled = true }
   }, [searchQuery])
+
+  // Volgende pagina zoekresultaten (scroll naar onderen tijdens zoeken)
+  const loadMoreSearchResults = useCallback(async () => {
+    if (!searchQuery.trim() || !searchHasMoreRef.current || searchLoadingMoreRef.current) return
+    searchLoadingMoreRef.current = true
+    try {
+      const offset = searchResults?.length ?? 0
+      const page = await searchEmailsFTS(searchQuery, SEARCH_PAGE_SIZE, offset)
+      searchHasMoreRef.current = page.length === SEARCH_PAGE_SIZE
+      if (page.length > 0) {
+        setSearchResults(prev => {
+          const bekend = new Set((prev ?? []).map(e => e.id))
+          return [...(prev ?? []), ...(page as Email[]).filter(e => !bekend.has(e.id))]
+        })
+      }
+    } catch (err) {
+      logger.warn('Meer zoekresultaten laden mislukt:', err)
+    } finally {
+      searchLoadingMoreRef.current = false
+    }
+  }, [searchQuery, searchResults])
 
   // ─── Unsnooze timer ───
   useEffect(() => {
@@ -409,18 +464,30 @@ export function EmailLayout() {
     return () => clearInterval(interval)
   }, [])
 
+  // ─── Server-side mappentellers ───
+  // Bij duizenden mails in de DB telt de client alleen zijn eigen venster;
+  // de echte aantallen komen van de server. Debounced her-ophalen zodra de
+  // lijst muteert (lezen, verwijderen, sync).
+  const [serverTellers, setServerTellers] = useState<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number } | null>(null)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      getMapTellers().then((tellers) => { if (tellers) setServerTellers(tellers) }).catch(() => { /* client-fallback blijft staan */ })
+    }, 800)
+    return () => clearTimeout(t)
+  }, [emails])
+
   // ─── Filtering (inline from useEmailFilters) ───
   const folderCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     folderIds.forEach((id) => {
-      if (id === 'inbox') counts[id] = emails.filter((e) => e.map === 'inbox' && !e.gelezen).length
-      else if (id === 'concepten') counts[id] = emails.filter((e) => e.map === 'concepten').length
-      else if (id === 'gepland') counts[id] = emails.filter((e) => e.map === 'gepland').length
-      else if (id === 'gesnoozed') counts[id] = emails.filter((e) => e.snoozed_until).length
+      if (id === 'inbox') counts[id] = serverTellers?.inboxOngelezen ?? emails.filter((e) => e.map === 'inbox' && !e.gelezen).length
+      else if (id === 'concepten') counts[id] = serverTellers?.concepten ?? emails.filter((e) => e.map === 'concepten').length
+      else if (id === 'gepland') counts[id] = serverTellers?.gepland ?? emails.filter((e) => e.map === 'gepland').length
+      else if (id === 'gesnoozed') counts[id] = serverTellers?.gesnoozed ?? emails.filter((e) => e.snoozed_until).length
       else counts[id] = 0
     })
     return counts
-  }, [emails])
+  }, [emails, serverTellers])
 
   const filteredEmails = useMemo(() => {
     // Als er server-side zoekresultaten zijn, gebruik die (alle mappen)
@@ -913,6 +980,7 @@ export function EmailLayout() {
     triggerImapSync(imapFolder)
       .then(async ({ total }) => {
         setImapTotal(total)
+        hasMoreDbRef.current = {}
         const fresh = await readFromSupabase()
         if (fresh.length > 0) setEmails(fresh)
         setLastSyncAt(Date.now())
@@ -936,30 +1004,46 @@ export function EmailLayout() {
   }, [])
 
   // ─── Load more (infinite scroll) ───
+  // Bladeren gaat uit de eigen DB met keyset-paginatie (datum, id) — geen
+  // IMAP-offset meer. De historie-backfill vult de DB op de achtergrond,
+  // dus een lege pagina nu kan na verloop van tijd alsnog data hebben;
+  // daarom resetten we hasMore bij refresh/folderwissel.
+  const hasMoreDbRef = useRef<Record<string, boolean>>({})
   const loadMoreEmails = useCallback(async (folder: EmailFolder) => {
     if (isLoadingMore) return
-    const currentCount = emails.length
-    if (imapTotal > 0 && currentCount >= imapTotal) return
+    const map = DB_MAP_FOLDERS[folder]
+    if (!map) return
+    if (hasMoreDbRef.current[map] === false) return
     setIsLoadingMore(true)
     try {
-      const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
-      const result = await fetchEmailsFromIMAP(imapFolder, fetchLimitRef.current, currentCount)
-      if (result.emails && Array.isArray(result.emails) && result.emails.length > 0) {
-        const moreEmails = result.emails.map((msg) => imapToEmail(msg, imapFolder, userIdRef.current || ''))
-        setEmails((prev) => [...prev, ...moreEmails])
-      } else {
-        // Sync-first: re-read from Supabase
-        const fresh = await readFromSupabase()
-        setEmails(fresh)
+      // Cursor = oudste mail van deze map die we al hebben
+      let oudste: Email | null = null
+      for (const e of emails) {
+        if (e.map !== map) continue
+        if (!oudste || (e.datum && e.datum < oudste.datum)) oudste = e
       }
-      setImapTotal(result.total || 0)
+      const page = await getEmailsPage(
+        map,
+        oudste ? { datum: oudste.datum, id: oudste.id } : null,
+        fetchLimitRef.current
+      )
+      if (page.length > 0) {
+        const meer = normalizeEmails(page)
+        setEmails((prev) => {
+          const bekend = new Set(prev.map((p) => p.id))
+          return [...prev, ...meer.filter((p) => !bekend.has(p.id))]
+        })
+      }
+      if (page.length < fetchLimitRef.current) {
+        hasMoreDbRef.current[map] = false
+      }
     } catch (err) {
       logger.error('Load more emails failed:', err)
       toast.error('Kon meer emails niet laden')
     } finally {
       setIsLoadingMore(false)
     }
-  }, [isLoadingMore, emails.length, imapTotal])
+  }, [isLoadingMore, emails])
 
   // ─── Load email body ───
   // Track in-flight prefetches om dubbele requests te voorkomen wanneer iemand
@@ -1302,7 +1386,7 @@ export function EmailLayout() {
     handleSelectEmail(threadedEmails[0])
   }, [isDesktop, isLoading, viewMode, selectedFolder, threadedEmails, handleSelectEmail])
 
-  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
+  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
     try {
       // Genereer thread_id client-side zodat we een eventueel gekoppeld
       // project direct na verzenden kunnen aanhaken — de backend accepteert
@@ -1330,7 +1414,7 @@ export function EmailLayout() {
     }
   }, [])
 
-  const handleSendReply = useCallback(async (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
+  const handleSendReply = useCallback(async (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
     try {
       // Threading: geef message_id en thread_id mee zodat de verzonden
       // mail aan dezelfde thread wordt gekoppeld als de originele mail.
@@ -1359,6 +1443,9 @@ export function EmailLayout() {
   }, [selectedEmail, selectedFolder, handleRefresh])
 
   const handleFolderChange = useCallback((folder: EmailFolder) => {
+    // Backfill kan intussen oudere mail hebben toegevoegd — geef bladeren
+    // weer een kans in deze map.
+    hasMoreDbRef.current = {}
     setSelectedFolder(folder)
     setSelectedEmail(null)
     setViewMode('idle')
@@ -1409,9 +1496,13 @@ export function EmailLayout() {
     if (!emailListRef.current || isLoadingMore) return
     const { scrollTop, scrollHeight, clientHeight } = emailListRef.current
     if (scrollHeight - scrollTop - clientHeight < 200) {
-      loadMoreEmails(selectedFolder)
+      if (searchResults !== null) {
+        void loadMoreSearchResults()
+      } else {
+        loadMoreEmails(selectedFolder)
+      }
     }
-  }, [isLoadingMore, loadMoreEmails, selectedFolder])
+  }, [isLoadingMore, loadMoreEmails, selectedFolder, searchResults, loadMoreSearchResults])
 
   const emailIndex = useMemo(
     () => selectedEmail ? threadedEmails.findIndex(e => e.id === selectedEmail.id) : -1,
@@ -1891,7 +1982,7 @@ export function EmailLayout() {
               onChange={(e) => handleSearchChange(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-              placeholder="Zoek in emails..."
+              placeholder="Zoek in emails... (van:naam, na:2024, voor:2025-06, bijlage:ja)"
               className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
             />
             {searchInput && (
@@ -2003,6 +2094,15 @@ export function EmailLayout() {
             </div>
           ) : (
             <div>
+              {searchQuery.trim() && searchResults !== null && (
+                <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50">
+                  {isSearching && <Loader2 className="h-3 w-3 animate-spin text-[#1A535C]/50" />}
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <span className="font-mono tabular-nums">{threadedEmails.length}</span>
+                    {' '}resultaten{searchHasMoreRef.current ? ' · scroll voor meer' : ''}
+                  </span>
+                </div>
+              )}
               <div
                 style={{
                   height: rowVirtualizer.getTotalSize(),
@@ -2297,7 +2397,7 @@ export function EmailLayout() {
             senderEmail={readerSenderEmail}
             onSelectEmail={handleSelectEmail}
             onCompose={() => handleCompose()}
-            unreadCount={emails.filter(e => !e.gelezen).length}
+            unreadCount={serverTellers?.inboxOngelezen ?? emails.filter(e => !e.gelezen).length}
             onClose={() => setContextOpen(false)}
           />
         </div>

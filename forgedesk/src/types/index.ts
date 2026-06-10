@@ -2170,6 +2170,10 @@ export interface IngeplandBericht {
   foutmelding?: string
   verzonden_op?: string
   created_at: string
+  /** Aantal mislukte verzendpogingen (outbox-retry, migratie 130). */
+  retry_count?: number
+  /** 'ingepland' (door gebruiker gepland) of 'outbox' (mislukte directe verzending). */
+  bron?: 'ingepland' | 'outbox'
 }
 
 // ============ KENNISBANK ============
