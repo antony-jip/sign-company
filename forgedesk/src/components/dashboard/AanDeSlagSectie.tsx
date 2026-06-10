@@ -48,7 +48,7 @@ export function AanDeSlagSectie() {
       <button
         type="button"
         onClick={() => setForceUitgevouwen(true)}
-        className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-white shadow-[0_2px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.05)] transition-shadow text-left"
+        className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-card shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-shadow text-left"
       >
         <span className="text-[14px] text-foreground">
           Aan de slag<span className="text-[#F15025]">.</span>{' '}
@@ -63,7 +63,7 @@ export function AanDeSlagSectie() {
   }
 
   return (
-    <div className="rounded-xl bg-white shadow-[0_2px_20px_rgba(0,0,0,0.03)] overflow-hidden">
+    <div className="rounded-xl bg-card shadow-[var(--shadow-sm)] overflow-hidden">
       <div
         className="relative px-7 py-7 sm:px-9 sm:py-8"
         style={{ background: 'linear-gradient(135deg, #143E47 0%, #1A535C 55%, #2A6E78 100%)' }}
@@ -116,7 +116,7 @@ export function AanDeSlagSectie() {
                 className={`group text-left rounded-lg px-4 py-4 transition-all border ${
                   klaar
                     ? 'bg-background border-transparent'
-                    : 'bg-white border-border hover:border-[#1A535C]/40 hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)]'
+                    : 'bg-card border-border hover:border-[#1A535C]/40 hover:shadow-[var(--shadow-sm)]'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">

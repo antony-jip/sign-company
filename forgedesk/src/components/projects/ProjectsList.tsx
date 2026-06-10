@@ -799,7 +799,7 @@ export function ProjectsList() {
               </div>
             </div>
             {/* Toolbar card */}
-            <div className="bg-card rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] space-y-4">
+            <div className="bg-card rounded-2xl p-5 shadow-[var(--shadow-sm)] ring-1 ring-[#1A535C]/[0.05] space-y-4">
               <div className="flex items-center gap-5">
                 <Skeleton className="h-9 w-[280px] rounded-lg" />
                 <div className="hidden sm:flex items-center gap-1 ml-auto">
@@ -814,7 +814,7 @@ export function ProjectsList() {
               </div>
             </div>
             {/* Table — match desktop row layout */}
-            <div className="hidden md:block bg-card rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+            <div className="hidden md:block bg-card rounded-2xl shadow-[var(--shadow-sm)] ring-1 ring-[#1A535C]/[0.05] overflow-hidden">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border last:border-b-0">
                   <Skeleton className="h-4 w-4 rounded" />
@@ -831,7 +831,7 @@ export function ProjectsList() {
             {/* Mobile card stack */}
             <div className="md:hidden space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-card rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] space-y-3">
+                <div key={i} className="bg-card rounded-xl p-4 shadow-[var(--shadow-xs)] space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <Skeleton className="h-4 w-3/5" />
