@@ -22,7 +22,11 @@ export function sendInBackground(task: () => Promise<void>, opts: BackgroundSend
       })
       .catch((err) => {
         logger.error('Achtergrond-verzending mislukt:', err)
-        toast.error(opts.error ?? 'Verzenden mislukt', {
+        // Toon de echte foutboodschap (bv. "staat in de outbox") als die er is
+        const boodschap = err instanceof Error && err.message
+          ? err.message
+          : (opts.error ?? 'Verzenden mislukt')
+        toast.error(boodschap, {
           id: toastId,
           duration: 10000,
           action: { label: 'Opnieuw', onClick: run },

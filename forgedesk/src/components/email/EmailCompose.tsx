@@ -531,11 +531,13 @@ export function EmailCompose({
         })
       },
       {
-        loading: 'Email wordt verzonden...',
+        loading: attachments.length > 0
+          ? `${attachments.length} bijlage${attachments.length > 1 ? 'n' : ''} (${formatFileSize(attachments.reduce((s, f) => s + f.size, 0))}) uploaden en verzenden...`
+          : 'Email wordt verzonden...',
         success: capturedWacht ? 'Email verzonden — toegevoegd aan Opvolgen' : 'Email verzonden',
       }
     )
-  }, [to, subject, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie])
+  }, [to, subject, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie, attachments])
 
   const handleScheduleSend = useCallback(async (scheduledAt: string, label: string) => {
     if (!to.trim()) { toast.error('Vul een ontvanger in'); return }
