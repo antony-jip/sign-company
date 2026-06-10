@@ -396,27 +396,54 @@ export function EmailLayout() {
     }
   }, [selectedFolder, loadSalesEmails])
 
-  // ─── Server-side full-text search ───
+  // ─── Server-side full-text search (gepagineerd, 50 per keer) ───
+  const SEARCH_PAGE_SIZE = 50
+  const searchHasMoreRef = useRef(false)
+  const searchLoadingMoreRef = useRef(false)
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults(null)
+      searchHasMoreRef.current = false
       return
     }
     let cancelled = false
     setIsSearching(true)
-    searchEmailsFTS(searchQuery).then(results => {
+    searchEmailsFTS(searchQuery, SEARCH_PAGE_SIZE, 0).then(results => {
       if (!cancelled) {
         setSearchResults(results as Email[])
+        searchHasMoreRef.current = results.length === SEARCH_PAGE_SIZE
         setIsSearching(false)
       }
     }).catch(() => {
       if (!cancelled) {
         setSearchResults(null)
+        searchHasMoreRef.current = false
         setIsSearching(false)
       }
     })
     return () => { cancelled = true }
   }, [searchQuery])
+
+  // Volgende pagina zoekresultaten (scroll naar onderen tijdens zoeken)
+  const loadMoreSearchResults = useCallback(async () => {
+    if (!searchQuery.trim() || !searchHasMoreRef.current || searchLoadingMoreRef.current) return
+    searchLoadingMoreRef.current = true
+    try {
+      const offset = searchResults?.length ?? 0
+      const page = await searchEmailsFTS(searchQuery, SEARCH_PAGE_SIZE, offset)
+      searchHasMoreRef.current = page.length === SEARCH_PAGE_SIZE
+      if (page.length > 0) {
+        setSearchResults(prev => {
+          const bekend = new Set((prev ?? []).map(e => e.id))
+          return [...(prev ?? []), ...(page as Email[]).filter(e => !bekend.has(e.id))]
+        })
+      }
+    } catch (err) {
+      logger.warn('Meer zoekresultaten laden mislukt:', err)
+    } finally {
+      searchLoadingMoreRef.current = false
+    }
+  }, [searchQuery, searchResults])
 
   // ─── Unsnooze timer ───
   useEffect(() => {
@@ -1457,9 +1484,13 @@ export function EmailLayout() {
     if (!emailListRef.current || isLoadingMore) return
     const { scrollTop, scrollHeight, clientHeight } = emailListRef.current
     if (scrollHeight - scrollTop - clientHeight < 200) {
-      loadMoreEmails(selectedFolder)
+      if (searchResults !== null) {
+        void loadMoreSearchResults()
+      } else {
+        loadMoreEmails(selectedFolder)
+      }
     }
-  }, [isLoadingMore, loadMoreEmails, selectedFolder])
+  }, [isLoadingMore, loadMoreEmails, selectedFolder, searchResults, loadMoreSearchResults])
 
   const emailIndex = useMemo(
     () => selectedEmail ? threadedEmails.findIndex(e => e.id === selectedEmail.id) : -1,
@@ -1939,7 +1970,7 @@ export function EmailLayout() {
               onChange={(e) => handleSearchChange(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-              placeholder="Zoek in emails..."
+              placeholder="Zoek in emails... (van:naam, na:2024, voor:2025-06, bijlage:ja)"
               className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
             />
             {searchInput && (

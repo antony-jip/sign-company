@@ -4,6 +4,7 @@ import {
   withUserId, getOrgId,
 } from './supabaseHelpers'
 import type { Email, InternEmailNotitie } from '@/types'
+import { parseZoekQuery } from '@/utils/emailZoek'
 
 // ============ HISTORIE-BACKFILL ============
 
@@ -114,15 +115,30 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
   }))
 }
 
-export async function searchEmailsFTS(query: string, limit = 50): Promise<Email[]> {
+export async function searchEmailsFTS(query: string, limit = 50, offset = 0): Promise<Email[]> {
   if (!query.trim() || !isSupabaseConfigured() || !supabase) return []
-  const tsQuery = query.trim().split(/\s+/).map(w => `${w}:*`).join(' & ')
-  const { data, error } = await supabase
+  const filters = parseZoekQuery(query)
+
+  let q = supabase
     .from('emails_list_view')
     .select(LIST_VIEW_COLUMNS)
-    .textSearch('fts', tsQuery)
     .order('datum', { ascending: false })
-    .limit(limit)
+    .range(offset, offset + limit - 1)
+
+  if (filters.tekst) {
+    const tsQuery = filters.tekst.split(/\s+/).map(w => `${w}:*`).join(' & ')
+    q = q.textSearch('fts', tsQuery)
+  }
+  if (filters.van) {
+    // Sanitize: PostgREST or-syntax gebruikt komma's en haakjes als structuur
+    const veilig = filters.van.replace(/[,%()"]/g, '')
+    if (veilig) q = q.or(`van.ilike.%${veilig}%,from_address.ilike.%${veilig}%`)
+  }
+  if (filters.voor) q = q.lt('datum', filters.voor)
+  if (filters.na) q = q.gte('datum', filters.na)
+  if (filters.bijlage !== undefined) q = q.eq('has_attachments', filters.bijlage)
+
+  const { data, error } = await q
   if (error) throw error
   return (data || []).map(e => ({
     ...e,
