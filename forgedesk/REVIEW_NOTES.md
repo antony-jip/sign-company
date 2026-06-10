@@ -793,3 +793,11 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
   select bij afwijkende categorie-waarden); e-Boekhouden ledgers >500 (paginering
   onbevestigd in docs); SnelStart creditnota-acceptatie en payload-shapes blijven
   extern te verifiëren tegen O&T-administratie; Moneybird naam-zoek >100 hits.
+- Audit-fixes gate-review: AKKOORD-MET-OPMERKINGEN, geen blokkades. Naloop gefixt:
+  naam-lookup e-Boekhouden gebruikt nu dezelfde 100-tekens-sleutel als de create.
+  Docs-verificatie ?name=-filter: live Swagger api.e-boekhouden.nl/swagger/v1/swagger.json
+  (geraadpleegd 2026-06-10) — name-param filtert server-side met default operator [eq]
+  ("Only retrieves relations with this (company) name"); rows[].description heeft
+  géén maxLength (alleen header-description: 50). Open (laag, gelogd): creditnota
+  item-copy loop niet transactioneel (zelfde zwakte als factuurService.createCreditnota);
+  rond2-halve-cent-randgeval bij teken-omkering wordt door 5ct-tolerantie gedekt.

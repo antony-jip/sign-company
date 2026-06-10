@@ -244,8 +244,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else {
       // Geen debiteurennummer (legacy klant): exacte naam-match, conform de
       // Moneybird/SnelStart-flow — voorkomt duplicaat-relaties per factuur.
+      // Zelfde sleutel als de create (name wordt daar op 100 afgekapt),
+      // anders matcht een lange naam nooit zijn eerder aangemaakte relatie.
       const lookupRes = await fetch(
-        `${EBOEKHOUDEN_API_BASE}/relation?name=${encodeURIComponent(klantNaam)}`,
+        `${EBOEKHOUDEN_API_BASE}/relation?name=${encodeURIComponent(klantNaam.slice(0, 100))}`,
         { headers: authHeaders },
       )
       if (lookupRes.ok) {
@@ -314,6 +316,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? `Creditnota ${factuur.nummer}${factuur.titel ? ` — ${factuur.titel}` : ''}`
           : (factuur.titel || `Factuur ${factuur.nummer}`)).slice(0, 50),
         inExVat: 'EX',
+        // rows[].description heeft volgens de live Swagger géén maxLength
+        // (alleen de header-description is begrensd op 50) — niet trunceren.
         rows: items.map((item) => ({
           ledgerId: Number(omzetLedgerId),
           vatCode: bepaalVatCode(item.btw_percentage),
