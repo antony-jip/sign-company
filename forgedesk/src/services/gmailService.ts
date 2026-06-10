@@ -87,48 +87,100 @@ export async function getEmailDetail(messageId: string): Promise<Email | null> {
   return data
 }
 
+interface SendEmailOptions {
+  cc?: string
+  bcc?: string
+  html?: string
+  scheduledAt?: string
+  attachments?: Array<{ filename: string; content?: string; encoding?: 'base64'; storagePath?: string; bucket?: string; cleanupAfter?: boolean }>
+  // Sales Inbox v1
+  wacht_op_reactie?: boolean
+  // Threading
+  in_reply_to?: string
+  thread_id?: string
+}
+
+/**
+ * Outbox: zet een mail die niet verzonden kon worden in ingeplande_berichten
+ * (bron 'outbox'); de verzend-cron probeert het automatisch opnieuw met
+ * backoff. Geeft false terug als ook het enqueuen mislukt.
+ */
+async function enqueueOutbox(to: string, subject: string, body: string, options?: SendEmailOptions): Promise<boolean> {
+  if (!supabase) return false
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user?.id) return false
+    const { error } = await supabase.from('ingeplande_berichten').insert({
+      user_id: session.user.id,
+      ontvanger: to,
+      cc: options?.cc || null,
+      bcc: options?.bcc || null,
+      onderwerp: subject,
+      body,
+      html: options?.html || null,
+      bijlagen: options?.attachments ?? [],
+      // Geplande mails behouden hun tijdstip; directe mails gaan z.s.m. opnieuw
+      scheduled_at: options?.scheduledAt || new Date(Date.now() + 60_000).toISOString(),
+      status: 'wachtend',
+      bron: 'outbox',
+      in_reply_to: options?.in_reply_to || null,
+      thread_id: options?.thread_id || null,
+      wacht_op_reactie: options?.wacht_op_reactie ?? false,
+    })
+    return !error
+  } catch {
+    return false
+  }
+}
+
+/** Statussen waarbij opnieuw proberen zin heeft (alles behalve client-fouten). */
+function isQueueableStatus(status: number): boolean {
+  return status === 429 || status >= 500
+}
+
 export async function sendEmail(
   to: string,
   subject: string,
   body: string,
-  options?: {
-    cc?: string
-    bcc?: string
-    html?: string
-    scheduledAt?: string
-    attachments?: Array<{ filename: string; content?: string; encoding?: 'base64'; storagePath?: string; bucket?: string; cleanupAfter?: boolean }>
-    // Sales Inbox v1
-    wacht_op_reactie?: boolean
-    // Threading
-    in_reply_to?: string
-    thread_id?: string
-  }
+  options?: SendEmailOptions
 ): Promise<{ success: boolean; message: string }> {
   const token = await getAuthToken()
 
-  const response = await fetch('/api/send-email', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      to,
-      subject,
-      body,
-      cc: options?.cc,
-      bcc: options?.bcc,
-      html: options?.html,
-      attachments: options?.attachments,
-      scheduledAt: options?.scheduledAt,
-      wacht_op_reactie: options?.wacht_op_reactie,
-      in_reply_to: options?.in_reply_to,
-      thread_id: options?.thread_id,
-    }),
-  })
+  let response: Response
+  try {
+    response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        to,
+        subject,
+        body,
+        cc: options?.cc,
+        bcc: options?.bcc,
+        html: options?.html,
+        attachments: options?.attachments,
+        scheduledAt: options?.scheduledAt,
+        wacht_op_reactie: options?.wacht_op_reactie,
+        in_reply_to: options?.in_reply_to,
+        thread_id: options?.thread_id,
+      }),
+    })
+  } catch (netErr) {
+    // Netwerk weg — in de outbox, cron levert af zodra het weer kan
+    if (await enqueueOutbox(to, subject, body, options)) {
+      throw new Error('Geen verbinding — de mail staat in de outbox en wordt automatisch opnieuw verstuurd')
+    }
+    throw netErr
+  }
 
   if (!response.ok) {
     const error: { error?: string } = await response.json().catch(() => ({}))
+    if (isQueueableStatus(response.status) && await enqueueOutbox(to, subject, body, options)) {
+      throw new Error('Verzenden mislukt — de mail staat in de outbox en wordt automatisch opnieuw verstuurd')
+    }
     throw new Error(error?.error || `Email verzenden mislukt: ${response.status}`)
   }
 

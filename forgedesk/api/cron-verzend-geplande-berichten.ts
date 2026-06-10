@@ -288,13 +288,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         verzonden++
         console.log('[cron] Bericht verzonden:', bericht.id)
       } catch (err) {
-        mislukt++
         const foutmelding = err instanceof Error ? err.message : String(err)
-        await supabaseAdmin
-          .from('ingeplande_berichten')
-          .update({ status: 'mislukt', foutmelding })
-          .eq('id', bericht.id)
-        console.error('[cron] Bericht verzenden mislukt:', bericht.id, foutmelding)
+
+        // Outbox-retry met backoff (1m, 5m, 15m); daarna definitief mislukt.
+        // Valt terug op direct 'mislukt' zolang migratie 130 (retry_count)
+        // nog niet gedraaid is — de update faalt dan op de onbekende kolom.
+        const retryCount = (bericht as { retry_count?: number }).retry_count ?? 0
+        const RETRY_DELAYS_MIN = [1, 5, 15]
+        let geretried = false
+        if (retryCount < RETRY_DELAYS_MIN.length) {
+          const { error: retryErr } = await supabaseAdmin
+            .from('ingeplande_berichten')
+            .update({
+              status: 'wachtend',
+              retry_count: retryCount + 1,
+              foutmelding,
+              scheduled_at: new Date(Date.now() + RETRY_DELAYS_MIN[retryCount] * 60_000).toISOString(),
+            })
+            .eq('id', bericht.id)
+          geretried = !retryErr
+          if (geretried) {
+            console.warn(`[cron] Bericht ${bericht.id} mislukt, retry ${retryCount + 1}/${RETRY_DELAYS_MIN.length} over ${RETRY_DELAYS_MIN[retryCount]}m:`, foutmelding)
+          }
+        }
+
+        if (!geretried) {
+          mislukt++
+          await supabaseAdmin
+            .from('ingeplande_berichten')
+            .update({ status: 'mislukt', foutmelding })
+            .eq('id', bericht.id)
+          console.error('[cron] Bericht verzenden definitief mislukt:', bericht.id, foutmelding)
+        }
       }
     }
 
