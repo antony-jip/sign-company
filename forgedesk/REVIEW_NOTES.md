@@ -765,3 +765,9 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
   pakketwissel naar "Geen" (badge aan factuur-historie, knop aan actief pakket).
   Restpunt (cosmetisch, gelogd): stale-state race in handleBoekhoudPakketChange
   bij snel dubbel wisselen; ?name=-filter-shape e-Boekhouden onbevestigd tot API-test.
+- Post-gate review (5eb1b622 + 11be98fe): AKKOORD-MET-OPMERKINGEN, geen blokkades.
+  Exact klant-bugfix bevestigd als centrale fix (geen andere select('naam')-plekken
+  in api/). Toegevoegd n.a.v. review: console.error op klant-lookup-fouten in
+  exact-sync (stil-falen was de root cause van deze bug). Gelogd: zelfde
+  stille-destructure-patroon in andere handlers is een losse opschoontaak;
+  per_page=100 is het Moneybird-maximum (geen paginatie, verwaarloosbaar risico).
