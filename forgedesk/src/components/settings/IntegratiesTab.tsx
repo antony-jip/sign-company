@@ -134,6 +134,17 @@ export function IntegratiesTab() {
   const [eboekhoudenConfigGeladen, setEboekhoudenConfigGeladen] = useState(false)
   const [eboekhoudenSaving, setEboekhoudenSaving] = useState(false)
 
+  // SnelStart state
+  const [snelstartSleutel, setSnelstartSleutel] = useState('')
+  const [snelstartConnecting, setSnelstartConnecting] = useState(false)
+  const [snelstartHelpOpen, setSnelstartHelpOpen] = useState(false)
+  const [snelstartGrootboeken, setSnelstartGrootboeken] = useState<Array<{ id: string; nummer: number; naam: string }>>([])
+  const [snelstartGrootboekId, setSnelstartGrootboekId] = useState('')
+  const [snelstartConfigLoading, setSnelstartConfigLoading] = useState(false)
+  const [snelstartConfigError, setSnelstartConfigError] = useState<string | null>(null)
+  const [snelstartConfigGeladen, setSnelstartConfigGeladen] = useState(false)
+  const [snelstartSaving, setSnelstartSaving] = useState(false)
+
   useEffect(() => {
     if (!user?.id) return
     const isEncrypted = (v: string) => /^[0-9a-f]{32}:/.test(v)
@@ -169,6 +180,7 @@ export function IntegratiesTab() {
       setMoneybirdTaxNul(s.moneybird_tax_rate_nul ?? '')
       setEboekhoudenDebiteurenLedgerId(s.eboekhouden_debiteuren_ledger_id ?? '')
       setEboekhoudenOmzetLedgerId(s.eboekhouden_omzet_ledger_id ?? '')
+      setSnelstartGrootboekId(s.snelstart_grootboek_id ?? '')
     }).catch(() => {})
   }, [user?.id])
 
@@ -526,6 +538,87 @@ export function IntegratiesTab() {
       toast.error('Kon e-Boekhouden instellingen niet opslaan')
     } finally {
       setEboekhoudenSaving(false)
+    }
+  }
+
+  const loadSnelstartGrootboeken = useCallback(async () => {
+    setSnelstartConfigLoading(true)
+    setSnelstartConfigError(null)
+    try {
+      if (!supabase) throw new Error('Niet ingelogd')
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess?.session?.access_token
+      if (!token) throw new Error('Niet ingelogd')
+      const res = await fetch('/api/snelstart-grootboeken', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Status ${res.status}`)
+      }
+      setSnelstartGrootboeken(await res.json())
+      setSnelstartConfigGeladen(true)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Onbekende fout'
+      setSnelstartConfigError(msg)
+      logger.error('SnelStart grootboeken laden mislukt:', err)
+    } finally {
+      setSnelstartConfigLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (
+      boekhoudPakket === 'snelstart' &&
+      boekhoudTokenAanwezig &&
+      !snelstartConfigGeladen &&
+      !snelstartConfigLoading
+    ) {
+      loadSnelstartGrootboeken()
+    }
+  }, [boekhoudPakket, boekhoudTokenAanwezig, snelstartConfigGeladen, snelstartConfigLoading, loadSnelstartGrootboeken])
+
+  const handleSnelstartConnect = async () => {
+    setSnelstartConnecting(true)
+    try {
+      if (!supabase) throw new Error('Niet ingelogd')
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess?.session?.access_token
+      if (!token) throw new Error('Niet ingelogd')
+      const res = await fetch('/api/snelstart-connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ koppelsleutel: snelstartSleutel }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Verbinden mislukt')
+      setBoekhoudTokenAanwezig(true)
+      setSnelstartSleutel('')
+      setSnelstartConfigGeladen(false)
+      toast.success(<>SnelStart verbonden<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('SnelStart verbinden mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Verbinden mislukt')
+    } finally {
+      setSnelstartConnecting(false)
+    }
+  }
+
+  const handleSnelstartSave = async () => {
+    setSnelstartSaving(true)
+    try {
+      const grootboek = snelstartGrootboeken.find((g) => g.id === snelstartGrootboekId)
+      await saveIntegrationSettings({
+        snelstart_grootboek_id: snelstartGrootboekId,
+        snelstart_grootboek_naam: grootboek ? `${grootboek.nummer} — ${grootboek.naam}` : '',
+      })
+      refreshSettings?.()
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('SnelStart instellingen opslaan mislukt:', err)
+      toast.error('Kon SnelStart instellingen niet opslaan')
+    } finally {
+      setSnelstartSaving(false)
     }
   }
 
@@ -1048,6 +1141,112 @@ export function IntegratiesTab() {
                           <div className="flex justify-end">
                             <Button onClick={handleMoneybirdSave} disabled={moneybirdSaving} size="sm" variant="outline">
                               {moneybirdSaving ? 'Opslaan...' : 'Opslaan'}
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {boekhoudPakket === 'snelstart' && (
+                <div className="space-y-3 border-t border-border pt-4">
+                  <div className="border border-border rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setSnelstartHelpOpen(!snelstartHelpOpen)}
+                      className="w-full flex items-center justify-between p-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <span>Hoe vind ik mijn koppelsleutel?</span>
+                      <ArrowRight className={cn('w-4 h-4 transition-transform', snelstartHelpOpen && 'rotate-90')} />
+                    </button>
+                    {snelstartHelpOpen && (
+                      <div className="px-4 pb-4 border-t border-border pt-3">
+                        <ol className="list-decimal list-inside space-y-1.5 text-sm text-muted-foreground">
+                          <li>Log in op SnelStart Web en open je administratie</li>
+                          <li>Ga naar Instellingen → Koppelingen → Maatwerk</li>
+                          <li>Maak een nieuwe koppelsleutel aan en kopieer deze</li>
+                          <li>Plak de sleutel hieronder en klik op &ldquo;Verbinden&rdquo;</li>
+                        </ol>
+                        <p className="text-xs text-muted-foreground pt-2 mt-2 border-t border-border/50">
+                          Let op: API-toegang vereist het SnelStart-pakket inZicht of inControle.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="snelstart-sleutel" className="text-sm font-medium">
+                      SnelStart koppelsleutel
+                    </Label>
+                    <Input
+                      id="snelstart-sleutel"
+                      type="password"
+                      value={snelstartSleutel}
+                      onChange={(e) => setSnelstartSleutel(e.target.value)}
+                      placeholder={boekhoudTokenAanwezig ? 'Sleutel opgeslagen — vul in om te vervangen' : 'Koppelsleutel'}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      disabled={(!snelstartSleutel && !boekhoudTokenAanwezig) || snelstartConnecting}
+                      onClick={handleSnelstartConnect}
+                      className="gap-1.5"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {snelstartConnecting ? 'Verbinden...' : (boekhoudTokenAanwezig ? 'Opnieuw verbinden' : 'Verbinden')}
+                    </Button>
+                  </div>
+
+                  {boekhoudTokenAanwezig && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Boekingsinstellingen</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={loadSnelstartGrootboeken}
+                          disabled={snelstartConfigLoading}
+                          className="h-7 text-xs gap-1"
+                        >
+                          <RefreshCw className={cn('w-3 h-3', snelstartConfigLoading && 'animate-spin')} />
+                          Opnieuw ophalen
+                        </Button>
+                      </div>
+                      {snelstartConfigError ? (
+                        <div className="text-xs text-amber-600 dark:text-amber-400">
+                          Grootboeken ophalen mislukt: {snelstartConfigError}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="snelstart-grootboek" className="text-sm">Omzetgrootboek</Label>
+                            <Select
+                              value={snelstartGrootboekId}
+                              onValueChange={setSnelstartGrootboekId}
+                              disabled={snelstartConfigLoading || snelstartGrootboeken.length === 0}
+                            >
+                              <SelectTrigger id="snelstart-grootboek" className="text-sm">
+                                <SelectValue placeholder={snelstartConfigLoading ? 'Laden...' : 'Kies grootboek...'} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {snelstartGrootboeken.map((g) => (
+                                  <SelectItem key={g.id} value={g.id}>
+                                    {g.nummer} — {g.naam}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Facturen worden geboekt als verkoopboeking op dit grootboek. SnelStart ontvangt geen PDF — alleen de boeking.
+                          </p>
+                          <div className="flex justify-end">
+                            <Button onClick={handleSnelstartSave} disabled={snelstartSaving || !snelstartGrootboekId} size="sm" variant="outline">
+                              {snelstartSaving ? 'Opslaan...' : 'Opslaan'}
                             </Button>
                           </div>
                         </>
