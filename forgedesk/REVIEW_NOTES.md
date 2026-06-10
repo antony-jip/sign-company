@@ -759,3 +759,9 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
   boekhoud connect/sync, 400 bij btw_percentage buiten {0,9,21}, 429-melding
   harmoniseren, waarschuwing-pad restrisico (pending-marker vóór externe call zou
   echte fix zijn), encrypted tokens client-leesbaar (zelfde patroon als mollie_api_key).
+- Totaalcheck pre-merge: AKKOORD-MET-OPMERKINGEN. Gefixt in review-commit:
+  e-Boekhouden naam-lookup faalt nu hard op non-404 (geen stille duplicaat-relatie),
+  Moneybird naam-fallback met per_page=100, badge-historie blijft zichtbaar na
+  pakketwissel naar "Geen" (badge aan factuur-historie, knop aan actief pakket).
+  Restpunt (cosmetisch, gelogd): stale-state race in handleBoekhoudPakketChange
+  bij snel dubbel wisselen; ?name=-filter-shape e-Boekhouden onbevestigd tot API-test.

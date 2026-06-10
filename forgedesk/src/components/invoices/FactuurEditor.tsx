@@ -1903,28 +1903,30 @@ export function FactuurEditor() {
                   )
                 )}
 
-                {/* Boekhoudpakket sync (SnelStart / Moneybird / e-Boekhouden) */}
-                {settings.boekhoud_pakket && existingFactuur && (
-                  existingFactuur.boekhoud_synced_at ? (
-                    <Badge
-                      className="bg-[hsl(var(--status-green-bg))] text-[#2D6B48] text-xs gap-1"
-                      title={`${BOEKHOUD_PAKKET_NAAM[existingFactuur.boekhoud_pakket || settings.boekhoud_pakket]} gesynchroniseerd op ${new Date(existingFactuur.boekhoud_synced_at).toLocaleDateString('nl-NL')}`}
-                    >
-                      <CheckCircle2 className="w-3 h-3" />
-                      {BOEKHOUD_PAKKET_NAAM[existingFactuur.boekhoud_pakket || settings.boekhoud_pakket]}
-                    </Badge>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-[#1A535C] border-[#1A535C]/20 hover:bg-[#1A535C]/5 gap-1"
-                      onClick={handleSyncBoekhouding}
-                      disabled={boekhoudSyncing}
-                    >
-                      <RefreshCw className={cn('w-3.5 h-3.5', boekhoudSyncing && 'animate-spin')} />
-                      Sync {BOEKHOUD_PAKKET_NAAM[settings.boekhoud_pakket]}
-                    </Button>
-                  )
+                {/* Boekhoudpakket sync (SnelStart / Moneybird / e-Boekhouden).
+                    De badge hangt aan de factuur-historie, de knop aan het
+                    actieve pakket — zo blijft de gesynct-status zichtbaar na
+                    een pakketwissel of wissel naar "Geen". */}
+                {existingFactuur?.boekhoud_synced_at && existingFactuur.boekhoud_pakket && (
+                  <Badge
+                    className="bg-[hsl(var(--status-green-bg))] text-[#2D6B48] text-xs gap-1"
+                    title={`${BOEKHOUD_PAKKET_NAAM[existingFactuur.boekhoud_pakket]} gesynchroniseerd op ${new Date(existingFactuur.boekhoud_synced_at).toLocaleDateString('nl-NL')}`}
+                  >
+                    <CheckCircle2 className="w-3 h-3" />
+                    {BOEKHOUD_PAKKET_NAAM[existingFactuur.boekhoud_pakket]}
+                  </Badge>
+                )}
+                {settings.boekhoud_pakket && existingFactuur && !existingFactuur.boekhoud_synced_at && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-[#1A535C] border-[#1A535C]/20 hover:bg-[#1A535C]/5 gap-1"
+                    onClick={handleSyncBoekhouding}
+                    disabled={boekhoudSyncing}
+                  >
+                    <RefreshCw className={cn('w-3.5 h-3.5', boekhoudSyncing && 'animate-spin')} />
+                    Sync {BOEKHOUD_PAKKET_NAAM[settings.boekhoud_pakket]}
+                  </Button>
                 )}
 
                 {/* More actions dropdown */}

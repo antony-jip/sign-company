@@ -210,7 +210,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     } else {
       // Geen debiteurennummer (legacy klant): zoek op exacte bedrijfsnaam
-      const zoekRes = await moneybirdFetch(token, `${adminPath}/contacts.json?query=${encodeURIComponent(klantNaam)}`)
+      const zoekRes = await moneybirdFetch(token, `${adminPath}/contacts.json?query=${encodeURIComponent(klantNaam)}&per_page=100`)
       if (zoekRes.ok) {
         const kandidaten = await zoekRes.json() as Array<{ id: number | string; company_name: string | null }>
         const match = kandidaten.find((c) => (c.company_name ?? '').toLowerCase() === klantNaam.toLowerCase())

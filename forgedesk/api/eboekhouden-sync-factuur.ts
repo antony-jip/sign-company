@@ -216,6 +216,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const kandidaten = Array.isArray(body) ? body : (body.items ?? [])
         const match = kandidaten.find((r) => (r.name ?? '').trim().toLowerCase() === klantNaam.toLowerCase())
         if (match) relatieId = match.id
+      } else if (lookupRes.status !== 404) {
+        if (lookupRes.status === 401) {
+          return res.status(401).json({ error: 'e-Boekhouden-sessie is niet meer geldig. Verbind opnieuw via Instellingen > Integraties.' })
+        }
+        const body = await lookupRes.text()
+        console.error('[eboekhouden-sync] relatie naam-lookup fout:', lookupRes.status, body)
+        return res.status(502).json({ error: `e-Boekhouden gaf een fout bij het opzoeken van de klant (${lookupRes.status}).` })
       }
     }
 
