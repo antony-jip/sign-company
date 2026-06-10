@@ -348,6 +348,26 @@ export async function fetchEmailsFromIMAP(
   return response.json()
 }
 
+/** Eén backfill-batch oudere mail (zie api/backfill-emails). */
+export async function backfillEmailsFromIMAP(
+  folder?: string
+): Promise<{ done: boolean; pending?: boolean; synced?: number; oudsteDatum?: string | null }> {
+  const token = await getAuthToken()
+  const response = await fetch('/api/backfill-emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ folder: folder || 'inbox' }),
+  })
+  if (!response.ok) {
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || `Backfill mislukt: ${response.status}`)
+  }
+  return response.json()
+}
+
 export async function readEmailFromIMAP(
   uid: number,
   folder?: string

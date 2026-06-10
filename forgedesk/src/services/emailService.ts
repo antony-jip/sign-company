@@ -5,6 +5,43 @@ import {
 } from './supabaseHelpers'
 import type { Email, InternEmailNotitie } from '@/types'
 
+// ============ HISTORIE-BACKFILL ============
+
+export type BackfillTarget = '1jaar' | '5jaar' | 'alles'
+
+/** Hoe ver de historie-backfill teruggaat (instelling leeft op email_sync_state). */
+export async function getBackfillTarget(): Promise<BackfillTarget> {
+  if (!isSupabaseConfigured() || !supabase) return '1jaar'
+  const { data } = await supabase
+    .from('email_sync_state')
+    .select('backfill_target')
+    .eq('folder', 'inbox')
+    .maybeSingle()
+  return (data?.backfill_target as BackfillTarget) || '1jaar'
+}
+
+/**
+ * Zet het backfill-doel voor inbox + verzonden en heropent de backfill
+ * (backfill_done = false) zodat een ruimer doel direct verder graaft.
+ */
+export async function setBackfillTarget(target: BackfillTarget): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase) return
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Niet ingelogd')
+  const nu = new Date().toISOString()
+  const rows = ['inbox', 'verzonden'].map((folder) => ({
+    user_id: session.user.id,
+    folder,
+    backfill_target: target,
+    backfill_done: false,
+    updated_at: nu,
+  }))
+  const { error } = await supabase
+    .from('email_sync_state')
+    .upsert(rows, { onConflict: 'user_id,folder' })
+  if (error) throw new Error(error.message)
+}
+
 // ============ EMAIL CACHING ============
 
 export async function cacheEmailsToSupabase(

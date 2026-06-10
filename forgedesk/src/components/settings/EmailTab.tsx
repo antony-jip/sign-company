@@ -36,6 +36,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { getBackfillTarget, setBackfillTarget, type BackfillTarget } from '@/services/emailService'
 import { getProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import { uploadFile, downloadFile } from '@/services/storageService'
@@ -439,6 +440,10 @@ export function EmailTab() {
   const [handtekeningAfbeelding, setHandtekeningAfbeelding] = useState('')
   const [afbeeldingGrootte, setAfbeeldingGrootte] = useState(64)
   const [emailFetchLimit, setEmailFetchLimit] = useState(currentFetchLimit || 200)
+  const [backfillTarget, setBackfillTargetState] = useState<BackfillTarget>('1jaar')
+  useEffect(() => {
+    getBackfillTarget().then(setBackfillTargetState).catch(() => { /* default blijft staan */ })
+  }, [])
 
   // Team signatures (admin only)
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
@@ -875,6 +880,23 @@ export function EmailTab() {
               </Select>
               <p className="text-xs text-muted-foreground">Meer emails laden kan trager zijn bij een grote inbox.</p>
             </div>
+            <div className="space-y-2 mt-6">
+              <Label>Mail-historie ophalen</Label>
+              <Select
+                value={backfillTarget}
+                onValueChange={(val) => setBackfillTargetState(val as BackfillTarget)}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1jaar">1 jaar terug</SelectItem>
+                  <SelectItem value="5jaar">5 jaar terug</SelectItem>
+                  <SelectItem value="alles">Alles</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Oudere mail wordt stapsgewijs op de achtergrond binnengehaald, zodat je er gewoon doorheen kunt bladeren en zoeken.</p>
+            </div>
             <div className="flex justify-end mt-6">
               <Button
                 onClick={async () => {
@@ -882,6 +904,7 @@ export function EmailTab() {
                   try {
                     setIsSaving(true)
                     await updateAppSettings(user.id, { email_fetch_limit: emailFetchLimit })
+                    await setBackfillTarget(backfillTarget)
                     await refreshSettings()
                     toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
                   } catch (err) {

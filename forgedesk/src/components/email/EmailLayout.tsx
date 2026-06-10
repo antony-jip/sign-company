@@ -9,7 +9,7 @@ import {
   Rows3, StretchHorizontal, Clock, Moon, Menu, Edit3, ChevronLeft,
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
-import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
+import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, backfillEmailsFromIMAP } from '@/services/gmailService'
 import type { IMAPEmailSummary } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
@@ -306,6 +306,34 @@ export function EmailLayout() {
     return { total, synced }
   }
 
+  // ─── Historie-backfill: rustig op de achtergrond oudere mail binnenhalen ───
+  // Max 8 batches (±2400 mails) per map per sessie, met pauze tussen batches
+  // zodat de IMAP-server en de UI er geen last van hebben. Stopt vanzelf op
+  // backfill_done (cutoff bereikt of UID 1) of als de state nog niet klaar is.
+  const backfillStartedRef = useRef(false)
+  const runBackfillAchtergrond = useCallback(async () => {
+    if (backfillStartedRef.current) return
+    backfillStartedRef.current = true
+    let opgehaald = 0
+    try {
+      for (const map of ['inbox', 'verzonden']) {
+        for (let i = 0; i < 8; i++) {
+          const r = await backfillEmailsFromIMAP(map)
+          opgehaald += r.synced || 0
+          if (r.done || r.pending) break
+          await new Promise((rust) => setTimeout(rust, 1500))
+        }
+      }
+      if (opgehaald > 0) {
+        const fresh = await readFromSupabase()
+        if (fresh.length > 0) setEmails(fresh)
+        logger.log(`[Email] Backfill: ${opgehaald} oudere mails binnengehaald`)
+      }
+    } catch (err) {
+      logger.warn('[Email] Backfill gestopt:', err instanceof Error ? err.message : err)
+    }
+  }, [])
+
   // ─── Initial load: Supabase first, then IMAP sync in background ───
   const initialLoadDone = useRef(false)
   useEffect(() => {
@@ -328,6 +356,7 @@ export function EmailLayout() {
               // Re-read from Supabase after sync
               const fresh = await readFromSupabase()
               if (fresh.length > 0) setEmails(fresh)
+              void runBackfillAchtergrond()
             })
             .catch((err) => {
               logger.warn('[Email] Achtergrond IMAP sync mislukt:', err?.message || err)
@@ -343,6 +372,7 @@ export function EmailLayout() {
           // Read synced emails from Supabase
           const synced = await readFromSupabase()
           setEmails(synced)
+          void runBackfillAchtergrond()
         } catch (err) {
           logger.error('IMAP sync failed:', err)
           setUseIMAP(false)
