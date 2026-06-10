@@ -533,10 +533,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Resolve klant alleen als we het Document echt nog moeten aanmaken.
         const { data: retryKlant } = await supabaseAdmin
           .from('klanten')
-          .select('naam, email, telefoon')
+          .select('bedrijfsnaam, email, telefoon')
           .eq('id', factuur.klant_id)
-          .single()
-        const retryKlantNaam = retryKlant?.naam || factuur.klant_naam || 'Onbekende klant'
+          .maybeSingle()
+        const retryKlantNaam = retryKlant?.bedrijfsnaam || factuur.klant_naam || 'Onbekende klant'
         let retryCustomerGuid: string
         try {
           retryCustomerGuid = await findOrCreateKlant(
@@ -689,11 +689,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Haal klantgegevens op uit Supabase
     const { data: klant } = await supabaseAdmin
       .from('klanten')
-      .select('naam, email, telefoon')
+      .select('bedrijfsnaam, email, telefoon')
       .eq('id', factuur.klant_id)
-      .single()
+      .maybeSingle()
 
-    const klantNaam = klant?.naam || factuur.klant_naam || 'Onbekende klant'
+    const klantNaam = klant?.bedrijfsnaam || factuur.klant_naam || 'Onbekende klant'
     let customerGuid: string
 
     try {
