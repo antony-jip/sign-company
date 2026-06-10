@@ -162,7 +162,7 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
   return folder
 }
 
-export const config = { maxDuration: 30 }
+export const config = { maxDuration: 60 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
@@ -238,6 +238,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const stateBruikbaar = !!syncState
       && Number(syncState.uidvalidity) === uidValidity
       && Number(syncState.last_seen_uid) > 0
+
+    if (syncState && Number(syncState.uidvalidity) !== uidValidity) {
+      // UIDVALIDITY-wissel: alle UIDs (incl. backfill-voortgang) zijn ongeldig.
+      // Re-bootstrap is correct — al gesyncte mails blijven gededupliceerd
+      // in de DB, de backfill scant alleen opnieuw.
+      console.warn('[fetch-emails] UIDVALIDITY gewijzigd, re-bootstrap', {
+        folder: mapValue, oud: syncState.uidvalidity, nieuw: uidValidity,
+      })
+    }
 
     let fetchQuery: { seq?: string; uid?: string } | null = null
     let incremental = false
@@ -317,7 +326,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // geen \Seen op IMAP, dus andersom zou lokaal-gelezen mail terugflippen.
     const seenByUid = new Map<number, boolean>()
     try {
-      const flagsCount = Math.min(Math.max(limit, 100), 300, total)
+      const flagsCount = Math.min(Math.max(limit, 100), 200, total)
       const flagsStart = Math.max(1, total - flagsCount + 1)
       for await (const msg of client.fetch({ seq: `${flagsStart}:${total}` }, { uid: true, flags: true })) {
         if (msg.uid) seenByUid.set(msg.uid, msg.flags?.has('\\Seen') || false)
@@ -474,7 +483,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // wordt ook de backfill-ondergrens gezet zodat fase-1b weet waar oudere
     // mail begint. Mislukt dit (migratie 131 niet gedraaid), dan blijft
     // alles werken in bootstrap-modus.
-    if (maxUidGezien > 0 || !stateBruikbaar) {
+    //
+    // De waterlijn schuift ALLEEN op als de upsert-fase foutloos was —
+    // anders zou mail die niet is opgeslagen bij de volgende run buiten het
+    // incrementele venster vallen en stilletjes verdwijnen.
+    if (errors.length === 0 && (maxUidGezien > 0 || !stateBruikbaar)) {
       const nieuweLastSeen = Math.max(stateBruikbaar ? Number(syncState!.last_seen_uid) : 0, maxUidGezien)
       const stateRow: Record<string, unknown> = {
         user_id,
