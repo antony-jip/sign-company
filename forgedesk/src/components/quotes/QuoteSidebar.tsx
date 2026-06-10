@@ -134,6 +134,14 @@ export interface QuoteSidebarProps {
   handleInkoopRegelAlsPrijsvariant: (regel: InkoopRegel, leverancier: string) => void
 }
 
+// Ronde verkooptotaal-suggesties: dichtstbijzijnde veelvoud van 10/50/100.
+// Dedupe + laat het huidige (al ronde) bedrag weg.
+function afrondSuggesties(huidigTotaal: number): number[] {
+  if (huidigTotaal <= 0) return []
+  const targets = [10, 50, 100].map((stap) => Math.round(huidigTotaal / stap) * stap)
+  return [...new Set(targets)].filter((t) => t > 0 && Math.abs(t - huidigTotaal) >= 0.005)
+}
+
 export function QuoteSidebar({
   sidebarCollapsed,
   setSidebarCollapsed,
@@ -500,6 +508,27 @@ export function QuoteSidebar({
                           <p className="relative text-[11px] text-white/65 mt-1">
                             incl. btw <span className="font-mono tabular-nums">{formatCurrency(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))))}</span>
                           </p>
+                          {!isEditingTotaal && (() => {
+                            const huidig = round2(subtotaal + afrondingskorting + urenCorrectieBedrag)
+                            const suggesties = afrondSuggesties(huidig)
+                            if (suggesties.length === 0) return null
+                            return (
+                              <div className="relative mt-2 flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] uppercase tracking-widest text-white/55 font-semibold">Afronden</span>
+                                {suggesties.map((t) => (
+                                  <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => setAfrondingskorting(round2(t - subtotaal - urenCorrectieBedrag))}
+                                    title={`Verkooptotaal afronden naar ${formatCurrency(t)}`}
+                                    className="text-[11px] font-mono tabular-nums text-white bg-white/15 hover:bg-white/25 rounded-full px-2 py-0.5 transition-colors"
+                                  >
+                                    {formatCurrency(t)}
+                                  </button>
+                                ))}
+                              </div>
+                            )
+                          })()}
                           {afrondingskorting !== 0 && (
                             <div className="relative flex items-center justify-between mt-1.5">
                               <p className="text-[11px] text-white/70">Korting: <span className="font-mono">{formatCurrency(afrondingskorting)}</span> excl BTW</p>
