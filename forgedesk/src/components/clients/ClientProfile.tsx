@@ -57,8 +57,10 @@ import {
   Upload,
   History,
   ArrowRightLeft,
+  AlertTriangle,
 } from 'lucide-react'
 import { Folder, Mail as MailLg } from 'lucide-react'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { toast } from 'sonner'
 import {
   cn,
@@ -605,34 +607,34 @@ export function ClientProfile() {
       {/* ── Klant Labels + Waarschuwingen ── */}
       {(klant.klant_labels || []).length > 0 && (
         <div className="space-y-2">
-          {/* Waarschuwing banners */}
+          {/* Waarschuwing banners — DOEN: pastel banner + flame punt */}
           {(klant.klant_labels || []).includes('niet_helpen') && (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
-              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              <span className="text-sm font-medium">Let op: deze klant heeft het label &quot;Niet helpen&quot;</span>
+            <div className="alert-banner alert-banner-danger">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
+              <span>Let op: deze klant heeft het label &quot;Niet helpen&quot;<span className="text-[#F15025] font-extrabold">.</span></span>
             </div>
           )}
           {(klant.klant_labels || []).includes('vooruit_betalen') && (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300">
-              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              <span className="text-sm font-medium">Let op: deze klant moet vooruit betalen</span>
+            <div className="alert-banner alert-banner-warning">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
+              <span>Let op: deze klant moet vooruit betalen<span className="text-[#F15025] font-extrabold">.</span></span>
             </div>
           )}
           {(klant.klant_labels || []).includes('wanbetaler') && (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
-              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              <span className="text-sm font-medium">Let op: deze klant staat geregistreerd als wanbetaler</span>
+            <div className="alert-banner alert-banner-danger">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
+              <span>Let op: deze klant staat geregistreerd als wanbetaler<span className="text-[#F15025] font-extrabold">.</span></span>
             </div>
           )}
-          {/* Label badges */}
-          <div className="flex flex-wrap gap-1.5">
+          {/* Label badges — tekst + dot + flame punt, geen gekleurde pills */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
             {(klant.klant_labels || []).map((label) => {
               const colors: Record<string, string> = {
-                vooruit_betalen: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-                niet_helpen: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-                voorrang: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-                grote_klant: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-                wanbetaler: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+                vooruit_betalen: '#8A7A4A',
+                niet_helpen: '#C0451A',
+                voorrang: '#3A7D52',
+                grote_klant: '#3A6B8C',
+                wanbetaler: '#C0451A',
               }
               const labels: Record<string, string> = {
                 vooruit_betalen: 'Vooruit betalen',
@@ -642,9 +644,13 @@ export function ClientProfile() {
                 wanbetaler: 'Wanbetaler',
               }
               return (
-                <Badge key={label} className={colors[label] || 'bg-muted text-foreground/70'}>
-                  {labels[label] || label}
-                </Badge>
+                <StatusBadge
+                  key={label}
+                  status={label}
+                  label={labels[label] || label}
+                  color={colors[label] || '#6B6B66'}
+                  className="text-[12px]"
+                />
               )
             })}
           </div>
@@ -1238,7 +1244,7 @@ export function ClientProfile() {
                     key={email.id}
                     className={cn(
                       'cursor-pointer hover:shadow-md transition-shadow duration-150',
-                      !email.gelezen && 'border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20'
+                      !email.gelezen && 'border-[#3A6B8C]/30 dark:border-[#3A6B8C]/50 bg-[#3A6B8C]/[0.06] dark:bg-[#3A6B8C]/[0.12]'
                     )}
                   >
                     <CardContent className="py-4">
@@ -1299,8 +1305,8 @@ export function ClientProfile() {
                     <Card key={doc.id} className="hover:shadow-md transition-shadow duration-150">
                       <CardContent className="pt-6">
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                            <FileIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                          <div className="w-10 h-10 rounded-lg bg-[#3A6B8C]/10 dark:bg-[#3A6B8C]/25 flex items-center justify-center flex-shrink-0">
+                            <FileIcon className="w-5 h-5 text-[#3A6B8C] dark:text-[#7AA4CC]" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{doc.naam}</p>
@@ -1379,8 +1385,8 @@ export function ClientProfile() {
                     {contactpersonen.map((cp) => (
                       <div key={cp.id} className="py-3 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                          <div className="w-10 h-10 rounded-full bg-[#3A6B8C]/10 dark:bg-[#3A6B8C]/25 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-semibold text-[#3A6B8C] dark:text-[#7AA4CC]">
                               {cp.naam.charAt(0).toUpperCase()}
                             </span>
                           </div>
@@ -1441,8 +1447,8 @@ export function ClientProfile() {
                       return (
                         <div key={ic.id} className="py-3 flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
-                              <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                            <div className="w-10 h-10 rounded-full bg-[#3A6B8C]/10 dark:bg-[#3A6B8C]/25 flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-semibold text-[#3A6B8C] dark:text-[#7AA4CC]">
                                 {(ic.voornaam || ic.achternaam || ic.email || '?').charAt(0).toUpperCase()}
                               </span>
                             </div>
