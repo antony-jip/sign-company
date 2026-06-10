@@ -2094,6 +2094,15 @@ export function EmailLayout() {
             </div>
           ) : (
             <div>
+              {searchQuery.trim() && searchResults !== null && (
+                <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50">
+                  {isSearching && <Loader2 className="h-3 w-3 animate-spin text-[#1A535C]/50" />}
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <span className="font-mono tabular-nums">{threadedEmails.length}</span>
+                    {' '}resultaten{searchHasMoreRef.current ? ' · scroll voor meer' : ''}
+                  </span>
+                </div>
+              )}
               <div
                 style={{
                   height: rowVirtualizer.getTotalSize(),
