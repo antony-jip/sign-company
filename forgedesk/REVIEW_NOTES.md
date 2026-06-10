@@ -728,3 +728,10 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
      ['snelstart','moneybird','eboekhouden', null] — meenemen in fase 1.
   4. Zodra fase 1 de DB-write doet: facturen.boekhoud_pakket (server-side) leidend
      voor de badge, niet settings.boekhoud_pakket.
+- Fase 1 (Moneybird) gate: BLOKKADE (cross-org sync via service-role zonder org-check)
+  gefixt in a5ec20ce + race-verliezer-detectie via .select('id') op de write-back.
+  Open punten: check-then-act race kan nog steeds dubbel boeken in Moneybird zelf
+  (alleen DB-state is beschermd); api/exact-sync-factuur.ts heeft hetzelfde org-gat
+  én geen 409-idempotency — eigen fix-taak, buiten deze feature; klant-select bug
+  in exact-sync (naam i.p.v. bedrijfsnaam) eveneens apart oppakken; pre-existing
+  64 TS-errors maken typecheck als gate waardeloos — opruimronde plannen.

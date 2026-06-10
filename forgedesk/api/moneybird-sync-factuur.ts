@@ -328,7 +328,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 6. Sync-state terugschrijven. De .is()-guard voorkomt dat een race
     // (twee gelijktijdige syncs) elkaars extern_id overschrijft.
     const syncedAt = new Date().toISOString()
-    const { error: updateError } = await supabaseAdmin
+    const { data: updatedRows, error: updateError } = await supabaseAdmin
       .from('facturen')
       .update({
         boekhoud_pakket: 'moneybird',
@@ -337,10 +337,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       .eq('id', factuur_id)
       .is('boekhoud_extern_id', null)
-    if (updateError) {
-      // Invoice bestaat in Moneybird maar doen. weet het niet — meld het
-      // extern_id zodat de gebruiker niet blind opnieuw synct (= dubbele boeking).
-      console.error('[moneybird-sync] sync-state opslaan mislukt:', updateError.message)
+      .select('id')
+    if (updateError || !updatedRows || updatedRows.length === 0) {
+      // Invoice bestaat in Moneybird maar de state-write faalde óf een
+      // gelijktijdige sync won de race — meld het extern_id zodat de
+      // gebruiker niet blind opnieuw synct (= dubbele boeking).
+      console.error('[moneybird-sync] sync-state opslaan mislukt:', updateError?.message ?? 'race verloren (0 rijen geüpdatet)')
       return res.status(200).json({
         success: true,
         extern_id: externId,
