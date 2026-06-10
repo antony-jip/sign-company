@@ -107,6 +107,22 @@ export function IntegratiesTab() {
   const [boekhoudPakket, setBoekhoudPakket] = useState<BoekhoudPakket | ''>('')
   const [boekhoudTokenAanwezig, setBoekhoudTokenAanwezig] = useState(false)
 
+  // Moneybird state
+  const [moneybirdToken, setMoneybirdToken] = useState('')
+  const [moneybirdConnecting, setMoneybirdConnecting] = useState(false)
+  const [moneybirdAdministrations, setMoneybirdAdministrations] = useState<Array<{ id: string; naam: string }>>([])
+  const [moneybirdAdministrationId, setMoneybirdAdministrationId] = useState('')
+  const [moneybirdLedgers, setMoneybirdLedgers] = useState<Array<{ id: string; naam: string }>>([])
+  const [moneybirdTaxRates, setMoneybirdTaxRates] = useState<Array<{ id: string; naam: string; percentage: string | null }>>([])
+  const [moneybirdLedgerAccountId, setMoneybirdLedgerAccountId] = useState('')
+  const [moneybirdTaxHoog, setMoneybirdTaxHoog] = useState('')
+  const [moneybirdTaxLaag, setMoneybirdTaxLaag] = useState('')
+  const [moneybirdTaxNul, setMoneybirdTaxNul] = useState('')
+  const [moneybirdConfigLoading, setMoneybirdConfigLoading] = useState(false)
+  const [moneybirdConfigError, setMoneybirdConfigError] = useState<string | null>(null)
+  const [moneybirdConfigGeladen, setMoneybirdConfigGeladen] = useState(false)
+  const [moneybirdSaving, setMoneybirdSaving] = useState(false)
+
   useEffect(() => {
     if (!user?.id) return
     const isEncrypted = (v: string) => /^[0-9a-f]{32}:/.test(v)
@@ -135,6 +151,11 @@ export function IntegratiesTab() {
         eboekhouden: s.eboekhouden_api_token,
       }
       setBoekhoudTokenAanwezig(!!(pakket && tokenPerPakket[pakket]))
+      setMoneybirdAdministrationId(s.moneybird_administration_id ?? '')
+      setMoneybirdLedgerAccountId(s.moneybird_ledger_account_id ?? '')
+      setMoneybirdTaxHoog(s.moneybird_tax_rate_hoog ?? '')
+      setMoneybirdTaxLaag(s.moneybird_tax_rate_laag ?? '')
+      setMoneybirdTaxNul(s.moneybird_tax_rate_nul ?? '')
     }).catch(() => {})
   }, [user?.id])
 
@@ -307,6 +328,111 @@ export function IntegratiesTab() {
       logger.error('Fout bij opslaan boekhoudpakket:', err)
       setBoekhoudPakket(vorige)
       toast.error('Kon boekhoudpakket niet opslaan')
+    }
+  }
+
+  const loadMoneybirdConfig = useCallback(async () => {
+    setMoneybirdConfigLoading(true)
+    setMoneybirdConfigError(null)
+    try {
+      if (!supabase) throw new Error('Niet ingelogd')
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess?.session?.access_token
+      if (!token) throw new Error('Niet ingelogd')
+      const headers = { Authorization: `Bearer ${token}` }
+      const [ledgersRes, taxRes] = await Promise.all([
+        fetch('/api/moneybird-ledger-accounts', { headers }),
+        fetch('/api/moneybird-tax-rates', { headers }),
+      ])
+      if (!ledgersRes.ok) {
+        const err = await ledgersRes.json().catch(() => ({}))
+        throw new Error(err.error || `Status ${ledgersRes.status}`)
+      }
+      if (!taxRes.ok) {
+        const err = await taxRes.json().catch(() => ({}))
+        throw new Error(err.error || `Status ${taxRes.status}`)
+      }
+      setMoneybirdLedgers(await ledgersRes.json())
+      setMoneybirdTaxRates(await taxRes.json())
+      setMoneybirdConfigGeladen(true)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Onbekende fout'
+      setMoneybirdConfigError(msg)
+      logger.error('Moneybird configuratie laden mislukt:', err)
+    } finally {
+      setMoneybirdConfigLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (
+      boekhoudPakket === 'moneybird' &&
+      boekhoudTokenAanwezig &&
+      moneybirdAdministrationId &&
+      !moneybirdConfigGeladen &&
+      !moneybirdConfigLoading
+    ) {
+      loadMoneybirdConfig()
+    }
+  }, [boekhoudPakket, boekhoudTokenAanwezig, moneybirdAdministrationId, moneybirdConfigGeladen, moneybirdConfigLoading, loadMoneybirdConfig])
+
+  const handleMoneybirdAdministratieChange = async (id: string) => {
+    setMoneybirdAdministrationId(id)
+    try {
+      await saveIntegrationSettings({ moneybird_administration_id: id })
+      setMoneybirdConfigGeladen(false)
+    } catch (err) {
+      logger.error('Moneybird administratie opslaan mislukt:', err)
+      toast.error('Kon administratie niet opslaan')
+    }
+  }
+
+  const handleMoneybirdConnect = async () => {
+    setMoneybirdConnecting(true)
+    try {
+      if (!supabase) throw new Error('Niet ingelogd')
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess?.session?.access_token
+      if (!token) throw new Error('Niet ingelogd')
+      const res = await fetch('/api/moneybird-connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ api_token: moneybirdToken }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Verbinden mislukt')
+      const admins = (body.administrations ?? []) as Array<{ id: string; naam: string }>
+      setMoneybirdAdministrations(admins)
+      setBoekhoudTokenAanwezig(true)
+      setMoneybirdToken('')
+      if (admins.length === 1) {
+        await handleMoneybirdAdministratieChange(admins[0].id)
+      }
+      toast.success(<>Moneybird verbonden<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('Moneybird verbinden mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Verbinden mislukt')
+    } finally {
+      setMoneybirdConnecting(false)
+    }
+  }
+
+  const handleMoneybirdSave = async () => {
+    setMoneybirdSaving(true)
+    try {
+      await saveIntegrationSettings({
+        moneybird_ledger_account_id: moneybirdLedgerAccountId,
+        moneybird_tax_rate_hoog: moneybirdTaxHoog,
+        moneybird_tax_rate_laag: moneybirdTaxLaag,
+        moneybird_tax_rate_nul: moneybirdTaxNul,
+      })
+      refreshSettings?.()
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('Moneybird instellingen opslaan mislukt:', err)
+      toast.error('Kon Moneybird instellingen niet opslaan')
+    } finally {
+      setMoneybirdSaving(false)
     }
   }
 
@@ -705,6 +831,138 @@ export function IntegratiesTab() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {boekhoudPakket === 'moneybird' && (
+                <div className="space-y-3 border-t border-border pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="moneybird-token" className="text-sm font-medium">
+                      Moneybird API-token
+                    </Label>
+                    <Input
+                      id="moneybird-token"
+                      type="password"
+                      value={moneybirdToken}
+                      onChange={(e) => setMoneybirdToken(e.target.value)}
+                      placeholder={boekhoudTokenAanwezig ? 'Token opgeslagen — vul in om te vervangen' : 'Persoonlijk API-token'}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Maak een token aan in Moneybird onder{' '}
+                      <a
+                        href="https://moneybird.com/user/applications"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline inline-flex items-center gap-0.5"
+                      >
+                        Instellingen → Externe koppelingen <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </p>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      disabled={(!moneybirdToken && !boekhoudTokenAanwezig) || moneybirdConnecting}
+                      onClick={handleMoneybirdConnect}
+                      className="gap-1.5"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {moneybirdConnecting ? 'Verbinden...' : (boekhoudTokenAanwezig ? 'Opnieuw verbinden' : 'Verbinden')}
+                    </Button>
+                  </div>
+
+                  {moneybirdAdministrations.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="moneybird-administratie" className="text-sm">Administratie</Label>
+                      <Select value={moneybirdAdministrationId} onValueChange={handleMoneybirdAdministratieChange}>
+                        <SelectTrigger id="moneybird-administratie" className="text-sm">
+                          <SelectValue placeholder="Kies administratie..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {moneybirdAdministrations.map((a) => (
+                            <SelectItem key={a.id} value={a.id}>{a.naam}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {boekhoudTokenAanwezig && moneybirdAdministrationId && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Boekingsinstellingen</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={loadMoneybirdConfig}
+                          disabled={moneybirdConfigLoading}
+                          className="h-7 text-xs gap-1"
+                        >
+                          <RefreshCw className={cn('w-3 h-3', moneybirdConfigLoading && 'animate-spin')} />
+                          Opnieuw ophalen
+                        </Button>
+                      </div>
+                      {moneybirdConfigError ? (
+                        <div className="text-xs text-amber-600 dark:text-amber-400">
+                          Configuratie ophalen mislukt: {moneybirdConfigError}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="moneybird-omzetrekening" className="text-sm">Omzetrekening</Label>
+                            <Select
+                              value={moneybirdLedgerAccountId}
+                              onValueChange={setMoneybirdLedgerAccountId}
+                              disabled={moneybirdConfigLoading || moneybirdLedgers.length === 0}
+                            >
+                              <SelectTrigger id="moneybird-omzetrekening" className="text-sm">
+                                <SelectValue placeholder={moneybirdConfigLoading ? 'Laden...' : 'Kies omzetrekening...'} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {moneybirdLedgers.map((l) => (
+                                  <SelectItem key={l.id} value={l.id}>{l.naam}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {([
+                              { id: 'moneybird-btw-hoog', label: 'BTW hoog (21%)', value: moneybirdTaxHoog, setter: setMoneybirdTaxHoog },
+                              { id: 'moneybird-btw-laag', label: 'BTW laag (9%)', value: moneybirdTaxLaag, setter: setMoneybirdTaxLaag },
+                              { id: 'moneybird-btw-nul', label: 'BTW nul (0%)', value: moneybirdTaxNul, setter: setMoneybirdTaxNul },
+                            ] as const).map((veld) => (
+                              <div key={veld.id} className="space-y-2">
+                                <Label htmlFor={veld.id} className="text-sm">{veld.label}</Label>
+                                <Select
+                                  value={veld.value}
+                                  onValueChange={veld.setter}
+                                  disabled={moneybirdConfigLoading || moneybirdTaxRates.length === 0}
+                                >
+                                  <SelectTrigger id={veld.id} className="text-sm">
+                                    <SelectValue placeholder={moneybirdConfigLoading ? 'Laden...' : 'Kies tarief...'} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {moneybirdTaxRates.map((t) => (
+                                      <SelectItem key={t.id} value={t.id}>
+                                        {t.naam}{t.percentage != null ? ` (${t.percentage}%)` : ''}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex justify-end">
+                            <Button onClick={handleMoneybirdSave} disabled={moneybirdSaving} size="sm" variant="outline">
+                              {moneybirdSaving ? 'Opslaan...' : 'Opslaan'}
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {boekhoudPakket && exactConnected && (
                 <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
