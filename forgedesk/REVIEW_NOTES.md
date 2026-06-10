@@ -715,3 +715,16 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
 - Fase 1a gate: blokkades 1-3 gefixt (waterlijn alleen bij foutloze upsert; uidvalidity-log; 60s/flags-cap). Blokkade 4 (503 zonder migratie 131) verworpen: fallback is exact het oude productiegedrag, 503 zou mail breken.
 - Fase 1b gate: NULL-message_id dedup gefixt. Verworpen: 'upsert reset andere kolommen naar NULL' (PostgREST update't alleen meegestuurde kolommen) en 'setBackfillTarget via serverless endpoint' (client-side RLS-update is het standaardpatroon in deze codebase).
 - Eindfase email-outlook (QAA + senior): AKKOORD-MET-OPMERKINGEN. Open punten voor later: observability/metrics op sync-vensters, flags-resync 2-pass voor grote inboxen, TTL-constante op 3 plekken (storageService/groteBijlagen/cleanup-cron), zoeklimiet 50 op 2 plekken. Deploy-volgorde: migraties 129→130→131 in Supabase SQL editor, daarna `npx trigger.dev@latest deploy` (cleanup-cron gewijzigd), dan pas mergen.
+
+## Boekhoudkoppelingen (SnelStart/Moneybird/e-Boekhouden) — fase 0 gate
+
+- Fase 0 gate-review: AKKOORD-MET-OPMERKINGEN. Open punten:
+  1. Sync-knop in FactuurEditor is dood (404) zolang fase 1-3 endpoints niet bestaan —
+     fase 0 niet los naar productie mergen, of knop extra gaten op token-aanwezigheid.
+  2. Fase 1-3 sync-endpoints MOETEN server-side idempotent zijn: eerst
+     facturen.boekhoud_extern_id checken vóór aanmaken in het externe pakket
+     (sync-knop heeft geen disabled/loading-state, dubbel-klik = twee POSTs).
+  3. boekhoud_pakket in save-integration-settings.ts whitelisten op
+     ['snelstart','moneybird','eboekhouden', null] — meenemen in fase 1.
+  4. Zodra fase 1 de DB-write doet: facturen.boekhoud_pakket (server-side) leidend
+     voor de badge, niet settings.boekhoud_pakket.
