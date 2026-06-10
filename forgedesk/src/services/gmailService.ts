@@ -110,6 +110,33 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return false
+
+    // Server kan de mail WEL verstuurd hebben terwijl alleen de response
+    // wegviel — send-email persisteert verzonden mails in `emails`, dus
+    // check de verzonden-map van de laatste minuten voordat we enqueuen.
+    const { data: netVerzonden } = await supabase
+      .from('emails')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .eq('map', 'verzonden')
+      .eq('onderwerp', subject)
+      .gte('datum', new Date(Date.now() - 5 * 60_000).toISOString())
+      .limit(1)
+    if (netVerzonden && netVerzonden.length > 0) return false
+
+    // Dedup: nooit twee outbox-rijen voor dezelfde mail (dubbele clicks,
+    // races, herhaalde fouten op rij).
+    const { data: bestaand } = await supabase
+      .from('ingeplande_berichten')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .eq('ontvanger', to)
+      .eq('onderwerp', subject)
+      .eq('bron', 'outbox')
+      .in('status', ['wachtend', 'verwerken'])
+      .limit(1)
+    if (bestaand && bestaand.length > 0) return true
+
     const { error } = await supabase.from('ingeplande_berichten').insert({
       user_id: session.user.id,
       ontvanger: to,

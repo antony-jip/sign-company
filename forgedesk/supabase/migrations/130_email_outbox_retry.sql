@@ -11,6 +11,11 @@ ALTER TABLE ingeplande_berichten
   ADD COLUMN IF NOT EXISTS retry_count INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS bron TEXT NOT NULL DEFAULT 'ingepland';
 
+ALTER TABLE ingeplande_berichten
+  DROP CONSTRAINT IF EXISTS ingeplande_berichten_bron_check;
+ALTER TABLE ingeplande_berichten
+  ADD CONSTRAINT ingeplande_berichten_bron_check CHECK (bron IN ('ingepland', 'outbox'));
+
 -- Snelle cron-scan op wachtende rijen die "due" zijn.
 CREATE INDEX IF NOT EXISTS idx_ingeplande_berichten_due
   ON ingeplande_berichten (scheduled_at)
