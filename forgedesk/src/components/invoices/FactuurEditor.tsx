@@ -104,7 +104,13 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useTrialGuard } from '@/hooks/useTrialGuard'
 import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
-import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon, FactuurBijlage } from '@/types'
+import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon, FactuurBijlage, BoekhoudPakket } from '@/types'
+
+const BOEKHOUD_PAKKET_NAAM: Record<BoekhoudPakket, string> = {
+  snelstart: 'SnelStart',
+  moneybird: 'Moneybird',
+  eboekhouden: 'e-Boekhouden',
+}
 import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
 import { genereerEnUploadFactuurPdf, downloadFactuurPdfFromStorage } from '@/services/factuurPdfService'
@@ -334,6 +340,7 @@ export function FactuurEditor() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [boekhoudSyncing, setBoekhoudSyncing] = useState(false)
   const [dialogBijlagen, setDialogBijlagen] = useState<FactuurBijlage[]>([])
   const [selectedBijlageIds, setSelectedBijlageIds] = useState<Set<string>>(new Set())
   const [creditnotaDialogOpen, setCreditnotaDialogOpen] = useState(false)
@@ -1468,6 +1475,25 @@ export function FactuurEditor() {
       }
 
       const saved = await createFactuur(creditnota)
+
+      // Kopieer items als negatieve bedragen (zelfde patroon als
+      // factuurService.createCreditnota) — zonder regels kan de creditnota
+      // niet naar de boekhouding gesynct worden.
+      const origineleItems = await getFactuurItems(existingFactuur.id)
+      for (const item of origineleItems) {
+        await createFactuurItem({
+          user_id: user?.id || '',
+          factuur_id: saved.id,
+          beschrijving: item.beschrijving,
+          aantal: -item.aantal,
+          eenheidsprijs: round2(item.eenheidsprijs),
+          btw_percentage: item.btw_percentage,
+          korting_percentage: item.korting_percentage,
+          totaal: round2(-item.totaal),
+          volgorde: item.volgorde,
+        } as Omit<FactuurItem, 'id' | 'created_at'>)
+      }
+
       logCreate({ user, entityType: 'factuur', entityId: saved.id, omschrijving: `Creditnota op factuur ${existingFactuur.nummer}` })
 
       // Mark original as gecrediteerd
@@ -1670,6 +1696,103 @@ export function FactuurEditor() {
     }
   }, [existingFactuur, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCreditFactuur, selectedKlant, documentStyle])
 
+  // ============ BOEKHOUD SYNC (SnelStart / Moneybird / e-Boekhouden) ============
+
+  const handleSyncBoekhouding = useCallback(async () => {
+    if (!existingFactuur || boekhoudSyncing) return
+    const pakket = settings.boekhoud_pakket
+    if (!pakket) return
+    // De server boekt de DB-staat; met onopgeslagen wijzigingen zouden
+    // boeking (oude regels) en PDF (nieuwe editor-staat) uiteenlopen.
+    if (isDirty) {
+      toast.error('Sla de factuur eerst op voordat je naar de boekhouding synct')
+      return
+    }
+    setBoekhoudSyncing(true)
+    const pakketNaam = BOEKHOUD_PAKKET_NAAM[pakket]
+    const toastId = toast.loading(`Synchroniseren met ${pakketNaam}...`)
+
+    try {
+      const session = await import('@/services/supabaseClient').then(m => m.default?.auth.getSession())
+      const token = session?.data?.session?.access_token
+      if (!token) { toast.error('Niet ingelogd', { id: toastId }); return }
+
+      // Alleen Moneybird accepteert een PDF-bijlage; genereer die lazy,
+      // zelfde patroon als handleSyncExact.
+      if (pakket === 'moneybird' && !existingFactuur.pdf_storage_path && existingFactuur.organisatie_id) {
+        try {
+          const bedrijfsProfiel = { ...profile, primaireKleur }
+          const factuurData = {
+            nummer,
+            titel,
+            datum: factuurdatum,
+            vervaldatum,
+            subtotaal,
+            btw_bedrag: btwBedrag,
+            totaal,
+            notities: notities || undefined,
+            betaalvoorwaarden: voorwaarden || undefined,
+            factuur_type: (isCredit ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
+            betaal_link: existingFactuur.betaal_link || undefined,
+            outro_tekst: outroTekst || undefined,
+          }
+          const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
+            id: item.id,
+            offerte_id: '',
+            beschrijving: item.beschrijving,
+            aantal: item.aantal,
+            eenheidsprijs: item.eenheidsprijs,
+            btw_percentage: item.btw_percentage,
+            korting_percentage: item.korting_percentage,
+            totaal: calcLineTotal(item),
+            volgorde: idx + 1,
+            created_at: new Date().toISOString(),
+          }))
+          await genereerEnUploadFactuurPdf({
+            factuurId: existingFactuur.id,
+            organisatieId: existingFactuur.organisatie_id,
+            factuurData,
+            items: pdfItems,
+            klant: selectedKlant || {},
+            bedrijfsProfiel,
+            docStyle: documentStyle,
+          })
+        } catch (pdfErr) {
+          logger.warn('Lazy PDF upload vóór boekhoud-sync mislukt, sync gaat door zonder bijlage:', pdfErr)
+        }
+      }
+
+      const res = await fetch(`/api/${pakket}-sync-factuur`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ factuur_id: existingFactuur.id }),
+      })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'Sync mislukt')
+      }
+      const data = await res.json() as { extern_id: string; waarschuwing?: string }
+
+      setExistingFactuur({
+        ...existingFactuur,
+        boekhoud_pakket: pakket,
+        boekhoud_extern_id: data.extern_id,
+        boekhoud_synced_at: new Date().toISOString(),
+      })
+
+      if (data.waarschuwing) {
+        toast.warning(data.waarschuwing, { id: toastId, duration: 10000 })
+      } else {
+        toast.success(`Factuur gesynchroniseerd met ${pakketNaam}`, { id: toastId })
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Sync mislukt'
+      toast.error(msg, { id: toastId })
+    } finally {
+      setBoekhoudSyncing(false)
+    }
+  }, [existingFactuur, boekhoudSyncing, isDirty, settings.boekhoud_pakket, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCredit, selectedKlant, documentStyle, outroTekst])
+
   // ============ LOADING ============
 
   if (isLoading) {
@@ -1803,6 +1926,32 @@ export function FactuurEditor() {
                       Sync Exact
                     </Button>
                   )
+                )}
+
+                {/* Boekhoudpakket sync (SnelStart / Moneybird / e-Boekhouden).
+                    De badge hangt aan de factuur-historie, de knop aan het
+                    actieve pakket — zo blijft de gesynct-status zichtbaar na
+                    een pakketwissel of wissel naar "Geen". */}
+                {existingFactuur?.boekhoud_synced_at && existingFactuur.boekhoud_pakket && (
+                  <Badge
+                    className="bg-[hsl(var(--status-green-bg))] text-[#2D6B48] text-xs gap-1"
+                    title={`${BOEKHOUD_PAKKET_NAAM[existingFactuur.boekhoud_pakket]} gesynchroniseerd op ${new Date(existingFactuur.boekhoud_synced_at).toLocaleDateString('nl-NL')}`}
+                  >
+                    <CheckCircle2 className="w-3 h-3" />
+                    {BOEKHOUD_PAKKET_NAAM[existingFactuur.boekhoud_pakket]}
+                  </Badge>
+                )}
+                {settings.boekhoud_pakket && existingFactuur && !existingFactuur.boekhoud_synced_at && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-[#1A535C] border-[#1A535C]/20 hover:bg-[#1A535C]/5 gap-1"
+                    onClick={handleSyncBoekhouding}
+                    disabled={boekhoudSyncing}
+                  >
+                    <RefreshCw className={cn('w-3.5 h-3.5', boekhoudSyncing && 'animate-spin')} />
+                    Sync {BOEKHOUD_PAKKET_NAAM[settings.boekhoud_pakket]}
+                  </Button>
                 )}
 
                 {/* More actions dropdown */}

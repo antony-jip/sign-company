@@ -659,6 +659,8 @@ export interface NavItem {
   badge?: number;
 }
 
+export type BoekhoudPakket = 'snelstart' | 'moneybird' | 'eboekhouden';
+
 export interface AppSettings {
   id: string;
   user_id?: string;
@@ -785,6 +787,22 @@ export interface AppSettings {
   exact_btw_nul?: string;
   exact_document_type_id?: number;
   exact_document_type_naam?: string;
+  // Boekhoudkoppeling (migratie 132) — één pakket tegelijk, naast eventueel Exact Online
+  boekhoud_pakket?: BoekhoudPakket | null;
+  snelstart_koppelsleutel?: string;
+  snelstart_grootboek_id?: string;
+  snelstart_grootboek_naam?: string;
+  snelstart_grootboek_laag_id?: string;
+  snelstart_grootboek_nul_id?: string;
+  moneybird_api_token?: string;
+  moneybird_administration_id?: string;
+  moneybird_ledger_account_id?: string;
+  moneybird_tax_rate_hoog?: string;
+  moneybird_tax_rate_laag?: string;
+  moneybird_tax_rate_nul?: string;
+  eboekhouden_api_token?: string;
+  eboekhouden_debiteuren_ledger_id?: string;
+  eboekhouden_omzet_ledger_id?: string;
   // Snelofferte: welke calculatie-templates als snelkoppeling tonen in het Nieuwe Offerte formulier
   snelofferte_templates?: string[];
   created_at: string;
@@ -1036,6 +1054,10 @@ export interface Factuur {
   exact_synced_at?: string;
   exact_document_id?: string;
   exact_bijlage_gesynced_op?: string;
+  // Boekhoudkoppeling sync (migratie 132)
+  boekhoud_pakket?: BoekhoudPakket | null;
+  boekhoud_extern_id?: string;
+  boekhoud_synced_at?: string;
   // Creditfactuur referentie
   credit_voor_factuur_id?: string;
   // Kostenplaats

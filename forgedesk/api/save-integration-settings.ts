@@ -52,9 +52,30 @@ const ALLOWED_FIELDS = [
   'exact_btw_nul',
   'exact_document_type_id',
   'exact_document_type_naam',
+  'boekhoud_pakket',
+  'snelstart_koppelsleutel',
+  'snelstart_grootboek_id',
+  'snelstart_grootboek_naam',
+  'snelstart_grootboek_laag_id',
+  'snelstart_grootboek_nul_id',
+  'moneybird_api_token',
+  'moneybird_administration_id',
+  'moneybird_ledger_account_id',
+  'moneybird_tax_rate_hoog',
+  'moneybird_tax_rate_laag',
+  'moneybird_tax_rate_nul',
+  'eboekhouden_api_token',
+  'eboekhouden_debiteuren_ledger_id',
+  'eboekhouden_omzet_ledger_id',
 ] as const
 
-const SECRET_FIELDS = ['mollie_api_key', 'exact_online_client_secret']
+const SECRET_FIELDS = [
+  'mollie_api_key',
+  'exact_online_client_secret',
+  'snelstart_koppelsleutel',
+  'moneybird_api_token',
+  'eboekhouden_api_token',
+]
 
 function getClientIp(req: VercelRequest): string | null {
   const fwd = req.headers['x-forwarded-for']
@@ -137,6 +158,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'Geen geldige velden opgegeven' })
+    }
+
+    if ('boekhoud_pakket' in updates) {
+      const pakket = updates.boekhoud_pakket
+      if (pakket !== null && !['snelstart', 'moneybird', 'eboekhouden'].includes(pakket as string)) {
+        return res.status(400).json({ error: 'Ongeldig boekhoudpakket' })
+      }
     }
 
     // Bepaal audit-events door oude staat op te halen vóór de update.

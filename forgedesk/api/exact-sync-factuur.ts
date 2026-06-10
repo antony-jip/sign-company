@@ -531,12 +531,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (!documentId) {
         // Resolve klant alleen als we het Document echt nog moeten aanmaken.
-        const { data: retryKlant } = await supabaseAdmin
+        const { data: retryKlant, error: retryKlantError } = await supabaseAdmin
           .from('klanten')
-          .select('naam, email, telefoon')
+          .select('bedrijfsnaam, email, telefoon')
           .eq('id', factuur.klant_id)
-          .single()
-        const retryKlantNaam = retryKlant?.naam || factuur.klant_naam || 'Onbekende klant'
+          .maybeSingle()
+        if (retryKlantError) console.error('[exact-sync] klant lookup fout (retry-flow):', retryKlantError.message)
+        const retryKlantNaam = retryKlant?.bedrijfsnaam || factuur.klant_naam || 'Onbekende klant'
         let retryCustomerGuid: string
         try {
           retryCustomerGuid = await findOrCreateKlant(
@@ -687,13 +688,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 4. Klant zoeken/aanmaken
     // Haal klantgegevens op uit Supabase
-    const { data: klant } = await supabaseAdmin
+    const { data: klant, error: klantError } = await supabaseAdmin
       .from('klanten')
-      .select('naam, email, telefoon')
+      .select('bedrijfsnaam, email, telefoon')
       .eq('id', factuur.klant_id)
-      .single()
+      .maybeSingle()
+    if (klantError) console.error('[exact-sync] klant lookup fout:', klantError.message)
 
-    const klantNaam = klant?.naam || factuur.klant_naam || 'Onbekende klant'
+    const klantNaam = klant?.bedrijfsnaam || factuur.klant_naam || 'Onbekende klant'
     let customerGuid: string
 
     try {

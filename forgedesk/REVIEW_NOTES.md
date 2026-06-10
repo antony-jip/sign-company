@@ -715,3 +715,89 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
 - Fase 1a gate: blokkades 1-3 gefixt (waterlijn alleen bij foutloze upsert; uidvalidity-log; 60s/flags-cap). Blokkade 4 (503 zonder migratie 131) verworpen: fallback is exact het oude productiegedrag, 503 zou mail breken.
 - Fase 1b gate: NULL-message_id dedup gefixt. Verworpen: 'upsert reset andere kolommen naar NULL' (PostgREST update't alleen meegestuurde kolommen) en 'setBackfillTarget via serverless endpoint' (client-side RLS-update is het standaardpatroon in deze codebase).
 - Eindfase email-outlook (QAA + senior): AKKOORD-MET-OPMERKINGEN. Open punten voor later: observability/metrics op sync-vensters, flags-resync 2-pass voor grote inboxen, TTL-constante op 3 plekken (storageService/groteBijlagen/cleanup-cron), zoeklimiet 50 op 2 plekken. Deploy-volgorde: migraties 129→130→131 in Supabase SQL editor, daarna `npx trigger.dev@latest deploy` (cleanup-cron gewijzigd), dan pas mergen.
+
+## Boekhoudkoppelingen (SnelStart/Moneybird/e-Boekhouden) — fase 0 gate
+
+- Fase 0 gate-review: AKKOORD-MET-OPMERKINGEN. Open punten:
+  1. Sync-knop in FactuurEditor is dood (404) zolang fase 1-3 endpoints niet bestaan —
+     fase 0 niet los naar productie mergen, of knop extra gaten op token-aanwezigheid.
+  2. Fase 1-3 sync-endpoints MOETEN server-side idempotent zijn: eerst
+     facturen.boekhoud_extern_id checken vóór aanmaken in het externe pakket
+     (sync-knop heeft geen disabled/loading-state, dubbel-klik = twee POSTs).
+  3. boekhoud_pakket in save-integration-settings.ts whitelisten op
+     ['snelstart','moneybird','eboekhouden', null] — meenemen in fase 1.
+  4. Zodra fase 1 de DB-write doet: facturen.boekhoud_pakket (server-side) leidend
+     voor de badge, niet settings.boekhoud_pakket.
+- Fase 1 (Moneybird) gate: BLOKKADE (cross-org sync via service-role zonder org-check)
+  gefixt in a5ec20ce + race-verliezer-detectie via .select('id') op de write-back.
+  Open punten: check-then-act race kan nog steeds dubbel boeken in Moneybird zelf
+  (alleen DB-state is beschermd); api/exact-sync-factuur.ts heeft hetzelfde org-gat
+  én geen 409-idempotency — eigen fix-taak, buiten deze feature; klant-select bug
+  in exact-sync (naam i.p.v. bedrijfsnaam) eveneens apart oppakken; pre-existing
+  64 TS-errors maken typecheck als gate waardeloos — opruimronde plannen.
+- Fase 2 (e-Boekhouden) gate: AKKOORD-MET-OPMERKINGEN. Gefixt in review-commit:
+  lookup-fout niet meer stil doorvallen naar relatie-aanmaken; fuzzy-match-fallback
+  (kandidaten[0]) verwijderd; sessie-DELETE in ledgers-route nu in finally.
+  Open punten voor later: BTW verlegd (VERL_VERK) niet representeerbaar — 0% is
+  altijd GEEN, gedocumenteerd in UI-helptekst; creditnota met negatieve regels
+  testen tegen echte e-Boekhouden API vóór livegang; ledger-paginatie boven 500;
+  NaN-guard op opgeslagen ledger-ids; 429-specifieke melding op mutatie-call.
+- Fase 3 (SnelStart) gate: AKKOORD-MET-OPMERKINGEN. Gefixt in review-commit:
+  relatiecode-normalisatie (voorloopnullen), 400 bij BTW-verschil > 5 cent
+  i.p.v. inconsistent doorboeken, waarschuwing-veld uit sync-response wordt nu
+  als warning-toast getoond (dekt alle drie pakketten). Open punten:
+  updateAppSettingsOrgFirst heeft geen insert-fallback (bestaand patroon,
+  meenemen bij helpers-consolidatie); grootboeken-select ongefilterd tot echte
+  response-shape bekend is; SnelStart payload-shapes verifiëren tegen
+  Ontwikkeling&Test-administratie vóór livegang + certificering + env var.
+- Eindfase-gate boekhoudkoppelingen: QAA groen licht (9/9 criteria, 1 waarschuwing),
+  senior AKKOORD-MET-OPMERKINGEN. Na gate nog gefixt: e-Boekhouden exacte-naam-lookup
+  bij leeg debiteurennummer (voorkomt duplicaat-relaties), pakket-match-check in alle
+  drie sync-routes (400 bij stale client na pakketwissel), dubbelklik-guard +
+  spinner op de sync-knop. Open punten (bewust, voor later/Antony):
+  status-guard op concept-facturen (productbeslissing), audit-events voor
+  boekhoud connect/sync, 400 bij btw_percentage buiten {0,9,21}, 429-melding
+  harmoniseren, waarschuwing-pad restrisico (pending-marker vóór externe call zou
+  echte fix zijn), encrypted tokens client-leesbaar (zelfde patroon als mollie_api_key).
+- Totaalcheck pre-merge: AKKOORD-MET-OPMERKINGEN. Gefixt in review-commit:
+  e-Boekhouden naam-lookup faalt nu hard op non-404 (geen stille duplicaat-relatie),
+  Moneybird naam-fallback met per_page=100, badge-historie blijft zichtbaar na
+  pakketwissel naar "Geen" (badge aan factuur-historie, knop aan actief pakket).
+  Restpunt (cosmetisch, gelogd): stale-state race in handleBoekhoudPakketChange
+  bij snel dubbel wisselen; ?name=-filter-shape e-Boekhouden onbevestigd tot API-test.
+- Post-gate review (5eb1b622 + 11be98fe): AKKOORD-MET-OPMERKINGEN, geen blokkades.
+  Exact klant-bugfix bevestigd als centrale fix (geen andere select('naam')-plekken
+  in api/). Toegevoegd n.a.v. review: console.error op klant-lookup-fouten in
+  exact-sync (stil-falen was de root cause van deze bug). Gelogd: zelfde
+  stille-destructure-patroon in andere handlers is een losse opschoontaak;
+  per_page=100 is het Moneybird-maximum (geen paginatie, verwaarloosbaar risico).
+
+## Multi-agent audit (42 agents, code + live docs-verificatie) — fixes
+
+- Audit leverde 30 bevestigde bevindingen (5 weerlegd na adversariële verificatie). Gefixt:
+  KRITIEK: SnelStart btw-array gebruikte 'Hoog'/'Laag' maar de API eist
+  'VerkopenHoog'/'VerkopenLaag' (ander enum dan boekingsregels). HOOG: creditnota-dialoog
+  kopieerde geen factuur_items (sync faalde altijd) + server-side teken-guard tegen
+  positief boeken; e-Boekhouden naam-lookup matchte op niet-bestaand name-veld in de
+  list-response (duplicaat-relatie per sync) — nu server-side [eq]-filter vertrouwen;
+  oneindige fetch-retry-loops in de drie config-load useEffects. MIDDEL/LAAG:
+  dirty-guard vóór sync (DB-staat vs PDF-mismatch); Moneybird naam-lookup hard-fail;
+  e-Boekhouden description ≤50 / name ≤100 / code ≤15 limieten; SnelStart BTW per regel
+  afgerond (zoals frontend), grootboek-per-tarief (migratie 133: hoog/laag/onbelast),
+  land-lookup matcht nu ook op landnaam (geen NL-forceren), betalingstermijn meegestuurd,
+  relatie/boeking-id-guards, grootboeken-paginering ($skip/$top); decryptSecret gooit
+  hard op onontsleutelbare blobs (10 routes); item-validatie (NULL-waarden) +
+  regelsom/BTW-consistentiechecks in alle drie sync-routes; Moneybird
+  administratie-wissel reset ledger/tax-ids; tax_rates per_page=100.
+- Bewust niet gefixt (gelogd): e-Boekhouden ledger-select categoriefallback (anders lege
+  select bij afwijkende categorie-waarden); e-Boekhouden ledgers >500 (paginering
+  onbevestigd in docs); SnelStart creditnota-acceptatie en payload-shapes blijven
+  extern te verifiëren tegen O&T-administratie; Moneybird naam-zoek >100 hits.
+- Audit-fixes gate-review: AKKOORD-MET-OPMERKINGEN, geen blokkades. Naloop gefixt:
+  naam-lookup e-Boekhouden gebruikt nu dezelfde 100-tekens-sleutel als de create.
+  Docs-verificatie ?name=-filter: live Swagger api.e-boekhouden.nl/swagger/v1/swagger.json
+  (geraadpleegd 2026-06-10) — name-param filtert server-side met default operator [eq]
+  ("Only retrieves relations with this (company) name"); rows[].description heeft
+  géén maxLength (alleen header-description: 50). Open (laag, gelogd): creditnota
+  item-copy loop niet transactioneel (zelfde zwakte als factuurService.createCreditnota);
+  rond2-halve-cent-randgeval bij teken-omkering wordt door 5ct-tolerantie gedekt.
