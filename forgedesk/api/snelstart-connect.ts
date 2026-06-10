@@ -27,14 +27,23 @@ function encryptSecret(text: string): string {
 }
 function decryptSecret(text: string): string {
   if (!text || !text.includes(':') || text.length < 34) return text
-  if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
+  // Een onontsleutelbare encrypted blob mag nooit als token naar de externe
+  // API — dat geeft een misleidende "token ongeldig"-melding bij de gebruiker.
+  const lijktEncrypted = /^[0-9a-f]{32}:/.test(text)
+  if (!INT_KEY) {
+    if (lijktEncrypted) throw new Error('Server-encryptie is niet geconfigureerd (INTEGRATION_ENCRYPTION_KEY). Neem contact op met support.')
+    console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text
+  }
   try {
     const key = crypto.scryptSync(INT_KEY, 'integration', 32)
     const [ivHex, enc] = text.split(':')
     if (!ivHex || ivHex.length !== 32 || !enc) return text
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
     return decipher.update(enc, 'hex', 'utf8') + decipher.final('utf8')
-  } catch { console.warn('[encryption] decrypt failed, treating as plaintext'); return text }
+  } catch {
+    if (lijktEncrypted) throw new Error('Integratie-token kan niet ontsleuteld worden (encryptie-key gewijzigd?). Verbind opnieuw via Instellingen > Integraties.')
+    console.warn('[encryption] decrypt failed, treating as plaintext'); return text
+  }
 }
 
 // ─── Inline org-aware app_settings helpers (copied from api/exact-sync-factuur.ts) ───

@@ -56,6 +56,8 @@ const ALLOWED_FIELDS = [
   'snelstart_koppelsleutel',
   'snelstart_grootboek_id',
   'snelstart_grootboek_naam',
+  'snelstart_grootboek_laag_id',
+  'snelstart_grootboek_nul_id',
   'moneybird_api_token',
   'moneybird_administration_id',
   'moneybird_ledger_account_id',

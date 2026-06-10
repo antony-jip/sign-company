@@ -25,14 +25,23 @@ const supabaseAdmin = createClient(
 const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
 function decryptSecret(text: string): string {
   if (!text || !text.includes(':') || text.length < 34) return text
-  if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
+  // Een onontsleutelbare encrypted blob mag nooit als token naar de externe
+  // API — dat geeft een misleidende "token ongeldig"-melding bij de gebruiker.
+  const lijktEncrypted = /^[0-9a-f]{32}:/.test(text)
+  if (!INT_KEY) {
+    if (lijktEncrypted) throw new Error('Server-encryptie is niet geconfigureerd (INTEGRATION_ENCRYPTION_KEY). Neem contact op met support.')
+    console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text
+  }
   try {
     const key = crypto.scryptSync(INT_KEY, 'integration', 32)
     const [ivHex, enc] = text.split(':')
     if (!ivHex || ivHex.length !== 32 || !enc) return text
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
     return decipher.update(enc, 'hex', 'utf8') + decipher.final('utf8')
-  } catch { console.warn('[encryption] decrypt failed, treating as plaintext'); return text }
+  } catch {
+    if (lijktEncrypted) throw new Error('Integratie-token kan niet ontsleuteld worden (encryptie-key gewijzigd?). Verbind opnieuw via Instellingen > Integraties.')
+    console.warn('[encryption] decrypt failed, treating as plaintext'); return text
+  }
 }
 
 // ─── Inline org-aware app_settings helpers (copied from api/exact-sync-factuur.ts) ───
@@ -145,6 +154,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const items = factuurItems as FactuurItemRij[]
 
+    // Regels valideren vóór er iets extern geboekt wordt: NULL-waarden uit
+    // legacy/import-data mogen niet crashen of stil onder 0% boeken.
+    const ongeldigeIndex = items.findIndex(
+      (i) => typeof i.totaal !== 'number' || !Number.isFinite(i.totaal)
+        || typeof i.btw_percentage !== 'number' || !Number.isFinite(i.btw_percentage),
+    )
+    if (ongeldigeIndex !== -1) {
+      return res.status(400).json({ error: `Factuurregel ${ongeldigeIndex + 1} heeft geen geldig bedrag of BTW-percentage. Controleer de factuur.` })
+    }
+
+    const somRegels = rond2(items.reduce((acc, i) => acc + i.totaal, 0))
+    const verwachtExcl = rond2(Number(factuur.totaal) - Number(factuur.btw_bedrag))
+    if (Math.abs(somRegels - verwachtExcl) > 0.05) {
+      return res.status(400).json({
+        error: `De som van de factuurregels (€${somRegels.toFixed(2)}) wijkt af van het factuurtotaal excl. BTW (€${verwachtExcl.toFixed(2)}). Controleer de factuur.`,
+      })
+    }
+
+    const isCredit = factuur.factuur_type === 'creditnota' || factuur.factuur_type === 'credit'
+    if (isCredit && somRegels > 0) {
+      return res.status(400).json({ error: 'De regels van een creditnota moeten negatief zijn; deze creditnota heeft een positief regeltotaal.' })
+    }
+
     let klantQuery = supabaseAdmin
       .from('klanten')
       .select('bedrijfsnaam, email, telefoon, adres, postcode, stad, land, btw_nummer, debiteurennummer')
@@ -156,19 +188,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const settingsRaw = await loadAppSettingsOrgFirst(
       supabaseAdmin,
       user_id,
-      'boekhoud_pakket, snelstart_koppelsleutel, snelstart_grootboek_id',
+      'boekhoud_pakket, snelstart_koppelsleutel, snelstart_grootboek_id, snelstart_grootboek_laag_id, snelstart_grootboek_nul_id',
     )
     if ((settingsRaw?.boekhoud_pakket as string | null) !== 'snelstart') {
       return res.status(400).json({ error: 'SnelStart is niet het actieve boekhoudpakket. Controleer Instellingen > Integraties.' })
     }
     const sleutel = decryptSecret((settingsRaw?.snelstart_koppelsleutel as string | null) ?? '')
-    const grootboekId = (settingsRaw?.snelstart_grootboek_id as string | null) ?? ''
 
     if (!sleutel) {
       return res.status(400).json({ error: 'SnelStart is niet verbonden. Koppel eerst via Instellingen > Integraties.' })
     }
-    if (!grootboekId) {
-      return res.status(400).json({ error: 'Configureer eerst een omzetgrootboek bij de SnelStart-instellingen.' })
+
+    // SnelStart-omzetgrootboeken zijn tariefgebonden (grootboekfunctie
+    // omzet hoog/laag/onbelast); één grootboek voor alle tarieven wordt
+    // door de API geweigerd (BOE-0082-klasse fout). Per gebruikt tarief
+    // moet er dus een grootboek geconfigureerd zijn.
+    const grootboekPerSoort: Record<BtwSoort, string> = {
+      Hoog: (settingsRaw?.snelstart_grootboek_id as string | null) ?? '',
+      Laag: (settingsRaw?.snelstart_grootboek_laag_id as string | null) ?? '',
+      Geen: (settingsRaw?.snelstart_grootboek_nul_id as string | null) ?? '',
+    }
+    const soortLabels: Record<BtwSoort, string> = { Hoog: 'hoog (21%)', Laag: 'laag (9%)', Geen: 'onbelast (0%)' }
+    const gebruikteSoorten = [...new Set(items.map((i) => bepaalBtwSoort(i.btw_percentage)))]
+    const ontbrekendeSoort = gebruikteSoorten.find((s) => !grootboekPerSoort[s])
+    if (ontbrekendeSoort) {
+      return res.status(400).json({
+        error: `Deze factuur heeft regels met BTW-tarief ${soortLabels[ontbrekendeSoort]}, maar daarvoor is geen omzetgrootboek geconfigureerd bij de SnelStart-instellingen.`,
+      })
     }
 
     // 3. Access token minten (clientkey flow, ~1 uur geldig — per request is genoeg)
@@ -232,10 +278,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const landenRes = await fetch(`${SNELSTART_API_BASE}/landen`, { headers: apiHeaders })
         if (landenRes.ok) {
           const landen = await landenRes.json() as Array<{ id: string; landcodeISO?: string; naam?: string }>
-          const klantLand = (((klant?.land as string | null) ?? '') || 'NL').trim()
-          const gezocht = klantLand.length === 2 ? klantLand.toUpperCase() : 'NL'
-          const land = landen.find((l) => (l.landcodeISO ?? '').toUpperCase() === gezocht)
-            ?? landen.find((l) => (l.naam ?? '').toLowerCase() === 'nederland')
+          // klanten.land is vrije tekst: match op ISO-code óf landnaam.
+          // Alleen bij een lege waarde naar Nederland defaulten — een
+          // buitenlandse klant mag nooit stilzwijgend NL als land krijgen.
+          const klantLand = ((klant?.land as string | null) ?? '').trim()
+          const land = klantLand.length === 0
+            ? landen.find((l) => (l.landcodeISO ?? '').toUpperCase() === 'NL')
+              ?? landen.find((l) => (l.naam ?? '').toLowerCase() === 'nederland')
+            : klantLand.length === 2
+              ? landen.find((l) => (l.landcodeISO ?? '').toUpperCase() === klantLand.toUpperCase())
+              : landen.find((l) => (l.naam ?? '').toLowerCase() === klantLand.toLowerCase())
           if (land) landId = land.id
         }
       } catch (landErr) {
@@ -269,25 +321,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error('[snelstart-sync] relatie aanmaken fout:', createRes.status, body)
         return res.status(502).json({ error: `Klant aanmaken in SnelStart mislukt (${createRes.status}).` })
       }
-      const nieuweRelatie = await createRes.json() as { id: string }
+      const nieuweRelatie = await createRes.json() as { id?: string }
+      if (!nieuweRelatie?.id) {
+        console.error('[snelstart-sync] relatie-response zonder id:', JSON.stringify(nieuweRelatie).slice(0, 500))
+        return res.status(502).json({ error: 'SnelStart gaf geen relatie-id terug. Probeer het later opnieuw.' })
+      }
       relatieId = nieuweRelatie.id
     }
 
     // 5. Verkoopboeking aanmaken.
     // Regels: factuur_items.totaal is al excl. BTW met korting verwerkt.
-    // BTW-array: som per tarief, laatste tarief reconciliëren tegen
-    // facturen.btw_bedrag zodat centafronding nooit een verschil geeft.
-    const isCredit = factuur.factuur_type === 'creditnota' || factuur.factuur_type === 'credit'
-
+    // BTW per regel afronden (zelfde berekening als de frontend, die
+    // facturen.btw_bedrag als som van per-regel-afgeronde bedragen opslaat —
+    // anders accumuleert het verschil en faalt de 5-cent-check onterecht),
+    // daarna laatste tarief reconciliëren tegen facturen.btw_bedrag.
     const btwPerSoort = new Map<BtwSoort, number>()
     for (const item of items) {
       const soort = bepaalBtwSoort(item.btw_percentage)
       if (soort === 'Geen') continue
-      const btwBedrag = item.totaal * (item.btw_percentage / 100)
-      btwPerSoort.set(soort, (btwPerSoort.get(soort) ?? 0) + btwBedrag)
+      const btwBedrag = rond2(item.totaal * (item.btw_percentage / 100))
+      btwPerSoort.set(soort, rond2((btwPerSoort.get(soort) ?? 0) + btwBedrag))
     }
+    // De btw-array gebruikt een ander enum dan boekingsregels[].btwSoort:
+    // VerkoopBoekingBtwSoortModel kent 'VerkopenHoog'/'VerkopenLaag', niet
+    // 'Hoog'/'Laag' (bevestigd in de officiële .NET- en PHP-clients).
     const btwGroepen = Array.from(btwPerSoort.entries()).map(([soort, bedrag]) => ({
-      btwSoort: soort,
+      btwSoort: soort === 'Hoog' ? 'VerkopenHoog' : 'VerkopenLaag',
       btwBedrag: rond2(bedrag),
     }))
     if (btwGroepen.length > 0) {
@@ -305,6 +364,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // Betalingstermijn in dagen meesturen zodat de vervaldatum in SnelStart
+    // gelijk loopt met facturen.vervaldatum (de API kent geen vervaldatum-veld).
+    const factuurdatumMs = Date.parse(factuur.factuurdatum as string)
+    const vervaldatumMs = Date.parse((factuur.vervaldatum as string | null) ?? '')
+    const betalingstermijn = Number.isFinite(factuurdatumMs) && Number.isFinite(vervaldatumMs)
+      ? Math.max(0, Math.round((vervaldatumMs - factuurdatumMs) / 86400000))
+      : null
+
     const boekingRes = await fetch(`${SNELSTART_API_BASE}/verkoopboekingen`, {
       method: 'POST',
       headers: apiHeaders,
@@ -312,6 +379,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         factuurnummer: factuur.nummer,
         klant: { id: relatieId },
         factuurdatum: factuur.factuurdatum,
+        ...(betalingstermijn != null ? { betalingstermijn } : {}),
         omschrijving: isCredit
           ? `Creditnota ${factuur.nummer}${factuur.titel ? ` — ${factuur.titel}` : ''}`
           : (factuur.titel || `Factuur ${factuur.nummer}`),
@@ -319,10 +387,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         boekingsregels: items.map((item) => ({
           omschrijving: [
             item.beschrijving,
-            item.aantal !== 1 ? `(${item.aantal} × €${item.eenheidsprijs.toFixed(2)})` : null,
+            typeof item.aantal === 'number' && item.aantal !== 1 ? `(${item.aantal} × €${Number(item.eenheidsprijs ?? 0).toFixed(2)})` : null,
             item.korting_percentage > 0 ? `(${item.korting_percentage}% korting)` : null,
           ].filter(Boolean).join(' '),
-          grootboek: { id: grootboekId },
+          grootboek: { id: grootboekPerSoort[bepaalBtwSoort(item.btw_percentage)] },
           bedrag: item.totaal,
           btwSoort: bepaalBtwSoort(item.btw_percentage),
         })),
@@ -336,7 +404,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: `Boeking aanmaken in SnelStart mislukt (${boekingRes.status}).` })
     }
 
-    const boeking = await boekingRes.json() as { id: string }
+    const boeking = await boekingRes.json() as { id?: string }
+    if (!boeking?.id) {
+      console.error('[snelstart-sync] boeking-response zonder id:', JSON.stringify(boeking).slice(0, 500))
+      return res.status(502).json({ error: 'SnelStart gaf geen boekings-id terug; controleer in SnelStart of de boeking is aangemaakt voordat je opnieuw synct.' })
+    }
     const externId = String(boeking.id)
 
     // 6. Sync-state terugschrijven. De .is()-guard voorkomt dat een race

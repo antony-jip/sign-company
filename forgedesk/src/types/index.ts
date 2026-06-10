@@ -792,6 +792,8 @@ export interface AppSettings {
   snelstart_koppelsleutel?: string;
   snelstart_grootboek_id?: string;
   snelstart_grootboek_naam?: string;
+  snelstart_grootboek_laag_id?: string;
+  snelstart_grootboek_nul_id?: string;
   moneybird_api_token?: string;
   moneybird_administration_id?: string;
   moneybird_ledger_account_id?: string;
