@@ -21,7 +21,15 @@ import {
   XCircle,
   ArrowRight,
   RefreshCw,
+  BookOpen,
 } from 'lucide-react'
+import type { BoekhoudPakket } from '@/types'
+
+const BOEKHOUD_PAKKET_NAAM: Record<BoekhoudPakket, string> = {
+  snelstart: 'SnelStart',
+  moneybird: 'Moneybird',
+  eboekhouden: 'e-Boekhouden',
+}
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getAppSettings, updateAppSettings } from '@/services/supabaseService'
@@ -95,6 +103,10 @@ export function IntegratiesTab() {
   const [kvkApiKey, setKvkApiKey] = useState('')
   const [kvkSaving, setKvkSaving] = useState(false)
 
+  // Boekhoudkoppeling state
+  const [boekhoudPakket, setBoekhoudPakket] = useState<BoekhoudPakket | ''>('')
+  const [boekhoudTokenAanwezig, setBoekhoudTokenAanwezig] = useState(false)
+
   useEffect(() => {
     if (!user?.id) return
     const isEncrypted = (v: string) => /^[0-9a-f]{32}:/.test(v)
@@ -115,6 +127,14 @@ export function IntegratiesTab() {
       setExactDocumentTypeId(s.exact_document_type_id ?? null)
       setExactDocumentTypeNaam(s.exact_document_type_naam ?? '')
       setKvkApiKey(s.kvk_api_key ?? '')
+      const pakket = s.boekhoud_pakket ?? ''
+      setBoekhoudPakket(pakket)
+      const tokenPerPakket: Record<BoekhoudPakket, string | undefined> = {
+        snelstart: s.snelstart_koppelsleutel,
+        moneybird: s.moneybird_api_token,
+        eboekhouden: s.eboekhouden_api_token,
+      }
+      setBoekhoudTokenAanwezig(!!(pakket && tokenPerPakket[pakket]))
     }).catch(() => {})
   }, [user?.id])
 
@@ -259,6 +279,21 @@ export function IntegratiesTab() {
       toast.error('Kon niet verbinden met Exact Online')
     } finally {
       setExactSaving(false)
+    }
+  }
+
+  const handleBoekhoudPakketChange = async (value: string) => {
+    const pakket = value === 'geen' ? null : (value as BoekhoudPakket)
+    const vorige = boekhoudPakket
+    setBoekhoudPakket(pakket ?? '')
+    try {
+      await saveIntegrationSettings({ boekhoud_pakket: pakket })
+      refreshSettings?.()
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('Fout bij opslaan boekhoudpakket:', err)
+      setBoekhoudPakket(vorige)
+      toast.error('Kon boekhoudpakket niet opslaan')
     }
   }
 
@@ -602,6 +637,68 @@ export function IntegratiesTab() {
                   </Button>
                 )}
               </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Boekhoudkoppeling (SnelStart / Moneybird / e-Boekhouden) ── */}
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-[#1A535C]/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-[#1A535C] dark:text-[#2A7A86]" />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-3 mb-1">
+                <h3 className="text-base font-semibold text-foreground">Boekhouding</h3>
+                <Badge
+                  className={
+                    boekhoudPakket && boekhoudTokenAanwezig
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                      : 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground/60'
+                  }
+                >
+                  {boekhoudPakket && boekhoudTokenAanwezig ? (
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      {BOEKHOUD_PAKKET_NAAM[boekhoudPakket]} verbonden
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <XCircle className="w-3 h-3" />
+                      Niet verbonden
+                    </span>
+                  )}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Koppel je boekhoudpakket om facturen en klanten vanuit doen. direct in je administratie te boeken.
+              </p>
+
+              <div className="space-y-2">
+                <Label htmlFor="boekhoud-pakket" className="text-sm font-medium">
+                  Boekhoudpakket
+                </Label>
+                <Select value={boekhoudPakket || 'geen'} onValueChange={handleBoekhoudPakketChange}>
+                  <SelectTrigger id="boekhoud-pakket" className="text-sm">
+                    <SelectValue placeholder="Kies pakket..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="geen">Geen</SelectItem>
+                    <SelectItem value="snelstart">SnelStart</SelectItem>
+                    <SelectItem value="moneybird">Moneybird</SelectItem>
+                    <SelectItem value="eboekhouden">e-Boekhouden</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {boekhoudPakket && exactConnected && (
+                <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                  Exact Online is ook gekoppeld. Facturen tonen dan twee sync-knoppen:
+                  één voor Exact en één voor {BOEKHOUD_PAKKET_NAAM[boekhoudPakket]}.
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
