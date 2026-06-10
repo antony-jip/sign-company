@@ -712,3 +712,4 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
 > overlappende runs of een gefaalde status-update geen dubbele mail veroorzaken.
 - Fase 2a gate-review: AKKOORD na fix 129 (RLS) + redeploy-instructie in commit message. TTL staat op 3 plekken (storageService/groteBijlagen/cleanup-cron) — bij wijziging alle drie aanpassen.
 - Fase 2b gate: dedup-fix toegevoegd; restrisico (server verstuurt exact tijdens response-verlies binnen 5min-venster met afwijkend onderwerp) is aanvaard. Echte at-most-once vergt server-side idempotency-keys — kandidaat voor later.
+- Fase 1a gate: blokkades 1-3 gefixt (waterlijn alleen bij foutloze upsert; uidvalidity-log; 60s/flags-cap). Blokkade 4 (503 zonder migratie 131) verworpen: fallback is exact het oude productiegedrag, 503 zou mail breken.
