@@ -123,6 +123,17 @@ export function IntegratiesTab() {
   const [moneybirdConfigGeladen, setMoneybirdConfigGeladen] = useState(false)
   const [moneybirdSaving, setMoneybirdSaving] = useState(false)
 
+  // e-Boekhouden state
+  const [eboekhoudenToken, setEboekhoudenToken] = useState('')
+  const [eboekhoudenConnecting, setEboekhoudenConnecting] = useState(false)
+  const [eboekhoudenLedgers, setEboekhoudenLedgers] = useState<Array<{ id: string; code: string; naam: string; categorie: string }>>([])
+  const [eboekhoudenDebiteurenLedgerId, setEboekhoudenDebiteurenLedgerId] = useState('')
+  const [eboekhoudenOmzetLedgerId, setEboekhoudenOmzetLedgerId] = useState('')
+  const [eboekhoudenConfigLoading, setEboekhoudenConfigLoading] = useState(false)
+  const [eboekhoudenConfigError, setEboekhoudenConfigError] = useState<string | null>(null)
+  const [eboekhoudenConfigGeladen, setEboekhoudenConfigGeladen] = useState(false)
+  const [eboekhoudenSaving, setEboekhoudenSaving] = useState(false)
+
   useEffect(() => {
     if (!user?.id) return
     const isEncrypted = (v: string) => /^[0-9a-f]{32}:/.test(v)
@@ -156,6 +167,8 @@ export function IntegratiesTab() {
       setMoneybirdTaxHoog(s.moneybird_tax_rate_hoog ?? '')
       setMoneybirdTaxLaag(s.moneybird_tax_rate_laag ?? '')
       setMoneybirdTaxNul(s.moneybird_tax_rate_nul ?? '')
+      setEboekhoudenDebiteurenLedgerId(s.eboekhouden_debiteuren_ledger_id ?? '')
+      setEboekhoudenOmzetLedgerId(s.eboekhouden_omzet_ledger_id ?? '')
     }).catch(() => {})
   }, [user?.id])
 
@@ -433,6 +446,86 @@ export function IntegratiesTab() {
       toast.error('Kon Moneybird instellingen niet opslaan')
     } finally {
       setMoneybirdSaving(false)
+    }
+  }
+
+  const loadEboekhoudenLedgers = useCallback(async () => {
+    setEboekhoudenConfigLoading(true)
+    setEboekhoudenConfigError(null)
+    try {
+      if (!supabase) throw new Error('Niet ingelogd')
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess?.session?.access_token
+      if (!token) throw new Error('Niet ingelogd')
+      const res = await fetch('/api/eboekhouden-ledgers', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Status ${res.status}`)
+      }
+      setEboekhoudenLedgers(await res.json())
+      setEboekhoudenConfigGeladen(true)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Onbekende fout'
+      setEboekhoudenConfigError(msg)
+      logger.error('e-Boekhouden grootboeken laden mislukt:', err)
+    } finally {
+      setEboekhoudenConfigLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (
+      boekhoudPakket === 'eboekhouden' &&
+      boekhoudTokenAanwezig &&
+      !eboekhoudenConfigGeladen &&
+      !eboekhoudenConfigLoading
+    ) {
+      loadEboekhoudenLedgers()
+    }
+  }, [boekhoudPakket, boekhoudTokenAanwezig, eboekhoudenConfigGeladen, eboekhoudenConfigLoading, loadEboekhoudenLedgers])
+
+  const handleEboekhoudenConnect = async () => {
+    setEboekhoudenConnecting(true)
+    try {
+      if (!supabase) throw new Error('Niet ingelogd')
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess?.session?.access_token
+      if (!token) throw new Error('Niet ingelogd')
+      const res = await fetch('/api/eboekhouden-connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ api_token: eboekhoudenToken }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Verbinden mislukt')
+      setBoekhoudTokenAanwezig(true)
+      setEboekhoudenToken('')
+      setEboekhoudenConfigGeladen(false)
+      toast.success(<>e-Boekhouden verbonden<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('e-Boekhouden verbinden mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Verbinden mislukt')
+    } finally {
+      setEboekhoudenConnecting(false)
+    }
+  }
+
+  const handleEboekhoudenSave = async () => {
+    setEboekhoudenSaving(true)
+    try {
+      await saveIntegrationSettings({
+        eboekhouden_debiteuren_ledger_id: eboekhoudenDebiteurenLedgerId,
+        eboekhouden_omzet_ledger_id: eboekhoudenOmzetLedgerId,
+      })
+      refreshSettings?.()
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('e-Boekhouden instellingen opslaan mislukt:', err)
+      toast.error('Kon e-Boekhouden instellingen niet opslaan')
+    } finally {
+      setEboekhoudenSaving(false)
     }
   }
 
@@ -955,6 +1048,115 @@ export function IntegratiesTab() {
                           <div className="flex justify-end">
                             <Button onClick={handleMoneybirdSave} disabled={moneybirdSaving} size="sm" variant="outline">
                               {moneybirdSaving ? 'Opslaan...' : 'Opslaan'}
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {boekhoudPakket === 'eboekhouden' && (
+                <div className="space-y-3 border-t border-border pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="eboekhouden-token" className="text-sm font-medium">
+                      e-Boekhouden API-token
+                    </Label>
+                    <Input
+                      id="eboekhouden-token"
+                      type="password"
+                      value={eboekhoudenToken}
+                      onChange={(e) => setEboekhoudenToken(e.target.value)}
+                      placeholder={boekhoudTokenAanwezig ? 'Token opgeslagen — vul in om te vervangen' : 'API-token'}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Maak een token aan in e-Boekhouden onder Beheer → Inrichting → Koppelingen → API-tokens.
+                    </p>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      disabled={(!eboekhoudenToken && !boekhoudTokenAanwezig) || eboekhoudenConnecting}
+                      onClick={handleEboekhoudenConnect}
+                      className="gap-1.5"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {eboekhoudenConnecting ? 'Verbinden...' : (boekhoudTokenAanwezig ? 'Opnieuw verbinden' : 'Verbinden')}
+                    </Button>
+                  </div>
+
+                  {boekhoudTokenAanwezig && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Boekingsinstellingen</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={loadEboekhoudenLedgers}
+                          disabled={eboekhoudenConfigLoading}
+                          className="h-7 text-xs gap-1"
+                        >
+                          <RefreshCw className={cn('w-3 h-3', eboekhoudenConfigLoading && 'animate-spin')} />
+                          Opnieuw ophalen
+                        </Button>
+                      </div>
+                      {eboekhoudenConfigError ? (
+                        <div className="text-xs text-amber-600 dark:text-amber-400">
+                          Grootboeken ophalen mislukt: {eboekhoudenConfigError}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {([
+                              {
+                                id: 'eboekhouden-debiteuren',
+                                label: 'Debiteurenrekening',
+                                value: eboekhoudenDebiteurenLedgerId,
+                                setter: setEboekhoudenDebiteurenLedgerId,
+                                categorie: 'DEB',
+                              },
+                              {
+                                id: 'eboekhouden-omzet',
+                                label: 'Omzetrekening',
+                                value: eboekhoudenOmzetLedgerId,
+                                setter: setEboekhoudenOmzetLedgerId,
+                                categorie: 'VW',
+                              },
+                            ] as const).map((veld) => {
+                              const gefilterd = eboekhoudenLedgers.filter((l) => l.categorie === veld.categorie)
+                              const opties = gefilterd.length > 0 ? gefilterd : eboekhoudenLedgers
+                              return (
+                                <div key={veld.id} className="space-y-2">
+                                  <Label htmlFor={veld.id} className="text-sm">{veld.label}</Label>
+                                  <Select
+                                    value={veld.value}
+                                    onValueChange={veld.setter}
+                                    disabled={eboekhoudenConfigLoading || opties.length === 0}
+                                  >
+                                    <SelectTrigger id={veld.id} className="text-sm">
+                                      <SelectValue placeholder={eboekhoudenConfigLoading ? 'Laden...' : 'Kies rekening...'} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {opties.map((l) => (
+                                        <SelectItem key={l.id} value={l.id}>
+                                          {l.code} — {l.naam}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Let op: e-Boekhouden ondersteunt geen PDF-bijlagen via de koppeling — alleen de boeking wordt overgezet.
+                          </p>
+                          <div className="flex justify-end">
+                            <Button onClick={handleEboekhoudenSave} disabled={eboekhoudenSaving} size="sm" variant="outline">
+                              {eboekhoudenSaving ? 'Opslaan...' : 'Opslaan'}
                             </Button>
                           </div>
                         </>
