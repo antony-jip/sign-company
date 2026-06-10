@@ -750,3 +750,12 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
   meenemen bij helpers-consolidatie); grootboeken-select ongefilterd tot echte
   response-shape bekend is; SnelStart payload-shapes verifiëren tegen
   Ontwikkeling&Test-administratie vóór livegang + certificering + env var.
+- Eindfase-gate boekhoudkoppelingen: QAA groen licht (9/9 criteria, 1 waarschuwing),
+  senior AKKOORD-MET-OPMERKINGEN. Na gate nog gefixt: e-Boekhouden exacte-naam-lookup
+  bij leeg debiteurennummer (voorkomt duplicaat-relaties), pakket-match-check in alle
+  drie sync-routes (400 bij stale client na pakketwissel), dubbelklik-guard +
+  spinner op de sync-knop. Open punten (bewust, voor later/Antony):
+  status-guard op concept-facturen (productbeslissing), audit-events voor
+  boekhoud connect/sync, 400 bij btw_percentage buiten {0,9,21}, 429-melding
+  harmoniseren, waarschuwing-pad restrisico (pending-marker vóór externe call zou
+  echte fix zijn), encrypted tokens client-leesbaar (zelfde patroon als mollie_api_key).

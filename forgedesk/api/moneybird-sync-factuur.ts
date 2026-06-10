@@ -166,8 +166,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const settingsRaw = await loadAppSettingsOrgFirst(
       supabaseAdmin,
       user_id,
-      'moneybird_api_token, moneybird_administration_id, moneybird_ledger_account_id, moneybird_tax_rate_hoog, moneybird_tax_rate_laag, moneybird_tax_rate_nul',
+      'boekhoud_pakket, moneybird_api_token, moneybird_administration_id, moneybird_ledger_account_id, moneybird_tax_rate_hoog, moneybird_tax_rate_laag, moneybird_tax_rate_nul',
     )
+    if ((settingsRaw?.boekhoud_pakket as string | null) !== 'moneybird') {
+      return res.status(400).json({ error: 'Moneybird is niet het actieve boekhoudpakket. Controleer Instellingen > Integraties.' })
+    }
     const settings = (settingsRaw ?? {}) as unknown as MoneybirdSettings
     const token = decryptSecret(settings.moneybird_api_token ?? '')
     const administratieId = settings.moneybird_administration_id ?? ''

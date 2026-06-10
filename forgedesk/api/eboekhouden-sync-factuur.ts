@@ -142,8 +142,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const settingsRaw = await loadAppSettingsOrgFirst(
       supabaseAdmin,
       user_id,
-      'eboekhouden_api_token, eboekhouden_debiteuren_ledger_id, eboekhouden_omzet_ledger_id',
+      'boekhoud_pakket, eboekhouden_api_token, eboekhouden_debiteuren_ledger_id, eboekhouden_omzet_ledger_id',
     )
+    if ((settingsRaw?.boekhoud_pakket as string | null) !== 'eboekhouden') {
+      return res.status(400).json({ error: 'e-Boekhouden is niet het actieve boekhoudpakket. Controleer Instellingen > Integraties.' })
+    }
     const apiToken = decryptSecret((settingsRaw?.eboekhouden_api_token as string | null) ?? '')
     const debiteurenLedgerId = (settingsRaw?.eboekhouden_debiteuren_ledger_id as string | null) ?? ''
     const omzetLedgerId = (settingsRaw?.eboekhouden_omzet_ledger_id as string | null) ?? ''
@@ -198,6 +201,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const body = await lookupRes.text()
         console.error('[eboekhouden-sync] relatie lookup fout:', lookupRes.status, body)
         return res.status(502).json({ error: `e-Boekhouden gaf een fout bij het opzoeken van de klant (${lookupRes.status}).` })
+      }
+    } else {
+      // Geen debiteurennummer (legacy klant): exacte naam-match, conform de
+      // Moneybird/SnelStart-flow — voorkomt duplicaat-relaties per factuur.
+      const lookupRes = await fetch(
+        `${EBOEKHOUDEN_API_BASE}/relation?name=${encodeURIComponent(klantNaam)}`,
+        { headers: authHeaders },
+      )
+      if (lookupRes.ok) {
+        const body = await lookupRes.json() as
+          | Array<{ id: number; name?: string }>
+          | { items?: Array<{ id: number; name?: string }> }
+        const kandidaten = Array.isArray(body) ? body : (body.items ?? [])
+        const match = kandidaten.find((r) => (r.name ?? '').trim().toLowerCase() === klantNaam.toLowerCase())
+        if (match) relatieId = match.id
       }
     }
 

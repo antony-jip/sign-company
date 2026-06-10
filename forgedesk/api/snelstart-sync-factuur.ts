@@ -156,8 +156,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const settingsRaw = await loadAppSettingsOrgFirst(
       supabaseAdmin,
       user_id,
-      'snelstart_koppelsleutel, snelstart_grootboek_id',
+      'boekhoud_pakket, snelstart_koppelsleutel, snelstart_grootboek_id',
     )
+    if ((settingsRaw?.boekhoud_pakket as string | null) !== 'snelstart') {
+      return res.status(400).json({ error: 'SnelStart is niet het actieve boekhoudpakket. Controleer Instellingen > Integraties.' })
+    }
     const sleutel = decryptSecret((settingsRaw?.snelstart_koppelsleutel as string | null) ?? '')
     const grootboekId = (settingsRaw?.snelstart_grootboek_id as string | null) ?? ''
 

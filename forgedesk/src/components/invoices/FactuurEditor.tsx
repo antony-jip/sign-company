@@ -340,6 +340,7 @@ export function FactuurEditor() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [boekhoudSyncing, setBoekhoudSyncing] = useState(false)
   const [dialogBijlagen, setDialogBijlagen] = useState<FactuurBijlage[]>([])
   const [selectedBijlageIds, setSelectedBijlageIds] = useState<Set<string>>(new Set())
   const [creditnotaDialogOpen, setCreditnotaDialogOpen] = useState(false)
@@ -1679,9 +1680,10 @@ export function FactuurEditor() {
   // ============ BOEKHOUD SYNC (SnelStart / Moneybird / e-Boekhouden) ============
 
   const handleSyncBoekhouding = useCallback(async () => {
-    if (!existingFactuur) return
+    if (!existingFactuur || boekhoudSyncing) return
     const pakket = settings.boekhoud_pakket
     if (!pakket) return
+    setBoekhoudSyncing(true)
     const pakketNaam = BOEKHOUD_PAKKET_NAAM[pakket]
     const toastId = toast.loading(`Synchroniseren met ${pakketNaam}...`)
 
@@ -1761,8 +1763,10 @@ export function FactuurEditor() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Sync mislukt'
       toast.error(msg, { id: toastId })
+    } finally {
+      setBoekhoudSyncing(false)
     }
-  }, [existingFactuur, settings.boekhoud_pakket, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCredit, selectedKlant, documentStyle, outroTekst])
+  }, [existingFactuur, boekhoudSyncing, settings.boekhoud_pakket, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCredit, selectedKlant, documentStyle, outroTekst])
 
   // ============ LOADING ============
 
@@ -1915,8 +1919,9 @@ export function FactuurEditor() {
                       size="sm"
                       className="text-[#1A535C] border-[#1A535C]/20 hover:bg-[#1A535C]/5 gap-1"
                       onClick={handleSyncBoekhouding}
+                      disabled={boekhoudSyncing}
                     >
-                      <RefreshCw className="w-3.5 h-3.5" />
+                      <RefreshCw className={cn('w-3.5 h-3.5', boekhoudSyncing && 'animate-spin')} />
                       Sync {BOEKHOUD_PAKKET_NAAM[settings.boekhoud_pakket]}
                     </Button>
                   )
