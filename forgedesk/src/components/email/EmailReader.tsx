@@ -19,7 +19,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/comp
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
 import { downloadEmailAttachment, downloadAllEmailAttachments } from '@/services/gmailService'
-import { uploadEmailBijlage } from '@/services/storageService'
+import { valideerBijlagen, uploadBijlagenMetLinkFallback } from '@/utils/groteBijlagen'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
@@ -682,18 +682,22 @@ export function EmailReader({
       }
     }
 
-    // User uploads: via Supabase Storage
+    // User uploads: via Supabase Storage; boven het 25MB-totaal automatisch
+    // als downloadlink in de body (zelfde gedrag als nieuw bericht)
     let userAttachments: Array<{ filename: string; storagePath: string; size: number }> = []
+    let linksHtml = ''
+    let linksText = ''
     if (replyAttachments.length) {
-      const totalSize = replyAttachments.reduce((s, f) => s + f.size, 0)
-      if (totalSize > 18 * 1024 * 1024) {
-        toast.error('Bijlagen zijn te groot (max 18MB).', { duration: 8000 })
+      const fout = valideerBijlagen(replyAttachments)
+      if (fout) {
+        toast.error(fout, { duration: 8000 })
         return null
       }
       try {
-        userAttachments = await Promise.all(
-          replyAttachments.map(file => uploadEmailBijlage(file))
-        )
+        const payload = await uploadBijlagenMetLinkFallback(replyAttachments)
+        userAttachments = payload.attachments ?? []
+        linksHtml = payload.linksHtml
+        linksText = payload.linksText
       } catch (err) {
         logger.error('Bijlage upload mislukt:', err)
         toast.error(err instanceof Error ? err.message : 'Bijlage uploaden mislukt')
@@ -711,8 +715,8 @@ export function EmailReader({
       cc: replyCc || undefined,
       bcc: replyBcc || undefined,
       subject,
-      body: editorRef.current.innerText,
-      html: html + quotedOriginal,
+      body: editorRef.current.innerText + linksText,
+      html: html + linksHtml + quotedOriginal,
       attachments: attachmentPayload.length > 0 ? attachmentPayload : undefined,
     }
   }, [email, replyMode, replySubject, replyTo, replyCc, replyBcc, replyAttachments, forwardOriginalAttachments, imapFolder])

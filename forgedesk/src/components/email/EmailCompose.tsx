@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getKlanten, getContactpersonenDB, getEmailTemplates, createEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
-import { uploadEmailBijlage } from '@/services/storageService'
+import { splitsBijlagen, valideerBijlagen, uploadBijlagenMetLinkFallback, type BijlagenPayload } from '@/utils/groteBijlagen'
 import { toast } from 'sonner'
 import { cn, getInitials } from '@/lib/utils'
 import type { Klant, Contactpersoon, ContactpersoonRecord, Email } from '@/types'
@@ -169,6 +169,9 @@ export function EmailCompose({
       imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url))
     }
   }, [imagePreviewUrls])
+
+  // Bestanden die het 25MB-totaal overschrijden gaan als downloadlink mee
+  const viaLinkBestanden = useMemo(() => new Set(splitsBijlagen(attachments).viaLink), [attachments])
 
   // Editor
   const editorRef = useRef<HTMLDivElement>(null)
@@ -459,24 +462,19 @@ export function EmailCompose({
     editorRef.current?.focus()
   }, [])
 
-  const buildAttachmentPayload = useCallback(async () => {
-    if (!attachments.length) return undefined
+  const buildAttachmentPayload = useCallback(async (): Promise<BijlagenPayload | undefined> => {
+    if (!attachments.length) return { attachments: undefined, linksHtml: '', linksText: '' }
 
-    const totalFileBytes = attachments.reduce((sum, f) => sum + f.size, 0)
-    const totalMB = totalFileBytes / (1024 * 1024)
-    if (totalMB > 22) {
-      toast.error(`Bijlagen zijn te groot (${totalMB.toFixed(1)}MB). Maximum is ca. 22MB per mail.`, { duration: 8000 })
+    const fout = valideerBijlagen(attachments)
+    if (fout) {
+      toast.error(fout, { duration: 8000 })
       return undefined
     }
 
-    // Upload naar Supabase Storage — payload bevat alleen paden
+    // Upload naar Supabase Storage — payload bevat alleen paden; alles boven
+    // het 25MB-totaal gaat automatisch als downloadlink in de mailbody mee.
     try {
-      return await Promise.all(
-        attachments.map(async (file) => {
-          const result = await uploadEmailBijlage(file)
-          return { filename: result.filename, storagePath: result.storagePath, size: result.size }
-        })
-      )
+      return await uploadBijlagenMetLinkFallback(attachments)
     } catch (err) {
       logger.error('Bijlage upload mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Bijlage uploaden mislukt')
@@ -521,8 +519,16 @@ export function EmailCompose({
 
     sendInBackground(
       async () => {
-        const attachmentPayload = await buildPayload()
-        await onSend?.({ to, subject, body, html, wacht_op_reactie: capturedWacht, attachments: attachmentPayload })
+        const payload = await buildPayload()
+        if (!payload) throw new Error('Bijlagen uploaden mislukt')
+        await onSend?.({
+          to,
+          subject,
+          body: body + payload.linksText,
+          html: html + payload.linksHtml,
+          wacht_op_reactie: capturedWacht,
+          attachments: payload.attachments,
+        })
       },
       {
         loading: 'Email wordt verzonden...',
@@ -549,8 +555,17 @@ export function EmailCompose({
 
     sendInBackground(
       async () => {
-        const attachmentPayload = await buildPayload()
-        await onSend?.({ to, subject, body, html, scheduledAt, wacht_op_reactie: capturedWacht, attachments: attachmentPayload })
+        const payload = await buildPayload()
+        if (!payload) throw new Error('Bijlagen uploaden mislukt')
+        await onSend?.({
+          to,
+          subject,
+          body: body + payload.linksText,
+          html: html + payload.linksHtml,
+          scheduledAt,
+          wacht_op_reactie: capturedWacht,
+          attachments: payload.attachments,
+        })
       },
       {
         loading: 'Bezig met inplannen...',
@@ -971,6 +986,9 @@ export function EmailCompose({
                   <span className="text-[12px] font-medium">
                     {attachments.length} {attachments.length === 1 ? 'bijlage' : 'bijlagen'}
                     <span className="text-muted-foreground/60"> · {formatFileSize(attachments.reduce((sum, f) => sum + f.size, 0))}</span>
+                    {viaLinkBestanden.size > 0 && (
+                      <span className="text-[#1A535C]"> · {viaLinkBestanden.size} via downloadlink</span>
+                    )}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -988,7 +1006,10 @@ export function EmailCompose({
                         )}
                         <div className="flex flex-col min-w-0 flex-1">
                           <span className="text-foreground text-[13px] font-medium leading-tight truncate">{file.name}</span>
-                          <span className="text-muted-foreground text-[11px] leading-tight mt-0.5">{formatFileSize(file.size)}</span>
+                          <span className="text-muted-foreground text-[11px] leading-tight mt-0.5">
+                            {formatFileSize(file.size)}
+                            {viaLinkBestanden.has(file) && <span className="text-[#1A535C]"> · via downloadlink</span>}
+                          </span>
                         </div>
                         <button
                           onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}
