@@ -332,12 +332,12 @@ function App() {
                         duration={4000}
                         toastOptions={{
                           style: {
-                            background: 'rgba(255, 255, 255, 0.80)',
+                            background: 'rgba(253, 252, 250, 0.86)',
                             backdropFilter: 'blur(24px) saturate(180%)',
                             WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                            border: '0.5px solid rgba(26, 83, 92, 0.10)',
+                            border: '0.5px solid rgba(26, 83, 92, 0.14)',
                             borderRadius: '14px',
-                            boxShadow: '0 12px 36px -8px rgba(100, 80, 40, 0.20), 0 2px 8px rgba(100, 80, 40, 0.08)',
+                            boxShadow: '0 12px 36px -8px rgba(100, 80, 40, 0.20), 0 0 24px -6px rgba(241, 80, 37, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.70)',
                             color: '#191919',
                             fontSize: '12px',
                             animation: 'toast-in 300ms ease-out',
