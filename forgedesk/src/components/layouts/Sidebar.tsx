@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LogOut, Menu, X,
@@ -293,6 +294,9 @@ export function Sidebar() {
               {active
                 ? <div className="doen-sidebar-active-pill absolute rounded-[12px]" style={{ insetInline: '10px', insetBlock: '4px' }} />
                 : <div className="doen-sidebar-item-hover" style={{ borderRadius: '12px', insetInline: '10px', insetBlock: '4px' }} />}
+
+              {/* Flame accent ook in rail-mode — zelfde signatuur als expanded */}
+              {active && <span className="doen-sidebar-flame-accent z-10" />}
 
               <div
                 className={cn(
@@ -629,8 +633,9 @@ export function Sidebar() {
                 )}
               </button>
 
-              {/* User popover */}
-              {userPopoverOpen && popoverPos && (
+              {/* User popover — via portal naar body, anders valt hij binnen de
+                  stacking context van de aside (z-40) deels achter de content */}
+              {userPopoverOpen && popoverPos && createPortal(
                 <div
                   data-user-popover
                   className="fixed z-50 w-60 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] p-1.5"
@@ -691,7 +696,8 @@ export function Sidebar() {
                   >
                     <LogOut className="w-[17px] h-[17px]" /> Uitloggen
                   </button>
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           )}
