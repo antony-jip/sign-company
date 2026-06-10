@@ -20,14 +20,23 @@ const supabaseAdmin = createClient(
 const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
 function decryptSecret(text: string): string {
   if (!text || !text.includes(':') || text.length < 34) return text
-  if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
+  // Een onontsleutelbare encrypted blob mag nooit als token naar de externe
+  // API — dat geeft een misleidende "token ongeldig"-melding bij de gebruiker.
+  const lijktEncrypted = /^[0-9a-f]{32}:/.test(text)
+  if (!INT_KEY) {
+    if (lijktEncrypted) throw new Error('Server-encryptie is niet geconfigureerd (INTEGRATION_ENCRYPTION_KEY). Neem contact op met support.')
+    console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text
+  }
   try {
     const key = crypto.scryptSync(INT_KEY, 'integration', 32)
     const [ivHex, enc] = text.split(':')
     if (!ivHex || ivHex.length !== 32 || !enc) return text
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
     return decipher.update(enc, 'hex', 'utf8') + decipher.final('utf8')
-  } catch { console.warn('[encryption] decrypt failed, treating as plaintext'); return text }
+  } catch {
+    if (lijktEncrypted) throw new Error('Integratie-token kan niet ontsleuteld worden (encryptie-key gewijzigd?). Verbind opnieuw via Instellingen > Integraties.')
+    console.warn('[encryption] decrypt failed, treating as plaintext'); return text
+  }
 }
 
 // ─── Inline org-aware app_settings helpers (copied from api/exact-sync-factuur.ts) ───
@@ -131,6 +140,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const items = factuurItems as FactuurItemRij[]
 
+    // Regels valideren vóór er iets extern geboekt wordt: NULL-waarden uit
+    // legacy/import-data mogen niet crashen of stil onder 0% boeken.
+    const ongeldigeIndex = items.findIndex(
+      (i) => typeof i.totaal !== 'number' || !Number.isFinite(i.totaal)
+        || typeof i.btw_percentage !== 'number' || !Number.isFinite(i.btw_percentage),
+    )
+    if (ongeldigeIndex !== -1) {
+      return res.status(400).json({ error: `Factuurregel ${ongeldigeIndex + 1} heeft geen geldig bedrag of BTW-percentage. Controleer de factuur.` })
+    }
+
+    const rond2 = (n: number) => Math.round(n * 100) / 100
+    const somRegels = rond2(items.reduce((acc, i) => acc + i.totaal, 0))
+    const verwachtExcl = rond2(Number(factuur.totaal) - Number(factuur.btw_bedrag))
+    if (Math.abs(somRegels - verwachtExcl) > 0.05) {
+      return res.status(400).json({
+        error: `De som van de factuurregels (€${somRegels.toFixed(2)}) wijkt af van het factuurtotaal excl. BTW (€${verwachtExcl.toFixed(2)}). Controleer de factuur.`,
+      })
+    }
+    const somBtw = rond2(items.reduce((acc, i) => acc + rond2(i.totaal * (i.btw_percentage / 100)), 0))
+    if (Math.abs(somBtw - Number(factuur.btw_bedrag)) > 0.05) {
+      return res.status(400).json({
+        error: `Het BTW-bedrag van de factuur (€${Number(factuur.btw_bedrag).toFixed(2)}) wijkt meer dan 5 cent af van de som van de regels (€${somBtw.toFixed(2)}). Controleer de factuurregels.`,
+      })
+    }
+
+    const isCredit = factuur.factuur_type === 'creditnota' || factuur.factuur_type === 'credit'
+    if (isCredit && somRegels > 0) {
+      return res.status(400).json({ error: 'De regels van een creditnota moeten negatief zijn; deze creditnota heeft een positief regeltotaal.' })
+    }
+
     let klantQuery = supabaseAdmin
       .from('klanten')
       .select('bedrijfsnaam, email, telefoon, adres, postcode, stad, land, btw_nummer, debiteurennummer')
@@ -211,11 +250,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       )
       if (lookupRes.ok) {
         const body = await lookupRes.json() as
-          | Array<{ id: number; name?: string }>
-          | { items?: Array<{ id: number; name?: string }> }
+          | Array<{ id: number }>
+          | { items?: Array<{ id: number }> }
         const kandidaten = Array.isArray(body) ? body : (body.items ?? [])
-        const match = kandidaten.find((r) => (r.name ?? '').trim().toLowerCase() === klantNaam.toLowerCase())
-        if (match) relatieId = match.id
+        // De list-response bevat alleen {id, type, code} — géén name. De
+        // ?name=-filter matcht server-side exact ([eq]), dus een resultaat
+        // ís de naam-match; client-side op name matchen kan nooit slagen.
+        if (kandidaten.length > 0) relatieId = kandidaten[0].id
       } else if (lookupRes.status !== 404) {
         if (lookupRes.status === 401) {
           return res.status(401).json({ error: 'e-Boekhouden-sessie is niet meer geldig. Verbind opnieuw via Instellingen > Integraties.' })
@@ -227,12 +268,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (relatieId == null) {
+      // e-Boekhouden veldlimieten: code max 15, name max 100 (geeft anders 400).
+      // Code niet trunceren — het is de idempotente lookup-sleutel.
+      if (debiteurennummer.length > 15) {
+        return res.status(400).json({ error: `Debiteurennummer "${debiteurennummer}" is langer dan 15 tekens; e-Boekhouden accepteert maximaal 15. Pas het debiteurennummer van deze klant aan.` })
+      }
       const createRes = await fetch(`${EBOEKHOUDEN_API_BASE}/relation`, {
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({
           type: 'B',
-          name: klantNaam,
+          name: klantNaam.slice(0, 100),
           ...(debiteurennummer ? { code: debiteurennummer } : {}),
           address: (klant?.adres as string | null) || undefined,
           postalCode: (klant?.postcode as string | null) || undefined,
@@ -254,7 +300,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 5. Mutatie type 2 (FactuurVerstuurd) aanmaken.
     // Bedragen per regel: factuur_items.totaal is al excl. BTW met korting
     // verwerkt; creditnota's hebben negatieve regels en gaan as-is door.
-    const isCredit = factuur.factuur_type === 'creditnota' || factuur.factuur_type === 'credit'
     const mutatieRes = await fetch(`${EBOEKHOUDEN_API_BASE}/mutation`, {
       method: 'POST',
       headers: authHeaders,
@@ -264,9 +309,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ledgerId: Number(debiteurenLedgerId),
         relationId: relatieId,
         invoiceNumber: factuur.nummer,
-        description: isCredit
+        // Header-description heeft maxLength 50 in de e-Boekhouden API
+        description: (isCredit
           ? `Creditnota ${factuur.nummer}${factuur.titel ? ` — ${factuur.titel}` : ''}`
-          : (factuur.titel || `Factuur ${factuur.nummer}`),
+          : (factuur.titel || `Factuur ${factuur.nummer}`)).slice(0, 50),
         inExVat: 'EX',
         rows: items.map((item) => ({
           ledgerId: Number(omzetLedgerId),
@@ -274,7 +320,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           amount: item.totaal,
           description: [
             item.beschrijving,
-            item.aantal !== 1 ? `(${item.aantal} × €${item.eenheidsprijs.toFixed(2)})` : null,
+            typeof item.aantal === 'number' && item.aantal !== 1 ? `(${item.aantal} × €${Number(item.eenheidsprijs ?? 0).toFixed(2)})` : null,
             item.korting_percentage > 0 ? `(${item.korting_percentage}% korting)` : null,
           ].filter(Boolean).join(' '),
         })),
