@@ -21,14 +21,23 @@ const supabaseAdmin = createClient(
 const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
 function decryptSecret(text: string): string {
   if (!text || !text.includes(':') || text.length < 34) return text
-  if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
+  // Een onontsleutelbare encrypted blob mag nooit als token naar de externe
+  // API — dat geeft een misleidende "token ongeldig"-melding bij de gebruiker.
+  const lijktEncrypted = /^[0-9a-f]{32}:/.test(text)
+  if (!INT_KEY) {
+    if (lijktEncrypted) throw new Error('Server-encryptie is niet geconfigureerd (INTEGRATION_ENCRYPTION_KEY). Neem contact op met support.')
+    console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text
+  }
   try {
     const key = crypto.scryptSync(INT_KEY, 'integration', 32)
     const [ivHex, enc] = text.split(':')
     if (!ivHex || ivHex.length !== 32 || !enc) return text
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
     return decipher.update(enc, 'hex', 'utf8') + decipher.final('utf8')
-  } catch { console.warn('[encryption] decrypt failed, treating as plaintext'); return text }
+  } catch {
+    if (lijktEncrypted) throw new Error('Integratie-token kan niet ontsleuteld worden (encryptie-key gewijzigd?). Verbind opnieuw via Instellingen > Integraties.')
+    console.warn('[encryption] decrypt failed, treating as plaintext'); return text
+  }
 }
 
 // ─── Inline org-aware app_settings helpers (copied from api/exact-sync-factuur.ts) ───
@@ -155,6 +164,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const items = factuurItems as FactuurItemRij[]
 
+    // Regels valideren vóór er iets extern geboekt wordt: NULL-waarden uit
+    // legacy/import-data mogen niet crashen of stil onder 0% boeken.
+    const ongeldigeIndex = items.findIndex(
+      (i) => typeof i.totaal !== 'number' || !Number.isFinite(i.totaal)
+        || typeof i.btw_percentage !== 'number' || !Number.isFinite(i.btw_percentage),
+    )
+    if (ongeldigeIndex !== -1) {
+      return res.status(400).json({ error: `Factuurregel ${ongeldigeIndex + 1} heeft geen geldig bedrag of BTW-percentage. Controleer de factuur.` })
+    }
+
+    const rond2 = (n: number) => Math.round(n * 100) / 100
+    const somRegels = rond2(items.reduce((acc, i) => acc + i.totaal, 0))
+    const verwachtExcl = rond2(Number(factuur.totaal) - Number(factuur.btw_bedrag))
+    if (Math.abs(somRegels - verwachtExcl) > 0.05) {
+      return res.status(400).json({
+        error: `De som van de factuurregels (€${somRegels.toFixed(2)}) wijkt af van het factuurtotaal excl. BTW (€${verwachtExcl.toFixed(2)}). Controleer de factuur.`,
+      })
+    }
+    const somBtw = rond2(items.reduce((acc, i) => acc + rond2(i.totaal * (i.btw_percentage / 100)), 0))
+    if (Math.abs(somBtw - Number(factuur.btw_bedrag)) > 0.05) {
+      return res.status(400).json({
+        error: `Het BTW-bedrag van de factuur (€${Number(factuur.btw_bedrag).toFixed(2)}) wijkt meer dan 5 cent af van de som van de regels (€${somBtw.toFixed(2)}). Controleer de factuurregels.`,
+      })
+    }
+
+    const isCredit = factuur.factuur_type === 'creditnota' || factuur.factuur_type === 'credit'
+    if (isCredit && somRegels > 0) {
+      return res.status(400).json({ error: 'De regels van een creditnota moeten negatief zijn; deze creditnota heeft een positief regeltotaal.' })
+    }
+
     let klantQuery = supabaseAdmin
       .from('klanten')
       .select('bedrijfsnaam, email, telefoon, adres, postcode, stad, land, btw_nummer, debiteurennummer')
@@ -209,12 +248,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(502).json({ error: `Moneybird gaf een fout bij het opzoeken van de klant (${lookupRes.status}).` })
       }
     } else {
-      // Geen debiteurennummer (legacy klant): zoek op exacte bedrijfsnaam
+      // Geen debiteurennummer (legacy klant): zoek op exacte bedrijfsnaam.
+      // Lookup-fouten falen hard — stil doorvallen naar aanmaken geeft
+      // duplicaat-contacten (zelfde patroon als de customer_id-tak).
       const zoekRes = await moneybirdFetch(token, `${adminPath}/contacts.json?query=${encodeURIComponent(klantNaam)}&per_page=100`)
       if (zoekRes.ok) {
         const kandidaten = await zoekRes.json() as Array<{ id: number | string; company_name: string | null }>
         const match = kandidaten.find((c) => (c.company_name ?? '').toLowerCase() === klantNaam.toLowerCase())
         if (match) contactId = String(match.id)
+      } else if (zoekRes.status !== 404) {
+        if (zoekRes.status === 401) {
+          return res.status(401).json({ error: 'Moneybird-token is niet meer geldig. Verbind opnieuw via Instellingen > Integraties.' })
+        }
+        const body = await zoekRes.text()
+        console.error('[moneybird-sync] contact naam-lookup fout:', zoekRes.status, body)
+        return res.status(502).json({ error: `Moneybird gaf een fout bij het opzoeken van de klant (${zoekRes.status}).` })
       }
     }
 
@@ -255,7 +303,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Per regel: price = regel-totaal (excl. BTW, korting al verwerkt) met
     // amount 1, zodat het geboekte totaal exact gelijk is aan doen.'s totaal
     // ondanks korting/afronding — zelfde aanpak als de Exact-sync (AmountDC).
-    const isCredit = factuur.factuur_type === 'creditnota' || factuur.factuur_type === 'credit'
     const invoiceRes = await moneybirdFetch(token, `${adminPath}/external_sales_invoices.json`, {
       method: 'POST',
       body: JSON.stringify({
@@ -270,7 +317,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           details_attributes: items.map((item) => ({
             description: [
               isCredit ? `Creditnota: ${item.beschrijving}` : item.beschrijving,
-              item.aantal !== 1 ? `(${item.aantal} × €${item.eenheidsprijs.toFixed(2)})` : null,
+              typeof item.aantal === 'number' && item.aantal !== 1 ? `(${item.aantal} × €${Number(item.eenheidsprijs ?? 0).toFixed(2)})` : null,
               item.korting_percentage > 0 ? `(${item.korting_percentage}% korting)` : null,
             ].filter(Boolean).join(' '),
             price: item.totaal.toFixed(2),
