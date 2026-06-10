@@ -95,34 +95,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: 'e-Boekhouden gaf geen sessietoken terug.' })
     }
 
-    const ledgerRes = await fetch(`${EBOEKHOUDEN_API_BASE}/ledger?limit=500`, {
-      headers: { Authorization: `Bearer ${sessie.token}` },
-    })
+    try {
+      const ledgerRes = await fetch(`${EBOEKHOUDEN_API_BASE}/ledger?limit=500`, {
+        headers: { Authorization: `Bearer ${sessie.token}` },
+      })
 
-    fetch(`${EBOEKHOUDEN_API_BASE}/session`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${sessie.token}` },
-    }).catch(() => {})
+      if (!ledgerRes.ok) {
+        const body = await ledgerRes.text()
+        console.error('[eboekhouden-ledgers] fout:', ledgerRes.status, body)
+        return res.status(502).json({ error: `e-Boekhouden gaf een fout (${ledgerRes.status}).` })
+      }
 
-    if (!ledgerRes.ok) {
-      const body = await ledgerRes.text()
-      console.error('[eboekhouden-ledgers] fout:', ledgerRes.status, body)
-      return res.status(502).json({ error: `e-Boekhouden gaf een fout (${ledgerRes.status}).` })
+      const body = await ledgerRes.json() as
+        | Array<{ id: number; code: string; description: string; category: string }>
+        | { items?: Array<{ id: number; code: string; description: string; category: string }> }
+      const ledgers = Array.isArray(body) ? body : (body.items ?? [])
+
+      return res.status(200).json(
+        ledgers.map((l) => ({
+          id: String(l.id),
+          code: l.code,
+          naam: l.description,
+          categorie: l.category,
+        })),
+      )
+    } finally {
+      fetch(`${EBOEKHOUDEN_API_BASE}/session`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${sessie.token}` },
+      }).catch(() => {})
     }
-
-    const body = await ledgerRes.json() as
-      | Array<{ id: number; code: string; description: string; category: string }>
-      | { items?: Array<{ id: number; code: string; description: string; category: string }> }
-    const ledgers = Array.isArray(body) ? body : (body.items ?? [])
-
-    return res.status(200).json(
-      ledgers.map((l) => ({
-        id: String(l.id),
-        code: l.code,
-        naam: l.description,
-        categorie: l.category,
-      })),
-    )
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Onbekende fout'
     if (message === 'Niet geautoriseerd' || message === 'Ongeldige sessie') {

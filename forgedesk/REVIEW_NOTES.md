@@ -735,3 +735,10 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
   én geen 409-idempotency — eigen fix-taak, buiten deze feature; klant-select bug
   in exact-sync (naam i.p.v. bedrijfsnaam) eveneens apart oppakken; pre-existing
   64 TS-errors maken typecheck als gate waardeloos — opruimronde plannen.
+- Fase 2 (e-Boekhouden) gate: AKKOORD-MET-OPMERKINGEN. Gefixt in review-commit:
+  lookup-fout niet meer stil doorvallen naar relatie-aanmaken; fuzzy-match-fallback
+  (kandidaten[0]) verwijderd; sessie-DELETE in ledgers-route nu in finally.
+  Open punten voor later: BTW verlegd (VERL_VERK) niet representeerbaar — 0% is
+  altijd GEEN, gedocumenteerd in UI-helptekst; creditnota met negatieve regels
+  testen tegen echte e-Boekhouden API vóór livegang; ledger-paginatie boven 500;
+  NaN-guard op opgeslagen ledger-ids; 429-specifieke melding op mutatie-call.

@@ -187,8 +187,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           | Array<{ id: number; code?: string }>
           | { items?: Array<{ id: number; code?: string }> }
         const kandidaten = Array.isArray(body) ? body : (body.items ?? [])
-        const match = kandidaten.find((r) => (r.code ?? '').trim() === debiteurennummer) ?? kandidaten[0]
+        // Alleen exacte code-match telt — als de API-filter fuzzy matcht mag
+        // er niet op een willekeurige relatie geboekt worden.
+        const match = kandidaten.find((r) => (r.code ?? '').trim() === debiteurennummer)
         if (match) relatieId = match.id
+      } else if (lookupRes.status !== 404) {
+        if (lookupRes.status === 401) {
+          return res.status(401).json({ error: 'e-Boekhouden-sessie is niet meer geldig. Verbind opnieuw via Instellingen > Integraties.' })
+        }
+        const body = await lookupRes.text()
+        console.error('[eboekhouden-sync] relatie lookup fout:', lookupRes.status, body)
+        return res.status(502).json({ error: `e-Boekhouden gaf een fout bij het opzoeken van de klant (${lookupRes.status}).` })
       }
     }
 
