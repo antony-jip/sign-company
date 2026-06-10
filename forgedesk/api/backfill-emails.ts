@@ -234,6 +234,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // Mails ZONDER message_id vallen buiten de unique constraint
+    // (user_id, message_id) — NULL matcht nooit. Een window-retry na een
+    // eerdere fout zou die dan dubbel inserten; filter ze vooraf op
+    // (uid, imap_folder) die al in de DB staan.
+    const uidsZonderMsgId = newEmails.filter((e) => !e.message_id).map((e) => e.uid as number)
+    if (uidsZonderMsgId.length > 0) {
+      const { data: bestaandeUids } = await supabaseAdmin
+        .from('emails')
+        .select('uid')
+        .eq('user_id', user_id)
+        .eq('imap_folder', state.imap_folder)
+        .in('uid', uidsZonderMsgId)
+      const bestaand = new Set((bestaandeUids || []).map((r) => Number(r.uid)))
+      if (bestaand.size > 0) {
+        for (let i = newEmails.length - 1; i >= 0; i--) {
+          if (!newEmails[i].message_id && bestaand.has(Number(newEmails[i].uid))) {
+            newEmails.splice(i, 1)
+          }
+        }
+      }
+    }
+
     let synced = 0
     let fataleFout: string | null = null
     for (let i = 0; i < newEmails.length; i += 50) {
