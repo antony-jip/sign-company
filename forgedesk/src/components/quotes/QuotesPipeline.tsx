@@ -88,19 +88,6 @@ const CLOSED_STATUS_COLUMNS = [
   { key: 'verlopen', label: 'Verlopen', color: 'from-mod-offertes-light/30 to-mod-offertes-light/10', accent: 'bg-mod-offertes-text', headerBg: 'bg-mod-offertes-light/60' },
 ]
 
-const STATUS_BADGE_CLASSES: Record<string, string> = {
-  concept: 'bg-[#EEEEED] text-[#5A5A55] dark:bg-[rgba(138,138,138,0.22)] dark:text-[#A0A0A0]',
-  verzonden: 'bg-[#FDE8E2] text-[#C03A18] dark:bg-[rgba(241,80,37,0.22)] dark:text-[#F18060]',
-  bekeken: 'bg-[#EEE8F5] text-[#5A4A78] dark:bg-[rgba(90,74,120,0.22)] dark:text-[#9A7ACC]',
-  goedgekeurd: 'bg-[#E2F0F0] text-[#1A535C] dark:bg-[rgba(26,83,92,0.22)] dark:text-[#5AABB5]',
-  afgewezen: 'bg-[#FDE8E2] text-[#C03A18] dark:bg-[rgba(241,80,37,0.22)] dark:text-[#F18060]',
-  verlopen: 'bg-[#EEEEED] text-[#5A5A55] dark:bg-[rgba(138,138,138,0.22)] dark:text-[#A0A0A0]',
-  gefactureerd: 'bg-[#E4F0EA] text-[#2D6B48] dark:bg-[rgba(45,107,72,0.22)] dark:text-[#7AAF85]',
-  wijziging_gevraagd: 'bg-[#FDE8E2] text-[#C03A18] dark:bg-[rgba(241,80,37,0.22)] dark:text-[#F18060]',
-}
-
-const STATUS_BADGE_FALLBACK = 'bg-[#EEEEED] text-[#5A5A55] dark:bg-[rgba(138,138,138,0.22)] dark:text-[#A0A0A0]'
-
 const STATUS_LABELS: Record<string, string> = {
   concept: 'Concept',
   verzonden: 'Verstuurd',
@@ -1386,9 +1373,11 @@ export function QuotesPipeline() {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-[12px] text-foreground/70">{offerte.klant_naam || 'Onbekend'}</span>
-                            <span className={cn('ml-auto inline-flex items-center gap-1 text-[11px] font-medium rounded-md px-2 py-0.5', STATUS_BADGE_CLASSES[offerte.status] ?? STATUS_BADGE_FALLBACK)}>
-                              {STATUS_LABELS[offerte.status] || offerte.status}<span className="text-[#F15025]">.</span>
-                            </span>
+                            <StatusBadge
+                              status={offerte.status}
+                              label={STATUS_LABELS[offerte.status] || offerte.status}
+                              className="ml-auto text-[11px]"
+                            />
                           </div>
                           <div className="flex items-center gap-2 mt-1.5">
                             <span className="text-[10px] font-mono text-muted-foreground/70">{offerte.nummer}</span>

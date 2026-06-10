@@ -27,10 +27,10 @@ import { avatarTint } from '@/utils/avatarTint'
 
 type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond' | 'vandaag'
 
-const STATUS_CONFIG: Record<string, { label: string; text: string; bg: string }> = {
-  concept: { label: 'Open', text: '#5A5A55', bg: '#EEEEED' },
-  definitief: { label: 'In uitvoering', text: '#C03A18', bg: '#FDE8E2' },
-  afgerond: { label: 'Afgetekend', text: '#1A535C', bg: '#E2F0F0' },
+const STATUS_CONFIG: Record<string, { label: string }> = {
+  concept: { label: 'Open' },
+  definitief: { label: 'In uitvoering' },
+  afgerond: { label: 'Afgetekend' },
 }
 
 const WERKBON_STATUS_HEX: Record<string, string> = {

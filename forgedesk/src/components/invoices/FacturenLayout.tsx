@@ -143,37 +143,12 @@ interface FactuurFormData {
 
 // ============ CONSTANTS ============
 
-const STATUS_CONFIG: Record<FactuurStatus, { label: string; bg: string; text: string; dot: string }> = {
-  concept: {
-    label: 'Concept',
-    bg: '#EEEEED',
-    text: '#5A5A55',
-    dot: '#5A5A55',
-  },
-  verzonden: {
-    label: 'Verzonden',
-    bg: '#FDE8E2',
-    text: '#C03A18',
-    dot: '#C03A18',
-  },
-  betaald: {
-    label: 'Betaald',
-    bg: '#E4F0EA',
-    text: '#2D6B48',
-    dot: '#2D6B48',
-  },
-  vervallen: {
-    label: 'Vervallen',
-    bg: '#FDE8E2',
-    text: '#C03A18',
-    dot: '#C03A18',
-  },
-  gecrediteerd: {
-    label: 'Gecrediteerd',
-    bg: '#EEE8F5',
-    text: '#5A4A78',
-    dot: '#5A4A78',
-  },
+const STATUS_CONFIG: Record<FactuurStatus, { label: string; text: string }> = {
+  concept: { label: 'Concept', text: '#5A5A55' },
+  verzonden: { label: 'Verzonden', text: '#C03A18' },
+  betaald: { label: 'Betaald', text: '#2D6B48' },
+  vervallen: { label: 'Vervallen', text: '#C03A18' },
+  gecrediteerd: { label: 'Gecrediteerd', text: '#5A4A78' },
 }
 
 const TYPE_CONFIG: Record<FactuurType, { label: string; prefix: string; color: string }> = {
@@ -2229,15 +2204,10 @@ export function FacturenLayout() {
                 </div>
                 <div>
                   <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Status</p>
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      'text-[10px] font-semibold px-[10px] py-[3px] rounded-full',
-                      STATUS_CONFIG[viewingFactuur.status].bg
-                    )}
-                  >
-                    {STATUS_CONFIG[viewingFactuur.status].label}<span className="text-[#F15025]">.</span>
-                  </Badge>
+                  <StatusBadge
+                    status={viewingFactuur.status}
+                    label={STATUS_CONFIG[viewingFactuur.status].label}
+                  />
                 </div>
                 <div>
                   <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Titel</p>
