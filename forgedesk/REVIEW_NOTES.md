@@ -710,3 +710,4 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
 > afbeeldingen naar CID-attachments (gelijk aan api/send-email.ts), en claimt een
 > bericht atomair (wachtend -> verwerken, migratie 120) vóór verzenden zodat
 > overlappende runs of een gefaalde status-update geen dubbele mail veroorzaken.
+- Fase 2a gate-review: AKKOORD na fix 129 (RLS) + redeploy-instructie in commit message. TTL staat op 3 plekken (storageService/groteBijlagen/cleanup-cron) — bij wijziging alle drie aanpassen.
