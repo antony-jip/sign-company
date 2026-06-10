@@ -140,6 +140,8 @@ export function IntegratiesTab() {
   const [snelstartHelpOpen, setSnelstartHelpOpen] = useState(false)
   const [snelstartGrootboeken, setSnelstartGrootboeken] = useState<Array<{ id: string; nummer: number; naam: string }>>([])
   const [snelstartGrootboekId, setSnelstartGrootboekId] = useState('')
+  const [snelstartGrootboekLaagId, setSnelstartGrootboekLaagId] = useState('')
+  const [snelstartGrootboekNulId, setSnelstartGrootboekNulId] = useState('')
   const [snelstartConfigLoading, setSnelstartConfigLoading] = useState(false)
   const [snelstartConfigError, setSnelstartConfigError] = useState<string | null>(null)
   const [snelstartConfigGeladen, setSnelstartConfigGeladen] = useState(false)
@@ -181,6 +183,8 @@ export function IntegratiesTab() {
       setEboekhoudenDebiteurenLedgerId(s.eboekhouden_debiteuren_ledger_id ?? '')
       setEboekhoudenOmzetLedgerId(s.eboekhouden_omzet_ledger_id ?? '')
       setSnelstartGrootboekId(s.snelstart_grootboek_id ?? '')
+      setSnelstartGrootboekLaagId(s.snelstart_grootboek_laag_id ?? '')
+      setSnelstartGrootboekNulId(s.snelstart_grootboek_nul_id ?? '')
     }).catch(() => {})
   }, [user?.id])
 
@@ -390,22 +394,38 @@ export function IntegratiesTab() {
   }, [])
 
   useEffect(() => {
+    // !configError voorkomt een oneindige retry-loop bij een laad-fout;
+    // retry kan dan alleen via de "Opnieuw ophalen"-knop.
     if (
       boekhoudPakket === 'moneybird' &&
       boekhoudTokenAanwezig &&
       moneybirdAdministrationId &&
       !moneybirdConfigGeladen &&
-      !moneybirdConfigLoading
+      !moneybirdConfigLoading &&
+      !moneybirdConfigError
     ) {
       loadMoneybirdConfig()
     }
-  }, [boekhoudPakket, boekhoudTokenAanwezig, moneybirdAdministrationId, moneybirdConfigGeladen, moneybirdConfigLoading, loadMoneybirdConfig])
+  }, [boekhoudPakket, boekhoudTokenAanwezig, moneybirdAdministrationId, moneybirdConfigGeladen, moneybirdConfigLoading, moneybirdConfigError, loadMoneybirdConfig])
 
   const handleMoneybirdAdministratieChange = async (id: string) => {
     setMoneybirdAdministrationId(id)
+    // Ledger- en tax-rate-ids horen bij de vorige administratie — leegmaken,
+    // anders synct de server met ids uit de verkeerde administratie.
+    setMoneybirdLedgerAccountId('')
+    setMoneybirdTaxHoog('')
+    setMoneybirdTaxLaag('')
+    setMoneybirdTaxNul('')
     try {
-      await saveIntegrationSettings({ moneybird_administration_id: id })
+      await saveIntegrationSettings({
+        moneybird_administration_id: id,
+        moneybird_ledger_account_id: '',
+        moneybird_tax_rate_hoog: '',
+        moneybird_tax_rate_laag: '',
+        moneybird_tax_rate_nul: '',
+      })
       setMoneybirdConfigGeladen(false)
+      setMoneybirdConfigError(null)
     } catch (err) {
       logger.error('Moneybird administratie opslaan mislukt:', err)
       toast.error('Kon administratie niet opslaan')
@@ -488,15 +508,17 @@ export function IntegratiesTab() {
   }, [])
 
   useEffect(() => {
+    // !configError voorkomt een oneindige retry-loop bij een laad-fout
     if (
       boekhoudPakket === 'eboekhouden' &&
       boekhoudTokenAanwezig &&
       !eboekhoudenConfigGeladen &&
-      !eboekhoudenConfigLoading
+      !eboekhoudenConfigLoading &&
+      !eboekhoudenConfigError
     ) {
       loadEboekhoudenLedgers()
     }
-  }, [boekhoudPakket, boekhoudTokenAanwezig, eboekhoudenConfigGeladen, eboekhoudenConfigLoading, loadEboekhoudenLedgers])
+  }, [boekhoudPakket, boekhoudTokenAanwezig, eboekhoudenConfigGeladen, eboekhoudenConfigLoading, eboekhoudenConfigError, loadEboekhoudenLedgers])
 
   const handleEboekhoudenConnect = async () => {
     setEboekhoudenConnecting(true)
@@ -568,15 +590,17 @@ export function IntegratiesTab() {
   }, [])
 
   useEffect(() => {
+    // !configError voorkomt een oneindige retry-loop bij een laad-fout
     if (
       boekhoudPakket === 'snelstart' &&
       boekhoudTokenAanwezig &&
       !snelstartConfigGeladen &&
-      !snelstartConfigLoading
+      !snelstartConfigLoading &&
+      !snelstartConfigError
     ) {
       loadSnelstartGrootboeken()
     }
-  }, [boekhoudPakket, boekhoudTokenAanwezig, snelstartConfigGeladen, snelstartConfigLoading, loadSnelstartGrootboeken])
+  }, [boekhoudPakket, boekhoudTokenAanwezig, snelstartConfigGeladen, snelstartConfigLoading, snelstartConfigError, loadSnelstartGrootboeken])
 
   const handleSnelstartConnect = async () => {
     setSnelstartConnecting(true)
@@ -611,6 +635,8 @@ export function IntegratiesTab() {
       await saveIntegrationSettings({
         snelstart_grootboek_id: snelstartGrootboekId,
         snelstart_grootboek_naam: grootboek ? `${grootboek.nummer} — ${grootboek.naam}` : '',
+        snelstart_grootboek_laag_id: snelstartGrootboekLaagId,
+        snelstart_grootboek_nul_id: snelstartGrootboekNulId,
       })
       refreshSettings?.()
       toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
@@ -1222,27 +1248,36 @@ export function IntegratiesTab() {
                         </div>
                       ) : (
                         <>
-                          <div className="space-y-2">
-                            <Label htmlFor="snelstart-grootboek" className="text-sm">Omzetgrootboek</Label>
-                            <Select
-                              value={snelstartGrootboekId}
-                              onValueChange={setSnelstartGrootboekId}
-                              disabled={snelstartConfigLoading || snelstartGrootboeken.length === 0}
-                            >
-                              <SelectTrigger id="snelstart-grootboek" className="text-sm">
-                                <SelectValue placeholder={snelstartConfigLoading ? 'Laden...' : 'Kies grootboek...'} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {snelstartGrootboeken.map((g) => (
-                                  <SelectItem key={g.id} value={g.id}>
-                                    {g.nummer} — {g.naam}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {([
+                              { id: 'snelstart-grootboek-hoog', label: 'Omzet hoog (21%)', value: snelstartGrootboekId, setter: setSnelstartGrootboekId },
+                              { id: 'snelstart-grootboek-laag', label: 'Omzet laag (9%)', value: snelstartGrootboekLaagId, setter: setSnelstartGrootboekLaagId },
+                              { id: 'snelstart-grootboek-nul', label: 'Omzet onbelast (0%)', value: snelstartGrootboekNulId, setter: setSnelstartGrootboekNulId },
+                            ] as const).map((veld) => (
+                              <div key={veld.id} className="space-y-2">
+                                <Label htmlFor={veld.id} className="text-sm">{veld.label}</Label>
+                                <Select
+                                  value={veld.value}
+                                  onValueChange={veld.setter}
+                                  disabled={snelstartConfigLoading || snelstartGrootboeken.length === 0}
+                                >
+                                  <SelectTrigger id={veld.id} className="text-sm">
+                                    <SelectValue placeholder={snelstartConfigLoading ? 'Laden...' : 'Kies grootboek...'} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {snelstartGrootboeken.map((g) => (
+                                      <SelectItem key={g.id} value={g.id}>
+                                        {g.nummer} — {g.naam}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ))}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Facturen worden geboekt als verkoopboeking op dit grootboek. SnelStart ontvangt geen PDF — alleen de boeking.
+                            SnelStart-omzetgrootboeken zijn gebonden aan een BTW-tarief; kies per tarief het juiste grootboek
+                            (alleen nodig voor tarieven die je gebruikt). SnelStart ontvangt geen PDF — alleen de boeking.
                           </p>
                           <div className="flex justify-end">
                             <Button onClick={handleSnelstartSave} disabled={snelstartSaving || !snelstartGrootboekId} size="sm" variant="outline">

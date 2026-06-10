@@ -771,3 +771,25 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
   exact-sync (stil-falen was de root cause van deze bug). Gelogd: zelfde
   stille-destructure-patroon in andere handlers is een losse opschoontaak;
   per_page=100 is het Moneybird-maximum (geen paginatie, verwaarloosbaar risico).
+
+## Multi-agent audit (42 agents, code + live docs-verificatie) — fixes
+
+- Audit leverde 30 bevestigde bevindingen (5 weerlegd na adversariële verificatie). Gefixt:
+  KRITIEK: SnelStart btw-array gebruikte 'Hoog'/'Laag' maar de API eist
+  'VerkopenHoog'/'VerkopenLaag' (ander enum dan boekingsregels). HOOG: creditnota-dialoog
+  kopieerde geen factuur_items (sync faalde altijd) + server-side teken-guard tegen
+  positief boeken; e-Boekhouden naam-lookup matchte op niet-bestaand name-veld in de
+  list-response (duplicaat-relatie per sync) — nu server-side [eq]-filter vertrouwen;
+  oneindige fetch-retry-loops in de drie config-load useEffects. MIDDEL/LAAG:
+  dirty-guard vóór sync (DB-staat vs PDF-mismatch); Moneybird naam-lookup hard-fail;
+  e-Boekhouden description ≤50 / name ≤100 / code ≤15 limieten; SnelStart BTW per regel
+  afgerond (zoals frontend), grootboek-per-tarief (migratie 133: hoog/laag/onbelast),
+  land-lookup matcht nu ook op landnaam (geen NL-forceren), betalingstermijn meegestuurd,
+  relatie/boeking-id-guards, grootboeken-paginering ($skip/$top); decryptSecret gooit
+  hard op onontsleutelbare blobs (10 routes); item-validatie (NULL-waarden) +
+  regelsom/BTW-consistentiechecks in alle drie sync-routes; Moneybird
+  administratie-wissel reset ledger/tax-ids; tax_rates per_page=100.
+- Bewust niet gefixt (gelogd): e-Boekhouden ledger-select categoriefallback (anders lege
+  select bij afwijkende categorie-waarden); e-Boekhouden ledgers >500 (paginering
+  onbevestigd in docs); SnelStart creditnota-acceptatie en payload-shapes blijven
+  extern te verifiëren tegen O&T-administratie; Moneybird naam-zoek >100 hits.

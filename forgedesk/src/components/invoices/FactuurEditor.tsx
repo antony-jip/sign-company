@@ -1475,6 +1475,25 @@ export function FactuurEditor() {
       }
 
       const saved = await createFactuur(creditnota)
+
+      // Kopieer items als negatieve bedragen (zelfde patroon als
+      // factuurService.createCreditnota) — zonder regels kan de creditnota
+      // niet naar de boekhouding gesynct worden.
+      const origineleItems = await getFactuurItems(existingFactuur.id)
+      for (const item of origineleItems) {
+        await createFactuurItem({
+          user_id: user?.id || '',
+          factuur_id: saved.id,
+          beschrijving: item.beschrijving,
+          aantal: -item.aantal,
+          eenheidsprijs: round2(item.eenheidsprijs),
+          btw_percentage: item.btw_percentage,
+          korting_percentage: item.korting_percentage,
+          totaal: round2(-item.totaal),
+          volgorde: item.volgorde,
+        } as Omit<FactuurItem, 'id' | 'created_at'>)
+      }
+
       logCreate({ user, entityType: 'factuur', entityId: saved.id, omschrijving: `Creditnota op factuur ${existingFactuur.nummer}` })
 
       // Mark original as gecrediteerd
@@ -1683,6 +1702,12 @@ export function FactuurEditor() {
     if (!existingFactuur || boekhoudSyncing) return
     const pakket = settings.boekhoud_pakket
     if (!pakket) return
+    // De server boekt de DB-staat; met onopgeslagen wijzigingen zouden
+    // boeking (oude regels) en PDF (nieuwe editor-staat) uiteenlopen.
+    if (isDirty) {
+      toast.error('Sla de factuur eerst op voordat je naar de boekhouding synct')
+      return
+    }
     setBoekhoudSyncing(true)
     const pakketNaam = BOEKHOUD_PAKKET_NAAM[pakket]
     const toastId = toast.loading(`Synchroniseren met ${pakketNaam}...`)
@@ -1766,7 +1791,7 @@ export function FactuurEditor() {
     } finally {
       setBoekhoudSyncing(false)
     }
-  }, [existingFactuur, boekhoudSyncing, settings.boekhoud_pakket, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCredit, selectedKlant, documentStyle, outroTekst])
+  }, [existingFactuur, boekhoudSyncing, isDirty, settings.boekhoud_pakket, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCredit, selectedKlant, documentStyle, outroTekst])
 
   // ============ LOADING ============
 
