@@ -286,6 +286,19 @@ export function IntegratiesTab() {
     const pakket = value === 'geen' ? null : (value as BoekhoudPakket)
     const vorige = boekhoudPakket
     setBoekhoudPakket(pakket ?? '')
+    // Badge resetten: token-aanwezigheid geldt per pakket, dus na een wissel
+    // is de verbonden-status pas weer bekend na een nieuwe settings-load.
+    setBoekhoudTokenAanwezig(false)
+    if (pakket && user?.id) {
+      getAppSettings(user.id).then((s) => {
+        const tokenPerPakket: Record<BoekhoudPakket, string | undefined> = {
+          snelstart: s.snelstart_koppelsleutel,
+          moneybird: s.moneybird_api_token,
+          eboekhouden: s.eboekhouden_api_token,
+        }
+        setBoekhoudTokenAanwezig(!!tokenPerPakket[pakket])
+      }).catch(() => {})
+    }
     try {
       await saveIntegrationSettings({ boekhoud_pakket: pakket })
       refreshSettings?.()
