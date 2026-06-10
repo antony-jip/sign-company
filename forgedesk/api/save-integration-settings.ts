@@ -158,6 +158,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Geen geldige velden opgegeven' })
     }
 
+    if ('boekhoud_pakket' in updates) {
+      const pakket = updates.boekhoud_pakket
+      if (pakket !== null && !['snelstart', 'moneybird', 'eboekhouden'].includes(pakket as string)) {
+        return res.status(400).json({ error: 'Ongeldig boekhoudpakket' })
+      }
+    }
+
     // Bepaal audit-events door oude staat op te halen vóór de update.
     // Mollie: connect/disconnect volgt mollie_enabled flip.
     let mollieWasEnabled: boolean | null = null
