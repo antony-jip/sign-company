@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from "react";
 import { logger } from '../../utils/logger'
 import { DatePicker } from '@/components/ui/date-picker'
-import { useWeekWeather, getWeatherForDate } from "./WeatherDayStrip";
+import { useWeekWeather, getWeatherForDate, WeerIcon } from "./WeatherDayStrip";
 import type { DayWeather } from "./WeatherDayStrip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1885,7 +1885,7 @@ export function MontagePlanningLayout() {
     if (!w) return null;
     return (
       <div className="flex items-center justify-center gap-1.5 py-1.5 px-2">
-        <span className="text-base leading-none">{w.emoji}</span>
+        <WeerIcon code={w.code} className="w-4 h-4 text-muted-foreground" />
         <span className="text-[10px] text-muted-foreground tabular-nums">{w.maxTemp}°</span>
         {w.precipitationProb > 30 && (
           <span className="text-[10px] tabular-nums text-muted-foreground">
@@ -1976,7 +1976,7 @@ export function MontagePlanningLayout() {
                 {/* Weer — subtiele regel onder de dag */}
                 {w && !feestdagInfo && (
                   <div className="mt-0.5 flex items-center justify-center gap-1 text-[10px] tabular-nums text-muted-foreground/55">
-                    <span className="text-[11px] leading-none opacity-70 grayscale">{w.emoji}</span>
+                    <WeerIcon code={w.code} className="w-3 h-3 opacity-70" />
                     <span>{w.maxTemp}°</span>
                     {w.precipitationProb > 30 && <span className="text-muted-foreground/40">· {w.precipitationProb}%</span>}
                   </div>

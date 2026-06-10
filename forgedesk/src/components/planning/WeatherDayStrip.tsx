@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Sun, CloudSun, CloudFog, CloudRain, Snowflake, CloudDrizzle, CloudLightning, type LucideIcon } from 'lucide-react'
 
 interface WeatherDayStripProps {
   weekDays: Date[]
@@ -7,19 +8,25 @@ interface WeatherDayStripProps {
 export interface DayWeather {
   date: string // YYYY-MM-DD
   maxTemp: number
-  emoji: string
+  code: number // WMO weathercode
   precipitationProb: number // 0-100
 }
 
-function wmoToEmoji(code: number): string {
-  if (code <= 1) return '☀️'
-  if (code <= 3) return '⛅'
-  if (code === 45 || code === 48) return '🌫️'
-  if (code >= 51 && code <= 67) return '🌧️'
-  if (code >= 71 && code <= 77) return '❄️'
-  if (code >= 80 && code <= 82) return '🌦️'
-  if (code >= 95) return '⛈️'
-  return '⛅'
+function wmoToIcon(code: number): LucideIcon {
+  if (code <= 1) return Sun
+  if (code <= 3) return CloudSun
+  if (code === 45 || code === 48) return CloudFog
+  if (code >= 51 && code <= 67) return CloudRain
+  if (code >= 71 && code <= 77) return Snowflake
+  if (code >= 80 && code <= 82) return CloudDrizzle
+  if (code >= 95) return CloudLightning
+  return CloudSun
+}
+
+/** Matte weer-icoon i.p.v. emoji — DOEN: geen emojis in UI */
+export function WeerIcon({ code, className }: { code: number; className?: string }) {
+  const Icon = wmoToIcon(code)
+  return <Icon className={className} strokeWidth={1.75} aria-hidden="true" />
 }
 
 /** Hook to fetch weather data for a week — reusable by parent */
@@ -50,7 +57,7 @@ export function useWeekWeather(weekDays: Date[]) {
           map.set(date, {
             date,
             maxTemp: Math.round(temps[i]),
-            emoji: wmoToEmoji(codes[i]),
+            code: codes[i],
             precipitationProb: precip[i] ?? 0,
           })
         })
@@ -85,7 +92,7 @@ export function WeatherDayStrip({ weekDays }: WeatherDayStripProps) {
         if (!w) return <div key={i} className="flex-1 min-w-0" />
         return (
           <div key={i} className="flex-1 min-w-0 flex items-center justify-center gap-1 py-1 text-muted-foreground">
-            <span className="text-sm leading-none">{w.emoji}</span>
+            <WeerIcon code={w.code} className="w-3.5 h-3.5" />
             <span className="text-xs font-mono tabular-nums hidden sm:inline">{w.maxTemp}°</span>
           </div>
         )
