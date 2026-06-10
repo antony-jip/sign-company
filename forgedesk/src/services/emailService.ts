@@ -84,6 +84,28 @@ export async function getEmails(limit = 200): Promise<Email[]> {
   return getLocalData<Email>('emails')
 }
 
+/**
+ * Server-side tellers voor de mappenlijst — onafhankelijk van hoeveel mails
+ * de client geladen heeft (met duizenden mails in de DB telt de client
+ * anders alleen zijn eigen venster).
+ */
+export async function getMapTellers(): Promise<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number } | null> {
+  if (!isSupabaseConfigured() || !supabase) return null
+  const [inboxQ, conceptenQ, geplandQ, gesnoozedQ] = await Promise.all([
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('map', 'inbox').eq('gelezen', false),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('map', 'concepten'),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('map', 'gepland'),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).not('snoozed_until', 'is', null),
+  ])
+  if (inboxQ.error || conceptenQ.error || geplandQ.error || gesnoozedQ.error) return null
+  return {
+    inboxOngelezen: inboxQ.count ?? 0,
+    concepten: conceptenQ.count ?? 0,
+    gepland: geplandQ.count ?? 0,
+    gesnoozed: gesnoozedQ.count ?? 0,
+  }
+}
+
 export interface EmailPageCursor {
   datum: string
   id: string

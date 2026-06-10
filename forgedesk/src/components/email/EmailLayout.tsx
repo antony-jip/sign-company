@@ -12,7 +12,7 @@ import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, backfillEmailsFromIMAP } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
-import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage } from '@/services/emailService'
+import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers } from '@/services/emailService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
@@ -464,18 +464,30 @@ export function EmailLayout() {
     return () => clearInterval(interval)
   }, [])
 
+  // ─── Server-side mappentellers ───
+  // Bij duizenden mails in de DB telt de client alleen zijn eigen venster;
+  // de echte aantallen komen van de server. Debounced her-ophalen zodra de
+  // lijst muteert (lezen, verwijderen, sync).
+  const [serverTellers, setServerTellers] = useState<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number } | null>(null)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      getMapTellers().then((tellers) => { if (tellers) setServerTellers(tellers) }).catch(() => { /* client-fallback blijft staan */ })
+    }, 800)
+    return () => clearTimeout(t)
+  }, [emails])
+
   // ─── Filtering (inline from useEmailFilters) ───
   const folderCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     folderIds.forEach((id) => {
-      if (id === 'inbox') counts[id] = emails.filter((e) => e.map === 'inbox' && !e.gelezen).length
-      else if (id === 'concepten') counts[id] = emails.filter((e) => e.map === 'concepten').length
-      else if (id === 'gepland') counts[id] = emails.filter((e) => e.map === 'gepland').length
-      else if (id === 'gesnoozed') counts[id] = emails.filter((e) => e.snoozed_until).length
+      if (id === 'inbox') counts[id] = serverTellers?.inboxOngelezen ?? emails.filter((e) => e.map === 'inbox' && !e.gelezen).length
+      else if (id === 'concepten') counts[id] = serverTellers?.concepten ?? emails.filter((e) => e.map === 'concepten').length
+      else if (id === 'gepland') counts[id] = serverTellers?.gepland ?? emails.filter((e) => e.map === 'gepland').length
+      else if (id === 'gesnoozed') counts[id] = serverTellers?.gesnoozed ?? emails.filter((e) => e.snoozed_until).length
       else counts[id] = 0
     })
     return counts
-  }, [emails])
+  }, [emails, serverTellers])
 
   const filteredEmails = useMemo(() => {
     // Als er server-side zoekresultaten zijn, gebruik die (alle mappen)
@@ -2376,7 +2388,7 @@ export function EmailLayout() {
             senderEmail={readerSenderEmail}
             onSelectEmail={handleSelectEmail}
             onCompose={() => handleCompose()}
-            unreadCount={emails.filter(e => !e.gelezen).length}
+            unreadCount={serverTellers?.inboxOngelezen ?? emails.filter(e => !e.gelezen).length}
             onClose={() => setContextOpen(false)}
           />
         </div>
