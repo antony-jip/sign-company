@@ -124,14 +124,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'factuur_id is verplicht' })
     }
 
-    // 1. Factuur + items + klant ophalen
-    const { data: factuur, error: factuurError } = await supabaseAdmin
+    // 1. Factuur + items + klant ophalen — org-scoped (service-role client
+    // omzeilt RLS, dus eigendom expliciet afdwingen; zelfde principe als
+    // de eigendoms-check in api/mollie-create-payment.ts)
+    const orgId = await getOrgIdForUser(supabaseAdmin, user_id)
+    let factuurQuery = supabaseAdmin
       .from('facturen')
       .select('*')
       .eq('id', factuur_id)
-      .single()
+    factuurQuery = orgId
+      ? factuurQuery.eq('organisatie_id', orgId)
+      : factuurQuery.eq('user_id', user_id)
+    const { data: factuur, error: factuurError } = await factuurQuery.maybeSingle()
     if (factuurError || !factuur) {
-      return res.status(404).json({ error: 'Factuur niet gevonden.' })
+      return res.status(404).json({ error: 'Factuur niet gevonden of geen toegang.' })
     }
 
     // Server-side idempotency: dubbel-klik of retry mag geen tweede boeking maken
@@ -149,11 +155,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const items = factuurItems as FactuurItemRij[]
 
-    const { data: klant } = await supabaseAdmin
+    let klantQuery = supabaseAdmin
       .from('klanten')
       .select('bedrijfsnaam, email, telefoon, adres, postcode, stad, land, btw_nummer, debiteurennummer')
       .eq('id', factuur.klant_id)
-      .maybeSingle()
+    if (orgId) klantQuery = klantQuery.eq('organisatie_id', orgId)
+    const { data: klant } = await klantQuery.maybeSingle()
 
     // 2. Instellingen
     const settingsRaw = await loadAppSettingsOrgFirst(
@@ -318,7 +325,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // 6. Sync-state terugschrijven
+    // 6. Sync-state terugschrijven. De .is()-guard voorkomt dat een race
+    // (twee gelijktijdige syncs) elkaars extern_id overschrijft.
     const syncedAt = new Date().toISOString()
     const { error: updateError } = await supabaseAdmin
       .from('facturen')
@@ -328,8 +336,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         boekhoud_synced_at: syncedAt,
       })
       .eq('id', factuur_id)
+      .is('boekhoud_extern_id', null)
     if (updateError) {
+      // Invoice bestaat in Moneybird maar doen. weet het niet — meld het
+      // extern_id zodat de gebruiker niet blind opnieuw synct (= dubbele boeking).
       console.error('[moneybird-sync] sync-state opslaan mislukt:', updateError.message)
+      return res.status(200).json({
+        success: true,
+        extern_id: externId,
+        bijlage_synced: bijlageSynced,
+        waarschuwing: `Factuur is geboekt in Moneybird (id ${externId}), maar de sync-status kon niet worden opgeslagen. Niet opnieuw syncen; neem contact op met support.`,
+      })
     }
 
     return res.status(200).json({
