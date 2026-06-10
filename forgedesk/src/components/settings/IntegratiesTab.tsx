@@ -1037,9 +1037,12 @@ export function IntegratiesTab() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="geen">Geen</SelectItem>
-                    <SelectItem value="snelstart">SnelStart</SelectItem>
                     <SelectItem value="moneybird">Moneybird</SelectItem>
                     <SelectItem value="eboekhouden">e-Boekhouden</SelectItem>
+                    {/* SnelStart verborgen tot de payload-verificatie tegen een
+                        Ontwikkeling&Test-administratie en de certificering rond
+                        zijn (zie REVIEW_NOTES.md). Code en routes staan klaar. */}
+                    {boekhoudPakket === 'snelstart' && <SelectItem value="snelstart">SnelStart</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
