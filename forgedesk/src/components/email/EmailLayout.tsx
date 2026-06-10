@@ -10,10 +10,9 @@ import {
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, backfillEmailsFromIMAP } from '@/services/gmailService'
-import type { IMAPEmailSummary } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
-import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht } from '@/services/emailService'
+import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage } from '@/services/emailService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
@@ -59,24 +58,13 @@ const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 
 // Mobile drawer surfaces these two as primary; the rest sits below a divider.
 const PRIMARY_FOLDER_IDS = new Set<EmailFolder>(['inbox', 'sales-wacht'])
 
-// ─── Helper: convert IMAP message to Email ───
-function imapToEmail(msg: IMAPEmailSummary, folder: string, userId: string): Email {
-  return {
-    id: String(msg.uid),
-    user_id: userId,
-    gmail_id: String(msg.uid),
-    van: msg.fromName ? `${msg.fromName} <${msg.from}>` : msg.from,
-    aan: msg.to,
-    onderwerp: msg.subject,
-    inhoud: '',
-    datum: msg.date,
-    gelezen: msg.isRead,
-    labels: [],
-    bijlagen: msg.hasAttachments ? 1 : 0,
-    map: folder === 'INBOX' ? 'inbox' : folder.toLowerCase(),
-    created_at: msg.date,
-    updated_at: msg.date,
-  }
+// Mappen die in de DB (kolom `map`) leven en dus DB-gepagineerd kunnen
+// worden; afgeleide mappen (sales/gesnoozed/gepland) filteren client-side.
+const DB_MAP_FOLDERS: Partial<Record<EmailFolder, string>> = {
+  inbox: 'inbox',
+  verzonden: 'verzonden',
+  concepten: 'concepten',
+  prullenbak: 'prullenbak',
 }
 
 export function EmailLayout() {
@@ -953,6 +941,7 @@ export function EmailLayout() {
     triggerImapSync(imapFolder)
       .then(async ({ total }) => {
         setImapTotal(total)
+        hasMoreDbRef.current = {}
         const fresh = await readFromSupabase()
         if (fresh.length > 0) setEmails(fresh)
         setLastSyncAt(Date.now())
@@ -976,30 +965,46 @@ export function EmailLayout() {
   }, [])
 
   // ─── Load more (infinite scroll) ───
+  // Bladeren gaat uit de eigen DB met keyset-paginatie (datum, id) — geen
+  // IMAP-offset meer. De historie-backfill vult de DB op de achtergrond,
+  // dus een lege pagina nu kan na verloop van tijd alsnog data hebben;
+  // daarom resetten we hasMore bij refresh/folderwissel.
+  const hasMoreDbRef = useRef<Record<string, boolean>>({})
   const loadMoreEmails = useCallback(async (folder: EmailFolder) => {
     if (isLoadingMore) return
-    const currentCount = emails.length
-    if (imapTotal > 0 && currentCount >= imapTotal) return
+    const map = DB_MAP_FOLDERS[folder]
+    if (!map) return
+    if (hasMoreDbRef.current[map] === false) return
     setIsLoadingMore(true)
     try {
-      const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
-      const result = await fetchEmailsFromIMAP(imapFolder, fetchLimitRef.current, currentCount)
-      if (result.emails && Array.isArray(result.emails) && result.emails.length > 0) {
-        const moreEmails = result.emails.map((msg) => imapToEmail(msg, imapFolder, userIdRef.current || ''))
-        setEmails((prev) => [...prev, ...moreEmails])
-      } else {
-        // Sync-first: re-read from Supabase
-        const fresh = await readFromSupabase()
-        setEmails(fresh)
+      // Cursor = oudste mail van deze map die we al hebben
+      let oudste: Email | null = null
+      for (const e of emails) {
+        if (e.map !== map) continue
+        if (!oudste || (e.datum && e.datum < oudste.datum)) oudste = e
       }
-      setImapTotal(result.total || 0)
+      const page = await getEmailsPage(
+        map,
+        oudste ? { datum: oudste.datum, id: oudste.id } : null,
+        fetchLimitRef.current
+      )
+      if (page.length > 0) {
+        const meer = normalizeEmails(page)
+        setEmails((prev) => {
+          const bekend = new Set(prev.map((p) => p.id))
+          return [...prev, ...meer.filter((p) => !bekend.has(p.id))]
+        })
+      }
+      if (page.length < fetchLimitRef.current) {
+        hasMoreDbRef.current[map] = false
+      }
     } catch (err) {
       logger.error('Load more emails failed:', err)
       toast.error('Kon meer emails niet laden')
     } finally {
       setIsLoadingMore(false)
     }
-  }, [isLoadingMore, emails.length, imapTotal])
+  }, [isLoadingMore, emails])
 
   // ─── Load email body ───
   // Track in-flight prefetches om dubbele requests te voorkomen wanneer iemand
@@ -1399,6 +1404,9 @@ export function EmailLayout() {
   }, [selectedEmail, selectedFolder, handleRefresh])
 
   const handleFolderChange = useCallback((folder: EmailFolder) => {
+    // Backfill kan intussen oudere mail hebben toegevoegd — geef bladeren
+    // weer een kans in deze map.
+    hasMoreDbRef.current = {}
     setSelectedFolder(folder)
     setSelectedEmail(null)
     setViewMode('idle')

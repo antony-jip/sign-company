@@ -83,6 +83,37 @@ export async function getEmails(limit = 200): Promise<Email[]> {
   return getLocalData<Email>('emails')
 }
 
+export interface EmailPageCursor {
+  datum: string
+  id: string
+}
+
+/**
+ * Keyset-paginatie per map: de volgende pagina ouder dan de cursor
+ * (datum, id) — stabiel bij nieuwe mail bovenin, geen offset-drift.
+ * De data komt uit de eigen DB; de historie-backfill vult die aan.
+ */
+export async function getEmailsPage(map: string, cursor: EmailPageCursor | null, limit = 100): Promise<Email[]> {
+  if (!isSupabaseConfigured() || !supabase) return []
+  let q = supabase
+    .from('emails_list_view')
+    .select(LIST_VIEW_COLUMNS)
+    .eq('map', map)
+    .order('datum', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(limit)
+  if (cursor) {
+    q = q.or(`datum.lt."${cursor.datum}",and(datum.eq."${cursor.datum}",id.lt."${cursor.id}")`)
+  }
+  const { data, error } = await q
+  if (error) throw error
+  return (data || []).map(e => ({
+    ...e,
+    inhoud: '',
+    body_html: null,
+  }))
+}
+
 export async function searchEmailsFTS(query: string, limit = 50): Promise<Email[]> {
   if (!query.trim() || !isSupabaseConfigured() || !supabase) return []
   const tsQuery = query.trim().split(/\s+/).map(w => `${w}:*`).join(' & ')
