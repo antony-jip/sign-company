@@ -52,9 +52,28 @@ const ALLOWED_FIELDS = [
   'exact_btw_nul',
   'exact_document_type_id',
   'exact_document_type_naam',
+  'boekhoud_pakket',
+  'snelstart_koppelsleutel',
+  'snelstart_grootboek_id',
+  'snelstart_grootboek_naam',
+  'moneybird_api_token',
+  'moneybird_administration_id',
+  'moneybird_ledger_account_id',
+  'moneybird_tax_rate_hoog',
+  'moneybird_tax_rate_laag',
+  'moneybird_tax_rate_nul',
+  'eboekhouden_api_token',
+  'eboekhouden_debiteuren_ledger_id',
+  'eboekhouden_omzet_ledger_id',
 ] as const
 
-const SECRET_FIELDS = ['mollie_api_key', 'exact_online_client_secret']
+const SECRET_FIELDS = [
+  'mollie_api_key',
+  'exact_online_client_secret',
+  'snelstart_koppelsleutel',
+  'moneybird_api_token',
+  'eboekhouden_api_token',
+]
 
 function getClientIp(req: VercelRequest): string | null {
   const fwd = req.headers['x-forwarded-for']
