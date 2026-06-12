@@ -85,9 +85,23 @@ DO $$ BEGIN
     SELECT 1 FROM pg_policies
     WHERE tablename = 'website_chat_berichten' AND policyname = 'Org members manage website_chat_berichten'
   ) THEN
+    -- naast de org-kolom ook het gesprek zelf checken: een org-lid kan zo
+    -- nooit een bericht onder een gesprek van een andere org hangen
     CREATE POLICY "Org members manage website_chat_berichten" ON website_chat_berichten
-      FOR ALL USING (organisatie_id = auth_organisatie_id())
-      WITH CHECK (organisatie_id = auth_organisatie_id());
+      FOR ALL USING (
+        organisatie_id = auth_organisatie_id()
+        AND gesprek_id IN (
+          SELECT id FROM website_chat_gesprekken
+          WHERE organisatie_id = auth_organisatie_id()
+        )
+      )
+      WITH CHECK (
+        organisatie_id = auth_organisatie_id()
+        AND gesprek_id IN (
+          SELECT id FROM website_chat_gesprekken
+          WHERE organisatie_id = auth_organisatie_id()
+        )
+      );
   END IF;
 
   IF NOT EXISTS (
@@ -101,11 +115,10 @@ DO $$ BEGIN
 END $$;
 
 -- ── Realtime ────────────────────────────────────────────────
-
-DO $$ BEGIN
-  ALTER PUBLICATION supabase_realtime ADD TABLE website_chat_gesprekken;
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+-- Alleen berichten streamen: de gesprekken-rij bevat bezoeker_token en
+-- blijft daarom buiten de publication. Elk nieuw gesprek heeft direct
+-- een eerste bericht, dus de inbox ververst alsnog realtime; status-
+-- wijzigingen vangt de 30s-poll in de chat-tab op.
 
 DO $$ BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE website_chat_berichten;

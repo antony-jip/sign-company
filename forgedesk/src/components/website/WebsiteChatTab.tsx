@@ -56,7 +56,14 @@ export function WebsiteChatTab() {
   const laadBerichten = useCallback(async (gesprekId: string) => {
     try {
       const data = await getChatBerichten(gesprekId)
-      if (actiefIdRef.current === gesprekId) setBerichten(data)
+      if (actiefIdRef.current !== gesprekId) return
+      // merge op id in plaats van vervangen: een snapshot die vóór een
+      // realtime/optimistic insert startte mag dat bericht niet wegdrukken
+      setBerichten((prev) => {
+        const gezien = new Set(data.map((b) => b.id))
+        const extra = prev.filter((b) => b.gesprek_id === gesprekId && !gezien.has(b.id))
+        return [...data, ...extra].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      })
     } catch (err) {
       logger.error('Chatberichten laden mislukt:', err)
     }
@@ -69,9 +76,11 @@ export function WebsiteChatTab() {
 
   useEffect(() => {
     if (!supabase) return
+    // gesprekken zelf zitten bewust niet in de realtime-publication
+    // (bezoeker_token); berichten-INSERTs zijn genoeg om de inbox te
+    // verversen, statuswijzigingen vangt de 30s-poll op
     const channel = supabase
       .channel('website-chat-inbox')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'website_chat_gesprekken' }, () => { laadGesprekken() })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'website_chat_berichten' }, (payload) => {
         const nieuw = payload.new as WebsiteChatBericht
         if (actiefIdRef.current && nieuw.gesprek_id === actiefIdRef.current) {

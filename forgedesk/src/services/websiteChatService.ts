@@ -4,15 +4,19 @@ import {
 } from './supabaseHelpers'
 import type { WebsiteChatGesprek, WebsiteChatBericht, WebsiteChatAanwezigheid } from '@/types'
 
+// bewust een expliciete kolomlijst: bezoeker_token is het schrijf-geheim
+// van de bezoeker op de website-API en mag de app-client nooit bereiken
+const GESPREK_KOLOMMEN = 'id,organisatie_id,naam,email,telefoon,pagina_url,ip_adres,browser,status,laatste_bericht_op,team_laatst_gelezen_op,created_at,updated_at'
+
 export async function getChatGesprekken(limit = 200): Promise<WebsiteChatGesprek[]> {
   if (!isSupabaseConfigured() || !supabase) return []
   const { data, error } = await supabase
     .from('website_chat_gesprekken')
-    .select('*')
+    .select(GESPREK_KOLOMMEN)
     .order('laatste_bericht_op', { ascending: false })
     .limit(limit)
   if (error) throw error
-  return data || []
+  return (data || []) as WebsiteChatGesprek[]
 }
 
 export async function getChatBerichten(gesprekId: string): Promise<WebsiteChatBericht[]> {
@@ -37,10 +41,11 @@ export async function stuurTeamBericht(gesprekId: string, tekst: string, medewer
     .select()
     .single()
   if (error) throw error
-  await supabase
+  const { error: updateError } = await supabase
     .from('website_chat_gesprekken')
     .update({ laatste_bericht_op: now(), team_laatst_gelezen_op: now(), updated_at: now() })
     .eq('id', gesprekId)
+  if (updateError) console.error('chat: laatste_bericht_op bijwerken mislukt', updateError)
   return data
 }
 
