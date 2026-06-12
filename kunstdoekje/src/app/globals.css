@@ -2,10 +2,126 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Kunstdoekje-huisstijl. De Tailwind-tokens (tailwind.config.ts) zijn leidend;
+   deze variabelen spiegelen ze onder de officiële --kd-namen. */
 :root {
   color-scheme: light;
+
+  /* Primaire kleuren */
+  --kd-gold: #cea935;
+  --kd-gold-hover: #b8941e;
+  --kd-gold-dark: #a0821a;
+
+  /* Achtergronden */
+  --kd-bg-main: #f7f6ec;
+  --kd-bg-card: #eeede0;
+  --kd-bg-white: #fbfaf8;
+
+  /* Tekst */
+  --kd-text-primary: #3a3127;
+  --kd-text-secondary: #402e32;
+  --kd-text-muted: #8b7a6b;
+
+  /* Gradiënten */
+  --kd-gradient: linear-gradient(135deg, #b8941e, #cea935);
+  --kd-gradient-hover: linear-gradient(135deg, #a0821a, #b8941e);
 }
 
 body {
   @apply bg-canvas text-ink antialiased;
+}
+
+/* Subtiele doek-korrel over de hele site — verwijst naar het product zelf */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Tekstselectie in merk-goud */
+::selection {
+  background: #cea935;
+  color: #fff;
+}
+
+/* Outline-koppen: transparante vulling, inkt-contour */
+.text-outline {
+  -webkit-text-stroke: 1.5px #3a3127;
+  color: transparent;
+}
+
+/* Doorlopende marquee-band */
+@keyframes kd-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.kd-marquee-track {
+  animation: kd-marquee 28s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kd-marquee-track {
+    animation: none;
+  }
+}
+
+/* Horizontale scrollrijen zonder zichtbare scrollbar */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Stoer maar chique: koppen in Archivo Expanded Black met strakke spatiëring */
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-extrabold tracking-tight;
+    font-stretch: 125%;
+  }
+}
+
+/* ── Merksysteem "de wisselgalerie" ──────────────────────────────────────── */
+@layer components {
+  /* Knoppen: rechthoekig met zachte hoek, kapitalen, brede spatiëring. */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-3 rounded-[3px] border border-ink bg-ink px-7 py-4 text-[13px] font-semibold uppercase tracking-[0.18em] text-canvas transition-all duration-300 hover:border-accent hover:bg-accent hover:text-ink;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-3 rounded-[3px] border border-ink/40 bg-transparent px-7 py-4 text-[13px] font-semibold uppercase tracking-[0.18em] text-ink transition-all duration-300 hover:border-ink hover:bg-ink hover:text-canvas;
+  }
+  /* Variant voor donkere vlakken (footer, overlays) */
+  .btn-invert {
+    @apply inline-flex items-center justify-center gap-3 rounded-[3px] border border-canvas/60 bg-transparent px-7 py-4 text-[13px] font-semibold uppercase tracking-[0.18em] text-canvas transition-all duration-300 hover:border-accent hover:bg-accent hover:text-ink;
+  }
+
+  /* Microlabels: kapitalen met extreem brede spatiëring */
+  .label-caps {
+    @apply text-[11px] font-bold uppercase tracking-[0.22em];
+  }
+
+  /* Galerijplaquette onder een beeld */
+  .plaquette {
+    @apply flex items-baseline justify-between border-t border-ink/25 pt-2.5 text-[11px] font-semibold uppercase tracking-[0.14em];
+  }
+}
+
+/* Registratiekruisje (drukwerk) als sectiemarkering */
+.reg-mark {
+  position: relative;
+}
+.reg-mark::before {
+  content: '+';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  font-weight: 400;
+  color: #cea935;
 }

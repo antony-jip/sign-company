@@ -72,7 +72,7 @@ export default function QuoteForm({
       </div>
       <textarea className={cls} rows={5} placeholder="Je bericht" value={form.bericht} onChange={(e) => update('bericht', e.target.value)} required />
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-      <button type="submit" disabled={busy} className="rounded-xl bg-ink px-6 py-3.5 font-medium text-canvas hover:bg-ink/90 disabled:opacity-60">
+      <button type="submit" disabled={busy} className="btn-primary disabled:opacity-60">
         {busy ? 'Versturen…' : 'Versturen'}
       </button>
     </form>

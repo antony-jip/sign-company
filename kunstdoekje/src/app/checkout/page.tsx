@@ -6,7 +6,7 @@ import { useCart } from '@/lib/cart'
 import { formatEuro } from '@/lib/pricing'
 
 export default function CheckoutPage() {
-  const { items, subtotalCents } = useCart()
+  const { items, subtotalCents, kortingCents, effectiveUnitCents } = useCart()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -18,7 +18,7 @@ export default function CheckoutPage() {
     return (
       <div className="mx-auto max-w-2xl px-6 py-24 text-center">
         <h1 className="font-serif text-3xl">Je winkelwagen is leeg</h1>
-        <button onClick={() => router.push('/shop')} className="mt-6 rounded-xl bg-ink px-6 py-3 text-canvas">
+        <button onClick={() => router.push('/shop')} className="btn-primary mt-6">
           Naar de shop
         </button>
       </div>
@@ -105,7 +105,7 @@ export default function CheckoutPage() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-xl bg-ink py-4 font-medium text-canvas transition hover:bg-ink/90 disabled:opacity-60"
+          className="btn-primary w-full disabled:opacity-60"
         >
           {busy ? 'Bezig…' : `Betaal ${formatEuro(subtotalCents)} met iDEAL`}
         </button>
@@ -121,14 +121,20 @@ export default function CheckoutPage() {
               <span className="text-ink/70">
                 {i.aantal}× {i.artworkTitel}
                 <span className="block text-xs text-ink/50">
-                  {i.formatLabel} · {i.fabricLabel} · {i.metLijst ? i.frameColorLabel : 'zonder lijst'}
+                  {i.formatLabel} · {i.fabricLabel} · {i.metLijst ? `frame ${i.frameColorLabel}` : 'zonder frame'}
                 </span>
               </span>
-              <span>{formatEuro(i.unitPriceCents * i.aantal)}</span>
+              <span>{formatEuro(effectiveUnitCents(i) * i.aantal)}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-4 flex justify-between border-t border-black/10 pt-4 font-medium">
+        {kortingCents > 0 && (
+          <div className="mt-4 flex justify-between border-t border-black/10 pt-4 text-sm font-semibold text-accent-dark">
+            <span>Combideal-korting (al verrekend)</span>
+            <span>−{formatEuro(kortingCents)}</span>
+          </div>
+        )}
+        <div className={`flex justify-between font-medium ${kortingCents > 0 ? 'mt-2' : 'mt-4 border-t border-black/10 pt-4'}`}>
           <span>Subtotaal</span>
           <span>{formatEuro(subtotalCents)}</span>
         </div>

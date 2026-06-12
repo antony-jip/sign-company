@@ -30,7 +30,7 @@ function Bedankt() {
         Zodra je betaling is verwerkt, ontvang je een bevestiging per e-mail. We gaan direct voor je
         aan de slag — elk doek wordt op bestelling voor je geprint.
       </p>
-      <Link href="/shop" className="mt-8 inline-block rounded-xl bg-ink px-6 py-3.5 font-medium text-canvas hover:bg-ink/90">
+      <Link href="/shop" className="btn-primary mt-8">
         Verder kijken
       </Link>
     </div>
