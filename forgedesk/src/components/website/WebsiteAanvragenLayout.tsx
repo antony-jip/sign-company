@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import {
@@ -31,7 +32,8 @@ export function WebsiteAanvragenLayout() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedAanvraag, setSelectedAanvraag] = useState<WebsiteAanvraag | null>(null)
-  const [tab, setTab] = useState<'aanvragen' | 'chat'>('aanvragen')
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState<'aanvragen' | 'chat'>(() => searchParams.get('tab') === 'chat' ? 'chat' : 'aanvragen')
   const [verwerkOpen, setVerwerkOpen] = useState(false)
 
   useEffect(() => {
