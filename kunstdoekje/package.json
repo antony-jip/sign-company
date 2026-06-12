@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "import:woo": "tsx scripts/import-woocommerce.ts"
+    "import:woo": "tsx scripts/import-woocommerce.ts",
+    "migrate:images": "tsx scripts/migrate-images.ts"
   },
   "dependencies": {
     "@mollie/api-client": "^4.3.2",
