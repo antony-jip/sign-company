@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import ProductCard from '@/components/ProductCard'
-import { getArtworks, getCategories, getFabrics, getFormats, getFrameColors } from '@/lib/catalog'
+import { getArtworks, getCategories, getFrameColors, getPrices } from '@/lib/catalog'
 import { vanafCompleetCents } from '@/lib/pricing'
 import type { Artwork, Category } from '@/lib/types'
 
@@ -25,16 +25,15 @@ export default async function Home() {
   let categories: Category[] = []
   let vanaf = 0
   try {
-    const [f, c, formats, fabrics, frameColors] = await Promise.all([
+    const [f, c, prices, frameColors] = await Promise.all([
       getArtworks({ featured: true, limit: 8 }),
       getCategories(),
-      getFormats(),
-      getFabrics(),
+      getPrices(),
       getFrameColors(),
     ])
     featured = f
     categories = c
-    vanaf = vanafCompleetCents(formats, fabrics, frameColors)
+    vanaf = vanafCompleetCents(prices, frameColors)
   } catch {
     // Catalogus nog niet beschikbaar (env/Supabase niet ingesteld) — toon lege staat
   }

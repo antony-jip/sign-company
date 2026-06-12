@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getArtworks, getFabrics, getFormats, getFrameColors } from '@/lib/catalog'
+import { getArtworks, getFabrics, getFormats, getFrameColors, getPrices } from '@/lib/catalog'
 
 export const runtime = 'nodejs'
 export const revalidate = 60 // ISR cache: catalogus 60s
@@ -16,13 +16,14 @@ export async function GET(req: NextRequest) {
   const featured = searchParams.get('featured') === '1'
 
   try {
-    const [artworks, formats, fabrics, frameColors] = await Promise.all([
+    const [artworks, formats, fabrics, frameColors, prices] = await Promise.all([
       getArtworks({ categorySlug, limit, featured }),
       getFormats(),
       getFabrics(),
       getFrameColors(),
+      getPrices(),
     ])
-    return NextResponse.json({ artworks, options: { formats, fabrics, frameColors } })
+    return NextResponse.json({ artworks, options: { formats, fabrics, frameColors, prices } })
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : 'Catalogus laden mislukt' },

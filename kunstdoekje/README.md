@@ -13,13 +13,15 @@ Een _kunstdoek_ is een **print** op doek. De **prijs hangt af van het formaat
 (+ stof + lijst), niet van de print**. Dezelfde afbeelding kost in elk formaat
 hetzelfde als elke andere afbeelding in dat formaat.
 
-Prijsformule (`src/lib/pricing.ts`, server-side = enige bron van waarheid):
+Prijzen komen uit de **prijsmatrix** `format_fabric_prices` (formaat × stof),
+met per combinatie een *los doek*-prijs en een *compleet (doek + lijst)*-prijs
+(`supabase/prijzen.sql`). Formule (`src/lib/pricing.ts`, server-side = enige
+bron van waarheid):
 
 ```
-stuksprijs = formaat.basisprijs
-           + stof.meerprijs            (velvet / deco / deco-PET)
-           + (met lijst ? formaat.lijstprijs : 0)
-           + lijstkleur.meerprijs      (bv. RAL op aanvraag)
+stuksprijs = met lijst
+  ? matrix[formaat][stof].compleet + lijstkleur.meerprijs   (bv. RAL)
+  : matrix[formaat][stof].doek
 ```
 
 ## Architectuur

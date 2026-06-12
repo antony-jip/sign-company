@@ -3,17 +3,18 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useCart } from '@/lib/cart'
-import { unitPriceCents, formatEuro } from '@/lib/pricing'
-import type { Artwork, Fabric, Format, FrameColor } from '@/lib/types'
+import { unitPriceCents, formatEuro, priceKey } from '@/lib/pricing'
+import type { Artwork, Fabric, Format, FormatFabricPrice, FrameColor } from '@/lib/types'
 
 interface Props {
   artwork: Artwork
   formats: Format[]
   fabrics: Fabric[]
   frameColors: FrameColor[]
+  prices: FormatFabricPrice[]
 }
 
-export default function Configurator({ artwork, formats, fabrics, frameColors }: Props) {
+export default function Configurator({ artwork, formats, fabrics, frameColors, prices }: Props) {
   const { add } = useCart()
 
   // Maatwerk-formaten apart (prijs op aanvraag) — niet selecteerbaar in de standaard config
@@ -30,16 +31,18 @@ export default function Configurator({ artwork, formats, fabrics, frameColors }:
   const fabric = fabrics.find((f) => f.id === fabricId)
   const frameColor = frameColors.find((f) => f.id === frameColorId)
 
+  // Prijs uit de matrix (formaat × stof)
+  const priceMap = useMemo(
+    () => new Map(prices.map((p) => [priceKey(p.format_id, p.fabric_id), p])),
+    [prices],
+  )
+  const price = format && fabric ? priceMap.get(priceKey(format.id, fabric.id)) : undefined
+
   const unit =
-    format && fabric && frameColor
-      ? unitPriceCents({ format, fabric, frameColor, metLijst })
-      : 0
+    price && frameColor ? unitPriceCents({ price, frameColor, metLijst }) : 0
 
   // Prijs van het losse doek (zonder lijst) — het herhaalaankoop-prijspunt
-  const losDoek =
-    format && fabric && frameColor
-      ? unitPriceCents({ format, fabric, frameColor, metLijst: false })
-      : 0
+  const losDoek = price?.doek_price_cents ?? 0
 
   function handleAdd() {
     if (!format || !fabric || !frameColor) return

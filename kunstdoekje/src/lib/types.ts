@@ -36,6 +36,20 @@ export interface Format {
   sort: number
 }
 
+/**
+ * Prijsmatrix: de werkelijke prijzen per formaat × stof (incl. btw, in centen).
+ * doek = los doek (herhaalaankoop), compleet = doek + luxe lijst.
+ * Dit is de bron van waarheid — de losse surcharge-velden op formats/fabrics
+ * zijn hiermee vervallen.
+ */
+export interface FormatFabricPrice {
+  id: string
+  format_id: string
+  fabric_id: string
+  doek_price_cents: number
+  compleet_price_cents: number
+}
+
 export interface Fabric {
   id: string
   key: string

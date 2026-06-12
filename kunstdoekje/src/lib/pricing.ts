@@ -1,38 +1,41 @@
-import type { Artwork, Fabric, Format, FrameColor, CartLineInput, PricedLine } from './types'
+import type {
+  Artwork, Fabric, Format, FormatFabricPrice, FrameColor, CartLineInput, PricedLine,
+} from './types'
 
 /**
- * Kernformule van Kunstdoekje.
+ * Kernprijsmodel van Kunstdoekje.
  *
- * De PRINT (artwork) beïnvloedt de prijs NIET. De prijs wordt bepaald door:
- *   - het formaat       (basisprijs van het doek)
- *   - de stofkeuze      (meerprijs velvet / deco / deco-PET)
- *   - wel/geen lijst    (lijstprijs hoort bij het formaat)
- *   - de lijstkleur     (meerprijs, bv. RAL op aanvraag)
+ * De PRINT (artwork) beïnvloedt de prijs niet. De prijs komt uit de
+ * PRIJSMATRIX per formaat × stof (tabel format_fabric_prices):
+ *   - los doek      → doek_price_cents
+ *   - compleet      → compleet_price_cents (doek + luxe lijst)
+ *   + lijstkleur-meerprijs (bv. RAL op aanvraag), alleen bij compleet.
  *
- * Dit is de ENIGE bron van waarheid voor prijzen en draait uitsluitend
- * server-side, zodat de client prijzen nooit kan manipuleren.
+ * Dit draait uitsluitend server-side voor orders, zodat de client prijzen
+ * nooit kan manipuleren. De Configurator gebruikt dezelfde functie client-side
+ * puur voor weergave.
  */
 export function unitPriceCents(opts: {
-  format: Format
-  fabric: Fabric
+  price: FormatFabricPrice
   frameColor: FrameColor
   metLijst: boolean
 }): number {
-  const { format, fabric, frameColor, metLijst } = opts
-  let price = format.base_price_cents
-  price += fabric.surcharge_cents
-  if (metLijst) {
-    price += format.frame_price_cents
-    price += frameColor.surcharge_cents
-  }
-  return Math.max(0, Math.round(price))
+  const { price, frameColor, metLijst } = opts
+  const cents = metLijst
+    ? price.compleet_price_cents + frameColor.surcharge_cents
+    : price.doek_price_cents
+  return Math.max(0, Math.round(cents))
 }
+
+/** Sleutel voor de prijsmatrix-map. */
+export const priceKey = (formatId: string, fabricId: string) => `${formatId}:${fabricId}`
 
 export interface Catalog {
   formats: Map<string, Format>
   fabrics: Map<string, Fabric>
   frameColors: Map<string, FrameColor>
   artworks: Map<string, Artwork>
+  prices: Map<string, FormatFabricPrice> // key: priceKey(format_id, fabric_id)
 }
 
 /** Bereken één regel uit een client-input + de catalogus. Gooit bij ongeldige refs. */
@@ -48,6 +51,11 @@ export function priceLine(line: CartLineInput, cat: Catalog): PricedLine {
     throw new Error('Maatwerk-formaat kan niet via de standaard checkout — gebruik offerte')
   }
 
+  const price = cat.prices.get(priceKey(line.formatId, line.fabricId))
+  if (!price) {
+    throw new Error(`Geen prijs bekend voor ${format.label} in ${fabric.label}`)
+  }
+
   const artwork = line.artworkId ? cat.artworks.get(line.artworkId) : undefined
   if (line.artworkId && !artwork) throw new Error(`Onbekend artwork: ${line.artworkId}`)
   if (!line.artworkId && !line.customUploadId) {
@@ -55,7 +63,7 @@ export function priceLine(line: CartLineInput, cat: Catalog): PricedLine {
   }
 
   const aantal = Math.max(1, Math.floor(line.aantal || 1))
-  const unit = unitPriceCents({ format, fabric, frameColor, metLijst: line.metLijst })
+  const unit = unitPriceCents({ price, frameColor, metLijst: line.metLijst })
 
   return {
     input: { ...line, aantal },
@@ -96,19 +104,14 @@ export function priceOrder(
   return { lines: priced, subtotalCents, shippingCents, totalCents, btwCents }
 }
 
-/** Laagste "compleet"-prijs (doek + lijst) over alle standaardformaten — voor "vanaf €X". */
+/** Laagste "compleet"-prijs over de hele matrix — voor "vanaf €X" op kaarten. */
 export function vanafCompleetCents(
-  formats: Format[],
-  fabrics: Fabric[],
+  prices: FormatFabricPrice[],
   frameColors: FrameColor[],
 ): number {
-  const std = formats.filter((f) => !f.is_maatwerk)
-  if (!std.length || !fabrics.length || !frameColors.length) return 0
-  const minFabric = Math.min(...fabrics.map((f) => f.surcharge_cents))
+  if (!prices.length || !frameColors.length) return 0
   const minFrame = Math.min(...frameColors.map((f) => f.surcharge_cents))
-  return Math.min(
-    ...std.map((f) => f.base_price_cents + f.frame_price_cents + minFabric + minFrame),
-  )
+  return Math.min(...prices.map((p) => p.compleet_price_cents)) + minFrame
 }
 
 /** Formatteer centen naar "€ 1.234,56" (NL). */

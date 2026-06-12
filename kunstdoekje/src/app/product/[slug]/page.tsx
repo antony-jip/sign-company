@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Configurator from '@/components/Configurator'
-import { getArtworkBySlug, getFabrics, getFormats, getFrameColors } from '@/lib/catalog'
+import { getArtworkBySlug, getFabrics, getFormats, getFrameColors, getPrices } from '@/lib/catalog'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -27,18 +27,19 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   let artwork = null
-  let formats, fabrics, frameColors
+  let formats, fabrics, frameColors, prices
   try {
-    ;[artwork, formats, fabrics, frameColors] = await Promise.all([
+    ;[artwork, formats, fabrics, frameColors, prices] = await Promise.all([
       getArtworkBySlug(params.slug),
       getFormats(),
       getFabrics(),
       getFrameColors(),
+      getPrices(),
     ])
   } catch {
     notFound()
   }
-  if (!artwork || !formats || !fabrics || !frameColors) notFound()
+  if (!artwork || !formats || !fabrics || !frameColors || !prices) notFound()
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -78,6 +79,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
               formats={formats}
               fabrics={fabrics}
               frameColors={frameColors}
+              prices={prices}
             />
           </div>
         </div>

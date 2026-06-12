@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import ProductCard from '@/components/ProductCard'
-import { getArtworks, getCategories, getFabrics, getFormats, getFrameColors } from '@/lib/catalog'
+import { getArtworks, getCategories, getFrameColors, getPrices } from '@/lib/catalog'
 import { vanafCompleetCents } from '@/lib/pricing'
 import type { Artwork, Category } from '@/lib/types'
 
@@ -16,16 +16,15 @@ export default async function ShopPage({
   let categories: Category[] = []
   let vanaf = 0
   try {
-    const [a, c, formats, fabrics, frameColors] = await Promise.all([
+    const [a, c, prices, frameColors] = await Promise.all([
       getArtworks({ categorySlug: categorie }),
       getCategories(),
-      getFormats(),
-      getFabrics(),
+      getPrices(),
       getFrameColors(),
     ])
     artworks = a
     categories = c
-    vanaf = vanafCompleetCents(formats, fabrics, frameColors)
+    vanaf = vanafCompleetCents(prices, frameColors)
   } catch {
     /* catalogus niet beschikbaar */
   }
