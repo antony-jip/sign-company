@@ -155,6 +155,10 @@ export {
 } from './bookingService'
 
 export {
+  getWebsiteAanvragen, updateWebsiteAanvraag,
+} from './websiteAanvragenService'
+
+export {
   getTijdregistraties, createTijdregistratie, updateTijdregistratie, deleteTijdregistratie,
   getTijdregistratiesByMedewerker,
 } from './tijdregistratieService'

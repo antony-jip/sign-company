@@ -1831,6 +1831,22 @@ export interface LeadInzending {
   updated_at?: string;
 }
 
+export interface WebsiteAanvraag {
+  id: string;
+  organisatie_id: string;
+  naam: string;
+  email: string;
+  telefoon?: string;
+  dienst?: string;
+  bericht: string;
+  pagina_url?: string;
+  ip_adres?: string;
+  browser?: string;
+  status: 'nieuw' | 'bekeken' | 'afgehandeld';
+  created_at: string;
+  updated_at?: string;
+}
+
 // ============ GEDEELDE INBOX UITBREIDING (Tier 3 Feature 3) ============
 
 export interface InternEmailNotitie {

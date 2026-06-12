@@ -6,7 +6,7 @@ import {
   Receipt, CheckSquare, ClipboardCheck, Inbox, Ruler,
   LogOut, ChevronDown, Menu, X, Search,
   Plus, Moon, Sun, Monitor, CreditCard, Sparkles, PiggyBank, BookOpen,
-  Pin, PinOff, LifeBuoy,
+  Pin, PinOff, LifeBuoy, MessageSquare,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -41,6 +41,7 @@ const navItems: NavItem[] = [
   { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#E8866A' },
   { label: 'Planning', icon: Calendar, path: '/planning', color: '#7EB5A6' },
   { label: 'Email', icon: Mail, path: '/email', color: '#8BAFD4' },
+  { label: 'Aanvragen', icon: MessageSquare, path: '/aanvragen', color: '#8BAFD4' },
   { label: 'Financieel', icon: PiggyBank, path: '/financieel', color: '#2D6B48' },
 ]
 

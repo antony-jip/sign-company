@@ -152,6 +152,9 @@ const LeadFormulierEditor = lazy(() => import('@/components/leads/LeadFormulierE
 const LeadFormulierPubliek = lazy(() => import('@/components/leads/LeadFormulierPubliek'), 'LeadFormulierPubliek')
 const LeadInzendingenLayout = lazy(() => import('@/components/leads/LeadInzendingenLayout'), 'LeadInzendingenLayout')
 
+// Website-aanvragen (chat op signcompany.nl)
+const WebsiteAanvragenLayout = lazy(() => import('@/components/website/WebsiteAanvragenLayout'), 'WebsiteAanvragenLayout')
+
 // Portaal
 const PortaalPagina = lazy(() => import('@/components/portaal/PortaalPagina'), 'PortaalPagina')
 const PortalenOverzicht = lazy(() => import('@/components/portaal/PortalenOverzicht'), 'PortalenOverzicht')
@@ -299,6 +302,7 @@ function AppContent() {
         <Route path="leads/formulieren/nieuw" element={<LeadFormulierEditor />} />
         <Route path="leads/formulieren/:id" element={<LeadFormulierEditor />} />
         <Route path="leads/inzendingen" element={<LeadInzendingenLayout />} />
+        <Route path="aanvragen" element={<WebsiteAanvragenLayout />} />
         <Route path="forecast" element={<ForecastLayout />} />
         <Route path="booking" element={<BookingBeheer />} />
         <Route path="visualizer" element={<VisualizerLayout />} />
