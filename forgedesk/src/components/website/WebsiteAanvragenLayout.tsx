@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import {
-  Loader2, Eye, CheckCircle, MessageSquare, Mail, Phone, ExternalLink,
+  Loader2, Eye, CheckCircle, MessageSquare, Mail, Phone, ExternalLink, UserPlus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -14,6 +14,8 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import type { WebsiteAanvraag } from '@/types'
 import { getWebsiteAanvragen, updateWebsiteAanvraag } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
+import { WebsiteChatTab } from './WebsiteChatTab'
+import { VerwerkAanvraagDialog } from './VerwerkAanvraagDialog'
 
 type FilterStatus = 'alle' | WebsiteAanvraag['status']
 
@@ -29,6 +31,8 @@ export function WebsiteAanvragenLayout() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedAanvraag, setSelectedAanvraag] = useState<WebsiteAanvraag | null>(null)
+  const [tab, setTab] = useState<'aanvragen' | 'chat'>('aanvragen')
+  const [verwerkOpen, setVerwerkOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -80,13 +84,9 @@ export function WebsiteAanvragenLayout() {
     }
   }, [selectedAanvraag])
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20">
             <MessageSquare className="h-5 w-5 text-white" />
@@ -96,8 +96,20 @@ export function WebsiteAanvragenLayout() {
             <p className="text-sm text-muted-foreground">{statusCounts.nieuw || 0} nieuwe, {aanvragen.length} totaal · via signcompany.nl</p>
           </div>
         </div>
+        <div className="flex gap-1">
+          <Button variant={tab === 'aanvragen' ? 'default' : 'outline'} size="sm" onClick={() => setTab('aanvragen')}>Aanvragen</Button>
+          <Button variant={tab === 'chat' ? 'default' : 'outline'} size="sm" onClick={() => setTab('chat')}>Chat</Button>
+        </div>
       </div>
 
+      {tab === 'chat' && <WebsiteChatTab />}
+
+      {tab === 'aanvragen' && isLoading && (
+        <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      )}
+
+      {tab === 'aanvragen' && !isLoading && (
+      <>
       <div className="flex gap-1 flex-wrap">
         {(['alle', 'nieuw', 'bekeken', 'afgehandeld'] as FilterStatus[]).map((s) => (
           <Button key={s} variant={filterStatus === s ? 'default' : 'outline'} size="sm" onClick={() => setFilterStatus(s)} className="text-xs">
@@ -199,6 +211,11 @@ export function WebsiteAanvragenLayout() {
             </div>
           )}
           <DialogFooter>
+            {selectedAanvraag && (
+              <Button variant="outline" onClick={() => setVerwerkOpen(true)} className="gap-1">
+                <UserPlus className="h-4 w-4" /> Verwerk tot klant
+              </Button>
+            )}
             {selectedAanvraag && selectedAanvraag.status !== 'afgehandeld' && (
               <Button onClick={() => handleAfronden(selectedAanvraag)} className="gap-1 bg-[#F15025] hover:bg-[#F15025]/90 text-white">
                 <CheckCircle className="h-4 w-4" /> Afronden
@@ -207,6 +224,22 @@ export function WebsiteAanvragenLayout() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {selectedAanvraag && (
+        <VerwerkAanvraagDialog
+          open={verwerkOpen}
+          onOpenChange={setVerwerkOpen}
+          bron={{
+            naam: selectedAanvraag.naam,
+            email: selectedAanvraag.email,
+            telefoon: selectedAanvraag.telefoon,
+            dienst: selectedAanvraag.dienst,
+            bericht: selectedAanvraag.bericht,
+          }}
+        />
+      )}
+      </>
+      )}
     </div>
   )
 }

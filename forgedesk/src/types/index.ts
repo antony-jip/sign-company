@@ -1847,6 +1847,39 @@ export interface WebsiteAanvraag {
   updated_at?: string;
 }
 
+export interface WebsiteChatGesprek {
+  id: string;
+  organisatie_id: string;
+  naam?: string;
+  email?: string;
+  telefoon?: string;
+  pagina_url?: string;
+  ip_adres?: string;
+  browser?: string;
+  status: 'open' | 'gesloten';
+  laatste_bericht_op: string;
+  team_laatst_gelezen_op?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface WebsiteChatBericht {
+  id: string;
+  gesprek_id: string;
+  organisatie_id: string;
+  rol: 'bezoeker' | 'team';
+  medewerker_id?: string;
+  tekst: string;
+  created_at: string;
+}
+
+export interface WebsiteChatAanwezigheid {
+  organisatie_id: string;
+  laatst_actief: string;
+  beschikbaar: boolean;
+  updated_at?: string;
+}
+
 // ============ GEDEELDE INBOX UITBREIDING (Tier 3 Feature 3) ============
 
 export interface InternEmailNotitie {

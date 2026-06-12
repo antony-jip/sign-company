@@ -159,6 +159,11 @@ export {
 } from './websiteAanvragenService'
 
 export {
+  getChatGesprekken, getChatBerichten, stuurTeamBericht, markeerChatGelezen,
+  sluitChatGesprek, getChatAanwezigheid, zetChatBeschikbaar, chatHeartbeat,
+} from './websiteChatService'
+
+export {
   getTijdregistraties, createTijdregistratie, updateTijdregistratie, deleteTijdregistratie,
   getTijdregistratiesByMedewerker,
 } from './tijdregistratieService'

@@ -13,6 +13,7 @@ import { TabBar } from '@/components/layouts/TabBar'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
 import { prefetchCore } from '@/lib/coreData'
+import { chatHeartbeat } from '@/services/websiteChatService'
 import { cn } from '@/lib/utils'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { WifiOff } from 'lucide-react'
@@ -54,6 +55,20 @@ export function AppLayout() {
       const cic = (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback
       if (ric && cic) cic(id as number)
       else window.clearTimeout(id as number)
+    }
+  }, [])
+
+  useEffect(() => {
+    // Aanwezigheid voor de website-chat (signcompany.nl): zolang de app
+    // zichtbaar openstaat geldt de org als online. Verborgen tab = na
+    // ±3 min offline, dan valt de widget terug op het aanvraagformulier.
+    const slag = () => { if (!document.hidden) chatHeartbeat() }
+    slag()
+    const id = window.setInterval(slag, 60_000)
+    document.addEventListener('visibilitychange', slag)
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', slag)
     }
   }, [])
 
