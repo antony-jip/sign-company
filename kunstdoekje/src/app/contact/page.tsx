@@ -1,6 +1,10 @@
 import QuoteForm from '@/components/QuoteForm'
 
-export const metadata = { title: 'Contact — Kunstdoekje' }
+export const metadata = {
+  title: 'Contact',
+  description: 'Vragen over je art frame of kunstdoek? Neem contact op met Kunstdoekje — we helpen je graag.',
+  alternates: { canonical: '/contact' },
+}
 
 export default function Contact() {
   return (

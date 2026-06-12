@@ -6,6 +6,13 @@ import type { Artwork, Category } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
+export const metadata = {
+  title: 'Alle kunstdoekjes — wisselbare kunst voor je art frame',
+  description:
+    'Ruim 1000 kunstdoeken op fluweel of decostof voor je art frame (wissellijst). Van oude meesters tot moderne kunst — wissel je kunst in 30 seconden.',
+  alternates: { canonical: '/shop' },
+}
+
 export default async function ShopPage({
   searchParams,
 }: {
@@ -50,8 +57,8 @@ export default async function ShopPage({
         Alle kunst<em className="font-accent font-normal normal-case italic tracking-normal text-accent">doekjes</em>
       </h1>
       <p className="mt-4 max-w-xl text-ink/60">
-        Eén prijs per formaat &amp; stof — de kunst kies je gratis. Hover over een doek om het in
-        een interieur te zien.
+        Ruim 1000 wisselbare kunstdoeken voor je art frame. Eén prijs per formaat &amp; stof — de
+        kunst kies je gratis. Hover over een doek om het in een interieur te zien.
       </p>
 
       <ShopGrid

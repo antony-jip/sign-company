@@ -1,6 +1,10 @@
 import QuoteForm from '@/components/QuoteForm'
 
-export const metadata = { title: 'Zakelijk — Kunstdoekje voor bedrijven' }
+export const metadata = {
+  title: 'Zakelijk — art frames voor kantoor en hospitality',
+  description: 'Wisselbare kunst voor kantoren, hotels en praktijken. Eén art frame per wand, wissel de uitstraling per seizoen of campagne.',
+  alternates: { canonical: '/zakelijk' },
+}
 
 const voordelen = [
   { t: 'Sfeer & uitstraling', d: 'Geef je kantoor, praktijk, hotel of restaurant een warme, professionele uitstraling.' },

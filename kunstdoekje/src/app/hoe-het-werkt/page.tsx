@@ -1,6 +1,10 @@
 import Link from 'next/link'
 
-export const metadata = { title: 'Hoe het werkt — Kunstdoekje' }
+export const metadata = {
+  title: 'Hoe het werkt — het art frame met wisselsysteem',
+  description: 'Zo werkt het Kunstdoekje art frame: aluminium wissellijst één keer ophangen, doek met pees in de gleuf drukken, klaar in 30 seconden.',
+  alternates: { canonical: '/hoe-het-werkt' },
+}
 
 const stappen = [
   { n: '1', t: 'Kies je kunstwerk', d: 'Blader door honderden kunstdoeken — van oude meesters tot moderne en AI-kunst — of upload je eigen foto.' },

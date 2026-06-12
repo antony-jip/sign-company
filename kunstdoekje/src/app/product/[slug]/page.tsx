@@ -20,14 +20,19 @@ export async function generateMetadata({
   try {
     const art = await getArtworkBySlug(params.slug)
     if (art) {
+      const beschrijving = (art.beschrijving ?? '').replace(/\\n/g, ' ').slice(0, 100)
       return {
-        title: `${art.titel} — Kunstdoekje`,
-        description: art.beschrijving ?? `${art.titel} als wisselbaar kunstdoek op luxe stof.`,
-        openGraph: { images: [art.image_url] },
+        title: `${art.titel} — kunstdoek voor je art frame`,
+        description: `${art.titel} als wisselbaar kunstdoek op fluweel of decostof, voor het Kunstdoekje art frame (wissellijst). ${beschrijving}`.trim(),
+        alternates: { canonical: `/product/${art.slug}` },
+        openGraph: {
+          title: `${art.titel} — Kunstdoekje`,
+          images: [{ url: art.image_url, alt: art.titel }],
+        },
       }
     }
   } catch { /* noop */ }
-  return { title: 'Kunstdoek — Kunstdoekje' }
+  return { title: 'Kunstdoek voor je art frame' }
 }
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
@@ -60,8 +65,36 @@ export default async function ProductPage({ params }: { params: { slug: string }
     vanaf = vanafCompleetCents(prices, frameColors)
   } catch { /* aanbevelingen zijn nice-to-have */ }
 
+  // Structured data: product met prijsbereik (rich results in Google)
+  const losVanaf = prices.length ? Math.min(...prices.map((p) => p.doek_price_cents)) : 0
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: artwork.titel,
+    description:
+      artwork.beschrijving ??
+      `${artwork.titel} als wisselbaar kunstdoek op fluweel of decostof voor het Kunstdoekje art frame.`,
+    image: [artwork.image_url, ...(artwork.gallery_urls ?? []).slice(0, 3)],
+    sku: artwork.woo_sku ?? undefined,
+    brand: { '@type': 'Brand', name: 'Kunstdoekje' },
+    offers: {
+      '@type': 'AggregateOffer',
+      priceCurrency: 'EUR',
+      lowPrice: (losVanaf / 100).toFixed(2),
+      highPrice: prices.length
+        ? (Math.max(...prices.map((p) => p.compleet_price_cents)) / 100).toFixed(2)
+        : undefined,
+      offerCount: prices.length * 2,
+      availability: 'https://schema.org/InStock',
+    },
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <TrackView artwork={artwork} />
       <Link href="/shop" className="text-sm text-ink/50 hover:text-ink">← Terug naar de collectie</Link>
 

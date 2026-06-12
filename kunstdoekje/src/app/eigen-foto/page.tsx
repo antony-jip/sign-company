@@ -1,6 +1,10 @@
 import QuoteForm from '@/components/QuoteForm'
 
-export const metadata = { title: 'Eigen foto op doek — Kunstdoekje' }
+export const metadata = {
+  title: 'Eigen foto op doek — voor je art frame',
+  description: 'Upload je eigen foto en ontvang hem als wisselbaar kunstdoek op fluweel of decostof, passend in het Kunstdoekje art frame.',
+  alternates: { canonical: '/eigen-foto' },
+}
 
 export default function EigenFoto() {
   return (

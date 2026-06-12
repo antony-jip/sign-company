@@ -53,7 +53,7 @@ export default async function Home() {
         <div className="grid items-center gap-14 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
           <div>
             <p className="label-caps reg-mark pl-4 text-ink/50">
-              Wisselgalerie voor thuis — sinds 2023
+              Hét art frame van Nederland — sinds 2023
             </p>
 
             <h1 className="mt-7 font-serif text-[clamp(48px,7vw,104px)] uppercase leading-[0.92] tracking-tight">
