@@ -83,12 +83,18 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function getArtworks(opts: { categorySlug?: string; limit?: number; featured?: boolean } = {}): Promise<Artwork[]> {
-  let q = supabasePublic().from('artworks').select('*').eq('is_active', true)
-  if (opts.featured) q = q.eq('is_featured', true)
-  if (opts.limit) q = q.limit(opts.limit)
-  const { data, error } = await q.order('sort')
-  if (error) throw error
-  let rows = data as Artwork[]
+  // PostgREST geeft max. 1000 rijen per request; pagineer zodat de hele catalogus meegaat
+  const PAGE = 1000
+  let rows: Artwork[] = []
+  for (let from = 0; ; from += PAGE) {
+    let q = supabasePublic().from('artworks').select('*').eq('is_active', true)
+    if (opts.featured) q = q.eq('is_featured', true)
+    const { data, error } = await q.order('sort').order('id').range(from, from + PAGE - 1)
+    if (error) throw error
+    rows.push(...(data as Artwork[]))
+    if (data.length < PAGE || (opts.limit && rows.length >= opts.limit)) break
+  }
+  if (opts.limit) rows = rows.slice(0, opts.limit)
   if (opts.categorySlug) {
     const cats = await getCategories()
     const cat = cats.find((c) => c.slug === opts.categorySlug)

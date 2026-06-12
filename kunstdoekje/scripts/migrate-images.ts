@@ -94,21 +94,22 @@ async function migrateOne(art: { id: string; slug: string; image_url: string }):
 async function main() {
   await ensureBucket()
 
-  // Gepagineerd ophalen — Supabase geeft max 1000 rijen per query terug
+  // PostgREST geeft max. 1000 rijen per request; pagineer zodat alle artworks meegaan
   const artworks: { id: string; slug: string; image_url: string }[] = []
   const PAGE = 1000
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from('artworks')
       .select('id, slug, image_url')
+      .order('sort')
       .order('id')
       .range(from, from + PAGE - 1)
-    if (error) {
-      console.error('❌ Artworks laden mislukt:', error.message)
+    if (error || !data) {
+      console.error('❌ Artworks laden mislukt:', error?.message)
       process.exit(1)
     }
-    artworks.push(...(data ?? []))
-    if (!data || data.length < PAGE) break
+    artworks.push(...data)
+    if (data.length < PAGE) break
   }
 
   const todo = artworks.filter((a) => !a.image_url.includes('.supabase.co/'))

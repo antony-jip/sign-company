@@ -9,7 +9,9 @@
     "start": "next start",
     "lint": "next lint",
     "import:woo": "tsx scripts/import-woocommerce.ts",
-    "migrate:images": "tsx scripts/migrate-images.ts"
+    "migrate:images": "tsx scripts/migrate-images.ts",
+    "migrate:gallery": "tsx scripts/migrate-gallery.ts",
+    "backfill:sku": "tsx scripts/backfill-sku.ts"
   },
   "dependencies": {
     "@mollie/api-client": "^4.3.2",
