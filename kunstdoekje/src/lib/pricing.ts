@@ -96,6 +96,21 @@ export function priceOrder(
   return { lines: priced, subtotalCents, shippingCents, totalCents, btwCents }
 }
 
+/** Laagste "compleet"-prijs (doek + lijst) over alle standaardformaten — voor "vanaf €X". */
+export function vanafCompleetCents(
+  formats: Format[],
+  fabrics: Fabric[],
+  frameColors: FrameColor[],
+): number {
+  const std = formats.filter((f) => !f.is_maatwerk)
+  if (!std.length || !fabrics.length || !frameColors.length) return 0
+  const minFabric = Math.min(...fabrics.map((f) => f.surcharge_cents))
+  const minFrame = Math.min(...frameColors.map((f) => f.surcharge_cents))
+  return Math.min(
+    ...std.map((f) => f.base_price_cents + f.frame_price_cents + minFabric + minFrame),
+  )
+}
+
 /** Formatteer centen naar "€ 1.234,56" (NL). */
 export function formatEuro(cents: number): string {
   return new Intl.NumberFormat('nl-NL', {
