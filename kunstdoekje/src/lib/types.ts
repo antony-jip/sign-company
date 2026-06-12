@@ -17,6 +17,9 @@ export interface Artwork {
   category_id: string | null
   image_url: string
   thumb_url: string | null
+  gallery_urls: string[]
+  /** WooCommerce-SKU; hieronder liggen de printbestanden opgeslagen. */
+  woo_sku: string | null
   tags: string[]
   is_featured: boolean
   is_active: boolean
@@ -110,6 +113,10 @@ export interface PricedLine {
   frameColor: FrameColor
   unitPriceCents: number
   lineTotalCents: number
+  /** Combideal: % korting op dit item (0 = geen). */
+  kortingPct: number
+  /** Prijs vóór combideal-korting, voor weergave ("was €X"). */
+  unitPriceVoorKortingCents: number
   titelSnapshot: string
   formatSnapshot: string
   fabricSnapshot: string

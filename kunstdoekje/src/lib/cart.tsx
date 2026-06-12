@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { COMBIDEAL_PCT, combidealUnitCents } from '@/lib/pricing'
 
 // Eén geconfigureerde regel in de winkelwagen. We bewaren genoeg om de cart te
 // tonen zonder opnieuw te laden; bij checkout sturen we alleen de *_id velden
@@ -30,6 +31,12 @@ interface CartContextValue {
   clear: () => void
   count: number
   subtotalCents: number
+  /** True zodra er een compleet doek (met lijst) in de wagen ligt → combideal actief. */
+  heeftFrame: boolean
+  /** Totale combideal-korting (alleen weergave; server herberekent bij checkout). */
+  kortingCents: number
+  /** Effectieve stuksprijs van een regel, inclusief eventuele combideal-korting. */
+  effectiveUnitCents: (item: CartItem) => number
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -70,14 +77,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clear = useCallback(() => setItems([]), [])
 
   const count = items.reduce((sum, i) => sum + i.aantal, 0)
-  const subtotalCents = items.reduce((sum, i) => sum + i.unitPriceCents * i.aantal, 0)
+  const heeftFrame = items.some((i) => i.metLijst)
+
+  // Zelfde combideal-regel als priceOrder (server blijft bron van waarheid)
+  const effectiveUnitCents = useCallback(
+    (item: CartItem) =>
+      heeftFrame && !item.metLijst ? combidealUnitCents(item.unitPriceCents) : item.unitPriceCents,
+    [heeftFrame],
+  )
+
+  const brutoCents = items.reduce((sum, i) => sum + i.unitPriceCents * i.aantal, 0)
+  const subtotalCents = items.reduce((sum, i) => sum + effectiveUnitCents(i) * i.aantal, 0)
+  const kortingCents = brutoCents - subtotalCents
 
   return (
-    <CartContext.Provider value={{ items, add, remove, setAantal, clear, count, subtotalCents }}>
+    <CartContext.Provider
+      value={{ items, add, remove, setAantal, clear, count, subtotalCents, heeftFrame, kortingCents, effectiveUnitCents }}
+    >
       {children}
     </CartContext.Provider>
   )
 }
+
+export { COMBIDEAL_PCT }
 
 export function useCart(): CartContextValue {
   const ctx = useContext(CartContext)

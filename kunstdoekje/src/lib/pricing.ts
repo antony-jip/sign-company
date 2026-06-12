@@ -73,6 +73,8 @@ export function priceLine(line: CartLineInput, cat: Catalog): PricedLine {
     frameColor,
     unitPriceCents: unit,
     lineTotalCents: unit * aantal,
+    kortingPct: 0,
+    unitPriceVoorKortingCents: unit,
     titelSnapshot: artwork?.titel ?? 'Eigen foto',
     formatSnapshot: format.label,
     fabricSnapshot: fabric.label,
@@ -89,13 +91,41 @@ export interface PricedOrder {
   btwCents: number
 }
 
-/** Bereken een volledige order incl. verzendkosten en btw-aandeel. */
+/**
+ * Combideal: wie een compleet doek (met lijst) bestelt, krijgt 25% korting op
+ * elk los doek (zonder lijst) in dezelfde order. Wordt zowel server-side
+ * (checkout, bron van waarheid) als client-side (cart-weergave) toegepast.
+ */
+export const COMBIDEAL_PCT = 25
+
+export function combidealUnitCents(unitCents: number): number {
+  return Math.round(unitCents * (1 - COMBIDEAL_PCT / 100))
+}
+
+/** Pas de combideal toe op geprijsde regels (muteert kopieën, niet de input). */
+function applyCombideal(lines: PricedLine[]): PricedLine[] {
+  const heeftFrame = lines.some((l) => l.input.metLijst)
+  if (!heeftFrame) return lines
+  return lines.map((l) => {
+    if (l.input.metLijst) return l
+    const unit = combidealUnitCents(l.unitPriceCents)
+    return {
+      ...l,
+      kortingPct: COMBIDEAL_PCT,
+      unitPriceVoorKortingCents: l.unitPriceCents,
+      unitPriceCents: unit,
+      lineTotalCents: unit * l.input.aantal,
+    }
+  })
+}
+
+/** Bereken een volledige order incl. combideal, verzendkosten en btw-aandeel. */
 export function priceOrder(
   lines: CartLineInput[],
   cat: Catalog,
   opts: { shippingCents: number; btwPercent: number },
 ): PricedOrder {
-  const priced = lines.map((l) => priceLine(l, cat))
+  const priced = applyCombideal(lines.map((l) => priceLine(l, cat)))
   const subtotalCents = priced.reduce((sum, l) => sum + l.lineTotalCents, 0)
   const shippingCents = opts.shippingCents
   const totalCents = subtotalCents + shippingCents
