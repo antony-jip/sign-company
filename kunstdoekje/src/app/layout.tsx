@@ -5,6 +5,7 @@ import { CartProvider } from '@/lib/cart'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import ScrollReveal from '@/components/ScrollReveal'
+import SiteChrome from '@/components/SiteChrome'
 
 // Display: Marcellus — klassieke, sierlijke Romeinse kapitalen. Galerie-gravitas.
 // Het display-token (font-serif) wijst hierheen. Eén gewicht (400) — bewust dun.
@@ -100,9 +101,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <CartProvider>
           <ScrollReveal />
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <SiteChrome navbar={<Navbar />} footer={<Footer />}>
+            {children}
+          </SiteChrome>
         </CartProvider>
       </body>
     </html>
