@@ -28,11 +28,11 @@ export default function CartPage() {
       {heeftFrame && (
         <div className="mt-6 flex flex-col items-start gap-4 rounded-[3px] border border-ink/30 bg-accent/10 p-5 shadow-hard-sm md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="font-serif text-lg uppercase">
-              Combideal actief — <span className="text-accent-dark">losse doeken −25%</span>
+            <p className="font-serif text-lg">
+              Combideal actief · <span className="text-accent-dark">losse doeken −25%</span>
             </p>
             <p className="mt-1 text-sm text-ink/70">
-              Je bestelt een frame. Elk extra los doek (zonder frame) krijgt automatisch 25% korting —
+              Je bestelt een frame. Elk extra los doek (zonder frame) krijgt automatisch 25% korting ·
               zo wissel je vanaf dag één.
             </p>
           </div>

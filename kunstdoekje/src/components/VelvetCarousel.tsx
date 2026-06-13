@@ -42,7 +42,7 @@ export default function VelvetCarousel() {
         <div className="mb-12 flex flex-wrap items-end justify-between gap-6 border-b border-ink/25 pb-6">
           <div>
             <p className="label-caps reg-mark pl-4 text-ink/50">Premium fluweel</p>
-            <h2 className="mt-3 font-serif text-4xl uppercase md:text-6xl">
+            <h2 className="mt-3 font-serif text-4xl md:text-6xl">
               Voelbare <em className="font-accent font-normal normal-case italic tracking-normal text-accent">kunst</em>
             </h2>
           </div>
@@ -78,7 +78,7 @@ export default function VelvetCarousel() {
                 {/* Overlay */}
                 <div className="absolute inset-x-0 bottom-0 flex flex-col items-start bg-gradient-to-t from-black/85 via-black/40 to-transparent px-8 pb-9 pt-20 text-white md:px-12">
                   <p className="label-caps text-accent">{String(i + 1).padStart(2, '0')} / 06</p>
-                  <h3 className="mt-2 font-serif text-2xl uppercase md:text-4xl">{s.titel}</h3>
+                  <h3 className="mt-2 font-serif text-2xl md:text-4xl">{s.titel}</h3>
                   <p className="mt-2 max-w-lg text-sm text-white/80 md:text-base">{s.tekst}</p>
                   <Link href="/shop" className="btn-invert mt-6 !py-3">
                     Bekijk collectie →
@@ -126,7 +126,7 @@ export default function VelvetCarousel() {
         <div className="mt-10 flex flex-col items-baseline justify-between gap-2 border-t border-ink/25 pt-5 md:flex-row">
           <p className="label-caps text-ink/50">Fluweel of decostof?</p>
           <p className="max-w-xl text-sm text-ink/70">
-            Je kiest tijdens het samenstellen — zelfde kunst, zelfde frame, andere beleving.
+            Je kiest tijdens het samenstellen · zelfde kunst, zelfde frame, andere beleving.
           </p>
         </div>
       </div>

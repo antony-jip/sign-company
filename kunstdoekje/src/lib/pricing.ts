@@ -30,6 +30,27 @@ export function unitPriceCents(opts: {
 /** Sleutel voor de prijsmatrix-map. */
 export const priceKey = (formatId: string, fabricId: string) => `${formatId}:${fabricId}`
 
+/**
+ * Prijs van een LOS frame (aluminium wissellijst, zonder doek).
+ *
+ * De prijsmatrix kent geen losse frameprijs, maar de frame-component is
+ * stof-onafhankelijk: bij decostof is compleet − doek de kale frameprijs
+ * (ronde bedragen, bv. €110 / €150 / €210). Daarom nemen we die deco-delta
+ * als basis, plus de eventuele lijstkleur-meerprijs.
+ */
+export function frameOnlyUnitCents(opts: {
+  formatId: string
+  frameColor: FrameColor
+  decoFabricId: string
+  prices: FormatFabricPrice[]
+}): number {
+  const p = opts.prices.find(
+    (x) => x.format_id === opts.formatId && x.fabric_id === opts.decoFabricId,
+  )
+  const base = p ? p.compleet_price_cents - p.doek_price_cents : 0
+  return Math.max(0, Math.round(base + opts.frameColor.surcharge_cents))
+}
+
 export interface Catalog {
   formats: Map<string, Format>
   fabrics: Map<string, Fabric>
@@ -41,15 +62,43 @@ export interface Catalog {
 /** Bereken één regel uit een client-input + de catalogus. Gooit bij ongeldige refs. */
 export function priceLine(line: CartLineInput, cat: Catalog): PricedLine {
   const format = cat.formats.get(line.formatId)
-  const fabric = cat.fabrics.get(line.fabricId)
   const frameColor = cat.frameColors.get(line.frameColorId)
   if (!format) throw new Error(`Onbekend formaat: ${line.formatId}`)
-  if (!fabric) throw new Error(`Onbekende stof: ${line.fabricId}`)
   if (!frameColor) throw new Error(`Onbekende lijstkleur: ${line.frameColorId}`)
-
   if (format.is_maatwerk) {
-    throw new Error('Maatwerk-formaat kan niet via de standaard checkout — gebruik offerte')
+    throw new Error('Maatwerk-formaat kan niet via de standaard checkout · gebruik offerte')
   }
+
+  // Los frame: geen doek, geen stof · prijs uit de frame-component (deco-delta).
+  if (line.frameOnly) {
+    const deco = Array.from(cat.fabrics.values()).find((f) => f.key === 'deco')
+    const basis = deco ? cat.prices.get(priceKey(format.id, deco.id)) : undefined
+    if (!deco || !basis) throw new Error(`Geen frameprijs bekend voor ${format.label}`)
+    const aantal = Math.max(1, Math.floor(line.aantal || 1))
+    const unit = Math.max(
+      0,
+      Math.round(basis.compleet_price_cents - basis.doek_price_cents + frameColor.surcharge_cents),
+    )
+    return {
+      input: { ...line, fabricId: deco.id, metLijst: true, aantal },
+      artwork: undefined,
+      format,
+      fabric: deco,
+      frameColor,
+      unitPriceCents: unit,
+      lineTotalCents: unit * aantal,
+      kortingPct: 0,
+      unitPriceVoorKortingCents: unit,
+      titelSnapshot: `Los frame · ${frameColor.label}`,
+      formatSnapshot: format.label,
+      fabricSnapshot: 'Aluminium wissellijst',
+      frameSnapshot: frameColor.label,
+      imageUrlSnapshot: null,
+    }
+  }
+
+  const fabric = cat.fabrics.get(line.fabricId)
+  if (!fabric) throw new Error(`Onbekende stof: ${line.fabricId}`)
 
   const price = cat.prices.get(priceKey(line.formatId, line.fabricId))
   if (!price) {
@@ -104,8 +153,10 @@ export function combidealUnitCents(unitCents: number): number {
 
 /** Pas de combideal toe op geprijsde regels (muteert kopieën, niet de input). */
 function applyCombideal(lines: PricedLine[]): PricedLine[] {
-  const heeftFrame = lines.some((l) => l.input.metLijst)
-  if (!heeftFrame) return lines
+  // Alleen een COMPLEET kunstdoekje (doek mét lijst) activeert de combideal ·
+  // een los frame telt niet mee.
+  const heeftCompleetDoek = lines.some((l) => l.input.metLijst && !l.input.frameOnly)
+  if (!heeftCompleetDoek) return lines
   return lines.map((l) => {
     if (l.input.metLijst) return l
     const unit = combidealUnitCents(l.unitPriceCents)
@@ -134,7 +185,7 @@ export function priceOrder(
   return { lines: priced, subtotalCents, shippingCents, totalCents, btwCents }
 }
 
-/** Laagste "compleet"-prijs over de hele matrix — voor "vanaf €X" op kaarten. */
+/** Laagste "compleet"-prijs over de hele matrix · voor "vanaf €X" op kaarten. */
 export function vanafCompleetCents(
   prices: FormatFabricPrice[],
   frameColors: FrameColor[],

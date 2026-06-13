@@ -12,7 +12,7 @@ export default function ProductGallery({ titel, images }: { titel: string; image
       <div className="relative aspect-[4/5] overflow-hidden border border-ink/40 bg-black/5">
         <Image
           src={images[active]}
-          alt={active === 0 ? titel : `${titel} — sfeerfoto ${active}`}
+          alt={active === 0 ? titel : `${titel} · sfeerfoto ${active}`}
           fill
           priority
           sizes="(max-width:768px) 100vw, 50vw"

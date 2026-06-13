@@ -5,16 +5,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useCart } from '@/lib/cart'
+import ThemeToggle from './ThemeToggle'
 
 const shopLinks = [
   { href: '/shop', label: 'Alle kunstdoeken', desc: 'Ruim 1000 genummerde werken' },
-  { href: '/eigen-foto', label: 'Eigen foto', desc: 'Jouw beeld op luxe stof' },
-  { href: '/maatwerk', label: 'Maatwerk', desc: 'Elk formaat mogelijk' },
+  { href: '/frame', label: 'Los frame', desc: 'Alleen de aluminium wissellijst' },
 ]
 
 const navLinks = [
   { href: '/hoe-het-werkt', label: 'Hoe het werkt' },
-  { href: '/zakelijk', label: 'Zakelijk' },
   { href: '/contact', label: 'Contact' },
 ]
 
@@ -76,7 +75,7 @@ export default function Navbar() {
 
       <nav aria-label="Hoofdnavigatie" className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
-        <Link href="/" aria-label="Kunstdoekje — naar homepage" className="transition hover:opacity-80">
+        <Link href="/" aria-label="Kunstdoekje · naar homepage" className="transition hover:opacity-80">
           <Image src="/home/logo.png" alt="Kunstdoekje" width={166} height={30} priority className="h-7 w-auto" />
         </Link>
 
@@ -116,8 +115,9 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Rechts: tas + CTA */}
-        <div className="flex items-center gap-5">
+        {/* Rechts: thema + tas + CTA */}
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Link
             href="/cart"
             className="text-[12px] font-bold uppercase tracking-[0.18em] transition hover:text-accent-dark"

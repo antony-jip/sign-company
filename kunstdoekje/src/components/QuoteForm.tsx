@@ -6,16 +6,20 @@ export default function QuoteForm({
   type = 'contact',
   showBedrijf = false,
   showFormaat = false,
+  initialFormaat = '',
+  initialBericht = '',
 }: {
   type?: 'maatwerk' | 'zakelijk' | 'contact'
   showBedrijf?: boolean
   showFormaat?: boolean
+  initialFormaat?: string
+  initialBericht?: string
 }) {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({
-    naam: '', email: '', telefoon: '', bedrijf: '', gewenstFormaat: '', bericht: '',
+    naam: '', email: '', telefoon: '', bedrijf: '', gewenstFormaat: initialFormaat, bericht: initialBericht,
   })
 
   function update(k: keyof typeof form, v: string) {

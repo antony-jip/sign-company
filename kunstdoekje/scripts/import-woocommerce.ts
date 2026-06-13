@@ -148,7 +148,7 @@ async function main() {
 
   console.log(`\n✅ Klaar: ~${created} verwerkt, ${updated} bijgewerkt, ${skipped} overgeslagen`)
   if (priceSamples.length) {
-    const uniq = [...new Set(priceSamples)].sort((a, b) => a - b)
+    const uniq = Array.from(new Set(priceSamples)).sort((a, b) => a - b)
     console.log(`\n💶 Woo-prijzen aangetroffen (om formaatprijzen te kalibreren):`)
     console.log(`   ${uniq.map((p) => '€' + p.toFixed(2)).join(', ')}`)
   }

@@ -20,10 +20,14 @@ export interface Artwork {
   gallery_urls: string[]
   /** WooCommerce-SKU; hieronder liggen de printbestanden opgeslagen. */
   woo_sku: string | null
+  /** WooCommerce post-id; hoger = later toegevoegd (chronologische bron). */
+  woo_id: number | null
   tags: string[]
   is_featured: boolean
   is_active: boolean
+  is_liggend: boolean
   sort: number
+  created_at: string | null
 }
 
 export interface Format {
@@ -42,7 +46,7 @@ export interface Format {
 /**
  * Prijsmatrix: de werkelijke prijzen per formaat × stof (incl. btw, in centen).
  * doek = los doek (herhaalaankoop), compleet = doek + luxe lijst.
- * Dit is de bron van waarheid — de losse surcharge-velden op formats/fabrics
+ * Dit is de bron van waarheid · de losse surcharge-velden op formats/fabrics
  * zijn hiermee vervallen.
  */
 export interface FormatFabricPrice {
@@ -77,7 +81,7 @@ export type OrderStatus =
   | 'open' | 'pending' | 'paid' | 'failed' | 'expired' | 'canceled' | 'refunded'
 
 // Eén geconfigureerd doek zoals de client het naar de server stuurt.
-// LET OP: de client stuurt GEEN prijzen — die berekent de server opnieuw.
+// LET OP: de client stuurt GEEN prijzen · die berekent de server opnieuw.
 export interface CartLineInput {
   artworkId?: string
   customUploadId?: string
@@ -86,6 +90,8 @@ export interface CartLineInput {
   frameColorId: string
   metLijst: boolean
   aantal: number
+  /** Los frame (aluminium wissellijst) zonder doek · prijs = frame-component. */
+  frameOnly?: boolean
 }
 
 export interface CustomerInput {

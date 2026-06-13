@@ -82,6 +82,17 @@ export async function getCategories(): Promise<Category[]> {
   return data as Category[]
 }
 
+// De bijgesneden doek-crops staan op een vaste URL (crop/<slug>.webp). Na een
+// her-crop verandert de inhoud maar niet de URL, dus voegen we een versie toe
+// om browser-, CDN- en Next-image-cache te omzeilen. Verhoog bij een her-crop.
+const CROP_VER = '3'
+function bustThumb<T extends { thumb_url: string | null }>(a: T): T {
+  if (a.thumb_url && a.thumb_url.includes('/crop/') && !a.thumb_url.includes('?')) {
+    a.thumb_url = `${a.thumb_url}?v=${CROP_VER}`
+  }
+  return a
+}
+
 export async function getArtworks(opts: { categorySlug?: string; limit?: number; featured?: boolean } = {}): Promise<Artwork[]> {
   // PostgREST geeft max. 1000 rijen per request; pagineer zodat de hele catalogus meegaat
   const PAGE = 1000
@@ -100,12 +111,12 @@ export async function getArtworks(opts: { categorySlug?: string; limit?: number;
     const cat = cats.find((c) => c.slug === opts.categorySlug)
     rows = cat ? rows.filter((r) => r.category_id === cat.id) : []
   }
-  return rows
+  return rows.map(bustThumb)
 }
 
 export async function getArtworkBySlug(slug: string): Promise<Artwork | null> {
   const { data, error } = await supabasePublic()
     .from('artworks').select('*').eq('slug', slug).eq('is_active', true).maybeSingle()
   if (error) throw error
-  return (data as Artwork) ?? null
+  return data ? bustThumb(data as Artwork) : null
 }

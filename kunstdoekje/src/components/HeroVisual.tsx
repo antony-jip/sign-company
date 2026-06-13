@@ -29,7 +29,7 @@ export default function HeroVisual() {
           </div>
           {/* Plaquette */}
           <div className="plaquette mt-3">
-            <span>Nº 0001 — Velvet</span>
+            <span>Nº 0001 · Velvet</span>
             <span className="flex items-center gap-2 normal-case tracking-normal">
               {KLEUREN.map((k) => (
                 <button

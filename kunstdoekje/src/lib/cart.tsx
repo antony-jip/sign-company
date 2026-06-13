@@ -21,6 +21,8 @@ export interface CartItem {
   metLijst: boolean
   aantal: number
   unitPriceCents: number
+  /** Los frame (aluminium wissellijst) zonder doek. */
+  frameOnly?: boolean
 }
 
 interface CartContextValue {
@@ -77,7 +79,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clear = useCallback(() => setItems([]), [])
 
   const count = items.reduce((sum, i) => sum + i.aantal, 0)
-  const heeftFrame = items.some((i) => i.metLijst)
+  // Alleen een compleet kunstdoekje (doek mét lijst) zet de combideal aan · een los frame niet.
+  const heeftFrame = items.some((i) => i.metLijst && !i.frameOnly)
 
   // Zelfde combideal-regel als priceOrder (server blijft bron van waarheid)
   const effectiveUnitCents = useCallback(

@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// ─── Publieke (browser) client — alleen leesrechten via RLS ──────────────────
+// ─── Publieke (browser) client · alleen leesrechten via RLS ──────────────────
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -15,7 +15,7 @@ export function supabasePublic(): SupabaseClient {
   return _public
 }
 
-// ─── Service-role client — ALLEEN server-side (bypass RLS) ───────────────────
+// ─── Service-role client · ALLEEN server-side (bypass RLS) ───────────────────
 let _admin: SupabaseClient | null = null
 
 /**

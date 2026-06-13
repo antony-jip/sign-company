@@ -47,3 +47,6 @@ Next.js 14, React 18, TypeScript, Tailwind CSS.
 - Tailwind voor styling, geen CSS modules.
 - Components in `src/components/`, gegroepeerd per feature.
 - TypeScript strict mode.
+- **Geen woordverbindingen in koppen.** Nooit één woord opsplitsen over twee
+  stijlen (bv. `kunst<em>doekjes</em>` → "KUNSTdoekjes"); accent-styling
+  (`font-accent`) altijd op een héél, los woord met een duidelijke spatie ervoor.

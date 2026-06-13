@@ -7,6 +7,16 @@
 :root {
   color-scheme: light;
 
+  /* Kleur-tokens (light) · door Tailwind gebruikt via rgb(var(--c-*) / alpha) */
+  --c-ink: 58 49 39;
+  --c-canvas: 247 246 236;
+  --c-card: 238 237 224;
+  --c-paper: 251 250 248;
+  --c-muted: 139 122 107;
+  --c-accent: 206 169 53;
+  --c-accent-hover: 184 148 30;
+  --c-accent-dark: 160 130 26;
+
   /* Primaire kleuren */
   --kd-gold: #cea935;
   --kd-gold-hover: #b8941e;
@@ -27,11 +37,35 @@
   --kd-gradient-hover: linear-gradient(135deg, #a0821a, #b8941e);
 }
 
-body {
-  @apply bg-canvas text-ink antialiased;
+html {
+  background-color: rgb(var(--c-canvas));
 }
 
-/* Subtiele doek-korrel over de hele site — verwijst naar het product zelf */
+body {
+  @apply bg-canvas text-ink antialiased;
+  transition: background-color 0.45s ease, color 0.35s ease;
+}
+
+/* ── Dark mode · diepe, warme galerij-sfeer met goud accent ───────────────── */
+.dark {
+  color-scheme: dark;
+  --c-ink: 237 232 219;
+  --c-canvas: 23 21 16;
+  --c-card: 43 39 30;
+  --c-paper: 33 30 23;
+  --c-muted: 162 150 132;
+  --c-accent: 218 184 84;
+  --c-accent-hover: 230 198 108;
+  --c-accent-dark: 233 205 134;
+}
+
+/* Subtiele goudgloed bovenin voor dat luxe galerij-gevoel */
+.dark body {
+  background-image: radial-gradient(130% 80% at 50% -12%, rgba(206, 169, 53, 0.08), transparent 58%);
+  background-attachment: fixed;
+}
+
+/* Subtiele doek-korrel over de hele site · verwijst naar het product zelf */
 body::after {
   content: '';
   position: fixed;
@@ -69,6 +103,47 @@ body::after {
   }
 }
 
+/* ── Interieur-preview (productpagina): luxe micro-animaties ──────────────── */
+/* Het ingelijste werk "ademt" zacht aan de muur */
+@keyframes kd-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.kd-float { animation: kd-float 7s ease-in-out infinite; }
+
+/* Scène en badges komen rustig omhoog in beeld */
+@keyframes kd-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.kd-rise { animation: kd-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Korte 'pop' wanneer het frame een nieuwe kleur krijgt */
+@keyframes kd-pop {
+  0% { transform: scale(0.965); }
+  60% { transform: scale(1.012); }
+  100% { transform: scale(1); }
+}
+.kd-pop { animation: kd-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Zachte crossfade bij het wisselen van beelden */
+@keyframes kd-fade {
+  from { opacity: 0; transform: scale(1.02); }
+  to { opacity: 1; transform: scale(1); }
+}
+.kd-fade { animation: kd-fade 0.5s ease-out both; }
+
+/* Lichtveeg over het doek bij hover · galerieglans */
+@keyframes kd-sheen {
+  from { transform: translateX(-120%) skewX(-12deg); }
+  to { transform: translateX(220%) skewX(-12deg); }
+}
+.kd-sheen { animation: kd-sheen 1.1s ease-in-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-float, .kd-rise, .kd-sheen, .kd-fade, .kd-pop { animation: none; }
+}
+
 /* Horizontale scrollrijen zonder zichtbare scrollbar */
 .scrollbar-none {
   scrollbar-width: none;
@@ -77,14 +152,15 @@ body::after {
   display: none;
 }
 
-/* Stoer maar chique: koppen in Archivo Expanded Black met strakke spatiëring */
+/* Koppen in Fraunces — verfijnde high-contrast serif, rustig en elegant
+   (normale kapitalisatie, ingetogen gewicht; niet schreeuwerig) */
 @layer base {
   h1,
   h2,
   h3,
   h4 {
-    @apply font-extrabold tracking-tight;
-    font-stretch: 125%;
+    @apply font-semibold tracking-tight;
+    font-optical-sizing: auto;
   }
 }
 

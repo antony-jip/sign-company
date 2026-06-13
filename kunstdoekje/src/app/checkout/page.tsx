@@ -1,9 +1,29 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart'
 import { formatEuro } from '@/lib/pricing'
+
+const CHECKOUT_FAQ = [
+  {
+    v: 'Wanneer wordt mijn bestelling geleverd?',
+    a: 'Elk doek wordt op bestelling voor je gemaakt. Reken op 3–5 werkdagen; bij een frame erbij soms iets langer. Je ontvangt een track & trace zodra het onderweg is.',
+  },
+  {
+    v: 'Wat kost de verzending?',
+    a: 'Verzending naar Nederland en België is gratis. Je bestelling komt veilig en stevig verpakt aan.',
+  },
+  {
+    v: 'Hoe kan ik betalen?',
+    a: 'Veilig en vertrouwd via Mollie · met iDEAL, creditcard of Bancontact. Je rekent af op een beveiligde betaalpagina.',
+  },
+  {
+    v: 'En als het toch niet bevalt?',
+    a: 'Je hebt 30 dagen bedenktijd. Niet helemaal wat je zocht? Stuur het terug en we lossen het netjes op.',
+  },
+]
 
 export default function CheckoutPage() {
   const { items, subtotalCents, kortingCents, effectiveUnitCents } = useCart()
@@ -46,6 +66,7 @@ export default function CheckoutPage() {
             frameColorId: i.frameColorId,
             metLijst: i.metLijst,
             aantal: i.aantal,
+            frameOnly: i.frameOnly,
           })),
           customer: form,
         }),
@@ -64,6 +85,7 @@ export default function CheckoutPage() {
     'w-full rounded-lg border border-black/15 px-3 py-2.5 text-sm outline-none focus:border-accent'
 
   return (
+    <>
     <div className="mx-auto grid max-w-5xl gap-12 px-6 py-12 md:grid-cols-[1fr_360px]">
       {/* Formulier */}
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -138,7 +160,69 @@ export default function CheckoutPage() {
           <span>Subtotaal</span>
           <span>{formatEuro(subtotalCents)}</span>
         </div>
+
+        {/* Geruststelling onder de samenvatting */}
+        <ul className="mt-5 space-y-2 border-t border-black/10 pt-4 text-sm text-ink/65">
+          <li className="flex items-center gap-2"><span className="text-accent">✓</span> Gratis verzending NL &amp; BE</li>
+          <li className="flex items-center gap-2"><span className="text-accent">✓</span> Veilig betalen via Mollie (iDEAL)</li>
+          <li className="flex items-center gap-2"><span className="text-accent">✓</span> 30 dagen bedenktijd</li>
+        </ul>
       </aside>
     </div>
+
+    {/* Hier gebeurt het · ambacht */}
+    <section className="border-y border-ink/15 bg-paper">
+      <div className="mx-auto grid max-w-5xl items-center gap-10 px-6 py-16 md:grid-cols-2">
+        <div className="relative order-2 overflow-hidden rounded-[4px] border border-ink/15 shadow-hard-sm md:order-1">
+          <div className="relative aspect-[4/3]">
+            <Image
+              src="https://kunstdoekje.nl/wp-content/uploads/2025/09/DSC_9537_websize.webp"
+              alt="Het atelier van Kunstdoekje · hier worden de doeken gemaakt"
+              fill
+              sizes="(max-width:768px) 100vw, 50vw"
+              className="object-cover"
+            />
+          </div>
+        </div>
+        <div className="order-1 md:order-2">
+          <p className="label-caps reg-mark pl-4 text-ink/50">Hier gebeurt het</p>
+          <h2 className="mt-4 font-serif text-3xl leading-tight md:text-4xl">
+            Met de hand gemaakt, <em className="font-accent font-normal normal-case italic tracking-normal text-accent">in Nederland</em>
+          </h2>
+          <p className="mt-5 max-w-md leading-relaxed text-ink/70">
+            Zodra je bestelt, gaan we voor je aan de slag. Je doek wordt op bestelling geprint op
+            fluweel of decostof, met zorg gespannen en nagekeken · geen voorraad, geen
+            overproductie. Jouw kunst wordt voor jou gemaakt.
+          </p>
+          <p className="mt-4 max-w-md text-ink/60">
+            Vragen tijdens het bestellen? Mail{' '}
+            <a href="mailto:info@kunstdoekje.nl" className="font-semibold text-accent-dark hover:underline">
+              info@kunstdoekje.nl
+            </a>{' '}
+            · we reageren snel.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {/* FAQ */}
+    <section className="mx-auto max-w-3xl px-6 py-16">
+      <p className="label-caps reg-mark pl-4 text-center text-ink/50">Veelgestelde vragen</p>
+      <h2 className="mt-3 text-center font-serif text-3xl">Voor je afrekent</h2>
+      <div className="mt-8 border-t border-ink/20">
+        {CHECKOUT_FAQ.map((q, i) => (
+          <details key={q.v} open={i === 0} className="group border-b border-ink/20">
+            <summary className="flex cursor-pointer list-none items-baseline justify-between gap-4 py-4 [&::-webkit-details-marker]:hidden">
+              <span className="font-serif text-sm font-extrabold tracking-tight">{q.v}</span>
+              <span className="font-accent shrink-0 text-xl italic text-accent transition-transform duration-200 group-open:rotate-45">
+                +
+              </span>
+            </summary>
+            <p className="pb-5 pr-8 text-sm leading-relaxed text-ink/70">{q.a}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+    </>
   )
 }

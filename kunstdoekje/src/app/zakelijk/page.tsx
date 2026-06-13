@@ -1,14 +1,14 @@
 import QuoteForm from '@/components/QuoteForm'
 
 export const metadata = {
-  title: 'Zakelijk — art frames voor kantoor en hospitality',
+  title: 'Zakelijk · art frames voor kantoor en hospitality',
   description: 'Wisselbare kunst voor kantoren, hotels en praktijken. Eén art frame per wand, wissel de uitstraling per seizoen of campagne.',
   alternates: { canonical: '/zakelijk' },
 }
 
 const voordelen = [
   { t: 'Sfeer & uitstraling', d: 'Geef je kantoor, praktijk, hotel of restaurant een warme, professionele uitstraling.' },
-  { t: 'Eenvoudig wisselen', d: 'Wissel kunst per seizoen of campagne — één lijst, eindeloze mogelijkheden.' },
+  { t: 'Eenvoudig wisselen', d: 'Wissel kunst per seizoen of campagne · één lijst, eindeloze mogelijkheden.' },
   { t: 'Akoestiek-optie', d: 'Zachte stof helpt galm te dempen; ideaal voor open ruimtes en kantoortuinen.' },
   { t: 'Eigen huisstijl', d: 'Plaats je eigen beelden, branding of fotografie op het doek.' },
 ]
@@ -34,7 +34,7 @@ export default function Zakelijk() {
 
       <div className="mt-14 rounded-2xl bg-white/50 p-8">
         <h2 className="font-serif text-2xl">Vraag een zakelijk voorstel aan</h2>
-        <p className="mt-2 text-ink/65">Vertel ons over je ruimte en wensen — we nemen snel contact op.</p>
+        <p className="mt-2 text-ink/65">Vertel ons over je ruimte en wensen · we nemen snel contact op.</p>
         <div className="mt-6">
           <QuoteForm type="zakelijk" showBedrijf showFormaat />
         </div>

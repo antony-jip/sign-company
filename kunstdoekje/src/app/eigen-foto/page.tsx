@@ -1,7 +1,7 @@
 import QuoteForm from '@/components/QuoteForm'
 
 export const metadata = {
-  title: 'Eigen foto op doek — voor je art frame',
+  title: 'Eigen foto op doek · voor je art frame',
   description: 'Upload je eigen foto en ontvang hem als wisselbaar kunstdoek op fluweel of decostof, passend in het Kunstdoekje art frame.',
   alternates: { canonical: '/eigen-foto' },
 }
@@ -13,7 +13,7 @@ export default function EigenFoto() {
       <h1 className="mt-3 font-serif text-4xl">Jouw foto als kunstdoek</h1>
       <p className="mt-4 text-lg text-ink/70">
         Een dierbare herinnering, eigen fotografie of een ontwerp? We printen jouw beeld op luxe
-        velvet of deco stof — als wisselbaar doek voor je lijst.
+        velvet of deco stof · als wisselbaar doek voor je lijst.
       </p>
 
       <div className="mt-8 rounded-2xl bg-white/50 p-6 text-sm text-ink/70">

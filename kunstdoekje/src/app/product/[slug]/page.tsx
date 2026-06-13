@@ -1,9 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import Configurator from '@/components/Configurator'
 import ProductCard from '@/components/ProductCard'
-import ProductFaq from '@/components/ProductFaq'
-import ProductGallery from '@/components/ProductGallery'
+import ProductExperience from '@/components/product/ProductExperience'
 import TrackView from '@/components/TrackView'
 import VoorJou from '@/components/VoorJou'
 import { getArtworkBySlug, getArtworks, getFabrics, getFormats, getFrameColors, getPrices } from '@/lib/catalog'
@@ -22,11 +20,11 @@ export async function generateMetadata({
     if (art) {
       const beschrijving = (art.beschrijving ?? '').replace(/\\n/g, ' ').slice(0, 100)
       return {
-        title: `${art.titel} — kunstdoek voor je art frame`,
+        title: `${art.titel} · kunstdoek voor je art frame`,
         description: `${art.titel} als wisselbaar kunstdoek op fluweel of decostof, voor het Kunstdoekje art frame (wissellijst). ${beschrijving}`.trim(),
         alternates: { canonical: `/product/${art.slug}` },
         openGraph: {
-          title: `${art.titel} — Kunstdoekje`,
+          title: `${art.titel} · Kunstdoekje`,
           images: [{ url: art.image_url, alt: art.titel }],
         },
       }
@@ -98,44 +96,17 @@ export default async function ProductPage({ params }: { params: { slug: string }
       <TrackView artwork={artwork} />
       <Link href="/shop" className="text-sm text-ink/50 hover:text-ink">← Terug naar de collectie</Link>
 
-      <div className="mt-6 grid gap-10 md:grid-cols-2">
-        {/* Beeld + sfeerfoto's + kwaliteit-FAQ */}
-        <div>
-          <ProductGallery
-            titel={artwork.titel}
-            images={[artwork.image_url, ...(artwork.gallery_urls ?? [])]}
-          />
-          <ProductFaq />
-        </div>
-
-        {/* Configuratie */}
-        <div>
-          {artwork.woo_sku && (
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-accent">
-              Nº {artwork.woo_sku} — uit de collectie
-            </p>
-          )}
-          <h1 className="mt-1 font-serif text-3xl md:text-4xl">{artwork.titel}</h1>
-          {artwork.kunstenaar && (
-            <p className="mt-1 text-sm text-ink/60">door {artwork.kunstenaar}</p>
-          )}
-          {artwork.beschrijving && (
-            <p className="mt-4 text-ink/70">{artwork.beschrijving}</p>
-          )}
-
-          <div className="mt-8">
-            <Configurator
-              artwork={artwork}
-              formats={formats}
-              fabrics={fabrics}
-              frameColors={frameColors}
-              prices={prices}
-            />
-          </div>
-        </div>
+      <div className="mt-6">
+        <ProductExperience
+          artwork={artwork}
+          formats={formats}
+          fabrics={fabrics}
+          frameColors={frameColors}
+          prices={prices}
+        />
       </div>
 
-      {/* Vergelijkbare doeken — zelfde categorie */}
+      {/* Vergelijkbare doeken · zelfde categorie */}
       {vergelijkbaar.length > 0 && (
         <section className="mt-20">
           <div className="flex items-end justify-between">

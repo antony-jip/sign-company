@@ -1,5 +1,5 @@
 /**
- * Kijkgedrag-tracking voor aanbevelingen — volledig client-side (localStorage),
+ * Kijkgedrag-tracking voor aanbevelingen · volledig client-side (localStorage),
  * privacyvriendelijk: er verlaat niets de browser behalve de (anonieme)
  * categorie/tag-voorkeuren waarmee /api/aanbevolen wordt bevraagd.
  */
@@ -33,7 +33,7 @@ export function registreerBekeken(item: Omit<BekekenItem, 'ts'>) {
   try {
     localStorage.setItem(KEY, JSON.stringify(lijst.slice(0, MAX)))
   } catch {
-    /* opslag vol of geblokkeerd — geen ramp */
+    /* opslag vol of geblokkeerd · geen ramp */
   }
 }
 

@@ -28,7 +28,7 @@ function Bedankt() {
       )}
       <p className="mt-4 text-ink/70">
         Zodra je betaling is verwerkt, ontvang je een bevestiging per e-mail. We gaan direct voor je
-        aan de slag — elk doek wordt op bestelling voor je geprint.
+        aan de slag · elk doek wordt op bestelling voor je geprint.
       </p>
       <Link href="/shop" className="btn-primary mt-8">
         Verder kijken

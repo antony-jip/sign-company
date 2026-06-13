@@ -1,7 +1,7 @@
 import QuoteForm from '@/components/QuoteForm'
 
 export const metadata = {
-  title: 'Maatwerk — elk formaat art frame',
+  title: 'Maatwerk · elk formaat art frame',
   description: 'Een art frame op maat? Elk formaat wissellijst en kunstdoek is mogelijk. Vraag vrijblijvend een offerte aan.',
   alternates: { canonical: '/maatwerk' },
 }

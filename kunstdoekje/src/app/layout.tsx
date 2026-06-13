@@ -1,37 +1,34 @@
 import type { Metadata } from 'next'
-import { Archivo, Hanken_Grotesk, Instrument_Serif } from 'next/font/google'
+import { Fraunces, Instrument_Sans } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/lib/cart'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
-// Variabele fonts: Archivo (koppen — expanded black, fashion-editorial) + Hanken Grotesk (body)
-const archivo = Archivo({
+// Display: Fraunces — verfijnde high-contrast serif met een prachtige cursief
+// (voor het gouden accent-woord). Elegant en luxe i.p.v. technisch.
+const fraunces = Fraunces({
   subsets: ['latin'],
-  axes: ['wdth'],
+  style: ['normal', 'italic'],
+  axes: ['opsz', 'SOFT', 'WONK'],
   variable: '--font-archivo',
+  display: 'swap',
 })
 
-const hankenGrotesk = Hanken_Grotesk({
+// Body: Instrument Sans — strak, modern, rustig leesbaar.
+const bodySans = Instrument_Sans({
   subsets: ['latin'],
   variable: '--font-hanken',
-})
-
-// Accent: één woord per kop in serif-cursief — het chique contrapunt op Archivo
-const instrumentSerif = Instrument_Serif({
-  subsets: ['latin'],
-  weight: '400',
-  style: ['normal', 'italic'],
-  variable: '--font-instrument',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
   title: {
-    default: 'Kunstdoekje — Art frame met wisselbare kunstdoeken',
-    template: '%s — Kunstdoekje',
+    default: 'Kunstdoekje · Art frame met wisselbare kunstdoeken',
+    template: '%s · Kunstdoekje',
   },
   description:
-    'Het art frame van Nederland: één aluminium wissellijst, ruim 1000 kunstdoeken op fluweel of decostof. Wissel je kunst in 30 seconden — of upload je eigen foto.',
+    'Het art frame van Nederland: één aluminium wissellijst, ruim 1000 kunstdoeken op fluweel of decostof. Wissel je kunst in 30 seconden · of upload je eigen foto.',
   keywords: [
     'art frame',
     'wissellijst',
@@ -48,7 +45,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'nl_NL',
     siteName: 'Kunstdoekje',
-    title: 'Kunstdoekje — Art frame met wisselbare kunstdoeken',
+    title: 'Kunstdoekje · Art frame met wisselbare kunstdoeken',
     description:
       'Eén art frame, eindeloos wisselen. Ruim 1000 kunstdoeken op fluweel of decostof, geprint in Nederland.',
     images: [{ url: '/home/hero.jpg', width: 1080, height: 1440, alt: 'Kunstdoekje art frame in interieur' }],
@@ -74,8 +71,19 @@ const orgJsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="nl" className={`${archivo.variable} ${hankenGrotesk.variable} ${instrumentSerif.variable}`}>
+    <html
+      lang="nl"
+      suppressHydrationWarning
+      className={`${fraunces.variable} ${bodySans.variable}`}
+    >
       <body className="flex min-h-screen flex-col font-sans">
+        {/* Zet het thema vóór de eerste paint zodat er geen flits is */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('kd-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}",
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}

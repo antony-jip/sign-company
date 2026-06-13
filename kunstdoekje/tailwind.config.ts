@@ -1,20 +1,22 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
+  darkMode: 'class',
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
-      // Kunstdoekje-huisstijl (zie ook de --kd-* variabelen in globals.css)
+      // Kunstdoekje-huisstijl — kleuren via CSS-variabelen (zie globals.css)
+      // zodat ze in dark mode kunnen wisselen. Alpha blijft werken (text-ink/50).
       colors: {
-        ink: '#3A3127', // hoofdtekst, donkerbruin
-        canvas: '#F7F6EC', // hoofdachtergrond, crème
-        card: '#EEEDE0', // card-achtergrond
-        paper: '#FBFAF8', // wit met warme tint
-        muted: '#8B7A6B', // subtiele tekst, labels
+        ink: 'rgb(var(--c-ink) / <alpha-value>)', // hoofdtekst
+        canvas: 'rgb(var(--c-canvas) / <alpha-value>)', // hoofdachtergrond
+        card: 'rgb(var(--c-card) / <alpha-value>)', // card-achtergrond
+        paper: 'rgb(var(--c-paper) / <alpha-value>)', // oppervlak
+        muted: 'rgb(var(--c-muted) / <alpha-value>)', // subtiele tekst
         accent: {
-          DEFAULT: '#CEA935', // goud, primaire accent
-          hover: '#B8941E',
-          dark: '#A0821A',
+          DEFAULT: 'rgb(var(--c-accent) / <alpha-value>)',
+          hover: 'rgb(var(--c-accent-hover) / <alpha-value>)',
+          dark: 'rgb(var(--c-accent-dark) / <alpha-value>)',
         },
       },
       backgroundImage: {
@@ -22,11 +24,11 @@ const config: Config = {
         'kd-gradient-hover': 'linear-gradient(135deg, #A0821A, #B8941E)',
       },
       fontFamily: {
-        sans: ['var(--font-hanken)', 'system-ui', 'sans-serif'],
-        // 'serif' is het display-token voor koppen; wijst naar Archivo (expanded display-sans)
-        serif: ['var(--font-archivo)', 'system-ui', 'sans-serif'],
-        // Accent: serif-cursief voor één woord per kop
-        accent: ['var(--font-instrument)', 'Georgia', 'serif'],
+        sans: ['var(--font-hanken)', 'system-ui', 'sans-serif'], // body = Instrument Sans
+        // Display-token voor koppen — Fraunces (verfijnde high-contrast serif)
+        serif: ['var(--font-archivo)', 'Georgia', 'serif'],
+        // Accent: hetzelfde Fraunces, cursief gezet voor één woord per kop
+        accent: ['var(--font-archivo)', 'Georgia', 'serif'],
       },
       boxShadow: {
         // Zachte offset-schaduwen — drukwerk-DNA, maar fluweelzacht

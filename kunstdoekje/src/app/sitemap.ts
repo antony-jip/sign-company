@@ -9,8 +9,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const statisch: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/`, changeFrequency: 'weekly', priority: 1 },
     { url: `${BASE_URL}/shop`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE_URL}/frame`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/hoe-het-werkt`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/eigen-foto`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/kunst-op-maat`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/ral-frame`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/stoffen`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE_URL}/maatwerk`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE_URL}/zakelijk`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE_URL}/contact`, changeFrequency: 'yearly', priority: 0.4 },
