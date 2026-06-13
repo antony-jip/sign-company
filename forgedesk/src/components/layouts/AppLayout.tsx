@@ -14,6 +14,7 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
 import { prefetchCore } from '@/lib/coreData'
 import { chatHeartbeat } from '@/services/websiteChatService'
+import { WebsiteMeldingPopup } from '@/components/notifications/WebsiteMeldingPopup'
 import { cn } from '@/lib/utils'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { WifiOff } from 'lucide-react'
@@ -135,6 +136,7 @@ export function AppLayout() {
         <FloatingQuickActions />
         <FloatingEmailButton />
         <ForgieChatWidget />
+        <WebsiteMeldingPopup />
       </>
     )
   }
@@ -190,6 +192,7 @@ export function AppLayout() {
       <FloatingQuickActions />
       <FloatingEmailButton />
       <ForgieChatWidget />
+      <WebsiteMeldingPopup />
     </>
   )
 }
