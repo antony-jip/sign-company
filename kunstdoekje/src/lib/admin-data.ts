@@ -154,6 +154,106 @@ export async function ensureInvoiceNumber(order: OrderRow): Promise<string> {
   return data as string
 }
 
+export interface DashboardStats {
+  omzetTotaalCents: number
+  omzetMaandCents: number
+  omzetVandaagCents: number
+  betaaldeOrders: number
+  totaalOrders: number
+  openOrders: number
+  mislukteOrders: number
+  gemiddeldeOrderCents: number
+  itemsVerkocht: number
+  omzetPerMaand: { label: string; cents: number; orders: number }[]
+  topProducten: { naam: string; sku: string | null; aantal: number }[]
+  gekapt: boolean
+}
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const sb = supabaseAdmin()
+  const CAP = 5000
+
+  const { data: ordersData, error } = await sb
+    .from('orders')
+    .select('status, total_cents, paid_at, created_at')
+    .order('created_at', { ascending: false })
+    .limit(CAP)
+  if (error) throw error
+  const orders = (ordersData ?? []) as {
+    status: OrderStatus
+    total_cents: number
+    paid_at: string | null
+    created_at: string
+  }[]
+
+  const paid = orders.filter((o) => o.status === 'paid')
+  const paidTime = (o: { paid_at: string | null; created_at: string }) =>
+    new Date(o.paid_at ?? o.created_at).getTime()
+  const omzetTotaalCents = paid.reduce((s, o) => s + o.total_cents, 0)
+
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const omzetMaandCents = paid.filter((o) => paidTime(o) >= monthStart).reduce((s, o) => s + o.total_cents, 0)
+  const omzetVandaagCents = paid.filter((o) => paidTime(o) >= dayStart).reduce((s, o) => s + o.total_cents, 0)
+
+  const openOrders = orders.filter((o) => o.status === 'open' || o.status === 'pending').length
+  const mislukteOrders = orders.filter(
+    (o) => o.status === 'failed' || o.status === 'expired' || o.status === 'canceled',
+  ).length
+
+  // Omzet per maand — laatste 6 maanden
+  const months: { key: string; label: string; cents: number; orders: number }[] = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString('nl-NL', { month: 'short' }), cents: 0, orders: 0 })
+  }
+  const idxByKey = new Map(months.map((m, i) => [m.key, i]))
+  for (const o of paid) {
+    const d = new Date(o.paid_at ?? o.created_at)
+    const idx = idxByKey.get(`${d.getFullYear()}-${d.getMonth()}`)
+    if (idx !== undefined) {
+      months[idx].cents += o.total_cents
+      months[idx].orders += 1
+    }
+  }
+
+  // Items verkocht + topproducten (alleen betaalde orders)
+  const { data: itemsData } = await sb
+    .from('order_items')
+    .select('aantal, titel_snapshot, artworks(woo_sku), orders!inner(status)')
+    .eq('orders.status', 'paid')
+    .limit(CAP)
+  let itemsVerkocht = 0
+  const prodMap = new Map<string, { naam: string; sku: string | null; aantal: number }>()
+  for (const raw of (itemsData ?? []) as unknown as { aantal: number; titel_snapshot: string | null; artworks: { woo_sku: string | null } | null }[]) {
+    const aantal = raw.aantal ?? 0
+    itemsVerkocht += aantal
+    const naam = raw.titel_snapshot ?? 'Onbekend'
+    const sku = raw.artworks?.woo_sku ?? null
+    const key = `${naam}|${sku ?? ''}`
+    const cur = prodMap.get(key) ?? { naam, sku, aantal: 0 }
+    cur.aantal += aantal
+    prodMap.set(key, cur)
+  }
+  const topProducten = Array.from(prodMap.values()).sort((a, b) => b.aantal - a.aantal).slice(0, 6)
+
+  return {
+    omzetTotaalCents,
+    omzetMaandCents,
+    omzetVandaagCents,
+    betaaldeOrders: paid.length,
+    totaalOrders: orders.length,
+    openOrders,
+    mislukteOrders,
+    gemiddeldeOrderCents: paid.length ? Math.round(omzetTotaalCents / paid.length) : 0,
+    itemsVerkocht,
+    omzetPerMaand: months.map((m) => ({ label: m.label, cents: m.cents, orders: m.orders })),
+    topProducten,
+    gekapt: orders.length >= CAP,
+  }
+}
+
 export async function listQuotes(): Promise<QuoteRow[]> {
   const sb = supabaseAdmin()
   const { data, error } = await sb

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
 const tabs = [
+  { href: '/admin', label: 'Dashboard', exact: true },
   { href: '/admin/orders', label: 'Bestellingen' },
   { href: '/admin/aanvragen', label: 'Aanvragen' },
 ]
@@ -22,12 +23,12 @@ export default function AdminNav() {
     <header className="border-b border-ink/15 bg-paper">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="flex items-center gap-6">
-          <Link href="/admin/orders" className="font-serif text-xl">
+          <Link href="/admin" className="font-serif text-xl">
             Kunstdoekje · <span className="text-accent-dark">Beheer</span>
           </Link>
           <nav className="flex gap-1">
             {tabs.map((t) => {
-              const active = pathname.startsWith(t.href)
+              const active = t.exact ? pathname === t.href : pathname.startsWith(t.href)
               return (
                 <Link
                   key={t.href}
