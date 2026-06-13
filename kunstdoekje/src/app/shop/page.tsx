@@ -57,16 +57,18 @@ export default async function ShopPage({
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12">
-      <p className="label-caps reg-mark pl-4 text-ink/50">De collectie</p>
-      <h1 className="mt-3 font-serif text-4xl md:text-6xl">
-        Alle <em className="font-accent font-normal normal-case italic tracking-normal text-accent">kunstdoekjes</em>
-      </h1>
-      <p className="mt-4 max-w-xl text-ink/60">
-        Ruim 1000 wisselbare kunstdoeken. Eén prijs per formaat &amp; stof · de kunst kies je gratis.
-      </p>
+      <div data-reveal>
+        <p className="label-caps reg-mark pl-4 text-ink/50">De collectie</p>
+        <h1 className="mt-3 font-serif text-4xl md:text-6xl">
+          Alle <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">kunstdoekjes</em>
+        </h1>
+        <p className="mt-4 max-w-xl text-ink/60">
+          Ruim 1000 wisselbare kunstdoeken. Eén prijs per formaat &amp; stof · de kunst kies je gratis.
+        </p>
+      </div>
 
       {/* USP: alle werken passen in hetzelfde frame */}
-      <div className="mt-6 flex items-start gap-3 rounded-[4px] border border-accent/30 bg-accent/[0.07] px-4 py-3.5">
+      <div className="mt-6 flex items-start gap-3 rounded-[4px] border border-accent/30 bg-accent/[0.07] px-4 py-3.5" data-reveal>
         <svg
           viewBox="0 0 24 24"
           className="mt-0.5 h-6 w-6 shrink-0 text-accent-dark"
@@ -88,6 +90,7 @@ export default async function ShopPage({
       <Link
         href="/frame"
         className="group mt-8 flex flex-col items-start gap-4 rounded-[4px] border border-ink/20 bg-paper p-5 transition-all hover:-translate-y-0.5 hover:border-ink/45 hover:shadow-hard-sm sm:flex-row sm:items-center sm:justify-between"
+        data-reveal
       >
         <div className="flex items-center gap-4">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[3px] border-2 border-ink/70" aria-hidden>

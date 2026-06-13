@@ -30,7 +30,7 @@ export default async function StoffenPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="mx-auto max-w-3xl px-6 pb-10 pt-16 text-center">
+      <section className="mx-auto max-w-3xl px-6 pb-10 pt-16 text-center" data-reveal>
         <p className="label-caps reg-mark inline-block pl-4 text-ink/50">De stoffen</p>
         <h1 className="mt-5 font-serif text-[clamp(38px,7vw,68px)] leading-[0.95] tracking-tight">
           Deco <em className="font-accent text-[0.7em] font-normal normal-case italic tracking-normal text-accent">vs</em> Fluweel
@@ -43,7 +43,7 @@ export default async function StoffenPage() {
 
       {/* Vergelijking */}
       <section className="mx-auto max-w-5xl px-6 py-10">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2" data-reveal-group>
           {STOFFEN.map((stof) => {
             const vanaf = vanafPerStof.get(stof.key)
             return (
@@ -107,7 +107,7 @@ export default async function StoffenPage() {
         </div>
 
         {/* Advies */}
-        <div className="mt-8 rounded-[4px] border border-accent/30 bg-accent/[0.08] p-8 text-center">
+        <div className="mt-8 rounded-[4px] border border-accent/30 bg-accent/[0.08] p-8 text-center" data-reveal>
           <h3 className="font-serif text-2xl">Ons advies?</h3>
           <p className="mx-auto mt-2 max-w-xl text-ink/70">
             Twijfel je? Kies <strong>fluweel</strong>. De stof neemt meer kleur op dan deco, waardoor

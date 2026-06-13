@@ -37,12 +37,12 @@ export default async function HoeHetWerkt() {
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-6 pb-16 pt-12 md:pt-16">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <div>
+          <div data-reveal-group>
             <p className="label-caps reg-mark inline-block pl-4 text-ink/50">Hoe het werkt</p>
             <h1 className="mt-6 font-serif text-[clamp(40px,6vw,76px)] leading-[0.95] tracking-tight">
               Hang één keer op.
               <br />
-              <em className="font-accent font-normal normal-case italic tracking-normal text-accent">Wissel</em> voor altijd.
+              <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">Wissel</em> voor altijd.
             </h1>
             <p className="mt-6 max-w-md text-xl leading-relaxed text-ink/75">
               Een Kunstdoekje is kunst op fluweel met een pees rondom. Je drukt ’m in de gleuf van
@@ -61,7 +61,7 @@ export default async function HoeHetWerkt() {
             </div>
           </div>
 
-          <div className="rounded-[4px] border border-ink/15 bg-paper p-3 shadow-hard-gold sm:p-4">
+          <div className="rounded-[4px] border border-ink/15 bg-paper p-3 shadow-hard-gold sm:p-4" data-reveal>
             <div className="relative aspect-[4/5] overflow-hidden">
               <Image
                 src="/home/hero.jpg"
@@ -79,15 +79,15 @@ export default async function HoeHetWerkt() {
       {/* Stappen */}
       <section className="border-y border-ink/15 bg-paper">
         <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="text-center">
+          <div className="text-center" data-reveal>
             <h2 className="font-serif text-4xl md:text-5xl">
-              Van muur naar <em className="font-accent font-normal normal-case italic tracking-normal text-accent">galerie</em>
+              Van muur naar <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">galerie</em>
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg text-ink/65">
               Vier stappen. En daarna wissel je zo vaak je wilt.
             </p>
           </div>
-          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" data-reveal-group>
             {STAPPEN.map((s) => (
               <div
                 key={s.n}
@@ -107,7 +107,7 @@ export default async function HoeHetWerkt() {
       {/* Fluweel · de kwaliteit */}
       <section className="mx-auto max-w-7xl px-6 py-24">
         <div className="grid items-center gap-12 md:grid-cols-2 md:gap-16">
-          <div className="order-2 md:order-1">
+          <div className="order-2 md:order-1" data-reveal>
             <div className="grid grid-cols-2 gap-3">
               <div className="relative col-span-2 aspect-[16/10] overflow-hidden rounded-[4px] border border-ink/15">
                 <Image src="/home/fluweel-2.webp" alt="Detail van een fluwelen kunstdoek" fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />
@@ -121,10 +121,10 @@ export default async function HoeHetWerkt() {
             </div>
           </div>
 
-          <div className="order-1 md:order-2">
+          <div className="order-1 md:order-2" data-reveal>
             <p className="label-caps reg-mark pl-4 text-ink/50">De stof</p>
             <h2 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">
-              Fluweel dat het licht <em className="font-accent font-normal normal-case italic tracking-normal text-accent">vasthoudt</em>
+              Fluweel dat het licht <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">vasthoudt</em>
             </h2>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-ink/75">
               Fluweel absorbeert licht in plaats van het te weerkaatsen. Daardoor krijgen kleuren een
@@ -148,17 +148,17 @@ export default async function HoeHetWerkt() {
       <section className="bg-ink text-canvas">
         <div className="mx-auto max-w-7xl px-6 py-20">
           <div className="grid gap-12 md:grid-cols-[1fr_1.2fr] md:items-center md:gap-16">
-            <div>
+            <div data-reveal>
               <p className="label-caps reg-mark pl-4 text-canvas/50">Het wisselen</p>
               <h2 className="mt-5 font-serif text-4xl leading-tight md:text-5xl">
-                Klaar in <em className="font-accent font-normal normal-case italic tracking-normal text-accent">30 seconden</em>
+                Klaar in <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">30 seconden</em>
               </h2>
               <p className="mt-6 max-w-md text-lg leading-relaxed text-canvas/75">
                 Geen gereedschap, geen gedoe. Het frame blijft aan de muur; alleen het doek erin
                 verander je. Een nieuw seizoen, een andere stemming, een feestje · je muur beweegt mee.
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-3" data-reveal-group>
               {[
                 { n: '1', t: 'Doek eruit', d: 'Til het oude doek zo uit de gleuf.' },
                 { n: '2', t: 'Pees erin', d: 'Druk de pees van het nieuwe doek in de gleuf.' },
@@ -177,10 +177,10 @@ export default async function HoeHetWerkt() {
 
       {/* Standaardmaten */}
       <section className="mx-auto max-w-7xl px-6 py-24">
-        <div className="text-center">
+        <div className="text-center" data-reveal>
           <p className="label-caps reg-mark inline-block pl-4 text-ink/50">De maten</p>
           <h2 className="mt-4 font-serif text-4xl md:text-5xl">
-            Een maat die jouw muur <em className="font-accent font-normal normal-case italic tracking-normal text-accent">vult</em>
+            Een maat die jouw muur <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">vult</em>
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-ink/65">
             Van een intieme 45 × 70 tot een statige 120 × 180 · er is altijd een formaat dat past. Eén

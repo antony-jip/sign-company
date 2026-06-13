@@ -1,24 +1,34 @@
 import type { Metadata } from 'next'
-import { Fraunces, Instrument_Sans } from 'next/font/google'
+import { Marcellus, Familjen_Grotesk, Cormorant_Garamond } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/lib/cart'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import ScrollReveal from '@/components/ScrollReveal'
 
-// Display: Fraunces — verfijnde high-contrast serif met een prachtige cursief
-// (voor het gouden accent-woord). Elegant en luxe i.p.v. technisch.
-const fraunces = Fraunces({
+// Display: Marcellus — klassieke, sierlijke Romeinse kapitalen. Galerie-gravitas.
+// Het display-token (font-serif) wijst hierheen. Eén gewicht (400) — bewust dun.
+const marcellus = Marcellus({
   subsets: ['latin'],
-  style: ['normal', 'italic'],
-  axes: ['opsz', 'SOFT', 'WONK'],
+  weight: '400',
   variable: '--font-archivo',
   display: 'swap',
 })
 
-// Body: Instrument Sans — strak, modern, rustig leesbaar.
-const bodySans = Instrument_Sans({
+// Body: Familjen Grotesk — frisse Scandinavische grotesk. Modern, met eigen
+// karakter (niet-app), als contrast op de klassieke koppen.
+const familjen = Familjen_Grotesk({
   subsets: ['latin'],
   variable: '--font-hanken',
+  display: 'swap',
+})
+
+// Accent: Cormorant-cursief — één sierlijk serif-woord per kop, in goud.
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  style: ['italic'],
+  variable: '--font-instrument',
   display: 'swap',
 })
 
@@ -74,14 +84,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="nl"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${bodySans.variable}`}
+      className={`${marcellus.variable} ${familjen.variable} ${cormorant.variable}`}
     >
       <body className="flex min-h-screen flex-col font-sans">
         {/* Zet het thema vóór de eerste paint zodat er geen flits is */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('kd-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}",
+              "document.documentElement.classList.add('js');try{var t=localStorage.getItem('kd-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}",
           }}
         />
         <script
@@ -89,6 +99,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
         />
         <CartProvider>
+          <ScrollReveal />
           <Navbar />
           <main className="flex-1">{children}</main>
           <Footer />

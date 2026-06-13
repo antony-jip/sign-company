@@ -9,7 +9,7 @@ export const metadata = {
 export default function Maatwerk() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <p className="text-sm uppercase tracking-widest text-accent">Maatwerk</p>
+      <p className="text-sm uppercase tracking-widest text-accent" data-reveal>Maatwerk</p>
       <h1 className="mt-3 font-serif text-4xl">Elk formaat mogelijk</h1>
       <p className="mt-4 text-lg text-ink/70">
         Past geen van de standaardformaten bij jouw muur? We maken je Kunstdoekje vrijwel op elk

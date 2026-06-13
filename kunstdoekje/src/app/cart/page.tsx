@@ -22,7 +22,7 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
-      <h1 className="font-serif text-4xl">Winkelwagen</h1>
+      <h1 className="font-serif text-4xl" data-reveal>Winkelwagen</h1>
 
       {/* Combideal-upsell */}
       {heeftFrame && (

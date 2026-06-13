@@ -9,7 +9,7 @@ export const metadata = {
 export default function EigenFoto() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <p className="text-sm uppercase tracking-widest text-accent">Eigen foto</p>
+      <p className="text-sm uppercase tracking-widest text-accent" data-reveal>Eigen foto</p>
       <h1 className="mt-3 font-serif text-4xl">Jouw foto als kunstdoek</h1>
       <p className="mt-4 text-lg text-ink/70">
         Een dierbare herinnering, eigen fotografie of een ontwerp? We printen jouw beeld op luxe
@@ -18,7 +18,7 @@ export default function EigenFoto() {
 
       <div className="mt-8 rounded-2xl bg-white/50 p-6 text-sm text-ink/70">
         <p className="font-medium text-ink">Tips voor het beste resultaat</p>
-        <ul className="mt-2 space-y-1">
+        <ul className="mt-2 space-y-1" data-reveal-group>
           <li>• Gebruik een zo hoog mogelijke resolutie (minimaal ~100 DPI op het gewenste formaat).</li>
           <li>• Liggend of staand beeld dat past bij de verhouding van je formaat.</li>
           <li>• Twijfel je over de kwaliteit? Stuur je foto en we beoordelen het gratis.</li>

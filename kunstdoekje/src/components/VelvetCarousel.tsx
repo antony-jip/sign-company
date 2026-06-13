@@ -43,7 +43,7 @@ export default function VelvetCarousel() {
           <div>
             <p className="label-caps reg-mark pl-4 text-ink/50">Premium fluweel</p>
             <h2 className="mt-3 font-serif text-4xl md:text-6xl">
-              Voelbare <em className="font-accent font-normal normal-case italic tracking-normal text-accent">kunst</em>
+              Voelbare <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">kunst</em>
             </h2>
           </div>
           <p className="max-w-sm pb-1 text-sm leading-relaxed text-ink/60">

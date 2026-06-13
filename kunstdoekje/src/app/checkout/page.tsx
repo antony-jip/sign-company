@@ -184,10 +184,10 @@ export default function CheckoutPage() {
             />
           </div>
         </div>
-        <div className="order-1 md:order-2">
+        <div className="order-1 md:order-2" data-reveal>
           <p className="label-caps reg-mark pl-4 text-ink/50">Hier gebeurt het</p>
           <h2 className="mt-4 font-serif text-3xl leading-tight md:text-4xl">
-            Met de hand gemaakt, <em className="font-accent font-normal normal-case italic tracking-normal text-accent">in Nederland</em>
+            Met de hand gemaakt, <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">in Nederland</em>
           </h2>
           <p className="mt-5 max-w-md leading-relaxed text-ink/70">
             Zodra je bestelt, gaan we voor je aan de slag. Je doek wordt op bestelling geprint op
@@ -207,9 +207,9 @@ export default function CheckoutPage() {
 
     {/* FAQ */}
     <section className="mx-auto max-w-3xl px-6 py-16">
-      <p className="label-caps reg-mark pl-4 text-center text-ink/50">Veelgestelde vragen</p>
+      <p className="label-caps reg-mark pl-4 text-center text-ink/50" data-reveal>Veelgestelde vragen</p>
       <h2 className="mt-3 text-center font-serif text-3xl">Voor je afrekent</h2>
-      <div className="mt-8 border-t border-ink/20">
+      <div className="mt-8 border-t border-ink/20" data-reveal-group>
         {CHECKOUT_FAQ.map((q, i) => (
           <details key={q.v} open={i === 0} className="group border-b border-ink/20">
             <summary className="flex cursor-pointer list-none items-baseline justify-between gap-4 py-4 [&::-webkit-details-marker]:hidden">

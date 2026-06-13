@@ -100,7 +100,7 @@ export default async function Home() {
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-6 pb-16 pt-12 md:pt-16">
         <div className="grid items-center gap-14 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
-          <div>
+          <div data-reveal-group>
             <p className="label-caps reg-mark pl-4 text-ink/50">
               Hét art frame van Nederland · sinds 2023
             </p>
@@ -148,7 +148,9 @@ export default async function Home() {
             </div>
           </div>
 
-          <HeroVisual />
+          <div data-reveal>
+            <HeroVisual />
+          </div>
         </div>
       </section>
 
@@ -157,10 +159,10 @@ export default async function Home() {
 
       {/* Hoe het werkt · vier stappen + kenmerken */}
       <section className="mx-auto max-w-7xl px-6 py-24">
-        <div className="text-center">
+        <div className="text-center" data-reveal>
           <p className="label-caps reg-mark inline-block pl-4 text-ink/50">Het Kunstdoekje-systeem</p>
           <h2 className="mt-5 font-serif text-4xl md:text-5xl">
-            Eenvoud ontmoet <em className="font-accent font-normal normal-case italic tracking-normal text-accent">elegantie</em>
+            Eenvoud ontmoet <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">elegantie</em>
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-ink/65">
             Eén intelligent frame dat met je meebeweegt. Verander je kunst, behoud je frame.
@@ -168,7 +170,7 @@ export default async function Home() {
         </div>
 
         {/* Stappen */}
-        <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" data-reveal-group>
           {stappen.map((s) => (
             <div
               key={s.nr}
@@ -191,7 +193,7 @@ export default async function Home() {
         </div>
 
         {/* Kenmerken */}
-        <div className="mt-20 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-20 grid gap-10 sm:grid-cols-2 lg:grid-cols-4" data-reveal-group>
           {kenmerken.map((k) => (
             <div key={k.titel} className="text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-accent/20 bg-paper text-accent shadow-hard-sm">
@@ -216,7 +218,7 @@ export default async function Home() {
       {/* Framekleuren · drie afwerkingen */}
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="grid items-center gap-12 md:grid-cols-2 md:gap-16">
-          <div className="relative order-2 md:order-1">
+          <div className="relative order-2 md:order-1" data-reveal>
             <div className="rounded-[4px] border border-ink/15 bg-paper p-4 shadow-hard-sm sm:p-6">
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image
@@ -230,12 +232,12 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="order-1 md:order-2">
+          <div className="order-1 md:order-2" data-reveal>
             <p className="label-caps reg-mark pl-4 text-ink/50">Het frame</p>
             <h2 className="mt-5 font-serif text-4xl leading-tight md:text-5xl">
               Drie kleuren,
               <br />
-              één <em className="font-accent font-normal normal-case italic tracking-normal text-accent">signatuur</em>
+              één <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">signatuur</em>
             </h2>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-ink/70">
               Het aluminium art frame komt in drie tijdloze afwerkingen · zwart, zilver en wit. Zo
@@ -257,16 +259,16 @@ export default async function Home() {
 
       {/* Uitgelicht */}
       <section className="mx-auto max-w-7xl px-6 py-20">
-        <div className="flex items-end justify-between border-b border-ink/25 pb-6">
+        <div className="flex items-end justify-between border-b border-ink/25 pb-6" data-reveal>
           <h2 className="font-serif text-4xl md:text-6xl">
-            <em className="font-accent font-normal normal-case italic tracking-normal text-accent">Uitgelicht</em>
+            <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">Uitgelicht</em>
           </h2>
           <Link href="/shop" className="label-caps shrink-0 pb-2 text-ink/50 transition hover:text-accent-dark">
             Alles bekijken →
           </Link>
         </div>
         {featured.length ? (
-          <div className="mt-10 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
+          <div className="mt-10 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4" data-reveal-group>
             {featured.map((a) => (
               <ProductCard key={a.id} artwork={a} vanafCents={vanaf || undefined} />
             ))}
@@ -279,13 +281,13 @@ export default async function Home() {
       {/* Combideal-statement */}
       {losVanaf > 0 && (
         <section className="bg-ink text-canvas">
-          <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-16 md:grid-cols-[1.2fr_1fr]">
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-16 md:grid-cols-[1.2fr_1fr]" data-reveal-group>
             <div>
               <p className="label-caps reg-mark pl-4 text-canvas/50">De combideal</p>
               <h2 className="mt-5 font-serif text-3xl leading-tight md:text-5xl">
                 Frame erbij?
                 <br />
-                Elk los doek <em className="font-accent font-normal normal-case italic tracking-normal text-accent">−{COMBIDEAL_PCT}%</em>
+                Elk los doek <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">−{COMBIDEAL_PCT}%</em>
               </h2>
             </div>
             <div className="md:justify-self-end">
@@ -310,12 +312,12 @@ export default async function Home() {
       {/* Categorieën */}
       {categories.length > 0 && (
         <section className="mx-auto max-w-7xl px-6 pb-24">
-          <div className="border-b border-ink/25 pb-6">
+          <div className="border-b border-ink/25 pb-6" data-reveal>
             <h2 className="font-serif text-4xl md:text-6xl">
-              Vind jouw <em className="font-accent font-normal normal-case italic tracking-normal text-accent">stijl</em>
+              Vind jouw <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">stijl</em>
             </h2>
           </div>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3" data-reveal-group>
             {categories.map((c) => (
               <Link
                 key={c.id}

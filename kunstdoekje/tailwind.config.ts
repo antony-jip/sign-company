@@ -24,11 +24,11 @@ const config: Config = {
         'kd-gradient-hover': 'linear-gradient(135deg, #A0821A, #B8941E)',
       },
       fontFamily: {
-        sans: ['var(--font-hanken)', 'system-ui', 'sans-serif'], // body = Instrument Sans
-        // Display-token voor koppen — Fraunces (verfijnde high-contrast serif)
+        sans: ['var(--font-hanken)', 'system-ui', 'sans-serif'], // body = Familjen Grotesk
+        // Display-token voor koppen — Marcellus (klassieke serif-kapitalen)
         serif: ['var(--font-archivo)', 'Georgia', 'serif'],
-        // Accent: hetzelfde Fraunces, cursief gezet voor één woord per kop
-        accent: ['var(--font-archivo)', 'Georgia', 'serif'],
+        // Accent: Cormorant-cursief voor één sierlijk woord per kop
+        accent: ['var(--font-instrument)', 'Georgia', 'serif'],
       },
       boxShadow: {
         // Zachte offset-schaduwen — drukwerk-DNA, maar fluweelzacht

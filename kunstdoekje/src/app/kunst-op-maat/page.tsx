@@ -43,11 +43,11 @@ export default function KunstOpMaat() {
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-6 pb-16 pt-12 md:pt-16">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <div>
+          <div data-reveal-group>
             <p className="label-caps reg-mark inline-block pl-4 text-accent-dark">Nieuw · op-maat service</p>
             <h1 className="mt-6 font-serif text-[clamp(40px,6vw,72px)] leading-[0.95] tracking-tight">
               Kies jouw{' '}
-              <em className="font-accent font-normal normal-case italic tracking-normal text-accent">kunstwerk</em>{' '}
+              <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">kunstwerk</em>{' '}
               in de perfecte maat
             </h1>
             <p className="mt-6 max-w-md text-xl leading-relaxed text-ink/75">
@@ -72,7 +72,7 @@ export default function KunstOpMaat() {
             </p>
           </div>
 
-          <div className="relative">
+          <div className="relative" data-reveal>
             <div className="rounded-[4px] border border-ink/15 bg-paper p-3 shadow-hard-gold sm:p-4">
               <div className="relative aspect-[4/5] overflow-hidden">
                 <Image
@@ -92,15 +92,15 @@ export default function KunstOpMaat() {
       {/* Zo werkt het */}
       <section className="border-t border-ink/15 bg-paper">
         <div className="mx-auto max-w-7xl px-6 py-24">
-          <div className="text-center">
+          <div className="text-center" data-reveal>
             <h2 className="font-serif text-4xl md:text-5xl">
-              Zo makkelijk <em className="font-accent font-normal normal-case italic tracking-normal text-accent">werkt het</em>
+              Zo makkelijk <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">werkt het</em>
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg text-ink/65">
               Van inspiratie naar jouw unieke kunstwerk in vier simpele stappen.
             </p>
           </div>
-          <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" data-reveal-group>
             {STAPPEN.map((s) => (
               <div
                 key={s.nr}
@@ -128,15 +128,15 @@ export default function KunstOpMaat() {
 
       {/* Voordelen */}
       <section className="mx-auto max-w-7xl px-6 py-24">
-        <div className="text-center">
+        <div className="text-center" data-reveal>
           <h2 className="font-serif text-4xl md:text-5xl">
-            Waarom <em className="font-accent font-normal normal-case italic tracking-normal text-accent">maatwerk</em>
+            Waarom <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">maatwerk</em>
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-lg text-ink/65">
             Jouw kunst, jouw maat, jouw ruimte. Precies zoals jij het wilt.
           </p>
         </div>
-        <div className="mt-16 grid gap-6 md:grid-cols-3">
+        <div className="mt-16 grid gap-6 md:grid-cols-3" data-reveal-group>
           {VOORDELEN.map((v) => (
             <div key={v.titel} className="rounded-[4px] border border-ink/15 bg-paper p-8 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-accent/20 text-accent">

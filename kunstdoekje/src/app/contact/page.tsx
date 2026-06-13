@@ -29,10 +29,10 @@ export default function Contact({
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-16">
-      <h1 className="font-serif text-4xl">Contact</h1>
+      <h1 className="font-serif text-4xl" data-reveal>Contact</h1>
       <div className="mt-8 grid gap-12 md:grid-cols-[1fr_300px]">
         <div>
-          <p className="text-ink/70">
+          <p className="text-ink/70" data-reveal>
             {heeftAanvraag
               ? 'Je keuze staat alvast in het bericht. Vul je gegevens aan en verstuur · je ontvangt snel een betaallink.'
               : 'Een vraag over je bestelling, een kunstdoek of de mogelijkheden? Stuur ons een bericht en we reageren zo snel mogelijk.'}
@@ -41,7 +41,7 @@ export default function Contact({
             <QuoteForm type="contact" initialFormaat={formaat ?? ''} initialBericht={initialBericht} />
           </div>
         </div>
-        <aside className="h-fit rounded-xl border border-black/10 p-6 text-sm">
+        <aside className="h-fit rounded-xl border border-black/10 p-6 text-sm" data-reveal>
           <p className="font-medium">Kunstdoekje</p>
           <ul className="mt-3 space-y-2 text-ink/65">
             <li>info@kunstdoekje.nl</li>

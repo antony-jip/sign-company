@@ -35,9 +35,9 @@ export default function RalFramePage() {
       <RalHero />
 
       {/* Intro */}
-      <section className="mx-auto max-w-3xl px-6 py-16 text-center">
+      <section className="mx-auto max-w-3xl px-6 py-16 text-center" data-reveal>
         <h2 className="font-serif text-3xl md:text-4xl">
-          Perfect afgestemd op jouw <em className="font-accent font-normal normal-case italic tracking-normal text-accent">interieur</em>
+          Perfect afgestemd op jouw <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">interieur</em>
         </h2>
         <p className="mt-5 text-lg leading-relaxed text-ink/70">
           Standaard kies je uit zwart, zilver of wit · maar wil je dat je frame écht naadloos
@@ -55,7 +55,7 @@ export default function RalFramePage() {
 
       {/* Inspiratiegalerij */}
       <section className="mx-auto max-w-6xl px-6 pb-16">
-        <div className="grid grid-cols-2 gap-3 [grid-auto-rows:140px] md:grid-cols-4 md:[grid-auto-rows:170px]">
+        <div className="grid grid-cols-2 gap-3 [grid-auto-rows:140px] md:grid-cols-4 md:[grid-auto-rows:170px]" data-reveal-group>
           {RAL_HERO_IMAGES.map((src, i) => (
             <div
               key={src}
@@ -80,9 +80,9 @@ export default function RalFramePage() {
 
       {/* Hoe werkt het */}
       <section className="border-t border-ink/15 bg-paper">
-        <div className="mx-auto max-w-5xl px-6 py-16">
+        <div className="mx-auto max-w-5xl px-6 py-16" data-reveal>
           <h2 className="text-center font-serif text-3xl">Hoe werkt het?</h2>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" data-reveal-group>
             {STAPPEN.map((s) => (
               <div key={s.n} className="text-center">
                 <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 border-accent font-serif text-lg text-accent-dark">

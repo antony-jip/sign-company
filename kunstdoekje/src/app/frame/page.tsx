@@ -38,7 +38,7 @@ export default async function FramePage() {
 
       <div className="mt-6 grid gap-10 md:grid-cols-2">
         {/* Beeld + uitleg */}
-        <div className="md:sticky md:top-28 md:h-fit">
+        <div className="md:sticky md:top-28 md:h-fit" data-reveal>
           <div className="rounded-[4px] border border-ink/15 bg-paper p-4 shadow-hard-sm sm:p-6">
             <div className="relative aspect-[4/3] overflow-hidden">
               <Image
@@ -51,7 +51,7 @@ export default async function FramePage() {
               />
             </div>
           </div>
-          <dl className="mt-6 space-y-4">
+          <dl className="mt-6 space-y-4" data-reveal-group>
             {VOORDELEN.map((v) => (
               <div key={v.titel} className="border-t border-ink/15 pt-3">
                 <dt className="font-semibold">{v.titel}</dt>
@@ -65,7 +65,7 @@ export default async function FramePage() {
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.15em] text-accent">Het art frame · los</p>
           <h1 className="mt-1 font-serif text-3xl md:text-4xl">
-            Alleen een <em className="font-accent font-normal normal-case italic tracking-normal text-accent">frame</em>?
+            Alleen een <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">frame</em>?
           </h1>
           <p className="mt-4 text-ink/70">
             Heb je al doeken, of wil je eerst het frame? Stel hieronder je aluminium wissellijst samen · in

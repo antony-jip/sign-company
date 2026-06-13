@@ -109,11 +109,11 @@ export default async function ProductPage({ params }: { params: { slug: string }
       {/* Vergelijkbare doeken · zelfde categorie */}
       {vergelijkbaar.length > 0 && (
         <section className="mt-20">
-          <div className="flex items-end justify-between">
+          <div className="flex items-end justify-between" data-reveal>
             <h2 className="font-serif text-3xl">Vergelijkbare doeken</h2>
             <Link href="/shop" className="text-sm text-accent hover:underline">Alles bekijken →</Link>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-5 md:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-5 md:grid-cols-4" data-reveal-group>
             {vergelijkbaar.map((a) => (
               <ProductCard key={a.id} artwork={a} vanafCents={vanaf || undefined} />
             ))}

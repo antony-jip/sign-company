@@ -16,14 +16,14 @@ const voordelen = [
 export default function Zakelijk() {
   return (
     <div className="mx-auto max-w-4xl px-6 py-16">
-      <p className="text-sm uppercase tracking-widest text-accent">Zakelijk</p>
+      <p className="text-sm uppercase tracking-widest text-accent" data-reveal>Zakelijk</p>
       <h1 className="mt-3 font-serif text-4xl">Kunstdoeken voor bedrijven</h1>
       <p className="mt-4 max-w-2xl text-lg text-ink/70">
         Van kantoor en horeca tot zorg en retail: wisselbare kunstdoeken brengen sfeer, identiteit en
         rust in elke ruimte. We denken graag mee over een passende inrichting en maken een voorstel op maat.
       </p>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2">
+      <div className="mt-10 grid gap-6 sm:grid-cols-2" data-reveal-group>
         {voordelen.map((v) => (
           <div key={v.t} className="rounded-xl border border-black/10 p-6">
             <p className="font-medium">{v.t}</p>

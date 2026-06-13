@@ -17,7 +17,7 @@ function Bedankt() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-24 text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent/15 text-2xl text-accent">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent/15 text-2xl text-accent" data-reveal>
         ✓
       </div>
       <h1 className="mt-6 font-serif text-3xl">Bedankt voor je bestelling!</h1>

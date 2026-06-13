@@ -44,7 +44,7 @@ export default function RalHero() {
           <h1 className="mt-6 font-serif text-[clamp(38px,6vw,72px)] leading-[0.96] tracking-tight text-canvas">
             Jouw frame,
             <br />
-            jouw <em className="font-accent font-normal normal-case italic tracking-normal text-accent">kleur</em>
+            jouw <em className="font-accent text-[1.06em] font-medium normal-case italic tracking-normal text-accent">kleur</em>
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-canvas/85">
             Laat je aluminium frame professioneel spuiten in élke gewenste RAL-kleur. Complete
