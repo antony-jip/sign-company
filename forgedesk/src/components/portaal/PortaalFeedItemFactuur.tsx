@@ -75,6 +75,11 @@ export function PortaalFeedItemFactuur({
         betaalvoorwaarden: data.factuur.betaalvoorwaarden || data.factuur.voorwaarden,
         factuur_type: data.factuur.factuur_type,
         betaal_link: data.factuur.betaal_link || item.mollie_payment_url,
+        factuur_bedrijfsnaam: data.factuur.factuur_bedrijfsnaam,
+        factuur_tav: data.factuur.factuur_tav,
+        factuur_adres: data.factuur.factuur_adres,
+        factuur_postcode: data.factuur.factuur_postcode,
+        factuur_plaats: data.factuur.factuur_plaats,
       }
 
       const pdfItems = (data.items || []).map((it: Record<string, unknown>, i: number) => ({

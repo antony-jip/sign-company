@@ -1001,6 +1001,11 @@ export function FacturenLayout() {
         betaalvoorwaarden: factuur.voorwaarden || undefined,
         factuur_type: factuur.factuur_type || 'standaard',
         betaal_link: factuur.betaal_link || undefined,
+        factuur_bedrijfsnaam: factuur.factuur_bedrijfsnaam || undefined,
+        factuur_tav: factuur.factuur_tav || undefined,
+        factuur_adres: factuur.factuur_adres || undefined,
+        factuur_postcode: factuur.factuur_postcode || undefined,
+        factuur_plaats: factuur.factuur_plaats || undefined,
       }
 
       // Build items from factuur data (single line item based on totals)

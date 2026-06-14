@@ -1218,6 +1218,11 @@ export function generateFactuurPDF(
     betaal_link?: string
     credit_voor_nummer?: string
     outro_tekst?: string
+    factuur_bedrijfsnaam?: string
+    factuur_tav?: string
+    factuur_adres?: string
+    factuur_postcode?: string
+    factuur_plaats?: string
   },
   items: OfferteItem[],
   klant: Partial<Klant>,
@@ -1304,7 +1309,16 @@ export function generateFactuurPDF(
 
   // Klant-adresblok (item 1): naam · t.a.v. · adres · postcode plaats.
   // Debiteurnr. staat al in het meta-grid hieronder, dus niet dubbel in de aanhef.
-  y = addClientInfo(doc, klant, y, docStyle, false)
+  // Per-factuur adres-override: ingevuld veld wint, anders het klantveld.
+  const effectieveKlant: Partial<Klant> = {
+    ...klant,
+    bedrijfsnaam: factuurData.factuur_bedrijfsnaam?.trim() || klant.bedrijfsnaam,
+    contactpersoon: factuurData.factuur_tav?.trim() || klant.contactpersoon,
+    adres: factuurData.factuur_adres?.trim() || klant.adres,
+    postcode: factuurData.factuur_postcode?.trim() || klant.postcode,
+    stad: factuurData.factuur_plaats?.trim() || klant.stad,
+  }
+  y = addClientInfo(doc, effectieveKlant, y, docStyle, false)
 
   // Titel "factuur." — lowercase + afsluitende dot, accentkleur, geen nummer.
   // Type-correct: creditnota wordt "creditfactuur.", voorschot "voorschotfactuur.".

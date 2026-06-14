@@ -287,6 +287,16 @@ export function FactuurEditor() {
   const [contactpersoonId, setContactpersoonId] = useState('')
   const [resolvedCp, setResolvedCp] = useState<ResolvedContactpersoon | null>(null)
   const [factuurStandaardCpId, setFactuurStandaardCpId] = useState<string | null>(null)
+
+  // Per-factuur adres-override: voorgevuld met het klantadres, vrij aanpasbaar.
+  // Leeg veld valt terug op de klantkaart; ingevuld veld wint op de PDF.
+  const [adresOverrideOpen, setAdresOverrideOpen] = useState(false)
+  const [adresBedrijfsnaam, setAdresBedrijfsnaam] = useState('')
+  const [adresTav, setAdresTav] = useState('')
+  const [adresRegel, setAdresRegel] = useState('')
+  const [adresPostcode, setAdresPostcode] = useState('')
+  const [adresPlaats, setAdresPlaats] = useState('')
+  const [adresOokOpKlant, setAdresOokOpKlant] = useState(false)
   const [klantSearch, setKlantSearch] = useState('')
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [offerteId, setOfferteId] = useState('')
@@ -732,6 +742,21 @@ export function FactuurEditor() {
 
   const selectedKlant = useMemo(() => klanten.find((k) => k.id === klantId), [klanten, klantId])
 
+  // Voorvullen adresblok: in edit-mode wint een opgeslagen override, anders het
+  // klantadres. Open het blok automatisch als er al een override staat.
+  useEffect(() => {
+    if (!selectedKlant) return
+    const ov = isEditMode ? existingFactuur : null
+    setAdresBedrijfsnaam(ov?.factuur_bedrijfsnaam || selectedKlant.bedrijfsnaam || '')
+    setAdresTav(ov?.factuur_tav || selectedKlant.contactpersoon || '')
+    setAdresRegel(ov?.factuur_adres || selectedKlant.adres || '')
+    setAdresPostcode(ov?.factuur_postcode || selectedKlant.postcode || '')
+    setAdresPlaats(ov?.factuur_plaats || selectedKlant.stad || '')
+    if (ov && (ov.factuur_bedrijfsnaam || ov.factuur_tav || ov.factuur_adres || ov.factuur_postcode || ov.factuur_plaats)) {
+      setAdresOverrideOpen(true)
+    }
+  }, [selectedKlant, isEditMode, existingFactuur])
+
   const filteredKlanten = useMemo(() => {
     if (!klantSearch.trim()) return klanten
     const q = klantSearch.toLowerCase()
@@ -837,8 +862,45 @@ export function FactuurEditor() {
     try {
       setIsSaving(true)
 
+      // Adres-override: alleen opslaan wat afwijkt van de klantkaart, zodat een
+      // ongewijzigd blok aan de klant gekoppeld blijft. '' = geen override.
+      const overrideVal = (value: string, klantValue?: string): string =>
+        value.trim() && value.trim() !== (klantValue ?? '').trim() ? value.trim() : ''
+
+      let adresOverride: Partial<Factuur> = {
+        factuur_bedrijfsnaam: overrideVal(adresBedrijfsnaam, selectedKlant?.bedrijfsnaam),
+        factuur_tav: overrideVal(adresTav, selectedKlant?.contactpersoon),
+        factuur_adres: overrideVal(adresRegel, selectedKlant?.adres),
+        factuur_postcode: overrideVal(adresPostcode, selectedKlant?.postcode),
+        factuur_plaats: overrideVal(adresPlaats, selectedKlant?.stad),
+      }
+
+      // Expliciete keuze om het adres ook op de klantkaart op te slaan. Daarna
+      // houdt de klant het adres bij en is de per-factuur override overbodig.
+      if (adresOokOpKlant && klantId) {
+        try {
+          const klantAdres = {
+            bedrijfsnaam: adresBedrijfsnaam.trim(),
+            contactpersoon: adresTav.trim(),
+            adres: adresRegel.trim(),
+            postcode: adresPostcode.trim(),
+            stad: adresPlaats.trim(),
+          }
+          await updateKlant(klantId, klantAdres)
+          setKlanten((prev) => prev.map((k) => (k.id === klantId ? { ...k, ...klantAdres } : k)))
+          adresOverride = {
+            factuur_bedrijfsnaam: '', factuur_tav: '', factuur_adres: '',
+            factuur_postcode: '', factuur_plaats: '',
+          }
+        } catch (err) {
+          logger.error('Adres op klantkaart bijwerken mislukt:', err)
+          toast.error('Adres kon niet op de klantkaart opgeslagen worden')
+        }
+      }
+
       if (isEditMode && existingFactuur) {
         const updates: Partial<Factuur> = {
+          ...adresOverride,
           klant_id: klantId,
           klant_naam: selectedKlant?.bedrijfsnaam || '',
           contactpersoon_id: contactpersoonId || undefined,
@@ -864,6 +926,7 @@ export function FactuurEditor() {
         const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
 
         const newFactuur = await createFactuur({
+          ...adresOverride,
           user_id: user?.id || '',
           klant_id: klantId,
           klant_naam: selectedKlant?.bedrijfsnaam || '',
@@ -1074,6 +1137,11 @@ export function FactuurEditor() {
       betaal_link: existingFactuur?.betaal_link || undefined,
       credit_voor_nummer: creditVoorNummer || undefined,
       outro_tekst: outroTekst || undefined,
+      factuur_bedrijfsnaam: adresBedrijfsnaam || undefined,
+      factuur_tav: adresTav || undefined,
+      factuur_adres: adresRegel || undefined,
+      factuur_postcode: adresPostcode || undefined,
+      factuur_plaats: adresPlaats || undefined,
     }
 
     const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
@@ -1245,6 +1313,11 @@ export function FactuurEditor() {
           factuur_type: (isCredit ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
           betaal_link: existingFactuur.betaal_link || undefined,
           outro_tekst: outroTekst || undefined,
+          factuur_bedrijfsnaam: adresBedrijfsnaam || undefined,
+          factuur_tav: adresTav || undefined,
+          factuur_adres: adresRegel || undefined,
+          factuur_postcode: adresPostcode || undefined,
+          factuur_plaats: adresPlaats || undefined,
         }
         const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
           id: item.id,
@@ -2102,6 +2175,60 @@ export function FactuurEditor() {
               )}
             </CardContent>
           </Card>
+
+          {/* Factuuradres / geadresseerde — per factuur aanpasbaar */}
+          {selectedKlant && (
+            <Card>
+              <CardHeader className="pb-3">
+                <button
+                  type="button"
+                  onClick={() => setAdresOverrideOpen((o) => !o)}
+                  className="w-full flex items-center gap-2 text-sm font-medium text-petrol"
+                >
+                  <MapPin className="h-4 w-4" />
+                  Factuuradres
+                  {adresOverrideOpen ? (
+                    <ChevronDown className="h-4 w-4 ml-auto text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
+                  )}
+                </button>
+              </CardHeader>
+              {adresOverrideOpen && (
+                <CardContent className="space-y-3">
+                  <p className="text-[11px] text-muted-foreground">
+                    Voorgevuld met het klantadres. Pas aan voor alleen deze factuur. De wijziging verschijnt direct op de PDF.
+                  </p>
+                  <div>
+                    <Label className="text-xs">Bedrijfsnaam</Label>
+                    <Input value={adresBedrijfsnaam} onChange={(e) => setAdresBedrijfsnaam(e.target.value)} className="text-sm" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">t.a.v. (geadresseerde)</Label>
+                    <Input value={adresTav} onChange={(e) => setAdresTav(e.target.value)} className="text-sm" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Adres</Label>
+                    <Input value={adresRegel} onChange={(e) => setAdresRegel(e.target.value)} className="text-sm" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Postcode</Label>
+                      <Input value={adresPostcode} onChange={(e) => setAdresPostcode(e.target.value)} className="text-sm" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Plaats</Label>
+                      <Input value={adresPlaats} onChange={(e) => setAdresPlaats(e.target.value)} className="text-sm" />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer text-muted-foreground">
+                    <Checkbox checked={adresOokOpKlant} onCheckedChange={(v) => setAdresOokOpKlant(v === true)} />
+                    Adres ook op de klantkaart opslaan
+                  </label>
+                </CardContent>
+              )}
+            </Card>
+          )}
 
           {/* Factuur gegevens */}
           <Card>

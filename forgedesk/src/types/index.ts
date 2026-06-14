@@ -1046,6 +1046,12 @@ export interface Factuur {
   outro_tekst?: string;
   // Contactpersoon
   contactpersoon_id?: string;
+  // Per-factuur adres-override (leeg = val terug op klantkaart)
+  factuur_bedrijfsnaam?: string;
+  factuur_tav?: string;
+  factuur_adres?: string;
+  factuur_postcode?: string;
+  factuur_plaats?: string;
   // PDF artifact
   pdf_storage_path?: string;
   pdf_gegenereerd_op?: string;

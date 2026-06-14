@@ -524,6 +524,11 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
           factuur_type: f.factuur_type || 'standaard',
           betaal_link: f.betaal_link || undefined,
           outro_tekst: f.outro_tekst || undefined,
+          factuur_bedrijfsnaam: f.factuur_bedrijfsnaam || undefined,
+          factuur_tav: f.factuur_tav || undefined,
+          factuur_adres: f.factuur_adres || undefined,
+          factuur_postcode: f.factuur_postcode || undefined,
+          factuur_plaats: f.factuur_plaats || undefined,
         }
         const doc = generateFactuurPDF(factuurData, pdfItems, klant || {}, { ...profile, primaireKleur: primaireKleur || '#2563eb' }, documentStyle)
         const base64 = doc.output('datauristring').split(',')[1]
