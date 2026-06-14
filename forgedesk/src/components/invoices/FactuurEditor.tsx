@@ -901,6 +901,10 @@ export function FactuurEditor() {
       if (isEditMode && existingFactuur) {
         const updates: Partial<Factuur> = {
           ...adresOverride,
+          // Bewerken maakt een eerder opgeslagen PDF ongeldig: de download- en
+          // verzendpaden lezen storage-first, dus zonder reset blijft de oude
+          // PDF (oud adres, oude bedragen) hangen. Forceer regeneratie.
+          ...({ pdf_storage_path: null, pdf_gegenereerd_op: null } as unknown as Partial<Factuur>),
           klant_id: klantId,
           klant_naam: selectedKlant?.bedrijfsnaam || '',
           contactpersoon_id: contactpersoonId || undefined,

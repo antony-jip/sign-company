@@ -641,6 +641,9 @@ export function FacturenLayout() {
           subtotaal,
           btw_bedrag: btwBedrag,
           totaal,
+          // Bewerken maakt een eerder opgeslagen PDF ongeldig (download/verzending
+          // leest storage-first); forceer regeneratie met de nieuwe gegevens.
+          ...({ pdf_storage_path: null, pdf_gegenereerd_op: null } as unknown as Partial<Factuur>),
         }
 
         const updated = await updateFactuur(editingFactuur.id, updates)
