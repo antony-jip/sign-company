@@ -801,3 +801,19 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
   géén maxLength (alleen header-description: 50). Open (laag, gelogd): creditnota
   item-copy loop niet transactioneel (zelfde zwakte als factuurService.createCreditnota);
   rond2-halve-cent-randgeval bij teken-omkering wordt door 5ct-tolerantie gedekt.
+- 2026-06-15 — Batch (concept-factuur/verwerken, boekhoud-disconnect, Exact-omschrijving,
+  klantstatus inline/bulk, offerte-PDF meesturen, intro/outro-overname, factuur kopiëren/plakken,
+  projectlijst-statusfilter persist, factuurdatum-snelknoppen, maatjes galerij-import,
+  creditnota-doornummeren #2, factuurregel-detail_regels #4). Twee senior-reviews:
+  AKKOORD-MET-OPMERKINGEN, geen blokkades. Gefixt na review: lijst-"Verwerken" gebruikt nu
+  de DB-bewuste generateFactuurNummer (was in-memory → duplicaat-risico).
+  Open (laag, gelogd):
+  (a) Item-edits op een BESTAANDE factuur persisteren niet — handleSave update-tak schrijft
+      alleen header-velden, geen factuur_items. Geldt al voor beschrijving/prijs, nu ook voor
+      detail_regels. UI suggereert wel bewerkbaarheid op een opgeslagen concept. Pre-existing.
+  (b) Asymmetrie nummerreeks: doorgenummerde creditnota pakt nummer direct bij aanmaken,
+      reguliere factuur pas bij "Verwerken" (concept = leeg nummer). Een weggegooid
+      creditnota-concept laat dus wél een gat, een factuur-concept niet. Bewuste keuze.
+  (c) factuurService.createCreditnota (ongebruikt door UI) volgt nog de harde CN-reeks,
+      niet de creditnota_doornummeren-setting. Latente valkuil als die service ooit vanuit
+      UI gebruikt wordt.
