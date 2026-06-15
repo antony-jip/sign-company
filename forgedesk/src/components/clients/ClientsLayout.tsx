@@ -38,7 +38,7 @@ import { AlertCircle, Activity, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { avatarTint } from '@/utils/avatarTint'
 import { exportCSV, exportExcel } from '@/lib/export'
-import { getKlanten, getProjectCountsByKlant, deleteKlant } from '@/services/supabaseService'
+import { getKlanten, getProjectCountsByKlant, deleteKlant, updateKlant } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Klant } from '@/types'
 import { klantStatusConfig } from '@/types'
@@ -61,6 +61,12 @@ const KLANT_STATUS_HEX: Record<string, string> = {
   prospect: '#3A5A9A',
   inactief: '#8A7A4A',
 }
+const KLANT_STATUS_LABELS: Record<string, string> = {
+  actief: 'Actief',
+  prospect: 'Prospect',
+  inactief: 'Inactief',
+}
+const KLANT_STATUS_OPTIES: Array<'actief' | 'prospect' | 'inactief'> = ['actief', 'prospect', 'inactief']
 function klantStatusHex(s?: string): string {
   return KLANT_STATUS_HEX[s || ''] ?? '#5A5A55'
 }
@@ -256,6 +262,34 @@ export function ClientsLayout() {
     fetchData()
   }
 
+  async function handleKlantStatusChange(klantId: string, newStatus: Klant['status']) {
+    const vorige = klanten.find((k) => k.id === klantId)?.status
+    if (vorige === newStatus) return
+    setKlanten((prev) => prev.map((k) => (k.id === klantId ? { ...k, status: newStatus } : k)))
+    try {
+      await updateKlant(klantId, { status: newStatus })
+    } catch (err) {
+      logger.error('Klantstatus wijzigen mislukt:', err)
+      setKlanten((prev) => prev.map((k) => (k.id === klantId ? { ...k, status: vorige } : k)))
+      toast.error('Kon status niet wijzigen')
+    }
+  }
+
+  async function handleBulkStatusChange(newStatus: Klant['status']) {
+    if (selectedIds.size === 0) return
+    const ids = [...selectedIds]
+    setKlanten((prev) => prev.map((k) => (selectedIds.has(k.id) ? { ...k, status: newStatus } : k)))
+    const results = await Promise.allSettled(ids.map((id) => updateKlant(id, { status: newStatus })))
+    const failed = results.filter((r) => r.status === 'rejected').length
+    if (failed > 0) {
+      toast.error(`${failed} klant${failed === 1 ? '' : 'en'} konden niet bijgewerkt worden`)
+      fetchData()
+    } else {
+      toast.success(`${ids.length} klant${ids.length === 1 ? '' : 'en'} op ${KLANT_STATUS_LABELS[newStatus]} gezet`)
+    }
+    setSelectedIds(new Set())
+  }
+
   const exportHeaders = ['Bedrijfsnaam', 'Contactpersoon', 'Email', 'Telefoon', 'Adres', 'Postcode', 'Stad', 'Website', 'Debiteurennummer', 'KvK', 'BTW', 'Status', 'Tags']
   function getExportRows() {
     return filteredKlanten.map((k) => ({
@@ -295,6 +329,17 @@ export function ClientsLayout() {
             <Pencil className="w-3.5 h-3.5 mr-2" />
             Bewerken
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {KLANT_STATUS_OPTIES.map((s) => (
+            <DropdownMenuItem
+              key={s}
+              onClick={(e) => { e.stopPropagation(); handleKlantStatusChange(klant.id, s) }}
+              className={cn(klant.status === s && 'font-semibold')}
+            >
+              <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: KLANT_STATUS_HEX[s] }} />
+              {KLANT_STATUS_LABELS[s]}
+            </DropdownMenuItem>
+          ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/projecten/nieuw?klant_id=${klant.id}`) }}>
             <FolderPlus className="w-3.5 h-3.5 mr-2" />
@@ -618,6 +663,21 @@ export function ClientsLayout() {
               {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
             </button>
             <div className="flex-1" />
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-petrol/15 text-petrol dark:text-foreground hover:shadow-sm transition-all">
+                  Status wijzigen
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {KLANT_STATUS_OPTIES.map((s) => (
+                  <DropdownMenuItem key={s} onClick={() => handleBulkStatusChange(s)}>
+                    <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: KLANT_STATUS_HEX[s] }} />
+                    {KLANT_STATUS_LABELS[s]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <button
               onClick={handleBulkDelete}
               className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all"
@@ -657,6 +717,21 @@ export function ClientsLayout() {
               {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
             </button>
             <div className="flex-1" />
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-petrol/15 text-petrol dark:text-foreground hover:shadow-sm transition-all">
+                  Status wijzigen
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {KLANT_STATUS_OPTIES.map((s) => (
+                  <DropdownMenuItem key={s} onClick={() => handleBulkStatusChange(s)}>
+                    <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: KLANT_STATUS_HEX[s] }} />
+                    {KLANT_STATUS_LABELS[s]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <button
               onClick={handleBulkDelete}
               className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all"
