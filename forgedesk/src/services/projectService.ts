@@ -153,6 +153,93 @@ export async function deleteProject(id: string): Promise<void> {
   setLocalData('projecten', projecten.filter((p) => p.id !== id))
 }
 
+export interface ProjectKoppelingItem {
+  id: string
+  nummer: string
+  titel?: string
+}
+
+export interface ProjectKoppelingen {
+  offertes: ProjectKoppelingItem[]
+  werkbonnen: ProjectKoppelingItem[]
+  facturenAantal: number
+}
+
+/** Gegooid wanneer een project nog facturen heeft. Facturen mogen nooit
+ *  impliciet mee verwijderd of ontkoppeld worden (financiële records, Exact-sync). */
+export class ProjectHeeftFacturenError extends Error {
+  aantal: number
+  constructor(aantal: number) {
+    super(`Project heeft nog ${aantal} factu${aantal === 1 ? 'ur' : 'ren'}.`)
+    this.name = 'ProjectHeeftFacturenError'
+    this.aantal = aantal
+  }
+}
+
+/** Haalt de gekoppelde offertes, werkbonnen en het aantal facturen op, zodat de
+ *  UI vóór verwijderen kan tonen wat er mee verdwijnt. */
+export async function getProjectKoppelingen(id: string): Promise<ProjectKoppelingen> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const [offertes, werkbonnen, facturen] = await Promise.all([
+      supabase.from('offertes').select('id, nummer, titel').eq('project_id', id),
+      supabase.from('werkbonnen').select('id, werkbon_nummer, titel').eq('project_id', id),
+      supabase.from('facturen').select('id', { count: 'exact', head: true }).eq('project_id', id),
+    ])
+    return {
+      offertes: (offertes.data || []).map((o) => ({ id: o.id, nummer: o.nummer, titel: o.titel })),
+      werkbonnen: (werkbonnen.data || []).map((w) => ({ id: w.id, nummer: w.werkbon_nummer, titel: w.titel })),
+      facturenAantal: facturen.count || 0,
+    }
+  }
+  const offertes = getLocalData<{ id: string; nummer: string; titel?: string; project_id?: string }>('offertes').filter((o) => o.project_id === id)
+  const werkbonnen = getLocalData<{ id: string; werkbon_nummer: string; titel?: string; project_id?: string }>('werkbonnen').filter((w) => w.project_id === id)
+  const facturen = getLocalData<{ project_id?: string }>('facturen').filter((f) => f.project_id === id)
+  return {
+    offertes: offertes.map((o) => ({ id: o.id, nummer: o.nummer, titel: o.titel })),
+    werkbonnen: werkbonnen.map((w) => ({ id: w.id, nummer: w.werkbon_nummer, titel: w.titel })),
+    facturenAantal: facturen.length,
+  }
+}
+
+/**
+ * Verwijdert een project mét zijn gekoppelde records.
+ * - Werkbonnen en hun child-records cascaden automatisch in de DB.
+ * - Offertes worden alleen mee verwijderd als `verwijderOffertes` true is;
+ *   anders ontkoppelt de DB ze via ON DELETE SET NULL.
+ * - Facturen blokkeren de actie altijd (ProjectHeeftFacturenError).
+ */
+export async function deleteProjectMetKoppelingen(
+  id: string,
+  opts: { verwijderOffertes: boolean },
+): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { count: facturenAantal } = await supabase
+      .from('facturen').select('id', { count: 'exact', head: true }).eq('project_id', id)
+    if ((facturenAantal || 0) > 0) throw new ProjectHeeftFacturenError(facturenAantal || 0)
+
+    if (opts.verwijderOffertes) {
+      // offerte_items en offerte_versies cascaden in de DB
+      const { error: offerteError } = await supabase.from('offertes').delete().eq('project_id', id)
+      if (offerteError) throw offerteError
+    }
+    const { error } = await supabase.from('projecten').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  // Lokale fallback (demo-modus)
+  const gekoppeldeFacturen = getLocalData<{ project_id?: string }>('facturen').filter((f) => f.project_id === id)
+  if (gekoppeldeFacturen.length > 0) throw new ProjectHeeftFacturenError(gekoppeldeFacturen.length)
+
+  setLocalData('werkbonnen', getLocalData<{ project_id?: string }>('werkbonnen').filter((w) => w.project_id !== id))
+  const offertes = getLocalData<{ project_id?: string }>('offertes')
+  setLocalData('offertes', opts.verwijderOffertes
+    ? offertes.filter((o) => o.project_id !== id)
+    : offertes.map((o) => (o.project_id === id ? { ...o, project_id: undefined } : o)))
+  setLocalData('projecten', getLocalData<Project>('projecten').filter((p) => p.id !== id))
+}
+
 // ============ TAKEN ============
 
 export async function getTaken(limit = 500): Promise<Taak[]> {

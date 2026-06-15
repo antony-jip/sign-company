@@ -46,7 +46,8 @@ import { exportCSV, exportExcel } from '@/lib/export'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 import { DatePicker } from '@/components/ui/date-picker'
 import { AlertCircle, Activity, Receipt, CheckCircle } from 'lucide-react'
-import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getMedewerkers as fetchMedewerkers, createOfferte, createOfferteItem, updateOfferte, updateOfferteItem, getOfferteItems, deleteOfferte } from '@/services/supabaseService'
+import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getProjectKoppelingen, deleteProjectMetKoppelingen, ProjectHeeftFacturenError, getMedewerkers as fetchMedewerkers, createOfferte, createOfferteItem, updateOfferte, updateOfferteItem, getOfferteItems, deleteOfferte } from '@/services/supabaseService'
+import type { ProjectKoppelingen } from '@/services/projectService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { ProjectImportDialog } from './ProjectImportDialog'
 import { useAuth } from '@/contexts/AuthContext'
@@ -229,6 +230,9 @@ export function ProjectsList() {
     }
   }, [groupBy])
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [koppelingDelete, setKoppelingDelete] = useState<{ project: Project; koppelingen: ProjectKoppelingen } | null>(null)
+  const [verwijderOffertesMee, setVerwijderOffertesMee] = useState(true)
+  const [koppelingDeleteBusy, setKoppelingDeleteBusy] = useState(false)
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const zoekInputRef = useRef<HTMLInputElement>(null)
   const runOptimistic = useOptimisticState(setProjecten)
@@ -249,14 +253,16 @@ export function ProjectsList() {
     }
   }, [])
 
-  function handleDeleteProject(project: Project) {
+  // Optimistische verwijdering met 5s undo via toast — voor projecten zonder
+  // gekoppelde offertes/werkbonnen. Daadwerkelijke server-delete pas na de timer.
+  function queueOptimisticDelete(project: Project) {
     setProjecten((prev) => prev.filter((p) => p.id !== project.id))
     const timer = setTimeout(() => {
       pendingDeletesRef.current.delete(project.id)
       deleteProject(project.id).catch((err) => {
         logger.error('delete project:', err)
         setProjecten((prev) => (prev.some((p) => p.id === project.id) ? prev : [...prev, project]))
-        toast.error(`Kon "${project.naam}" niet verwijderen (gekoppelde offertes/werkbonnen?)`)
+        toast.error(`Kon "${project.naam}" niet verwijderen`)
       })
     }, 5000)
     pendingDeletesRef.current.set(project.id, { project, timer })
@@ -275,6 +281,52 @@ export function ProjectsList() {
         },
       },
     })
+  }
+
+  async function handleDeleteProject(project: Project) {
+    let koppelingen: ProjectKoppelingen
+    try {
+      koppelingen = await getProjectKoppelingen(project.id)
+    } catch (err) {
+      // Precheck mislukt: val terug op de directe optimistische flow.
+      logger.error('koppelingen ophalen:', err)
+      queueOptimisticDelete(project)
+      return
+    }
+    if (koppelingen.facturenAantal > 0) {
+      const n = koppelingen.facturenAantal
+      toast.error(`"${project.naam}" heeft ${n} factu${n === 1 ? 'ur' : 'ren'}. Ontkoppel of verwijder die eerst.`)
+      return
+    }
+    if (koppelingen.offertes.length > 0 || koppelingen.werkbonnen.length > 0) {
+      setVerwijderOffertesMee(true)
+      setKoppelingDelete({ project, koppelingen })
+      return
+    }
+    queueOptimisticDelete(project)
+  }
+
+  async function handleConfirmKoppelingDelete() {
+    if (!koppelingDelete) return
+    const { project } = koppelingDelete
+    const verwijderOffertes = verwijderOffertesMee
+    setKoppelingDeleteBusy(true)
+    try {
+      await deleteProjectMetKoppelingen(project.id, { verwijderOffertes })
+      setProjecten((prev) => prev.filter((p) => p.id !== project.id))
+      toast.success(`"${project.naam}" verwijderd`)
+      setKoppelingDelete(null)
+    } catch (err) {
+      if (err instanceof ProjectHeeftFacturenError) {
+        toast.error(`"${project.naam}" heeft ${err.aantal} factu${err.aantal === 1 ? 'ur' : 'ren'}. Ontkoppel of verwijder die eerst.`)
+      } else {
+        logger.error('cascade delete project:', err)
+        toast.error(`Kon "${project.naam}" niet verwijderen`)
+      }
+      setKoppelingDelete(null)
+    } finally {
+      setKoppelingDeleteBusy(false)
+    }
   }
 
   const [leadColumns, setLeadColumns] = useState<['project', 'klant'] | ['klant', 'project']>(() => {
@@ -1766,6 +1818,64 @@ export function ProjectsList() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkDeleteDialogOpen(false)}>Annuleren</Button>
             <Button variant="destructive" onClick={handleBulkDelete}>Verwijderen</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!koppelingDelete} onOpenChange={(open) => { if (!open && !koppelingDeleteBusy) setKoppelingDelete(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>"{koppelingDelete?.project.naam}" verwijderen</DialogTitle>
+            <DialogDescription>
+              Aan dit project hangen nog records. Controleer wat er mee verdwijnt.
+            </DialogDescription>
+          </DialogHeader>
+
+          {koppelingDelete && (
+            <div className="space-y-4 text-sm">
+              {koppelingDelete.koppelingen.werkbonnen.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground mb-1.5">
+                    {koppelingDelete.koppelingen.werkbonnen.length} werkbon{koppelingDelete.koppelingen.werkbonnen.length === 1 ? '' : 'nen'} · wordt mee verwijderd
+                  </p>
+                  <ul className="max-h-28 overflow-y-auto rounded-md bg-muted/50 px-3 py-2 space-y-0.5 text-foreground/80">
+                    {koppelingDelete.koppelingen.werkbonnen.map((w) => (
+                      <li key={w.id}>{w.nummer}{w.titel ? ` · ${w.titel}` : ''}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {koppelingDelete.koppelingen.offertes.length > 0 && (
+                <div>
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <Checkbox
+                      checked={verwijderOffertesMee}
+                      onCheckedChange={(v) => setVerwijderOffertesMee(v === true)}
+                      className="mt-0.5"
+                    />
+                    <span className="text-foreground">
+                      Ook {koppelingDelete.koppelingen.offertes.length} offerte{koppelingDelete.koppelingen.offertes.length === 1 ? '' : 's'} verwijderen
+                      <span className="block text-xs text-muted-foreground">
+                        {verwijderOffertesMee ? 'Worden definitief verwijderd.' : 'Blijven behouden, alleen ontkoppeld van dit project.'}
+                      </span>
+                    </span>
+                  </label>
+                  <ul className="mt-2 max-h-28 overflow-y-auto rounded-md bg-muted/50 px-3 py-2 space-y-0.5 text-foreground/80">
+                    {koppelingDelete.koppelingen.offertes.map((o) => (
+                      <li key={o.id}>{o.nummer}{o.titel ? ` · ${o.titel}` : ''}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setKoppelingDelete(null)} disabled={koppelingDeleteBusy}>Annuleren</Button>
+            <Button variant="destructive" onClick={handleConfirmKoppelingDelete} disabled={koppelingDeleteBusy}>
+              {koppelingDeleteBusy ? 'Bezig…' : 'Verwijderen'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

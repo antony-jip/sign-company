@@ -88,6 +88,7 @@ export {
 
 export {
   getProjecten, getProject, getProjectenByKlant, getProjectCountsByKlant, createProject, updateProject, deleteProject,
+  getProjectKoppelingen, deleteProjectMetKoppelingen, ProjectHeeftFacturenError,
   getTaken, getTaak, getTakenByProject, createTaak, uploadTaakBijlage, updateTaak, deleteTaak,
   getTijdregistratiesByProject,
   getProjectToewijzingen, getProjectToewijzingenVoorMedewerker, createProjectToewijzing, deleteProjectToewijzing,
