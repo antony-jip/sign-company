@@ -133,6 +133,8 @@ export function IntegratiesTab() {
   const [eboekhoudenConfigError, setEboekhoudenConfigError] = useState<string | null>(null)
   const [eboekhoudenConfigGeladen, setEboekhoudenConfigGeladen] = useState(false)
   const [eboekhoudenSaving, setEboekhoudenSaving] = useState(false)
+  const [boekhoudDisconnecting, setBoekhoudDisconnecting] = useState(false)
+  const [bevestigOntkoppel, setBevestigOntkoppel] = useState(false)
 
   // SnelStart state
   const [snelstartSleutel, setSnelstartSleutel] = useState('')
@@ -560,6 +562,34 @@ export function IntegratiesTab() {
       toast.error('Kon e-Boekhouden instellingen niet opslaan')
     } finally {
       setEboekhoudenSaving(false)
+    }
+  }
+
+  const handleBoekhoudDisconnect = async () => {
+    if (!boekhoudPakket) return
+    setBoekhoudDisconnecting(true)
+    try {
+      if (!supabase) throw new Error('Niet ingelogd')
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess?.session?.access_token
+      if (!token) throw new Error('Niet ingelogd')
+      const res = await fetch('/api/boekhoud-disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ pakket: boekhoudPakket }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Ontkoppelen mislukt')
+      setBoekhoudTokenAanwezig(false)
+      setBoekhoudPakket('')
+      setBevestigOntkoppel(false)
+      refreshSettings?.()
+      toast.success(<>Ontkoppeld<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('Boekhoudkoppeling ontkoppelen mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Ontkoppelen mislukt')
+    } finally {
+      setBoekhoudDisconnecting(false)
     }
   }
 
@@ -1400,6 +1430,38 @@ export function IntegratiesTab() {
                       )}
                     </div>
                   )}
+                </div>
+              )}
+
+              {boekhoudPakket && boekhoudTokenAanwezig && (
+                <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
+                  {bevestigOntkoppel && (
+                    <span className="text-xs text-muted-foreground mr-auto">
+                      Token en boekingsinstellingen van {BOEKHOUD_PAKKET_NAAM[boekhoudPakket]} worden verwijderd.
+                    </span>
+                  )}
+                  {bevestigOntkoppel && !boekhoudDisconnecting && (
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setBevestigOntkoppel(false)}
+                    >
+                      Annuleren
+                    </button>
+                  )}
+                  <Button
+                    type="button"
+                    variant={bevestigOntkoppel ? 'destructive' : 'outline'}
+                    size="sm"
+                    disabled={boekhoudDisconnecting}
+                    onClick={() => (bevestigOntkoppel ? handleBoekhoudDisconnect() : setBevestigOntkoppel(true))}
+                  >
+                    {boekhoudDisconnecting
+                      ? 'Ontkoppelen...'
+                      : bevestigOntkoppel
+                        ? 'Bevestig ontkoppelen'
+                        : `${BOEKHOUD_PAKKET_NAAM[boekhoudPakket]} ontkoppelen`}
+                  </Button>
                 </div>
               )}
 
