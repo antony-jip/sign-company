@@ -196,7 +196,17 @@ export function ProjectsList() {
   const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
   const [isLoading, setIsLoading] = useState(() => getCached('projecten') === undefined)
   const [zoekterm, setZoekterm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('alle')
+  // Multi-select status-filter: lege set = "Alle". Bevat status-waarden
+  // (en eventueel het pseudo-filter 'met-aandacht' vanuit de KPI-tegels).
+  const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set())
+  const toggleStatusFilter = useCallback((value: string) => {
+    setStatusFilters((prev) => {
+      const next = new Set(prev)
+      if (next.has(value)) next.delete(value)
+      else next.add(value)
+      return next
+    })
+  }, [])
   const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'created_at'>('created_at')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   // Pagina-nummer leeft in de URL (?page=N) zodat het bewaard blijft bij
@@ -606,10 +616,10 @@ export function ProjectsList() {
       )
     }
 
-    if (statusFilter === 'met-aandacht') {
-      result = result.filter(needsAttention)
-    } else if (statusFilter !== 'alle') {
-      result = result.filter((p) => p.status === statusFilter)
+    if (statusFilters.size > 0) {
+      result = result.filter(
+        (p) => statusFilters.has(p.status) || (statusFilters.has('met-aandacht') && needsAttention(p))
+      )
     }
 
     if (dagenOpenFilter !== 'alle') {
@@ -668,7 +678,7 @@ export function ProjectsList() {
     })
 
     return result
-  }, [projecten, klanten, offertes, zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir, groupBy])
+  }, [projecten, klanten, offertes, zoekterm, statusFilters, dagenOpenFilter, sortField, sortDir, groupBy])
 
   // Reset paginanummer als de gebruiker filtert. Skip de allereerste render
   // zodat een via de URL hersteld pagina-nummer (?page=N) niet meteen
@@ -681,7 +691,7 @@ export function ProjectsList() {
     }
     setCurrentPage(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir, groupBy])
+  }, [zoekterm, statusFilters, dagenOpenFilter, sortField, sortDir, groupBy])
 
   function projectGroupKey(p: Project): string {
     if (groupBy === 'status') return p.status
@@ -991,13 +1001,13 @@ export function ProjectsList() {
                 { key: 'te-factureren', label: 'Te factureren', sub: 'wachten op factuur',      count: stats.teFactureren,  Icon: Receipt,     accent: '#2D6B48' },
                 { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar.',                  count: stats.afgerond,      Icon: CheckCircle, accent: '#1A535C' },
               ] as const).map(tile => {
-                const isActive = statusFilter === tile.key
+                const isActive = statusFilters.size === 1 && statusFilters.has(tile.key)
                 const TileIcon = tile.Icon
                 return (
                   <button
                     key={tile.key}
                     type="button"
-                    onClick={() => setStatusFilter(isActive ? 'alle' : tile.key)}
+                    onClick={() => setStatusFilters(isActive ? new Set() : new Set([tile.key]))}
                     className="doen-stat-tile group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
                     style={isActive ? {
                       border: `1px solid ${tile.accent}66`,
@@ -1097,11 +1107,13 @@ export function ProjectsList() {
                     ? projecten.length
                     : projecten.filter((p) => p.status === optie.value).length
                   if (optie.value !== 'alle' && count === 0) return null
-                  const isActive = statusFilter === optie.value
+                  const isActive = optie.value === 'alle'
+                    ? statusFilters.size === 0
+                    : statusFilters.has(optie.value)
                   return (
                     <button
                       key={optie.value}
-                      onClick={() => setStatusFilter(optie.value)}
+                      onClick={() => optie.value === 'alle' ? setStatusFilters(new Set()) : toggleStatusFilter(optie.value)}
                       className={cn(
                         'relative px-3 py-1.5 rounded-lg text-[13px] transition-all duration-150',
                         isActive
@@ -1239,7 +1251,7 @@ export function ProjectsList() {
               <EmptyState
                 module="projecten"
                 title="Nog geen projecten"
-                description={zoekterm || statusFilter !== 'alle'
+                description={zoekterm || statusFilters.size > 0
                   ? 'Pas je filters aan of maak een nieuw project aan.'
                   : 'Start je eerste project en houd alles bij.'}
                 action={
