@@ -81,6 +81,24 @@ const DISPLAY_FIELDS: Record<string, string[]> = {
 
 const VALID_PROJECT_STATUSES = ['gepland', 'actief', 'in-review', 'afgerond', 'on-hold', 'te-factureren', 'te-plannen']
 
+// Supabase gooit een PostgrestError (plain object), géén Error-instance — een
+// kale `err instanceof Error`-check valt dan terug op de generieke melding en
+// verbergt de echte oorzaak. Pak hier message/details/hint en vertaal de
+// bekende RLS-blokkade (verlopen abonnement / ontbrekende organisatie).
+function leesbareFout(err: unknown): string {
+  if (err instanceof Error) return err.message
+  if (err && typeof err === 'object') {
+    const e = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown }
+    if (e.code === '42501' || (typeof e.message === 'string' && e.message.includes('row-level security'))) {
+      return 'Aanmaken geblokkeerd door een beveiligingsregel. Controleer of het abonnement nog actief is en of de organisatie goed gekoppeld is.'
+    }
+    for (const veld of [e.message, e.details, e.hint]) {
+      if (typeof veld === 'string' && veld) return veld
+    }
+  }
+  return 'Aanmaken mislukt'
+}
+
 type ActieStatus = 'idle' | 'creating' | 'created' | 'cancelled'
 
 interface ForgieActieKaartProps {
@@ -231,7 +249,7 @@ export function ForgieActieKaart({
       toast.success(labels[actie.type] || 'Aangemaakt door Daan')
       onCreated(actie.type, createdId)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Aanmaken mislukt'
+      const msg = leesbareFout(err)
       setError(msg)
       setStatus('idle')
       onError?.(msg)
