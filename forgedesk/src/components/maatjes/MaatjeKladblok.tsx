@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Camera, Check, Link2, Trash2, CloudOff } from 'lucide-react'
+import { Camera, Check, Link2, Trash2, CloudOff, ImagePlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '@/utils/logger'
@@ -92,6 +92,10 @@ export function MaatjeKladblok() {
   const [koppelOpen, setKoppelOpen] = useState(false)
   const [wachtAantal, setWachtAantal] = useState(0)
   const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galerijInputRef = useRef<HTMLInputElement>(null)
+  // Onthoudt of de laatste foto van de camera of uit de bibliotheek kwam, zodat
+  // we na opslaan alleen bij camera-gebruik direct de volgende opname openen.
+  const laatsteBronRef = useRef<'camera' | 'galerij'>('camera')
 
   const laadMaatjes = useCallback(async () => {
     try {
@@ -264,8 +268,11 @@ export function MaatjeKladblok() {
         }
       }
       setEditor(null)
-      // Bewaren → terug naar camera voor de volgende opname
-      setTimeout(() => cameraInputRef.current?.click(), 0)
+      // Bewaren → bij camera-gebruik direct de volgende opname openen.
+      // Bij een import uit de bibliotheek niet (anders popt de camera ongevraagd op).
+      if (laatsteBronRef.current === 'camera') {
+        setTimeout(() => cameraInputRef.current?.click(), 0)
+      }
     }
     await laadMaatjes()
   }, [editor, laadMaatjes, verversWachtrij])
@@ -307,7 +314,15 @@ export function MaatjeKladblok() {
           )}
           <button
             type="button"
-            onClick={() => cameraInputRef.current?.click()}
+            onClick={() => { laatsteBronRef.current = 'galerij'; galerijInputRef.current?.click() }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#1A535C]/30 px-3 py-2.5 text-[13px] font-semibold text-[#1A535C] transition-colors hover:bg-[#1A535C]/[0.06]"
+          >
+            <ImagePlus className="h-4 w-4" strokeWidth={2} />
+            Importeren
+          </button>
+          <button
+            type="button"
+            onClick={() => { laatsteBronRef.current = 'camera'; cameraInputRef.current?.click() }}
             className="inline-flex items-center gap-2 rounded-lg bg-[#F15025] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)] transition-transform active:scale-[0.97]"
           >
             <Camera className="h-4 w-4" strokeWidth={2} />
@@ -321,6 +336,14 @@ export function MaatjeKladblok() {
         type="file"
         accept="image/*"
         capture="environment"
+        className="hidden"
+        onChange={opCameraBestand}
+      />
+      {/* Zelfde verwerking, maar zonder capture → opent de fotobibliotheek i.p.v. de camera */}
+      <input
+        ref={galerijInputRef}
+        type="file"
+        accept="image/*"
         className="hidden"
         onChange={opCameraBestand}
       />
@@ -341,13 +364,23 @@ export function MaatjeKladblok() {
       ) : maatjes.length === 0 ? (
         <div className="py-16 text-center">
           <p className="text-[14px] text-[#6B6B66]">Nog geen maatjes in het kladblok.</p>
-          <button
-            type="button"
-            onClick={() => cameraInputRef.current?.click()}
-            className="mt-2 text-[14px] font-semibold text-[#F15025] underline underline-offset-2"
-          >
-            Maak je eerste foto
-          </button>
+          <div className="mt-2 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => { laatsteBronRef.current = 'camera'; cameraInputRef.current?.click() }}
+              className="text-[14px] font-semibold text-[#F15025] underline underline-offset-2"
+            >
+              Maak je eerste foto
+            </button>
+            <span className="text-[13px] text-[#9B9B96]">of</span>
+            <button
+              type="button"
+              onClick={() => { laatsteBronRef.current = 'galerij'; galerijInputRef.current?.click() }}
+              className="text-[14px] font-semibold text-[#1A535C] underline underline-offset-2"
+            >
+              importeer uit je bibliotheek
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
