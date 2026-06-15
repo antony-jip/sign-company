@@ -198,7 +198,15 @@ export function ProjectsList() {
   const [zoekterm, setZoekterm] = useState('')
   // Multi-select status-filter: lege set = "Alle". Bevat status-waarden
   // (en eventueel het pseudo-filter 'met-aandacht' vanuit de KPI-tegels).
-  const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set())
+  const [statusFilters, setStatusFilters] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const stored = window.localStorage.getItem('doen_projecten_statusfilters')
+      return stored ? new Set<string>(JSON.parse(stored)) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
   const toggleStatusFilter = useCallback((value: string) => {
     setStatusFilters((prev) => {
       const next = new Set(prev)
@@ -207,6 +215,10 @@ export function ProjectsList() {
       return next
     })
   }, [])
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('doen_projecten_statusfilters', JSON.stringify([...statusFilters]))
+  }, [statusFilters])
   const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'created_at'>('created_at')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   // Pagina-nummer leeft in de URL (?page=N) zodat het bewaard blijft bij
