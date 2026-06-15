@@ -64,11 +64,13 @@ import {
   createFactuur,
   updateFactuur,
   updateFactuurStatus,
+  generateFactuurNummer as generateFactuurNrDb,
   deleteFactuur,
   getKlanten,
   getOffertes,
   getOfferteItems,
   createFactuurItem,
+  getFactuurItems,
   getHerinneringTemplates,
   generateBetaalToken,
   updateProject,
@@ -77,6 +79,7 @@ import {
   getOffertesByProject,
   getFacturenByProject,
 } from '@/services/supabaseService'
+import { setFactuurClipboard } from '@/utils/factuurClipboard'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate, Project } from '@/types'
 import { getFactuurBijlageCounts } from '@/services/factuurBijlagenService'
@@ -286,7 +289,7 @@ export function FacturenLayout() {
   const { medewerkers } = useMedewerkers()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   // App settings (bedrijfsprofiel for PDF generation)
-  const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
+  const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, creditnotaDoornummeren, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
   const exactConnected = settings.exact_online_connected ?? false
   const documentStyle = useDocumentStyle()
 
@@ -647,7 +650,6 @@ export function FacturenLayout() {
         setFacturen((prev) => prev.map((f) => (f.id === editingFactuur.id ? { ...f, ...updated } : f)))
         toast.success('Factuur bijgewerkt')
       } else {
-        const nummer = generateFactuurNummer(facturen, factuurPrefix, factuurStartNummer)
         const betaalToken = generateBetaalToken()
         const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
         const newFactuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
@@ -656,7 +658,7 @@ export function FacturenLayout() {
           klant_naam: selectedKlant?.bedrijfsnaam || '',
           offerte_id: formData.offerte_id,
           project_id: formData.project_id,
-          nummer,
+          nummer: '',
           titel: formData.titel,
           status: 'concept',
           subtotaal,
@@ -703,7 +705,7 @@ export function FacturenLayout() {
           }
           setFacturen((prev) => [localFactuur, ...prev])
         }
-        toast.success('Factuur aangemaakt')
+        toast.success('Concept opgeslagen')
       }
 
       setCreateDialogOpen(false)
@@ -1103,6 +1105,54 @@ export function FacturenLayout() {
     [klanten, bedrijfsnaam, primaireKleur, emailHandtekening, isTrialBlocked, setShowTrialDialog]
   )
 
+  // Verwerken: kent het concept een definitief volgnummer toe en zet het op
+  // verzonden. Een al bestaand nummer (creditnota e.d.) blijft behouden.
+  const handleVerwerkFactuur = useCallback(
+    async (factuur: Factuur) => {
+      if (isTrialBlocked) {
+        setShowTrialDialog(true)
+        return
+      }
+      try {
+        // DB-bewuste generator (zelfde als de editor) i.p.v. de in-memory lijst,
+        // zodat twee gelijktijdige verwerk-acties niet hetzelfde nummer uitdelen.
+        const nummer = factuur.nummer || await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
+        const updated = await updateFactuur(factuur.id, { nummer, status: 'verzonden' })
+        setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
+        toast.success(`Factuur ${nummer} verwerkt`)
+      } catch (err) {
+        logger.error('Fout bij verwerken factuur:', err)
+        toast.error('Kon factuur niet verwerken')
+      }
+    },
+    [facturen, factuurPrefix, factuurStartNummer, isTrialBlocked, setShowTrialDialog]
+  )
+
+  const handleKopieerFactuur = useCallback(async (factuur: Factuur) => {
+    try {
+      const items = await getFactuurItems(factuur.id)
+      setFactuurClipboard({
+        titel: factuur.titel,
+        intro_tekst: factuur.intro_tekst || '',
+        outro_tekst: factuur.outro_tekst || '',
+        voorwaarden: factuur.voorwaarden || '',
+        notities: factuur.notities || '',
+        items: items.map((i) => ({
+          beschrijving: i.beschrijving,
+          aantal: i.aantal,
+          eenheidsprijs: i.eenheidsprijs,
+          btw_percentage: i.btw_percentage,
+          korting_percentage: i.korting_percentage,
+          grootboek_code: i.grootboek_code || '',
+        })),
+      })
+      toast.success('Factuur gekopieerd. Open een concept en kies "Plak gekopieerde factuur".')
+    } catch (err) {
+      logger.error('Factuur kopiëren mislukt:', err)
+      toast.error('Kopiëren mislukt')
+    }
+  }, [])
+
   // ============ HERINNERING LOGIC ============
 
   const getDagenVerlopen = useCallback((factuur: Factuur): number => {
@@ -1222,7 +1272,9 @@ export function FacturenLayout() {
 
     try {
       setIsSaving(true)
-      const nummer = generateTypedNummer(facturen, 'CN')
+      const nummer = creditnotaDoornummeren
+        ? await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
+        : generateTypedNummer(facturen, 'CN')
       const selectedKlant = klanten.find((k) => k.id === creditnotaFactuur.klant_id)
 
       const cnToken = generateBetaalToken()
@@ -1761,7 +1813,7 @@ export function FacturenLayout() {
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground">{factuur.nummer}</span>
+                    <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground">{factuur.nummer || 'Concept'}</span>
                     {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
                       <span className="text-[10px] text-muted-foreground/80 font-mono bg-background px-1.5 py-0.5 rounded font-semibold">
                         {TYPE_CONFIG[factuur.factuur_type].label}
@@ -1921,7 +1973,7 @@ export function FacturenLayout() {
                           onClick={() => setViewingFactuur(factuur)}
                           className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all duration-150"
                         >
-                          {factuur.nummer}
+                          {factuur.nummer || 'Concept'}
                         </button>
                         {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
                           <span className="text-[10px] text-muted-foreground/80 font-mono flex-shrink-0 bg-background px-1.5 py-0.5 rounded font-semibold">
@@ -2102,6 +2154,10 @@ export function FacturenLayout() {
                             <FileDown className="h-4 w-4 mr-2" />
                             Download PDF
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleKopieerFactuur(factuur)}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Kopieer factuur
+                          </DropdownMenuItem>
                           {factuur.betaal_link && (<>
                             <DropdownMenuItem onClick={() => {
                               navigator.clipboard.writeText(factuur.betaal_link!).then(() => {
@@ -2127,6 +2183,12 @@ export function FacturenLayout() {
                             </DropdownMenuItem>
                           </>)}
                           {factuur.status === 'concept' && (
+                            <DropdownMenuItem onClick={() => handleVerwerkFactuur(factuur)}>
+                              <Send className="h-4 w-4 mr-2" />
+                              Verwerken
+                            </DropdownMenuItem>
+                          )}
+                          {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
                             <DropdownMenuItem onClick={() => handleSendFactuur(factuur)}>
                               <Send className="h-4 w-4 mr-2" />
                               Verstuur factuur
@@ -2191,7 +2253,7 @@ export function FacturenLayout() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-emerald-500" />
-              {viewingFactuur?.nummer}
+              {viewingFactuur?.nummer || 'Concept'}
             </DialogTitle>
             <DialogDescription>Factuurdetails bekijken</DialogDescription>
           </DialogHeader>
@@ -2391,6 +2453,19 @@ export function FacturenLayout() {
             </div>
           )}
           <DialogFooter className="gap-2">
+            {viewingFactuur && viewingFactuur.status === 'concept' && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  handleVerwerkFactuur(viewingFactuur)
+                  setViewingFactuur(null)
+                }}
+                className="gap-1 bg-flame text-white hover:bg-flame/90"
+              >
+                <Send className="h-4 w-4" />
+                Verwerken
+              </Button>
+            )}
             {viewingFactuur && (viewingFactuur.status === 'verzonden' || viewingFactuur.status === 'vervallen') && (
               <Button
                 variant="outline"

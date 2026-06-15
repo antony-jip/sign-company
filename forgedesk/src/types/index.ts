@@ -726,6 +726,7 @@ export interface AppSettings {
   // Factuur instellingen
   factuur_prefix: string;
   factuur_volgnummer: number;
+  creditnota_doornummeren?: boolean;
   factuur_betaaltermijn_dagen: number;
   factuur_voorwaarden: string;
   factuur_intro_tekst: string;
@@ -1084,6 +1085,8 @@ export interface FactuurItem {
   korting_percentage: number;
   totaal: number;
   volgorde: number;
+  // Optionele detailregels (label/waarde) met extra uitleg, zoals bij offertes
+  detail_regels?: OfferteItemDetailRegel[];
   // Grootboek
   grootboek_code?: string;
   created_at: string;

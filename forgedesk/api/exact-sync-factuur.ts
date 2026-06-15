@@ -868,9 +868,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return line
     })
 
+    // Omschrijving (Exact 'Description', max 50 tekens) = factuurtitel;
+    // 'Uw referentie' (YourRef) blijft het factuurnummer.
+    const omschrijving = String(factuur.titel || '').slice(0, 50)
+
     const salesEntry: Record<string, unknown> = {
       Journal: exactSettings.exact_verkoopboek,
       YourRef: factuur.nummer,
+      Description: omschrijving,
       Customer: customerGuid,
       EntryDate: `${factuurdatum}T00:00:00`,
       ReportingPeriod: reportingPeriod,

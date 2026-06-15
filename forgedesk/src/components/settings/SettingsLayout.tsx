@@ -339,6 +339,7 @@ function DocumentenTab() {
   const [factuurPrefix, setFactuurPrefix] = useState('')
   const [factuurStartNummer, setFactuurStartNummer] = useState('1')
   const [creditnotaPrefix, setCreditnotaPrefix] = useState('CN')
+  const [creditnotaDoornummeren, setCreditnotaDoornummeren] = useState(false)
   const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
   const [werkbonStartNummer, setWerkbonStartNummer] = useState('1')
   const [projectPrefix, setProjectPrefix] = useState('PRJ')
@@ -366,6 +367,7 @@ function DocumentenTab() {
       setFactuurPrefix(data.factuur_prefix || 'FAC')
       setFactuurStartNummer(String(data.factuur_volgnummer ?? 1))
       setCreditnotaPrefix(data.creditnota_prefix || 'CN')
+      setCreditnotaDoornummeren(data.creditnota_doornummeren ?? false)
       setWerkbonPrefix(data.werkbon_prefix || 'WB')
       setWerkbonStartNummer(String(data.werkbon_volgnummer ?? 1))
       setProjectPrefix(data.project_prefix || 'PRJ')
@@ -406,6 +408,7 @@ function DocumentenTab() {
         factuur_prefix: factuurPrefix,
         factuur_volgnummer: parseInt(factuurStartNummer) || 1,
         creditnota_prefix: creditnotaPrefix,
+        creditnota_doornummeren: creditnotaDoornummeren,
         werkbon_prefix: werkbonPrefix,
         werkbon_volgnummer: parseInt(werkbonStartNummer) || 1,
         project_prefix: projectPrefix,
@@ -543,8 +546,16 @@ function DocumentenTab() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="creditnota-prefix">Creditnota prefix</Label>
-                  <Input id="creditnota-prefix" value={creditnotaPrefix} onChange={(e) => setCreditnotaPrefix(e.target.value.toUpperCase())} placeholder="CN" maxLength={5} />
-                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {creditnotaPrefix}-2026-0001</p>
+                  <Input id="creditnota-prefix" value={creditnotaPrefix} onChange={(e) => setCreditnotaPrefix(e.target.value.toUpperCase())} placeholder="CN" maxLength={5} disabled={creditnotaDoornummeren} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
+                    {creditnotaDoornummeren ? 'Niet gebruikt — creditnota volgt de factuurreeks.' : `Voorbeeld: ${creditnotaPrefix}-2026-0001`}
+                  </p>
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <Label htmlFor="creditnota-doornummeren" className="text-[13px] font-normal text-muted-foreground">
+                      Doornummeren met de normale facturen
+                    </Label>
+                    <Switch id="creditnota-doornummeren" checked={creditnotaDoornummeren} onCheckedChange={setCreditnotaDoornummeren} />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="project-prefix">Project prefix</Label>

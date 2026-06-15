@@ -76,6 +76,7 @@ import {
   createFactuurItem,
   updateFactuur,
   updateFactuurStatus,
+  generateFactuurNummer as generateFactuurNrDb,
   deleteFactuur,
   getOffertes,
   getOfferteItems,
@@ -104,7 +105,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useTrialGuard } from '@/hooks/useTrialGuard'
 import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
-import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon, FactuurBijlage, BoekhoudPakket } from '@/types'
+import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, OfferteItemDetailRegel, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon, FactuurBijlage, BoekhoudPakket } from '@/types'
 
 const BOEKHOUD_PAKKET_NAAM: Record<BoekhoudPakket, string> = {
   snelstart: 'SnelStart',
@@ -112,7 +113,8 @@ const BOEKHOUD_PAKKET_NAAM: Record<BoekhoudPakket, string> = {
   eboekhouden: 'e-Boekhouden',
 }
 import { round2 } from '@/utils/budgetUtils'
-import { generateFactuurPDF } from '@/services/pdfService'
+import { generateFactuurPDF, generateOffertePDF } from '@/services/pdfService'
+import { getFactuurClipboard } from '@/utils/factuurClipboard'
 import { genereerEnUploadFactuurPdf, downloadFactuurPdfFromStorage } from '@/services/factuurPdfService'
 import { generateUBLInvoice, downloadUBLXml } from '@/services/ublService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -142,6 +144,7 @@ interface LineItem {
   btw_percentage: number
   korting_percentage: number
   grootboek_code: string
+  detail_regels?: OfferteItemDetailRegel[]
 }
 
 // ============ HELPERS ============
@@ -155,6 +158,7 @@ function createEmptyLineItem(defaultBtw: number = 21): LineItem {
     btw_percentage: defaultBtw,
     korting_percentage: 0,
     grootboek_code: '',
+    detail_regels: [],
   }
 }
 
@@ -247,6 +251,7 @@ export function FactuurEditor() {
     standaardBtw,
     factuurPrefix,
     factuurStartNummer,
+    creditnotaDoornummeren,
     factuurBetaaltermijnDagen,
     factuurVoorwaarden,
     factuurIntroTekst,
@@ -353,6 +358,7 @@ export function FactuurEditor() {
   const [boekhoudSyncing, setBoekhoudSyncing] = useState(false)
   const [dialogBijlagen, setDialogBijlagen] = useState<FactuurBijlage[]>([])
   const [selectedBijlageIds, setSelectedBijlageIds] = useState<Set<string>>(new Set())
+  const [stuurOfferteMee, setStuurOfferteMee] = useState(true)
   const [creditnotaDialogOpen, setCreditnotaDialogOpen] = useState(false)
   const [creditReden, setCreditReden] = useState('')
   const [herinneringDialogOpen, setHerinneringDialogOpen] = useState(false)
@@ -432,6 +438,7 @@ export function FactuurEditor() {
                       btw_percentage: fi.btw_percentage,
                       korting_percentage: fi.korting_percentage,
                       grootboek_code: fi.grootboek_code || '',
+                      detail_regels: fi.detail_regels || [],
                     }))
                 )
               }
@@ -441,10 +448,9 @@ export function FactuurEditor() {
             if (!cancelled) toast.error('Kon factuur niet laden')
           }
         } else {
-          // New factuur: generate nummer
-          if (!cancelled) {
-            setNummer(generateFactuurNummer(factuurPrefix, facturenData, factuurStartNummer))
-          }
+          // New factuur: blijft een concept zonder nummer. Het volgnummer wordt
+          // pas bij "Verwerken" toegekend (zie handleSave), zodat afgebroken
+          // concepten geen gat in de factuurnummer-reeks veroorzaken.
 
           // Pre-fill from query params
           if (paramKlantId) {
@@ -484,6 +490,7 @@ export function FactuurEditor() {
                         btw_percentage: oi.btw_percentage,
                         korting_percentage: oi.korting_percentage,
                         grootboek_code: oi.grootboek_code || '',
+                        detail_regels: oi.detail_regels || [],
                       }))
                     setItems(mapped)
                     setOrigineleItems(mapped.map((item) => ({ ...item })))
@@ -558,6 +565,8 @@ export function FactuurEditor() {
                 setTitel(offerte.titel)
                 if (offerte.project_id) setProjectId(offerte.project_id)
                 if (offerte.notities) setNotities(offerte.notities)
+                if (offerte.intro_tekst) setIntroTekst(offerte.intro_tekst)
+                if (offerte.outro_tekst) setOutroTekst(offerte.outro_tekst)
 
                 if (offerteItems.length > 0) {
                   setItems(
@@ -572,6 +581,7 @@ export function FactuurEditor() {
                         btw_percentage: oi.btw_percentage,
                         korting_percentage: oi.korting_percentage,
                         grootboek_code: oi.grootboek_code || '',
+                        detail_regels: oi.detail_regels || [],
                       }))
                   )
                 } else {
@@ -609,7 +619,9 @@ export function FactuurEditor() {
                 setTitel(`Credit: ${origFactuur.titel}`)
                 setProjectId(origFactuur.project_id || '')
                 setOfferteId(origFactuur.offerte_id || '')
-                setNummer(generateTypedNummer(facturenData, 'CR'))
+                setNummer(creditnotaDoornummeren
+                  ? await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
+                  : generateTypedNummer(facturenData, 'CR'))
                 setKostenplaatsId(origFactuur.kostenplaats_id || '')
                 if (origFactuur.voorwaarden) setVoorwaarden(origFactuur.voorwaarden)
                 if (origFactuur.intro_tekst) setIntroTekst(origFactuur.intro_tekst)
@@ -627,6 +639,7 @@ export function FactuurEditor() {
                         btw_percentage: fi.btw_percentage,
                         korting_percentage: fi.korting_percentage,
                         grootboek_code: fi.grootboek_code || '',
+                        detail_regels: fi.detail_regels || [],
                       }))
                   )
                 } else {
@@ -814,6 +827,27 @@ export function FactuurEditor() {
     setKlantSearch('')
   }, [])
 
+  const [heeftKlembord] = useState(() => !!getFactuurClipboard())
+
+  const handlePlakFactuur = useCallback(() => {
+    const data = getFactuurClipboard()
+    if (!data) {
+      toast.error('Geen gekopieerde factuur gevonden')
+      return
+    }
+    setItems(
+      data.items.length > 0
+        ? data.items.map((i) => ({ id: crypto.randomUUID(), ...i }))
+        : [createEmptyLineItem(standaardBtw)],
+    )
+    if (data.titel && !titel.trim()) setTitel(data.titel)
+    if (data.intro_tekst) setIntroTekst(data.intro_tekst)
+    if (data.outro_tekst) setOutroTekst(data.outro_tekst)
+    if (data.voorwaarden) setVoorwaarden(data.voorwaarden)
+    if (data.notities) setNotities(data.notities)
+    toast.success('Gekopieerde factuur geplakt')
+  }, [standaardBtw, titel])
+
   const handleAddItem = useCallback(() => {
     setItems((prev) => [...prev, createEmptyLineItem(standaardBtw)])
   }, [standaardBtw])
@@ -825,6 +859,36 @@ export function FactuurEditor() {
   const handleUpdateItem = useCallback((id: string, field: keyof LineItem, value: string | number) => {
     setItems((prev) =>
       prev.map((i) => (i.id === id ? { ...i, [field]: value } : i))
+    )
+  }, [])
+
+  const handleAddDetailRegel = useCallback((itemId: string) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId
+          ? { ...i, detail_regels: [...(i.detail_regels || []), { id: crypto.randomUUID(), label: '', waarde: '' }] }
+          : i,
+      ),
+    )
+  }, [])
+
+  const handleUpdateDetailRegel = useCallback((itemId: string, detailId: string, field: 'label' | 'waarde', value: string) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId
+          ? { ...i, detail_regels: (i.detail_regels || []).map((d) => (d.id === detailId ? { ...d, [field]: value } : d)) }
+          : i,
+      ),
+    )
+  }, [])
+
+  const handleRemoveDetailRegel = useCallback((itemId: string, detailId: string) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId
+          ? { ...i, detail_regels: (i.detail_regels || []).filter((d) => d.id !== detailId) }
+          : i,
+      ),
     )
   }, [])
 
@@ -841,7 +905,7 @@ export function FactuurEditor() {
 
   // ============ SAVE ============
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (verwerken = false) => {
     if (isTrialBlocked) {
       setShowTrialDialog(true)
       return
@@ -861,6 +925,14 @@ export function FactuurEditor() {
 
     try {
       setIsSaving(true)
+
+      // "Verwerken" maakt het concept definitief: nu pas een volgnummer toekennen
+      // (DB-bewust, zodat de reeks aansluit) en de status op 'verzonden' zetten.
+      // Een al toegekend nummer (bv. creditnota CR-…) blijft behouden.
+      const effectiefNummer = verwerken
+        ? (nummer || await generateFactuurNrDb(factuurPrefix, factuurStartNummer))
+        : nummer
+      const doelStatus: Factuur['status'] = verwerken ? 'verzonden' : 'concept'
 
       // Adres-override: alleen opslaan wat afwijkt van de klantkaart, zodat een
       // ongewijzigd blok aan de klant gekoppeld blijft. '' = geen override.
@@ -916,11 +988,12 @@ export function FactuurEditor() {
           totaal,
           kostenplaats_id: kostenplaatsId || undefined,
           werkbon_id: werkbonId || undefined,
+          ...(verwerken ? { nummer: effectiefNummer, status: 'verzonden' as const } : {}),
         }
         const updated = await updateFactuur(existingFactuur.id, updates)
         setExistingFactuur({ ...existingFactuur, ...updated })
         setIsDirty(false)
-        toast.success('Factuur bijgewerkt')
+        toast.success(verwerken ? `Factuur ${effectiefNummer} verwerkt` : 'Factuur bijgewerkt')
       } else {
         const betaalToken = generateBetaalToken()
         const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
@@ -933,9 +1006,9 @@ export function FactuurEditor() {
           contactpersoon_id: contactpersoonId || undefined,
           offerte_id: offerteId || undefined,
           project_id: projectId || undefined,
-          nummer,
+          nummer: effectiefNummer,
           titel,
-          status: 'concept',
+          status: doelStatus,
           subtotaal,
           btw_bedrag: btwBedrag,
           totaal,
@@ -973,6 +1046,7 @@ export function FactuurEditor() {
             totaal: calcLineTotal(item),
             volgorde: i + 1,
             grootboek_code: item.grootboek_code || '',
+            detail_regels: (item.detail_regels || []).filter((r) => r.label || r.waarde),
           })
         }
 
@@ -1052,9 +1126,10 @@ export function FactuurEditor() {
         }
 
         // Check of er nog meer offertes te factureren zijn
+        const opslaanMelding = verwerken ? `Factuur ${effectiefNummer} verwerkt` : 'Concept opgeslagen'
         const nextOfferte = teFacturerenOffertes.find((o) => o.id !== offerteId)
         if (nextOfferte) {
-          toast.success(`Factuur ${nummer} aangemaakt`, {
+          toast.success(opslaanMelding, {
             action: {
               label: `Volgende: ${nextOfferte.nummer}`,
               onClick: () => {
@@ -1070,7 +1145,7 @@ export function FactuurEditor() {
             duration: 8000,
           })
         } else {
-          toast.success(`Factuur ${nummer} aangemaakt`)
+          toast.success(opslaanMelding)
         }
         navigate(`/facturen/${newFactuur.id}`)
         return
@@ -1086,7 +1161,7 @@ export function FactuurEditor() {
     factuurdatum, vervaldatum, voorwaarden, notities, introTekst, outroTekst,
     subtotaal, btwBedrag, totaal, nummer, offerteId, projectId, user, navigate,
     kostenplaatsId, isCreditFactuur, creditVoorFactuurId,
-    isTrialBlocked, setShowTrialDialog,
+    isTrialBlocked, setShowTrialDialog, factuurPrefix, factuurStartNummer,
   ])
 
   // ============ PDF ============
@@ -1097,7 +1172,8 @@ export function FactuurEditor() {
       return
     }
 
-    const filename = `Factuur-${nummer}.pdf`
+    const pdfNummer = nummer || 'CONCEPT'
+    const filename = `Factuur-${pdfNummer}.pdf`
 
     // Storage-first: lees gepersisteerde PDF als die bestaat.
     if (existingFactuur?.pdf_storage_path) {
@@ -1124,7 +1200,7 @@ export function FactuurEditor() {
     // of Storage-failure).
     const bedrijfsProfiel = { ...profile, primaireKleur }
     const factuurData = {
-      nummer,
+      nummer: pdfNummer,
       titel,
       datum: factuurdatum,
       vervaldatum,
@@ -1154,6 +1230,7 @@ export function FactuurEditor() {
       korting_percentage: item.korting_percentage,
       totaal: calcLineTotal(item),
       volgorde: idx + 1,
+      detail_regels: item.detail_regels || [],
       created_at: new Date().toISOString(),
     }))
 
@@ -1329,6 +1406,7 @@ export function FactuurEditor() {
           korting_percentage: item.korting_percentage,
           totaal: calcLineTotal(item),
           volgorde: idx + 1,
+          detail_regels: item.detail_regels || [],
           created_at: new Date().toISOString(),
         }))
 
@@ -1413,6 +1491,24 @@ export function FactuurEditor() {
         }
       }
 
+      // Gekoppelde offerte als PDF meesturen (optioneel, standaard aan zolang
+      // er een offerte gekoppeld is). Mislukt de generatie, dan gaat de mail
+      // gewoon zonder de offerte de deur uit.
+      if (stuurOfferteMee && offerteId && attachments) {
+        try {
+          const offerte = allOffertes.find((o) => o.id === offerteId)
+          if (offerte) {
+            const offerteItems = await getOfferteItems(offerteId)
+            const bedrijfsProfiel = { ...profile, primaireKleur }
+            const offerteDoc = await generateOffertePDF(offerte, offerteItems, selectedKlant, bedrijfsProfiel, documentStyle)
+            const offerteBase64 = offerteDoc.output('datauristring').split(',')[1]
+            attachments.push({ filename: `Offerte-${offerte.nummer}.pdf`, content: offerteBase64, encoding: 'base64' })
+          }
+        } catch (offErr) {
+          logger.warn('Offerte PDF bijlage mislukt:', offErr)
+        }
+      }
+
       // Geselecteerde factuur-bijlagen (klant-inkooporders e.d.) meesturen.
       // Bucket 'factuur-bijlagen' is persistent; send-email mag niet opruimen.
       if (attachments) {
@@ -1452,7 +1548,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds, medewerkers])
+  }, [existingFactuur, selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds, medewerkers, stuurOfferteMee, offerteId, allOffertes])
 
   // ============ MARK AS PAID ============
 
@@ -1519,7 +1615,9 @@ export function FactuurEditor() {
 
     try {
       setIsSaving(true)
-      const cnNummer = generateTypedNummer(allFacturen, 'CN')
+      const cnNummer = creditnotaDoornummeren
+        ? await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
+        : generateTypedNummer(allFacturen, 'CN')
 
       const cnToken = generateBetaalToken()
       const creditnota: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
@@ -1564,6 +1662,7 @@ export function FactuurEditor() {
           korting_percentage: item.korting_percentage,
           totaal: round2(-item.totaal),
           volgorde: item.volgorde,
+          detail_regels: item.detail_regels || [],
         } as Omit<FactuurItem, 'id' | 'created_at'>)
       }
 
@@ -1718,6 +1817,7 @@ export function FactuurEditor() {
             korting_percentage: item.korting_percentage,
             totaal: calcLineTotal(item),
             volgorde: idx + 1,
+            detail_regels: item.detail_regels || [],
             created_at: new Date().toISOString(),
           }))
           await genereerEnUploadFactuurPdf({
@@ -1819,6 +1919,7 @@ export function FactuurEditor() {
             korting_percentage: item.korting_percentage,
             totaal: calcLineTotal(item),
             volgorde: idx + 1,
+            detail_regels: item.detail_regels || [],
             created_at: new Date().toISOString(),
           }))
           await genereerEnUploadFactuurPdf({
@@ -1886,12 +1987,12 @@ export function FactuurEditor() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-extrabold tracking-[-0.03em]">
-                  {isCreditFactuur
-                    ? (isEditMode ? `Creditfactuur ${nummer}` : 'Nieuwe creditfactuur')
-                    : (isEditMode ? `Factuur ${nummer}` : 'Nieuwe factuur')}
+                  {isEditMode
+                    ? (nummer ? `${isCreditFactuur ? 'Creditfactuur' : 'Factuur'} ${nummer}` : 'Concept')
+                    : (isCreditFactuur ? 'Nieuwe creditfactuur' : 'Nieuwe factuur')}
                 </h1>
               </div>
-              <p className="text-xs font-mono text-muted-foreground">{nummer}</p>
+              <p className="text-xs font-mono text-muted-foreground">{nummer || 'Concept'}</p>
             </div>
           </div>
 
@@ -1899,8 +2000,9 @@ export function FactuurEditor() {
             {/* Edit mode actions */}
             {isEditMode && existingFactuur && (
               <>
-                {/* Send button + verzendadres-preview */}
-                {(currentStatus === 'concept') && (() => {
+                {/* Send button + verzendadres-preview. Mailen kan pas nadat de
+                    factuur is verwerkt (nummer toegekend, status verzonden). */}
+                {(currentStatus === 'verzonden' || currentStatus === 'vervallen' || isVervallen) && (() => {
                   const sendEmail = resolvedCp?.email || selectedKlant?.email || ''
                   const sendName = resolvedCp?.naam || 'Hoofdadres'
                   return (
@@ -2077,7 +2179,8 @@ export function FactuurEditor() {
 
             <Button
               size="sm"
-              onClick={handleSave}
+              variant={currentStatus === 'concept' ? 'outline' : 'default'}
+              onClick={() => handleSave(false)}
               disabled={isSaving || isReadOnly}
               title={isReadOnly ? `Factuur is ${currentStatus} en kan niet meer worden gewijzigd` : undefined}
             >
@@ -2088,6 +2191,19 @@ export function FactuurEditor() {
               )}
               {isEditMode ? 'Bijwerken' : 'Opslaan'}
             </Button>
+
+            {currentStatus === 'concept' && !isReadOnly && (
+              <Button
+                size="sm"
+                onClick={() => handleSave(true)}
+                disabled={isSaving}
+                className="bg-flame text-white hover:bg-flame/90"
+                title="Kent een definitief factuurnummer toe en zet de factuur op verzonden"
+              >
+                <Send className="h-4 w-4 mr-1" />
+                Verwerken
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -2264,6 +2380,19 @@ export function FactuurEditor() {
                     asInput
                     className="text-sm"
                   />
+                  {!isReadOnly && factuurdatum !== getTodayString() && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const vandaag = getTodayString()
+                        setFactuurdatum(vandaag)
+                        setVervaldatum(getDefaultVervaldatum(vandaag, factuurBetaaltermijnDagen))
+                      }}
+                      className="mt-1 text-[11px] text-muted-foreground hover:text-flame"
+                    >
+                      Vandaag
+                    </button>
+                  )}
                 </div>
                 <div>
                   <Label className="text-xs">Vervaldatum</Label>
@@ -2273,6 +2402,20 @@ export function FactuurEditor() {
                     asInput
                     className="text-sm"
                   />
+                  {!isReadOnly && (
+                    <div className="mt-1 flex items-center gap-2">
+                      {[14, 30].map((dagen) => (
+                        <button
+                          key={dagen}
+                          type="button"
+                          onClick={() => setVervaldatum(getDefaultVervaldatum(factuurdatum, dagen))}
+                          className="text-[11px] text-muted-foreground hover:text-flame"
+                        >
+                          +{dagen}d
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               {offerteId && (
@@ -2452,7 +2595,18 @@ export function FactuurEditor() {
           {/* Intro tekst — staat boven de regels zoals 'ie ook op de PDF verschijnt */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Intro tekst</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium">Intro tekst</CardTitle>
+                {introTekst.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => setIntroTekst('')}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Wissen
+                  </button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <Textarea
@@ -2508,12 +2662,20 @@ export function FactuurEditor() {
                 <CardTitle className="text-sm font-medium">
                   Factuurregels ({items.length})
                 </CardTitle>
-                {!isReadOnly && (
-                  <Button size="sm" variant="outline" onClick={handleAddItem}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Regel
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  {!isReadOnly && heeftKlembord && (
+                    <Button size="sm" variant="ghost" onClick={handlePlakFactuur} title="Regels en teksten van een gekopieerde factuur overnemen">
+                      <Copy className="h-4 w-4 mr-1" />
+                      Plak gekopieerde factuur
+                    </Button>
+                  )}
+                  {!isReadOnly && (
+                    <Button size="sm" variant="outline" onClick={handleAddItem}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Regel
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -2536,9 +2698,9 @@ export function FactuurEditor() {
 
               <div className="divide-y divide-[#EBEBEB]">
                 {items.map((item) => (
+                  <div key={item.id} className="transition-colors hover:bg-background">
                   <div
-                    key={item.id}
-                    className="grid grid-cols-1 md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-3 transition-colors hover:bg-background"
+                    className="grid grid-cols-1 md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-3"
                   >
                     <Input
                       value={item.beschrijving}
@@ -2635,6 +2797,49 @@ export function FactuurEditor() {
                       )}
                     </div>
                   </div>
+                  {((item.detail_regels && item.detail_regels.length > 0) || !isReadOnly) && (
+                    <div className="px-3 pb-3 md:pl-6 space-y-1.5">
+                      {(item.detail_regels || []).map((d) => (
+                        <div key={d.id} className="flex items-center gap-2">
+                          <Input
+                            value={d.label}
+                            onChange={(e) => handleUpdateDetailRegel(item.id, d.id, 'label', e.target.value)}
+                            placeholder="Label (bijv. Afmeting)"
+                            className="h-8 text-xs max-w-[200px]"
+                            disabled={isReadOnly}
+                          />
+                          <Input
+                            value={d.waarde}
+                            onChange={(e) => handleUpdateDetailRegel(item.id, d.id, 'waarde', e.target.value)}
+                            placeholder="Waarde (bijv. 200 × 100 cm)"
+                            className="h-8 text-xs flex-1"
+                            disabled={isReadOnly}
+                          />
+                          {!isReadOnly && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 flex-shrink-0"
+                              onClick={() => handleRemoveDetailRegel(item.id, d.id)}
+                              title="Detailregel verwijderen"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      {!isReadOnly && (
+                        <button
+                          type="button"
+                          onClick={() => handleAddDetailRegel(item.id)}
+                          className="text-[11px] text-muted-foreground hover:text-flame"
+                        >
+                          + Detail toevoegen
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  </div>
                 ))}
               </div>
 
@@ -2688,7 +2893,18 @@ export function FactuurEditor() {
             {extraTekstOpen && (
               <CardContent className="space-y-4 pt-0">
                 <div>
-                  <Label className="text-xs text-muted-foreground">Outro tekst (onder de regels op de PDF)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Outro tekst (onder de regels op de PDF)</Label>
+                    {outroTekst.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setOutroTekst('')}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Wissen
+                      </button>
+                    )}
+                  </div>
                   <Textarea
                     value={outroTekst}
                     onChange={(e) => setOutroTekst(e.target.value)}
@@ -2711,7 +2927,18 @@ export function FactuurEditor() {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Interne notities (niet op PDF)</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Interne notities (niet op PDF)</Label>
+                      {notities.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => setNotities('')}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Wissen
+                        </button>
+                      )}
+                    </div>
                     <Textarea
                       value={notities}
                       onChange={(e) => setNotities(e.target.value)}
@@ -2832,6 +3059,20 @@ export function FactuurEditor() {
                         <span className="text-[10px] text-muted-foreground/70">gekoppeld</span>
                       </div>
                     )}
+                    {offerteId && (() => {
+                      const offerte = allOffertes.find((o) => o.id === offerteId)
+                      return (
+                        <label className="flex items-center gap-2 text-xs cursor-pointer hover:bg-background rounded px-1.5 py-1">
+                          <Checkbox
+                            checked={stuurOfferteMee}
+                            onCheckedChange={(checked) => setStuurOfferteMee(!!checked)}
+                          />
+                          <Paperclip className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <span className="flex-1 truncate">Offerte{offerte ? `-${offerte.nummer}` : ''}.pdf</span>
+                          <span className="text-[10px] text-muted-foreground/70">gekoppeld</span>
+                        </label>
+                      )
+                    })()}
                     {dialogBijlagen.length > 0 && (
                       <div className="max-h-40 overflow-y-auto space-y-0.5">
                         {dialogBijlagen.map((bij) => (

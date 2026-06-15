@@ -1369,19 +1369,32 @@ export function generateFactuurPDF(
   // Items table — hairline separator tussen items + uppercase brand header
   const separatorColor: [number, number, number] = [225, 225, 228]
 
-  const tableBody = items.map((item, index) => {
+  const detailColor: [number, number, number] = [120, 120, 120]
+  const tableBody: RowInput[] = items.flatMap((item, index) => {
     const isFirst = index === 0
     const cellOverride = isFirst ? {} : {
       lineWidth: { top: 0.2, right: 0, bottom: 0, left: 0 },
       lineColor: separatorColor,
     }
-    return [
-      { content: (index + 1).toString(), styles: { ...cellOverride } },
+    const detailLines = (item.detail_regels || [])
+      .filter((r) => r.label || r.waarde)
+      .map((r) => (r.label && r.waarde ? `${r.label}: ${r.waarde}` : `${r.label}${r.waarde}`))
+    const hasDetails = detailLines.length > 0
+    const rij1: RowInput = [
+      { content: (index + 1).toString(), rowSpan: hasDetails ? 2 : 1, styles: { ...cellOverride } },
       { content: item.beschrijving, styles: { fontStyle: 'bold' as const, ...cellOverride } },
-      { content: item.aantal.toString(), styles: { ...cellOverride } },
-      { content: formatCurrency(item.eenheidsprijs), styles: { ...cellOverride } },
-      { content: formatCurrency(item.totaal), styles: { ...cellOverride } },
+      { content: item.aantal.toString(), rowSpan: hasDetails ? 2 : 1, styles: { ...cellOverride } },
+      { content: formatCurrency(item.eenheidsprijs), rowSpan: hasDetails ? 2 : 1, styles: { ...cellOverride } },
+      { content: formatCurrency(item.totaal), rowSpan: hasDetails ? 2 : 1, styles: { ...cellOverride } },
     ]
+    if (!hasDetails) return [rij1]
+    const rij2: RowInput = [
+      {
+        content: detailLines.join('\n'),
+        styles: { cellPadding: { top: 0.5, bottom: 3.5, left: 4, right: 4 }, textColor: detailColor, fontSize: 8 },
+      },
+    ]
+    return [rij1, rij2]
   })
 
   const tableStyles = getAutoTableStyles(brand, docStyle)
