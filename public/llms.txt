@@ -1,0 +1,32 @@
+# doen.
+
+> doen. is alles-in-een bedrijfssoftware van Sign Company voor signmakers en
+> reclamebedrijven. Van offerte tot factuur — projecten, planning, werkbonnen,
+> klantportaal, e-mail en een ingebouwde AI-assistent op één plek.
+
+## Kernfeiten
+
+- Product: doen. (web-applicatie, werkt in de browser op desktop, tablet en telefoon)
+- Bedrijf: Sign Company
+- Prijs: €79 per maand ex. btw, tot 10 gebruikers inbegrepen (meer op aanvraag)
+- Proefperiode: eerste 30 dagen gratis, geen creditcard nodig, maandelijks opzegbaar
+- Modules: Projecten, Offertes, Planning, Werkbonnen, Facturen, Klantportaal, E-mail/Sales Inbox, Visualizer, Taken, AI-assistent
+- AI-assistent "Daan": draait op het nieuwste Claude-model van Anthropic; geen extra kosten
+- Hosting & privacy: data in de EU (Supabase, AWS Frankfurt), AVG-compliant, geen data buiten Europa
+- Integraties: Exact Online (boekhouding, one-way), Mollie (betalingen), IMAP/SMTP (e-mail)
+- Contact: info@signcompany.nl
+- Taal: Nederlands
+
+## Pagina's
+
+- [Home](https://doen.team/): overzicht van het product
+- [Cockpit / Features](https://doen.team/features): alle modules
+- [Prijzen](https://doen.team/prijzen): één plan, één prijs
+- [Hoe het werkt](https://doen.team/hoe-het-werkt): van offerte tot factuur
+- [Over ons](https://doen.team/over): waarom doen. bestaat
+- [Kennisbank](https://doen.team/kennisbank): handleidingen en uitleg per module
+- [Contact](https://doen.team/contact): vragen stellen
+
+## Aanmelden
+
+- [Gratis account](https://app.doen.team/register): start een proefperiode van 30 dagen

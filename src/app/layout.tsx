@@ -1,6 +1,13 @@
 import type { Metadata } from 'next'
 import { Bricolage_Grotesque, Inter, IBM_Plex_Mono, Instrument_Serif } from 'next/font/google'
 import './globals.css'
+import JsonLd from '@/components/seo/JsonLd'
+import {
+  jsonLdGraph,
+  organizationSchema,
+  softwareApplicationSchema,
+  webSiteSchema,
+} from '@/lib/seo'
 
 const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -51,11 +58,20 @@ export const metadata: Metadata = {
     siteName: 'doen.',
     locale: 'nl_NL',
     type: 'website',
+    images: [
+      {
+        url: '/images/hero-waarom-doen.webp',
+        width: 1200,
+        height: 630,
+        alt: 'doen. — software voor creatieve maakbedrijven',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'doen. | Slim gedaan.',
     description: 'Van offerte tot factuur. Zo gedaan. €79/maand ex. btw, tot 10 gebruikers.',
+    images: ['/images/hero-waarom-doen.webp'],
   },
   robots: { index: true, follow: true },
 }
@@ -69,6 +85,13 @@ export default function RootLayout({
     <html lang="nl" className={`${bricolage.variable} ${inter.variable} ${plexMono.variable} ${instrumentSerif.variable}`}>
       <head>
         <link rel="canonical" href="https://doen.team" />
+        <JsonLd
+          data={jsonLdGraph(
+            organizationSchema(),
+            webSiteSchema(),
+            softwareApplicationSchema(),
+          )}
+        />
       </head>
       <body className="font-sans bg-bg text-ink antialiased">
         <a href="#main-content" className="skip-link">

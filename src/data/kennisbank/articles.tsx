@@ -13,8 +13,13 @@ export type Article = {
   excerpt: string
   updatedAt: string
   readingTime: number
+  /** Herkomst-/E-E-A-T-signaal; valt terug op de redactie als niet gezet. */
+  author?: string
   sections: Section[]
 }
+
+/** Standaard-auteur voor kennisbank-artikelen (E-E-A-T herkomstsignaal). */
+export const DEFAULT_AUTHOR = 'doen. Redactie'
 
 export type Category =
   | 'Aan de slag'

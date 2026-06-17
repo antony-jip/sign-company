@@ -10,10 +10,14 @@ import FaqSection from '@/components/home/FaqSection'
 import CTASection from '@/components/home/CTASection'
 import Footer from '@/components/Footer'
 import SignTypesStrip from '@/components/SignTypesStrip'
+import { faqs } from '@/data/faqs'
+import JsonLd from '@/components/seo/JsonLd'
+import { jsonLdGraph, faqPageSchema } from '@/lib/seo'
 
 export default function Home() {
   return (
     <>
+      <JsonLd data={jsonLdGraph(faqPageSchema(faqs))} />
       <Navbar />
       <main id="main-content">
         <Hero />

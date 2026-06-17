@@ -3,8 +3,9 @@
 import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ChevronLeft, Clock, Calendar } from 'lucide-react'
+import { ChevronLeft, Clock, Calendar, PenLine } from 'lucide-react'
 import type { Article } from '@/data/kennisbank/articles'
+import { DEFAULT_AUTHOR } from '@/data/kennisbank/articles'
 
 const PETROL = '#1A535C'
 const FLAME = '#F15025'
@@ -121,6 +122,10 @@ export default function ArticleLayout({ article }: { article: Article }) {
                 <div className="flex items-center gap-2 text-[12px] font-mono" style={{ color: MUTED_SOFT }}>
                   <Calendar className="w-3.5 h-3.5" />
                   <span>Bijgewerkt {formattedDate}</span>
+                </div>
+                <div className="flex items-center gap-2 text-[12px] font-mono" style={{ color: MUTED_SOFT }}>
+                  <PenLine className="w-3.5 h-3.5" />
+                  <span>Door {article.author ?? DEFAULT_AUTHOR}</span>
                 </div>
               </div>
             </motion.div>
