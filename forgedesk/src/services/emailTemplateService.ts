@@ -416,17 +416,25 @@ export function factuurVerzendTemplate(data: FactuurEmailData): EmailResult {
     ? renderButton('Factuur betalen', data.betaalUrl, kleur)
     : ''
 
-  const persoonlijkHtml = data.persoonlijkBericht?.trim()
-    ? `<p style="margin: 0 0 16px 0; white-space: pre-line;">${escapeHtml(data.persoonlijkBericht.trim())}</p>`
+  const heeftPersoonlijkBericht = !!data.persoonlijkBericht?.trim()
+
+  // Eigen bericht vervangt de standaardregel: is er een persoonlijk bericht,
+  // dan vormt dat de openingstekst en valt "Hierbij ontvangt u factuur …" weg.
+  const persoonlijkHtml = heeftPersoonlijkBericht
+    ? `<p style="margin: 0 0 16px 0; white-space: pre-line;">${escapeHtml(data.persoonlijkBericht!.trim())}</p>`
     : ''
+
+  const standaardRegelHtml = heeftPersoonlijkBericht
+    ? ''
+    : `<p style="margin: 0 0 16px 0;">
+      Hierbij ontvangt u factuur <strong>${escapeHtml(data.factuurNummer)}</strong> voor
+      <strong>${escapeHtml(data.factuurTitel)}</strong>.
+    </p>`
 
   const bodyHtml = `
     <p style="margin: 0 0 16px 0;">Beste ${escapeHtml(data.klantNaam)},</p>
     ${persoonlijkHtml}
-    <p style="margin: 0 0 16px 0;">
-      Hierbij ontvangt u factuur <strong>${escapeHtml(data.factuurNummer)}</strong> voor
-      <strong>${escapeHtml(data.factuurTitel)}</strong>.
-    </p>
+    ${standaardRegelHtml}
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
         <td style="padding: 16px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;">
@@ -448,8 +456,9 @@ export function factuurVerzendTemplate(data: FactuurEmailData): EmailResult {
   const text = [
     `Beste ${data.klantNaam},`,
     '',
-    ...(data.persoonlijkBericht?.trim() ? [data.persoonlijkBericht.trim(), ''] : []),
-    `Hierbij ontvangt u factuur ${data.factuurNummer} voor ${data.factuurTitel}.`,
+    ...(heeftPersoonlijkBericht
+      ? [data.persoonlijkBericht!.trim(), '']
+      : [`Hierbij ontvangt u factuur ${data.factuurNummer} voor ${data.factuurTitel}.`]),
     '',
     `Totaalbedrag: ${data.totaalBedrag}`,
     `Vervaldatum: ${data.vervaldatum}`,

@@ -1560,6 +1560,31 @@ export function FactuurEditor() {
     }
   }, [existingFactuur, selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds, medewerkers, stuurOfferteMee, offerteId, allOffertes, persoonlijkBericht])
 
+  // Live e-mailvoorbeeld voor het verzendvenster: exact dezelfde template als
+  // de daadwerkelijke verzending, zodat persoonlijk bericht én standaardtekst
+  // samen zichtbaar zijn vóór het versturen.
+  const verzendVoorbeeldHtml = useMemo(() => {
+    if (!selectedKlant) return ''
+    try {
+      const { html } = factuurVerzendTemplate({
+        klantNaam: resolvedCp?.naam || selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
+        factuurNummer: nummer,
+        factuurTitel: titel,
+        totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(totaal),
+        vervaldatum: formatDate(vervaldatum),
+        bedrijfsnaam,
+        primaireKleur,
+        handtekening: emailHandtekening || undefined,
+        logoUrl: profile?.logo_url || undefined,
+        betaalUrl: existingFactuur?.betaal_link || undefined,
+        persoonlijkBericht: persoonlijkBericht.trim() || undefined,
+      })
+      return html
+    } catch {
+      return ''
+    }
+  }, [selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, existingFactuur, persoonlijkBericht])
+
   // ============ MARK AS PAID ============
 
   const handleMarkAsBetaald = useCallback(async () => {
@@ -3013,7 +3038,7 @@ export function FactuurEditor() {
 
       {/* Send factuur dialog */}
       <Dialog open={sendDialogOpen} onOpenChange={(open) => { setSendDialogOpen(open); if (!open) setPersoonlijkBericht(STANDAARD_VERZEND_BERICHT) }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Send className="h-5 w-5 text-[#F15025]" />
@@ -3132,6 +3157,16 @@ export function FactuurEditor() {
                 className="text-sm resize-none"
               />
             </div>
+            {verzendVoorbeeldHtml && (
+              <div className="border-t pt-3 space-y-1.5">
+                <span className="text-muted-foreground text-xs uppercase tracking-wider">E-mailvoorbeeld</span>
+                <iframe
+                  title="E-mailvoorbeeld"
+                  srcDoc={verzendVoorbeeldHtml}
+                  className="w-full h-72 rounded-md border border-border bg-white"
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSendDialogOpen(false)}>Annuleren</Button>
