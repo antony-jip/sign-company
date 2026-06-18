@@ -11,12 +11,13 @@ import { getDocumentenByProject } from '@/services/documentenService'
 import { getOffertesByProject, getOfferteItems } from '@/services/offerteService'
 import { getFacturenByProject, getFactuurItems } from '@/services/factuurService'
 import { getWerkbonnenByProject, getWerkbonItems, getWerkbonFotos } from '@/services/werkbonService'
+import { getSigningVisualisatiesByProject } from '@/services/visualizerService'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF, generateFactuurPDF } from '@/services/pdfService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { getEmailsVoorProject, koppelEmailAanProject, type ProjectMail } from '@/services/emailProjectService'
 import { uploadEmailAttachment, deleteFile } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
-import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem } from '@/types'
+import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem, SigningVisualisatie } from '@/types'
 
 const MAX_BIJLAGE_BYTES = 20 * 1024 * 1024
 const MAX_BIJLAGEN_TOTAAL_BYTES = 25 * 1024 * 1024
@@ -31,7 +32,7 @@ interface ProjectMailComposerProps {
   onOpenChange: (open: boolean) => void
 }
 
-type BijlageBron = 'upload' | 'bestand' | 'offerte' | 'factuur' | 'werkbon'
+type BijlageBron = 'upload' | 'bestand' | 'offerte' | 'factuur' | 'werkbon' | 'visualisatie'
 
 interface Bijlage {
   id: string
@@ -95,6 +96,55 @@ function base64Size(b64: string): number {
   return Math.round((b64.length * 3) / 4)
 }
 
+// Haalt een (externe) afbeelding op en hercomprimeert hem als JPEG, zodat de
+// bijlage fors kleiner wordt zonder zichtbaar kwaliteitsverlies.
+async function comprimeerAfbeeldingNaarBase64(
+  url: string,
+  maxBreedte = 2400,
+  kwaliteit = 0.9,
+): Promise<{ base64: string; mimeType: string }> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Afbeelding ophalen mislukt (${res.status})`)
+  const blob = await res.blob()
+
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const fr = new FileReader()
+    fr.onload = () => resolve(fr.result as string)
+    fr.onerror = () => reject(new Error('Inlezen mislukt'))
+    fr.readAsDataURL(blob)
+  })
+
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new window.Image()
+    i.crossOrigin = 'anonymous'
+    i.onload = () => resolve(i)
+    i.onerror = () => reject(new Error('Afbeelding laden mislukt'))
+    i.src = dataUrl
+  })
+
+  let { width, height } = img
+  if (width > maxBreedte) {
+    height = Math.round((height * maxBreedte) / width)
+    width = maxBreedte
+  }
+
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas niet beschikbaar')
+  ctx.drawImage(img, 0, 0, width, height)
+
+  const out = canvas.toDataURL('image/jpeg', kwaliteit)
+  const base64 = out.split(',')[1]
+  // Als de gecomprimeerde versie onverhoopt groter is dan het origineel, gebruik origineel
+  const origBase64 = dataUrl.split(',')[1]
+  if (origBase64 && base64Size(base64) >= base64Size(origBase64)) {
+    return { base64: origBase64, mimeType: blob.type || 'image/png' }
+  }
+  return { base64, mimeType: 'image/jpeg' }
+}
+
 function formatThreadDatum(iso: string): string {
   try {
     return new Date(iso).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -114,6 +164,7 @@ function bronAccent(bron: BijlageBron): { bg: string; border: string } {
     case 'offerte': return { bg: 'rgba(58,107,140,0.08)', border: 'rgba(58,107,140,0.25)' }
     case 'factuur': return { bg: 'rgba(26,83,92,0.08)', border: 'rgba(26,83,92,0.25)' }
     case 'werkbon': return { bg: 'rgba(154,90,72,0.08)', border: 'rgba(154,90,72,0.25)' }
+    case 'visualisatie': return { bg: 'rgba(241,80,37,0.08)', border: 'rgba(241,80,37,0.25)' }
     case 'bestand': return { bg: '#F0EEEA', border: '#E4E1DB' }
     default: return { bg: 'hsl(var(--background))', border: 'hsl(var(--border))' }
   }
@@ -124,6 +175,7 @@ function bijlageIcon(bron: BijlageBron, mimeType: string) {
     case 'offerte': return <Receipt className="h-3.5 w-3.5" style={{ color: '#3A6B8C' }} />
     case 'factuur': return <CreditCard className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />
     case 'werkbon': return <Wrench className="h-3.5 w-3.5" style={{ color: '#9A5A48' }} />
+    case 'visualisatie': return <ImageIcon className="h-3.5 w-3.5" style={{ color: '#F15025' }} />
     default: return getFileIcon(mimeType)
   }
 }
@@ -233,6 +285,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const [projectOffertes, setProjectOffertes] = useState<Offerte[]>([])
   const [projectFacturen, setProjectFacturen] = useState<Factuur[]>([])
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
+  const [projectVisualisaties, setProjectVisualisaties] = useState<SigningVisualisatie[]>([])
   const [bezigItemId, setBezigItemId] = useState<string | null>(null)
   const pickerRef = useRef<HTMLDivElement>(null)
 
@@ -406,16 +459,18 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     if (pickerLoaded || pickerLoading) return
     setPickerLoading(true)
     try {
-      const [docs, offs, facs, wbs] = await Promise.all([
+      const [docs, offs, facs, wbs, viss] = await Promise.all([
         getDocumentenByProject(project.id).catch(() => [] as Document[]),
         getOffertesByProject(project.id).catch(() => [] as Offerte[]),
         getFacturenByProject(project.id).catch(() => [] as Factuur[]),
         getWerkbonnenByProject(project.id).catch(() => [] as Werkbon[]),
+        getSigningVisualisatiesByProject(project.id).catch(() => [] as SigningVisualisatie[]),
       ])
       setProjectDocs(docs)
       setProjectOffertes(offs)
       setProjectFacturen(facs)
       setProjectWerkbonnen(wbs)
+      setProjectVisualisaties(viss)
       setPickerLoaded(true)
     } finally {
       setPickerLoading(false)
@@ -587,6 +642,25 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     }
   }
 
+  async function toggleVisualisatie(v: SigningVisualisatie) {
+    if (isToegevoegd(v.id)) { verwijderBron(v.id); return }
+    setBezigItemId(v.id)
+    try {
+      const { base64, mimeType } = await comprimeerAfbeeldingNaarBase64(v.resultaat_url)
+      const ext = mimeType === 'image/png' ? 'png' : 'jpg'
+      const naamBasis = (project.naam || 'visualisatie').replace(/[^\w\d-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+      setBijlagen((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), filename: `Visualisatie-${naamBasis}.${ext}`, size: base64Size(base64), mimeType, base64, bron: 'visualisatie', bronId: v.id },
+      ])
+    } catch (err) {
+      logger.error('Visualisatie als bijlage toevoegen mislukt:', err)
+      toast.error('Kon visualisatie niet toevoegen')
+    } finally {
+      setBezigItemId(null)
+    }
+  }
+
   const cats = [
     {
       key: 'bestanden', label: 'Bestanden', color: '#6B6B66', count: projectDocs.length,
@@ -612,6 +686,16 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       key: 'werkbonnen', label: 'Werkbonnen', color: '#9A5A48', count: projectWerkbonnen.length,
       tabIcon: <Wrench className="h-3.5 w-3.5" />,
       items: projectWerkbonnen.map((w) => ({ id: w.id, label: w.titel || `Werkbon ${w.werkbon_nummer}`, icon: <Wrench className="h-3.5 w-3.5" style={{ color: '#9A5A48' }} />, onToggle: () => toggleWerkbon(w) })),
+    },
+    {
+      key: 'visualisaties', label: 'Visualisaties', color: '#F15025', count: projectVisualisaties.length,
+      tabIcon: <ImageIcon className="h-3.5 w-3.5" />,
+      items: projectVisualisaties.map((v) => ({
+        id: v.id,
+        label: v.aangepaste_prompt?.trim() || v.prompt_gebruikt?.slice(0, 40) || `Visualisatie ${new Date(v.created_at).toLocaleDateString('nl-NL')}`,
+        icon: <ImageIcon className="h-3.5 w-3.5" style={{ color: '#F15025' }} />,
+        onToggle: () => toggleVisualisatie(v),
+      })),
     },
   ].filter((c) => c.count > 0)
 

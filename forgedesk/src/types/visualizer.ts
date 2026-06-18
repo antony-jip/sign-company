@@ -114,3 +114,32 @@ export interface CreditsPakket {
   populair: boolean
   beschrijving: string
 }
+
+// Org-brede chat-geschiedenis van de Visualizer
+export interface VisualizerChatBericht {
+  id: string
+  rol: 'user' | 'assistant' | 'systeem'
+  tekst: string
+  afbeelding_url?: string
+  generatie_tijd_ms?: number
+  prompt_gebruikt?: string
+  fal_request_id?: string
+  timestamp: number
+}
+
+export interface VisualizerChat {
+  id: string
+  organisatie_id?: string
+  user_id?: string
+  titel: string
+  berichten: VisualizerChatBericht[]
+  foto?: string | null
+  foto_naam?: string | null
+  logo_foto?: string | null
+  ratio: string
+  resolutie: string
+  created_at: string
+  updated_at: string
+}
+
+export type VisualizerChatInput = Omit<VisualizerChat, 'id' | 'organisatie_id' | 'user_id' | 'created_at' | 'updated_at'> & { id?: string }

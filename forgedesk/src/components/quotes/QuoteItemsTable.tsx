@@ -18,7 +18,7 @@ import type { CalculatieRegel } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
-import { createDocument, getSigningVisualisatiesByOfferte } from '@/services/supabaseService'
+import { createDocument, getSigningVisualisatiesByOfferte, getSigningVisualisatiesByProject } from '@/services/supabaseService'
 import type { SigningVisualisatie } from '@/types'
 
 // ============================================================
@@ -618,16 +618,22 @@ export function QuoteItemsTable({
   // Bijlage upload state
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null)
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null)
-  // Visualisaties voor deze offerte (voor in de tekening/bijlage sectie)
+  // Visualisaties voor deze offerte én het gekoppelde project (voor in de tekening/bijlage sectie)
   const [visualisaties, setVisualisaties] = useState<SigningVisualisatie[]>([])
   useEffect(() => {
-    if (!offerteId) return
+    if (!offerteId && !projectId) return
     let cancelled = false
-    getSigningVisualisatiesByOfferte(offerteId).then(items => {
-      if (!cancelled) setVisualisaties(items)
+    Promise.all([
+      offerteId ? getSigningVisualisatiesByOfferte(offerteId).catch(() => [] as SigningVisualisatie[]) : Promise.resolve([] as SigningVisualisatie[]),
+      projectId ? getSigningVisualisatiesByProject(projectId).catch(() => [] as SigningVisualisatie[]) : Promise.resolve([] as SigningVisualisatie[]),
+    ]).then(([perOfferte, perProject]) => {
+      if (cancelled) return
+      const samen = new Map<string, SigningVisualisatie>()
+      for (const v of [...perOfferte, ...perProject]) samen.set(v.id, v)
+      setVisualisaties(Array.from(samen.values()))
     }).catch(() => {})
     return () => { cancelled = true }
-  }, [offerteId])
+  }, [offerteId, projectId])
 
   const activeItem = items.find((i) => i.id === activeItemId)
   const activeVariant = activeItem?.prijs_varianten?.find(v => v.id === activeVariantId)

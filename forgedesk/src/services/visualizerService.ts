@@ -1,7 +1,7 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, round2,
+  withUserId, round2, getOrgId,
 } from './supabaseHelpers'
 import { safeSetItem } from '@/utils/localStorageUtils'
 import { DEFAULT_VISUALIZER_INSTELLINGEN } from '@/utils/visualizerDefaults'
@@ -12,6 +12,8 @@ import type {
   VisualizerStats,
   VisualizerCredits,
   CreditTransactie,
+  VisualizerChat,
+  VisualizerChatInput,
 } from '@/types'
 
 // --- Visualisaties CRUD ---
@@ -489,4 +491,112 @@ export async function getForgieGebruik(user_id: string): Promise<{ geschatte_kos
   }
 
   return { geschatte_kosten: 0, aantal_calls: 0, limiet }
+}
+
+// ============================================================
+// Visualizer chats — org-brede gespreksgeschiedenis
+// Valt terug op localStorage zolang de DB-tabel (migratie 052)
+// nog niet bestaat of Supabase niet geconfigureerd is.
+// ============================================================
+
+const VIS_CHATS_LOCAL_KEY = 'doen_visualizer_chats'
+
+function getLocalChats(): VisualizerChat[] {
+  try {
+    return JSON.parse(localStorage.getItem(VIS_CHATS_LOCAL_KEY) || '[]') as VisualizerChat[]
+  } catch {
+    return []
+  }
+}
+
+function setLocalChats(chats: VisualizerChat[]): void {
+  const trimmed = chats
+    .slice()
+    .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
+    .slice(0, 40)
+  safeSetItem(VIS_CHATS_LOCAL_KEY, JSON.stringify(trimmed))
+}
+
+function upsertLocalChat(chat: VisualizerChatInput): VisualizerChat {
+  const chats = getLocalChats()
+  const ts = now()
+  if (chat.id) {
+    const idx = chats.findIndex(c => c.id === chat.id)
+    if (idx >= 0) {
+      chats[idx] = { ...chats[idx], ...chat, id: chat.id, updated_at: ts }
+      setLocalChats(chats)
+      return chats[idx]
+    }
+  }
+  const created: VisualizerChat = {
+    id: chat.id || generateId(),
+    titel: chat.titel,
+    berichten: chat.berichten,
+    foto: chat.foto ?? null,
+    foto_naam: chat.foto_naam ?? null,
+    logo_foto: chat.logo_foto ?? null,
+    ratio: chat.ratio,
+    resolutie: chat.resolutie,
+    created_at: ts,
+    updated_at: ts,
+  }
+  setLocalChats([created, ...chats])
+  return created
+}
+
+export async function getVisualizerChats(): Promise<VisualizerChat[]> {
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const orgId = await getOrgId()
+      let query = supabase.from('visualizer_chats').select('*').order('updated_at', { ascending: false })
+      if (orgId) query = query.eq('organisatie_id', orgId)
+      const { data, error } = await query
+      if (error) throw error
+      return (data || []) as VisualizerChat[]
+    } catch {
+      return getLocalChats()
+    }
+  }
+  return getLocalChats()
+}
+
+export async function upsertVisualizerChat(chat: VisualizerChatInput): Promise<VisualizerChat> {
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const orgId = await getOrgId()
+      const { data: { user } } = await supabase.auth.getUser()
+      const payload: Record<string, unknown> = {
+        organisatie_id: orgId,
+        user_id: user?.id,
+        titel: chat.titel,
+        berichten: chat.berichten,
+        foto: chat.foto ?? null,
+        foto_naam: chat.foto_naam ?? null,
+        logo_foto: chat.logo_foto ?? null,
+        ratio: chat.ratio,
+        resolutie: chat.resolutie,
+        updated_at: new Date().toISOString(),
+      }
+      if (chat.id) payload.id = chat.id
+      const { data, error } = await supabase.from('visualizer_chats').upsert(payload).select().single()
+      if (error) throw error
+      return data as VisualizerChat
+    } catch {
+      return upsertLocalChat(chat)
+    }
+  }
+  return upsertLocalChat(chat)
+}
+
+export async function deleteVisualizerChat(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const { error } = await supabase.from('visualizer_chats').delete().eq('id', id)
+      if (error) throw error
+      return
+    } catch {
+      /* val terug op lokaal */
+    }
+  }
+  setLocalChats(getLocalChats().filter(c => c.id !== id))
 }

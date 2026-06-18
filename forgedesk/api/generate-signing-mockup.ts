@@ -190,6 +190,11 @@ async function deductCredits(userId: string, creditsNodig: number, resolutie: st
 
 // Claude analyzes photos + description → creates optimized fal.ai prompt
 // Now supports: signing on buildings, vehicle wraps, design-to-photo, etc.
+interface VisualisatiePlan {
+  toelichting: string
+  prompt: string
+}
+
 async function generatePromptWithClaude(
   fotoBase64: string,
   fotoMime: MimeType,
@@ -197,7 +202,7 @@ async function generatePromptWithClaude(
   logoMime: MimeType | null,
   beschrijving: string,
   chatGeschiedenis: ChatMessage[],
-): Promise<string> {
+): Promise<VisualisatiePlan> {
   const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY })
 
   const imageContent: Anthropic.ImageBlockParam[] = [
@@ -226,7 +231,7 @@ async function generatePromptWithClaude(
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 1024,
+    max_tokens: 1536,
     messages: [
       {
         role: 'user',
@@ -247,9 +252,13 @@ ${logoBase64 ? 'De eerste foto is de referentie/huidige situatie. De tweede foto
 
 De klant wil dit: "${beschrijving}"${chatContext}
 
-Maak een gedetailleerde prompt voor een AI image editor (fal.ai Nano Banana 2) die het gewenste resultaat realistisch genereert.
+Je levert TWEE dingen op:
 
-Regels voor je prompt:
+1. "toelichting" — een korte, concrete uitleg in het NEDERLANDS waarin je de klant vertelt wát je precies gaat maken, vóórdat het beeld gegenereerd wordt. Schrijf alsof je tegen de klant praat (vlot, helder, niet technisch). Benoem expliciet: het type signing/bestickering, de exacte positie/plek, kleur(en), materiaal en de stijl/sfeer. Als iets ontbreekt of jij een keuze maakt, zeg dat erbij ("ik kies voor…"). 2 tot 4 zinnen. Geen opsomming met streepjes, gewoon lopende tekst. Geen emoji.
+
+2. "prompt" — de gedetailleerde prompt in het ENGELS voor de AI image editor (fal.ai Nano Banana 2) die exact dit resultaat realistisch genereert.
+
+Regels voor de Engelse prompt:
 - Schrijf in het Engels (de AI werkt het best in Engels)
 - Bij type A: beschrijf exact waar op het gebouw de signing moet komen, het type (LED doosletters, neon, freesletters, lichtbak, etc.), kleur, materiaal en stijl. Houd het gebouw 100% intact.
 - Bij type B: beschrijf de bestickering, positie op het voertuig, kleuren, en zorg voor een fotorealistische weergave
@@ -259,7 +268,10 @@ Regels voor je prompt:
 - Het resultaat moet eruitzien als een professionele reclame/architectuurvisualisatie
 - Als er een logo/artwork is, beschrijf hoe dat wordt geïntegreerd
 
-Geef ALLEEN de prompt terug, geen uitleg of andere tekst.`,
+Belangrijk: de toelichting en de prompt moeten exact hetzelfde ontwerp beschrijven.
+
+Geef ALLEEN geldige JSON terug, zonder markdown of codeblok, in exact deze vorm:
+{"toelichting": "...", "prompt": "..."}`,
           },
         ],
       },
@@ -267,7 +279,19 @@ Geef ALLEEN de prompt terug, geen uitleg of andere tekst.`,
   })
 
   const textBlock = response.content.find((b) => b.type === 'text')
-  return textBlock?.text || ''
+  const ruw = (textBlock?.text || '').trim()
+
+  // Claude geeft JSON terug; strip eventueel een markdown-codeblok
+  const schoon = ruw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+  try {
+    const parsed = JSON.parse(schoon) as Partial<VisualisatiePlan>
+    if (parsed.prompt) {
+      return { toelichting: parsed.toelichting?.trim() || '', prompt: parsed.prompt.trim() }
+    }
+  } catch {
+    // Geen geldige JSON — val terug op ruwe tekst als prompt
+  }
+  return { toelichting: '', prompt: ruw }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -337,8 +361,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const startTime = Date.now()
 
-    // Step 1: Claude generates optimized prompt (with chat history for refinements)
-    const optimizedPrompt = await generatePromptWithClaude(
+    // Step 1: Claude generates a Dutch toelichting + optimized prompt (with chat history for refinements)
+    const { toelichting, prompt: optimizedPrompt } = await generatePromptWithClaude(
       fotoData.data,
       fotoData.mimeType,
       logoData?.data || null,
@@ -395,6 +419,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       generatie_tijd_ms: generatieTijdMs,
       api_kosten_usd: 0.12,
       prompt_gebruikt: optimizedPrompt,
+      toelichting,
       credits_gebruikt: creditCheck.creditsNodig,
     })
   } catch (error: unknown) {
