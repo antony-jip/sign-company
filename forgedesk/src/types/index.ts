@@ -859,6 +859,7 @@ export interface CalculatieRegel {
   nacalculatie: boolean;           // Markeer voor nacalculatie (achteraf verrekenen)
   btw_percentage: number;          // BTW tarief
   notitie: string;                 // Eventuele toelichting per regel
+  is_opstartkosten?: boolean;      // Vaste opstartkosten-regel (alleen eerste offerte-item)
 }
 
 /**

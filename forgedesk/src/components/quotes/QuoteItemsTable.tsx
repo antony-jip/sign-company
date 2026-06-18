@@ -1248,7 +1248,7 @@ export function QuoteItemsTable({
                         value={regel.label}
                         onChange={(e) => updateDetailRegelField(item.id, regel.id, 'label', e.target.value)}
                         placeholder="LABEL"
-                        className="w-32 flex-shrink-0 h-7 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground bg-transparent border-transparent hover:bg-[rgba(26,83,92,0.04)] focus-visible:bg-[rgba(26,83,92,0.06)] focus-visible:ring-0 focus-visible:border-transparent shadow-none px-2 placeholder:text-muted-foreground/50 placeholder:font-semibold placeholder:tracking-wider"
+                        className="w-32 flex-shrink-0 h-7 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground bg-transparent dark:bg-transparent border-transparent dark:border-transparent hover:bg-[rgba(26,83,92,0.04)] focus-visible:bg-[rgba(26,83,92,0.06)] focus-visible:ring-0 focus-visible:border-transparent shadow-none px-2 placeholder:text-muted-foreground/50 placeholder:font-semibold placeholder:tracking-wider"
                       />
 
                       {/* Waarde — with autofill for omschrijving/materiaal/lay-out/montage */}
@@ -1732,6 +1732,7 @@ export function QuoteItemsTable({
           setActiveVariantId(null)
         }}
         initialRegels={activeVariant?.calculatie_regels || activeItem?.calculatie_regels}
+        isEersteItem={!!activeItemId && items.find((i) => i.soort === 'prijs')?.id === activeItemId}
         itemBeschrijving={activeVariant ? `${activeItem?.beschrijving} · ${activeVariant.label}` : activeItem?.beschrijving}
         onConfirm={handleCalculatieConfirm}
       />
