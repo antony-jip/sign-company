@@ -731,8 +731,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // 5. Grootboek GUID opzoeken
-    const grootboekGuid = await getGrootboekGuid(token, division, exactSettings.exact_grootboek)
+    // 5. Grootboek GUID per regel opzoeken.
+    // DOEN kan per factuurregel een grootboekrekening hebben (factuur_items.
+    // grootboek_code). Die krijgt voorrang; ontbreekt hij, dan valt de regel
+    // terug op het org-brede standaard-grootboek (exact_grootboek). De code→GUID
+    // lookup koppelt de DOEN-grootboekcode aan de Exact GLAccount met dezelfde Code.
+    const defaultGrootboekCode = (exactSettings.exact_grootboek || '').trim()
+    const grootboekGuidPerCode = new Map<string, string>()
+    for (const item of (factuurItems || []) as Array<{ grootboek_code?: string | null }>) {
+      const code = (item.grootboek_code || '').trim() || defaultGrootboekCode
+      if (!code) {
+        return res.status(400).json({
+          error: 'Geen grootboekrekening op de factuurregel én geen standaard-grootboek geconfigureerd in Instellingen > Integraties.',
+        })
+      }
+      if (!grootboekGuidPerCode.has(code)) {
+        grootboekGuidPerCode.set(code, await getGrootboekGuid(token, division, code))
+      }
+    }
 
     // 5b. Document POST + DocumentAttachment POST (alleen als PDF beschikbaar).
     // Bij failure: log, sla over, sync gaat door zonder bijlage-koppeling.
@@ -852,16 +868,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       aantal: number
       eenheidsprijs: number
       korting_percentage: number
+      grootboek_code?: string | null
     }) => {
       // factuur_items.totaal is al excl. BTW (zie calcLineTotal in FactuurEditor)
       const regelTotaal = item.totaal
       const btwCode = bepaalBtwCode(item.btw_percentage, exactSettings)
+      const regelGrootboekCode = (item.grootboek_code || '').trim() || defaultGrootboekCode
 
       const line: Record<string, string | null> = {
         AmountDC: regelTotaal.toFixed(2),
         AmountFC: regelTotaal.toFixed(2),
         Description: item.beschrijving,
-        GLAccount: grootboekGuid,
+        GLAccount: grootboekGuidPerCode.get(regelGrootboekCode) ?? null,
         VATCode: btwCode,
       }
 
