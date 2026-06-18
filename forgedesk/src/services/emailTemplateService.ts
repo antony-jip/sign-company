@@ -33,6 +33,7 @@ interface FactuurEmailData extends EmailTemplateData {
   totaalBedrag: string
   vervaldatum: string
   betaalUrl?: string
+  persoonlijkBericht?: string
 }
 
 interface FactuurHerinneringData extends FactuurEmailData {
@@ -415,8 +416,13 @@ export function factuurVerzendTemplate(data: FactuurEmailData): EmailResult {
     ? renderButton('Factuur betalen', data.betaalUrl, kleur)
     : ''
 
+  const persoonlijkHtml = data.persoonlijkBericht?.trim()
+    ? `<p style="margin: 0 0 16px 0; white-space: pre-line;">${escapeHtml(data.persoonlijkBericht.trim())}</p>`
+    : ''
+
   const bodyHtml = `
     <p style="margin: 0 0 16px 0;">Beste ${escapeHtml(data.klantNaam)},</p>
+    ${persoonlijkHtml}
     <p style="margin: 0 0 16px 0;">
       Hierbij ontvangt u factuur <strong>${escapeHtml(data.factuurNummer)}</strong> voor
       <strong>${escapeHtml(data.factuurTitel)}</strong>.
@@ -442,6 +448,7 @@ export function factuurVerzendTemplate(data: FactuurEmailData): EmailResult {
   const text = [
     `Beste ${data.klantNaam},`,
     '',
+    ...(data.persoonlijkBericht?.trim() ? [data.persoonlijkBericht.trim(), ''] : []),
     `Hierbij ontvangt u factuur ${data.factuurNummer} voor ${data.factuurTitel}.`,
     '',
     `Totaalbedrag: ${data.totaalBedrag}`,

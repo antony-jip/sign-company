@@ -148,6 +148,7 @@ interface FactuurFormData {
 
 const STATUS_CONFIG: Record<FactuurStatus, { label: string; text: string }> = {
   concept: { label: 'Concept', text: '#5A5A55' },
+  open: { label: 'Open', text: '#1A535C' },
   verzonden: { label: 'Verzonden', text: '#C03A18' },
   betaald: { label: 'Betaald', text: '#2D6B48' },
   vervallen: { label: 'Vervallen', text: '#C03A18' },
@@ -165,6 +166,7 @@ const TYPE_CONFIG: Record<FactuurType, { label: string; prefix: string; color: s
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'alle', label: 'Alle' },
   { value: 'concept', label: 'Concept' },
+  { value: 'open', label: 'Open' },
   { value: 'verzonden', label: 'Verzonden' },
   { value: 'betaald', label: 'Betaald' },
   { value: 'vervallen', label: 'Vervallen' },
@@ -182,6 +184,7 @@ const SORT_OPTIONS: { value: SortField; label: string }[] = [
 
 const FACTUUR_STATUS_HEX: Record<string, string> = {
   concept: '#5A5A55',
+  open: '#1A535C',
   verzonden: '#3A5A9A',
   betaald: '#2D6B48',
   vervallen: '#F15025',
@@ -463,7 +466,7 @@ export function FacturenLayout() {
     }
 
     if (dagenOpenFilter !== 'alle') {
-      const openStatuses = ['concept', 'verzonden', 'vervallen']
+      const openStatuses = ['concept', 'open', 'verzonden', 'vervallen']
       result = result.filter((f) => {
         if (!openStatuses.includes(f.status)) return false
         return matchDagenFilter(getDaysOpen(f.factuurdatum), dagenOpenFilter)
@@ -1106,7 +1109,8 @@ export function FacturenLayout() {
   )
 
   // Verwerken: kent het concept een definitief volgnummer toe en zet het op
-  // verzonden. Een al bestaand nummer (creditnota e.d.) blijft behouden.
+  // 'open' (definitief, klaar om te versturen). Een al bestaand nummer
+  // (creditnota e.d.) blijft behouden.
   const handleVerwerkFactuur = useCallback(
     async (factuur: Factuur) => {
       if (isTrialBlocked) {
@@ -1117,7 +1121,7 @@ export function FacturenLayout() {
         // DB-bewuste generator (zelfde als de editor) i.p.v. de in-memory lijst,
         // zodat twee gelijktijdige verwerk-acties niet hetzelfde nummer uitdelen.
         const nummer = factuur.nummer || await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
-        const updated = await updateFactuur(factuur.id, { nummer, status: 'verzonden' })
+        const updated = await updateFactuur(factuur.id, { nummer, status: 'open' })
         setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
         toast.success(`Factuur ${nummer} verwerkt`)
       } catch (err) {
@@ -1712,7 +1716,7 @@ export function FacturenLayout() {
             value={dagenOpenFilter}
             onChange={setDagenOpenFilter}
             items={facturen
-              .filter((f) => ['concept', 'verzonden', 'vervallen'].includes(f.status))
+              .filter((f) => ['concept', 'open', 'verzonden', 'vervallen'].includes(f.status))
               .map((f) => ({ dateField: f.factuurdatum }))
             }
           />
@@ -2188,13 +2192,13 @@ export function FacturenLayout() {
                               Verwerken
                             </DropdownMenuItem>
                           )}
-                          {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
+                          {(factuur.status === 'open' || factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
                             <DropdownMenuItem onClick={() => handleSendFactuur(factuur)}>
                               <Send className="h-4 w-4 mr-2" />
                               Verstuur factuur
                             </DropdownMenuItem>
                           )}
-                          {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
+                          {(factuur.status === 'open' || factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
                             <DropdownMenuItem onClick={() => handleMarkAsBetaald(factuur)}>
                               <CreditCard className="h-4 w-4 mr-2" />
                               Markeer als betaald
@@ -2466,7 +2470,7 @@ export function FacturenLayout() {
                 Verwerken
               </Button>
             )}
-            {viewingFactuur && (viewingFactuur.status === 'verzonden' || viewingFactuur.status === 'vervallen') && (
+            {viewingFactuur && (viewingFactuur.status === 'open' || viewingFactuur.status === 'verzonden' || viewingFactuur.status === 'vervallen') && (
               <Button
                 variant="outline"
                 size="sm"

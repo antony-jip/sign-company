@@ -229,8 +229,11 @@ function generateTypedNummer(existing: { nummer: string }[], prefix: string): st
   return `${fullPrefix}${String(maxNum + 1).padStart(3, '0')}`
 }
 
+const STANDAARD_VERZEND_BERICHT = 'Hartelijk dank voor de opdracht, hierbij ontvang je onze factuur.'
+
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   concept: { label: 'Concept', color: 'bg-bg-hover text-text-tertiary' },
+  open: { label: 'Open', color: 'bg-[#1A535C15] text-[#1A535C]' },
   verzonden: { label: 'Verzonden', color: 'bg-[#8BAFD415] text-[#5a8ab5]' },
   betaald: { label: 'Betaald', color: 'bg-[#16a34a12] text-[#16a34a]' },
   vervallen: { label: 'Vervallen', color: 'bg-[#ef444412] text-[#ef4444]' },
@@ -354,11 +357,12 @@ export function FactuurEditor() {
   // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
+  const [persoonlijkBericht, setPersoonlijkBericht] = useState(STANDAARD_VERZEND_BERICHT)
   const [isSending, setIsSending] = useState(false)
   const [boekhoudSyncing, setBoekhoudSyncing] = useState(false)
   const [dialogBijlagen, setDialogBijlagen] = useState<FactuurBijlage[]>([])
   const [selectedBijlageIds, setSelectedBijlageIds] = useState<Set<string>>(new Set())
-  const [stuurOfferteMee, setStuurOfferteMee] = useState(true)
+  const [stuurOfferteMee, setStuurOfferteMee] = useState(false)
   const [creditnotaDialogOpen, setCreditnotaDialogOpen] = useState(false)
   const [creditReden, setCreditReden] = useState('')
   const [herinneringDialogOpen, setHerinneringDialogOpen] = useState(false)
@@ -566,7 +570,8 @@ export function FactuurEditor() {
                 if (offerte.project_id) setProjectId(offerte.project_id)
                 if (offerte.notities) setNotities(offerte.notities)
                 if (offerte.intro_tekst) setIntroTekst(offerte.intro_tekst)
-                if (offerte.outro_tekst) setOutroTekst(offerte.outro_tekst)
+                // Outro bewust NIET uit de offerte overnemen — de factuur houdt
+                // zijn eigen standaard-outro (factuurOutroTekst).
 
                 if (offerteItems.length > 0) {
                   setItems(
@@ -927,12 +932,14 @@ export function FactuurEditor() {
       setIsSaving(true)
 
       // "Verwerken" maakt het concept definitief: nu pas een volgnummer toekennen
-      // (DB-bewust, zodat de reeks aansluit) en de status op 'verzonden' zetten.
-      // Een al toegekend nummer (bv. creditnota CR-…) blijft behouden.
+      // (DB-bewust, zodat de reeks aansluit) en de status op 'open' zetten. De
+      // factuur is dan klaar om te versturen; pas bij daadwerkelijk versturen
+      // wordt de status 'verzonden'. Een al toegekend nummer (bv. creditnota
+      // CR-…) blijft behouden.
       const effectiefNummer = verwerken
         ? (nummer || await generateFactuurNrDb(factuurPrefix, factuurStartNummer))
         : nummer
-      const doelStatus: Factuur['status'] = verwerken ? 'verzonden' : 'concept'
+      const doelStatus: Factuur['status'] = verwerken ? 'open' : 'concept'
 
       // Adres-override: alleen opslaan wat afwijkt van de klantkaart, zodat een
       // ongewijzigd blok aan de klant gekoppeld blijft. '' = geen override.
@@ -988,10 +995,11 @@ export function FactuurEditor() {
           totaal,
           kostenplaats_id: kostenplaatsId || undefined,
           werkbon_id: werkbonId || undefined,
-          ...(verwerken ? { nummer: effectiefNummer, status: 'verzonden' as const } : {}),
+          ...(verwerken ? { nummer: effectiefNummer, status: 'open' as const } : {}),
         }
         const updated = await updateFactuur(existingFactuur.id, updates)
         setExistingFactuur({ ...existingFactuur, ...updated })
+        setNummer(updated.nummer ?? nummer)
         setIsDirty(false)
         toast.success(verwerken ? `Factuur ${effectiefNummer} verwerkt` : 'Factuur bijgewerkt')
       } else {
@@ -1362,6 +1370,7 @@ export function FactuurEditor() {
         handtekening: emailHandtekening || undefined,
         logoUrl: profile?.logo_url || undefined,
         betaalUrl: existingFactuur.betaal_link || undefined,
+        persoonlijkBericht: persoonlijkBericht.trim() || undefined,
       })
 
       // Generate PDF attachment — eerst proberen via Storage (persistente kopie),
@@ -1541,6 +1550,7 @@ export function FactuurEditor() {
       }
 
       setSendDialogOpen(false)
+      setPersoonlijkBericht(STANDAARD_VERZEND_BERICHT)
       toast.success(`Factuur ${nummer} verzonden naar ${ontvangerEmail}`)
     } catch (err) {
       logger.error('Fout bij verzenden factuur:', err)
@@ -1548,7 +1558,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds, medewerkers, stuurOfferteMee, offerteId, allOffertes])
+  }, [existingFactuur, selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds, medewerkers, stuurOfferteMee, offerteId, allOffertes, persoonlijkBericht])
 
   // ============ MARK AS PAID ============
 
@@ -2002,7 +2012,7 @@ export function FactuurEditor() {
               <>
                 {/* Send button + verzendadres-preview. Mailen kan pas nadat de
                     factuur is verwerkt (nummer toegekend, status verzonden). */}
-                {(currentStatus === 'verzonden' || currentStatus === 'vervallen' || isVervallen) && (() => {
+                {(currentStatus === 'open' || currentStatus === 'verzonden' || currentStatus === 'vervallen' || isVervallen) && (() => {
                   const sendEmail = resolvedCp?.email || selectedKlant?.email || ''
                   const sendName = resolvedCp?.naam || 'Hoofdadres'
                   return (
@@ -2033,7 +2043,7 @@ export function FactuurEditor() {
                 })()}
 
                 {/* Mark as paid */}
-                {(currentStatus === 'verzonden' || currentStatus === 'vervallen' || isVervallen) && (
+                {(currentStatus === 'open' || currentStatus === 'verzonden' || currentStatus === 'vervallen' || isVervallen) && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -2145,7 +2155,7 @@ export function FactuurEditor() {
                       <FileDown className="h-4 w-4 mr-2" />
                       Download UBL XML
                     </DropdownMenuItem>
-                    {(currentStatus === 'verzonden' || isVervallen) && (
+                    {(currentStatus === 'open' || currentStatus === 'verzonden' || isVervallen) && (
                       <DropdownMenuItem onClick={handleMarkAsBetaald}>
                         <CreditCard className="h-4 w-4 mr-2" />
                         Markeer als betaald
@@ -2198,7 +2208,7 @@ export function FactuurEditor() {
                 onClick={() => handleSave(true)}
                 disabled={isSaving}
                 className="bg-flame text-white hover:bg-flame/90"
-                title="Kent een definitief factuurnummer toe en zet de factuur op verzonden"
+                title="Kent een definitief factuurnummer toe (status wordt Open). De factuur is daarna klaar om te versturen."
               >
                 <Send className="h-4 w-4 mr-1" />
                 Verwerken
@@ -2231,6 +2241,7 @@ export function FactuurEditor() {
             <span className="text-foreground">
               {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span><span className="text-[#F15025]">.</span></>}
               {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd · wachtend op betaling<span className="text-[#F15025]">.</span></>}
+              {currentStatus === 'open' && <>Verwerkt · klaar om te versturen<span className="text-[#F15025]">.</span></>}
               {currentStatus === 'concept' && <>Concept · nog niet verstuurd<span className="text-[#F15025]">.</span></>}
               {currentStatus === 'gecrediteerd' && <>Gecrediteerd<span className="text-[#F15025]">.</span></>}
               {isVervallen && <>{dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen<span className="text-[#F15025]">.</span></>}
@@ -3001,7 +3012,7 @@ export function FactuurEditor() {
       {/* ============ DIALOGS ============ */}
 
       {/* Send factuur dialog */}
-      <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
+      <Dialog open={sendDialogOpen} onOpenChange={(open) => { setSendDialogOpen(open); if (!open) setPersoonlijkBericht(STANDAARD_VERZEND_BERICHT) }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -3108,6 +3119,19 @@ export function FactuurEditor() {
                 </div>
               )
             })()}
+            <div className="border-t pt-3 space-y-1.5">
+              <label htmlFor="factuur-persoonlijk-bericht" className="text-muted-foreground text-xs uppercase tracking-wider">
+                Persoonlijk bericht (optioneel)
+              </label>
+              <Textarea
+                id="factuur-persoonlijk-bericht"
+                value={persoonlijkBericht}
+                onChange={(e) => setPersoonlijkBericht(e.target.value)}
+                placeholder="Voeg een persoonlijk bericht toe dat bovenaan de e-mail verschijnt…"
+                rows={3}
+                className="text-sm resize-none"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSendDialogOpen(false)}>Annuleren</Button>

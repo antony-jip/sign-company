@@ -1004,7 +1004,7 @@ export interface Factuur {
   project_id?: string;
   nummer: string;
   titel: string;
-  status: 'concept' | 'verzonden' | 'betaald' | 'vervallen' | 'gecrediteerd';
+  status: 'concept' | 'open' | 'verzonden' | 'betaald' | 'vervallen' | 'gecrediteerd';
   subtotaal: number;
   btw_bedrag: number;
   totaal: number;
