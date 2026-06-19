@@ -2,40 +2,11 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Anthropic from '@anthropic-ai/sdk'
 import { fal } from '@fal-ai/client'
 import { createClient } from '@supabase/supabase-js'
-import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
 
 const FAL_API_KEY = process.env.FAL_AI_API_KEY || ''
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-
-// ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
-const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-if (!rlConfigured) {
-  console.warn('[ratelimit] UPSTASH env vars missing for generate-signing-mockup, requests will not be rate limited')
-}
-const ratelimit = rlConfigured
-  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(2, '3600 s'), prefix: 'rl:generate-signing-mockup', timeout: 2000 })
-  : null
-
-async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
-  if (!ratelimit) return true
-  try {
-    const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
-    if (success) return true
-    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
-    console.warn(`[ratelimit-hit] generate-signing-mockup id=${identifier} limit=${limit}`)
-    res.setHeader('Retry-After', String(retryAfter))
-    res.setHeader('X-RateLimit-Limit', String(limit))
-    res.setHeader('X-RateLimit-Remaining', String(remaining))
-    res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
-    return false
-  } catch (err) {
-    console.warn(`[ratelimit-error] generate-signing-mockup id=${identifier} err=${(err as Error).message}`)
-    return true
-  }
-}
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
@@ -341,7 +312,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(creditCheck.status).json({ error: creditCheck.error })
     }
 
-    if (!(await enforceRateLimit(creditCheck.userId, res))) return
+    // Geen rate limit: credits zijn de gate, mensen betalen per generatie
 
     // Extract base64 data
     const fotoData = extractBase64Data(gebouw_foto_base64)
