@@ -40,7 +40,7 @@ const WERK_ITEMS: NavItem[] = [
   { label: 'Klanten', icon: Building2, path: '/klanten', color: '#3A6B8C' },
   { label: 'Werkbonnen', icon: Wrench, path: '/werkbonnen', color: '#C44830' },
   { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#F15025' },
-  { label: 'Visualizer', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
+  { label: 'Studio', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
 ]
 
 const FINANCIEEL_ITEMS: NavItem[] = [

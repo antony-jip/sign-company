@@ -7,7 +7,7 @@ import {
   Palette, X, Image as ImageIcon, Sparkles,
   Loader2, Download, Save, Trash2, Eye, Link2,
   Send, Maximize2, RotateCcw, Mail, Plus, ChevronDown,
-  MessageSquare, SquarePen, PanelLeft,
+  MessageSquare, SquarePen, PanelLeft, Info, Search, Check, Pencil,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -16,6 +16,7 @@ import {
   getSigningVisualisaties,
   getVisualizerCredits,
   createSigningVisualisatie,
+  updateSigningVisualisatie,
   deleteSigningVisualisatie,
   getProjecten,
   getOffertes,
@@ -68,10 +69,39 @@ const VOORBEELD_PROMPTS = [
   'Lichtbak naast de voordeur, strak en modern',
 ]
 
+function relatieveTijd(iso: string): string {
+  const d = new Date(iso).getTime()
+  if (!d) return ''
+  const min = Math.floor((Date.now() - d) / 60000)
+  if (min < 1) return 'zojuist'
+  if (min < 60) return `${min} min`
+  const uur = Math.floor(min / 60)
+  if (uur < 24) return `${uur} u`
+  const dag = Math.floor(uur / 24)
+  if (dag === 1) return 'gisteren'
+  if (dag < 7) return `${dag} dgn`
+  return new Date(iso).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+}
+
+function groepeerChats(chats: VisualizerChat[]): { label: string; items: VisualizerChat[] }[] {
+  const now = new Date()
+  const startVandaag = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const buckets: Record<string, VisualizerChat[]> = { Vandaag: [], Gisteren: [], 'Deze week': [], Eerder: [] }
+  for (const c of chats) {
+    const t = new Date(c.updated_at).getTime()
+    if (t >= startVandaag) buckets['Vandaag'].push(c)
+    else if (t >= startVandaag - 86400000) buckets['Gisteren'].push(c)
+    else if (t >= startVandaag - 7 * 86400000) buckets['Deze week'].push(c)
+    else buckets['Eerder'].push(c)
+  }
+  return Object.entries(buckets).filter(([, v]) => v.length).map(([label, items]) => ({ label, items }))
+}
+
 export function VisualizerLayout() {
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
+  const bibFileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatInputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -112,10 +142,33 @@ export function VisualizerLayout() {
   const [chats, setChats] = useState<VisualizerChat[]>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+
+  // ── Uitleg-popover (1e bezoek automatisch open) ──
+  const [infoOpen, setInfoOpen] = useState(false)
+  const [infoGezien, setInfoGezien] = useState(true)
+  useEffect(() => {
+    let cancelled = false
+    try {
+      if (!localStorage.getItem('doen_studio_info_gezien')) {
+        setInfoGezien(false)
+        const t = setTimeout(() => { if (!cancelled) setInfoOpen(true) }, 700)
+        return () => { cancelled = true; clearTimeout(t) }
+      }
+    } catch { /* localStorage niet beschikbaar */ }
+    return () => { cancelled = true }
+  }, [])
+  const sluitInfo = useCallback(() => {
+    setInfoOpen(false)
+    setInfoGezien(true)
+    try { localStorage.setItem('doen_studio_info_gezien', '1') } catch { /* negeer */ }
+  }, [])
 
   // ── Library state ──
   const [visualisaties, setVisualisaties] = useState<SigningVisualisatie[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isUploadingFoto, setIsUploadingFoto] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [filterKoppeling, setFilterKoppeling] = useState<'alle' | 'gekoppeld' | 'los'>('alle')
@@ -126,6 +179,13 @@ export function VisualizerLayout() {
   const [shareEmailSubject, setShareEmailSubject] = useState('')
   const [shareEmailBody, setShareEmailBody] = useState('')
   const [isSendingShareEmail, setIsSendingShareEmail] = useState(false)
+
+  // ── Koppelen vanuit bibliotheek ──
+  const [koppelVis, setKoppelVis] = useState<SigningVisualisatie | null>(null)
+  const [koppelProject, setKoppelProject] = useState('')
+  const [koppelOfferte, setKoppelOfferte] = useState('')
+  const [koppelZoek, setKoppelZoek] = useState('')
+  const [isKoppelen, setIsKoppelen] = useState(false)
 
   // ── Data for linking ──
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -257,8 +317,10 @@ export function VisualizerLayout() {
   // ── Chat persisteren (org-breed) na elke ronde ──
   const persistChat = useCallback(async (berichten: ChatBericht[]) => {
     if (!berichten.length) return
+    // Bestaande (evt. handmatig hernoemde) titel behouden; alleen bij nieuwe chat afleiden.
+    const bestaande = activeChatId ? chats.find(c => c.id === activeChatId) : null
     const eersteUser = berichten.find(b => b.rol === 'user')
-    const titel = (eersteUser?.tekst || 'Nieuwe visualisatie').slice(0, 60)
+    const titel = bestaande?.titel || (eersteUser?.tekst || 'Nieuwe visualisatie').slice(0, 60)
     const serialized = berichten.map(b => ({
       id: b.id,
       rol: b.rol,
@@ -284,7 +346,26 @@ export function VisualizerLayout() {
       setActiveChatId(saved.id)
       setChats(prev => [saved, ...prev.filter(c => c.id !== saved.id)])
     } catch { /* stil — persistentie mag verzenden nooit blokkeren */ }
-  }, [activeChatId, foto, fotoNaam, logoFoto, ratio, resolutie])
+  }, [activeChatId, chats, foto, fotoNaam, logoFoto, ratio, resolutie])
+
+  // ── Chatnaam inline hernoemen ──
+  const hernoemChat = useCallback(async (chat: VisualizerChat, nieuweTitel: string) => {
+    const titel = nieuweTitel.trim()
+    if (!titel || titel === chat.titel) return
+    setChats(prev => prev.map(c => c.id === chat.id ? { ...c, titel } : c))
+    try {
+      await upsertVisualizerChat({
+        id: chat.id,
+        titel,
+        berichten: chat.berichten,
+        foto: chat.foto,
+        foto_naam: chat.foto_naam,
+        logo_foto: chat.logo_foto,
+        ratio: chat.ratio,
+        resolutie: chat.resolutie,
+      })
+    } catch { /* optimistische update blijft staan */ }
+  }, [])
 
   // ── Eén verzend-flow: eerste bericht = eerste generatie, daarna verfijnen ──
   const isGenerating = ['claude', 'genereren'].includes(generatieStatus)
@@ -541,6 +622,92 @@ export function VisualizerLayout() {
     a.click()
   }, [])
 
+  // ── Snel een resultaat in de bibliotheek bewaren (los, zonder koppeling) ──
+  const [bewaardUrls, setBewaardUrls] = useState<Set<string>>(new Set())
+  const handleSnelBewaren = useCallback(async (url: string, promptGebruikt?: string) => {
+    if (!user?.id || !url || bewaardUrls.has(url)) return
+    setBewaardUrls(prev => new Set(prev).add(url))
+    try {
+      let resultaatUrl = url
+      if (/^https?:\/\//.test(url)) {
+        try {
+          const r = await fetch(url)
+          if (r.ok) {
+            const blob = await r.blob()
+            const mime = blob.type || 'image/png'
+            const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg'
+            const ts = Date.now()
+            const f = new File([blob], `resultaat-${ts}.${ext}`, { type: mime })
+            const path = `${user.id}/visualizer/${ts}-resultaat.${ext}`
+            await uploadFile(f, path)
+            resultaatUrl = await downloadFile(path)
+          }
+        } catch { /* val terug op originele url */ }
+      }
+      await createSigningVisualisatie({
+        user_id: user.id,
+        gebouw_foto_url: resultaatUrl,
+        prompt_gebruikt: promptGebruikt || 'Visualisatie',
+        signing_type: 'led_verlicht',
+        kleur_instelling: 'auto',
+        resolutie: '2K',
+        resultaat_url: resultaatUrl,
+        status: 'klaar',
+        api_kosten_eur: 0,
+        wisselkoers_gebruikt: 0.92,
+        doorberekend_aan_klant: false,
+      })
+      toast.success('Bewaard in bibliotheek')
+      ladenBibliotheek()
+    } catch (err) {
+      setBewaardUrls(prev => { const n = new Set(prev); n.delete(url); return n })
+      logger.error('Snel bewaren mislukt:', err)
+      toast.error('Bewaren mislukt')
+    }
+  }, [user?.id, bewaardUrls, ladenBibliotheek])
+
+  // ── Losse foto direct in de bibliotheek opslaan (zonder koppeling) ──
+  const handleLooseUpload = useCallback(async (file: File) => {
+    if (!user?.id) return
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { toast.error('Alleen JPG, PNG en WEBP'); return }
+    if (file.size > 15 * 1024 * 1024) { toast.error('Max 15MB'); return }
+    setIsUploadingFoto(true)
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader()
+        r.onload = () => resolve(r.result as string)
+        r.onerror = () => reject(new Error('Inlezen mislukt'))
+        r.readAsDataURL(file)
+      })
+      const resized = await resizeImage(dataUrl, 1600, 0.85)
+      const ts = Date.now()
+      const compressed = base64ToFile(resized, `upload-${ts}.jpg`)
+      const path = `${user.id}/visualizer/${ts}-upload.jpg`
+      await uploadFile(compressed, path)
+      const url = await downloadFile(path)
+      await createSigningVisualisatie({
+        user_id: user.id,
+        gebouw_foto_url: url,
+        prompt_gebruikt: 'Handmatig geüpload',
+        signing_type: 'led_verlicht',
+        kleur_instelling: 'auto',
+        resolutie: '2K',
+        resultaat_url: url,
+        status: 'klaar',
+        api_kosten_eur: 0,
+        wisselkoers_gebruikt: 0.92,
+        doorberekend_aan_klant: false,
+      })
+      toast.success('Foto toegevoegd aan bibliotheek')
+      ladenBibliotheek()
+    } catch (err) {
+      logger.error('Losse upload mislukt:', err)
+      toast.error('Uploaden mislukt')
+    } finally {
+      setIsUploadingFoto(false)
+    }
+  }, [user?.id, resizeImage, base64ToFile, ladenBibliotheek])
+
   const handleShareViaPortaal = useCallback(async (v: SigningVisualisatie) => {
     if (!user?.id || !v.project_id) return
     try {
@@ -608,6 +775,36 @@ export function VisualizerLayout() {
     }
   }, [user?.id])
 
+  const openKoppel = useCallback((v: SigningVisualisatie) => {
+    setKoppelVis(v)
+    setKoppelProject(v.project_id || '')
+    setKoppelOfferte(v.offerte_id || '')
+    setKoppelZoek('')
+    setShareDropdownId(null)
+  }, [])
+
+  const handleKoppel = useCallback(async () => {
+    if (!koppelVis) return
+    setIsKoppelen(true)
+    try {
+      const project = projecten.find(p => p.id === koppelProject)
+      const updated = await updateSigningVisualisatie(koppelVis.id, {
+        user_id: koppelVis.user_id,
+        project_id: koppelProject || undefined,
+        offerte_id: koppelOfferte || undefined,
+        klant_id: project?.klant_id || undefined,
+      })
+      setVisualisaties(prev => prev.map(v => v.id === updated.id ? { ...v, ...updated } : v))
+      toast.success(koppelProject ? 'Gekoppeld aan project' : 'Koppeling verwijderd')
+      setKoppelVis(null)
+    } catch (err) {
+      logger.error('Koppelen mislukt:', err)
+      toast.error('Koppelen mislukt')
+    } finally {
+      setIsKoppelen(false)
+    }
+  }, [koppelVis, koppelProject, koppelOfferte, projecten])
+
   const gefilterd = visualisaties.filter(v => {
     if (filterKoppeling === 'gekoppeld' && !v.project_id && !v.offerte_id) return false
     if (filterKoppeling === 'los' && (v.project_id || v.offerte_id)) return false
@@ -615,6 +812,7 @@ export function VisualizerLayout() {
   })
 
   const sessieGestart = chatBerichten.length > 0
+  const voornaam = user?.user_metadata?.voornaam?.trim() || ''
   const creditKost = resolutie === '4K' ? 2 : 1
   const huidigeRatio = RATIO_OPTIES.find(r => r.value === ratio)
 
@@ -658,7 +856,7 @@ export function VisualizerLayout() {
             : 'Stel een vraag of beschrijf je idee — voeg met + een foto toe om te visualiseren'}
           rows={2}
           disabled={isGenerating}
-          className="w-full resize-none bg-transparent px-2 py-1 text-[15px] placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 leading-relaxed min-h-[52px]"
+          className="w-full resize-none bg-transparent px-2 py-1 text-base placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 leading-relaxed min-h-[56px]"
         />
 
         <div className="flex items-center gap-1.5 mt-1">
@@ -756,7 +954,7 @@ export function VisualizerLayout() {
           </Button>
         </div>
       </div>
-      <p className="text-2xs text-muted-foreground text-center mt-2">
+      <p className="text-xs text-muted-foreground text-center mt-2.5">
         {creditSaldo} credits over · Enter verzendt · Shift+Enter = nieuwe regel
       </p>
     </>
@@ -781,14 +979,50 @@ export function VisualizerLayout() {
               <Palette className="w-4 h-4 text-petrol" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground tracking-[-0.3px] leading-none">
-                Visualizer<span className="text-[#F15025]">.</span>
+              <h1 className="text-xl font-bold text-foreground tracking-[-0.3px] leading-none">
+                Studio<span className="text-[#F15025]">.</span>
               </h1>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Claude vertelt wat-ie maakt · Gemini genereert</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                <span className="font-medium text-foreground/80">Claude Sonnet 4.6</span> bedenkt het ontwerp · <span className="font-medium text-foreground/80">Nano Banana 2</span> genereert het beeld
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Uitleg / info */}
+            <Popover open={infoOpen} onOpenChange={(o) => o ? setInfoOpen(true) : sluitInfo()}>
+              <PopoverTrigger asChild>
+                <button
+                  className="relative h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
+                  title="Hoe werkt Studio?"
+                >
+                  <Info className="w-4 h-4" />
+                  {!infoGezien && <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#F15025]" />}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="h-1 w-1 rounded-full bg-[#F15025]" />
+                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Zo werkt Studio</span>
+                </div>
+                <p className="text-sm text-foreground leading-relaxed">
+                  Spar met de assistent of voeg een foto toe met <span className="font-medium">+</span> om je signing op locatie te visualiseren.
+                </p>
+                <div className="mt-3 flex items-start gap-2.5 rounded-xl bg-petrol-light/15 ring-1 ring-petrol/10 p-3">
+                  <Link2 className="w-4 h-4 text-petrol flex-shrink-0 mt-0.5" />
+                  <p className="text-[13px] text-foreground leading-relaxed">
+                    <span className="font-semibold">Koppel aan een project</span> — bij opslaan, of later via de <Link2 className="inline w-3 h-3 -mt-0.5 text-petrol" />-knop in de bibliotheek. Zo komt de visualisatie mee in je offertes, e-mail en het klantportaal.
+                  </p>
+                </div>
+                <button
+                  onClick={sluitInfo}
+                  className="mt-3 w-full rounded-lg bg-petrol text-white text-sm font-medium py-2 hover:bg-petrol/90 transition-colors"
+                >
+                  Aan de slag
+                </button>
+              </PopoverContent>
+            </Popover>
+
             {/* Tab toggle */}
             <div className="inline-flex rounded-lg bg-muted/60 p-0.5">
               {([
@@ -799,7 +1033,7 @@ export function VisualizerLayout() {
                   key={t.key}
                   onClick={() => setView(t.key)}
                   className={cn(
-                    'px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5',
+                    'px-3.5 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5',
                     view === t.key
                       ? 'bg-card text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.08)]'
                       : 'text-muted-foreground hover:text-foreground/80',
@@ -820,7 +1054,7 @@ export function VisualizerLayout() {
 
             <button
               onClick={() => setShowCreditsPakket(true)}
-              className="text-xs font-mono font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer bg-background border border-border text-foreground hover:border-petrol/30"
+              className="text-sm font-mono font-medium px-3.5 py-2 rounded-lg transition-colors cursor-pointer bg-background border border-border text-foreground hover:border-petrol/30"
             >
               <span>{creditSaldo}</span> credits{creditSaldo < 5 && <span className="text-[#F15025] ml-1">· bijkopen</span>}
             </button>
@@ -833,39 +1067,103 @@ export function VisualizerLayout() {
         <div className="flex-1 min-h-0 flex">
           {/* ── Sidebar met gesprekken ── */}
           {sidebarOpen && (
-            <aside className="w-64 flex-shrink-0 border-r border-border bg-card/40 flex flex-col">
+            <aside className="w-72 flex-shrink-0 border-r border-border bg-card/50 flex flex-col">
               <div className="p-3">
                 <button
                   onClick={handleNieuweSessie}
-                  className="w-full flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground hover:border-petrol/40 hover:shadow-sm transition-all"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-petrol text-white px-3 py-2.5 text-sm font-semibold hover:bg-petrol/90 shadow-[0_2px_12px_-2px_rgba(26,83,92,0.45)] transition-all"
                 >
-                  <SquarePen className="w-4 h-4 text-petrol" /> Nieuwe visualisatie
+                  <SquarePen className="w-4 h-4" /> Nieuwe visualisatie
                 </button>
               </div>
-              <div className="px-4 pb-1.5 text-2xs font-medium uppercase tracking-wider text-muted-foreground">Recent</div>
-              <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5 scrollbar-thin">
+
+              <div className="flex-1 overflow-y-auto px-2 pb-3 scrollbar-thin">
                 {chats.length === 0 ? (
-                  <p className="px-2.5 py-2 text-xs text-muted-foreground">Nog geen gesprekken</p>
-                ) : chats.map(c => (
-                  <div
-                    key={c.id}
-                    onClick={() => openChat(c)}
-                    className={cn(
-                      'group/chat flex items-center gap-2 rounded-lg px-2.5 py-2 cursor-pointer transition-colors',
-                      activeChatId === c.id ? 'bg-petrol-light/15 text-foreground' : 'hover:bg-muted/60 text-foreground/80',
-                    )}
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />
-                    <span className="flex-1 truncate text-[13px]">{c.titel}</span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); verwijderChat(c.id) }}
-                      className="opacity-0 group-hover/chat:opacity-100 text-muted-foreground hover:text-destructive transition-all flex-shrink-0"
-                      title="Verwijderen"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  <div className="flex flex-col items-center text-center px-4 pt-12">
+                    <div className="h-11 w-11 rounded-2xl bg-petrol-light/15 ring-1 ring-petrol/10 flex items-center justify-center mb-3">
+                      <MessageSquare className="w-5 h-5 text-petrol" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">Nog geen gesprekken</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Je eerste idee verschijnt hier.</p>
+                  </div>
+                ) : groepeerChats(chats).map(groep => (
+                  <div key={groep.label}>
+                    {/* doen eyebrow */}
+                    <div className="flex items-center gap-1.5 px-2.5 pt-3.5 pb-1.5">
+                      <span className="h-1 w-1 rounded-full bg-[#F15025]" />
+                      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{groep.label}</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {groep.items.map(c => {
+                        const heeftBeeld = !!c.foto || (c.berichten || []).some(b => b.afbeelding_url)
+                        const Icon = heeftBeeld ? ImageIcon : MessageSquare
+                        const actief = activeChatId === c.id
+                        return (
+                          <div
+                            key={c.id}
+                            onClick={() => openChat(c)}
+                            className={cn(
+                              'group/chat relative flex items-start gap-2.5 rounded-lg pl-3.5 pr-2 py-2 cursor-pointer transition-colors',
+                              actief ? 'bg-petrol-light/20' : 'hover:bg-muted/60',
+                            )}
+                          >
+                            {actief && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#F15025]" />}
+                            <Icon className={cn('w-4 h-4 flex-shrink-0 mt-0.5', actief ? 'text-petrol' : 'text-muted-foreground/60')} />
+                            {renamingId === c.id ? (
+                              <div className="flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  autoFocus
+                                  value={renameValue}
+                                  onChange={(e) => setRenameValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') { hernoemChat(c, renameValue); setRenamingId(null) }
+                                    if (e.key === 'Escape') setRenamingId(null)
+                                  }}
+                                  onBlur={() => { hernoemChat(c, renameValue); setRenamingId(null) }}
+                                  className="w-full text-sm bg-background border border-petrol/40 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-petrol/30"
+                                />
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex-1 min-w-0">
+                                  <p
+                                    onDoubleClick={(e) => { e.stopPropagation(); setRenamingId(c.id); setRenameValue(c.titel) }}
+                                    className={cn('truncate text-sm', actief ? 'text-foreground font-medium' : 'text-foreground/85')}
+                                  >
+                                    {c.titel}
+                                  </p>
+                                  <p className="text-[11px] text-muted-foreground mt-0.5">{relatieveTijd(c.updated_at)}</p>
+                                </div>
+                                <div className="flex items-center gap-0.5 opacity-0 group-hover/chat:opacity-100 transition-all flex-shrink-0 mt-0.5">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setRenamingId(c.id); setRenameValue(c.titel) }}
+                                    className="text-muted-foreground hover:text-foreground p-0.5"
+                                    title="Naam wijzigen"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); verwijderChat(c.id) }}
+                                    className="text-muted-foreground hover:text-destructive p-0.5"
+                                    title="Verwijderen"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 ))}
+              </div>
+
+              {/* doen. signatuur */}
+              <div className="px-4 py-3 border-t border-border/70">
+                <p className="text-sm font-bold text-foreground tracking-[-0.02em] leading-none">doen<span className="text-[#F15025]">.</span></p>
+                <p className="text-[11px] text-muted-foreground mt-1">slim gedaan<span className="text-[#F15025]">.</span></p>
               </div>
             </aside>
           )}
@@ -882,9 +1180,11 @@ export function VisualizerLayout() {
                 <div className="p-3 bg-petrol-light/15 rounded-2xl ring-1 ring-petrol/10 mb-5">
                   <Sparkles className="w-6 h-6 text-petrol" />
                 </div>
-                <h2 className="text-[28px] leading-tight font-bold text-foreground tracking-[-0.5px] text-center">Waar wil je over sparren<span className="text-[#F15025]">?</span></h2>
-                <p className="text-sm text-muted-foreground mt-2.5 text-center max-w-md leading-relaxed">
-                  Stel een vraag of brainstorm over signing — gratis. Voeg een foto toe met <span className="font-medium text-foreground">+</span> en Gemini visualiseert je idee op locatie.
+                <h2 className="text-[28px] leading-tight font-bold text-foreground tracking-[-0.5px] text-center">
+                  {voornaam ? `Hi ${voornaam}, wat zullen we maken` : 'Hi! Wat zullen we maken'}<span className="text-[#F15025]">?</span>
+                </h2>
+                <p className="text-base text-muted-foreground mt-2.5 text-center max-w-md leading-relaxed">
+                  Stel een vraag of brainstorm over signing — gratis. Voeg een foto toe met <span className="font-medium text-foreground">+</span> en zie je idee meteen op locatie.
                 </p>
 
                 <div className="w-full mt-7">{composer}</div>
@@ -894,7 +1194,7 @@ export function VisualizerLayout() {
                     <button
                       key={p}
                       onClick={() => { setChatInput(p); chatInputRef.current?.focus() }}
-                      className="text-xs text-foreground/70 bg-card border border-border rounded-full px-3 py-1.5 hover:border-petrol/40 hover:text-foreground hover:shadow-sm transition-all"
+                      className="text-sm text-foreground/70 bg-card border border-border rounded-full px-3.5 py-2 hover:border-petrol/40 hover:text-foreground hover:shadow-sm transition-all"
                     >
                       {p}
                     </button>
@@ -903,9 +1203,9 @@ export function VisualizerLayout() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto">
+            <div className="flex-1 min-h-0 flex flex-col">
               {/* Actie-balk */}
-              <div className="flex items-center justify-end gap-1 px-4 pt-3 flex-shrink-0">
+              <div className="flex items-center justify-end gap-1 px-4 pt-3 flex-shrink-0 w-full max-w-3xl mx-auto">
               {resultaat && (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => handleDownload(resultaat.url, resultaat.fal_request_id)} className="text-muted-foreground hover:text-foreground gap-1.5">
@@ -923,7 +1223,7 @@ export function VisualizerLayout() {
 
           {/* Save panel */}
           {showSavePanel && resultaat && (
-            <div className="mx-4 mt-3 p-4 bg-petrol-light border border-petrol-border rounded-2xl space-y-3 animate-in slide-in-from-top-2 flex-shrink-0">
+            <div className="mt-3 mx-auto w-[calc(100%-2rem)] max-w-3xl p-4 bg-petrol-light border border-petrol-border rounded-2xl space-y-3 animate-in slide-in-from-top-2 flex-shrink-0">
               <div className="flex items-center gap-2 text-sm font-medium text-petrol">
                 <Link2 className="h-4 w-4" /> Opslaan in bibliotheek
               </div>
@@ -958,8 +1258,8 @@ export function VisualizerLayout() {
           )}
 
           {/* Berichten */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-thin">
-              <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+              <div className="space-y-5 w-full max-w-3xl mx-auto px-4 py-4">
                 {chatBerichten.map((bericht) => (
                   <div
                     key={bericht.id}
@@ -970,8 +1270,8 @@ export function VisualizerLayout() {
                     )}
                   >
                     {bericht.rol === 'assistant' && (
-                      <div className="flex-shrink-0 mt-1">
-                        <Sparkles className="w-4 h-4 text-petrol" />
+                      <div className="flex-shrink-0 mt-0.5 h-8 w-8 rounded-full bg-gradient-to-br from-petrol to-petrol-light flex items-center justify-center shadow-sm">
+                        <Sparkles className="w-4 h-4 text-white" />
                       </div>
                     )}
 
@@ -987,8 +1287,8 @@ export function VisualizerLayout() {
 
                       {/* Assistent met beeld → één gebundelde kaart: toelichting boven, resultaat eronder */}
                       {bericht.rol === 'assistant' && bericht.afbeelding_url ? (
-                        <div className="rounded-2xl border bg-card overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-                          <p className="px-4 pt-3 pb-2.5 text-sm text-foreground whitespace-pre-wrap leading-relaxed">{bericht.tekst}</p>
+                        <div className="rounded-2xl rounded-bl-md border bg-card overflow-hidden shadow-[0_4px_20px_-6px_rgba(26,83,92,0.16)]">
+                          <p className="px-5 pt-4 pb-3 text-[15px] text-foreground whitespace-pre-wrap leading-relaxed">{bericht.tekst}</p>
                           <div className="relative group/img">
                             <img
                               src={bericht.afbeelding_url}
@@ -997,6 +1297,20 @@ export function VisualizerLayout() {
                               className="block w-full h-auto cursor-zoom-in"
                             />
                             <div className="absolute top-2.5 right-2.5 flex gap-1.5 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={() => handleSnelBewaren(bericht.afbeelding_url!, bericht.prompt_gebruikt)}
+                                disabled={bewaardUrls.has(bericht.afbeelding_url)}
+                                className={cn(
+                                  'h-8 w-8 rounded-lg backdrop-blur-sm flex items-center justify-center transition-colors',
+                                  bewaardUrls.has(bericht.afbeelding_url)
+                                    ? 'bg-[#F15025] text-white'
+                                    : 'bg-black/55 text-white hover:bg-black/70',
+                                )}
+                                title={bewaardUrls.has(bericht.afbeelding_url) ? 'Bewaard in bibliotheek' : 'Bewaren in bibliotheek'}
+                              >
+                                <Save className="w-4 h-4" />
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => window.open(bericht.afbeelding_url!, '_blank')}
@@ -1020,10 +1334,10 @@ export function VisualizerLayout() {
                         <>
                           {bericht.rol !== 'systeem' && (
                             <div className={cn(
-                              'rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed',
+                              'rounded-2xl px-4 py-3 text-[15px] whitespace-pre-wrap leading-relaxed',
                               bericht.rol === 'user'
-                                ? 'bg-mod-klanten-light text-foreground'
-                                : 'bg-card border text-foreground',
+                                ? 'bg-petrol text-white rounded-br-md shadow-sm'
+                                : 'bg-card border text-foreground rounded-bl-md shadow-sm',
                             )}>
                               {bericht.tekst}
                             </div>
@@ -1048,7 +1362,7 @@ export function VisualizerLayout() {
                       )}
 
                       {bericht.generatie_tijd_ms && (
-                        <div className="flex items-center gap-2 text-2xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>{(bericht.generatie_tijd_ms / 1000).toFixed(1)}s</span>
                           <span>·</span>
                           <span>1 credit</span>
@@ -1071,8 +1385,8 @@ export function VisualizerLayout() {
 
                 {isGenerating && (
                   <div className="flex gap-3 justify-start">
-                    <div className="flex-shrink-0 mt-1">
-                      <Sparkles className="w-4 h-4 text-petrol" />
+                    <div className="flex-shrink-0 mt-0.5 h-8 w-8 rounded-full bg-gradient-to-br from-petrol to-petrol-light flex items-center justify-center shadow-sm">
+                      <Sparkles className="w-4 h-4 text-white" />
                     </div>
                     <div className="bg-card border rounded-2xl p-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
@@ -1094,7 +1408,7 @@ export function VisualizerLayout() {
           </div>
 
           {/* ── Composer ── */}
-          <div className="flex-shrink-0 px-4 pb-4 pt-1">
+          <div className="flex-shrink-0 w-full max-w-3xl mx-auto px-4 pb-4 pt-1">
             {composer}
           </div>
             </div>
@@ -1106,25 +1420,42 @@ export function VisualizerLayout() {
       {/* ═══════════════ BIBLIOTHEEK ═══════════════ */}
       {view === 'bibliotheek' && (
         <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6 bg-gradient-to-b from-petrol-light/[0.05] via-background to-background">
-          <div className="flex items-center justify-between mb-5">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex items-center justify-between mb-5 gap-3">
+            <p className="text-[15px] text-muted-foreground">
               <span className="font-semibold text-foreground">{gefilterd.length}</span> {gefilterd.length === 1 ? 'visualisatie' : 'visualisaties'}
             </p>
-            <div className="inline-flex rounded-lg bg-muted/60 p-0.5">
-              {(['alle', 'gekoppeld', 'los'] as const).map((val) => (
-                <button
-                  key={val}
-                  onClick={() => setFilterKoppeling(val)}
-                  className={cn(
-                    'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                    filterKoppeling === val
-                      ? 'bg-card text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.08)]'
-                      : 'text-muted-foreground hover:text-foreground/80',
-                  )}
-                >
-                  {val === 'alle' ? 'Alle' : val === 'gekoppeld' ? 'Aan project' : 'Losse mockups'}
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => bibFileInputRef.current?.click()}
+                disabled={isUploadingFoto}
+                className="inline-flex items-center gap-1.5 text-sm font-medium rounded-lg border border-border bg-card px-3 py-1.5 text-foreground hover:border-petrol/40 hover:shadow-sm transition-all disabled:opacity-50"
+              >
+                {isUploadingFoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 text-petrol" />}
+                Foto toevoegen
+              </button>
+              <input
+                ref={bibFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLooseUpload(f); e.target.value = '' }}
+              />
+              <div className="inline-flex rounded-lg bg-muted/60 p-0.5">
+                {(['alle', 'gekoppeld', 'los'] as const).map((val) => (
+                  <button
+                    key={val}
+                    onClick={() => setFilterKoppeling(val)}
+                    className={cn(
+                      'px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors',
+                      filterKoppeling === val
+                        ? 'bg-card text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.08)]'
+                        : 'text-muted-foreground hover:text-foreground/80',
+                    )}
+                  >
+                    {val === 'alle' ? 'Alle' : val === 'gekoppeld' ? 'Aan project' : 'Losse mockups'}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -1179,11 +1510,20 @@ export function VisualizerLayout() {
                     </div>
 
                     <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button size="sm" variant="secondary" className="h-6 w-6 p-0 rounded-lg" onClick={() => setLightboxIndex(index)} title="Bekijken">
-                        <Eye className="h-3 w-3" />
+                      <Button size="sm" variant="secondary" className="h-7 w-7 p-0 rounded-lg" onClick={() => setLightboxIndex(index)} title="Bekijken">
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className={cn('h-7 w-7 p-0 rounded-lg', v.project_id && 'text-petrol')}
+                        onClick={() => openKoppel(v)}
+                        title={v.project_id ? 'Koppeling wijzigen' : 'Koppel aan project'}
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
                       </Button>
                       <div className="relative">
-                        <Button size="sm" variant="secondary" className="h-6 w-6 p-0 rounded-lg" onClick={() => setShareDropdownId(shareDropdownId === v.id ? null : v.id)} title="Delen">
+                        <Button size="sm" variant="secondary" className="h-7 w-7 p-0 rounded-lg" onClick={() => setShareDropdownId(shareDropdownId === v.id ? null : v.id)} title="Delen">
                           <Send className="h-3 w-3" />
                         </Button>
                         {shareDropdownId === v.id && (
@@ -1202,7 +1542,7 @@ export function VisualizerLayout() {
                           </>
                         )}
                       </div>
-                      <Button size="sm" variant="secondary" className="h-6 w-6 p-0 rounded-lg" onClick={() => handleDownload(v.resultaat_url, v.id)} title="Download">
+                      <Button size="sm" variant="secondary" className="h-7 w-7 p-0 rounded-lg" onClick={() => handleDownload(v.resultaat_url, v.id)} title="Download">
                         <Download className="h-3 w-3" />
                       </Button>
                       {deleteConfirmId === v.id ? (
@@ -1210,7 +1550,7 @@ export function VisualizerLayout() {
                           Bevestig
                         </Button>
                       ) : (
-                        <Button size="sm" variant="secondary" className="h-6 w-6 p-0 rounded-lg" onClick={() => setDeleteConfirmId(v.id)}>
+                        <Button size="sm" variant="secondary" className="h-7 w-7 p-0 rounded-lg" onClick={() => setDeleteConfirmId(v.id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       )}
@@ -1269,6 +1609,94 @@ export function VisualizerLayout() {
                 <Send className="h-3.5 w-3.5" />
                 {isSendingShareEmail ? 'Verzenden...' : 'Verstuur'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Koppel-aan-project dialog */}
+      {koppelVis && (
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setKoppelVis(null)}>
+          <div className="bg-card rounded-2xl w-full max-w-md shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/60">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Link2 className="h-4 w-4 text-petrol" /> Koppel aan project</h3>
+              <button onClick={() => setKoppelVis(null)} className="text-muted-foreground hover:text-foreground transition-colors"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="p-5 space-y-3">
+              <img src={koppelVis.resultaat_url} alt="" className="w-full max-h-44 object-cover rounded-xl" />
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Project</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    value={koppelZoek}
+                    onChange={(e) => setKoppelZoek(e.target.value)}
+                    placeholder="Zoek op bedrijf of project..."
+                    autoFocus
+                    className="w-full text-sm bg-background border border-border rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-petrol/40 placeholder:text-muted-foreground"
+                  />
+                </div>
+                <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-border bg-background scrollbar-thin">
+                  <button
+                    onClick={() => { setKoppelProject(''); setKoppelOfferte('') }}
+                    className={cn(
+                      'w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors border-b border-border/60',
+                      !koppelProject ? 'bg-petrol-light/20' : 'hover:bg-muted/60',
+                    )}
+                  >
+                    <span className={cn('flex-shrink-0', !koppelProject ? 'text-petrol' : 'text-transparent')}><Check className="w-4 h-4" /></span>
+                    <span className="text-sm text-foreground">Geen project <span className="text-muted-foreground">(los)</span></span>
+                  </button>
+                  {(() => {
+                    const q = koppelZoek.trim().toLowerCase()
+                    const lijst = projecten.filter(p => !q || p.naam?.toLowerCase().includes(q) || p.klant_naam?.toLowerCase().includes(q))
+                    if (lijst.length === 0) {
+                      return <p className="px-3 py-4 text-sm text-muted-foreground text-center">Geen projecten gevonden</p>
+                    }
+                    return lijst.map(p => {
+                      const actief = koppelProject === p.id
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => { setKoppelProject(p.id); setKoppelOfferte('') }}
+                          className={cn(
+                            'w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors border-b border-border/40 last:border-0',
+                            actief ? 'bg-petrol-light/20' : 'hover:bg-muted/60',
+                          )}
+                        >
+                          <span className={cn('flex-shrink-0', actief ? 'text-petrol' : 'text-transparent')}><Check className="w-4 h-4" /></span>
+                          <span className="min-w-0">
+                            <span className={cn('block truncate text-sm', actief ? 'font-medium text-foreground' : 'text-foreground')}>{p.naam}</span>
+                            {p.klant_naam && <span className="block truncate text-xs text-muted-foreground">{p.klant_naam}</span>}
+                          </span>
+                        </button>
+                      )
+                    })
+                  })()}
+                </div>
+              </div>
+              {koppelProject && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Offerte <span className="font-normal">(optioneel)</span></label>
+                  <select
+                    value={koppelOfferte}
+                    onChange={(e) => setKoppelOfferte(e.target.value)}
+                    className="w-full text-sm bg-background border border-border rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-petrol/40"
+                  >
+                    <option value="">Geen offerte</option>
+                    {offertes.filter(o => o.project_id === koppelProject).map(o => (
+                      <option key={o.id} value={o.id}>{o.nummer || o.titel}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-between px-5 py-3.5 border-t border-border/60 bg-background/50">
+              <button onClick={() => setKoppelVis(null)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Annuleren</button>
+              <Button onClick={handleKoppel} disabled={isKoppelen} className="rounded-xl bg-petrol hover:bg-petrol/90 gap-1.5">
+                {isKoppelen ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+                {koppelProject ? 'Koppelen' : 'Loskoppelen'}
+              </Button>
             </div>
           </div>
         </div>

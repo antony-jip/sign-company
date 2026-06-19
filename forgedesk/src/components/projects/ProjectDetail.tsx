@@ -1833,7 +1833,7 @@ export function ProjectDetail() {
           {/* Visualisaties (conditioneel, behouden) */}
           {hasVisualisaties && (
             <div>
-              <h3 className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.08em] mb-3">Visualizer</h3>
+              <h3 className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.08em] mb-3">Studio</h3>
               <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
             </div>
           )}

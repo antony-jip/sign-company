@@ -24,7 +24,7 @@ const ROUTE_NAMES: Record<string, string> = {
   'forgie': 'Daan',
   'cockpit': 'Cockpit',
   'documenten': 'Documenten',
-  'visualizer': 'Visualizer',
+  'visualizer': 'Studio',
 }
 
 function isUuid(str: string) {

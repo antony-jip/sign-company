@@ -55,8 +55,8 @@ export const FEATURES: Feature[] = [
   },
   {
     icon: PenTool,
-    title: 'Visualizer',
-    description: 'Ontwerp en presenteer je creatieve concepten. Toon klanten direct hoe het eindresultaat eruitziet.',
+    title: 'Studio',
+    description: 'Brainstorm met AI en visualiseer je signing op een echte foto. Toon klanten direct hoe het eindresultaat eruitziet.',
     detail: 'Presenteer ontwerpen aan je klant',
     color: '#B8A076',
   },
