@@ -31,6 +31,19 @@ function OfflineBanner() {
   )
 }
 
+// Speelt een subtiele push-transitie bij het wisselen van module. Keyed op het
+// eerste pad-segment, zodat detail-/tab-navigatie binnen een module niet
+// remount of animeert. Alleen voor niet-fullbleed content.
+function AnimatedOutlet() {
+  const location = useLocation()
+  const seg = location.pathname.split('/')[1] || 'home'
+  return (
+    <div key={seg} className="route-transition">
+      <Outlet />
+    </div>
+  )
+}
+
 export function AppLayout() {
   const { layoutMode } = useSidebar()
   const location = useLocation()
@@ -128,7 +141,7 @@ export function AppLayout() {
                   <TabBar />
                 </div>
                 <div className="w-full px-4 md:px-8 py-6 md:py-8 pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.25rem)] md:pb-8 page-content-enter">
-                  <Outlet />
+                  <AnimatedOutlet />
                 </div>
               </div>
             )}
@@ -185,7 +198,7 @@ export function AppLayout() {
                 'flex-1 min-h-0 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter',
                 isFullBleed ? 'p-0' : 'p-4 md:p-8',
               )}>
-                <Outlet />
+                {isFullBleed ? <Outlet /> : <AnimatedOutlet />}
               </div>
             </main>
           </div>
