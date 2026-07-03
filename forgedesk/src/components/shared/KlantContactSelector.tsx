@@ -445,9 +445,9 @@ export function KlantContactSelector({
 
                 {showUitgebreid && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <Input value={nb.contactpersoon} onChange={(e) => setNb({ ...nb, contactpersoon: e.target.value })} placeholder="Contactpersoon" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                    <Input value={nb.email} onChange={(e) => setNb({ ...nb, email: e.target.value })} placeholder="E-mail" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                    <Input value={nb.telefoon} onChange={(e) => setNb({ ...nb, telefoon: e.target.value })} placeholder="Telefoon" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                    <Input value={nb.contactpersoon} onChange={(e) => setNb({ ...nb, contactpersoon: e.target.value })} placeholder="Contactpersoon" autoCapitalize="words" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                    <Input value={nb.email} onChange={(e) => setNb({ ...nb, email: e.target.value })} placeholder="E-mail" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                    <Input value={nb.telefoon} onChange={(e) => setNb({ ...nb, telefoon: e.target.value })} placeholder="Telefoon" type="tel" inputMode="tel" autoComplete="tel" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                     <Input value={nb.adres} onChange={(e) => setNb({ ...nb, adres: e.target.value })} placeholder="Adres" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                     <Input value={nb.postcode} onChange={(e) => setNb({ ...nb, postcode: e.target.value })} placeholder="Postcode" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                     <Input value={nb.website} onChange={(e) => setNb({ ...nb, website: e.target.value })} placeholder="Website" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
@@ -610,10 +610,10 @@ export function KlantContactSelector({
                 Nieuwe contactpersoon
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Input value={nc.naam} onChange={(e) => setNc({ ...nc, naam: e.target.value })} placeholder="Naam *" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} autoFocus />
+                <Input value={nc.naam} onChange={(e) => setNc({ ...nc, naam: e.target.value })} placeholder="Naam *" autoCapitalize="words" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} autoFocus />
                 <Input value={nc.functie} onChange={(e) => setNc({ ...nc, functie: e.target.value })} placeholder="Functie" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                <Input value={nc.email} onChange={(e) => setNc({ ...nc, email: e.target.value })} placeholder={requireContactEmail ? 'E-mailadres *' : 'E-mailadres'} type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                <Input value={nc.telefoon} onChange={(e) => setNc({ ...nc, telefoon: e.target.value })} placeholder="Telefoonnummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                <Input value={nc.email} onChange={(e) => setNc({ ...nc, email: e.target.value })} placeholder={requireContactEmail ? 'E-mailadres *' : 'E-mailadres'} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                <Input value={nc.telefoon} onChange={(e) => setNc({ ...nc, telefoon: e.target.value })} placeholder="Telefoonnummer" type="tel" inputMode="tel" autoComplete="tel" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
               </div>
               <div className="flex items-center gap-2 pt-1">
                 <button

@@ -426,6 +426,9 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
               <Input
                 id="email"
                 type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
                 placeholder="email@bedrijf.nl"
@@ -440,6 +443,8 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
               <Input
                 id="telefoon"
                 type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={formData.telefoon}
                 onChange={(e) => handleChange('telefoon', e.target.value)}
                 placeholder="+31 6 12345678"
