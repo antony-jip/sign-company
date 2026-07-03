@@ -319,6 +319,7 @@ function AppContent() {
 }
 
 function App() {
+  const isMobile = useMediaQuery('(max-width: 767px)')
   return (
     <BrowserRouter>
       <ThemeProvider>
@@ -331,7 +332,8 @@ function App() {
                     <TabsProvider>
                     <ErrorBoundary>
                       <Toaster
-                        position="top-right"
+                        position={isMobile ? 'top-center' : 'top-right'}
+                        offset={isMobile ? 'calc(env(safe-area-inset-top) + 12px)' : undefined}
                         visibleToasts={2}
                         duration={4000}
                         toastOptions={{

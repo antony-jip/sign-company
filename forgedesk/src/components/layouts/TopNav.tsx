@@ -173,7 +173,7 @@ export function TopNav() {
     : user?.email?.split('@')[0] || 'Gebruiker'
 
   return (
-    <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
+    <header className="flex-shrink-0 bg-card" style={{ position: 'relative', zIndex: 30, paddingTop: 'env(safe-area-inset-top)' }}>
       {/* ── Row 1: Cohesieve balk (doen.-stijl) ── */}
       <div className="doen-toolbar relative flex items-center gap-2.5 h-[56px] px-3.5 bg-card border-b border-border">
         {/* Logo */}
