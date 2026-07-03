@@ -136,7 +136,7 @@ export function ProjectCreate() {
 
   return (
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full bg-background">
-      <div className="relative max-w-2xl mx-auto px-4 pt-5 md:pt-12 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-12 animate-fade-in-up">
+      <div className="relative max-w-2xl mx-auto px-4 pt-5 md:pt-12 pb-[calc(8.5rem+env(safe-area-inset-bottom))] md:pb-12 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-3 md:gap-4 mb-5 md:mb-6">
         <button
@@ -307,10 +307,10 @@ export function ProjectCreate() {
       </form>
       </div>
 
-      {/* Sticky bottom action bar — mobile only, pinned to the viewport bottom
-          (safe-area padding clears the iOS home indicator). */}
+      {/* Sticky bottom action bar — mobile only, sits above the bottom tab bar
+          (h-14 + safe-area handled by the nav itself). */}
       <div
-        className="md:hidden fixed inset-x-0 bottom-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] flex items-center gap-2"
+        className="md:hidden fixed inset-x-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 flex items-center gap-2 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
         style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}
       >
         <button

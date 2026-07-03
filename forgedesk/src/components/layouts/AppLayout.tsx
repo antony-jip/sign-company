@@ -4,6 +4,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { TopNav } from './TopNav'
+import { MobileBottomNav } from './MobileBottomNav'
 import { ForgieChatWidget } from '@/components/forgie/ForgieChatWidget'
 import { FloatingQuickActions } from '@/components/dashboard/FloatingQuickActions'
 import { FloatingEmailButton } from '@/components/shared/FloatingEmailButton'
@@ -126,13 +127,14 @@ export function AppLayout() {
                   {!hideTopNav && <TopNav />}
                   <TabBar />
                 </div>
-                <div className="w-full px-4 md:px-8 py-6 md:py-8 pb-8 page-content-enter">
+                <div className="w-full px-4 md:px-8 py-6 md:py-8 pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.25rem)] md:pb-8 page-content-enter">
                   <Outlet />
                 </div>
               </div>
             )}
           </main>
         </div>
+        <MobileBottomNav />
         <FloatingQuickActions />
         <FloatingEmailButton />
         <ForgieChatWidget />
