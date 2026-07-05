@@ -6,7 +6,11 @@ import * as Sentry from '@sentry/node'
 
 // ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
 if (process.env.SENTRY_DSN && !Sentry.getClient()) {
-  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|publiek_token|\btoken\b|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  // Query-strings met ?token= belanden in event.request.url/query_string; die
+  // scrubben we hieronder expliciet weg.
+  const scrubUrl = (url?: string): string | undefined =>
+    url?.replace(/([?&](?:token|betaal_token|publiek_token|payment_token)=)[^&#]*/gi, '$1[Filtered]')
   const scrub = (v: unknown, d = 0): unknown => {
     if (d > 6 || v == null) return v
     if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
@@ -25,6 +29,10 @@ if (process.env.SENTRY_DSN && !Sentry.getClient()) {
     beforeSend(event) {
       if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
       if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.request?.url) event.request.url = scrubUrl(event.request.url)
+      if (event.request?.query_string && typeof event.request.query_string === 'string') {
+        event.request.query_string = scrubUrl('?' + event.request.query_string)?.slice(1)
+      }
       if (event.user) { delete event.user.ip_address; delete event.user.email }
       return event
     },
@@ -282,11 +290,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (o.publiek_token) {
             offerteTokenMap[o.id] = o.publiek_token
           } else {
-            // Auto-generate publiek_token for offertes without one
+            // Auto-generate publiek_token for offertes without one.
+            // Met expiry (183 dagen, consistent met de client-side generatie);
+            // zonder expiry zou dit een eeuwig geldige publieke link zijn.
             const newToken = crypto.randomUUID()
+            const verlooptOp = new Date(Date.now() + 183 * 24 * 60 * 60 * 1000).toISOString()
             await supabaseAdmin
               .from('offertes')
-              .update({ publiek_token: newToken })
+              .update({ publiek_token: newToken, publiek_token_verloopt_op: verlooptOp })
               .eq('id', o.id)
             offerteTokenMap[o.id] = newToken
           }

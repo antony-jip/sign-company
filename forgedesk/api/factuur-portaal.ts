@@ -86,13 +86,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Via portaal token + factuur_id
       const { data: portaal } = await supabaseAdmin
         .from('project_portalen')
-        .select('id, user_id, project_id, organisatie_id, actief')
+        .select('id, user_id, project_id, organisatie_id, actief, verloopt_op')
         .eq('token', portaalToken)
         .eq('actief', true)
         .maybeSingle()
 
       if (!portaal) {
         return res.status(404).json({ error: 'Portaal niet gevonden of verlopen' })
+      }
+
+      // Expiry server-side afdwingen (consistent met portaal-get/reactie/upload/bekeken).
+      const portaalVerloopt = portaal.verloopt_op as string | null | undefined
+      if (portaalVerloopt && new Date(portaalVerloopt) < new Date()) {
+        return res.status(410).json({ error: 'Deze portaallink is verlopen' })
       }
       userId = portaal.user_id
 
@@ -208,8 +214,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       appSettings = data
     }
 
+    // betaal_token niet meeteruggeven: het portaal-token-pad hoort de betaallink
+    // niet te lekken, en de betaalpagina leest de token uit de eigen URL. Rest
+    // van de factuur blijft ongemoeid zodat de portaal-weergave niets mist.
+    const { betaal_token: _bt, betaal_token_verloopt_op: _bte, ...factuurPubliek } = factuur as Record<string, unknown>
+
     return res.status(200).json({
-      factuur,
+      factuur: factuurPubliek,
       items: factuurItems || [],
       bedrijf: profile || null,
       klant: klant || null,

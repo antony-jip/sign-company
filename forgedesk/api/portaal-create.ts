@@ -75,13 +75,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ portaal: bestaand, hergebruikt: true })
     }
 
-    // Haal portaal instellingen op voor instructietekst — org-first met user-fallback
-    const { data: callerProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('organisatie_id')
-      .eq('id', userId)
-      .maybeSingle()
-    const orgId = (callerProfile?.organisatie_id as string | null) ?? null
+    // Haal portaal instellingen op voor instructietekst — org-first met user-fallback.
+    // orgId is hierboven al geresolved (fail-closed bij ontbreken).
     let appSettings: { portaal_instellingen: unknown } | null = null
     if (orgId) {
       const { data } = await supabaseAdmin
