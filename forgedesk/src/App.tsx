@@ -174,11 +174,25 @@ const VisualizerLayout = lazy(() => import('@/components/visualizer/VisualizerLa
 const NotFoundPage = lazy(() => import('@/components/shared/NotFoundPage'), 'NotFoundPage')
 
 // ---------------------------------------------------------------------------
-// Loading spinner used as Suspense fallback
+// Loading states. BootSplash spiegelt de statische splash in index.html
+// (klassen staan daar in de <head>-style), zodat splash → data-init één
+// doorlopend beeld is. De route-spinner fade't pas na 180ms in, zodat
+// snelle (geprefetchte) navigaties geen spinner-flits tonen.
 // ---------------------------------------------------------------------------
+function BootSplash() {
+  return (
+    <div className="boot-splash">
+      <span className="boot-logo">doen<span className="dot">.</span></span>
+    </div>
+  )
+}
+
 function LoadingSpinner() {
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div
+      className="flex items-center justify-center min-h-screen opacity-0"
+      style={{ animation: 'fadeIn 200ms ease-out 180ms forwards' }}
+    >
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
     </div>
   )
@@ -200,7 +214,7 @@ function AppContent() {
   const { isReady } = useDataInit()
 
   if (!isReady) {
-    return <LoadingSpinner />
+    return <BootSplash />
   }
 
   return (

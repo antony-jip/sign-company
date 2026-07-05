@@ -5,7 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/logos/doen-app-icon.svg" />
     <link rel="apple-touch-icon" href="/logos/doen-icon-192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <meta property="og:title" content="doen. — slim gedaan." />
+    <meta property="og:title" content="doen. · slim gedaan." />
     <meta property="og:description" content="CRM en projectmanagement voor vakmensen" />
     <meta property="og:image" content="/logos/doen-app-icon.svg" />
     <meta property="og:type" content="website" />
@@ -17,15 +17,45 @@
     <meta name="apple-mobile-web-app-title" content="doen." />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="format-detection" content="telephone=no" />
-    <title>Doen.</title>
-    <meta name="description" content="Doen. — CRM en projectmanagement voor vakmensen">
+    <title>doen.</title>
+    <meta name="description" content="doen. · CRM en projectmanagement voor vakmensen">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Mono:wght@400;500&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <script src="/fouc.js"></script>
+    <style>
+      /* Boot-splash: zichtbaar tot React mount, daarna vervangen. */
+      .boot-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #F8F7F5;
+      }
+      html.dark .boot-splash { background: #08161A; }
+      .boot-logo {
+        font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+        font-weight: 800;
+        font-size: 34px;
+        letter-spacing: -0.02em;
+        color: #1A535C;
+        animation: boot-pulse 1.6s ease-in-out infinite;
+      }
+      html.dark .boot-logo { color: #E8EDEE; }
+      .boot-logo .dot { color: #F15025; }
+      @keyframes boot-pulse {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-splash">
+        <span class="boot-logo">doen<span class="dot">.</span></span>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
