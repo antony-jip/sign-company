@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, RefreshCw, Download, FileText, CheckCircle2, X, ChevronLeft, ChevronRight, Loader2, Check } from 'lucide-react'
+import { Search, RefreshCw, Download, FileText, CheckCircle2, X, ChevronLeft, ChevronRight, Loader2, Check, Plus, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
@@ -17,10 +17,12 @@ import {
   syncInkoopfacturen,
   extractInkoopfactuur,
   getInkoopAIUsage,
+  koppelInkoopfactuurAanProject,
 } from '@/services/inkoopfactuurService'
+import { getProjecten, getKlanten } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
-import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus } from '@/types'
+import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus, Project, Klant } from '@/types'
 
 const STATUS_CONFIG: Record<InkoopFactuurStatus, { label: string; bg: string; text: string; dot: boolean }> = {
   nieuw: { label: 'Nieuw', bg: '#FDE8E2', text: '#C03A18', dot: true },
@@ -73,10 +75,22 @@ export function InkoopfacturenLayout() {
   const [lightboxReden, setLightboxReden] = useState('')
   const [lightboxSaving, setLightboxSaving] = useState(false)
   const [lightboxAction, setLightboxAction] = useState<'idle' | 'approving' | 'rejecting' | 'approved' | 'rejected'>('idle')
+  const [filterMaand, setFilterMaand] = useState<string>('alle')
+  const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? [])
+  const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
+  const [projectPickerOpen, setProjectPickerOpen] = useState(false)
+  const [projectQuery, setProjectQuery] = useState('')
 
   useEffect(() => {
     setLightboxAction('idle')
+    setProjectPickerOpen(false)
+    setProjectQuery('')
   }, [lightbox?.factuur.id])
+
+  useEffect(() => {
+    fetchQuery('projecten', getProjecten).then(setProjecten).catch(() => {})
+    fetchQuery('klanten', getKlanten).then(setKlanten).catch(() => {})
+  }, [])
   const [isSyncing, setIsSyncing] = useState(false)
   const [extractProgress, setExtractProgress] = useState<{ current: number; total: number } | null>(null)
 
@@ -260,6 +274,9 @@ export function InkoopfacturenLayout() {
     if (filterStatus !== 'alle') {
       result = result.filter(f => f.status === filterStatus)
     }
+    if (filterMaand !== 'alle') {
+      result = result.filter(f => (f.factuur_datum || f.created_at || '').startsWith(filterMaand))
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter(f =>
@@ -279,7 +296,33 @@ export function InkoopfacturenLayout() {
       return dateB - dateA
     })
     return result
-  }, [facturen, filterStatus, searchQuery])
+  }, [facturen, filterStatus, filterMaand, searchQuery])
+
+  const beschikbareMaanden = useMemo(() => {
+    const maanden = new Set<string>()
+    for (const f of facturen) {
+      const datum = f.factuur_datum || f.created_at
+      if (datum) maanden.add(datum.slice(0, 7))
+    }
+    return Array.from(maanden).sort().reverse()
+  }, [facturen])
+
+  const klantNamen = useMemo(
+    () => new Map(klanten.map(k => [k.id, k.bedrijfsnaam || k.contactpersoon || ''])),
+    [klanten],
+  )
+
+  // Picker zoekt in bestaande projecten, op projectnaam, nummer én klantnaam.
+  const projectResultaten = useMemo(() => {
+    const q = projectQuery.trim().toLowerCase()
+    const lijst = q
+      ? projecten.filter(p =>
+          (p.naam || '').toLowerCase().includes(q) ||
+          (p.project_nummer || '').toLowerCase().includes(q) ||
+          (klantNamen.get(p.klant_id) || '').toLowerCase().includes(q))
+      : projecten
+    return lijst.slice(0, 8)
+  }, [projecten, klantNamen, projectQuery])
 
   async function openLightbox(factuur: InkoopFactuur) {
     try {
@@ -299,6 +342,23 @@ export function InkoopfacturenLayout() {
   // Positie live afleiden i.p.v. opslaan: na goedkeuren/afwijzen
   // hersorteert de lijst en zou een opgeslagen index verlopen zijn.
   const lightboxIndex = lightbox ? filtered.findIndex(f => f.id === lightbox.factuur.id) : -1
+  const gekoppeldProject = lightbox?.factuur.project_id
+    ? projecten.find(p => p.id === lightbox.factuur.project_id)
+    : undefined
+
+  async function koppelProject(projectId: string | null) {
+    if (!lightbox) return
+    try {
+      const updated = await koppelInkoopfactuurAanProject(lightbox.factuur.id, projectId)
+      setLightbox(lb => (lb ? { ...lb, factuur: updated } : lb))
+      setFacturen(prev => prev.map(f => (f.id === updated.id ? updated : f)))
+      setProjectPickerOpen(false)
+      setProjectQuery('')
+      toast.success(projectId ? 'Gekoppeld aan project' : 'Projectkoppeling verwijderd')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Koppelen mislukt')
+    }
+  }
 
   function navigateLightbox(direction: 'prev' | 'next') {
     if (!lightbox) return
@@ -560,6 +620,23 @@ export function InkoopfacturenLayout() {
               )
             })}
           </div>
+
+          {/* Maand-filter */}
+          <select
+            value={filterMaand}
+            onChange={(e) => setFilterMaand(e.target.value)}
+            className={cn(
+              'text-[13px] font-medium bg-background border border-border rounded-lg px-3 py-1.5 cursor-pointer focus:outline-none focus:border-[#C44830] focus:ring-2 focus:ring-[#C44830]/10 transition-all',
+              filterMaand !== 'alle' ? 'text-[#C44830] font-semibold' : 'text-muted-foreground',
+            )}
+          >
+            <option value="alle">Alle maanden</option>
+            {beschikbareMaanden.map((maand) => (
+              <option key={maand} value={maand}>
+                {new Date(`${maand}-01T00:00:00`).toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' })}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -600,7 +677,7 @@ export function InkoopfacturenLayout() {
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6}>
-                    {searchQuery || filterStatus !== 'alle' ? (
+                    {searchQuery || filterStatus !== 'alle' || filterMaand !== 'alle' ? (
                       <EmptyState
                         module="inkoopfacturen"
                         title="Geen resultaten"
@@ -812,6 +889,85 @@ export function InkoopfacturenLayout() {
                     <span className="text-muted-foreground">Van</span>
                     <span className="text-foreground/80 truncate ml-4">{lightbox.factuur.email_van}</span>
                   </div>
+                )}
+              </div>
+
+              {/* Project-koppeling */}
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 block">Project</label>
+                {projectPickerOpen ? (
+                  <div className="rounded-xl border border-border bg-background overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 border-b border-border">
+                      <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                      <input
+                        autoFocus
+                        placeholder="Zoek op project of klant..."
+                        value={projectQuery}
+                        onChange={e => setProjectQuery(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Escape') setProjectPickerOpen(false) }}
+                        className="w-full h-9 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
+                      />
+                    </div>
+                    <div className="max-h-56 overflow-y-auto p-1">
+                      {projectResultaten.length === 0 ? (
+                        <p className="text-[12px] text-muted-foreground px-2.5 py-2">Geen projecten gevonden</p>
+                      ) : (
+                        projectResultaten.map(p => (
+                          <button
+                            key={p.id}
+                            onClick={() => koppelProject(p.id)}
+                            className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-muted transition-colors"
+                          >
+                            <span className="block text-[13px] font-medium text-foreground truncate">{p.naam}</span>
+                            <span className="block text-[11px] text-muted-foreground truncate">
+                              {[p.project_nummer, klantNamen.get(p.klant_id)].filter(Boolean).join(' · ')}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setProjectPickerOpen(false)}
+                      className="w-full text-[12px] text-muted-foreground hover:text-foreground py-2 border-t border-border transition-colors"
+                    >
+                      Annuleren
+                    </button>
+                  </div>
+                ) : lightbox.factuur.project_id ? (
+                  <div className="flex items-center justify-between gap-2 rounded-xl bg-background border border-border px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground truncate">{gekoppeldProject?.naam || 'Gekoppeld project'}</p>
+                      {gekoppeldProject && (
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {[gekoppeldProject.project_nummer, klantNamen.get(gekoppeldProject.klant_id)].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center flex-shrink-0">
+                      <button
+                        onClick={() => { setProjectPickerOpen(true); setProjectQuery('') }}
+                        title="Ander project kiezen"
+                        className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => koppelProject(null)}
+                        title="Koppeling verwijderen"
+                        className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setProjectPickerOpen(true); setProjectQuery('') }}
+                    className="w-full flex items-center gap-2 rounded-xl border border-dashed border-border px-3 py-2.5 text-[13px] text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Koppel aan project
+                  </button>
                 )}
               </div>
 

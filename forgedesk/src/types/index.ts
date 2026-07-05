@@ -2341,6 +2341,7 @@ export interface InkoopFactuur {
   goedgekeurd_op: string | null
   raw_extractie_json: Record<string, unknown> | null
   uitgave_id: string | null
+  project_id: string | null
   created_at: string
   updated_at: string
 }

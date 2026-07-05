@@ -148,6 +148,7 @@ export async function approveInkoopfactuur(id: string, userId: string): Promise<
     categorie: 'overig',
     bijlage_url: factuur.pdf_storage_path,
     referentie_nummer: factuur.factuur_nummer || undefined,
+    project_id: factuur.project_id || undefined,
   })
 
   const { data, error } = await supabase
@@ -199,6 +200,29 @@ export async function updateInkoopfactuurVelden(id: string, data: Partial<Inkoop
     return result
   }
   throw new Error('Supabase vereist voor deze actie')
+}
+
+// Koppelt (of ontkoppelt, projectId = null) een inkoopfactuur aan een
+// project. Is de factuur al goedgekeurd, dan beweegt de gekoppelde
+// uitgave mee, anders raakt de projectkost zoek.
+export async function koppelInkoopfactuurAanProject(id: string, projectId: string | null): Promise<InkoopFactuur> {
+  assertId(id)
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase vereist voor deze actie')
+  const { data, error } = await supabase
+    .from('inkoopfacturen')
+    .update({ project_id: projectId, updated_at: now() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  if (data.uitgave_id) {
+    const { error: uitgaveError } = await supabase
+      .from('uitgaven')
+      .update({ project_id: projectId, updated_at: now() })
+      .eq('id', data.uitgave_id)
+    if (uitgaveError) throw uitgaveError
+  }
+  return data
 }
 
 export async function updateInkoopfactuurRegels(id: string, regels: Omit<InkoopFactuurRegel, 'id' | 'inkoopfactuur_id' | 'created_at'>[]): Promise<InkoopFactuurRegel[]> {
