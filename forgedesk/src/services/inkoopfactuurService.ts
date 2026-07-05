@@ -55,9 +55,11 @@ export async function getInboxConfig(): Promise<InkoopFactuurInboxConfig | null>
   if (isSupabaseConfigured() && supabase) {
     const orgId = await getOrgId()
     if (!orgId) return null
+    // Bewust GEEN imap_password_encrypted: het versleutelde wachtwoord hoort niet
+    // in de browser (zie migratie 143, kolom-grant dwingt dit ook op DB-niveau af).
     const { data, error } = await supabase
       .from('inkoopfactuur_inbox_config')
-      .select('*')
+      .select('id, organisatie_id, imap_host, imap_port, imap_user, gmail_label, actief, laatst_gecheckt_op, laatste_uid, laatste_error, created_at, updated_at')
       .eq('organisatie_id', orgId)
       .maybeSingle()
     if (error) throw error

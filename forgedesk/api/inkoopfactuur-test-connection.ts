@@ -47,6 +47,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     let password = imap_password || ''
+    // Bij use_stored komen host/user/port uit de opgeslagen config, NIET uit de
+    // body: anders kan een org-lid het opgeslagen wachtwoord naar een eigen host
+    // laten sturen (secret-exfiltratie). Body-host/user gelden alleen bij een
+    // test met een zelf-ingevoerd wachtwoord.
+    let effectiveHost = imap_host || 'imap.gmail.com'
+    let effectivePort = imap_port || 993
+    let effectiveUser = imap_user || ''
 
     if (!password && use_stored) {
       const { data: profile } = await supabase
@@ -61,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const { data: config } = await supabase
         .from('inkoopfactuur_inbox_config')
-        .select('imap_password_encrypted')
+        .select('imap_password_encrypted, imap_host, imap_port, imap_user')
         .eq('organisatie_id', profile.organisatie_id)
         .maybeSingle()
 
@@ -70,17 +77,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       password = decrypt(config.imap_password_encrypted)
+      effectiveHost = config.imap_host || 'imap.gmail.com'
+      effectivePort = config.imap_port || 993
+      effectiveUser = config.imap_user || ''
     }
 
-    if (!imap_user || !password) {
+    if (!effectiveUser || !password) {
       return res.status(200).json({ success: false, error: 'Email en wachtwoord zijn verplicht' })
     }
 
     const client = new ImapFlow({
-      host: imap_host || 'imap.gmail.com',
-      port: imap_port || 993,
-      secure: (imap_port || 993) === 993,
-      auth: { user: imap_user, pass: password },
+      host: effectiveHost,
+      port: effectivePort,
+      secure: effectivePort === 993,
+      auth: { user: effectiveUser, pass: password },
       logger: false,
       emitLogs: false,
       greetingTimeout: 10000,
