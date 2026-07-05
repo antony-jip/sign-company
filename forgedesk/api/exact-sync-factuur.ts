@@ -417,6 +417,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Factuur niet gevonden.' })
     }
 
+    // Tenant-isolatie: factuur moet bij de organisatie van de caller horen.
+    const callerOrgId = await getOrgIdForUser(supabaseAdmin, user_id)
+    if (!callerOrgId || factuur.organisatie_id !== callerOrgId) {
+      return res.status(404).json({ error: 'Factuur niet gevonden.' })
+    }
+
     const { data: factuurItems, error: itemsError } = await supabaseAdmin
       .from('factuur_items')
       .select('*')
