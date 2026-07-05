@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { TopNav } from './TopNav'
@@ -47,9 +46,9 @@ function AnimatedOutlet() {
 export function AppLayout() {
   const { layoutMode } = useSidebar()
   const location = useLocation()
-  const isDesktop = useMediaQuery('(min-width: 768px)')
-  // /email renders its own pill topbar on mobile — skip the global TopNav there.
-  const hideTopNav = !isDesktop && location.pathname.startsWith('/email')
+  // Globale TopNav overal tonen — ook op /email — zodat de top-navigatie
+  // consistent aanwezig blijft. E-mail houdt daaronder zijn eigen mail-balk.
+  const hideTopNav = false
   // Email-module verbreedt naar edge-to-edge (geen 1400px cap) zodat de
   // folder-rail tegen de viewport-rand kan plakken.
   const isEmailRoute = location.pathname.startsWith('/email')
