@@ -6,7 +6,7 @@ import {
   Receipt, CheckSquare, ClipboardCheck, Inbox, Ruler,
   LogOut, ChevronDown, Menu, X, Search,
   Plus, Moon, Sun, Monitor, CreditCard, Sparkles, PiggyBank, BookOpen,
-  Pin, PinOff, LifeBuoy, MessageSquare,
+  Pin, PinOff, LifeBuoy, MessageSquare, Smartphone,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
 import { DarkModeToggle } from '@/components/shared/DarkModeToggle'
+import { MobielMenuSheet, resolveMobieleNav } from '@/components/layouts/MobielMenuSheet'
 
 interface NavItem {
   label: string
@@ -51,11 +52,6 @@ const PRIMARY_LABELS = ['Dashboard', 'Projecten', 'Taken', 'Offertes', 'Planning
 // Admin-only: support-inbox, leeft onder "Overig".
 const SUPPORT_ITEM: NavItem = { label: 'Support', icon: LifeBuoy, path: '/support', color: '#F15025' }
 
-// Mobiel is bewust lean: alleen het hoogstnodige voor de buitendienst
-// (projecten, mail, maatje). De rest doe je op desktop. Geldt altijd op
-// mobiel, los van de desktop-menukeuze.
-const MOBIELE_NAV_LABELS = ['Projecten', 'Email', 'Maatjes']
-
 const quickAddItems = [
   { label: 'Nieuw Project', icon: FolderKanban, path: '/projecten/nieuw', color: '#7EB5A6' },
   { label: 'Nieuwe Offerte', icon: FileText, path: '/offertes/nieuw', color: '#9B8EC4' },
@@ -79,6 +75,7 @@ export function TopNav() {
   const [overigOpen, setOverigOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const [mobielMenuOpen, setMobielMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const quickAddRef = useRef<HTMLDivElement>(null)
   const overigRef = useRef<HTMLDivElement>(null)
@@ -87,18 +84,21 @@ export function TopNav() {
 
   // Maatje is een buitendienst-feature: alleen op mobiel tonen.
   const isMobieleNav = useMediaQuery('(max-width: 1023px)')
+  // Mobiel menu is per-user instelbaar (migratie 140); null = standaard set.
+  const mobieleSet = useMemo(() => resolveMobieleNav(settings), [settings])
   const visibleItems = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
     const heeftVoorkeur = Array.isArray(sidebarItems) && sidebarItems.length > 0
     const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
     return navItems.filter(item => {
-      // Maatjes is altijd zichtbaar: mobiel als capture-tool, desktop als beheer.
+      // Op mobiel volgt het menu de eigen keuze van de user (incl. Maatjes).
+      if (isMobieleNav) return mobieleSet.includes(item.label)
+      // Desktop: Maatjes altijd zichtbaar (beheer-tool), rest via voorkeur.
       if (item.label === 'Maatjes') return true
-      if (isMobieleNav) return MOBIELE_NAV_LABELS.includes(item.label)
       if (!heeftVoorkeur) return true
       return normalized.includes(item.label) || item.label === 'Dashboard'
     })
-  }, [settings?.sidebar_items, isMobieleNav])
+  }, [settings?.sidebar_items, isMobieleNav, mobieleSet])
 
   // Splits de zichtbare modules in een vaste primaire set + een "Overig"-rest.
   // Primair volgt de PRIMARY_LABELS-volgorde; Overig houdt de menu-volgorde aan.
@@ -490,6 +490,17 @@ export function TopNav() {
               </div>
               <span>Instellingen<span className="text-[#F15025]">.</span></span>
             </NavLink>
+
+            <button
+              type="button"
+              onClick={() => { setMobileOpen(false); setMobielMenuOpen(true) }}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-[12px] text-[14px] font-semibold tracking-[-0.01em] text-muted-foreground/50 hover:text-foreground transition-colors"
+            >
+              <div className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-muted/30">
+                <Smartphone className="w-[18px] h-[18px]" style={{ opacity: 0.4 }} />
+              </div>
+              <span>Menu aanpassen</span>
+            </button>
           </nav>
 
           {/* Mobile user section */}
@@ -523,6 +534,8 @@ export function TopNav() {
           )}
         </div>
       )}
+
+      <MobielMenuSheet open={mobielMenuOpen} onOpenChange={setMobielMenuOpen} />
     </header>
   )
 }

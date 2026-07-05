@@ -34,6 +34,8 @@ export interface Profile {
   afzender_naam?: string;
   // Per-user navigatie — null/undefined = gebruik UI-defaults
   sidebar_items?: string[] | null;
+  // Per-user mobiel menu — null/undefined = standaard mobiele set
+  mobile_nav_items?: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -703,6 +705,8 @@ export interface AppSettings {
   // Sidebar navigatie - welke items zijn zichtbaar
   /** @deprecated Verhuisd naar profiles (migratie 091). Lees via useAppSettings().settings.sidebar_items wordt nu uit profile gevuld. */
   sidebar_items: string[];
+  // Per-user mobiel menu — gevuld vanuit profiles (migratie 140). null = standaard mobiele set.
+  mobile_nav_items?: string[] | null;
   // Calculatie instellingen
   calculatie_categorieen: string[];            // Product categorieën (bijv. "Materiaal", "Arbeid")
   calculatie_eenheden: string[];               // Eenheden (bijv. "m²", "stuks", "uur")

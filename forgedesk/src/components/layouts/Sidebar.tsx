@@ -7,7 +7,7 @@ import {
   LayoutDashboard, CircleUserRound, BookOpen,
   Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox, Ruler,
   TrendingUp, Calendar, ListChecks, Mail, Globe, SlidersHorizontal, LifeBuoy, MessageSquare,
-  Pin, PinOff, Pencil, Plus, LayoutGrid, Check, ChevronRight,
+  Pin, PinOff, Pencil, Plus, LayoutGrid, Check, ChevronRight, Smartphone,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -20,6 +20,7 @@ import { usePalette } from '@/contexts/PaletteContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
+import { MobielMenuSheet, resolveMobieleNav } from '@/components/layouts/MobielMenuSheet'
 
 interface NavItem {
   label: string
@@ -73,11 +74,6 @@ const NAV_GROUPS: NavGroup[] = [
 // Flat list for rail mode
 const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...FINANCIEEL_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS]
 
-// Mobiel is bewust lean: alleen het hoogstnodige voor de buitendienst
-// (projecten, mail, maatje) plus Instellingen. De rest doe je op desktop.
-// Geldt altijd op mobiel, los van de desktop-menukeuze.
-const MOBIELE_NAV_LABELS = ['Projecten', 'Email', 'Maatjes']
-
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768)
   useEffect(() => {
@@ -102,6 +98,7 @@ export function Sidebar() {
   const location = useLocation()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobielMenuOpen, setMobielMenuOpen] = useState(false)
   const [hovered, setHovered] = useState(false)
   // Gepind = rail blijft smal vast (hover klapt niet uit). Standaard uit, zodat
   // het bestaande hover-uitklap-gedrag behouden blijft.
@@ -126,18 +123,22 @@ export function Sidebar() {
   const userButtonRef = useRef<HTMLButtonElement>(null)
 
   const isMobieleNav = useMediaQuery('(max-width: 767px)')
+  // Mobiel menu is per-user instelbaar (migratie 140); null = standaard set.
+  const mobieleSet = useMemo(() => resolveMobieleNav(settings), [settings])
   const isItemVisible = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
     const heeftVoorkeur = Array.isArray(sidebarItems) && sidebarItems.length > 0
     const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
     return (label: string) => {
-      // Maatjes altijd zichtbaar (mobiel = kladblok, desktop = beheer).
+      // Op mobiel volgt het menu de eigen keuze van de user (incl. Maatjes);
+      // Instellingen blijft altijd zichtbaar (anti-lockout).
+      if (isMobieleNav) return mobieleSet.includes(label) || label === 'Instellingen'
+      // Desktop: Maatjes altijd zichtbaar (beheer-tool), rest via voorkeur.
       if (label === 'Maatjes') return true
-      if (isMobieleNav) return MOBIELE_NAV_LABELS.includes(label) || label === 'Instellingen'
       if (!heeftVoorkeur) return true
       return normalized.includes(label) || label === 'Instellingen'
     }
-  }, [settings?.sidebar_items, isMobieleNav])
+  }, [settings?.sidebar_items, isMobieleNav, mobieleSet])
 
   const filteredNavItems = useMemo(() => ALL_NAV_ITEMS.filter(i => isItemVisible(i.label)), [isItemVisible])
 
@@ -612,6 +613,20 @@ export function Sidebar() {
           {/* Instellingen — Importeren leeft nu onder Instellingen → Importeren */}
           {collapsed ? renderRailItem(SETTINGS_ITEM) : renderExpandedItem(SETTINGS_ITEM, true)}
 
+          {/* Mobiel: eigen menu samenstellen */}
+          {forMobile && (
+            <button
+              type="button"
+              onClick={() => { setMobileOpen(false); setMobielMenuOpen(true) }}
+              className="flex items-center gap-2.5 h-11 px-3 mx-2 w-[calc(100%-16px)] rounded-[12px] text-[13px] font-medium text-foreground/65 hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-colors"
+            >
+              <div className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center flex-shrink-0">
+                <Smartphone className="w-[18px] h-[18px] text-[#1A535C]/55 dark:text-[#7FB5BF]/55" strokeWidth={1.6} />
+              </div>
+              <span>Menu aanpassen</span>
+            </button>
+          )}
+
           {/* User avatar */}
           {user && (
             <div ref={userPopoverRef} className={cn('relative mt-1', collapsed ? 'flex justify-center' : '')}>
@@ -820,6 +835,8 @@ export function Sidebar() {
           </div>
         </>
       )}
+
+      <MobielMenuSheet open={mobielMenuOpen} onOpenChange={setMobielMenuOpen} />
     </>
   )
 }

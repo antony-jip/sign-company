@@ -297,6 +297,7 @@ const PER_USER_VELDEN_IN_PROFILE = [
   'handtekening_afbeelding_grootte',
   'afzender_naam',
   'sidebar_items',
+  'mobile_nav_items',
 ] as const
 
 export async function updateAppSettings(userId: string, updates: Partial<AppSettings>): Promise<AppSettings> {

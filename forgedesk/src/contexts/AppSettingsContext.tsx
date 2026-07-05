@@ -110,7 +110,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       // Per-user velden (handtekening, sidebar_items, afzender_naam) worden
       // door updateAppSettings doorgesluisd naar profiles. Vernieuw profile
       // ook in state als zo'n veld in de update zit.
-      const perUserKeys = ['email_handtekening', 'handtekening_afbeelding', 'handtekening_afbeelding_grootte', 'afzender_naam', 'sidebar_items']
+      const perUserKeys = ['email_handtekening', 'handtekening_afbeelding', 'handtekening_afbeelding_grootte', 'afzender_naam', 'sidebar_items', 'mobile_nav_items']
       const heeftPerUserUpdate = perUserKeys.some(k => k in updates)
       const updated = await updateAppSettings(user.id, updates)
       setSettings(updated)
@@ -153,9 +153,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   // Sinds migratie 091 staan sidebar_items per-user op profiles. Merge ze
   // hier in het settings-object zodat consumers (Sidebar, TopNav) hun
   // bestaande settings.sidebar_items lezen kunnen blijven gebruiken.
-  const mergedSettings: AppSettings = profile?.sidebar_items != null
-    ? { ...settings, sidebar_items: profile.sidebar_items }
-    : settings
+  const mergedSettings: AppSettings = {
+    ...settings,
+    ...(profile?.sidebar_items != null ? { sidebar_items: profile.sidebar_items } : {}),
+    ...(profile?.mobile_nav_items != null ? { mobile_nav_items: profile.mobile_nav_items } : {}),
+  }
 
   const value: AppSettingsContextType = {
     settings: mergedSettings,
