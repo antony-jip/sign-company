@@ -166,13 +166,23 @@ export async function getMateriaalSuggesties(query: string): Promise<Array<{ mat
 export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' | 'updated_at'>): Promise<Offerte> {
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()
-    const { data, error } = await supabase
-      .from('offertes')
-      .insert({ ...await withUserId(sanitizeDates(offerte)), organisatie_id: _orgId })
-      .select()
-      .single()
-    if (error) throw error
-    return data
+    const payload = { ...await withUserId(sanitizeDates(offerte)), organisatie_id: _orgId } as Record<string, unknown>
+    for (let poging = 0; poging < 5; poging++) {
+      const { data, error } = await supabase
+        .from('offertes')
+        .insert(payload)
+        .select()
+        .single()
+      if (!error) return data
+      // 23505 = unique_violation op (organisatie_id, nummer): nummer-race, hergenereer en probeer opnieuw.
+      const huidigNummer = payload.nummer
+      if ((error as { code?: string }).code === '23505' && poging < 4 && typeof huidigNummer === 'string' && huidigNummer) {
+        payload.nummer = await regenerateOfferteNummer(huidigNummer)
+        continue
+      }
+      throw error
+    }
+    throw new Error('Kon geen uniek offertenummer genereren na meerdere pogingen')
   }
   const offertes = getLocalData<Offerte>('offertes')
   const newOfferte: Offerte = {
@@ -929,4 +939,13 @@ export async function generateOfferteNummer(prefix: string = 'OFF', startNummer 
   // systeem zodat de nummering doorloopt vanaf een specifiek beginpunt.
   const nextNr = Math.max(maxNr, Math.max(0, startNummer - 1)) + 1
   return `${jaarPrefix}${String(nextNr).padStart(3, '0')}`
+}
+
+// Hergenereert een offertenummer format-behoudend na een unique-collision.
+async function regenerateOfferteNummer(currentNummer: string): Promise<string> {
+  const match = /^(.*?)(\d+)$/.exec(currentNummer)
+  if (!match) return currentNummer
+  const [, prefix, tail] = match
+  const maxNr = await getMaxNummer('offertes', 'nummer', prefix)
+  return `${prefix}${String(maxNr + 1).padStart(tail.length, '0')}`
 }

@@ -169,16 +169,26 @@ export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'upda
     const klantInsert = { ...klant, user_id, organisatie_id: orgId }
     if (!Array.isArray(klantInsert.tags)) klantInsert.tags = []
     if (!Array.isArray(klantInsert.klant_labels)) klantInsert.klant_labels = []
+    let nummerAutoGegenereerd = false
     if (!klantInsert.debiteurennummer) {
       klantInsert.debiteurennummer = await generateDebiteurennummer()
+      nummerAutoGegenereerd = true
     }
-    const { data, error } = await supabase
-      .from('klanten')
-      .insert(klantInsert)
-      .select()
-      .single()
-    if (error) throw error
-    return normalizeKlant(data)
+    for (let poging = 0; poging < 5; poging++) {
+      const { data, error } = await supabase
+        .from('klanten')
+        .insert(klantInsert)
+        .select()
+        .single()
+      if (!error) return normalizeKlant(data)
+      // 23505 op een auto-gegenereerd debiteurennummer = nummer-race: hergenereer en probeer opnieuw.
+      if ((error as { code?: string }).code === '23505' && poging < 4 && nummerAutoGegenereerd) {
+        klantInsert.debiteurennummer = await generateDebiteurennummer()
+        continue
+      }
+      throw error
+    }
+    throw new Error('Kon geen uniek debiteurennummer genereren na meerdere pogingen')
   }
   const klanten = getLocalData<Klant>('klanten')
   const newKlant: Klant = {

@@ -27,13 +27,32 @@ export async function getFactuur(id: string): Promise<Factuur | null> {
   return items.find((f) => f.id === id) || null
 }
 
+// Hergenereert een factuurnummer format-behoudend (zelfde prefix + zelfde
+// padding-lengte) na een unique-collision, zodat gelijktijdige aanmaak niet in
+// een duplicaat resulteert.
+async function regenerateFactuurNummer(currentNummer: string): Promise<string> {
+  const match = /^(.*?)(\d+)$/.exec(currentNummer)
+  if (!match) return currentNummer
+  const [, prefix, tail] = match
+  const maxNr = await getMaxNummer('facturen', 'nummer', prefix)
+  return `${prefix}${String(maxNr + 1).padStart(tail.length, '0')}`
+}
+
 export async function createFactuur(factuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'>): Promise<Factuur> {
   const newFactuur: Factuur = { ...sanitizeDates(factuur), id: generateId(), created_at: now(), updated_at: now() } as Factuur
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()
-    const { data, error } = await supabase.from('facturen').insert({ ...await withUserId(newFactuur), organisatie_id: _orgId }).select().single()
-    if (error) throw error
-    return data
+    for (let poging = 0; poging < 5; poging++) {
+      const { data, error } = await supabase.from('facturen').insert({ ...await withUserId(newFactuur), organisatie_id: _orgId }).select().single()
+      if (!error) return data
+      // 23505 = unique_violation op (organisatie_id, nummer): nummer-race, hergenereer en probeer opnieuw.
+      if ((error as { code?: string }).code === '23505' && poging < 4) {
+        newFactuur.nummer = await regenerateFactuurNummer(newFactuur.nummer)
+        continue
+      }
+      throw error
+    }
+    throw new Error('Kon geen uniek factuurnummer genereren na meerdere pogingen')
   }
   const items = getLocalData<Factuur>('facturen')
   items.push(newFactuur)

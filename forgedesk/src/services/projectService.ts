@@ -93,13 +93,23 @@ export async function getProjectenByKlant(klantId: string): Promise<Project[]> {
 export async function createProject(project: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'klant_naam'>): Promise<Project> {
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()
-    const { data, error } = await supabase
-      .from('projecten')
-      .insert({ ...await withUserId(sanitizeDates(project)), organisatie_id: _orgId })
-      .select()
-      .single()
-    if (error) throw error
-    return data
+    const payload = { ...await withUserId(sanitizeDates(project)), organisatie_id: _orgId } as Record<string, unknown>
+    for (let poging = 0; poging < 5; poging++) {
+      const { data, error } = await supabase
+        .from('projecten')
+        .insert(payload)
+        .select()
+        .single()
+      if (!error) return data
+      // 23505 = unique_violation op (organisatie_id, project_nummer): nummer-race, hergenereer en probeer opnieuw.
+      const huidigNummer = payload.project_nummer
+      if ((error as { code?: string }).code === '23505' && poging < 4 && typeof huidigNummer === 'string' && huidigNummer) {
+        payload.project_nummer = await regenerateProjectNummer(huidigNummer)
+        continue
+      }
+      throw error
+    }
+    throw new Error('Kon geen uniek projectnummer genereren na meerdere pogingen')
   }
   const projecten = getLocalData<Project>('projecten')
   const newProject: Project = {
@@ -545,4 +555,14 @@ export async function generateProjectNummer(prefix: string = 'PRJ'): Promise<str
       .reduce((max, p) => Math.max(max, parseInt((p.project_nummer || '').replace(jaarPrefix, ''), 10) || 0), 0)
   }
   return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
+}
+
+// Hergenereert een projectnummer format-behoudend (zelfde prefix + padding)
+// na een unique-collision, zodat gelijktijdige aanmaak geen duplicaat geeft.
+async function regenerateProjectNummer(currentNummer: string): Promise<string> {
+  const match = /^(.*?)(\d+)$/.exec(currentNummer)
+  if (!match) return currentNummer
+  const [, prefix, tail] = match
+  const maxNr = await getMaxNummer('projecten', 'project_nummer', prefix)
+  return `${prefix}${String(maxNr + 1).padStart(tail.length, '0')}`
 }

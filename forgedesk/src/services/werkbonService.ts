@@ -98,9 +98,17 @@ export async function createWerkbon(werkbon: Omit<Werkbon, 'id' | 'werkbon_numme
   const newWerkbon: Werkbon = { ...sanitizeDates(werkbon), id: generateId(), werkbon_nummer, created_at: now(), updated_at: now() } as Werkbon
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()
-    const { data, error } = await supabase.from('werkbonnen').insert({ ...await withUserId(newWerkbon), organisatie_id: _orgId }).select().single()
-    if (error) throw error
-    return data
+    for (let poging = 0; poging < 5; poging++) {
+      const { data, error } = await supabase.from('werkbonnen').insert({ ...await withUserId(newWerkbon), organisatie_id: _orgId }).select().single()
+      if (!error) return data
+      // 23505 = unique_violation op (organisatie_id, werkbon_nummer): nummer-race, hergenereer en probeer opnieuw.
+      if ((error as { code?: string }).code === '23505' && poging < 4) {
+        newWerkbon.werkbon_nummer = await generateWerkbonNummer(prefix, startNummer)
+        continue
+      }
+      throw error
+    }
+    throw new Error('Kon geen uniek werkbonnummer genereren na meerdere pogingen')
   }
   const items = getLocalData<Werkbon>('werkbonnen')
   items.push(newWerkbon)
