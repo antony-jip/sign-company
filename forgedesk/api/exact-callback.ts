@@ -61,17 +61,18 @@ const APP_URL = 'https://app.doen.team'
 
 // Inline copy van verifyState uit exact-auth.ts. Vercel serverless functions
 // kunnen geen lokale modules importeren — elke route moet standalone zijn.
-// Beide functies (sign + verify) gebruiken hetzelfde HMAC-sha256 secret +
-// 16-char digest schema, dus deze blijft compatibel met state strings die
-// door exact-auth.ts zijn gegenereerd.
+// Moet in sync blijven met signState/verifyState in exact-auth.ts:
+// formaat `${userId}:${ts}:${sig}`, sig = HMAC(userId:ts), met TTL-check.
+const STATE_TTL_MS = 15 * 60 * 1000
 function verifyState(state: string): string | null {
+  if (!SUPABASE_SERVICE_KEY) return null // fail-closed: geen fallback-secret
   const parts = state.split(':')
-  if (parts.length < 2) return null
-  const sig = parts.pop()!
-  const userId = parts.join(':') // UUIDs bevatten geen colons, maar safe split
-  const secret = SUPABASE_SERVICE_KEY || 'fallback-secret'
-  const expected = createHmac('sha256', secret).update(userId).digest('hex').slice(0, 16)
+  if (parts.length !== 3) return null
+  const [userId, ts, sig] = parts
+  const expected = createHmac('sha256', SUPABASE_SERVICE_KEY).update(`${userId}:${ts}`).digest('hex').slice(0, 16)
   if (sig !== expected) return null
+  const tsNum = Number(ts)
+  if (!Number.isFinite(tsNum) || Date.now() - tsNum > STATE_TTL_MS || tsNum > Date.now() + 60_000) return null
   return userId
 }
 
@@ -227,7 +228,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const responseText = await tokenResponse.text()
 
     if (!tokenResponse.ok) {
-      console.error('Exact token exchange error:', tokenResponse.status, responseText)
+      // Body niet loggen: een 200-response bevat access/refresh-tokens, en ook
+      // error-responses kunnen gevoelige velden bevatten. Alleen status.
+      console.error('Exact token exchange error:', tokenResponse.status)
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=token_exchange`)
     }
 
@@ -235,7 +238,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       tokens = JSON.parse(responseText)
     } catch (parseErr) {
-      console.error('Exact token exchange: JSON parse failed', parseErr, responseText)
+      // responseText kan bij een 200 de tokens bevatten → nooit loggen.
+      console.error('Exact token exchange: JSON parse failed', parseErr instanceof Error ? parseErr.message : 'parse error', `(${responseText.length} bytes)`)
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=token_parse`)
     }
 

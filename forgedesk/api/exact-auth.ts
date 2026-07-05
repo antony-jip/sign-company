@@ -8,20 +8,32 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const EXACT_AUTH_URL = 'https://start.exactonline.nl/api/oauth2/auth'
 const REDIRECT_URI = 'https://app.doen.team/api/exact-callback'
 
+// OAuth-state TTL: de round-trip naar Exact + terug duurt normaal seconden.
+const STATE_TTL_MS = 15 * 60 * 1000
+
+function stateSecret(): string {
+  // Geen 'fallback-secret': zonder echte sleutel is de state te vervalsen, dus
+  // fail-closed i.p.v. ondertekenen met een publiek bekende string.
+  if (!SUPABASE_SERVICE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY ontbreekt — kan OAuth-state niet ondertekenen')
+  return SUPABASE_SERVICE_KEY
+}
+
 export function signState(userId: string): string {
-  const secret = SUPABASE_SERVICE_KEY || 'fallback-secret'
-  const sig = createHmac('sha256', secret).update(userId).digest('hex').slice(0, 16)
-  return `${userId}:${sig}`
+  const ts = Date.now().toString()
+  // Timestamp meetekenen maakt de state tijdgebonden en niet-deterministisch,
+  // wat replay buiten het TTL-venster voorkomt.
+  const sig = createHmac('sha256', stateSecret()).update(`${userId}:${ts}`).digest('hex').slice(0, 16)
+  return `${userId}:${ts}:${sig}`
 }
 
 export function verifyState(state: string): string | null {
   const parts = state.split(':')
-  if (parts.length < 2) return null
-  const sig = parts.pop()!
-  const userId = parts.join(':') // UUIDs contain no colons, but be safe
-  const secret = SUPABASE_SERVICE_KEY || 'fallback-secret'
-  const expected = createHmac('sha256', secret).update(userId).digest('hex').slice(0, 16)
+  if (parts.length !== 3) return null
+  const [userId, ts, sig] = parts
+  const expected = createHmac('sha256', stateSecret()).update(`${userId}:${ts}`).digest('hex').slice(0, 16)
   if (sig !== expected) return null
+  const tsNum = Number(ts)
+  if (!Number.isFinite(tsNum) || Date.now() - tsNum > STATE_TTL_MS || tsNum > Date.now() + 60_000) return null
   return userId
 }
 
