@@ -94,6 +94,15 @@ export async function createProject(project: Omit<Project, 'id' | 'created_at' |
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()
     const payload = { ...await withUserId(sanitizeDates(project)), organisatie_id: _orgId } as Record<string, unknown>
+    // Maker standaard in het team, zodat lijst en detail tonen wie het
+    // project heeft aangemaakt. Alleen als de aanroeper geen team meegaf.
+    const teamLeden = payload.team_leden
+    if (!Array.isArray(teamLeden) || teamLeden.length === 0) {
+      let makerQuery = supabase.from('medewerkers').select('id').eq('user_id', payload.user_id as string)
+      if (_orgId) makerQuery = makerQuery.eq('organisatie_id', _orgId)
+      const { data: maker } = await makerQuery.maybeSingle()
+      if (maker?.id) payload.team_leden = [maker.id]
+    }
     for (let poging = 0; poging < 5; poging++) {
       const { data, error } = await supabase
         .from('projecten')

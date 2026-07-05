@@ -432,6 +432,7 @@ export function ProjectDetail() {
   const [nieuweTaakPrioriteit, setNieuweTaakPrioriteit] = useState<Taak['prioriteit']>('medium')
 
   const [project, setProject] = useState<Project | null>(null)
+  const projectMaker = project?.user_id ? medewerkers.find((m) => m.user_id === project.user_id) : undefined
   const [klant, setKlant] = useState<Klant | null>(null)
   const [editKlantOpen, setEditKlantOpen] = useState(false)
   const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([])
@@ -1426,6 +1427,7 @@ export function ProjectDetail() {
                 style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
               >
                 aangemaakt {new Date(project.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {projectMaker ? ` door ${projectMaker.naam}` : ''}
               </span>
             </>
           )}
