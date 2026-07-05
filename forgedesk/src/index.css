@@ -3023,10 +3023,12 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
    detail-/tab-navigatie binnen een module. */
 @keyframes route-push-in {
   from { opacity: 0; transform: translateX(10px); }
-  to { opacity: 1; transform: translateX(0); }
+  to { opacity: 1; transform: none; }
 }
+/* backwards (niet forwards): geen blijvende transform na afloop, anders zou de
+   wrapper een containing block worden voor position:fixed-kinderen. */
 .route-transition {
-  animation: route-push-in 260ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation: route-push-in 260ms cubic-bezier(0.32, 0.72, 0, 1) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .route-transition { animation: none; }
