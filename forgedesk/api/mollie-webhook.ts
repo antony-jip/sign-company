@@ -183,13 +183,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ received: true, already_paid: true })
       }
 
+      // Bedrag-verificatie: vertrouw het betaalde bedrag van Mollie, niet de
+      // aanname dat elke 'paid'-webhook de volledige factuur dekt. Voorkomt dat
+      // een onderbetaling (bv. €0,01) de factuur als volledig voldaan markeert.
+      const betaaldNu = Number(payment.amount?.value) || 0
+      const totaal = Number(factuur.totaal) || 0
+      const reedsBetaald = Number(factuur.betaald_bedrag) || 0
+      const nieuwBetaald = Math.round((reedsBetaald + betaaldNu) * 100) / 100
+      const volledigVoldaan = nieuwBetaald + 0.01 >= totaal
+
       const now = new Date().toISOString()
       const { error: updateError } = await supabase
         .from('facturen')
         .update({
-          status: 'betaald',
-          betaaldatum: now.split('T')[0],
-          betaald_bedrag: factuur.totaal,
+          status: volledigVoldaan ? 'betaald' : factuur.status,
+          betaaldatum: volledigVoldaan ? now.split('T')[0] : null,
+          betaald_bedrag: nieuwBetaald,
           updated_at: now,
         })
         .eq('id', factuur.id)
@@ -200,7 +209,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Database update failed' })
       }
 
-      console.log(`Factuur ${factuur.id} gemarkeerd als betaald via Mollie`)
+      if (volledigVoldaan) {
+        console.log(`Factuur ${factuur.id} gemarkeerd als betaald via Mollie`)
+      } else {
+        console.warn(`Mollie webhook: deelbetaling €${betaaldNu} op factuur ${factuur.id} (totaal €${totaal}), niet als voldaan gemarkeerd`)
+        Sentry.captureMessage(`Mollie deelbetaling: factuur ${factuur.id} betaald €${nieuwBetaald} van €${totaal}`, 'warning')
+      }
     }
 
     return res.status(200).json({ received: true })

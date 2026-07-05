@@ -76,16 +76,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const { factuur_id, bedrag, omschrijving, redirect_url, betaal_token } = req.body as {
+    const { factuur_id, omschrijving, redirect_url, betaal_token } = req.body as {
       factuur_id: string
-      bedrag: number
       omschrijving: string
       redirect_url?: string
       betaal_token?: string
     }
 
-    if (!factuur_id || !bedrag) {
-      return res.status(400).json({ error: 'factuur_id en bedrag zijn verplicht' })
+    if (!factuur_id) {
+      return res.status(400).json({ error: 'factuur_id is verplicht' })
     }
 
     // Twee auth-paden: JWT (interne gebruiker) of betaal_token (publieke klant)
@@ -94,12 +93,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let organisatie_id: string | null = null
     let factuurStatus: string | null = null
     let existingPaymentId: string | null = null
+    // Bedrag komt NOOIT uit de request-body: altijd server-side uit de factuur,
+    // anders kan een klant met een geldige betaallink een willekeurig (bv. €0,01)
+    // bedrag betalen en wordt de factuur alsnog als voldaan gemarkeerd.
+    let factuurTotaal = 0
+    let factuurBetaald = 0
 
     if (jwt_user_id) {
       // Interne flow: verifieer dat factuur toebehoort aan ingelogde gebruiker
       const { data: eigenFactuur } = await supabaseAdmin
         .from('facturen')
-        .select('id, user_id, organisatie_id, status, mollie_payment_id')
+        .select('id, user_id, organisatie_id, status, mollie_payment_id, totaal, betaald_bedrag')
         .eq('id', factuur_id)
         .eq('user_id', jwt_user_id)
         .maybeSingle()
@@ -110,11 +114,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       organisatie_id = (eigenFactuur.organisatie_id as string | null) ?? null
       factuurStatus = eigenFactuur.status ?? null
       existingPaymentId = eigenFactuur.mollie_payment_id ?? null
+      factuurTotaal = Number(eigenFactuur.totaal) || 0
+      factuurBetaald = Number(eigenFactuur.betaald_bedrag) || 0
     } else if (betaal_token) {
       // Publieke flow: verifieer factuur via betaal_token
       const { data: factuur } = await supabaseAdmin
         .from('facturen')
-        .select('id, user_id, organisatie_id, betaal_token_verloopt_op, status, mollie_payment_id')
+        .select('id, user_id, organisatie_id, betaal_token_verloopt_op, status, mollie_payment_id, totaal, betaald_bedrag')
         .eq('id', factuur_id)
         .eq('betaal_token', betaal_token)
         .maybeSingle()
@@ -128,8 +134,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       organisatie_id = (factuur.organisatie_id as string | null) ?? null
       factuurStatus = factuur.status ?? null
       existingPaymentId = factuur.mollie_payment_id ?? null
+      factuurTotaal = Number(factuur.totaal) || 0
+      factuurBetaald = Number(factuur.betaald_bedrag) || 0
     } else {
       return res.status(401).json({ error: 'Niet geautoriseerd' })
+    }
+
+    // Openstaand bedrag server-side bepaald; body-`bedrag` wordt genegeerd.
+    const teBetalen = Math.round((factuurTotaal - factuurBetaald) * 100) / 100
+    if (teBetalen <= 0) {
+      return res.status(400).json({ error: 'Voor deze factuur staat geen bedrag open' })
     }
 
     // Status-guard: factuur al voldaan → blokkeer nieuwe payment
@@ -236,7 +250,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         amount: {
           currency: 'EUR',
-          value: bedrag.toFixed(2),
+          value: teBetalen.toFixed(2),
         },
         description: omschrijving || `Factuur ${factuur_id}`,
         redirectUrl: redirectAfterPayment,
