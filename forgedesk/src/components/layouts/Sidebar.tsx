@@ -103,8 +103,9 @@ export function Sidebar() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [hovered, setHovered] = useState(false)
-  // Gepind = rail blijft smal vast (hover klapt niet uit). Standaard uit, zodat
-  // het bestaande hover-uitklap-gedrag behouden blijft.
+  // Gepind = ingeklapt tot de smalle rail (met hover-peek als overlay).
+  // Standaard NIET gepind = persistent uitgeklapte, gelabelde kolom waar de
+  // content naast leeft (Linear/Notion-shell).
   const [isPinned, setIsPinned] = useState(() => {
     try { return localStorage.getItem('doen_sidebar_pinned') === 'true' } catch { return false }
   })
@@ -118,7 +119,10 @@ export function Sidebar() {
   // Samenstelbaar menu: bewerk-modus + Overig mega-menu (vóór `expanded` i.v.m. gebruik).
   const [editMode, setEditMode] = useState(false)
   const [overigOpen, setOverigOpen] = useState(false)
-  const expanded = isPinned ? false : (hovered || overigOpen || editMode)
+  // Twee vaste standen, beide persistent met content ernaast:
+  //  · niet gepind = uitgeklapte, gelabelde kolom
+  //  · gepind      = enkel-iconen-rail (klapt NIET uit bij hover)
+  const expanded = !isPinned
   const [userPopoverOpen, setUserPopoverOpen] = useState(false)
   const [popoverPos, setPopoverPos] = useState<{ left: number; bottom: number } | null>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
@@ -559,7 +563,7 @@ export function Sidebar() {
                       {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="right">{isPinned ? 'Menu losmaken' : 'Menu vastzetten'}</TooltipContent>
+                  <TooltipContent side="right">{isPinned ? 'Menu uitklappen' : 'Inklappen tot iconen'}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
@@ -598,7 +602,7 @@ export function Sidebar() {
                       {isPinned ? <PinOff className="w-[15px] h-[15px]" /> : <Pin className="w-[15px] h-[15px]" />}
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">{isPinned ? 'Menu losmaken' : 'Menu vastzetten'}</TooltipContent>
+                  <TooltipContent side="top">{isPinned ? 'Menu uitklappen' : 'Inklappen tot iconen'}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
@@ -736,15 +740,19 @@ export function Sidebar() {
         {sidebarContent(true)}
       </aside>
 
-      {/* Desktop sidebar — rail die bij hover opent (overlay, content schuift niet) */}
+      {/* Desktop sidebar — default persistente kolom (content leeft ernaast);
+          gepind = ingeklapte rail met hover-peek als overlay. De reserveer-breedte
+          beweegt mee zodat content inspringt wanneer de kolom uitgeklapt vast staat. */}
       {isDesktop && (
-        <div className="flex-shrink-0 h-screen" style={{ width: RAIL_WIDTH }}>
+        <div
+          className="flex-shrink-0 h-screen transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          style={{ width: isPinned ? RAIL_WIDTH : EXPANDED_WIDTH }}
+        >
           <aside
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             className={cn(
               'fixed inset-y-0 left-0 z-40 flex flex-col h-screen doen-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden',
-              hovered && 'doen-sidebar-glass',
             )}
             style={{ width: expanded ? EXPANDED_WIDTH : RAIL_WIDTH }}
           >
