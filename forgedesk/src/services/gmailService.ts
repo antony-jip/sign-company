@@ -462,6 +462,8 @@ export interface EmailSettingsData {
   imap_host: string
   imap_port: number
   is_verified?: boolean
+  // Server geeft het wachtwoord niet meer terug; enkel of er één is opgeslagen.
+  has_password?: boolean
 }
 
 export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | null> {
@@ -484,7 +486,8 @@ export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | nul
 
     return {
       gmail_address: data.gmail_address,
-      app_password: data.app_password || '',
+      app_password: '',
+      has_password: !!data.has_password,
       smtp_host: data.smtp_host || 'smtp.gmail.com',
       smtp_port: data.smtp_port || 587,
       imap_host: data.imap_host || 'imap.gmail.com',
@@ -508,7 +511,9 @@ export async function saveEmailSettingsToDb(settings: EmailSettingsData): Promis
     },
     body: JSON.stringify({
       gmail_address: settings.gmail_address,
-      app_password: settings.app_password,
+      // Leeg wachtwoord = ongewijzigd: stuur sentinel zodat de server de
+      // bestaande versleutelde waarde behoudt in plaats van hem te wissen.
+      app_password: settings.app_password || 'UNCHANGED',
       smtp_host: settings.smtp_host || 'smtp.gmail.com',
       smtp_port: settings.smtp_port || 587,
       imap_host: settings.imap_host || 'imap.gmail.com',

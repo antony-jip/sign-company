@@ -567,20 +567,21 @@ export function EmailTab() {
   const [emailConnected, setEmailConnected] = useState(false)
 
   const checkEmailStatus = useCallback(() => {
-    setEmailConnected(!!emailSettings.gmail_address && !!emailSettings.app_password)
+    setEmailConnected(!!emailSettings.gmail_address && (!!emailSettings.has_password || !!emailSettings.app_password))
   }, [emailSettings])
 
   // Load email settings from Supabase (or sessionStorage cache) on mount
   useEffect(() => {
     async function loadEmailSettings() {
-      // 1. Try sessionStorage cache first (fast)
+      // 1. Try sessionStorage cache first (fast). Het wachtwoord staat hier NIET
+      // meer in; has_password markeert dat er een wachtwoord bekend is.
       try {
         const cached = sessionStorage.getItem('doen_email_settings')
         if (cached) {
           const parsed = JSON.parse(cached)
-          if (parsed.gmail_address && parsed.app_password) {
-            setEmailSettings(prev => ({ ...prev, ...parsed }))
-            setEmailConnected(true)
+          if (parsed.gmail_address) {
+            setEmailSettings(prev => ({ ...prev, ...parsed, app_password: '' }))
+            setEmailConnected(!!parsed.has_password)
           }
         }
       } catch (err) { /* ignore */ }
@@ -597,9 +598,9 @@ export function EmailTab() {
             accept_self_signed: false,
           }
           setEmailSettings(merged)
-          setEmailConnected(true)
-          // Update cache
-          sessionStorage.setItem('doen_email_settings', JSON.stringify(merged))
+          setEmailConnected(!!merged.has_password)
+          // Update cache — nooit het wachtwoord meecachen.
+          sessionStorage.setItem('doen_email_settings', JSON.stringify({ ...merged, app_password: '' }))
         }
       } catch (err) {
         console.error('Email settings laden mislukt:', err)
@@ -962,7 +963,9 @@ function EmailSettingsInline({
       setError('Vul een e-mailadres in')
       return
     }
-    if (!settings.app_password) {
+    // Leeg laten mag alleen als er al een wachtwoord is opgeslagen (dan blijft
+    // het ongewijzigd). Bij de eerste keer is een wachtwoord verplicht.
+    if (!settings.app_password && !settings.has_password) {
       setError('Vul een app-wachtwoord in')
       return
     }
@@ -988,8 +991,11 @@ function EmailSettingsInline({
       // mails van het zojuist gekoppelde adres toont.
       await clearEmailCache()
 
-      // Cache in sessionStorage for quick loads
-      sessionStorage.setItem('doen_email_settings', JSON.stringify(settings))
+      // Na opslaan is er een wachtwoord bekend; wachtwoord zelf niet in state/cache houden.
+      const opgeslagen = { ...settings, app_password: '', has_password: true }
+      setSettings(opgeslagen)
+      // Cache in sessionStorage for quick loads — zonder wachtwoord.
+      sessionStorage.setItem('doen_email_settings', JSON.stringify(opgeslagen))
 
       setSuccess('E-mailinstellingen opgeslagen!')
       onSaved()
@@ -1187,12 +1193,15 @@ function EmailSettingsInline({
             <Label htmlFor="app_password" className="flex items-center gap-2 text-sm font-medium">
               <Lock className="w-3.5 h-3.5 text-muted-foreground" />
               Wachtwoord / App Wachtwoord
+              {settings.has_password && !settings.app_password && (
+                <span className="text-xs font-normal text-muted-foreground">— ingesteld, laat leeg om ongewijzigd te laten</span>
+              )}
             </Label>
             <div className="relative">
               <Input
                 id="app_password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••••••••••"
+                placeholder={settings.has_password ? 'Opgeslagen — leeg laten om te behouden' : '••••••••••••••••'}
                 value={settings.app_password}
                 onChange={(e) => setSettings({ ...settings, app_password: e.target.value })}
               />

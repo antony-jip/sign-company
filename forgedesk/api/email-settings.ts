@@ -47,7 +47,9 @@ function decrypt(encryptedText: string): string {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  // GET: haal opgeslagen email instellingen op (met ontsleuteld wachtwoord)
+  // GET: haal opgeslagen email instellingen op.
+  // Het wachtwoord verlaat de server NOOIT (voorheen werd het ontsleuteld
+  // teruggegeven); we exposen alleen has_password zodat de UI de status kan tonen.
   if (req.method === 'GET') {
     try {
       const userId = await verifyUser(req)
@@ -61,20 +63,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ error: 'Geen email instellingen gevonden' })
       }
 
-      let app_password = ''
-      if (data.encrypted_app_password) {
-        try {
-          app_password = decrypt(data.encrypted_app_password)
-        } catch (decryptErr) {
-          const decryptMsg = decryptErr instanceof Error ? decryptErr.message : 'Onbekende fout'
-          console.error('[email-settings] GET decrypt mislukt:', decryptMsg, '| format:', data.encrypted_app_password.substring(0, 10) + '...')
-          return res.status(500).json({ error: `Kon wachtwoord niet ontsleutelen: ${decryptMsg}` })
-        }
-      }
-
       return res.status(200).json({
         gmail_address: data.gmail_address,
-        app_password,
+        has_password: !!data.encrypted_app_password,
         smtp_host: data.smtp_host || 'smtp.gmail.com',
         smtp_port: data.smtp_port || 587,
         imap_host: data.imap_host || 'imap.gmail.com',
@@ -108,8 +99,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const userId = await verifyUser(req)
     const { gmail_address, app_password, smtp_host, smtp_port, imap_host, imap_port } = req.body
 
-    if (!gmail_address || !app_password) {
-      return res.status(400).json({ error: 'Email adres en app wachtwoord zijn verplicht' })
+    if (!gmail_address) {
+      return res.status(400).json({ error: 'Email adres is verplicht' })
+    }
+
+    // Sentinel 'UNCHANGED' (of leeg) = gebruiker wijzigt het wachtwoord niet;
+    // behoud de bestaande versleutelde waarde. Zo hoeft het wachtwoord nooit
+    // opnieuw over de lijn (het wordt ook niet meer via GET teruggegeven).
+    const wijzigtWachtwoord = !!app_password && app_password !== 'UNCHANGED'
+
+    const basisVelden = {
+      user_id: userId,
+      gmail_address,
+      smtp_host: smtp_host || 'smtp.gmail.com',
+      smtp_port: smtp_port || 587,
+      imap_host: imap_host || 'imap.gmail.com',
+      imap_port: imap_port || 993,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (!wijzigtWachtwoord) {
+      // Geen nieuw wachtwoord: vereist dat er al één is opgeslagen.
+      const { data: bestaand } = await supabaseAdmin
+        .from('user_email_settings')
+        .select('encrypted_app_password')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (!bestaand?.encrypted_app_password) {
+        return res.status(400).json({ error: 'App wachtwoord is verplicht' })
+      }
+      const { error } = await supabaseAdmin
+        .from('user_email_settings')
+        .update(basisVelden)
+        .eq('user_id', userId)
+      if (error) {
+        console.error('Supabase update fout:', JSON.stringify(error))
+        return res.status(500).json({ error: `Kon email instellingen niet opslaan: ${error.message || error.code || JSON.stringify(error)}` })
+      }
+      return res.status(200).json({ success: true, message: 'Email instellingen opgeslagen' })
     }
 
     // Encrypt password: prefer AES if key available, fallback to base64 obfuscation
@@ -126,14 +153,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { error } = await supabaseAdmin
       .from('user_email_settings')
       .upsert({
-        user_id: userId,
-        gmail_address,
+        ...basisVelden,
         encrypted_app_password: encryptedPassword,
-        smtp_host: smtp_host || 'smtp.gmail.com',
-        smtp_port: smtp_port || 587,
-        imap_host: imap_host || 'imap.gmail.com',
-        imap_port: imap_port || 993,
-        updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' })
 
     if (error) {

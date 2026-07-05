@@ -18,6 +18,9 @@ export interface EmailSettings {
   imap_port: number
   gmail_address: string
   app_password: string
+  // Server geeft het wachtwoord niet meer terug; dit markeert alleen dat er een
+  // wachtwoord is opgeslagen (voor status + "leeg laten = ongewijzigd").
+  has_password?: boolean
   accept_self_signed: boolean
 }
 
