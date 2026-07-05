@@ -34,7 +34,7 @@ export function AppLayout() {
   const { layoutMode } = useSidebar()
   const location = useLocation()
   const isDesktop = useMediaQuery('(min-width: 768px)')
-  // /email renders its own pill topbar on mobile — skip the global TopNav there.
+  // /email renders its own pill topbar on mobile · skip the global TopNav there.
   const hideTopNav = !isDesktop && location.pathname.startsWith('/email')
   // Email-module verbreedt naar edge-to-edge (geen 1400px cap) zodat de
   // folder-rail tegen de viewport-rand kan plakken.

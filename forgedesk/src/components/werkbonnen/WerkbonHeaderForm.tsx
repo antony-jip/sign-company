@@ -28,7 +28,7 @@ interface WerkbonHeaderFormProps {
 
 const inputStyle = { backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' }
 const labelClass = "text-[12px] font-medium mb-1.5 block"
-const labelColor = { color: '#6B6B66' }
+const labelColor = { color: 'hsl(var(--muted-foreground))' }
 
 export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
   klantId, projectId, offerteId, titel, datum,
@@ -123,7 +123,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
         </div>
       </div>
 
-      {/* Section 2: Locatie + Contact — merged */}
+      {/* Section 2: Locatie + Contact · merged */}
       <div className="rounded-xl" style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}>
         <div className="px-4 py-4 space-y-3">
           <div className="flex items-center justify-between">
@@ -133,7 +133,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([locatieAdres, locatiePostcode, locatieStad].filter(Boolean).join(' '))}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[11px] text-[#1A535C] hover:underline flex items-center gap-0.5 font-medium"
+                className="text-[11px] text-petrol hover:underline flex items-center gap-0.5 font-medium"
               >
                 <MapPin className="h-3 w-3" /> Route
               </a>
@@ -192,7 +192,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
             />
             <div className="flex gap-1.5">
               <div className="relative flex-1">
-                <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95] pointer-events-none" />
+                <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <Input
                   key={`tel-${pickerVersion}`}
                   defaultValue={contactTelefoon}
@@ -205,7 +205,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
               </div>
               {contactTelefoon && (
                 <a href={`tel:${contactTelefoon}`} className="inline-flex items-center justify-center shrink-0 rounded-lg h-9 w-9 hover:bg-muted transition-colors" style={{ border: '1px solid hsl(var(--border))' }}>
-                  <Phone className="h-3.5 w-3.5 text-[#1A535C]" />
+                  <Phone className="h-3.5 w-3.5 text-petrol" />
                 </a>
               )}
             </div>

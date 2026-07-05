@@ -562,7 +562,7 @@ export function EmailTab() {
     }
   }
 
-  // Email connection settings — lifted to EmailTab so they survive sub-tab switches
+  // Email connection settings · lifted to EmailTab so they survive sub-tab switches
   const [emailSettings, setEmailSettings] = useState<EmailSettings>(DEFAULT_EMAIL_SETTINGS)
   const [emailConnected, setEmailConnected] = useState(false)
 
@@ -599,7 +599,7 @@ export function EmailTab() {
           }
           setEmailSettings(merged)
           setEmailConnected(!!merged.has_password)
-          // Update cache — nooit het wachtwoord meecachen.
+          // Update cache · nooit het wachtwoord meecachen.
           sessionStorage.setItem('doen_email_settings', JSON.stringify({ ...merged, app_password: '' }))
         }
       } catch (err) {
@@ -994,7 +994,7 @@ function EmailSettingsInline({
       // Na opslaan is er een wachtwoord bekend; wachtwoord zelf niet in state/cache houden.
       const opgeslagen = { ...settings, app_password: '', has_password: true }
       setSettings(opgeslagen)
-      // Cache in sessionStorage for quick loads — zonder wachtwoord.
+      // Cache in sessionStorage for quick loads · zonder wachtwoord.
       sessionStorage.setItem('doen_email_settings', JSON.stringify(opgeslagen))
 
       setSuccess('E-mailinstellingen opgeslagen!')
@@ -1066,8 +1066,8 @@ function EmailSettingsInline({
     <Card className="mt-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <div className="w-8 h-8 bg-[#F15025]/10 dark:bg-[#F15025]/20 rounded-lg flex items-center justify-center">
-            <Mail className="w-4 h-4 text-[#F15025]" />
+          <div className="w-8 h-8 bg-flame/10 dark:bg-flame/20 rounded-lg flex items-center justify-center">
+            <Mail className="w-4 h-4 text-flame" />
           </div>
           E-mail Instellingen
         </CardTitle>
@@ -1085,7 +1085,7 @@ function EmailSettingsInline({
                 <button
                   key={key}
                   onClick={() => handleProviderChange(key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${provider === key ? 'bg-[#1A535C] text-white border-[#1A535C]' : 'bg-card text-foreground/70 border-border hover:border-[#1A535C]/30'}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${provider === key ? 'bg-petrol text-white border-petrol' : 'bg-card text-foreground/70 border-border hover:border-petrol/30'}`}
                 >
                   {label}
                 </button>
@@ -1201,7 +1201,7 @@ function EmailSettingsInline({
               <Input
                 id="app_password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder={settings.has_password ? 'Opgeslagen — leeg laten om te behouden' : '••••••••••••••••'}
+                placeholder={settings.has_password ? 'Opgeslagen · leeg laten om te behouden' : '••••••••••••••••'}
                 value={settings.app_password}
                 onChange={(e) => setSettings({ ...settings, app_password: e.target.value })}
               />
@@ -1302,7 +1302,7 @@ function EmailSettingsInline({
               {isSaving ? 'Opslaan...' : 'Opslaan'}
             </Button>
             {isConnected && (
-              <Button variant="ghost" onClick={handleDisconnect} className="gap-2 text-[#F15025] hover:text-[#F15025]/80 hover:bg-[#F15025]/5">
+              <Button variant="ghost" onClick={handleDisconnect} className="gap-2 text-flame hover:text-flame/80 hover:bg-flame/5">
                 <Trash2 className="w-4 h-4" />
                 Verwijderen
               </Button>

@@ -27,11 +27,11 @@ export function PortaalFeedItemAfbeelding({
         style={{ border: '0.5px solid #E8E6E1' }}
       >
         <div className="px-5 py-4">
-          <p className="font-semibold" style={{ fontSize: 15, color: '#191919' }}>
+          <p className="font-semibold" style={{ fontSize: 15, color: 'hsl(var(--foreground))' }}>
             {item.titel}
           </p>
           {item.omschrijving && (
-            <p className="mt-0.5 text-sm" style={{ color: '#5A5A55' }}>
+            <p className="mt-0.5 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
               {item.omschrijving}
             </p>
           )}
@@ -68,7 +68,7 @@ export function PortaalFeedItemAfbeelding({
           <button
             onClick={onVragenStellen}
             className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-gray-100"
-            style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
+            style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
           >
             Reactie
           </button>

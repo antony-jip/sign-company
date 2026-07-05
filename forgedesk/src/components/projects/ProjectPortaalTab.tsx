@@ -66,7 +66,7 @@ const STATUS_STYLE: Record<string, { color: string; label: string }> = {
   goedgekeurd: { color: '#3A7D52', label: 'Goedgekeurd' },
   revisie: { color: '#C0451A', label: 'Revisie' },
   betaald: { color: '#3A7D52', label: 'Betaald' },
-  vervangen: { color: '#9B9B95', label: 'Vervangen' },
+  vervangen: { color: 'hsl(var(--muted-foreground))', label: 'Vervangen' },
 }
 
 // ---------------------------------------------------------------------------
@@ -280,12 +280,12 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
       const onderwerp = instellingen?.template_nieuw_item?.onderwerp
         ? replaceEmailVariables(instellingen.template_nieuw_item.onderwerp, vars)
-        : `${bedrijfsnaam || 'Nieuw item'} — ${titel}`
+        : `${bedrijfsnaam || 'Nieuw item'} · ${titel}`
       const heading = instellingen?.template_nieuw_item?.inhoud
         ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars)
         : `Er staat een nieuw item voor u klaar.`
 
-      const plainBody = `${heading} — ${titel} (${projectNaam})`
+      const plainBody = `${heading} · ${titel} (${projectNaam})`
 
       const htmlBody = buildPortalEmailHtml({
         heading,
@@ -474,7 +474,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#9B9B95' }} />
+        <Loader2 className="h-5 w-5 animate-spin" style={{ color: 'hsl(var(--muted-foreground))' }} />
       </div>
     )
   }
@@ -483,8 +483,8 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   if (!portaal) {
     return (
       <div className="py-12 text-center">
-        <p className="text-sm font-medium" style={{ color: '#1A1A1A' }}>Nog geen klantportaal</p>
-        <p className="text-xs mt-1" style={{ color: '#9B9B95' }}>
+        <p className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>Nog geen klantportaal</p>
+        <p className="text-xs mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
           Deel offertes, tekeningen en facturen met je klant.
         </p>
         <button
@@ -519,7 +519,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
             {isActief ? 'Actief' : isVerlopen ? 'Verlopen' : 'Inactief'}
           </span>
           <span style={{ color: '#F15025', fontSize: 10 }}>●</span>
-          <span className="text-[11px]" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
+          <span className="text-[11px]" style={{ color: 'hsl(var(--muted-foreground))', fontFamily: "'DM Mono', monospace" }}>
             verloopt {formatDate(portaal.verloopt_op)}
           </span>
         </div>
@@ -602,7 +602,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               {showDay && (
                 <div className="flex items-center gap-3 py-3">
                   <div className="flex-1 h-px" style={{ backgroundColor: 'hsl(var(--border))' }} />
-                  <span className="text-[10px] uppercase tracking-widest" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
+                  <span className="text-[10px] uppercase tracking-widest" style={{ color: 'hsl(var(--muted-foreground))', fontFamily: "'DM Mono', monospace" }}>
                     {dayLabel(item.created_at)}
                   </span>
                   <div className="flex-1 h-px" style={{ backgroundColor: 'hsl(var(--border))' }} />
@@ -623,11 +623,11 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                     }
                   >
                     {isIntern && <p className="text-[10px] font-medium uppercase tracking-wider mb-1" style={{ color: '#8A7A4A' }}>Intern</p>}
-                    <p className="text-sm whitespace-pre-wrap" style={{ color: '#1A1A1A', lineHeight: 1.55 }}>
+                    <p className="text-sm whitespace-pre-wrap" style={{ color: 'hsl(var(--foreground))', lineHeight: 1.55 }}>
                       {item.bericht_tekst || ''}
                     </p>
                     <div className="mt-1.5 text-right">
-                      <span className="text-[10px]" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
+                      <span className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))', fontFamily: "'DM Mono', monospace" }}>
                         {isKlant ? 'Klant' : 'Jij'} · {formatTime(item.created_at)}
                       </span>
                     </div>
@@ -649,10 +649,10 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                       />
                     )}
                     {item.bericht_tekst && (
-                      <p className="mt-1.5 text-sm whitespace-pre-wrap" style={{ color: '#1A1A1A' }}>{item.bericht_tekst}</p>
+                      <p className="mt-1.5 text-sm whitespace-pre-wrap" style={{ color: 'hsl(var(--foreground))' }}>{item.bericht_tekst}</p>
                     )}
                     <div className="mt-1 text-right">
-                      <span className="text-[10px]" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
+                      <span className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))', fontFamily: "'DM Mono', monospace" }}>
                         {formatTime(item.created_at)}
                       </span>
                     </div>
@@ -662,7 +662,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
               {/* ── Card (offerte/factuur/tekening) ──────────────────── */}
               {!isBubble && !isPhoto && (() => {
-                const st = STATUS_STYLE[item.status] || { color: '#9B9B95', label: item.status }
+                const st = STATUS_STYLE[item.status] || { color: 'hsl(var(--muted-foreground))', label: item.status }
                 const typeColor = item.type === 'offerte' ? '#F15025' : item.type === 'factuur' ? '#2D6B48' : '#1A535C'
                 return (
                   <div className="rounded-xl p-5" style={{ backgroundColor: 'hsl(var(--card))', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
@@ -671,9 +671,9 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                         <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: typeColor, fontFamily: "'DM Mono', monospace" }}>
                           {item.type}
                         </p>
-                        <h4 className="text-sm font-semibold mt-0.5" style={{ color: '#1A1A1A' }}>{item.titel}</h4>
+                        <h4 className="text-sm font-semibold mt-0.5" style={{ color: 'hsl(var(--foreground))' }}>{item.titel}</h4>
                         {item.bedrag != null && (
-                          <p className="text-lg font-semibold mt-0.5" style={{ fontFamily: "'DM Mono', monospace", color: '#1A1A1A' }}>
+                          <p className="text-lg font-semibold mt-0.5" style={{ fontFamily: "'DM Mono', monospace", color: 'hsl(var(--foreground))' }}>
                             {formatCurrency(item.bedrag)}
                           </p>
                         )}
@@ -695,8 +695,8 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                             className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition-opacity hover:opacity-70"
                             style={{ backgroundColor: 'hsl(var(--background))' }}
                           >
-                            <FileText className="h-3.5 w-3.5" style={{ color: '#9B9B95' }} />
-                            <span className="flex-1 truncate" style={{ color: '#1A1A1A' }}>{b.bestandsnaam}</span>
+                            <FileText className="h-3.5 w-3.5" style={{ color: 'hsl(var(--muted-foreground))' }} />
+                            <span className="flex-1 truncate" style={{ color: 'hsl(var(--foreground))' }}>{b.bestandsnaam}</span>
                           </a>
                         ))}
                       </div>
@@ -708,11 +708,11 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                           ✓ Bekeken {formatTime(item.bekeken_op)}
                         </span>
                       ) : (
-                        <span className="text-[10px] font-mono" style={{ color: '#9B9B95' }}>
+                        <span className="text-[10px] font-mono" style={{ color: 'hsl(var(--muted-foreground))' }}>
                           Nog niet bekeken
                         </span>
                       )}
-                      <span className="text-[10px]" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
+                      <span className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))', fontFamily: "'DM Mono', monospace" }}>
                         {formatTime(item.created_at)}
                       </span>
                     </div>
@@ -728,18 +728,18 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                   style={{ borderLeft: '2px solid #F15025' }}
                 >
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-medium" style={{ color: '#1A1A1A' }}>
+                    <span className="text-[11px] font-medium" style={{ color: 'hsl(var(--foreground))' }}>
                       {r.klant_naam || 'Klant'}
                     </span>
                     <span className="text-[11px]" style={{ color: r.type === 'goedkeuring' ? '#3A7D52' : r.type === 'revisie' ? '#C0451A' : '#6B6B66' }}>
                       {r.type === 'goedkeuring' ? 'heeft goedgekeurd' : r.type === 'revisie' ? 'vraagt revisie' : 'reageerde'}
                     </span>
-                    <span className="text-[10px] ml-auto" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
+                    <span className="text-[10px] ml-auto" style={{ color: 'hsl(var(--muted-foreground))', fontFamily: "'DM Mono', monospace" }}>
                       {formatTime(r.created_at)}
                     </span>
                   </div>
                   {r.bericht && (
-                    <p className="text-sm whitespace-pre-wrap mt-0.5" style={{ color: '#6B6B66', lineHeight: 1.55 }}>{r.bericht}</p>
+                    <p className="text-sm whitespace-pre-wrap mt-0.5" style={{ color: 'hsl(var(--muted-foreground))', lineHeight: 1.55 }}>{r.bericht}</p>
                   )}
                   {r.foto_url && (
                     <img
@@ -773,7 +773,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 setSelectedFactuurId('')
               }}
               className="text-[11px] rounded-lg px-2 py-1 border-0 outline-none"
-              style={{ backgroundColor: 'hsl(var(--background))', color: '#6B6B66' }}
+              style={{ backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--muted-foreground))' }}
             >
               <option value="bericht">Bericht</option>
               <option value="notitie_intern">Interne notitie</option>
@@ -784,7 +784,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
             </select>
 
             {inputType !== 'notitie_intern' && (
-              <label className="flex items-center gap-1.5 text-[11px] ml-auto cursor-pointer" style={{ color: '#9B9B95' }}>
+              <label className="flex items-center gap-1.5 text-[11px] ml-auto cursor-pointer" style={{ color: 'hsl(var(--muted-foreground))' }}>
                 <input
                   type="checkbox"
                   checked={emailNotify}
@@ -805,7 +805,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder={inputType === 'notitie_intern' ? 'Interne notitie...' : 'Typ een bericht...'}
                 className="flex-1 resize-none rounded-xl px-3.5 py-2.5 text-sm border-0 outline-none"
-                style={{ backgroundColor: 'hsl(var(--background))', color: '#1A1A1A', minHeight: 40, maxHeight: 120 }}
+                style={{ backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))', minHeight: 40, maxHeight: 120 }}
                 rows={1}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
               />

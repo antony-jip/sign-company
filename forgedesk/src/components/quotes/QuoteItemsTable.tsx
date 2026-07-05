@@ -26,9 +26,9 @@ import type { SigningVisualisatie } from '@/types'
 //
 // Elk item is 1 complete "calculatie":
 //   1. Item naam (titel bovenaan)
-//   2. Beschrijving-regels — dynamisch: toevoegen, verwijderen, aanpassen
+//   2. Beschrijving-regels · dynamisch: toevoegen, verwijderen, aanpassen
 //      Default: Aantal, Materiaal, Formaat, Lay-out, Montage, Opmerking
-//   3. Prijsberekening — Aantal × Prijs [Calculator] | BTW | Korting | = Totaal
+//   3. Prijsberekening · Aantal × Prijs [Calculator] | BTW | Korting | = Totaal
 //
 // De Calculator (CalculatieModal) zit achter de prijs voor
 // gedetailleerde inkoop/verkoop/marge berekening.
@@ -312,11 +312,11 @@ function BijlageDropZone({
         className="flex items-center gap-2 w-full text-left"
       >
         <div className="flex items-center justify-center h-5 w-5 rounded bg-violet-100 dark:bg-violet-900/30">
-          <ImageIcon className="h-3 w-3 text-violet-500 dark:text-violet-400" />
+          <ImageIcon className="h-3 w-3 text-petrol dark:text-violet-400" />
         </div>
         <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Tekening / Bijlage</span>
         {!sectionOpen && hasContent && (
-          <span className="text-2xs font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-full">
+          <span className="text-2xs font-medium text-petrol dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-full">
             {hasBijlage ? item.bijlage_naam || '1 bestand' : `${visualisaties.length} voorbeeld${visualisaties.length > 1 ? 'en' : ''}`}
           </span>
         )}
@@ -328,8 +328,8 @@ function BijlageDropZone({
 
       {!sectionOpen ? null : isUploading ? (
         <div className="mt-2 rounded-lg border-2 border-dashed border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 flex items-center justify-center gap-2 py-4">
-          <div className="h-4 w-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-violet-600 dark:text-violet-400 font-medium">Uploaden...</span>
+          <div className="h-4 w-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-petrol dark:text-violet-400 font-medium">Uploaden...</span>
         </div>
       ) : item.bijlage_url && resolvedUrl ? (
         <div className="mt-2 relative group rounded-lg overflow-hidden bg-muted/40 dark:bg-muted/20 border border-border">
@@ -388,7 +388,7 @@ function BijlageDropZone({
             'mt-2 rounded-lg border-2 border-dashed transition-all duration-200 cursor-pointer',
             'flex flex-col items-center justify-center gap-1.5 py-3',
             isDragOver
-              ? 'border-violet-400 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/40 dark:to-indigo-950/40 scale-[1.01] shadow-sm'
+              ? 'border-muted-foreground bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/40 dark:to-indigo-950/40 scale-[1.01] shadow-sm'
               : 'border-border hover:border-violet-300 dark:hover:border-violet-700 hover:bg-gradient-to-br hover:from-violet-50/50 hover:to-indigo-50/50 dark:hover:from-violet-950/20 dark:hover:to-indigo-950/20'
           )}
           onClick={() => fileInputRef.current?.click()}
@@ -402,7 +402,7 @@ function BijlageDropZone({
             <Upload className={cn(
               'h-3.5 w-3.5 transition-colors',
               isDragOver
-                ? 'text-violet-500 dark:text-violet-400'
+                ? 'text-petrol dark:text-violet-400'
                 : 'text-muted-foreground/60 dark:text-muted-foreground'
             )} />
           </div>
@@ -410,7 +410,7 @@ function BijlageDropZone({
             <p className={cn(
               'text-xs font-medium transition-colors',
               isDragOver
-                ? 'text-violet-600 dark:text-violet-400'
+                ? 'text-petrol dark:text-violet-400'
                 : 'text-muted-foreground dark:text-muted-foreground/60'
             )}>
               {isDragOver ? 'Laat los om te uploaden' : 'Sleep, plak of klik om te uploaden'}
@@ -445,7 +445,7 @@ function BijlageDropZone({
               <div
                 key={v.id}
                 onClick={() => onSelectVisualisatie?.(v)}
-                className="relative group cursor-pointer rounded-md overflow-hidden border border-border dark:border-border hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-md transition-all w-[80px] flex-shrink-0"
+                className="relative group cursor-pointer rounded-md overflow-hidden border border-border dark:border-border hover:border-muted-foreground dark:hover:border-violet-500 hover:shadow-md transition-all w-[80px] flex-shrink-0"
                 title="Klik om als tekening te gebruiken"
               >
                 <img
@@ -1257,7 +1257,7 @@ export function QuoteItemsTable({
                         className="w-32 flex-shrink-0 h-7 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground bg-transparent dark:bg-transparent border-transparent dark:border-transparent hover:bg-[rgba(26,83,92,0.04)] focus-visible:bg-[rgba(26,83,92,0.06)] focus-visible:ring-0 focus-visible:border-transparent shadow-none px-2 placeholder:text-muted-foreground/50 placeholder:font-semibold placeholder:tracking-wider"
                       />
 
-                      {/* Waarde — with autofill for omschrijving/materiaal/lay-out/montage */}
+                      {/* Waarde · with autofill for omschrijving/materiaal/lay-out/montage */}
                       {labelToAutofillField(regel.label) ? (
                         <AutofillInput
                           field={labelToAutofillField(regel.label)!}
@@ -1279,7 +1279,7 @@ export function QuoteItemsTable({
                       <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => duplicateDetailRegel(item.id, regel.id)}
-                          className="text-muted-foreground hover:text-[#1A535C] p-1 rounded transition-colors"
+                          className="text-muted-foreground hover:text-petrol p-1 rounded transition-colors"
                           title="Dupliceer rij"
                         >
                           <Copy className="h-3 w-3" />
@@ -1295,10 +1295,10 @@ export function QuoteItemsTable({
                     </div>
                   ))}
 
-                  {/* Rij toevoegen — Flame text-link stijl */}
+                  {/* Rij toevoegen · Flame text-link stijl */}
                   <button
                     onClick={() => addDetailRegel(item.id)}
-                    className="text-xs font-medium text-[#F15025] hover:text-[#D9421C] transition-colors pt-2 pl-2"
+                    className="text-xs font-medium text-flame hover:text-[#D9421C] transition-colors pt-2 pl-2"
                   >
                     + Beschrijving toevoegen
                   </button>
@@ -1676,7 +1676,7 @@ export function QuoteItemsTable({
               <Button
                 variant="outline"
                 onClick={onPasteItems}
-                className="gap-2 text-[#1A535C] border-[#1A535C]/30 hover:bg-[#1A535C]/5 hover:border-[#1A535C]/50 hover:text-[#1A535C]"
+                className="gap-2 text-petrol border-petrol/30 hover:bg-petrol/5 hover:border-petrol/50 hover:text-petrol"
               >
                 <Clipboard className="h-4 w-4" />
                 Plak items ({clipboardCount})
@@ -1700,7 +1700,7 @@ export function QuoteItemsTable({
           {clipboardCount > 0 && onPasteItems && (
             <button
               onClick={onPasteItems}
-              className="py-3 px-4 rounded-xl border-2 border-dashed border-[#1A535C]/30 text-sm font-medium text-[#1A535C] hover:border-[#1A535C]/50 hover:bg-[#1A535C]/5 transition-colors flex items-center gap-2"
+              className="py-3 px-4 rounded-xl border-2 border-dashed border-petrol/30 text-sm font-medium text-petrol hover:border-petrol/50 hover:bg-petrol/5 transition-colors flex items-center gap-2"
             >
               <Clipboard className="h-4 w-4" />
               Plak items ({clipboardCount})
@@ -1720,7 +1720,7 @@ export function QuoteItemsTable({
           {onCopyAllItems && items.filter(i => i.soort === 'prijs' && i.beschrijving.trim()).length > 1 && (
             <button
               onClick={onCopyAllItems}
-              className="py-3 px-4 rounded-xl border-2 border-dashed border-[#1A535C]/30 text-sm font-medium text-[#1A535C] hover:border-[#1A535C]/50 hover:bg-[#1A535C]/5 transition-colors flex items-center gap-2"
+              className="py-3 px-4 rounded-xl border-2 border-dashed border-petrol/30 text-sm font-medium text-petrol hover:border-petrol/50 hover:bg-petrol/5 transition-colors flex items-center gap-2"
             >
               <Copy className="h-4 w-4" />
               Kopieer alle items

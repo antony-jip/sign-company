@@ -32,7 +32,7 @@ interface EditorState {
 function meldOpgeslagen() {
   tik(12)
   toast.success(
-    <span>Opgeslagen<span className="text-[#F15025]">.</span></span>,
+    <span>Opgeslagen<span className="text-flame">.</span></span>,
   )
 }
 
@@ -60,20 +60,20 @@ function MaatjeKaart({
       onClick={() => onKlik(maatje)}
       className={cn(
         'group relative block overflow-hidden rounded-xl bg-white text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] active:scale-[0.98]',
-        geselecteerd && 'ring-2 ring-[#F15025]',
+        geselecteerd && 'ring-2 ring-flame',
       )}
     >
       <div className="aspect-square w-full bg-[#F8F7F5]">
         {url && <img src={url} alt={maatje.titel ?? 'Maatje'} className="h-full w-full object-cover animate-in fade-in-0 duration-500" />}
       </div>
       {maatje.titel && (
-        <div className="truncate px-2.5 py-2 text-[12px] font-medium text-[#1A1A1A]">{maatje.titel}</div>
+        <div className="truncate px-2.5 py-2 text-[12px] font-medium text-foreground">{maatje.titel}</div>
       )}
       {selectieModus && (
         <span
           className={cn(
             'absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors',
-            geselecteerd ? 'border-[#F15025] bg-[#F15025] text-white' : 'border-white bg-black/20 text-transparent',
+            geselecteerd ? 'border-flame bg-flame text-white' : 'border-white bg-black/20 text-transparent',
           )}
         >
           <Check className="h-3.5 w-3.5" strokeWidth={3} />
@@ -123,7 +123,7 @@ export function MaatjeKladblok() {
         geslaagd++
       } catch (err) {
         logger.error('Upload uit wachtrij mislukt:', err)
-        break // waarschijnlijk weer offline — stoppen
+        break // waarschijnlijk weer offline · stoppen
       }
     }
     await verversWachtrij()
@@ -195,7 +195,7 @@ export function MaatjeKladblok() {
       await koppelMaatjes(ids, projectId)
       tik([12, 40, 12])
       toast.success(
-        <span>{ids.length} maatje{ids.length > 1 ? 's' : ''} gekoppeld<span className="text-[#F15025]">.</span></span>,
+        <span>{ids.length} maatje{ids.length > 1 ? 's' : ''} gekoppeld<span className="text-flame">.</span></span>,
         {
           action: {
             label: 'Ongedaan maken',
@@ -229,7 +229,7 @@ export function MaatjeKladblok() {
     try {
       await Promise.all(ids.map((id) => verwijderMaatje(id)))
       tik(25)
-      toast.success(<span>{ids.length} verwijderd<span className="text-[#F15025]">.</span></span>)
+      toast.success(<span>{ids.length} verwijderd<span className="text-flame">.</span></span>)
     } catch (err) {
       logger.error('Verwijderen mislukt:', err)
       toast.error('Verwijderen mislukt')
@@ -261,7 +261,7 @@ export function MaatjeKladblok() {
             aangemaakt: Date.now(),
           })
           tik(12)
-          toast.success(<span>Opgeslagen — upload zodra je online bent<span className="text-[#F15025]">.</span></span>)
+          toast.success(<span>Opgeslagen · upload zodra je online bent<span className="text-flame">.</span></span>)
           await verversWachtrij()
         } else {
           throw err
@@ -298,15 +298,15 @@ export function MaatjeKladblok() {
     <div className={cn('mx-auto w-full max-w-4xl px-4 py-6 md:px-8', selectieModus && 'pb-24')}>
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[26px] font-extrabold tracking-[-0.3px] text-[#1A1A1A]">Maatjes</h1>
-          <p className="mt-1 text-[13px] text-[#6B6B66]">Kladblok met losse maatjes, nog niet gekoppeld.</p>
+          <h1 className="text-[26px] font-extrabold tracking-[-0.3px] text-foreground">Maatjes<span className="text-flame">.</span></h1>
+          <p className="mt-1 text-[13px] text-muted-foreground">Kladblok met losse maatjes, nog niet gekoppeld.</p>
         </div>
         <div className="flex shrink-0 items-center gap-3">
           {maatjes.length > 0 && !selectieModus && (
             <button
               type="button"
               onClick={() => setSelectieModus(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#1A535C]/30 px-3 py-2.5 text-[13px] font-semibold text-[#1A535C] transition-colors hover:bg-[#1A535C]/[0.06]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-petrol/30 px-3 py-2.5 text-[13px] font-semibold text-petrol transition-colors hover:bg-petrol/[0.06]"
             >
               <Link2 className="h-4 w-4" strokeWidth={2} />
               Koppelen
@@ -315,7 +315,7 @@ export function MaatjeKladblok() {
           <button
             type="button"
             onClick={() => { laatsteBronRef.current = 'galerij'; galerijInputRef.current?.click() }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#1A535C]/30 px-3 py-2.5 text-[13px] font-semibold text-[#1A535C] transition-colors hover:bg-[#1A535C]/[0.06]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-petrol/30 px-3 py-2.5 text-[13px] font-semibold text-petrol transition-colors hover:bg-petrol/[0.06]"
           >
             <ImagePlus className="h-4 w-4" strokeWidth={2} />
             Importeren
@@ -323,7 +323,7 @@ export function MaatjeKladblok() {
           <button
             type="button"
             onClick={() => { laatsteBronRef.current = 'camera'; cameraInputRef.current?.click() }}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#F15025] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)] transition-transform active:scale-[0.97]"
+            className="inline-flex items-center gap-2 rounded-lg bg-flame px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)] transition-transform active:scale-[0.97]"
           >
             <Camera className="h-4 w-4" strokeWidth={2} />
             Foto maken
@@ -363,12 +363,12 @@ export function MaatjeKladblok() {
         </div>
       ) : maatjes.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-[14px] text-[#6B6B66]">Nog geen maatjes in het kladblok.</p>
+          <p className="text-[14px] text-muted-foreground">Nog geen maatjes in het kladblok.</p>
           <div className="mt-2 flex items-center justify-center gap-3">
             <button
               type="button"
               onClick={() => { laatsteBronRef.current = 'camera'; cameraInputRef.current?.click() }}
-              className="text-[14px] font-semibold text-[#F15025] underline underline-offset-2"
+              className="text-[14px] font-semibold text-flame underline underline-offset-2"
             >
               Maak je eerste foto
             </button>
@@ -376,7 +376,7 @@ export function MaatjeKladblok() {
             <button
               type="button"
               onClick={() => { laatsteBronRef.current = 'galerij'; galerijInputRef.current?.click() }}
-              className="text-[14px] font-semibold text-[#1A535C] underline underline-offset-2"
+              className="text-[14px] font-semibold text-petrol underline underline-offset-2"
             >
               importeer uit je bibliotheek
             </button>
@@ -402,7 +402,7 @@ export function MaatjeKladblok() {
       )}
 
       {selectieModus && createPortal(
-        <div className="safe-area-bottom fixed inset-x-0 bottom-0 z-[60] flex items-center justify-between gap-3 bg-[#1A535C] px-4 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.15)] animate-in slide-in-from-bottom-4 duration-200">
+        <div className="safe-area-bottom fixed inset-x-0 bottom-0 z-[60] flex items-center justify-between gap-3 bg-petrol px-4 py-3 shadow-[0_-2px_12px_rgba(0,0,0,0.15)] animate-in slide-in-from-bottom-4 duration-200">
           <button
             type="button"
             onClick={verlaatSelectie}
@@ -427,7 +427,7 @@ export function MaatjeKladblok() {
               type="button"
               onClick={() => setKoppelOpen(true)}
               disabled={selectie.size === 0}
-              className="rounded-lg bg-[#F15025] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+              className="rounded-lg bg-flame px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
             >
               Koppel aan project
             </button>

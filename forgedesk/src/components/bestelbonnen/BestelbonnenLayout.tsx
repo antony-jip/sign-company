@@ -232,8 +232,8 @@ export function BestelbonnenLayout() {
           {gefilterd.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16">
               <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#F15025' }} />
-              <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen bestelbonnen gevonden</p>
-              <p style={{ fontSize: '12px', color: '#5A5A55' }}>Maak een bestelbon aan voor je leveranciers.</p>
+              <p className="font-semibold" style={{ fontSize: '14px', color: 'hsl(var(--foreground))' }}>Geen bestelbonnen gevonden</p>
+              <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>Maak een bestelbon aan voor je leveranciers.</p>
               <Button variant="outline" size="sm" onClick={() => navigate('/bestelbonnen/nieuw')}>
                 <Plus className="h-4 w-4 mr-2" /> Eerste bestelbon aanmaken
               </Button>
@@ -253,7 +253,7 @@ export function BestelbonnenLayout() {
                   return (
                     <tr key={bst.id} className={`group hover:bg-bg-hover transition-colors duration-150 cursor-pointer border-l-2 ${getRowAccentClass(bst.status)}`} onClick={() => navigateWithTab({ path: `/bestelbonnen/${bst.id}`, label: bst.bestelbon_nummer || 'Bestelbon', id: `/bestelbonnen/${bst.id}` })}>
                       <td className="px-4 py-3">
-                        <span className="text-sm font-mono font-semibold text-orange-600 dark:text-orange-400">{bst.bestelbon_nummer}</span>
+                        <span className="text-sm font-mono font-semibold text-flame dark:text-orange-400">{bst.bestelbon_nummer}</span>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getLeverancierNaam(bst.leverancier_id)}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getProjectNaam(bst.project_id)}</td>

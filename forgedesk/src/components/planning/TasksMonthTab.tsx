@@ -66,7 +66,7 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
     <>
       <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
         <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
-          Taken<span className="text-[#F15025]">.</span>
+          Taken<span className="text-flame">.</span>
         </h1>
         <p className="mt-1 text-[14px] text-foreground/70 capitalize">{monthLabel}</p>
         {monthOpenCount > 0 && (
@@ -79,7 +79,7 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
           type="button"
           onClick={() => setVisibleMonth((m) => subMonths(m, 1))}
           aria-label="Vorige maand"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-petrol active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -88,7 +88,7 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
           type="button"
           onClick={() => setVisibleMonth((m) => addMonths(m, 1))}
           aria-label="Volgende maand"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-petrol active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -125,7 +125,7 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
                 className={cn(
                   'aspect-square flex flex-col items-center justify-center rounded-full transition-colors',
                   isTodayCell
-                    ? 'bg-[#F15025] text-white'
+                    ? 'bg-flame text-white'
                     : inMonth
                       ? 'text-foreground hover:bg-muted/60 active:bg-muted'
                       : 'text-muted-foreground/80 hover:bg-muted/40',
@@ -139,7 +139,7 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
                         key={i}
                         className={cn(
                           'h-1 w-1 rounded-full',
-                          isTodayCell ? 'bg-white' : 'bg-[#F15025]',
+                          isTodayCell ? 'bg-white' : 'bg-flame',
                         )}
                       />
                     ))}

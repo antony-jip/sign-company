@@ -180,7 +180,7 @@ export function EmailReader({
     return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
   }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam])
 
-  // Track per-attachment download state (alleen visueel — losse spinner per bijlage)
+  // Track per-attachment download state (alleen visueel · losse spinner per bijlage)
   const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null)
   const [previewLoading, setPreviewLoading] = useState<string | null>(null)
   const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false)
@@ -259,7 +259,7 @@ export function EmailReader({
     }
 
     // Pad 0: signed Storage URLs uit de persistent cache (sprint 3). Snelst
-    // van allemaal — direct als <img src>, geen decode-stap. URL.revokeObjectURL
+    // van allemaal · direct als <img src>, geen decode-stap. URL.revokeObjectURL
     // is een no-op voor https-URLs dus we hoeven hier niets te cleanen.
     const initial: Record<string, string> = {}
     if (prefetchedAttachmentUrls) {
@@ -344,7 +344,7 @@ export function EmailReader({
       setAttachmentThumbnails({})
       setThumbnailsLoading(false)
     }
-    // attachmentThumbnails opzettelijk weggelaten — de effect lifecycle hoort
+    // attachmentThumbnails opzettelijk weggelaten · de effect lifecycle hoort
     // aan de email/meta gekoppeld te zijn, niet aan tussentijdse updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email?.id, email?.attachment_meta?.length, imapFolder, prefetchedAttachmentBytes, prefetchedAttachmentUrls])
@@ -365,7 +365,7 @@ export function EmailReader({
         subject: replySubject,
         html: content,
       }))
-    } catch { /* sessionStorage vol — negeer */ }
+    } catch { /* sessionStorage vol · negeer */ }
   }, [draftKey, replyMode, replyTo, replyCc, replyBcc, replySubject, signatureHtml])
 
   const clearDraft = useCallback(() => {
@@ -411,7 +411,7 @@ export function EmailReader({
     if (!email) return
     const uid = Number(email.gmail_id || email.id)
     if (Number.isNaN(uid)) {
-      toast.error('Kan deze bijlage niet ophalen — geen geldig email-id')
+      toast.error('Kan deze bijlage niet ophalen · geen geldig email-id')
       return
     }
     setDownloadingAttachment(filename)
@@ -447,7 +447,7 @@ export function EmailReader({
     if (!email) return
     const uid = Number(email.gmail_id || email.id)
     if (Number.isNaN(uid)) {
-      toast.error('Kan deze bijlage niet ophalen — geen geldig email-id')
+      toast.error('Kan deze bijlage niet ophalen · geen geldig email-id')
       return
     }
     setPreviewLoading(att.filename)
@@ -489,7 +489,7 @@ export function EmailReader({
     if (!email?.attachment_meta?.length) return
     const uid = Number(email.gmail_id || email.id)
     if (Number.isNaN(uid)) {
-      toast.error('Kan deze bijlagen niet ophalen — geen geldig email-id')
+      toast.error('Kan deze bijlagen niet ophalen · geen geldig email-id')
       return
     }
     setDownloadingAll(true)
@@ -643,7 +643,7 @@ export function EmailReader({
     const subject = replySubject || email.onderwerp
     // Strip base64 data URIs uit de geciteerde tekst zodat de JSON payload
     // binnen Vercel's 4.5MB limiet blijft. Inline images in het origineel
-    // zijn niet nodig in het antwoord — de ontvanger heeft het origineel al.
+    // zijn niet nodig in het antwoord · de ontvanger heeft het origineel al.
     const inhoudZonderInlineImages = (email.inhoud || '').replace(
       /<img([^>]*)src="data:image\/[^"]*"([^>]*)>/gi,
       '<img$1src=""$2 alt="[afbeelding]" style="display:none">'
@@ -677,7 +677,7 @@ export function EmailReader({
           }
         } catch (err) {
           logger.warn('Originele bijlagen ophalen mislukt:', err)
-          toast.warning('Originele bijlagen niet ingesloten — verzend zonder')
+          toast.warning('Originele bijlagen niet ingesloten · verzend zonder')
         }
       }
     }
@@ -851,7 +851,7 @@ export function EmailReader({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [email, replyMode, handleSummarize, handleGenerateReplyFromReader])
 
-  // Memoize sender data — avoid recalculating on every render
+  // Memoize sender data · avoid recalculating on every render
   const senderName = useMemo(() => email ? extractSenderName(email.van) : '', [email?.van])
   const senderEmail = useMemo(() => email ? extractSenderEmail(email.van) : '', [email?.van])
   const avatarColor = useMemo(() => getAvatarColor(senderName), [senderName])
@@ -887,7 +887,7 @@ export function EmailReader({
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // INLINE REPLY FORM — gerenderd boven de email body wanneer replyMode actief is.
+  // INLINE REPLY FORM · gerenderd boven de email body wanneer replyMode actief is.
   // Body blijft zichtbaar eronder; geen mode-switch meer (was: full-screen takeover).
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const inlineReplyForm = replyMode ? (
@@ -914,8 +914,8 @@ export function EmailReader({
                   Cc/Bcc
                 </button>
               )}
-              {/* Reply-mode segmented control — iOS-style pill */}
-              <div className="hidden md:flex items-center ml-2.5 flex-shrink-0 bg-[#1A535C]/[0.06] dark:bg-white/[0.06] rounded-button p-[2px]">
+              {/* Reply-mode segmented control · iOS-style pill */}
+              <div className="hidden md:flex items-center ml-2.5 flex-shrink-0 bg-petrol/[0.06] dark:bg-white/[0.06] rounded-button p-[2px]">
                 <button
                   onClick={() => {
                     setReplyMode('reply')
@@ -1002,7 +1002,7 @@ export function EmailReader({
               />
             </div>
 
-            {/* AI suggestion — subtler text-link op zelfde aligning kolom */}
+            {/* AI suggestion · subtler text-link op zelfde aligning kolom */}
             <div className="flex items-center px-5 md:px-7 py-2 border-b border-black/[0.06] dark:border-white/[0.08]">
               <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Daan</span>
               <div className="relative">
@@ -1011,7 +1011,7 @@ export function EmailReader({
                   disabled={forgieLoading}
                   className={cn(
                     'inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors duration-150',
-                    forgieLoading ? 'text-muted-foreground' : 'text-[#C0451A] hover:text-[#F15025]',
+                    forgieLoading ? 'text-muted-foreground' : 'text-[#C0451A] hover:text-flame',
                   )}
                 >
                   {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
@@ -1024,14 +1024,14 @@ export function EmailReader({
                     <div className="absolute left-0 top-full mt-1.5 w-[230px] bg-card rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-border z-50 py-1.5">
                       <button
                         onClick={() => { setReplyAiOpen(false); handleForgieWrite() }}
-                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-[#1A535C]/[0.06] transition-colors flex items-center gap-2"
+                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-petrol/[0.06] transition-colors flex items-center gap-2"
                       >
-                        <Sparkles className="h-3.5 w-3.5 text-[#F15025]" />
+                        <Sparkles className="h-3.5 w-3.5 text-flame" />
                         Uit context mail
                       </button>
                       <button
                         onClick={() => { setReplyAiOpen(false); setReplyBriefOpen(true) }}
-                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-[#1A535C]/[0.06] transition-colors flex items-center gap-2"
+                        className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-petrol/[0.06] transition-colors flex items-center gap-2"
                       >
                         <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
                         Eigen input geven
@@ -1044,7 +1044,7 @@ export function EmailReader({
                     <div className="fixed inset-0 z-40" onClick={() => setReplyBriefOpen(false)} />
                     <div className="absolute left-0 top-full mt-1.5 w-[340px] max-w-[calc(100vw-2rem)] bg-card rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-border z-50 p-3.5 space-y-2.5">
                       <div className="flex items-center gap-1.5">
-                        <Sparkles className="h-3.5 w-3.5 text-[#F15025]" />
+                        <Sparkles className="h-3.5 w-3.5 text-flame" />
                         <p className="text-[13px] font-semibold text-foreground">Wat wil je antwoorden?</p>
                       </div>
                       <textarea
@@ -1054,12 +1054,12 @@ export function EmailReader({
                         rows={3}
                         autoFocus
                         placeholder="Bijv. Bevestig de afspraak en vraag om het juiste leveradres."
-                        className="w-full text-[13px] text-foreground bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-[#1A535C] resize-none"
+                        className="w-full text-[13px] text-foreground bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-petrol resize-none"
                       />
                       <p className="text-[11px] text-muted-foreground">Daan schrijft in jouw tone of voice. <span className="text-muted-foreground/70">⌘↵ om te genereren</span></p>
                       <div className="flex justify-end gap-2">
                         <button onClick={() => setReplyBriefOpen(false)} className="text-[12px] text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-lg transition-colors">Annuleren</button>
-                        <button onClick={handleReplyFromBrief} disabled={!replyBrief.trim() || forgieLoading} className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-[#F15025] hover:bg-[#D9421C] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40">
+                        <button onClick={handleReplyFromBrief} disabled={!replyBrief.trim() || forgieLoading} className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-flame hover:bg-[#D9421C] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40">
                           {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                           Genereer
                         </button>
@@ -1092,13 +1092,13 @@ export function EmailReader({
             {/* ─── Attachments ─── */}
             {(replyAttachments.length > 0 || forwardOriginalAttachments.length > 0) && (
               <div className="flex flex-wrap gap-2 px-4 md:px-5 py-2.5 border-t border-border bg-background">
-                {/* Doorgestuurde originelen — met visual icon en "doorgestuurd" hint */}
+                {/* Doorgestuurde originelen · met visual icon en "doorgestuurd" hint */}
                 {forwardOriginalAttachments.map((att, i) => {
                   const visual = getAttachmentVisual(att.filename, att.contentType)
                   return (
                     <div
                       key={`fwd-${att.filename}-${i}`}
-                      className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white dark:bg-white/[0.04] rounded-lg border border-[#1A535C]/20 dark:border-white/10 text-[12px] text-foreground/70"
+                      className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white dark:bg-white/[0.04] rounded-lg border border-petrol/20 dark:border-white/10 text-[12px] text-foreground/70"
                       title={`Doorgestuurd: ${att.filename}`}
                     >
                       <div className={cn(
@@ -1144,28 +1144,28 @@ export function EmailReader({
               </div>
             )}
 
-            {/* ─── Toolbar (sticky bottom — iOS-style frosted material) ─── */}
+            {/* ─── Toolbar (sticky bottom · iOS-style frosted material) ─── */}
             <div className="sticky bottom-0 z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 pl-3 pr-3 md:pl-5 md:pr-3 py-2.5 border-t border-black/[0.06] dark:border-white/[0.08] bg-card/85 backdrop-blur-xl shadow-[0_-1px_0_rgba(0,0,0,0.02),0_-8px_24px_-12px_rgba(0,0,0,0.08)]">
               <div className="flex items-center">
                 <div className="flex items-center gap-px mr-2">
-                  <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
                 </div>
-                <div className="w-px h-5 bg-[#1A535C]/10 mr-2" />
+                <div className="w-px h-5 bg-petrol/10 mr-2" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
                 </div>
-                <div className="w-px h-5 bg-[#1A535C]/10 mx-1" />
+                <div className="w-px h-5 bg-petrol/10 mx-1" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
                 </div>
-                <div className="w-px h-5 bg-[#1A535C]/10 mx-1" />
+                <div className="w-px h-5 bg-petrol/10 mx-1" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Link"><Link2 className="h-4 w-4" /></button>
-                  <button onClick={() => replyFileInputRef.current?.click()} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
+                  <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Link"><Link2 className="h-4 w-4" /></button>
+                  <button onClick={() => replyFileInputRef.current?.click()} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
                   <input
                     ref={replyFileInputRef}
                     type="file"
@@ -1193,7 +1193,7 @@ export function EmailReader({
                 </span>
                 <div className="relative">
                   <button
-                    className="h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.08] transition-colors duration-150 disabled:opacity-50"
+                    className="h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-petrol hover:bg-petrol/[0.08] transition-colors duration-150 disabled:opacity-50"
                     onClick={() => setShowScheduleMenu(s => !s)}
                     disabled={isSending}
                     title="Inplannen"
@@ -1214,7 +1214,7 @@ export function EmailReader({
                           <button
                             key={opt.label}
                             onClick={() => handleScheduleSend(opt.getDate().toISOString(), opt.label)}
-                            className="w-full px-3.5 py-2.5 text-left text-[13px] text-foreground hover:bg-[#1A535C]/[0.06] transition-colors duration-150 flex items-center justify-between"
+                            className="w-full px-3.5 py-2.5 text-left text-[13px] text-foreground hover:bg-petrol/[0.06] transition-colors duration-150 flex items-center justify-between"
                           >
                             <span>{opt.label}</span>
                             <span className="text-[11px] text-muted-foreground font-mono">
@@ -1231,7 +1231,7 @@ export function EmailReader({
                                 tomorrow.setDate(tomorrow.getDate() + 1)
                                 setCustomScheduleDate(tomorrow.toISOString().split('T')[0])
                               }}
-                              className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 flex items-center gap-2"
+                              className="w-full px-3.5 py-2.5 text-left text-[13px] text-petrol hover:bg-petrol/[0.06] transition-colors duration-150 flex items-center gap-2"
                             >
                               <Clock className="h-3.5 w-3.5" />
                               Kies datum en tijd...
@@ -1249,7 +1249,7 @@ export function EmailReader({
                                 type="time"
                                 value={customScheduleTime}
                                 onChange={e => setCustomScheduleTime(e.target.value)}
-                                className="w-full px-2.5 py-1.5 text-[13px] text-foreground bg-background rounded-lg border border-border outline-none focus:border-[#1A535C] transition-colors font-mono"
+                                className="w-full px-2.5 py-1.5 text-[13px] text-foreground bg-background rounded-lg border border-border outline-none focus:border-petrol transition-colors font-mono"
                               />
                               <button
                                 onClick={() => {
@@ -1260,7 +1260,7 @@ export function EmailReader({
                                   handleScheduleSend(dt.toISOString(), label)
                                   setShowCustomSchedule(false)
                                 }}
-                                className="w-full py-1.5 rounded-lg bg-[#1A535C] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
+                                className="w-full py-1.5 rounded-lg bg-petrol text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
                               >
                                 Inplannen
                               </button>
@@ -1272,7 +1272,7 @@ export function EmailReader({
                   )}
                 </div>
                 <button
-                  className="tap-press h-10 md:h-9 px-5 md:px-6 rounded-[10px] text-[14px] md:text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
+                  className="tap-press h-10 md:h-9 px-5 md:px-6 rounded-[10px] text-[14px] md:text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
                   onClick={() => { hapticMedium(); handleSend() }}
                   disabled={isSending}
                 >
@@ -1287,18 +1287,18 @@ export function EmailReader({
   ) : null
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // READING MODE — shows email body with reply buttons
+  // READING MODE · shows email body with reply buttons
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   return (
     <div className="flex flex-col h-full min-w-0">
-        {/* Top action bar — sticky, grouped */}
+        {/* Top action bar · sticky, grouped */}
         <TooltipProvider delayDuration={300}>
-        <div className="flex items-center justify-between gap-2 px-2 md:px-5 h-12 border-b border-black/[0.06] dark:border-white/[0.08] flex-shrink-0 bg-card/85 dark:bg-[#1A535C]/[0.15] backdrop-blur-xl sticky top-0 z-10">
+        <div className="flex items-center justify-between gap-2 px-2 md:px-5 h-12 border-b border-black/[0.06] dark:border-white/[0.08] flex-shrink-0 bg-card/85 dark:bg-petrol/[0.15] backdrop-blur-xl sticky top-0 z-10">
           {/* Left: Back + email-acties (markeer + organize) */}
           <div className="flex items-center gap-0.5"><Button
               variant="ghost"
               size="sm"
-              className="tap-press h-10 md:h-8 w-10 md:w-auto px-0 md:px-2.5 gap-1.5 text-foreground/70 hover:text-foreground hover:bg-[#1A535C]/[0.06] rounded-button"
+              className="tap-press h-10 md:h-8 w-10 md:w-auto px-0 md:px-2.5 gap-1.5 text-foreground/70 hover:text-foreground hover:bg-petrol/[0.06] rounded-button"
               onClick={() => { hapticLight(); onBack?.() }}
             >
               <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
@@ -1306,7 +1306,7 @@ export function EmailReader({
             </Button>
             <div className="w-1 hidden md:block" />
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-[#1A535C]/[0.06] rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onArchive?.(email) }}>
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-petrol/[0.06] rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onArchive?.(email) }}>
                 <Archive className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Archiveren</TooltipContent></Tooltip>
@@ -1316,7 +1316,7 @@ export function EmailReader({
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Verwijderen</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-[#1A535C]/[0.06] rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onToggleRead?.(email) }}>
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-petrol/[0.06] rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onToggleRead?.(email) }}>
                 <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Markeer als ongelezen</TooltipContent></Tooltip>
@@ -1328,8 +1328,8 @@ export function EmailReader({
                   className={cn(
                     'tap-press h-10 w-10 md:h-8 md:w-8 rounded-button transition-colors duration-150',
                     email?.snoozed_until
-                      ? 'text-[#1A535C] hover:bg-[#1A535C]/[0.08]'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-[#1A535C]/[0.06]',
+                      ? 'text-petrol hover:bg-petrol/[0.08]'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-petrol/[0.06]',
                   )}
                   onClick={() => { hapticLight(); setSnoozeMenuOpen((v) => !v) }}
                 >
@@ -1343,7 +1343,7 @@ export function EmailReader({
                       <button
                         type="button"
                         onClick={() => { setSnoozeMenuOpen(false); onUnsnooze?.(email) }}
-                        className="w-full text-left px-3 py-2 text-[13px] text-[#C0451A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
+                        className="w-full text-left px-3 py-2 text-[13px] text-[#C0451A] hover:bg-petrol/[0.06] transition-colors duration-150"
                       >
                         Niet meer snoozen
                       </button>
@@ -1355,7 +1355,7 @@ export function EmailReader({
                       key={opt.hours}
                       type="button"
                       onClick={() => { setSnoozeMenuOpen(false); onSnooze?.(email, opt.hours) }}
-                      className="w-full text-left px-3 py-2 text-[13px] text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
+                      className="w-full text-left px-3 py-2 text-[13px] text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150"
                     >
                       {opt.label}
                     </button>
@@ -1371,8 +1371,8 @@ export function EmailReader({
                   className={cn(
                     'tap-press h-10 w-10 md:h-8 md:w-8 transition-colors duration-150',
                     (email?.labels?.length ?? 0) > 0
-                      ? 'text-[#1A535C] hover:bg-[#1A535C]/[0.08]'
-                      : 'text-muted-foreground hover:text-foreground/70 hover:bg-[#1A535C]/[0.06]',
+                      ? 'text-petrol hover:bg-petrol/[0.08]'
+                      : 'text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06]',
                   )}
                   onClick={() => { hapticLight(); setLabelMenuOpen((v) => !v) }}
                 >
@@ -1388,11 +1388,11 @@ export function EmailReader({
                         key={label}
                         type="button"
                         onClick={() => onToggleLabel?.(email, label)}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-foreground/70 hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150"
                       >
                         <span className={cn('w-2.5 h-2.5 rounded-full flex-shrink-0', color)} />
                         <span className="flex-1 text-left capitalize">{label}</span>
-                        {active && <span className="text-[11px] text-[#1A535C]">●</span>}
+                        {active && <span className="text-[11px] text-petrol">●</span>}
                       </button>
                     )
                   })}
@@ -1406,7 +1406,7 @@ export function EmailReader({
             <Button
               variant="ghost"
               size="sm"
-              className="h-10 w-10 md:h-8 md:w-auto px-0 md:px-3 gap-1.5 text-[13px] text-foreground/70 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] rounded-[10px] transition-colors duration-150 disabled:opacity-50"
+              className="h-10 w-10 md:h-8 md:w-auto px-0 md:px-3 gap-1.5 text-[13px] text-foreground/70 hover:text-petrol hover:bg-petrol/[0.06] rounded-[10px] transition-colors duration-150 disabled:opacity-50"
               onClick={handleSummarize}
               disabled={summaryLoading}
               title="Samenvatten (⌘⇧S)"
@@ -1417,7 +1417,7 @@ export function EmailReader({
             <Button
               variant="ghost"
               size="sm"
-              className="h-10 w-10 md:h-8 md:w-auto px-0 md:px-3 gap-1.5 text-[13px] text-foreground/70 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] rounded-[10px] transition-colors duration-150 disabled:opacity-50"
+              className="h-10 w-10 md:h-8 md:w-auto px-0 md:px-3 gap-1.5 text-[13px] text-foreground/70 hover:text-petrol hover:bg-petrol/[0.06] rounded-[10px] transition-colors duration-150 disabled:opacity-50"
               onClick={handleGenerateReplyFromReader}
               disabled={forgieLoading}
               title="Beantwoord met AI (⌘⇧R)"
@@ -1429,10 +1429,10 @@ export function EmailReader({
               <span className="hidden md:contents">
                 <div className="w-px h-5 bg-border mx-2" />
                 <span className="text-[12px] text-muted-foreground font-mono tabular-nums">{emailIndex + 1}/{emailTotal}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-[#1A535C]/[0.08] rounded-[10px]" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-petrol/[0.08] rounded-[10px]" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
                   <ChevronUp className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-[#1A535C]/[0.08] rounded-[10px]" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-petrol/[0.08] rounded-[10px]" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
                   <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
               </span>
@@ -1445,7 +1445,7 @@ export function EmailReader({
         <div className="flex-1 overflow-y-auto bg-white dark:bg-card">
           <div className="w-full">
             {/* Header: subject + sender + reply actions */}
-            {/* In reply-mode collapsen we naar één compacte regel — sender + onderwerp
+            {/* In reply-mode collapsen we naar één compacte regel · sender + onderwerp
                 staan toch al in de Aan/Ond-velden van het formulier eronder. */}
             {replyMode ? (
               <div className="flex items-center gap-3 px-5 md:px-7 py-3 border-b border-black/[0.06] dark:border-white/[0.08]">
@@ -1473,16 +1473,16 @@ export function EmailReader({
                       className={cn(
                         'p-1 rounded-button transition-colors duration-150',
                         email.pinned
-                          ? 'text-[#1A535C] hover:bg-[#1A535C]/10'
-                          : 'text-muted-foreground/80 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06]',
+                          ? 'text-petrol hover:bg-petrol/10'
+                          : 'text-muted-foreground/80 hover:text-petrol hover:bg-petrol/[0.06]',
                       )}
                     >
-                      <Pin className={cn('h-3.5 w-3.5', email.pinned && 'fill-[#1A535C] -rotate-45')} />
+                      <Pin className={cn('h-3.5 w-3.5', email.pinned && 'fill-petrol -rotate-45')} />
                     </button>
                   </div>
                 </div>
 
-                {/* Sender info — system-style avatar, tighter rhythm */}
+                {/* Sender info · system-style avatar, tighter rhythm */}
                 <div className="flex items-center gap-2.5 mb-3">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatarStyle.bg }}>
                     <span className="text-[12px] font-semibold leading-none" style={{ color: avatarStyle.text }}>{senderName[0]?.toUpperCase()}</span>
@@ -1499,27 +1499,27 @@ export function EmailReader({
                 {/* Reply-acties */}
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button onClick={() => { hapticLight(); handleReply('reply') }}
-                    className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-9 md:h-8 px-3.5 rounded-button text-[13px] font-semibold text-white bg-[#1A535C] hover:bg-[#0F3C44] transition-colors duration-150"
+                    className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-9 md:h-8 px-3.5 rounded-button text-[13px] font-semibold text-white bg-petrol hover:bg-[#0F3C44] transition-colors duration-150"
                     title="Beantwoorden (r)">
                     <Reply className="h-3.5 w-3.5" strokeWidth={2} />
                     <span>Beantwoorden</span>
                   </button>
                   <button onClick={() => { hapticLight(); handleReply('reply-all') }}
-                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
+                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-petrol hover:bg-petrol/[0.06] transition-colors duration-150"
                     title="Allen beantwoorden"
                     aria-label="Allen beantwoorden">
                     <ReplyAll className="h-3.5 w-3.5" strokeWidth={1.75} />
                     <span className="hidden md:inline">Allen</span>
                   </button>
                   <button onClick={() => { hapticLight(); handleReply('forward') }}
-                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
+                    className="tap-press flex items-center justify-center gap-1.5 h-9 md:h-8 w-9 md:w-auto md:px-2.5 rounded-button text-[12px] font-medium text-muted-foreground hover:text-petrol hover:bg-petrol/[0.06] transition-colors duration-150"
                     title="Doorsturen (f)"
                     aria-label="Doorsturen">
                     <Forward className="h-3.5 w-3.5" strokeWidth={1.75} />
                     <span className="hidden md:inline">Doorsturen</span>
                   </button>
 
-                  {/* Aanmaken vanuit deze mail — subtiele icon-buttons, rechts */}
+                  {/* Aanmaken vanuit deze mail · subtiele icon-buttons, rechts */}
                   {onOpenContextPanel && (
                     <div className="ml-auto">
                       <EmailActionsPopover
@@ -1532,7 +1532,7 @@ export function EmailReader({
               </div>
             )}
 
-            {/* Inline reply form — verschijnt boven body wanneer replyMode actief is */}
+            {/* Inline reply form · verschijnt boven body wanneer replyMode actief is */}
             {inlineReplyForm}
 
             {/* Email body content area */}
@@ -1543,10 +1543,10 @@ export function EmailReader({
               {threadEmails && threadEmails.length > 1 && (
                 <div className="mb-6">
                   <div className="flex items-center gap-2 px-1 mb-2">
-                    <span className="text-[10.5px] font-semibold text-muted-foreground/80 uppercase tracking-[0.08em]">
+                    <span className="text-[10px] font-semibold text-muted-foreground/80 uppercase tracking-[0.08em]">
                       Gesprek
                     </span>
-                    <span className="text-[10.5px] text-muted-foreground/60 tabular-nums">
+                    <span className="text-[10px] text-muted-foreground/60 tabular-nums">
                       · {threadEmails.length}
                     </span>
                   </div>
@@ -1564,14 +1564,14 @@ export function EmailReader({
                           className={cn(
                             'w-full flex items-start gap-3 px-3.5 py-2.5 text-left transition-colors',
                             isCurrent
-                              ? 'bg-[#1A535C]/[0.05]'
-                              : 'bg-background hover:bg-[#1A535C]/[0.06] cursor-pointer',
+                              ? 'bg-petrol/[0.05]'
+                              : 'bg-background hover:bg-petrol/[0.06] cursor-pointer',
                           )}
                         >
                           <div className="flex-shrink-0 mt-1.5">
                             <div className={cn(
                               'w-1.5 h-1.5 rounded-full',
-                              isCurrent ? 'bg-[#1A535C]' : 'bg-muted-foreground/30',
+                              isCurrent ? 'bg-petrol' : 'bg-muted-foreground/30',
                             )} />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1627,7 +1627,7 @@ export function EmailReader({
                 </div>
               )}
 
-              {/* Email body — readable, clean hierarchy */}
+              {/* Email body · readable, clean hierarchy */}
               {isLoadingBody ? (
                 <div className="space-y-3 py-2">
                   <div className="h-4 bg-muted rounded w-full animate-pulse" />
@@ -1647,7 +1647,7 @@ export function EmailReader({
                         [&_div]:!ml-0 [&_div]:max-w-full
                         [&_p]:!ml-0 [&_p]:mb-2
                         [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3
-                        [&_a]:text-[#1A535C] dark:[&_a]:text-[#7FB5BF] [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_a]:break-all
+                        [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_a]:break-all
                         [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:text-[14px] [&_blockquote]:text-muted-foreground [&_blockquote]:my-3
                         [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h1]:!ml-0
                         [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:!ml-0
@@ -1663,7 +1663,7 @@ export function EmailReader({
                 </div>
               )}
 
-              {/* Attachments — image-grid + losse rij-cards voor non-images */}
+              {/* Attachments · image-grid + losse rij-cards voor non-images */}
               {email.attachment_meta && email.attachment_meta.length > 0 && (() => {
                 const imageAtts = email.attachment_meta.filter((a) => isImageAttachment(a.filename, a.contentType))
                 const fileAtts = email.attachment_meta.filter((a) => !isImageAttachment(a.filename, a.contentType))
@@ -1678,7 +1678,7 @@ export function EmailReader({
                         type="button"
                         onClick={handleDownloadAllAttachments}
                         disabled={downloadingAll}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-foreground/70 hover:text-foreground/80 hover:bg-[#1A535C]/[0.06] disabled:opacity-60 disabled:cursor-wait transition-colors duration-150"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-foreground/70 hover:text-foreground/80 hover:bg-petrol/[0.06] disabled:opacity-60 disabled:cursor-wait transition-colors duration-150"
                         title="Alle bijlagen downloaden"
                       >
                         {downloadingAll ? (
@@ -1710,7 +1710,7 @@ export function EmailReader({
                               }
                             }}
                             className={cn(
-                              'group/att relative flex flex-col rounded-xl overflow-hidden bg-background hover:bg-[#1A535C]/[0.06] transition-colors duration-150 cursor-pointer text-left',
+                              'group/att relative flex flex-col rounded-xl overflow-hidden bg-background hover:bg-petrol/[0.06] transition-colors duration-150 cursor-pointer text-left',
                               (isDownloading || isPreviewing) && 'opacity-60 cursor-wait',
                             )}
                             title={`Preview ${att.filename}`}
@@ -1781,7 +1781,7 @@ export function EmailReader({
                               }
                             }}
                             className={cn(
-                              'flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-background hover:bg-[#1A535C]/[0.06] transition-colors duration-150 cursor-pointer group/att text-left max-w-[280px]',
+                              'flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-background hover:bg-petrol/[0.06] transition-colors duration-150 cursor-pointer group/att text-left max-w-[280px]',
                               (isDownloading || isPreviewing) && 'opacity-60 cursor-wait',
                             )}
                             title={`Preview ${att.filename}`}
@@ -1799,7 +1799,7 @@ export function EmailReader({
                               <span className="text-[11px] text-muted-foreground">{formatFileSize(att.size)}</span>
                             </div>
                             {isPreviewing || isDownloading ? (
-                              <Loader2 className="h-3.5 w-3.5 text-[#1A535C]/60 animate-spin ml-1 flex-shrink-0" />
+                              <Loader2 className="h-3.5 w-3.5 text-petrol/60 animate-spin ml-1 flex-shrink-0" />
                             ) : (
                               <button
                                 type="button"
@@ -1863,7 +1863,7 @@ export function EmailReader({
                   <button
                     type="button"
                     onClick={() => handleDownloadAttachment(previewAtt.filename)}
-                    className="p-2 rounded-lg hover:bg-[#1A535C]/[0.06] transition-colors"
+                    className="p-2 rounded-lg hover:bg-petrol/[0.06] transition-colors"
                     title="Downloaden"
                     aria-label="Downloaden"
                   >
@@ -1872,7 +1872,7 @@ export function EmailReader({
                   <button
                     type="button"
                     onClick={closePreview}
-                    className="p-2 rounded-lg hover:bg-[#1A535C]/[0.06] transition-colors"
+                    className="p-2 rounded-lg hover:bg-petrol/[0.06] transition-colors"
                     title="Sluiten"
                     aria-label="Sluiten"
                   >
@@ -1901,7 +1901,7 @@ export function EmailReader({
                     <button
                       type="button"
                       onClick={() => handleDownloadAttachment(previewAtt.filename)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A535C] text-white text-[13px] hover:bg-[#16454D] transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-petrol text-white text-[13px] hover:bg-[#16454D] transition-colors"
                     >
                       <Download className="h-4 w-4" />
                       Download bestand

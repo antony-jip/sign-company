@@ -43,12 +43,12 @@ const CAT_META: Record<FactCategory, { icon: LucideIcon; color: string; bg: stri
 
 const DOEN_FACTS: DoenFact[] = [
   // ── AI / Daan
-  { cat: 'ai', text: 'Daan vat hele e-mail-threads samen in twee zinnen. Niet doen — dit dus.' },
+  { cat: 'ai', text: 'Daan vat hele e-mail-threads samen in twee zinnen. Niet doen · dit dus.' },
   { cat: 'ai', text: 'Klant niet thuis? Daan schrijft de follow-up. Jij hoeft alleen op verzenden.' },
   { cat: 'ai', text: 'Daan kent je schrijfstijl. Mail klinkt als jij, maar dan sneller. Doen ze.' },
   { cat: 'ai', text: 'Tekst even in \'t Engels? Selecteer, vertaal, weg. Klaar.' },
   { cat: 'ai', text: 'Daan kent je klanten, offertes en projecten. Vraag maar raak.' },
-  { cat: 'ai', text: 'Welkomstmail, status-update, social post — Daan tekent \'m voor.' },
+  { cat: 'ai', text: 'Welkomstmail, status-update, social post · Daan tekent \'m voor.' },
   { cat: 'ai', text: 'CSV erin slepen, Daan begrijpt \'m. Doe je zo.' },
   // ── Finance / Inkoop
   { cat: 'finance', text: 'Sleep een leveranciers-PDF erin. OCR pakt regels en BTW. Klaar.' },
@@ -56,13 +56,13 @@ const DOEN_FACTS: DoenFact[] = [
   { cat: 'finance', text: 'Goedkeurings-flow in twee klikken. Of bulk. Doe je zo.' },
   { cat: 'finance', text: 'Exact-sync regelt de boekhouding. Doen we voor je.' },
   { cat: 'finance', text: 'Mollie-betaallink op elke factuur. iDEAL? Doen.' },
-  { cat: 'finance', text: 'Voorschot en eindafrekening — automatisch verrekend. Niks dubbel doen.' },
+  { cat: 'finance', text: 'Voorschot en eindafrekening · automatisch verrekend. Niks dubbel doen.' },
   { cat: 'finance', text: 'Creditfactuur? Eén klik, hele historie erbij. Gedaan.' },
   // ── Planning / Montage
-  { cat: 'planning', text: 'Sleep een montage naar morgen — de planning schikt zich. Doen.' },
+  { cat: 'planning', text: 'Sleep een montage naar morgen · de planning schikt zich. Doen.' },
   { cat: 'planning', text: 'Twee monteurs dubbel ingepland? doen. signaleert vóór \'t fout gaat.' },
   { cat: 'planning', text: 'Weerbericht per dag in de planning. Regent \'t? Schuif door.' },
-  { cat: 'planning', text: 'Montage afgerond? Werkbon met één klik — foto\'s en handtekening erbij.' },
+  { cat: 'planning', text: 'Montage afgerond? Werkbon met één klik · foto\'s en handtekening erbij.' },
   { cat: 'planning', text: 'Swimlanes per rol: monteurs, productie, verkoop. Overzicht doen.' },
   { cat: 'planning', text: 'Status van gepland tot afgerond in vijf stappen. Volg je zo.' },
   // ── Sales / Klant
@@ -71,7 +71,7 @@ const DOEN_FACTS: DoenFact[] = [
   { cat: 'sales', text: 'Wacht-op-reactie-vlag laat geen offerte vergeten. Doen ze.' },
   { cat: 'sales', text: 'Email-threading per klant. Hele historie in één scherm.' },
   { cat: 'sales', text: 'Deals-pipeline met kanban-bord. Verschuiven en doen.' },
-  { cat: 'sales', text: 'Klant uploadt tekening via portaal — direct in \'t project.' },
+  { cat: 'sales', text: 'Klant uploadt tekening via portaal · direct in \'t project.' },
   { cat: 'sales', text: 'Akkoord op de telefoon, handtekening met de vinger. Gedaan.' },
   // ── Vibes
   { cat: 'vibe', text: 'Eén ding tegelijk.' },
@@ -123,9 +123,9 @@ function DoenVibeCard() {
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="doen-panel doen-wash group relative rounded-xl p-5 flex flex-col gap-3 text-left transition-all overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
+      className="doen-panel doen-wash group relative rounded-xl p-5 flex flex-col gap-3 text-left transition-all overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame/30 focus-visible:ring-offset-2"
       style={{ minHeight: 168 }}
-      aria-label={`${meta.label} — klik voor volgende doen-fact`}
+      aria-label={`${meta.label} · klik voor volgende doen-fact`}
     >
       {/* Decoratief Sparkles drift-bg, héél subtiel */}
       <span aria-hidden className="absolute -top-3 -right-3 opacity-[0.07] pointer-events-none">
@@ -144,7 +144,7 @@ function DoenVibeCard() {
           <Icon className="w-4 h-4" style={{ color: meta.color }} />
         </span>
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-          doen<span className="text-[#F15025]">.</span>
+          doen<span className="text-flame">.</span>
         </span>
       </div>
 

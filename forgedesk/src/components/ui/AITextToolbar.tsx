@@ -233,7 +233,7 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
           <div className="px-3 py-2.5 max-h-[200px] overflow-y-auto">
             {loading ? (
               <div className="flex items-center gap-2 py-3 justify-center">
-                <Loader2 className="w-4 h-4 animate-spin text-[#F15025]" />
+                <Loader2 className="w-4 h-4 animate-spin text-flame" />
                 <span className="text-sm text-foreground/70">Bezig met herschrijven...</span>
               </div>
             ) : (
@@ -244,7 +244,7 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
             <div className="px-3 py-2 border-t border-border flex items-center gap-1.5">
               <button
                 onClick={handleAccept}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F15025] text-white text-xs font-medium hover:bg-[#F15025]/90 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-flame text-white text-xs font-medium hover:bg-flame/90 transition-colors"
               >
                 <Check className="w-3 h-3" />
                 Toepassen
@@ -293,7 +293,7 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
                 <button
                   onClick={handleCustomSubmit}
                   disabled={!customInstruction.trim()}
-                  className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#F15025] text-white disabled:opacity-40 hover:bg-[#F15025]/90 transition-colors"
+                  className="flex items-center justify-center w-7 h-7 rounded-lg bg-flame text-white disabled:opacity-40 hover:bg-flame/90 transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                 </button>
@@ -312,14 +312,14 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
                         onClick={heeftSchrijfstijl ? () => handleAction('eigen-stijl') : undefined}
                         disabled={!heeftSchrijfstijl}
                         className={cn(
-                          'w-full flex items-center justify-center gap-2 px-3 py-2.5 mb-1.5 rounded-lg bg-[#1A535C] text-white text-xs font-medium transition-all',
+                          'w-full flex items-center justify-center gap-2 px-3 py-2.5 mb-1.5 rounded-lg bg-petrol text-white text-xs font-medium transition-all',
                           heeftSchrijfstijl
-                            ? 'hover:bg-[#1A535C]/95 hover:shadow-[0_0_18px_rgba(241,80,37,0.18)] cursor-pointer'
+                            ? 'hover:bg-petrol/95 hover:shadow-[0_0_18px_rgba(241,80,37,0.18)] cursor-pointer'
                             : 'opacity-50 cursor-not-allowed'
                         )}
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>Mijn stijl<span className="text-[#F15025]">.</span></span>
+                        <span>Mijn stijl<span className="text-flame">.</span></span>
                       </button>
                     </TooltipTrigger>
                     {!heeftSchrijfstijl && (
@@ -370,9 +370,9 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
                     : 'AI herschrijven · geen schrijfstijl ingesteld'
               }
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#F15025] group-hover:scale-110 transition-transform" />
+              <Sparkles className="w-3.5 h-3.5 text-flame group-hover:scale-110 transition-transform" />
               <span>AI herschrijven</span>
-              <Pen className={cn('w-3 h-3 transition-colors', toneActive ? 'text-[#1A535C]' : 'text-muted-foreground/50')} />
+              <Pen className={cn('w-3 h-3 transition-colors', toneActive ? 'text-petrol' : 'text-muted-foreground/50')} />
             </button>
           )}
         </>

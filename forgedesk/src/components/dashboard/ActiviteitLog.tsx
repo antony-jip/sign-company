@@ -97,7 +97,7 @@ export function ActiviteitLog() {
       <header className="flex items-baseline justify-between gap-4 mb-3">
         <div className="flex items-baseline gap-3 min-w-0">
           <h2 className="font-heading text-[14px] font-bold text-foreground">
-            Activiteit<span className="text-[#F15025]">.</span>
+            Activiteit<span className="text-flame">.</span>
           </h2>
           <span
             className="text-[14px] text-muted-foreground"
@@ -113,7 +113,7 @@ export function ActiviteitLog() {
           className="text-sm text-muted-foreground py-2"
           style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
         >
-          Nog geen activiteit<span className="text-[#F15025]">.</span>
+          Nog geen activiteit<span className="text-flame">.</span>
         </p>
       ) : (
         <ul className="space-y-1 max-h-[220px] overflow-y-auto pr-1 -mr-2">

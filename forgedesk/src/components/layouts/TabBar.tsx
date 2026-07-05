@@ -21,22 +21,22 @@ function TabItem({
   return (
     <button
       className={cn(
-        'tab-bar-item group relative flex items-center gap-[7px] h-[28px] pl-[11px] pr-[8px] text-[12.5px] tracking-[-0.01em] transition-colors duration-150 whitespace-nowrap max-w-[210px] select-none rounded-[7px] border',
+        'tab-bar-item group relative flex items-center gap-[7px] h-[28px] pl-[11px] pr-[8px] text-[12px] tracking-[-0.01em] transition-colors duration-150 whitespace-nowrap max-w-[210px] select-none rounded-[7px] border',
         isActive
-          ? 'bg-card font-semibold text-[#1A535C] border-border shadow-[0_1px_2px_rgba(130,100,60,0.07)] dark:text-foreground'
-          : 'font-medium border-transparent text-[#1A535C]/60 hover:text-[#1A535C] hover:bg-[hsl(38,22%,92.5%)] dark:text-foreground/65 dark:hover:text-foreground dark:hover:bg-white/[0.05]'
+          ? 'bg-card font-semibold text-petrol border-border shadow-[0_1px_2px_rgba(130,100,60,0.07)] dark:text-foreground'
+          : 'font-medium border-transparent text-petrol/60 hover:text-petrol hover:bg-[hsl(38,22%,92.5%)] dark:text-foreground/65 dark:hover:text-foreground dark:hover:bg-white/[0.05]'
       )}
       onClick={onActivate}
       onContextMenu={onContextMenu}
       title={tab.label}
     >
       {tab.isDirty && (
-        <span className="w-[5.5px] h-[5.5px] rounded-full bg-[#F15025] flex-shrink-0" />
+        <span className="w-[5.5px] h-[5.5px] rounded-full bg-flame flex-shrink-0" />
       )}
       <span className="truncate flex-1 text-left">{tab.label}</span>
       <span
         className={cn(
-          'flex-shrink-0 flex items-center justify-center w-[17px] h-[17px] rounded-[5px] text-[#1A535C]/40 transition-all hover:bg-[rgba(241,80,37,0.13)] hover:text-[#F15025]',
+          'flex-shrink-0 flex items-center justify-center w-[17px] h-[17px] rounded-[5px] text-petrol/40 transition-all hover:bg-[rgba(241,80,37,0.13)] hover:text-flame',
           isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         )}
         onClick={onClose}
@@ -187,7 +187,7 @@ export function TabBar() {
           ))}
 
           <button
-            className="flex-shrink-0 w-7 h-7 rounded-[7px] text-[#1A535C]/40 hover:text-[#F15025] hover:bg-[hsl(38,22%,92.5%)] flex items-center justify-center transition-colors duration-150 ml-0.5"
+            className="flex-shrink-0 w-7 h-7 rounded-[7px] text-petrol/40 hover:text-flame hover:bg-[hsl(38,22%,92.5%)] flex items-center justify-center transition-colors duration-150 ml-0.5"
             onClick={newTab}
             title="Nieuw tabblad (Cmd+T)"
           >

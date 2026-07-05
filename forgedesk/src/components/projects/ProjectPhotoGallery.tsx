@@ -163,12 +163,12 @@ export function ProjectPhotoGallery({
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Camera className="h-4 w-4 text-[#F15025]" />
+              <Camera className="h-4 w-4 text-flame" />
               <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Situatiefoto's<span className="text-[#F15025]">.</span>
+                Situatiefoto's<span className="text-flame">.</span>
               </h3>
               {photos.length > 0 && (
-                <span className="font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-[#F15025] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+                <span className="font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-flame rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
                   {photos.length}
                 </span>
               )}
@@ -177,14 +177,14 @@ export function ProjectPhotoGallery({
               {photos.length > 0 && (
                 <>
                   <button
-                    className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3D44] hover:underline transition-colors"
+                    className="text-[12px] font-medium text-petrol hover:text-[#0F3D44] hover:underline transition-colors"
                     onClick={() => setLightboxIndex(0)}
                   >
                     Bekijken
                   </button>
                   <span className="text-[10px] text-muted-foreground/70 font-mono">·</span>
                   <button
-                    className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3D44] hover:underline transition-colors disabled:opacity-40"
+                    className="text-[12px] font-medium text-petrol hover:text-[#0F3D44] hover:underline transition-colors disabled:opacity-40"
                     onClick={handleBulkDownload}
                     disabled={isDownloading}
                   >
@@ -249,7 +249,7 @@ export function ProjectPhotoGallery({
                 'flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed transition-all text-[13px] font-semibold',
                 isUploading
                   ? 'border-[rgba(26,83,92,0.18)] text-muted-foreground cursor-wait'
-                  : 'border-[rgba(241,80,37,0.28)] text-[#F15025] hover:border-[rgba(241,80,37,0.55)] hover:bg-[rgba(241,80,37,0.04)] cursor-pointer'
+                  : 'border-[rgba(241,80,37,0.28)] text-flame hover:border-[rgba(241,80,37,0.55)] hover:bg-[rgba(241,80,37,0.04)] cursor-pointer'
               )}
             >
               <Upload className="h-4 w-4" />
@@ -264,7 +264,7 @@ export function ProjectPhotoGallery({
                 'inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed transition-all text-[13px] font-semibold sm:hidden',
                 isUploading
                   ? 'border-[rgba(26,83,92,0.18)] text-muted-foreground cursor-wait'
-                  : 'border-[rgba(26,83,92,0.22)] text-[#1A535C] hover:border-[rgba(26,83,92,0.45)] hover:bg-[rgba(26,83,92,0.04)] cursor-pointer'
+                  : 'border-[rgba(26,83,92,0.22)] text-petrol hover:border-[rgba(26,83,92,0.45)] hover:bg-[rgba(26,83,92,0.04)] cursor-pointer'
               )}
             >
               <Camera className="h-4 w-4" />

@@ -33,16 +33,13 @@ export function EmptyState({ module = 'default', title, description, action, cla
         className="rounded-full mb-5"
         style={{ width: '40px', height: '4px', backgroundColor: color }}
       />
-      <h3
-        className="font-semibold mb-1.5"
-        style={{ fontSize: '14px', color: '#191919', fontWeight: 600 }}
-      >
-        {title}
+      <h3 className="text-[14px] font-semibold text-foreground mb-1.5">
+        {title}<span className="text-flame">.</span>
       </h3>
       {description && (
         <p
-          className="text-center max-w-[320px] mb-5"
-          style={{ fontSize: '12px', color: '#5A5A55' }}
+          className="text-center max-w-[320px] mb-5 text-[12px] text-muted-foreground"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
         >
           {description}
         </p>

@@ -213,7 +213,7 @@ export function FinancialLayout() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-[#1A535C] mb-4" />
+        <Loader2 className="w-8 h-8 animate-spin text-petrol mb-4" />
         <p className="text-muted-foreground">Financieel laden...</p>
       </div>
     )
@@ -224,10 +224,10 @@ export function FinancialLayout() {
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
 
-      {/* Page Header — DOEN inline style */}
+      {/* Page Header · DOEN inline style */}
       <div className="flex items-baseline gap-4">
         <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-          Financieel<span className="text-[#F15025]">.</span>
+          Financieel<span className="text-flame">.</span>
         </h1>
         <span
           className="text-[13px] text-muted-foreground"
@@ -248,7 +248,7 @@ export function FinancialLayout() {
 
         {/* Overzicht Tab */}
         <TabsContent value="overzicht" className="space-y-6">
-          {/* Stat tiles — readouts in slate-surface */}
+          {/* Stat tiles · readouts in slate-surface */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             {statCards.map((stat) => (
               <div key={stat.label} className="doen-slate-surface rounded-xl px-5 py-4">
@@ -259,7 +259,7 @@ export function FinancialLayout() {
                       style={{ backgroundColor: stat.dot }}
                     />
                     <span className="font-heading text-[14px] font-bold text-foreground">
-                      {stat.label}<span className="text-[#F15025]">.</span>
+                      {stat.label}<span className="text-flame">.</span>
                     </span>
                   </span>
                 </div>
@@ -422,7 +422,7 @@ export function FinancialLayout() {
                   <FileText className="w-5 h-5" />
                   Openstaande Offertes
                 </CardTitle>
-                <Badge variant="secondary" className="bg-[hsl(var(--status-green-bg))] text-[#1A535C]">{openstaandeOffertes.length} open</Badge>
+                <Badge variant="secondary" className="bg-[hsl(var(--status-green-bg))] text-petrol">{openstaandeOffertes.length} open</Badge>
               </div>
             </CardHeader>
             <CardContent>

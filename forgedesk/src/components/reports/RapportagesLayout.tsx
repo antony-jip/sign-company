@@ -472,7 +472,7 @@ export function RapportagesLayout() {
     bedrijfs_adres: bedrijfsAdres || '',
     kvk_nummer: kvkNummer || '',
     btw_nummer: btwNummer || '',
-    primaireKleur: primaireKleur || '#2563eb',
+    primaireKleur: primaireKleur || '#1A535C',
   };
 
   function handleDownloadOmzetPDF() {

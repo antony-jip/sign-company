@@ -108,7 +108,7 @@ export function KvkZoekVeld({ kvkNummer, onKvkChange, onResultSelect }: KvkZoekV
     }
   }, [])
 
-  // Debounced search — 400ms na stoppen met typen
+  // Debounced search · 400ms na stoppen met typen
   useEffect(() => {
     if (!zoekDialogOpen) return
     if (debounceTimer.current) clearTimeout(debounceTimer.current)

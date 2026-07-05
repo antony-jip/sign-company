@@ -55,7 +55,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-// DOEN design — ModuleHeader verwijderd
+// DOEN design · ModuleHeader verwijderd
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage, getMedewerkers } from '@/services/supabaseService'
 import { getDisplayFilename } from '@/services/projectService'
@@ -91,7 +91,7 @@ type TaakPrioriteit = Taak['prioriteit']
 const PRIORITEIT_ORDER: Record<string, number> = { kritiek: 4, hoog: 3, medium: 2, laag: 1 }
 
 // Theme-aware via CSS-vars (zie .prio-* in index.css). bg/border/text
-// switchen automatisch per theme — pastel in light, gedimde versie in dark.
+// switchen automatisch per theme · pastel in light, gedimde versie in dark.
 // Binair: belangrijk (kritiek) = flame met lichte tint; de rest = rustig lichtblauw.
 const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; text: string; dot: string }> = {
   kritiek: { border: '#F15025', bg: 'rgba(241,80,37,0.09)',  text: '#C03A18', dot: '#F15025' },
@@ -104,7 +104,7 @@ const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
   kritiek: 'text-[#C03A18]', hoog: 'text-[#3A5A9A]', medium: 'text-[#3A5A9A]', laag: 'text-[#3A5A9A]',
 }
 
-// Dark-aware kaart-classes — PRIORITEIT_COLORS zijn light-hexen voor inline
+// Dark-aware kaart-classes · PRIORITEIT_COLORS zijn light-hexen voor inline
 // styles; in dark mode moeten bg, tekst en accent-stripe via classes schakelen.
 const PRIO_CARD_BG: Record<TaakPrioriteit, string> = {
   kritiek: 'bg-[rgba(241,80,37,0.09)] dark:bg-[rgba(241,80,37,0.15)]',
@@ -113,20 +113,20 @@ const PRIO_CARD_BG: Record<TaakPrioriteit, string> = {
   laag: 'bg-[rgba(26,83,92,0.07)] dark:bg-[rgba(95,181,192,0.10)]',
 }
 const PRIO_CARD_STRIPE: Record<TaakPrioriteit, string> = {
-  kritiek: 'border-l-2 border-l-[#F15025]',
-  hoog: 'border-l-2 border-l-[#1A535C] dark:border-l-[#5FB5C0]',
-  medium: 'border-l-2 border-l-[#1A535C] dark:border-l-[#5FB5C0]',
-  laag: 'border-l-2 border-l-[#1A535C] dark:border-l-[#5FB5C0]',
+  kritiek: 'border-l-2 border-l-flame',
+  hoog: 'border-l-2 border-l-petrol dark:border-l-[#5FB5C0]',
+  medium: 'border-l-2 border-l-petrol dark:border-l-[#5FB5C0]',
+  laag: 'border-l-2 border-l-petrol dark:border-l-[#5FB5C0]',
 }
 const PRIO_CARD_TEXT: Record<TaakPrioriteit, string> = {
   kritiek: 'text-[#C03A18] dark:text-[#FF8866]',
-  hoog: 'text-[#1A535C] dark:text-[#9FC5CC]',
-  medium: 'text-[#1A535C] dark:text-[#9FC5CC]',
-  laag: 'text-[#1A535C] dark:text-[#9FC5CC]',
+  hoog: 'text-petrol dark:text-[#9FC5CC]',
+  medium: 'text-petrol dark:text-[#9FC5CC]',
+  laag: 'text-petrol dark:text-[#9FC5CC]',
 }
 
 const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'border-[#F15025] hover:border-[#C03A18]',
+  kritiek: 'border-flame hover:border-[#C03A18]',
   hoog: 'border-[#4A7AC7] hover:border-[#3A5A9A]',
   medium: 'border-[#4A7AC7] hover:border-[#3A5A9A]',
   laag: 'border-[#4A7AC7] hover:border-[#3A5A9A]',
@@ -189,7 +189,7 @@ function toDateStr(d: Date): string {
 }
 
 // Hour kan fractioneel zijn (10.5 = 10:30) zodat je tasks ook op halve uren
-// kunt plannen — anders kunnen twee tasks niet direct onder elkaar staan.
+// kunt plannen · anders kunnen twee tasks niet direct onder elkaar staan.
 function toDateTimeStr(d: Date, hour: number): string {
   const h = Math.floor(hour)
   const m = Math.round((hour - h) * 60)
@@ -644,7 +644,7 @@ export function TasksLayout() {
     return () => clearInterval(interval)
   }, [])
 
-  // Scroll to current time on load — fallback naar 07:00 buiten werkuren
+  // Scroll to current time on load · fallback naar 07:00 buiten werkuren
   useEffect(() => {
     if (!isLoading && scrollRef.current) {
       const nowHour = new Date().getHours()
@@ -786,7 +786,7 @@ export function TasksLayout() {
     return map
   }, [filteredTaken, weekDays])
 
-  // Totaal aantal zichtbare taken in de week — voor empty-state
+  // Totaal aantal zichtbare taken in de week · voor empty-state
   const weekTotal = useMemo(
     () => [...tasksByDay.values()].reduce((s, a) => s + a.length, 0),
     [tasksByDay]
@@ -816,7 +816,7 @@ export function TasksLayout() {
   }, [filteredTaken])
 
   // Swimlane-view: taken gegroepeerd per toegewezen persoon binnen de huidige week.
-  // v1 bewust zonder drag & drop — die blijft alleen in week/maand-view, omdat een
+  // v1 bewust zonder drag & drop · die blijft alleen in week/maand-view, omdat een
   // swimlane-drop 2D is (persoon + dag) en nu niet nodig voor het overzicht/bulk-doel.
   const swimlaneLanes = useMemo(() => {
     const lanes: { key: string; label: string; tasksByDay: Map<string, Taak[]>; total: number }[] = []
@@ -1208,7 +1208,7 @@ export function TasksLayout() {
         <div className="sticky top-0 z-20 bg-card border-b border-border px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           <div className="flex items-baseline gap-2">
             <h1 className="text-[17px] font-bold text-[#1A4A52] dark:text-foreground tracking-[-0.3px]">
-              Taken<span className="text-[#F15025]">.</span>
+              Taken<span className="text-flame">.</span>
             </h1>
             <Skeleton className="h-3 w-10" />
           </div>
@@ -1271,12 +1271,12 @@ export function TasksLayout() {
   return (
     <>
       <div className="flex flex-col h-full bg-card">
-        {/* === Sticky toolbar — 1 rij === */}
+        {/* === Sticky toolbar · 1 rij === */}
         <div className="sticky top-0 z-20 bg-card border-b border-border px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           {/* Titel + counter */}
           <div className="flex items-baseline gap-2">
             <h1 className="text-[17px] font-bold text-[#1A4A52] dark:text-foreground tracking-[-0.3px]">
-              Taken<span className="text-[#F15025]">.</span>
+              Taken<span className="text-flame">.</span>
             </h1>
             <span
               className="text-[12px] text-muted-foreground tabular-nums"
@@ -1286,7 +1286,7 @@ export function TasksLayout() {
             </span>
           </div>
 
-          {/* Filter pills — text-only met onderlijn-actief */}
+          {/* Filter pills · text-only met onderlijn-actief */}
           <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
             {([['alle', 'Alle'], ['project', 'Project'], ['los', 'Los']] as const).map(([key, label]) => (
               <button key={key} onClick={() => setTaskFilter(key)} className={cn(
@@ -1320,8 +1320,8 @@ export function TasksLayout() {
                 className={cn(
                   'h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0',
                   mijnActief
-                    ? 'bg-[#1A535C]/[0.12] dark:bg-white/[0.08] text-[#1A535C] dark:text-foreground ring-2 ring-[#1A535C]/30 dark:ring-white/15'
-                    : 'border border-border text-foreground/70 hover:border-[#1A535C]/40 dark:hover:border-white/25 hover:text-[#1A535C] dark:hover:text-foreground'
+                    ? 'bg-petrol/[0.12] dark:bg-white/[0.08] text-petrol dark:text-foreground ring-2 ring-petrol/30 dark:ring-white/15'
+                    : 'border border-border text-foreground/70 hover:border-petrol/40 dark:hover:border-white/25 hover:text-petrol dark:hover:text-foreground'
                 )}
               >
                 {getLaneInitials(currentMedewerker.naam)}
@@ -1338,7 +1338,7 @@ export function TasksLayout() {
             />
           )}
 
-          {/* View toggle — text-only met onderlijn-actief */}
+          {/* View toggle · text-only met onderlijn-actief */}
           <div className="inline-flex items-center gap-3 flex-shrink-0">
             {([
               ['week', 'Week'],
@@ -1364,7 +1364,7 @@ export function TasksLayout() {
               <ChevronLeft className="w-4 h-4 text-foreground/70" />
             </button>
             <button
-              className="text-[13px] px-2 py-1 font-semibold text-foreground min-w-[140px] text-center hover:text-[#1A535C] dark:hover:text-foreground/80 transition-colors"
+              className="text-[13px] px-2 py-1 font-semibold text-foreground min-w-[140px] text-center hover:text-petrol dark:hover:text-foreground/80 transition-colors"
               onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
               title="Spring naar vandaag"
             >
@@ -1380,14 +1380,14 @@ export function TasksLayout() {
           </div>
           {!(viewMode === 'maand' ? monthOffset === 0 : isCurrentWeek) && (
             <button
-              className="text-[12px] py-1 font-medium text-[#1A535C] dark:text-[#5AABB5] hover:text-[#0F3A40] dark:hover:text-foreground transition-colors"
+              className="text-[12px] py-1 font-medium text-petrol dark:text-[#5AABB5] hover:text-[#0F3A40] dark:hover:text-foreground transition-colors"
               onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
             >
               Vandaag
             </button>
           )}
 
-          {/* Zoom — twee subtiele text-knoppen */}
+          {/* Zoom · twee subtiele text-knoppen */}
           <div className="flex items-center gap-1">
             <button onClick={() => handleZoom(-4)} className="px-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors" title="Kleiner">A</button>
             <button onClick={() => handleZoom(4)} className="px-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors font-medium" title="Groter">A</button>
@@ -1408,7 +1408,7 @@ export function TasksLayout() {
         )}
 
         {viewMode === 'week' && (<>
-        {/* Ongepland verborgen — taken zonder deadline worden niet getoond */}
+        {/* Ongepland verborgen · taken zonder deadline worden niet getoond */}
 
         {/* === DAY HEADERS === */}
         <div className="sticky top-[52px] z-10 flex border-b border-border bg-card flex-shrink-0">
@@ -1424,21 +1424,21 @@ export function TasksLayout() {
                 key={i}
                 className={cn(
                   'flex-1 min-w-0 text-center py-4 border-l border-border transition-colors',
-                  isToday && 'bg-[#1A535C]/[0.04] dark:bg-white/[0.03]'
+                  isToday && 'bg-petrol/[0.04] dark:bg-white/[0.03]'
                 )}
               >
                 <div className="flex flex-col items-center gap-1">
                   <span className={cn(
                     'text-[11px] font-semibold tracking-[0.06em] uppercase',
-                    isToday ? 'text-[#1A535C] dark:text-[#5AABB5]' : isPast ? 'text-muted-foreground/80' : 'text-muted-foreground'
+                    isToday ? 'text-petrol dark:text-[#5AABB5]' : isPast ? 'text-muted-foreground/80' : 'text-muted-foreground'
                   )}>
-                    {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
+                    {DAY_LABELS[i]}{isToday && <span className="text-flame">.</span>}
                   </span>
                   <div className="flex items-baseline gap-1.5">
                     <span className={cn(
                       'tabular-nums font-bold',
                       isToday
-                        ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[13px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
+                        ? 'w-7 h-7 rounded-full bg-petrol text-white flex items-center justify-center text-[13px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
                         : isPast ? 'text-muted-foreground/80 text-[16px]'
                         : 'text-foreground text-[16px]'
                     )}>
@@ -1447,7 +1447,7 @@ export function TasksLayout() {
                     {isPast && dayTasks.length > 0 ? (
                       <button
                         onClick={() => togglePastDay(dayKey)}
-                        className="inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground hover:text-[#1A535C] dark:hover:text-foreground transition-colors px-1 py-0.5 rounded hover:bg-[#1A535C]/[0.06] dark:hover:bg-white/[0.06]"
+                        className="inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground hover:text-petrol dark:hover:text-foreground transition-colors px-1 py-0.5 rounded hover:bg-petrol/[0.06] dark:hover:bg-white/[0.06]"
                         title={isExpanded ? 'Verberg verlopen taken' : 'Toon verlopen taken'}
                       >
                         <span className="font-mono">{dayTasks.length}</span>
@@ -1465,12 +1465,12 @@ export function TasksLayout() {
           })}
         </div>
 
-        {/* === CALENDAR GRID — DOEN === */}
+        {/* === CALENDAR GRID · DOEN === */}
         <div ref={scrollRef} onMouseDown={handleGridMouseDown} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-card">
           {weekTotal === 0 && !isLoading && (
             <div className="sticky top-24 z-10 flex flex-col items-center pointer-events-none mx-auto max-w-md text-center">
-              <div className="w-12 h-12 rounded-full bg-[#1A535C]/[0.08] dark:bg-white/[0.06] flex items-center justify-center mb-3">
-                <CalendarIcon className="w-5 h-5 text-[#1A535C] dark:text-[#5AABB5]" />
+              <div className="w-12 h-12 rounded-full bg-petrol/[0.08] dark:bg-white/[0.06] flex items-center justify-center mb-3">
+                <CalendarIcon className="w-5 h-5 text-petrol dark:text-[#5AABB5]" />
               </div>
               <p className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground">Geen taken deze week</p>
               <p className="text-[12px] text-muted-foreground mt-1 max-w-[280px]">Klik op een tijdslot om er een in te plannen, of sleep een taak hierheen.</p>
@@ -1549,7 +1549,7 @@ export function TasksLayout() {
         )}
         </>)}
         {viewMode === 'maand' && (() => {
-        /* === MONTH VIEW — DOEN === */
+        /* === MONTH VIEW · DOEN === */
         // Show working days only (Mon-Fri). Compute the visible week count
         // from the last current-month day in the 42-day grid, then drop
         // weekend cells.
@@ -1568,7 +1568,7 @@ export function TasksLayout() {
             className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-border border-t border-border"
             style={{ gridTemplateRows: `auto repeat(${visibleWeeks}, minmax(0, 1fr))` }}
           >
-            {/* Day headers — werkweek */}
+            {/* Day headers · werkweek */}
             {DAY_LABELS.slice(0, 5).map((d) => (
               <div
                 key={d}
@@ -1592,8 +1592,8 @@ export function TasksLayout() {
                   className={cn(
                     'group/cell relative p-2 transition-colors flex flex-col min-h-0',
                     !isCurrentMonth ? 'bg-background text-muted-foreground/80' : 'bg-card',
-                    isToday && 'bg-[#1A535C]/[0.04] dark:bg-white/[0.03]',
-                    isDropHere && 'bg-[#F15025]/[0.06] shadow-[inset_0_2px_0_#F15025]'
+                    isToday && 'bg-petrol/[0.04] dark:bg-white/[0.03]',
+                    isDropHere && 'bg-flame/[0.06] shadow-[inset_0_2px_0_#F15025]'
                   )}
                   onClick={(e) => {
                     if (!isCurrentMonth || isAddingHere) return
@@ -1631,7 +1631,7 @@ export function TasksLayout() {
                     <span className={cn(
                       'text-[14px] font-semibold tabular-nums',
                       isToday
-                        ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[11px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
+                        ? 'w-6 h-6 rounded-full bg-petrol text-white flex items-center justify-center text-[11px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
                         : isPastInMonth ? 'text-muted-foreground'
                         : isCurrentMonth ? 'text-foreground'
                         : 'text-muted-foreground/80'
@@ -1645,7 +1645,7 @@ export function TasksLayout() {
                       value={monthAddTitle}
                       onChange={(e) => setMonthAddTitle(e.target.value)}
                       placeholder="Taak..."
-                      className="w-full text-[11px] px-2 py-1 rounded-md border border-[#1A535C]/30 bg-card focus:outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 text-foreground placeholder:text-muted-foreground/80 mb-1 flex-shrink-0"
+                      className="w-full text-[11px] px-2 py-1 rounded-md border border-petrol/30 bg-card focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol/20 text-foreground placeholder:text-muted-foreground/80 mb-1 flex-shrink-0"
                       onKeyDown={async (e) => {
                         if (e.key === 'Enter' && monthAddTitle.trim()) {
                           await handleQuickAdd(monthAddTitle.trim(), 'medium', toDateStr(day), '')
@@ -1680,7 +1680,7 @@ export function TasksLayout() {
                           className={cn(
                             'group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-semibold leading-tight px-2 py-[3px] rounded-none cursor-grab active:cursor-grabbing hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow',
                             isDone
-                              ? 'bg-[#E8F0F0] dark:bg-[#1A535C]/15 line-through text-[#6B6B66] dark:text-muted-foreground/70 border-l-2 border-l-[#1A535C] dark:border-l-[#5FB5C0]/60'
+                              ? 'bg-[#E8F0F0] dark:bg-petrol/15 line-through text-muted-foreground dark:text-muted-foreground/70 border-l-2 border-l-petrol dark:border-l-[#5FB5C0]/60'
                               : cn(PRIO_CARD_BG[t.prioriteit], PRIO_CARD_TEXT[t.prioriteit], PRIO_CARD_STRIPE[t.prioriteit])
                           )}
                           onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
@@ -1695,7 +1695,7 @@ export function TasksLayout() {
                             aria-label={isDone ? 'Markeer als open' : 'Markeer als klaar'}
                           >
                             {isDone ? (
-                              <div className="w-3 h-3 rounded-full bg-[#1A535C] flex items-center justify-center transition-all duration-200">
+                              <div className="w-3 h-3 rounded-full bg-petrol flex items-center justify-center transition-all duration-200">
                                 <Check className="w-1.5 h-1.5 text-white" strokeWidth={4} />
                               </div>
                             ) : (
@@ -1725,7 +1725,7 @@ export function TasksLayout() {
         )
         })()}
         {viewMode === 'swimlane' && (
-        /* === SWIMLANE VIEW — overzicht per toegewezen persoon voor de week
+        /* === SWIMLANE VIEW · overzicht per toegewezen persoon voor de week
            v1: geen drag & drop (week/maand houden D&D); doel is overzicht + bulk-selectie. */
         <div className="flex-1 overflow-y-auto bg-card">
           <div className="min-w-[720px]">
@@ -1747,15 +1747,15 @@ export function TasksLayout() {
                     key={i}
                     className={cn(
                       'flex-1 min-w-0 text-center py-4 border-l border-border',
-                      isToday && 'bg-[#1A535C]/[0.04] dark:bg-white/[0.03]'
+                      isToday && 'bg-petrol/[0.04] dark:bg-white/[0.03]'
                     )}
                   >
                     <div className="flex flex-col items-center gap-1">
                       <span className={cn(
                         'text-[11px] font-semibold tracking-[0.06em] uppercase',
-                        isToday ? 'text-[#1A535C] dark:text-[#5AABB5]' : 'text-muted-foreground'
+                        isToday ? 'text-petrol dark:text-[#5AABB5]' : 'text-muted-foreground'
                       )}>
-                        {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
+                        {DAY_LABELS[i]}{isToday && <span className="text-flame">.</span>}
                       </span>
                       <div className="flex items-center gap-1.5">
                         {hasDayTasks && (
@@ -1763,13 +1763,13 @@ export function TasksLayout() {
                             checked={allDaySelected}
                             onCheckedChange={() => toggleTaskGroupSelected(dayTaskIds)}
                             aria-label={`Selecteer alle taken op ${DAY_LABELS[i]} ${day.getDate()}`}
-                            className="h-3.5 w-3.5 border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                            className="h-3.5 w-3.5 border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                           />
                         )}
                         <span className={cn(
                           'tabular-nums font-bold',
                           isToday
-                            ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[13px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
+                            ? 'w-7 h-7 rounded-full bg-petrol text-white flex items-center justify-center text-[13px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
                             : 'text-foreground text-[16px]'
                         )}>
                           {day.getDate()}
@@ -1798,7 +1798,7 @@ export function TasksLayout() {
                         disabled={laneTaskIds.length === 0}
                         onCheckedChange={() => toggleTaskGroupSelected(laneTaskIds)}
                         aria-label={`Selecteer alle taken van ${lane.label}`}
-                        className="h-3.5 w-3.5 flex-shrink-0 border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                        className="h-3.5 w-3.5 flex-shrink-0 border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                       />
                       <button
                         type="button"
@@ -1838,7 +1838,7 @@ export function TasksLayout() {
                           key={dayIdx}
                           className={cn(
                             'flex-1 min-w-0 border-l border-border p-1.5 min-h-[56px]',
-                            isToday && 'bg-[#1A535C]/[0.02] dark:bg-white/[0.02]'
+                            isToday && 'bg-petrol/[0.02] dark:bg-white/[0.02]'
                           )}
                         >
                           {!isCollapsed && cellTasks.length > 0 && (
@@ -1853,7 +1853,7 @@ export function TasksLayout() {
                                       'group relative flex items-start gap-1.5 rounded-none transition-shadow hover:shadow-sm',
                                       PRIO_CARD_BG[t.prioriteit],
                                       PRIO_CARD_STRIPE[t.prioriteit],
-                                      isSelected && 'ring-2 ring-[#1A535C]/40 dark:ring-[#5FB5C0]/40'
+                                      isSelected && 'ring-2 ring-petrol/40 dark:ring-[#5FB5C0]/40'
                                     )}
                                   >
                                     <div
@@ -1864,7 +1864,7 @@ export function TasksLayout() {
                                         checked={isSelected}
                                         onCheckedChange={() => toggleTaskSelected(t.id)}
                                         aria-label={`Selecteer ${t.titel}`}
-                                        className="h-3 w-3 border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 dark:group-hover:border-white/35 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                                        className="h-3 w-3 border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 dark:group-hover:border-white/35 data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                                       />
                                     </div>
                                     <button
@@ -1908,7 +1908,7 @@ export function TasksLayout() {
         )}
       </div>
 
-      {/* === FLOATING ACTION BUTTON — DOEN. Clears MobileBottomNav (h-14) on mobile. === */}
+      {/* === FLOATING ACTION BUTTON · DOEN. Clears MobileBottomNav (h-14) on mobile. === */}
       <div className="fixed right-4 md:right-6 z-50 flex flex-col items-end gap-3 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)] md:bottom-6">
         {fabOpen && (
           <div className="w-80 rounded-xl bg-card border border-border shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18)] p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
@@ -1969,7 +1969,7 @@ export function TasksLayout() {
               </Select>
             </div>
             <button
-              className="w-full h-9 text-sm font-semibold text-white rounded-xl bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-40 disabled:shadow-none disabled:translate-y-0"
+              className="w-full h-9 text-sm font-semibold text-white rounded-xl bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-40 disabled:shadow-none disabled:translate-y-0"
               disabled={!fabTitle.trim()}
               onClick={handleFabAdd}
             >
@@ -1982,7 +1982,7 @@ export function TasksLayout() {
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
             'flex items-center justify-center w-14 h-14 rounded-2xl shadow-[0_4px_16px_rgba(241,80,37,0.35)] transition-all duration-200',
-            'bg-[#F15025] text-white hover:shadow-[0_6px_24px_rgba(241,80,37,0.45)] hover:scale-105',
+            'bg-flame text-white hover:shadow-[0_6px_24px_rgba(241,80,37,0.45)] hover:scale-105',
             fabOpen && 'rotate-45'
           )}
         >
@@ -2053,7 +2053,7 @@ export function TasksLayout() {
 
 // === DAY COLUMN ===
 
-// === NIET VERGETEN — persoonlijke sticky notes ===
+// === NIET VERGETEN · persoonlijke sticky notes ===
 const NIET_VERGETEN_KEY = 'doen_niet_vergeten'
 
 function NietVergetenStrip() {
@@ -2324,7 +2324,7 @@ function DayColumn({
   return (
     <div className={cn(
       'flex-1 min-w-0 border-l border-border relative',
-      isToday && 'bg-[#1A535C]/[0.015] dark:bg-white/[0.02]'
+      isToday && 'bg-petrol/[0.015] dark:bg-white/[0.02]'
     )}>
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
@@ -2342,13 +2342,13 @@ function DayColumn({
             style={{ height: HOUR_HEIGHT }}
             className={cn(
               'group/hour border-b border-border transition-all duration-200 relative',
-              isDropHere && 'bg-[#1A535C]/[0.06] dark:bg-white/[0.05]'
+              isDropHere && 'bg-petrol/[0.06] dark:bg-white/[0.05]'
             )}
             onDragOver={(e) => handleDragOver(e, hour)}
             onDrop={(e) => handleDrop(e, hour)}
             onDragLeave={handleDragLeave}
           >
-            {/* Drop indicator — alleen op de helft waar de cursor zit */}
+            {/* Drop indicator · alleen op de helft waar de cursor zit */}
             {isDropHere && (
               <div
                 className="absolute inset-x-1 pointer-events-none animate-[fadeIn_150ms_ease-out]"
@@ -2357,9 +2357,9 @@ function DayColumn({
                   height: HOUR_HEIGHT / 2 - 4,
                 }}
               >
-                <div className="w-full h-full rounded-lg border-2 border-dashed border-[#1A535C]/25 dark:border-white/20 bg-[#1A535C]/[0.04] dark:bg-white/[0.04] flex items-center justify-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-[#1A535C]/40 dark:text-foreground/40" />
-                  <span className="text-[11px] text-[#1A535C]/50 dark:text-foreground/60 font-semibold font-mono">
+                <div className="w-full h-full rounded-lg border-2 border-dashed border-petrol/25 dark:border-white/20 bg-petrol/[0.04] dark:bg-white/[0.04] flex items-center justify-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-petrol/40 dark:text-foreground/40" />
+                  <span className="text-[11px] text-petrol/50 dark:text-foreground/60 font-semibold font-mono">
                     {formatHourLabel(dropTarget!.hour)}
                   </span>
                 </div>
@@ -2374,7 +2374,7 @@ function DayColumn({
                   value={hourAddTitle}
                   onChange={(e) => setHourAddTitle(e.target.value)}
                   placeholder={`Taak om ${String(hour).padStart(2, '0')}:00...`}
-                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 dark:border-white/15 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:border-[#1A535C] dark:focus:border-white/25 focus:ring-2 focus:ring-[#1A535C]/20 dark:focus:ring-white/10 text-foreground placeholder:text-muted-foreground/80 transition-all"
+                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-petrol/30 dark:border-white/15 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:border-petrol dark:focus:border-white/25 focus:ring-2 focus:ring-petrol/20 dark:focus:ring-white/10 text-foreground placeholder:text-muted-foreground/80 transition-all"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && hourAddTitle.trim()) {
                       onQuickAddAtTime(hour, hourAddTitle.trim())
@@ -2388,12 +2388,12 @@ function DayColumn({
               </div>
             )}
 
-            {/* Plus button per hour slot — hide when the hour is occupied so it doesn't collide with the task's delete */}
+            {/* Plus button per hour slot · hide when the hour is occupied so it doesn't collide with the task's delete */}
             {!isDropHere && !isAddingHere && !hasTaskAtHour && (
               <button
                 data-add-hour-btn="true"
                 onClick={() => { setAddingAtHour(hour); setHourAddTitle(''); setTimeout(() => hourInputRef.current?.focus(), 50) }}
-                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-lg text-[#F15025]/40 hover:text-[#F15025] hover:bg-[#F15025]/10 transition-all duration-200"
+                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-lg text-flame/40 hover:text-flame hover:bg-flame/10 transition-all duration-200"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -2402,15 +2402,15 @@ function DayColumn({
         )
       })}
 
-      {/* Now-line — flame indicator met soft glow */}
+      {/* Now-line · flame indicator met soft glow */}
       {nowLineTop !== null && (
         <div
           className="absolute left-0 right-0 z-20 pointer-events-none"
           style={{ top: `${nowLineTop}%` }}
         >
           <div className="flex items-center">
-            <div className="w-2 h-2 rounded-full bg-[#F15025] shadow-[0_0_0_3px_rgba(241,80,37,0.18)] -ml-1.5 flex-shrink-0" />
-            <div className="flex-1 h-[1.5px] bg-[#F15025]/70" />
+            <div className="w-2 h-2 rounded-full bg-flame shadow-[0_0_0_3px_rgba(241,80,37,0.18)] -ml-1.5 flex-shrink-0" />
+            <div className="flex-1 h-[1.5px] bg-flame/70" />
           </div>
         </div>
       )}
@@ -2490,7 +2490,7 @@ function DayColumn({
 
         const tooltipText = [
           afspraak.titel,
-          afspraak.locatie ? `📍 ${afspraak.locatie}` : '',
+          afspraak.locatie ? `${afspraak.locatie}` : '',
           `⏰ ${afspraak.start_tijd?.slice(0, 5)} – ${afspraak.eind_tijd?.slice(0, 5)}`,
           STATUS_LABELS[afspraak.status] || afspraak.status,
         ].filter(Boolean).join('\n')
@@ -2511,11 +2511,11 @@ function DayColumn({
             title={tooltipText}
           >
             <div className="px-2 py-1 overflow-hidden">
-              <div className="text-xs text-[#1A535C]/50 dark:text-[#7EB5A6]/70 truncate font-medium">
+              <div className="text-xs text-petrol/50 dark:text-[#7EB5A6]/70 truncate font-medium">
                 {afspraak.titel}
               </div>
               {afspraak.locatie && (
-                <div className="text-xs text-[#1A535C]/30 dark:text-[#7EB5A6]/50 truncate">
+                <div className="text-xs text-petrol/30 dark:text-[#7EB5A6]/50 truncate">
                   {afspraak.locatie}
                 </div>
               )}
@@ -2553,7 +2553,7 @@ function DayColumn({
                 value={addTitle}
                 onChange={(e) => setAddTitle(e.target.value)}
                 placeholder="Taak..."
-                className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 bg-card focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/20 text-foreground placeholder:text-muted-foreground/80 transition-all"
+                className="w-full text-xs px-2.5 py-2 rounded-lg border border-petrol/30 bg-card focus:outline-none focus:border-petrol focus:ring-2 focus:ring-petrol/20 text-foreground placeholder:text-muted-foreground/80 transition-all"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && addTitle.trim()) {
                     onQuickAdd(addTitle.trim())
@@ -2567,7 +2567,7 @@ function DayColumn({
           ) : (
             <button
               onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground/80/40 hover:text-[#1A535C] dark:hover:text-foreground hover:bg-[#1A535C]/[0.05] dark:hover:bg-white/[0.05] transition-all duration-200"
+              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground/80/40 hover:text-petrol dark:hover:text-foreground hover:bg-petrol/[0.05] dark:hover:bg-white/[0.05] transition-all duration-200"
             >
               <Plus className="w-3 h-3" />
             </button>
@@ -2663,28 +2663,28 @@ function TaskCard({
         'hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:z-10',
         isPast && !isDone && 'opacity-55',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
-        isResizing && 'ring-2 ring-[#1A535C]/30 dark:ring-[#5FB5C0]/40 z-30',
-        isSelected && 'ring-2 ring-[#1A535C] dark:ring-[#5FB5C0] z-20',
+        isResizing && 'ring-2 ring-petrol/30 dark:ring-[#5FB5C0]/40 z-30',
+        isSelected && 'ring-2 ring-petrol dark:ring-[#5FB5C0] z-20',
         isDimmedForBulkDrag && 'opacity-40',
         isDone
-          ? 'bg-[#E8F0F0] dark:bg-[#1A535C]/15'
+          ? 'bg-[#E8F0F0] dark:bg-petrol/15'
           : cn(PRIO_CARD_BG[taak.prioriteit], PRIO_CARD_STRIPE[taak.prioriteit])
       )}
       style={heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : undefined}
       onClick={onEdit}
     >
-      {/* Checkbox — Priority Pulse: cirkel met binnen-dot in priority-kleur, groeit bij hover */}
+      {/* Checkbox · Priority Pulse: cirkel met binnen-dot in priority-kleur, groeit bij hover */}
       <button
         onClick={handleToggle}
         className={cn('group/check absolute top-[6px] left-2 z-10', isCompact && 'top-1')}
         title={isDone ? 'Ongedaan maken' : 'Markeer als klaar'}
       >
         {isDone ? (
-          <div className="w-3.5 h-3.5 rounded-full bg-[#1A535C] flex items-center justify-center ring-2 ring-[#1A535C]/15 transition-all duration-200">
+          <div className="w-3.5 h-3.5 rounded-full bg-petrol flex items-center justify-center ring-2 ring-petrol/15 transition-all duration-200">
             <Check className="w-2 h-2 text-white" strokeWidth={4} />
           </div>
         ) : (
-          <div className="w-3.5 h-3.5 rounded-full border-[1.5px] border-border/55 flex items-center justify-center transition-[transform,border-color] duration-200 group-hover/check:border-[#1A535C] group-hover/check:scale-110 group-active/check:scale-95">
+          <div className="w-3.5 h-3.5 rounded-full border-[1.5px] border-border/55 flex items-center justify-center transition-[transform,border-color] duration-200 group-hover/check:border-petrol group-hover/check:scale-110 group-active/check:scale-95">
             <span
               className="block rounded-full w-[3px] h-[3px] opacity-55 transition-all duration-200 ease-out group-hover/check:w-[7px] group-hover/check:h-[7px] group-hover/check:opacity-100"
               style={{ backgroundColor: pc.dot }}
@@ -2693,32 +2693,32 @@ function TaskCard({
         )}
       </button>
 
-      {/* Content — pl-7 voor ruimte naast checkbox (iets breder dan voorheen) */}
+      {/* Content · pl-7 voor ruimte naast checkbox (iets breder dan voorheen) */}
       <div className={cn('h-full', isCompact ? 'pl-7 pr-1.5 py-1' : 'pl-7 pr-1.5 py-2', isDone && 'opacity-60')}>
         <div className="flex items-center gap-1.5">
           <p
             className={cn(
               'text-[13px] font-semibold leading-tight truncate flex-1',
-              isDone ? 'line-through text-[#6B6B66] dark:text-muted-foreground/70' : PRIO_CARD_TEXT[taak.prioriteit],
+              isDone ? 'line-through text-muted-foreground dark:text-muted-foreground/70' : PRIO_CARD_TEXT[taak.prioriteit],
               isCompact && 'text-[11px]'
             )}
           >
             {taak.titel}
           </p>
-          {/* Prioriteit — flame-toggle: oranje box markeert prioriteit */}
+          {/* Prioriteit · flame-toggle: oranje box markeert prioriteit */}
           <button
             onClick={(e) => { e.stopPropagation(); onTogglePrio?.() }}
             className={cn(
               'ml-auto p-1 rounded-md transition-all flex-shrink-0',
               isPriority
-                ? 'text-[#F15025] opacity-100'
-                : 'text-muted-foreground/70 opacity-0 group-hover:opacity-100 hover:text-[#F15025]'
+                ? 'text-flame opacity-100'
+                : 'text-muted-foreground/70 opacity-0 group-hover:opacity-100 hover:text-flame'
             )}
             title={isPriority ? 'Prioriteit weghalen' : 'Markeer als prioriteit'}
           >
-            <Flame className={cn('w-3.5 h-3.5', isPriority && 'fill-[#F15025]')} />
+            <Flame className={cn('w-3.5 h-3.5', isPriority && 'fill-flame')} />
           </button>
-          {/* Delete — hover only, ruimte + grotere hit area */}
+          {/* Delete · hover only, ruimte + grotere hit area */}
           <button
             onClick={handleDeleteClick}
             className="p-1.5 -mr-1 rounded-md text-transparent group-hover:text-muted-foreground hover:!text-[#C03A18] dark:hover:!text-[#DA7B70] hover:bg-[#C03A18]/8 transition-all flex-shrink-0"
@@ -2731,7 +2731,7 @@ function TaskCard({
           <div
             className={cn(
               'flex items-center gap-2 mt-1 overflow-hidden',
-              isDone ? 'text-[#9B9B95] dark:text-muted-foreground/60' : cn(PRIO_CARD_TEXT[taak.prioriteit], 'opacity-70'),
+              isDone ? 'text-muted-foreground dark:text-muted-foreground/60' : cn(PRIO_CARD_TEXT[taak.prioriteit], 'opacity-70'),
             )}
           >
             {scheduled && hour !== null && (
@@ -2754,14 +2754,14 @@ function TaskCard({
           onMouseDown={(e) => { onResizeStart(e) }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="w-8 h-1 rounded-full bg-transparent group-hover:bg-border/30 group-hover/resize:bg-[#1A535C]/50 transition-colors mb-0.5" />
+          <div className="w-8 h-1 rounded-full bg-transparent group-hover:bg-border/30 group-hover/resize:bg-petrol/50 transition-colors mb-0.5" />
         </div>
       )}
 
       {/* Completion animation overlay */}
       {justCompleted && (
-        <div className="absolute inset-0 bg-[#1A535C]/10 dark:bg-white/[0.08] flex items-center justify-center pointer-events-none">
-          <Check className="w-4 h-4 text-[#1A535C] dark:text-[#5AABB5]" strokeWidth={3} />
+        <div className="absolute inset-0 bg-petrol/10 dark:bg-white/[0.08] flex items-center justify-center pointer-events-none">
+          <Check className="w-4 h-4 text-petrol dark:text-[#5AABB5]" strokeWidth={3} />
         </div>
       )}
     </div>
@@ -2820,7 +2820,7 @@ function EditTaskDialog({
             <button
               type="button"
               onClick={() => { onOpenChange(false); navigate(`/projecten/${formData.project_id}`) }}
-              className="flex-shrink-0 inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] dark:text-[#5AABB5] hover:text-[#0F3A40] dark:hover:text-foreground transition-colors mt-1"
+              className="flex-shrink-0 inline-flex items-center gap-1 text-[12px] font-medium text-petrol dark:text-[#5AABB5] hover:text-[#0F3A40] dark:hover:text-foreground transition-colors mt-1"
               title="Open project in nieuw tabblad"
             >
               Open project
@@ -2829,7 +2829,7 @@ function EditTaskDialog({
           )}
         </div>
 
-        {/* Meta-pill rij — alles op 1 lijn, type-segment inline */}
+        {/* Meta-pill rij · alles op 1 lijn, type-segment inline */}
         <div className="px-7 pb-4 flex items-center gap-1.5 flex-wrap">
           {/* Prioriteit */}
           <Select value={formData.prioriteit} onValueChange={(v) => updateField('prioriteit', v as TaakPrioriteit)}>
@@ -2849,7 +2849,7 @@ function EditTaskDialog({
             </SelectContent>
           </Select>
 
-          {/* Deadline — DOEN-styled date picker via Popover */}
+          {/* Deadline · DOEN-styled date picker via Popover */}
           <DatePicker
             value={formData.deadline}
             onChange={(v) => updateField('deadline', v)}
@@ -2889,7 +2889,7 @@ function EditTaskDialog({
 
         </div>
 
-        {/* Project — altijd zichtbaar, geen type-toggle meer */}
+        {/* Project · altijd zichtbaar, geen type-toggle meer */}
         <div className="px-7 pb-4 space-y-1.5">
           <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</Label>
           <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
@@ -2906,7 +2906,7 @@ function EditTaskDialog({
           </Select>
         </div>
 
-        {/* Briefing — dominant field, auto-grow tot 400px, daarna scroll */}
+        {/* Briefing · dominant field, auto-grow tot 400px, daarna scroll */}
         <div className="px-7 pb-5 space-y-2">
           <Label className="text-xs uppercase tracking-[0.05em] text-muted-foreground font-semibold block">Briefing</Label>
           <Textarea
@@ -2915,15 +2915,15 @@ function EditTaskDialog({
             onChange={(e) => updateField('beschrijving', e.target.value)}
             placeholder="Briefing toevoegen…"
             data-gramm="false"
-            className="border-0 shadow-none px-3 py-2.5 min-h-[180px] max-h-[400px] resize-none overflow-y-auto bg-background hover:bg-muted focus:bg-card rounded-lg text-sm leading-relaxed text-foreground placeholder:text-foreground/70 focus-visible:ring-1 focus-visible:ring-[#1A535C]/20 transition-colors"
+            className="border-0 shadow-none px-3 py-2.5 min-h-[180px] max-h-[400px] resize-none overflow-y-auto bg-background hover:bg-muted focus:bg-card rounded-lg text-sm leading-relaxed text-foreground placeholder:text-foreground/70 focus-visible:ring-1 focus-visible:ring-petrol/20 transition-colors"
           />
         </div>
 
-        {/* Bijlagen — compacte inline rij */}
+        {/* Bijlagen · compacte inline rij */}
         <div className="px-7 pb-5">
           <div className="flex items-center flex-wrap gap-3">
             <Label className="text-xs uppercase tracking-[0.05em] text-muted-foreground font-semibold m-0">Bijlagen</Label>
-            <label className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-dashed border-border bg-transparent text-xs font-medium text-foreground/70 hover:border-[#1A535C] dark:hover:border-white/25 hover:text-[#1A535C] dark:hover:text-foreground hover:bg-[#1A535C]/[0.03] dark:hover:bg-white/[0.04] transition-colors cursor-pointer">
+            <label className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-dashed border-border bg-transparent text-xs font-medium text-foreground/70 hover:border-petrol dark:hover:border-white/25 hover:text-petrol dark:hover:text-foreground hover:bg-petrol/[0.03] dark:hover:bg-white/[0.04] transition-colors cursor-pointer">
               <Plus className="h-3.5 w-3.5" />
               Toevoegen
               <input
@@ -2963,10 +2963,10 @@ function EditTaskDialog({
                   <div key={i} className="group relative">
                     {isImage ? (
                       <a href={url} target="_blank" rel="noopener noreferrer" title={filename}>
-                        <img src={url} alt="" className="h-14 w-14 rounded-lg object-cover border border-border hover:border-[#1A535C] transition-colors" />
+                        <img src={url} alt="" className="h-14 w-14 rounded-lg object-cover border border-border hover:border-petrol transition-colors" />
                       </a>
                     ) : (
-                      <a href={url} target="_blank" rel="noopener noreferrer" title={filename} className="h-14 px-3 rounded-lg border border-border bg-card flex items-center gap-2 hover:border-[#1A535C] transition-colors">
+                      <a href={url} target="_blank" rel="noopener noreferrer" title={filename} className="h-14 px-3 rounded-lg border border-border bg-card flex items-center gap-2 hover:border-petrol transition-colors">
                         <DocIcon className="h-4 w-4 text-foreground/70 flex-shrink-0" />
                         <span className="text-xs text-foreground truncate max-w-[160px]">{filename}</span>
                       </a>
@@ -3008,7 +3008,7 @@ function EditTaskDialog({
               <button
                 type="button"
                 onClick={onAfronden}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-[13px] font-medium text-[#1A535C] dark:text-[#5AABB5] border border-[#1A535C]/30 dark:border-[#5AABB5]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-[13px] font-medium text-petrol dark:text-[#5AABB5] border border-petrol/30 dark:border-[#5AABB5]/30 hover:bg-petrol hover:text-white hover:border-petrol transition-all"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Afronden
@@ -3018,7 +3018,7 @@ function EditTaskDialog({
               onClick={onSave}
               disabled={isSaving}
               size="sm"
-              className="h-9 px-5 bg-[#1A535C] hover:bg-[#0F3A40] text-white shadow-sm"
+              className="h-9 px-5 bg-petrol hover:bg-[#0F3A40] text-white shadow-sm"
             >
               {isSaving && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}Opslaan
             </Button>

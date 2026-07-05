@@ -52,7 +52,7 @@ function Avatar({ medewerker, medewerkers, size = 24 }: { medewerker: Medewerker
 }
 
 // ─────────────────────────────────────────────────────────
-// Deze week — date strip + events
+// Deze week · date strip + events
 
 interface WeekEvent {
   id: string
@@ -89,7 +89,7 @@ function MedewerkerToggleRow({
         className={cn(
           'h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors',
           value === ''
-            ? 'bg-[#1A535C] text-white'
+            ? 'bg-petrol text-white'
             : 'bg-background text-foreground/70 hover:bg-border',
         )}
       >
@@ -108,7 +108,7 @@ function MedewerkerToggleRow({
             className={cn(
               'inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-semibold transition-all',
               isActive
-                ? 'ring-2 ring-[#1A535C] ring-offset-1 ring-offset-white'
+                ? 'ring-2 ring-petrol ring-offset-1 ring-offset-white'
                 : 'opacity-75 hover:opacity-100',
             )}
             style={{ backgroundColor: style.backgroundColor, color: style.color }}
@@ -125,7 +125,7 @@ function MedewerkerToggleRow({
               className={cn(
                 'inline-flex items-center justify-center h-7 px-1.5 rounded-full text-[11px] transition-colors gap-0.5',
                 overflowSelected
-                  ? 'bg-[#1A535C] text-white'
+                  ? 'bg-petrol text-white'
                   : 'bg-background text-foreground/70 hover:bg-border',
               )}
               title="Meer medewerkers"
@@ -149,7 +149,7 @@ function MedewerkerToggleRow({
                       }}
                       className={cn(
                         'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[12px] transition-colors',
-                        isActive ? 'bg-background font-semibold text-[#1A535C]' : 'hover:bg-background text-foreground',
+                        isActive ? 'bg-background font-semibold text-petrol' : 'hover:bg-background text-foreground',
                       )}
                     >
                       <span
@@ -266,7 +266,7 @@ function DezeWeekCard() {
         <div className="flex items-baseline gap-2 min-w-0">
           <h2 className="font-heading text-[14px] font-bold text-foreground">
             {weekOffset === 0 ? 'Deze week' : weekOffset === -1 ? 'Vorige week' : weekOffset === 1 ? 'Volgende week' : `Week ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
-            <span className="text-[#F15025]">.</span>
+            <span className="text-flame">.</span>
           </h2>
           <span
             className="text-[14px] text-muted-foreground truncate"
@@ -289,7 +289,7 @@ function DezeWeekCard() {
             onClick={() => setWeekOffset(0)}
             className={cn(
               'text-[11px] font-mono uppercase tracking-wider px-1.5 transition-colors',
-              weekOffset === 0 ? 'text-muted-foreground cursor-default' : 'text-[#1A535C] hover:underline',
+              weekOffset === 0 ? 'text-muted-foreground cursor-default' : 'text-petrol hover:underline',
             )}
             title="Naar deze week"
           >
@@ -326,7 +326,7 @@ function DezeWeekCard() {
               <span
                 className={cn(
                   'text-[13px] font-mono rounded-md w-7 h-7 flex items-center justify-center',
-                  isToday ? 'bg-[#1A535C] text-white font-semibold' : 'text-foreground',
+                  isToday ? 'bg-petrol text-white font-semibold' : 'text-foreground',
                 )}
               >
                 {date.getDate()}
@@ -349,7 +349,7 @@ function DezeWeekCard() {
           {filterNaam
             ? `Geen afspraken voor ${filterNaam.split(' ')[0]} deze week`
             : 'Geen afspraken deze week'}
-          <span className="text-[#F15025]">.</span>
+          <span className="text-flame">.</span>
         </p>
       ) : (
         <ul className="space-y-3 max-h-[280px] overflow-y-auto pr-1 -mr-2">
@@ -391,7 +391,7 @@ function DezeWeekCard() {
 }
 
 // ─────────────────────────────────────────────────────────
-// Team — deze week (stats + recente activiteit)
+// Team · deze week (stats + recente activiteit)
 
 interface ActivityItem {
   id: string
@@ -507,7 +507,7 @@ function TeamCard() {
     <section className="doen-panel doen-wash rounded-xl p-6">
       <header className="flex items-baseline justify-between mb-4">
         <h2 className="font-heading text-[14px] font-bold text-foreground">
-          Gedaan<span className="text-[#F15025]">.</span>
+          Gedaan<span className="text-flame">.</span>
           <span
             className="text-muted-foreground ml-2 font-normal"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
@@ -525,7 +525,7 @@ function TeamCard() {
           className="text-sm text-muted-foreground py-2"
           style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
         >
-          Nog geen activiteit deze week<span className="text-[#F15025]">.</span>
+          Nog geen activiteit deze week<span className="text-flame">.</span>
         </p>
       ) : (
         <ul className="space-y-3 max-h-[200px] overflow-y-auto pr-1 -mr-2">

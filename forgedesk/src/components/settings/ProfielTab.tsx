@@ -120,10 +120,10 @@ export function ProfielTab() {
               className="text-[14px] text-foreground/70"
               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
             >
-              {greeting}<span className="text-[#F15025]">·</span>
+              {greeting}<span className="text-flame">·</span>
             </p>
             <h2 className="text-[24px] font-extrabold tracking-[-0.3px] text-foreground mt-0.5 truncate">
-              {volledigeNaam || 'Jouw naam'}<span className="text-[#F15025]">.</span>
+              {volledigeNaam || 'Jouw naam'}<span className="text-flame">.</span>
             </h2>
             <p className="text-[13px] text-foreground/70 truncate">
               {functie || 'Voeg je functie toe'} <span className="text-muted-foreground/70">·</span> {email}
@@ -135,7 +135,7 @@ export function ProfielTab() {
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70">Profiel</span>
-            <span className="text-[13px] font-mono tabular-nums text-[#1A535C] font-semibold">
+            <span className="text-[13px] font-mono tabular-nums text-petrol font-semibold">
               {completionPct}%
             </span>
           </div>
@@ -192,7 +192,7 @@ export function ProfielTab() {
             type="button"
             onClick={handleSave}
             disabled={isSaving || isLoading}
-            className="inline-flex items-center gap-2 bg-[#F15025] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="inline-flex items-center gap-2 bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {isSaving ? 'Opslaan...' : 'Opslaan'}
           </button>
@@ -230,7 +230,7 @@ export function ProfielTab() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-bold text-foreground truncate">
-                {volledigeNaam || 'Jouw naam'}<span className="text-[#F15025]">.</span>
+                {volledigeNaam || 'Jouw naam'}<span className="text-flame">.</span>
               </p>
               {functie && (
                 <p className="text-[12px] text-foreground/70 truncate">{functie}</p>
@@ -238,7 +238,7 @@ export function ProfielTab() {
             </div>
           </div>
 
-          <div className="relative space-y-2 text-[12.5px]">
+          <div className="relative space-y-2 text-[12px]">
             <div className="flex items-center gap-2 text-foreground/80">
               <Mail className="h-4 w-4 flex-shrink-0" strokeWidth={1.75} style={{ color: '#1A535C' }} />
               <span className="truncate font-mono">{email || 'jouw@email.nl'}</span>
@@ -257,7 +257,7 @@ export function ProfielTab() {
           </div>
 
           <div className="relative mt-4 pt-3 border-t border-[rgba(26,83,92,0.1)] flex items-center gap-2">
-            <User className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} style={{ color: '#9B9B95' }} />
+            <User className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} style={{ color: 'hsl(var(--muted-foreground))' }} />
             <p
               className="text-[11px] text-muted-foreground"
               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}

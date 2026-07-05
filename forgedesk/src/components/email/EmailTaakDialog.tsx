@@ -27,7 +27,7 @@ interface EmailTaakDialogProps {
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
   kritiek: 'text-[#C0451A]',
-  hoog: 'text-[#F15025]',
+  hoog: 'text-flame',
   medium: 'text-[#3A5A9A]',
   laag: 'text-muted-foreground',
 }
@@ -139,7 +139,7 @@ export function EmailTaakDialog({
             <select
               value={formData.project_id || ''}
               onChange={(e) => update('project_id', e.target.value)}
-              className="w-full h-9 px-3 text-[13px] border border-border bg-background rounded-lg outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 transition-colors"
+              className="w-full h-9 px-3 text-[13px] border border-border bg-background rounded-lg outline-none focus:border-petrol focus:ring-1 focus:ring-petrol/20 transition-colors"
             >
               <option value="">Geen project</option>
               {projecten.map((p) => (
@@ -156,11 +156,11 @@ export function EmailTaakDialog({
               onChange={(e) => update('beschrijving', e.target.value)}
               placeholder="Briefing toevoegen…"
               data-gramm="false"
-              className="w-full border-0 shadow-none px-3 py-2.5 min-h-[140px] max-h-[300px] resize-none overflow-y-auto bg-background hover:bg-muted focus:bg-white dark:focus:bg-white/[0.06] rounded-lg text-[13px] leading-relaxed text-foreground placeholder:text-foreground/70 outline-none focus:ring-1 focus:ring-[#1A535C]/20 transition-colors"
+              className="w-full border-0 shadow-none px-3 py-2.5 min-h-[140px] max-h-[300px] resize-none overflow-y-auto bg-background hover:bg-muted focus:bg-white dark:focus:bg-white/[0.06] rounded-lg text-[13px] leading-relaxed text-foreground placeholder:text-foreground/70 outline-none focus:ring-1 focus:ring-petrol/20 transition-colors"
             />
           </div>
 
-          {/* Bijlagen — placeholder voor latere upload-flow */}
+          {/* Bijlagen · placeholder voor latere upload-flow */}
           <div className="px-7 pb-5">
             <div className="flex items-center gap-3">
               <label className="text-[11px] uppercase tracking-[0.05em] text-muted-foreground font-semibold m-0">Bijlagen</label>
@@ -185,7 +185,7 @@ export function EmailTaakDialog({
             type="button"
             onClick={onSave}
             disabled={saving || !formData.titel.trim()}
-            className="inline-flex items-center gap-1.5 h-9 px-5 rounded-md text-[13px] font-semibold text-white bg-[#1A535C] hover:bg-[#0F3A40] shadow-sm disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1.5 h-9 px-5 rounded-md text-[13px] font-semibold text-white bg-petrol hover:bg-[#0F3A40] shadow-sm disabled:opacity-50 transition-colors"
           >
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Opslaan

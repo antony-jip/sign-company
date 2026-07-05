@@ -145,8 +145,8 @@ export function LeadInzendingenLayout() {
           {gefilterd.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16">
               <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#2A5580' }} />
-              <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen inzendingen gevonden</p>
-              <p style={{ fontSize: '12px', color: '#5A5A55' }}>Inzendingen van lead-formulieren verschijnen hier.</p>
+              <p className="font-semibold" style={{ fontSize: '14px', color: 'hsl(var(--foreground))' }}>Geen inzendingen gevonden</p>
+              <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>Inzendingen van lead-formulieren verschijnen hier.</p>
             </div>
           ) : (
             <table className="w-full">

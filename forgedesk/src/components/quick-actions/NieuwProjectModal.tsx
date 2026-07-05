@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
 import type { Klant } from '@/types'
 import { toast } from 'sonner'
-import { Building2 } from 'lucide-react'
+import { Building2, X } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -105,7 +105,7 @@ export function NieuwProjectModal({ open, onOpenChange }: Props) {
                     onClick={clearKlant}
                     className="ml-auto text-muted-foreground hover:text-foreground text-xs shrink-0"
                   >
-                    ✕
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (

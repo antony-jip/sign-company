@@ -89,7 +89,7 @@ export function TakenBulkActionBar({
   const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1)
   const nextWeek = new Date(); nextWeek.setDate(nextWeek.getDate() + 7)
 
-  const barButtonClass = 'flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#1A535C]/20 text-[#1A535C] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+  const barButtonClass = 'flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-petrol/20 text-petrol hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 
   if (compact) {
     return (
@@ -106,10 +106,10 @@ export function TakenBulkActionBar({
   }
 
   return (
-    <div className="flex-shrink-0 bg-[#1A535C]/[0.06] ring-1 ring-[#1A535C]/10 px-5 py-2.5 flex items-center gap-3">
+    <div className="flex-shrink-0 bg-petrol/[0.06] ring-1 ring-petrol/10 px-5 py-2.5 flex items-center gap-3">
       <div className="flex items-center gap-2.5">
-        <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{count}</span>
-        <span className="text-sm font-semibold text-[#1A535C]">
+        <span className="w-7 h-7 rounded-lg bg-petrol text-white flex items-center justify-center text-xs font-bold">{count}</span>
+        <span className="text-sm font-semibold text-petrol">
           {count} taak{count === 1 ? '' : 'en'} geselecteerd
         </span>
       </div>
@@ -141,7 +141,7 @@ export function TakenBulkActionBar({
             <button
               onClick={() => submitMove(moveDate)}
               disabled={!moveDate}
-              className="mt-2 w-full h-8 rounded-md bg-[#1A535C] text-white text-[12px] font-semibold hover:bg-[#1A535C]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="mt-2 w-full h-8 rounded-md bg-petrol text-white text-[12px] font-semibold hover:bg-petrol/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Toepassen
             </button>
@@ -230,7 +230,7 @@ export function TakenBulkActionBar({
         <Trash2 className="w-3 h-3" />
         Verwijderen
       </button>
-      <button onClick={onClear} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all" title="Deselecteer alles">
+      <button onClick={onClear} className="p-1.5 rounded-lg text-petrol hover:bg-white/40 transition-all" title="Deselecteer alles">
         <X className="w-3.5 h-3.5" />
       </button>
     </div>

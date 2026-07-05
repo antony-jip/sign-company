@@ -91,14 +91,14 @@ function getDoenConfig(
   },
   navigate: ReturnType<typeof useNavigate>,
 ): DoenConfig | null {
-  // Step 0: no offerte — no banner (flame CTA in header + empty card handle this)
+  // Step 0: no offerte · no banner (flame CTA in header + empty card handle this)
   if (step === 0) return null
 
   // Step 1: has offerte(s) in early stage
   if (step === 1) {
     const conceptOfferte = offertes.find(o => o.status === 'concept')
     if (conceptOfferte) {
-      // Concept offerte — user needs to finish editing. NOT an irreversible action.
+      // Concept offerte · user needs to finish editing. NOT an irreversible action.
       return {
         tekst: 'Je offerte is nog niet af.',
         bg: '#FDE8E2',
@@ -108,20 +108,20 @@ function getDoenConfig(
         icon: <Pencil className="h-4 w-4" />,
         btnLabel: 'Offerte bewerken',
         btnAction: () => navigate(`/offertes/${conceptOfferte.id}/bewerken`),
-        btnFlame: false, // petrol — not irreversible
+        btnFlame: false, // petrol · not irreversible
       }
     }
-    // Offerte exists but not concept (e.g. verzonden/bekeken waiting for approval) — no banner
+    // Offerte exists but not concept (e.g. verzonden/bekeken waiting for approval) · no banner
     return null
   }
 
-  // Step 2: approved / waiting — no banner
+  // Step 2: approved / waiting · no banner
   if (step === 2) return null
 
-  // Step 3: in production — no banner (work is happening)
+  // Step 3: in production · no banner (work is happening)
   if (step === 3) return null
 
-  // Step 4: ready for montage — irreversible scheduling moment
+  // Step 4: ready for montage · irreversible scheduling moment
   if (step === 4) {
     return {
       tekst: 'Alles klaar voor montage.',
@@ -136,7 +136,7 @@ function getDoenConfig(
     }
   }
 
-  // Step 5: ready to invoice — irreversible billing moment
+  // Step 5: ready to invoice · irreversible billing moment
   if (step === 5) {
     const hasFactuur = facturen.length > 0
     if (hasFactuur) return null

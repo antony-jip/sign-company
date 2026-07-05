@@ -87,7 +87,7 @@ export function Header() {
       {/* Left: Breadcrumb */}
       <div className="flex items-center gap-1.5 min-w-0">
         <span className="text-[13px] font-semibold text-foreground">
-          {moduleName}<span className="text-[#F15025]">.</span>
+          {moduleName}<span className="text-flame">.</span>
         </span>
         {subPage && (
           <>
@@ -99,7 +99,7 @@ export function Header() {
         )}
       </div>
 
-      {/* Center: Search bar (desktop) — compact */}
+      {/* Center: Search bar (desktop) · compact */}
       <div className="hidden md:flex flex-1 justify-center mx-8">
         <GlobalSearch className="w-full max-w-xs" />
       </div>
@@ -121,7 +121,7 @@ export function Header() {
         <NotificatieCenter />
 
         {/* User avatar */}
-        <div className="flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 bg-[#1A535C]">
+        <div className="flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 bg-petrol">
           <span className="font-semibold leading-none text-[10px] text-white">{initials}</span>
         </div>
       </div>

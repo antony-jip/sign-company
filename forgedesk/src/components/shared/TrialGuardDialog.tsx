@@ -27,10 +27,10 @@ export function TrialGuardDialog({ open, onOpenChange }: TrialGuardDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-[18px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
+          <DialogTitle className="text-[18px] font-bold tracking-tight" style={{ color: 'hsl(var(--foreground))' }}>
             Je proefperiode is verlopen
           </DialogTitle>
-          <DialogDescription className="text-[14px] pt-2" style={{ color: '#6B6B66', lineHeight: 1.6 }}>
+          <DialogDescription className="text-[14px] pt-2" style={{ color: 'hsl(var(--muted-foreground))', lineHeight: 1.6 }}>
             Bedankt voor het uitproberen van doen. Activeer je abonnement om verder te gaan, je data blijft bewaard.
           </DialogDescription>
         </DialogHeader>

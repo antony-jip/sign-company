@@ -36,7 +36,7 @@ export function BriefingCard({ beschrijving, projectNaam, klantNaam, onSave }: B
       await onSave(value)
       savedRef.current = value
     } catch (err) {
-      // Niet stil falen — autosave fout was eerder onzichtbaar voor user
+      // Niet stil falen · autosave fout was eerder onzichtbaar voor user
       // (kwam vaak voor bij medewerkers door RLS op projecten-tabel).
       console.error('Briefing autosave mislukt:', err)
       const msg = err instanceof Error ? err.message : 'Onbekende fout'
@@ -109,7 +109,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           <h3 className="font-heading text-[15px] font-bold text-foreground">
-            Briefing<span className="text-[#F15025]">.</span>
+            Briefing<span className="text-flame">.</span>
           </h3>
           <span
             className="text-[12px] text-muted-foreground hidden sm:inline"
@@ -131,7 +131,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
             <button
               disabled={isGenerating}
               onClick={handleDaan}
-              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-foreground/70 hover:text-foreground bg-card border border-border hover:border-[#1A535C]/40 transition-all rounded-lg px-2.5 py-1.5 shadow-sm hover:shadow disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-foreground/70 hover:text-foreground bg-card border border-border hover:border-petrol/40 transition-all rounded-lg px-2.5 py-1.5 shadow-sm hover:shadow disabled:opacity-50"
             >
               {isGenerating ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -149,7 +149,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
         onChange={(e) => setText(e.target.value)}
         onBlur={handleBlur}
         placeholder="Wat moet er gemaakt worden? Waar? Welke materialen?"
-        className="resize-y text-[14px] leading-relaxed w-full min-h-[110px] px-4 py-3.5 bg-card text-foreground border border-border rounded-lg focus-visible:bg-card focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] focus-visible:shadow-none transition-colors placeholder:text-muted-foreground"
+        className="resize-y text-[14px] leading-relaxed w-full min-h-[110px] px-4 py-3.5 bg-card text-foreground border border-border rounded-lg focus-visible:bg-card focus-visible:border-petrol focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] focus-visible:shadow-none transition-colors placeholder:text-muted-foreground"
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             setText(savedRef.current)

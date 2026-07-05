@@ -136,7 +136,7 @@ export function ProductCatalogusCombobox({
               onClick={() => commitSelect(p)}
               className={cn(
                 'w-full text-left px-2 py-1.5 rounded-md text-[13px] hover:bg-background transition-colors',
-                highlighted === idx && 'bg-[#1A535C]/[0.06] text-[#1A535C]'
+                highlighted === idx && 'bg-petrol/[0.06] text-petrol'
               )}
             >
               {p.naam}

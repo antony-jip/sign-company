@@ -50,7 +50,7 @@ export function MedewerkerFilterCombobox({
         <button
           type="button"
           className={cn(
-            'h-7 inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-2 text-[13px] text-foreground/70 hover:border-[#1A535C]/40 focus:outline-none focus:border-[#1A535C]/40 transition-colors',
+            'h-7 inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 text-[13px] text-foreground/70 hover:border-petrol/40 focus:outline-none focus:border-petrol/40 transition-colors',
             className
           )}
         >
@@ -90,12 +90,12 @@ export function MedewerkerFilterCombobox({
             onClick={() => { onChange(''); setOpen(false) }}
             className={cn(
               'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-background transition-colors',
-              value === '' && 'bg-[#1A535C]/[0.06] text-[#1A535C] font-semibold'
+              value === '' && 'bg-petrol/[0.06] text-petrol font-semibold'
             )}
           >
             <Users className="h-4 w-4 text-muted-foreground" />
             <span className="flex-1">{allLabel}</span>
-            {value === '' && <Check className="h-3.5 w-3.5 text-[#1A535C]" />}
+            {value === '' && <Check className="h-3.5 w-3.5 text-petrol" />}
           </button>
           {filtered.length === 0 && query && (
             <div className="px-2 py-6 text-center text-[12px] text-muted-foreground">Geen resultaat</div>
@@ -110,7 +110,7 @@ export function MedewerkerFilterCombobox({
                 onClick={() => { onChange(m.naam); setOpen(false) }}
                 className={cn(
                   'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-background transition-colors',
-                  isSelected && 'bg-[#1A535C]/[0.06] text-[#1A535C] font-semibold'
+                  isSelected && 'bg-petrol/[0.06] text-petrol font-semibold'
                 )}
               >
                 <span
@@ -120,7 +120,7 @@ export function MedewerkerFilterCombobox({
                   {getInitials(m.naam)}
                 </span>
                 <span className="flex-1 truncate">{m.naam}</span>
-                {isSelected && <Check className="h-3.5 w-3.5 text-[#1A535C]" />}
+                {isSelected && <Check className="h-3.5 w-3.5 text-petrol" />}
               </button>
             )
           })}

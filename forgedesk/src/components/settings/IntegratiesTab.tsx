@@ -93,7 +93,7 @@ export function IntegratiesTab() {
   // ze niet per ongeluk de actieve Exact-sessie van de eigenaar invalideren
   // (Exact Online staat geen twee gelijktijdige sessies per bedrijfsaccount
   // toe). De feitelijke connected-status voor de huidige user komt uit
-  // /api/exact-token-status — niet uit de org-brede `exact_online_connected`
+  // /api/exact-token-status · niet uit de org-brede `exact_online_connected`
   // boolean, die alleen "iemand in de org heeft ooit gekoppeld" zegt.
   const [exactOwnerUserId, setExactOwnerUserId] = useState<string | null>(null)
   const [exactEigenTokens, setExactEigenTokens] = useState<boolean | null>(null)
@@ -261,7 +261,7 @@ export function IntegratiesTab() {
   // Badge-status. Voor de eigenaar: leidend is per-user `exactEigenTokens`
   // (de waarheid uit /api/exact-token-status). Voor niet-eigenaren bestaat
   // er geen eigen tokens-rij waaraan we kunnen aflezen of "iemand anders"
-  // gekoppeld is — daarom valt de badge bij hen terug op de org-brede
+  // gekoppeld is · daarom valt de badge bij hen terug op de org-brede
   // `exact_online_connected` boolean (informatief). Tijdens de loading
   // van de status-fetch tonen we de org-flag als best-effort fallback.
   const exactBadgeVerbonden = isExactEigenaar
@@ -296,7 +296,7 @@ export function IntegratiesTab() {
 
   // Alleen DocumentTypes ophalen als deze user zelf geldige tokens heeft.
   // Bij niet-eigenaars zonder eigen exact_tokens-rij zou de call een 401
-  // van Exact triggeren en (na commit 2) hun token-rij verwijderen — voor
+  // van Exact triggeren en (na commit 2) hun token-rij verwijderen · voor
   // niets, want ze koppelen niet zelf.
   useEffect(() => {
     if (exactConnected && exactEigenTokens) loadDocumentTypes()
@@ -412,7 +412,7 @@ export function IntegratiesTab() {
 
   const handleMoneybirdAdministratieChange = async (id: string) => {
     setMoneybirdAdministrationId(id)
-    // Ledger- en tax-rate-ids horen bij de vorige administratie — leegmaken,
+    // Ledger- en tax-rate-ids horen bij de vorige administratie · leegmaken,
     // anders synct de server met ids uit de verkeerde administratie.
     setMoneybirdLedgerAccountId('')
     setMoneybirdTaxHoog('')
@@ -664,7 +664,7 @@ export function IntegratiesTab() {
       const grootboek = snelstartGrootboeken.find((g) => g.id === snelstartGrootboekId)
       await saveIntegrationSettings({
         snelstart_grootboek_id: snelstartGrootboekId,
-        snelstart_grootboek_naam: grootboek ? `${grootboek.nummer} — ${grootboek.naam}` : '',
+        snelstart_grootboek_naam: grootboek ? `${grootboek.nummer} · ${grootboek.naam}` : '',
         snelstart_grootboek_laag_id: snelstartGrootboekLaagId,
         snelstart_grootboek_nul_id: snelstartGrootboekNulId,
       })
@@ -725,8 +725,8 @@ export function IntegratiesTab() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-[#F15025]/10 dark:bg-[#F15025]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <CreditCard className="w-5 h-5 text-[#F15025]" />
+            <div className="w-10 h-10 bg-flame/10 dark:bg-flame/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <CreditCard className="w-5 h-5 text-flame" />
             </div>
             <div className="flex-1 space-y-4">
               <div>
@@ -788,8 +788,8 @@ export function IntegratiesTab() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-[#1A535C]/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Globe className="w-5 h-5 text-[#1A535C] dark:text-[#2A7A86]" />
+            <div className="w-10 h-10 bg-petrol/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Globe className="w-5 h-5 text-petrol dark:text-[#2A7A86]" />
             </div>
             <div className="flex-1 space-y-4">
               <div className="flex items-center gap-3 mb-1">
@@ -998,7 +998,7 @@ export function IntegratiesTab() {
                 <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
                   Exact Online is gekoppeld door een collega. Je kunt facturen
                   syncen met je eigen tokens, maar opnieuw verbinden zou de
-                  actieve sessie verbreken — alleen de eigenaar kan dat doen.
+                  actieve sessie verbreken · alleen de eigenaar kan dat doen.
                 </div>
               )}
 
@@ -1027,8 +1027,8 @@ export function IntegratiesTab() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-[#1A535C]/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <BookOpen className="w-5 h-5 text-[#1A535C] dark:text-[#2A7A86]" />
+            <div className="w-10 h-10 bg-petrol/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-petrol dark:text-[#2A7A86]" />
             </div>
             <div className="flex-1 space-y-4">
               <div className="flex items-center gap-3 mb-1">
@@ -1088,7 +1088,7 @@ export function IntegratiesTab() {
                       type="password"
                       value={moneybirdToken}
                       onChange={(e) => setMoneybirdToken(e.target.value)}
-                      placeholder={boekhoudTokenAanwezig ? 'Token opgeslagen — vul in om te vervangen' : 'Persoonlijk API-token'}
+                      placeholder={boekhoudTokenAanwezig ? 'Token opgeslagen · vul in om te vervangen' : 'Persoonlijk API-token'}
                       className="font-mono text-sm"
                     />
                     <p className="text-xs text-muted-foreground">
@@ -1243,7 +1243,7 @@ export function IntegratiesTab() {
                       type="password"
                       value={snelstartSleutel}
                       onChange={(e) => setSnelstartSleutel(e.target.value)}
-                      placeholder={boekhoudTokenAanwezig ? 'Sleutel opgeslagen — vul in om te vervangen' : 'Koppelsleutel'}
+                      placeholder={boekhoudTokenAanwezig ? 'Sleutel opgeslagen · vul in om te vervangen' : 'Koppelsleutel'}
                       className="font-mono text-sm"
                     />
                   </div>
@@ -1300,7 +1300,7 @@ export function IntegratiesTab() {
                                   <SelectContent>
                                     {snelstartGrootboeken.map((g) => (
                                       <SelectItem key={g.id} value={g.id}>
-                                        {g.nummer} — {g.naam}
+                                        {g.nummer} · {g.naam}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -1310,7 +1310,7 @@ export function IntegratiesTab() {
                           </div>
                           <p className="text-xs text-muted-foreground">
                             SnelStart-omzetgrootboeken zijn gebonden aan een BTW-tarief; kies per tarief het juiste grootboek
-                            (alleen nodig voor tarieven die je gebruikt). SnelStart ontvangt geen PDF — alleen de boeking.
+                            (alleen nodig voor tarieven die je gebruikt). SnelStart ontvangt geen PDF · alleen de boeking.
                           </p>
                           <div className="flex justify-end">
                             <Button onClick={handleSnelstartSave} disabled={snelstartSaving || !snelstartGrootboekId} size="sm" variant="outline">
@@ -1335,7 +1335,7 @@ export function IntegratiesTab() {
                       type="password"
                       value={eboekhoudenToken}
                       onChange={(e) => setEboekhoudenToken(e.target.value)}
-                      placeholder={boekhoudTokenAanwezig ? 'Token opgeslagen — vul in om te vervangen' : 'API-token'}
+                      placeholder={boekhoudTokenAanwezig ? 'Token opgeslagen · vul in om te vervangen' : 'API-token'}
                       className="font-mono text-sm"
                     />
                     <p className="text-xs text-muted-foreground">
@@ -1409,7 +1409,7 @@ export function IntegratiesTab() {
                                     <SelectContent>
                                       {opties.map((l) => (
                                         <SelectItem key={l.id} value={l.id}>
-                                          {l.code} — {l.naam}
+                                          {l.code} · {l.naam}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -1419,7 +1419,7 @@ export function IntegratiesTab() {
                             })}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Let op: e-Boekhouden ondersteunt geen PDF-bijlagen via de koppeling — alleen de boeking wordt overgezet.
+                            Let op: e-Boekhouden ondersteunt geen PDF-bijlagen via de koppeling · alleen de boeking wordt overgezet.
                           </p>
                           <div className="flex justify-end">
                             <Button onClick={handleEboekhoudenSave} disabled={eboekhoudenSaving} size="sm" variant="outline">
@@ -1480,8 +1480,8 @@ export function IntegratiesTab() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-[#1A535C]/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-[#1A535C] dark:text-[#2A7A86] font-bold text-sm">KvK</span>
+            <div className="w-10 h-10 bg-petrol/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-petrol dark:text-[#2A7A86] font-bold text-sm">KvK</span>
             </div>
             <div className="flex-1 space-y-4">
               <div>

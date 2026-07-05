@@ -142,7 +142,7 @@ export function VerwerkAanvraagDialog({ open, onOpenChange, bron }: VerwerkAanvr
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isBezig}>Annuleren</Button>
-          <Button onClick={handleAanmaken} disabled={isBezig} className="gap-1 bg-[#F15025] hover:bg-[#F15025]/90 text-white">
+          <Button onClick={handleAanmaken} disabled={isBezig} className="gap-1 bg-flame hover:bg-flame/90 text-white">
             {isBezig && <Loader2 className="h-4 w-4 animate-spin" />}
             {metProject ? 'Klant + project aanmaken' : 'Klant aanmaken'}
           </Button>

@@ -73,7 +73,7 @@ export function WerkbonnenMockup() {
   const rows = [
     { nr: 'WB-042', klant: 'Bakker Reclame', status: 'afgetekend', statusBg: '#E2F0F0', statusColor: '#1A535C', datum: '22 mrt' },
     { nr: 'WB-041', klant: 'Smit Signs', status: 'in uitvoering', statusBg: '#FAE5E0', statusColor: '#943520', datum: '21 mrt' },
-    { nr: 'WB-040', klant: 'Jansen & Zn', status: 'open', statusBg: '#EEEEED', statusColor: '#5A5A55', datum: '20 mrt' },
+    { nr: 'WB-040', klant: 'Jansen & Zn', status: 'open', statusBg: '#EEEEED', statuscolor: 'hsl(var(--muted-foreground))', datum: '20 mrt' },
     { nr: 'WB-039', klant: 'De Vries Signing', status: 'afgetekend', statusBg: '#E2F0F0', statusColor: '#1A535C', datum: '19 mrt' },
   ]
 
@@ -93,7 +93,7 @@ export function WerkbonnenMockup() {
       {/* Rows */}
       {rows.map((r, i) => (
         <div key={i} className="grid grid-cols-[50px_1fr_70px_45px] px-3 py-2 border-b border-border/50 items-center hover:bg-muted/50">
-          <span className="font-mono font-medium text-[#1A535C]">{r.nr}</span>
+          <span className="font-mono font-medium text-petrol">{r.nr}</span>
           <span className="text-ink/80">{r.klant}</span>
           <span className="px-1.5 py-0.5 rounded-full text-[6px] font-bold inline-block w-fit" style={{ backgroundColor: r.statusBg, color: r.statusColor }}>
             {r.status}<span style={{ color: '#F15025' }}>.</span>
@@ -110,9 +110,9 @@ export function KlantportaalMockup() {
   return (
     <div className="w-full h-full bg-background rounded-lg overflow-hidden text-[7px] flex flex-col">
       {/* Header */}
-      <div className="bg-[#1A535C] px-3 py-2 text-white flex items-baseline gap-1">
+      <div className="bg-petrol px-3 py-2 text-white flex items-baseline gap-1">
         <span className="font-bold text-[9px]">Klantportaal</span>
-        <span className="text-[#F15025] font-bold text-[9px]">.</span>
+        <span className="text-flame font-bold text-[9px]">.</span>
       </div>
       {/* Chat timeline */}
       <div className="flex-1 p-3 space-y-2 overflow-hidden">
@@ -142,7 +142,7 @@ export function KlantportaalMockup() {
             <div className="flex items-center justify-between mb-1">
               <span className="text-[7px] font-semibold">Factuur #F-2024-018</span>
               <span className="text-[6px] font-bold px-1.5 py-0.5 rounded-full bg-[hsl(var(--status-green-bg))] text-[#2D6B48]">
-                Betaald<span className="text-[#F15025]">.</span>
+                Betaald<span className="text-flame">.</span>
               </span>
             </div>
             <span className="font-mono text-[8px] font-bold text-[#2D6B48]">&euro;2.450</span>
@@ -158,7 +158,7 @@ export function OffertesMockup() {
   const columns = [
     {
       label: 'Concept',
-      color: '#5A5A55',
+      color: 'hsl(var(--muted-foreground))',
       bg: '#EEEEED',
       cards: [{ klant: 'Jansen & Zn', bedrag: '€1.850' }],
     },
@@ -240,7 +240,7 @@ export function FacturenMockup() {
       </div>
       {rows.map((r, i) => (
         <div key={i} className="grid grid-cols-[40px_1fr_55px_60px] px-2 py-2 border-b border-border/50 items-center">
-          <span className="font-mono font-medium text-[#1A535C]">{r.nr}</span>
+          <span className="font-mono font-medium text-petrol">{r.nr}</span>
           <span className="text-ink/80">{r.klant}</span>
           <span className="font-mono font-bold text-ink text-right">{r.bedrag}</span>
           <div className="flex justify-end">
@@ -269,7 +269,7 @@ export function DaanAIMockup() {
       <div className="flex-1 p-2.5 space-y-2 overflow-hidden">
         {/* User query */}
         <div className="flex justify-end">
-          <div className="bg-[#1A535C] text-white rounded-xl rounded-tr-sm px-2 py-1.5 max-w-[75%]">
+          <div className="bg-petrol text-white rounded-xl rounded-tr-sm px-2 py-1.5 max-w-[75%]">
             <p className="text-[7px]">Hoeveel offertes staan er open?</p>
           </div>
         </div>
@@ -279,8 +279,8 @@ export function DaanAIMockup() {
             <p className="text-[7px] text-ink/70 mb-1.5">Er staan 8 offertes open met een totaalwaarde van &euro;24.500.</p>
             <div className="grid grid-cols-2 gap-1">
               <div className="rounded-md px-1.5 py-1 bg-[hsl(var(--status-flame-bg))]">
-                <span className="text-[5px] uppercase font-bold text-[#F15025]/60">Open</span>
-                <p className="font-mono text-[8px] font-bold text-[#F15025]">8</p>
+                <span className="text-[5px] uppercase font-bold text-flame/60">Open</span>
+                <p className="font-mono text-[8px] font-bold text-flame">8</p>
               </div>
               <div className="rounded-md px-1.5 py-1 bg-[hsl(var(--status-green-bg))]">
                 <span className="text-[5px] uppercase font-bold text-[#2D6B48]/60">Waarde</span>

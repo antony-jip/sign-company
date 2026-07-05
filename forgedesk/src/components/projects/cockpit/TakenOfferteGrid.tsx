@@ -125,17 +125,17 @@ export function TakenOfferteGrid({
           <div className="flex items-center gap-2">
             <ListChecks className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
             <h3 className="font-heading text-[15px] font-bold text-foreground">
-              Taken<span className="text-[#F15025]">.</span>
+              Taken<span className="text-flame">.</span>
             </h3>
             {taken.length > 0 && (
-              <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+              <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-petrol rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
                 {taken.length}
               </span>
             )}
           </div>
           <button
             onClick={onNewTaak}
-            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#1A535C] hover:text-[#0F3D44] hover:underline transition-colors"
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-petrol hover:text-[#0F3D44] hover:underline transition-colors"
           >
             <Plus className="h-3 w-3" strokeWidth={2.5} />
             Taak
@@ -152,12 +152,12 @@ export function TakenOfferteGrid({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
-                    <Wrench className="h-3 w-3 text-[#1A535C]" strokeWidth={2} />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#1A535C]">Montage</span>
+                    <Wrench className="h-3 w-3 text-petrol" strokeWidth={2} />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-petrol">Montage</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[11px] text-foreground/70 flex-shrink-0">
-                      {montageStatusLabel[m.status] || 'Gepland'}<span className="text-[#F15025]">.</span>
+                      {montageStatusLabel[m.status] || 'Gepland'}<span className="text-flame">.</span>
                     </span>
                     {onMontageDelete && (
                       <button
@@ -249,17 +249,17 @@ export function TakenOfferteGrid({
           <div className="flex items-center gap-2">
             <Receipt className="h-4 w-4" strokeWidth={1.75} style={{ color: '#F15025' }} />
             <h3 className="font-heading text-[15px] font-bold text-foreground">
-              Offertes<span className="text-[#F15025]">.</span>
+              Offertes<span className="text-flame">.</span>
             </h3>
             {offertes.length > 0 && (
-              <span className="font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-[#F15025] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+              <span className="font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-flame rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
                 {offertes.length}
               </span>
             )}
           </div>
           <button
             onClick={onNewOfferte}
-            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#F15025] hover:text-[#D03A18] hover:underline transition-colors"
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-flame hover:text-[#D03A18] hover:underline transition-colors"
           >
             <Plus className="h-3 w-3" strokeWidth={2.5} />
             Offerte
@@ -284,11 +284,11 @@ export function TakenOfferteGrid({
                   />
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-semibold text-foreground truncate group-hover:text-[#1A535C] transition-colors">
+                      <p className="text-[14px] font-semibold text-foreground truncate group-hover:text-petrol transition-colors">
                         {offerte.titel || 'Offerte zonder titel'}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="font-mono text-[10.5px] text-muted-foreground bg-[rgba(26,83,92,0.05)] px-1.5 py-0.5 rounded">{offerte.nummer}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground bg-[rgba(26,83,92,0.05)] px-1.5 py-0.5 rounded">{offerte.nummer}</span>
                         <span className={getStatusPillClass(offerte.status)} style={{ fontSize: 11, padding: '2px 8px' }}>
                           {getStatusLabel(offerte.status)}
                         </span>
@@ -310,7 +310,7 @@ export function TakenOfferteGrid({
                               else if (e.key === 'Escape') { setEditingPriceId(null) }
                             }}
                             onBlur={() => void submitEditPrice(offerte)}
-                            className="w-[96px] h-7 pl-5 pr-1.5 text-[14px] font-mono font-bold text-right text-foreground border border-[#F15025] rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-[#F15025]/30 disabled:opacity-50"
+                            className="w-[96px] h-7 pl-5 pr-1.5 text-[14px] font-mono font-bold text-right text-foreground border border-flame rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-flame/30 disabled:opacity-50"
                           />
                         </div>
                       ) : (
@@ -321,7 +321,7 @@ export function TakenOfferteGrid({
                           className="font-mono text-[15px] tabular-nums flex-shrink-0 mt-0.5 rounded-md px-1 -mr-1 hover:bg-[rgba(241,80,37,0.08)] transition-colors"
                         >
                           <span className="text-muted-foreground">€</span>
-                          <span className="text-foreground font-bold ml-0.5 border-b border-dashed border-[#F15025]/30">{formatAmount(offerte.totaal)}</span>
+                          <span className="text-foreground font-bold ml-0.5 border-b border-dashed border-flame/30">{formatAmount(offerte.totaal)}</span>
                         </button>
                       )
                     ) : (
@@ -361,13 +361,13 @@ export function TakenOfferteGrid({
                   onChange={(e) => setQuickBedrag(e.target.value)}
                   placeholder="0,00"
                   disabled={quickSubmitting}
-                  className="w-full h-9 pl-6 pr-2.5 text-sm font-mono text-right text-foreground border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-[#F15025]/25 focus:border-[#F15025]/60 disabled:opacity-50"
+                  className="w-full h-9 pl-6 pr-2.5 text-sm font-mono text-right text-foreground border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-flame/25 focus:border-flame/60 disabled:opacity-50"
                 />
               </div>
               <button
                 type="submit"
                 disabled={!canQuickSubmit}
-                className="h-9 px-3.5 text-[12.5px] font-semibold text-white rounded-lg transition-colors whitespace-nowrap disabled:opacity-40"
+                className="h-9 px-3.5 text-[12px] font-semibold text-white rounded-lg transition-colors whitespace-nowrap disabled:opacity-40"
                 style={{ backgroundColor: '#F15025' }}
               >
                 {quickSubmitting ? 'Aanmaken.' : 'Prijs aanmaken'}
@@ -376,7 +376,7 @@ export function TakenOfferteGrid({
             <button
               type="button"
               onClick={onNewOfferte}
-              className="self-end text-[11px] text-muted-foreground hover:text-[#F15025] hover:underline transition-colors"
+              className="self-end text-[11px] text-muted-foreground hover:text-flame hover:underline transition-colors"
             >
               of open de volledige editor
             </button>

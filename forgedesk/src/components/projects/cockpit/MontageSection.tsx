@@ -39,7 +39,7 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
         <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Montage</h3>
         <button
           onClick={onInplannen}
-          className="text-[12px] text-[#1A535C] hover:underline transition-colors"
+          className="text-[12px] text-petrol hover:underline transition-colors"
         >
           + Inplannen
         </button>
@@ -50,7 +50,7 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
           <p className="text-sm text-muted-foreground">Nog niet gepland</p>
           <button
             onClick={onInplannen}
-            className="text-sm text-[#1A535C] hover:underline mt-1"
+            className="text-sm text-petrol hover:underline mt-1"
           >
             Montage inplannen
           </button>
@@ -66,7 +66,7 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium text-foreground truncate">{m.titel}</p>
                   <span className="text-xs text-foreground/70 flex-shrink-0">
-                    {st.label}<span className="text-[#F15025]">.</span>
+                    {st.label}<span className="text-flame">.</span>
                   </span>
                 </div>
 
@@ -110,7 +110,7 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
                     <ClipboardCheck className="h-3 w-3 flex-shrink-0 text-[#C44830]" />
                     <Link
                       to={`/werkbonnen/${m.werkbon_id}`}
-                      className="font-mono font-medium text-[#1A535C] hover:underline"
+                      className="font-mono font-medium text-petrol hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {m.werkbon_nummer || 'Werkbon'}
@@ -129,7 +129,7 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
                           href={b.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[10px] text-[#1A535C] hover:underline truncate max-w-[80px]"
+                          className="text-[10px] text-petrol hover:underline truncate max-w-[80px]"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {b.naam}

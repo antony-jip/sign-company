@@ -133,25 +133,25 @@ export function ProjectCreate() {
           style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}
           aria-label="Terug"
         >
-          <ArrowLeft className="h-4 w-4" style={{ color: '#5A5A55' }} />
+          <ArrowLeft className="h-4 w-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
         </button>
         <div className="hidden md:flex h-12 w-12 rounded-2xl items-center justify-center shadow-sm flex-shrink-0" style={{ backgroundColor: '#1A535C' }}>
           <FolderKanban className="h-5 w-5 text-white" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight" style={{ color: '#191919' }}>Nieuw project</h1>
-          <p className="text-[13px] md:text-sm" style={{ color: '#5A5A55' }}>Vul de gegevens in om te starten</p>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight" style={{ color: 'hsl(var(--foreground))' }}>Nieuw project</h1>
+          <p className="text-[13px] md:text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Vul de gegevens in om te starten</p>
         </div>
       </div>
 
       <form id="project-create-form" onSubmit={handleSubmit} className="space-y-4">
-        {/* Section 1: Project + Planning — merged */}
+        {/* Section 1: Project + Planning · merged */}
         <div className="rounded-xl" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
           <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
           <div className="flex items-center gap-3 px-4 md:px-5 pt-4 pb-1">
             <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
             <div>
-              <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Projectgegevens</span>
+              <span className="text-[13px] font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Projectgegevens</span>
               <p className="text-[11px]" style={{ color: '#A0A098' }}>Naam, planning en status</p>
             </div>
           </div>
@@ -233,7 +233,7 @@ export function ProjectCreate() {
           <div className="flex items-center gap-3 px-4 md:px-5 pt-4 pb-1">
             <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#9A4070' }}>2</div>
             <div>
-              <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Klant & Contact</span>
+              <span className="text-[13px] font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Klant & Contact</span>
               <p className="text-[11px]" style={{ color: '#A0A098' }}>Koppel aan een klant</p>
             </div>
           </div>
@@ -251,13 +251,13 @@ export function ProjectCreate() {
           </div>
         </div>
 
-        {/* Actions — desktop inline */}
+        {/* Actions · desktop inline */}
         <div className="hidden md:flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={() => navigate('/projecten')}
             className="tap-press h-9 px-5 text-[13px] font-medium rounded-lg transition-colors"
-            style={{ color: '#5A5A55', border: '0.5px solid #E6E4E0' }}
+            style={{ color: 'hsl(var(--muted-foreground))', border: '0.5px solid #E6E4E0' }}
           >
             Annuleren
           </button>
@@ -275,7 +275,7 @@ export function ProjectCreate() {
       </form>
       </div>
 
-      {/* Sticky bottom action bar — mobile only, sits above MobileBottomNav (h-14 + safe-area) */}
+      {/* Sticky bottom action bar · mobile only, sits above MobileBottomNav (h-14 + safe-area) */}
       <div
         className="md:hidden fixed inset-x-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 flex items-center gap-2 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
         style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}
@@ -284,7 +284,7 @@ export function ProjectCreate() {
           type="button"
           onClick={() => { hapticLight(); navigate('/projecten') }}
           className="tap-press h-11 px-4 text-[14px] font-medium rounded-lg transition-colors flex-shrink-0"
-          style={{ color: '#5A5A55', border: '0.5px solid #E6E4E0' }}
+          style={{ color: 'hsl(var(--muted-foreground))', border: '0.5px solid #E6E4E0' }}
         >
           Annuleren
         </button>

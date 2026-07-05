@@ -233,7 +233,7 @@ const ARTICLES: KbArticle[] = [
     id: 'taken',
     category: 'uitvoering',
     icon: CheckCircle,
-    iconColor: '#5A5A55',
+    iconcolor: 'hsl(var(--muted-foreground))',
     titel: 'Takenbeheer',
     subtitel: 'Wat moet er nog gebeuren?',
     inhoud: [
@@ -321,7 +321,7 @@ function renderBold(text: string): ReactNode {
   )
 }
 
-// ── The DOEN workflow — the visual spectrum ──
+// ── The DOEN workflow · the visual spectrum ──
 
 const FLOW_STEPS = [
   { icon: Users, label: 'Klant', desc: 'Leg je klant vast', color: '#3A6B8C', category: 'klanten', voordelen: ['Contactpersonen', 'Vestigingen', 'Volledige historie'] },
@@ -363,8 +363,8 @@ export function KennisbankPage() {
       <div className="max-w-3xl mx-auto px-4 py-8 animate-fade-in-up">
         <button
           onClick={() => setActiveArticle(null)}
-          className="flex items-center gap-1.5 text-[13px] font-medium mb-6 transition-colors hover:text-[#1A535C]"
-          style={{ color: '#9B9B95' }}
+          className="flex items-center gap-1.5 text-[13px] font-medium mb-6 transition-colors hover:text-petrol"
+          style={{ color: 'hsl(var(--muted-foreground))' }}
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Terug naar kennisbank
         </button>
@@ -378,10 +378,10 @@ export function KennisbankPage() {
           </div>
         )}
 
-        <h1 className="font-heading text-[32px] font-bold tracking-tight leading-[1.1] mb-2" style={{ color: '#1A1A1A' }}>
+        <h1 className="font-heading text-[32px] font-bold tracking-tight leading-[1.1] mb-2" style={{ color: 'hsl(var(--foreground))' }}>
           {activeArticle.titel}
         </h1>
-        <p className="text-[16px] mb-10" style={{ color: '#6B6B66' }}>{activeArticle.subtitel}</p>
+        <p className="text-[16px] mb-10" style={{ color: 'hsl(var(--muted-foreground))' }}>{activeArticle.subtitel}</p>
 
         <div className="space-y-5">
           {activeArticle.inhoud.map((p, i) => (
@@ -395,7 +395,7 @@ export function KennisbankPage() {
             <ul className="space-y-2.5">
               {activeArticle.tips.map((tip, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-[14px] text-white/90">
-                  <span className="mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0 bg-[#F15025]" />
+                  <span className="mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0 bg-flame" />
                   {tip}
                 </li>
               ))}
@@ -422,12 +422,12 @@ export function KennisbankPage() {
     <div className="animate-fade-in-up">
       {/* ── Hero with workflow spectrum ── */}
       <div className="relative rounded-3xl mx-4 mb-10" style={{ background: 'linear-gradient(160deg, #0F3A42 0%, #1A535C 30%, #237580 60%, #1A535C 100%)' }}>
-        {/* Decorative bg elements — clipped to banner shape */}
+        {/* Decorative bg elements · clipped to banner shape */}
         <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
           <div className="absolute top-[-80px] right-[-60px] w-[300px] h-[300px] rounded-full opacity-[0.05] bg-white" />
           <div className="absolute bottom-[-50px] left-[5%] w-[180px] h-[180px] rounded-full opacity-[0.03] bg-white" />
         </div>
-        {/* Pulsing heart glow — clipped */}
+        {/* Pulsing heart glow · clipped */}
         <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
           <div className="absolute top-[15%] right-[8%] w-[100px] h-[100px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.06 }} />
           <div className="absolute top-[18%] right-[9.5%] w-[60px] h-[60px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.08, animationDelay: '0.5s' }} />
@@ -443,10 +443,10 @@ export function KennisbankPage() {
                 doeners.
               </h1>
               <p className="text-[16px] text-white/45 max-w-md leading-relaxed">
-                Eén doel: je klant tevreden houden. Van eerste contact tot oplevering — alles in Doen. is gebouwd rond die missie.
+                Eén doel: je klant tevreden houden. Van eerste contact tot oplevering · alles in Doen. is gebouwd rond die missie.
               </p>
             </div>
-            {/* The goal — visual anchor */}
+            {/* The goal · visual anchor */}
             <div className="hidden md:flex flex-col items-center animate-stagger-item" style={{ animationDelay: '600ms' }}>
               <div className="h-20 w-20 rounded-3xl flex items-center justify-center relative" style={{ backgroundColor: '#F15025', boxShadow: '0 8px 30px rgba(241,80,37,0.4)' }}>
                 <CheckCircle className="h-9 w-9 text-white" />
@@ -458,7 +458,7 @@ export function KennisbankPage() {
 
           {/* ── Flow spectrum ── */}
           <div>
-            {/* The journey — visual flow */}
+            {/* The journey · visual flow */}
             <div className="flex items-center gap-0 mb-2 overflow-x-auto">
               {FLOW_STEPS.map((step, idx) => {
                 const StepIcon = step.icon
@@ -483,7 +483,7 @@ export function KennisbankPage() {
                       {/* Label */}
                       <span className={cn("font-bold text-white mt-2 whitespace-nowrap", isLast ? "text-[13px]" : "text-[11px]")}>{step.label}</span>
                       <span className="text-[10px] text-white/30 whitespace-nowrap leading-tight">{step.desc}</span>
-                      {/* Hover tooltip with voordelen — above */}
+                      {/* Hover tooltip with voordelen · above */}
                       <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 opacity-0 scale-95 group-hover/step:opacity-100 group-hover/step:scale-100 transition-all duration-200 pointer-events-none z-30">
                         <div className="relative rounded-xl px-4 py-3 shadow-xl min-w-[160px]" style={{ backgroundColor: step.color }}>
                           {/* Arrow pointing down */}
@@ -524,14 +524,14 @@ export function KennisbankPage() {
 
       {/* ── Search + filters + articles ── */}
       <div className="max-w-5xl mx-auto px-4">
-        {/* Search — pulled up into hero overlap */}
+        {/* Search · pulled up into hero overlap */}
         <div className="relative max-w-2xl mx-auto -mt-6 mb-8 z-10">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-muted-foreground" />
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); setActiveCategory(null) }}
             placeholder="Zoek op onderwerp, module of functie..."
-            className="w-full h-13 pl-12 pr-5 text-[15px] rounded-2xl outline-none transition-all focus:ring-2 focus:ring-[#1A535C]/20 focus:shadow-[0_4px_20px_rgba(26,83,92,0.1)]"
+            className="w-full h-13 pl-12 pr-5 text-[15px] rounded-2xl outline-none transition-all focus:ring-2 focus:ring-petrol/20 focus:shadow-[0_4px_20px_rgba(26,83,92,0.1)]"
             style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', boxShadow: '0 4px 16px rgba(130,100,60,0.08)' }}
           />
         </div>
@@ -544,7 +544,7 @@ export function KennisbankPage() {
               'h-9 px-5 rounded-full text-[12px] font-bold transition-all duration-200',
               !activeCategory && !search ? 'text-white shadow-md' : 'hover:bg-muted'
             )}
-            style={!activeCategory && !search ? { backgroundColor: '#1A535C' } : { color: '#6B6B66', border: '1px solid hsl(var(--border))' }}
+            style={!activeCategory && !search ? { backgroundColor: '#1A535C' } : { color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))' }}
           >
             Alles
           </button>
@@ -556,7 +556,7 @@ export function KennisbankPage() {
                 'h-9 px-5 rounded-full text-[12px] font-bold transition-all duration-200 inline-flex items-center gap-1.5',
                 activeCategory === cat.id ? 'text-white shadow-md' : 'hover:bg-muted'
               )}
-              style={activeCategory === cat.id ? { backgroundColor: cat.color } : { color: '#6B6B66', border: '1px solid hsl(var(--border))' }}
+              style={activeCategory === cat.id ? { backgroundColor: cat.color } : { color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))' }}
             >
               <cat.icon className="h-3.5 w-3.5" />
               {cat.label}
@@ -567,7 +567,7 @@ export function KennisbankPage() {
         {/* Results count */}
         {(search || activeCategory) && (
           <div className="flex items-center justify-between mb-5">
-            <p className="text-[13px] font-medium" style={{ color: '#6B6B66' }}>
+            <p className="text-[13px] font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>
               {filtered.length} {filtered.length === 1 ? 'artikel' : 'artikelen'}
               {search && <> voor &ldquo;{search}&rdquo;</>}
               {activeCategory && !search && <> in <strong>{CATEGORIES.find(c => c.id === activeCategory)?.label}</strong></>}
@@ -581,9 +581,9 @@ export function KennisbankPage() {
         {/* ── Articles grid ── */}
         {filtered.length === 0 ? (
           <div className="text-center py-20">
-            <Search className="h-10 w-10 mx-auto mb-4 opacity-15" style={{ color: '#9B9B95' }} />
-            <p className="text-[15px] font-semibold" style={{ color: '#1A1A1A' }}>Geen artikelen gevonden</p>
-            <p className="text-[13px] mt-1" style={{ color: '#9B9B95' }}>Probeer een ander zoekwoord</p>
+            <Search className="h-10 w-10 mx-auto mb-4 opacity-15" style={{ color: 'hsl(var(--muted-foreground))' }} />
+            <p className="text-[15px] font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Geen artikelen gevonden</p>
+            <p className="text-[13px] mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>Probeer een ander zoekwoord</p>
             <button onClick={() => { setSearch(''); setActiveCategory(null) }} className="text-[13px] font-bold mt-3 inline-flex items-center gap-1" style={{ color: '#F15025' }}>
               Toon alles <ChevronRight className="h-3 w-3" />
             </button>
@@ -616,10 +616,10 @@ export function KennisbankPage() {
                         </span>
                       )}
                     </div>
-                    <h3 className="text-[15px] font-bold leading-snug mb-1.5 group-hover:text-[#1A535C] transition-colors" style={{ color: '#1A1A1A' }}>
+                    <h3 className="text-[15px] font-bold leading-snug mb-1.5 group-hover:text-petrol transition-colors" style={{ color: 'hsl(var(--foreground))' }}>
                       {article.titel}
                     </h3>
-                    <p className="text-[12px] leading-relaxed line-clamp-2" style={{ color: '#9B9B95' }}>
+                    <p className="text-[12px] leading-relaxed line-clamp-2" style={{ color: 'hsl(var(--muted-foreground))' }}>
                       {article.subtitel}
                     </p>
                     <div className="mt-4 flex items-center gap-1 text-[11px] font-bold opacity-0 group-hover:opacity-100 translate-x-0 group-hover:translate-x-1 transition-all duration-200" style={{ color: catColor }}>
@@ -635,10 +635,10 @@ export function KennisbankPage() {
         {/* Footer */}
         <div className="text-center mt-20 pb-10">
           <div className="h-px w-16 mx-auto mb-6" style={{ backgroundColor: '#E6E4E0' }} />
-          <p className="text-[14px] font-heading font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
+          <p className="text-[14px] font-heading font-bold tracking-tight" style={{ color: 'hsl(var(--foreground))' }}>
             Doen<span style={{ color: '#F15025' }}>.</span>
           </p>
-          <p className="text-[12px] mt-1" style={{ color: '#9B9B95' }}>
+          <p className="text-[12px] mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
             Gebouwd voor creatieve maakbedrijven
           </p>
         </div>

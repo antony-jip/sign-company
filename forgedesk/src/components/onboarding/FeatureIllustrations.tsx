@@ -1,6 +1,6 @@
 import React from 'react'
 
-// ─── 1. Offertes — Document met regelitems ──────────────────
+// ─── 1. Offertes · Document met regelitems ──────────────────
 
 export function IllustratieOffertes() {
   return (
@@ -38,7 +38,7 @@ export function IllustratieOffertes() {
   )
 }
 
-// ─── 2. Facturen — Invoice met betaalstatus ─────────────────
+// ─── 2. Facturen · Invoice met betaalstatus ─────────────────
 
 export function IllustratieFacturen() {
   return (
@@ -79,7 +79,7 @@ export function IllustratieFacturen() {
   )
 }
 
-// ─── 3. Klanten — Contact kaarten ───────────────────────────
+// ─── 3. Klanten · Contact kaarten ───────────────────────────
 
 export function IllustratieKlanten() {
   const cards = [
@@ -109,7 +109,7 @@ export function IllustratieKlanten() {
   )
 }
 
-// ─── 4. Projecten — Kanban bord ──────────────────────────────
+// ─── 4. Projecten · Kanban bord ──────────────────────────────
 
 export function IllustratieProjecten() {
   const columns = [
@@ -152,7 +152,7 @@ export function IllustratieProjecten() {
   )
 }
 
-// ─── 5. Werkbonnen — Clipboard met checks ───────────────────
+// ─── 5. Werkbonnen · Clipboard met checks ───────────────────
 
 export function IllustratieWerkbonnen() {
   return (
@@ -197,7 +197,7 @@ export function IllustratieWerkbonnen() {
   )
 }
 
-// ─── 5. Planning — Weekkalender ─────────────────────────────
+// ─── 5. Planning · Weekkalender ─────────────────────────────
 
 export function IllustratiePlanning() {
   const blocks = [
@@ -236,7 +236,7 @@ export function IllustratiePlanning() {
   )
 }
 
-// ─── 7. Visualizer — Canvas met design tools ────────────────
+// ─── 7. Visualizer · Canvas met design tools ────────────────
 
 export function IllustratieVisualizer() {
   return (
@@ -293,7 +293,7 @@ export function IllustratieVisualizer() {
   )
 }
 
-// ─── 8. Email — Inbox met berichten ─────────────────────────
+// ─── 8. Email · Inbox met berichten ─────────────────────────
 
 export function IllustratieEmail() {
   const emails = [
@@ -337,7 +337,7 @@ export function IllustratieEmail() {
   )
 }
 
-// ─── 7. AI Daan — Chat met sparkles ───────────────────────
+// ─── 7. AI Daan · Chat met sparkles ───────────────────────
 
 export function IllustratieForgie() {
   return (

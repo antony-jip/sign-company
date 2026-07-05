@@ -63,7 +63,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
     }
   }
 
-  const selectClass = 'h-9 px-3 py-1.5 text-[13px] border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20 focus:border-[#1A535C] text-foreground/80 appearance-none'
+  const selectClass = 'h-9 px-3 py-1.5 text-[13px] border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol text-foreground/80 appearance-none'
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,7 +75,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
             onChange={e => setTitel(e.target.value)}
             placeholder="Wat moet er gedaan worden?"
             autoFocus
-            className="w-full h-11 px-4 text-[15px] border border-border rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20 focus:border-[#1A535C] placeholder:text-muted-foreground/80"
+            className="w-full h-11 px-4 text-[15px] border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol placeholder:text-muted-foreground/80"
           />
 
           <div className="grid grid-cols-2 gap-3">
@@ -118,7 +118,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
             <button
               type="submit"
               disabled={!titel.trim() || saving}
-              className="h-9 px-5 text-[13px] font-semibold text-white rounded-xl transition-all duration-150 disabled:opacity-50 whitespace-nowrap shrink-0 bg-[#1A535C] hover:bg-[#16454D] shadow-sm hover:shadow active:scale-[0.98]"
+              className="h-9 px-5 text-[13px] font-semibold text-white rounded-xl transition-all duration-150 disabled:opacity-50 whitespace-nowrap shrink-0 bg-petrol hover:bg-[#16454D] shadow-sm hover:shadow active:scale-[0.98]"
             >
               {saving ? 'Toevoegen...' : 'Toevoegen'}
             </button>

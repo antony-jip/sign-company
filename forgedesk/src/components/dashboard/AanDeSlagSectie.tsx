@@ -51,10 +51,10 @@ export function AanDeSlagSectie() {
         className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-card shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-shadow text-left"
       >
         <span className="text-[14px] text-foreground">
-          Aan de slag<span className="text-[#F15025]">.</span>{' '}
+          Aan de slag<span className="text-flame">.</span>{' '}
           <span className="text-foreground/70">{status.klaarCount} van 6 klaar.</span>
         </span>
-        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#1A535C]">
+        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-petrol">
           Uitvouwen
           <ChevronDown className="h-3.5 w-3.5" />
         </span>
@@ -80,7 +80,7 @@ export function AanDeSlagSectie() {
           className="font-heading text-white"
           style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.15 }}
         >
-          Werk vanuit projecten<span className="text-[#F15025]">.</span>
+          Werk vanuit projecten<span className="text-flame">.</span>
         </h2>
         <p className="mt-3 text-[14px] text-white/60 leading-[1.6] max-w-[640px]">
           In doen. hangt alles aan een project · offertes, taken, planning, facturen, werkbonnen.
@@ -116,7 +116,7 @@ export function AanDeSlagSectie() {
                 className={`group text-left rounded-lg px-4 py-4 transition-all border ${
                   klaar
                     ? 'bg-background border-transparent'
-                    : 'bg-card border-border hover:border-[#1A535C]/40 hover:shadow-[var(--shadow-sm)]'
+                    : 'bg-card border-border hover:border-petrol/40 hover:shadow-[var(--shadow-sm)]'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
@@ -125,18 +125,18 @@ export function AanDeSlagSectie() {
                       <Check className="h-3.5 w-3.5 text-[#3A7D52]" strokeWidth={2.5} />
                     </span>
                   ) : (
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-[#F15025]/10">
-                      <Icon className="h-3.5 w-3.5 text-[#F15025]" strokeWidth={2} />
+                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-flame/10">
+                      <Icon className="h-3.5 w-3.5 text-flame" strokeWidth={2} />
                     </span>
                   )}
                   {klaar && (
                     <span className="text-[10px] uppercase tracking-wider text-[#3A7D52] font-semibold">
-                      Klaar<span className="text-[#F15025]">.</span>
+                      Klaar<span className="text-flame">.</span>
                     </span>
                   )}
                 </div>
                 <p
-                  className={`text-[13.5px] font-semibold leading-snug ${
+                  className={`text-[13px] font-semibold leading-snug ${
                     klaar ? 'text-muted-foreground line-through decoration-[#9B9B95]/40' : 'text-foreground'
                   }`}
                 >
@@ -156,7 +156,7 @@ export function AanDeSlagSectie() {
           </span>
           <div className="flex-1 h-[3px] bg-border rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#F15025] transition-all duration-500 ease-out"
+              className="h-full bg-flame transition-all duration-500 ease-out"
               style={{ width: `${(status.klaarCount / 6) * 100}%` }}
             />
           </div>

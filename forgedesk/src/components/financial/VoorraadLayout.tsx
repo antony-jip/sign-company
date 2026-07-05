@@ -521,7 +521,7 @@ export function VoorraadLayout() {
           {gefilterd.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16">
               <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#1A535C' }} />
-              <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen artikelen gevonden</p>
+              <p className="font-semibold" style={{ fontSize: '14px', color: 'hsl(var(--foreground))' }}>Geen artikelen gevonden</p>
               <Button variant="outline" size="sm" onClick={openNewArtikel}>
                 <Plus className="h-4 w-4 mr-2" /> Eerste artikel aanmaken
               </Button>

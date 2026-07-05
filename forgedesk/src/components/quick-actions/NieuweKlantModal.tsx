@@ -5,7 +5,7 @@ import { createKlant, getKlanten, updateKlant } from '@/services/supabaseService
 import type { Klant } from '@/types'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
-import { ChevronDown, Building2 } from 'lucide-react'
+import { ChevronDown, Building2, X } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -172,7 +172,7 @@ export function NieuweKlantModal({ open, onOpenChange }: Props) {
                     onClick={clearSelection}
                     className="ml-auto text-muted-foreground hover:text-foreground text-xs shrink-0"
                   >
-                    ✕
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (

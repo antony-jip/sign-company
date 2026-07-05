@@ -117,7 +117,7 @@ function getOfferteStatusDotColor(status: string): string {
     case 'concept': return 'bg-[#5A5A55]'
     case 'verzonden': return 'bg-[#C03A18]'
     case 'bekeken': return 'bg-[#5A4A78]'
-    case 'goedgekeurd': return 'bg-[#1A535C]'
+    case 'goedgekeurd': return 'bg-petrol'
     case 'afgewezen': return 'bg-[#C03A18]'
     case 'verlopen': return 'bg-[#9B9B95]'
     case 'gefactureerd': return 'bg-[#2D6B48]'
@@ -739,7 +739,7 @@ export function QuotesPipeline() {
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
                   <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-                    Offertes<span className="text-[#F15025]">.</span>
+                    Offertes<span className="text-flame">.</span>
                   </h1>
                   <Skeleton className="h-4 w-12" />
                 </div>
@@ -769,7 +769,7 @@ export function QuotesPipeline() {
                 ))}
               </div>
             </div>
-            {/* List view (default) — table on md+, cards on mobile */}
+            {/* List view (default) · table on md+, cards on mobile */}
             <div className="hidden md:block bg-card rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border last:border-b-0">
@@ -810,7 +810,7 @@ export function QuotesPipeline() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-sm text-[#C03A18]">{error}</p>
-          <button onClick={loadOffertes} className="text-sm font-medium text-[#1A535C] hover:underline">Opnieuw proberen</button>
+          <button onClick={loadOffertes} className="text-sm font-medium text-petrol hover:underline">Opnieuw proberen</button>
         </div>
       </div>
     )
@@ -845,7 +845,7 @@ export function QuotesPipeline() {
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-4">
                 <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-                  Offertes<span className="text-[#F15025]">.</span>
+                  Offertes<span className="text-flame">.</span>
                 </h1>
                 <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
                   {filteredOffertes.length === offertes.length ? (
@@ -860,14 +860,14 @@ export function QuotesPipeline() {
               </div>
               <Link
                 to="/offertes/nieuw"
-                className="inline-flex items-center gap-2 bg-[#F15025] text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+                className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
               >
                 <Plus className="w-4 h-4 opacity-80" />
                 <span className="hidden md:inline">Nieuwe offerte</span>
               </Link>
             </div>
 
-            {/* KPI tiles — clickable status-filter shortcuts */}
+            {/* KPI tiles · clickable status-filter shortcuts */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {([
                 { key: 'wacht_op_reactie', label: 'Opvolgen',  sub: 'wacht op reactie',         count: offerteKpis.opvolgen, Icon: Timer,     accent: '#F15025' },
@@ -883,7 +883,7 @@ export function QuotesPipeline() {
                     type="button"
                     onClick={() => setStatusFilter(isActive ? 'alle' : tile.key as StatusFilter)}
                     className={cn(
-                      'group doen-stat-tile relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2'
+                      'group doen-stat-tile relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame/30 focus-visible:ring-offset-2'
                     )}
                     style={isActive ? { borderColor: tile.accent, boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px ${tile.accent}1F` } : undefined}
                     aria-pressed={isActive}
@@ -892,7 +892,7 @@ export function QuotesPipeline() {
                       <span className="inline-flex items-center gap-2">
                         <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'wacht_op_reactie' && 'doen-pulse')} strokeWidth={1.75} style={{ color: tile.accent }} />
                         <span className="font-heading text-[14px] font-bold text-foreground">
-                          {tile.label}<span className="text-[#F15025]">.</span>
+                          {tile.label}<span className="text-flame">.</span>
                         </span>
                       </span>
                     </div>
@@ -912,8 +912,8 @@ export function QuotesPipeline() {
               })}
             </div>
 
-            {/* Business fact-strip — pipeline waarde + conversie */}
-            <div className="flex items-center gap-5 flex-wrap text-[12.5px]">
+            {/* Business fact-strip · pipeline waarde + conversie */}
+            <div className="flex items-center gap-5 flex-wrap text-[12px]">
               <span className="inline-flex items-center gap-1.5 text-[#3A5A9A]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
                 <span className="text-foreground/70">Pipeline</span>
@@ -926,7 +926,7 @@ export function QuotesPipeline() {
               </span>
               {kpis.overdueFollowUps > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-[#C0451A]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-flame doen-pulse" />
                   <span className="font-mono font-medium">{kpis.overdueFollowUps}</span>
                   <span className="text-foreground/70">achterstallige follow-up</span>
                 </span>
@@ -945,7 +945,7 @@ export function QuotesPipeline() {
                     placeholder="Zoek op nummer, titel of klant..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+                    className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-petrol focus:ring-2 focus:ring-petrol/10 transition-all"
                   />
                   <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
                 </div>
@@ -1021,13 +1021,13 @@ export function QuotesPipeline() {
                         className={cn(
                           'relative text-[13px] font-medium px-3 py-1.5 rounded-lg transition-all',
                           isActive
-                            ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                            ? 'text-petrol font-semibold bg-petrol/[0.07]'
                             : 'text-muted-foreground hover:text-foreground/70',
                         )}
                       >
                         {optie.label}
                         {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-50">{count}</span>}
-                        {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-[#1A535C] rounded-full" />}
+                        {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-petrol rounded-full" />}
                       </button>
                     )
                   })}
@@ -1062,7 +1062,7 @@ export function QuotesPipeline() {
                     <div key={col.key} className="doen-slate-surface rounded-2xl p-5">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: col.dot }} />
-                        <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: col.text }}>{col.label}<span className="text-[#F15025]">.</span></span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: col.text }}>{col.label}<span className="text-flame">.</span></span>
                       </div>
                       <p className="text-[18px] font-bold font-mono tabular-nums text-foreground">{formatEur(data.totaal)}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">{data.count} {data.count === 1 ? 'offerte' : 'offertes'}</p>
@@ -1101,7 +1101,7 @@ export function QuotesPipeline() {
                       key={col.key}
                       className={cn(
                         'rounded-2xl bg-background ring-1 flex flex-col overflow-hidden transition-all duration-150',
-                        isDragOver ? 'ring-[#1A535C] shadow-lg scale-[1.01]' : 'ring-black/[0.03]',
+                        isDragOver ? 'ring-petrol shadow-lg scale-[1.01]' : 'ring-black/[0.03]',
                       )}
                       onDragOver={e => handleDragOver(e, col.key)}
                       onDragLeave={handleDragLeave}
@@ -1121,17 +1121,17 @@ export function QuotesPipeline() {
                                 if (e.key === 'Enter') { e.preventDefault(); saveKolomLabel(col.key, editingKolomLabel) }
                                 if (e.key === 'Escape') { e.preventDefault(); setEditingKolomKey(null) }
                               }}
-                              className="font-bold text-[13px] text-foreground bg-card border border-border rounded-md px-1.5 py-0.5 flex-1 min-w-0 focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
+                              className="font-bold text-[13px] text-foreground bg-card border border-border rounded-md px-1.5 py-0.5 flex-1 min-w-0 focus:outline-none focus:border-petrol focus:ring-2 focus:ring-petrol/10"
                               placeholder={DEFAULT_STATUS_COLUMNS.concat(CLOSED_STATUS_COLUMNS).find(c => c.key === col.key)?.label || ''}
                             />
                           ) : (
                             <button
                               type="button"
                               onClick={() => { setEditingKolomLabel(col.label); setEditingKolomKey(col.key) }}
-                              className="font-bold text-[13px] text-foreground hover:text-[#1A535C] transition-colors text-left"
+                              className="font-bold text-[13px] text-foreground hover:text-petrol transition-colors text-left"
                               title="Klik om kolomnaam aan te passen"
                             >
-                              {col.label}<span className="text-[#F15025]">.</span>
+                              {col.label}<span className="text-flame">.</span>
                             </button>
                           )}
                           <span className="ml-auto text-[11px] font-mono font-semibold text-muted-foreground bg-border px-2 py-0.5 rounded-md">{colOffertes.length}</span>
@@ -1180,7 +1180,7 @@ export function QuotesPipeline() {
                                 onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                                 className={cn(
                                   'relative bg-card rounded-xl pl-4 pr-3.5 py-3.5 space-y-2 shadow-[0_1px_2px_rgba(15,15,15,0.04)] hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] hover:shadow-[0_10px_28px_-12px_rgba(15,15,15,0.18),0_2px_6px_-2px_rgba(15,15,15,0.04)] hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer active:cursor-grabbing active:translate-y-0',
-                                  needsFollowUp ? 'ring-1 ring-[#F15025]/35' : 'ring-1 ring-black/[0.04]',
+                                  needsFollowUp ? 'ring-1 ring-flame/35' : 'ring-1 ring-black/[0.04]',
                                   isPaused && 'opacity-55 saturate-50',
                                 )}
                               >
@@ -1191,14 +1191,14 @@ export function QuotesPipeline() {
                                 />
                                 {/* Top row */}
                                 <div className="flex items-center justify-between gap-1">
-                                  <span className="text-[11px] font-mono font-medium text-[#1A535C]">{offerte.nummer}</span>
+                                  <span className="text-[11px] font-mono font-medium text-petrol">{offerte.nummer}</span>
                                   <div className="flex items-center gap-1">
                                     {(offerte.prioriteit === 'urgent' || offerte.prioriteit === 'hoog') && (
-                                      <span className="w-2 h-2 rounded-full bg-[#F15025]" title={offerte.prioriteit} />
+                                      <span className="w-2 h-2 rounded-full bg-flame" title={offerte.prioriteit} />
                                     )}
                                     {followUpState === 'overdue' && <BellRing className="h-3 w-3 text-[#C03A18] doen-pulse" />}
-                                    {followUpState === 'today' && <BellRing className="h-3 w-3 text-[#F15025]" />}
-                                    {followUpState === 'upcoming' && <Bell className="h-3 w-3 text-[#1A535C]" />}
+                                    {followUpState === 'today' && <BellRing className="h-3 w-3 text-flame" />}
+                                    {followUpState === 'upcoming' && <Bell className="h-3 w-3 text-petrol" />}
                                     {offerte.bekeken_door_klant && (
                                       <span className="inline-flex items-center gap-0.5" title={`Bekeken${offerte.aantal_keer_bekeken ? ` (${offerte.aantal_keer_bekeken}x)` : ''}`}>
                                         <Eye className="h-3 w-3 text-[#2D6B48]" />
@@ -1209,7 +1209,7 @@ export function QuotesPipeline() {
                                     )}
                                     {offerte.verstuurd_op && (offerte.status === 'verzonden' || offerte.status === 'bekeken') && (() => {
                                       const sentDays = getDaysOpen(offerte.verstuurd_op!)
-                                      const dotColor = sentDays <= 3 ? 'bg-[#2D6B48]' : sentDays <= 14 ? 'bg-[#F15025]' : 'bg-[#C03A18]'
+                                      const dotColor = sentDays <= 3 ? 'bg-[#2D6B48]' : sentDays <= 14 ? 'bg-flame' : 'bg-[#C03A18]'
                                       return (
                                         <span className="inline-flex items-center gap-0.5">
                                           <span className={cn('w-1.5 h-1.5 rounded-full', dotColor)} />
@@ -1259,7 +1259,7 @@ export function QuotesPipeline() {
                                     <button
                                       onClick={e => { e.preventDefault(); e.stopPropagation(); handleOpenMail(offerte) }}
                                       disabled={openingActieId === offerte.id}
-                                      className="p-1.5 rounded-md text-foreground/70 hover:bg-muted hover:text-[#F15025] transition-colors disabled:opacity-50"
+                                      className="p-1.5 rounded-md text-foreground/70 hover:bg-muted hover:text-flame transition-colors disabled:opacity-50"
                                       title="Mail versturen"
                                     >
                                       {openingActieId === offerte.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
@@ -1267,7 +1267,7 @@ export function QuotesPipeline() {
                                     <button
                                       onClick={e => { e.preventDefault(); e.stopPropagation(); handleOpenPortaal(offerte) }}
                                       disabled={openingActieId === offerte.id}
-                                      className="p-1.5 rounded-md text-foreground/70 hover:bg-muted hover:text-[#1A535C] transition-colors disabled:opacity-50"
+                                      className="p-1.5 rounded-md text-foreground/70 hover:bg-muted hover:text-petrol transition-colors disabled:opacity-50"
                                       title="Portaal herinnering"
                                     >
                                       <Bell className="h-3.5 w-3.5" />
@@ -1295,21 +1295,21 @@ export function QuotesPipeline() {
 
           {/* ── Bulk action bar ── */}
           {viewMode === 'lijst' && selectedIds.size > 0 && (
-            <div className="bg-[#1A535C]/[0.06] dark:bg-white/[0.05] rounded-xl ring-1 ring-[#1A535C]/10 dark:ring-white/10 px-5 py-3 flex items-center gap-3">
+            <div className="bg-petrol/[0.06] dark:bg-white/[0.05] rounded-xl ring-1 ring-petrol/10 dark:ring-white/10 px-5 py-3 flex items-center gap-3">
               <div className="flex items-center gap-2.5">
-                <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{selectedIds.size}</span>
+                <span className="w-7 h-7 rounded-lg bg-petrol text-white flex items-center justify-center text-xs font-bold">{selectedIds.size}</span>
                 <div>
-                  <span className="text-sm font-semibold text-[#1A535C] dark:text-foreground">{selectedIds.size} offerte{selectedIds.size === 1 ? '' : 's'} geselecteerd</span>
-                  <span className="text-[10px] text-[#1A535C]/50 dark:text-muted-foreground ml-2">van {filteredOffertes.length}</span>
+                  <span className="text-sm font-semibold text-petrol dark:text-foreground">{selectedIds.size} offerte{selectedIds.size === 1 ? '' : 's'} geselecteerd</span>
+                  <span className="text-[10px] text-petrol/50 dark:text-muted-foreground ml-2">van {filteredOffertes.length}</span>
                 </div>
               </div>
-              <button onClick={toggleSelectAll} className="text-xs font-semibold text-[#1A535C] dark:text-foreground px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
+              <button onClick={toggleSelectAll} className="text-xs font-semibold text-petrol dark:text-foreground px-2.5 py-1 rounded-md hover:bg-card/40 transition-all">
                 {selectedIds.size === filteredOffertes.length ? 'Deselecteer alles' : 'Selecteer alles'}
               </button>
               <div className="flex-1" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-[#1A535C]/10 dark:ring-white/10 text-[#1A535C] dark:text-foreground hover:shadow-sm transition-all">
+                  <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-card ring-1 ring-petrol/10 dark:ring-white/10 text-petrol dark:text-foreground hover:shadow-sm transition-all">
                     <ArrowUpDown className="w-3 h-3" /> Status wijzigen <ChevronDown className="w-3 h-3 opacity-50" />
                   </button>
                 </DropdownMenuTrigger>
@@ -1328,7 +1328,7 @@ export function QuotesPipeline() {
               >
                 <Trash2 className="w-3 h-3" /> Verwijderen
               </button>
-              <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] dark:text-foreground hover:bg-card/40 transition-all">
+              <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-petrol dark:text-foreground hover:bg-card/40 transition-all">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -1344,7 +1344,7 @@ export function QuotesPipeline() {
                     title="Geen offertes gevonden"
                     description={searchQuery || statusFilter !== 'alle' ? 'Pas je filters aan of maak een nieuwe offerte.' : 'Maak je eerste offerte en stuur hem naar je klant.'}
                     action={
-                      <Link to="/offertes/nieuw" className="text-sm font-medium text-[#F15025] hover:underline inline-flex items-center gap-1.5">
+                      <Link to="/offertes/nieuw" className="text-sm font-medium text-flame hover:underline inline-flex items-center gap-1.5">
                         <Plus className="w-3.5 h-3.5" /> Nieuwe offerte
                       </Link>
                     }
@@ -1401,7 +1401,7 @@ export function QuotesPipeline() {
                               <Checkbox
                                 checked={sortedListOffertes.length > 0 && selectedIds.size === sortedListOffertes.length}
                                 onCheckedChange={toggleSelectAll}
-                                className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                                className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                               />
                             </th>
                             <th className="text-left py-3.5 pr-4"><SortHeader column="nummer" label="Offerte" /></th>
@@ -1427,7 +1427,7 @@ export function QuotesPipeline() {
                                   'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
                                   attention && !selectedIds.has(offerte.id) && 'bg-[rgba(241,80,37,0.025)]',
                                   'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
-                                  selectedIds.has(offerte.id) && 'bg-[#1A535C]/[0.05] dark:bg-white/[0.05]',
+                                  selectedIds.has(offerte.id) && 'bg-petrol/[0.05] dark:bg-white/[0.05]',
                                 )}
                                 style={{ animationDelay: `${i * 25}ms`, ['--row-accent' as string]: stripeHex } as React.CSSProperties}
                                 onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
@@ -1436,7 +1436,7 @@ export function QuotesPipeline() {
                                   className="py-3.5 pl-5 pr-3 align-middle"
                                   onClick={e => e.stopPropagation()}
                                 >
-                                  <Checkbox checked={selectedIds.has(offerte.id)} onCheckedChange={() => toggleSelect(offerte.id)} className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 dark:group-hover:border-white/35 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white" />
+                                  <Checkbox checked={selectedIds.has(offerte.id)} onCheckedChange={() => toggleSelect(offerte.id)} className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 dark:group-hover:border-white/35 data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white" />
                                 </td>
                                 {/* Offerte */}
                                 <td className="py-3.5 pr-4">
@@ -1445,7 +1445,7 @@ export function QuotesPipeline() {
                                       <Link
                                         to={`/offertes/${offerte.id}/bewerken`}
                                         onClick={e => e.stopPropagation()}
-                                        className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
+                                        className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-petrol underline-offset-2 decoration-transparent group-hover:decoration-petrol/20 underline transition-all truncate"
                                       >
                                         {offerte.titel || offerte.nummer}
                                       </Link>
@@ -1493,7 +1493,7 @@ export function QuotesPipeline() {
                                         >
                                           <span className={cn('w-1.5 h-1.5 rounded-full', getOfferteStatusDotColor(s.value))} />
                                           {s.label}
-                                          {s.value === offerte.status && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C]" />}
+                                          {s.value === offerte.status && <CheckCircle2 className="w-3 h-3 ml-auto text-petrol" />}
                                         </DropdownMenuItem>
                                       ))}
                                     </DropdownMenuContent>
@@ -1546,7 +1546,7 @@ export function QuotesPipeline() {
                                   <div className="flex items-center gap-1.5 justify-end">
                                     <span className="text-[12px] font-mono tabular-nums text-muted-foreground/80">{formatDate(offerte.geldig_tot)}</span>
                                     {expiryStatus === 'expired' && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18]" />}
-                                    {expiryStatus === 'soon' && <span className="w-1.5 h-1.5 rounded-full bg-[#F15025]" />}
+                                    {expiryStatus === 'soon' && <span className="w-1.5 h-1.5 rounded-full bg-flame" />}
                                   </div>
                                 </td>
                                 {/* Actions */}
@@ -1645,7 +1645,7 @@ export function QuotesPipeline() {
                 onChange={(e) => setPortaalBericht(e.target.value)}
                 rows={3}
                 placeholder="Bijv. Heeft u onze offerte al kunnen bekijken? Ik hoor graag uw reactie."
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 resize-none"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:border-petrol focus:ring-2 focus:ring-petrol/10 resize-none"
               />
             </div>
             <p className="text-[11px] text-muted-foreground">Geen bericht? Dan wordt de standaard-tekst gebruikt.</p>
@@ -1675,7 +1675,7 @@ export function QuotesPipeline() {
                 type="text"
                 value={taakTitel}
                 onChange={(e) => setTaakTitel(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:border-petrol focus:ring-2 focus:ring-petrol/10"
               />
             </div>
             <div className="space-y-1.5">

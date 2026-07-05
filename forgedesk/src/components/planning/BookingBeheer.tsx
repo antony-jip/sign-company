@@ -250,7 +250,7 @@ export function BookingBeheer() {
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {afspraak.start_tijd} - {afspraak.eind_tijd}
-                          {afspraak.onderwerp && ` — ${afspraak.onderwerp}`}
+                          {afspraak.onderwerp && ` · ${afspraak.onderwerp}`}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
                           {afspraak.klant_email}

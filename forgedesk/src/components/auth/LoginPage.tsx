@@ -54,7 +54,7 @@ export function LoginPage() {
       <DoenAuthHeader rightSlot={
         <p className="text-[13px] text-foreground/70 hidden sm:block">
           Nog geen account?{' '}
-          <Link to="/registreren" className="text-[#F15025] font-semibold hover:underline underline-offset-4">
+          <Link to="/registreren" className="text-flame font-semibold hover:underline underline-offset-4">
             Gratis uitproberen
           </Link>
         </p>
@@ -67,14 +67,14 @@ export function LoginPage() {
           animate="show"
           className="lg:col-span-7 lg:pt-6"
         >
-          <motion.p variants={item} className="text-[11px] uppercase tracking-[0.22em] font-semibold text-[#1A535C]/70 dark:text-[#8FC3CC]/80 mb-5">
-            <span className="inline-block w-6 h-px bg-[#1A535C]/40 dark:bg-[#8FC3CC]/40 align-middle mr-3" />
+          <motion.p variants={item} className="text-[11px] uppercase tracking-[0.22em] font-semibold text-petrol/70 dark:text-[#8FC3CC]/80 mb-5">
+            <span className="inline-block w-6 h-px bg-petrol/40 dark:bg-[#8FC3CC]/40 align-middle mr-3" />
             Inloggen
           </motion.p>
 
           <motion.h1
             variants={item}
-            className="font-heading font-extrabold tracking-[-0.025em] text-[#191919] dark:text-foreground"
+            className="font-heading font-extrabold tracking-[-0.025em] text-foreground dark:text-foreground"
             style={{ lineHeight: 1.02 }}
           >
             <span className="block text-[40px] sm:text-[52px] lg:text-[60px] xl:text-[68px]">
@@ -91,7 +91,7 @@ export function LoginPage() {
             className="mt-6 text-[16px] sm:text-[17px] text-foreground/70 leading-[1.6] max-w-[460px]"
           >
             Inloggen en weer aan het{' '}
-            <span className="text-[#191919] dark:text-foreground font-semibold">
+            <span className="text-foreground dark:text-foreground font-semibold">
               doen<span style={{ color: '#F15025' }}>.</span>
             </span>{' '}
             Geen tijd te verspillen.
@@ -101,9 +101,9 @@ export function LoginPage() {
             variants={item}
             className="mt-8 text-[12px] uppercase tracking-[0.18em] font-semibold text-muted-foreground"
           >
-            Offertes <span className="mx-2 text-[#F15025]">·</span>
-            Werkbonnen <span className="mx-2 text-[#F15025]">·</span>
-            Planning <span className="mx-2 text-[#F15025]">·</span>
+            Offertes <span className="mx-2 text-flame">·</span>
+            Werkbonnen <span className="mx-2 text-flame">·</span>
+            Planning <span className="mx-2 text-flame">·</span>
             Facturen
           </motion.p>
         </motion.section>
@@ -115,10 +115,10 @@ export function LoginPage() {
           className="lg:col-span-5 lg:pt-2 w-full"
         >
           <DoenFormCard accentColor="#1A535C">
-            <h2 className="font-heading text-[22px] font-extrabold text-[#191919] dark:text-foreground tracking-[-0.02em] mb-1">
+            <h2 className="font-heading text-[22px] font-extrabold text-foreground dark:text-foreground tracking-[-0.02em] mb-1">
               Aanmelden<span style={{ color: '#F15025' }}>.</span>
             </h2>
-            <p className="text-[13.5px] text-foreground/70 mb-6">
+            <p className="text-[13px] text-foreground/70 mb-6">
               Log in op je doen.-account.
             </p>
 
@@ -135,7 +135,7 @@ export function LoginPage() {
                     placeholder="naam@bedrijf.nl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-[#1A535C]/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all"
+                    className="pl-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-petrol focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-petrol/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all"
                     disabled={isLoading}
                     autoComplete="email"
                     autoFocus
@@ -148,7 +148,7 @@ export function LoginPage() {
                   <Label htmlFor="password" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground/70">
                     Wachtwoord
                   </Label>
-                  <Link to="/wachtwoord-vergeten" className="text-[12px] text-[#1A535C] dark:text-[#8FC3CC] hover:underline underline-offset-4 font-medium">
+                  <Link to="/wachtwoord-vergeten" className="text-[12px] text-petrol dark:text-[#8FC3CC] hover:underline underline-offset-4 font-medium">
                     Vergeten?
                   </Link>
                 </div>
@@ -160,14 +160,14 @@ export function LoginPage() {
                     placeholder="Voer je wachtwoord in"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-12 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-[#1A535C]/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all"
+                    className="pl-10 pr-12 h-11 rounded-xl border-border bg-background text-[14px] focus:border-petrol focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-petrol/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all"
                     disabled={isLoading}
                     autoComplete="current-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-muted-foreground/70 hover:text-foreground/70 transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-muted-foreground/70 hover:text-foreground/70 transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-petrol/30"
                     tabIndex={-1}
                     aria-label={showPassword ? 'Wachtwoord verbergen' : 'Wachtwoord tonen'}
                   >
@@ -178,7 +178,7 @@ export function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-11 rounded-xl font-semibold text-[14px] transition-all group bg-[#1A535C] hover:bg-[#164A52] dark:bg-[#23646E] dark:hover:bg-[#2A7480] text-white mt-2 shadow-[0_6px_20px_-8px_rgba(26,83,92,0.55)] dark:shadow-[0_6px_24px_-8px_rgba(78,150,163,0.45)]"
+                className="w-full h-11 rounded-xl font-semibold text-[14px] transition-all group bg-petrol hover:bg-[#164A52] dark:bg-[#23646E] dark:hover:bg-[#2A7480] text-white mt-2 shadow-[0_6px_20px_-8px_rgba(26,83,92,0.55)] dark:shadow-[0_6px_24px_-8px_rgba(78,150,163,0.45)]"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -197,7 +197,7 @@ export function LoginPage() {
 
             <p className="text-center text-[12px] text-muted-foreground mt-5 sm:hidden">
               Nog geen account?{' '}
-              <Link to="/registreren" className="text-[#F15025] font-semibold hover:underline">
+              <Link to="/registreren" className="text-flame font-semibold hover:underline">
                 Gratis uitproberen
               </Link>
             </p>

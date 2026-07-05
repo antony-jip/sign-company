@@ -100,7 +100,7 @@ export function WerkbonnenLayoutMobile() {
     <div className="h-full flex flex-col bg-background -m-3 sm:-m-4 md:-m-6">
       <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
         <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
-          Werkbonnen<span className="text-[#F15025]">.</span>
+          Werkbonnen<span className="text-flame">.</span>
         </h1>
         {!loading && (
           <p className="mt-1 text-[14px] text-foreground/70 tabular-nums">
@@ -118,7 +118,7 @@ export function WerkbonnenLayoutMobile() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Zoek op nummer, klant, project..."
-            className="w-full h-10 pl-9 pr-9 rounded-lg bg-background border border-border focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[14px] text-foreground placeholder:text-muted-foreground transition-all"
+            className="w-full h-10 pl-9 pr-9 rounded-lg bg-background border border-border focus:border-petrol focus:bg-white focus:ring-2 focus:ring-petrol/10 outline-none text-[14px] text-foreground placeholder:text-muted-foreground transition-all"
           />
           {search && (
             <button
@@ -144,7 +144,7 @@ export function WerkbonnenLayoutMobile() {
                 className={cn(
                   'flex-shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors',
                   isActive
-                    ? 'bg-[#1A535C] text-white'
+                    ? 'bg-petrol text-white'
                     : 'bg-muted text-foreground/70 active:bg-muted',
                 )}
               >
@@ -177,13 +177,13 @@ export function WerkbonnenLayoutMobile() {
             </div>
             <p className="text-[15px] font-medium text-foreground/70">
               {search.trim() || filter !== 'alle' ? 'Geen werkbonnen gevonden' : 'Geen werkbonnen'}
-              <span className="text-[#F15025]">.</span>
+              <span className="text-flame">.</span>
             </p>
             {(search.trim() || filter !== 'alle') && (
               <button
                 type="button"
                 onClick={() => { setSearch(''); setFilter('alle') }}
-                className="mt-3 text-[13px] font-medium text-[#1A535C] hover:text-[#0F3C44] transition-colors"
+                className="mt-3 text-[13px] font-medium text-petrol hover:text-[#0F3C44] transition-colors"
               >
                 Filters wissen
               </button>
@@ -224,7 +224,7 @@ export function WerkbonnenLayoutMobile() {
                         style={{ color: cfg.accent }}
                       >
                         <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.accent }} />
-                        {cfg.label}<span className="text-[#F15025]">.</span>
+                        {cfg.label}<span className="text-flame">.</span>
                       </span>
                     </div>
                     <h3 className="text-[15px] font-medium text-foreground leading-snug truncate">
@@ -238,7 +238,7 @@ export function WerkbonnenLayoutMobile() {
                       </p>
                     )}
                     {locationLabel && mapsHref && (
-                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-[#1A535C] max-w-full">
+                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-petrol max-w-full">
                         <MapPin className="h-3 w-3 flex-shrink-0" />
                         <a
                           href={mapsHref}
@@ -263,7 +263,7 @@ export function WerkbonnenLayoutMobile() {
         <button
           type="button"
           onClick={() => navigate('/werkbonnen/nieuw')}
-          className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 h-10 flex items-center justify-center gap-1.5 text-[13px] font-semibold text-white bg-[#F15025]/85 hover:bg-[#F15025] backdrop-blur-md shadow-[0_-2px_8px_rgba(0,0,0,0.08)] transition-colors duration-150"
+          className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 h-10 flex items-center justify-center gap-1.5 text-[13px] font-semibold text-white bg-flame/85 hover:bg-flame backdrop-blur-md shadow-[0_-2px_8px_rgba(0,0,0,0.08)] transition-colors duration-150"
         >
           <Plus className="h-3.5 w-3.5" />
           Nieuwe werkbon

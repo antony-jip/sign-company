@@ -245,7 +245,7 @@ export function BeveiligingTab() {
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" className="text-[#F15025] hover:text-[#F15025]/80 hover:bg-[#F15025]/5">
+              <Button variant="ghost" size="sm" className="text-flame hover:text-flame/80 hover:bg-flame/5">
                 Beëindigen
               </Button>
             </div>

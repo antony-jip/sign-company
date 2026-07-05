@@ -69,7 +69,7 @@ function avatarColor(name: string): string {
 // Map een audit_log_feature rij naar de derived-event id die 'm onderdrukt
 // (zodat we niet een 'aangemaakt' event én een audit-event voor dezelfde
 // entity krijgen). Returns null voor audit-acties zonder derived counterpart
-// — die worden los toegevoegd aan de feed.
+// · die worden los toegevoegd aan de feed.
 function derivedIdForAudit(entry: AuditLogEntry): string | null {
   const id = entry.entity_id
   switch (entry.entity_type) {
@@ -477,7 +477,7 @@ export function ActiviteitFeed({
               onClick={() => { setActiveFilter(key); setShowAll(false) }}
               className={`text-[10px] px-2.5 py-1 rounded-lg transition-all duration-150 ${
                 activeFilter === key
-                  ? 'bg-[#1A535C] text-white font-medium'
+                  ? 'bg-petrol text-white font-medium'
                   : 'text-muted-foreground hover:text-foreground/70 hover:bg-muted'
               }`}
             >
@@ -571,7 +571,7 @@ export function ActiviteitFeed({
       {filteredEvents.length > 3 && !showAll && (
         <button
           onClick={() => setShowAll(true)}
-          className="w-full text-[11px] font-medium text-[#1A535C] mt-2 py-2.5 rounded-lg hover:bg-[#E8F5F6] transition-colors duration-150"
+          className="w-full text-[11px] font-medium text-petrol mt-2 py-2.5 rounded-lg hover:bg-[#E8F5F6] transition-colors duration-150"
         >
           Alle {filteredEvents.length} activiteiten tonen
         </button>

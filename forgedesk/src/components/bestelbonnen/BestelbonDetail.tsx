@@ -64,7 +64,7 @@ export function BestelbonDetail() {
   const [isLoading, setIsLoading] = useState(!isNew)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Form state — mapped to actual Bestelbon type fields
+  // Form state · mapped to actual Bestelbon type fields
   const [bestelbonNummer, setBestelbonNummer] = useState('')
   const [leverancierId, setLeverancierId] = useState('')
   const [projectId, setProjectId] = useState('')
@@ -236,7 +236,7 @@ export function BestelbonDetail() {
         })
         setStatus(autoStatus)
 
-        // Sync regels — update existing, create new, delete removed
+        // Sync regels · update existing, create new, delete removed
         const existingRegels = await getBestelbonRegels(bestelbonId).catch(() => [])
         const currentIds = new Set(regels.filter((r) => !r._isNew).map((r) => r.id))
 
@@ -324,7 +324,7 @@ export function BestelbonDetail() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-flame" />
       </div>
     )
   }

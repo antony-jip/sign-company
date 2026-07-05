@@ -364,7 +364,7 @@ export function WerkbonDetail() {
       setDirty(false)
       toast.success('Werkbon afgerond')
 
-      // Sluit gekoppelde montage automatisch — fire-and-forget, faalt stil
+      // Sluit gekoppelde montage automatisch · fire-and-forget, faalt stil
       if (montageAfspraakId) {
         getMontageAfspraak(montageAfspraakId)
           .then(async (afspraak) => {
@@ -383,7 +383,7 @@ export function WerkbonDetail() {
     bumpPreview()
   }, [werkbonId, klantId, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty, montageAfspraakId, bumpPreview])
 
-  // Item toevoegen — auto-save werkbon als die nog niet bestaat
+  // Item toevoegen · auto-save werkbon als die nog niet bestaat
   const handleItemToevoegen = useCallback(async () => {
     let currentWerkbonId = werkbonId
     if (!currentWerkbonId) {
@@ -433,7 +433,7 @@ export function WerkbonDetail() {
     locatieAdres, locatieStad, locatiePostcode, toonBriefpapier,
     werkbonItems.length, setDirty, navigate, bumpPreview])
 
-  // Item bijwerken — debounced Supabase call
+  // Item bijwerken · debounced Supabase call
   const debouncedUpdateItem = useDebouncedCallback(
     (itemId: string, updates: Partial<WerkbonItem>) => {
       updateWerkbonItem(itemId, updates)
@@ -571,7 +571,7 @@ export function WerkbonDetail() {
     //
     // `ratio` (bron breedte/hoogte) wordt vlak vóór de createWerkbonAfbeelding-call
     // gelezen via getImageBlobRatio. Met die ratio bepaalt deriveCanvasSize de
-    // element-afmetingen — geen object-contain letterbox in de editor, dus het
+    // element-afmetingen · geen object-contain letterbox in de editor, dus het
     // selectie-frame valt strak om de zichtbare pixels (fix bug 1).
     const makeLayout = (
       blokType: WerkbonBlokType,
@@ -698,7 +698,7 @@ export function WerkbonDetail() {
     }
   }, [werkbonItems, bumpPreview, canvasActief, fase2Actief, fase3Actief])
 
-  // Canvas-element verplaatsen (fase 3) — schrijft canvas_x_mm/y_mm naar layout.
+  // Canvas-element verplaatsen (fase 3) · schrijft canvas_x_mm/y_mm naar layout.
   const handleCanvasElementMove = useCallback(async (
     itemId: string,
     afbId: string,
@@ -730,7 +730,7 @@ export function WerkbonDetail() {
     }
   }, [werkbonItems, fase3Actief, bumpPreview])
 
-  // Canvas-element vergroten/verkleinen (fase 3) — schrijft canvas_breedte_mm/hoogte_mm.
+  // Canvas-element vergroten/verkleinen (fase 3) · schrijft canvas_breedte_mm/hoogte_mm.
   const handleCanvasElementResize = useCallback(async (
     itemId: string,
     afbId: string,
@@ -1080,7 +1080,7 @@ export function WerkbonDetail() {
       doc.save(bestandsnaam)
       const tekst = encodeURIComponent(`${deelTekst}\nZie bijgevoegde PDF.`)
       window.open(`https://wa.me/?text=${tekst}`, '_blank')
-      toast.success('PDF gedownload — voeg toe in WhatsApp')
+      toast.success('PDF gedownload · voeg toe in WhatsApp')
     }
 
     // Native Web Share API (mobiel: WhatsApp, Mail, etc.)
@@ -1187,7 +1187,7 @@ export function WerkbonDetail() {
             <button
               onClick={handleAfronden}
               disabled={isSaving}
-              className="h-9 px-4 text-[13px] font-semibold text-white rounded-lg transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5 bg-[#F15025]"
+              className="h-9 px-4 text-[13px] font-semibold text-white rounded-lg transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5 bg-flame"
             >
               <ClipboardCheck className="h-3.5 w-3.5" /> Afronden
             </button>
@@ -1211,7 +1211,7 @@ export function WerkbonDetail() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-        {/* Linker kolom: meta info — sticky tijdens scroll vanaf lg-breakpoint */}
+        {/* Linker kolom: meta info · sticky tijdens scroll vanaf lg-breakpoint */}
         <div className="lg:sticky lg:top-4">
           <WerkbonHeaderForm
             klantId={klantId}
@@ -1237,7 +1237,7 @@ export function WerkbonDetail() {
           {/* Items */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#9B9B95' }}>Items ({werkbonItems.length})</h2>
+              <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'hsl(var(--muted-foreground))' }}>Items ({werkbonItems.length})</h2>
               <button
                 onClick={handleItemToevoegen}
                 className="inline-flex items-center gap-1 h-8 px-3 text-[12px] font-semibold rounded-lg text-white transition-all hover:opacity-90"
@@ -1250,11 +1250,11 @@ export function WerkbonDetail() {
             {werkbonItems.length === 0 ? (
               <button
                 onClick={handleItemToevoegen}
-                className="w-full py-8 text-center rounded-xl border-2 border-dashed hover:border-[#F15025]/30 transition-colors group"
+                className="w-full py-8 text-center rounded-xl border-2 border-dashed hover:border-flame/30 transition-colors group"
                 style={{ borderColor: '#EBEBEB', backgroundColor: 'hsl(var(--card))' }}
               >
-                <ClipboardCheck className="h-6 w-6 mx-auto mb-2 text-[#F15025] opacity-30 group-hover:opacity-60 transition-opacity" />
-                <p className="text-[13px] text-muted-foreground group-hover:text-[#F15025] transition-colors">
+                <ClipboardCheck className="h-6 w-6 mx-auto mb-2 text-flame opacity-30 group-hover:opacity-60 transition-opacity" />
+                <p className="text-[13px] text-muted-foreground group-hover:text-flame transition-colors">
                   Voeg een item toe
                 </p>
               </button>
@@ -1285,7 +1285,7 @@ export function WerkbonDetail() {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleItemToevoegen}
-                    className="inline-flex items-center gap-1 h-8 px-3 text-[12px] font-semibold rounded-lg border border-[#F15025]/30 text-[#F15025] hover:bg-[#F15025] hover:text-white hover:border-[#F15025] transition-colors"
+                    className="inline-flex items-center gap-1 h-8 px-3 text-[12px] font-semibold rounded-lg border border-flame/30 text-flame hover:bg-flame hover:text-white hover:border-flame transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" /> Item toevoegen
                   </button>

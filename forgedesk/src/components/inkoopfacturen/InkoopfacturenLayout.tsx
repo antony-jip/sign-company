@@ -134,7 +134,7 @@ export function InkoopfacturenLayout() {
     const capReached = truncatedByPreflight || capRaceHit
     if (capReached) {
       const totaal = ids.length
-      toast.error(`${gelukt} van ${totaal} verwerkt — AI-limiet bereikt. Mail hello@doen.team om te verhogen.`)
+      toast.error(`${gelukt} van ${totaal} verwerkt · AI-limiet bereikt. Mail hello@doen.team om te verhogen.`)
     } else if (gelukt > 0) {
       toast.success(`${gelukt} factuur${gelukt > 1 ? 'en' : ''} geextraheerd`)
     } else if (laatsteFout) {
@@ -410,7 +410,7 @@ export function InkoopfacturenLayout() {
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
             <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-              Inkoopfacturen<span className="text-[#F15025]">.</span>
+              Inkoopfacturen<span className="text-flame">.</span>
             </h1>
             <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {filtered.length === facturen.length ? (
@@ -437,7 +437,7 @@ export function InkoopfacturenLayout() {
           </div>
         </div>
 
-        {/* KPI tiles — clickable triage entry-points */}
+        {/* KPI tiles · clickable triage entry-points */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
             { key: 'verwerkt' as FilterStatus,    label: 'Te reviewen',    sub: 'wacht op goedkeuring',   count: wachtendCount,                          isMoney: false, dot: '#F15025', pulse: true },
@@ -456,7 +456,7 @@ export function InkoopfacturenLayout() {
                   setFilterStatus(isActive ? 'alle' : tile.key)
                 }}
                 className={cn(
-                  'group doen-stat-tile relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
+                  'group doen-stat-tile relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame/30 focus-visible:ring-offset-2',
                   isActive && 'doen-stat-tile-active',
                   tile.key === 'alle' && 'cursor-default'
                 )}
@@ -469,7 +469,7 @@ export function InkoopfacturenLayout() {
                       style={{ backgroundColor: tile.dot }}
                     />
                     <span className="font-heading text-[14px] font-bold text-foreground">
-                      {tile.label}<span className="text-[#F15025]">.</span>
+                      {tile.label}<span className="text-flame">.</span>
                     </span>
                   </span>
                 </div>
@@ -567,7 +567,7 @@ export function InkoopfacturenLayout() {
                   <Checkbox
                     checked={filtered.length > 0 && selectedIds.size === filtered.length}
                     onCheckedChange={toggleSelectAll}
-                    className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                    className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                   />
                 </th>
                 <th className="text-left py-3.5 pr-4">
@@ -654,7 +654,7 @@ export function InkoopfacturenLayout() {
                       className={cn(
                         'border-b border-border last:border-0 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] cursor-pointer transition-colors doen-row group',
                         attention && !selectedIds.has(factuur.id) && 'bg-[rgba(241,80,37,0.025)]',
-                        selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.05]',
+                        selectedIds.has(factuur.id) && 'bg-petrol/[0.05]',
                         isDimmed && 'opacity-45'
                       )}
                     >
@@ -665,7 +665,7 @@ export function InkoopfacturenLayout() {
                         <Checkbox
                           checked={selectedIds.has(factuur.id)}
                           onCheckedChange={() => toggleSelect(factuur.id)}
-                          className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                          className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                         />
                       </td>
                       <td className="py-3.5 pr-4">
@@ -724,7 +724,7 @@ export function InkoopfacturenLayout() {
           {/* PDF + Sidebar als één blok */}
           <div className="flex w-full h-full" onClick={e => e.stopPropagation()}>
 
-            {/* PDF area — A4 ratio, past in viewport */}
+            {/* PDF area · A4 ratio, past in viewport */}
             <div className="flex-1 flex items-center justify-center bg-[#1A1A1A] p-6">
               <div style={{ aspectRatio: '210 / 297', height: 'calc(100vh - 48px)', maxWidth: '100%' }} className="bg-white rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] overflow-hidden">
                 <iframe
@@ -736,7 +736,7 @@ export function InkoopfacturenLayout() {
               </div>
             </div>
 
-            {/* Sidebar rechts — sluit aan op PDF hoogte */}
+            {/* Sidebar rechts · sluit aan op PDF hoogte */}
             <div className="w-[360px] bg-white flex flex-col border-l border-border">
 
             {/* Nav + Close */}
@@ -761,7 +761,7 @@ export function InkoopfacturenLayout() {
               {/* Leverancier */}
               <div>
                 <h3 className="text-[18px] font-bold text-foreground leading-tight">
-                  {lightbox.factuur.leverancier_naam || lightbox.factuur.email_van || 'Factuur'}<span className="text-[#F15025]">.</span>
+                  {lightbox.factuur.leverancier_naam || lightbox.factuur.email_van || 'Factuur'}<span className="text-flame">.</span>
                 </h3>
                 {lightbox.factuur.factuur_nummer && (
                   <p className="text-[13px] font-mono text-muted-foreground mt-1">#{lightbox.factuur.factuur_nummer}</p>
@@ -812,7 +812,7 @@ export function InkoopfacturenLayout() {
                 style={{ backgroundColor: STATUS_CONFIG[lightbox.factuur.status].bg, color: STATUS_CONFIG[lightbox.factuur.status].text }}
               >
                 {STATUS_CONFIG[lightbox.factuur.status].dot && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
-                {STATUS_CONFIG[lightbox.factuur.status].label}<span className="text-[#F15025]">.</span>
+                {STATUS_CONFIG[lightbox.factuur.status].label}<span className="text-flame">.</span>
               </span>
 
               {lightbox.factuur.extractie_opmerkingen && (

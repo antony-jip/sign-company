@@ -38,7 +38,7 @@ export function getDaysColor(days: number): string {
 interface DagenOpenFilterBarProps {
   value: DagenOpenFilter
   onChange: (value: DagenOpenFilter) => void
-  /** Items to count — pass only items with "open" statuses */
+  /** Items to count · pass only items with "open" statuses */
   items: { dateField: string }[]
 }
 

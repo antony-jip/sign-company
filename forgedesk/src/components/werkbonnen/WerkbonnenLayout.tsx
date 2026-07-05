@@ -14,7 +14,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { cn } from '@/lib/utils'
-// ModuleHeader removed — using DOEN inline header
+// ModuleHeader removed · using DOEN inline header
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Wrench, Sun, Clipboard, Flag } from 'lucide-react'
@@ -227,7 +227,7 @@ export function WerkbonnenLayout() {
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
                   <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-                    Werkbonnen<span className="text-[#F15025]">.</span>
+                    Werkbonnen<span className="text-flame">.</span>
                   </h1>
                   <Skeleton className="h-4 w-12" />
                 </div>
@@ -295,7 +295,7 @@ export function WerkbonnenLayout() {
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
             <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-              Werkbonnen<span className="text-[#F15025]">.</span>
+              Werkbonnen<span className="text-flame">.</span>
             </h1>
             <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
               {gefilterd.length === werkbonnen.length ? (
@@ -310,14 +310,14 @@ export function WerkbonnenLayout() {
           </div>
           <button
             onClick={() => navigate('/werkbonnen/nieuw')}
-            className="inline-flex items-center gap-2 bg-[#F15025] text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+            className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
           >
             <Plus className="w-4 h-4 opacity-80" />
             <span className="hidden md:inline">Nieuwe werkbon</span>
           </button>
         </div>
 
-        {/* KPI tiles — clickable triage entry-points */}
+        {/* KPI tiles · clickable triage entry-points */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
             { key: 'definitief' as FilterStatus, label: 'In uitvoering', sub: 'lopende werkbonnen',  count: statusCounts['definitief'] || 0, Icon: Wrench,    pulse: true,  accent: '#3A5A9A' },
@@ -332,7 +332,7 @@ export function WerkbonnenLayout() {
                 key={tile.key}
                 type="button"
                 onClick={() => setFilterStatus(isActive ? 'alle' : tile.key)}
-                className="doen-stat-tile group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
+                className="doen-stat-tile group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame/30 focus-visible:ring-offset-2"
                 style={isActive ? {
                   border: `1px solid ${tile.accent}66`,
                   boxShadow: `0 1px 2px ${tile.accent}14, 0 10px 26px ${tile.accent}24`,
@@ -343,7 +343,7 @@ export function WerkbonnenLayout() {
                   <span className="inline-flex items-center gap-2">
                     <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.pulse && 'doen-pulse')} style={{ color: tile.accent }} strokeWidth={1.9} />
                     <span className="font-heading text-[14px] font-bold text-[#1A4A52] dark:text-foreground">
-                      {tile.label}<span className="text-[#F15025]">.</span>
+                      {tile.label}<span className="text-flame">.</span>
                     </span>
                   </span>
                 </div>
@@ -375,7 +375,7 @@ export function WerkbonnenLayout() {
               placeholder="Zoek op nummer, klant, project..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+              className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-petrol focus:ring-2 focus:ring-petrol/10 transition-all"
             />
             <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
           </div>
@@ -406,13 +406,13 @@ export function WerkbonnenLayout() {
                   className={cn(
                     'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
                     isActive
-                      ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                      ? 'text-petrol font-semibold bg-petrol/[0.07]'
                       : 'text-muted-foreground hover:text-foreground/70'
                   )}
                 >
                   {labels[status]}
                   {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-50">{count}</span>}
-                  {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-[#1A535C] rounded-full" />}
+                  {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-petrol rounded-full" />}
                 </button>
               )
             })}
@@ -422,13 +422,13 @@ export function WerkbonnenLayout() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-4 px-5 py-3 bg-[#1A535C]/[0.06] rounded-xl ring-1 ring-[#1A535C]/10">
+        <div className="flex items-center gap-4 px-5 py-3 bg-petrol/[0.06] rounded-xl ring-1 ring-petrol/10">
           <span className="text-sm text-foreground font-medium">
-            <span className="font-mono font-bold text-[#1A535C]">{selectedIds.size}</span> geselecteerd
+            <span className="font-mono font-bold text-petrol">{selectedIds.size}</span> geselecteerd
           </span>
           <button
             onClick={toggleSelectAll}
-            className="text-xs font-medium text-[#1A535C] hover:underline transition-colors"
+            className="text-xs font-medium text-petrol hover:underline transition-colors"
           >
             {selectedIds.size === gefilterd.length ? 'Deselecteer alles' : 'Selecteer alles'}
           </button>
@@ -470,7 +470,7 @@ export function WerkbonnenLayout() {
                     <Checkbox
                       checked={gefilterd.length > 0 && selectedIds.size === gefilterd.length}
                       onCheckedChange={toggleSelectAll}
-                      className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                      className="border-[#1A4A52]/25 rounded-[5px] transition-colors data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                     />
                   </th>
                   <th className="text-left py-3.5 pl-2 pr-4">
@@ -509,7 +509,7 @@ export function WerkbonnenLayout() {
                         'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
                         attention && !selectedIds.has(wb.id) && 'bg-[rgba(241,80,37,0.025)]',
                         'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
-                        selectedIds.has(wb.id) && 'bg-[#1A535C]/[0.05]',
+                        selectedIds.has(wb.id) && 'bg-petrol/[0.05]',
                       )}
                       style={{ animationDelay: `${i * 25}ms`, ['--row-accent' as string]: stripeHex } as React.CSSProperties}
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}
@@ -521,13 +521,13 @@ export function WerkbonnenLayout() {
                         <Checkbox
                           checked={selectedIds.has(wb.id)}
                           onCheckedChange={() => toggleWerkbonSelection(wb.id)}
-                          className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                          className="border-[#1A4A52]/25 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                         />
                       </td>
                       <td className="py-3.5 pl-2 pr-4">
                         <div className="min-w-0">
                           <div className="flex items-baseline gap-2.5">
-                            <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] transition-colors">{wb.werkbon_nummer}</span>
+                            <span className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-petrol transition-colors">{wb.werkbon_nummer}</span>
                           </div>
                           {wb.titel && <p className="text-[11px] text-muted-foreground/70 truncate max-w-[240px] mt-0.5">{wb.titel}</p>}
                         </div>

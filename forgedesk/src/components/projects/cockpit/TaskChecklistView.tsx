@@ -85,8 +85,8 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
                 className={cn(
                   'flex-shrink-0 rounded-md border-[1.5px] transition-all flex items-center justify-center',
                   isDone
-                    ? 'bg-[#1A535C] border-[#1A535C] text-white'
-                    : 'border-border hover:border-[#1A535C] hover:bg-[hsl(var(--status-green-bg))]/30'
+                    ? 'bg-petrol border-petrol text-white'
+                    : 'border-border hover:border-petrol hover:bg-[hsl(var(--status-green-bg))]/30'
                 )}
                 style={{ width: 20, height: 20 }}
               >
@@ -102,7 +102,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
 
               {!isDone && (
                 <span className="text-[10px] font-medium flex-shrink-0" style={{ color: st.color }}>
-                  {st.label}<span className="text-[#F15025]">.</span>
+                  {st.label}<span className="text-flame">.</span>
                 </span>
               )}
 

@@ -100,7 +100,7 @@ const HIDE_EMPTY_LANES_KEY = 'doen_planning_hide_empty_lanes';
 
 // Vrije/afwezige dag: heel licht petrol-blue frosted-glass blok, full-bleed
 // zodat het strak boven en onder aansluit binnen de cel/kolom.
-const AFWEZIG_GLASS = "bg-gradient-to-b from-[#1A535C]/[0.08] to-[#1A535C]/[0.035] backdrop-blur-[2px]";
+const AFWEZIG_GLASS = "bg-gradient-to-b from-petrol/[0.08] to-petrol/[0.035] backdrop-blur-[2px]";
 const LANE_GROUPING_KEY = 'doen_planning_lane_grouping';
 const PLANNING_FILTER_KEY = 'doen_planning_filter_v1';
 const PLANNING_SCOPE_KEY = 'doen_planning_scope_v1';
@@ -170,7 +170,7 @@ const STATUS_CONFIG: Record<
   uitgesteld: { label: "Uitgesteld", text: "#C03A18", bg: "#FDE8E2", border: "#F0C8BC", dot: "#E04A28" },
 };
 
-// Dark-aware kaart/pill-classes — STATUS_CONFIG levert light-pastels via
+// Dark-aware kaart/pill-classes · STATUS_CONFIG levert light-pastels via
 // inline style; in dark mode moeten bg en tekst via classes schakelen,
 // anders krijg je witte tekst op pastel (onleesbaar).
 const STATUS_CARD_BG: Record<MontageAfspraak["status"], string> = {
@@ -184,7 +184,7 @@ const STATUS_PILL_CLASSES: Record<MontageAfspraak["status"], string> = {
   gepland: "bg-[#E8EEF9] text-[#3A5A9A] dark:bg-[rgba(74,122,199,0.20)] dark:text-[#7FA8E6]",
   onderweg: "bg-[#F5F2E8] text-[#8A6A2A] dark:bg-[rgba(196,154,48,0.18)] dark:text-[#D4B566]",
   bezig: "bg-[#E8F2EC] text-[#3A7D52] dark:bg-[rgba(74,163,102,0.18)] dark:text-[#7AAF85]",
-  afgerond: "bg-[#E2F0F0] text-[#1A535C] dark:bg-[rgba(42,138,138,0.18)] dark:text-[#5FB5C0]",
+  afgerond: "bg-[#E2F0F0] text-petrol dark:bg-[rgba(42,138,138,0.18)] dark:text-[#5FB5C0]",
   uitgesteld: "bg-[#FDE8E2] text-[#C03A18] dark:bg-[rgba(224,74,40,0.18)] dark:text-[#FF8866]",
 };
 const PRIO_CARD_BG_CLASS = "bg-[rgba(241,80,37,0.06)] dark:bg-[rgba(241,80,37,0.15)]";
@@ -347,17 +347,17 @@ function DagNotitiePopover({
         {notitie ? (
           <button
             type="button"
-            title={`${notitie} — klik om te bewerken`}
-            className="mx-auto mt-1 flex max-w-[95%] items-center gap-1 rounded-full bg-[#F15025]/[0.07] dark:bg-[#F15025]/[0.12] px-2 py-[2px] text-[10px] font-medium leading-tight text-[#1A535C] dark:text-foreground/80 ring-1 ring-inset ring-[#F15025]/15 dark:ring-[#F15025]/25 hover:bg-[#F15025]/[0.12] dark:hover:bg-[#F15025]/[0.18] transition-colors"
+            title={`${notitie} · klik om te bewerken`}
+            className="mx-auto mt-1 flex max-w-[95%] items-center gap-1 rounded-full bg-flame/[0.07] dark:bg-flame/[0.12] px-2 py-[2px] text-[10px] font-medium leading-tight text-petrol dark:text-foreground/80 ring-1 ring-inset ring-flame/15 dark:ring-flame/25 hover:bg-flame/[0.12] dark:hover:bg-flame/[0.18] transition-colors"
           >
-            <StickyNote className="h-2.5 w-2.5 shrink-0 text-[#F15025]" />
+            <StickyNote className="h-2.5 w-2.5 shrink-0 text-flame" />
             <span className="truncate">{notitie}</span>
           </button>
         ) : (
           <button
             type="button"
             title={`Notitie voor ${label}`}
-            className="mx-auto mt-1 flex items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-medium leading-tight text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:text-[#1A535C] dark:hover:text-foreground hover:bg-[#1A535C]/[0.06] dark:hover:bg-white/[0.06] transition-all"
+            className="mx-auto mt-1 flex items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-medium leading-tight text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:text-petrol dark:hover:text-foreground hover:bg-petrol/[0.06] dark:hover:bg-white/[0.06] transition-all"
           >
             <StickyNote className="h-2.5 w-2.5 shrink-0" />
             notitie
@@ -366,12 +366,12 @@ function DagNotitiePopover({
       </PopoverTrigger>
       <PopoverContent align="center" className="w-64 overflow-hidden rounded-xl border-[rgba(26,83,92,0.12)] p-0 shadow-[0_8px_28px_-6px_rgba(26,83,92,0.28)]">
         <div className="flex items-center gap-2 px-3.5 pt-3 pb-2">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#F15025]/10">
-            <StickyNote className="h-3 w-3 text-[#F15025]" />
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-flame/10">
+            <StickyNote className="h-3 w-3 text-flame" />
           </span>
           <div className="leading-tight">
             <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/60">Dagnotitie</div>
-            <div className="text-[12px] font-semibold text-[#1A535C] dark:text-foreground">{label}</div>
+            <div className="text-[12px] font-semibold text-petrol dark:text-foreground">{label}</div>
           </div>
         </div>
         <div className="px-3.5 pb-3">
@@ -392,7 +392,7 @@ function DagNotitiePopover({
             }}
             rows={2}
             placeholder="Bijv. ZZP'er werkt vandaag"
-            className="w-full resize-none rounded-lg border border-[rgba(26,83,92,0.14)] dark:border-white/15 bg-[#FAFBFB] dark:bg-white/[0.05] px-2.5 py-2 text-[12.5px] leading-snug outline-none placeholder:text-muted-foreground/45 focus:border-[#1A535C] dark:focus:border-white/25 focus:bg-white dark:focus:bg-card focus:ring-2 focus:ring-[#1A535C]/15 dark:focus:ring-white/10 transition-colors"
+            className="w-full resize-none rounded-lg border border-[rgba(26,83,92,0.14)] dark:border-white/15 bg-[#FAFBFB] dark:bg-white/[0.05] px-2.5 py-2 text-[12px] leading-snug outline-none placeholder:text-muted-foreground/45 focus:border-petrol dark:focus:border-white/25 focus:bg-white dark:focus:bg-card focus:ring-2 focus:ring-petrol/15 dark:focus:ring-white/10 transition-colors"
           />
           <div className="mt-2.5 flex items-center justify-end gap-1">
             {notitie && (
@@ -407,7 +407,7 @@ function DagNotitiePopover({
             <button
               type="button"
               onClick={() => { commit(draft); setOpen(false); }}
-              className="rounded-lg bg-[#1A535C] px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm hover:bg-[#16444c] active:scale-[0.98] transition-all"
+              className="rounded-lg bg-petrol px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm hover:bg-[#16444c] active:scale-[0.98] transition-all"
             >
               Opslaan
             </button>
@@ -440,7 +440,7 @@ export function MontagePlanningLayout() {
   const runOptimistic = useOptimisticState(setAfspraken);
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? []);
   const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? []);
-  // Taken in /planning — sommige collega's plannen hier hun losse taken
+  // Taken in /planning · sommige collega's plannen hier hun losse taken
   // naast de montage-afspraken in.
   const [taken, setTaken] = useState<Taak[]>(() => getCached<Taak[]>('taken') ?? []);
   const [dagNotities, setDagNotities] = useState<DagNotitie[]>(() => getCached<DagNotitie[]>('dagNotities') ?? []);
@@ -1070,7 +1070,7 @@ export function MontagePlanningLayout() {
       h1{font-size:20px;margin-bottom:2px}
       @media print{body{padding:10px}h3{page-break-inside:avoid}}</style></head>
       <body>
-      <h1>Weekplanning — ${weekLabel}</h1>
+      <h1>Weekplanning · ${weekLabel}</h1>
       <p style="color:#666;margin-bottom:8px;">${monteurNaam} &middot; ${printAfspraken.length} montage${printAfspraken.length !== 1 ? "s" : ""}</p>
       ${dagSections}
       </body></html>`;
@@ -1653,7 +1653,7 @@ export function MontagePlanningLayout() {
         )}
       >
         <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.dot }} />
-        {cfg.label}<span className="text-[#F15025]">.</span>
+        {cfg.label}<span className="text-flame">.</span>
       </span>
     );
   }
@@ -1686,7 +1686,7 @@ export function MontagePlanningLayout() {
     }
   }
 
-  // ── Card with colored left border — DOEN style ──
+  // ── Card with colored left border · DOEN style ──
   function renderMontageCard(afspraak: MontageAfspraak, opts?: { variant?: 'personal' | 'timegrid' }) {
     const hasConflict = conflictAfspraakIds.has(afspraak.id);
     const cfg = STATUS_CONFIG[afspraak.status];
@@ -1738,7 +1738,7 @@ export function MontagePlanningLayout() {
           isAfgerond && "bg-[hsl(40,10%,96.5%)] dark:bg-[hsl(190,20%,9%)]",
           cardBgClass,
           hasConflict && "ring-1 ring-[#F0C8BC] dark:ring-[#E04A28]/40",
-          draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30 dark:ring-[#5FB5C0]/40"
+          draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-petrol/30 dark:ring-[#5FB5C0]/40"
         )}
         style={cardStyle}
         onClick={() => openEditDialog(afspraak)}
@@ -1783,7 +1783,7 @@ export function MontagePlanningLayout() {
                     className="flex flex-col items-start gap-0.5 py-1.5 data-[highlighted]:bg-background data-[highlighted]:text-foreground"
                   >
                     <span className="text-[12px] font-medium">
-                      Afronden &amp; factureren<span className="text-[#F15025]">.</span>
+                      Afronden &amp; factureren<span className="text-flame">.</span>
                     </span>
                     <span className="text-[10px] opacity-60">Project naar 'Te factureren'</span>
                   </DropdownMenuItem>
@@ -1800,16 +1800,16 @@ export function MontagePlanningLayout() {
             aria-label={isPrio ? 'Prioriteit weghalen' : 'Prioriteit geven'}
             className={cn(
               "absolute top-1 right-7 rounded-full p-0.5 transition-all z-10",
-              isPrio ? "opacity-100 text-[#F15025]" : "opacity-0 group-hover/card:opacity-100 text-muted-foreground/70 hover:text-[#F15025]"
+              isPrio ? "opacity-100 text-flame" : "opacity-0 group-hover/card:opacity-100 text-muted-foreground/70 hover:text-flame"
             )}
           >
-            <Flame className={cn("h-3.5 w-3.5", isPrio && "fill-[#F15025]")} />
+            <Flame className={cn("h-3.5 w-3.5", isPrio && "fill-flame")} />
           </button>
         )}
         <div className={cn("min-w-0", isAfgerond && "opacity-60")}>
           <div className={cn("flex items-start justify-between gap-1", isAfgerond ? "pr-5" : "pr-12")}>
             <div className={cn(
-              "text-[12px] font-semibold text-[#1A535C] dark:text-foreground leading-tight truncate",
+              "text-[12px] font-semibold text-petrol dark:text-foreground leading-tight truncate",
               isAfgerond && "line-through"
             )}>{afspraak.titel}</div>
           </div>
@@ -1839,7 +1839,7 @@ export function MontagePlanningLayout() {
                   e.stopPropagation();
                   window.open(`/werkbonnen/${afspraak.werkbon_id}`, "_blank");
                 }}
-                className="inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums text-foreground/70 hover:text-[#1A535C] dark:hover:text-foreground transition-colors"
+                className="inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums text-foreground/70 hover:text-petrol dark:hover:text-foreground transition-colors"
                 title={`Open werkbon ${afspraak.werkbon_nummer || ''}`}
               >
                 <FileText className="h-2.5 w-2.5 opacity-70" />
@@ -1852,7 +1852,7 @@ export function MontagePlanningLayout() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-0.5 text-[10px] text-[#1A535C] dark:text-[#5AABB5] hover:underline truncate max-w-[120px]"
+                className="inline-flex items-center gap-0.5 text-[10px] text-petrol dark:text-[#5AABB5] hover:underline truncate max-w-[120px]"
               >
                 <MapPin className="h-2 w-2 shrink-0" />
                 <span className="truncate">{afspraak.locatie}</span>
@@ -1921,7 +1921,7 @@ export function MontagePlanningLayout() {
 
     return (
       <div className="flex-1 min-w-0 overflow-y-auto">
-        {/* Day headers — weer + dag + datum (sticky, één strakke rij) */}
+        {/* Day headers · weer + dag + datum (sticky, één strakke rij) */}
         <div className="grid border-b border-[rgba(26,83,92,0.08)] bg-card sticky top-0 z-20" style={{ gridTemplateColumns: gridTemplate }}>
           <div className="px-2 flex items-center">
             <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">Tijd</span>
@@ -1942,20 +1942,20 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "group relative text-center px-2 py-2",
-                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-card",
-                  isToday && "border-t-2 border-t-[#F15025]"
+                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/40" : isToday ? "bg-petrol/[0.04]" : "bg-card",
+                  isToday && "border-t-2 border-t-flame"
                 )}
               >
                 <div className="flex items-baseline justify-center gap-1.5">
                   <span className={cn(
                     "text-[13px] font-bold tracking-[-0.2px]",
-                    feestdagInfo ? "text-[#C03A18]" : isToday ? "text-[#1A535C]" : "text-[#1A4A52] dark:text-foreground"
+                    feestdagInfo ? "text-[#C03A18]" : isToday ? "text-petrol" : "text-[#1A4A52] dark:text-foreground"
                   )}>
                     {DAG_NAMEN_LANG[dayIdx]}
                   </span>
                   <span className={cn(
                     "text-[11px] font-mono tabular-nums",
-                    feestdagInfo ? "text-[#C03A18]/70 dark:text-[#DA7B70]" : isToday ? "text-[#1A535C]/80 dark:text-[#5AABB5]" : "text-muted-foreground/70"
+                    feestdagInfo ? "text-[#C03A18]/70 dark:text-[#DA7B70]" : isToday ? "text-petrol/80 dark:text-[#5AABB5]" : "text-muted-foreground/70"
                   )}>
                     {date.getDate()} {date.toLocaleDateString("nl-NL", { month: "short" })}
                   </span>
@@ -1973,7 +1973,7 @@ export function MontagePlanningLayout() {
                   )}
                 </div>
 
-                {/* Weer — subtiele regel onder de dag */}
+                {/* Weer · subtiele regel onder de dag */}
                 {w && !feestdagInfo && (
                   <div className="mt-0.5 flex items-center justify-center gap-1 text-[10px] tabular-nums text-muted-foreground/55">
                     <WeerIcon code={w.code} className="w-3 h-3 opacity-70" />
@@ -1988,7 +1988,7 @@ export function MontagePlanningLayout() {
                   </span>
                 )}
                 {afwezig?.afwezig && (
-                  <span className="mx-auto mt-1 flex max-w-[95%] items-center justify-center gap-1 rounded-full bg-[#1A535C]/[0.07] dark:bg-white/[0.06] px-2 py-[2px] text-[10px] font-medium leading-tight text-[#1A535C] dark:text-foreground/80 ring-1 ring-inset ring-[#1A535C]/15 dark:ring-white/15">
+                  <span className="mx-auto mt-1 flex max-w-[95%] items-center justify-center gap-1 rounded-full bg-petrol/[0.07] dark:bg-white/[0.06] px-2 py-[2px] text-[10px] font-medium leading-tight text-petrol dark:text-foreground/80 ring-1 ring-inset ring-petrol/15 dark:ring-white/15">
                     <CalendarOff className="h-2.5 w-2.5 shrink-0" />
                     <span className="truncate">{afwezig.label}</span>
                   </span>
@@ -2006,7 +2006,7 @@ export function MontagePlanningLayout() {
                     type="button"
                     onClick={() => openNewDialog(dateStr)}
                     title={`Nieuwe afspraak op ${dateStr}`}
-                    className="absolute top-1 right-1 h-5 w-5 rounded-none flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-[#F15025] hover:bg-muted transition-all"
+                    className="absolute top-1 right-1 h-5 w-5 rounded-none flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-flame hover:bg-muted transition-all"
                   >
                     <Plus className="h-3 w-3" />
                   </button>
@@ -2016,12 +2016,12 @@ export function MontagePlanningLayout() {
           })}
         </div>
 
-        {/* Taken-rij (member view) — taken met deadline op deze dag */}
+        {/* Taken-rij (member view) · taken met deadline op deze dag */}
         {Object.values(takenPerDag).some(arr => arr.length > 0) && (
           <div className="grid border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 bg-[#FAF9F6] dark:bg-white/[0.04]" style={{ gridTemplateColumns: gridTemplate }}>
             <div className="border-r border-[rgba(26,83,92,0.08)] dark:border-white/10 py-2 px-2 flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-[#1A535C] dark:text-[#5AABB5]" />
-              <span className="text-[9px] font-semibold text-[#1A535C] dark:text-muted-foreground uppercase tracking-widest">Taken</span>
+              <CheckCircle2 className="h-3 w-3 text-petrol dark:text-[#5AABB5]" />
+              <span className="text-[9px] font-semibold text-petrol dark:text-muted-foreground uppercase tracking-widest">Taken</span>
             </div>
             {werkdagen.map((date) => {
               const dateStr = formatDate(date);
@@ -2032,7 +2032,7 @@ export function MontagePlanningLayout() {
                   key={dateStr}
                   className={cn(
                     "border-r last:border-r-0 border-[rgba(26,83,92,0.06)] p-1.5 space-y-1 min-h-[42px] transition-colors",
-                    isDragOver && "bg-[#1A535C]/[0.06] ring-1 ring-inset ring-[#1A535C]/30"
+                    isDragOver && "bg-petrol/[0.06] ring-1 ring-inset ring-petrol/30"
                   )}
                   onDragOver={(e) => {
                     if (!draggingTaakId) return;
@@ -2064,11 +2064,11 @@ export function MontagePlanningLayout() {
                       }}
                       title={t.titel}
                       className={cn(
-                        "flex items-center gap-1.5 px-2 py-1 rounded-none bg-card border border-border text-[11px] text-foreground cursor-grab active:cursor-grabbing hover:border-[#1A535C]/40 hover:shadow-sm transition-all",
+                        "flex items-center gap-1.5 px-2 py-1 rounded-none bg-card border border-border text-[11px] text-foreground cursor-grab active:cursor-grabbing hover:border-petrol/40 hover:shadow-sm transition-all",
                         draggingTaakId === t.id && "opacity-50"
                       )}
                     >
-                      {t.prioriteit === 'kritiek' && <span className="w-1 h-1 rounded-full bg-[#F15025] flex-shrink-0" />}
+                      {t.prioriteit === 'kritiek' && <span className="w-1 h-1 rounded-full bg-flame flex-shrink-0" />}
                       {t.prioriteit === 'hoog' && <span className="w-1 h-1 rounded-full bg-[#E89A3A] flex-shrink-0" />}
                       <span className="flex-1 truncate">{t.titel}</span>
                     </div>
@@ -2112,8 +2112,8 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "relative border-r last:border-r-0 border-[rgba(26,83,92,0.06)] transition-colors",
-                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/20" : afwezig?.afwezig && !afwezig.start_tijd ? AFWEZIG_GLASS : isToday ? "bg-[#1A535C]/[0.02]" : "bg-card",
-                  !feestdagInfo && dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
+                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/20" : afwezig?.afwezig && !afwezig.start_tijd ? AFWEZIG_GLASS : isToday ? "bg-petrol/[0.02]" : "bg-card",
+                  !feestdagInfo && dragOverDate === dateStr && "bg-petrol/[0.08] ring-2 ring-petrol/25 ring-inset",
                   feestdagInfo && dragOverDate === dateStr && "ring-2 ring-[#C03A18]/30 ring-inset"
                 )}
                 style={{ height: gridHeight }}
@@ -2161,10 +2161,10 @@ export function MontagePlanningLayout() {
                   return (
                     <div className="absolute left-0 right-0 z-30 pointer-events-none" style={{ top }}>
                       <div className="flex items-center">
-                        <span className="bg-[#1A535C] text-white text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-r-md tabular-nums">
+                        <span className="bg-petrol text-white text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-r-md tabular-nums">
                           {montageDropSnap.time}
                         </span>
-                        <div className="flex-1 h-0.5 bg-[#1A535C]" />
+                        <div className="flex-1 h-0.5 bg-petrol" />
                       </div>
                     </div>
                   );
@@ -2188,7 +2188,7 @@ export function MontagePlanningLayout() {
                   return (
                     <div className="absolute left-0 right-0 z-0 pointer-events-none" style={{ top, height }}>
                       <div className={cn("h-full w-full rounded-sm", AFWEZIG_GLASS)} />
-                      <span className="absolute left-1.5 top-0.5 text-[10px] font-medium text-[#1A535C]/60 dark:text-[#5AABB5]/80 tabular-nums">{afwezig.label}</span>
+                      <span className="absolute left-1.5 top-0.5 text-[10px] font-medium text-petrol/60 dark:text-[#5AABB5]/80 tabular-nums">{afwezig.label}</span>
                     </div>
                   );
                 })()}
@@ -2199,8 +2199,8 @@ export function MontagePlanningLayout() {
                     className="absolute left-0 right-0 pointer-events-none z-10"
                     style={{ top: nowY }}
                   >
-                    <div className="relative h-px bg-[#F15025]">
-                      <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-[#F15025]" />
+                    <div className="relative h-px bg-flame">
+                      <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-flame" />
                     </div>
                   </div>
                 )}
@@ -2282,7 +2282,7 @@ export function MontagePlanningLayout() {
 
                 {/* Empty-state hint */}
                 {!feestdagInfo && dayAfspraken.length === 0 && (draggingAfspraakId || draggingProjectId) && (
-                  <div className="absolute inset-2 flex items-center justify-center text-[#1A535C] dark:text-[#5AABB5] text-xs font-medium border-2 border-dashed border-[#1A535C]/30 dark:border-white/20 rounded-xl bg-[#1A535C]/[0.04] dark:bg-white/[0.04] pointer-events-none">
+                  <div className="absolute inset-2 flex items-center justify-center text-petrol dark:text-[#5AABB5] text-xs font-medium border-2 border-dashed border-petrol/30 dark:border-white/20 rounded-xl bg-petrol/[0.04] dark:bg-white/[0.04] pointer-events-none">
                     Hier neerzetten
                   </div>
                 )}
@@ -2340,7 +2340,7 @@ export function MontagePlanningLayout() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => openNewDialog()}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
             >
               <Plus className="h-3.5 w-3.5" />
               Nieuw
@@ -2381,8 +2381,8 @@ export function MontagePlanningLayout() {
                   !isCurrentMonth && "bg-background/40",
                   isCurrentMonth && isWeekend && "bg-background/60",
                   feestdagInfo && "bg-[hsl(var(--status-flame-bg))]/40",
-                  isToday && "bg-[#1A535C]/[0.04] border-t-2 border-t-[#F15025]",
-                  isTaakDragOver && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/30 ring-inset"
+                  isToday && "bg-petrol/[0.04] border-t-2 border-t-flame",
+                  isTaakDragOver && "bg-petrol/[0.08] ring-2 ring-petrol/30 ring-inset"
                 )}
                 onDragOver={(e) => {
                   if (!draggingTaakId) return;
@@ -2407,7 +2407,7 @@ export function MontagePlanningLayout() {
                   <span
                     className={cn(
                       "text-[12px] font-mono tabular-nums",
-                      isToday && "text-[#1A535C] dark:text-[#5AABB5] font-bold",
+                      isToday && "text-petrol dark:text-[#5AABB5] font-bold",
                       !isToday && isCurrentMonth && "text-foreground",
                       !isToday && !isCurrentMonth && "text-muted-foreground/80",
                       feestdagInfo && "text-[#C03A18] font-semibold"
@@ -2420,7 +2420,7 @@ export function MontagePlanningLayout() {
                       type="button"
                       onClick={() => openNewDialog(dateStr)}
                       title="Nieuwe afspraak"
-                      className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-[#F15025] hover:bg-muted transition-all"
+                      className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:text-flame hover:bg-muted transition-all"
                     >
                       <Plus className="h-3 w-3" />
                     </button>
@@ -2439,7 +2439,7 @@ export function MontagePlanningLayout() {
                         onClick={() => openEditDialog(a)}
                         className={cn(
                           "text-left text-[10px] truncate rounded-none border-l-2 pl-1.5 pr-1 py-0.5 hover:opacity-80 transition-opacity",
-                          STATUS_PILL_CLASSES[a.status] || "bg-[#F0EFEC] text-[#1A1A1A] dark:bg-white/[0.06] dark:text-foreground",
+                          STATUS_PILL_CLASSES[a.status] || "bg-[#F0EFEC] text-foreground dark:bg-white/[0.06] dark:text-foreground",
                         )}
                         style={{ borderLeftColor: cfg?.dot || '#1A535C' }}
                         title={`${a.titel} (${a.start_tijd}–${a.eind_tijd})`}
@@ -2466,11 +2466,11 @@ export function MontagePlanningLayout() {
                       }}
                       title={`Taak: ${t.titel}`}
                       className={cn(
-                        "flex items-center gap-1 text-[10px] truncate rounded-none px-1 py-0.5 bg-card border border-border text-foreground cursor-grab active:cursor-grabbing hover:border-[#1A535C]/40 transition-all",
+                        "flex items-center gap-1 text-[10px] truncate rounded-none px-1 py-0.5 bg-card border border-border text-foreground cursor-grab active:cursor-grabbing hover:border-petrol/40 transition-all",
                         draggingTaakId === t.id && "opacity-50"
                       )}
                     >
-                      <CheckCircle2 className="h-2.5 w-2.5 text-[#1A535C] dark:text-[#5AABB5] flex-shrink-0" />
+                      <CheckCircle2 className="h-2.5 w-2.5 text-petrol dark:text-[#5AABB5] flex-shrink-0" />
                       <span className="truncate">{t.titel}</span>
                     </div>
                   ))}
@@ -2501,13 +2501,13 @@ export function MontagePlanningLayout() {
 
     return (
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        {/* Geen aparte Team-header meer — scope, week-nav, groepering, banen,
+        {/* Geen aparte Team-header meer · scope, week-nav, groepering, banen,
             print en Nieuw staan nu in de gedeelde hoofd-toolbar hierboven. */}
 
         {/* Weather strip + dag-headers staan buiten de onderstaande overflow-y-auto,
             dus blijven ze automatisch zichtbaar tijdens verticaal scrollen door lanes.
             De `sticky top-0` hieronder is een defensieve safety-net voor het geval een
-            toekomstige refactor ze binnen de scroll-container plaatst — dan blijft het
+            toekomstige refactor ze binnen de scroll-container plaatst · dan blijft het
             gedrag hetzelfde zonder aanvullende wijziging. */}
         {/* Weather strip */}
         <div className="grid sticky top-0 z-10 border-b border-[rgba(26,83,92,0.08)] bg-background" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
@@ -2537,15 +2537,15 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "group relative text-center py-1.5 border-l border-border",
-                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-card",
-                  isToday && "border-t-2 border-t-[#F15025]"
+                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/40" : isToday ? "bg-petrol/[0.04]" : "bg-card",
+                  isToday && "border-t-2 border-t-flame"
                 )}
               >
                 <div className="flex items-baseline justify-center gap-1.5">
-                  <span className={cn("text-[12px] font-bold", feestdagInfo ? "text-[#C03A18]" : isToday ? "text-[#1A535C]" : "text-[#1A4A52] dark:text-foreground")}>
+                  <span className={cn("text-[12px] font-bold", feestdagInfo ? "text-[#C03A18]" : isToday ? "text-petrol" : "text-[#1A4A52] dark:text-foreground")}>
                     {DAG_NAMEN[dayIdx]}
                   </span>
-                  <span className={cn("text-[11px] font-mono tabular-nums", feestdagInfo ? "text-[#C03A18]/70 dark:text-[#DA7B70]" : isToday ? "text-[#1A535C] dark:text-[#5AABB5]" : "text-muted-foreground/80")}>
+                  <span className={cn("text-[11px] font-mono tabular-nums", feestdagInfo ? "text-[#C03A18]/70 dark:text-[#DA7B70]" : isToday ? "text-petrol dark:text-[#5AABB5]" : "text-muted-foreground/80")}>
                     {date.getDate()}/{date.getMonth() + 1}
                   </span>
                 </div>
@@ -2557,7 +2557,7 @@ export function MontagePlanningLayout() {
                     type="button"
                     onClick={() => openNewDialog(dateStr)}
                     title={`Nieuwe afspraak op ${dateStr}`}
-                    className="absolute top-1 right-1 h-5 w-5 rounded-none flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-[#F15025] hover:bg-muted transition-all"
+                    className="absolute top-1 right-1 h-5 w-5 rounded-none flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-flame hover:bg-muted transition-all"
                   >
                     <Plus className="h-3 w-3" />
                   </button>
@@ -2567,7 +2567,7 @@ export function MontagePlanningLayout() {
           })}
         </div>
 
-        {/* Taken-lane — losse taken (met deadline in deze week) verschijnen
+        {/* Taken-lane · losse taken (met deadline in deze week) verschijnen
             hier zodat collega's hun planning + taken in één scherm hebben.
             Drag-tussen-dagen werkt door deadline van de taak te updaten. */}
         {Object.values(takenPerDag).some(arr => arr.length > 0) && (
@@ -2576,8 +2576,8 @@ export function MontagePlanningLayout() {
             style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
           >
             <div className="py-2 px-3 flex items-center gap-1.5 border-r border-[rgba(26,83,92,0.08)] dark:border-white/10">
-              <CheckCircle2 className="h-3.5 w-3.5 text-[#1A535C] dark:text-[#5AABB5]" />
-              <span className="text-[11px] font-semibold text-[#1A535C] dark:text-muted-foreground uppercase tracking-widest">Taken</span>
+              <CheckCircle2 className="h-3.5 w-3.5 text-petrol dark:text-[#5AABB5]" />
+              <span className="text-[11px] font-semibold text-petrol dark:text-muted-foreground uppercase tracking-widest">Taken</span>
             </div>
             {werkdagen.map((date) => {
               const dateStr = formatDate(date);
@@ -2588,7 +2588,7 @@ export function MontagePlanningLayout() {
                   key={dateStr}
                   className={cn(
                     "border-l border-border p-1.5 space-y-1 min-h-[42px] transition-colors",
-                    isDragOver && "bg-[#1A535C]/[0.06] ring-1 ring-inset ring-[#1A535C]/30"
+                    isDragOver && "bg-petrol/[0.06] ring-1 ring-inset ring-petrol/30"
                   )}
                   onDragOver={(e) => {
                     if (!draggingTaakId) return;
@@ -2624,11 +2624,11 @@ export function MontagePlanningLayout() {
                         }}
                         title={`${t.titel}${monteur ? ` · ${monteur.naam}` : ''}`}
                         className={cn(
-                          "group flex items-center gap-1.5 px-2 py-1 rounded-none bg-card border border-border text-[11px] text-foreground cursor-grab active:cursor-grabbing hover:border-[#1A535C]/40 hover:shadow-sm transition-all",
+                          "group flex items-center gap-1.5 px-2 py-1 rounded-none bg-card border border-border text-[11px] text-foreground cursor-grab active:cursor-grabbing hover:border-petrol/40 hover:shadow-sm transition-all",
                           draggingTaakId === t.id && "opacity-50"
                         )}
                       >
-                        {t.prioriteit === 'kritiek' && <span className="w-1 h-1 rounded-full bg-[#F15025] flex-shrink-0" />}
+                        {t.prioriteit === 'kritiek' && <span className="w-1 h-1 rounded-full bg-flame flex-shrink-0" />}
                         {t.prioriteit === 'hoog' && <span className="w-1 h-1 rounded-full bg-[#E89A3A] flex-shrink-0" />}
                         <span className="flex-1 truncate">{t.titel}</span>
                         {monteur && (
@@ -2643,7 +2643,7 @@ export function MontagePlanningLayout() {
           </div>
         )}
 
-        {/* Monteur lanes — eventueel gegroepeerd per rol (laneGroups). Wanneer
+        {/* Monteur lanes · eventueel gegroepeerd per rol (laneGroups). Wanneer
             laneGrouping === 'none' bevat laneGroups één sentinel-groep '__all__'
             zonder header, zodat de output identiek is aan het niet-gegroepeerde
             gedrag. Group-collapse hergebruikt collapsedLanes met prefix 'group:'. */}
@@ -2732,7 +2732,7 @@ export function MontagePlanningLayout() {
                     <button
                       type="button"
                       title={`Afwezigheid / vrije dagen · ${monteur.naam}`}
-                      className="shrink-0 p-1 rounded-md text-muted-foreground/70 hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                      className="shrink-0 p-1 rounded-md text-muted-foreground/70 hover:text-petrol hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                     >
                       <CalendarOff className="h-3.5 w-3.5" />
                     </button>
@@ -2746,7 +2746,7 @@ export function MontagePlanningLayout() {
                     </div>
                   )}
                 </div>
-                {/* Day cells — collapsed keeps compact drop-targets so drop op ingeklapte
+                {/* Day cells · collapsed keeps compact drop-targets so drop op ingeklapte
                     baan (Optie B: auto-expand + toast) werkt per dag, net als uitgeklapt. */}
                 {werkdagen.map((date) => {
                   const dateStr = formatDate(date);
@@ -2764,9 +2764,9 @@ export function MontagePlanningLayout() {
                       className={cn(
                         "border-l border-border transition-all duration-200",
                         isCollapsed ? "min-h-[30px]" : "p-1 min-h-[60px]",
-                        feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/15" : afwezig?.afwezig ? AFWEZIG_GLASS : isToday && "bg-[#1A535C]/[0.02]",
-                        !feestdagInfo && !isCollapsed && dragOverDate !== dragKey && "hover:bg-[#1A535C]/[0.03]",
-                        !feestdagInfo && dragOverDate === dragKey && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
+                        feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/15" : afwezig?.afwezig ? AFWEZIG_GLASS : isToday && "bg-petrol/[0.02]",
+                        !feestdagInfo && !isCollapsed && dragOverDate !== dragKey && "hover:bg-petrol/[0.03]",
+                        !feestdagInfo && dragOverDate === dragKey && "bg-petrol/[0.08] ring-2 ring-petrol/25 ring-inset",
                         feestdagInfo && dragOverDate === dragKey && "ring-2 ring-[#C03A18]/30 ring-inset"
                       )}
                       onDragOver={(e) => {
@@ -2794,7 +2794,7 @@ export function MontagePlanningLayout() {
                       }}
                     >
                       {!isCollapsed && afwezig?.afwezig && dayAfspraken.length === 0 && (
-                        <div className="px-1 pt-0.5 text-[10px] font-medium text-[#1A535C]/55 dark:text-[#5AABB5]/70 truncate">{afwezig.label}</div>
+                        <div className="px-1 pt-0.5 text-[10px] font-medium text-petrol/55 dark:text-[#5AABB5]/70 truncate">{afwezig.label}</div>
                       )}
                       {!isCollapsed && dayAfspraken.map((a) => renderMontageCard(a))}
                     </div>
@@ -2897,7 +2897,7 @@ export function MontagePlanningLayout() {
                 </DialogTitle>
                 {editingAfspraak && STATUS_CONFIG[formData.status] && (
                   <div className="text-[13px] text-foreground/70 font-medium px-0">
-                    {STATUS_CONFIG[formData.status].label}<span className="text-[#F15025]">.</span>
+                    {STATUS_CONFIG[formData.status].label}<span className="text-flame">.</span>
                   </div>
                 )}
               </div>
@@ -2914,7 +2914,7 @@ export function MontagePlanningLayout() {
                         id: `/projecten/${formData.project_id}`,
                       });
                     }}
-                    className="inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] dark:text-[#5AABB5] hover:text-[#143F46] dark:hover:text-foreground hover:underline shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30 dark:focus-visible:ring-white/20 focus-visible:ring-offset-1"
+                    className="inline-flex items-center gap-1 text-[12px] font-medium text-petrol dark:text-[#5AABB5] hover:text-[#143F46] dark:hover:text-foreground hover:underline shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-petrol/30 dark:focus-visible:ring-white/20 focus-visible:ring-offset-1"
                   >
                     Open project
                     <ArrowUpRight className="h-3.5 w-3.5" />
@@ -2925,7 +2925,7 @@ export function MontagePlanningLayout() {
           </DialogHeader>
 
           <div className="space-y-6 py-2">
-            {/* Project — context bovenin */}
+            {/* Project · context bovenin */}
             <div className="space-y-1.5">
               <Label htmlFor="project" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</Label>
               <Select value={formData.project_id} onValueChange={handleProjectChange}>
@@ -3030,7 +3030,7 @@ export function MontagePlanningLayout() {
                       className={cn(
                         "h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all",
                         selected
-                          ? "text-white ring-2 ring-offset-1 ring-[#1A535C]"
+                          ? "text-white ring-2 ring-offset-1 ring-petrol"
                           : "bg-muted text-muted-foreground hover:bg-[#E5E3DE]"
                       )}
                       style={selected ? getAvatarStyle(idx) : undefined}
@@ -3110,7 +3110,7 @@ export function MontagePlanningLayout() {
               />
             </div>
 
-            {/* Werkbon — koppelen aan een werkbon (optioneel) */}
+            {/* Werkbon · koppelen aan een werkbon (optioneel) */}
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 <ClipboardCheck className="h-3 w-3" />
@@ -3183,7 +3183,7 @@ export function MontagePlanningLayout() {
               </div>
             </div>
 
-            {/* Bijlagen — compact */}
+            {/* Bijlagen · compact */}
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 <Paperclip className="h-3 w-3" />
@@ -3206,14 +3206,14 @@ export function MontagePlanningLayout() {
                       )}
                       <span className="text-[13px] text-foreground truncate flex-1">{bijlage.naam}</span>
                       <span className="text-[10px] text-muted-foreground uppercase font-medium flex-shrink-0">{bijlage.type}</span>
-                      <button type="button" title="Bekijken" onClick={() => window.open(bijlage.url, '_blank')} className="text-muted-foreground hover:text-[#1A535C] dark:hover:text-foreground transition-colors flex-shrink-0">
+                      <button type="button" title="Bekijken" onClick={() => window.open(bijlage.url, '_blank')} className="text-muted-foreground hover:text-petrol dark:hover:text-foreground transition-colors flex-shrink-0">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
                         title="Printen"
                         onClick={() => { const w = window.open(bijlage.url, '_blank'); if (w) { w.addEventListener('load', () => w.print()) } }}
-                        className="text-muted-foreground hover:text-[#1A535C] dark:hover:text-foreground transition-colors flex-shrink-0"
+                        className="text-muted-foreground hover:text-petrol dark:hover:text-foreground transition-colors flex-shrink-0"
                       >
                         <Printer className="h-3.5 w-3.5" />
                       </button>
@@ -3229,7 +3229,7 @@ export function MontagePlanningLayout() {
                 </div>
               )}
 
-              <label className="inline-flex items-center gap-1 cursor-pointer text-[13px] font-medium text-[#F15025] hover:text-[#D4452A] transition-colors w-fit">
+              <label className="inline-flex items-center gap-1 cursor-pointer text-[13px] font-medium text-flame hover:text-[#D4452A] transition-colors w-fit">
                 <span className="font-semibold">+</span>
                 {formData.bijlagen.length === 0 ? 'Bestand toevoegen' : 'Nog een bestand'}
                 <input
@@ -3279,7 +3279,7 @@ export function MontagePlanningLayout() {
                   <button
                     type="button"
                     onClick={handleAfronden}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-[#1A535C] dark:text-[#5AABB5] border border-[#1A535C]/30 dark:border-[#5AABB5]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-petrol dark:text-[#5AABB5] border border-petrol/30 dark:border-[#5AABB5]/30 hover:bg-petrol hover:text-white hover:border-petrol transition-all"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Afronden
@@ -3291,7 +3291,7 @@ export function MontagePlanningLayout() {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-[#1A535C] dark:text-[#5AABB5] border border-[#1A535C]/30 dark:border-[#5AABB5]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-petrol dark:text-[#5AABB5] border border-petrol/30 dark:border-[#5AABB5]/30 hover:bg-petrol hover:text-white hover:border-petrol transition-all"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Afronden
@@ -3311,7 +3311,7 @@ export function MontagePlanningLayout() {
                       className="flex flex-col items-start gap-0.5 py-1.5 data-[highlighted]:bg-background data-[highlighted]:text-foreground"
                     >
                       <span className="text-[13px] font-medium">
-                        Afronden &amp; factureren<span className="text-[#F15025]">.</span>
+                        Afronden &amp; factureren<span className="text-flame">.</span>
                       </span>
                       <span className="text-[11px] opacity-60">Project naar 'Te factureren'</span>
                     </DropdownMenuItem>
@@ -3397,13 +3397,13 @@ export function MontagePlanningLayout() {
               type="button"
               onClick={toggleSidebar}
               title="Te plannen tonen"
-              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-petrol hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
             {tePlannenProjecten.length > 0 && (
               <span
-                className="text-[10px] font-bold flex items-center justify-center tabular-nums bg-[#FDE8E2] text-[#F15025] dark:bg-[rgba(241,80,37,0.20)] dark:text-[#FF8866]"
+                className="text-[10px] font-bold flex items-center justify-center tabular-nums bg-[#FDE8E2] text-flame dark:bg-[rgba(241,80,37,0.20)] dark:text-[#FF8866]"
                 style={{ minWidth: '20px', height: '20px', padding: '0 5px' }}
               >
                 {tePlannenProjecten.length}
@@ -3416,7 +3416,7 @@ export function MontagePlanningLayout() {
         <div className="px-4 pt-5 pb-3 flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-baseline gap-2 min-w-0">
             <h1 className="text-[17px] font-bold tracking-[-0.3px] text-[#1A4A52] dark:text-foreground leading-none">
-              Planning<span className="text-[#F15025]">.</span>
+              Planning<span className="text-flame">.</span>
             </h1>
             <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
               {stats.totaalWeek}
@@ -3426,7 +3426,7 @@ export function MontagePlanningLayout() {
             type="button"
             onClick={toggleSidebar}
             title="Te plannen inklappen"
-            className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors shrink-0"
+            className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-petrol hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors shrink-0"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -3434,10 +3434,10 @@ export function MontagePlanningLayout() {
 
         {/* Te plannen section */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="px-3 py-2.5 flex items-center justify-between border-l-2 border-l-[#1A535C] shrink-0">
-            <h2 className="text-[11px] font-bold text-[#F15025] uppercase tracking-wider">Te plannen</h2>
+          <div className="px-3 py-2.5 flex items-center justify-between border-l-2 border-l-petrol shrink-0">
+            <h2 className="text-[11px] font-bold text-flame uppercase tracking-wider">Te plannen</h2>
             <span
-              className="text-[11px] font-bold flex items-center justify-center rounded-none bg-[#FDE8E2] text-[#F15025] dark:bg-[rgba(241,80,37,0.20)] dark:text-[#FF8866]"
+              className="text-[11px] font-bold flex items-center justify-center rounded-none bg-[#FDE8E2] text-flame dark:bg-[rgba(241,80,37,0.20)] dark:text-[#FF8866]"
               style={{ minWidth: '24px', height: '24px', padding: '0 6px' }}
             >
               {tePlannenProjecten.length}
@@ -3477,8 +3477,8 @@ export function MontagePlanningLayout() {
                     className={cn(
                       "group/card relative w-full text-left border-l-2 rounded-none transition-colors duration-150 cursor-grab active:cursor-grabbing select-none hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.05]",
                       isPrio
-                        ? "border-l-[#F15025] bg-[rgba(241,80,37,0.05)]"
-                        : "border-l-[#1A535C]/35",
+                        ? "border-l-flame bg-[rgba(241,80,37,0.05)]"
+                        : "border-l-petrol/35",
                       draggingProjectId === project.id && "opacity-50"
                     )}
                     style={{ padding: '8px 10px' }}
@@ -3496,11 +3496,11 @@ export function MontagePlanningLayout() {
                       className={cn(
                         "absolute top-1.5 right-1.5 h-5 w-5 rounded flex items-center justify-center transition-all",
                         isPrio
-                          ? "text-[#F15025] opacity-100"
-                          : "text-muted-foreground/80 opacity-0 group-hover/card:opacity-100 hover:text-[#F15025]"
+                          ? "text-flame opacity-100"
+                          : "text-muted-foreground/80 opacity-0 group-hover/card:opacity-100 hover:text-flame"
                       )}
                     >
-                      <Flame className={cn("h-3.5 w-3.5", isPrio && "fill-[#F15025]")} />
+                      <Flame className={cn("h-3.5 w-3.5", isPrio && "fill-flame")} />
                     </button>
                   </div>
                 );
@@ -3512,10 +3512,10 @@ export function MontagePlanningLayout() {
         {/* Sidebar footer: stats */}
         <div className="px-3 py-2.5 border-t border-border text-[11px] text-foreground/70 space-y-0.5">
           <div>
-            <span className="font-mono tabular-nums">{stats.totaalWeek}</span> montages<span className="text-[#F15025]">.</span>
+            <span className="font-mono tabular-nums">{stats.totaalWeek}</span> montages<span className="text-flame">.</span>
           </div>
           <div>
-            <span className="font-mono tabular-nums">{stats.monteursBeschikbaar}</span> beschikbaar<span className="text-[#F15025]">.</span>
+            <span className="font-mono tabular-nums">{stats.monteursBeschikbaar}</span> beschikbaar<span className="text-flame">.</span>
           </div>
         </div>
         </>
@@ -3526,10 +3526,10 @@ export function MontagePlanningLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[rgba(26,83,92,0.08)] bg-card">
-          {/* Scope — één dropdown */}
+          {/* Scope · één dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button" className="flex items-center gap-1 text-[14px] font-semibold text-[#1A535C] dark:text-foreground hover:opacity-75 transition-opacity">
+              <button type="button" className="flex items-center gap-1 text-[14px] font-semibold text-petrol dark:text-foreground hover:opacity-75 transition-opacity">
                 {scopeMode === 'alle' ? 'Iedereen' : scopeMode === 'mijn' ? 'Mijn week' : (monteurMap[selectedMonteur]?.naam ?? 'Per persoon')}
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </button>
@@ -3577,30 +3577,30 @@ export function MontagePlanningLayout() {
 
           <div className="flex-1" />
 
-          {/* Week / Maand — compacte segmented toggle */}
+          {/* Week / Maand · compacte segmented toggle */}
           <div className="flex rounded-lg bg-[hsl(38,20%,95.5%)] dark:bg-white/[0.06] p-0.5 text-[12px]">
             <button
               type="button"
               onClick={() => setViewMode('week')}
-              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'week' ? "bg-white dark:bg-white/[0.12] text-[#1A535C] dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'week' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
               Week
             </button>
             <button
               type="button"
               onClick={() => setViewMode('maand')}
-              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'maand' ? "bg-white dark:bg-white/[0.12] text-[#1A535C] dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'maand' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
               Maand
             </button>
           </div>
 
-          {/* Afwezigheid — compact icoon (persoon-view) */}
+          {/* Afwezigheid · compact icoon (persoon-view) */}
           {viewMode !== 'maand' && selectedMonteur !== 'alle' && monteurMap[selectedMonteur] && renderAfwezigheidPopover(monteurMap[selectedMonteur], (
             <button
               type="button"
               title="Afwezigheid / vrije dagen"
-              className="p-1.5 rounded-md text-muted-foreground hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-petrol hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
             >
               <CalendarOff className="h-4 w-4" />
             </button>
@@ -3609,13 +3609,13 @@ export function MontagePlanningLayout() {
           {/* Primaire actie */}
           <button
             onClick={() => openNewDialog()}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_1px_3px_rgba(241,80,37,0.25)] hover:bg-[#E0481D] transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-flame shadow-[0_1px_3px_rgba(241,80,37,0.25)] hover:bg-[#E0481D] transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Nieuw
           </button>
 
-          {/* Overflow — secundaire acties */}
+          {/* Overflow · secundaire acties */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" title="Meer" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors">

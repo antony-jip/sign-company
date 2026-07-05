@@ -78,7 +78,7 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
         <div className="flex items-center gap-2 mb-2">
           <Activity className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           <h3 className="font-heading text-[15px] font-bold text-foreground">
-            Activiteit<span className="text-[#F15025]">.</span>
+            Activiteit<span className="text-flame">.</span>
           </h3>
         </div>
         <p
@@ -104,16 +104,16 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
           }
           <Activity className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           <h3 className="font-heading text-[15px] font-bold text-foreground">
-            Activiteit<span className="text-[#F15025]">.</span>
+            Activiteit<span className="text-flame">.</span>
           </h3>
-          <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+          <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-petrol rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
             {events.length}
           </span>
         </div>
         {!collapsed && hasMore && (
           <button
             onClick={(e) => { e.stopPropagation(); setShowAll(v => !v) }}
-            className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3D44] hover:underline transition-colors"
+            className="text-[12px] font-medium text-petrol hover:text-[#0F3D44] hover:underline transition-colors"
           >
             {showAll ? 'Toon minder' : 'Alles bekijken'}
           </button>

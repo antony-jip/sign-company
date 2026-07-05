@@ -10,7 +10,7 @@ export function ImportHulpBanner() {
         <h3 className="text-sm font-semibold text-foreground">Kom je er niet uit?</h3>
         <p className="text-sm text-muted-foreground mt-1">
           Geen probleem. Stuur je bestanden en je inlognaam naar{' '}
-          <a href={MAILTO_HREF} className="text-[#1A535C] hover:underline font-medium">
+          <a href={MAILTO_HREF} className="text-petrol hover:underline font-medium">
             hello@doen.team
           </a>{' '}
           en wij regelen de import voor je. Gratis, zonder gedoe.
@@ -18,7 +18,7 @@ export function ImportHulpBanner() {
       </div>
       <a
         href={MAILTO_HREF}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#1A535C] bg-[hsl(var(--status-green-bg))] hover:bg-[#D0E6E6] transition-colors whitespace-nowrap"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-petrol bg-[hsl(var(--status-green-bg))] hover:bg-[#D0E6E6] transition-colors whitespace-nowrap"
       >
         <Mail className="w-4 h-4" />
         Mail ons

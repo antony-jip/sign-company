@@ -23,13 +23,13 @@ function wmoToIcon(code: number): LucideIcon {
   return CloudSun
 }
 
-/** Matte weer-icoon i.p.v. emoji — DOEN: geen emojis in UI */
+/** Matte weer-icoon i.p.v. emoji · DOEN: geen emojis in UI */
 export function WeerIcon({ code, className }: { code: number; className?: string }) {
   const Icon = wmoToIcon(code)
   return <Icon className={className} strokeWidth={1.75} aria-hidden="true" />
 }
 
-/** Hook to fetch weather data for a week — reusable by parent */
+/** Hook to fetch weather data for a week · reusable by parent */
 export function useWeekWeather(weekDays: Date[]) {
   const [weather, setWeather] = useState<Map<string, DayWeather>>(new Map())
 
@@ -79,7 +79,7 @@ export function getWeatherForDate(weather: Map<string, DayWeather>, day: Date): 
   return weather.get(dateStr)
 }
 
-/** Legacy component — kept for backward compat */
+/** Legacy component · kept for backward compat */
 export function WeatherDayStrip({ weekDays }: WeatherDayStripProps) {
   const weather = useWeekWeather(weekDays)
 

@@ -229,7 +229,7 @@ export function PortalenOverzicht() {
           id: `notif-${n.id}`,
           type: n.type === 'portaal_bekeken' ? 'bekeken' : 'herinnering',
           klant_naam: 'Klant',
-          project_naam: n.bericht?.split(' — ').pop() || '',
+          project_naam: n.bericht?.split(' · ').pop() || '',
           project_id: n.project_id || '',
           klant_id: n.klant_id,
           item_titel: n.titel,
@@ -514,7 +514,7 @@ export function PortalenOverzicht() {
                           >
                             <p className="text-sm text-foreground">
                               <span className="font-medium">{act.klant_naam}</span>
-                              {' — '}
+                              {' · '}
                               <span className="text-muted-foreground">{act.item_titel}</span>
                               {' '}
                               <span className="text-muted-foreground">{getActieLabel(act.type)}</span>
@@ -693,7 +693,7 @@ export function PortalenOverzicht() {
                   </SelectTrigger>
                   <SelectContent>
                     {medewerkers.map(m => (
-                      <SelectItem key={m.id} value={m.naam}>{m.naam}{m.functie ? ` — ${m.functie}` : ''}</SelectItem>
+                      <SelectItem key={m.id} value={m.naam}>{m.naam}{m.functie ? ` · ${m.functie}` : ''}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

@@ -184,8 +184,8 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
 
   const triggerBaseClasses =
     trigger === 'input'
-      ? 'h-9 w-full justify-between rounded-md border border-border bg-white px-3 text-[13px]'
-      : 'h-7 rounded-md border border-border bg-white px-2 text-[13px]'
+      ? 'h-9 w-full justify-between rounded-md border border-border bg-background px-3 text-[13px]'
+      : 'h-7 rounded-md border border-border bg-background px-2 text-[13px]'
 
   const renderTriggerContent = () => {
     if (mode === 'single') {
@@ -329,7 +329,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
             type="button"
             disabled={disabled}
             className={cn(
-              'inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:border-[#1A535C]/40 hover:border-[#1A535C]/40 disabled:opacity-60 disabled:cursor-not-allowed',
+              'inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:border-petrol/40 hover:border-petrol/40 disabled:opacity-60 disabled:cursor-not-allowed',
               triggerBaseClasses,
               error && 'border-[#C03A18]/60',
               className
@@ -362,12 +362,12 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
               onClick={() => { props.onChange(null); setOpen(false) }}
               className={cn(
                 'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left hover:bg-background transition-colors',
-                props.value === null && 'bg-[#1A535C]/[0.06] text-[#1A535C] font-semibold'
+                props.value === null && 'bg-petrol/[0.06] text-petrol font-semibold'
               )}
             >
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="flex-1">{allLabel}</span>
-              {props.value === null && <Check className="h-3.5 w-3.5 text-[#1A535C]" />}
+              {props.value === null && <Check className="h-3.5 w-3.5 text-petrol" />}
             </button>
           )}
           {mode === 'multi' && selectedMulti.length > 0 && (
@@ -395,7 +395,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
                 className={cn(
                   'w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-left transition-colors',
                   active && 'bg-background',
-                  selected && 'bg-[#1A535C]/[0.06] text-[#1A535C] font-semibold'
+                  selected && 'bg-petrol/[0.06] text-petrol font-semibold'
                 )}
               >
                 <span
@@ -405,7 +405,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
                   {getInitials(m.naam)}
                 </span>
                 <span className="flex-1 truncate">{m.naam}</span>
-                {selected && <Check className="h-3.5 w-3.5 text-[#1A535C]" />}
+                {selected && <Check className="h-3.5 w-3.5 text-petrol" />}
               </button>
             )
           })}
@@ -417,7 +417,7 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
                   type="button"
                   onClick={() => props.onChange((props.value as string[]).filter((x) => x !== v))}
                   className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] text-left text-muted-foreground italic hover:bg-background transition-colors"
-                  title="Niet meer actief — klik om te verwijderen"
+                  title="Niet meer actief · klik om te verwijderen"
                 >
                   <span className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold bg-muted text-muted-foreground flex-shrink-0">
                     {getInitials(v)}

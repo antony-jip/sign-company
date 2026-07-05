@@ -197,7 +197,7 @@ export function WebsiteChatTab() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <p className={cn('text-sm truncate', ongelezen ? 'font-bold' : 'font-medium')}>{contactLabel(g)}</p>
-                      {ongelezen && <span className="h-2 w-2 rounded-full bg-[#F15025] flex-none" />}
+                      {ongelezen && <span className="h-2 w-2 rounded-full bg-flame flex-none" />}
                     </div>
                     <div className="flex items-center justify-between gap-2 mt-0.5">
                       <p className="text-xs text-muted-foreground truncate">{g.email || g.telefoon}</p>
@@ -244,7 +244,7 @@ export function WebsiteChatTab() {
                     <UserPlus className="h-4 w-4" /> Verwerk
                   </Button>
                   {actief.status === 'open' && (
-                    <Button variant="outline" size="sm" className="gap-1 text-[#F15025] border-[#F15025]/40 hover:bg-[#F15025]/5" onClick={handleSluiten}>
+                    <Button variant="outline" size="sm" className="gap-1 text-flame border-flame/40 hover:bg-flame/5" onClick={handleSluiten}>
                       <CheckCircle className="h-4 w-4" /> Sluiten
                     </Button>
                   )}
@@ -258,7 +258,7 @@ export function WebsiteChatTab() {
                     className={cn(
                       'max-w-[80%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap',
                       b.rol === 'team'
-                        ? 'ml-auto bg-[#1A535C] text-white rounded-br-md'
+                        ? 'ml-auto bg-petrol text-white rounded-br-md'
                         : 'mr-auto bg-muted text-foreground rounded-bl-md',
                     )}
                   >
@@ -285,7 +285,7 @@ export function WebsiteChatTab() {
                     rows={2}
                     className="resize-none"
                   />
-                  <Button onClick={handleVersturen} disabled={!concept.trim() || isVersturen} size="icon" className="flex-none bg-[#1A535C] hover:bg-[#1A535C]/90 text-white">
+                  <Button onClick={handleVersturen} disabled={!concept.trim() || isVersturen} size="icon" className="flex-none bg-petrol hover:bg-petrol/90 text-white">
                     {isVersturen ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>

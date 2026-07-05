@@ -117,7 +117,7 @@ function formatBytes(bytes: number): string {
 
 const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
-// Steps removed — now a permanent two-column layout
+// Steps removed · now a permanent two-column layout
 
 // Sommige contactpersonen hebben een lokaal gegenereerd ID (bv.
 // "cp-1775720212913-sn59y") dat geen geldige UUID is. Supabase weigert die
@@ -306,7 +306,7 @@ export function QuoteCreation() {
   const [gewenstTotaal, setGewenstTotaal] = useState('')
   const [afrondingskorting, setAfrondingskorting] = useState(0)
 
-  // ── Uren correctie — handmatige +/- vanuit sidebar ──
+  // ── Uren correctie · handmatige +/- vanuit sidebar ──
   const [urenCorrectie, setUrenCorrectie] = useState<Record<string, number>>({})
 
   // ── Step 1: Items ──
@@ -466,9 +466,9 @@ export function QuoteCreation() {
 
   // ── Uren overzicht per configureerbaar veld + materiaalkosten ──
   // Haalt uren uit twee bronnen:
-  //   1. Calculatieregels — matcht productnaam/categorie tegen geconfigureerde uren-velden
-  //      (ongeacht eenheid — ook "stuks" wordt meegeteld als de naam matcht)
-  //   2. Detail velden (namefields) — matcht op label, pakt getal uit waarde
+  //   1. Calculatieregels · matcht productnaam/categorie tegen geconfigureerde uren-velden
+  //      (ongeacht eenheid · ook "stuks" wordt meegeteld als de naam matcht)
+  //   2. Detail velden (namefields) · matcht op label, pakt getal uit waarde
   const urenVelden = (settings.calculatie_uren_velden && settings.calculatie_uren_velden.length > 0)
     ? settings.calculatie_uren_velden
     : ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
@@ -488,7 +488,7 @@ export function QuoteCreation() {
     verplichtePrijsItems.forEach((item) => {
       const data = getActivePriceData(item)
 
-      // Bron 1: Calculatieregels — match productnaam/categorie tegen uren-velden
+      // Bron 1: Calculatieregels · match productnaam/categorie tegen uren-velden
       if (data.calculatie_regels && data.calculatie_regels.length > 0) {
         data.calculatie_regels.forEach((r) => {
           const categorieLower = (r.categorie || '').toLowerCase()
@@ -513,7 +513,7 @@ export function QuoteCreation() {
         })
       }
 
-      // Bron 2: Detail velden (namefields) — bijv. label "Voorbereiding", waarde "4" of "4 uur"
+      // Bron 2: Detail velden (namefields) · bijv. label "Voorbereiding", waarde "4" of "4 uur"
       if (item.detail_regels && item.detail_regels.length > 0) {
         item.detail_regels.forEach((dr) => {
           const labelLower = (dr.label || '').toLowerCase()
@@ -610,7 +610,7 @@ export function QuoteCreation() {
         if (!cancelled) setOmschrijvingSuggesties(suggesties)
       })
       .catch(() => {
-        // Silent fail — suggesties zijn optioneel
+        // Silent fail · suggesties zijn optioneel
       })
     return () => { cancelled = true }
   }, [])
@@ -1023,7 +1023,7 @@ export function QuoteCreation() {
   // ── Autosave logic (debounced) ──
   const performAutoSave = useCallback(async () => {
     if (!user?.id || !selectedKlantId || !offerteTitel.trim() || items.length === 0) return
-    // Geen nieuwe offerte aanmaken zonder nummer — voorkom lege nummers in DB
+    // Geen nieuwe offerte aanmaken zonder nummer · voorkom lege nummers in DB
     const currentId = editOfferteId || autoSaveIdRef.current
     if (!currentId && !offerteNummer) return
     if (isSaving || saveLockRef.current) return
@@ -1049,7 +1049,7 @@ export function QuoteCreation() {
       const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
 
       if (currentId) {
-        // Update existing (met optimistic locking) — geen status meesturen om pipeline wijzigingen niet te overschrijven
+        // Update existing (met optimistic locking) · geen status meesturen om pipeline wijzigingen niet te overschrijven
         const saved = await updateOfferte(currentId, {
           klant_id: selectedKlantId,
           klant_naam: klant?.bedrijfsnaam,
@@ -1179,7 +1179,7 @@ export function QuoteCreation() {
     }
   }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, geldigTot, selectedKlantId, selectedProjectId, selectedContactId, showKlantSelector, afrondingskorting, urenCorrectie])
 
-  // Save on unmount (navigating away) — fire-and-forget
+  // Save on unmount (navigating away) · fire-and-forget
   useEffect(() => {
     return () => {
       if (hasUnsavedChangesRef.current) {
@@ -1334,7 +1334,7 @@ export function QuoteCreation() {
       return
     }
     // Auto-migreer contactpersoon als die een lokaal ID heeft
-    // (eenmalig — na migratie wordt de UUID bewaard en herkend bij volgende saves)
+    // (eenmalig · na migratie wordt de UUID bewaard en herkend bij volgende saves)
     const resolvedContactId = selectedContactId && !isValidUUID(selectedContactId)
       ? await ensureContactUUID(selectedContactId, selectedKlant as Parameters<typeof ensureContactUUID>[1], user.id)
       : uuidOrNull(selectedContactId)
@@ -1825,7 +1825,7 @@ export function QuoteCreation() {
           attachments.push({ filename: pdfFilename, storagePath: pdfPath })
         } catch (pdfErr) {
           logger.error('PDF genereren of uploaden mislukt:', pdfErr)
-          toast.error('Offerte-PDF kon niet worden voorbereid — email niet verstuurd')
+          toast.error('Offerte-PDF kon niet worden voorbereid · email niet verstuurd')
           email.setIsSendingEmail(false)
           return
         }
@@ -1842,7 +1842,7 @@ export function QuoteCreation() {
             attachments.push({ filename: bijlage.naam, storagePath: path })
           } catch (upErr) {
             logger.error(`Bijlage uploaden mislukt voor ${bijlage.naam}:`, upErr)
-            toast.error(`Bijlage "${bijlage.naam}" uploaden mislukt — email niet verstuurd`)
+            toast.error(`Bijlage "${bijlage.naam}" uploaden mislukt · email niet verstuurd`)
             email.setIsSendingEmail(false)
             return
           }
@@ -1958,7 +1958,7 @@ export function QuoteCreation() {
   }
 
   // ────────────────────────────────────────────────────────────────────
-  // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
+  // MAIN LAYOUT: Two columns · Left: scrollable content, Right: sticky sidebar (380px)
   // ────────────────────────────────────────────────────────────────────
   return (
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: 'hsl(var(--background))' }}>
@@ -2002,20 +2002,20 @@ export function QuoteCreation() {
             <button
               type="button"
               onClick={() => { setShowProjectForm(true); setProjectNaam(offerteTitel || '') }}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-[#1A535C]/30 text-[#1A535C] hover:bg-[#1A535C]/5 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-petrol/30 text-petrol hover:bg-petrol/5 transition-colors"
             >
               <FolderPlus className="h-3.5 w-3.5" />
               Project erbij aanmaken
             </button>
           ) : (
-            <div className="flex items-center gap-2 rounded-lg border border-[#1A535C]/30 bg-[#1A535C]/5 px-3 py-2">
-              <FolderPlus className="h-3.5 w-3.5 text-[#1A535C] shrink-0" />
+            <div className="flex items-center gap-2 rounded-lg border border-petrol/30 bg-petrol/5 px-3 py-2">
+              <FolderPlus className="h-3.5 w-3.5 text-petrol shrink-0" />
               <input
                 type="text"
                 value={projectNaam}
                 onChange={(e) => setProjectNaam(e.target.value)}
                 placeholder="Projectnaam"
-                className="flex-1 h-8 px-2 py-1 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20 focus:border-[#1A535C]"
+                className="flex-1 h-8 px-2 py-1 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol"
                 autoFocus
               />
               <button
@@ -2072,7 +2072,7 @@ export function QuoteCreation() {
         <div className="mb-4">
           <Link
             to={`/projecten/${selectedProjectId}`}
-            className="inline-flex items-center gap-1.5 text-xs text-[#1A535C] hover:text-[#1A535C]/80 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-petrol hover:text-petrol/80 transition-colors"
           >
             <FolderOpen className="h-3.5 w-3.5" />
             Project: {selectedProject.naam}
@@ -2116,7 +2116,7 @@ export function QuoteCreation() {
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Introductietekst<span className="text-[#F15025]">.</span>
+                Introductietekst<span className="text-flame">.</span>
                 <span
                   className="ml-2 text-[12px] text-muted-foreground font-normal"
                   style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
@@ -2134,7 +2134,7 @@ export function QuoteCreation() {
                 <button
                   key={tmpl.label}
                   onClick={() => setIntroTekst(tmpl.tekst)}
-                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 text-foreground/70 hover:text-[#1A535C] dark:hover:text-foreground transition-colors"
+                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 text-foreground/70 hover:text-petrol dark:hover:text-foreground transition-colors"
                 >
                   {tmpl.label}
                 </button>
@@ -2145,7 +2145,7 @@ export function QuoteCreation() {
               onChange={(e) => setIntroTekst(e.target.value)}
               placeholder="Beste ..., hierbij ontvangt u onze offerte voor..."
               rows={3}
-              className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-[#1A535C] dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+              className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
             />
           </div>
 
@@ -2154,10 +2154,10 @@ export function QuoteCreation() {
             <div className="flex items-baseline justify-between mb-4">
               <h3 className="font-heading text-[15px] font-bold text-foreground flex items-center">
                 <span>
-                  Offerte-items<span className="text-[#F15025]">.</span>
+                  Offerte-items<span className="text-flame">.</span>
                 </span>
                 {items.length > 0 && (
-                  <span className="ml-2 font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-[#F15025] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+                  <span className="ml-2 font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-flame rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
                     {items.length}
                   </span>
                 )}
@@ -2202,7 +2202,7 @@ export function QuoteCreation() {
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Afsluittekst<span className="text-[#F15025]">.</span>
+                Afsluittekst<span className="text-flame">.</span>
                 <span
                   className="ml-2 text-[12px] text-muted-foreground font-normal"
                   style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
@@ -2220,7 +2220,7 @@ export function QuoteCreation() {
                 <button
                   key={tmpl.label}
                   onClick={() => setOutroTekst(tmpl.tekst)}
-                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 text-foreground/70 hover:text-[#1A535C] dark:hover:text-foreground transition-colors"
+                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 text-foreground/70 hover:text-petrol dark:hover:text-foreground transition-colors"
                 >
                   {tmpl.label}
                 </button>
@@ -2231,7 +2231,7 @@ export function QuoteCreation() {
               onChange={(e) => setOutroTekst(e.target.value)}
               placeholder="Wij zien uw reactie graag tegemoet."
               rows={2}
-              className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-[#1A535C] dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+              className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
             />
           </div>
 
@@ -2239,7 +2239,7 @@ export function QuoteCreation() {
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Notities &amp; voorwaarden<span className="text-[#F15025]">.</span>
+                Notities &amp; voorwaarden<span className="text-flame">.</span>
               </h3>
             </div>
             <div>
@@ -2251,7 +2251,7 @@ export function QuoteCreation() {
                     onChange={(e) => setNotities(e.target.value)}
                     placeholder="Interne notities of opmerkingen voor de klant..."
                     rows={4}
-                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-[#1A535C] dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -2260,7 +2260,7 @@ export function QuoteCreation() {
                     value={voorwaarden}
                     onChange={(e) => setVoorwaarden(e.target.value)}
                     rows={4}
-                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-[#1A535C] dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
                   />
                 </div>
               </div>
@@ -2268,7 +2268,7 @@ export function QuoteCreation() {
           </div>
 
           {/* ════════════════════════════════════════════════════════════════ */}
-          {/* INLINE EMAIL COMPOSE — bottom of left column                   */}
+          {/* INLINE EMAIL COMPOSE · bottom of left column                   */}
           {/* ════════════════════════════════════════════════════════════════ */}
           <div ref={email.emailSectionRef}>
             {email.showEmailCompose && (
@@ -2276,7 +2276,7 @@ export function QuoteCreation() {
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-[rgba(26,83,92,0.08)]">
                   <h3 className="font-heading text-[15px] font-bold text-foreground">
-                    Email versturen<span className="text-[#F15025]">.</span>
+                    Email versturen<span className="text-flame">.</span>
                   </h3>
                   <button onClick={() => email.setShowEmailCompose(false)} className="text-muted-foreground hover:text-foreground hover:bg-white/60 dark:hover:bg-white/10 transition-colors h-7 w-7 rounded-md flex items-center justify-center">
                     <X className="h-4 w-4" />
@@ -2288,23 +2288,23 @@ export function QuoteCreation() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">Aan</span>
-                      <input value={email.emailTo} onChange={(e) => email.setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-[#1A535C] dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
+                      <input value={email.emailTo} onChange={(e) => email.setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-petrol dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">CC</span>
-                      <input value={email.emailCc} onChange={(e) => email.setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-[#1A535C] dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
+                      <input value={email.emailCc} onChange={(e) => email.setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-petrol dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">BCC</span>
-                      <input value={email.emailBcc} onChange={(e) => email.setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-[#1A535C] dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
+                      <input value={email.emailBcc} onChange={(e) => email.setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-petrol dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
                     </div>
                   </div>
 
                   {/* Onderwerp */}
-                  <input value={email.emailSubject} onChange={(e) => email.setEmailSubject(e.target.value)} placeholder="Onderwerp…" className="w-full text-[14px] font-semibold px-3 py-2.5 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-[#1A535C] dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
+                  <input value={email.emailSubject} onChange={(e) => email.setEmailSubject(e.target.value)} placeholder="Onderwerp…" className="w-full text-[14px] font-semibold px-3 py-2.5 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-petrol dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
 
                   {/* Bericht */}
-                  <div className="border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus-within:border-[#1A535C] dark:focus-within:border-white/30 focus-within:ring-[3px] focus-within:ring-[rgba(26,83,92,0.12)] dark:focus-within:ring-white/10 transition-colors overflow-hidden">
+                  <div className="border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus-within:border-petrol dark:focus-within:border-white/30 focus-within:ring-[3px] focus-within:ring-[rgba(26,83,92,0.12)] dark:focus-within:ring-white/10 transition-colors overflow-hidden">
                     {/* Toolbar */}
                     <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border/30">
                       {[
@@ -2359,13 +2359,13 @@ export function QuoteCreation() {
                         }} className="text-muted-foreground hover:text-[#C03A18] transition-colors"><X className="h-3 w-3" /></button>}
                       </div>
                     ))}
-                    <button onClick={email.handleAddBijlage} className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#1A535C] hover:underline">
+                    <button onClick={email.handleAddBijlage} className="flex items-center gap-1 px-2 py-1.5 text-xs text-petrol hover:underline">
                       <Paperclip className="h-3 w-3" />Bijlage
                     </button>
                     <input ref={email.fileInputRef} type="file" multiple className="hidden" onChange={email.handleFileSelect} accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx" />
                   </div>
 
-                  {/* Cumulatieve grootte van user-uploads — PDF wordt apart genoemd */}
+                  {/* Cumulatieve grootte van user-uploads · PDF wordt apart genoemd */}
                   {(() => {
                     const totaalBytes = email.emailExtraBijlagen.reduce((sum, b) => sum + b.grootte, 0)
                     const teGroot = totaalBytes > MAX_BIJLAGEN_BYTES
@@ -2373,7 +2373,7 @@ export function QuoteCreation() {
                     return (
                       <div className={cn(
                         'flex items-center gap-1.5 text-xs',
-                        teGroot ? 'text-[#F15025]' : 'text-muted-foreground'
+                        teGroot ? 'text-flame' : 'text-muted-foreground'
                       )}>
                         {teGroot && <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />}
                         <span className="font-mono tabular-nums">{formatBytes(totaalBytes)} / {formatBytes(MAX_BIJLAGEN_BYTES)}</span>
@@ -2388,7 +2388,7 @@ export function QuoteCreation() {
                   {/* Inplannen */}
                   <div className="border-t border-border/40 pt-3">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={email.emailScheduled} onChange={(e) => email.setEmailScheduled(e.target.checked)} className="h-3.5 w-3.5 rounded border-border text-[#1A535C] focus:ring-[#1A535C]/30" />
+                      <input type="checkbox" checked={email.emailScheduled} onChange={(e) => email.setEmailScheduled(e.target.checked)} className="h-3.5 w-3.5 rounded border-border text-petrol focus:ring-petrol/30" />
                       <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-xs text-foreground/70">Inplannen</span>
                     </label>
@@ -2418,7 +2418,7 @@ export function QuoteCreation() {
                   <button
                     onClick={handleSendEmailInline}
                     disabled={!email.emailTo.trim() || !email.emailSubject.trim() || email.isSendingEmail || email.emailExtraBijlagen.reduce((s, b) => s + b.grootte, 0) > MAX_BIJLAGEN_BYTES}
-                    className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-[#F15025] text-white hover:bg-[#D94520] disabled:opacity-40 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-flame text-white hover:bg-[#D94520] disabled:opacity-40 transition-colors"
                   >
                     <Send className="h-3.5 w-3.5" />
                     {email.isSendingEmail ? 'Verzenden...' : email.emailScheduled ? 'Inplannen' : 'Verstuur'}

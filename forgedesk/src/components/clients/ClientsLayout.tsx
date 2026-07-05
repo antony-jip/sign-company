@@ -48,7 +48,7 @@ import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PaginationControls } from '@/components/ui/pagination-controls'
-// ModuleHeader removed — using DOEN inline header
+// ModuleHeader removed · using DOEN inline header
 import { confirm } from '@/components/shared/ConfirmDialog'
 
 type ViewMode = 'grid' | 'list'
@@ -412,7 +412,7 @@ export function ClientsLayout() {
           </Button>
         </div>
 
-        {/* KPI tiles — clickable triage entry-points */}
+        {/* KPI tiles · clickable triage entry-points */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
             { key: 'met-aandacht' as StatusFilter, label: 'Met aandacht',  sub: 'niet helpen of geblokkeerd', count: kpiCounts.metAandacht, Icon: AlertCircle },

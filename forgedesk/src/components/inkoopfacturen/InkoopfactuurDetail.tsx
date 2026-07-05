@@ -226,7 +226,7 @@ export function InkoopfactuurDetail() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-bold tracking-[-0.3px]">
-          {factuur.leverancier_naam || 'Nieuwe factuur'}<span className="text-[#F15025]">.</span>
+          {factuur.leverancier_naam || 'Nieuwe factuur'}<span className="text-flame">.</span>
         </h1>
         {isExtracting && (
           <span className="flex items-center gap-1.5 text-[12px] font-medium text-[#C44830]">
@@ -245,7 +245,7 @@ export function InkoopfactuurDetail() {
       {/* 50/50 split */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* PDF viewer */}
-        <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
           {pdfUrl ? (
             <iframe src={pdfUrl} className="w-full h-[700px]" title="PDF preview" />
           ) : (
@@ -257,7 +257,7 @@ export function InkoopfactuurDetail() {
 
         {/* Form */}
         <div className="space-y-5">
-          <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] p-5 space-y-4">
+          <div className="bg-card rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] p-5 space-y-4">
             {factuur.extractie_opmerkingen && (
               <div className="text-[12px] p-3 rounded-lg bg-[hsl(var(--status-amber-bg))] text-[#8B6914] border border-[#FFE082]">
                 {factuur.extractie_opmerkingen}
@@ -312,7 +312,7 @@ export function InkoopfactuurDetail() {
           </div>
 
           {/* Regels */}
-          <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] p-5">
+          <div className="bg-card rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-semibold">Regels</h3>
               {!isAfgerond && (
@@ -415,7 +415,7 @@ export function InkoopfactuurDetail() {
       {/* Afwijs modal */}
       {showAfwijsModal && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowAfwijsModal(false)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-[14px] font-semibold mb-3">Factuur afwijzen</h3>
             <Textarea
               placeholder="Reden voor afwijzing..."

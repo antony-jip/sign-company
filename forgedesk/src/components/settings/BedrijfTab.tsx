@@ -131,7 +131,7 @@ export function BedrijfTab() {
       type="button"
       onClick={handleSave}
       disabled={isSaving || isLoading}
-      className="inline-flex items-center gap-2 bg-[#F15025] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+      className="inline-flex items-center gap-2 bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
     >
       {isSaving ? 'Opslaan...' : 'Opslaan'}
     </button>
@@ -151,7 +151,7 @@ export function BedrijfTab() {
         <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
           <div className="space-y-1">
             <h2 className="text-[20px] font-bold tracking-[-0.3px] text-foreground">
-              Bedrijfsgegevens<span className="text-[#F15025]">.</span>
+              Bedrijfsgegevens<span className="text-flame">.</span>
             </h2>
             <p
               className="text-[14px] text-foreground/70"
@@ -169,7 +169,7 @@ export function BedrijfTab() {
 
             <div className="flex items-center gap-6">
               <div
-                className="relative w-32 h-20 rounded-lg bg-muted dark:bg-muted border-2 border-dashed border-border dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-[#1A535C]/50 transition-colors"
+                className="relative w-32 h-20 rounded-lg bg-muted dark:bg-muted border-2 border-dashed border-border dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-petrol/50 transition-colors"
                 onClick={handleLogoClick}
               >
                 {logoPreview ? (
@@ -202,7 +202,7 @@ export function BedrijfTab() {
 
             <div className="space-y-1.5">
               <label htmlFor="bedrijfsnaam" className="text-[11px] text-muted-foreground block">Bedrijfsnaam</label>
-              <Input id="bedrijfsnaam" value={bedrijfsnaam} onChange={(e) => setBedrijfsnaam(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-[#1A535C]" />
+              <Input id="bedrijfsnaam" value={bedrijfsnaam} onChange={(e) => setBedrijfsnaam(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-petrol" />
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] text-muted-foreground block">E-mail kleur</label>
@@ -228,16 +228,16 @@ export function BedrijfTab() {
 
             <div className="space-y-1.5">
               <label htmlFor="adres" className="text-[11px] text-muted-foreground block">Adres</label>
-              <Input id="adres" value={adres} onChange={(e) => setAdres(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-[#1A535C]" />
+              <Input id="adres" value={adres} onChange={(e) => setAdres(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-petrol" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label htmlFor="postcode" className="text-[11px] text-muted-foreground block">Postcode</label>
-                <Input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-[#1A535C] font-mono" />
+                <Input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-petrol font-mono" />
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="stad" className="text-[11px] text-muted-foreground block">Stad</label>
-                <Input id="stad" value={stad} onChange={(e) => setStad(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-[#1A535C]" />
+                <Input id="stad" value={stad} onChange={(e) => setStad(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-petrol" />
               </div>
             </div>
           </div>
@@ -249,7 +249,7 @@ export function BedrijfTab() {
         <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
           <div className="space-y-1">
             <h2 className="text-[20px] font-bold tracking-[-0.3px] text-foreground">
-              Contactgegevens<span className="text-[#F15025]">.</span>
+              Contactgegevens<span className="text-flame">.</span>
             </h2>
             <p
               className="text-[14px] text-foreground/70"
@@ -280,7 +280,7 @@ export function BedrijfTab() {
         <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
           <div className="space-y-1">
             <h2 className="text-[20px] font-bold tracking-[-0.3px] text-foreground">
-              Juridisch &amp; financieel<span className="text-[#F15025]">.</span>
+              Juridisch &amp; financieel<span className="text-flame">.</span>
             </h2>
             <p
               className="text-[14px] text-foreground/70"
@@ -371,7 +371,7 @@ function DemoDataSection() {
   }
 
   return (
-    <Card className="border-[#F15025]/20 dark:border-[#F15025]/30 mt-6 rounded-xl">
+    <Card className="border-flame/20 dark:border-flame/30 mt-6 rounded-xl">
       <CardContent className="pt-6">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -385,7 +385,7 @@ function DemoDataSection() {
             size="sm"
             onClick={handleDelete}
             disabled={isDeleting}
-            className="border-[#F15025]/30 text-[#F15025] hover:bg-[#F15025]/5 dark:border-[#F15025]/40 dark:text-[#F15025] dark:hover:bg-[#F15025]/10 flex-shrink-0"
+            className="border-flame/30 text-flame hover:bg-flame/5 dark:border-flame/40 dark:text-flame dark:hover:bg-flame/10 flex-shrink-0"
           >
             {isDeleting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-2 h-3.5 w-3.5" />}
             Verwijderen

@@ -108,7 +108,7 @@ export function DataImportPage() {
       </div>
 
       {/* AI tip */}
-      <div className="rounded-xl border border-[#1A535C]/15 bg-[#1A535C]/[0.03] p-5">
+      <div className="rounded-xl border border-petrol/15 bg-petrol/[0.03] p-5">
         <p className="text-sm font-semibold text-foreground mb-1">Tip: heb je een export uit je oude software?</p>
         <p className="text-sm text-muted-foreground">
           Plak je export in ChatGPT of Claude met deze instructie:
@@ -183,9 +183,9 @@ export function DataImportPage() {
                       <td className="py-2.5 px-4">
                         <div className="flex items-center gap-1.5">
                           {log.type === 'bedrijfsdata' ? (
-                            <FileSpreadsheet className="w-3.5 h-3.5 text-[#1A535C]" />
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-petrol" />
                           ) : (
-                            <Users className="w-3.5 h-3.5 text-[#1A535C]" />
+                            <Users className="w-3.5 h-3.5 text-petrol" />
                           )}
                           <span className="text-xs capitalize">{log.type}</span>
                         </div>

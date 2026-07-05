@@ -97,7 +97,7 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
         <div className="mx-auto h-1 w-10 rounded-full bg-[#D4D2CE] mb-5" />
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[18px] font-bold text-foreground">
-            Nieuwe taak<span className="text-[#F15025]">.</span>
+            Nieuwe taak<span className="text-flame">.</span>
           </h2>
           <button
             type="button"
@@ -114,7 +114,7 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
             value={titel}
             onChange={(e) => setTitel(e.target.value)}
             placeholder="Wat moet er gebeuren?"
-            className="w-full h-11 px-3 rounded-lg bg-background border border-border focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[15px] text-foreground placeholder:text-muted-foreground transition-all"
+            className="w-full h-11 px-3 rounded-lg bg-background border border-border focus:border-petrol focus:bg-white focus:ring-2 focus:ring-petrol/10 outline-none text-[15px] text-foreground placeholder:text-muted-foreground transition-all"
           />
           <div className="flex gap-2">
             <DatePicker
@@ -127,13 +127,13 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
               type="time"
               value={tijd}
               onChange={(e) => setTijd(e.target.value)}
-              className="w-32 h-11 px-3 rounded-lg bg-background border border-border focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[14px] text-foreground transition-all"
+              className="w-32 h-11 px-3 rounded-lg bg-background border border-border focus:border-petrol focus:bg-white focus:ring-2 focus:ring-petrol/10 outline-none text-[14px] text-foreground transition-all"
             />
           </div>
           <button
             type="submit"
             disabled={!titel.trim() || saving}
-            className="w-full h-12 mt-2 rounded-xl bg-[#F15025] text-white text-[15px] font-semibold hover:bg-[#D9431E] active:bg-[#C83A18] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full h-12 mt-2 rounded-xl bg-flame text-white text-[15px] font-semibold hover:bg-[#D9431E] active:bg-[#C83A18] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Toevoegen…' : 'Toevoegen'}
           </button>

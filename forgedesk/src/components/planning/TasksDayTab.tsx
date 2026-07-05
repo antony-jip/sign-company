@@ -63,7 +63,7 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
     <>
       <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
         <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
-          Taken<span className="text-[#F15025]">.</span>
+          Taken<span className="text-flame">.</span>
         </h1>
         <p className="mt-1 text-[14px] text-foreground/70 capitalize">
           {formatFullWeekdayDate(selectedDate)}
@@ -78,7 +78,7 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
           type="button"
           onClick={() => setSelectedDate((d) => addDays(d, -1))}
           aria-label="Vorige dag"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-petrol active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -87,7 +87,7 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
             <button
               type="button"
               onClick={() => setSelectedDate(new Date())}
-              className="text-[12px] font-semibold uppercase tracking-wider text-[#1A535C] hover:text-[#0F3C44] transition-colors"
+              className="text-[12px] font-semibold uppercase tracking-wider text-petrol hover:text-[#0F3C44] transition-colors"
             >
               Vandaag
             </button>
@@ -97,7 +97,7 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
           type="button"
           onClick={() => setSelectedDate((d) => addDays(d, 1))}
           aria-label="Volgende dag"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-petrol active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -114,7 +114,7 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
               <CalendarCheck className="h-9 w-9 text-muted-foreground/80" strokeWidth={1.5} />
             </div>
             <p className="text-[15px] font-medium text-foreground/70">
-              Geen taken voor {isToday ? 'vandaag' : 'deze dag'}<span className="text-[#F15025]">.</span>
+              Geen taken voor {isToday ? 'vandaag' : 'deze dag'}<span className="text-flame">.</span>
             </p>
             <p className="mt-1.5 text-[13px] text-muted-foreground max-w-[240px] leading-relaxed">
               Tik onderaan op <span className="font-medium text-foreground/70">Nieuwe taak</span> om er een toe te voegen.
@@ -140,8 +140,8 @@ export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, togg
                     className={cn(
                       'h-[22px] w-[22px] rounded-full border-[1.5px] flex items-center justify-center transition-all duration-200 flex-shrink-0',
                       isDone
-                        ? 'bg-[#F15025] border-[#F15025] text-white'
-                        : 'bg-white border-[#D4D2CE] hover:border-[#1A535C] active:scale-95',
+                        ? 'bg-flame border-flame text-white'
+                        : 'bg-white border-[#D4D2CE] hover:border-petrol active:scale-95',
                     )}
                   >
                     <Check

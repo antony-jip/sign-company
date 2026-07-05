@@ -88,7 +88,7 @@ export function WelkomPagina() {
         const profile = await getProfile(user.id)
         if (profile?.voornaam) setVoornaam(profile.voornaam)
       } catch {
-        // stil — fallback blijft user_metadata
+        // stil · fallback blijft user_metadata
       }
     })()
   }, [user])

@@ -33,16 +33,16 @@ export function ImportHelp({ type }: ImportHelpProps) {
 function BedrijfsdataHelp() {
   return (
     <div className="space-y-4 text-sm text-muted-foreground bg-muted/30 rounded-lg p-4 border">
-      <p>Het template heeft 14 kolommen. Je hoeft niet alles in te vullen — vul alleen in wat je hebt.</p>
+      <p>Het template heeft 14 kolommen. Je hoeft niet alles in te vullen · vul alleen in wat je hebt.</p>
 
       <div>
         <p className="font-semibold text-foreground mb-1">TYPE (verplicht)</p>
         <p>Vul in de eerste kolom één van deze waarden in:</p>
         <ul className="list-disc list-inside mt-1 space-y-0.5">
-          <li><strong>relatie</strong> — voor je klanten en bedrijven</li>
-          <li><strong>project</strong> — voor je projecten</li>
-          <li><strong>offerte</strong> — voor je offertes</li>
-          <li><strong>factuur</strong> — voor je facturen</li>
+          <li><strong>relatie</strong> · voor je klanten en bedrijven</li>
+          <li><strong>project</strong> · voor je projecten</li>
+          <li><strong>offerte</strong> · voor je offertes</li>
+          <li><strong>factuur</strong> · voor je facturen</li>
         </ul>
       </div>
 
@@ -90,12 +90,12 @@ function ContactpersonenHelp() {
     <div className="space-y-3 text-sm text-muted-foreground bg-muted/30 rounded-lg p-4 border">
       <p>Het template heeft 6 kolommen:</p>
       <ul className="list-disc list-inside space-y-0.5">
-        <li><strong>bedrijfsnaam</strong> — om te koppelen aan een bestaande klant (optioneel)</li>
-        <li><strong>voornaam</strong> — voornaam van het contact</li>
-        <li><strong>achternaam</strong> — achternaam van het contact</li>
-        <li><strong>email</strong> — e-mailadres</li>
-        <li><strong>telefoon</strong> — telefoonnummer</li>
-        <li><strong>functie</strong> — functietitel</li>
+        <li><strong>bedrijfsnaam</strong> · om te koppelen aan een bestaande klant (optioneel)</li>
+        <li><strong>voornaam</strong> · voornaam van het contact</li>
+        <li><strong>achternaam</strong> · achternaam van het contact</li>
+        <li><strong>email</strong> · e-mailadres</li>
+        <li><strong>telefoon</strong> · telefoonnummer</li>
+        <li><strong>functie</strong> · functietitel</li>
       </ul>
       <p>Laat <strong>bedrijfsnaam</strong> leeg voor losse contacten die niet aan een klant gekoppeld zijn.</p>
       <p>Contacten met hetzelfde e-mailadres worden overgeslagen (duplicaatdetectie).</p>

@@ -218,7 +218,7 @@ export function VandaagBlok() {
   // Sneltoets "naar morgen": optimistische server-update + 5s undo. We
   // bewaren de oorspronkelijke deadline lokaal zodat de undo-knop hem kan
   // herstellen. Daarna roepen we refresh() aan om de dashboard-state weer
-  // synchroon te trekken — de rij verdwijnt dan vanzelf uit "Vandaag".
+  // synchroon te trekken · de rij verdwijnt dan vanzelf uit "Vandaag".
   const handleMoveToTomorrow = useCallback(async (taakId: string, originalDeadline: string | undefined) => {
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
@@ -258,7 +258,7 @@ export function VandaagBlok() {
   )
 
   // Vijf weekdagen (ma-vr) + index van vandaag binnen die set. Wordt
-  // éénmaal per mount gefixeerd — als de gebruiker tot na middernacht het
+  // éénmaal per mount gefixeerd · als de gebruiker tot na middernacht het
   // dashboard open laat staan blijft de selectie zinvol (de refresh-poll
   // herlaadt de items zelf).
   const weekDays = useMemo(() => {
@@ -278,7 +278,7 @@ export function VandaagBlok() {
   const selectedDay = weekDays[selectedDayIndex]
 
   // Quick-add: taak voor de geselecteerde dag, toegewezen aan jezelf,
-  // standaard prioriteit. Geen audit-log voor deze snelle creatie — wie
+  // standaard prioriteit. Geen audit-log voor deze snelle creatie · wie
   // het echt nodig heeft maakt 'm via de Taken-pagina aan met full form.
   const [quickAddInput, setQuickAddInput] = useState('')
   const [isAdding, setIsAdding] = useState(false)
@@ -404,7 +404,7 @@ export function VandaagBlok() {
         <div className="flex items-baseline gap-3 min-w-0">
           <h2 className="font-heading text-[14px] font-bold text-foreground">
             {selectedDayIndex === todayIndex ? 'Vandaag' : WEEKDAY_LABELS_FULL[selectedDayIndex]}
-            <span className="text-[#F15025]">.</span>
+            <span className="text-flame">.</span>
           </h2>
           <span
             className="text-[14px] text-muted-foreground truncate"
@@ -449,11 +449,11 @@ export function VandaagBlok() {
               aria-selected={isSelected}
               onClick={() => setSelectedDayIndex(i)}
               className={cn(
-                'relative z-10 flex-1 min-w-0 px-1.5 py-1 rounded-[8px] text-[11.5px] font-semibold tracking-[-0.1px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30',
+                'relative z-10 flex-1 min-w-0 px-1.5 py-1 rounded-[8px] text-[11px] font-semibold tracking-[-0.1px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-petrol/30',
                 isSelected
                   ? 'text-white'
                   : isToday
-                    ? 'text-[#F15025] hover:text-[#C03A18]'
+                    ? 'text-flame hover:text-[#C03A18]'
                     : 'text-muted-foreground hover:text-foreground',
               )}
               title={d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'short' })}
@@ -473,7 +473,7 @@ export function VandaagBlok() {
           {selectedDayIndex === todayIndex
             ? 'Niets ingepland voor vandaag'
             : `Niets ingepland voor ${WEEKDAY_LABELS_FULL[selectedDayIndex].toLowerCase()}`}
-          <span className="text-[#F15025]">.</span>
+          <span className="text-flame">.</span>
         </p>
       ) : (
         <ul key={`items-${selectedDayIndex}`} className="-mx-2">
@@ -504,7 +504,7 @@ export function VandaagBlok() {
                       onClick={() => handleToggleComplete(item.taakId!, item.taakStatus!)}
                       title="Markeer als klaar"
                       aria-label={`Markeer "${item.titel}" als klaar`}
-                      className="inline-flex items-center justify-center w-[30px] h-[30px] flex-shrink-0 transition-transform group-hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/35"
+                      className="inline-flex items-center justify-center w-[30px] h-[30px] flex-shrink-0 transition-transform group-hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-petrol/35"
                       style={{
                         background: typeStyle.bg,
                         borderRadius: 9,
@@ -537,9 +537,9 @@ export function VandaagBlok() {
                   <button
                     type="button"
                     onClick={() => navigate(item.href)}
-                    className="flex-1 min-w-0 text-left focus-visible:outline-none rounded-md focus-visible:ring-2 focus-visible:ring-[#1A535C]/30"
+                    className="flex-1 min-w-0 text-left focus-visible:outline-none rounded-md focus-visible:ring-2 focus-visible:ring-petrol/30"
                   >
-                    <span className="block text-[13.5px] font-medium text-foreground truncate leading-[1.25]">
+                    <span className="block text-[13px] font-medium text-foreground truncate leading-[1.25]">
                       {item.titel}
                     </span>
                     {item.context && (
@@ -576,7 +576,7 @@ export function VandaagBlok() {
                       onClick={() => handleMoveToTomorrow(item.taakId!, item.taakDeadline)}
                       title="Naar morgen"
                       aria-label={`Verplaats "${item.titel}" naar morgen`}
-                      className="inline-flex items-center justify-center w-6 h-6 rounded-md text-[#1A535C] hover:bg-[#1A535C]/10 focus-visible:bg-[#1A535C]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30 transition-colors"
+                      className="inline-flex items-center justify-center w-6 h-6 rounded-md text-petrol hover:bg-petrol/10 focus-visible:bg-petrol/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-petrol/30 transition-colors"
                     >
                       <ArrowRightToLine className="h-3.5 w-3.5" />
                     </button>
@@ -593,8 +593,8 @@ export function VandaagBlok() {
         onSubmit={(e) => { e.preventDefault(); void handleQuickAdd() }}
         className="mt-4"
       >
-        <div className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-card/50 hover:border-[#1A535C]/35 focus-within:border-[#1A535C] focus-within:bg-card focus-within:shadow-[0_0_0_3px_rgba(26,83,92,0.08)] transition-all">
-          <Plus className="h-3.5 w-3.5 text-muted-foreground group-focus-within:text-[#1A535C] transition-colors flex-shrink-0" />
+        <div className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-card/50 hover:border-petrol/35 focus-within:border-petrol focus-within:bg-card focus-within:shadow-[0_0_0_3px_rgba(26,83,92,0.08)] transition-all">
+          <Plus className="h-3.5 w-3.5 text-muted-foreground group-focus-within:text-petrol transition-colors flex-shrink-0" />
           <input
             type="text"
             value={quickAddInput}

@@ -122,7 +122,7 @@ export function EmailLayout() {
   }, [listWidth])
   // Sidebar is ephemeral: opent alleen wanneer een actie in de drie-puntjes
   // dropdown wordt geklikt (Klant/Project/Taak aanmaken). Geen localStorage
-  // persistentie — anders zou hij open blijven na refresh zodra je 'm één
+  // persistentie · anders zou hij open blijven na refresh zodra je 'm één
   // keer hebt geopend, wat de hele point van "dropdown ipv sidebar" tegenwerkt.
   const [contextOpen, setContextOpen] = useState<boolean>(false)
 
@@ -251,7 +251,7 @@ export function EmailLayout() {
 
   const fetchLimit = emailFetchLimit || 200
 
-  // Refs for values used in loadEmails — prevents effect re-runs on auth/settings changes
+  // Refs for values used in loadEmails · prevents effect re-runs on auth/settings changes
   const userIdRef = useRef(user?.id)
   userIdRef.current = user?.id
   const fetchLimitRef = useRef(fetchLimit)
@@ -352,7 +352,7 @@ export function EmailLayout() {
           return
         }
 
-        // Step 1b: No Supabase data — need to wait for IMAP sync
+        // Step 1b: No Supabase data · need to wait for IMAP sync
         try {
           const { total } = await triggerImapSync('INBOX')
           setImapTotal(total)
@@ -660,7 +660,7 @@ export function EmailLayout() {
   }, [threadedEmails, getDateGroup])
 
   // Platte items-array voor virtualization: één entry per zichtbare rij
-  // (header of email). Headers blijven scrollen mee — geen sticky meer,
+  // (header of email). Headers blijven scrollen mee · geen sticky meer,
   // want absolute positioning binnen de virtualizer maakt CSS-sticky stuk.
   type FlatRow =
     | { type: 'header-pinned' }
@@ -995,7 +995,7 @@ export function EmailLayout() {
   }, [])
 
   const handleFolderLoad = useCallback(async (folder: EmailFolder) => {
-    // Read from Supabase only — no IMAP sync on folder switch
+    // Read from Supabase only · no IMAP sync on folder switch
     try {
       const cached = await readFromSupabase()
       setEmails(cached)
@@ -1004,7 +1004,7 @@ export function EmailLayout() {
   }, [])
 
   // ─── Load more (infinite scroll) ───
-  // Bladeren gaat uit de eigen DB met keyset-paginatie (datum, id) — geen
+  // Bladeren gaat uit de eigen DB met keyset-paginatie (datum, id) · geen
   // IMAP-offset meer. De historie-backfill vult de DB op de achtergrond,
   // dus een lege pagina nu kan na verloop van tijd alsnog data hebben;
   // daarom resetten we hasMore bij refresh/folderwissel.
@@ -1111,7 +1111,7 @@ export function EmailLayout() {
     return promise
   }, [])
 
-  // Prefetch on hover — vult cache op de achtergrond, geen UI feedback.
+  // Prefetch on hover · vult cache op de achtergrond, geen UI feedback.
   const prefetchEmailBody = useCallback((email: Email) => {
     if (bodyCacheRef.current.has(email.id)) return
     if (email.inhoud) return
@@ -1120,7 +1120,7 @@ export function EmailLayout() {
 
   // Targeted IMAP fetch voor enkel attachment-metadata. Triggert wanneer de
   // body al ergens vandaan komt (DB of cache) maar de bijlagen-meta ontbreekt
-  // — bv. bij oude mails die gesynced zijn voordat attachment_meta werd
+  // · bv. bij oude mails die gesynced zijn voordat attachment_meta werd
   // bijgehouden, of bij DB-rijen zonder meta. Voorkomt het "open opnieuw om
   // de details te laden" dead-end.
   const fetchAttachmentMeta = useCallback(async (email: Email, folder: EmailFolder): Promise<EmailAttachment[] | undefined> => {
@@ -1166,18 +1166,18 @@ export function EmailLayout() {
 
     setIsLoadingBody(true)
     try {
-      // Body is al gecached, alleen bijlagen ontbreken — alleen attachment-fetch.
+      // Body is al gecached, alleen bijlagen ontbreken · alleen attachment-fetch.
       if (cached !== undefined) {
         const att = await fetchAttachmentMeta(email, folder)
         return { ...email, gelezen: true, inhoud: cached, attachment_meta: email.attachment_meta || att || cachedAtt || undefined }
       }
-      // Body op email-object aanwezig (uit lijst), bijlagen niet — alleen attachment-fetch.
+      // Body op email-object aanwezig (uit lijst), bijlagen niet · alleen attachment-fetch.
       if (email.inhoud) {
         const att = await fetchAttachmentMeta(email, folder)
         return { ...email, gelezen: true, attachment_meta: email.attachment_meta || att || undefined }
       }
 
-      // Niets gecached — volle body-fetch (vult ook attachments als IMAP-pad).
+      // Niets gecached · volle body-fetch (vult ook attachments als IMAP-pad).
       const body = await fetchBodyToCache(email, folder)
       let att = attachmentCacheRef.current.get(email.id)
       // Body kwam uit DB, maar attachments ontbraken in DB; haal ze nu via IMAP.
@@ -1213,7 +1213,7 @@ export function EmailLayout() {
   }, [threadedEmails, fetchBodyToCache, selectedFolder])
 
   // ─── Polling: silent background sync every 3min ───
-  // No window focus sync — too aggressive (full IMAP connection each time)
+  // No window focus sync · too aggressive (full IMAP connection each time)
   useEffect(() => {
     pollingRef.current = setInterval(() => {
       handleRefresh(selectedFolder, true)
@@ -1226,7 +1226,7 @@ export function EmailLayout() {
   // ─── Keyboard shortcuts (inline from useEmailKeyboard) ───
   // callbacksRef wordt aan onder via useEffect na declaratie van alle
   // handlers gevuld (handleReply / handleForward worden later gedeclareerd
-  // dus we kunnen ze niet op top-level lezen — TDZ).
+  // dus we kunnen ze niet op top-level lezen · TDZ).
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const callbacksRef = useRef<{
     handleTogglePin: (e: Email) => void
@@ -1290,7 +1290,7 @@ export function EmailLayout() {
 
   // Houd de focused-row in view bij j/k-navigatie. Virtualizer scrolt
   // gericht naar het flat-item (header of email) dat overeenkomt met het
-  // gefocuste email-id — gewoon scrollIntoView werkt niet bij absolute
+  // gefocuste email-id · gewoon scrollIntoView werkt niet bij absolute
   // positioning.
   useEffect(() => {
     if (focusedIndex < 0 || viewMode !== 'idle') return
@@ -1389,7 +1389,7 @@ export function EmailLayout() {
   const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
     try {
       // Genereer thread_id client-side zodat we een eventueel gekoppeld
-      // project direct na verzenden kunnen aanhaken — de backend accepteert
+      // project direct na verzenden kunnen aanhaken · de backend accepteert
       // deze waarde en gebruikt 'm als de thread_id van de nieuwe mail.
       const pendingProjectId = composeProjectIdRef.current
       const clientThreadId = pendingProjectId ? crypto.randomUUID() : undefined
@@ -1443,7 +1443,7 @@ export function EmailLayout() {
   }, [selectedEmail, selectedFolder, handleRefresh])
 
   const handleFolderChange = useCallback((folder: EmailFolder) => {
-    // Backfill kan intussen oudere mail hebben toegevoegd — geef bladeren
+    // Backfill kan intussen oudere mail hebben toegevoegd · geef bladeren
     // weer een kans in deze map.
     hasMoreDbRef.current = {}
     setSelectedFolder(folder)
@@ -1528,7 +1528,7 @@ export function EmailLayout() {
   const readerSenderEmail = selectedEmail ? extractSenderEmail(selectedEmail.van) : ''
   // Avatar helpers kept in emailHelpers for EmailReader usage
 
-  // Mobile drawer account header — same fallback pattern as TopNav/Sidebar.
+  // Mobile drawer account header · same fallback pattern as TopNav/Sidebar.
   const userInitial = (user?.user_metadata?.voornaam?.[0] || user?.email?.[0] || 'U').toUpperCase()
   const userName = user?.user_metadata?.voornaam
     ? `${user.user_metadata.voornaam}${user.user_metadata.achternaam ? ' ' + user.user_metadata.achternaam : ''}`
@@ -1544,18 +1544,18 @@ export function EmailLayout() {
       <button
         key={folder.id}
         onClick={() => handleFolderChange(folder.id)}
-        title={showNewBadge ? 'Markeer mails die je opvolgt — krijg een ping als er antwoord komt' : undefined}
+        title={showNewBadge ? 'Markeer mails die je opvolgt · krijg een ping als er antwoord komt' : undefined}
         className={cn(
           'w-full py-3 px-4 flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors',
           isActive
-            ? 'bg-[#1A535C]/[0.08] dark:bg-[#2A7A86]/[0.18] text-[#1A535C] dark:text-[#7FB5BF] font-medium'
+            ? 'bg-petrol/[0.08] dark:bg-[#2A7A86]/[0.18] text-petrol dark:text-[#7FB5BF] font-medium'
             : 'text-foreground/70 hover:bg-background hover:text-foreground',
         )}
       >
-        <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
+        <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-petrol')} />
         <span className="flex-1 text-left">{folder.label}</span>
         {showNewBadge && (
-          <span className="text-[10px] font-semibold text-[#F15025] tracking-wide">
+          <span className="text-[10px] font-semibold text-flame tracking-wide">
             Nieuw<span aria-hidden>.</span>
           </span>
         )}
@@ -1587,7 +1587,7 @@ export function EmailLayout() {
 
       <div className="p-3">
         <button
-          className="tap-press w-full h-10 rounded-[10px] flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-[#F15025] hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] active:scale-[0.98] transition-[background-color,box-shadow,transform] duration-200"
+          className="tap-press w-full h-10 rounded-[10px] flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-flame hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] active:scale-[0.98] transition-[background-color,box-shadow,transform] duration-200"
           onClick={() => { setFolderDrawerOpen(false); handleCompose() }}
         >
           <Pencil className="h-4 w-4" />
@@ -1606,11 +1606,11 @@ export function EmailLayout() {
             className={cn(
               'w-full py-3 px-4 flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors',
               selectedFolder === 'gepland'
-                ? 'bg-[#1A535C]/[0.08] dark:bg-[#2A7A86]/[0.18] text-[#1A535C] dark:text-[#7FB5BF] font-medium'
+                ? 'bg-petrol/[0.08] dark:bg-[#2A7A86]/[0.18] text-petrol dark:text-[#7FB5BF] font-medium'
                 : 'text-foreground/70 hover:bg-background hover:text-foreground',
             )}
           >
-            <Clock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-[#1A535C]')} />
+            <Clock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-petrol')} />
             <span className="flex-1 text-left">Ingeplande berichten</span>
           </button>
         </div>
@@ -1626,25 +1626,25 @@ export function EmailLayout() {
               <button
                 key={folder.id}
                 onClick={() => handleFolderChange(folder.id)}
-                title={showNewBadge ? 'Markeer mails die je opvolgt — krijg een ping als er antwoord komt' : undefined}
+                title={showNewBadge ? 'Markeer mails die je opvolgt · krijg een ping als er antwoord komt' : undefined}
                 className={cn(
                   'w-full h-[36px] flex items-center gap-3 px-2.5 rounded-[10px] text-[14px] tracking-[-0.01em] transition-all duration-200 active:scale-[0.98]',
                   isActive
-                    ? 'bg-[#1A535C]/[0.10] text-[#1A535C] font-semibold'
+                    ? 'bg-petrol/[0.10] text-petrol font-semibold'
                     : 'text-[#3A3A36] font-medium hover:bg-black/[0.04]',
                 )}
               >
-                <Icon className={cn('h-[17px] w-[17px] flex-shrink-0', isActive ? 'text-[#1A535C]' : 'text-muted-foreground')} />
+                <Icon className={cn('h-[17px] w-[17px] flex-shrink-0', isActive ? 'text-petrol' : 'text-muted-foreground')} />
                 <span className="flex-1 text-left truncate">{folder.label}</span>
                 {showNewBadge && (
-                  <span className="text-[10px] font-semibold text-[#F15025] tracking-wide">
+                  <span className="text-[10px] font-semibold text-flame tracking-wide">
                     Nieuw<span aria-hidden>.</span>
                   </span>
                 )}
                 {count > 0 && folder.id !== 'inbox' && (
                   <span className={cn(
                     'text-[11px] font-medium tabular-nums px-1.5 min-w-[20px] h-[18px] rounded-full inline-flex items-center justify-center',
-                    isActive ? 'bg-[#1A535C]/[0.14] text-[#1A535C] dark:bg-[#2A7A86]/[0.25] dark:text-[#7FB5BF]' : 'bg-black/[0.06] dark:bg-white/[0.08] text-foreground/70',
+                    isActive ? 'bg-petrol/[0.14] text-petrol dark:bg-[#2A7A86]/[0.25] dark:text-[#7FB5BF]' : 'bg-black/[0.06] dark:bg-white/[0.08] text-foreground/70',
                   )}>
                     {count}
                   </span>
@@ -1660,11 +1660,11 @@ export function EmailLayout() {
             className={cn(
               'w-full h-[36px] flex items-center gap-3 px-2.5 rounded-[10px] text-[14px] tracking-[-0.01em] transition-all duration-200 active:scale-[0.98]',
               selectedFolder === 'gepland'
-                ? 'bg-[#1A535C]/[0.10] dark:bg-[#2A7A86]/[0.18] text-[#1A535C] dark:text-[#7FB5BF] font-semibold'
+                ? 'bg-petrol/[0.10] dark:bg-[#2A7A86]/[0.18] text-petrol dark:text-[#7FB5BF] font-semibold'
                 : 'text-[#3A3A36] dark:text-foreground/80 font-medium hover:bg-black/[0.04] dark:hover:bg-white/[0.05]',
             )}
           >
-            <Clock className={cn('h-[17px] w-[17px] flex-shrink-0', selectedFolder === 'gepland' ? 'text-[#1A535C]' : 'text-muted-foreground')} />
+            <Clock className={cn('h-[17px] w-[17px] flex-shrink-0', selectedFolder === 'gepland' ? 'text-petrol' : 'text-muted-foreground')} />
             <span className="flex-1 text-left truncate">Ingeplande berichten</span>
           </button>
         </div>
@@ -1684,7 +1684,7 @@ export function EmailLayout() {
           <span
             className={cn(
               'relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0',
-              focusModus ? 'bg-[#1A535C]' : 'bg-[#D4D3CE] dark:bg-white/20'
+              focusModus ? 'bg-petrol' : 'bg-[#D4D3CE] dark:bg-white/20'
             )}
           >
             <span
@@ -1697,7 +1697,7 @@ export function EmailLayout() {
         </button>
         <div className="flex items-center gap-2 text-[12px] md:text-[11px] text-muted-foreground md:text-muted-foreground/80">
           <Mail className="h-3 w-3" />
-          <span>doen<span className="text-[#F15025]">.</span> mail</span>
+          <span>doen<span className="text-flame">.</span> mail</span>
         </div>
       </div>
     </>
@@ -1737,11 +1737,11 @@ export function EmailLayout() {
         />
       )}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-      {/* Desktop folder-icon-sidebar — iOS-inspired met subtiele petrol-infusie:
+      {/* Desktop folder-icon-sidebar · iOS-inspired met subtiele petrol-infusie:
           zachte verticale gradient, petrol-tinted hairlines, cooler grey iconen,
           en hover-state in petrol ipv neutraal zwart. */}
-      <div className="hidden md:flex w-[64px] bg-gradient-to-b from-[#E9EEEF] via-[#E4EBEC] to-[#DDE7E8] dark:from-[hsl(190_40%_6%)] dark:via-[hsl(190_38%_5%)] dark:to-[hsl(190_42%_4%)] border-r border-[#1A535C]/[0.10] dark:border-[#1A535C]/[0.22] flex-col flex-shrink-0 relative">
-        {/* Subtiele binnen-highlight aan de linkerkant — geeft diepte */}
+      <div className="hidden md:flex w-[64px] bg-gradient-to-b from-[#E9EEEF] via-[#E4EBEC] to-[#DDE7E8] dark:from-[hsl(190_40%_6%)] dark:via-[hsl(190_38%_5%)] dark:to-[hsl(190_42%_4%)] border-r border-petrol/[0.10] dark:border-petrol/[0.22] flex-col flex-shrink-0 relative">
+        {/* Subtiele binnen-highlight aan de linkerkant · geeft diepte */}
         <div className="absolute inset-y-0 left-0 w-px bg-white/40 dark:bg-white/[0.04] pointer-events-none" aria-hidden />
 
         <nav className="flex-1 overflow-y-auto pt-3 pb-2 px-2 space-y-1 relative">
@@ -1754,29 +1754,29 @@ export function EmailLayout() {
               <button
                 key={folder.id}
                 onClick={() => handleFolderChange(folder.id)}
-                title={`${folder.label}${count > 0 && folder.id !== 'inbox' ? ` (${count})` : ''}${showNewBadge ? ' — Nieuw' : ''}`}
+                title={`${folder.label}${count > 0 && folder.id !== 'inbox' ? ` (${count})` : ''}${showNewBadge ? ' · Nieuw' : ''}`}
                 className={cn(
                   'tap-press relative w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
                   isActive
                     ? 'bg-gradient-to-b from-[#1F606A] to-[#164850] text-white shadow-[0_3px_10px_-2px_rgba(26,83,92,0.45),0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_-1px_0_rgba(0,0,0,0.05)_inset]'
-                    : 'text-[#8FA0A4] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] dark:text-[#6A8085] dark:hover:text-[#5FB5C0] dark:hover:bg-[#1A535C]/[0.22]',
+                    : 'text-[#8FA0A4] hover:text-petrol hover:bg-petrol/[0.06] dark:text-[#6A8085] dark:hover:text-[#5FB5C0] dark:hover:bg-petrol/[0.22]',
                 )}
               >
                 <Icon className="h-[19px] w-[19px]" strokeWidth={isActive ? 2.2 : 1.8} />
                 {showNewBadge && (
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#F15025] ring-2 ring-[#F1F5F5] dark:ring-[hsl(190_40%_5%)]" />
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-flame ring-2 ring-[#F1F5F5] dark:ring-[hsl(190_40%_5%)]" />
                 )}
                 {count > 0 && folder.id !== 'inbox' && !showNewBadge && (
                   <span className={cn(
                     'absolute top-0.5 right-0.5 text-[10px] font-semibold tabular-nums min-w-[16px] h-[16px] px-1 rounded-full inline-flex items-center justify-center leading-none ring-2 ring-[#F1F5F5] dark:ring-[hsl(190_40%_5%)]',
-                    isActive ? 'bg-white text-[#1A535C]' : 'bg-[#F15025] text-white',
+                    isActive ? 'bg-white text-petrol' : 'bg-flame text-white',
                   )}>{count}</span>
                 )}
               </button>
             )
           })}
 
-          <div className="my-2 mx-3 h-px bg-gradient-to-r from-transparent via-[#1A535C]/[0.12] to-transparent" aria-hidden />
+          <div className="my-2 mx-3 h-px bg-gradient-to-r from-transparent via-petrol/[0.12] to-transparent" aria-hidden />
 
           <button
             onClick={() => handleFolderChange('gepland')}
@@ -1785,22 +1785,22 @@ export function EmailLayout() {
               'tap-press w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
               selectedFolder === 'gepland'
                 ? 'bg-gradient-to-b from-[#1F606A] to-[#164850] text-white shadow-[0_3px_10px_-2px_rgba(26,83,92,0.45),0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_-1px_0_rgba(0,0,0,0.05)_inset]'
-                : 'text-[#8FA0A4] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] dark:text-[#6A8085] dark:hover:text-[#5FB5C0] dark:hover:bg-[#1A535C]/[0.22]',
+                : 'text-[#8FA0A4] hover:text-petrol hover:bg-petrol/[0.06] dark:text-[#6A8085] dark:hover:text-[#5FB5C0] dark:hover:bg-petrol/[0.22]',
             )}
           >
             <Clock className="h-[19px] w-[19px]" strokeWidth={selectedFolder === 'gepland' ? 2.2 : 1.8} />
           </button>
         </nav>
 
-        {/* Footer: Focus modus toggle — subtieler petrol-tinted divider */}
-        <div className="border-t border-[#1A535C]/[0.08] py-2 px-2 bg-gradient-to-b from-transparent to-[#1A535C]/[0.04]">
+        {/* Footer: Focus modus toggle · subtieler petrol-tinted divider */}
+        <div className="border-t border-petrol/[0.08] py-2 px-2 bg-gradient-to-b from-transparent to-petrol/[0.04]">
           <button
             type="button"
             role="switch"
             aria-checked={focusModus}
             aria-label="Focus modus aan/uit"
             onClick={() => setFocusModus(!focusModus)}
-            title={focusModus ? 'Focus modus — aan' : 'Focus modus — uit'}
+            title={focusModus ? 'Focus modus · aan' : 'Focus modus · uit'}
             className={cn(
               'tap-press w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
               focusModus
@@ -1813,7 +1813,7 @@ export function EmailLayout() {
         </div>
       </div>
 
-      {/* Mobile drawer + backdrop — portaled to body so the slide-over escapes
+      {/* Mobile drawer + backdrop · portaled to body so the slide-over escapes
           the parent's stacking context (main carries zIndex:0 in topnav layout,
           which would otherwise hide the drawer's top behind the global header). */}
       {createPortal(
@@ -1837,7 +1837,7 @@ export function EmailLayout() {
         document.body,
       )}
 
-      {/* Mobile floating "Opstellen" pill — bottom-right above MobileBottomNav.
+      {/* Mobile floating "Opstellen" pill · bottom-right above MobileBottomNav.
           Portaled to body to escape main's stacking context. Verberg tijdens
           bulk-selectie zodat de bulk action-bar (zelfde y-positie) niet
           overlapt met de pill. */}
@@ -1846,7 +1846,7 @@ export function EmailLayout() {
           type="button"
           onClick={() => { hapticLight(); handleCompose() }}
           aria-label="Nieuw bericht opstellen"
-          className="md:hidden fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 inline-flex items-center gap-2 px-5 py-3 rounded-full text-white text-[14px] font-medium bg-[#F15025]/[0.94] backdrop-blur-xl shadow-[0_8px_24px_rgba(241,80,37,0.32)] active:scale-[0.94] transition-transform duration-100"
+          className="md:hidden fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 inline-flex items-center gap-2 px-5 py-3 rounded-full text-white text-[14px] font-medium bg-flame/[0.94] backdrop-blur-xl shadow-[0_8px_24px_rgba(241,80,37,0.32)] active:scale-[0.94] transition-transform duration-100"
         >
           <Edit3 className="h-[17px] w-[17px]" />
           Opstellen
@@ -1854,7 +1854,7 @@ export function EmailLayout() {
         document.body,
       )}
 
-      {/* ─── LIST COLUMN — altijd zichtbaar op desktop (resizable), op mobile alleen wanneer idle ─── */}
+      {/* ─── LIST COLUMN · altijd zichtbaar op desktop (resizable), op mobile alleen wanneer idle ─── */}
       <div
         className={cn(
           'bg-white dark:bg-card flex-col min-w-0 relative',
@@ -1871,16 +1871,16 @@ export function EmailLayout() {
 
       {/* Email list (idle view) */}
       {selectedFolder !== 'gepland' && (<>
-        {/* Sticky header + toolbar — desktop only */}
+        {/* Sticky header + toolbar · desktop only */}
         <div className="sticky top-0 z-20 bg-white dark:bg-card border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 flex-shrink-0 hidden md:block">
           <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[rgba(26,83,92,0.06)] dark:border-white/[0.06]">
             <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
-              {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}<span className="text-[#F15025]">.</span>
+              {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}<span className="text-flame">.</span>
             </h1>
             <button
               type="button"
               onClick={() => handleCompose()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-[#F15025] hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] transition-[background-color,box-shadow] duration-200"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-flame hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] transition-[background-color,box-shadow] duration-200"
               title="Nieuw bericht opstellen (c)"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -1894,7 +1894,7 @@ export function EmailLayout() {
               checked={allChecked}
               ref={(el) => { if (el) el.indeterminate = someChecked }}
               onChange={toggleCheckAll}
-              className="h-4 w-4 rounded border-foreground/20 cursor-pointer accent-[#1A535C] flex-shrink-0"
+              className="h-4 w-4 rounded border-foreground/20 cursor-pointer accent-petrol flex-shrink-0"
             />
 
             {hasChecked ? (
@@ -1921,7 +1921,7 @@ export function EmailLayout() {
                       key={f.id}
                       onClick={() => setFilter(f.id)}
                       className={cn(
-                        'px-2 py-1 rounded-md text-[11.5px] transition-all duration-150 whitespace-nowrap',
+                        'px-2 py-1 rounded-md text-[11px] transition-all duration-150 whitespace-nowrap',
                         isActiveFilter
                           ? 'bg-white dark:bg-white/10 text-foreground font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
                           : 'text-muted-foreground hover:text-foreground/70',
@@ -1936,7 +1936,7 @@ export function EmailLayout() {
           </div>
 
           <div className="flex items-center flex-shrink-0">
-            {/* List-style + font-size toggles — verborgen in 3-kolom layout (te smal).
+            {/* List-style + font-size toggles · verborgen in 3-kolom layout (te smal).
                 Logica blijft intact, kan via settings/popover terug. */}
 
             {lastSyncAt && (
@@ -1971,9 +1971,9 @@ export function EmailLayout() {
         </div>
         </div>
 
-        {/* Search bar — desktop only; mobile uses de topbar pill. */}
+        {/* Search bar · desktop only; mobile uses de topbar pill. */}
         <div className="hidden md:block px-4 py-2 border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 bg-white dark:bg-card">
-          <div className="flex items-center gap-2 h-9 px-3 bg-background rounded-lg focus-within:ring-2 focus-within:ring-[#1A535C]/20 transition-shadow">
+          <div className="flex items-center gap-2 h-9 px-3 bg-background rounded-lg focus-within:ring-2 focus-within:ring-petrol/20 transition-shadow">
             <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <input
               ref={searchInputRef}
@@ -2003,7 +2003,7 @@ export function EmailLayout() {
                     searchInputRef.current?.focus()
                   }}
                   title={op.example}
-                  className="px-2 py-0.5 rounded-md bg-muted hover:bg-[#1A535C]/[0.08] text-[11px] text-foreground/70 hover:text-[#1A535C] transition-colors duration-150 inline-flex items-center gap-1"
+                  className="px-2 py-0.5 rounded-md bg-muted hover:bg-petrol/[0.08] text-[11px] text-foreground/70 hover:text-petrol transition-colors duration-150 inline-flex items-center gap-1"
                 >
                   <span className="font-mono">{op.key}</span>
                   <span className="text-muted-foreground">{op.description}</span>
@@ -2022,7 +2022,7 @@ export function EmailLayout() {
             <p>
               "Beantwoord" wordt bepaald op basis van het afzender-emailadres, niet op echte
               email-threads. Bij koude acquisitie kan een antwoord van een ander adres komen
-              (zoals info@) — die blijft dan in "Opvolgen". Andersom kan een mail over een
+              (zoals info@) · die blijft dan in "Opvolgen". Andersom kan een mail over een
               ander onderwerp ten onrechte als reactie tellen. Gebruik de per-rij knoppen om
               dit te corrigeren.
             </p>
@@ -2042,17 +2042,17 @@ export function EmailLayout() {
           className="flex-1 overflow-y-auto scroll-smooth relative"
           onScroll={handleScroll}
         >
-          {/* Sticky date-group overlay — toont actieve groep bovenaan tijdens
+          {/* Sticky date-group overlay · toont actieve groep bovenaan tijdens
               scroll. Virtualizer rendert echte headers absolute, dus deze
               overlay vult de gap. */}
           {activeGroup && (
-            <div className="sticky top-0 z-10 px-4 pt-3 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#1A535C]/55 dark:text-foreground/60 bg-card/85 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.06] -mb-[36px]">
+            <div className="sticky top-0 z-10 px-4 pt-3 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/55 dark:text-foreground/60 bg-card/85 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.06] -mb-[36px]">
               {activeGroup === 'Vandaag' ? (
                 <>
                   <span className="md:hidden">Eerder vandaag</span>
                   <span className="hidden md:inline">{activeGroup}</span>
                 </>
-              ) : activeGroup}<span className="text-[#F15025] tracking-normal">.</span>
+              ) : activeGroup}<span className="text-flame tracking-normal">.</span>
             </div>
           )}
 
@@ -2096,7 +2096,7 @@ export function EmailLayout() {
             <div>
               {searchQuery.trim() && searchResults !== null && (
                 <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50">
-                  {isSearching && <Loader2 className="h-3 w-3 animate-spin text-[#1A535C]/50" />}
+                  {isSearching && <Loader2 className="h-3 w-3 animate-spin text-petrol/50" />}
                   <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
                     <span className="font-mono tabular-nums">{threadedEmails.length}</span>
                     {' '}resultaten{searchHasMoreRef.current ? ' · scroll voor meer' : ''}
@@ -2127,21 +2127,21 @@ export function EmailLayout() {
                       }}
                     >
                       {it.type === 'header-pinned' ? (
-                        <div className="px-4 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#1A535C]/50 dark:text-foreground/55">
-                          Vastgepind<span className="text-[#F15025] tracking-normal">.</span>
+                        <div className="px-4 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/50 dark:text-foreground/55">
+                          Vastgepind<span className="text-flame tracking-normal">.</span>
                         </div>
                       ) : it.type === 'header-group' ? (() => {
                         const groupIds = emailsByGroup.get(it.group) || []
                         const allGroupChecked = groupIds.length > 0 && groupIds.every(id => checkedEmails.has(id))
                         const someGroupChecked = !allGroupChecked && groupIds.some(id => checkedEmails.has(id))
                         return (
-                          <div className="px-4 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#1A535C]/50 dark:text-foreground/55 flex items-center gap-2">
+                          <div className="px-4 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/50 dark:text-foreground/55 flex items-center gap-2">
                             <input
                               type="checkbox"
                               checked={allGroupChecked}
                               ref={(el) => { if (el) el.indeterminate = someGroupChecked }}
                               onChange={() => toggleCheckGroup(it.group)}
-                              className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-[#1A535C]"
+                              className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-petrol"
                               onClick={(e) => e.stopPropagation()}
                             />
                             <span>
@@ -2150,7 +2150,7 @@ export function EmailLayout() {
                                   <span className="md:hidden">Eerder vandaag</span>
                                   <span className="hidden md:inline">{it.group}</span>
                                 </>
-                              ) : it.group}<span className="text-[#F15025] tracking-normal">.</span>
+                              ) : it.group}<span className="text-flame tracking-normal">.</span>
                             </span>
                           </div>
                         )
@@ -2181,14 +2181,14 @@ export function EmailLayout() {
               </div>
               {isLoadingMore && (
                 <div className="flex items-center justify-center py-5">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#1A535C]/40 mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin text-petrol/40 mr-2" />
                   <span className="text-[12px] text-muted-foreground/80">Meer laden...</span>
                 </div>
               )}
               {threadedEmails.length < imapTotal && !isLoadingMore && (
                 <button
                   onClick={() => loadMoreEmails(selectedFolder)}
-                  className="w-full py-4 text-[12px] text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors duration-150"
+                  className="w-full py-4 text-[12px] text-muted-foreground hover:text-petrol hover:bg-petrol/[0.03] transition-colors duration-150"
                 >
                   Meer laden ({threadedEmails.length} van {imapTotal})
                 </button>
@@ -2220,15 +2220,15 @@ export function EmailLayout() {
       )}
       </>)}
 
-      {/* Resize handle — sleep om lijst-kolom breedte aan te passen (desktop only) */}
+      {/* Resize handle · sleep om lijst-kolom breedte aan te passen (desktop only) */}
       <div
         onMouseDown={handleListResizeStart}
-        className="hidden md:block absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-[#1A535C]/20 active:bg-[#1A535C]/30 z-30 transition-colors"
+        className="hidden md:block absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-petrol/20 active:bg-petrol/30 z-30 transition-colors"
         title="Sleep om breedte aan te passen"
       />
       </div>
 
-      {/* ─── READER COLUMN — flex-1 op desktop, op mobile zichtbaar bij reading/composing ─── */}
+      {/* ─── READER COLUMN · flex-1 op desktop, op mobile zichtbaar bij reading/composing ─── */}
       <div className={cn(
         'bg-white dark:bg-card flex-col min-w-0',
         'md:flex md:flex-1',
@@ -2286,7 +2286,7 @@ export function EmailLayout() {
           )
         })()}
 
-        {/* Empty state — desktop only, getoond wanneer geen mail is geselecteerd */}
+        {/* Empty state · desktop only, getoond wanneer geen mail is geselecteerd */}
         {viewMode === 'idle' && (
           <div
             className="hidden md:flex flex-1 flex-col items-center justify-center text-center px-8 relative overflow-hidden"
@@ -2297,12 +2297,12 @@ export function EmailLayout() {
           >
             <div className="relative mb-6">
               <div className="w-16 h-16 rounded-2xl bg-white dark:bg-white/[0.06] flex items-center justify-center shadow-[0_4px_20px_rgba(26,83,92,0.10),inset_0_0_0_0.5px_rgba(255,255,255,0.8)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),inset_0_0_0_0.5px_rgba(255,255,255,0.10)]">
-                <Mail className="h-7 w-7 text-[#1A535C] dark:text-[#7FB5BF]" strokeWidth={1.6} />
+                <Mail className="h-7 w-7 text-petrol dark:text-[#7FB5BF]" strokeWidth={1.6} />
               </div>
-              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#F15025] ring-[3px] ring-background" />
+              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-flame ring-[3px] ring-background" />
             </div>
             <h3 className="font-heading text-[18px] font-bold text-foreground tracking-[-0.01em] mb-2">
-              Niets geopend<span className="text-[#F15025]">.</span>
+              Niets geopend<span className="text-flame">.</span>
             </h3>
             <p
               className="text-[14px] text-muted-foreground max-w-[280px] leading-relaxed"
@@ -2315,7 +2315,7 @@ export function EmailLayout() {
 
       </div>
 
-      {/* Bulk action bar — verschijnt onderaan zodra er emails zijn aangevinkt.
+      {/* Bulk action bar · verschijnt onderaan zodra er emails zijn aangevinkt.
           Floating, met undo/cancel + de meest gebruikte bulk acties. */}
       {hasChecked && viewMode === 'idle' && (
         <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-2 fade-in duration-200">
@@ -2373,7 +2373,7 @@ export function EmailLayout() {
         </div>
       )}
 
-      {/* Right context sidebar — opent via toggle-knop in email-header.
+      {/* Right context sidebar · opent via toggle-knop in email-header.
           Bevat klant-koppeling, project-aanmaken, taak-aanmaken, etc.
           Default open, klap dicht via knop in reader. */}
       {/* EmailContextSidebar wordt onzichtbaar gemount (display:none) wanneer

@@ -51,7 +51,7 @@ const FINANCIEEL_ITEMS: NavItem[] = [
 
 const PLANNING_ITEMS: NavItem[] = [
   { label: 'Planning', icon: Calendar, path: '/planning', color: '#9A5A48' },
-  { label: 'Taken', icon: ListChecks, path: '/taken', color: '#5A5A55' },
+  { label: 'Taken', icon: ListChecks, path: '/taken', color: 'hsl(var(--muted-foreground))' },
 ]
 
 const COMMUNICATIE_ITEMS: NavItem[] = [
@@ -60,7 +60,7 @@ const COMMUNICATIE_ITEMS: NavItem[] = [
   { label: 'Portaal', icon: Globe, path: '/portalen', color: '#6A5A8A' },
 ]
 
-const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: '#5A5A55' }
+const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: 'hsl(var(--muted-foreground))' }
 const SUPPORT_ITEM: NavItem = { label: 'Support', icon: LifeBuoy, path: '/support', color: '#F15025' }
 
 const NAV_GROUPS: NavGroup[] = [
@@ -294,13 +294,13 @@ export function Sidebar() {
               to={item.path}
               className="relative flex items-center justify-center w-full h-11 group/rail transition-transform duration-200 active:scale-[0.94]"
             >
-              {/* Actief — petrol pill (zelfde canon als de e-mail-rail);
-                  idle hover — lichtere petrol-tint squircle */}
+              {/* Actief · petrol pill (zelfde canon als de e-mail-rail);
+                  idle hover · lichtere petrol-tint squircle */}
               {active
                 ? <div className="doen-sidebar-active-pill absolute rounded-[12px]" style={{ insetInline: '10px', insetBlock: '4px' }} />
                 : <div className="doen-sidebar-item-hover" style={{ borderRadius: '12px', insetInline: '10px', insetBlock: '4px' }} />}
 
-              {/* Flame accent ook in rail-mode — zelfde signatuur als expanded */}
+              {/* Flame accent ook in rail-mode · zelfde signatuur als expanded */}
               {active && <span className="doen-sidebar-flame-accent z-10" />}
 
               <div
@@ -354,11 +354,11 @@ export function Sidebar() {
           : undefined}
         className={cn(
           'relative flex items-center gap-[11px] px-4 mx-2 rounded-[11px] group/nav overflow-hidden transition-all duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
-          isBottom ? 'text-[13px]' : 'text-[13.5px]',
+          isBottom ? 'text-[13px]' : 'text-[13px]',
           isRemoving ? 'max-h-0 py-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-h-12 py-[8.5px]',
         )}
       >
-        {/* Background — frosted surface when active, soft sweep on hover */}
+        {/* Background · frosted surface when active, soft sweep on hover */}
         {ownActive
           ? <div className="doen-sidebar-active-surface" />
           : <div className="doen-sidebar-item-hover" />}
@@ -368,11 +368,11 @@ export function Sidebar() {
           <span className="doen-sidebar-flame-accent z-10" />
         )}
 
-        {/* Icon — bare glyph; idle muted, active + hover in the module colour */}
+        {/* Icon · bare glyph; idle muted, active + hover in the module colour */}
         <Icon
           className={cn(
             'relative z-10 h-[18px] w-[18px] flex-shrink-0 transition-colors duration-200',
-            !active && 'text-[#1A535C]/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-[var(--mc)]',
+            !active && 'text-petrol/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-[var(--mc)]',
           )}
           style={active ? { color: item.color } : ({ ['--mc']: item.color } as React.CSSProperties)}
           strokeWidth={1.6}
@@ -381,7 +381,7 @@ export function Sidebar() {
         {/* Label */}
         <span className={cn(
           'relative z-10 truncate transition-colors duration-200 tracking-[-0.01em]',
-          active ? 'text-[#1A535C] dark:text-foreground font-semibold' : 'text-foreground/65 font-medium group-hover/nav:text-foreground/90',
+          active ? 'text-petrol dark:text-foreground font-semibold' : 'text-foreground/65 font-medium group-hover/nav:text-foreground/90',
         )}>
           {item.label}
         </span>
@@ -433,7 +433,7 @@ export function Sidebar() {
           <div className="doen-sidebar-divider" />
         </div>
 
-        {/* Main navigation — scrollt bij overflow (veel items / kleine viewport) */}
+        {/* Main navigation · scrollt bij overflow (veel items / kleine viewport) */}
         <nav className="flex-1 flex flex-col justify-start pt-4 overflow-y-auto overflow-x-hidden min-h-0">
           {collapsed ? (
             <div className="flex flex-col items-center gap-0">
@@ -464,7 +464,7 @@ export function Sidebar() {
               ref={forMobile ? undefined : navListRef}
               className="relative px-0 animate-in fade-in duration-200"
             >
-              {/* Glijdende actieve surface — spring-curve tussen items */}
+              {/* Glijdende actieve surface · spring-curve tussen items */}
               {!forMobile && indicator && (
                 <div
                   aria-hidden
@@ -500,19 +500,19 @@ export function Sidebar() {
                 </div>
               )}
 
-              {/* Overig — opent het mega-menu met niet-gekozen items */}
+              {/* Overig · opent het mega-menu met niet-gekozen items */}
               {heeftOverig && (
                 <div className="mt-7">
                   <div className="doen-sidebar-section">OVERIG</div>
                   <button
                     type="button"
                     onClick={() => setOverigOpen(v => !v)}
-                    className="relative flex w-full items-center gap-[11px] py-[8.5px] px-4 mx-2 rounded-[11px] group/nav text-[13.5px]"
+                    className="relative flex w-full items-center gap-[11px] py-[8.5px] px-4 mx-2 rounded-[11px] group/nav text-[13px]"
                   >
                     {overigOpen ? <div className="doen-sidebar-active-surface" /> : <div className="doen-sidebar-item-hover" />}
-                    <LayoutGrid className="relative z-10 h-[18px] w-[18px] flex-shrink-0 text-[#1A535C]/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-[#1A535C] transition-colors" strokeWidth={1.6} />
+                    <LayoutGrid className="relative z-10 h-[18px] w-[18px] flex-shrink-0 text-petrol/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-petrol transition-colors" strokeWidth={1.6} />
                     <span className="relative z-10 truncate font-medium tracking-[-0.01em] text-foreground/65 group-hover/nav:text-foreground/90">Overig</span>
-                    <span className="relative z-10 ml-auto rounded-full bg-[#1A535C]/[0.07] px-1.5 text-[10px] font-mono tabular-nums text-[#1A535C]/60">{overigGroups.reduce((n, g) => n + g.items.length, 0)}</span>
+                    <span className="relative z-10 ml-auto rounded-full bg-petrol/[0.07] px-1.5 text-[10px] font-mono tabular-nums text-petrol/60">{overigGroups.reduce((n, g) => n + g.items.length, 0)}</span>
                   </button>
                 </div>
               )}
@@ -520,12 +520,12 @@ export function Sidebar() {
           )}
         </nav>
 
-        {/* Bottom section — pushed to bottom */}
+        {/* Bottom section · pushed to bottom */}
         <div className={cn(
           'flex-shrink-0',
           collapsed ? 'pb-4 pt-2 flex flex-col items-center gap-1' : 'pb-4 pt-2 space-y-[2px]',
         )}>
-          {/* Utilities — compacte icoon-rij (bewerken · Overig · vastzetten) */}
+          {/* Utilities · compacte icoon-rij (bewerken · Overig · vastzetten) */}
           {!forMobile && (collapsed ? (
             <div className="flex flex-col items-center gap-1">
               {heeftOverig && (
@@ -538,7 +538,7 @@ export function Sidebar() {
                         aria-pressed={overigOpen}
                         className={cn(
                           'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
-                          overigOpen ? 'text-[#1A535C] bg-[#1A535C]/[0.08]' : 'text-muted-foreground/45 hover:text-[#1A535C] hover:bg-black/[0.03]',
+                          overigOpen ? 'text-petrol bg-petrol/[0.08]' : 'text-muted-foreground/45 hover:text-petrol hover:bg-black/[0.03]',
                         )}
                       >
                         <ChevronRight className="w-4 h-4" />
@@ -557,7 +557,7 @@ export function Sidebar() {
                       aria-pressed={isPinned}
                       className={cn(
                         'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
-                        isPinned ? 'text-[#1A535C]/70 hover:text-[#1A535C]' : 'text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-black/[0.03]',
+                        isPinned ? 'text-petrol/70 hover:text-petrol' : 'text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-black/[0.03]',
                       )}
                     >
                       {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
@@ -578,7 +578,7 @@ export function Sidebar() {
                       aria-pressed={editMode}
                       className={cn(
                         'flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-                        editMode ? 'text-[#1A535C] bg-[#1A535C]/[0.08]' : 'text-muted-foreground/45 hover:text-foreground/80 hover:bg-black/[0.03]',
+                        editMode ? 'text-petrol bg-petrol/[0.08]' : 'text-muted-foreground/45 hover:text-foreground/80 hover:bg-black/[0.03]',
                       )}
                     >
                       {editMode ? <Check className="w-4 h-4" /> : <Pencil className="w-[15px] h-[15px]" />}
@@ -596,7 +596,7 @@ export function Sidebar() {
                       aria-pressed={isPinned}
                       className={cn(
                         'flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-                        isPinned ? 'text-[#1A535C]/80 hover:text-[#1A535C] bg-[#1A535C]/[0.05]' : 'text-muted-foreground/45 hover:text-foreground/80 hover:bg-black/[0.03]',
+                        isPinned ? 'text-petrol/80 hover:text-petrol bg-petrol/[0.05]' : 'text-muted-foreground/45 hover:text-foreground/80 hover:bg-black/[0.03]',
                       )}
                     >
                       {isPinned ? <PinOff className="w-[15px] h-[15px]" /> : <Pin className="w-[15px] h-[15px]" />}
@@ -613,7 +613,7 @@ export function Sidebar() {
             <div className="doen-sidebar-divider" />
           </div>
 
-          {/* Instellingen — Importeren leeft nu onder Instellingen → Importeren */}
+          {/* Instellingen · Importeren leeft nu onder Instellingen → Importeren */}
           {collapsed ? renderRailItem(SETTINGS_ITEM) : renderExpandedItem(SETTINGS_ITEM, true)}
 
           {/* User avatar */}
@@ -631,14 +631,14 @@ export function Sidebar() {
                   className="w-[30px] h-[30px] rounded-full flex items-center justify-center flex-shrink-0 doen-sidebar-avatar"
                   style={{ background: 'linear-gradient(145deg, rgba(26,83,92,0.12), rgba(26,83,92,0.04))' }}
                 >
-                  <span className="text-[12px] font-bold text-[#1A535C] dark:text-[#7FB5BF]">{userInitial}</span>
+                  <span className="text-[12px] font-bold text-petrol dark:text-[#7FB5BF]">{userInitial}</span>
                 </div>
                 {!collapsed && (
                   <p className="flex-1 min-w-0 text-left text-foreground text-[13px] font-medium truncate leading-tight">{userName}</p>
                 )}
               </button>
 
-              {/* User popover — via portal naar body, anders valt hij binnen de
+              {/* User popover · via portal naar body, anders valt hij binnen de
                   stacking context van de aside (z-40) deels achter de content */}
               {userPopoverOpen && popoverPos && createPortal(
                 <div
@@ -650,7 +650,7 @@ export function Sidebar() {
                   }}
                 >
                   <div className="flex items-center gap-2.5 px-2 py-2">
-                    <span className="w-9 h-9 rounded-[9px] flex items-center justify-center bg-[#1A535C] text-white font-bold text-[14px] flex-shrink-0">{userInitial}</span>
+                    <span className="w-9 h-9 rounded-[9px] flex items-center justify-center bg-petrol text-white font-bold text-[14px] flex-shrink-0">{userInitial}</span>
                     <div className="min-w-0">
                       <p className="text-[13px] font-semibold text-foreground truncate leading-tight">{userName}</p>
                       <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
@@ -697,7 +697,7 @@ export function Sidebar() {
 
                   <button
                     onClick={() => { setUserPopoverOpen(false); logout() }}
-                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-[#F15025] hover:bg-[#F15025]/[0.07] transition-colors"
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-flame hover:bg-flame/[0.07] transition-colors"
                   >
                     <LogOut className="w-[17px] h-[17px]" /> Uitloggen
                   </button>
@@ -740,7 +740,7 @@ export function Sidebar() {
         {sidebarContent(true)}
       </aside>
 
-      {/* Desktop sidebar — default persistente kolom (content leeft ernaast);
+      {/* Desktop sidebar · default persistente kolom (content leeft ernaast);
           gepind = ingeklapte rail met hover-peek als overlay. De reserveer-breedte
           beweegt mee zodat content inspringt wanneer de kolom uitgeklapt vast staat. */}
       {isDesktop && (
@@ -761,7 +761,7 @@ export function Sidebar() {
         </div>
       )}
 
-      {/* Overig mega-menu — schuift uit naast de sidebar */}
+      {/* Overig mega-menu · schuift uit naast de sidebar */}
       {isDesktop && (
         <>
           {overigOpen && (
@@ -804,17 +804,17 @@ export function Sidebar() {
                           >
                             <div className="doen-sidebar-item-hover" />
                             <Icon
-                              className="relative z-10 h-[18px] w-[18px] flex-shrink-0 text-[#1A535C]/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-[var(--mc)] transition-colors duration-200"
+                              className="relative z-10 h-[18px] w-[18px] flex-shrink-0 text-petrol/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-[var(--mc)] transition-colors duration-200"
                               style={{ ['--mc']: item.color } as React.CSSProperties}
                               strokeWidth={1.6}
                             />
-                            <span className="relative z-10 truncate text-[13.5px] font-medium tracking-[-0.01em] text-foreground/65 group-hover/nav:text-foreground/90">{item.label}</span>
+                            <span className="relative z-10 truncate text-[13px] font-medium tracking-[-0.01em] text-foreground/65 group-hover/nav:text-foreground/90">{item.label}</span>
                           </NavLink>
                           <button
                             type="button"
                             onClick={() => addToMenu(item.label)}
                             title={`${item.label} aan menu toevoegen`}
-                            className="absolute right-2 z-20 flex h-6 w-6 items-center justify-center rounded-full text-[#1A535C]/55 opacity-0 group-hover/ov:opacity-100 hover:bg-[#1A535C]/10 hover:text-[#1A535C] transition-all"
+                            className="absolute right-2 z-20 flex h-6 w-6 items-center justify-center rounded-full text-petrol/55 opacity-0 group-hover/ov:opacity-100 hover:bg-petrol/10 hover:text-petrol transition-all"
                           >
                             <Plus className="h-4 w-4" />
                           </button>

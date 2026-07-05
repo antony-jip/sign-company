@@ -292,7 +292,7 @@ export function PortaalPagina() {
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
             <h1
               className="text-base font-bold"
-              style={{ color: '#191919', fontFamily: '"Bricolage Grotesque", sans-serif' }}
+              style={{ color: 'hsl(var(--foreground))', fontFamily: '"Bricolage Grotesque", sans-serif' }}
             >
               {project.naam}
             </h1>
@@ -323,7 +323,7 @@ export function PortaalPagina() {
                 className="rounded-[10px] px-5 py-4 mb-4"
                 style={{ backgroundColor: 'hsl(var(--card))', border: '0.5px solid #E8E6E1' }}
               >
-                <p className="whitespace-pre-wrap" style={{ fontSize: 13, color: '#5A5A55', lineHeight: 1.6 }}>
+                <p className="whitespace-pre-wrap" style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', lineHeight: 1.6 }}>
                   {portaal.instructie_tekst}
                 </p>
               </div>
@@ -361,13 +361,13 @@ export function PortaalPagina() {
           className="fixed bottom-0 left-0 right-0 py-3 px-4 flex items-center justify-center gap-3"
           style={{ backgroundColor: 'hsl(var(--card))', borderTop: '0.5px solid #E8E6E1', boxShadow: '0 -2px 12px rgba(0,0,0,0.04)' }}
         >
-          <span className="text-sm" style={{ color: '#5A5A55' }}>Uw naam:</span>
+          <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Uw naam:</span>
           <input
             type="text"
             value={klantNaam}
             onChange={(e) => setKlantNaam(e.target.value)}
             placeholder="Vul uw naam in"
-            className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A535C]/30 focus:border-[#1A535C]"
+            className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-petrol/30 focus:border-petrol"
             style={{ borderColor: '#E8E6E1', maxWidth: 200 }}
           />
         </div>

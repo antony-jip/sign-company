@@ -52,7 +52,7 @@ export function PortaalKlantReactie({
         </span>
         {klantNaam && (
           <span className="text-xs" style={{ color: '#A0A098' }}>
-            — {klantNaam}
+            · {klantNaam}
           </span>
         )}
         <span

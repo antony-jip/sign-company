@@ -34,7 +34,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
       {/* Header */}
       <div className="flex items-baseline justify-between mb-4">
         <h3 className="font-heading text-[15px] font-bold text-foreground">
-          Acties<span className="text-[#F15025]">.</span>
+          Acties<span className="text-flame">.</span>
         </h3>
         <span
           className="text-[12px] text-muted-foreground"
@@ -44,7 +44,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
         </span>
       </div>
 
-      {/* 2x2 grid van actie-tiles — rustig, token-gebaseerd, kalme hover */}
+      {/* 2x2 grid van actie-tiles · rustig, token-gebaseerd, kalme hover */}
       <div className="grid grid-cols-2 gap-2.5">
         {tiles.map((tile) => {
           const Icon = tile.icon
@@ -65,10 +65,10 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
                 </div>
 
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="text-[13.5px] font-bold text-foreground leading-tight tracking-[-0.01em]">
+                  <p className="text-[13px] font-bold text-foreground leading-tight tracking-[-0.01em]">
                     {tile.label}
                   </p>
-                  <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                     {tile.sublabel}
                   </p>
                 </div>
@@ -83,11 +83,11 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
         })}
       </div>
 
-      {/* Footer — secundaire acties */}
+      {/* Footer · secundaire acties */}
       <div className="mt-4 pt-3 border-t border-[rgba(26,83,92,0.08)] flex items-center justify-center gap-4">
         <button
           onClick={onPakbon}
-          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-[#1A535C] transition-colors px-2 py-1 rounded-md"
+          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-petrol transition-colors px-2 py-1 rounded-md"
         >
           <Package className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           Pakbon
@@ -97,7 +97,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
 
         <button
           onClick={onBevestiging}
-          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-[#1A535C] transition-colors px-2 py-1 rounded-md"
+          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-petrol transition-colors px-2 py-1 rounded-md"
         >
           <FileSignature className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           Bevestiging

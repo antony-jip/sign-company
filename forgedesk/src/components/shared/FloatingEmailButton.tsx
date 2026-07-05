@@ -22,8 +22,8 @@ export function FloatingEmailButton() {
         onClick={() => navigate('/email')}
         className={`flex items-center gap-2 py-2.5 rounded-l-xl border border-r-0 border-border shadow-lg transition-all duration-200 ${
           hovered
-            ? 'pl-4 pr-3 bg-[#1A535C] text-white'
-            : 'pl-2 pr-1.5 bg-white/90 backdrop-blur text-muted-foreground hover:text-[#1A535C]'
+            ? 'pl-4 pr-3 bg-petrol text-white'
+            : 'pl-2 pr-1.5 bg-white/90 backdrop-blur text-muted-foreground hover:text-petrol'
         }`}
       >
         <Mail className="w-4 h-4 flex-shrink-0" />

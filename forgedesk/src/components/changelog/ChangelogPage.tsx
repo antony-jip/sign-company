@@ -129,10 +129,10 @@ export function ChangelogPage() {
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="font-heading text-[28px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
+            <h1 className="font-heading text-[28px] font-bold tracking-tight" style={{ color: 'hsl(var(--foreground))' }}>
               What's new<span style={{ color: '#F15025' }}>.</span>
             </h1>
-            <p className="text-[14px]" style={{ color: '#6B6B66' }}>Alles wat we bouwen, in één overzicht</p>
+            <p className="text-[14px]" style={{ color: 'hsl(var(--muted-foreground))' }}>Alles wat we bouwen, in één overzicht</p>
           </div>
         </div>
 
@@ -156,7 +156,7 @@ export function ChangelogPage() {
           <a
             href="mailto:hello@doen.team"
             className="inline-flex items-center gap-2 h-9 px-4 rounded-xl text-[12px] font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', color: '#6B6B66' }}
+            style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}
           >
             <MessageCircle className="h-3.5 w-3.5" />
             Suggestie? hello@doen.team
@@ -167,7 +167,7 @@ export function ChangelogPage() {
       {/* ── Features tab ── */}
       {tab === 'features' && (
         <div>
-          <p className="text-[14px] mb-6" style={{ color: '#6B6B66' }}>
+          <p className="text-[14px] mb-6" style={{ color: 'hsl(var(--muted-foreground))' }}>
             Alles wat er nu in Doen. zit. <strong className="text-foreground">{APP_FEATURES.length} features</strong>, gebouwd voor creatieve maakbedrijven.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -179,9 +179,9 @@ export function ChangelogPage() {
               >
                 <div className="flex items-center gap-2.5 mb-1.5">
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: f.kleur }} />
-                  <span className="text-[14px] font-bold" style={{ color: '#1A1A1A' }}>{f.naam}</span>
+                  <span className="text-[14px] font-bold" style={{ color: 'hsl(var(--foreground))' }}>{f.naam}</span>
                 </div>
-                <p className="text-[12px] leading-relaxed pl-[18px]" style={{ color: '#6B6B66' }}>{f.desc}</p>
+                <p className="text-[12px] leading-relaxed pl-[18px]" style={{ color: 'hsl(var(--muted-foreground))' }}>{f.desc}</p>
               </div>
             ))}
           </div>
@@ -210,20 +210,20 @@ export function ChangelogPage() {
                     >
                       {entry.label}
                     </span>
-                    <span className="text-[14px] font-bold font-mono" style={{ color: '#1A1A1A' }}>{entry.versie}</span>
-                    <span className="text-[12px]" style={{ color: '#9B9B95' }}>{entry.datum}</span>
+                    <span className="text-[14px] font-bold font-mono" style={{ color: 'hsl(var(--foreground))' }}>{entry.versie}</span>
+                    <span className="text-[12px]" style={{ color: 'hsl(var(--muted-foreground))' }}>{entry.datum}</span>
                   </div>
 
                   {/* Title + description */}
-                  <h3 className="text-[18px] font-bold tracking-tight mb-1" style={{ color: '#1A1A1A' }}>{entry.titel}</h3>
-                  <p className="text-[13px] mb-4" style={{ color: '#6B6B66' }}>{entry.beschrijving}</p>
+                  <h3 className="text-[18px] font-bold tracking-tight mb-1" style={{ color: 'hsl(var(--foreground))' }}>{entry.titel}</h3>
+                  <p className="text-[13px] mb-4" style={{ color: 'hsl(var(--muted-foreground))' }}>{entry.beschrijving}</p>
 
                   {/* Features */}
                   <div className="space-y-2">
                     {entry.features.map(f => (
                       <div key={f.titel} className="rounded-lg p-3" style={{ backgroundColor: 'hsl(var(--background))' }}>
-                        <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>{f.titel}</span>
-                        <span className="text-[12px] ml-2" style={{ color: '#6B6B66' }}>{f.beschrijving}</span>
+                        <span className="text-[13px] font-semibold" style={{ color: 'hsl(var(--foreground))' }}>{f.titel}</span>
+                        <span className="text-[12px] ml-2" style={{ color: 'hsl(var(--muted-foreground))' }}>{f.beschrijving}</span>
                       </div>
                     ))}
                   </div>
@@ -240,7 +240,7 @@ export function ChangelogPage() {
         <p className="text-[14px] text-white/50 mb-5">We bouwen Doen. samen met onze gebruikers.</p>
         <a
           href="mailto:hello@doen.team"
-          className="inline-flex items-center gap-2 h-11 px-6 text-[14px] font-bold text-[#1A535C] bg-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="inline-flex items-center gap-2 h-11 px-6 text-[14px] font-bold text-petrol bg-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
         >
           <Mail className="h-4 w-4" />
           hello@doen.team
@@ -249,10 +249,10 @@ export function ChangelogPage() {
 
       {/* Footer */}
       <div className="text-center mt-10 pb-8">
-        <p className="text-[14px] font-heading font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
+        <p className="text-[14px] font-heading font-bold tracking-tight" style={{ color: 'hsl(var(--foreground))' }}>
           Doen<span style={{ color: '#F15025' }}>.</span>
         </p>
-        <p className="text-[12px] mt-1" style={{ color: '#9B9B95' }}>
+        <p className="text-[12px] mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
           Gebouwd voor creatieve maakbedrijven
         </p>
       </div>

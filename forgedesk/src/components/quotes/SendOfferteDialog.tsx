@@ -110,12 +110,12 @@ export function SendOfferteDialog({
     } else if (dagenOpen <= 21) {
       body = `${aanhef},\n\nOnze offerte ${offerte.nummer} voor "${offerte.titel}" (${bedrag}) staat nu ${dagenOpen} dagen open.${offerte.geldig_tot && dagenTotVerlopen <= 7 ? ` Let op: de offerte verloopt over ${dagenTotVerlopen} dagen.` : ''}\n\nZijn er nog punten die u tegengehouden hebben? Ik denk graag met u mee over eventuele aanpassingen of alternatieven.`
     } else {
-      body = `${aanhef},\n\n${pogingen > 1 ? `Ik heb u eerder ${pogingen}x benaderd` : 'Ik heb u eerder benaderd'} over offerte ${offerte.nummer} — "${offerte.titel}" (${bedrag}).\n\nIk begrijp dat prioriteiten kunnen verschuiven. Laat me weten of dit project nog actueel is, dan kijken we samen naar de volgende stap.`
+      body = `${aanhef},\n\n${pogingen > 1 ? `Ik heb u eerder ${pogingen}x benaderd` : 'Ik heb u eerder benaderd'} over offerte ${offerte.nummer} · "${offerte.titel}" (${bedrag}).\n\nIk begrijp dat prioriteiten kunnen verschuiven. Laat me weten of dit project nog actueel is, dan kijken we samen naar de volgende stap.`
     }
     return {
       onderwerp: pogingen > 0
-        ? `Re: Offerte ${offerte.nummer} — ${offerte.titel}`
-        : `Opvolging offerte ${offerte.nummer} — ${offerte.titel}`,
+        ? `Re: Offerte ${offerte.nummer} · ${offerte.titel}`
+        : `Opvolging offerte ${offerte.nummer} · ${offerte.titel}`,
       body,
     }
   }, [offerte, klant, dagenOpen, dagenTotVerlopen])

@@ -81,7 +81,7 @@ const DISPLAY_FIELDS: Record<string, string[]> = {
 
 const VALID_PROJECT_STATUSES = ['gepland', 'actief', 'in-review', 'afgerond', 'on-hold', 'te-factureren', 'te-plannen']
 
-// Supabase gooit een PostgrestError (plain object), géén Error-instance — een
+// Supabase gooit een PostgrestError (plain object), géén Error-instance · een
 // kale `err instanceof Error`-check valt dan terug op de generieke melding en
 // verbergt de echte oorzaak. Pak hier message/details/hint en vertaal de
 // bekende RLS-blokkade (verlopen abonnement / ontbrekende organisatie).
@@ -113,7 +113,7 @@ interface ForgieActieKaartProps {
   autoStart?: boolean
   /** Meldt een mislukte create aan de parent (voor stop-halverwege). */
   onError?: (message: string) => void
-  /** Rendert niets — alleen uitvoeren (de stepper in DaanActiePlan toont de voortgang). */
+  /** Rendert niets · alleen uitvoeren (de stepper in DaanActiePlan toont de voortgang). */
   silent?: boolean
 }
 

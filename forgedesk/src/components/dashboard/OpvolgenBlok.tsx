@@ -45,7 +45,7 @@ export function OpvolgenBlok() {
       <header className="flex items-baseline justify-between gap-4 mb-5">
         <div className="flex items-baseline gap-3 min-w-0">
           <h2 className="font-heading text-[14px] font-bold text-foreground">
-            Opvolgen<span className="text-[#F15025]">.</span>
+            Opvolgen<span className="text-flame">.</span>
           </h2>
           <span
             className="text-[14px] text-muted-foreground truncate"
@@ -66,7 +66,7 @@ export function OpvolgenBlok() {
           className="text-sm text-muted-foreground py-2"
           style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
         >
-          Geen offertes wachten op reactie<span className="text-[#F15025]">.</span>
+          Geen offertes wachten op reactie<span className="text-flame">.</span>
         </p>
       ) : (
         <ul className="divide-y divide-border/60">
@@ -99,7 +99,7 @@ export function OpvolgenBlok() {
                   </span>
                   <span className={`text-sm w-20 text-right flex-shrink-0 ${ageClass}`}>
                     {item.dagen} dagen
-                    <span className={urgent ? 'text-[#F15025] font-bold' : ''}>.</span>
+                    <span className={urgent ? 'text-flame font-bold' : ''}>.</span>
                   </span>
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                 </button>

@@ -95,7 +95,7 @@ export function PortaalFeedItemTekening({
         <div className="px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-semibold" style={{ fontSize: 15, color: '#191919' }}>
+              <p className="font-semibold" style={{ fontSize: 15, color: 'hsl(var(--foreground))' }}>
                 {item.titel}
               </p>
               {item.label && (
@@ -108,7 +108,7 @@ export function PortaalFeedItemTekening({
           </div>
 
           {item.omschrijving && (
-            <p className="mt-1 text-sm" style={{ color: '#5A5A55' }}>
+            <p className="mt-1 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
               {item.omschrijving}
             </p>
           )}
@@ -129,7 +129,7 @@ export function PortaalFeedItemTekening({
             </div>
           )}
 
-          {/* PDF files — inline preview */}
+          {/* PDF files · inline preview */}
           {pdfFiles.length > 0 && (
             <div className="mt-3 space-y-2">
               {pdfFiles.map((f) => (
@@ -139,7 +139,7 @@ export function PortaalFeedItemTekening({
                     style={{ backgroundColor: 'hsl(var(--muted))', border: '0.5px solid #E8E6E1' }}
                   >
                     <FileText className="w-4 h-4 flex-shrink-0" style={{ color: '#C03A18' }} />
-                    <span className="truncate flex-1 text-sm" style={{ color: '#191919' }}>{f.bestandsnaam}</span>
+                    <span className="truncate flex-1 text-sm" style={{ color: 'hsl(var(--foreground))' }}>{f.bestandsnaam}</span>
                     {f.grootte != null && (
                       <span style={{ fontSize: 11, color: '#A0A098', fontFamily: "'DM Mono', monospace" }}>
                         {formatFileSize(f.grootte)}
@@ -200,7 +200,7 @@ export function PortaalFeedItemTekening({
           <div className="px-5 py-3 border-t" style={{ borderColor: '#F0EEEA' }}>
             {confirmAction ? (
               <div className="flex items-center gap-2">
-                <p className="text-sm flex-1" style={{ color: '#5A5A55' }}>
+                <p className="text-sm flex-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
                   {confirmAction === 'goedkeuren'
                     ? 'Weet u zeker dat u deze tekening wilt goedkeuren?'
                     : 'Wilt u een revisie aanvragen?'}
@@ -218,7 +218,7 @@ export function PortaalFeedItemTekening({
                   onClick={() => setConfirmAction(null)}
                   disabled={loading}
                   className="px-3 py-2 rounded-lg text-sm hover:bg-background"
-                  style={{ color: '#5A5A55' }}
+                  style={{ color: 'hsl(var(--muted-foreground))' }}
                 >
                   Annuleren
                 </button>
@@ -238,7 +238,7 @@ export function PortaalFeedItemTekening({
                     onVragenStellen()
                   }}
                   className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted"
-                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
+                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
                 >
                   Revisie
                 </button>

@@ -276,7 +276,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
             <div
               className={`
                 border-2 border-dashed rounded-2xl p-12 text-center transition-colors cursor-pointer
-                ${isDragging ? 'border-[#1A535C] bg-[#1A535C08]' : 'border-[#E0DFDB] hover:border-[#1A535C50]'}
+                ${isDragging ? 'border-petrol bg-[#1A535C08]' : 'border-[#E0DFDB] hover:border-[#1A535C50]'}
               `}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -296,7 +296,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
               <p className="text-[15px] font-semibold mb-1" style={{ color: '#1A535C' }}>
                 Upload je projecten CSV-export
               </p>
-              <p className="text-[13px]" style={{ color: '#9B9B95' }}>
+              <p className="text-[13px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
                 Sleep een bestand hierheen of klik om te selecteren
               </p>
             </div>
@@ -319,7 +319,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
                 <span className="text-[14px] font-semibold" style={{ color: '#1A535C' }}>
                   {projecten.length} projecten gevonden
                 </span>
-                <span className="text-[12px]" style={{ color: '#9B9B95' }}>
+                <span className="text-[12px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
                   ({selectedCount} geselecteerd)
                 </span>
               </div>
@@ -399,7 +399,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
                 size="sm"
                 disabled={selectedCount === 0}
                 onClick={handleImport}
-                className="bg-[#1A535C] hover:bg-[#143F46] text-white"
+                className="bg-petrol hover:bg-[#143F46] text-white"
               >
                 Importeer {selectedCount} project{selectedCount !== 1 ? 'en' : ''}
               </Button>
@@ -414,7 +414,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
             <p className="text-[15px] font-semibold mb-1" style={{ color: '#1A535C' }}>
               Bezig met importeren...
             </p>
-            <p className="text-[13px]" style={{ color: '#9B9B95' }}>
+            <p className="text-[13px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
               {importProgress.current} van {importProgress.total} projecten
             </p>
             <div className="w-64 mx-auto mt-4 h-1.5 bg-[#E8E7E3] rounded-full overflow-hidden">
@@ -470,7 +470,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
                 onImportComplete()
                 toast.success(`${resultaat.projecten} projecten geïmporteerd`)
               }}
-              className="bg-[#1A535C] hover:bg-[#143F46] text-white"
+              className="bg-petrol hover:bg-[#143F46] text-white"
             >
               Sluiten
             </Button>

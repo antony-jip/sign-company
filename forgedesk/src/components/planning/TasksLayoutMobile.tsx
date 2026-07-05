@@ -116,7 +116,7 @@ export function TasksLayoutMobile() {
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
-          className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 h-10 flex items-center justify-center gap-1.5 text-[13px] font-semibold text-white bg-[#F15025]/85 hover:bg-[#F15025] backdrop-blur-md shadow-[0_-2px_8px_rgba(0,0,0,0.08)] transition-colors duration-150"
+          className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 h-10 flex items-center justify-center gap-1.5 text-[13px] font-semibold text-white bg-flame/85 hover:bg-flame backdrop-blur-md shadow-[0_-2px_8px_rgba(0,0,0,0.08)] transition-colors duration-150"
         >
           <Plus className="h-3.5 w-3.5" />
           Nieuwe taak

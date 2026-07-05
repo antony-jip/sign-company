@@ -41,7 +41,7 @@ function levenshtein(a: string, b: string): number {
   return prev[n]
 }
 
-// "Lijkt erg op" — tolereert kleine typfouten (Floreks → Florex), schaalt met lengte.
+// "Lijkt erg op" · tolereert kleine typfouten (Floreks → Florex), schaalt met lengte.
 function lijktOp(doel: string, kandidaat: string): boolean {
   const langer = Math.max(doel.length, kandidaat.length)
   if (Math.abs(doel.length - kandidaat.length) > 3) return false
@@ -53,7 +53,7 @@ function lijktOp(doel: string, kandidaat: string): boolean {
 function stepLabel(type: string, state: StepState): string {
   const base = STEP_CONFIG[type]?.label ?? 'Stap'
   if (state === 'busy') return `${base} aanmaken…`
-  if (state === 'failed') return `${base} — mislukt`
+  if (state === 'failed') return `${base} · mislukt`
   return base
 }
 
@@ -210,10 +210,10 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
   const displaySteps = useMemo(() => {
     const rows: { type: string; label: string; state: StepState }[] = []
     if (resolvedKlant) {
-      rows.push({ type: 'klant', label: `Klant gekoppeld — ${resolvedKlant.naam}`, state: 'done' })
+      rows.push({ type: 'klant', label: `Klant gekoppeld · ${resolvedKlant.naam}`, state: 'done' })
     }
     if (contactNaam) {
-      rows.push({ type: 'contactpersoon', label: `Contactpersoon — ${contactNaam}`, state: 'done' })
+      rows.push({ type: 'contactpersoon', label: `Contactpersoon · ${contactNaam}`, state: 'done' })
     }
     ordered.forEach((actie) => {
       const t = actie.type
@@ -274,7 +274,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               }}
               className="text-xs text-muted-foreground hover:text-petrol underline-offset-2 hover:underline mt-0.5"
             >
-              Geen van deze — nieuw aanmaken
+              Geen van deze · nieuw aanmaken
             </button>
           </div>
         ) : (
@@ -311,7 +311,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               <p className="text-xs text-red-600 dark:text-red-400 mt-2">{error}</p>
             )}
 
-            {/* Projectnaam (verplicht) — voorgevuld met Daans suggestie, aanpasbaar. */}
+            {/* Projectnaam (verplicht) · voorgevuld met Daans suggestie, aanpasbaar. */}
             {hasProject && !started && (
               <div className="mt-3 pt-3 border-t border-border/40">
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
@@ -326,7 +326,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               </div>
             )}
 
-            {/* Contactpersoon-keuze — optioneel voor een kaal project; verplicht zodra
+            {/* Contactpersoon-keuze · optioneel voor een kaal project; verplicht zodra
                 je er een offerte bij maakt (dan vraagt Daan er opnieuw om). */}
             {needsKlant && !started && (
               <div className="mt-3 pt-3 border-t border-border/40 max-h-64 overflow-y-auto">
@@ -344,7 +344,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
                   onContactpersoonPicked={(id, naam) => {
                     setContactpersoonId(id)
                     if (naam) setContactNaam(naam)
-                    // Een klik op een contactpersoon bevestigt meteen — geen aparte Bevestigen-klik nodig.
+                    // Een klik op een contactpersoon bevestigt meteen · geen aparte Bevestigen-klik nodig.
                     if (klantReady && projectNaamReady) setStarted(true)
                   }}
                   klanten={klanten}
@@ -396,7 +396,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               <p className="text-xs text-muted-foreground mt-2">Geannuleerd.</p>
             )}
 
-            {/* Project staat — bied de offerte optioneel aan (ontstaat nooit automatisch). */}
+            {/* Project staat · bied de offerte optioneel aan (ontstaat nooit automatisch). */}
             {projectDone && hasProject && offerteKeuze === 'idle' && (
               <div className="mt-3 pt-3 border-t border-border/40">
                 <p className="text-sm text-foreground mb-2">Wil je hier ook een offerte bij maken?</p>
@@ -443,7 +443,7 @@ export function DaanActiePlan({ acties }: DaanActiePlanProps) {
               </div>
             )}
 
-            {/* Contactpersoon gekozen — maak een lege offerte (klant/project/contact
+            {/* Contactpersoon gekozen · maak een lege offerte (klant/project/contact
                 gekoppeld) en open 'm in de volle editor zodat de gebruiker 'm zelf vult. */}
             {projectDone && offerteKeuze === 'ja' && !!contactpersoonId && (
               <div className="mt-3">

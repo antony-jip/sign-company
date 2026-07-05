@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
-// BackButton removed — inline back link in header
+// BackButton removed · inline back link in header
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import {
@@ -50,7 +50,7 @@ import { getEmailsVoorProject, type ProjectMail } from '@/services/emailProjectS
 import { sanitizeEmailHTML } from '@/lib/sanitize'
 import { callForgie } from '@/services/forgieService'
 import { DatePicker } from '@/components/ui/date-picker'
-// Card/Badge removed — using DOEN text-based styling
+// Card/Badge removed · using DOEN text-based styling
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -134,7 +134,7 @@ import { getOrgId } from '@/services/supabaseHelpers'
 import { analyzeProject } from '@/services/aiService'
 import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
-// ProjectTasksTable removed — using TaskChecklistView in TakenOfferteGrid
+// ProjectTasksTable removed · using TaskChecklistView in TakenOfferteGrid
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { ProjectMaatjesTab } from '@/components/maatjes/ProjectMaatjesTab'
 import { getProjectMaatjes } from '@/services/maatjeService'
@@ -142,9 +142,9 @@ import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import { AddEditClient } from '@/components/clients/AddEditClient'
 import { PakbonVanProjectDialog } from '@/components/leveringsbonnen/PakbonVanProjectDialog'
-// SpectrumBar removed — using text-based phase in header
+// SpectrumBar removed · using text-based phase in header
 import { getFase } from '@/utils/projectFases'
-// ProjectKaart removed — using inline sticky header
+// ProjectKaart removed · using inline sticky header
 import { PortaalCompactBlock } from './cockpit/PortaalCompactBlock'
 import { ActiviteitCard } from './cockpit/ActiviteitCard'
 import { KlantCard } from './cockpit/KlantCard'
@@ -200,7 +200,7 @@ function ProjectDetailSkeleton() {
         <div className="flex flex-col lg:flex-row gap-6 md:gap-8 px-4 md:px-8 py-4 md:py-8">
           {/* Left column */}
           <div className="flex-1 min-w-0 space-y-6">
-            {/* Voortgang/Fase card — 5 stage cirkels */}
+            {/* Voortgang/Fase card · 5 stage cirkels */}
             <div className="doen-slate-surface rounded-2xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <Skeleton className="h-4 w-24" />
@@ -353,11 +353,11 @@ function getStatusDotColor(status: string): string {
   switch (status) {
     case 'actief': return 'bg-[#2D6B48]'
     case 'gepland': return 'bg-[#2A5580]'
-    case 'te-plannen': return 'bg-[#F15025]'
+    case 'te-plannen': return 'bg-flame'
     case 'in-review': return 'bg-[#5A5A55]'
-    case 'akkoord-klant': return 'bg-[#1A535C]'
+    case 'akkoord-klant': return 'bg-petrol'
     case 'ingepland': return 'bg-[#2A5580]'
-    case 'afgerond': return 'bg-[#1A535C]'
+    case 'afgerond': return 'bg-petrol'
     case 'on-hold': return 'bg-[#5A5A55]'
     case 'te-factureren': return 'bg-[#2D6B48]'
     case 'gefactureerd': return 'bg-[#2D6B48]'
@@ -378,7 +378,7 @@ function getFileIcon(type: string, size: string = 'h-8 w-8') {
   if (type.includes('image') || type.includes('jpeg') || type.includes('png'))
     return <FileImage className={`${size} text-primary`} />
   if (type.includes('illustrator') || type.includes('acad'))
-    return <File className={`${size} text-[#F15025]`} />
+    return <File className={`${size} text-flame`} />
   return <File className={`${size} text-muted-foreground/60`} />
 }
 
@@ -422,7 +422,7 @@ export function ProjectDetail() {
     params.set('tab', tab)
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
   }
-  // takenWeergave removed — using TaskChecklistView only
+  // takenWeergave removed · using TaskChecklistView only
   const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
   const [nieuweTaakTitel, setNieuweTaakTitel] = useState('')
   const [nieuweTaakBeschrijving, setNieuweTaakBeschrijving] = useState('')
@@ -526,7 +526,7 @@ export function ProjectDetail() {
 
   // Inline prijs-edit van een concept-offerte vanuit de cockpit. WYSIWYG op het
   // getoonde (incl. btw) bedrag; ex-btw + 21% wordt eruit afgeleid. Alleen voor
-  // simpele 1-regel offertes — meerdere regels gaan naar de volledige editor.
+  // simpele 1-regel offertes · meerdere regels gaan naar de volledige editor.
   const handleUpdateOffertePrice = async (offerte: Offerte, bedragInclBtw: number) => {
     if (!id) return
     const totaal = Math.round(bedragInclBtw * 100) / 100
@@ -1012,7 +1012,7 @@ export function ProjectDetail() {
           setEmailsLoading(true)
           getEmailsVoorProject(id)
             .then((mails) => { if (!cancelled) setProjectEmails(mails) })
-            .catch(() => { /* stil — RLS kan niets opleveren */ })
+            .catch(() => { /* stil · RLS kan niets opleveren */ })
             .finally(() => { if (!cancelled) setEmailsLoading(false) })
 
           // Check if visualisaties exist for conditional rendering
@@ -1020,7 +1020,7 @@ export function ProjectDetail() {
             if (!cancelled) setHasVisualisaties(viz.length > 0)
           }).catch(() => {})
 
-          // Gekoppelde maatjes — tab verschijnt alleen als er minstens één is
+          // Gekoppelde maatjes · tab verschijnt alleen als er minstens één is
           getProjectMaatjes(id).then(m => {
             if (!cancelled) setProjectMaatjes(m)
           }).catch(() => {})
@@ -1209,7 +1209,7 @@ export function ProjectDetail() {
   )
 
   // Audit-events laden ná de initiële page-load. Stable deps via .join(',')
-  // op de id-arrays zodat we niet refetchen bij elke React-rerender — alleen
+  // op de id-arrays zodat we niet refetchen bij elke React-rerender · alleen
   // wanneer er een entity is bijgekomen of weggegaan.
   const offerteIdsKey = useMemo(() => projectOffertes.map(o => o.id).join(','), [projectOffertes])
   const werkbonIdsKey = useMemo(() => projectWerkbonnen.map(w => w.id).join(','), [projectWerkbonnen])
@@ -1225,7 +1225,7 @@ export function ProjectDetail() {
     const taakIds = taakIdsKey ? taakIdsKey.split(',') : []
     getAuditLogForProject(id, { offerteIds, werkbonIds, factuurIds, taakIds })
       .then((entries) => { if (!cancelled) setAuditEntries(entries) })
-      .catch(() => { /* fire-and-forget — feed valt terug op derived events */ })
+      .catch(() => { /* fire-and-forget · feed valt terug op derived events */ })
     return () => { cancelled = true }
   }, [id, isLoading, offerteIdsKey, werkbonIdsKey, factuurIdsKey, taakIdsKey])
 
@@ -1238,7 +1238,7 @@ export function ProjectDetail() {
       <div className="h-[calc(100dvh-122px)] flex flex-col items-center justify-center bg-background">
         <p className="text-lg font-semibold text-foreground">Project niet gevonden</p>
         <p className="text-sm text-muted-foreground mt-1">Het project met ID "{id}" bestaat niet.</p>
-        <Link to="/projecten" className="text-sm text-[#1A535C] hover:underline mt-4">Terug naar projecten</Link>
+        <Link to="/projecten" className="text-sm text-petrol hover:underline mt-4">Terug naar projecten</Link>
       </div>
     )
   }
@@ -1287,10 +1287,10 @@ export function ProjectDetail() {
         }}
       />
 
-      {/* Mobile floating camera button — clears MobileBottomNav (h-14) */}
+      {/* Mobile floating camera button · clears MobileBottomNav (h-14) */}
       <div className="fixed right-4 z-40 md:hidden bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)]">
         <label
-          className="flex items-center justify-center h-14 w-14 rounded-full bg-[#1A535C] text-white shadow-lg shadow-[#1A535C]/25 active:scale-95 transition-transform cursor-pointer"
+          className="flex items-center justify-center h-14 w-14 rounded-full bg-petrol text-white shadow-lg shadow-petrol/25 active:scale-95 transition-transform cursor-pointer"
         >
           <Camera className="h-6 w-6" />
           <input
@@ -1320,7 +1320,7 @@ export function ProjectDetail() {
         </label>
       </div>
 
-      {/* ══════════ CONTENT AREA — scrolls with main, no inner scroll ══════════ */}
+      {/* ══════════ CONTENT AREA · scrolls with main, no inner scroll ══════════ */}
       <div ref={scrollAreaRef}>
 
       {/* ══════════ HEADER + TABS ══════════ */}
@@ -1351,9 +1351,9 @@ export function ProjectDetail() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#1A535C] dark:text-petrol-light rounded-lg px-2 py-1 -ml-1.5 hover:bg-[rgba(26,83,92,0.08)] dark:hover:bg-white/[0.06] transition-colors"
+                className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-petrol dark:text-petrol-light rounded-lg px-2 py-1 -ml-1.5 hover:bg-[rgba(26,83,92,0.08)] dark:hover:bg-white/[0.06] transition-colors"
               >
-                <ArrowLeft className="h-3.5 w-3.5 text-[#F15025] group-hover:-translate-x-0.5 transition-transform" />
+                <ArrowLeft className="h-3.5 w-3.5 text-flame group-hover:-translate-x-0.5 transition-transform" />
                 {fromLabel}
               </button>
             )
@@ -1402,18 +1402,18 @@ export function ProjectDetail() {
               title="Klik om te wijzigen"
               className="text-[32px] font-extrabold text-foreground truncate tracking-[-0.5px] leading-none cursor-text"
             >
-              {project.naam}<span className="text-[#F15025]">.</span>
+              {project.naam}<span className="text-flame">.</span>
             </h1>
           )}
 
-          {/* Status verwijderd uit header — al wijzigbaar via de
+          {/* Status verwijderd uit header · al wijzigbaar via de
               Voortgang-strip in het Overzicht-tab. */}
         </div>
 
-        {/* Row 2: subline — klant · plaats + datum-hint */}
-        <div className="mt-2.5 text-[13.5px] flex items-center gap-x-2 gap-y-1 flex-wrap">
+        {/* Row 2: subline · klant · plaats + datum-hint */}
+        <div className="mt-2.5 text-[13px] flex items-center gap-x-2 gap-y-1 flex-wrap">
           {klant && (
-            <Link to={`/klanten/${klant.id}`} className="inline-flex items-center gap-1.5 text-foreground/80 hover:text-[#1A535C] transition-colors">
+            <Link to={`/klanten/${klant.id}`} className="inline-flex items-center gap-1.5 text-foreground/80 hover:text-petrol transition-colors">
               <span className="font-semibold">{klant.bedrijfsnaam || klant.contactpersoon}</span>
               {klant.stad && <span className="text-muted-foreground font-normal"> · {klant.stad}</span>}
             </Link>
@@ -1422,7 +1422,7 @@ export function ProjectDetail() {
             <>
               <span className="text-muted-foreground/70">·</span>
               <span
-                className="text-[12.5px] text-muted-foreground"
+                className="text-[12px] text-muted-foreground"
                 style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
               >
                 aangemaakt {new Date(project.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -1444,7 +1444,7 @@ export function ProjectDetail() {
             }}
             align="start"
             trigger={
-              <button className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground hover:text-[#1A535C] transition-colors" title="Deadline instellen">
+              <button className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-petrol transition-colors" title="Deadline instellen">
                 <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.75} />
                 {project.eind_datum
                   ? <span className="font-medium text-foreground/80">deadline {new Date(project.eind_datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span>
@@ -1454,7 +1454,7 @@ export function ProjectDetail() {
           />
         </div>
 
-        {/* TAB BAR — flame underline, duotone icoon per tab */}
+        {/* TAB BAR · flame underline, duotone icoon per tab */}
         <div className="flex items-center gap-1 border-b border-border mt-4 sticky top-0 z-10 bg-background">
           {([
             { key: 'overzicht' as ProjectTab,  label: 'Overzicht',  count: 0,                          Icon: TabList    },
@@ -1475,7 +1475,7 @@ export function ProjectDetail() {
                 className={cn(
                   'relative inline-flex items-center gap-2 px-3.5 py-2.5 text-[14px] rounded-t-lg transition-all duration-200 -mb-px',
                   isActive
-                    ? 'text-[#1A535C] dark:text-foreground font-bold bg-[#1A535C]/[0.05] dark:bg-white/[0.05]'
+                    ? 'text-petrol dark:text-foreground font-bold bg-petrol/[0.05] dark:bg-white/[0.05]'
                     : 'text-foreground/55 font-medium hover:text-foreground hover:bg-foreground/[0.035]'
                 )}
               >
@@ -1485,14 +1485,14 @@ export function ProjectDetail() {
                   <span className={cn(
                     'font-mono text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums transition-colors',
                     isActive
-                      ? 'bg-[#1A535C] text-white'
+                      ? 'bg-petrol text-white'
                       : 'bg-[rgba(26,83,92,0.08)] dark:bg-white/[0.06] text-foreground/70'
                   )}>{tab.count}</span>
                 )}
                 {isActive && (
                   <span
                     aria-hidden
-                    className="absolute bottom-0 left-2.5 right-2.5 h-[2.5px] rounded-t-full bg-[#F15025]"
+                    className="absolute bottom-0 left-2.5 right-2.5 h-[2.5px] rounded-t-full bg-flame"
                   />
                 )}
               </button>
@@ -1621,7 +1621,7 @@ export function ProjectDetail() {
           {/* Activiteit */}
           <ActiviteitCard events={recenteActiviteiten} />
 
-          {/* Portaal — één compact-strip voor actieve én niet-actieve state */}
+          {/* Portaal · één compact-strip voor actieve én niet-actieve state */}
           <PortaalCompactBlock projectId={id!} />
 
           {/* Verzonden emails */}
@@ -1631,21 +1631,21 @@ export function ProjectDetail() {
             return (
               <div className="doen-slate-surface rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <Send className="h-4 w-4 text-[#1A535C] dark:text-petrol-light" strokeWidth={1.75} />
+                  <Send className="h-4 w-4 text-petrol dark:text-petrol-light" strokeWidth={1.75} />
                   <h3 className="font-heading text-[15px] font-bold text-foreground">
-                    Verzonden<span className="text-[#F15025]">.</span>
+                    Verzonden<span className="text-flame">.</span>
                   </h3>
-                  <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] dark:bg-white/[0.06] text-[#1A535C] dark:text-petrol-light rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">{verzonden.length}</span>
+                  <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] dark:bg-white/[0.06] text-petrol dark:text-petrol-light rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">{verzonden.length}</span>
                 </div>
                 <div className="space-y-1">
                   {verzonden.slice(0, 5).map((o) => (
-                    <div key={`email-${o.id}`} className="flex items-center gap-3 text-[12.5px] px-2 py-2 rounded-lg hover:bg-card/60 transition-colors">
+                    <div key={`email-${o.id}`} className="flex items-center gap-3 text-[12px] px-2 py-2 rounded-lg hover:bg-card/60 transition-colors">
                       <div className="w-8 h-8 rounded-lg bg-[hsl(var(--status-blue-bg))] border border-[#3A5A9A]/20 flex items-center justify-center flex-shrink-0">
                         <Send className="h-3 w-3 text-[#3A5A9A]" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold text-foreground truncate">Offerte {o.nummer}</div>
-                        <div className="text-foreground/70 truncate text-[11.5px]">
+                        <div className="text-foreground/70 truncate text-[11px]">
                           {o.verstuurd_naar}
                           <span className="text-muted-foreground/70"> · </span>
                           <span className="font-mono">{new Date(o.verstuurd_op!).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span>
@@ -1683,15 +1683,15 @@ export function ProjectDetail() {
             return (
               <div className="doen-slate-surface rounded-2xl p-4 flex items-center justify-between gap-4 doen-slate-surface-active">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="w-2 h-2 rounded-full bg-[#F15025] doen-pulse flex-shrink-0" aria-hidden />
+                  <span className="w-2 h-2 rounded-full bg-flame doen-pulse flex-shrink-0" aria-hidden />
                   <span
-                    className="text-[13.5px] text-foreground font-medium"
+                    className="text-[13px] text-foreground font-medium"
                   >
                     {suggestion.text}
                   </span>
                 </div>
                 <button
-                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold bg-[#F15025] text-white px-4 py-2 rounded-xl shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 flex-shrink-0"
+                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold bg-flame text-white px-4 py-2 rounded-xl shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 flex-shrink-0"
                   onClick={suggestion.action}
                 >
                   Doen<span>.</span>
@@ -1729,7 +1729,7 @@ export function ProjectDetail() {
                   await updateKlant(klant.id, { contactpersonen: updatedCps })
                   setKlant({ ...klant, contactpersonen: updatedCps })
                 } else {
-                  // DB-record uit contactpersonen-tabel — split naam best-effort
+                  // DB-record uit contactpersonen-tabel · split naam best-effort
                   const parts = cp.naam.trim().split(/\s+/)
                   const voornaam = parts[0] || ''
                   const achternaam = parts.slice(1).join(' ')
@@ -1781,7 +1781,7 @@ export function ProjectDetail() {
             onBevestiging={() => setShowObOfferteSelect(s => !s)}
           />
 
-          {/* Opdrachtbevestiging — uitklap onder Acties */}
+          {/* Opdrachtbevestiging · uitklap onder Acties */}
           {showObOfferteSelect && (
             <div className="rounded-xl bg-card shadow-[0_1px_3px_rgba(130,100,60,0.04)] overflow-hidden">
               <div className="px-5 py-3 border-b border-border">
@@ -1806,7 +1806,7 @@ export function ProjectDetail() {
             </div>
           )}
 
-          {/* Bestanden — eigen card-shell */}
+          {/* Bestanden · eigen card-shell */}
           <BestandenSection
             documenten={projectDocumenten}
             onUpload={() => fileInputRef.current?.click()}
@@ -1822,7 +1822,7 @@ export function ProjectDetail() {
             }}
           />
 
-          {/* Situatiefoto's — eigen card-shell (Pad B shell-tweaks toegepast) */}
+          {/* Situatiefoto's · eigen card-shell (Pad B shell-tweaks toegepast) */}
           <ProjectPhotoGallery
             projectId={id!}
             userId={user?.id || ''}
@@ -1850,7 +1850,7 @@ export function ProjectDetail() {
           <h2 className="text-lg font-bold text-foreground tracking-[-0.3px]">Werkbonnen</h2>
           <button
             onClick={() => setShowWerkbonDialog(true)}
-            className="text-sm text-[#F15025] font-medium hover:underline"
+            className="text-sm text-flame font-medium hover:underline"
           >
             + Nieuwe werkbon
           </button>
@@ -1858,7 +1858,7 @@ export function ProjectDetail() {
         {projectWerkbonnen.length === 0 ? (
           <div className="py-16 text-center">
             <p className="text-sm text-muted-foreground">Nog geen werkbonnen</p>
-            <button onClick={() => setShowWerkbonDialog(true)} className="text-sm text-[#1A535C] hover:underline mt-1">
+            <button onClick={() => setShowWerkbonDialog(true)} className="text-sm text-petrol hover:underline mt-1">
               Maak een werkbon aan
             </button>
           </div>
@@ -1898,7 +1898,7 @@ export function ProjectDetail() {
                     <div className="flex items-center justify-between mt-3">
                       <span className="text-xs font-mono text-muted-foreground">{new Date(wb.datum).toLocaleDateString('nl-NL')}</span>
                       <span className="text-xs" style={{ color: accentColor }}>
-                        {wbStatusLabel}<span className="text-[#F15025]">.</span>
+                        {wbStatusLabel}<span className="text-flame">.</span>
                       </span>
                     </div>
                   </div>
@@ -1962,7 +1962,7 @@ export function ProjectDetail() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Offertes</h3>
-              <button onClick={openNieuweOfferte} className="text-sm text-[#F15025] font-medium hover:underline">+ Nieuwe offerte</button>
+              <button onClick={openNieuweOfferte} className="text-sm text-flame font-medium hover:underline">+ Nieuwe offerte</button>
             </div>
             <div className="space-y-3">
               {projectOffertes.map((offerte) => {
@@ -1982,7 +1982,7 @@ export function ProjectDetail() {
                         <div className="text-right flex-shrink-0">
                           <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(offerte.totaal)}</p>
                           <span className="text-xs" style={{ color: accentColor }}>
-                            {offerteStatusLabel}<span className="text-[#F15025]">.</span>
+                            {offerteStatusLabel}<span className="text-flame">.</span>
                           </span>
                         </div>
                       </div>
@@ -2010,7 +2010,7 @@ export function ProjectDetail() {
                       <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/40">
                         <button
                           onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}
-                          className="text-sm font-medium text-[#1A535C] hover:underline"
+                          className="text-sm font-medium text-petrol hover:underline"
                         >
                           Bewerken
                         </button>
@@ -2023,7 +2023,7 @@ export function ProjectDetail() {
                             )
                             setEmailOfferteOpen(true)
                           }}
-                          className="text-sm font-medium text-[#1A535C] hover:underline"
+                          className="text-sm font-medium text-petrol hover:underline"
                         >
                           Mail
                         </button>
@@ -2066,12 +2066,12 @@ export function ProjectDetail() {
                           <CheckCircle2 className="h-3 w-3 text-[#3A7D52]" />
                           <span className="font-mono">{linkedFactuur.nummer}</span>
                           <span className="text-[#EBEBEB]">·</span>
-                          <span>{linkedFactuur.status}<span className="text-[#F15025]">.</span></span>
+                          <span>{linkedFactuur.status}<span className="text-flame">.</span></span>
                           <span className="text-[#EBEBEB]">·</span>
                           <span className="font-mono">{formatCurrency(linkedFactuur.totaal)}</span>
                           <button
                             onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}`, { state: { from: location.pathname } })}
-                            className="text-[#1A535C] font-medium hover:underline ml-auto"
+                            className="text-petrol font-medium hover:underline ml-auto"
                           >
                             Bekijken
                           </button>
@@ -2107,7 +2107,7 @@ export function ProjectDetail() {
                       <div className="text-right">
                         <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(factuur.totaal)}</p>
                         <span className="text-xs" style={{ color: accentColor }}>
-                          {factuurStatusLabel}<span className="text-[#F15025]">.</span>
+                          {factuurStatusLabel}<span className="text-flame">.</span>
                         </span>
                       </div>
                     </div>
@@ -2140,7 +2140,7 @@ export function ProjectDetail() {
                       <div className="text-right">
                         <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(uitgave.bedrag_incl_btw)}</p>
                         <span className="text-xs" style={{ color: accentColor }}>
-                          {uitgaveStatusLabel}<span className="text-[#F15025]">.</span>
+                          {uitgaveStatusLabel}<span className="text-flame">.</span>
                         </span>
                       </div>
                     </div>
@@ -2164,15 +2164,15 @@ export function ProjectDetail() {
           <h2 className="text-lg font-bold text-foreground tracking-[-0.3px]">E-mailcommunicatie</h2>
         </div>
 
-        {/* Daan-samenvatting bovenin — vat hele thread samen vanuit project-perspectief */}
+        {/* Daan-samenvatting bovenin · vat hele thread samen vanuit project-perspectief */}
         {projectEmails.length > 0 && !emailsLoading && (
-          <div className="mb-5 rounded-xl border border-[#1A535C]/15 bg-gradient-to-br from-[#1A535C]/[0.04] to-[#F15025]/[0.03] p-4">
+          <div className="mb-5 rounded-xl border border-petrol/15 bg-gradient-to-br from-petrol/[0.04] to-flame/[0.03] p-4">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-lg bg-card shadow-sm flex items-center justify-center flex-shrink-0">
                 {aiSummaryLoading ? (
-                  <Loader2 className="h-4 w-4 text-[#F15025] animate-spin" />
+                  <Loader2 className="h-4 w-4 text-flame animate-spin" />
                 ) : (
-                  <Sparkles className="h-4 w-4 text-[#F15025]" />
+                  <Sparkles className="h-4 w-4 text-flame" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -2187,7 +2187,7 @@ export function ProjectDetail() {
                     <button
                       type="button"
                       onClick={handleSamenvatThread}
-                      className="text-[11px] text-[#1A535C] hover:text-[#0F3C44] inline-flex items-center gap-1 transition-colors"
+                      className="text-[11px] text-petrol hover:text-[#0F3C44] inline-flex items-center gap-1 transition-colors"
                       title="Opnieuw samenvatten"
                     >
                       <RefreshCw className="h-3 w-3" />
@@ -2206,12 +2206,12 @@ export function ProjectDetail() {
                 ) : (
                   <div>
                     <p className="text-[12px] text-foreground/70 mb-2">
-                      Laat Daan deze {projectEmails.length} bericht{projectEmails.length === 1 ? '' : 'en'} samenvatten — afspraken, openstaande vragen en status in één blik.
+                      Laat Daan deze {projectEmails.length} bericht{projectEmails.length === 1 ? '' : 'en'} samenvatten · afspraken, openstaande vragen en status in één blik.
                     </p>
                     <button
                       type="button"
                       onClick={handleSamenvatThread}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#1A535C] text-white text-[12px] font-medium hover:bg-[#0F3C44] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-petrol text-white text-[12px] font-medium hover:bg-[#0F3C44] transition-colors"
                     >
                       <Sparkles className="h-3.5 w-3.5" />
                       Samenvatten
@@ -2250,10 +2250,10 @@ export function ProjectDetail() {
                       isExpanded && 'bg-background',
                     )}
                   >
-                    <div className="w-9 h-9 rounded-lg bg-[#1A535C]/[0.06] flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-petrol/[0.06] flex items-center justify-center flex-shrink-0">
                       <ChevronDown
                         className={cn(
-                          'h-4 w-4 text-[#1A535C] transition-transform duration-150',
+                          'h-4 w-4 text-petrol transition-transform duration-150',
                           !isExpanded && '-rotate-90',
                         )}
                       />
@@ -2280,7 +2280,7 @@ export function ProjectDetail() {
                       </div>
                       {bodyHtml ? (
                         <div
-                          className="ml-12 mr-2 text-[13px] text-foreground leading-relaxed prose prose-sm max-w-none [&_a]:text-[#1A535C] [&_a]:underline"
+                          className="ml-12 mr-2 text-[13px] text-foreground leading-relaxed prose prose-sm max-w-none [&_a]:text-petrol [&_a]:underline"
                           dangerouslySetInnerHTML={{ __html: bodyHtml }}
                         />
                       ) : mail.body_text ? (
@@ -2289,7 +2289,7 @@ export function ProjectDetail() {
                         </pre>
                       ) : (
                         <p className="ml-12 mr-2 text-[12px] text-muted-foreground italic">
-                          Geen body opgeslagen — open de mail in de e-mailmodule om te lezen.
+                          Geen body opgeslagen · open de mail in de e-mailmodule om te lezen.
                         </p>
                       )}
                     </div>
@@ -2311,7 +2311,7 @@ export function ProjectDetail() {
             <button
               disabled={briefingSaving}
               onClick={handleSaveBriefing}
-              className="text-sm text-[#1A535C] hover:underline disabled:opacity-50"
+              className="text-sm text-petrol hover:underline disabled:opacity-50"
             >
               {briefingSaving ? 'Opslaan...' : 'Opslaan'}
             </button>
@@ -2321,7 +2321,7 @@ export function ProjectDetail() {
             onChange={(e) => setBriefingText(e.target.value)}
             placeholder="Voeg hier de projectbriefing en notities toe..."
             rows={20}
-            className="resize-y bg-background rounded-lg p-4 border-none focus:ring-1 focus:ring-[#1A535C]/20 transition-colors text-sm leading-relaxed"
+            className="resize-y bg-background rounded-lg p-4 border-none focus:ring-1 focus:ring-petrol/20 transition-colors text-sm leading-relaxed"
           />
           {project.updated_at && (
             <p className="text-xs text-muted-foreground mt-2">
@@ -2385,7 +2385,7 @@ export function ProjectDetail() {
               </button>
               <button
                 onClick={() => handleCreateFactuurFromOfferte(activeOfferte)}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#1A535C]/30 bg-card text-[#1A535C] hover:bg-[#1A535C] hover:text-white transition-colors text-[13px] font-medium"
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-petrol/30 bg-card text-petrol hover:bg-petrol hover:text-white transition-colors text-[13px] font-medium"
                 title={isGefactureerd ? `Factuur openen` : 'Factuur maken van deze offerte'}
               >
                 <Receipt className="h-3.5 w-3.5" />
@@ -2464,7 +2464,7 @@ export function ProjectDetail() {
         />
       )}
 
-      {/* Nieuwe taak dialog — zelfde stijl als /taken edit-dialog */}
+      {/* Nieuwe taak dialog · zelfde stijl als /taken edit-dialog */}
       <Dialog open={nieuweTaakOpen} onOpenChange={(open) => {
         setNieuweTaakOpen(open)
         if (!open) {
@@ -2491,7 +2491,7 @@ export function ProjectDetail() {
               />
             </div>
 
-            {/* Toewijzen — avatar-bolletjes */}
+            {/* Toewijzen · avatar-bolletjes */}
             <div className="px-7 pb-4">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Toewijzen aan</p>
               <div className="flex flex-wrap gap-1.5">
@@ -2513,7 +2513,7 @@ export function ProjectDetail() {
                       className={cn(
                         'inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full text-[12px] font-medium transition-all border',
                         selected
-                          ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]'
+                          ? 'border-petrol bg-petrol/[0.08] text-petrol'
                           : 'border-transparent bg-background text-foreground/70 hover:bg-muted'
                       )}
                     >
@@ -2535,7 +2535,7 @@ export function ProjectDetail() {
               </div>
             </div>
 
-            {/* Deadline — eigen sectie met snel-pillen */}
+            {/* Deadline · eigen sectie met snel-pillen */}
             <div className="px-7 pb-4">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Deadline</p>
               <div className="flex items-center gap-2 flex-wrap">
@@ -2545,7 +2545,7 @@ export function ProjectDetail() {
                   trigger={
                     <button
                       type="button"
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-[13px] font-medium hover:border-[#1A535C]/30 transition-colors"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-[13px] font-medium hover:border-petrol/30 transition-colors"
                     >
                       <CalendarDays className="w-3.5 h-3.5 text-foreground/70" />
                       <span className={cn(!nieuweTaakDeadline && 'text-muted-foreground')}>
@@ -2573,9 +2573,9 @@ export function ProjectDetail() {
                         type="button"
                         onClick={() => setNieuweTaakDeadline(isSelected ? '' : val)}
                         className={cn(
-                          'px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold transition-all',
+                          'px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all',
                           isSelected
-                            ? 'bg-[#1A535C] text-white shadow-[0_1px_3px_rgba(20,62,71,0.2)]'
+                            ? 'bg-petrol text-white shadow-[0_1px_3px_rgba(20,62,71,0.2)]'
                             : 'bg-background text-foreground/70 hover:bg-muted hover:text-foreground'
                         )}
                       >
@@ -2604,15 +2604,15 @@ export function ProjectDetail() {
                 onChange={(e) => setNieuweTaakBeschrijving(e.target.value)}
                 placeholder="Briefing toevoegen…"
                 rows={5}
-                className="resize-y bg-background border border-border focus-visible:border-[#1A535C] dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 text-[14px] leading-relaxed rounded-lg"
+                className="resize-y bg-background border border-border focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 text-[14px] leading-relaxed rounded-lg"
               />
             </div>
           </div>
 
-          {/* Footer — project-context links + acties rechts */}
+          {/* Footer · project-context links + acties rechts */}
           <div className="border-t border-border px-7 py-4 flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1 flex items-center gap-2 text-[12px] text-muted-foreground">
-              <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-[#1A535C] flex-shrink-0" />
+              <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-petrol flex-shrink-0" />
               <span className="truncate">
                 <span className="font-semibold text-foreground/70">{project?.naam}</span>
                 {klant && <span className="text-muted-foreground/70"> · {klant.bedrijfsnaam || klant.contactpersoon}</span>}
@@ -3125,7 +3125,7 @@ export function ProjectDetail() {
               <Textarea value={montageNotities} onChange={(e) => setMontageNotities(e.target.value)} placeholder="Optioneel..." rows={2} className="mt-1 min-h-[50px]" />
             </div>
 
-            {/* Bijlagen — compact */}
+            {/* Bijlagen · compact */}
             <div>
               <div className="flex items-center justify-between">
                 <Label className="text-sm flex items-center gap-1.5">
@@ -3175,7 +3175,7 @@ export function ProjectDetail() {
                         type="button"
                         title="Bekijken"
                         onClick={() => window.open(bijlage.url, '_blank')}
-                        className="text-muted-foreground hover:text-[#1A535C] ml-0.5"
+                        className="text-muted-foreground hover:text-petrol ml-0.5"
                       >
                         <Eye className="h-3 w-3" />
                       </button>
@@ -3186,7 +3186,7 @@ export function ProjectDetail() {
                           const w = window.open(bijlage.url, '_blank')
                           if (w) { w.addEventListener('load', () => w.print()) }
                         }}
-                        className="text-muted-foreground hover:text-[#1A535C]"
+                        className="text-muted-foreground hover:text-petrol"
                       >
                         <Printer className="h-3 w-3" />
                       </button>
@@ -3240,4 +3240,4 @@ export function ProjectDetail() {
   )
 }
 
-/* InfoRow and TaakCard removed — using DOEN text-based layout and TaskChecklistView */
+/* InfoRow and TaakCard removed · using DOEN text-based layout and TaskChecklistView */

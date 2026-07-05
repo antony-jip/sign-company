@@ -101,8 +101,8 @@ export function IngeplandeBerichtenLijst() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <Clock className="h-3.5 w-3.5 text-[#1A535C] flex-shrink-0" />
-                      <span className="text-[12px] font-mono text-[#1A535C] font-medium">
+                      <Clock className="h-3.5 w-3.5 text-petrol flex-shrink-0" />
+                      <span className="text-[12px] font-mono text-petrol font-medium">
                         {formatScheduledAt(b.scheduled_at)}
                       </span>
                       {!isWachtend && (
@@ -116,7 +116,7 @@ export function IngeplandeBerichtenLijst() {
                         </span>
                       )}
                       {b.bron === 'outbox' && (
-                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#1A535C]/10 text-[#1A535C]">
+                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-petrol/10 text-petrol">
                           Outbox
                         </span>
                       )}

@@ -147,7 +147,7 @@ function DealDetailSkeleton() {
 
 const ACTIVITEIT_TYPE_CONFIG: Record<DealActiviteit['type'], { label: string; icon: typeof Phone; color: string }> = {
   notitie: { label: 'Notitie', icon: StickyNote, color: 'text-muted-foreground bg-muted dark:bg-muted' },
-  email: { label: 'Email', icon: Mail, color: 'text-blue-500 bg-blue-100 dark:bg-blue-900/30' },
+  email: { label: 'Email', icon: Mail, color: 'text-petrol bg-blue-100 dark:bg-blue-900/30' },
   telefoon: { label: 'Telefoon', icon: Phone, color: 'text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30' },
   vergadering: { label: 'Vergadering', icon: Calendar, color: 'text-purple-500 bg-purple-100 dark:bg-purple-900/30' },
   offerte_verstuurd: { label: 'Offerte verstuurd', icon: FileText, color: 'text-orange-500 bg-orange-100 dark:bg-orange-900/30' },
@@ -566,7 +566,7 @@ export function DealDetail() {
             <CardContent className="space-y-2">
               <div className="text-sm">
                 <span className="text-muted-foreground">Klant: </span>
-                <button className="text-blue-600 hover:underline" onClick={() => klant && navigate(`/klanten/${klant.id}`)}>{klant?.bedrijfsnaam || '-'}</button>
+                <button className="text-petrol hover:underline" onClick={() => klant && navigate(`/klanten/${klant.id}`)}>{klant?.bedrijfsnaam || '-'}</button>
               </div>
               {deal.offerte_ids && deal.offerte_ids.length > 0 && (
                 <div className="text-sm">
@@ -577,7 +577,7 @@ export function DealDetail() {
               {deal.project_id && (
                 <div className="text-sm">
                   <span className="text-muted-foreground">Project: </span>
-                  <button className="text-blue-600 hover:underline" onClick={() => navigate(`/projecten/${deal.project_id}`)}>Bekijk project</button>
+                  <button className="text-petrol hover:underline" onClick={() => navigate(`/projecten/${deal.project_id}`)}>Bekijk project</button>
                 </div>
               )}
               <Separator />

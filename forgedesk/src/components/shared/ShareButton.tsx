@@ -16,7 +16,7 @@ export function ShareButton({ title, url, className }: ShareButtonProps) {
       try {
         await navigator.share({ title, url: fullUrl })
       } catch (err) {
-        // User cancelled share — ignore AbortError
+        // User cancelled share · ignore AbortError
         if (err instanceof Error && err.name !== 'AbortError') {
           toast.error('Delen mislukt')
         }

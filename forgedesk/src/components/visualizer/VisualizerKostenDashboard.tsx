@@ -79,7 +79,7 @@ export function VisualizerKostenDashboard({ compact = false }: VisualizerKostenD
             <div>
               <p className="text-xs text-muted-foreground">Deze maand</p>
               <p className="text-sm font-medium">
-                {stats.gegenereerd_deze_maand} mockups — {stats.gegenereerd_deze_maand} credits
+                {stats.gegenereerd_deze_maand} mockups · {stats.gegenereerd_deze_maand} credits
               </p>
             </div>
           </div>
@@ -101,7 +101,7 @@ export function VisualizerKostenDashboard({ compact = false }: VisualizerKostenD
             <div>
               <p className="text-xs text-muted-foreground">Totaal gebruikt</p>
               <p className="text-sm font-medium">
-                {stats.totaal_gegenereerd} mockups — {stats.totaal_gegenereerd} credits
+                {stats.totaal_gegenereerd} mockups · {stats.totaal_gegenereerd} credits
               </p>
             </div>
           </div>

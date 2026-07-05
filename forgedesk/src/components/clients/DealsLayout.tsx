@@ -439,7 +439,7 @@ export function DealsLayout() {
             {gefilterd.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-16">
                 <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#2A5580' }} />
-                <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen deals gevonden</p>
+                <p className="font-semibold" style={{ fontSize: '14px', color: 'hsl(var(--foreground))' }}>Geen deals gevonden</p>
               </div>
             ) : (
               <table className="w-full">

@@ -62,7 +62,7 @@ export function VisualisatieLightbox({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-baseline gap-2.5 min-w-0">
-          <span className="text-white font-semibold truncate">{titel}<span className="text-[#F15025]">.</span></span>
+          <span className="text-white font-semibold truncate">{titel}<span className="text-flame">.</span></span>
           {current.kleur_instelling && (
             <span className="text-white/50 text-sm truncate">{current.kleur_instelling}</span>
           )}
@@ -132,7 +132,7 @@ export function VisualisatieLightbox({
           {/* Mockup */}
           <figure className="min-h-0 flex flex-col items-center justify-center">
             <figcaption className="text-[11px] font-medium uppercase tracking-wider mb-2.5">
-              <span className="text-[#F15025]">Mockup</span>
+              <span className="text-flame">Mockup</span>
             </figcaption>
             <img
               src={mockupUrl}

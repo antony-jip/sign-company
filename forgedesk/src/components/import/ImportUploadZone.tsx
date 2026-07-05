@@ -19,7 +19,7 @@ export function ImportUploadZone({ type, label, icon: Icon, accept, onParsed }: 
     setFileName(file.name)
     setError(null)
 
-    // File size check — max 10MB
+    // File size check · max 10MB
     if (file.size > 10 * 1024 * 1024) {
       setError(`Bestand is te groot (${(file.size / (1024 * 1024)).toFixed(1)}MB). Maximum is 10MB.`)
       return

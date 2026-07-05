@@ -5,7 +5,7 @@ import { TemplateEditor } from './TemplateEditor'
 import { getOrgId } from '@/services/supabaseHelpers'
 
 // Deze 5 templates zijn doen.-platform-mails (doen. → org-admin). Voor
-// klant-orgs zijn ze irrelevant — alleen Sign Makers (de doen.-eigenaar)
+// klant-orgs zijn ze irrelevant · alleen Sign Makers (de doen.-eigenaar)
 // ziet ze in de editor.
 const DOEN_PLATFORM_ORG_ID = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229'
 const DOEN_PLATFORM_TRIGGERS = new Set([

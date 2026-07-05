@@ -147,12 +147,12 @@ function SidebarContent({
             Contact
           </h3>
           <div className="space-y-1.5" style={{ fontSize: 13 }}>
-            <p className="font-medium" style={{ color: '#191919' }}>{bedrijf.naam}</p>
+            <p className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>{bedrijf.naam}</p>
             {bedrijf.telefoon && (
               <a
                 href={`tel:${bedrijf.telefoon}`}
                 className="flex items-center gap-2 hover:opacity-70 transition-opacity"
-                style={{ color: '#5A5A55' }}
+                style={{ color: 'hsl(var(--muted-foreground))' }}
               >
                 <Phone className="w-3.5 h-3.5 flex-shrink-0" />
                 {bedrijf.telefoon}
@@ -162,7 +162,7 @@ function SidebarContent({
               <a
                 href={`mailto:${bedrijf.email}`}
                 className="flex items-center gap-2 hover:opacity-70 transition-opacity"
-                style={{ color: '#5A5A55' }}
+                style={{ color: 'hsl(var(--muted-foreground))' }}
               >
                 <Mail className="w-3.5 h-3.5 flex-shrink-0" />
                 {bedrijf.email}
@@ -174,7 +174,7 @@ function SidebarContent({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 hover:opacity-70 transition-opacity"
-                style={{ color: '#5A5A55' }}
+                style={{ color: 'hsl(var(--muted-foreground))' }}
               >
                 <Globe className="w-3.5 h-3.5 flex-shrink-0" />
                 {bedrijf.website.replace(/^https?:\/\//, '')}
@@ -234,10 +234,10 @@ function PlanningRij({ label, datum, tijd }: { label: string; datum: string; tij
   return (
     <div className="flex items-center gap-2">
       <Calendar className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#A0A098' }} />
-      <span className="text-xs" style={{ color: '#5A5A55' }}>{label}:</span>
+      <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>{label}:</span>
       <span
         className="text-xs font-medium"
-        style={{ color: '#191919', fontFamily: "'DM Mono', monospace" }}
+        style={{ color: 'hsl(var(--foreground))', fontFamily: "'DM Mono', monospace" }}
       >
         {datum}
         {tijd && <span className="text-gray-400 ml-1">{tijd}</span>}

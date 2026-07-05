@@ -181,7 +181,7 @@ export function ClientProfile() {
       setClientDeals(deals)
       setImportedContacts(contactpersonen)
 
-      // Emails filteren op klant email — moet nog via getEmails() want er is geen getEmailsByKlant
+      // Emails filteren op klant email · moet nog via getEmails() want er is geen getEmailsByKlant
       if (klantData?.email) {
         const email = klantData.email.toLowerCase()
         const allEmails = await getEmails().catch(() => [])
@@ -570,7 +570,7 @@ export function ClientProfile() {
                 className="gap-2 cursor-pointer"
                 onClick={() => navigate(`/offertes/nieuw?klant_id=${id}`)}
               >
-                <FileText className="w-4 h-4 text-blue-500" />
+                <FileText className="w-4 h-4 text-petrol" />
                 Offerte
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -607,26 +607,26 @@ export function ClientProfile() {
       {/* ── Klant Labels + Waarschuwingen ── */}
       {(klant.klant_labels || []).length > 0 && (
         <div className="space-y-2">
-          {/* Waarschuwing banners — DOEN: pastel banner + flame punt */}
+          {/* Waarschuwing banners · DOEN: pastel banner + flame punt */}
           {(klant.klant_labels || []).includes('niet_helpen') && (
             <div className="alert-banner alert-banner-danger">
               <AlertTriangle className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
-              <span>Let op: deze klant heeft het label &quot;Niet helpen&quot;<span className="text-[#F15025] font-extrabold">.</span></span>
+              <span>Let op: deze klant heeft het label &quot;Niet helpen&quot;<span className="text-flame font-extrabold">.</span></span>
             </div>
           )}
           {(klant.klant_labels || []).includes('vooruit_betalen') && (
             <div className="alert-banner alert-banner-warning">
               <AlertTriangle className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
-              <span>Let op: deze klant moet vooruit betalen<span className="text-[#F15025] font-extrabold">.</span></span>
+              <span>Let op: deze klant moet vooruit betalen<span className="text-flame font-extrabold">.</span></span>
             </div>
           )}
           {(klant.klant_labels || []).includes('wanbetaler') && (
             <div className="alert-banner alert-banner-danger">
               <AlertTriangle className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
-              <span>Let op: deze klant staat geregistreerd als wanbetaler<span className="text-[#F15025] font-extrabold">.</span></span>
+              <span>Let op: deze klant staat geregistreerd als wanbetaler<span className="text-flame font-extrabold">.</span></span>
             </div>
           )}
-          {/* Label badges — tekst + dot + flame punt, geen gekleurde pills */}
+          {/* Label badges · tekst + dot + flame punt, geen gekleurde pills */}
           <div className="flex flex-wrap gap-x-4 gap-y-1.5">
             {(klant.klant_labels || []).map((label) => {
               const colors: Record<string, string> = {
@@ -671,7 +671,7 @@ export function ClientProfile() {
         <Card className="border-border dark:border-border">
           <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-500" />
+              <Users className="w-4 h-4 text-petrol" />
               Contactpersonen ({contactpersonen.length + importedContacts.length})
             </CardTitle>
             <button
@@ -679,7 +679,7 @@ export function ClientProfile() {
               className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors duration-150"
               title="Contactpersoon toevoegen"
             >
-              <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-blue-500" />
+              <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-petrol" />
             </button>
           </CardHeader>
           <CardContent className="pt-0">
@@ -696,7 +696,7 @@ export function ClientProfile() {
                       <p className="text-sm font-medium text-foreground truncate">
                         {cp.naam}
                         {cp.is_primair && (
-                          <span className="ml-1.5 text-[10px] text-blue-500 font-normal">primair</span>
+                          <span className="ml-1.5 text-[10px] text-petrol font-normal">primair</span>
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
@@ -718,7 +718,7 @@ export function ClientProfile() {
                 {(contactpersonen.length + importedContacts.length) > 2 && (
                   <button
                     onClick={() => setActiveTab('contactpersonen')}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-xs text-petrol dark:text-blue-400 hover:underline"
                   >
                     Bekijk alle contactpersonen
                   </button>
@@ -731,7 +731,7 @@ export function ClientProfile() {
                 <p className="text-xs text-muted-foreground">{klant.email}</p>
                 <button
                   onClick={openAddContact}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-2 block"
+                  className="text-xs text-petrol dark:text-blue-400 hover:underline mt-2 block"
                 >
                   + Contactpersoon toevoegen
                 </button>
@@ -815,7 +815,7 @@ export function ClientProfile() {
             )}
             <button
               onClick={() => setEditDialogOpen(true)}
-              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-xs text-petrol dark:text-blue-400 hover:underline"
             >
               Bewerk financiele gegevens
             </button>
@@ -836,7 +836,7 @@ export function ClientProfile() {
             </p>
             <button
               onClick={() => setActiveTab('notities')}
-              className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-2 block"
+              className="text-xs text-petrol dark:text-blue-400 hover:underline mt-2 block"
             >
               Bewerk opmerking
             </button>
@@ -933,7 +933,7 @@ export function ClientProfile() {
                               <td className="py-3 px-4">
                                 <div>
                                   <div className="flex items-center gap-1.5">
-                                    <p className="text-sm font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-150">
+                                    <p className="text-sm font-semibold text-foreground hover:text-petrol dark:hover:text-blue-400 transition-colors duration-150">
                                       {project.naam}
                                     </p>
                                   </div>
@@ -1007,7 +1007,7 @@ export function ClientProfile() {
                                   className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors duration-150 inline-flex"
                                   title="Download CSV"
                                 >
-                                  <FileText className="w-4 h-4 text-muted-foreground hover:text-blue-600" />
+                                  <FileText className="w-4 h-4 text-muted-foreground hover:text-petrol" />
                                 </button>
                               </td>
                             </tr>
@@ -1054,7 +1054,7 @@ export function ClientProfile() {
                         >
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">
+                              <span className="text-sm font-medium font-mono text-petrol dark:text-blue-400">
                                 {offerte.nummer}
                               </span>
                             </div>
@@ -1160,7 +1160,7 @@ export function ClientProfile() {
                         >
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400 hover:underline">{factuur.nummer}</span>
+                              <span className="text-sm font-medium font-mono text-petrol dark:text-blue-400 hover:underline">{factuur.nummer}</span>
                             </div>
                           </td>
                           <td className="py-3 px-4 text-sm">{factuur.titel}</td>
@@ -1402,13 +1402,13 @@ export function ClientProfile() {
                             </p>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                               {cp.email && (
-                                <a href="#" className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(cp.email)}`, label: 'Nieuwe email', id: `/email/compose-${cp.email}` }) }}>
+                                <a href="#" className="flex items-center gap-1 hover:text-petrol" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(cp.email)}`, label: 'Nieuwe email', id: `/email/compose-${cp.email}` }) }}>
                                   <Mail className="w-3 h-3" />
                                   {cp.email}
                                 </a>
                               )}
                               {cp.telefoon && (
-                                <a href={`tel:${cp.telefoon}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
+                                <a href={`tel:${cp.telefoon}`} className="flex items-center gap-1 hover:text-petrol" onClick={(e) => e.stopPropagation()}>
                                   <Phone className="w-3 h-3" />
                                   {cp.telefoon}
                                 </a>
@@ -1459,13 +1459,13 @@ export function ClientProfile() {
                               </p>
                               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                                 {ic.email && (
-                                  <a href="#" className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(ic.email)}`, label: 'Nieuwe email', id: `/email/compose-${ic.email}` }) }}>
+                                  <a href="#" className="flex items-center gap-1 hover:text-petrol" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(ic.email)}`, label: 'Nieuwe email', id: `/email/compose-${ic.email}` }) }}>
                                     <Mail className="w-3 h-3" />
                                     {ic.email}
                                   </a>
                                 )}
                                 {ic.telefoon && (
-                                  <a href={`tel:${ic.telefoon}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
+                                  <a href={`tel:${ic.telefoon}`} className="flex items-center gap-1 hover:text-petrol" onClick={(e) => e.stopPropagation()}>
                                     <Phone className="w-3 h-3" />
                                     {ic.telefoon}
                                   </a>
@@ -1580,7 +1580,7 @@ export function ClientProfile() {
           <Card className="border-border dark:border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Download className="w-4 h-4 text-blue-500" />
+                <Download className="w-4 h-4 text-petrol" />
                 Exporteren
               </CardTitle>
             </CardHeader>
@@ -1887,7 +1887,7 @@ function ClientProfileSkeleton() {
         </div>
       </div>
 
-      {/* Info Cards Row — 4 cards: Contactpersonen / Vestigingen / Financieel / Opmerking */}
+      {/* Info Cards Row · 4 cards: Contactpersonen / Vestigingen / Financieel / Opmerking */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="border-border dark:border-border">
@@ -1911,7 +1911,7 @@ function ClientProfileSkeleton() {
       <div className="flex flex-col xl:flex-row gap-6">
         {/* Left: tabs + tab content */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* Tab-strip — 8 tabs */}
+          {/* Tab-strip · 8 tabs */}
           <div className="flex items-center gap-1 flex-wrap">
             {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="h-9 w-28 rounded-lg" />
@@ -1948,7 +1948,7 @@ function ClientProfileSkeleton() {
           </Card>
         </div>
 
-        {/* Right sidebar — w-80 op xl */}
+        {/* Right sidebar · w-80 op xl */}
         <div className="w-full xl:w-80 flex-shrink-0 space-y-4">
           {/* Notities */}
           <Card className="border-border dark:border-border">

@@ -47,7 +47,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all duration-200 rounded-xl border-black/[0.06] hover:shadow-lg hover:border-[#1A535C]/20 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] group",
+        "cursor-pointer transition-all duration-200 rounded-xl border-black/[0.06] hover:shadow-lg hover:border-petrol/20 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] group",
         selected && "ring-2 ring-primary border-primary/30"
       )}
       onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.contactpersoon || 'Klant', id: `/klanten/${klant.id}` })}

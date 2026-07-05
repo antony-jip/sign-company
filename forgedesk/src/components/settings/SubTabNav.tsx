@@ -9,8 +9,8 @@ interface SubTabNavProps {
   active: string
   onChange: (id: string) => void
   /**
-   * 'pill' (default) — slate-surface gevulde pillen, voor sectie-navigatie op het hoogste niveau.
-   * 'underline' — tekst-tabs met Flame-streep onder de actieve. Gebruik binnen een tab die zelf al
+   * 'pill' (default) · slate-surface gevulde pillen, voor sectie-navigatie op het hoogste niveau.
+   * 'underline' · tekst-tabs met Flame-streep onder de actieve. Gebruik binnen een tab die zelf al
    *   in een sectie zit, om visuele "dubbele tabs" te voorkomen.
    */
   variant?: 'pill' | 'underline'
@@ -34,12 +34,12 @@ export function SubTabNav({ tabs, active, onChange, variant = 'pill' }: SubTabNa
                   : 'text-muted-foreground hover:text-foreground/70',
               )}
             >
-              <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-[#1A535C]' : 'text-muted-foreground')} />
+              <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-petrol' : 'text-muted-foreground')} />
               {tab.label}
               {isActive && (
                 <span
                   aria-hidden
-                  className="absolute left-2 right-2 bottom-0 h-[2px] rounded-full bg-[#F15025]"
+                  className="absolute left-2 right-2 bottom-0 h-[2px] rounded-full bg-flame"
                 />
               )}
             </button>
@@ -65,9 +65,9 @@ export function SubTabNav({ tabs, active, onChange, variant = 'pill' }: SubTabNa
                 : 'text-foreground/70 hover:text-foreground hover:bg-card/50'
             )}
           >
-            <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-[#1A535C]' : 'text-muted-foreground')} />
+            <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-petrol' : 'text-muted-foreground')} />
             {tab.label}
-            {isActive && <span className="text-[#F15025] ml-0.5">.</span>}
+            {isActive && <span className="text-flame ml-0.5">.</span>}
           </button>
         )
       })}

@@ -50,8 +50,8 @@ function MaatjeBeheerKaart({
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]',
-        geselecteerd && 'ring-2 ring-[#F15025]',
+        'group relative overflow-hidden rounded-xl bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]',
+        geselecteerd && 'ring-2 ring-flame',
       )}
     >
       <button
@@ -65,8 +65,8 @@ function MaatjeBeheerKaart({
       </button>
       <div className="flex items-center justify-between gap-2 px-2.5 py-2">
         <div className="min-w-0">
-          {maatje.titel && <div className="truncate text-[12px] font-semibold text-[#1A1A1A]">{maatje.titel}</div>}
-          <div className="truncate text-[11px] text-[#9B9B95]">{maker}</div>
+          {maatje.titel && <div className="truncate text-[12px] font-semibold text-foreground">{maatje.titel}</div>}
+          <div className="truncate text-[11px] text-muted-foreground">{maker}</div>
         </div>
       </div>
       <button
@@ -75,7 +75,7 @@ function MaatjeBeheerKaart({
         aria-label={geselecteerd ? 'Deselecteren' : 'Selecteren'}
         className={cn(
           'absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors',
-          geselecteerd ? 'border-[#F15025] bg-[#F15025] text-white' : 'border-white bg-black/25 text-transparent hover:bg-black/35',
+          geselecteerd ? 'border-flame bg-flame text-white' : 'border-white bg-black/25 text-transparent hover:bg-black/35',
         )}
       >
         <Check className="h-3.5 w-3.5" strokeWidth={3} />
@@ -140,7 +140,7 @@ export function MaatjeBeheer() {
   const bewaarVanuitEditor = useCallback(async (data: { annotaties: MaatjeAnnotatie[]; titel: string | null; render: Blob }) => {
     if (!editor) return
     await updateMaatje(editor.maatjeId, { titel: data.titel, annotaties: data.annotaties }, data.render)
-    toast.success(<span>Opgeslagen<span className="text-[#F15025]">.</span></span>)
+    toast.success(<span>Opgeslagen<span className="text-flame">.</span></span>)
     setEditor(null)
     await laadMaatjes()
   }, [editor, laadMaatjes])
@@ -164,7 +164,7 @@ export function MaatjeBeheer() {
       await koppelMaatjes(ids, projectId)
       tik([12, 40, 12])
       toast.success(
-        <span>{ids.length} maatje{ids.length > 1 ? 's' : ''} gekoppeld<span className="text-[#F15025]">.</span></span>,
+        <span>{ids.length} maatje{ids.length > 1 ? 's' : ''} gekoppeld<span className="text-flame">.</span></span>,
         {
           action: {
             label: 'Ongedaan maken',
@@ -198,7 +198,7 @@ export function MaatjeBeheer() {
     try {
       await Promise.all(ids.map((id) => verwijderMaatje(id)))
       tik(25)
-      toast.success(<span>{ids.length} verwijderd<span className="text-[#F15025]">.</span></span>)
+      toast.success(<span>{ids.length} verwijderd<span className="text-flame">.</span></span>)
     } catch (err) {
       logger.error('Verwijderen mislukt:', err)
       toast.error('Verwijderen mislukt')
@@ -209,9 +209,9 @@ export function MaatjeBeheer() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
       <div className="mb-1 flex items-start justify-between gap-4">
-        <h1 className="text-[26px] font-extrabold tracking-[-0.3px] text-[#1A1A1A]">Maatjes</h1>
+        <h1 className="text-[26px] font-extrabold tracking-[-0.3px] text-foreground">Maatjes<span className="text-flame">.</span></h1>
       </div>
-      <p className="mb-6 text-[13px] text-[#6B6B66]">
+      <p className="mb-6 text-[13px] text-muted-foreground">
         Beheer alle losse maatjes per medewerker en koppel ze alsnog aan een project.
       </p>
 
@@ -223,16 +223,16 @@ export function MaatjeBeheer() {
           allLabel="Alle medewerkers"
           className="w-64"
         />
-        <span className="text-[13px] text-[#9B9B95]">
+        <span className="text-[13px] text-muted-foreground">
           {zichtbaar.length} los{zichtbaar.length === 1 ? '' : 'se'} maatje{zichtbaar.length === 1 ? '' : 's'}
         </span>
         {selectie.size > 0 && (
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-[13px] font-semibold text-[#1A535C]">{selectie.size} geselecteerd</span>
+            <span className="text-[13px] font-semibold text-petrol">{selectie.size} geselecteerd</span>
             <button
               type="button"
               onClick={verwijderGeselecteerde}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#EBEBEB] px-3 py-2 text-[13px] font-medium text-[#6B6B66] hover:bg-[#F8F7F5]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#EBEBEB] px-3 py-2 text-[13px] font-medium text-muted-foreground hover:bg-[#F8F7F5]"
             >
               <Trash2 className="h-4 w-4" strokeWidth={1.75} />
               Verwijderen
@@ -240,7 +240,7 @@ export function MaatjeBeheer() {
             <button
               type="button"
               onClick={() => setKoppelOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#F15025] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)]"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-flame px-4 py-2 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)]"
             >
               <Link2 className="h-4 w-4" strokeWidth={2} />
               Koppel aan project
@@ -257,8 +257,8 @@ export function MaatjeBeheer() {
         </div>
       ) : zichtbaar.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-[14px] text-[#6B6B66]">Geen losse maatjes{filterNaam ? ` van ${filterNaam}` : ''}.</p>
-          <p className="mt-1 text-[13px] text-[#9B9B95]">Maatjes maak je op de telefoon; hier koppel je ze alsnog.</p>
+          <p className="text-[14px] text-muted-foreground">Geen losse maatjes{filterNaam ? ` van ${filterNaam}` : ''}.</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">Maatjes maak je op de telefoon; hier koppel je ze alsnog.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">

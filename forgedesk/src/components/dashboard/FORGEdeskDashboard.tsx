@@ -43,24 +43,24 @@ function getDagdeel(): { greet: string; verb: string } {
 }
 
 const PLAYFUL_OCHTEND = [
-  'Goedemorgen — zin om wat te doen?',
+  'Goedemorgen · zin om wat te doen?',
   'Wat ga jij vandaag doen?',
   'Welke is jouw eerste win vandaag?',
-  'Slim begin — wat staat bovenaan?',
+  'Slim begin · wat staat bovenaan?',
   'Eerst koffie, dan de wereld?',
   'Frisse start, frisse blik.',
   'Mooie dag om iets af te maken.',
 ]
 const PLAYFUL_MIDDAG = [
-  'Goedemiddag — nog energie voor één klus?',
-  'Halverwege de dag — hoe staan we ervoor?',
+  'Goedemiddag · nog energie voor één klus?',
+  'Halverwege de dag · hoe staan we ervoor?',
   'Tijd voor het volgende?',
   'Wat krijgt vanmiddag jouw aandacht?',
   'Eén klus van de lijst, kom op.',
   'Productieve middag op de planning?',
 ]
 const PLAYFUL_AVOND = [
-  'Goedenavond — afronden of doortrekken?',
+  'Goedenavond · afronden of doortrekken?',
   'Laatste klusje voor je gaat?',
   'Was \'t een goede dag?',
   'Pak je nog één taakje mee?',
@@ -84,7 +84,7 @@ function pickPlayfulGreeting(): string {
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
-// Weer-context greetings — kleine pool per type, willekeurig gekozen
+// Weer-context greetings · kleine pool per type, willekeurig gekozen
 // zodat het niet steeds dezelfde regel is bij elke refresh.
 const WEER_REGEN = [
   'Binnenwerk-weer.',
@@ -93,11 +93,11 @@ const WEER_REGEN = [
   'Goede dag voor de werkplaats.',
 ]
 const WEER_SNEEUW = [
-  'Sneeuw — voorzichtig op het dak.',
+  'Sneeuw · voorzichtig op het dak.',
   'Witte dag, warme koffie.',
 ]
 const WEER_MIST = [
-  'Mist boven het IJsselmeer — eerst koffie.',
+  'Mist boven het IJsselmeer · eerst koffie.',
   'Even rustig opstarten.',
 ]
 const WEER_ZON_WARM = [
@@ -115,7 +115,7 @@ const WEER_ZON_KOUD = [
 ]
 const WEER_BEWOLKT = [
   'Grijs maar prima werkweer.',
-  'Bedekt — geen excuus.',
+  'Bedekt · geen excuus.',
   'Wolken, geen drama.',
 ]
 
@@ -202,14 +202,14 @@ function FORGEdeskDashboardInner() {
       <div className="flex flex-col xl:flex-row gap-6">
         {/* ── Main column ── */}
         <main className="flex-1 min-w-0 space-y-5">
-          {/* ── Hero — petrol card met omzet-overlay rechts ── */}
+          {/* ── Hero · petrol card met omzet-overlay rechts ── */}
           <section
             className="doen-hero relative rounded-2xl overflow-hidden"
           >
             <div className="relative flex flex-col md:flex-row">
               <div className="flex-1 px-7 py-7 sm:px-9 sm:py-9">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#F15025]" aria-hidden />
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-flame" aria-hidden />
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-white/70 font-mono">
                     {dateCaps}
                   </span>

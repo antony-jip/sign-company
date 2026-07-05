@@ -284,7 +284,7 @@ export function SupportInboxPage() {
         ) : composeOrg ? (
           <ComposePane
             titel={composeOrg.naam}
-            subtitel="Nieuw bericht — klant krijgt een notificatie"
+            subtitel="Nieuw bericht · klant krijgt een notificatie"
             icon={<Building2 className="w-4 h-4 text-petrol" />}
             value={composeText}
             onChange={setComposeText}

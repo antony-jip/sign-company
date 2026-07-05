@@ -93,12 +93,12 @@ export function PortaalFeedItemOfferte({
             <div className="min-w-0">
               <p
                 className="font-semibold truncate"
-                style={{ fontSize: 15, color: '#1A1A1A', fontFamily: "'DM Sans', sans-serif" }}
+                style={{ fontSize: 15, color: 'hsl(var(--foreground))', fontFamily: "'DM Sans', sans-serif" }}
               >
                 {item.titel}
               </p>
               {item.omschrijving && (
-                <p className="mt-0.5 text-sm" style={{ color: '#5A5A55' }}>
+                <p className="mt-0.5 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
                   {item.omschrijving}
                 </p>
               )}
@@ -109,7 +109,7 @@ export function PortaalFeedItemOfferte({
           {item.bedrag != null && (
             <p
               className="mt-2 text-lg font-medium"
-              style={{ color: '#191919', fontFamily: "'DM Mono', monospace" }}
+              style={{ color: 'hsl(var(--foreground))', fontFamily: "'DM Mono', monospace" }}
             >
               {formatBedrag(item.bedrag)}
             </p>
@@ -165,7 +165,7 @@ export function PortaalFeedItemOfferte({
           <div className="px-5 py-3 border-t flex items-center gap-2" style={{ borderColor: '#F0EEEA' }}>
             {confirmOpen ? (
               <div className="flex items-center gap-2 w-full">
-                <p className="text-sm flex-1" style={{ color: '#5A5A55' }}>
+                <p className="text-sm flex-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
                   Weet u zeker dat u deze offerte wilt accepteren?
                 </p>
                 <button
@@ -181,7 +181,7 @@ export function PortaalFeedItemOfferte({
                   onClick={() => setConfirmOpen(false)}
                   disabled={loading}
                   className="px-3 py-2 rounded-lg text-sm transition-colors hover:bg-background"
-                  style={{ color: '#5A5A55' }}
+                  style={{ color: 'hsl(var(--muted-foreground))' }}
                 >
                   Annuleren
                 </button>
@@ -198,7 +198,7 @@ export function PortaalFeedItemOfferte({
                 <button
                   onClick={onVragenStellen}
                   className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
-                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
+                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
                 >
                   Vragen stellen
                 </button>

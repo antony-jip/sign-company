@@ -126,8 +126,8 @@ export function WebsiteAanvragenLayout() {
           {gefilterd.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16">
               <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#2A5580' }} />
-              <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen aanvragen gevonden</p>
-              <p style={{ fontSize: '12px', color: '#5A5A55' }}>Aanvragen via de chat op signcompany.nl verschijnen hier.</p>
+              <p className="font-semibold" style={{ fontSize: '14px', color: 'hsl(var(--foreground))' }}>Geen aanvragen gevonden</p>
+              <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>Aanvragen via de chat op signcompany.nl verschijnen hier.</p>
             </div>
           ) : (
             <table className="w-full">
@@ -156,7 +156,7 @@ export function WebsiteAanvragenLayout() {
                             <Eye className="h-4 w-4" />
                           </Button>
                           {aanvraag.status !== 'afgehandeld' && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-[#F15025]" onClick={(e) => { e.stopPropagation(); handleAfronden(aanvraag) }}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-flame" onClick={(e) => { e.stopPropagation(); handleAfronden(aanvraag) }}>
                               <CheckCircle className="h-4 w-4" />
                             </Button>
                           )}
@@ -219,7 +219,7 @@ export function WebsiteAanvragenLayout() {
               </Button>
             )}
             {selectedAanvraag && selectedAanvraag.status !== 'afgehandeld' && (
-              <Button onClick={() => handleAfronden(selectedAanvraag)} className="gap-1 bg-[#F15025] hover:bg-[#F15025]/90 text-white">
+              <Button onClick={() => handleAfronden(selectedAanvraag)} className="gap-1 bg-flame hover:bg-flame/90 text-white">
                 <CheckCircle className="h-4 w-4" /> Afronden
               </Button>
             )}

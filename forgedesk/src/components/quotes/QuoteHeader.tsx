@@ -161,12 +161,12 @@ export function QuoteHeader({
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-3 flex-wrap">
             <h1 className="text-[28px] md:text-[32px] font-extrabold text-foreground tracking-[-0.5px] leading-none truncate">
-              {isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}<span className="text-[#F15025]">.</span>
+              {isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}<span className="text-flame">.</span>
             </h1>
 
             {/* Verstuurd-status pill */}
             {verstuurdOp && (
-              <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#3A5A9A] bg-[hsl(var(--status-blue-bg))] border border-[#3A5A9A]/20 px-2 py-0.5 rounded-md">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#3A5A9A] bg-[hsl(var(--status-blue-bg))] border border-[#3A5A9A]/20 px-2 py-0.5 rounded-md">
                 <Send className="h-3 w-3" strokeWidth={1.75} />
                 Verstuurd{verstuurdNaar ? ` · ${verstuurdNaar}` : ''} · {new Date(verstuurdOp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
               </span>
@@ -175,7 +175,7 @@ export function QuoteHeader({
             {/* Geldigheid */}
             {geldigInfo && (
               <span className={cn(
-                'inline-flex items-center gap-1 text-[11.5px] font-medium px-2 py-0.5 rounded-md',
+                'inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md',
                 geldigInfo.accent === 'flame' && 'text-[#C0451A] bg-[hsl(var(--status-flame-bg))] border border-[#C0451A]/20 font-semibold',
                 geldigInfo.accent === 'amber' && 'text-[#8A6A2A] bg-[hsl(var(--status-amber-bg))] border border-[#8A6A2A]/15',
                 geldigInfo.accent === 'muted' && 'text-foreground/70',
@@ -186,7 +186,7 @@ export function QuoteHeader({
           </div>
 
           {/* Subline: klant + autosave-status */}
-          <div className="mt-2 text-[13.5px] flex items-center gap-2 flex-wrap">
+          <div className="mt-2 text-[13px] flex items-center gap-2 flex-wrap">
             {selectedKlant ? (
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3A6B8C]" />
@@ -221,7 +221,7 @@ export function QuoteHeader({
           {/* PDF */}
           <button
             onClick={() => { hapticLight(); handleDownloadPdf() }}
-            className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-3.5 text-[13px] font-medium rounded-xl border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-card text-foreground/70 hover:text-[#1A535C] dark:hover:text-petrol-light hover:border-[rgba(26,83,92,0.25)] dark:hover:border-white/20 hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] transition-all"
+            className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-3.5 text-[13px] font-medium rounded-xl border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-card text-foreground/70 hover:text-petrol dark:hover:text-petrol-light hover:border-[rgba(26,83,92,0.25)] dark:hover:border-white/20 hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] transition-all"
             aria-label="PDF downloaden"
           >
             <Download className="h-4 w-4 md:h-3.5 md:w-3.5" />
@@ -232,19 +232,19 @@ export function QuoteHeader({
           <button
             onClick={() => { hapticLight(); saveOfferte('concept') }}
             disabled={isSaving}
-            className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-4 text-[13px] font-semibold rounded-xl bg-[#1A535C] text-white hover:bg-[#0F3D44] hover:shadow-[0_2px_8px_rgba(20,62,71,0.18)] transition-all disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-4 text-[13px] font-semibold rounded-xl bg-petrol text-white hover:bg-[#0F3D44] hover:shadow-[0_2px_8px_rgba(20,62,71,0.18)] transition-all disabled:opacity-50"
             aria-label="Opslaan"
           >
             <Save className="h-4 w-4 md:h-3.5 md:w-3.5" />
             <span className="hidden md:inline">{isSaving ? 'Opslaan…' : 'Opslaan'}</span>
           </button>
 
-          {/* Verstuur — Flame split-button */}
+          {/* Verstuur · Flame split-button */}
           <div className="relative flex items-center">
             <button
               onClick={() => { hapticMedium(); handleVerstuurOfferte() }}
               disabled={isSaving}
-              className="inline-flex items-center justify-center gap-2 h-10 md:h-9 px-4 md:px-5 text-[13px] md:text-sm font-semibold rounded-l-xl bg-[#F15025] text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+              className="inline-flex items-center justify-center gap-2 h-10 md:h-9 px-4 md:px-5 text-[13px] md:text-sm font-semibold rounded-l-xl bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
             >
               <Send className="h-4 w-4" strokeWidth={1.75} />
               <span>Verstuur</span>
@@ -267,18 +267,18 @@ export function QuoteHeader({
                     className="w-full text-left px-4 py-3 hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-b border-[rgba(26,83,92,0.08)] dark:border-white/10"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="h-9 w-9 rounded-lg bg-[#1A535C] flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(20,62,71,0.2)]">
+                      <div className="h-9 w-9 rounded-lg bg-petrol flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(20,62,71,0.2)]">
                         <Globe className="h-4 w-4" strokeWidth={1.75} color="#FFFFFF" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13.5px] font-semibold text-foreground">Via portaal</p>
-                        <p className="text-[11.5px] text-muted-foreground leading-snug mt-0.5">Klant bekijkt online + email-notificatie</p>
+                        <p className="text-[13px] font-semibold text-foreground">Via portaal</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">Klant bekijkt online + email-notificatie</p>
                         {!selectedProjectId && (
-                          <p className="text-[10.5px] text-[#C0451A] mt-1">Koppel eerst een project</p>
+                          <p className="text-[10px] text-[#C0451A] mt-1">Koppel eerst een project</p>
                         )}
                         {email.isSendingPortaal && (
-                          <p className="text-[10.5px] text-[#1A535C] dark:text-petrol-light mt-1 flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#1A535C] dark:bg-petrol-light animate-pulse" />
+                          <p className="text-[10px] text-petrol dark:text-petrol-light mt-1 flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-petrol dark:bg-petrol-light animate-pulse" />
                             Delen…
                           </p>
                         )}
@@ -290,12 +290,12 @@ export function QuoteHeader({
                     className="w-full text-left px-4 py-3 hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="h-9 w-9 rounded-lg bg-[#F15025] flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(241,80,37,0.25)]">
+                      <div className="h-9 w-9 rounded-lg bg-flame flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(241,80,37,0.25)]">
                         <Mail className="h-4 w-4" strokeWidth={1.75} color="#FFFFFF" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13.5px] font-semibold text-foreground">Via email</p>
-                        <p className="text-[11.5px] text-muted-foreground leading-snug mt-0.5">PDF-bijlage + gepersonaliseerde email</p>
+                        <p className="text-[13px] font-semibold text-foreground">Via email</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">PDF-bijlage + gepersonaliseerde email</p>
                       </div>
                     </div>
                   </button>
@@ -377,7 +377,7 @@ export function QuoteHeader({
         </div>
       </div>
 
-      {/* Kopieer naar andere klant — modal */}
+      {/* Kopieer naar andere klant · modal */}
       {showKopieerNaarKlant && klanten && setShowKopieerNaarKlant && setKopieerZoek && (
         <>
           <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => setShowKopieerNaarKlant(false)} />
@@ -385,7 +385,7 @@ export function QuoteHeader({
             <div className="pointer-events-auto doen-slate-surface rounded-2xl shadow-[0_8px_32px_rgba(20,62,71,0.16)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(26,83,92,0.08)] dark:border-white/10">
                 <h3 className="font-heading text-[16px] font-bold text-foreground">
-                  Kopieer naar klant<span className="text-[#F15025]">.</span>
+                  Kopieer naar klant<span className="text-flame">.</span>
                 </h3>
                 <button
                   onClick={() => setShowKopieerNaarKlant(false)}
@@ -403,7 +403,7 @@ export function QuoteHeader({
                     placeholder="Zoek klant…"
                     value={kopieerZoek || ''}
                     onChange={(e) => setKopieerZoek(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:border-[#1A535C] dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 outline-none transition-colors"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:border-petrol dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 outline-none transition-colors"
                   />
                 </div>
                 <div className="max-h-[280px] overflow-y-auto space-y-0.5">

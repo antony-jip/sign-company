@@ -39,11 +39,11 @@ export class ErrorBoundary extends Component<Props, State> {
         const alreadyReloaded = sessionStorage.getItem(RELOAD_KEY)
         if (!alreadyReloaded) {
           sessionStorage.setItem(RELOAD_KEY, Date.now().toString())
-          logger.warn('Chunk-load error gedetecteerd — pagina wordt herladen voor nieuwe bundle')
+          logger.warn('Chunk-load error gedetecteerd · pagina wordt herladen voor nieuwe bundle')
           window.location.reload()
         }
       } catch {
-        // sessionStorage kan falen (private mode, etc) — gewoon reloaden
+        // sessionStorage kan falen (private mode, etc) · gewoon reloaden
         window.location.reload()
       }
     }
@@ -69,7 +69,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle className="w-7 h-7 text-[#C0451A]" />
           </div>
           <h2 className="text-xl font-bold text-foreground tracking-[-0.3px] mb-2">
-            Er is iets misgegaan<span className="text-[#F15025]">.</span>
+            Er is iets misgegaan<span className="text-flame">.</span>
           </h2>
           <p className="text-sm text-foreground/70 max-w-md mb-2">
             Er is een onverwachte fout opgetreden. Probeer het opnieuw of herlaad de pagina.
@@ -82,7 +82,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="flex items-center gap-3">
             <button
               onClick={this.handleReset}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1A535C] text-white text-sm font-medium rounded-lg hover:bg-[#164850] transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-petrol text-white text-sm font-medium rounded-lg hover:bg-[#164850] transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               Opnieuw proberen

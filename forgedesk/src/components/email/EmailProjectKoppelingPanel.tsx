@@ -159,17 +159,17 @@ export function EmailProjectKoppelingPanel({
         disabled={saving}
         className={cn(
           'w-full flex items-center gap-2 px-2 py-2 rounded-md text-left disabled:opacity-50 transition-colors duration-150',
-          active ? 'bg-[#1A535C]/[0.06]' : 'hover:bg-muted',
+          active ? 'bg-petrol/[0.06]' : 'hover:bg-muted',
         )}
       >
-        <Briefcase className={cn('h-3.5 w-3.5 flex-shrink-0', active ? 'text-[#1A535C]' : 'text-muted-foreground')} />
+        <Briefcase className={cn('h-3.5 w-3.5 flex-shrink-0', active ? 'text-petrol' : 'text-muted-foreground')} />
         <div className="min-w-0 flex-1">
           <div className="text-[12px] font-medium text-foreground truncate">{p.naam}</div>
           {p.project_nummer && (
             <div className="text-[10px] text-muted-foreground font-mono">{p.project_nummer}</div>
           )}
         </div>
-        {active && <Check className="h-3.5 w-3.5 text-[#1A535C] flex-shrink-0" />}
+        {active && <Check className="h-3.5 w-3.5 text-petrol flex-shrink-0" />}
       </button>
     )
   }
@@ -193,7 +193,7 @@ export function EmailProjectKoppelingPanel({
           <button
             type="button"
             onClick={() => setPickerOpen((v) => !v)}
-            className="text-[11px] text-muted-foreground hover:text-[#1A535C] transition-colors duration-150"
+            className="text-[11px] text-muted-foreground hover:text-petrol transition-colors duration-150"
           >
             {pickerOpen ? 'Sluiten' : 'Wijzigen'}
           </button>
@@ -207,14 +207,14 @@ export function EmailProjectKoppelingPanel({
         </div>
       ) : linkedProject ? (
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#1A535C]/[0.08] flex items-center justify-center flex-shrink-0">
-            <Briefcase className="h-4 w-4 text-[#1A535C]" />
+          <div className="w-9 h-9 rounded-lg bg-petrol/[0.08] flex items-center justify-center flex-shrink-0">
+            <Briefcase className="h-4 w-4 text-petrol" />
           </div>
           <div className="min-w-0 flex-1">
             <button
               type="button"
               onClick={() => navigate(`/projecten/${linkedProject.id}`)}
-              className="text-[13px] font-medium text-foreground hover:text-[#1A535C] truncate text-left transition-colors duration-150 block w-full"
+              className="text-[13px] font-medium text-foreground hover:text-petrol truncate text-left transition-colors duration-150 block w-full"
               title={linkedProject.naam}
             >
               {linkedProject.naam}
@@ -237,7 +237,7 @@ export function EmailProjectKoppelingPanel({
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-border text-[12px] text-[#1A535C] font-medium hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.03] transition-colors duration-150"
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-border text-[12px] text-petrol font-medium hover:border-petrol/30 hover:bg-petrol/[0.03] transition-colors duration-150"
         >
           <Briefcase className="h-3.5 w-3.5" />
           Koppel aan project
@@ -246,7 +246,7 @@ export function EmailProjectKoppelingPanel({
 
       {pickerOpen && (
         <div ref={pickerRef} className="mt-3 border-t border-border pt-3">
-          <div className="flex items-center gap-2 h-8 px-2.5 bg-background rounded-md focus-within:ring-2 focus-within:ring-[#1A535C]/20 transition-shadow">
+          <div className="flex items-center gap-2 h-8 px-2.5 bg-background rounded-md focus-within:ring-2 focus-within:ring-petrol/20 transition-shadow">
             <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
             <input
               autoFocus

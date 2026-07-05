@@ -96,17 +96,17 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
         <div className="flex items-center gap-2">
           <Files className="h-4 w-4" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           <h3 className="font-heading text-[15px] font-bold text-foreground">
-            Bestanden<span className="text-[#F15025]">.</span>
+            Bestanden<span className="text-flame">.</span>
           </h3>
           {documenten.length > 0 && (
-            <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+            <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-petrol rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
               {documenten.length}
             </span>
           )}
         </div>
         <button
           onClick={onUpload}
-          className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#1A535C] hover:text-[#0F3D44] hover:underline transition-colors"
+          className="inline-flex items-center gap-1 text-[12px] font-semibold text-petrol hover:text-[#0F3D44] hover:underline transition-colors"
         >
           <Upload className="h-3 w-3" strokeWidth={2.25} />
           Upload
@@ -170,7 +170,7 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
           {documenten.length > 5 && !showAll && (
             <button
               onClick={() => setShowAll(true)}
-              className="w-full text-[12px] font-medium text-[#1A535C] hover:text-[#0F3D44] mt-2 py-2 rounded-lg hover:bg-muted/50 transition-colors"
+              className="w-full text-[12px] font-medium text-petrol hover:text-[#0F3D44] mt-2 py-2 rounded-lg hover:bg-muted/50 transition-colors"
             >
               Alle {documenten.length} bestanden tonen
             </button>

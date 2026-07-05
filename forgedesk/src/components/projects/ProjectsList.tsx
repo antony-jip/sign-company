@@ -114,11 +114,11 @@ function getStatusDotColor(status: string): string {
   switch (status) {
     case 'actief': return 'bg-[#2D6B48]'
     case 'gepland': return 'bg-[#2A5580]'
-    case 'te-plannen': return 'bg-[#F15025]'
+    case 'te-plannen': return 'bg-flame'
     case 'in-review': return 'bg-[#5A5A55]'
-    case 'akkoord-klant': return 'bg-[#1A535C]'
+    case 'akkoord-klant': return 'bg-petrol'
     case 'ingepland': return 'bg-[#2A5580]'
-    case 'afgerond': return 'bg-[#1A535C]'
+    case 'afgerond': return 'bg-petrol'
     case 'on-hold': return 'bg-[#5A5A55]'
     case 'te-factureren': return 'bg-[#2D6B48]'
     case 'gefactureerd': return 'bg-[#2D6B48]'
@@ -129,7 +129,7 @@ function getStatusDotColor(status: string): string {
   }
 }
 
-/** Workflow-proximity ordering — given a current status, which transitions are most likely next */
+/** Workflow-proximity ordering · given a current status, which transitions are most likely next */
 const STATUS_WORKFLOW: Record<string, string[]> = {
   'te-plannen':    ['gepland', 'actief', 'on-hold'],
   gepland:         ['in-review', 'akkoord-klant', 'on-hold'],
@@ -143,7 +143,7 @@ const STATUS_WORKFLOW: Record<string, string[]> = {
   'on-hold':       ['actief', 'te-plannen'],
 }
 
-/** Hex codes for status indicators — unified across left-edge stripe and inline dot */
+/** Hex codes for status indicators · unified across left-edge stripe and inline dot */
 const STATUS_HEX: Record<string, string> = {
   actief: '#2D6B48',
   gepland: '#2A5580',
@@ -275,7 +275,7 @@ export function ProjectsList() {
     }
   }, [])
 
-  // Optimistische verwijdering met 5s undo via toast — voor projecten zonder
+  // Optimistische verwijdering met 5s undo via toast · voor projecten zonder
   // gekoppelde offertes/werkbonnen. Daadwerkelijke server-delete pas na de timer.
   function queueOptimisticDelete(project: Project) {
     setProjecten((prev) => prev.filter((p) => p.id !== project.id))
@@ -550,7 +550,7 @@ export function ProjectsList() {
         }
         return
       }
-      toast.info('Kan de prijs hier niet wissen — open de offerte')
+      toast.info('Kan de prijs hier niet wissen · open de offerte')
       setEditingBedragId(null)
       return
     }
@@ -589,7 +589,7 @@ export function ProjectsList() {
           return
         }
       } else {
-        toast.info('Meerdere offertes — open het project om de prijs aan te passen')
+        toast.info('Meerdere offertes · open het project om de prijs aan te passen')
         return
       }
       const all = await getOffertes()
@@ -856,7 +856,7 @@ export function ProjectsList() {
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-4">
                   <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A4A52] dark:text-foreground">
-                    Projecten<span className="text-[#F15025]">.</span>
+                    Projecten<span className="text-flame">.</span>
                   </h1>
                   <Skeleton className="h-4 w-12" />
                 </div>
@@ -865,7 +865,7 @@ export function ProjectsList() {
                   <Skeleton className="h-10 w-36 rounded-xl" />
                 </div>
               </div>
-              {/* Stats badges row — fixed height to prevent shift */}
+              {/* Stats badges row · fixed height to prevent shift */}
               <div className="flex items-center gap-2 flex-wrap min-h-[28px]">
                 <Skeleton className="h-7 w-20 rounded-md" />
                 <Skeleton className="h-7 w-24 rounded-md" />
@@ -873,7 +873,7 @@ export function ProjectsList() {
               </div>
             </div>
             {/* Toolbar card */}
-            <div className="bg-card rounded-2xl p-5 shadow-[var(--shadow-sm)] ring-1 ring-[#1A535C]/[0.05] space-y-4">
+            <div className="bg-card rounded-2xl p-5 shadow-[var(--shadow-sm)] ring-1 ring-petrol/[0.05] space-y-4">
               <div className="flex items-center gap-5">
                 <Skeleton className="h-9 w-[280px] rounded-lg" />
                 <div className="hidden sm:flex items-center gap-1 ml-auto">
@@ -887,8 +887,8 @@ export function ProjectsList() {
                 ))}
               </div>
             </div>
-            {/* Table — match desktop row layout */}
-            <div className="hidden md:block bg-card rounded-2xl shadow-[var(--shadow-sm)] ring-1 ring-[#1A535C]/[0.05] overflow-hidden">
+            {/* Table · match desktop row layout */}
+            <div className="hidden md:block bg-card rounded-2xl shadow-[var(--shadow-sm)] ring-1 ring-petrol/[0.05] overflow-hidden">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border last:border-b-0">
                   <Skeleton className="h-4 w-4 rounded" />
@@ -974,7 +974,7 @@ export function ProjectsList() {
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-4">
                 <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A4A52] dark:text-foreground">
-                  Projecten<span className="text-[#F15025]">.</span>
+                  Projecten<span className="text-flame">.</span>
                 </h1>
                 <span className="text-[13px] text-muted-foreground font-mono tabular-nums">
                   {gefilterdeProjecten.length === projecten.length ? (
@@ -997,7 +997,7 @@ export function ProjectsList() {
                 </button>
                 <Link
                   to="/projecten/nieuw"
-                  className="inline-flex items-center gap-2 bg-[#F15025] text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+                  className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
                 >
                   <Plus className="w-4 h-4 opacity-80" />
                   <span className="hidden md:inline">Nieuw project</span>
@@ -1005,7 +1005,7 @@ export function ProjectsList() {
               </div>
             </div>
 
-            {/* KPI tiles — triage entry-points, clickable filter targets */}
+            {/* KPI tiles · triage entry-points, clickable filter targets */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {([
                 { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'in-review of >30d open',  count: stats.metAandacht,   Icon: AlertCircle, accent: '#F15025' },
@@ -1020,7 +1020,7 @@ export function ProjectsList() {
                     key={tile.key}
                     type="button"
                     onClick={() => setStatusFilters(isActive ? new Set() : new Set([tile.key]))}
-                    className="doen-stat-tile group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
+                    className="doen-stat-tile group relative rounded-xl px-5 py-4 text-left transition-all duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame/30 focus-visible:ring-offset-2"
                     style={isActive ? {
                       border: `1px solid ${tile.accent}66`,
                       boxShadow: `0 1px 2px ${tile.accent}14, 0 10px 26px ${tile.accent}24`,
@@ -1031,7 +1031,7 @@ export function ProjectsList() {
                       <span className="inline-flex items-center gap-2">
                         <TileIcon className={cn('h-[18px] w-[18px] flex-shrink-0', tile.key === 'actief' && 'doen-pulse')} style={{ color: tile.accent }} strokeWidth={1.9} />
                         <span className="font-heading text-[14px] font-bold text-[#1A4A52] dark:text-foreground">
-                          {tile.label}<span className="text-[#F15025]">.</span>
+                          {tile.label}<span className="text-flame">.</span>
                         </span>
                       </span>
                     </div>
@@ -1052,7 +1052,7 @@ export function ProjectsList() {
             </div>
           </div>
 
-          {/* Toolbar card — search, filters, export in one slate surface */}
+          {/* Toolbar card · search, filters, export in one slate surface */}
           <div className="doen-panel doen-wash rounded-2xl p-5">
             <div className="flex items-center gap-5">
               {/* Search with keyboard hint */}
@@ -1064,7 +1064,7 @@ export function ProjectsList() {
                   placeholder="Zoek project of klant..."
                   value={zoekterm}
                   onChange={(e) => setZoekterm(e.target.value)}
-                  className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+                  className="w-full pl-9 pr-12 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-petrol focus:ring-2 focus:ring-petrol/10 transition-all"
                 />
                 <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
               </div>
@@ -1110,7 +1110,7 @@ export function ProjectsList() {
               </div>
             </div>
 
-            {/* Filters — primary status tabs, secondary age sub-filter */}
+            {/* Filters · primary status tabs, secondary age sub-filter */}
             <div className="mt-4 pt-4 border-t border-border space-y-3">
               {/* Status tabs (primary) */}
               <div className="flex items-center gap-1 flex-nowrap md:flex-wrap overflow-x-auto">
@@ -1129,19 +1129,19 @@ export function ProjectsList() {
                       className={cn(
                         'relative px-3 py-1.5 rounded-lg text-[13px] transition-all duration-150',
                         isActive
-                          ? 'font-semibold text-[#1A535C] dark:text-foreground bg-[#1A535C]/[0.07] dark:bg-white/[0.06]'
+                          ? 'font-semibold text-petrol dark:text-foreground bg-petrol/[0.07] dark:bg-white/[0.06]'
                           : 'text-muted-foreground hover:text-foreground/70 hover:bg-background'
                       )}
                     >
                       {optie.label}
                       {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-40">{count}</span>}
-                      {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-[#1A535C] dark:bg-[#5AABB5] rounded-full" />}
+                      {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-petrol dark:bg-[#5AABB5] rounded-full" />}
                     </button>
                   )
                 })}
               </div>
 
-              {/* Sub-filters — open sinds + groep */}
+              {/* Sub-filters · open sinds + groep */}
               <div className="hidden lg:flex items-center gap-5">
                 <div className="flex items-center gap-1.5">
                   <span
@@ -1166,7 +1166,7 @@ export function ProjectsList() {
                         className={cn(
                           'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors',
                           isActive
-                            ? 'text-[#1A535C] dark:text-foreground font-bold'
+                            ? 'text-petrol dark:text-foreground font-bold'
                             : 'text-muted-foreground/80 hover:text-foreground/70'
                         )}
                       >
@@ -1195,7 +1195,7 @@ export function ProjectsList() {
                         className={cn(
                           'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors',
                           isActive
-                            ? 'text-[#1A535C] dark:text-foreground font-bold'
+                            ? 'text-petrol dark:text-foreground font-bold'
                             : 'text-muted-foreground/80 hover:text-foreground/70'
                         )}
                       >
@@ -1210,20 +1210,20 @@ export function ProjectsList() {
 
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
-            <div className="flex items-center gap-4 px-5 py-3 bg-[#1A535C]/[0.06] dark:bg-white/[0.05] rounded-xl ring-1 ring-[#1A535C]/10 dark:ring-white/10">
+            <div className="flex items-center gap-4 px-5 py-3 bg-petrol/[0.06] dark:bg-white/[0.05] rounded-xl ring-1 ring-petrol/10 dark:ring-white/10">
               <span className="text-sm text-foreground font-medium">
-                <span className="font-mono font-bold text-[#1A535C] dark:text-foreground">{selectedIds.size}</span> geselecteerd
+                <span className="font-mono font-bold text-petrol dark:text-foreground">{selectedIds.size}</span> geselecteerd
               </span>
               <button
                 onClick={toggleSelectAll}
-                className="text-xs font-medium text-[#1A535C] dark:text-foreground hover:underline transition-colors"
+                className="text-xs font-medium text-petrol dark:text-foreground hover:underline transition-colors"
               >
                 {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
               </button>
               <div className="flex-1" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A535C] dark:text-foreground bg-card px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all">
+                  <button className="inline-flex items-center gap-1.5 text-xs font-semibold text-petrol dark:text-foreground bg-card px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all">
                     Status wijzigen
                     <ChevronDown className="w-3 h-3" />
                   </button>
@@ -1269,7 +1269,7 @@ export function ProjectsList() {
                 action={
                   <Link
                     to="/projecten/nieuw"
-                    className="inline-flex items-center gap-2 bg-[#F15025] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:-translate-y-[1px] active:translate-y-0 transition-all mt-4"
+                    className="inline-flex items-center gap-2 bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:-translate-y-[1px] active:translate-y-0 transition-all mt-4"
                   >
                     <Plus className="w-4 h-4 opacity-80" />
                     Nieuw project
@@ -1303,7 +1303,7 @@ export function ProjectsList() {
                           className="text-xs font-semibold flex-shrink-0 px-2.5 py-1 rounded-full"
                           style={{ color: getStatusTextColor(project.status), backgroundColor: statusBg[project.status] || 'hsl(var(--muted))' }}
                         >
-                          {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
+                          {statusLabels[project.status] || project.status}<span className="text-flame">.</span>
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -1325,7 +1325,7 @@ export function ProjectsList() {
                 })}
               </div>
 
-              {/* Desktop table — slate surface, clip-path for rounded corners without breaking sticky */}
+              {/* Desktop table · slate surface, clip-path for rounded corners without breaking sticky */}
               <div
                 className="hidden md:block rounded-2xl"
                 style={{
@@ -1342,7 +1342,7 @@ export function ProjectsList() {
                           checked={selectedIds.size > 0 && selectedIds.size === gefilterdeProjecten.length}
                           onCheckedChange={toggleSelectAll}
                           aria-label="Selecteer alle projecten"
-                          className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                          className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                         />
                       </th>
                       {leadColumns.flatMap((col, idx) => {
@@ -1461,7 +1461,7 @@ export function ProjectsList() {
                             'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
                             needsAttention(project) && !selectedIds.has(project.id) && 'bg-[rgba(241,80,37,0.025)]',
                             'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
-                            selectedIds.has(project.id) && 'bg-[#1A535C]/[0.05] dark:bg-white/[0.05]'
+                            selectedIds.has(project.id) && 'bg-petrol/[0.05] dark:bg-white/[0.05]'
                           )}
                           style={{ animationDelay: `${i * 25}ms`, ['--row-accent' as string]: statusHex(project.status) } as React.CSSProperties}
                           onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
@@ -1475,7 +1475,7 @@ export function ProjectsList() {
                               checked={selectedIds.has(project.id)}
                               onCheckedChange={() => toggleProjectSelection(project.id)}
                               aria-label={`Selecteer ${project.naam}`}
-                              className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 dark:group-hover:border-white/35 data-[state=checked]:bg-[#F15025] data-[state=checked]:border-[#F15025] data-[state=checked]:text-white"
+                              className="border-[#1A4A52]/25 dark:border-white/20 rounded-[5px] transition-colors group-hover:border-[#1A4A52]/45 dark:group-hover:border-white/35 data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
                             />
                           </td>
 
@@ -1486,7 +1486,7 @@ export function ProjectsList() {
                                   <div className="flex items-baseline gap-2.5">
                                     <Link
                                       to={`/projecten/${project.id}`}
-                                      className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-[#1A535C] dark:group-hover:text-foreground underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 dark:group-hover:decoration-white/20 underline transition-all truncate"
+                                      className="text-[15px] font-semibold text-[#1A4A52] dark:text-foreground group-hover:text-petrol dark:group-hover:text-foreground underline-offset-2 decoration-transparent group-hover:decoration-petrol/20 dark:group-hover:decoration-white/20 underline transition-all truncate"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       {project.naam}
@@ -1619,12 +1619,12 @@ export function ProjectsList() {
                             return [cell]
                           })}
 
-                          {/* Status — colored dot + label, no pill bg */}
+                          {/* Status · colored dot + label, no pill bg */}
                           <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button className="text-left group/status inline-flex flex-col items-start gap-1.5 hover:bg-muted/60 rounded-md px-1.5 py-1 -mx-1.5 -my-1 transition-colors">
-                                  {/* Reis — 6-punts fase-indicator: waar staat dit project? */}
+                                  {/* Reis · 6-punts fase-indicator: waar staat dit project? */}
                                   {(() => {
                                     const cur = projectFaseIndex(project.status)
                                     const kleur = statusHex(project.status)
@@ -1650,7 +1650,7 @@ export function ProjectsList() {
                                       className="text-[13px] font-medium"
                                       style={{ color: getStatusTextColor(project.status) }}
                                     >
-                                      {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
+                                      {statusLabels[project.status] || project.status}<span className="text-flame">.</span>
                                     </span>
                                     <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity" />
                                   </span>
@@ -1698,7 +1698,7 @@ export function ProjectsList() {
                                         >
                                           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: statusHex(s.value) }} />
                                           {s.label}
-                                          {isCurrent && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C] dark:text-[#5AABB5]" />}
+                                          {isCurrent && <CheckCircle2 className="w-3 h-3 ml-auto text-petrol dark:text-[#5AABB5]" />}
                                         </DropdownMenuItem>
                                       </React.Fragment>
                                     )
@@ -1708,7 +1708,7 @@ export function ProjectsList() {
                             </DropdownMenu>
                           </td>
 
-                          {/* Bedrag — inline bewerkbaar (ex btw) */}
+                          {/* Bedrag · inline bewerkbaar (ex btw) */}
                           <td className="py-3.5 pr-4 text-right hidden xl:table-cell" onClick={(e) => e.stopPropagation()}>
                             {(() => {
                               const bedrag = getProjectBedrag(project.id)
@@ -1729,7 +1729,7 @@ export function ProjectsList() {
                                         else if (e.key === 'Escape') setEditingBedragId(null)
                                       }}
                                       onBlur={() => void handleSetProjectBedrag(project, parseBedragInput(bedragInput))}
-                                      className="w-[110px] h-7 pl-5 pr-2 text-sm font-mono text-right text-foreground border border-[#F15025] rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-[#F15025]/30 disabled:opacity-50"
+                                      className="w-[110px] h-7 pl-5 pr-2 text-sm font-mono text-right text-foreground border border-flame rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-flame/30 disabled:opacity-50"
                                     />
                                   </div>
                                 )
@@ -1740,7 +1740,7 @@ export function ProjectsList() {
                                     type="button"
                                     onClick={() => startEditBedrag(project)}
                                     title="Prijs toevoegen (ex btw)"
-                                    className="text-xs font-medium text-muted-foreground/50 hover:text-[#F15025] transition-colors px-1.5 py-0.5 rounded"
+                                    className="text-xs font-medium text-muted-foreground/50 hover:text-flame transition-colors px-1.5 py-0.5 rounded"
                                   >
                                     + prijs
                                   </button>
@@ -1791,7 +1791,7 @@ export function ProjectsList() {
                             />
                           </td>
 
-                          {/* Delete — hover-only */}
+                          {/* Delete · hover-only */}
                           <td className="py-3.5 pr-5 align-middle" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => handleDeleteProject(project)}
@@ -1908,7 +1908,7 @@ export function ProjectsList() {
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ListPlus className="w-4 h-4 text-[#1A535C] dark:text-[#5AABB5]" />
+              <ListPlus className="w-4 h-4 text-petrol dark:text-[#5AABB5]" />
               Snelle taak
             </DialogTitle>
             <DialogDescription>
@@ -1925,7 +1925,7 @@ export function ProjectsList() {
               placeholder="Wat moet er gebeuren?"
               value={quickTaakTitel}
               onChange={(e) => setQuickTaakTitel(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#1A535C] dark:focus:border-white/25 focus:ring-2 focus:ring-[#1A535C]/10 dark:focus:ring-white/10 transition-all"
+              className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-petrol dark:focus:border-white/25 focus:ring-2 focus:ring-petrol/10 dark:focus:ring-white/10 transition-all"
               autoFocus
             />
             <div>
@@ -1953,7 +1953,7 @@ export function ProjectsList() {
                         className={cn(
                           'px-2 py-1.5 rounded-md text-[11px] font-medium transition-all',
                           quickTaakDeadline === val
-                            ? 'bg-[#1A535C]/[0.08] dark:bg-white/[0.06] text-[#1A535C] dark:text-foreground font-semibold'
+                            ? 'bg-petrol/[0.08] dark:bg-white/[0.06] text-petrol dark:text-foreground font-semibold'
                             : 'bg-background text-foreground/70 hover:bg-muted'
                         )}
                       >
@@ -1985,7 +1985,7 @@ export function ProjectsList() {
                       className={cn(
                         'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium transition-all border',
                         selected
-                          ? 'border-[#1A535C] dark:border-white/25 bg-[#1A535C]/[0.08] dark:bg-white/[0.06] text-[#1A535C] dark:text-foreground'
+                          ? 'border-petrol dark:border-white/25 bg-petrol/[0.08] dark:bg-white/[0.06] text-petrol dark:text-foreground'
                           : 'border-transparent bg-background text-foreground/70 hover:bg-muted'
                       )}
                     >

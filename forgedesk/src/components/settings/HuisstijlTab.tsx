@@ -107,7 +107,7 @@ function SliderWithInput({ label, unit, min, max, value, onChange }: {
               const n = parseInt(e.target.value)
               if (!Number.isNaN(n)) onChange(clamp(n))
             }}
-            className="w-12 h-6 text-[11px] font-mono text-right px-1.5 bg-background border border-border rounded-md focus:outline-none focus:border-[#1A535C]/40 focus:bg-card transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-12 h-6 text-[11px] font-mono text-right px-1.5 bg-background border border-border rounded-md focus:outline-none focus:border-petrol/40 focus:bg-card transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
           <span className="text-[10px] text-muted-foreground font-mono w-4">{unit}</span>
         </div>
@@ -118,7 +118,7 @@ function SliderWithInput({ label, unit, min, max, value, onChange }: {
         max={max}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full accent-[#1A535C]"
+        className="w-full accent-petrol"
       />
     </div>
   )
@@ -163,7 +163,7 @@ function TekeningPreview({ style, logoUrl }: { style: DocumentStyle; logoUrl: st
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      {/* Landscape A4 — aspect ratio 297:210 */}
+      {/* Landscape A4 · aspect ratio 297:210 */}
       <div className="relative bg-card" style={{ aspectRatio: '297 / 210' }}>
         {/* Logo */}
         {showLogo && (
@@ -211,7 +211,6 @@ function TekeningPreview({ style, logoUrl }: { style: DocumentStyle; logoUrl: st
           style={{ top: '27%' }}
         >
           <div className="text-center text-muted-foreground" style={{ fontSize: '8px' }}>
-            <div className="mb-0.5">📐</div>
             <div>Hier komt de geüploade tekening</div>
           </div>
         </div>
@@ -282,10 +281,10 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
             />
           )}
 
-          {/* Content-area indicator — alleen wanneer briefpapier actief */}
+          {/* Content-area indicator · alleen wanneer briefpapier actief */}
           {style.briefpapier_modus !== 'geen' && style.briefpapier_url && (
             <div
-              className="absolute pointer-events-none border border-dashed border-[#1A535C]/40 rounded-sm"
+              className="absolute pointer-events-none border border-dashed border-petrol/40 rounded-sm"
               style={{
                 top: `${((style.marge_boven + (style.briefpapier_safe_zone_boven ?? 0)) / 297) * 100}%`,
                 bottom: `${((style.marge_onder + (style.briefpapier_safe_zone_onder ?? 0)) / 297) * 100}%`,
@@ -293,7 +292,7 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
                 right: `${(Math.max(0, style.marge_rechts + (style.briefpapier_safe_zone_rechts ?? 0)) / 210) * 100}%`,
               }}
             >
-              <span className="absolute -top-3 left-1 text-[8px] uppercase tracking-wider font-medium text-[#1A535C]/70 bg-card/80 px-1 rounded">
+              <span className="absolute -top-3 left-1 text-[8px] uppercase tracking-wider font-medium text-petrol/70 bg-card/80 px-1 rounded">
                 Content
               </span>
             </div>
@@ -308,7 +307,7 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
               paddingRight: `${(Math.max(0, style.marge_rechts + (style.briefpapier_modus !== 'geen' && style.briefpapier_url ? (style.briefpapier_safe_zone_rechts ?? 0) : 0)) / 210) * 100}%`,
             }}
           >
-            {/* Header — skip branding als briefpapier actief */}
+            {/* Header · skip branding als briefpapier actief */}
             {style.toon_header && style.briefpapier_modus === 'geen' && (
               <>
                 <div className="flex items-start justify-between mb-[3%]">
@@ -492,7 +491,7 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
             {/* Spacer to push footer down */}
             <div className="flex-1" />
 
-            {/* Footer — skip bedrijfsinfo als briefpapier actief */}
+            {/* Footer · skip bedrijfsinfo als briefpapier actief */}
             {style.toon_footer && (
               <div
                 style={{
@@ -975,7 +974,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                 step={1}
                 value={style.font_grootte_basis}
                 onChange={(e) => updateStyle({ font_grootte_basis: parseInt(e.target.value) })}
-                className="w-full accent-blue-500"
+                className="w-full accent-primary"
               />
               <div className="flex justify-between text-2xs text-muted-foreground/60">
                 <span>8pt</span>
@@ -1093,8 +1092,8 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
               Upload je eigen briefpapier als achtergrond voor offertes, facturen en andere documenten. Logo, naam en adres op het briefpapier worden dan niet dubbel getekend.
             </p>
 
-            <div className="mt-3 rounded-lg bg-[#1A535C]/[0.04] border border-[#1A535C]/15 p-3 space-y-1.5">
-              <p className="text-[11px] font-semibold text-[#1A535C] uppercase tracking-wider">Tip voor scherp resultaat</p>
+            <div className="mt-3 rounded-lg bg-petrol/[0.04] border border-petrol/15 p-3 space-y-1.5">
+              <p className="text-[11px] font-semibold text-petrol uppercase tracking-wider">Tip voor scherp resultaat</p>
               <p className="text-[11px] text-foreground/70 leading-relaxed">
                 Upload bij voorkeur een <strong>JPG</strong> op <strong>3× de uiteindelijke grootte</strong>. Voor A4 betekent dat ongeveer <strong>2480 × 3508 px</strong>. Zo blijft het briefpapier scherp bij printen en zoomen.
               </p>
@@ -1124,7 +1123,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   <button
                     onClick={() => briefpapierInputRef.current?.click()}
                     disabled={uploadingBriefpapier}
-                    className="w-full aspect-[210/297] rounded-lg border-2 border-dashed border-border hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.02] transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
+                    className="w-full aspect-[210/297] rounded-lg border-2 border-dashed border-border hover:border-petrol/30 hover:bg-petrol/[0.02] transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
                   >
                     <Upload className="h-6 w-6 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">{uploadingBriefpapier ? 'Uploaden...' : 'Briefpapier uploaden'}</span>
@@ -1153,7 +1152,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   <button
                     onClick={() => vervolgpapierInputRef.current?.click()}
                     disabled={uploadingVervolgpapier}
-                    className="w-full aspect-[210/297] rounded-lg border-2 border-dashed border-border hover:border-[#1A535C]/30 hover:bg-[#1A535C]/[0.02] transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
+                    className="w-full aspect-[210/297] rounded-lg border-2 border-dashed border-border hover:border-petrol/30 hover:bg-petrol/[0.02] transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
                   >
                     <Upload className="h-6 w-6 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">{uploadingVervolgpapier ? 'Uploaden...' : 'Vervolgpapier uploaden'}</span>
@@ -1172,7 +1171,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   value={style.briefpapier_modus}
                   onValueChange={(v) => updateStyle({ briefpapier_modus: v as BriefpapierModus })}
                 >
-                  <SelectTrigger className="h-9 border-border bg-background focus:bg-card focus:border-[#1A535C]/30">
+                  <SelectTrigger className="h-9 border-border bg-background focus:bg-card focus:border-petrol/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1187,7 +1186,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
               </div>
             )}
 
-            {/* Layout-opties — alleen als briefpapier actief */}
+            {/* Layout-opties · alleen als briefpapier actief */}
             {style.briefpapier_url && style.briefpapier_modus !== 'geen' && (
               <div className="space-y-4 pt-5 mt-4 border-t border-border">
                 <div>
@@ -1248,7 +1247,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
 
           </Section>
 
-          {/* Balkenkleuren — alleen relevant binnen briefpapier-context */}
+          {/* Balkenkleuren · alleen relevant binnen briefpapier-context */}
           <Section title="Balkenkleuren" icon={Palette}>
             <p className="text-[11px] text-muted-foreground -mt-1 mb-3">
               Stem de gekleurde balken in het document af op je briefpapier.
@@ -1339,7 +1338,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   value={style.tekening_logo_positie ?? 'linksboven'}
                   onValueChange={(v) => updateStyle({ tekening_logo_positie: v as 'linksboven' | 'rechtsboven' | 'geen' })}
                 >
-                  <SelectTrigger className="h-9 border-border bg-background focus:bg-card focus:border-[#1A535C]/30">
+                  <SelectTrigger className="h-9 border-border bg-background focus:bg-card focus:border-petrol/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1357,7 +1356,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   value={style.tekening_specs_kleur_modus ?? 'brand'}
                   onValueChange={(v) => updateStyle({ tekening_specs_kleur_modus: v as 'brand' | 'neutraal' | 'eigen' })}
                 >
-                  <SelectTrigger className="h-9 border-border bg-background focus:bg-card focus:border-[#1A535C]/30">
+                  <SelectTrigger className="h-9 border-border bg-background focus:bg-card focus:border-petrol/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

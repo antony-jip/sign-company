@@ -179,7 +179,7 @@ export function PakbonVanProjectDialog({
               disabled={isCreating}
               className="w-full flex items-start gap-3 p-3 rounded-xl text-left hover:bg-background transition-colors border border-transparent hover:border-border"
             >
-              <ClipboardList className="h-5 w-5 text-[#1A535C] mt-0.5 shrink-0" />
+              <ClipboardList className="h-5 w-5 text-petrol mt-0.5 shrink-0" />
               <div>
                 <div className="text-sm font-semibold text-foreground">Losse pakbon</div>
                 <div className="text-xs text-muted-foreground mt-0.5">Lege pakbon om zelf regels aan toe te voegen</div>
@@ -200,7 +200,7 @@ export function PakbonVanProjectDialog({
 
             {isCreating && (
               <div className="flex items-center justify-center py-2">
-                <Loader2 className="h-5 w-5 animate-spin text-[#1A535C]" />
+                <Loader2 className="h-5 w-5 animate-spin text-petrol" />
               </div>
             )}
           </div>

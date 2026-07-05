@@ -75,7 +75,7 @@ export function BedrijfsdataUpload() {
 
   const handleImport = async () => {
     if (!organisatieId || !user?.id) {
-      toast.error('Kan niet importeren — je bent niet ingelogd of je organisatie is niet gevonden. Herlaad de pagina.')
+      toast.error('Kan niet importeren · je bent niet ingelogd of je organisatie is niet gevonden. Herlaad de pagina.')
       return
     }
     setImporting(true)
@@ -106,7 +106,7 @@ export function BedrijfsdataUpload() {
     <Card>
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          <FileSpreadsheet className="w-5 h-5 text-[#1A535C]" />
+          <FileSpreadsheet className="w-5 h-5 text-petrol" />
           Bedrijfsdata
         </CardTitle>
         <p className="text-sm text-muted-foreground mt-1">
@@ -136,17 +136,17 @@ export function BedrijfsdataUpload() {
             className={cn(
               'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
               dragOver
-                ? 'border-[#1A535C] bg-[#1A535C]/5'
+                ? 'border-petrol bg-petrol/5'
                 : 'border-muted-foreground/20 hover:border-muted-foreground/40'
             )}
           >
             <Upload className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
             <p className="text-sm text-muted-foreground">
-              Sleep je CSV-bestand hierheen of <span className="text-[#1A535C] font-medium">klik om te uploaden</span>
+              Sleep je CSV-bestand hierheen of <span className="text-petrol font-medium">klik om te uploaden</span>
             </p>
             <p className="text-xs text-muted-foreground/60 mt-1">.csv bestanden</p>
             {fileName && (
-              <p className="text-xs font-medium mt-2 text-[#1A535C]">{fileName}</p>
+              <p className="text-xs font-medium mt-2 text-petrol">{fileName}</p>
             )}
           </div>
         )}
@@ -207,7 +207,7 @@ export function BedrijfsdataUpload() {
             <Button
               onClick={handleImport}
               disabled={importing}
-              className="bg-[#1A535C] hover:bg-[#1A535C]/90 text-white gap-2"
+              className="bg-petrol hover:bg-petrol/90 text-white gap-2"
             >
               <Upload className="w-4 h-4" />
               {importing ? 'Importeren...' : `Importeer ${rows.length.toLocaleString('nl-NL')} rijen`}

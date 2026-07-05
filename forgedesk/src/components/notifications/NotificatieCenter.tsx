@@ -46,7 +46,7 @@ const typeConfig: Record<
   },
   website_chat: {
     icon: MessageSquare,
-    colorClass: "text-[#1A535C]",
+    colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
   website_aanvraag: {
@@ -61,7 +61,7 @@ const typeConfig: Record<
   },
   offerte_geaccepteerd: {
     icon: CheckCircle2,
-    colorClass: "text-[#1A535C]",
+    colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
   offerte_wijziging: {
@@ -86,7 +86,7 @@ const typeConfig: Record<
   },
   taak_voltooid: {
     icon: CheckCircle2,
-    colorClass: "text-[#1A535C]",
+    colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
   montage_gepland: {
@@ -116,7 +116,7 @@ const typeConfig: Record<
   },
   goedkeuring: {
     icon: CheckCircle2,
-    colorClass: "text-[#1A535C]",
+    colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
   herinnering: {
@@ -126,7 +126,7 @@ const typeConfig: Record<
   },
   portaal_goedkeuring: {
     icon: CheckCircle2,
-    colorClass: "text-[#1A535C]",
+    colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
   portaal_revisie: {
@@ -217,10 +217,10 @@ function NotificatieToast({
           <Icon className={cn("h-4 w-4", config.colorClass)} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-medium truncate" style={{ color: '#191919' }}>
+          <p className="text-[12px] font-medium truncate" style={{ color: 'hsl(var(--foreground))' }}>
             {notificatie.titel}
           </p>
-          <p className="text-[12px] line-clamp-2 mt-0.5" style={{ color: '#5A5A55' }}>
+          <p className="text-[12px] line-clamp-2 mt-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
             {notificatie.bericht}
           </p>
         </div>
@@ -401,11 +401,11 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
           aria-label={aantalOngelezen > 0
             ? `${aantalOngelezen} nieuwe notificatie${aantalOngelezen === 1 ? '' : 's'} openen`
             : 'Notificaties openen'}
-          className="relative inline-flex items-center justify-center w-[34px] h-[34px] rounded-full bg-[#1A535C] text-white flex-shrink-0"
+          className="relative inline-flex items-center justify-center w-[34px] h-[34px] rounded-full bg-petrol text-white flex-shrink-0"
         >
           <span className="text-[13px] font-bold leading-none">{userInitial ?? '·'}</span>
           {aantalOngelezen > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-[#F15025] text-white text-[9px] font-bold leading-none flex items-center justify-center px-1 ring-2 ring-muted">
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-flame text-white text-[9px] font-bold leading-none flex items-center justify-center px-1 ring-2 ring-muted">
               {aantalOngelezen > 99 ? '99+' : aantalOngelezen}
             </span>
           )}
@@ -432,8 +432,8 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
             aria-label={`${aantalOngelezen} nieuwe notificatie${aantalOngelezen === 1 ? '' : 's'} openen`}
             className="md:hidden relative inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-muted/60 transition-colors"
           >
-            <Bell className="h-[18px] w-[18px]" style={{ color: '#5A5A55' }} />
-            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-[#F15025] text-white text-[10px] font-bold leading-none flex items-center justify-center px-1">
+            <Bell className="h-[18px] w-[18px]" style={{ color: 'hsl(var(--muted-foreground))' }} />
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-flame text-white text-[10px] font-bold leading-none flex items-center justify-center px-1">
               {aantalOngelezen > 99 ? '99+' : aantalOngelezen}
             </span>
           </button>
@@ -445,7 +445,7 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
           aria-label="Notificaties openen"
           className="relative w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.04]"
         >
-          <Bell className="h-[18px] w-[18px]" style={{ color: '#5A5A55' }} />
+          <Bell className="h-[18px] w-[18px]" style={{ color: 'hsl(var(--muted-foreground))' }} />
         </button>
       )}
 
@@ -460,13 +460,13 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3.5">
             <h3 className="text-[14px] font-bold text-foreground tracking-[-0.2px]">
-              Notificaties{aantalOngelezen > 0 && <span className="text-[#F15025]">.</span>}
+              Notificaties{aantalOngelezen > 0 && <span className="text-flame">.</span>}
             </h3>
             <div className="flex items-center gap-2">
               {aantalOngelezen > 0 && (
                 <button
                   onClick={handleAllesGelezenMarkeren}
-                  className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3C44] transition-colors"
+                  className="text-[12px] font-medium text-petrol hover:text-[#0F3C44] transition-colors"
                 >
                   Alles gelezen
                 </button>
@@ -511,7 +511,7 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
                       className={cn(
                         'group flex w-full items-start gap-3 px-5 py-3.5 text-left transition-colors border-l-2',
                         isUnread
-                          ? 'bg-[#F15025]/[0.05] hover:bg-[#F15025]/[0.08] border-[#F15025]'
+                          ? 'bg-flame/[0.05] hover:bg-flame/[0.08] border-flame'
                           : 'hover:bg-background border-transparent',
                       )}
                     >
@@ -537,7 +537,7 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
                               {formatTijdGeleden(notificatie.created_at)}
                             </span>
                             {isUnread && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#F15025]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-flame" />
                             )}
                           </div>
                         </div>
@@ -562,7 +562,7 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
               setOpen(false);
               navigate("/meldingen");
             }}
-            className="w-full px-5 py-3 text-center text-[12px] font-medium text-[#1A535C] hover:bg-background transition-colors inline-flex items-center justify-center gap-1"
+            className="w-full px-5 py-3 text-center text-[12px] font-medium text-petrol hover:bg-background transition-colors inline-flex items-center justify-center gap-1"
           >
             Alle meldingen bekijken
             <ChevronRight className="h-3.5 w-3.5" />

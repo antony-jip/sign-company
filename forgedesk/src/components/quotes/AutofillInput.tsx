@@ -6,7 +6,7 @@ import { getMateriaalSuggesties } from '@/services/supabaseService'
 
 export interface DbSuggestion {
   text: string
-  meta: string // e.g. "12-02 — Bakkerij Jansen"
+  meta: string // e.g. "12-02 · Bakkerij Jansen"
 }
 
 interface AutofillInputProps {
@@ -77,7 +77,7 @@ export function AutofillInput({
           setDbSuggestions(
             results.map((r) => ({
               text: r.materiaal,
-              meta: `${new Date(r.laatst_gebruikt).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })}${r.project_naam ? ` — ${r.project_naam}` : ''}`,
+              meta: `${new Date(r.laatst_gebruikt).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })}${r.project_naam ? ` · ${r.project_naam}` : ''}`,
             }))
           )
         })

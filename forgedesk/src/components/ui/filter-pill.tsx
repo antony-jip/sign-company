@@ -16,8 +16,8 @@ const FilterPill = React.forwardRef<HTMLButtonElement, FilterPillProps>(
         className={cn(
           "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium transition-all duration-150 whitespace-nowrap",
           active
-            ? "bg-muted text-[#191919] font-semibold border border-[#D1CEC7] pill-pop-active"
-            : "text-foreground/70 border border-border hover:bg-muted hover:text-[#191919]",
+            ? "bg-muted text-foreground font-semibold border border-[#D1CEC7] pill-pop-active"
+            : "text-foreground/70 border border-border hover:bg-muted hover:text-foreground",
           className
         )}
         {...props}
@@ -34,7 +34,7 @@ const FilterPill = React.forwardRef<HTMLButtonElement, FilterPillProps>(
             className={cn(
               "ml-0.5 inline-flex items-center justify-center rounded-full px-1.5 min-w-[18px] h-[18px] text-[10px] font-mono font-semibold",
               active
-                ? "bg-[#191919]/10 text-[#191919]"
+                ? "bg-[#191919]/10 text-foreground"
                 : "bg-black/[0.06] text-foreground/70"
             )}
           >

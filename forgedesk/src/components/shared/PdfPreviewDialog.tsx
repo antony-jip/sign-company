@@ -116,7 +116,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
               <button
                 onClick={handleOpenNewTab}
                 disabled={!blobUrl}
-                className="h-8 px-3 text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/5 dark:text-[#5FB5C0] dark:hover:bg-[#5FB5C0]/10 rounded-lg transition-colors disabled:opacity-30 flex items-center gap-1.5"
+                className="h-8 px-3 text-[12px] font-medium text-petrol hover:bg-petrol/5 dark:text-[#5FB5C0] dark:hover:bg-[#5FB5C0]/10 rounded-lg transition-colors disabled:opacity-30 flex items-center gap-1.5"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 Open
@@ -124,7 +124,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
               <button
                 onClick={handleDownload}
                 disabled={!blobUrl}
-                className="h-8 px-3 text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/5 dark:text-[#5FB5C0] dark:hover:bg-[#5FB5C0]/10 rounded-lg transition-colors disabled:opacity-30 flex items-center gap-1.5"
+                className="h-8 px-3 text-[12px] font-medium text-petrol hover:bg-petrol/5 dark:text-[#5FB5C0] dark:hover:bg-[#5FB5C0]/10 rounded-lg transition-colors disabled:opacity-30 flex items-center gap-1.5"
               >
                 <Download className="h-3.5 w-3.5" />
                 Download
@@ -184,7 +184,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
         <div className="flex-1 min-h-0 overflow-auto mx-8 mb-6 rounded-xl bg-white dark:bg-black/30 shadow-[0_1px_3px_rgba(0,0,0,0.03)] dark:shadow-none">
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-full gap-3">
-              <Loader2 className="h-6 w-6 animate-spin text-[#1A535C]" />
+              <Loader2 className="h-6 w-6 animate-spin text-petrol" />
               <span className="text-[13px] text-muted-foreground">PDF laden...</span>
             </div>
           )}
@@ -194,7 +194,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
               <p className="text-[13px] text-[#C0451A]">{error}</p>
               <button
                 onClick={() => onOpenChange(false)}
-                className="text-[12px] text-[#1A535C] hover:underline mt-1"
+                className="text-[12px] text-petrol hover:underline mt-1"
               >
                 Sluiten
               </button>
@@ -208,7 +208,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
                 onLoadSuccess={onDocumentLoadSuccess}
                 loading={
                   <div className="flex items-center justify-center py-20">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#1A535C]" />
+                    <Loader2 className="h-6 w-6 animate-spin text-petrol" />
                   </div>
                 }
                 error={

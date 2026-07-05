@@ -229,11 +229,11 @@ export function PortaalAlerts() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-medium" style={{ color: '#191919' }}>{alert.titel}</span>
+                    <span className="text-[13px] font-medium" style={{ color: 'hsl(var(--foreground))' }}>{alert.titel}</span>
                     <span className="text-[10px] font-mono" style={{ color: '#C0BDB8' }}>{formatTijdGeleden(alert.created_at)}</span>
                   </div>
                   {alert.bericht && (
-                    <p className="text-xs mt-0.5 line-clamp-2" style={{ color: '#5A5A55' }}>{alert.bericht}</p>
+                    <p className="text-xs mt-0.5 line-clamp-2" style={{ color: 'hsl(var(--muted-foreground))' }}>{alert.bericht}</p>
                   )}
                   <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                     {isGoedkeuring ? (

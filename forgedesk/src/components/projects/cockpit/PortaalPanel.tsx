@@ -44,11 +44,11 @@ export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = fals
     return () => observer.disconnect()
   }, [])
 
-  // Inline mode — collapsible card
+  // Inline mode · collapsible card
   if (inline) {
     return (
       <div className="border border-[hsl(35,15%,87%)] bg-card shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
-        {/* Header — always visible, clickable to toggle */}
+        {/* Header · always visible, clickable to toggle */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-mod-projecten-light/10 to-transparent hover:from-mod-projecten-light/15 transition-all duration-200 cursor-pointer group"
@@ -73,7 +73,7 @@ export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = fals
           </div>
         </button>
 
-        {/* Contact strip — visible when expanded */}
+        {/* Contact strip · visible when expanded */}
         {!isCollapsed && klant && (
           <div className="px-3 py-2 border-t border-[hsl(35,15%,90%)]">
             <div className="flex items-center gap-2.5 bg-[hsl(35,15%,97%)] rounded-lg px-3 py-2">

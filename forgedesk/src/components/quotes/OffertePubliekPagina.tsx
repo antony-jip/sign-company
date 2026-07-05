@@ -749,13 +749,13 @@ export function OffertePubliekPagina() {
                                       className="text-xs border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-w-[300px]"
                                     >
                                       {toonBasis ? (
-                                        <option value="">Basis — {item.aantal} x {formatCurrency(item.eenheidsprijs)}</option>
+                                        <option value="">Basis · {item.aantal} x {formatCurrency(item.eenheidsprijs)}</option>
                                       ) : (
                                         <option value="" disabled>Selecteer een optie</option>
                                       )}
                                       {toonbareVarianten.map((v) => (
                                         <option key={v.id} value={v.id}>
-                                          {v.label} — {v.aantal} x {formatCurrency(v.eenheidsprijs)}
+                                          {v.label} · {v.aantal} x {formatCurrency(v.eenheidsprijs)}
                                         </option>
                                       ))}
                                     </select>

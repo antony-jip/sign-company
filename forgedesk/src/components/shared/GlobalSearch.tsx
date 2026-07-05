@@ -295,7 +295,7 @@ function getStatusBadgeColor(status?: string): string {
   if (!status) return ''
   switch (status) {
     case 'actief': case 'bezig': case 'onderweg': case 'definitief': return 'bg-[hsl(var(--status-blue-bg))] text-[#2A5580]'
-    case 'goedgekeurd': case 'klaar': case 'betaald': case 'opgeleverd': return 'bg-[hsl(var(--status-green-bg))] text-[#1A535C]'
+    case 'goedgekeurd': case 'klaar': case 'betaald': case 'opgeleverd': return 'bg-[hsl(var(--status-green-bg))] text-petrol'
     case 'afgerond': case 'gefactureerd': case 'te-factureren': return 'bg-[hsl(var(--status-green-bg))] text-[#2D6B48]'
     case 'concept': case 'todo': case 'gepland': case 'verlopen': return 'bg-muted text-foreground/70'
     case 'verzonden': case 'verstuurd': case 'afgewezen': case 'wijziging_gevraagd': return 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18]'
@@ -445,7 +445,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
           'flex items-center w-full border transition-all duration-200',
           'rounded-lg',
           focused
-            ? 'border-[#1A535C]/20 bg-card shadow-[0_0_0_2.5px_rgba(26,83,92,0.07)] dark:border-white/15'
+            ? 'border-petrol/20 bg-card shadow-[0_0_0_2.5px_rgba(26,83,92,0.07)] dark:border-white/15'
             : 'border-transparent bg-[hsl(38,20%,95.5%)] hover:bg-[hsl(38,20%,93.5%)] dark:bg-white/[0.05] dark:hover:bg-white/[0.07]'
         )}
       >

@@ -54,7 +54,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
     <div className="doen-slate-surface rounded-2xl p-5">
       <div className="flex items-baseline justify-between mb-6">
         <h3 className="font-heading text-[15px] font-bold text-foreground">
-          Voortgang<span className="text-[#F15025]">.</span>
+          Voortgang<span className="text-flame">.</span>
         </h3>
         <span
           className="text-[12px] text-muted-foreground"
@@ -79,7 +79,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
             const connectorActive = i === currentIdx - 1 || (isActive && !isLast)
 
             // Speciale staat: laatste cirkel is een gevulde "celebrate"-orb zodra
-            // hij bereikt is — past bij doen.team's "Gedaan."-marker.
+            // hij bereikt is · past bij doen.team's "Gedaan."-marker.
             const isFinalCompleted = isLast && (isPast || isActive)
 
             // Stijl-vars per cirkel
@@ -87,7 +87,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
               ? '#0F3C44'                 // donker Petrol "celebrate"
               : isPast
                 ? PETROL                  // solid Petrol
-                : 'hsl(var(--card))'      // outline-only — blend met surface in beide themes
+                : 'hsl(var(--card))'      // outline-only · blend met surface in beide themes
             const circleBorder = isFinalCompleted
               ? '#0F3C44'
               : isActive
@@ -112,7 +112,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.06, duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
-                  className="group relative flex flex-col items-center gap-2.5 flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30 rounded-xl"
+                  className="group relative flex flex-col items-center gap-2.5 flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-petrol/30 rounded-xl"
                   aria-current={isActive ? 'step' : undefined}
                   title={`Naar fase: ${fase.label}`}
                 >
@@ -159,25 +159,25 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     )}
                   </motion.div>
 
-                  {/* Label — heading-style met Flame-dot. De beschrijvende caption
+                  {/* Label · heading-style met Flame-dot. De beschrijvende caption
                       staat nu één keer in de header (actieve fase), zodat de rij
                       rustig en strak blijft: enkel cirkel + label. */}
                   <div className="flex flex-col items-center leading-none">
                     <span
                       className={cn(
-                        'font-heading font-bold text-[13.5px] tracking-[-0.01em] transition-colors duration-200',
-                        isActive ? 'text-foreground' : isPast || isFinalCompleted ? 'text-[#1A535C] dark:text-[#5FA8B5]' : 'text-[var(--fase-label)] group-hover:text-foreground',
+                        'font-heading font-bold text-[13px] tracking-[-0.01em] transition-colors duration-200',
+                        isActive ? 'text-foreground' : isPast || isFinalCompleted ? 'text-petrol dark:text-[#5FA8B5]' : 'text-[var(--fase-label)] group-hover:text-foreground',
                       )}
                     >
-                      {fase.label}<span className="text-[#F15025]">.</span>
+                      {fase.label}<span className="text-flame">.</span>
                     </span>
                   </div>
                 </motion.button>
 
-                {/* Connector — solid past, dashed future, Flame-overgang bij actief */}
+                {/* Connector · solid past, dashed future, Flame-overgang bij actief */}
                 {!isLast && (
                   <div className="flex-1 mt-[23px] mx-3 relative">
-                    {/* Achtergrondlijn — dashed pattern voor "nog niet bereikt" */}
+                    {/* Achtergrondlijn · dashed pattern voor "nog niet bereikt" */}
                     <div
                       className="absolute inset-x-0 top-0 h-px"
                       style={{

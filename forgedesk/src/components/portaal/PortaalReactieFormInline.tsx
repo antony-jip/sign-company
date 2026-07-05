@@ -124,7 +124,7 @@ export function PortaalReactieFormInline({
       style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1' }}
     >
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium" style={{ color: '#5A5A55' }}>
+        <p className="text-xs font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>
           Uw reactie op: {itemTitel}
         </p>
         <button
@@ -152,7 +152,7 @@ export function PortaalReactieFormInline({
         }}
         placeholder="Typ uw reactie..."
         rows={2}
-        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A535C]/30 focus:border-[#1A535C] resize-none"
+        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-petrol/30 focus:border-petrol resize-none"
         style={{ borderColor: '#E8E6E1', minHeight: 60 }}
         autoFocus
       />
@@ -184,7 +184,7 @@ export function PortaalReactieFormInline({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-100"
-          style={{ color: '#5A5A55' }}
+          style={{ color: 'hsl(var(--muted-foreground))' }}
         >
           <Camera className="w-4 h-4" />
           Foto toevoegen

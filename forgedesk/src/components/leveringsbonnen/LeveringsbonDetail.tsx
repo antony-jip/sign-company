@@ -59,7 +59,7 @@ export function LeveringsbonDetail() {
   const [isLoading, setIsLoading] = useState(!isNew)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Form state — mapped to actual Leveringsbon type fields
+  // Form state · mapped to actual Leveringsbon type fields
   const [leveringsbonNummer, setLeveringsbonNummer] = useState('')
   const [klantId, setKlantId] = useState('')
   const [projectId, setProjectId] = useState('')
@@ -359,7 +359,7 @@ export function LeveringsbonDetail() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-petrol" />
       </div>
     )
   }

@@ -190,7 +190,7 @@ export function TopNav() {
         {/* Divider na logo */}
         <div className="hidden lg:block w-px h-[22px] bg-border flex-none" />
 
-        {/* Quick-add — mobile only */}
+        {/* Quick-add · mobile only */}
         <div className="relative lg:hidden" style={{ zIndex: 40 }}>
           <button
             onClick={() => setQuickAddOpen(!quickAddOpen)}
@@ -226,13 +226,13 @@ export function TopNav() {
 
         {/* ── Module-nav: directe modules, actief = witte pill + flame-underline (glijdt mee) ── */}
         <nav ref={navRef} className="relative hidden lg:flex items-center gap-px flex-1 min-w-0">
-          {/* Sliding highlight — witte pill (rand + schaduw) met flame-underline */}
+          {/* Sliding highlight · witte pill (rand + schaduw) met flame-underline */}
           <div
             ref={indicatorRef}
             className="absolute top-1/2 -mt-[17px] left-0 h-[34px] rounded-[10px] bg-[hsl(38,20%,94%)] dark:bg-white/[0.07] transition-all duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{ opacity: 0 }}
           >
-            <span className="absolute left-[13px] right-[13px] -bottom-px h-[2px] rounded-[2px] bg-[#F15025] dark:shadow-[0_0_8px_1px_rgba(241,80,37,0.25)]" />
+            <span className="absolute left-[13px] right-[13px] -bottom-px h-[2px] rounded-[2px] bg-flame dark:shadow-[0_0_8px_1px_rgba(241,80,37,0.25)]" />
           </div>
 
           {primaryItems.map((item) => {
@@ -246,16 +246,16 @@ export function TopNav() {
                 className={cn(
                   'group relative flex items-center h-[34px] px-[13px] rounded-[10px] text-[13px] font-semibold tracking-[-0.1px] whitespace-nowrap transition-colors duration-150',
                   isActive
-                    ? 'text-[#1A535C] dark:text-foreground'
-                    : 'text-[#1A535C]/55 hover:text-[#1A535C] dark:text-foreground/55 dark:hover:text-foreground',
+                    ? 'text-petrol dark:text-foreground'
+                    : 'text-petrol/55 hover:text-petrol dark:text-foreground/55 dark:hover:text-foreground',
                 )}
               >
-                <span>{item.label}<span className={cn('transition-colors', isActive ? 'text-[#F15025]' : 'text-transparent group-hover:text-[#F15025]')}>.</span></span>
+                <span>{item.label}<span className={cn('transition-colors', isActive ? 'text-flame' : 'text-transparent group-hover:text-flame')}>.</span></span>
               </NavLink>
             )
           })}
 
-          {/* Overig — minder gebruikte modules in een strak lijstje */}
+          {/* Overig · minder gebruikte modules in een strak lijstje */}
           {overigItems.length > 0 && (
             <div ref={overigRef} className="relative flex items-center">
               <button
@@ -266,11 +266,11 @@ export function TopNav() {
                 className={cn(
                   'group relative flex items-center gap-1 h-[34px] px-[13px] rounded-[10px] text-[13px] font-semibold tracking-[-0.1px] whitespace-nowrap transition-colors duration-150',
                   overigActive
-                    ? 'text-[#1A535C] dark:text-foreground'
-                    : 'text-[#1A535C]/55 hover:text-[#1A535C] dark:text-foreground/55 dark:hover:text-foreground',
+                    ? 'text-petrol dark:text-foreground'
+                    : 'text-petrol/55 hover:text-petrol dark:text-foreground/55 dark:hover:text-foreground',
                 )}
               >
-                <span>Overig<span className={cn('transition-colors', overigActive ? 'text-[#F15025]' : 'text-transparent group-hover:text-[#F15025]')}>.</span></span>
+                <span>Overig<span className={cn('transition-colors', overigActive ? 'text-flame' : 'text-transparent group-hover:text-flame')}>.</span></span>
                 {supportAttentie > 0 && (
                   <span className="absolute top-1 right-1.5 rounded-full" style={{ width: 7, height: 7, backgroundColor: '#F15025' }} />
                 )}
@@ -293,7 +293,7 @@ export function TopNav() {
                         )}
                       >
                         <Icon className="w-4 h-4" style={{ color: isActive ? item.color : undefined, opacity: isActive ? 1 : 0.6 }} />
-                        <span>{item.label}<span className="text-[#F15025]">.</span></span>
+                        <span>{item.label}<span className="text-flame">.</span></span>
                         {item.path === '/support' && supportAttentie > 0 && (
                           <span className="ml-auto inline-flex items-center justify-center text-white font-bold" style={{ minWidth: 16, height: 16, padding: '0 4px', fontSize: 10, borderRadius: 999, backgroundColor: '#F15025' }}>
                             {supportAttentie}
@@ -318,9 +318,9 @@ export function TopNav() {
           </div>
         )}
 
-        {/* Right cluster — search + icons + avatar (gap 5px) */}
+        {/* Right cluster · search + icons + avatar (gap 5px) */}
         <div className="relative flex items-center gap-[5px] ml-auto md:ml-0">
-          {/* Search — desktop */}
+          {/* Search · desktop */}
           <div className="hidden md:flex flex-shrink-0">
             <GlobalSearch className="w-[190px] xl:w-[230px]" />
           </div>
@@ -336,15 +336,15 @@ export function TopNav() {
             <NotificatieCenter />
           </div>
 
-          {/* Sticky-header pin — desktop */}
+          {/* Sticky-header pin · desktop */}
           <button
             type="button"
             onClick={toggleStickyHeader}
             className={cn(
               'tap-press hidden md:inline-flex items-center justify-center w-[34px] h-[34px] rounded-lg transition-colors duration-150 active:scale-[0.94]',
               stickyHeader
-                ? 'text-[#F15025] bg-[#F15025]/10 hover:bg-[#F15025]/15 dark:bg-[#F15025]/15 dark:hover:bg-[#F15025]/20'
-                : 'text-[#1A535C]/60 hover:text-[#1A535C] hover:bg-[hsl(38,20%,95.5%)] dark:text-foreground/65 dark:hover:text-foreground dark:hover:bg-white/[0.05]',
+                ? 'text-flame bg-flame/10 hover:bg-flame/15 dark:bg-flame/15 dark:hover:bg-flame/20'
+                : 'text-petrol/60 hover:text-petrol hover:bg-[hsl(38,20%,95.5%)] dark:text-foreground/65 dark:hover:text-foreground dark:hover:bg-white/[0.05]',
             )}
             title={stickyHeader ? 'Header losmaken' : 'Header vastpinnen'}
             aria-label={stickyHeader ? 'Header losmaken' : 'Header vastpinnen'}
@@ -353,12 +353,12 @@ export function TopNav() {
             {stickyHeader ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
           </button>
 
-          {/* Dark-mode toggle — desktop */}
+          {/* Dark-mode toggle · desktop */}
           <DarkModeToggle className="hidden md:inline-flex" />
 
           <div className="hidden md:block w-px h-[22px] bg-border mx-0.5" />
 
-          {/* User dropdown — lichte warm-pill met petrol vierkant-avatar */}
+          {/* User dropdown · lichte warm-pill met petrol vierkant-avatar */}
           <div ref={userMenuRef} className="relative hidden md:block">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -369,9 +369,9 @@ export function TopNav() {
                   : 'bg-[hsl(38,20%,95.5%)] border-transparent hover:bg-card hover:border-border dark:bg-white/[0.05] dark:hover:bg-white/[0.08]',
               )}
             >
-              <span className="w-[27px] h-[27px] rounded-[7px] flex items-center justify-center bg-[#1A535C] text-white font-bold text-[13px]">{userInitial}</span>
-              <span className="hidden xl:block text-[13.5px] font-semibold text-[#1A535C] dark:text-foreground truncate max-w-[90px] leading-none">{userName}</span>
-              <ChevronDown className={cn('w-[13px] h-[13px] text-[#1A535C]/60 dark:text-foreground/55 transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
+              <span className="w-[27px] h-[27px] rounded-[7px] flex items-center justify-center bg-petrol text-white font-bold text-[13px]">{userInitial}</span>
+              <span className="hidden xl:block text-[13px] font-semibold text-petrol dark:text-foreground truncate max-w-[90px] leading-none">{userName}</span>
+              <ChevronDown className={cn('w-[13px] h-[13px] text-petrol/60 dark:text-foreground/55 transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
             </button>
 
             {userMenuOpen && (
@@ -379,7 +379,7 @@ export function TopNav() {
                 className="absolute right-0 top-full mt-2 w-60 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(241,80,37,0.10)] p-1.5"
               >
                 <div className="flex items-center gap-2.5 px-2 py-2">
-                  <span className="w-9 h-9 rounded-[9px] flex items-center justify-center bg-[#1A535C] text-white font-bold text-[14px] flex-shrink-0">{userInitial}</span>
+                  <span className="w-9 h-9 rounded-[9px] flex items-center justify-center bg-petrol text-white font-bold text-[14px] flex-shrink-0">{userInitial}</span>
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-foreground truncate leading-tight">{userName}</p>
                     <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
@@ -408,7 +408,7 @@ export function TopNav() {
                 <div className="h-px bg-border/50 mx-2 my-1" />
 
                 <button onClick={() => { setUserMenuOpen(false); logout() }}
-                  className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-[#F15025] hover:bg-[#F15025]/[0.07] transition-colors">
+                  className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-flame hover:bg-flame/[0.07] transition-colors">
                   <LogOut className="w-[17px] h-[17px]" /> Uitloggen
                 </button>
               </div>
@@ -434,14 +434,14 @@ export function TopNav() {
               to={item.path}
               end={item.path === '/'}
               className={cn(
-                'flex flex-shrink-0 items-center gap-1.5 px-3.5 py-2 rounded-full text-[13.5px] font-semibold whitespace-nowrap transition-colors',
+                'flex flex-shrink-0 items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors',
                 isActive
-                  ? 'bg-[#F15025]/10 text-[#1A535C] dark:bg-[#F15025]/15 dark:text-foreground'
-                  : 'text-[#1A535C]/55 hover:text-[#1A535C] dark:text-foreground/55',
+                  ? 'bg-flame/10 text-petrol dark:bg-flame/15 dark:text-foreground'
+                  : 'text-petrol/55 hover:text-petrol dark:text-foreground/55',
               )}
             >
               <Icon className="w-4 h-4" style={{ opacity: isActive ? 1 : 0.55 }} />
-              <span>{item.label}<span className={cn(isActive ? 'text-[#F15025]' : 'text-transparent')}>.</span></span>
+              <span>{item.label}<span className={cn(isActive ? 'text-flame' : 'text-transparent')}>.</span></span>
             </NavLink>
           )
         })}
@@ -471,7 +471,7 @@ export function TopNav() {
                   >
                     <Icon className="w-[18px] h-[18px]" style={isActive ? { color: item.color } : { opacity: 0.4 }} />
                   </div>
-                  <span>{item.label}<span className="text-[#F15025]">.</span></span>
+                  <span>{item.label}<span className="text-flame">.</span></span>
                 </NavLink>
               )
             })}
@@ -488,7 +488,7 @@ export function TopNav() {
               <div className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-muted/30">
                 <Settings className="w-[18px] h-[18px]" style={{ opacity: 0.4 }} />
               </div>
-              <span>Instellingen<span className="text-[#F15025]">.</span></span>
+              <span>Instellingen<span className="text-flame">.</span></span>
             </NavLink>
           </nav>
 

@@ -31,7 +31,7 @@ interface WerkbonItemCardProps {
   onLightbox: (url: string) => void
   onAfbeeldingenDropped?: (itemId: string, files: File[]) => void | Promise<void>
   onAfbeeldingReorder?: (itemId: string, draggedAfbId: string, targetAfbId: string) => void | Promise<void>
-  // Fase 3 canvas-mutaties — alleen gebruikt wanneer werkbon_canvas_versie >= 3.
+  // Fase 3 canvas-mutaties · alleen gebruikt wanneer werkbon_canvas_versie >= 3.
   onCanvasElementMove?: (itemId: string, afbId: string, x_mm: number, y_mm: number) => void | Promise<void>
   onCanvasElementResize?: (itemId: string, afbId: string, w_mm: number, h_mm: number) => void | Promise<void>
 }
@@ -53,7 +53,7 @@ const TEKST_POSITIE_LABEL: Record<WerkbonTekstPositie, string> = {
 
 const AFB_DRAG_MIME = 'text/afb-id'
 
-/** Debounced text field — local state for fast typing, debounced callback for persistence */
+/** Debounced text field · local state for fast typing, debounced callback for persistence */
 function useDebouncedField(initialValue: string, onCommit: (val: string) => void, delay = 500) {
   const [localValue, setLocalValue] = useState(initialValue)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -236,8 +236,8 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                             title={isLogo ? 'Schakel naar foto' : 'Schakel naar logo (40×40mm rechtsboven in PDF)'}
                             className={`absolute top-1 right-1 z-10 px-2 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-wider transition-colors ${
                               isLogo
-                                ? 'bg-[#FFFFFF] text-[#F15025] border-2 border-[#F15025]'
-                                : 'bg-white/80 text-[#9B9B95]'
+                                ? 'bg-[#FFFFFF] text-flame border-2 border-flame'
+                                : 'bg-white/80 text-muted-foreground'
                             }`}
                           >
                             {isLogo ? 'LOGO' : 'FOTO'}
@@ -290,7 +290,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                               key={g}
                               type="button"
                               onClick={() => onImageGrootteChange(item.id, afb.id, g)}
-                              className={`flex-1 h-7 text-[10px] uppercase tracking-wider rounded transition-colors ${active ? 'font-semibold text-white' : 'text-[#9B9B95] hover:bg-white'}`}
+                              className={`flex-1 h-7 text-[10px] uppercase tracking-wider rounded transition-colors ${active ? 'font-semibold text-white' : 'text-muted-foreground hover:bg-white'}`}
                               style={active ? { backgroundColor: '#F15025' } : undefined}
                               aria-pressed={active}
                             >
@@ -308,7 +308,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                                 key={p}
                                 type="button"
                                 onClick={() => onImageTekstPositieChange(item.id, afb.id, p)}
-                                className={`flex-1 h-7 text-[10px] uppercase tracking-wider rounded transition-colors ${active ? 'font-semibold text-white' : 'text-[#9B9B95] hover:bg-[#FFFFFF]'}`}
+                                className={`flex-1 h-7 text-[10px] uppercase tracking-wider rounded transition-colors ${active ? 'font-semibold text-white' : 'text-muted-foreground hover:bg-[#FFFFFF]'}`}
                                 style={active ? { backgroundColor: '#1A535C' } : undefined}
                                 aria-pressed={active}
                                 title={`Tekst ${p} van afbeelding`}

@@ -233,7 +233,7 @@ const STANDAARD_VERZEND_BERICHT = 'Hartelijk dank voor de opdracht, hierbij ontv
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   concept: { label: 'Concept', color: 'bg-bg-hover text-text-tertiary' },
-  open: { label: 'Open', color: 'bg-[#1A535C15] text-[#1A535C]' },
+  open: { label: 'Open', color: 'bg-[#1A535C15] text-petrol' },
   verzonden: { label: 'Verzonden', color: 'bg-[#8BAFD415] text-[#5a8ab5]' },
   betaald: { label: 'Betaald', color: 'bg-[#16a34a12] text-[#16a34a]' },
   vervallen: { label: 'Vervallen', color: 'bg-[#ef444412] text-[#ef4444]' },
@@ -570,7 +570,7 @@ export function FactuurEditor() {
                 if (offerte.project_id) setProjectId(offerte.project_id)
                 if (offerte.notities) setNotities(offerte.notities)
                 if (offerte.intro_tekst) setIntroTekst(offerte.intro_tekst)
-                // Outro bewust NIET uit de offerte overnemen — de factuur houdt
+                // Outro bewust NIET uit de offerte overnemen · de factuur houdt
                 // zijn eigen standaard-outro (factuurOutroTekst).
 
                 if (offerteItems.length > 0) {
@@ -697,7 +697,7 @@ export function FactuurEditor() {
   }, [klantId, isEditMode])
 
   // Open "Extra tekst" automatisch zodra de data geladen is met aanwezige content.
-  // Voorwaarden wordt bewust uitgesloten — die wordt standaard gevuld vanuit settings.
+  // Voorwaarden wordt bewust uitgesloten · die wordt standaard gevuld vanuit settings.
   useEffect(() => {
     if (!isLoading && (outroTekst.trim() || notities.trim())) {
       setExtraTekstOpen(true)
@@ -1352,7 +1352,7 @@ export function FactuurEditor() {
     if (!existingFactuur || !selectedKlant) return
     const ontvangerEmail = resolvedCp?.email || selectedKlant.email || ''
     if (!ontvangerEmail) {
-      toast.error('Geen email-adres bekend voor deze klant — voeg een contactpersoon toe.')
+      toast.error('Geen email-adres bekend voor deze klant · voeg een contactpersoon toe.')
       return
     }
 
@@ -1373,7 +1373,7 @@ export function FactuurEditor() {
         persoonlijkBericht: persoonlijkBericht.trim() || undefined,
       })
 
-      // Generate PDF attachment — eerst proberen via Storage (persistente kopie),
+      // Generate PDF attachment · eerst proberen via Storage (persistente kopie),
       // bij ELKE failure fallback naar on-the-fly generatie zodat de email nooit
       // door een Storage-issue geblokkeerd wordt.
       let attachments: Array<{
@@ -1456,7 +1456,7 @@ export function FactuurEditor() {
         attachments = [{ filename: `Factuur-${nummer}.pdf`, content: pdfBase64, encoding: 'base64' }]
       } catch (pdfErr) {
         logger.warn('PDF bijlage genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
-        toast.warning('PDF bijlage kon niet gegenereerd worden — email wordt zonder bijlage verstuurd')
+        toast.warning('PDF bijlage kon niet gegenereerd worden · email wordt zonder bijlage verstuurd')
       }
 
       // Werkbon PDF als extra bijlage (als gekoppeld)
@@ -1683,7 +1683,7 @@ export function FactuurEditor() {
       const saved = await createFactuur(creditnota)
 
       // Kopieer items als negatieve bedragen (zelfde patroon als
-      // factuurService.createCreditnota) — zonder regels kan de creditnota
+      // factuurService.createCreditnota) · zonder regels kan de creditnota
       // niet naar de boekhouding gesynct worden.
       const origineleItems = await getFactuurItems(existingFactuur.id)
       for (const item of origineleItems) {
@@ -1823,7 +1823,7 @@ export function FactuurEditor() {
       if (!token) { toast.error('Niet ingelogd', { id: toastId }); return }
 
       // Lazy PDF: zonder pdf_storage_path heeft de server geen bijlage om te
-      // koppelen. Geldt voor zowel initial sync als retry — anders krijg je
+      // koppelen. Geldt voor zowel initial sync als retry · anders krijg je
       // op retry een 400 "Geen PDF beschikbaar".
       if (!existingFactuur.pdf_storage_path && existingFactuur.organisatie_id) {
         try {
@@ -2118,7 +2118,7 @@ export function FactuurEditor() {
                           size="sm"
                           className="h-6 px-2 text-xs gap-1 bg-[#FEF3E2] text-[#C56A1A] border-[#FEA060]/40 hover:bg-[#FCEED1]"
                           onClick={() => handleSyncExact(true)}
-                          title="Bijlage ontbreekt in Exact — klik om opnieuw te proberen"
+                          title="Bijlage ontbreekt in Exact · klik om opnieuw te proberen"
                         >
                           <AlertCircle className="w-3 h-3" />
                           Bijlage opnieuw
@@ -2129,7 +2129,7 @@ export function FactuurEditor() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-[#1A535C] border-[#1A535C]/20 hover:bg-[#1A535C]/5 gap-1"
+                      className="text-petrol border-petrol/20 hover:bg-petrol/5 gap-1"
                       onClick={() => handleSyncExact(false)}
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
@@ -2140,7 +2140,7 @@ export function FactuurEditor() {
 
                 {/* Boekhoudpakket sync (SnelStart / Moneybird / e-Boekhouden).
                     De badge hangt aan de factuur-historie, de knop aan het
-                    actieve pakket — zo blijft de gesynct-status zichtbaar na
+                    actieve pakket · zo blijft de gesynct-status zichtbaar na
                     een pakketwissel of wissel naar "Geen". */}
                 {existingFactuur?.boekhoud_synced_at && existingFactuur.boekhoud_pakket && (
                   <Badge
@@ -2155,7 +2155,7 @@ export function FactuurEditor() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-[#1A535C] border-[#1A535C]/20 hover:bg-[#1A535C]/5 gap-1"
+                    className="text-petrol border-petrol/20 hover:bg-petrol/5 gap-1"
                     onClick={handleSyncBoekhouding}
                     disabled={boekhoudSyncing}
                   >
@@ -2243,7 +2243,7 @@ export function FactuurEditor() {
         </div>
       </div>
 
-      {/* Status bar for existing invoices — tekst + Flame punt, geen kleurig vlak */}
+      {/* Status bar for existing invoices · tekst + Flame punt, geen kleurig vlak */}
       {isEditMode && existingFactuur && (
         <div className="px-8 pt-3">
           <div className="flex items-center gap-3 text-sm text-foreground/70">
@@ -2264,12 +2264,12 @@ export function FactuurEditor() {
               return null
             })()}
             <span className="text-foreground">
-              {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span><span className="text-[#F15025]">.</span></>}
-              {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd · wachtend op betaling<span className="text-[#F15025]">.</span></>}
-              {currentStatus === 'open' && <>Verwerkt · klaar om te versturen<span className="text-[#F15025]">.</span></>}
-              {currentStatus === 'concept' && <>Concept · nog niet verstuurd<span className="text-[#F15025]">.</span></>}
-              {currentStatus === 'gecrediteerd' && <>Gecrediteerd<span className="text-[#F15025]">.</span></>}
-              {isVervallen && <>{dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen<span className="text-[#F15025]">.</span></>}
+              {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span><span className="text-flame">.</span></>}
+              {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd · wachtend op betaling<span className="text-flame">.</span></>}
+              {currentStatus === 'open' && <>Verwerkt · klaar om te versturen<span className="text-flame">.</span></>}
+              {currentStatus === 'concept' && <>Concept · nog niet verstuurd<span className="text-flame">.</span></>}
+              {currentStatus === 'gecrediteerd' && <>Gecrediteerd<span className="text-flame">.</span></>}
+              {isVervallen && <>{dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen<span className="text-flame">.</span></>}
             </span>
             {existingFactuur.betaal_link && currentStatus !== 'betaald' && (
               <span className="ml-auto text-xs text-muted-foreground truncate max-w-[420px]" title={existingFactuur.betaal_link}>
@@ -2282,7 +2282,7 @@ export function FactuurEditor() {
 
       {/* Content: Two-column layout */}
       <div className="px-8 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 lg:items-start">
-        {/* LEFT PANEL: Klant & Meta — sticky met intern scroll bij lange inhoud */}
+        {/* LEFT PANEL: Klant & Meta · sticky met intern scroll bij lange inhoud */}
         <div className="space-y-4 lg:sticky lg:top-[88px] lg:self-start lg:max-h-[calc(100vh-104px)] lg:overflow-y-auto lg:pr-1">
           {/* Klant selectie */}
           <Card>
@@ -2319,7 +2319,7 @@ export function FactuurEditor() {
               )}
               {selectedKlant && !resolvedCp?.email && !selectedKlant.email && (
                 <p className="mt-2 text-[11px] text-flame">
-                  Geen email-adres bekend — voeg een contactpersoon met email toe.
+                  Geen email-adres bekend · voeg een contactpersoon met email toe.
                 </p>
               )}
               {selectedKlant && (
@@ -2328,7 +2328,7 @@ export function FactuurEditor() {
             </CardContent>
           </Card>
 
-          {/* Factuuradres / geadresseerde — per factuur aanpasbaar */}
+          {/* Factuuradres / geadresseerde · per factuur aanpasbaar */}
           {selectedKlant && (
             <Card>
               <CardHeader className="pb-3">
@@ -2483,7 +2483,7 @@ export function FactuurEditor() {
                 Financieel
                 {isCredit && (
                   <span className="ml-auto inline-flex items-center text-[11px] font-semibold text-[#C03A18] bg-[#FDE8E2] rounded px-1.5 py-0.5">
-                    Creditfactuur<span className="text-[#F15025]">.</span>
+                    Creditfactuur<span className="text-flame">.</span>
                   </span>
                 )}
               </CardTitle>
@@ -2501,8 +2501,8 @@ export function FactuurEditor() {
               ))}
               <Separator className="bg-sand" />
               <div className="flex justify-between items-baseline pt-1">
-                <span className="text-sm font-semibold text-[#F15025]">Totaal incl. BTW</span>
-                <span className="text-xl font-bold font-mono tabular-nums text-[#F15025]">{formatCurrency(totaal)}</span>
+                <span className="text-sm font-semibold text-flame">Totaal incl. BTW</span>
+                <span className="text-xl font-bold font-mono tabular-nums text-flame">{formatCurrency(totaal)}</span>
               </div>
               {existingFactuur && existingFactuur.betaald_bedrag > 0 && (
                 <>
@@ -2628,7 +2628,7 @@ export function FactuurEditor() {
 
         {/* RIGHT PANEL: Items & Teksten */}
         <div className="space-y-4">
-          {/* Intro tekst — staat boven de regels zoals 'ie ook op de PDF verschijnt */}
+          {/* Intro tekst · staat boven de regels zoals 'ie ook op de PDF verschijnt */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -2720,7 +2720,7 @@ export function FactuurEditor() {
                   Deze factuur is {currentStatus === 'betaald' ? 'betaald' : 'gecrediteerd'} en kan niet meer worden gewijzigd.
                 </div>
               )}
-              {/* Table header — kolomlabels in tertiary uppercase, geen gekleurd vlak */}
+              {/* Table header · kolomlabels in tertiary uppercase, geen gekleurd vlak */}
               <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2 mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
                 <span>Omschrijving</span>
                 <span className="text-right">Aantal</span>
@@ -2897,7 +2897,7 @@ export function FactuurEditor() {
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[#F15025] hover:text-[#D94520] transition-colors"
+                  className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-flame hover:text-[#D94520] transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                   Regel toevoegen
@@ -2906,7 +2906,7 @@ export function FactuurEditor() {
             </CardContent>
           </Card>
 
-          {/* Extra tekst (Intro, Outro, Voorwaarden, Notities) — standaard ingeklapt */}
+          {/* Extra tekst (Intro, Outro, Voorwaarden, Notities) · standaard ingeklapt */}
           <Card>
             <button
               type="button"
@@ -3041,7 +3041,7 @@ export function FactuurEditor() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-[#F15025]" />
+              <Send className="h-5 w-5 text-flame" />
               Factuur versturen
             </DialogTitle>
             <DialogDescription>
@@ -3317,7 +3317,7 @@ function FactuurEditorSkeleton() {
         <Skeleton className="h-8 w-24" />
       </div>
 
-      {/* Header — mimic sticky top-bar */}
+      {/* Header · mimic sticky top-bar */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-8 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -3446,7 +3446,7 @@ function FactuurEditorSkeleton() {
             </CardContent>
           </Card>
 
-          {/* Factuurregels card — items table */}
+          {/* Factuurregels card · items table */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -3504,7 +3504,7 @@ function FactuurEditorSkeleton() {
             </CardContent>
           </Card>
 
-          {/* Extra tekst (collapsible header — alleen header zichtbaar) */}
+          {/* Extra tekst (collapsible header · alleen header zichtbaar) */}
           <Card>
             <div className="w-full flex items-center justify-between px-6 py-3">
               <Skeleton className="h-4 w-48" />

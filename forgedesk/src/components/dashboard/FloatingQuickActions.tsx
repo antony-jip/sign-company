@@ -25,7 +25,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   { id: 'project', label: 'Nieuw project', icon: FolderPlus, color: '#1A535C' },
   { id: 'klant', label: 'Nieuwe klant', icon: UserPlus, color: '#3A6B8C' },
   { id: 'offerte', label: 'Nieuwe offerte', icon: FilePlus, color: '#F15025' },
-  { id: 'taak', label: 'Nieuwe taak', icon: CheckSquare, color: '#5A5A55' },
+  { id: 'taak', label: 'Nieuwe taak', icon: CheckSquare, color: 'hsl(var(--muted-foreground))' },
   { id: 'mail', label: 'Nieuwe mail', icon: Mail, color: '#7BABC7' },
 ]
 
@@ -172,7 +172,7 @@ export function FloatingQuickActions() {
           )}
           style={{ right: 16, bottom: 76 }}
         >
-          {/* Quick action buttons — only visible when open */}
+          {/* Quick action buttons · only visible when open */}
           {isOpen && (
             <div className="flex flex-col-reverse items-end gap-2 mb-2">
               {visibleActions.map((action, i) => {
@@ -188,7 +188,7 @@ export function FloatingQuickActions() {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: '#191919',
+                        color: 'hsl(var(--foreground))',
                         backgroundColor: 'hsl(var(--card))',
                         border: '0.5px solid #E6E4E0',
                         borderRadius: 6,

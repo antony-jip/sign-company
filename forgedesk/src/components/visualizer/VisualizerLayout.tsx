@@ -345,7 +345,7 @@ export function VisualizerLayout() {
       })
       setActiveChatId(saved.id)
       setChats(prev => [saved, ...prev.filter(c => c.id !== saved.id)])
-    } catch { /* stil — persistentie mag verzenden nooit blokkeren */ }
+    } catch { /* stil · persistentie mag verzenden nooit blokkeren */ }
   }, [activeChatId, chats, foto, fotoNaam, logoFoto, ratio, resolutie])
 
   // ── Chatnaam inline hernoemen ──
@@ -377,7 +377,7 @@ export function VisualizerLayout() {
     const eersteKeer = chatBerichten.length === 0
     const metBeeld = !!foto
     if (metBeeld && creditSaldo <= 0) {
-      toast.error('Geen credits meer — koop credits bij')
+      toast.error('Geen credits meer · koop credits bij')
       setShowCreditsPakket(true)
       return
     }
@@ -564,7 +564,7 @@ export function VisualizerLayout() {
         logoUrl = path
       }
 
-      // Resultaat naar eigen storage halen — de fal-URL is tijdelijk en kan verlopen.
+      // Resultaat naar eigen storage halen · de fal-URL is tijdelijk en kan verlopen.
       // Lukt het niet (bijv. CORS), dan vallen we terug op de fal-URL zodat opslaan nooit blokkeert.
       let resultaatUrl = resultaat.url
       try {
@@ -739,7 +739,7 @@ export function VisualizerLayout() {
     const project = projecten.find(p => p.id === v.project_id)
     setShareEmailVis(v)
     setShareEmailTo('')
-    setShareEmailSubject(`Visualisatie${project ? ` — ${project.naam}` : ''}`)
+    setShareEmailSubject(`Visualisatie${project ? ` · ${project.naam}` : ''}`)
     setShareEmailBody(`Hallo,\n\nBijgaand een visualisatie van het gewenste ontwerp.\n\nMet vriendelijke groet`)
     setShareDropdownId(null)
   }, [projecten])
@@ -852,8 +852,8 @@ export function VisualizerLayout() {
           onChange={e => setChatInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={foto
-            ? (sessieGestart ? 'Beschrijf wat je wilt aanpassen...' : 'Beschrijf wat je wilt zien — bijv. LED doosletters boven de entree, warmwit')
-            : 'Stel een vraag of beschrijf je idee — voeg met + een foto toe om te visualiseren'}
+            ? (sessieGestart ? 'Beschrijf wat je wilt aanpassen...' : 'Beschrijf wat je wilt zien · bijv. LED doosletters boven de entree, warmwit')
+            : 'Stel een vraag of beschrijf je idee · voeg met + een foto toe om te visualiseren'}
           rows={2}
           disabled={isGenerating}
           className="w-full resize-none bg-transparent px-2 py-1 text-base placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 leading-relaxed min-h-[56px]"
@@ -881,7 +881,7 @@ export function VisualizerLayout() {
                 onClick={() => { setAttachOpen(false); logoInputRef.current?.click() }}
                 className="w-full text-left px-2.5 py-2 text-sm rounded-lg hover:bg-muted/60 transition-colors flex items-center gap-2"
               >
-                <Sparkles className="w-4 h-4 text-[#F15025]" />
+                <Sparkles className="w-4 h-4 text-flame" />
                 {logoFoto ? 'Logo vervangen' : 'Logo toevoegen'}
                 <span className="text-2xs text-muted-foreground ml-auto">optioneel</span>
               </button>
@@ -948,7 +948,7 @@ export function VisualizerLayout() {
             size="icon"
             onClick={handleSend}
             disabled={!chatInput.trim() || isGenerating || (!!foto && creditSaldo <= 0)}
-            className="rounded-full h-9 w-9 bg-[#F15025] hover:bg-[#D94520] text-white flex-shrink-0 shadow-sm"
+            className="rounded-full h-9 w-9 bg-flame hover:bg-[#D94520] text-white flex-shrink-0 shadow-sm"
           >
             {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
@@ -980,7 +980,7 @@ export function VisualizerLayout() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground tracking-[-0.3px] leading-none">
-                Studio<span className="text-[#F15025]">.</span>
+                Studio<span className="text-flame">.</span>
               </h1>
               <p className="text-xs text-muted-foreground mt-1">
                 <span className="font-medium text-foreground/80">Claude Sonnet 4.6</span> bedenkt het ontwerp · <span className="font-medium text-foreground/80">Nano Banana 2</span> genereert het beeld
@@ -997,12 +997,12 @@ export function VisualizerLayout() {
                   title="Hoe werkt Studio?"
                 >
                   <Info className="w-4 h-4" />
-                  {!infoGezien && <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#F15025]" />}
+                  {!infoGezien && <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-flame" />}
                 </button>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-80 p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="h-1 w-1 rounded-full bg-[#F15025]" />
+                  <span className="h-1 w-1 rounded-full bg-flame" />
                   <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Zo werkt Studio</span>
                 </div>
                 <p className="text-sm text-foreground leading-relaxed">
@@ -1011,7 +1011,7 @@ export function VisualizerLayout() {
                 <div className="mt-3 flex items-start gap-2.5 rounded-xl bg-petrol-light/15 ring-1 ring-petrol/10 p-3">
                   <Link2 className="w-4 h-4 text-petrol flex-shrink-0 mt-0.5" />
                   <p className="text-[13px] text-foreground leading-relaxed">
-                    <span className="font-semibold">Koppel aan een project</span> — bij opslaan, of later via de <Link2 className="inline w-3 h-3 -mt-0.5 text-petrol" />-knop in de bibliotheek. Zo komt de visualisatie mee in je offertes, e-mail en het klantportaal.
+                    <span className="font-semibold">Koppel aan een project</span> · bij opslaan, of later via de <Link2 className="inline w-3 h-3 -mt-0.5 text-petrol" />-knop in de bibliotheek. Zo komt de visualisatie mee in je offertes, e-mail en het klantportaal.
                   </p>
                 </div>
                 <button
@@ -1056,7 +1056,7 @@ export function VisualizerLayout() {
               onClick={() => setShowCreditsPakket(true)}
               className="text-sm font-mono font-medium px-3.5 py-2 rounded-lg transition-colors cursor-pointer bg-background border border-border text-foreground hover:border-petrol/30"
             >
-              <span>{creditSaldo}</span> credits{creditSaldo < 5 && <span className="text-[#F15025] ml-1">· bijkopen</span>}
+              <span>{creditSaldo}</span> credits{creditSaldo < 5 && <span className="text-flame ml-1">· bijkopen</span>}
             </button>
           </div>
         </div>
@@ -1090,7 +1090,7 @@ export function VisualizerLayout() {
                   <div key={groep.label}>
                     {/* doen eyebrow */}
                     <div className="flex items-center gap-1.5 px-2.5 pt-3.5 pb-1.5">
-                      <span className="h-1 w-1 rounded-full bg-[#F15025]" />
+                      <span className="h-1 w-1 rounded-full bg-flame" />
                       <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{groep.label}</span>
                     </div>
                     <div className="space-y-0.5">
@@ -1107,7 +1107,7 @@ export function VisualizerLayout() {
                               actief ? 'bg-petrol-light/20' : 'hover:bg-muted/60',
                             )}
                           >
-                            {actief && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#F15025]" />}
+                            {actief && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-flame" />}
                             <Icon className={cn('w-4 h-4 flex-shrink-0 mt-0.5', actief ? 'text-petrol' : 'text-muted-foreground/60')} />
                             {renamingId === c.id ? (
                               <div className="flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
@@ -1162,8 +1162,8 @@ export function VisualizerLayout() {
 
               {/* doen. signatuur */}
               <div className="px-4 py-3 border-t border-border/70">
-                <p className="text-sm font-bold text-foreground tracking-[-0.02em] leading-none">doen<span className="text-[#F15025]">.</span></p>
-                <p className="text-[11px] text-muted-foreground mt-1">slim gedaan<span className="text-[#F15025]">.</span></p>
+                <p className="text-sm font-bold text-foreground tracking-[-0.02em] leading-none">doen<span className="text-flame">.</span></p>
+                <p className="text-[11px] text-muted-foreground mt-1">slim gedaan<span className="text-flame">.</span></p>
               </div>
             </aside>
           )}
@@ -1181,10 +1181,10 @@ export function VisualizerLayout() {
                   <Sparkles className="w-6 h-6 text-petrol" />
                 </div>
                 <h2 className="text-[28px] leading-tight font-bold text-foreground tracking-[-0.5px] text-center">
-                  {voornaam ? `Hi ${voornaam}, wat zullen we maken` : 'Hi! Wat zullen we maken'}<span className="text-[#F15025]">?</span>
+                  {voornaam ? `Hi ${voornaam}, wat zullen we maken` : 'Hi! Wat zullen we maken'}<span className="text-flame">?</span>
                 </h2>
                 <p className="text-base text-muted-foreground mt-2.5 text-center max-w-md leading-relaxed">
-                  Stel een vraag of brainstorm over signing — gratis. Voeg een foto toe met <span className="font-medium text-foreground">+</span> en zie je idee meteen op locatie.
+                  Stel een vraag of brainstorm over signing · gratis. Voeg een foto toe met <span className="font-medium text-foreground">+</span> en zie je idee meteen op locatie.
                 </p>
 
                 <div className="w-full mt-7">{composer}</div>
@@ -1235,7 +1235,7 @@ export function VisualizerLayout() {
                 >
                   <option value="">Geen project koppelen</option>
                   {projecten.map(p => (
-                    <option key={p.id} value={p.id}>{p.naam} — {p.klant_naam}</option>
+                    <option key={p.id} value={p.id}>{p.naam} · {p.klant_naam}</option>
                   ))}
                 </select>
                 {selectedProject && (
@@ -1304,7 +1304,7 @@ export function VisualizerLayout() {
                                 className={cn(
                                   'h-8 w-8 rounded-lg backdrop-blur-sm flex items-center justify-center transition-colors',
                                   bewaardUrls.has(bericht.afbeelding_url)
-                                    ? 'bg-[#F15025] text-white'
+                                    ? 'bg-flame text-white'
                                     : 'bg-black/55 text-white hover:bg-black/70',
                                 )}
                                 title={bewaardUrls.has(bericht.afbeelding_url) ? 'Bewaard in bibliotheek' : 'Bewaren in bibliotheek'}
@@ -1532,11 +1532,11 @@ export function VisualizerLayout() {
                             <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-card rounded-lg border border-border shadow-[0_4px_16px_rgba(0,0,0,0.12)] overflow-hidden">
                               {v.project_id && (
                                 <button onClick={() => handleShareViaPortaal(v)} className="w-full text-left px-3 py-2 text-xs hover:bg-background transition-colors flex items-center gap-2">
-                                  <Send className="h-3 w-3 text-[#1A535C]" /> Via portaal
+                                  <Send className="h-3 w-3 text-petrol" /> Via portaal
                                 </button>
                               )}
                               <button onClick={() => handleOpenShareEmail(v)} className="w-full text-left px-3 py-2 text-xs hover:bg-background transition-colors flex items-center gap-2">
-                                <Mail className="h-3 w-3 text-[#F15025]" /> Via email
+                                <Mail className="h-3 w-3 text-flame" /> Via email
                               </button>
                             </div>
                           </>
@@ -1588,14 +1588,14 @@ export function VisualizerLayout() {
               <img src={shareEmailVis.resultaat_url} alt="" className="w-full max-h-48 object-cover rounded-lg" />
               <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-muted-foreground w-16 flex-shrink-0">Aan</span>
-                <input value={shareEmailTo} onChange={(e) => setShareEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+                <input value={shareEmailTo} onChange={(e) => setShareEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:border-petrol/40 focus:bg-white transition-colors" />
               </div>
-              <input value={shareEmailSubject} onChange={(e) => setShareEmailSubject(e.target.value)} placeholder="Onderwerp..." className="w-full text-sm font-medium px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-[#1A535C]/40 transition-colors" />
+              <input value={shareEmailSubject} onChange={(e) => setShareEmailSubject(e.target.value)} placeholder="Onderwerp..." className="w-full text-sm font-medium px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-petrol/40 transition-colors" />
               <textarea
                 value={shareEmailBody}
                 onChange={(e) => setShareEmailBody(e.target.value)}
                 rows={4}
-                className="w-full text-sm px-3 py-3 border border-border rounded-lg bg-background focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors resize-y leading-relaxed"
+                className="w-full text-sm px-3 py-3 border border-border rounded-lg bg-background focus:outline-none focus:border-petrol/40 focus:bg-white transition-colors resize-y leading-relaxed"
                 placeholder="Bericht..."
               />
             </div>
@@ -1604,7 +1604,7 @@ export function VisualizerLayout() {
               <button
                 onClick={handleSendShareEmail}
                 disabled={!shareEmailTo.trim() || isSendingShareEmail}
-                className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-[#F15025] text-white hover:bg-[#D94520] disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-flame text-white hover:bg-[#D94520] disabled:opacity-40 transition-colors"
               >
                 <Send className="h-3.5 w-3.5" />
                 {isSendingShareEmail ? 'Verzenden...' : 'Verstuur'}

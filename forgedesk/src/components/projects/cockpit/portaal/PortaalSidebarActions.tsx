@@ -63,13 +63,13 @@ export function PortaalSidebarActions({
 
       const project = await getProject(projectId)
       if (!project?.klant_id || !portaal) {
-        toast.warning('Geen klant gekoppeld — email niet verstuurd')
+        toast.warning('Geen klant gekoppeld · email niet verstuurd')
         return
       }
       const klant = await getKlant(project.klant_id)
       const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
       if (!klantEmail) {
-        toast.warning('Klant heeft geen email — notificatie niet verstuurd')
+        toast.warning('Klant heeft geen email · notificatie niet verstuurd')
         return
       }
 
@@ -93,7 +93,7 @@ export function PortaalSidebarActions({
 
       const onderwerp = instellingen?.template_nieuw_item?.onderwerp
         ? replaceEmailVariables(instellingen.template_nieuw_item.onderwerp, vars)
-        : `${bedrijfsnaam || 'Nieuw item'} — ${titel}`
+        : `${bedrijfsnaam || 'Nieuw item'} · ${titel}`
       const heading = instellingen?.template_nieuw_item?.inhoud
         ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars)
         : `Er is een nieuw item gedeeld voor project ${project.naam}.`

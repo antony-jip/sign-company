@@ -84,7 +84,7 @@ export function RegisterPage() {
       <DoenAuthHeader rightSlot={
         <p className="text-[13px] text-foreground/70 hidden sm:block">
           Al een account?{' '}
-          <Link to="/login" className="text-[#1A535C] dark:text-[#8FC3CC] font-semibold hover:underline underline-offset-4">
+          <Link to="/login" className="text-petrol dark:text-[#8FC3CC] font-semibold hover:underline underline-offset-4">
             Inloggen
           </Link>
         </p>
@@ -97,14 +97,14 @@ export function RegisterPage() {
           animate="show"
           className="lg:col-span-7 lg:pt-6"
         >
-          <motion.p variants={item} className="text-[11px] uppercase tracking-[0.22em] font-semibold text-[#1A535C]/70 dark:text-[#8FC3CC]/80 mb-5">
-            <span className="inline-block w-6 h-px bg-[#1A535C]/40 dark:bg-[#8FC3CC]/40 align-middle mr-3" />
+          <motion.p variants={item} className="text-[11px] uppercase tracking-[0.22em] font-semibold text-petrol/70 dark:text-[#8FC3CC]/80 mb-5">
+            <span className="inline-block w-6 h-px bg-petrol/40 dark:bg-[#8FC3CC]/40 align-middle mr-3" />
             Aanmelden
           </motion.p>
 
           <motion.h1
             variants={item}
-            className="font-heading font-extrabold tracking-[-0.025em] text-[#191919] dark:text-foreground"
+            className="font-heading font-extrabold tracking-[-0.025em] text-foreground dark:text-foreground"
             style={{ lineHeight: 1.02 }}
           >
             <span className="block text-[40px] sm:text-[52px] lg:text-[60px] xl:text-[68px]">
@@ -126,16 +126,16 @@ export function RegisterPage() {
 
           <motion.div variants={item} className="mt-8 max-w-[460px]">
             <div className="flex items-baseline gap-3">
-              <span className="font-heading text-[26px] sm:text-[28px] font-extrabold tracking-tight text-[#1A535C] dark:text-[#8FC3CC] leading-none tabular-nums">
+              <span className="font-heading text-[26px] sm:text-[28px] font-extrabold tracking-tight text-petrol dark:text-[#8FC3CC] leading-none tabular-nums">
                 €<CountUp target={79} duration={900} delay={400} />
               </span>
               <span className="text-[13px] text-foreground/70 font-medium">/maand</span>
             </div>
             <p className="mt-2.5 text-[13px] text-foreground/70 leading-[1.55]">
-              Tot <span className="font-semibold text-[#191919] dark:text-foreground">10 gebruikers</span> inbegrepen
-              <span className="mx-2 text-[#F15025]">·</span>
+              Tot <span className="font-semibold text-foreground dark:text-foreground">10 gebruikers</span> inbegrepen
+              <span className="mx-2 text-flame">·</span>
               30 dagen gratis
-              <span className="mx-2 text-[#F15025]">·</span>
+              <span className="mx-2 text-flame">·</span>
               geen creditcard
             </p>
             <p className="mt-1.5 text-[12px] text-muted-foreground">
@@ -152,10 +152,10 @@ export function RegisterPage() {
           className="lg:col-span-5 lg:pt-2 w-full"
         >
           <DoenFormCard accentColor="#F15025">
-            <h2 className="font-heading text-[22px] font-extrabold text-[#191919] dark:text-foreground tracking-[-0.02em] mb-1">
+            <h2 className="font-heading text-[22px] font-extrabold text-foreground dark:text-foreground tracking-[-0.02em] mb-1">
               Aan de slag<span style={{ color: '#F15025' }}>.</span>
             </h2>
-            <p className="text-[13.5px] text-foreground/70 mb-6">
+            <p className="text-[13px] text-foreground/70 mb-6">
               Maak een account. Kost je een minuut.
             </p>
 
@@ -172,7 +172,7 @@ export function RegisterPage() {
                     placeholder="naam@bedrijf.nl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-[#1A535C]/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all"
+                    className="pl-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-petrol focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-petrol/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all"
                     disabled={isLoading}
                     autoComplete="email"
                     autoFocus
@@ -192,14 +192,14 @@ export function RegisterPage() {
                     placeholder="Minimaal 10 tekens, sterk"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-12 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-[#1A535C]/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all"
+                    className="pl-10 pr-12 h-11 rounded-xl border-border bg-background text-[14px] focus:border-petrol focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-petrol/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all"
                     disabled={isLoading}
                     autoComplete="new-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-muted-foreground/70 hover:text-foreground/70 transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-muted-foreground/70 hover:text-foreground/70 transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-petrol/30"
                     tabIndex={-1}
                     aria-label={showPassword ? 'Wachtwoord verbergen' : 'Wachtwoord tonen'}
                   >
@@ -221,7 +221,7 @@ export function RegisterPage() {
                     placeholder="Herhaal je wachtwoord"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`pl-10 pr-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-[#1A535C] focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-[#1A535C]/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all ${!passwordsMatch ? 'border-[#C03A18] focus-visible:ring-[#C03A18]/20' : ''}`}
+                    className={`pl-10 pr-10 h-11 rounded-xl border-border bg-background text-[14px] focus:border-petrol focus:bg-white dark:focus:border-[#4E96A3] dark:focus:bg-white/[0.06] focus-visible:ring-petrol/20 dark:focus-visible:ring-[#4E96A3]/25 transition-all ${!passwordsMatch ? 'border-[#C03A18] focus-visible:ring-[#C03A18]/20' : ''}`}
                     disabled={isLoading}
                     autoComplete="new-password"
                     aria-invalid={!passwordsMatch}
@@ -240,7 +240,7 @@ export function RegisterPage() {
 
               <Button
                 type="submit"
-                className="w-full h-11 rounded-xl font-semibold text-[14px] transition-all group bg-[#F15025] hover:bg-[#D94520] text-white mt-2 shadow-[0_6px_20px_-8px_rgba(241,80,37,0.55)]"
+                className="w-full h-11 rounded-xl font-semibold text-[14px] transition-all group bg-flame hover:bg-[#D94520] text-white mt-2 shadow-[0_6px_20px_-8px_rgba(241,80,37,0.55)]"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -263,7 +263,7 @@ export function RegisterPage() {
 
             <p className="text-center text-[12px] text-muted-foreground mt-5 sm:hidden">
               Al een account?{' '}
-              <Link to="/login" className="text-[#1A535C] dark:text-[#8FC3CC] font-semibold hover:underline">
+              <Link to="/login" className="text-petrol dark:text-[#8FC3CC] font-semibold hover:underline">
                 Inloggen
               </Link>
             </p>
@@ -271,16 +271,16 @@ export function RegisterPage() {
         </motion.section>
       </main>
 
-      {/* CONVERSION SECTION 1 — Workflow proof: see the product before you sign up */}
+      {/* CONVERSION SECTION 1 · Workflow proof: see the product before you sign up */}
       <section className="relative z-10 max-w-[1280px] w-full mx-auto px-6 sm:px-10 py-16 sm:py-24">
         <div className="text-center mb-10 sm:mb-14">
           <p
-            className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase mb-3 text-[#F15025]"
+            className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase mb-3 text-flame"
             style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
           >
             Hoe het werkt
           </p>
-          <h2 className="font-heading text-[28px] sm:text-[36px] lg:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919] dark:text-foreground">
+          <h2 className="font-heading text-[28px] sm:text-[36px] lg:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.05] text-foreground dark:text-foreground">
             Klant tot factuur. In één flow<span style={{ color: '#F15025' }}>.</span>
           </h2>
           <p className="mt-3 text-[15px] sm:text-[16px] text-foreground/70 max-w-[520px] mx-auto leading-[1.6]">
@@ -291,16 +291,16 @@ export function RegisterPage() {
         <AuthProcesVisual />
       </section>
 
-      {/* CONVERSION SECTION 2 — Why doen: anchored pricing + risk reversal + transition help */}
+      {/* CONVERSION SECTION 2 · Why doen: anchored pricing + risk reversal + transition help */}
       <section className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-10 py-12 sm:py-16">
         <div className="text-center mb-10 sm:mb-12">
           <p
-            className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase mb-3 text-[#F15025]"
+            className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase mb-3 text-flame"
             style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
           >
             Waarom doen
           </p>
-          <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919] dark:text-foreground">
+          <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-foreground dark:text-foreground">
             Drie redenen om vandaag te beginnen<span style={{ color: '#F15025' }}>.</span>
           </h2>
         </div>
@@ -320,16 +320,16 @@ export function RegisterPage() {
         </div>
       </section>
 
-      {/* CONVERSION SECTION 2.5 — Migration deep-dive: kill the switching-cost objection */}
+      {/* CONVERSION SECTION 2.5 · Migration deep-dive: kill the switching-cost objection */}
       <section className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-10 py-12 sm:py-16">
         <div className="text-center mb-10 sm:mb-12">
           <p
-            className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase mb-3 text-[#F15025]"
+            className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase mb-3 text-flame"
             style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
           >
             Overstappen
           </p>
-          <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919] dark:text-foreground">
+          <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-foreground dark:text-foreground">
             Eenvoudig overzetten uit ieder pakket<span style={{ color: '#F15025' }}>.</span>
           </h2>
           <p className="mt-3 text-[14px] sm:text-[15px] text-foreground/70 max-w-[520px] mx-auto leading-[1.6]">
@@ -365,16 +365,16 @@ export function RegisterPage() {
 
         <p className="mt-8 text-center text-[12px] text-muted-foreground">
           Onbekend exportformaat? Mail{' '}
-          <a href="mailto:hello@doen.team" className="text-[#1A535C] dark:text-[#8FC3CC] font-semibold hover:underline underline-offset-4">
+          <a href="mailto:hello@doen.team" className="text-petrol dark:text-[#8FC3CC] font-semibold hover:underline underline-offset-4">
             hello@doen.team
           </a>
           . We kijken samen wat het beste werkt.
         </p>
       </section>
 
-      {/* CONVERSION SECTION 3 — Final close: zero-risk reframe + scroll back to form */}
+      {/* CONVERSION SECTION 3 · Final close: zero-risk reframe + scroll back to form */}
       <section className="relative z-10 max-w-[820px] w-full mx-auto px-6 sm:px-10 py-12 sm:py-16 text-center">
-        <h2 className="font-heading text-[30px] sm:text-[42px] lg:text-[52px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919] dark:text-foreground">
+        <h2 className="font-heading text-[30px] sm:text-[42px] lg:text-[52px] font-extrabold tracking-[-0.03em] leading-[1.05] text-foreground dark:text-foreground">
           Beginnen kost je niks<span style={{ color: '#F15025' }}>.</span>
         </h2>
         <p className="mt-5 text-[15px] sm:text-[17px] text-foreground/70 leading-[1.6] max-w-[560px] mx-auto">
@@ -383,7 +383,7 @@ export function RegisterPage() {
         </p>
         <a
           href="#aanmelden"
-          className="inline-flex items-center justify-center gap-2 mt-8 h-12 px-7 rounded-xl font-semibold text-[15px] bg-[#F15025] hover:bg-[#D94520] text-white transition-all group shadow-[0_8px_28px_-10px_rgba(241,80,37,0.6)]"
+          className="inline-flex items-center justify-center gap-2 mt-8 h-12 px-7 rounded-xl font-semibold text-[15px] bg-flame hover:bg-[#D94520] text-white transition-all group shadow-[0_8px_28px_-10px_rgba(241,80,37,0.6)]"
         >
           Begin gratis
           <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -414,7 +414,7 @@ function MigrationOption({
   return (
     <div
       className={`relative bg-white dark:bg-card rounded-2xl p-7 sm:p-8 border ${
-        highlight ? 'border-[#1A535C]/30 dark:border-[#4E96A3]/35' : 'border-border dark:border-white/10'
+        highlight ? 'border-petrol/30 dark:border-[#4E96A3]/35' : 'border-border dark:border-white/10'
       } shadow-[0_2px_24px_-8px_rgba(26,83,92,0.08)] flex flex-col`}
     >
       <div className="flex items-start justify-between gap-3 mb-4">
@@ -426,7 +426,7 @@ function MigrationOption({
         </p>
         <span
           className={`text-[10px] font-bold uppercase tracking-[0.12em] px-2.5 py-1 rounded-full whitespace-nowrap ${
-            highlight ? 'text-white' : 'text-[#1A535C] dark:text-[#8FC3CC]'
+            highlight ? 'text-white' : 'text-petrol dark:text-[#8FC3CC]'
           }`}
           style={{
             background: highlight ? '#1A535C' : '#1A535C14',
@@ -436,12 +436,12 @@ function MigrationOption({
           {badge}
         </span>
       </div>
-      <h3 className="font-heading text-[18px] sm:text-[20px] font-extrabold tracking-tight text-[#191919] dark:text-foreground leading-[1.25] mb-5">
+      <h3 className="font-heading text-[18px] sm:text-[20px] font-extrabold tracking-tight text-foreground dark:text-foreground leading-[1.25] mb-5">
         {title}
       </h3>
       <ul className="space-y-3">
         {steps.map((step, i) => (
-          <li key={i} className="flex gap-3 text-[13.5px] text-foreground/70 leading-[1.55]">
+          <li key={i} className="flex gap-3 text-[13px] text-foreground/70 leading-[1.55]">
             <span
               className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full mt-0.5 text-white text-[10px] font-bold"
               style={{ background: highlight ? '#1A535C' : '#1A535C99', fontFamily: '"DM Mono", ui-monospace, monospace' }}
@@ -470,7 +470,7 @@ function ConversionCard({
   return (
     <div
       className={`relative bg-white dark:bg-card rounded-2xl p-6 sm:p-7 border ${
-        highlight ? 'border-[#F15025]/30 dark:border-[#F15025]/40' : 'border-border dark:border-white/10'
+        highlight ? 'border-flame/30 dark:border-flame/40' : 'border-border dark:border-white/10'
       } shadow-[0_2px_24px_-8px_rgba(26,83,92,0.08)]`}
     >
       {highlight && (
@@ -487,7 +487,7 @@ function ConversionCard({
       >
         {kicker}
       </p>
-      <h3 className="font-heading text-[20px] sm:text-[22px] font-extrabold tracking-tight text-[#191919] dark:text-foreground leading-tight">
+      <h3 className="font-heading text-[20px] sm:text-[22px] font-extrabold tracking-tight text-foreground dark:text-foreground leading-tight">
         {title}
       </h3>
       <p className="mt-3 text-[14px] text-foreground/70 leading-[1.55]">{body}</p>
@@ -511,7 +511,7 @@ export function DoenAuthShell({ children }: { children: React.ReactNode }) {
         }
       `}</style>
 
-      {/* Soft gradient layers — light */}
+      {/* Soft gradient layers · light */}
       <div
         className="absolute inset-0 pointer-events-none dark:hidden"
         style={{
@@ -523,7 +523,7 @@ export function DoenAuthShell({ children }: { children: React.ReactNode }) {
         }}
         aria-hidden
       />
-      {/* Gradient layers — dark: diepe petrol-nacht met flame-glow */}
+      {/* Gradient layers · dark: diepe petrol-nacht met flame-glow */}
       <div
         className="absolute inset-0 pointer-events-none hidden dark:block"
         style={{
@@ -537,7 +537,7 @@ export function DoenAuthShell({ children }: { children: React.ReactNode }) {
         aria-hidden
       />
 
-      {/* Cursor-following flame glow — Stripe-grade detail */}
+      {/* Cursor-following flame glow · Stripe-grade detail */}
       <CursorFlameSpot />
 
       {/* Animated particle field */}

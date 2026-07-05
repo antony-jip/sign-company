@@ -185,7 +185,7 @@ function SupportKlantView({ isOpen, onAdminReply }: { isOpen: boolean; onAdminRe
             {offline && (
               <div className="rounded-xl border border-border/60 bg-muted/40 p-3 space-y-2">
                 <p className="text-[12px] text-foreground leading-relaxed">
-                  We zijn er nu even niet<span className="text-flame">.</span> Laat je e-mail achter, dan nemen we contact met je op — of wacht gerust, we chatten hier verder zodra we terug zijn.
+                  We zijn er nu even niet<span className="text-flame">.</span> Laat je e-mail achter, dan nemen we contact met je op · of wacht gerust, we chatten hier verder zodra we terug zijn.
                 </p>
                 {emailSent ? (
                   <p className="text-[12px] font-medium text-petrol">Bedankt, we nemen contact op<span className="text-flame">.</span></p>
@@ -283,7 +283,7 @@ export function ForgieChatWidget() {
     if (isMobile && isAdminOrg) setView('support')
   }, [isMobile, isAdminOrg])
 
-  // Klant: bulletje bij Daan zodra support een bericht stuurt — ook bij gesloten paneel
+  // Klant: bulletje bij Daan zodra support een bericht stuurt · ook bij gesloten paneel
   // of nieuw gesprek. RLS scopet de stream op de eigen organisatie.
   useEffect(() => {
     if (isAdminOrg || !supabase) return
@@ -411,7 +411,7 @@ export function ForgieChatWidget() {
       setActiveGesprek(res.gesprek)
       loadInbox()
     } catch {
-      // stil falen — gebruiker kan opnieuw proberen
+      // stil falen · gebruiker kan opnieuw proberen
     }
   }, [activeGesprek, loadInbox])
 
@@ -508,7 +508,7 @@ export function ForgieChatWidget() {
             overflow: 'hidden',
           }}
         >
-          {/* Header — petrol */}
+          {/* Header · petrol */}
           <div
             className="flex items-center justify-between px-4 py-3 flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, var(--color-petrol) 0%, var(--color-petrol-dark) 100%)' }}
@@ -543,7 +543,7 @@ export function ForgieChatWidget() {
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              {/* Medewerker spreken — klant, in het petrol-gedeelte met flame-hartje */}
+              {/* Medewerker spreken · klant, in het petrol-gedeelte met flame-hartje */}
               {!inSupport && !isAdminOrg && (
                 <button
                   onClick={() => setView('support')}
@@ -574,7 +574,7 @@ export function ForgieChatWidget() {
             </div>
           </div>
 
-          {/* Admin tab-strip — verborgen op mobiel (Daan is desktop-only) */}
+          {/* Admin tab-strip · verborgen op mobiel (Daan is desktop-only) */}
           {isAdminOrg && (
             <div className="hidden md:flex items-stretch flex-shrink-0 border-b border-border/60 bg-card">
               <button
@@ -613,7 +613,7 @@ export function ForgieChatWidget() {
 
           {inSupport && isAdminOrg && (
             <div className="flex-1 flex min-h-0" style={{ backgroundColor: 'hsl(var(--card))' }}>
-              {/* Linkerpaneel — gesprekkenlijst (full-width op mobiel, vast op desktop) */}
+              {/* Linkerpaneel · gesprekkenlijst (full-width op mobiel, vast op desktop) */}
               <div className={cn(
                 'flex-shrink-0 overflow-y-auto border-border/60 w-full md:w-[244px] md:border-r',
                 activeGesprek ? 'hidden md:block' : 'block'
@@ -659,7 +659,7 @@ export function ForgieChatWidget() {
                 )}
               </div>
 
-              {/* Rechterpaneel — actief gesprek (op mobiel alleen zichtbaar bij open gesprek) */}
+              {/* Rechterpaneel · actief gesprek (op mobiel alleen zichtbaar bij open gesprek) */}
               <div className={cn('flex-1 flex-col min-w-0', activeGesprek ? 'flex' : 'hidden md:flex')}>
                 {activeGesprek ? (
                   <>
@@ -761,7 +761,7 @@ export function ForgieChatWidget() {
                           style={{
                             padding: '4px 10px',
                             fontSize: 10,
-                            color: '#5A5A55',
+                            color: 'hsl(var(--muted-foreground))',
                             border: '0.5px solid #E6E4E0',
                             borderRadius: 999,
                             backgroundColor: 'transparent',

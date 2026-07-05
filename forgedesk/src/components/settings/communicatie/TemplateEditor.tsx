@@ -196,7 +196,7 @@ export function TemplateEditor({ triggerTaskNaam, open, onClose, onSaved }: Temp
                         key={key}
                         type="button"
                         onClick={() => insertPlaceholder(key)}
-                        className="inline-flex items-center rounded-md border border-border bg-card px-2 py-1 text-xs font-mono text-[#1A535C] hover:border-[#1A535C] hover:bg-background transition-colors"
+                        className="inline-flex items-center rounded-md border border-border bg-card px-2 py-1 text-xs font-mono text-petrol hover:border-petrol hover:bg-background transition-colors"
                       >
                         {`{{${key}}}`}
                       </button>

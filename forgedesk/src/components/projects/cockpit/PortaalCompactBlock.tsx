@@ -44,8 +44,8 @@ function statusStyle(status: string): { color: string; label: string } {
     case 'betaald': return { color: '#3A7D52', label: 'Betaald' }
     case 'revisie': return { color: '#C0451A', label: 'Revisie' }
     case 'verlopen': case 'afgewezen': return { color: '#C0451A', label: 'Verlopen' }
-    case 'vervangen': return { color: '#9B9B95', label: 'Vervangen' }
-    default: return { color: '#6B6B66', label: status }
+    case 'vervangen': return { color: 'hsl(var(--muted-foreground))', label: 'Vervangen' }
+    default: return { color: 'hsl(var(--muted-foreground))', label: status }
   }
 }
 
@@ -56,7 +56,7 @@ function AfzenderLabel({ item }: { item: PortaalItem }) {
   const naam = isKlant ? (item.toegewezen_aan || 'Klant') : 'Jij'
   return (
     <div className="flex items-center gap-1.5 mb-1.5">
-      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isKlant ? 'bg-[#F15025]' : 'border-[1.5px] border-[#1A535C]'}`} />
+      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isKlant ? 'bg-flame' : 'border-[1.5px] border-petrol'}`} />
       <span className="text-[11px] text-muted-foreground">
         {isKlant ? <span className="font-medium text-foreground">{naam}</span> : naam}
         {' '}· {relativeDate(item.created_at)} {formatTime(item.created_at)}
@@ -81,24 +81,24 @@ function OfferteKaart({ item }: { item: PortaalItem }) {
     <div className="max-w-[400px]">
       <AfzenderLabel item={item} />
       <div className="rounded-xl overflow-hidden bg-card shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-        <div className="h-1 bg-[#F15025]" />
+        <div className="h-1 bg-flame" />
         <div className="p-4">
-        <p className="text-[11px] font-mono uppercase tracking-wide text-[#F15025]/70">Offerte</p>
+        <p className="text-[11px] font-mono uppercase tracking-wide text-flame/70">Offerte</p>
         <p className="text-sm font-medium text-foreground mt-1">{item.titel}</p>
         {item.bedrag != null && (
           <div className="flex items-center justify-between mt-1">
             <span className="text-lg font-mono font-semibold text-foreground">{currencyFmt.format(item.bedrag)}</span>
             <span className="text-sm flex items-center gap-1" style={{ color: st.color }}>
-              {st.label}<span className="text-[#F15025]">.</span>
+              {st.label}<span className="text-flame">.</span>
             </span>
           </div>
         )}
         {!item.bedrag && (
           <span className="text-sm flex items-center gap-1 mt-1" style={{ color: st.color }}>
-            {st.label}<span className="text-[#F15025]">.</span>
+            {st.label}<span className="text-flame">.</span>
           </span>
         )}
-        {/* Actieknoppen — disabled in interne view */}
+        {/* Actieknoppen · disabled in interne view */}
         {item.status !== 'goedgekeurd' && item.status !== 'betaald' && (
           <div className="flex gap-2 mt-3 pt-3 border-t border-border/40">
             <span className="flex-1 text-center text-sm font-medium py-2 bg-background rounded-md text-muted-foreground cursor-default" title="Zichtbaar voor klant">Goedkeuren</span>
@@ -125,7 +125,7 @@ function FactuurKaart({ item }: { item: PortaalItem }) {
           <div className="flex items-center justify-between mt-1">
             <span className="text-lg font-mono font-semibold text-foreground">{currencyFmt.format(item.bedrag)}</span>
             <span className="text-sm flex items-center gap-1" style={{ color: st.color }}>
-              {st.label}<span className="text-[#F15025]">.</span>
+              {st.label}<span className="text-flame">.</span>
             </span>
           </div>
         )}
@@ -150,15 +150,15 @@ function TekeningKaart({ item }: { item: PortaalItem }) {
     <div className="max-w-[400px]">
       <AfzenderLabel item={item} />
       <div className="rounded-xl overflow-hidden bg-card shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-        <div className="h-1 bg-[#1A535C]" />
+        <div className="h-1 bg-petrol" />
         <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-mono uppercase tracking-wide text-[#1A535C]/70">Tekening</p>
+            <p className="text-[11px] font-mono uppercase tracking-wide text-petrol/70">Tekening</p>
             <p className="text-sm font-medium text-foreground mt-1">{item.titel}</p>
             {item.omschrijving && <p className="text-xs text-foreground/70 mt-0.5">{item.omschrijving}</p>}
             <span className="text-sm flex items-center gap-1 mt-1.5" style={{ color: st.color }}>
-              {st.label}<span className="text-[#F15025]">.</span>
+              {st.label}<span className="text-flame">.</span>
             </span>
           </div>
           {thumbFile && (
@@ -199,7 +199,7 @@ function TekstBubbel({ item }: { item: PortaalItem }) {
         <div className={`px-4 py-2.5 text-sm leading-relaxed ${
           isKlant
             ? 'bg-card text-foreground rounded-2xl rounded-bl-sm shadow-[0_1px_3px_rgba(0,0,0,0.04)]'
-            : 'bg-[#1A535C]/[0.07] text-foreground rounded-2xl rounded-br-sm'
+            : 'bg-petrol/[0.07] text-foreground rounded-2xl rounded-br-sm'
         }`}>
           {item.bericht_tekst || item.titel}
         </div>
@@ -245,7 +245,7 @@ function FeedItem({ item }: { item: PortaalItem }) {
         : item.bericht_type === 'foto' && item.foto_url ? <FotoBubbel item={item} />
         : <TekstBubbel item={item} />}
 
-      {/* Reacties — altijd renderen voor alle item types */}
+      {/* Reacties · altijd renderen voor alle item types */}
       {(item.reacties ?? []).map((r) => (
         <div
           key={r.id}
@@ -301,9 +301,9 @@ function Feed({ items, feedEndRef }: { items: PortaalItem[]; feedEndRef: React.R
       {groups.map((group) => (
         <div key={group.date}>
           <div className="flex items-center gap-3 py-3">
-            <div className="flex-1 h-px bg-[#1A535C]/10" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[#1A535C]/30 whitespace-nowrap">{group.label}</span>
-            <div className="flex-1 h-px bg-[#1A535C]/10" />
+            <div className="flex-1 h-px bg-petrol/10" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-petrol/30 whitespace-nowrap">{group.label}</span>
+            <div className="flex-1 h-px bg-petrol/10" />
           </div>
           <div className="space-y-4">
             {group.items.map((item) => <FeedItem key={item.id} item={item} />)}
@@ -364,9 +364,9 @@ function InputBar({
       const klantNaam = activeCp?.naam || klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || klant?.bedrijfsnaam || 'klant'
       const instellingen = await getPortaalInstellingen(userId)
       const vars: Record<string, string> = { klant_naam: klantNaam, project_naam: project.naam, portaal_link: portaalUrl, bedrijfsnaam: bedrijfsnaam || '', item_type: titel, projectnaam: project.naam, itemtitel: titel, klantNaam, portaalUrl }
-      const onderwerp = instellingen?.template_nieuw_item?.onderwerp ? replaceEmailVariables(instellingen.template_nieuw_item.onderwerp, vars) : `${bedrijfsnaam || 'Nieuw item'} — ${titel}`
+      const onderwerp = instellingen?.template_nieuw_item?.onderwerp ? replaceEmailVariables(instellingen.template_nieuw_item.onderwerp, vars) : `${bedrijfsnaam || 'Nieuw item'} · ${titel}`
       const heading = instellingen?.template_nieuw_item?.inhoud ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars) : `Er staat een nieuw item voor u klaar.`
-      const plainBody = `${heading} — ${titel} (${project.naam})`
+      const plainBody = `${heading} · ${titel} (${project.naam})`
       const htmlBody = buildPortalEmailHtml({ heading, klantNaam, itemTitel: titel, beschrijving: `Project: ${project.naam}`, ctaLabel: 'Bekijk in portaal', ctaUrl: portaalUrl, bedrijfsnaam, logoUrl: profile?.logo_url || undefined, primaireKleur: undefined })
       await sendEmail(klantEmail, onderwerp, plainBody, { html: htmlBody })
       toast.success(`Email verstuurd naar ${klantEmail}`)
@@ -466,8 +466,8 @@ function InputBar({
           <div className="flex items-center justify-between px-4 py-3 border-b border-border"><p className="text-xs font-semibold text-foreground">Tekening delen</p><button onClick={() => { setTekeningPopoverOpen(false); setTekeningFile(null) }} className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button></div>
           <div className="px-4 py-3 space-y-3">
             <p className="text-xs text-muted-foreground truncate">{tekeningFile.name}</p>
-            <input type="text" value={tekeningTitel} onChange={(e) => setTekeningTitel(e.target.value)} placeholder="Titel" className="w-full text-sm px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1A535C]/20" />
-            <button onClick={handleSendTekening} disabled={isSending} className="w-full text-sm font-medium py-2 rounded-lg bg-[#1A535C] text-white hover:bg-[#164850] disabled:opacity-40 transition-colors">Delen</button>
+            <input type="text" value={tekeningTitel} onChange={(e) => setTekeningTitel(e.target.value)} placeholder="Titel" className="w-full text-sm px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-petrol/20" />
+            <button onClick={handleSendTekening} disabled={isSending} className="w-full text-sm font-medium py-2 rounded-lg bg-petrol text-white hover:bg-[#164850] disabled:opacity-40 transition-colors">Delen</button>
           </div>
         </div>
       )}
@@ -576,7 +576,7 @@ function InputBar({
               onClick={btn.onClick}
               disabled={isSending}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all disabled:opacity-40"
-              style={{ backgroundColor: 'hsl(var(--background))', color: '#6B6B66', border: '0.5px solid #EBEBEB' }}
+              style={{ backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--muted-foreground))', border: '0.5px solid #EBEBEB' }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F0EEEA'; e.currentTarget.style.color = '#1A1A1A' }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#F8F7F5'; e.currentTarget.style.color = '#6B6B66' }}
             >
@@ -595,7 +595,7 @@ function InputBar({
         </button>
       </div>
 
-      {/* Notificeer klant — prominent toggle */}
+      {/* Notificeer klant · prominent toggle */}
       <button
         onClick={() => setNotificeerKlant(!notificeerKlant)}
         className="flex items-center gap-2.5 mt-3 w-full px-3 py-2.5 rounded-lg transition-all cursor-pointer select-none"
@@ -618,7 +618,7 @@ function InputBar({
             Klant notificeren per email
           </span>
           {notificeerKlant && (
-            <span className="text-[10px] ml-1.5" style={{ color: '#9B9B95' }}>
+            <span className="text-[10px] ml-1.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
               Klant ontvangt een email bij verzending
             </span>
           )}
@@ -729,10 +729,10 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
     }
     setup()
 
-    // Polling fallback — elke 10s data verversen
+    // Polling fallback · elke 10s data verversen
     const poll = setInterval(() => fetchItems(), 10_000)
 
-    // Visibility change — data verversen bij terugkeer
+    // Visibility change · data verversen bij terugkeer
     function handleVisibility() {
       if (document.visibilityState === 'visible') fetchItems()
     }
@@ -764,7 +764,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
     <div className="rounded-xl shadow-[0_1px_3px_rgba(130,100,60,0.04)] overflow-hidden">
       {/* Header bar */}
       <div
-        className={`flex items-center justify-between select-none group bg-[#1A535C] px-5 py-4 ${portaal ? `cursor-pointer ${!collapsed ? 'rounded-t-xl' : 'rounded-xl'}` : 'cursor-default rounded-xl'}`}
+        className={`flex items-center justify-between select-none group bg-petrol px-5 py-4 ${portaal ? `cursor-pointer ${!collapsed ? 'rounded-t-xl' : 'rounded-xl'}` : 'cursor-default rounded-xl'}`}
         onClick={portaal ? toggleCollapsed : undefined}
       >
         <div className="flex items-center gap-2.5">
@@ -774,14 +774,14 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
           )}
           <h3 className="text-[12px] font-semibold text-white uppercase tracking-widest">Portaal</h3>
           <span className="text-[11px] font-medium text-white/60">
-            {portaal ? (isActief ? 'Actief' : 'Verlopen') : 'Niet actief'}<span className="text-[#F15025]">.</span>
+            {portaal ? (isActief ? 'Actief' : 'Verlopen') : 'Niet actief'}<span className="text-flame">.</span>
           </span>
           {portaal && sharedCount > 0 && (
             <span className="text-[11px] text-white/40 font-mono">{sharedCount} gedeeld</span>
           )}
           {portaal && hasKlantReactie && (
-            <span className="flex items-center gap-1 text-[11px] font-medium text-[#F15025]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] animate-pulse" />
+            <span className="flex items-center gap-1 text-[11px] font-medium text-flame">
+              <span className="w-1.5 h-1.5 rounded-full bg-flame animate-pulse" />
               Reactie
             </span>
           )}
@@ -804,7 +804,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
         )}
       </div>
 
-      {/* Content — alleen bij actief portaal */}
+      {/* Content · alleen bij actief portaal */}
       {portaal && !collapsed && (
         <div className="bg-background rounded-b-xl px-5 py-4">
           <Feed items={items} feedEndRef={feedEndRef} />

@@ -115,7 +115,7 @@ export function AbonnementTab() {
               <p className="text-[12px]" style={{ color: '#1A535C', opacity: 0.6 }}>Je hebt volledige toegang tot alle features.</p>
             </div>
           </div>
-          <Button onClick={handleManage} disabled={isLoading} variant="outline" className="border-[#1A535C]/20 text-[#1A535C]">
+          <Button onClick={handleManage} disabled={isLoading} variant="outline" className="border-petrol/20 text-petrol">
             {loadingAction === 'portal' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
             Beheren
           </Button>

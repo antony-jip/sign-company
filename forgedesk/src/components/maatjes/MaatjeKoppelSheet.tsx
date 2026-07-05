@@ -114,27 +114,27 @@ export function MaatjeKoppelSheet({ aantal, onKoppel, onSluiten }: MaatjeKoppelS
           className="mx-auto -mt-1 mb-3 h-1.5 w-10 flex-shrink-0 cursor-grab touch-none rounded-full bg-[#E0DDD8] sm:hidden"
         />
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[16px] font-bold text-[#1A1A1A]">
+          <h2 className="text-[16px] font-bold text-foreground">
             Koppel {aantal} maatje{aantal > 1 ? 's' : ''}
           </h2>
-          <button type="button" onClick={onSluiten} aria-label="Sluiten" className="text-[#9B9B95] hover:text-[#1A1A1A]">
+          <button type="button" onClick={onSluiten} aria-label="Sluiten" className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" strokeWidth={1.75} />
           </button>
         </div>
 
         <div className="relative mb-3">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9B9B95]" strokeWidth={1.75} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.75} />
           <input
             value={zoek}
             onChange={(e) => setZoek(e.target.value)}
             placeholder="Zoek een project..."
-            className="w-full rounded-lg bg-[#F8F7F5] py-2.5 pl-9 pr-3 text-[14px] text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:ring-2 focus:ring-[#1A535C]"
+            className="w-full rounded-lg bg-[#F8F7F5] py-2.5 pl-9 pr-3 text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-petrol"
           />
         </div>
 
         <div className="-mx-1 flex-1 overflow-y-auto">
           {gefilterd.length === 0 ? (
-            <p className="py-8 text-center text-[13px] text-[#9B9B95]">Geen projecten gevonden.</p>
+            <p className="py-8 text-center text-[13px] text-muted-foreground">Geen projecten gevonden.</p>
           ) : (
             gefilterd.map((p) => (
               <button
@@ -145,14 +145,14 @@ export function MaatjeKoppelSheet({ aantal, onKoppel, onSluiten }: MaatjeKoppelS
                 className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-[#F8F7F5] disabled:opacity-50"
               >
                 <div className="min-w-0">
-                  <div className="truncate text-[14px] font-semibold text-[#1A1A1A]">{p.naam}</div>
-                  <div className="truncate text-[12px] text-[#6B6B66]">
+                  <div className="truncate text-[14px] font-semibold text-foreground">{p.naam}</div>
+                  <div className="truncate text-[12px] text-muted-foreground">
                     {p.project_nummer && <span className="font-mono">{p.project_nummer}</span>}
                     {p.project_nummer && p.klant_naam ? ' · ' : ''}
                     {p.klant_naam}
                   </div>
                 </div>
-                {bezigId === p.id && <span className="text-[12px] text-[#9B9B95]">Koppelen...</span>}
+                {bezigId === p.id && <span className="text-[12px] text-muted-foreground">Koppelen...</span>}
               </button>
             ))
           )}

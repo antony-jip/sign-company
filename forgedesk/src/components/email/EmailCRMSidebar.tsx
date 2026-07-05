@@ -142,7 +142,7 @@ export const CRMSidebar = memo(function CRMSidebar({
         k.email?.toLowerCase() === klantForm.email.toLowerCase() ||
         (klantForm.bedrijfsnaam && k.bedrijfsnaam?.toLowerCase() === klantForm.bedrijfsnaam.toLowerCase())
       )
-      if (dupe) { toast('Klant bestaat al — gekoppeld', { icon: '🔗' }); setLinkedKlant(dupe); setActivePanel('none'); return }
+      if (dupe) { toast('Klant bestaat al · gekoppeld', { icon: '🔗' }); setLinkedKlant(dupe); setActivePanel('none'); return }
       const emailDomain = klantForm.email.match(/@(.+)/)?.[1]?.toLowerCase()
       const newKlant = await createKlant({
         bedrijfsnaam: klantForm.bedrijfsnaam, contactpersoon: klantForm.contactpersoon,
@@ -287,7 +287,7 @@ export const CRMSidebar = memo(function CRMSidebar({
               <input
                 value={klantForm.bedrijfsnaam}
                 onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
-                className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
+                className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-petrol/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
                 placeholder="Zoek klant op naam of email..."
                 autoFocus
               />
@@ -316,7 +316,7 @@ export const CRMSidebar = memo(function CRMSidebar({
             {/* Switch to create mode */}
             <button
               onClick={() => setKlantSearchMode(false)}
-              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] border border-dashed border-border text-[12px] text-muted-foreground hover:border-[#1A535C]/30 hover:text-[#1A535C] transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] border border-dashed border-border text-[12px] text-muted-foreground hover:border-petrol/30 hover:text-petrol transition-colors"
             >
               <Plus className="h-3.5 w-3.5" />
               Nieuw contact aanmaken
@@ -341,7 +341,7 @@ export const CRMSidebar = memo(function CRMSidebar({
               <div key={key} className="relative">
                 <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/80" />
                 <input value={klantForm[key]} onChange={e => setKlantForm(f => ({ ...f, [key]: e.target.value }))}
-                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
+                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-petrol/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
                   placeholder={placeholder} />
               </div>
             ))}
@@ -361,10 +361,10 @@ export const CRMSidebar = memo(function CRMSidebar({
               </div>
             )}
             <input value={offerteForm.titel} onChange={e => setOfferteForm(f => ({ ...f, titel: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-petrol/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
               placeholder="Titel *" />
             <textarea value={offerteForm.notities} onChange={e => setOfferteForm(f => ({ ...f, notities: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-petrol/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
               placeholder="Notities" />
           </>
         ),
@@ -382,10 +382,10 @@ export const CRMSidebar = memo(function CRMSidebar({
               </div>
             )}
             <input value={projectForm.naam} onChange={e => setProjectForm(f => ({ ...f, naam: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-petrol/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
               placeholder="Projectnaam *" />
             <textarea value={projectForm.beschrijving} onChange={e => setProjectForm(f => ({ ...f, beschrijving: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-petrol/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
               placeholder="Beschrijving" />
           </>
         ),
@@ -403,10 +403,10 @@ export const CRMSidebar = memo(function CRMSidebar({
               </div>
             )}
             <input value={taakForm.titel} onChange={e => setTaakForm(f => ({ ...f, titel: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-petrol/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80"
               placeholder="Taak titel *" />
             <textarea value={taakForm.beschrijving} onChange={e => setTaakForm(f => ({ ...f, beschrijving: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-[#1A535C]/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-petrol/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
               placeholder="Beschrijving" />
           </>
         ),
@@ -518,7 +518,7 @@ export const CRMSidebar = memo(function CRMSidebar({
           </button>
         ) : activePanel !== 'klant' ? (
           <button onClick={() => openPanel('klant')}
-            className="w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-dashed border-border text-[12px] font-medium text-muted-foreground hover:border-[#1A535C]/20 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-all duration-200">
+            className="w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-dashed border-border text-[12px] font-medium text-muted-foreground hover:border-petrol/20 hover:text-petrol hover:bg-petrol/[0.03] transition-all duration-200">
             <UserPlus className="h-3.5 w-3.5" />
             Contact koppelen
           </button>

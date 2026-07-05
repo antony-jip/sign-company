@@ -498,7 +498,7 @@ export function MaatjeEditor({
     <div className="fixed inset-0 z-[60] flex flex-col bg-[#0E2025] animate-in fade-in-0 duration-200 sm:items-center sm:justify-center sm:bg-black/55 sm:p-6 sm:backdrop-blur-sm">
       <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#0E2025] sm:h-auto sm:max-h-[92vh] sm:max-w-5xl sm:rounded-2xl sm:shadow-[0_30px_90px_rgba(0,0,0,0.55)] sm:animate-in sm:zoom-in-95 sm:duration-200">
       {/* Topbalk */}
-      <div className="flex items-center justify-between gap-3 bg-[#1A535C] px-4 pt-3 pb-2">
+      <div className="flex items-center justify-between gap-3 bg-petrol px-4 pt-3 pb-2">
         <button type="button" onClick={onAnnuleren} className="text-[13px] font-medium text-white/80 hover:text-white">
           Annuleren
         </button>
@@ -518,7 +518,7 @@ export function MaatjeEditor({
             type="button"
             onClick={() => voltooi('bewaren')}
             disabled={bezig}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#F15025] px-3.5 py-1.5 text-[13px] font-semibold text-white disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-flame px-3.5 py-1.5 text-[13px] font-semibold text-white disabled:opacity-50"
           >
             <Check className="h-4 w-4" strokeWidth={2.25} />
             {bezig ? '...' : 'Bewaren'}
@@ -526,8 +526,8 @@ export function MaatjeEditor({
         </div>
       </div>
 
-      {/* Naam-veld (optioneel) — eigen rij, duidelijk leesbaar */}
-      <div className="bg-[#1A535C] px-4 pb-3">
+      {/* Naam-veld (optioneel) · eigen rij, duidelijk leesbaar */}
+      <div className="bg-petrol px-4 pb-3">
         <div className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2">
           <Tag className="h-4 w-4 flex-shrink-0 text-white/55" strokeWidth={1.75} />
           <input
@@ -585,7 +585,7 @@ export function MaatjeEditor({
         )}
       </div>
 
-      {/* Cm- / tekst-popup — bovenin zodat het toetsenbord het niet bedekt */}
+      {/* Cm- / tekst-popup · bovenin zodat het toetsenbord het niet bedekt */}
       {bewerk && (
         <>
           <div className="absolute inset-0 z-20 bg-black/25 animate-in fade-in-0 duration-150" onClick={sluitBewerkViaAchtergrond} />
@@ -599,11 +599,11 @@ export function MaatjeEditor({
                 inputMode={bewerk.soort === 'cm' ? 'decimal' : 'text'}
                 placeholder={bewerk.soort === 'cm' ? 'Maat in cm' : 'Tekst'}
                 className={cn(
-                  'flex-1 rounded-lg bg-[#F8F7F5] px-3 py-2 text-[15px] text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:ring-2 focus:ring-[#1A535C]',
+                  'flex-1 rounded-lg bg-[#F8F7F5] px-3 py-2 text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-petrol',
                   bewerk.soort === 'cm' && 'font-mono',
                 )}
               />
-              <button type="button" onClick={bevestigBewerk} className="rounded-lg bg-[#1A535C] px-4 py-2 text-[13px] font-semibold text-white">
+              <button type="button" onClick={bevestigBewerk} className="rounded-lg bg-petrol px-4 py-2 text-[13px] font-semibold text-white">
                 Klaar
               </button>
             </div>
@@ -631,7 +631,7 @@ export function MaatjeEditor({
               <button
                 type="button"
                 onClick={verwijderGeselecteerde}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#F15025]/15 px-3 py-1.5 text-[12px] font-medium text-[#F8A38C] hover:bg-[#F15025]/25"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-flame/15 px-3 py-1.5 text-[12px] font-medium text-[#F8A38C] hover:bg-flame/25"
               >
                 <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
                 Verwijderen
@@ -651,7 +651,7 @@ export function MaatjeEditor({
                 aria-label={label}
                 className={cn(
                   'flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-150 active:scale-90',
-                  tool === key ? 'bg-[#F15025] text-white shadow-[0_2px_10px_rgba(241,80,37,0.4)]' : 'text-white/70 hover:bg-white/10',
+                  tool === key ? 'bg-flame text-white shadow-[0_2px_10px_rgba(241,80,37,0.4)]' : 'text-white/70 hover:bg-white/10',
                 )}
               >
                 <Icon className="h-5 w-5" strokeWidth={1.75} />

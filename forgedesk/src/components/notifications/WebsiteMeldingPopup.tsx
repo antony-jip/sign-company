@@ -110,7 +110,7 @@ export function WebsiteMeldingPopup() {
   return (
     <div className="fixed bottom-5 right-5 z-[110] animate-in slide-in-from-bottom-3 fade-in duration-300">
       <div className="w-[360px] max-w-[calc(100vw-40px)] overflow-hidden rounded-xl border border-border bg-background shadow-2xl">
-        <div className="flex items-center gap-2 bg-[#1A535C] px-4 py-2.5 text-white">
+        <div className="flex items-center gap-2 bg-petrol px-4 py-2.5 text-white">
           <MessageSquare className="h-4 w-4" />
           <span className="text-[12px] font-semibold tracking-wide">{melding.kop}</span>
           <button
@@ -125,7 +125,7 @@ export function WebsiteMeldingPopup() {
         <button type="button" onClick={open} className="block w-full px-4 py-3 text-left transition-colors hover:bg-muted">
           <p className="text-[13px] font-semibold text-foreground">{melding.titel}</p>
           <p className="mt-0.5 text-[13px] text-muted-foreground line-clamp-3 whitespace-pre-wrap">{melding.tekst}</p>
-          <p className="mt-2 text-[12px] font-semibold text-[#F15025]">Open in Aanvragen</p>
+          <p className="mt-2 text-[12px] font-semibold text-flame">Open in Aanvragen</p>
         </button>
       </div>
     </div>

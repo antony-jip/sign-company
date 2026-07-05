@@ -18,7 +18,7 @@ import { hapticLight } from '@/utils/haptic'
 
 interface Props {
   email: Email | null
-  // Project flow blijft via bestaande Dialog — callback opent die centered modal
+  // Project flow blijft via bestaande Dialog · callback opent die centered modal
   onOpenProjectDialog: () => void
 }
 
@@ -40,7 +40,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
     ? senderDomain.split('.')[0].charAt(0).toUpperCase() + senderDomain.split('.')[0].slice(1)
     : ''
 
-  // Form state — auto-filled wanneer view opent
+  // Form state · auto-filled wanneer view opent
   const [klantForm, setKlantForm] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '' })
   const [klantStep, setKlantStep] = useState<'search' | 'add-to-existing' | 'create-new'>('search')
   const [klantSearch, setKlantSearch] = useState('')
@@ -193,7 +193,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
     }
   }, [taakForm, user, medewerkers])
 
-  const inputCls = "w-full px-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-[8px] outline-none border border-border focus:border-[#1A535C] transition-colors duration-150 placeholder:text-muted-foreground/80"
+  const inputCls = "w-full px-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-[8px] outline-none border border-border focus:border-petrol transition-colors duration-150 placeholder:text-muted-foreground/80"
   const labelCls = "text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground block mb-1"
 
   // Breedte morpht per view voor smooth animation
@@ -201,13 +201,13 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
 
   return (
     <div ref={containerRef} className="relative flex items-center gap-1.5">
-      {/* Aanmaken vanuit deze mail — subtiele icon-buttons met tooltip-label */}
+      {/* Aanmaken vanuit deze mail · subtiele icon-buttons met tooltip-label */}
       <TooltipProvider delayDuration={200}>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               onClick={() => { hapticLight(); setView('klant'); setOpen(true) }}
-              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-flame hover:bg-flame/[0.06] transition-colors duration-150"
               aria-label="Klant aanmaken"
             >
               <UserPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -219,7 +219,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
           <TooltipTrigger asChild>
             <button
               onClick={() => { hapticLight(); onOpenProjectDialog() }}
-              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-flame hover:bg-flame/[0.06] transition-colors duration-150"
               aria-label="Project aanmaken"
             >
               <FolderPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -231,7 +231,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
           <TooltipTrigger asChild>
             <button
               onClick={() => { hapticLight(); setView('taak'); setOpen(true) }}
-              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-flame hover:bg-flame/[0.06] transition-colors duration-150"
               aria-label="Taak aanmaken"
             >
               <ListPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -243,7 +243,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
           <TooltipTrigger asChild>
             <button
               onClick={() => { hapticLight(); setView('koppel'); setOpen(true) }}
-              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-colors duration-150"
+              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-flame hover:bg-flame/[0.06] transition-colors duration-150"
               aria-label="Aan project koppelen"
             >
               <Link2 className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -304,7 +304,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                             <p className="text-[12px] font-semibold text-foreground truncate">{displayName}</p>
                             <p className="text-[11px] text-muted-foreground truncate">{k.email || k.contactpersoon}</p>
                           </div>
-                          <UserPlus className="h-3.5 w-3.5 text-[#1A535C] flex-shrink-0" />
+                          <UserPlus className="h-3.5 w-3.5 text-petrol flex-shrink-0" />
                         </button>
                       )
                     }) : (
@@ -315,7 +315,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                   <button
                     type="button"
                     onClick={() => setKlantStep('create-new')}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] text-[12px] font-medium text-petrol hover:bg-petrol/[0.06] transition-colors duration-150"
                   >
                     <UserPlus className="h-3 w-3" />
                     Nieuwe klant aanmaken
@@ -323,9 +323,9 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                 </div>
               ) : klantStep === 'add-to-existing' && addToKlant ? (
                 <div className="space-y-2.5">
-                  <div className="flex items-center gap-2 px-2.5 py-2 bg-[#1A535C]/[0.06] rounded-[8px]">
-                    <Building2 className="h-3.5 w-3.5 text-[#1A535C] flex-shrink-0" />
-                    <span className="text-[12px] font-semibold text-[#1A535C] truncate flex-1">{addToKlant.bedrijfsnaam || addToKlant.contactpersoon}</span>
+                  <div className="flex items-center gap-2 px-2.5 py-2 bg-petrol/[0.06] rounded-[8px]">
+                    <Building2 className="h-3.5 w-3.5 text-petrol flex-shrink-0" />
+                    <span className="text-[12px] font-semibold text-petrol truncate flex-1">{addToKlant.bedrijfsnaam || addToKlant.contactpersoon}</span>
                   </div>
                   <div>
                     <label className={labelCls}>Naam contactpersoon *</label>
@@ -346,7 +346,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                     type="button"
                     onClick={handleAddContactToExisting}
                     disabled={saving}
-                    className="tap-press w-full h-9 rounded-[10px] bg-[#1A535C] text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
+                    className="tap-press w-full h-9 rounded-[10px] bg-petrol text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
                   >
                     {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                     {saving ? 'Toevoegen…' : 'Contact toevoegen'}
@@ -378,7 +378,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                     type="button"
                     onClick={handleSaveKlant}
                     disabled={saving}
-                    className="tap-press w-full h-9 rounded-[10px] bg-[#1A535C] text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
+                    className="tap-press w-full h-9 rounded-[10px] bg-petrol text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
                   >
                     {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                     {saving ? 'Aanmaken…' : 'Klant aanmaken'}
@@ -418,7 +418,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                           onClick={() => setTaakForm(f => ({ ...f, deadline: val }))}
                           className={cn(
                             'flex-1 py-1.5 rounded-[8px] text-[11px] font-medium transition-all',
-                            active ? 'bg-[#1A535C]/[0.10] text-[#1A535C]' : 'bg-background text-foreground/70 hover:bg-muted',
+                            active ? 'bg-petrol/[0.10] text-petrol' : 'bg-background text-foreground/70 hover:bg-muted',
                           )}
                         >{label}</button>
                       )
@@ -438,7 +438,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                             onClick={() => setTaakForm(f => ({ ...f, toegewezen_aan: selected ? '' : mw.naam }))}
                             className={cn(
                               'inline-flex items-center gap-1 px-2 py-1 rounded-[8px] text-[11px] font-medium border transition-all',
-                              selected ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]' : 'border-transparent bg-background text-foreground/70 hover:bg-muted',
+                              selected ? 'border-petrol bg-petrol/[0.08] text-petrol' : 'border-transparent bg-background text-foreground/70 hover:bg-muted',
                             )}
                           >
                             {mw.naam.split(' ')[0]}
@@ -452,7 +452,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                   type="button"
                   onClick={handleSaveTaak}
                   disabled={saving}
-                  className="tap-press w-full h-9 rounded-[10px] bg-[#1A535C] text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
+                  className="tap-press w-full h-9 rounded-[10px] bg-petrol text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
                 >
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                   {saving ? 'Aanmaken…' : 'Taak aanmaken'}

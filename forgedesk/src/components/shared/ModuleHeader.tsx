@@ -35,11 +35,11 @@ export function ModuleHeader({ module, icon: Icon, title, subtitle, actions }: M
           <Icon className="h-4 w-4" strokeWidth={1.75} style={{ color: iconColor }} />
         </div>
         <div className="min-w-0">
-          <h1 className="font-bold tracking-[-0.022em] truncate text-[22px] md:text-title leading-[1.1]" style={{ color: '#191919' }}>
+          <h1 className="font-bold tracking-[-0.022em] truncate text-[22px] md:text-title leading-[1.1] text-foreground">
             {title}
           </h1>
           {subtitle && (
-            <p className="text-caption mt-1" style={{ color: '#5A5A55' }}>{subtitle}</p>
+            <p className="text-caption mt-1 text-muted-foreground">{subtitle}</p>
           )}
         </div>
       </div>

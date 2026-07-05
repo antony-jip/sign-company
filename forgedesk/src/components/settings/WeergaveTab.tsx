@@ -33,7 +33,7 @@ import {
 } from './settingsShared'
 
 const ALL_SIDEBAR_ITEMS = [
-  // Dashboard staat alleen achter het doen.-logo, niet als nav-item — niet toggable
+  // Dashboard staat alleen achter het doen.-logo, niet als nav-item · niet toggable
   { label: 'Projecten', section: 'Werk' },
   { label: 'Offertes', section: 'Werk' },
   { label: 'Facturen', section: 'Werk' },
@@ -433,7 +433,7 @@ export function WeergaveTab() {
 
     {subTab === 'voorkeuren' && (
     <>
-    {/* Eén kaart met alle aan/uit-toggles — UI-zichtbaarheid */}
+    {/* Eén kaart met alle aan/uit-toggles · UI-zichtbaarheid */}
     <Card className="doen-slate-surface border-0 shadow-none rounded-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -516,7 +516,7 @@ export function WeergaveTab() {
       </CardContent>
     </Card>
 
-    {/* Tweede kaart: details van snelkoppelingen — alleen als aan */}
+    {/* Tweede kaart: details van snelkoppelingen · alleen als aan */}
     {(settings.quick_actions_enabled ?? true) && (
     <Card className="mt-4 doen-slate-surface border-0 shadow-none rounded-2xl">
       <CardHeader>
@@ -555,15 +555,15 @@ export function WeergaveTab() {
                       className={cn(
                         'text-left rounded-lg border p-3 transition-colors',
                         isActive
-                          ? 'border-[#1A535C] bg-[#1A535C]/[0.04]'
+                          ? 'border-petrol bg-petrol/[0.04]'
                           : 'border-border hover:bg-background',
                       )}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={cn('text-sm font-medium', isActive ? 'text-[#1A535C]' : 'text-foreground')}>
+                        <span className={cn('text-sm font-medium', isActive ? 'text-petrol' : 'text-foreground')}>
                           {p.label}
                         </span>
-                        {isActive && <CheckCircle2 className="h-4 w-4 text-[#1A535C]" />}
+                        {isActive && <CheckCircle2 className="h-4 w-4 text-petrol" />}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{p.desc}</p>
                     </button>
@@ -636,7 +636,7 @@ export function WeergaveTab() {
         {/* Aan-count summary */}
         <div className="flex items-baseline justify-between pb-3 border-b border-[rgba(26,83,92,0.1)]">
           <span className="text-[13px] text-foreground/70">
-            <span className="font-mono font-bold text-[#1A535C] tabular-nums">{sidebarItems.length}</span>
+            <span className="font-mono font-bold text-petrol tabular-nums">{sidebarItems.length}</span>
             <span className="text-muted-foreground/70"> / </span>
             <span className="font-mono tabular-nums text-muted-foreground">{ALL_SIDEBAR_ITEMS.length}</span>
             <span className="ml-1.5">items zichtbaar</span>
@@ -645,14 +645,14 @@ export function WeergaveTab() {
             <button
               type="button"
               onClick={handleResetSidebar}
-              className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3D44] hover:underline"
+              className="text-[12px] font-medium text-petrol hover:text-[#0F3D44] hover:underline"
             >
               Alles aanzetten
             </button>
           )}
         </div>
 
-        {/* Groepeer per sectie — chip-style */}
+        {/* Groepeer per sectie · chip-style */}
         {['Werk', 'Planning', 'Communicatie', 'Beheer'].map((section) => {
           const sectionItems = ALL_SIDEBAR_ITEMS.filter((i) => i.section === section)
           if (sectionItems.length === 0) return null
@@ -698,7 +698,7 @@ export function WeergaveTab() {
           )
         })}
 
-        {/* Instellingen (altijd aan) — kleine fixed-footer */}
+        {/* Instellingen (altijd aan) · kleine fixed-footer */}
         <div className="flex items-center gap-2 pt-2 border-t border-[rgba(26,83,92,0.08)]">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium bg-[rgba(26,83,92,0.05)] text-foreground/70 border border-[rgba(26,83,92,0.08)]">
             <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-muted-foreground flex-shrink-0" />
@@ -724,14 +724,14 @@ export function WeergaveTab() {
         <div className="flex items-center justify-between pt-2 border-t border-[rgba(26,83,92,0.08)]">
           <span className="text-[12px] text-muted-foreground">
             {hasUnsavedNavChanges
-              ? <span className="text-[#F15025] font-semibold">Onopgeslagen wijzigingen</span>
+              ? <span className="text-flame font-semibold">Onopgeslagen wijzigingen</span>
               : 'Alle wijzigingen opgeslagen'}
           </span>
           <button
             type="button"
             onClick={handleSaveSidebar}
             disabled={isSavingSidebar || !hasUnsavedNavChanges}
-            className="inline-flex items-center gap-2 bg-[#F15025] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:bg-[#9B9B95] disabled:shadow-none"
+            className="inline-flex items-center gap-2 bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:bg-[#9B9B95] disabled:shadow-none"
           >
             {isSavingSidebar
               ? <>Opslaan...</>

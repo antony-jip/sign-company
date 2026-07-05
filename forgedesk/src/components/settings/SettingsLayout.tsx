@@ -204,7 +204,7 @@ export function SettingsLayout() {
     <div className="space-y-6">
       <div className="flex items-baseline gap-4 min-w-0">
         <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
-          Instellingen<span className="text-[#F15025]">.</span>
+          Instellingen<span className="text-flame">.</span>
         </h1>
         <span
           className="text-[14px] text-foreground/70 hidden sm:inline truncate"
@@ -265,10 +265,10 @@ export function SettingsLayout() {
                     {isActive && (
                       <span
                         aria-hidden
-                        className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2.5px] rounded-r-full bg-[#F15025]"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2.5px] rounded-r-full bg-flame"
                       />
                     )}
-                    <Icon className={cn('w-4 h-4 transition-colors', isActive ? 'text-[#1A535C]' : 'text-muted-foreground group-hover:text-foreground/70')} />
+                    <Icon className={cn('w-4 h-4 transition-colors', isActive ? 'text-petrol' : 'text-muted-foreground group-hover:text-foreground/70')} />
                     <span className="text-[13px] truncate">{section.label}</span>
                   </button>
                 )
@@ -305,7 +305,7 @@ export function SettingsLayout() {
   )
 }
 
-// ─── DocumentenTab (inline — small enough to keep here) ───
+// ─── DocumentenTab (inline · small enough to keep here) ───
 
 const DOCUMENTEN_TABS: SubTab[] = [
   { id: 'offertes', label: 'Offertes', icon: FileText },
@@ -548,7 +548,7 @@ function DocumentenTab() {
                   <Label htmlFor="creditnota-prefix">Creditnota prefix</Label>
                   <Input id="creditnota-prefix" value={creditnotaPrefix} onChange={(e) => setCreditnotaPrefix(e.target.value.toUpperCase())} placeholder="CN" maxLength={5} disabled={creditnotaDoornummeren} />
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                    {creditnotaDoornummeren ? 'Niet gebruikt — creditnota volgt de factuurreeks.' : `Voorbeeld: ${creditnotaPrefix}-2026-0001`}
+                    {creditnotaDoornummeren ? 'Niet gebruikt · creditnota volgt de factuurreeks.' : `Voorbeeld: ${creditnotaPrefix}-2026-0001`}
                   </p>
                   <div className="flex items-center justify-between gap-3 pt-1">
                     <Label htmlFor="creditnota-doornummeren" className="text-[13px] font-normal text-muted-foreground">

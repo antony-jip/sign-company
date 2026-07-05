@@ -48,7 +48,7 @@ export function PortaalFeedItemFactuur({
 
   // Klantportaal draait token-based (geen Supabase auth), dus de RLS-policy
   // op storage.buckets.facturen blokkeert directe downloads. Bewust on-the-fly
-  // gegenereerd via /api/factuur-portaal — zelfde flow voor oude en nieuwe
+  // gegenereerd via /api/factuur-portaal · zelfde flow voor oude en nieuwe
   // facturen, geen Storage-fallback nodig hier.
   const handleDownloadPDF = useCallback(async () => {
     const factuurId = item.factuur_id
@@ -130,7 +130,7 @@ export function PortaalFeedItemFactuur({
           <div className="flex items-start justify-between gap-3">
             <p
               className="font-semibold"
-              style={{ fontSize: 15, color: '#191919' }}
+              style={{ fontSize: 15, color: 'hsl(var(--foreground))' }}
             >
               {item.titel}
             </p>
@@ -140,14 +140,14 @@ export function PortaalFeedItemFactuur({
           {item.bedrag != null && (
             <p
               className="mt-2 text-lg font-medium"
-              style={{ color: '#191919', fontFamily: "'DM Mono', monospace" }}
+              style={{ color: 'hsl(var(--foreground))', fontFamily: "'DM Mono', monospace" }}
             >
               {formatBedrag(item.bedrag)}
             </p>
           )}
 
           {item.omschrijving && (
-            <p className="mt-1 text-sm" style={{ color: '#5A5A55' }}>
+            <p className="mt-1 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
               {item.omschrijving}
             </p>
           )}
@@ -168,7 +168,7 @@ export function PortaalFeedItemFactuur({
               onClick={handleDownloadPDF}
               disabled={isDownloading}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
-              style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
+              style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
             >
               {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
               PDF
@@ -177,7 +177,7 @@ export function PortaalFeedItemFactuur({
           <button
             onClick={onVragenStellen}
             className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
-            style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
+            style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
           >
             Vragen stellen
           </button>

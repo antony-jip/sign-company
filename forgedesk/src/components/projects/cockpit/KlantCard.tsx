@@ -47,7 +47,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
     ? `${klant.adres}${klant.postcode || klant.stad ? `, ${[klant.postcode, klant.stad].filter(Boolean).join(' ')}` : ''}`
     : null
   const mapsUrl = adresLabel ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresLabel)}` : null
-  // Per-klant kleur — dezelfde tint als in de lijstweergaven, zodat een klant
+  // Per-klant kleur · dezelfde tint als in de lijstweergaven, zodat een klant
   // overal in de app dezelfde identiteitskleur heeft.
   const klantKleur = avatarTint(klant.bedrijfsnaam || klant.contactpersoon || '').fg
 
@@ -152,7 +152,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
       {/* Header */}
       <div className="flex items-baseline justify-between mb-4">
         <h3 className="font-heading text-[15px] font-bold text-foreground">
-          Klant<span className="text-[#F15025]">.</span>
+          Klant<span className="text-flame">.</span>
         </h3>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -191,7 +191,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
         <div className="min-w-0 flex-1">
           <Link
             to={`/klanten/${klant.id}`}
-            className="text-[16px] font-bold text-foreground hover:text-[#1A535C] transition-colors truncate block leading-tight"
+            className="text-[16px] font-bold text-foreground hover:text-petrol transition-colors truncate block leading-tight"
           >
             {klant.bedrijfsnaam || klant.contactpersoon}
           </Link>
@@ -269,27 +269,27 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               onChange={(e) => setEditNaam(e.target.value)}
               placeholder="Naam"
               autoFocus
-              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-petrol focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
             />
             <input
               value={editEmail}
               onChange={(e) => setEditEmail(e.target.value)}
               placeholder="Email"
               type="email"
-              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-petrol focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
             />
             <div className="flex gap-1.5">
               <input
                 value={editTelefoon}
                 onChange={(e) => setEditTelefoon(e.target.value)}
                 placeholder="Telefoon"
-                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-petrol focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
               />
               <input
                 value={editFunctie}
                 onChange={(e) => setEditFunctie(e.target.value)}
                 placeholder="Functie"
-                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-petrol focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
               />
             </div>
             <div className="flex items-center justify-end gap-3 pt-1">
@@ -302,7 +302,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               <button
                 disabled={!editNaam.trim() || saving}
                 onClick={handleSaveCp}
-                className="text-[11px] font-semibold text-white bg-[#F15025] hover:bg-[#D94520] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
+                className="text-[11px] font-semibold text-white bg-flame hover:bg-[#D94520] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
               >
                 {saving ? 'Bezig…' : 'Opslaan'}
               </button>
@@ -310,17 +310,17 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
           </div>
         )}
 
-        {/* Mail-button — petrol full-width met duotone icon */}
+        {/* Mail-button · petrol full-width met duotone icon */}
         <button
           onClick={handleMail}
           disabled={!displayEmail}
-          className="group w-full mt-3 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#1A535C] text-white text-[13px] font-semibold shadow-[0_2px_8px_rgba(20,62,71,0.18)] hover:bg-[#0F3D44] hover:shadow-[0_4px_16px_rgba(20,62,71,0.28)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          className="group w-full mt-3 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-petrol text-white text-[13px] font-semibold shadow-[0_2px_8px_rgba(20,62,71,0.18)] hover:bg-[#0F3D44] hover:shadow-[0_4px_16px_rgba(20,62,71,0.28)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         >
           <Mail className="h-4 w-4" strokeWidth={1.75} />
           Mail contactpersoon
         </button>
 
-        {/* Bewerk-link — toont alleen als een cp geselecteerd is */}
+        {/* Bewerk-link · toont alleen als een cp geselecteerd is */}
         {projectCp && onContactpersoonEdit && !editCpOpen && (
           <button
             onClick={openEditCp}
@@ -331,7 +331,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
           </button>
         )}
 
-        {/* Nieuw contactpersoon — collapsed default */}
+        {/* Nieuw contactpersoon · collapsed default */}
         {!showNieuwCp ? (
           <button
             onClick={() => setShowNieuwCp(true)}
@@ -347,13 +347,13 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               onChange={(e) => setNieuwCpNaam(e.target.value)}
               placeholder="Naam"
               autoFocus
-              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-petrol focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
             />
             <input
               value={nieuwCpEmail}
               onChange={(e) => setNieuwCpEmail(e.target.value)}
               placeholder="Email"
-              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-petrol focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
             />
             <div className="flex gap-1.5">
               <input
@@ -379,7 +379,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               <button
                 disabled={!nieuwCpNaam.trim() || saving}
                 onClick={handleAddCp}
-                className="text-[11px] font-semibold text-white bg-[#1A535C] hover:bg-[#237580] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
+                className="text-[11px] font-semibold text-white bg-petrol hover:bg-[#237580] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
               >
                 {saving ? 'Bezig…' : 'Toevoegen'}
               </button>

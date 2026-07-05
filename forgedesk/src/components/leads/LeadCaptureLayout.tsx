@@ -106,7 +106,7 @@ export function LeadCaptureLayout() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground font-display">Lead Capture</h1>
-            <p className="text-sm text-muted-foreground"><span className="font-mono">{formulieren.length}</span> formulieren — <span className="font-mono">{nieuweLeads}</span> nieuwe leads</p>
+            <p className="text-sm text-muted-foreground"><span className="font-mono">{formulieren.length}</span> formulieren · <span className="font-mono">{nieuweLeads}</span> nieuwe leads</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -123,8 +123,8 @@ export function LeadCaptureLayout() {
       {formulieren.length === 0 ? (
         <Card className="flex flex-col items-center gap-3 py-16">
           <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#2A5580' }} />
-          <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Nog geen formulieren</p>
-          <p style={{ fontSize: '12px', color: '#5A5A55' }}>Maak een lead-formulier aan om aanvragen te ontvangen.</p>
+          <p className="font-semibold" style={{ fontSize: '14px', color: 'hsl(var(--foreground))' }}>Nog geen formulieren</p>
+          <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>Maak een lead-formulier aan om aanvragen te ontvangen.</p>
           <Button variant="outline" size="sm" onClick={() => navigate('/leads/formulieren/nieuw')}>
             <Plus className="h-4 w-4 mr-2" /> Eerste formulier aanmaken
           </Button>

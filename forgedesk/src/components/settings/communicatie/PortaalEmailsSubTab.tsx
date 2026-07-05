@@ -15,7 +15,7 @@ export function PortaalEmailsSubTab() {
       </p>
       <a
         href="/instellingen?tab=portaal"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1A535C] hover:text-[#0F3D45] transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-petrol hover:text-[#0F3D45] transition-colors"
       >
         Open Instellingen, Integraties, Portaal
         <ArrowRight className="h-3.5 w-3.5" />

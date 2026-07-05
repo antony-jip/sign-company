@@ -168,7 +168,7 @@ export function RegelTemplateEditor({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="ml-2 p-1 rounded-md text-muted-foreground hover:text-[#1A535C] hover:bg-[rgba(26,83,92,0.06)] transition-colors"
+          className="ml-2 p-1 rounded-md text-muted-foreground hover:text-petrol hover:bg-[rgba(26,83,92,0.06)] transition-colors"
           title="Standaard rij-labels instellen"
         >
           <Settings className="h-3.5 w-3.5" />
@@ -177,7 +177,7 @@ export function RegelTemplateEditor({
       <PopoverContent align="start" className="w-96 p-0">
         <div className="px-4 pt-3 pb-2 border-b border-border/60">
           <h4 className="font-heading text-[13px] font-bold text-foreground">
-            Rij-labels<span className="text-[#F15025]">.</span>
+            Rij-labels<span className="text-flame">.</span>
           </h4>
           <p className="text-[11px] text-muted-foreground mt-0.5">
             Velden die elk nieuw offerte-item standaard krijgt.
@@ -214,7 +214,7 @@ export function RegelTemplateEditor({
                     <span className="text-[10px] text-muted-foreground font-normal flex-shrink-0">
                       {t.labels.length} velden
                     </span>
-                    <ArrowRight className="h-3 w-3 text-[#F15025] opacity-0 group-hover:opacity-100 transition-opacity ml-auto flex-shrink-0" />
+                    <ArrowRight className="h-3 w-3 text-flame opacity-0 group-hover:opacity-100 transition-opacity ml-auto flex-shrink-0" />
                   </div>
                   <div className="text-[10px] text-muted-foreground truncate mt-0.5">
                     {t.labels.join(' · ')}
@@ -227,7 +227,7 @@ export function RegelTemplateEditor({
                       e.stopPropagation()
                       handleLoadIntoEditor(t)
                     }}
-                    className="text-muted-foreground hover:text-[#1A535C] p-1 rounded transition-colors"
+                    className="text-muted-foreground hover:text-petrol p-1 rounded transition-colors"
                     title="Bewerk in editor"
                   >
                     <Pencil className="h-3 w-3" />
@@ -341,7 +341,7 @@ export function RegelTemplateEditor({
                 size="sm"
                 onClick={handleSaveAsTemplate}
                 disabled={saving}
-                className="h-7 px-2 text-xs bg-[#1A535C] hover:bg-[#163E45] text-white"
+                className="h-7 px-2 text-xs bg-petrol hover:bg-[#163E45] text-white"
               >
                 <Check className="h-3 w-3" />
               </Button>
@@ -378,7 +378,7 @@ export function RegelTemplateEditor({
             onClick={handleSaveDefault}
             disabled={saving}
             size="sm"
-            className="h-7 px-3 text-xs bg-[#F15025] hover:bg-[#D9421C] text-white"
+            className="h-7 px-3 text-xs bg-flame hover:bg-[#D9421C] text-white"
           >
             <Check className="h-3 w-3 mr-1" />
             {saving ? 'Opslaan...' : 'Standaard'}

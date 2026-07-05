@@ -125,7 +125,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Wat kost Doen. na de proefperiode?',
-    a: 'Doen. kost €79 per maand per bedrijf. Tot 10 gebruikers zijn inbegrepen — meer nodig? Dan maken we een staffel op maat. Alle features zijn inbegrepen, inclusief AI-tools.',
+    a: 'Doen. kost €79 per maand per bedrijf. Tot 10 gebruikers zijn inbegrepen · meer nodig? Dan maken we een staffel op maat. Alle features zijn inbegrepen, inclusief AI-tools.',
   },
   {
     q: 'Kan ik mijn data importeren?',
@@ -141,12 +141,12 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Kan ik Doen. op mijn telefoon gebruiken?',
-    a: 'Ja. Doen. werkt volledig in de browser en is geoptimaliseerd voor mobiel. Je monteurs kunnen werkbonnen invullen, foto\'s toevoegen en klanten laten tekenen — allemaal op hun telefoon.',
+    a: 'Ja. Doen. werkt volledig in de browser en is geoptimaliseerd voor mobiel. Je monteurs kunnen werkbonnen invullen, foto\'s toevoegen en klanten laten tekenen · allemaal op hun telefoon.',
   },
 ]
 
 // ═══════════════════════════════════════════════════════════
-// NAVBAR — Glassmorphism
+// NAVBAR · Glassmorphism
 // ═══════════════════════════════════════════════════════════
 
 function Navbar() {
@@ -186,7 +186,7 @@ function Navbar() {
               <button
                 key={item.id}
                 onClick={() => scrollTo(item.id)}
-                className="text-sm font-medium text-[#777] hover:text-[#1a1a1a] transition-colors duration-300"
+                className="text-sm font-medium text-[#777] hover:text-foreground transition-colors duration-300"
               >
                 {item.label}
               </button>
@@ -197,7 +197,7 @@ function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             <Link
               to="/login"
-              className="text-sm font-medium text-[#777] hover:text-[#1a1a1a] transition-colors"
+              className="text-sm font-medium text-[#777] hover:text-foreground transition-colors"
             >
               Inloggen
             </Link>
@@ -216,9 +216,9 @@ function Navbar() {
             aria-label="Menu"
           >
             {mobileOpen ? (
-              <X className="w-6 h-6 text-[#1a1a1a]" />
+              <X className="w-6 h-6 text-foreground" />
             ) : (
-              <Menu className="w-6 h-6 text-[#1a1a1a]" />
+              <Menu className="w-6 h-6 text-foreground" />
             )}
           </button>
         </div>
@@ -243,7 +243,7 @@ function Navbar() {
             <button
               key={item.id}
               onClick={() => scrollTo(item.id)}
-              className="text-2xl font-semibold text-[#1a1a1a]"
+              className="text-2xl font-semibold text-foreground"
             >
               {item.label}
             </button>
@@ -269,7 +269,7 @@ function Navbar() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// HERO — Gradient orbs + floating cards + massive whitespace
+// HERO · Gradient orbs + floating cards + massive whitespace
 // ═══════════════════════════════════════════════════════════
 
 function FloatingCards({ scrollY }: { scrollY: number }) {
@@ -318,9 +318,9 @@ function FloatingCards({ scrollY }: { scrollY: number }) {
             animationDelay: `${i * 0.8}s`,
           }}
         >
-          <div className="text-xs font-bold text-[#1a1a1a]">{card.title}</div>
+          <div className="text-xs font-bold text-foreground">{card.title}</div>
           <div className="text-xs text-[#999] mt-1">{card.sub}</div>
-          <div className="text-sm font-bold text-[#1a1a1a] mt-2 font-outfit">
+          <div className="text-sm font-bold text-foreground mt-2 font-outfit">
             {card.amount}
           </div>
         </div>
@@ -351,7 +351,7 @@ function Hero() {
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-8">
-          {/* Left — Text */}
+          {/* Left · Text */}
           <div className="lg:w-[55%]">
             {/* Badge */}
             <div className="lf-fade-up inline-flex items-center gap-2 bg-white border border-border rounded-full px-4 py-2 text-sm font-medium text-[#777] mb-8 shadow-sm">
@@ -360,7 +360,7 @@ function Hero() {
             </div>
 
             {/* Heading */}
-            <h1 className="lf-fade-up lf-delay-1 text-[40px] md:text-[64px] lg:text-[72px] leading-[1.02] font-extrabold text-[#1a1a1a] tracking-tight">
+            <h1 className="lf-fade-up lf-delay-1 text-[40px] md:text-[64px] lg:text-[72px] leading-[1.02] font-extrabold text-foreground tracking-tight">
               Jouw hele bedrijf.{' '}
               <span className="lf-serif-accent font-normal" style={{ color: COLORS.coral }}>
                 Één app.
@@ -370,7 +370,7 @@ function Hero() {
             {/* Sub */}
             <p className="lf-fade-up lf-delay-2 text-[17px] md:text-[19px] text-[#777] max-w-[520px] mt-8 leading-relaxed">
               Offertes, werkbonnen, planning, facturen. Alles wat je nodig hebt als{' '}
-              <span className="text-[#1a1a1a] font-semibold">creatief maakbedrijf</span>. Zonder gedoe, zonder dubbel werk.
+              <span className="text-foreground font-semibold">creatief maakbedrijf</span>. Zonder gedoe, zonder dubbel werk.
             </p>
 
             {/* CTA */}
@@ -387,7 +387,7 @@ function Hero() {
                   const el = document.getElementById('hoe-het-werkt')
                   if (el) el.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="text-[#777] font-medium hover:text-[#1a1a1a] transition-colors py-4 text-[16px]"
+                className="text-[#777] font-medium hover:text-foreground transition-colors py-4 text-[16px]"
               >
                 Bekijk hoe het werkt
               </button>
@@ -407,7 +407,7 @@ function Hero() {
             </div>
           </div>
 
-          {/* Right — Floating cards */}
+          {/* Right · Floating cards */}
           <div className="lg:w-[45%] lf-fade-up lf-delay-2">
             <FloatingCards scrollY={scrollY} />
           </div>
@@ -418,7 +418,7 @@ function Hero() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// THREE ICONS — Glow circles
+// THREE ICONS · Glow circles
 // ═══════════════════════════════════════════════════════════
 
 function ThreeIcons() {
@@ -452,7 +452,7 @@ function ThreeIcons() {
           <p className="lf-fade-up text-sm font-semibold text-[#C4A882] uppercase tracking-widest mb-4">
             Alles-in-één platform
           </p>
-          <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight leading-tight">
+          <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-foreground tracking-tight leading-tight">
             Gebouwd voor wie{' '}
             <span className="lf-serif-accent font-normal" style={{ color: COLORS.sage }}>
               iets maakt
@@ -477,7 +477,7 @@ function ThreeIcons() {
                   {item.icon}
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-[#1a1a1a] mb-3">{item.title}</h3>
+              <h3 className="text-xl font-bold text-foreground mb-3">{item.title}</h3>
               <p className="text-[15px] text-[#777] leading-relaxed">{item.desc}</p>
             </div>
           ))}
@@ -488,7 +488,7 @@ function ThreeIcons() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// HOE HET WERKT — Tabs + numbered steps
+// HOE HET WERKT · Tabs + numbered steps
 // ═══════════════════════════════════════════════════════════
 
 const BOSS_STEPS = [
@@ -565,7 +565,7 @@ function HowItWorksSection() {
           <p className="lf-fade-up text-sm font-semibold text-[#C4A882] uppercase tracking-widest mb-4">
             Hoe het werkt
           </p>
-          <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight">
+          <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-foreground tracking-tight">
             Van A tot Z.{' '}
             <span className="lf-serif-accent font-normal" style={{ color: COLORS.coral }}>
               Zonder gedoe.
@@ -582,7 +582,7 @@ function HowItWorksSection() {
                 onClick={() => setActiveTab(i)}
                 className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
                   activeTab === i
-                    ? 'bg-white text-[#1a1a1a] shadow-sm'
+                    ? 'bg-white text-foreground shadow-sm'
                     : 'text-[#999] hover:text-[#555]'
                 }`}
               >
@@ -610,7 +610,7 @@ function HowItWorksSection() {
                 <div className="w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: `${step.color}15`, color: step.color }}>
                   {step.icon}
                 </div>
-                <h3 className="text-lg font-bold text-[#1a1a1a] mb-2">{step.title}</h3>
+                <h3 className="text-lg font-bold text-foreground mb-2">{step.title}</h3>
                 <p className="text-sm text-[#777] leading-relaxed">{step.desc}</p>
               </div>
             ))}
@@ -622,7 +622,7 @@ function HowItWorksSection() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// DAAN AI — Chat mockup
+// DAAN AI · Chat mockup
 // ═══════════════════════════════════════════════════════════
 
 function ForgieSection() {
@@ -669,7 +669,7 @@ function ForgieSection() {
             <p className="lf-fade-up text-sm font-semibold text-[#9B8EC4] uppercase tracking-widest mb-4">
               AI-assistent
             </p>
-            <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight leading-tight">
+            <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-foreground tracking-tight leading-tight">
               Maak kennis met{' '}
               <span className="lf-serif-accent font-normal" style={{ color: COLORS.purple }}>
                 Daan
@@ -707,7 +707,7 @@ function ForgieSection() {
                     <span className="text-base font-bold text-[#9B8EC4]">D</span>
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-[#1a1a1a]">Daan</div>
+                    <div className="text-sm font-bold text-foreground">Daan</div>
                     <div className="text-xs text-[#7EB5A6]">Online</div>
                   </div>
                 </div>
@@ -733,7 +733,7 @@ function ForgieSection() {
                   </div>
                 ) : showAnswer ? (
                   <div className="flex justify-start">
-                    <div className="bg-bg-subtle text-[#1a1a1a] rounded-2xl rounded-bl-md px-4 py-3 text-sm max-w-[85%] leading-relaxed whitespace-pre-line">
+                    <div className="bg-bg-subtle text-foreground rounded-2xl rounded-bl-md px-4 py-3 text-sm max-w-[85%] leading-relaxed whitespace-pre-line">
                       {conversations[activeChat].answer.split('**').map((part, i) =>
                         i % 2 === 1 ? <strong key={i}>{part}</strong> : part
                       )}
@@ -771,7 +771,7 @@ function ForgieSection() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// STATS — Dark section
+// STATS · Dark section
 // ═══════════════════════════════════════════════════════════
 
 function StatsSection() {
@@ -814,7 +814,7 @@ function StatsSection() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// PRICING — Single plan, €79/maand
+// PRICING · Single plan, €79/maand
 // ═══════════════════════════════════════════════════════════
 
 function PricingSection() {
@@ -828,7 +828,7 @@ function PricingSection() {
         <p className="lf-fade-up text-sm font-semibold text-[#C4A882] uppercase tracking-widest mb-4">
           Eenvoudige prijzen
         </p>
-        <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight">
+        <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-foreground tracking-tight">
           Eén prijs.{' '}
           <span className="lf-serif-accent font-normal" style={{ color: COLORS.coral }}>
             Alles erin.
@@ -839,7 +839,7 @@ function PricingSection() {
         <div className="lf-fade-up lf-delay-2 mt-14 bg-white rounded-3xl border border-border p-8 md:p-12 shadow-sm max-w-lg mx-auto" ref={priceRef}>
           {/* Price */}
           <div className="flex items-baseline justify-center gap-2">
-            <span className="text-[72px] md:text-[96px] font-extrabold text-[#1a1a1a] leading-none lf-price-number">
+            <span className="text-[72px] md:text-[96px] font-extrabold text-foreground leading-none lf-price-number">
               €{priceValue}
             </span>
             <span className="text-[20px] text-[#999] font-medium">/maand</span>
@@ -885,7 +885,7 @@ function PricingSection() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// FAQ — Accordion
+// FAQ · Accordion
 // ═══════════════════════════════════════════════════════════
 
 function FAQItem({ item, isOpen, onToggle }: { item: typeof FAQ_ITEMS[0]; isOpen: boolean; onToggle: () => void }) {
@@ -895,7 +895,7 @@ function FAQItem({ item, isOpen, onToggle }: { item: typeof FAQ_ITEMS[0]; isOpen
         onClick={onToggle}
         className="w-full flex items-center justify-between py-6 text-left group"
       >
-        <span className="text-[16px] md:text-[17px] font-semibold text-[#1a1a1a] pr-8 group-hover:text-[#E8866A] transition-colors">
+        <span className="text-[16px] md:text-[17px] font-semibold text-foreground pr-8 group-hover:text-[#E8866A] transition-colors">
           {item.q}
         </span>
         <ChevronDown
@@ -926,7 +926,7 @@ function FAQSection() {
           <p className="lf-fade-up text-sm font-semibold text-[#C4A882] uppercase tracking-widest mb-4">
             FAQ
           </p>
-          <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight">
+          <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-foreground tracking-tight">
             Veelgestelde{' '}
             <span className="lf-serif-accent font-normal" style={{ color: COLORS.sage }}>
               vragen
@@ -977,7 +977,7 @@ function CTAFooter() {
           <div className="lf-fade-up lf-delay-2 mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to="/register"
-              className="group bg-white text-[#1a1a1a] px-8 py-4 rounded-full text-[16px] font-semibold hover:bg-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-white/10 flex items-center gap-2"
+              className="group bg-white text-foreground px-8 py-4 rounded-full text-[16px] font-semibold hover:bg-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-white/10 flex items-center gap-2"
             >
               Start gratis
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

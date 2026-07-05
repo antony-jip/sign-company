@@ -29,7 +29,7 @@ type FilterStatus = 'alle' | Leveringsbon['status']
 const STATUS_CONFIG: Record<Leveringsbon['status'], { label: string; color: string; dot: string }> = {
   concept: { label: 'Concept', color: 'badge-grijs', dot: 'bg-[#5A5A55]' },
   geleverd: { label: 'Geleverd', color: 'badge-blauw', dot: 'bg-[#2A5580]' },
-  getekend: { label: 'Getekend', color: 'badge-petrol', dot: 'bg-[#1A535C]' },
+  getekend: { label: 'Getekend', color: 'badge-petrol', dot: 'bg-petrol' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
@@ -140,7 +140,7 @@ export function LeveringsbonnenLayout() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-petrol" />
           <p className="text-sm text-muted-foreground">Leveringsbonnen laden...</p>
         </div>
       </div>
@@ -212,8 +212,8 @@ export function LeveringsbonnenLayout() {
           {gefilterd.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16">
               <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#1A535C' }} />
-              <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen leveringsbonnen gevonden</p>
-              <p style={{ fontSize: '12px', color: '#5A5A55' }}>Registreer leveringen aan klanten of projectlocaties.</p>
+              <p className="font-semibold" style={{ fontSize: '14px', color: 'hsl(var(--foreground))' }}>Geen leveringsbonnen gevonden</p>
+              <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>Registreer leveringen aan klanten of projectlocaties.</p>
               <Button variant="outline" size="sm" onClick={() => navigate('/leveringsbonnen/nieuw')}>
                 <Plus className="h-4 w-4 mr-2" /> Eerste leveringsbon aanmaken
               </Button>
@@ -233,7 +233,7 @@ export function LeveringsbonnenLayout() {
                   return (
                     <tr key={lb.id} className={`group hover:bg-bg-hover transition-colors duration-150 cursor-pointer border-l-2 ${getRowAccentClass(lb.status)}`} onClick={() => navigateWithTab({ path: `/leveringsbonnen/${lb.id}`, label: lb.leveringsbon_nummer || 'Leveringsbon', id: `/leveringsbonnen/${lb.id}` })}>
                       <td className="px-4 py-3">
-                        <span className="text-sm font-mono font-semibold text-teal-600 dark:text-teal-400">{lb.leveringsbon_nummer}</span>
+                        <span className="text-sm font-mono font-semibold text-petrol dark:text-teal-400">{lb.leveringsbon_nummer}</span>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getKlantNaam(lb.klant_id)}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getProjectNaam(lb.project_id)}</td>

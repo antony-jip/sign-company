@@ -316,8 +316,8 @@ export function WerkbonMonteurView() {
   if (notFound || !werkbon) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center" style={{ backgroundColor: '#F8F7F5' }}>
-        <ClipboardCheck className="h-10 w-10 mb-4" style={{ color: '#9B9B95' }} />
-        <p className="text-[15px] font-medium" style={{ color: '#1A1A1A' }}>
+        <ClipboardCheck className="h-10 w-10 mb-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
+        <p className="text-[15px] font-medium" style={{ color: 'hsl(var(--foreground))' }}>
           Werkbon niet gevonden<span style={{ color: '#F15025' }}>.</span>
         </p>
         <button
@@ -344,14 +344,14 @@ export function WerkbonMonteurView() {
           <BackButton fallbackPath="/werkbonnen" />
           <div className="min-w-0">
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-[12px] font-mono font-semibold" style={{ color: '#6B6B66' }}>
+              <span className="text-[12px] font-mono font-semibold" style={{ color: 'hsl(var(--muted-foreground))' }}>
                 {werkbon.werkbon_nummer}
               </span>
-              <span className="text-[12px]" style={{ color: '#6B6B66' }}>
+              <span className="text-[12px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
                 {statusLabel}<span style={{ color: '#F15025' }}>.</span>
               </span>
             </div>
-            <h1 className="text-[18px] font-semibold leading-tight truncate" style={{ color: '#1A1A1A' }}>
+            <h1 className="text-[18px] font-semibold leading-tight truncate" style={{ color: 'hsl(var(--foreground))' }}>
               {werkbon.titel || klantLabel || 'Werkbon'}
             </h1>
           </div>
@@ -362,9 +362,9 @@ export function WerkbonMonteurView() {
           type="button"
           onClick={() => setShowPdfPreview(true)}
           className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white text-[13px] font-medium transition-colors active:bg-[#F1EFEB]"
-          style={{ color: '#1A1A1A', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
+          style={{ color: 'hsl(var(--foreground))', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
         >
-          <FileText className="h-4 w-4" style={{ color: '#6B6B66' }} />
+          <FileText className="h-4 w-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
           PDF bekijken
         </button>
 
@@ -375,8 +375,8 @@ export function WerkbonMonteurView() {
         >
           {klantLabel && (
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#9B9B95' }}>Klant</div>
-              <div className="text-[15px] font-medium" style={{ color: '#1A1A1A' }}>{klantLabel}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'hsl(var(--muted-foreground))' }}>Klant</div>
+              <div className="text-[15px] font-medium" style={{ color: 'hsl(var(--foreground))' }}>{klantLabel}</div>
             </div>
           )}
 
@@ -406,25 +406,25 @@ export function WerkbonMonteurView() {
           <div className="flex flex-wrap gap-x-6 gap-y-2 pt-1">
             {werkbon.datum && (
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#9B9B95' }}>Datum</div>
-                <div className="text-[13px]" style={{ color: '#1A1A1A' }}>{formatDateNL(werkbon.datum)}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>Datum</div>
+                <div className="text-[13px]" style={{ color: 'hsl(var(--foreground))' }}>{formatDateNL(werkbon.datum)}</div>
               </div>
             )}
             {locatieLabel && (
               <div className="min-w-0">
-                <div className="text-[11px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#9B9B95' }}>Locatie</div>
-                <div className="text-[13px]" style={{ color: '#1A1A1A' }}>{locatieLabel}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>Locatie</div>
+                <div className="text-[13px]" style={{ color: 'hsl(var(--foreground))' }}>{locatieLabel}</div>
               </div>
             )}
           </div>
 
           {(werkbon.contact_naam || werkbon.contact_telefoon) && (
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#9B9B95' }}>Contact op locatie</div>
-              <div className="text-[13px]" style={{ color: '#1A1A1A' }}>
+              <div className="text-[11px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>Contact op locatie</div>
+              <div className="text-[13px]" style={{ color: 'hsl(var(--foreground))' }}>
                 {werkbon.contact_naam}
                 {werkbon.contact_naam && werkbon.contact_telefoon && (
-                  <span style={{ color: '#9B9B95' }}> · </span>
+                  <span style={{ color: 'hsl(var(--muted-foreground))' }}> · </span>
                 )}
                 {werkbon.contact_telefoon && (
                   <a href={`tel:${werkbon.contact_telefoon}`} style={{ color: '#1A535C' }}>
@@ -437,16 +437,16 @@ export function WerkbonMonteurView() {
 
           {klant?.contactpersoon && klant.contactpersoon !== klantLabel && (
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#9B9B95' }}>Contactpersoon</div>
-              <div className="text-[13px]" style={{ color: '#1A1A1A' }}>{klant.contactpersoon}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>Contactpersoon</div>
+              <div className="text-[13px]" style={{ color: 'hsl(var(--foreground))' }}>{klant.contactpersoon}</div>
             </div>
           )}
         </section>
 
-        {/* Items — read-only */}
+        {/* Items · read-only */}
         {werkbonItems.length > 0 && (
           <section className="space-y-2">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest px-1" style={{ color: '#9B9B95' }}>
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest px-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
               Items ({werkbonItems.length})
             </h2>
             <div className="space-y-3">
@@ -460,15 +460,15 @@ export function WerkbonMonteurView() {
                     style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
                   >
                     <div className="flex items-start gap-3">
-                      <span className="text-[12px] font-mono font-semibold flex-shrink-0 mt-0.5" style={{ color: '#9B9B95' }}>
+                      <span className="text-[12px] font-mono font-semibold flex-shrink-0 mt-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
                         {String(idx + 1).padStart(2, '0')}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[14px] leading-snug whitespace-pre-wrap" style={{ color: '#1A1A1A' }}>
+                        <p className="text-[14px] leading-snug whitespace-pre-wrap" style={{ color: 'hsl(var(--foreground))' }}>
                           {item.omschrijving || 'Geen omschrijving'}
                         </p>
                         {heeftAfmeting && (
-                          <p className="mt-1 text-[12px] font-mono" style={{ color: '#6B6B66' }}>
+                          <p className="mt-1 text-[12px] font-mono" style={{ color: 'hsl(var(--muted-foreground))' }}>
                             {item.afmeting_breedte_mm ?? '?'} × {item.afmeting_hoogte_mm ?? '?'} mm
                           </p>
                         )}
@@ -478,7 +478,7 @@ export function WerkbonMonteurView() {
                     {item.interne_notitie && (
                       <div
                         className="rounded-lg px-3 py-2 text-[13px] whitespace-pre-wrap"
-                        style={{ backgroundColor: '#F1EFEB', color: '#1A1A1A' }}
+                        style={{ backgroundColor: '#F1EFEB', color: 'hsl(var(--foreground))' }}
                       >
                         {item.interne_notitie}
                       </div>
@@ -500,7 +500,7 @@ export function WerkbonMonteurView() {
                                 className="w-full aspect-[4/3] object-cover"
                               />
                             ) : (
-                              <div className="w-full aspect-[4/3] flex items-center justify-center text-[11px]" style={{ color: '#9B9B95' }}>
+                              <div className="w-full aspect-[4/3] flex items-center justify-center text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
                                 Afbeelding niet beschikbaar
                               </div>
                             )}
@@ -515,7 +515,7 @@ export function WerkbonMonteurView() {
           </section>
         )}
 
-        {/* Monteur feedback — volledig bewerkbaar */}
+        {/* Monteur feedback · volledig bewerkbaar */}
         <section className="space-y-3">
           <WerkbonMonteurFeedback
             showUren={werkbonMonteurUren}

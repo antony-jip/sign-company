@@ -303,13 +303,13 @@ export function KlantContactSelector({
 
         {selectedKlant ? (
           <div className="rounded-lg p-3 flex items-center gap-2.5" style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }}>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1A535C] to-[#1A535C]/70 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-petrol to-petrol/70 flex items-center justify-center flex-shrink-0">
               <span className="text-white font-bold text-[10px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold truncate" style={{ color: '#191919' }}>{selectedKlant.bedrijfsnaam}</p>
+              <p className="text-[13px] font-semibold truncate" style={{ color: 'hsl(var(--foreground))' }}>{selectedKlant.bedrijfsnaam}</p>
               <div className="flex items-center gap-3">
-                {selectedKlant.email && <span className="text-[11px] truncate" style={{ color: '#5A5A55' }}>{selectedKlant.email}</span>}
+                {selectedKlant.email && <span className="text-[11px] truncate" style={{ color: 'hsl(var(--muted-foreground))' }}>{selectedKlant.email}</span>}
                 {selectedKlant.stad && <span className="text-[11px]" style={{ color: '#A0A098' }}>{selectedKlant.stad}</span>}
               </div>
             </div>
@@ -337,7 +337,7 @@ export function KlantContactSelector({
             {showResults && !showNieuwBedrijf && dropdownPos && createPortal(
               <div
                 ref={dropdownRef}
-                className="fixed z-50 rounded-lg border bg-white shadow-lg max-h-[320px] overflow-y-auto"
+                className="fixed z-50 rounded-lg border bg-popover shadow-lg max-h-[320px] overflow-y-auto"
                 style={{
                   border: '0.5px solid #E6E4E0',
                   top: dropdownPos.top,
@@ -347,7 +347,7 @@ export function KlantContactSelector({
               >
                 {/* Nieuw bedrijf optie */}
                 <button
-                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[hsl(var(--status-green-bg))]/50 transition-colors border-b"
+                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-petrol hover:bg-[hsl(var(--status-green-bg))]/50 transition-colors border-b"
                   style={{ borderColor: '#E6E4E0' }}
                   onClick={() => {
                     setShowNieuwBedrijf(true)
@@ -372,9 +372,9 @@ export function KlantContactSelector({
                       style={{ borderColor: '#E6E4E0' }}
                       onClick={() => handleSelectKlant(klant)}
                     >
-                      <p className="text-[13px] font-medium" style={{ color: '#191919' }}>{klant.bedrijfsnaam}</p>
+                      <p className="text-[13px] font-medium" style={{ color: 'hsl(var(--foreground))' }}>{klant.bedrijfsnaam}</p>
                       <div className="flex items-center gap-2">
-                        {klant.contactpersoon && <span className="text-[11px]" style={{ color: '#5A5A55' }}>{klant.contactpersoon}</span>}
+                        {klant.contactpersoon && <span className="text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>{klant.contactpersoon}</span>}
                         {klant.stad && <span className="text-[11px]" style={{ color: '#A0A098' }}>{klant.stad}</span>}
                       </div>
                     </button>
@@ -389,7 +389,7 @@ export function KlantContactSelector({
               <div className="mt-2 rounded-lg p-4 space-y-3" style={{ border: '0.5px solid #E6E4E0', backgroundColor: 'hsl(var(--background))' }}>
                 <div className="flex items-center gap-2 mb-1">
                   <Building2 className="h-4 w-4" style={{ color: '#1A535C' }} />
-                  <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Nieuw bedrijf</span>
+                  <span className="text-[13px] font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Nieuw bedrijf</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -446,7 +446,7 @@ export function KlantContactSelector({
                   <button
                     onClick={() => { setShowNieuwBedrijf(false); setShowResults(true) }}
                     className="h-8 px-3 text-[12px] font-medium rounded-lg"
-                    style={{ color: '#5A5A55' }}
+                    style={{ color: 'hsl(var(--muted-foreground))' }}
                   >
                     Annuleren
                   </button>
@@ -481,7 +481,7 @@ export function KlantContactSelector({
                   value={contactpersoonId || '__none__'}
                   onValueChange={(v) => onContactpersoonChange(v === '__none__' ? '' : v)}
                 >
-                  <SelectTrigger className="h-10 text-[13px] rounded-lg border-border bg-background focus:bg-white hover:bg-white transition-colors">
+                  <SelectTrigger className="h-10 text-[13px] rounded-lg border-border bg-background focus:bg-muted hover:bg-muted transition-colors">
                     <span className="truncate text-left">{triggerLabel}</span>
                   </SelectTrigger>
                   <SelectContent>
@@ -538,14 +538,14 @@ export function KlantContactSelector({
                       className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
                       style={{
                         backgroundColor: contactpersoonId === cp.id ? '#1A535C' : '#EEEEED',
-                        color: contactpersoonId === cp.id ? '#FFFFFF' : '#5A5A55',
+                        color: contactpersoonId === cp.id ? '#FFFFFF' : 'hsl(var(--muted-foreground))',
                       }}
                     >
                       {cp.naam[0]?.toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0 truncate">
-                      <span className="text-[13px] font-medium" style={{ color: '#191919' }}>{cp.naam}</span>
-                      {cp.email && <span className="text-[11px] ml-1.5" style={{ color: '#5A5A55' }}>{cp.email}</span>}
+                      <span className="text-[13px] font-medium" style={{ color: 'hsl(var(--foreground))' }}>{cp.naam}</span>
+                      {cp.email && <span className="text-[11px] ml-1.5" style={{ color: 'hsl(var(--muted-foreground))' }}>{cp.email}</span>}
                       {cp.functie && <span className="text-[11px] ml-1.5" style={{ color: '#A0A098' }}>({cp.functie})</span>}
                     </div>
                     {cp.is_primair && (
@@ -561,7 +561,7 @@ export function KlantContactSelector({
                     type="button"
                     onClick={(e) => { e.preventDefault(); setExpandedContacts(true) }}
                     className="w-full flex items-center justify-center gap-1.5 text-[11px] py-1.5 rounded-lg transition-colors hover:bg-background"
-                    style={{ color: '#5A5A55' }}
+                    style={{ color: 'hsl(var(--muted-foreground))' }}
                   >
                     <ChevronDown className="h-3.5 w-3.5" />
                     Andere contactpersoon
@@ -582,7 +582,7 @@ export function KlantContactSelector({
             </button>
           ) : (
             <div className="rounded-lg p-3 space-y-2" style={{ border: '0.5px solid #E6E4E0', backgroundColor: 'hsl(var(--background))' }}>
-              <p className="text-[12px] font-semibold flex items-center gap-1.5" style={{ color: '#191919' }}>
+              <p className="text-[12px] font-semibold flex items-center gap-1.5" style={{ color: 'hsl(var(--foreground))' }}>
                 <UserPlus className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />
                 Nieuwe contactpersoon
               </p>
@@ -605,7 +605,7 @@ export function KlantContactSelector({
                 <button
                   onClick={() => { setShowNieuwContact(false); setNc({ naam: '', functie: '', email: '', telefoon: '' }) }}
                   className="h-7 px-3 text-[11px] font-medium rounded-lg"
-                  style={{ color: '#5A5A55' }}
+                  style={{ color: 'hsl(var(--muted-foreground))' }}
                 >
                   Annuleren
                 </button>
@@ -632,7 +632,7 @@ export function KlantContactSelector({
                   backgroundColor: vestigingId === v.id ? '#E2F0F0' : 'transparent',
                 }}
               >
-                <span className="text-[13px]" style={{ color: '#191919' }}>{v.naam}</span>
+                <span className="text-[13px]" style={{ color: 'hsl(var(--foreground))' }}>{v.naam}</span>
                 {v.stad && <span className="text-[11px]" style={{ color: '#A0A098' }}>({v.stad})</span>}
                 {vestigingId === v.id && <Check className="w-3.5 h-3.5 ml-auto" style={{ color: '#1A535C' }} />}
               </button>

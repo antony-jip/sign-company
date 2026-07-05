@@ -294,7 +294,7 @@ export function QuoteSidebar({
                                 <span className="text-white font-extrabold text-[12px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                               </div>
                               <div className="flex-1 text-left min-w-0">
-                                <p className="text-[13.5px] font-bold truncate text-foreground">{selectedKlant.bedrijfsnaam}</p>
+                                <p className="text-[13px] font-bold truncate text-foreground">{selectedKlant.bedrijfsnaam}</p>
                                 <p className="text-[11px] truncate text-muted-foreground">{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
                               </div>
                               {klantPanelOpen ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />}
@@ -302,37 +302,37 @@ export function QuoteSidebar({
 
                             {klantPanelOpen && (
                               <div className="px-4 py-3 space-y-2.5">
-                                <div className="text-[11px] space-y-0.5 text-[#6B6B66] dark:text-muted-foreground">
-                                  {selectedKlant.telefoon && <p className="flex items-center gap-1.5 font-mono"><Phone className="h-3 w-3 text-[#9B9B95] dark:text-muted-foreground" />{selectedKlant.telefoon}</p>}
-                                  {selectedKlant.email && <p className="flex items-center gap-1.5"><Mail className="h-3 w-3 text-[#9B9B95] dark:text-muted-foreground" />{selectedKlant.email}</p>}
+                                <div className="text-[11px] space-y-0.5 text-muted-foreground dark:text-muted-foreground">
+                                  {selectedKlant.telefoon && <p className="flex items-center gap-1.5 font-mono"><Phone className="h-3 w-3 text-muted-foreground dark:text-muted-foreground" />{selectedKlant.telefoon}</p>}
+                                  {selectedKlant.email && <p className="flex items-center gap-1.5"><Mail className="h-3 w-3 text-muted-foreground dark:text-muted-foreground" />{selectedKlant.email}</p>}
                                   {(selectedKlant.adres || selectedKlant.stad) && (
-                                    <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3 text-[#9B9B95] dark:text-muted-foreground" />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
+                                    <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3 text-muted-foreground dark:text-muted-foreground" />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
                                   )}
                                 </div>
 
                                 <KlantStatusWarning klant={selectedKlant} className="mt-1" />
 
                                 {/* TODO: vervang door <KlantContactSelector> (zelfde component als ProjectDetail). */}
-                                {/* Mergt JSONB+DB en biedt primary-fallback gratis. Vereist QuoteSidebar refactor — losse follow-up. */}
+                                {/* Mergt JSONB+DB en biedt primary-fallback gratis. Vereist QuoteSidebar refactor · losse follow-up. */}
                                 {selectedKlant.contactpersonen?.length > 0 && (
                                   <div className="space-y-1">
-                                    <label className="text-[10px] font-semibold uppercase tracking-wider text-[#9B9B95] dark:text-muted-foreground">Contactpersoon</label>
+                                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground">Contactpersoon</label>
                                     <Select value={selectedContactId} onValueChange={(val) => contact.handleSelectContact(val)}>
                                       <SelectTrigger className="h-8 text-[12px] rounded-lg" style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}><SelectValue placeholder="Selecteer..." /></SelectTrigger>
                                       <SelectContent>
                                         {selectedKlant.contactpersonen.map((cp) => (
                                           <SelectItem key={cp.id} value={cp.id}>
-                                            <div className="flex items-center gap-1.5"><span>{cp.naam}</span>{cp.is_primair && <span className="text-[10px] text-[#1A535C] dark:text-petrol-light">(primair)</span>}</div>
+                                            <div className="flex items-center gap-1.5"><span>{cp.naam}</span>{cp.is_primair && <span className="text-[10px] text-petrol dark:text-petrol-light">(primair)</span>}</div>
                                           </SelectItem>
                                         ))}
-                                        <SelectItem value="__new__"><span className="text-[#1A535C] dark:text-petrol-light">+ Nieuw</span></SelectItem>
+                                        <SelectItem value="__new__"><span className="text-petrol dark:text-petrol-light">+ Nieuw</span></SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
                                 )}
 
                                 {(selectedKlant.debiteurennummer || selectedKlant.btw_nummer) && (
-                                  <div className="text-[11px] font-mono space-y-0.5 pt-2 text-[#6B6B66] dark:text-muted-foreground" style={{ borderTop: '0.5px solid hsl(var(--border))' }}>
+                                  <div className="text-[11px] font-mono space-y-0.5 pt-2 text-muted-foreground dark:text-muted-foreground" style={{ borderTop: '0.5px solid hsl(var(--border))' }}>
                                     {selectedKlant.debiteurennummer && <p>Deb.nr: {selectedKlant.debiteurennummer}</p>}
                                     {selectedKlant.btw_nummer && <p>BTW: {selectedKlant.btw_nummer}</p>}
                                   </div>
@@ -340,16 +340,16 @@ export function QuoteSidebar({
 
                                 <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: '0.5px solid hsl(var(--border))' }}>
                                   {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors bg-[#E2F0E8] dark:bg-[#2D6B48]/20 text-[#2D6B48] dark:text-[#7AAF85]"><Phone className="h-3 w-3" />Bellen</a>}
-                                  {selectedKlant.email && <a href="#" onClick={(e) => { e.preventDefault(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(selectedKlant.email)}`, label: 'Nieuwe email', id: `/email/compose-${selectedKlant.email}` }) }} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer bg-[#E2F0F0] dark:bg-[#1A535C]/30 text-[#1A535C] dark:text-[#5AABB5]"><Mail className="h-3 w-3" />Email</a>}
-                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors bg-border text-[#6B6B66] dark:text-muted-foreground"><ExternalLink className="h-3 w-3" />Profiel</Link>
+                                  {selectedKlant.email && <a href="#" onClick={(e) => { e.preventDefault(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(selectedKlant.email)}`, label: 'Nieuwe email', id: `/email/compose-${selectedKlant.email}` }) }} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer bg-[#E2F0F0] dark:bg-petrol/30 text-petrol dark:text-[#5AABB5]"><Mail className="h-3 w-3" />Email</a>}
+                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors bg-border text-muted-foreground dark:text-muted-foreground"><ExternalLink className="h-3 w-3" />Profiel</Link>
                                 </div>
                               </div>
                             )}
                           </div>
                         ) : (
                           <div className="rounded-xl p-5 text-center" style={{ border: '1.5px dashed hsl(var(--border))', backgroundColor: 'hsl(var(--background))' }}>
-                            <Building2 className="h-7 w-7 mx-auto mb-1.5 text-[#9B9B95] dark:text-muted-foreground" />
-                            <p className="text-[12px] text-[#9B9B95] dark:text-muted-foreground">Geen klant geselecteerd</p>
+                            <Building2 className="h-7 w-7 mx-auto mb-1.5 text-muted-foreground dark:text-muted-foreground" />
+                            <p className="text-[12px] text-muted-foreground dark:text-muted-foreground">Geen klant geselecteerd</p>
                             <button className="mt-2 h-7 px-3 text-[11px] font-semibold rounded-lg text-white bg-petrol hover:bg-petrol/90 transition-all" onClick={() => setShowKlantSelector(true)}>Klant kiezen</button>
                           </div>
                         )}
@@ -365,7 +365,7 @@ export function QuoteSidebar({
                               <div className="flex items-center gap-2 mb-2">
                                 <CheckCircle2 className="h-4 w-4 text-white" />
                                 <p className="text-[10px] uppercase tracking-widest text-white/80 font-semibold">
-                                  Gefactureerd<span className="text-[#F15025]">.</span>
+                                  Gefactureerd<span className="text-flame">.</span>
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
@@ -385,7 +385,7 @@ export function QuoteSidebar({
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-                                    <span className="text-[12.5px] font-semibold text-foreground">{linkedFactuur.nummer}</span>
+                                    <span className="text-[12px] font-semibold text-foreground">{linkedFactuur.nummer}</span>
                                   </div>
                                   <Badge className={cn('text-[10px] font-semibold', getStatusColor(linkedFactuur.status))}>
                                     {linkedFactuur.status.charAt(0).toUpperCase() + linkedFactuur.status.slice(1)}
@@ -400,7 +400,7 @@ export function QuoteSidebar({
                               )}
                               <button
                                 onClick={() => navigate(`/facturen/${geconverteerdNaarFactuurId}`)}
-                                className="w-full inline-flex items-center justify-center gap-1.5 text-[12.5px] font-semibold h-9 rounded-xl border border-[#2D6B48]/25 text-[#2D6B48] hover:bg-[#2D6B48]/[0.05] hover:border-[#2D6B48]/40 transition-all"
+                                className="w-full inline-flex items-center justify-center gap-1.5 text-[12px] font-semibold h-9 rounded-xl border border-[#2D6B48]/25 text-[#2D6B48] hover:bg-[#2D6B48]/[0.05] hover:border-[#2D6B48]/40 transition-all"
                               >
                                 <Receipt className="h-3.5 w-3.5" />
                                 Bekijk factuur
@@ -458,13 +458,13 @@ export function QuoteSidebar({
                     {sectionId === 'samenvatting' && (
                       <div className="doen-slate-surface rounded-2xl overflow-hidden">
                         <div className="p-4 relative overflow-hidden dark:shadow-[0_0_28px_rgba(241,80,37,0.14),inset_0_1px_0_rgba(255,255,255,0.05)]" style={{ background: 'linear-gradient(135deg, #1A535C 0%, #0F3D44 100%)' }}>
-                          {/* Decorative flame glow — smeult sterker in dark */}
+                          {/* Decorative flame glow · smeult sterker in dark */}
                           <div
                             aria-hidden
                             className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[radial-gradient(circle,rgba(241,80,37,0.18)_0%,transparent_70%)] dark:bg-[radial-gradient(circle,rgba(241,80,37,0.34)_0%,transparent_70%)]"
                           />
                           <p className="relative text-[10px] uppercase tracking-widest text-white/75 font-semibold">
-                            Totaal ex BTW<span className="text-[#F15025]">.</span>
+                            Totaal ex BTW<span className="text-flame">.</span>
                           </p>
                           {isEditingTotaal ? (
                             <div className="relative mt-1">
@@ -550,17 +550,17 @@ export function QuoteSidebar({
                           <div className="grid grid-cols-2 gap-2">
                             <div className="rounded-lg bg-card border border-[rgba(26,83,92,0.08)] p-2.5">
                               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Subtotaal</p>
-                              <p className="text-[13.5px] font-bold font-mono text-foreground mt-0.5 tabular-nums">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
+                              <p className="text-[13px] font-bold font-mono text-foreground mt-0.5 tabular-nums">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
                             </div>
                             <div className="rounded-lg bg-card border border-[rgba(26,83,92,0.08)] p-2.5">
                               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">BTW</p>
-                              <p className="text-[13.5px] font-bold font-mono text-foreground mt-0.5 tabular-nums">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
+                              <p className="text-[13px] font-bold font-mono text-foreground mt-0.5 tabular-nums">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
                             </div>
                           </div>
                           {afrondingskorting !== 0 && (
                             <div className="rounded-lg bg-[hsl(var(--status-amber-bg))] border border-[#8A6A2A]/15 p-2.5">
                               <p className="text-[10px] uppercase tracking-widest text-[#8A6A2A] font-semibold">Afrondingskorting</p>
-                              <p className="text-[13.5px] font-bold font-mono text-[#8A6A2A] mt-0.5 tabular-nums">{formatCurrency(afrondingskorting)}</p>
+                              <p className="text-[13px] font-bold font-mono text-[#8A6A2A] mt-0.5 tabular-nums">{formatCurrency(afrondingskorting)}</p>
                             </div>
                           )}
 
@@ -569,7 +569,7 @@ export function QuoteSidebar({
                           {/* Inkoop / Verkoop / Winst */}
                           <div className="space-y-2.5">
                             <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
-                              Inkoop &amp; verkoop<span className="text-[#F15025]">.</span>
+                              Inkoop &amp; verkoop<span className="text-flame">.</span>
                             </h4>
                             <div className="space-y-1.5 text-[13px]">
                               <div className="flex items-center justify-between">
@@ -581,7 +581,7 @@ export function QuoteSidebar({
                               </div>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#1A535C] flex-shrink-0" />
+                                  <span className="w-1.5 h-1.5 rounded-full bg-petrol flex-shrink-0" />
                                   <span className="text-foreground/70">Verkoop</span>
                                 </div>
                                 <span className="font-mono tabular-nums font-semibold text-foreground">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</span>
@@ -599,7 +599,7 @@ export function QuoteSidebar({
                           {/* Marge */}
                           <div className="space-y-2">
                             <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
-                              Marge<span className="text-[#F15025]">.</span>
+                              Marge<span className="text-flame">.</span>
                             </h4>
                             <div className="doen-slate-surface rounded-xl p-3 relative overflow-hidden">
                               <div className="flex items-center justify-between mb-2">
@@ -627,14 +627,14 @@ export function QuoteSidebar({
                               <div className="h-px bg-[rgba(26,83,92,0.08)]" />
                               <div className="space-y-2">
                                 <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
-                                  Per item<span className="text-[#F15025]">.</span>
+                                  Per item<span className="text-flame">.</span>
                                 </h4>
                                 <div className="space-y-1">
                                   {itemMarges.map((m, idx) => {
                                     if (!m.hasCalc) return null
                                     const c = getMargeColorSidebar(m.pct)
                                     return (
-                                      <div key={idx} className="flex items-center justify-between text-[12.5px] py-1 px-2 rounded hover:bg-card/60 transition-colors">
+                                      <div key={idx} className="flex items-center justify-between text-[12px] py-1 px-2 rounded hover:bg-card/60 transition-colors">
                                         <span className="text-foreground/70 truncate max-w-[200px]">{m.beschrijving || `Item ${idx + 1}`}</span>
                                         <span className={cn('font-mono font-semibold tabular-nums', c.text)}>{m.pct.toFixed(1)}%</span>
                                       </div>
@@ -650,7 +650,7 @@ export function QuoteSidebar({
                               <div className="h-px bg-[rgba(26,83,92,0.08)]" />
                               <div className="space-y-2">
                                 <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
-                                  {materiaalKosten > 0 ? 'Uren & materiaal' : 'Uren'}<span className="text-[#F15025]">.</span>
+                                  {materiaalKosten > 0 ? 'Uren & materiaal' : 'Uren'}<span className="text-flame">.</span>
                                 </h4>
                                 <div className="space-y-1.5 text-[13px]">
                                   {urenVelden.map((veld) => {
@@ -662,7 +662,7 @@ export function QuoteSidebar({
                                     return (
                                       <div key={veld} className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                          <Clock className="h-3.5 w-3.5 text-[#1A535C]" />
+                                          <Clock className="h-3.5 w-3.5 text-petrol" />
                                           <span className="text-foreground/70">{veld}</span>
                                         </div>
                                         <div className="flex items-center gap-1">
@@ -670,19 +670,19 @@ export function QuoteSidebar({
                                             <button
                                               onClick={() => setUrenCorrectie(prev => ({ ...prev, [veld]: (prev[veld] || 0) - 1 }))}
                                               disabled={effectief <= 0}
-                                              className="h-6 w-6 rounded-md flex items-center justify-center bg-card border border-[rgba(26,83,92,0.12)] hover:border-[#1A535C] hover:bg-[rgba(26,83,92,0.04)] text-[#1A535C] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                              className="h-6 w-6 rounded-md flex items-center justify-center bg-card border border-[rgba(26,83,92,0.12)] hover:border-petrol hover:bg-[rgba(26,83,92,0.04)] text-petrol disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                               title={`-1 uur ${veld} (${formatCurrency(tarief)}/u)`}
                                             >
                                               <Minus className="h-3 w-3" />
                                             </button>
                                           )}
-                                          <span className={cn('font-mono font-semibold tabular-nums min-w-[3.25rem] text-right', correctie !== 0 ? 'text-[#F15025]' : 'text-foreground')}>
+                                          <span className={cn('font-mono font-semibold tabular-nums min-w-[3.25rem] text-right', correctie !== 0 ? 'text-flame' : 'text-foreground')}>
                                             {effectief} uur
                                           </span>
                                           {tarief > 0 && (
                                             <button
                                               onClick={() => setUrenCorrectie(prev => ({ ...prev, [veld]: (prev[veld] || 0) + 1 }))}
-                                              className="h-6 w-6 rounded-md flex items-center justify-center bg-card border border-[rgba(26,83,92,0.12)] hover:border-[#1A535C] hover:bg-[rgba(26,83,92,0.04)] text-[#1A535C] transition-colors"
+                                              className="h-6 w-6 rounded-md flex items-center justify-center bg-card border border-[rgba(26,83,92,0.12)] hover:border-petrol hover:bg-[rgba(26,83,92,0.04)] text-petrol transition-colors"
                                               title={`+1 uur ${veld} (${formatCurrency(tarief)}/u)`}
                                             >
                                               <Plus className="h-3 w-3" />
@@ -695,14 +695,14 @@ export function QuoteSidebar({
                                   {effectieveTotaalUren > 0 && (
                                     <div className="flex items-center justify-between pt-1.5 border-t border-[rgba(26,83,92,0.08)]">
                                       <div className="flex items-center gap-2">
-                                        <Wrench className="h-3.5 w-3.5 text-[#F15025]" />
+                                        <Wrench className="h-3.5 w-3.5 text-flame" />
                                         <span className="font-semibold text-foreground">Totaal uren</span>
                                       </div>
-                                      <span className="font-mono tabular-nums font-bold text-[#F15025]">{effectieveTotaalUren} uur</span>
+                                      <span className="font-mono tabular-nums font-bold text-flame">{effectieveTotaalUren} uur</span>
                                     </div>
                                   )}
                                   {urenCorrectieBedrag !== 0 && (
-                                    <div className="flex items-center justify-between text-[11.5px]">
+                                    <div className="flex items-center justify-between text-[11px]">
                                       <span className="text-muted-foreground">Uren correctie</span>
                                       <span className={cn('font-mono font-semibold', urenCorrectieBedrag > 0 ? 'text-[#2D6B48]' : 'text-[#C03A18]')}>
                                         {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)}
@@ -712,10 +712,10 @@ export function QuoteSidebar({
                                   {materiaalKosten > 0 && (
                                     <div className="flex items-center justify-between pt-1.5 border-t border-[rgba(26,83,92,0.08)]">
                                       <div className="flex items-center gap-2">
-                                        <ShoppingCart className="h-3.5 w-3.5 text-[#1A535C]" />
+                                        <ShoppingCart className="h-3.5 w-3.5 text-petrol" />
                                         <span className="text-foreground/70">Materiaal</span>
                                       </div>
-                                      <span className="font-mono tabular-nums font-semibold text-[#1A535C]">{formatCurrency(materiaalKosten)}</span>
+                                      <span className="font-mono tabular-nums font-semibold text-petrol">{formatCurrency(materiaalKosten)}</span>
                                     </div>
                                   )}
                                 </div>
@@ -727,20 +727,20 @@ export function QuoteSidebar({
                           <div className="pt-3 border-t border-[rgba(26,83,92,0.08)] grid grid-cols-3 gap-2">
                             <button
                               onClick={handleVerstuurOfferte}
-                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-[#F15025] text-white text-[12px] font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:shadow-[0_4px_14px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
+                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-flame text-white text-[12px] font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:shadow-[0_4px_14px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
                             >
                               <Send className="h-3.5 w-3.5" />Verstuur
                             </button>
                             <button
                               onClick={handleDownloadPdf}
-                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-card border border-[rgba(26,83,92,0.12)] text-foreground/70 hover:text-[#1A535C] hover:border-[rgba(26,83,92,0.25)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] text-[12px] font-semibold transition-all"
+                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-card border border-[rgba(26,83,92,0.12)] text-foreground/70 hover:text-petrol hover:border-[rgba(26,83,92,0.25)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] text-[12px] font-semibold transition-all"
                             >
                               <Download className="h-3.5 w-3.5" />PDF
                             </button>
                             <button
                               onClick={() => saveOfferte('concept')}
                               disabled={isSaving}
-                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-[#1A535C] text-white text-[12px] font-semibold hover:bg-[#0F3D44] hover:shadow-[0_2px_8px_rgba(20,62,71,0.18)] transition-all disabled:opacity-50"
+                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-petrol text-white text-[12px] font-semibold hover:bg-[#0F3D44] hover:shadow-[0_2px_8px_rgba(20,62,71,0.18)] transition-all disabled:opacity-50"
                             >
                               <Save className="h-3.5 w-3.5" />{isSaving ? '…' : 'Opslaan'}
                             </button>
@@ -765,10 +765,10 @@ export function QuoteSidebar({
                           </div>
                           <div className="flex-1 text-left min-w-0">
                             <p className="text-[14px] font-bold text-foreground">
-                              Inkoop<span className="text-[#F15025]">.</span>
+                              Inkoop<span className="text-flame">.</span>
                             </p>
                             <p
-                              className="text-[11.5px] text-muted-foreground"
+                              className="text-[11px] text-muted-foreground"
                               style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                             >
                               leveranciersprijzen

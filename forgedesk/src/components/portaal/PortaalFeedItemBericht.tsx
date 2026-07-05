@@ -31,14 +31,14 @@ export function PortaalFeedItemBericht({
 }: PortaalFeedItemBerichtProps) {
   return (
     <div>
-      <div className="h-1 rounded-t-[10px]" style={{ backgroundColor: '#5A5A55' }} />
+      <div className="h-1 rounded-t-[10px]" style={{ backgroundcolor: 'hsl(var(--muted-foreground))' }} />
       <div
         className="rounded-b-[10px] bg-white"
         style={{ border: '0.5px solid #E8E6E1' }}
       >
         <div className="px-5 py-4">
           <div className="flex items-center justify-between gap-2 mb-2">
-            <p className="text-sm font-medium" style={{ color: '#191919' }}>
+            <p className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
               {bedrijfNaam || item.titel}
             </p>
             <span
@@ -74,7 +74,7 @@ export function PortaalFeedItemBericht({
           <button
             onClick={onVragenStellen}
             className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
-            style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
+            style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
           >
             Reactie
           </button>

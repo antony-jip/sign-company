@@ -213,7 +213,7 @@ export function DatePicker({
                         : isSelected
                           ? 'bg-petrol text-white font-medium dark:bg-petrol-light dark:text-petrol'
                           : isToday
-                            ? 'text-[#F15025] font-semibold hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06]'
+                            ? 'text-flame font-semibold hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06]'
                             : !inMonth
                               ? 'text-muted-foreground/40 hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06]'
                               : 'text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06]',
@@ -227,7 +227,7 @@ export function DatePicker({
                         aria-hidden
                         className={cn(
                           'absolute bottom-1 h-1 w-1 rounded-full',
-                          isSelected ? 'bg-white dark:bg-petrol' : 'bg-[#F15025]',
+                          isSelected ? 'bg-white dark:bg-petrol' : 'bg-flame',
                         )}
                       />
                     )}

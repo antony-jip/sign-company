@@ -158,7 +158,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
         </div>
       )}
 
-      {/* Foto's — prominent voor mobiel */}
+      {/* Foto's · prominent voor mobiel */}
       {showFotos && (
         <div className="bg-white rounded-xl border border-border p-4 space-y-4" ref={containerRef}>
           <div className="flex items-center justify-between">
@@ -178,21 +178,21 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
             )}
           </div>
 
-          {/* Grote camera knoppen — mobile-first */}
+          {/* Grote camera knoppen · mobile-first */}
           {!readOnly && (
             <div className="grid grid-cols-2 gap-3">
               <label className="cursor-pointer">
                 <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => onFotoToevoegen(e, 'voor')} />
-                <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#1A535C]/20 bg-[#1A535C]/[0.03] hover:bg-[#1A535C]/[0.06] active:bg-[#1A535C]/[0.10] transition-colors">
-                  <Camera className="h-6 w-6 text-[#1A535C]" />
-                  <span className="text-[13px] font-semibold text-[#1A535C]">Voor foto</span>
+                <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-petrol/20 bg-petrol/[0.03] hover:bg-petrol/[0.06] active:bg-petrol/[0.10] transition-colors">
+                  <Camera className="h-6 w-6 text-petrol" />
+                  <span className="text-[13px] font-semibold text-petrol">Voor foto</span>
                 </div>
               </label>
               <label className="cursor-pointer">
                 <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => onFotoToevoegen(e, 'na')} />
-                <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#F15025]/20 bg-[#F15025]/[0.03] hover:bg-[#F15025]/[0.06] transition-colors">
-                  <Camera className="h-6 w-6 text-[#F15025]" />
-                  <span className="text-[13px] font-semibold text-[#F15025]">Na foto</span>
+                <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-flame/20 bg-flame/[0.03] hover:bg-flame/[0.06] transition-colors">
+                  <Camera className="h-6 w-6 text-flame" />
+                  <span className="text-[13px] font-semibold text-flame">Na foto</span>
                 </div>
               </label>
             </div>
@@ -359,13 +359,13 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
         </div>
       )}
 
-      {/* Afronden knop — prominent onderaan */}
+      {/* Afronden knop · prominent onderaan */}
       {onAfronden && status !== 'afgerond' && !readOnly && (
         <div className="bg-white rounded-xl border border-border p-4">
           <button
             onClick={onAfronden}
             disabled={isSaving}
-            className="w-full py-3.5 rounded-xl text-[15px] font-bold text-white bg-[#F15025] hover:bg-[#E04520] active:bg-[#D03A18] disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(241,80,37,0.25)]"
+            className="w-full py-3.5 rounded-xl text-[15px] font-bold text-white bg-flame hover:bg-[#E04520] active:bg-[#D03A18] disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(241,80,37,0.25)]"
           >
             <ClipboardCheck className="h-5 w-5" />
             {isSaving ? 'Bezig met opslaan...' : 'Werkbon afronden'}
@@ -374,7 +374,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
         </div>
       )}
 
-      {/* Fullscreen signature modal — mobiel */}
+      {/* Fullscreen signature modal · mobiel */}
       <Dialog open={fullscreenSignature} onOpenChange={setFullscreenSignature}>
         <DialogContent className="max-w-[100vw] max-h-[100dvh] w-screen h-[100dvh] p-0 rounded-none border-none">
           <div className="flex flex-col h-full bg-white">

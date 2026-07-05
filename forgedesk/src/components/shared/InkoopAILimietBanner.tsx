@@ -39,14 +39,14 @@ function LokaalBanner({ route, usage }: { route: 'extract' | 'analyze'; usage: R
 
   return (
     <div
-      className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[hsl(var(--status-flame-bg))] dark:bg-[#F15025]/10 text-[#C03A18] dark:text-[#F15025]"
+      className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[hsl(var(--status-flame-bg))] dark:bg-flame/10 text-[#C03A18] dark:text-flame"
       style={{ minHeight: 36 }}
       role="status"
     >
       <span className="text-center">
         Je organisatie nadert de AI-limiet voor {ROUTE_LABEL[route]}:{' '}
         <strong>{usage.used} van {usage.cap}</strong> deze maand
-        {isAdmin && <> — <Cta>Mail {SUPPORT_EMAIL} om te verhogen</Cta></>}
+        {isAdmin && <> · <Cta>Mail {SUPPORT_EMAIL} om te verhogen</Cta></>}
       </span>
       <button
         onClick={handleDismiss}
@@ -72,13 +72,13 @@ function GlobaalBanner({ usage }: { usage: { extract: RouteUsage; analyze: Route
 
   return (
     <div
-      className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium bg-[hsl(var(--status-flame-bg))] dark:bg-[#F15025]/20 text-[#C03A18] dark:text-[#F15025]"
+      className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium bg-[hsl(var(--status-flame-bg))] dark:bg-flame/20 text-[#C03A18] dark:text-flame"
       style={{ minHeight: 36 }}
       role="alert"
     >
       <span className="text-center">
         AI-limiet bereikt voor <strong>{labels}</strong>
-        {isAdmin && <> — <Cta>Mail {SUPPORT_EMAIL} om te verhogen</Cta></>}
+        {isAdmin && <> · <Cta>Mail {SUPPORT_EMAIL} om te verhogen</Cta></>}
       </span>
     </div>
   )

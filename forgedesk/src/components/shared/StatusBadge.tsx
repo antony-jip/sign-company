@@ -33,7 +33,7 @@ export function statusColor(status: string): string {
 }
 
 interface StatusBadgeProps {
-  /** Ruwe status-key (voor de kleur) — bv. 'gepland', 'betaald'. */
+  /** Ruwe status-key (voor de kleur) · bv. 'gepland', 'betaald'. */
   status: string
   /** Weergavelabel; valt terug op de status-key. */
   label?: string
@@ -45,7 +45,7 @@ interface StatusBadgeProps {
 }
 
 /**
- * Uniforme status-weergave: gekleurde dot + "Label." met flame-punt — exact het
+ * Uniforme status-weergave: gekleurde dot + "Label." met flame-punt · exact het
  * format van de Projecten-lijst, zodat alle list views dezelfde status-layout delen.
  */
 export function StatusBadge({ status, label, color, dot = true, className }: StatusBadgeProps) {
@@ -54,7 +54,7 @@ export function StatusBadge({ status, label, color, dot = true, className }: Sta
     <span className={cn('inline-flex items-center gap-2 text-[13px] font-medium whitespace-nowrap', className)} style={{ color: c }}>
       {dot && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: c }} />}
       <span>
-        {label ?? status}<span className="text-[#F15025]">.</span>
+        {label ?? status}<span className="text-flame">.</span>
       </span>
     </span>
   )

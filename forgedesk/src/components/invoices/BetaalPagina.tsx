@@ -48,7 +48,7 @@ function generateEpcPayload(
 }
 
 /**
- * Minimal QR Code encoder — renders to Canvas, returns data URL.
+ * Minimal QR Code encoder · renders to Canvas, returns data URL.
  * Uses the QR Server API for simplicity (public, free, no signup).
  * Falls back to text display if image fails.
  */
@@ -389,7 +389,7 @@ export function BetaalPagina() {
           </CardContent>
         </Card>
 
-        {/* Download PDF — haalt factuur items + docStyle op en genereert in huisstijl.
+        {/* Download PDF · haalt factuur items + docStyle op en genereert in huisstijl.
             Betaalpagina draait betaal-token-based (geen Supabase auth), dus de RLS-policy
             op storage.buckets.facturen blokkeert directe downloads. Bewust on-the-fly,
             geen Storage-fallback nodig. */}

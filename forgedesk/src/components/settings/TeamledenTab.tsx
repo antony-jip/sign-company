@@ -48,7 +48,7 @@ const ROL_LABELS: Record<TeamRol, string> = {
 }
 
 const ROL_COLORS: Record<TeamRol, string> = {
-  admin: 'bg-[#1A535C]/10 text-[#1A535C] border-[#1A535C]/20 dark:bg-[#2A7A86]/20 dark:text-[#2A7A86] dark:border-[#2A7A86]/30',
+  admin: 'bg-petrol/10 text-petrol border-petrol/20 dark:bg-[#2A7A86]/20 dark:text-[#2A7A86] dark:border-[#2A7A86]/30',
   medewerker: 'bg-[#6A5A8A]/10 text-[#6A5A8A] border-[#6A5A8A]/20 dark:bg-[#6A5A8A]/20 dark:text-[#9A8AB8] dark:border-[#6A5A8A]/30',
   monteur: 'bg-[#9A5A48]/10 text-[#9A5A48] border-[#9A5A48]/20 dark:bg-[#9A5A48]/20 dark:text-[#C4886E] dark:border-[#9A5A48]/30',
 }
@@ -285,7 +285,7 @@ export function TeamledenTab() {
         </div>
         <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5 bg-[#1A535C] hover:bg-[#1A535C]/90 text-white">
+            <Button size="sm" className="gap-1.5 bg-petrol hover:bg-petrol/90 text-white">
               <UserPlus className="w-4 h-4" />
               Teamlid uitnodigen
             </Button>
@@ -498,7 +498,7 @@ function TeamlidRow({ profile, isCurrentUser, isDeactivated, onChangeRol, onDeac
       <div className="relative flex-shrink-0">
         <Avatar className="h-9 w-9">
           {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={name} />}
-          <AvatarFallback className="bg-[#1A535C]/10 text-[#1A535C] dark:bg-[#2A7A86]/20 dark:text-[#2A7A86] text-sm font-bold">
+          <AvatarFallback className="bg-petrol/10 text-petrol dark:bg-[#2A7A86]/20 dark:text-[#2A7A86] text-sm font-bold">
             {initials}
           </AvatarFallback>
         </Avatar>
@@ -576,7 +576,7 @@ function TeamlidRow({ profile, isCurrentUser, isDeactivated, onChangeRol, onDeac
                 Heractiveren
               </DropdownMenuItem>
             ) : onDeactiveer ? (
-              <DropdownMenuItem onClick={onDeactiveer} className="text-[#F15025] focus:text-[#F15025] focus:bg-[#F15025]/5">
+              <DropdownMenuItem onClick={onDeactiveer} className="text-flame focus:text-flame focus:bg-flame/5">
                 <UserX className="w-3.5 h-3.5 mr-2" />
                 Deactiveren
               </DropdownMenuItem>
@@ -636,7 +636,7 @@ function UitnodigingRow({ uitnodiging, onCancel }: UitnodigingRowProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={onCancel} className="text-[#F15025] focus:text-[#F15025] focus:bg-[#F15025]/5">
+          <DropdownMenuItem onClick={onCancel} className="text-flame focus:text-flame focus:bg-flame/5">
             <UserX className="w-3.5 h-3.5 mr-2" />
             Uitnodiging intrekken
           </DropdownMenuItem>

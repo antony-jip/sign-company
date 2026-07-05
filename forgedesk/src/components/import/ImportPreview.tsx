@@ -10,9 +10,9 @@ interface ImportPreviewProps {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  relatie: 'bg-[#1A535C]/10 dark:bg-[#1A535C]/20',
+  relatie: 'bg-petrol/10 dark:bg-petrol/20',
   project: 'bg-gray-100 dark:bg-gray-800/50',
-  offerte: 'bg-[#F15025]/10 dark:bg-[#F15025]/20',
+  offerte: 'bg-flame/10 dark:bg-flame/20',
   factuur: 'bg-green-50 dark:bg-green-900/20',
 }
 
@@ -26,7 +26,7 @@ export function ImportPreview({ headers = [], rows = [], type, maxRows = 10, sam
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2 text-sm">
           <span className="font-medium">Samenvatting:</span>
-          <span className="px-2 py-0.5 rounded bg-[#1A535C]/10 text-[#1A535C] dark:text-[#4ECDC4] font-medium">
+          <span className="px-2 py-0.5 rounded bg-petrol/10 text-petrol dark:text-[#4ECDC4] font-medium">
             {samenvatting.klanten} klanten
           </span>
           <span className="text-muted-foreground">·</span>
@@ -34,7 +34,7 @@ export function ImportPreview({ headers = [], rows = [], type, maxRows = 10, sam
             {samenvatting.projecten.total} projecten
           </span>
           <span className="text-muted-foreground">·</span>
-          <span className="px-2 py-0.5 rounded bg-[#F15025]/10 text-[#F15025] font-medium">
+          <span className="px-2 py-0.5 rounded bg-flame/10 text-flame font-medium">
             {samenvatting.offertes.total} offertes
           </span>
           <span className="text-muted-foreground">·</span>
@@ -64,7 +64,7 @@ export function ImportPreview({ headers = [], rows = [], type, maxRows = 10, sam
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2 text-sm">
           <span className="font-medium">Gevonden:</span>
-          <span className="px-2 py-0.5 rounded bg-[#1A535C]/10 text-[#1A535C] dark:text-[#4ECDC4] font-medium">
+          <span className="px-2 py-0.5 rounded bg-petrol/10 text-petrol dark:text-[#4ECDC4] font-medium">
             {counts.relatie} relaties
           </span>
           <span className="text-muted-foreground">·</span>
@@ -72,7 +72,7 @@ export function ImportPreview({ headers = [], rows = [], type, maxRows = 10, sam
             {counts.project} projecten
           </span>
           <span className="text-muted-foreground">·</span>
-          <span className="px-2 py-0.5 rounded bg-[#F15025]/10 text-[#F15025] font-medium">
+          <span className="px-2 py-0.5 rounded bg-flame/10 text-flame font-medium">
             {counts.offerte} offertes
           </span>
           <span className="text-muted-foreground">·</span>

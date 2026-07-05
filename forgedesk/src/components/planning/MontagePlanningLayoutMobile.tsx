@@ -128,7 +128,7 @@ function MontageCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-[#1A535C] hover:bg-muted active:scale-95 transition-all max-w-full"
+                className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-petrol hover:bg-muted active:scale-95 transition-all max-w-full"
               >
                 <MapPin className="h-3 w-3 flex-shrink-0" />
                 <span className="truncate">{afspraak.locatie}</span>
@@ -138,7 +138,7 @@ function MontageCard({
               <a
                 href={`tel:${telefoon}`}
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-[#1A535C] hover:bg-muted active:scale-95 transition-all"
+                className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-petrol hover:bg-muted active:scale-95 transition-all"
               >
                 <Phone className="h-3 w-3 flex-shrink-0" />
                 {telefoon}
@@ -153,7 +153,7 @@ function MontageCard({
               <span
                 key={m.id}
                 title={m.naam}
-                className="w-6 h-6 rounded-full bg-[#1A535C]/10 text-[#1A535C] text-[10px] font-bold flex items-center justify-center"
+                className="w-6 h-6 rounded-full bg-petrol/10 text-petrol text-[10px] font-bold flex items-center justify-center"
               >
                 {getInitials(m.naam)}
               </span>
@@ -178,7 +178,7 @@ function MontageCard({
                   href={b.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-[#1A535C] hover:bg-muted active:scale-95 transition-all max-w-full"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[12px] text-petrol hover:bg-muted active:scale-95 transition-all max-w-full"
                 >
                   <Paperclip className="h-3 w-3 flex-shrink-0" />
                   <span className="truncate">{b.naam}</span>
@@ -187,7 +187,7 @@ function MontageCard({
               {afspraak.werkbon_id && (
                 <a
                   href={`/werkbonnen/${afspraak.werkbon_id}`}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1A535C]/[0.07] px-2.5 py-1 text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.12] transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-petrol/[0.07] px-2.5 py-1 text-[12px] font-medium text-petrol hover:bg-petrol/[0.12] transition-colors"
                 >
                   <ClipboardList className="h-3 w-3" />
                   {afspraak.werkbon_nummer || 'Werkbon'}
@@ -196,7 +196,7 @@ function MontageCard({
               {afspraak.project_id && (
                 <a
                   href={`/projecten/${afspraak.project_id}`}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1A535C]/[0.07] px-2.5 py-1 text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.12] transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-petrol/[0.07] px-2.5 py-1 text-[12px] font-medium text-petrol hover:bg-petrol/[0.12] transition-colors"
                 >
                   Open project
                   <ArrowUpRight className="h-3 w-3" />
@@ -359,7 +359,7 @@ export function MontagePlanningLayoutMobile() {
     <div className="h-full flex flex-col bg-background -m-3 sm:-m-4 md:-m-6">
       <header className="px-5 pt-5 pb-4 bg-white border-b border-border">
         <h1 className="text-[28px] font-medium tracking-[-0.02em] leading-tight text-foreground">
-          Planning<span className="text-[#F15025]">.</span>
+          Planning<span className="text-flame">.</span>
         </h1>
         <p className="mt-1 text-[14px] text-foreground/70 capitalize">
           {formatFullWeekdayDate(selectedDate)}
@@ -403,7 +403,7 @@ export function MontagePlanningLayoutMobile() {
           type="button"
           onClick={() => setSelectedDate((d) => addDays(d, -1))}
           aria-label="Vorige dag"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-petrol active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -412,7 +412,7 @@ export function MontagePlanningLayoutMobile() {
             <button
               type="button"
               onClick={() => setSelectedDate(new Date())}
-              className="text-[12px] font-semibold uppercase tracking-wider text-[#1A535C] hover:text-[#0F3C44] transition-colors"
+              className="text-[12px] font-semibold uppercase tracking-wider text-petrol hover:text-[#0F3C44] transition-colors"
             >
               Vandaag
             </button>
@@ -422,7 +422,7 @@ export function MontagePlanningLayoutMobile() {
           type="button"
           onClick={() => setSelectedDate((d) => addDays(d, 1))}
           aria-label="Volgende dag"
-          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-[#1A535C] active:scale-95 transition-all flex-shrink-0"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-muted text-foreground/70 hover:bg-muted hover:text-petrol active:scale-95 transition-all flex-shrink-0"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -439,7 +439,7 @@ export function MontagePlanningLayoutMobile() {
               <CalendarCheck className="h-9 w-9 text-muted-foreground/80" strokeWidth={1.5} />
             </div>
             <p className="text-[15px] font-medium text-foreground/70">
-              Geen montages voor {isToday ? 'vandaag' : 'deze dag'}<span className="text-[#F15025]">.</span>
+              Geen montages voor {isToday ? 'vandaag' : 'deze dag'}<span className="text-flame">.</span>
             </p>
             {scope === 'mijn' && (
               <p className="mt-1.5 text-[13px] text-muted-foreground max-w-[260px] leading-relaxed">

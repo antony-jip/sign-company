@@ -503,7 +503,7 @@ export function OfferteDetail() {
     }
   }, [offerte, navigate])
 
-  // Create factuur from offerte — navigate to FactuurEditor with pre-fill
+  // Create factuur from offerte · navigate to FactuurEditor with pre-fill
   const handleMaakFactuur = useCallback(() => {
     if (!offerte) return
 
@@ -634,7 +634,7 @@ export function OfferteDetail() {
                     key={opt.key}
                     onClick={() => handleStatusChange(opt.key)}
                     className={`w-full text-left px-2.5 py-2 rounded-[9px] text-sm transition-colors hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] ${
-                      offerte.status === opt.key ? 'text-[#F15025] font-semibold' : 'text-foreground/80'
+                      offerte.status === opt.key ? 'text-flame font-semibold' : 'text-foreground/80'
                     }`}
                   >
                     {opt.label}
@@ -764,7 +764,7 @@ export function OfferteDetail() {
                     }))
                     const key = 'doen_clipboard_items'
                     localStorage.setItem(key, JSON.stringify(templates))
-                    toast.success(`${templates.length} item${templates.length === 1 ? '' : 's'} gekopieerd — plak in een andere offerte`)
+                    toast.success(`${templates.length} item${templates.length === 1 ? '' : 's'} gekopieerd · plak in een andere offerte`)
                   } catch (err) {
                     toast.error('Kon items niet kopiëren')
                   }
@@ -1020,7 +1020,7 @@ export function OfferteDetail() {
           </div>
         )}
 
-        {/* Opvolg timeline — alleen bij verzonden/bekeken */}
+        {/* Opvolg timeline · alleen bij verzonden/bekeken */}
         {(offerte.status === 'verzonden' || offerte.status === 'bekeken') && organisatieId && (
           <OfferteOpvolgTimeline
             offerteId={offerte.id}
@@ -1230,7 +1230,7 @@ export function OfferteDetail() {
                   <p className="text-sm text-foreground">{act.beschrijving}</p>
                   <p className="text-xs text-muted-foreground">
                     {formatDateTime(act.datum)}
-                    {act.medewerker && ` — ${act.medewerker}`}
+                    {act.medewerker && ` · ${act.medewerker}`}
                   </p>
                 </div>
               </div>

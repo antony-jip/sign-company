@@ -84,7 +84,7 @@ interface CalculatieModalProps {
   onClose: () => void
   /** De huidige calculatieregels (als je een bestaande calculatie bewerkt) */
   initialRegels?: CalculatieRegel[]
-  /** Of dit het eerste offerte-item is — alleen dan tonen we de opstartkosten-optie */
+  /** Of dit het eerste offerte-item is · alleen dan tonen we de opstartkosten-optie */
   isEersteItem?: boolean
   /** De beschrijving van het offerte-item (wordt als titel getoond) */
   itemBeschrijving?: string
@@ -449,7 +449,7 @@ export function CalculatieModal({
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="pb-1">
           <DialogTitle className="flex items-center gap-2.5 text-2xl font-bold text-foreground">
-            <Calculator className="h-6 w-6 text-[#1A535C]" />
+            <Calculator className="h-6 w-6 text-petrol" />
             Calculatie maken
           </DialogTitle>
           <DialogDescription className="text-foreground/70 text-sm">
@@ -598,7 +598,7 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-right px-2 pl-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/60 w-32 border-l border-[#1A535C]/10 dark:border-[#5BB5B5]/10">
+                  <th className="text-right px-2 pl-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/60 w-32 border-l border-petrol/10 dark:border-[#5BB5B5]/10">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
@@ -688,7 +688,7 @@ export function CalculatieModal({
                       </td>
 
                       {/* Verkoop */}
-                      <td className="px-2 pl-4 py-1.5 border-l border-[#1A535C]/10 dark:border-[#5BB5B5]/10">
+                      <td className="px-2 pl-4 py-1.5 border-l border-petrol/10 dark:border-[#5BB5B5]/10">
                         <CurrencyCell
                           value={regel.verkoop_prijs}
                           onChange={(v) => updateRegel(regel.id, { verkoop_prijs: v })}
@@ -724,7 +724,7 @@ export function CalculatieModal({
                             variant="ghost"
                             size="icon"
                             onClick={() => duplicateRegel(regel.id)}
-                            className="h-7 w-7 text-muted-foreground/60 hover:text-[#1A535C]"
+                            className="h-7 w-7 text-muted-foreground/60 hover:text-petrol"
                             title="Regel dupliceren"
                           >
                             <Copy className="h-3.5 w-3.5" />
@@ -761,7 +761,7 @@ export function CalculatieModal({
           </Button>
         </div>
 
-        {/* ======== SAMENVATTING — één coherente kaart ======== */}
+        {/* ======== SAMENVATTING · één coherente kaart ======== */}
         <div className="overflow-hidden rounded-xl border border-border">
           {isEersteItem && (
             <div className="flex items-center gap-3 border-b border-border px-4 py-2.5">
@@ -769,7 +769,7 @@ export function CalculatieModal({
                 id="calc-opstartkosten"
                 checked={heeftOpstartkosten}
                 onCheckedChange={(v) => toggleOpstartkosten(v === true)}
-                className="border-[#1A535C] data-[state=checked]:bg-[#1A535C] data-[state=checked]:border-[#1A535C]"
+                className="border-petrol data-[state=checked]:bg-petrol data-[state=checked]:border-petrol"
               />
               <label
                 htmlFor="calc-opstartkosten"
@@ -822,9 +822,9 @@ export function CalculatieModal({
             <div className="flex items-center gap-3">
               <div className="text-right leading-tight">
                 <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Verkooptotaal<span className="text-[#F15025]">.</span>
+                  Verkooptotaal<span className="text-flame">.</span>
                 </div>
-                <div className="font-mono tabular-nums text-2xl font-bold text-[#1A535C] dark:text-white">
+                <div className="font-mono tabular-nums text-2xl font-bold text-petrol dark:text-white">
                   {formatCurrency(totalen.totaalVerkoop)}
                 </div>
               </div>
@@ -835,7 +835,7 @@ export function CalculatieModal({
                     onClick={() => zetVerkooptotaalOp(vorigeStap)}
                     disabled={!kanOmlaag}
                     aria-label="€ 5 omlaag"
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-[#1A535C] transition-colors hover:bg-[#1A535C] hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[#1A535C] dark:text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-petrol transition-colors hover:bg-petrol hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-petrol dark:text-white"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
@@ -843,7 +843,7 @@ export function CalculatieModal({
                     type="button"
                     onClick={() => zetVerkooptotaalOp(volgendeStap)}
                     aria-label="€ 5 omhoog"
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-[#1A535C] transition-colors hover:bg-[#1A535C] hover:text-white dark:text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-petrol transition-colors hover:bg-petrol hover:text-white dark:text-white"
                   >
                     <Plus className="h-4 w-4" />
                   </button>

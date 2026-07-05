@@ -83,7 +83,7 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
         colorClass="text-mod-taken-text"
       />
 
-      {/* Progress indicator — refined inline version */}
+      {/* Progress indicator · refined inline version */}
       <div className="flex items-center gap-0 py-2.5 px-5 ml-auto">
         {STEPS.map((step, i) => {
           const Icon = step.icon

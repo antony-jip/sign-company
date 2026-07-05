@@ -226,14 +226,14 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
         else nw = nh * r
       }
 
-      // Snap (Shift omzeilt — zelfde toets als vrije ratio)
+      // Snap (Shift omzeilt · zelfde toets als vrije ratio)
       if (!shift) {
         nw = Math.round(nw / CANVAS_SNAP_GRID_MM) * CANVAS_SNAP_GRID_MM
         nh = Math.round(nh / CANVAS_SNAP_GRID_MM) * CANVAS_SNAP_GRID_MM
       }
 
       // Hard-floor 1 snap-stap (5mm) BEFORE we derive nx/ny van de nieuwe
-      // afmetingen — anders kan een NW-resize naar binnen het element
+      // afmetingen · anders kan een NW-resize naar binnen het element
       // wegklemmen tot 1mm in de rechter-onderhoek.
       // CANVAS_MIN_ELEMENT_MM (15mm) blijft soft-cap voor de rode badge.
       const MIN = CANVAS_SNAP_GRID_MM
@@ -248,7 +248,7 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
         ny = start.elementY + (start.elementH - nh)
       }
 
-      // Clamp binnen werkruimte — nx/ny eerst tegen breedte-nw zodat de
+      // Clamp binnen werkruimte · nx/ny eerst tegen breedte-nw zodat de
       // element-grenzen altijd binnen 267x100mm vallen.
       nx = clamp(nx, 0, CANVAS_WERKRUIMTE_MM.breedte - nw)
       ny = clamp(ny, 0, CANVAS_WERKRUIMTE_MM.hoogte - nh)
@@ -312,12 +312,12 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
       onPointerCancel={handleDragPointerCancel}
       className={cn(
         'absolute cursor-move',
-        selected && 'ring-1 ring-inset ring-[#1A535C]',
+        selected && 'ring-1 ring-inset ring-petrol',
         // Hover-frame onderdrukken zodra een ander element geselecteerd is —
         // voorkomt dubbele kaders (100% selectie + 30% hover).
         !selected &&
           !anyOtherSelected &&
-          'hover:ring-1 hover:ring-inset hover:ring-[#1A535C]/30',
+          'hover:ring-1 hover:ring-inset hover:ring-petrol/30',
       )}
       style={{
         left: `${leftPx}px`,
@@ -347,7 +347,7 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
               onPointerUp={handleResizePointerUp}
               onPointerCancel={handleResizePointerCancel}
               className={cn(
-                'absolute w-2.5 h-2.5 bg-[#F15025] border-2 border-white',
+                'absolute w-2.5 h-2.5 bg-flame border-2 border-white',
                 'shadow-[0_0_0_0.5px_rgba(0,0,0,0.15)]',
                 activeCorner === corner &&
                   'shadow-[0_0_0_3px_rgba(241,80,37,0.25)]',
@@ -371,7 +371,7 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
             className={cn(
               'absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full bg-white',
               'border border-[#EBEBEB] flex items-center justify-center',
-              'text-[#6B6B66] hover:text-[#F15025] hover:border-[#F15025]',
+              'text-muted-foreground hover:text-flame hover:border-flame',
               'transition-colors cursor-pointer',
             )}
             aria-label="Element verwijderen"
@@ -385,7 +385,7 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
         <div
           className={cn(
             'absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded',
-            'bg-[#1A535C] text-white text-[11px] font-mono tabular-nums whitespace-nowrap',
+            'bg-petrol text-white text-[11px] font-mono tabular-nums whitespace-nowrap',
             'shadow-[0_2px_8px_rgba(0,0,0,0.15)] pointer-events-none select-none',
           )}
         >
@@ -399,7 +399,7 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
             'absolute -bottom-7 px-2 py-0.5 rounded text-[11px] text-white',
             'font-mono tabular-nums whitespace-nowrap',
             'shadow-[0_2px_8px_rgba(0,0,0,0.15)] pointer-events-none select-none',
-            isTooSmall ? 'bg-[#C0451A]' : 'bg-[#1A535C]',
+            isTooSmall ? 'bg-[#C0451A]' : 'bg-petrol',
           )}
           style={
             activeCorner === 'sw' || activeCorner === 'nw'

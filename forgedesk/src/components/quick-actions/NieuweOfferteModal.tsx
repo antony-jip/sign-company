@@ -478,7 +478,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                     onClick={clearKlant}
                     className="ml-auto text-muted-foreground hover:text-foreground text-xs shrink-0"
                   >
-                    ✕
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
@@ -516,7 +516,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                           <button
                             type="button"
                             onMouseDown={handleSnelKlant}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-[#1A535C]/5 flex items-center gap-2 text-[#1A535C]"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-petrol/5 flex items-center gap-2 text-petrol"
                           >
                             <UserPlus className="h-3.5 w-3.5 shrink-0" />
                             <span className="truncate">Snel: &quot;{klantQuery.trim()}&quot;</span>
@@ -528,7 +528,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                               setNewKlant(prev => ({ ...prev, bedrijfsnaam: klantQuery.trim() }))
                               setShowSuggestions(false)
                             }}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-[#1A535C]/5 flex items-center gap-2 text-[#1A535C]"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-petrol/5 flex items-center gap-2 text-petrol"
                           >
                             <Plus className="h-3.5 w-3.5 shrink-0" />
                             <span>Uitgebreid toevoegen...</span>
@@ -541,9 +541,9 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
               )}
               {/* Inline formulier nieuwe klant */}
               {showNewKlant === 'uitgebreid' && !selectedKlant && (
-                <div className="mt-2 rounded-lg border border-[#1A535C]/20 bg-[#1A535C]/5 p-3 space-y-2">
+                <div className="mt-2 rounded-lg border border-petrol/20 bg-petrol/5 p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-[#1A535C]">Nieuwe klant</span>
+                    <span className="text-xs font-medium text-petrol">Nieuwe klant</span>
                     <button type="button" onClick={() => setShowNewKlant('none')} className="text-muted-foreground hover:text-foreground">
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -621,7 +621,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             )}
           </div>
 
-          {/* Taak aanmaken — altijd zichtbaar */}
+          {/* Taak aanmaken · altijd zichtbaar */}
           <div className="space-y-1.5">
             <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
               <input
@@ -682,7 +682,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                   <button
                     type="button"
                     onClick={() => taakFileRef.current?.click()}
-                    className="h-8 px-2.5 text-[11px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded-md flex items-center gap-1.5 hover:border-[#1A535C]/30 hover:bg-[#1A535C]/5 transition-colors"
+                    className="h-8 px-2.5 text-[11px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded-md flex items-center gap-1.5 hover:border-petrol/30 hover:bg-petrol/5 transition-colors"
                   >
                     <Paperclip className="h-3 w-3" />
                     Bestanden toevoegen
@@ -726,7 +726,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                 type="checkbox"
                 checked={maakProject}
                 onChange={e => setMaakProject(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-border accent-[#1A535C]"
+                className="h-3.5 w-3.5 rounded border-border accent-petrol"
               />
               <FolderPlus className="h-3.5 w-3.5" />
               <span className="text-[11px]">Project erbij aanmaken</span>

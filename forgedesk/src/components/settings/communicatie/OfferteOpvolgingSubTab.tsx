@@ -348,7 +348,7 @@ export function OfferteOpvolgingSubTab() {
                         defaultValue={stap.onderwerp}
                         onBlur={(e) => handleStapChange(stap, { onderwerp: e.target.value })}
                         className="mt-1 text-xs h-8"
-                        placeholder="Bijv. Offerte {offerte_nummer} — heeft u nog vragen?"
+                        placeholder="Bijv. Offerte {offerte_nummer} · heeft u nog vragen?"
                       />
                     </div>
                     <div>
@@ -471,7 +471,7 @@ export function OfferteOpvolgingSubTab() {
 
           <div className="flex items-center justify-between pt-2">
             <span className="text-sm text-muted-foreground">
-              {schemas.length === 0 ? 'Nog geen schema — maak er één aan.' : `${schemas.length} ${schemas.length === 1 ? 'schema' : 'schema\'s'}`}
+              {schemas.length === 0 ? 'Nog geen schema · maak er één aan.' : `${schemas.length} ${schemas.length === 1 ? 'schema' : 'schema\'s'}`}
             </span>
             <Button size="sm" onClick={handleCreateSchema} className="text-xs">
               <Plus className="h-3.5 w-3.5 mr-1" /> Nieuw schema

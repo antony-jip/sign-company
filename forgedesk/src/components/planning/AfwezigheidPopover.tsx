@@ -48,7 +48,7 @@ interface Props {
   onDeleteAfwezigheid: (id: string) => void
 }
 
-const inputCls = "rounded-lg border border-[rgba(26,83,92,0.14)] bg-[#FAFBFB] dark:bg-white/[0.04] px-2.5 py-2 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/45 focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/15 transition-colors"
+const inputCls = "rounded-lg border border-[rgba(26,83,92,0.14)] bg-[#FAFBFB] dark:bg-white/[0.04] px-2.5 py-2 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/45 focus:border-petrol focus:ring-2 focus:ring-petrol/15 transition-colors"
 
 export function AfwezigheidPopover({
   monteur, patronen, afwezigheden, defaultDatum, trigger,
@@ -140,7 +140,7 @@ export function AfwezigheidPopover({
         {/* Header */}
         <div className="px-6 pt-6 pb-4">
           <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/60">Afwezigheid</div>
-          <DialogTitle className="text-[18px] font-bold tracking-[-0.3px] text-[#1A535C] dark:text-foreground">{monteur.naam}</DialogTitle>
+          <DialogTitle className="text-[18px] font-bold tracking-[-0.3px] text-petrol dark:text-foreground">{monteur.naam}</DialogTitle>
         </div>
 
         {/* Toggle */}
@@ -153,7 +153,7 @@ export function AfwezigheidPopover({
                 onClick={() => setMode(m)}
                 className={cn(
                   "flex-1 rounded-md py-1.5 text-[13px] font-semibold transition-colors",
-                  mode === m ? "bg-white dark:bg-white/[0.12] text-[#1A535C] dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  mode === m ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {m === 'patroon' ? 'Vrije dagen' : 'Afwezig'}
@@ -175,7 +175,7 @@ export function AfwezigheidPopover({
                     onClick={() => toggleDag(idx)}
                     className={cn(
                       'flex-1 rounded-lg py-2 text-[12px] font-medium capitalize transition-colors',
-                      actief ? 'bg-[#1A535C] text-white' : 'bg-[hsl(38,20%,95.5%)] text-muted-foreground hover:text-foreground dark:bg-white/[0.06]'
+                      actief ? 'bg-petrol text-white' : 'bg-[hsl(38,20%,95.5%)] text-muted-foreground hover:text-foreground dark:bg-white/[0.06]'
                     )}
                   >
                     {d}
@@ -186,7 +186,7 @@ export function AfwezigheidPopover({
             <button
               type="button"
               onClick={() => setTijdelijk((t) => !t)}
-              className={cn('mt-3 text-[12px] font-medium transition-colors', tijdelijk ? 'text-[#1A535C] dark:text-foreground' : 'text-muted-foreground hover:text-foreground')}
+              className={cn('mt-3 text-[12px] font-medium transition-colors', tijdelijk ? 'text-petrol dark:text-foreground' : 'text-muted-foreground hover:text-foreground')}
             >
               {tijdelijk ? '− Alleen tijdelijke periode' : '+ Alleen tijdelijke periode'}
             </button>
@@ -201,17 +201,17 @@ export function AfwezigheidPopover({
               type="button"
               onClick={savePatroon}
               disabled={patroonBezig || !patroonGewijzigd}
-              className="mt-4 w-full rounded-lg bg-[#1A535C] px-3 py-2.5 text-[13px] font-semibold text-white hover:bg-[#16444c] disabled:opacity-40 transition-colors"
+              className="mt-4 w-full rounded-lg bg-petrol px-3 py-2.5 text-[13px] font-semibold text-white hover:bg-[#16444c] disabled:opacity-40 transition-colors"
             >
               {patroonBezig ? 'Opslaan...' : patroon ? 'Wijzigingen opslaan' : 'Weekpatroon opslaan'}
             </button>
             <div className="mt-2.5 flex items-center justify-between gap-2">
-              <p className="text-[11.5px] leading-snug text-muted-foreground/60">Deze vrije dag(en) komen elke week automatisch terug.</p>
+              <p className="text-[11px] leading-snug text-muted-foreground/60">Deze vrije dag(en) komen elke week automatisch terug.</p>
               {patroon && (
                 <button
                   type="button"
                   onClick={async () => { await onDeletePatroon(patroon.id); setDagen(0); setTijdelijk(false); setVan(''); setTot('') }}
-                  className="shrink-0 text-[11.5px] font-medium text-[#C03A18] hover:underline"
+                  className="shrink-0 text-[11px] font-medium text-[#C03A18] hover:underline"
                 >
                   Verwijderen
                 </button>
@@ -230,7 +230,7 @@ export function AfwezigheidPopover({
                   onClick={() => setType(t.value)}
                   className={cn(
                     'flex-1 rounded-lg py-1.5 text-[12px] font-medium transition-colors',
-                    type === t.value ? 'bg-[#1A535C] text-white' : 'bg-[hsl(38,20%,95.5%)] text-muted-foreground hover:text-foreground dark:bg-white/[0.06]'
+                    type === t.value ? 'bg-petrol text-white' : 'bg-[hsl(38,20%,95.5%)] text-muted-foreground hover:text-foreground dark:bg-white/[0.06]'
                   )}
                 >
                   {t.label}
@@ -248,7 +248,7 @@ export function AfwezigheidPopover({
                   onClick={() => setDagdeel(d.value)}
                   className={cn(
                     'flex-1 rounded-lg py-1.5 text-[12px] font-medium transition-colors',
-                    dagdeel === d.value ? 'bg-[#1A535C] text-white' : 'bg-[hsl(38,20%,95.5%)] text-muted-foreground hover:text-foreground dark:bg-white/[0.06]'
+                    dagdeel === d.value ? 'bg-petrol text-white' : 'bg-[hsl(38,20%,95.5%)] text-muted-foreground hover:text-foreground dark:bg-white/[0.06]'
                   )}
                 >
                   {d.label}
@@ -278,7 +278,7 @@ export function AfwezigheidPopover({
             <input
               value={opmerking}
               onChange={(e) => setOpmerking(e.target.value)}
-              placeholder="Omschrijving — bijv. Tandarts (optioneel)"
+              placeholder="Omschrijving · bijv. Tandarts (optioneel)"
               className={cn(inputCls, "mt-2.5 w-full")}
             />
 
@@ -286,7 +286,7 @@ export function AfwezigheidPopover({
               type="button"
               onClick={addAfwezigheid}
               disabled={afwBezig || !start}
-              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#F15025] px-3 py-2.5 text-[13px] font-semibold text-white shadow-[0_1px_3px_rgba(241,80,37,0.25)] hover:bg-[#E0481D] disabled:opacity-40 transition-colors"
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-flame px-3 py-2.5 text-[13px] font-semibold text-white shadow-[0_1px_3px_rgba(241,80,37,0.25)] hover:bg-[#E0481D] disabled:opacity-40 transition-colors"
             >
               <Plus className="h-3.5 w-3.5" />
               {afwBezig ? 'Toevoegen...' : 'Afwezigheid toevoegen'}
@@ -304,7 +304,7 @@ export function AfwezigheidPopover({
                       <div key={a.id} className="group/afw flex items-center justify-between gap-2">
                         <div className="min-w-0 truncate text-[13px]">
                           <span className="font-medium text-foreground">{lbl}</span>
-                          <span className="text-[#F15025]">.</span>
+                          <span className="text-flame">.</span>
                           <span className="ml-1.5 font-mono tabular-nums text-muted-foreground/70">{periode}{tijd}</span>
                           {a.opmerking && <span className="ml-1.5 text-muted-foreground/60">· {a.opmerking}</span>}
                         </div>

@@ -125,7 +125,7 @@ export function ForgieTab() {
   const [geselecteerdPakket, setGeselecteerdPakket] = useState<CreditsPakket | null>(null)
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
 
-  // Daan moet aan staan zodra je de instellingen-tab opent — ook als 'm ooit is uitgezet.
+  // Daan moet aan staan zodra je de instellingen-tab opent · ook als 'm ooit is uitgezet.
   const forgieGeforceerdRef = useRef(false)
   useEffect(() => {
     if (forgieGeforceerdRef.current) return
@@ -294,20 +294,20 @@ export function ForgieTab() {
     <div className="space-y-6">
 
       {/* ═══════════════════════════════════════════ */}
-      {/* DAAN HEADER — Petrol blok                   */}
+      {/* DAAN HEADER · Petrol blok                   */}
       {/* ═══════════════════════════════════════════ */}
-      <div className="rounded-xl bg-[#1A535C] p-6">
+      <div className="rounded-xl bg-petrol p-6">
         <h2 className="text-white text-[20px] font-bold font-display tracking-[-0.03em]">Daan</h2>
         <p className="text-white/60 text-[13px] mt-0.5">Je AI-assistent</p>
       </div>
 
       {/* ═══════════════════════════════════════════ */}
-      {/* CREDITS DASHBOARD — Altijd bovenaan        */}
+      {/* CREDITS DASHBOARD · Altijd bovenaan        */}
       {/* ═══════════════════════════════════════════ */}
       <Card className={cn(
         'border-2',
-        creditStatus === 'leeg' && 'border-[#F15025]/30 dark:border-[#F15025]/40',
-        creditStatus === 'laag' && 'border-[#F15025]/20 dark:border-[#F15025]/30',
+        creditStatus === 'leeg' && 'border-flame/30 dark:border-flame/40',
+        creditStatus === 'laag' && 'border-flame/20 dark:border-flame/30',
         creditStatus === 'ok' && 'border-border',
       )}>
         <CardHeader className="pb-3">
@@ -326,8 +326,8 @@ export function ForgieTab() {
             <div className="text-center">
               <div className={cn(
                 'text-4xl font-bold font-mono tabular-nums',
-                creditStatus === 'leeg' && 'text-[#F15025]',
-                creditStatus === 'laag' && 'text-[#F15025]/70',
+                creditStatus === 'leeg' && 'text-flame',
+                creditStatus === 'laag' && 'text-flame/70',
                 creditStatus === 'ok' && 'text-foreground',
               )}>
                 {creditSaldo}
@@ -358,7 +358,7 @@ export function ForgieTab() {
                 <div
                   className={cn(
                     'h-1.5 rounded-full transition-all',
-                    forgiePercentage > 80 ? 'bg-[#F15025]' : forgiePercentage > 50 ? 'bg-[#F15025]/60' : 'bg-[#1A535C]'
+                    forgiePercentage > 80 ? 'bg-flame' : forgiePercentage > 50 ? 'bg-flame/60' : 'bg-petrol'
                   )}
                   style={{ width: `${forgiePercentage}%` }}
                 />
@@ -371,8 +371,8 @@ export function ForgieTab() {
             <div className={cn(
               'rounded-lg p-3 flex items-start gap-2 text-sm',
               creditStatus === 'leeg'
-                ? 'bg-[#F15025]/5 dark:bg-[#F15025]/10 text-[#F15025] dark:text-[#F15025]'
-                : 'bg-[#F15025]/5 dark:bg-[#F15025]/10 text-[#F15025]/80 dark:text-[#F15025]/80'
+                ? 'bg-flame/5 dark:bg-flame/10 text-flame dark:text-flame'
+                : 'bg-flame/5 dark:bg-flame/10 text-flame/80 dark:text-flame/80'
             )}>
               <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <div>
@@ -547,7 +547,7 @@ export function ForgieTab() {
                           <td className="p-2 text-muted-foreground truncate max-w-[200px]">
                             {t.beschrijving}
                           </td>
-                          <td className={`p-2 text-right font-medium font-mono ${t.aantal > 0 ? 'text-[#1A535C]' : 'text-[#F15025]'}`}>
+                          <td className={`p-2 text-right font-medium font-mono ${t.aantal > 0 ? 'text-petrol' : 'text-flame'}`}>
                             {t.aantal > 0 ? '+' : ''}{t.aantal}
                           </td>
                           <td className="p-2 text-right">{t.saldo_na}</td>
@@ -595,7 +595,7 @@ export function ForgieTab() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="forgie-toggle" className="flex items-center gap-2 cursor-pointer">
-                <Bot className="w-4 h-4 text-[#1A535C] dark:text-[#2A7A86]" />
+                <Bot className="w-4 h-4 text-petrol dark:text-[#2A7A86]" />
                 <span className="font-medium">Daan inschakelen</span>
               </Label>
               <p className="text-xs text-muted-foreground ml-6">
@@ -625,7 +625,7 @@ export function ForgieTab() {
             onChange={e => setBedrijfscontext(e.target.value)}
             placeholder="Bijv: Wij zijn een signbedrijf in Enkhuizen, gespecialiseerd in lichtreclames en gevelbelettering. We werken met 4 monteurs."
             rows={4}
-            className="resize-none bg-muted dark:bg-muted border-border focus-visible:ring-[#1A535C]"
+            className="resize-none bg-muted dark:bg-muted border-border focus-visible:ring-petrol"
           />
           <div className="flex items-center justify-between">
             <span className={`text-xs ${bedrijfscontext.length > 500 ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
@@ -749,7 +749,7 @@ export function ForgieTab() {
                       <p className="text-xs text-muted-foreground">{imp.count} rijen &middot; {new Date(imp.created_at).toLocaleDateString('nl-NL')}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-[#F15025] hover:bg-[#F15025]/5 flex-shrink-0" onClick={() => handleDeleteImport(imp.bestandsnaam)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-flame hover:bg-flame/5 flex-shrink-0" onClick={() => handleDeleteImport(imp.bestandsnaam)}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
@@ -774,7 +774,7 @@ export function ForgieTab() {
       {/* API Status */}
       {!visInstellingen.fal_api_key_geconfigureerd && (
         <div className="bg-muted dark:bg-muted border border-border dark:border-border rounded-lg p-3 flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 text-[#F15025] mt-0.5" />
+          <AlertTriangle className="h-4 w-4 text-flame mt-0.5" />
           <div className="text-sm">
             <p className="font-medium text-foreground dark:text-white">fal.ai API key niet geconfigureerd</p>
             <p className="text-muted-foreground mt-1">
@@ -859,7 +859,7 @@ export function ForgieTab() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
-            <Badge className="bg-[#1A535C]/10 text-[#1A535C] dark:bg-[#2A7A86]/20 dark:text-[#2A7A86]">
+            <Badge className="bg-petrol/10 text-petrol dark:bg-[#2A7A86]/20 dark:text-[#2A7A86]">
               Claude Sonnet 4.6
             </Badge>
             <span className="text-sm text-muted-foreground">

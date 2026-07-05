@@ -47,7 +47,7 @@ export function TeamCard({ teamLeden, medewerkers, onChange }: TeamCardProps) {
     <div className="doen-slate-surface rounded-2xl p-5">
       <div className="flex items-baseline justify-between mb-3">
         <h3 className="font-heading text-[15px] font-bold text-foreground">
-          Team<span className="text-[#F15025]">.</span>
+          Team<span className="text-flame">.</span>
         </h3>
         <span
           className="text-[12px] text-muted-foreground"
@@ -86,7 +86,7 @@ export function TeamCard({ teamLeden, medewerkers, onChange }: TeamCardProps) {
               type="button"
               disabled={busy || beschikbaar.length === 0}
               title="Teamlid toevoegen"
-              className="inline-flex items-center gap-1 h-7 pl-1.5 pr-2.5 rounded-full border border-dashed border-[rgba(26,83,92,0.3)] text-[12px] font-medium text-foreground/70 hover:border-[#1A535C] hover:text-[#1A535C] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 h-7 pl-1.5 pr-2.5 rounded-full border border-dashed border-[rgba(26,83,92,0.3)] text-[12px] font-medium text-foreground/70 hover:border-petrol hover:text-petrol transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Plus className="h-3.5 w-3.5" strokeWidth={2} />
               {toegewezen.length === 0 ? 'Teamlid' : ''}

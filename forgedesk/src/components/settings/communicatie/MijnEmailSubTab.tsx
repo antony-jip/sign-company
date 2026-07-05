@@ -15,7 +15,7 @@ export function MijnEmailSubTab() {
       </p>
       <a
         href="/instellingen?tab=email"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1A535C] hover:text-[#0F3D45] transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-petrol hover:text-[#0F3D45] transition-colors"
       >
         Open Instellingen, E-mail
         <ArrowRight className="h-3.5 w-3.5" />

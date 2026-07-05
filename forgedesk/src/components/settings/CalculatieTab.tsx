@@ -60,7 +60,7 @@ import { logger } from '../../utils/logger'
 import { confirm } from '@/components/shared/ConfirmDialog'
 
 // ============ STARTER TEMPLATES ============
-// Pre-built calculatie templates for sign companies — installable with 1 click
+// Pre-built calculatie templates for sign companies · installable with 1 click
 
 function makeRegel(overrides: Partial<CalculatieRegel>): CalculatieRegel {
   return {
@@ -451,7 +451,7 @@ function StartSection({
         </CardContent>
       </Card>
 
-      {/* Hoe werkt het — visual flow */}
+      {/* Hoe werkt het · visual flow */}
       <Card>
         <CardContent className="p-5">
           <h3 className="text-sm font-semibold text-foreground dark:text-white mb-3 flex items-center gap-2">
