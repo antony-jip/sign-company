@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils'
 import { useSupportAttentie } from '@/hooks/useSupportInbox'
 import { ADMIN_USER_ID } from '@/services/supportChatService'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTheme } from '@/contexts/ThemeContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
@@ -69,7 +68,6 @@ export function TopNav() {
   const { user, logout } = useAuth()
   const isSupportAdmin = user?.id === ADMIN_USER_ID
   const supportAttentie = useSupportAttentie('support-topnav', isSupportAdmin)
-  const { theme, toggleTheme } = useTheme()
   const { settings } = useAppSettings()
   const { setLayoutMode } = useSidebar()
   const location = useLocation()

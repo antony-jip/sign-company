@@ -392,6 +392,13 @@
     background-color: #F5F4F1;
   }
 
+  /* Dark mode: laat de body de thema-tokens volgen i.p.v. de hardcoded lichte
+     waarden hierboven (anders blijft de achtergrond licht ondanks .dark). */
+  .dark body {
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+
   /* Heading typography */
   h1, h2, h3, .font-heading {
     font-family: 'Bricolage Grotesque', system-ui, sans-serif;

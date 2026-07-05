@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, ReactNode } from 'react'
 
 type Theme = 'light' | 'dark'
 
@@ -11,14 +11,9 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Forceer light mode — dark mode is uitgeschakeld
-  useEffect(() => {
-    const root = window.document.documentElement
-    root.classList.remove('dark')
-    root.classList.add('light')
-    localStorage.removeItem('doen_theme')
-  }, [])
-
+  // Inert wrapper: het thema (licht/donker) wordt volledig beheerd door
+  // PaletteContext (leest doen_app_theme, zet .dark, volgt OS-voorkeur).
+  // Deze provider forceert niets meer, zodat dark mode werkt.
   const noop = () => {}
 
   return (
