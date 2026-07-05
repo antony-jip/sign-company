@@ -73,8 +73,15 @@ export default defineConfig({
           if (id.includes('node_modules/dompurify')) {
             return 'vendor-dompurify'
           }
-          // Services layer — shared by many lazy chunks, must be separate
+          // jsPDF + autotable: only used by pdf services, keep out of eager load
+          if (id.includes('node_modules/jspdf')) {
+            return 'vendor-pdf'
+          }
+          // Services layer — shared by many lazy chunks, must be separate.
+          // PDF services excluded: they pull in jsPDF (~430 kB) and the
+          // services chunk loads eagerly at startup via contexts.
           if (id.includes('/src/services/')) {
+            if (/pdfservice/i.test(id)) return undefined
             return 'services'
           }
           // Contexts — loaded eagerly, shared across all routes
