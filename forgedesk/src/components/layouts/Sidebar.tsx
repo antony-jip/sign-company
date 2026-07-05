@@ -417,8 +417,8 @@ export function Sidebar() {
         >
           {collapsed ? (
             <>
-              <img src="/logos/doen-app-icon.svg" alt="doen." className="h-10 w-10 transition-transform duration-300 group-hover/logo:scale-105 dark:hidden" />
-              <img src="/logos/doen-app-icon-wit.svg" alt="doen." className="h-10 w-10 transition-transform duration-300 group-hover/logo:scale-105 hidden dark:block" />
+              <img src="/logos/doen-app-icon.svg" alt="doen." className="h-12 w-12 transition-transform duration-300 group-hover/logo:scale-105 dark:hidden" />
+              <img src="/logos/doen-app-icon-wit.svg" alt="doen." className="h-12 w-12 transition-transform duration-300 group-hover/logo:scale-105 hidden dark:block" />
             </>
           ) : (
             <>
