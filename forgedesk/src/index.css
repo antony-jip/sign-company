@@ -2362,6 +2362,17 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
   }
 }
 
+/* Globale tap-feedback op touch: kale knoppen krijgen een subtiele press.
+   Element-selector (lage specificiteit) + geen transition, zodat framer-motion
+   (inline transform) en bestaande active:scale-/tap-press-elementen voorrang
+   houden en niet dubbel/janky animeren. */
+@media (hover: none) and (pointer: coarse) {
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.97);
+  }
+}
+
 /* View Transitions API — iOS-style push/pop between email list ↔ reader.
    Driven by data-vt-direction on <html>, set by utils/viewTransition.ts.
    Mobile-only; desktop and reduced-motion get instant updates. */
