@@ -48,55 +48,28 @@ async function handleCreditsCheckout(session: Stripe.Checkout.Session) {
 
   const supabase = getSupabase()
 
-  const { data: existing } = await supabase
-    .from('visualizer_credits')
-    .select('*')
-    .eq('user_id', userId)
-    .single()
+  // Atomair + idempotent: de RPC claimt de Stripe-sessie (UNIQUE-index), telt de
+  // credits bij en logt de transactie in één transactie. Bij een duplicate
+  // webhook (Stripe levert at-least-once) is de sessie al geclaimd → RPC geeft
+  // null terug en we tellen niet dubbel op.
+  const { data: nieuwSaldo, error: koopError } = await supabase.rpc('visualizer_credits_koop', {
+    p_user: userId,
+    p_credits: credits,
+    p_session_id: session.id,
+    p_payment_intent: (session.payment_intent as string) ?? null,
+    p_beschrijving: `Stripe betaling — ${pakketId} pakket (${credits} credits)`,
+  })
 
-  // Idempotency check — voorkom dubbele credit toevoeging bij duplicate webhooks
-  const { data: bestaandeTransactie } = await supabase
-    .from('credit_transacties')
-    .select('id')
-    .eq('stripe_session_id', session.id)
-    .maybeSingle()
-  if (bestaandeTransactie) {
+  if (koopError) {
+    console.error(`Credits toevoegen mislukt voor user ${userId}, session ${session.id}:`, koopError)
+    throw koopError
+  }
+  if (nieuwSaldo === null) {
     console.log(`Credits already processed for session ${session.id}, skipping`)
     return
   }
 
-  if (existing) {
-    await supabase
-      .from('visualizer_credits')
-      .update({
-        saldo: existing.saldo + credits,
-        totaal_gekocht: existing.totaal_gekocht + credits,
-        laatst_bijgewerkt: new Date().toISOString(),
-      })
-      .eq('user_id', userId)
-  } else {
-    await supabase
-      .from('visualizer_credits')
-      .insert({
-        user_id: userId,
-        saldo: credits,
-        totaal_gekocht: credits,
-        totaal_gebruikt: 0,
-        laatst_bijgewerkt: new Date().toISOString(),
-      })
-  }
-
-  await supabase.from('credit_transacties').insert({
-    user_id: userId,
-    type: 'aankoop',
-    aantal: credits,
-    saldo_na: (existing?.saldo || 0) + credits,
-    beschrijving: `Stripe betaling — ${pakketId} pakket (${credits} credits)`,
-    stripe_session_id: session.id,
-    stripe_payment_intent: session.payment_intent as string,
-  })
-
-  console.log(`Credits added: user=${userId}, +${credits}, new_saldo=${(existing?.saldo || 0) + credits}`)
+  console.log(`Credits added: user=${userId}, +${credits}, new_saldo=${nieuwSaldo}`)
 }
 
 // ─── Subscription: checkout.session.completed (subscription mode) ───

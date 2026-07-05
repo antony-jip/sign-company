@@ -127,36 +127,26 @@ async function deductCredits(userId: string, creditsNodig: number, resolutie: st
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-  // Atomisch saldo verlagen
-  const { data: credits } = await supabase
-    .from('visualizer_credits')
-    .select('saldo, totaal_gebruikt')
-    .eq('user_id', userId)
-    .single()
+  // Atomair verlagen via RPC: conditionele UPDATE (saldo >= nodig) + transactie-log
+  // in één transactie. Voorkomt de TOCTOU waarbij twee parallelle generaties op
+  // hetzelfde saldo beide de check passeren.
+  const beschrijving = creditsNodig > 1
+    ? `${creditsNodig} credits gebruikt (${resolutie} visualisatie)`
+    : 'Credit gebruikt voor visualisatie'
 
-  if (!credits) return
-
-  const nieuwSaldo = credits.saldo - creditsNodig
-  if (nieuwSaldo < 0) return // Extra veiligheid
-
-  await supabase
-    .from('visualizer_credits')
-    .update({
-      saldo: nieuwSaldo,
-      totaal_gebruikt: credits.totaal_gebruikt + creditsNodig,
-      laatst_bijgewerkt: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
-
-  await supabase.from('credit_transacties').insert({
-    user_id: userId,
-    type: 'gebruik',
-    aantal: -creditsNodig,
-    saldo_na: nieuwSaldo,
-    beschrijving: creditsNodig > 1
-      ? `${creditsNodig} credits gebruikt (${resolutie} visualisatie)`
-      : 'Credit gebruikt voor visualisatie',
+  const { data: nieuwSaldo, error } = await supabase.rpc('visualizer_credits_verbruik', {
+    p_user: userId,
+    p_credits: creditsNodig,
+    p_beschrijving: beschrijving,
   })
+
+  if (error) {
+    console.error(`[generate-signing-mockup] Credits verbruiken mislukt voor user ${userId}:`, error)
+    return
+  }
+  if (nieuwSaldo === null) {
+    console.warn(`[generate-signing-mockup] Onvoldoende saldo bij aftrek voor user ${userId} (${creditsNodig} nodig)`)
+  }
 }
 
 // Claude analyzes photos + description → creates optimized fal.ai prompt
