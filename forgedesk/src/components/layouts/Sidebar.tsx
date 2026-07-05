@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { prefetchRoute } from '@/lib/routePrefetch'
 import { useSidebar, RAIL_WIDTH, EXPANDED_WIDTH } from '@/contexts/SidebarContext'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useSupportAttentie } from '@/hooks/useSupportInbox'
@@ -292,6 +293,7 @@ export function Sidebar() {
           <TooltipTrigger asChild>
             <NavLink
               to={item.path}
+              onPointerEnter={() => prefetchRoute(item.path)}
               className="relative flex items-center justify-center w-full h-11 group/rail transition-transform duration-200 active:scale-[0.94]"
             >
               {/* Actief · petrol pill (zelfde canon als de e-mail-rail);
@@ -346,6 +348,7 @@ export function Sidebar() {
       <NavLink
         key={item.path}
         to={item.path}
+        onPointerEnter={() => prefetchRoute(item.path)}
         ref={withIndicator && !isBottom
           ? (el: HTMLAnchorElement | null) => {
               if (el) itemRefs.current.set(item.path, el)

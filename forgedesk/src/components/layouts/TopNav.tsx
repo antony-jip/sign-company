@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { prefetchRoute } from '@/lib/routePrefetch'
 import { useSupportAttentie } from '@/hooks/useSupportInbox'
 import { ADMIN_USER_ID } from '@/services/supportChatService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -240,6 +241,7 @@ export function TopNav() {
                 key={item.path}
                 to={item.path}
                 end={item.path === '/'}
+                onPointerEnter={() => prefetchRoute(item.path)}
                 data-active={isActive}
                 className={cn(
                   'group relative flex items-center h-[34px] px-[13px] rounded-[10px] text-[13px] font-semibold tracking-[-0.1px] whitespace-nowrap transition-colors duration-150',
@@ -284,6 +286,7 @@ export function TopNav() {
                       <NavLink
                         key={item.path}
                         to={item.path}
+                        onPointerEnter={() => prefetchRoute(item.path)}
                         onClick={() => setOverigOpen(false)}
                         className={cn(
                           'flex items-center gap-2.5 px-2.5 py-2 rounded-[9px] text-[13px] font-medium transition-colors',
