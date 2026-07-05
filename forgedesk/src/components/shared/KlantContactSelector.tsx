@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, X, Plus, ChevronDown, ChevronUp, Building2, UserPlus, Check } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { createKlant, updateKlant, getContactpersonenByKlant } from '@/services/supabaseService'
 import type { Klant, Contactpersoon, ContactpersoonRecord } from '@/types'
 import { toast } from 'sonner'
@@ -68,6 +69,9 @@ export function KlantContactSelector({
   requireContactEmail = false,
 }: KlantContactSelectorProps) {
   const { user } = useAuth()
+  // Mobiel: resultaten inline i.p.v. een fixed-portal dropdown, zodat ze
+  // niet achter het toetsenbord of de sticky actie-balk verdwijnen.
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const [search, setSearch] = useState('')
   const [showResults, setShowResults] = useState(false)
   const [showNieuwBedrijf, setShowNieuwBedrijf] = useState(false)
@@ -178,7 +182,7 @@ export function KlantContactSelector({
 
   // Position the portaled dropdown beneath the input; track scroll (incl. nested) + resize
   useEffect(() => {
-    if (!showResults || showNieuwBedrijf) {
+    if (!showResults || showNieuwBedrijf || isMobile) {
       setDropdownPos(null)
       return
     }
@@ -194,7 +198,7 @@ export function KlantContactSelector({
       window.removeEventListener('scroll', updatePos, true)
       window.removeEventListener('resize', updatePos)
     }
-  }, [showResults, showNieuwBedrijf])
+  }, [showResults, showNieuwBedrijf, isMobile])
 
   function handleSelectKlant(klant: Klant) {
     onKlantChange(klant.id, klant)
@@ -292,6 +296,47 @@ export function KlantContactSelector({
 
   const inputStyle = { backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }
 
+  // Zoekresultaten — gedeeld tussen de desktop-portal en de mobiele inline-lijst.
+  const resultatenLijst = (
+    <>
+      {/* Nieuw bedrijf optie */}
+      <button
+        className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[hsl(var(--status-green-bg))]/50 transition-colors border-b"
+        style={{ borderColor: '#E6E4E0' }}
+        onClick={() => {
+          setShowNieuwBedrijf(true)
+          setNb((prev) => ({ ...prev, bedrijfsnaam: search }))
+        }}
+      >
+        <Plus className="w-4 h-4" />
+        <span className="text-[13px] font-medium">
+          Nieuw bedrijf toevoegen{search.trim() ? `: "${search.trim()}"` : ''}
+        </span>
+      </button>
+
+      {filtered.length === 0 ? (
+        <div className="py-4 text-center text-[13px]" style={{ color: '#A0A098' }}>
+          Geen klanten gevonden
+        </div>
+      ) : (
+        filtered.map((klant) => (
+          <button
+            key={klant.id}
+            className="w-full text-left px-3 py-2.5 hover:bg-muted transition-colors border-b last:border-0"
+            style={{ borderColor: '#E6E4E0' }}
+            onClick={() => handleSelectKlant(klant)}
+          >
+            <p className="text-[13px] font-medium" style={{ color: '#191919' }}>{klant.bedrijfsnaam}</p>
+            <div className="flex items-center gap-2">
+              {klant.contactpersoon && <span className="text-[11px]" style={{ color: '#5A5A55' }}>{klant.contactpersoon}</span>}
+              {klant.stad && <span className="text-[11px]" style={{ color: '#A0A098' }}>{klant.stad}</span>}
+            </div>
+          </button>
+        ))
+      )}
+    </>
+  )
+
   return (
     <div className="space-y-3">
       {/* Klant zoeken / selectie */}
@@ -334,10 +379,11 @@ export function KlantContactSelector({
               />
             </div>
 
-            {showResults && !showNieuwBedrijf && dropdownPos && createPortal(
+            {/* Desktop: fixed-portal dropdown onder het zoekveld */}
+            {!isMobile && showResults && !showNieuwBedrijf && dropdownPos && createPortal(
               <div
                 ref={dropdownRef}
-                className="fixed z-50 rounded-lg border bg-white shadow-lg max-h-[320px] overflow-y-auto"
+                className="fixed z-50 rounded-lg border bg-card shadow-lg max-h-[320px] overflow-y-auto"
                 style={{
                   border: '0.5px solid #E6E4E0',
                   top: dropdownPos.top,
@@ -345,43 +391,20 @@ export function KlantContactSelector({
                   width: dropdownPos.width,
                 }}
               >
-                {/* Nieuw bedrijf optie */}
-                <button
-                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[hsl(var(--status-green-bg))]/50 transition-colors border-b"
-                  style={{ borderColor: '#E6E4E0' }}
-                  onClick={() => {
-                    setShowNieuwBedrijf(true)
-                    setNb((prev) => ({ ...prev, bedrijfsnaam: search }))
-                  }}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="text-[13px] font-medium">
-                    Nieuw bedrijf toevoegen{search.trim() ? `: "${search.trim()}"` : ''}
-                  </span>
-                </button>
-
-                {filtered.length === 0 ? (
-                  <div className="py-4 text-center text-[13px]" style={{ color: '#A0A098' }}>
-                    Geen klanten gevonden
-                  </div>
-                ) : (
-                  filtered.map((klant) => (
-                    <button
-                      key={klant.id}
-                      className="w-full text-left px-3 py-2 hover:bg-muted transition-colors border-b last:border-0"
-                      style={{ borderColor: '#E6E4E0' }}
-                      onClick={() => handleSelectKlant(klant)}
-                    >
-                      <p className="text-[13px] font-medium" style={{ color: '#191919' }}>{klant.bedrijfsnaam}</p>
-                      <div className="flex items-center gap-2">
-                        {klant.contactpersoon && <span className="text-[11px]" style={{ color: '#5A5A55' }}>{klant.contactpersoon}</span>}
-                        {klant.stad && <span className="text-[11px]" style={{ color: '#A0A098' }}>{klant.stad}</span>}
-                      </div>
-                    </button>
-                  ))
-                )}
+                {resultatenLijst}
               </div>,
               document.body
+            )}
+
+            {/* Mobiel: resultaten inline in de document-flow — blijven bereikbaar
+                naast het toetsenbord en de sticky actie-balk. */}
+            {isMobile && showResults && !showNieuwBedrijf && (
+              <div
+                className="mt-1.5 rounded-lg border bg-card max-h-[52vh] overflow-y-auto"
+                style={{ border: '0.5px solid #E6E4E0' }}
+              >
+                {resultatenLijst}
+              </div>
             )}
 
             {/* Nieuw bedrijf formulier (inline) */}
@@ -422,9 +445,9 @@ export function KlantContactSelector({
 
                 {showUitgebreid && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <Input value={nb.contactpersoon} onChange={(e) => setNb({ ...nb, contactpersoon: e.target.value })} placeholder="Contactpersoon" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                    <Input value={nb.email} onChange={(e) => setNb({ ...nb, email: e.target.value })} placeholder="E-mail" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                    <Input value={nb.telefoon} onChange={(e) => setNb({ ...nb, telefoon: e.target.value })} placeholder="Telefoon" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                    <Input value={nb.contactpersoon} onChange={(e) => setNb({ ...nb, contactpersoon: e.target.value })} placeholder="Contactpersoon" autoCapitalize="words" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                    <Input value={nb.email} onChange={(e) => setNb({ ...nb, email: e.target.value })} placeholder="E-mail" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                    <Input value={nb.telefoon} onChange={(e) => setNb({ ...nb, telefoon: e.target.value })} placeholder="Telefoon" type="tel" inputMode="tel" autoComplete="tel" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                     <Input value={nb.adres} onChange={(e) => setNb({ ...nb, adres: e.target.value })} placeholder="Adres" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                     <Input value={nb.postcode} onChange={(e) => setNb({ ...nb, postcode: e.target.value })} placeholder="Postcode" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                     <Input value={nb.website} onChange={(e) => setNb({ ...nb, website: e.target.value })} placeholder="Website" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
@@ -587,10 +610,10 @@ export function KlantContactSelector({
                 Nieuwe contactpersoon
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Input value={nc.naam} onChange={(e) => setNc({ ...nc, naam: e.target.value })} placeholder="Naam *" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} autoFocus />
+                <Input value={nc.naam} onChange={(e) => setNc({ ...nc, naam: e.target.value })} placeholder="Naam *" autoCapitalize="words" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} autoFocus />
                 <Input value={nc.functie} onChange={(e) => setNc({ ...nc, functie: e.target.value })} placeholder="Functie" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                <Input value={nc.email} onChange={(e) => setNc({ ...nc, email: e.target.value })} placeholder={requireContactEmail ? 'E-mailadres *' : 'E-mailadres'} type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                <Input value={nc.telefoon} onChange={(e) => setNc({ ...nc, telefoon: e.target.value })} placeholder="Telefoonnummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                <Input value={nc.email} onChange={(e) => setNc({ ...nc, email: e.target.value })} placeholder={requireContactEmail ? 'E-mailadres *' : 'E-mailadres'} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                <Input value={nc.telefoon} onChange={(e) => setNc({ ...nc, telefoon: e.target.value })} placeholder="Telefoonnummer" type="tel" inputMode="tel" autoComplete="tel" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
               </div>
               <div className="flex items-center gap-2 pt-1">
                 <button

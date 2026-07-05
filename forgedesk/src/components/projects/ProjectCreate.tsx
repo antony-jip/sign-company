@@ -36,8 +36,20 @@ export function ProjectCreate() {
   const [contactpersoonId, setContactpersoonId] = useState('')
   const [vestigingId, setVestigingId] = useState('')
   const [status, setStatus] = useState<'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren' | 'te-plannen' | 'akkoord-klant' | 'ingepland'>('gepland')
-  const [startDatum, setStartDatum] = useState(() => new Date().toISOString().split('T')[0])
+  const [startDatum, setStartDatum] = useState('')
   const [eindDatum, setEindDatum] = useState('')
+
+  // Snelkeuze voor de startdatum — één tik i.p.v. de popover-kalender openen.
+  const datumOffset = (dagen: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() + dagen)
+    return d.toISOString().split('T')[0]
+  }
+  const startDatumChips: { label: string; waarde: string }[] = [
+    { label: 'Vandaag', waarde: datumOffset(0) },
+    { label: 'Morgen', waarde: datumOffset(1) },
+    { label: 'Volgende week', waarde: datumOffset(7) },
+  ]
 
   async function fetchKlanten() {
     try {
@@ -213,6 +225,26 @@ export function ProjectCreate() {
                   asInput
                   className="h-10 rounded-lg font-mono text-[13px]"
                 />
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {startDatumChips.map((chip) => {
+                    const actief = startDatum === chip.waarde
+                    return (
+                      <button
+                        key={chip.label}
+                        type="button"
+                        onClick={() => { hapticLight(); setStartDatum(actief ? '' : chip.waarde) }}
+                        className="tap-press h-7 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+                        style={{
+                          backgroundColor: actief ? '#1A535C' : 'hsl(var(--background))',
+                          color: actief ? '#FFFFFF' : '#5A5A55',
+                          border: '0.5px solid #E6E4E0',
+                        }}
+                      >
+                        {chip.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
               <div>
                 <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Einddatum</Label>
@@ -275,7 +307,8 @@ export function ProjectCreate() {
       </form>
       </div>
 
-      {/* Sticky bottom action bar — mobile only, sits above MobileBottomNav (h-14 + safe-area) */}
+      {/* Sticky bottom action bar — mobile only, sits above the bottom tab bar
+          (h-14 + safe-area handled by the nav itself). */}
       <div
         className="md:hidden fixed inset-x-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 flex items-center gap-2 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
         style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}

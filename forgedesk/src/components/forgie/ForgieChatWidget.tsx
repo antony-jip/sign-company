@@ -862,11 +862,12 @@ export function ForgieChatWidget() {
         onClick={() => setIsOpen(prev => !prev)}
         className={cn(
           'fixed z-[9999] flex items-center justify-center transition-all duration-200',
+          // Op mobiel boven de tabbar (h-14 + safe-area); desktop 16px vanaf de rand.
+          'bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)] md:bottom-4',
           isAdminOrg ? 'flex' : 'hidden md:flex',
         )}
         style={{
           right: 16,
-          bottom: 16,
           width: 48,
           height: 48,
           borderRadius: 14,

@@ -2039,7 +2039,7 @@ export function EmailLayout() {
         {/* Email list */}
         <div
           ref={emailListRef}
-          className="flex-1 overflow-y-auto scroll-smooth relative"
+          className="flex-1 overflow-y-auto scroll-smooth relative pb-[calc(3.5rem+env(safe-area-inset-bottom)+0.5rem)] md:pb-0"
           onScroll={handleScroll}
         >
           {/* Sticky date-group overlay — toont actieve groep bovenaan tijdens

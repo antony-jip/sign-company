@@ -2362,6 +2362,17 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
   }
 }
 
+/* Globale tap-feedback op touch: kale knoppen krijgen een subtiele press.
+   Element-selector (lage specificiteit) + geen transition, zodat framer-motion
+   (inline transform) en bestaande active:scale-/tap-press-elementen voorrang
+   houden en niet dubbel/janky animeren. */
+@media (hover: none) and (pointer: coarse) {
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.97);
+  }
+}
+
 /* View Transitions API — iOS-style push/pop between email list ↔ reader.
    Driven by data-vt-direction on <html>, set by utils/viewTransition.ts.
    Mobile-only; desktop and reduced-motion get instant updates. */
@@ -3016,6 +3027,22 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 }
 .page-content-enter {
   animation: page-enter 200ms ease-out;
+}
+
+/* Route-transitie: subtiele iOS-achtige push bij het wisselen van module.
+   Keyed op het eerste pad-segment, dus alleen bij sectie-wissels — niet bij
+   detail-/tab-navigatie binnen een module. */
+@keyframes route-push-in {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: none; }
+}
+/* backwards (niet forwards): geen blijvende transform na afloop, anders zou de
+   wrapper een containing block worden voor position:fixed-kinderen. */
+.route-transition {
+  animation: route-push-in 260ms cubic-bezier(0.32, 0.72, 0, 1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-transition { animation: none; }
 }
 
 /* Cursor helpers */

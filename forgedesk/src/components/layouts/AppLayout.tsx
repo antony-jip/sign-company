@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { TopNav } from './TopNav'
+import { MobileBottomNav } from './MobileBottomNav'
 import { ForgieChatWidget } from '@/components/forgie/ForgieChatWidget'
 import { FloatingQuickActions } from '@/components/dashboard/FloatingQuickActions'
 import { FloatingEmailButton } from '@/components/shared/FloatingEmailButton'
@@ -30,12 +30,25 @@ function OfflineBanner() {
   )
 }
 
+// Speelt een subtiele push-transitie bij het wisselen van module. Keyed op het
+// eerste pad-segment, zodat detail-/tab-navigatie binnen een module niet
+// remount of animeert. Alleen voor niet-fullbleed content.
+function AnimatedOutlet() {
+  const location = useLocation()
+  const seg = location.pathname.split('/')[1] || 'home'
+  return (
+    <div key={seg} className="route-transition">
+      <Outlet />
+    </div>
+  )
+}
+
 export function AppLayout() {
   const { layoutMode } = useSidebar()
   const location = useLocation()
-  const isDesktop = useMediaQuery('(min-width: 768px)')
-  // /email renders its own pill topbar on mobile — skip the global TopNav there.
-  const hideTopNav = !isDesktop && location.pathname.startsWith('/email')
+  // Globale TopNav overal tonen — ook op /email — zodat de top-navigatie
+  // consistent aanwezig blijft. E-mail houdt daaronder zijn eigen mail-balk.
+  const hideTopNav = false
   // Email-module verbreedt naar edge-to-edge (geen 1400px cap) zodat de
   // folder-rail tegen de viewport-rand kan plakken.
   const isEmailRoute = location.pathname.startsWith('/email')
@@ -126,13 +139,14 @@ export function AppLayout() {
                   {!hideTopNav && <TopNav />}
                   <TabBar />
                 </div>
-                <div className="w-full px-4 md:px-8 py-6 md:py-8 pb-8 page-content-enter">
-                  <Outlet />
+                <div className="w-full px-4 md:px-8 py-6 md:py-8 pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.25rem)] md:pb-8 page-content-enter">
+                  <AnimatedOutlet />
                 </div>
               </div>
             )}
           </main>
         </div>
+        <MobileBottomNav />
         <FloatingQuickActions />
         <FloatingEmailButton />
         <ForgieChatWidget />
@@ -183,7 +197,7 @@ export function AppLayout() {
                 'flex-1 min-h-0 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter',
                 isFullBleed ? 'p-0' : 'p-4 md:p-8',
               )}>
-                <Outlet />
+                {isFullBleed ? <Outlet /> : <AnimatedOutlet />}
               </div>
             </main>
           </div>

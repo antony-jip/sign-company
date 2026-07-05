@@ -126,7 +126,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                   )}
 
                   <motion.div
-                    className="relative w-14 h-14 rounded-full flex items-center justify-center transition-[background,border-color,box-shadow] duration-300"
+                    className="relative w-11 h-11 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-[background,border-color,box-shadow] duration-300"
                     style={{
                       backgroundColor: circleBg,
                       borderWidth: 2,
@@ -142,7 +142,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     whileTap={{ scale: 0.96 }}
                   >
                     <FaseIcon
-                      className="h-5 w-5"
+                      className="h-4 w-4 md:h-5 md:w-5"
                       style={{ color: iconColor }}
                       strokeWidth={isActive ? 2.2 : 1.8}
                     />
@@ -159,8 +159,10 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     )}
                   </motion.div>
 
-                  {/* Label — heading-style met Flame-dot, conform doen.team */}
-                  <div className="flex flex-col items-center gap-1 leading-none">
+                  {/* Label — heading-style met Flame-dot, conform doen.team.
+                      Op mobiel enkel de actieve fase labelen (rest botst anders);
+                      de fasenaam staat al in de "fase X van 6"-kop bovenaan. */}
+                  <div className={cn('flex-col items-center gap-1 leading-none', isActive ? 'flex' : 'hidden md:flex')}>
                     <span
                       className={cn(
                         'font-heading font-bold text-[15px] tracking-[-0.01em] transition-colors duration-200',
@@ -171,7 +173,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     </span>
                     <span
                       className={cn(
-                        'text-[9.5px] uppercase tracking-[0.16em] font-semibold transition-colors duration-200 text-center max-w-[110px] leading-[1.4]',
+                        'hidden md:block text-[9.5px] uppercase tracking-[0.16em] font-semibold transition-colors duration-200 text-center max-w-[110px] leading-[1.4]',
                         isActive ? 'text-foreground/70' : isPast || isFinalCompleted ? 'text-muted-foreground' : 'text-[var(--fase-caption)] group-hover:text-muted-foreground',
                       )}
                     >
@@ -182,7 +184,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
 
                 {/* Connector — solid past, dashed future, Flame-overgang bij actief */}
                 {!isLast && (
-                  <div className="flex-1 mt-[27px] mx-3 relative">
+                  <div className="flex-1 mt-[21px] md:mt-[27px] mx-1.5 md:mx-3 relative">
                     {/* Achtergrondlijn — dashed pattern voor "nog niet bereikt" */}
                     <div
                       className="absolute inset-x-0 top-0 h-px"

@@ -35,11 +35,18 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-card text-card-foreground p-6 shadow-elevation-lg duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-modal",
+        // Gedeelde basis (padding/max-w overschrijfbaar per dialog; geen positie/anim hier)
+        "fixed z-50 grid w-full max-w-lg gap-4 border border-border bg-card text-card-foreground p-6 shadow-elevation-lg duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        // Mobiel (< sm): iOS-achtige bottom-sheet — van onderen inschuivend
+        "max-sm:inset-x-0 max-sm:bottom-0 max-sm:max-w-none max-sm:max-h-[92dvh] max-sm:overflow-y-auto max-sm:rounded-t-2xl max-sm:data-[state=open]:slide-in-from-bottom-[100%] max-sm:data-[state=closed]:slide-out-to-bottom-[100%]",
+        // Desktop (>= sm): gecentreerde dialog (ongewijzigd gedrag)
+        "sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-modal sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]",
         className
       )}
       {...props}
     >
+      {/* Grab-handle — alleen op mobiel (bottom-sheet-affordance) */}
+      <div className="sm:hidden absolute top-2 left-1/2 -translate-x-1/2 h-1.5 w-10 rounded-full bg-foreground/15" aria-hidden />
       {children}
       <DialogPrimitive.Close className="absolute right-3 top-3 h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
         <X className="h-3.5 w-3.5" />
