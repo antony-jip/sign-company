@@ -51,8 +51,8 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
   const isCompleted = currentIdx === FASES.length - 1
 
   return (
-    <div className="rounded-2xl p-7 bg-card border border-border/50">
-      <div className="flex items-baseline justify-between mb-8">
+    <div className="doen-slate-surface rounded-2xl p-5">
+      <div className="flex items-baseline justify-between mb-6">
         <h3 className="font-heading text-[15px] font-bold text-foreground">
           Voortgang<span className="text-[#F15025]">.</span>
         </h3>
@@ -60,13 +60,13 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
           className="text-[12px] text-muted-foreground"
           style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
         >
-          fase {currentIdx + 1} van {FASES.length} · {currentFase.label.toLowerCase()}
+          fase {currentIdx + 1} van {FASES.length} · {currentFase.caption}
         </span>
       </div>
 
       <div className="flex flex-col lg:flex-row lg:items-end gap-8">
         {/* Stepper in doen.team-stijl: outlined cirkels + connector-lijnen + Flame-dot labels */}
-        <div className="flex items-start flex-1 min-w-0 pt-2 pb-4">
+        <div className="flex items-start flex-1 min-w-0 pt-1 pb-2">
           {FASES.map((fase, i) => {
             const isActive = i === currentIdx
             const isPast = i < currentIdx
@@ -112,7 +112,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.06, duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
-                  className="group relative flex flex-col items-center gap-3 flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30 rounded-xl"
+                  className="group relative flex flex-col items-center gap-2.5 flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30 rounded-xl"
                   aria-current={isActive ? 'step' : undefined}
                   title={`Naar fase: ${fase.label}`}
                 >
@@ -126,7 +126,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                   )}
 
                   <motion.div
-                    className="relative w-14 h-14 rounded-full flex items-center justify-center transition-[background,border-color,box-shadow] duration-300"
+                    className="relative w-12 h-12 rounded-full flex items-center justify-center transition-[background,border-color,box-shadow] duration-300"
                     style={{
                       backgroundColor: circleBg,
                       borderWidth: 2,
@@ -159,30 +159,24 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     )}
                   </motion.div>
 
-                  {/* Label — heading-style met Flame-dot, conform doen.team */}
-                  <div className="flex flex-col items-center gap-1 leading-none">
+                  {/* Label — heading-style met Flame-dot. De beschrijvende caption
+                      staat nu één keer in de header (actieve fase), zodat de rij
+                      rustig en strak blijft: enkel cirkel + label. */}
+                  <div className="flex flex-col items-center leading-none">
                     <span
                       className={cn(
-                        'font-heading font-bold text-[15px] tracking-[-0.01em] transition-colors duration-200',
+                        'font-heading font-bold text-[13.5px] tracking-[-0.01em] transition-colors duration-200',
                         isActive ? 'text-foreground' : isPast || isFinalCompleted ? 'text-[#1A535C] dark:text-[#5FA8B5]' : 'text-[var(--fase-label)] group-hover:text-foreground',
                       )}
                     >
                       {fase.label}<span className="text-[#F15025]">.</span>
-                    </span>
-                    <span
-                      className={cn(
-                        'text-[9.5px] uppercase tracking-[0.16em] font-semibold transition-colors duration-200 text-center max-w-[110px] leading-[1.4]',
-                        isActive ? 'text-foreground/70' : isPast || isFinalCompleted ? 'text-muted-foreground' : 'text-[var(--fase-caption)] group-hover:text-muted-foreground',
-                      )}
-                    >
-                      {fase.caption}
                     </span>
                   </div>
                 </motion.button>
 
                 {/* Connector — solid past, dashed future, Flame-overgang bij actief */}
                 {!isLast && (
-                  <div className="flex-1 mt-[27px] mx-3 relative">
+                  <div className="flex-1 mt-[23px] mx-3 relative">
                     {/* Achtergrondlijn — dashed pattern voor "nog niet bereikt" */}
                     <div
                       className="absolute inset-x-0 top-0 h-px"

@@ -116,7 +116,7 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
       {documenten.length === 0 ? (
         <button
           onClick={onUpload}
-          className="w-full rounded-xl border border-dashed border-[rgba(26,83,92,0.2)] bg-transparent hover:bg-white/40 hover:border-[rgba(26,83,92,0.32)] transition-all px-4 py-7 flex flex-col items-center gap-2.5 text-center group"
+          className="w-full rounded-xl border border-dashed border-[rgba(26,83,92,0.2)] bg-transparent hover:bg-muted/40 hover:border-[rgba(26,83,92,0.32)] transition-all px-4 py-7 flex flex-col items-center gap-2.5 text-center group"
         >
           <Upload className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:-translate-y-0.5" strokeWidth={1.5} style={{ color: 'rgba(26,83,92,0.5)' }} />
           <div>
@@ -139,11 +139,11 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
             return (
               <div
                 key={doc.id}
-                className="group flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-white/60 transition-colors cursor-pointer"
+                className="group flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted/50 transition-colors cursor-pointer"
                 onClick={() => handleFileClick(doc)}
               >
-                <div className="relative h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-white border border-[rgba(26,83,92,0.08)]">
-                  <Glyph size={18} weight="duotone" color="#1A535C" />
+                <div className="relative h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-card border border-[rgba(26,83,92,0.08)]">
+                  <Glyph size={18} color="#1A535C" />
                   <span
                     className="absolute -bottom-[3px] -right-[3px] font-mono text-[9px] font-semibold uppercase rounded-md px-1 py-px leading-none tracking-tight"
                     style={{ background: badgeStyle.bg, color: badgeStyle.color }}
@@ -170,7 +170,7 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
           {documenten.length > 5 && !showAll && (
             <button
               onClick={() => setShowAll(true)}
-              className="w-full text-[12px] font-medium text-[#1A535C] hover:text-[#0F3D44] mt-2 py-2 rounded-lg hover:bg-white/60 transition-colors"
+              className="w-full text-[12px] font-medium text-[#1A535C] hover:text-[#0F3D44] mt-2 py-2 rounded-lg hover:bg-muted/50 transition-colors"
             >
               Alle {documenten.length} bestanden tonen
             </button>

@@ -61,7 +61,7 @@ export function TeamCard({ teamLeden, medewerkers, onChange }: TeamCardProps) {
         {toegewezen.map((m) => (
           <span
             key={m.id}
-            className="group inline-flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full bg-white border border-[rgba(26,83,92,0.12)] text-[12px] font-medium text-foreground"
+            className="group inline-flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full bg-card border border-[rgba(26,83,92,0.12)] text-[12px] font-medium text-foreground"
           >
             <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold uppercase flex-shrink-0 ${tint(m.naam)}`}>
               {initiaal(m.naam)}

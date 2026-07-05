@@ -227,7 +227,7 @@ export function TakenOfferteGrid({
         ) : (
           <button
             onClick={onNewTaak}
-            className="w-full rounded-xl border border-dashed border-[rgba(26,83,92,0.18)] bg-transparent hover:bg-white/40 hover:border-[rgba(26,83,92,0.3)] transition-all px-4 py-8 flex flex-col items-center gap-2.5 text-center group"
+            className="w-full rounded-xl border border-dashed border-[rgba(26,83,92,0.18)] bg-transparent hover:bg-muted/40 hover:border-[rgba(26,83,92,0.3)] transition-all px-4 py-8 flex flex-col items-center gap-2.5 text-center group"
           >
             <ListChecks className="h-7 w-7 transition-transform group-hover:scale-110" strokeWidth={1.5} style={{ color: 'rgba(26,83,92,0.45)' }} />
             <div>
@@ -350,7 +350,7 @@ export function TakenOfferteGrid({
             })}
           </div>
         ) : onQuickOfferte ? (
-          <div className="rounded-xl border border-dashed border-[rgba(241,80,37,0.22)] bg-transparent px-3 py-3 flex flex-col gap-1.5">
+          <div className="rounded-xl border border-border/70 bg-muted/30 p-3 flex flex-col gap-2">
             <form onSubmit={handleQuickSubmit} className="flex items-stretch gap-2">
               <div className="relative flex-1">
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground font-mono pointer-events-none">€</span>
@@ -361,13 +361,13 @@ export function TakenOfferteGrid({
                   onChange={(e) => setQuickBedrag(e.target.value)}
                   placeholder="0,00"
                   disabled={quickSubmitting}
-                  className="w-full h-8 pl-6 pr-2 text-sm font-mono text-right text-foreground border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-[#F15025]/30 focus:border-[#F15025] disabled:opacity-50"
+                  className="w-full h-9 pl-6 pr-2.5 text-sm font-mono text-right text-foreground border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-[#F15025]/25 focus:border-[#F15025]/60 disabled:opacity-50"
                 />
               </div>
               <button
                 type="submit"
                 disabled={!canQuickSubmit}
-                className="h-8 px-3 text-[12px] font-semibold text-white rounded-lg transition-colors disabled:opacity-40 whitespace-nowrap"
+                className="h-9 px-3.5 text-[12.5px] font-semibold text-white rounded-lg transition-colors whitespace-nowrap disabled:opacity-40"
                 style={{ backgroundColor: '#F15025' }}
               >
                 {quickSubmitting ? 'Aanmaken.' : 'Prijs aanmaken'}
@@ -384,7 +384,7 @@ export function TakenOfferteGrid({
         ) : (
           <button
             onClick={onNewOfferte}
-            className="w-full rounded-xl border border-dashed border-[rgba(241,80,37,0.22)] bg-transparent hover:bg-white/40 hover:border-[rgba(241,80,37,0.4)] transition-all px-4 py-8 flex flex-col items-center gap-2.5 text-center group"
+            className="w-full rounded-xl border border-dashed border-[rgba(241,80,37,0.22)] bg-transparent hover:bg-muted/40 hover:border-[rgba(241,80,37,0.4)] transition-all px-4 py-8 flex flex-col items-center gap-2.5 text-center group"
           >
             <Receipt className="h-7 w-7 transition-transform group-hover:scale-110" strokeWidth={1.5} style={{ color: 'rgba(241,80,37,0.5)' }} />
             <div>

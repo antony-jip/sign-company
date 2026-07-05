@@ -1411,7 +1411,7 @@ export function ProjectDetail() {
         </div>
 
         {/* Row 2: subline — klant · plaats + datum-hint */}
-        <div className="mt-2 text-[13.5px] flex items-center gap-2 flex-wrap">
+        <div className="mt-2.5 text-[13.5px] flex items-center gap-x-2 gap-y-1 flex-wrap">
           {klant && (
             <Link to={`/klanten/${klant.id}`} className="inline-flex items-center gap-1.5 text-foreground/80 hover:text-[#1A535C] transition-colors">
               <span className="font-semibold">{klant.bedrijfsnaam || klant.contactpersoon}</span>
@@ -1455,7 +1455,7 @@ export function ProjectDetail() {
         </div>
 
         {/* TAB BAR — flame underline, duotone icoon per tab */}
-        <div className="flex items-center gap-1 border-b border-border mt-5 sticky top-0 z-10 bg-background">
+        <div className="flex items-center gap-1 border-b border-border mt-4 sticky top-0 z-10 bg-background">
           {([
             { key: 'overzicht' as ProjectTab,  label: 'Overzicht',  count: 0,                          Icon: TabList    },
             { key: 'werkbon' as ProjectTab,    label: 'Werkbon',    count: projectWerkbonnen.length,   Icon: TabWrench  },

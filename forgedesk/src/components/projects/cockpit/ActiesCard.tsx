@@ -1,5 +1,5 @@
 import {
-  Receipt, ClipboardList, Wrench, CreditCard, Package, FileSignature,
+  Receipt, ClipboardList, Wrench, CreditCard, Package, FileSignature, ChevronRight,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -44,7 +44,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
         </span>
       </div>
 
-      {/* 2x2 grid van actie-tiles */}
+      {/* 2x2 grid van actie-tiles — rustig, token-gebaseerd, kalme hover */}
       <div className="grid grid-cols-2 gap-2.5">
         {tiles.map((tile) => {
           const Icon = tile.icon
@@ -52,49 +52,32 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
             <button
               key={tile.key}
               onClick={tile.onClick}
-              className="group relative overflow-hidden rounded-xl bg-white p-3.5 text-left transition-all duration-200 hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(20,62,71,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={{
-                border: `1px solid ${tile.color}1F`,
-                ['--tw-ring-color' as string]: `${tile.color}55`,
-              }}
+              className="group relative rounded-xl bg-card border border-border/60 p-3 text-left transition-colors duration-200 hover:bg-muted/40 hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{ ['--tw-ring-color' as string]: `${tile.color}55` }}
             >
-              {/* Decorative gradient halo in tile-color */}
-              <span
-                aria-hidden
-                className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  background: `radial-gradient(circle, ${tile.color}22 0%, transparent 70%)`,
-                }}
-              />
-
-              <div className="relative flex items-start gap-3">
+              <div className="flex items-start gap-3">
                 {/* Icon-vlak met module-color tint */}
                 <div
-                  className="flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 transition-transform duration-300 group-hover:scale-105"
-                  style={{
-                    background: `${tile.color}14`,
-                    border: `1px solid ${tile.color}1A`,
-                  }}
+                  className="flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 transition-transform duration-200 group-hover:scale-[1.06]"
+                  style={{ background: `${tile.color}14`, border: `1px solid ${tile.color}1A` }}
                 >
-                  <Icon className="h-5 w-5" strokeWidth={1.75} style={{ color: tile.color }} />
+                  <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} style={{ color: tile.color }} />
                 </div>
 
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="text-[14px] font-bold text-foreground leading-tight tracking-[-0.01em] truncate">
+                  <p className="text-[13.5px] font-bold text-foreground leading-tight tracking-[-0.01em]">
                     {tile.label}
                   </p>
-                  <p className="text-[11.5px] text-foreground/60 mt-1 leading-snug line-clamp-2 min-h-[2.1em]">
+                  <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
                     {tile.sublabel}
                   </p>
                 </div>
-              </div>
 
-              {/* Hover accent-stripe links */}
-              <span
-                aria-hidden
-                className="absolute left-0 top-3 bottom-3 w-[2px] rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                style={{ background: tile.color }}
-              />
+                <ChevronRight
+                  className="h-3.5 w-3.5 text-muted-foreground/50 flex-shrink-0 -mr-0.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200"
+                  strokeWidth={2}
+                />
+              </div>
             </button>
           )
         })}

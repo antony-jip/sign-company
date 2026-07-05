@@ -133,14 +133,14 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
       </>
     )
     if (!href) {
-      return <div className="flex items-center gap-2.5 px-2 py-2">{content}</div>
+      return <div className="flex items-center gap-2.5 px-2 py-1.5">{content}</div>
     }
     return (
       <a
         href={href}
         target={href.startsWith('http') ? '_blank' : undefined}
         rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-        className="group flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[rgba(26,83,92,0.05)] transition-colors"
+        className="group flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-[rgba(26,83,92,0.05)] transition-colors"
       >
         {content}
       </a>
@@ -214,7 +214,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
         {displayEmail && (
           <button
             onClick={handleMail}
-            className="w-full group flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[rgba(26,83,92,0.05)] transition-colors text-left"
+            className="w-full group flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-[rgba(26,83,92,0.05)] transition-colors text-left"
           >
             <Mail className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" strokeWidth={1.75} />
             <span className="flex-1 min-w-0 truncate text-[13px] text-foreground">{displayEmail}</span>
@@ -240,7 +240,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               }
             }}
           >
-            <SelectTrigger className="w-full h-auto py-2.5 pl-9 pr-3 rounded-lg border-[rgba(26,83,92,0.12)] bg-white dark:bg-card text-[13px] font-medium text-foreground">
+            <SelectTrigger className="w-full h-auto py-2.5 pl-9 pr-3 rounded-lg border-[rgba(26,83,92,0.12)] bg-card dark:bg-card text-[13px] font-medium text-foreground">
               <SelectValue placeholder="Selecteer contactpersoon…" />
             </SelectTrigger>
             <SelectContent>
@@ -269,27 +269,27 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               onChange={(e) => setEditNaam(e.target.value)}
               placeholder="Naam"
               autoFocus
-              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-white border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
             />
             <input
               value={editEmail}
               onChange={(e) => setEditEmail(e.target.value)}
               placeholder="Email"
               type="email"
-              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-white border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
             />
             <div className="flex gap-1.5">
               <input
                 value={editTelefoon}
                 onChange={(e) => setEditTelefoon(e.target.value)}
                 placeholder="Telefoon"
-                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-white border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
               />
               <input
                 value={editFunctie}
                 onChange={(e) => setEditFunctie(e.target.value)}
                 placeholder="Functie"
-                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-white border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
               />
             </div>
             <div className="flex items-center justify-end gap-3 pt-1">
@@ -347,26 +347,26 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               onChange={(e) => setNieuwCpNaam(e.target.value)}
               placeholder="Naam"
               autoFocus
-              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-white border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
             />
             <input
               value={nieuwCpEmail}
               onChange={(e) => setNieuwCpEmail(e.target.value)}
               placeholder="Email"
-              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-white border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+              className="w-full text-[12px] text-foreground placeholder:text-muted-foreground bg-card border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
             />
             <div className="flex gap-1.5">
               <input
                 value={nieuwCpTelefoon}
                 onChange={(e) => setNieuwCpTelefoon(e.target.value)}
                 placeholder="Telefoon"
-                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-[var(--surface-soft)] border border-[var(--surface-soft-border)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
+                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-[var(--surface-soft)] border border-[var(--surface-soft-border)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
               />
               <input
                 value={nieuwCpFunctie}
                 onChange={(e) => setNieuwCpFunctie(e.target.value)}
                 placeholder="Functie"
-                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-[var(--surface-soft)] border border-[var(--surface-soft-border)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
+                className="flex-1 min-w-0 text-[12px] text-foreground placeholder:text-muted-foreground bg-[var(--surface-soft)] border border-[var(--surface-soft-border)] rounded-lg px-3 py-2 outline-none focus:bg-card focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
               />
             </div>
             <div className="flex items-center justify-end gap-3 pt-1">

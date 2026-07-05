@@ -134,13 +134,13 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
           return (
             <div
               key={event.id}
-              className="relative flex items-start gap-3 px-2 py-2 rounded-lg hover:bg-white/60 transition-colors"
+              className="relative flex items-start gap-3 px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors"
             >
               <div
-                className="relative flex-shrink-0 h-[28px] w-[28px] rounded-full flex items-center justify-center mt-0.5 bg-white border z-10"
-                style={{ borderColor: `${color}33` }}
+                className="relative flex-shrink-0 h-[28px] w-[28px] rounded-full flex items-center justify-center mt-0.5 bg-card border z-10"
+                style={{ borderColor: `${color}45`, boxShadow: `inset 0 0 0 3px ${color}0D` }}
               >
-                <Icon size={14} weight="duotone" color={color} />
+                <Icon size={14} color={color} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] text-foreground/80 leading-snug">
