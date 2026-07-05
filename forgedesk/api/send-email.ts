@@ -73,6 +73,59 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
 }
+
+// Valideert dat een uit de body opgegeven storage-object bij de caller hoort.
+// DB-gebaseerd (convention-onafhankelijk): het pad moet als storage_path in de
+// org-gescopete brontabel staan. Tijdelijke offerte/mail-uploads leven onder
+// email-bijlagen/{user_id}/ en worden op user_id gecheckt.
+async function attachmentToegestaan(
+  bucket: string,
+  path: string,
+  orgId: string | null,
+  userId: string,
+): Promise<boolean> {
+  // Path-traversal / absolute paden altijd weigeren.
+  if (!path || path.includes('..') || path.startsWith('/') || path.includes('\\')) return false
+
+  if (bucket === 'documenten') {
+    const seg = path.split('/')
+    // Tijdelijke mail-/offerte-uploads: email-bijlagen[-groot]/{user_id}/...
+    if (seg[0] === 'email-bijlagen' || seg[0] === 'email-bijlagen-groot') return seg[1] === userId
+    if (!orgId) return false
+    const { data } = await supabaseAdmin
+      .from('documenten')
+      .select('id')
+      .eq('storage_path', path)
+      .eq('organisatie_id', orgId)
+      .maybeSingle()
+    return !!data
+  }
+
+  if (bucket === 'facturen') {
+    if (!orgId) return false
+    const { data } = await supabaseAdmin
+      .from('facturen')
+      .select('id')
+      .eq('pdf_storage_path', path)
+      .eq('organisatie_id', orgId)
+      .maybeSingle()
+    return !!data
+  }
+
+  if (bucket === 'factuur-bijlagen') {
+    if (!orgId) return false
+    const { data } = await supabaseAdmin
+      .from('factuur_bijlagen')
+      .select('id')
+      .eq('storage_path', path)
+      .eq('organisatie_id', orgId)
+      .maybeSingle()
+    return !!data
+  }
+
+  // Onbekende bucket: fail-closed.
+  return false
+}
 interface EmailCredentials {
   gmail_address: string
   app_password: string
@@ -306,9 +359,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const cleanupTargets: Array<{ bucket: string; path: string }> = []
     const fileAttachments: Array<{ filename: string; content: Buffer }> = []
     if (attachments?.length) {
+      // Ownership-check: storagePath/bucket komen uit de request-body. Zonder
+      // validatie kan een geauthenticeerde user via service-role elk pad in elke
+      // bucket downloaden (cross-tenant exfiltratie). We valideren daarom per
+      // bucket dat het object bij de organisatie/user van de caller hoort.
+      const { data: callerProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('organisatie_id')
+        .eq('id', user_id)
+        .maybeSingle()
+      const callerOrgId = (callerProfile?.organisatie_id as string | null) ?? null
+
       for (const a of attachments) {
         if (a.storagePath) {
           const bucket = a.bucket ?? 'documenten'
+          if (!(await attachmentToegestaan(bucket, a.storagePath, callerOrgId, user_id))) {
+            console.warn(`[send-email] Bijlage geweigerd: geen toegang tot ${bucket}/${a.storagePath}`)
+            return res.status(403).json({ error: `Geen toegang tot bijlage "${a.filename}"` })
+          }
           const { data, error: dlError } = await supabaseAdmin.storage
             .from(bucket)
             .download(a.storagePath)
@@ -419,6 +487,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Trigger auto-opvolging task als opvolging_id meegegeven is
     if (opvolging_id) {
       try {
+        // Ownership-check vóór het triggeren: de opvolging moet van deze user
+        // zijn (service-role bypasst RLS, dus app-laag afdwingen).
+        const { data: opvolging } = await supabaseAdmin
+          .from('email_opvolgingen')
+          .select('id, user_id')
+          .eq('id', opvolging_id)
+          .maybeSingle()
+        if (!opvolging || opvolging.user_id !== user_id) {
+          console.warn('[send-email] Opvolging-trigger geweigerd: geen toegang tot opvolging', opvolging_id)
+          return res.status(200).json({ success: true, message: 'Email verzonden' })
+        }
         const { tasks } = await import("@trigger.dev/sdk/v3")
         await tasks.trigger("email-opvolging", { opvolgingId: opvolging_id })
         console.log('[send-email] Auto-opvolging task getriggerd:', opvolging_id)
