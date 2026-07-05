@@ -80,6 +80,7 @@ export function InkoopfacturenLayout() {
   const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
   const [projectPickerOpen, setProjectPickerOpen] = useState(false)
   const [projectQuery, setProjectQuery] = useState('')
+  const [wisselAnim, setWisselAnim] = useState(false)
 
   useEffect(() => {
     setLightboxAction('idle')
@@ -370,18 +371,28 @@ export function InkoopfacturenLayout() {
   // Na goedkeuren/afwijzen: door naar de volgende factuur die nog review
   // nodig heeft, in de lijstvolgorde zoals de gebruiker die zag (eerst
   // verder omlaag, dan wrap-around). Niets meer te reviewen → dicht.
+  // De uit-animatie draait parallel aan de data-refresh; de keyed
+  // remount van PDF en sidebar speelt daarna de in-animatie af.
   async function goToNextOrClose() {
     if (!lightbox) return
     const huidigeId = lightbox.factuur.id
     const volgorde = [...filtered.slice(lightboxIndex + 1), ...filtered.slice(0, Math.max(lightboxIndex, 0))]
-    const vers = await refreshData()
-    const versById = new Map(vers.map(f => [f.id, f]))
-    const afgerond = new Set(['goedgekeurd', 'afgewezen'])
-    const volgende = volgorde
-      .map(f => versById.get(f.id))
-      .find((f): f is InkoopFactuur => !!f && f.id !== huidigeId && !afgerond.has(f.status))
-    if (volgende) openLightbox(volgende)
-    else setLightbox(null)
+    setWisselAnim(true)
+    try {
+      const [vers] = await Promise.all([
+        refreshData(),
+        new Promise(resolve => setTimeout(resolve, 220)),
+      ])
+      const versById = new Map(vers.map(f => [f.id, f]))
+      const afgerond = new Set(['goedgekeurd', 'afgewezen'])
+      const volgende = volgorde
+        .map(f => versById.get(f.id))
+        .find((f): f is InkoopFactuur => !!f && f.id !== huidigeId && !afgerond.has(f.status))
+      if (volgende) await openLightbox(volgende)
+      else setLightbox(null)
+    } finally {
+      setWisselAnim(false)
+    }
   }
 
   async function handleLightboxApprove() {
@@ -812,7 +823,14 @@ export function InkoopfacturenLayout() {
 
             {/* PDF area · A4 ratio, past in viewport */}
             <div className="flex-1 flex items-center justify-center bg-[#1A1A1A] p-6">
-              <div style={{ aspectRatio: '210 / 297', height: 'calc(100vh - 48px)', maxWidth: '100%' }} className="bg-white rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] overflow-hidden">
+              <div
+                key={lightbox.factuur.id}
+                style={{ aspectRatio: '210 / 297', height: 'calc(100vh - 48px)', maxWidth: '100%' }}
+                className={cn(
+                  'bg-white rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] overflow-hidden inkoop-wissel-in',
+                  wisselAnim && 'inkoop-wissel-uit',
+                )}
+              >
                 <iframe
                   src={`${lightbox.pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                   className="w-full h-full"
@@ -842,7 +860,13 @@ export function InkoopfacturenLayout() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            <div
+              key={lightbox.factuur.id}
+              className={cn(
+                'flex-1 overflow-y-auto px-6 py-5 space-y-5 inkoop-wissel-in',
+                wisselAnim && 'inkoop-wissel-uit',
+              )}
+            >
 
               {/* Leverancier */}
               <div>
