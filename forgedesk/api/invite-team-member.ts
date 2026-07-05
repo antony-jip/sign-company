@@ -178,6 +178,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Sla uitnodiging EERST op zodat handle_new_user hem kan vinden
     // op email-match bij de volgende inviteUserByEmail-call.
+    // verloopt_op expliciet zetten: de trigger matcht alleen op verloopt_op > NOW(),
+    // dus een NULL zou betekenen dat de invite nooit matcht (user krijgt dan een
+    // eigen org i.p.v. te joinen). Niet leunen op een impliciete DB-default.
+    const verlooptOp = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     const { data: uitnodiging, error: uitnodigingError } = await supabaseAdmin
       .from('uitnodigingen')
       .insert({
@@ -185,7 +189,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         email: email.toLowerCase(),
         rol,
         uitgenodigd_door,
-        status: 'verstuurd'
+        status: 'verstuurd',
+        verloopt_op: verlooptOp
       })
       .select()
       .single()
