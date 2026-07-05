@@ -463,3 +463,23 @@ byte-identical.
 - `EmailContextSidebar` is `hidden xl:flex` (1280px+) — onzichtbaar op
   iPad-portrait (~810px). Bewust of regressie? Niet onderzocht in deze
   sprint.
+
+## 2026-07-05 — Security sprint (audit + P0/P1/P2/P3)
+
+Analyse-only audit over 5 gebieden → gefaseerde remediatie (plan:
+`~/.claude/plans/maak-nu-een-plan-reflective-mountain.md`). Migraties 141-147.
+
+**Bewuste beslissingen (niet als bug behandelen):**
+- **Support-admin-UUID** in migratie `122_support_chat.sql` (`auth.uid() =
+  'ce6843e3-5cd9-4043-9461-55071bc91eb7'`) geeft dit ene support-account
+  cross-tenant lees+schrijf op support-chats. Dit is BEWUST (interne
+  support-toegang), geen lek. Optioneel later: vervangen door een
+  support-rol/claim i.p.v. hardcoded UUID.
+- **Nummer-generatie** blijft max-scan + retry-on-23505 + unique index
+  (geen atomaire teller-tabel) — bewust, om fiscale gaten bij verwijderde
+  concept-facturen te voorkomen.
+
+**Nog open:** app_settings-brede secret-exposure + `kvk_api_key`-encryptie
+(feature-refactor, apart in te plannen) en b64-encryptie-fallback verwijderen
+(vereist prod-check op `b64:`-rijen). PKCE + sessie-JWT-uit-query bij
+exact-auth: flow-wijziging, apart.
