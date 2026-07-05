@@ -69,7 +69,7 @@ export function InkoopfacturenLayout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [inboxConfig, setInboxConfig] = useState<InkoopFactuurInboxConfig | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [lightbox, setLightbox] = useState<{ factuur: InkoopFactuur; pdfUrl: string; index: number } | null>(null)
+  const [lightbox, setLightbox] = useState<{ factuur: InkoopFactuur; pdfUrl: string } | null>(null)
   const [lightboxReden, setLightboxReden] = useState('')
   const [lightboxSaving, setLightboxSaving] = useState(false)
   const [lightboxAction, setLightboxAction] = useState<'idle' | 'approving' | 'rejecting' | 'approved' | 'rejected'>('idle')
@@ -80,7 +80,7 @@ export function InkoopfacturenLayout() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [extractProgress, setExtractProgress] = useState<{ current: number; total: number } | null>(null)
 
-  async function refreshData() {
+  async function refreshData(): Promise<InkoopFactuur[]> {
     const [data, count, config] = await Promise.all([
       fetchQuery('inkoopfacturen', getInkoopfacturen).catch(() => []),
       countWachtendOpReview().catch(() => 0),
@@ -89,6 +89,7 @@ export function InkoopfacturenLayout() {
     setFacturen(data)
     setWachtendCount(count)
     setInboxConfig(config)
+    return data
   }
 
   async function extractBatch(ids: string[]) {
@@ -280,7 +281,7 @@ export function InkoopfacturenLayout() {
     return result
   }, [facturen, filterStatus, searchQuery])
 
-  async function openLightbox(factuur: InkoopFactuur, index?: number) {
+  async function openLightbox(factuur: InkoopFactuur) {
     try {
       const mod = await import('@/services/supabaseClient')
       const sb = mod.supabase || mod.default
@@ -288,31 +289,39 @@ export function InkoopfacturenLayout() {
       if (!factuur.pdf_storage_path) { toast.error('Geen PDF beschikbaar'); return }
       const { data, error } = await sb.storage.from('inkoopfacturen').createSignedUrl(factuur.pdf_storage_path, 3600)
       if (error || !data?.signedUrl) { toast.error('PDF URL ophalen mislukt'); return }
-      setLightbox({ factuur, pdfUrl: data.signedUrl, index: index ?? filtered.findIndex(f => f.id === factuur.id) })
+      setLightbox({ factuur, pdfUrl: data.signedUrl })
       setLightboxReden('')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Fout bij openen PDF')
     }
   }
 
+  // Positie live afleiden i.p.v. opslaan: na goedkeuren/afwijzen
+  // hersorteert de lijst en zou een opgeslagen index verlopen zijn.
+  const lightboxIndex = lightbox ? filtered.findIndex(f => f.id === lightbox.factuur.id) : -1
+
   function navigateLightbox(direction: 'prev' | 'next') {
     if (!lightbox) return
-    const newIndex = direction === 'next' ? lightbox.index + 1 : lightbox.index - 1
+    const newIndex = direction === 'next' ? lightboxIndex + 1 : lightboxIndex - 1
     if (newIndex < 0 || newIndex >= filtered.length) return
-    openLightbox(filtered[newIndex], newIndex)
+    openLightbox(filtered[newIndex])
   }
 
+  // Na goedkeuren/afwijzen: door naar de volgende factuur die nog review
+  // nodig heeft, in de lijstvolgorde zoals de gebruiker die zag (eerst
+  // verder omlaag, dan wrap-around). Niets meer te reviewen → dicht.
   async function goToNextOrClose() {
     if (!lightbox) return
-    await refreshData()
-    const nextIndex = lightbox.index
-    if (nextIndex < filtered.length) {
-      openLightbox(filtered[nextIndex], nextIndex)
-    } else if (nextIndex - 1 >= 0 && nextIndex - 1 < filtered.length) {
-      openLightbox(filtered[nextIndex - 1], nextIndex - 1)
-    } else {
-      setLightbox(null)
-    }
+    const huidigeId = lightbox.factuur.id
+    const volgorde = [...filtered.slice(lightboxIndex + 1), ...filtered.slice(0, Math.max(lightboxIndex, 0))]
+    const vers = await refreshData()
+    const versById = new Map(vers.map(f => [f.id, f]))
+    const afgerond = new Set(['goedgekeurd', 'afgewezen'])
+    const volgende = volgorde
+      .map(f => versById.get(f.id))
+      .find((f): f is InkoopFactuur => !!f && f.id !== huidigeId && !afgerond.has(f.status))
+    if (volgende) openLightbox(volgende)
+    else setLightbox(null)
   }
 
   async function handleLightboxApprove() {
@@ -649,7 +658,7 @@ export function InkoopfacturenLayout() {
                   return (
                     <tr
                       key={factuur.id}
-                      onClick={() => openLightbox(factuur, idx)}
+                      onClick={() => openLightbox(factuur)}
                       style={{ animationDelay: `${idx * 25}ms`, ['--row-accent' as string]: stripeHex } as React.CSSProperties}
                       className={cn(
                         'border-b border-border last:border-0 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] cursor-pointer transition-colors doen-row group',
@@ -742,11 +751,11 @@ export function InkoopfacturenLayout() {
             {/* Nav + Close */}
             <div className="flex items-center justify-between px-6 py-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <button onClick={() => navigateLightbox('prev')} disabled={lightbox.index <= 0} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center disabled:opacity-20 transition-colors">
+                <button onClick={() => navigateLightbox('prev')} disabled={lightboxIndex <= 0} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center disabled:opacity-20 transition-colors">
                   <ChevronLeft className="w-4 h-4 text-foreground/70" />
                 </button>
-                <span className="text-[12px] font-mono text-muted-foreground min-w-[32px] text-center">{lightbox.index + 1}/{filtered.length}</span>
-                <button onClick={() => navigateLightbox('next')} disabled={lightbox.index >= filtered.length - 1} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center disabled:opacity-20 transition-colors">
+                <span className="text-[12px] font-mono text-muted-foreground min-w-[32px] text-center">{lightboxIndex >= 0 ? lightboxIndex + 1 : '–'}/{filtered.length}</span>
+                <button onClick={() => navigateLightbox('next')} disabled={lightboxIndex < 0 || lightboxIndex >= filtered.length - 1} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center disabled:opacity-20 transition-colors">
                   <ChevronRight className="w-4 h-4 text-foreground/70" />
                 </button>
               </div>
