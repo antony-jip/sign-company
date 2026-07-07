@@ -5,6 +5,7 @@ import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import SectionReveal from '../SectionReveal'
+import SocialProof from '../home/SocialProof'
 
 const pains = [
   { nr: '01', before: 'Offertes in Word of een systeem uit 2015', after: 'Calculator met templates. Klant keurt goed via het portaal.' },
@@ -223,6 +224,9 @@ export default function OverContent() {
           </div>
         </div>
       </section>
+
+      {/* === BRIEF VAN DE MAKER === */}
+      <SocialProof />
 
       {/* === ACT 3: DE OPLOSSING — PORTAAL === */}
       <section ref={portalRef} className="py-24 md:py-36 relative overflow-hidden">

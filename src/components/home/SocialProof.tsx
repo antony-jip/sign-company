@@ -8,12 +8,8 @@ import { TrimCorners, TapePiece } from '@/components/brand/BrandMarks'
 import GevelMockup from '@/components/brand/GevelMockup'
 
 /**
- * Brief van de maker — personal founder note in the new Hero aesthetic.
- *
- * Replace placeholders:
- *   - [jouw naam] / [X jaar]  → in the body
- *   - portrait image: swap the placeholder div with
- *     <Image src="/images/maker/portret.jpg" alt="..." fill className="object-cover" />
+ * Brief van de maker — persoonlijke founder-brief, geplaatst op /over
+ * na de "Ons verhaal"-sectie.
  */
 export default function SocialProof() {
   const ref = useRef(null)
@@ -124,7 +120,7 @@ export default function SocialProof() {
             >
               <span className="block">Familiebedrijf<span style={{ color: '#F15025' }}>.</span></span>
               <span className="block" style={{ color: '#6B6B66' }}>
-                45 jaar <SerifItalic style={{ letterSpacing: '-2px' }}>vak</SerifItalic>
+                Ruim 40 jaar <SerifItalic style={{ letterSpacing: '-2px' }}>vak</SerifItalic>
                 <span style={{ color: '#F15025' }}>.</span>
               </span>
               <span className="block">Eén maker<span style={{ color: '#F15025' }}>.</span></span>
@@ -160,7 +156,7 @@ export default function SocialProof() {
                 >
                   I
                 </span>
-                k ben <strong style={{ color: '#1A1A1A' }}>Antony Bootsma</strong>. Wij zijn een familiebedrijf. Sign Company bestaat 45 jaar. Mijn vader heeft het opgebouwd, doet de montage nog steeds. Ik neem het over.
+                k ben <strong style={{ color: '#1A1A1A' }}>Antony Bootsma</strong>. Wij zijn een familiebedrijf. Sign Company bestaat sinds 1983. Mijn vader heeft het opgebouwd, doet de montage nog steeds. Ik neem het over.
               </p>
               <p>
                 En ik had geen zin om nog jaren te werken met software die niet past bij hoe wij werken.
@@ -193,7 +189,7 @@ export default function SocialProof() {
               style={{ color: '#3F3F3A' }}
             >
               <p>
-                Ik zocht software die paste bij 45 jaar vakmanschap en de manier waarop wij werken. Die er niet was. Dus heb ik het zelf gebouwd, in de avonden, tussen de werkdagen door. Niet vanuit een glazen kantoor, maar vanuit dezelfde werkplaats waar mijn vader elke ochtend binnenloopt.
+                Ik zocht software die paste bij ruim 40 jaar vakmanschap en de manier waarop wij werken. Die er niet was. Dus heb ik het zelf gebouwd, in de avonden, tussen de werkdagen door. Niet vanuit een glazen kantoor, maar vanuit dezelfde werkplaats waar mijn vader elke ochtend binnenloopt.
               </p>
               <p>
                 Een van de dingen waar ik het meest trots op ben is het <strong style={{ color: '#1A1A1A' }}>klantportaal</strong>. Geen mailtjes heen en weer. Je klant krijgt één link, ziet de tekeningen, keurt de offerte goed. Dat scheelt ons elke week uren.
