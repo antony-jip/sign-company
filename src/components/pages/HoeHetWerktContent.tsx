@@ -3,24 +3,17 @@
 import { useRef } from 'react'
 import {
   motion,
-  useScroll,
-  useTransform,
   useInView,
   useReducedMotion,
-  MotionValue,
 } from 'framer-motion'
 import {
   Mail,
-  MessageCircle,
   Receipt,
-  Phone,
   Calendar,
   FileText,
-  Pencil,
   Image as ImageIcon,
   User,
   ClipboardList,
-  CreditCard,
   Smile,
   Check,
   X,
@@ -44,109 +37,79 @@ const INK = '#1A1A1A'
 
 
 function Act1Opening() {
-  const sectionRef = useRef<HTMLElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end end'],
-  })
-
-  // Phase transforms
-  const eyebrowOpacity = useTransform(scrollYProgress, [0.02, 0.12], [0, 1])
-  const h1Opacity = useTransform(scrollYProgress, [0.10, 0.22], [0, 1])
-  const h1Y = useTransform(scrollYProgress, [0.10, 0.22], [20, 0])
-  const subheadOpacity = useTransform(scrollYProgress, [0.70, 0.82], [0, 1])
-  const subheadY = useTransform(scrollYProgress, [0.70, 0.82], [16, 0])
-  const contentFadeOut = useTransform(scrollYProgress, [0.90, 1.0], [1, 0])
-
+  // Kort en direct: alles verschijnt vanzelf bij laden, geen scroll-theater.
   return (
-    <section ref={sectionRef} className="relative" style={{ height: '260vh', backgroundColor: '#F5F4F1' }}>
-      <div className="sticky top-0 h-screen flex items-center">
-        <div className="container-site w-full">
-          <motion.div style={{ opacity: contentFadeOut }} className="max-w-4xl mx-auto text-center">
-            {/* Eyebrow — time + day */}
-            <motion.div
-              style={{ opacity: eyebrowOpacity }}
-              className="mb-6 inline-flex items-center gap-2"
-            >
-              <span className="relative inline-flex items-center justify-center w-2 h-2">
-                <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
-                <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
-              </span>
-              <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
-                08:15 · Maandagochtend
-              </span>
-            </motion.div>
-
-            {/* H1 */}
-            <motion.h1
-              style={{ opacity: h1Opacity, y: h1Y }}
-              className="font-heading text-[40px] md:text-[64px] lg:text-[76px] font-extrabold tracking-[-2.5px] leading-[0.95] mb-12"
-              aria-label="Je opent je laptop. Dit staat er al."
-            >
-              <span style={{ color: PETROL }}>Je opent je laptop</span>
-              <span style={{ color: FLAME }}>.</span>
-              <br />
-              <span style={{ color: MUTED_SOFT }}>Dit staat er al</span>
-              <span style={{ color: FLAME }}>.</span>
-            </motion.h1>
-
-            {/* Notifications stack */}
-            <div className="relative max-w-xl mx-auto mb-10 md:mb-12">
-              {morningNotifications.map((n, i) => (
-                <NotificationCard
-                  key={i}
-                  notification={n}
-                  index={i}
-                  scrollProgress={scrollYProgress}
-                />
-              ))}
-            </div>
-
-            {/* Subhead */}
-            <motion.p
-              style={{ opacity: subheadOpacity, y: subheadY }}
-              className="text-[17px] md:text-[22px] leading-relaxed font-heading font-semibold"
-              aria-label="Dit is je maandag. En je dinsdag. En je vrijdag."
-            >
-              <span style={{ color: PETROL }}>Dit is je maandag</span>
-              <span style={{ color: FLAME }}>.</span>{' '}
-              <span style={{ color: MUTED }}>En je dinsdag</span>
-              <span style={{ color: FLAME }}>.</span>{' '}
-              <span style={{ color: MUTED }}>En je vrijdag</span>
-              <span style={{ color: FLAME }}>.</span>
-            </motion.p>
+    <section className="relative pb-20 md:pb-28" style={{ backgroundColor: '#F5F4F1' }}>
+      <div className="container-site">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Eyebrow — time + day */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-6 inline-flex items-center gap-2"
+          >
+            <span className="relative inline-flex items-center justify-center w-2 h-2">
+              <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
+              <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+            </span>
+            <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
+              08:15 · Maandagochtend
+            </span>
           </motion.div>
+
+          {/* H1 */}
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="font-heading text-[40px] md:text-[64px] lg:text-[76px] font-extrabold tracking-[-2.5px] leading-[0.95] mb-10 md:mb-12"
+            aria-label="Je opent je laptop. Dit staat er al."
+          >
+            <span style={{ color: PETROL }}>Je opent je laptop</span>
+            <span style={{ color: FLAME }}>.</span>
+            <br />
+            <span style={{ color: MUTED_SOFT }}>Dit staat er al</span>
+            <span style={{ color: FLAME }}>.</span>
+          </motion.h1>
+
+          {/* Notifications stack */}
+          <div className="relative max-w-xl mx-auto mb-10 md:mb-12">
+            {morningNotifications.map((n, i) => (
+              <NotificationCard key={i} notification={n} index={i} />
+            ))}
+          </div>
+
+          {/* Subhead */}
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 1.5, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[17px] md:text-[22px] leading-relaxed font-heading font-semibold"
+            aria-label="Dit is je maandag. En je dinsdag. En je vrijdag."
+          >
+            <span style={{ color: PETROL }}>Dit is je maandag</span>
+            <span style={{ color: FLAME }}>.</span>{' '}
+            <span style={{ color: MUTED }}>En je dinsdag</span>
+            <span style={{ color: FLAME }}>.</span>{' '}
+            <span style={{ color: MUTED }}>En je vrijdag</span>
+            <span style={{ color: FLAME }}>.</span>
+          </motion.p>
         </div>
       </div>
     </section>
   )
 }
 
-function NotificationCard({
-  notification,
-  index,
-  scrollProgress,
-}: {
-  notification: Notification
-  index: number
-  scrollProgress: MotionValue<number>
-}) {
-  // Each notification appears sequentially between 0.28 and 0.65
-  const start = 0.28 + index * 0.07
-  const end = start + 0.08
-  const opacity = useTransform(scrollProgress, [start, end], [0, 1])
-  const y = useTransform(scrollProgress, [start, end], [24, 0])
-  const scale = useTransform(scrollProgress, [start, end], [0.96, 1])
-
+function NotificationCard({ notification, index }: { notification: Notification; index: number }) {
   const Icon = notification.icon
 
   return (
     <motion.div
-      style={{ opacity, y, scale }}
+      initial={{ opacity: 0, y: 24, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1, rotate: index % 2 === 0 ? -0.4 : 0.4 }}
+      transition={{ duration: 0.45, delay: 0.4 + index * 0.18, ease: [0.16, 1, 0.3, 1] }}
       className="flex items-center gap-3 md:gap-4 px-4 md:px-5 py-3 md:py-3.5 mb-2.5 rounded-xl text-left"
-      // Slight rotation alternation for lived-in feel
-      initial={false}
-      animate={{ rotate: index % 2 === 0 ? -0.4 : 0.4 }}
     >
       <div
         className="w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center flex-shrink-0"
@@ -297,188 +260,43 @@ function PainCard({ pain, index, isInView }: { pain: Pain; index: number; isInVi
    ═══════════════════════════════════════════════════════════════════ */
 
 function Act3Pivot() {
-  const sectionRef = useRef<HTMLElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end end'],
-  })
-
-  // Orbs coalesce: floating around → converging to center
-  const orbSpread = useTransform(scrollYProgress, [0.1, 0.55], [1, 0])
-  const lineOpacity = useTransform(scrollYProgress, [0.3, 0.55], [0, 0.5])
-  const logoOpacity = useTransform(scrollYProgress, [0.50, 0.70], [0, 1])
-  const logoScale = useTransform(scrollYProgress, [0.50, 0.72], [0.6, 1])
-  const statementOpacity = useTransform(scrollYProgress, [0.65, 0.85], [0, 1])
-  const statementY = useTransform(scrollYProgress, [0.65, 0.85], [20, 0])
-
-  const orbIcons = [Mail, Pencil, Calendar, Receipt, MessageCircle, FileText, Phone, CreditCard]
-  // Spread positions (percentage around center)
-  const orbPositions = [
-    { x: -42, y: -28 },
-    { x: 38, y: -32 },
-    { x: -48, y: 12 },
-    { x: 46, y: 18 },
-    { x: -24, y: 34 },
-    { x: 28, y: 36 },
-    { x: -8, y: -40 },
-    { x: 12, y: 42 },
-  ]
+  // Korte, statische pivot — het statement zonder scroll-theater.
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-100px' })
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative"
-      style={{ height: '180vh', background: 'linear-gradient(180deg, #FFFFFF 0%, #F5F4F1 30%, #143F46 100%)' }}
-    >
-      <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
-        <div className="relative w-full h-full flex items-center justify-center">
-          {/* Orbiting tool icons */}
-          <div className="relative" style={{ width: 500, height: 400 }}>
-            {orbIcons.map((Icon, i) => {
-              const pos = orbPositions[i]
-              return (
-                <OrbIcon
-                  key={i}
-                  Icon={Icon}
-                  baseX={pos.x}
-                  baseY={pos.y}
-                  spread={orbSpread}
-                  index={i}
-                />
-              )
-            })}
-
-            {/* Connection lines — appear as convergence happens */}
-            <motion.svg
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              viewBox="-250 -200 500 400"
-              style={{ opacity: lineOpacity }}
-            >
-              {orbPositions.map((pos, i) => (
-                <line
-                  key={i}
-                  x1={pos.x * 5}
-                  y1={pos.y * 5}
-                  x2={0}
-                  y2={0}
-                  stroke={FLAME}
-                  strokeWidth={1}
-                  opacity={0.4}
-                />
-              ))}
-            </motion.svg>
-
-            {/* Center doen. symbol */}
-            <motion.div
-              style={{
-                opacity: logoOpacity,
-                scale: logoScale,
-                left: '50%',
-                top: '50%',
-                translateX: '-50%',
-                translateY: '-50%',
-              }}
-              className="absolute flex items-center justify-center"
-            >
-              <div className="relative">
-                <div
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background: `radial-gradient(circle, ${FLAME}66 0%, ${FLAME}00 70%)`,
-                    filter: 'blur(30px)',
-                    transform: 'scale(2)',
-                  }}
-                />
-                <svg viewBox="82 188 390 135" style={{ height: 80, display: 'block' }}>
-                  <g fill="#FFFFFF">
-                    <path d="M170.03,198.76v90.76c0,7.28,0,14.65.15,21.97h-21.28c-.44-2.4-.87-6.53-1.01-8.35-3.86,6.29-10.74,10.2-22.68,10.2-20.21,0-33.07-16.23-33.07-41.17s13.67-42.48,36.31-42.48c11.5,0,17.68,4.06,19.45,7.64v-38.58h22.13ZM114.87,271.6c0,15.58,6.07,24.02,16.9,24.02,15.22,0,16.97-12.69,16.97-24.18,0-13.67-1.93-24.01-16.4-24.01-11.62,0-17.48,9.07-17.48,24.17Z" />
-                    <path d="M256.16,271.37c0,24.19-14.47,41.98-39.8,41.98s-39.26-17.69-39.26-41.55,14.92-42.09,40.3-42.09c23.53,0,38.75,16.6,38.75,41.67ZM199.56,271.52c0,15.39,6.62,24.5,17.28,24.5s16.85-9.12,16.85-24.37c0-16.73-6.14-24.64-17.16-24.64-10.26,0-16.97,7.6-16.97,24.5Z" />
-                    <path d="M282.01,276.26c.02,10,5.03,19.77,16.05,19.77,9.21,0,11.85-3.7,13.95-8.53h22.15c-2.84,9.78-11.56,25.85-36.68,25.85s-37.75-19.69-37.75-40.66c0-25.07,12.87-42.98,38.54-42.98,27.45,0,36.79,19.86,36.79,39.81,0,2.71,0,4.46-.29,6.74h-52.75ZM312.88,262.66c-.15-9.31-3.87-17.14-14.66-17.14s-14.87,7.31-15.75,17.14h30.41Z" />
-                    <path d="M342.84,251.69c0-6.79,0-14.23-.15-20.14h21.43c.44,2.06.74,7.61.85,10.18,2.72-5.02,9.19-12.04,23.19-12.04,16.06,0,26.49,10.85,26.49,30.94v50.85h-22.13v-48.39c0-8.99-3-15.5-12.76-15.5s-14.78,5.23-14.78,19.34v44.55h-22.13v-59.8Z" />
-                  </g>
-                  <circle cx="444.97" cy="294.08" r="18.03" fill={FLAME} />
-                </svg>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Statement */}
-          <motion.div
-            style={{ opacity: statementOpacity, y: statementY }}
-            className="absolute bottom-[14vh] left-0 right-0 text-center px-6"
+    <section ref={ref} className="relative py-24 md:py-32" style={{ backgroundColor: PETROL_DARK }}>
+      <div className="container-site text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <svg viewBox="82 188 390 135" style={{ height: 52, display: 'block' }} className="mx-auto mb-8" aria-hidden>
+            <g fill="#FFFFFF">
+              <path d="M170.03,198.76v90.76c0,7.28,0,14.65.15,21.97h-21.28c-.44-2.4-.87-6.53-1.01-8.35-3.86,6.29-10.74,10.2-22.68,10.2-20.21,0-33.07-16.23-33.07-41.17s13.67-42.48,36.31-42.48c11.5,0,17.68,4.06,19.45,7.64v-38.58h22.13ZM114.87,271.6c0,15.58,6.07,24.02,16.9,24.02,15.22,0,16.97-12.69,16.97-24.18,0-13.67-1.93-24.01-16.4-24.01-11.62,0-17.48,9.07-17.48,24.17Z" />
+              <path d="M256.16,271.37c0,24.19-14.47,41.98-39.8,41.98s-39.26-17.69-39.26-41.55,14.92-42.09,40.3-42.09c23.53,0,38.75,16.6,38.75,41.67ZM199.56,271.52c0,15.39,6.62,24.5,17.28,24.5s16.85-9.12,16.85-24.37c0-16.73-6.14-24.64-17.16-24.64-10.26,0-16.97,7.6-16.97,24.5Z" />
+              <path d="M282.01,276.26c.02,10,5.03,19.77,16.05,19.77,9.21,0,11.85-3.7,13.95-8.53h22.15c-2.84,9.78-11.56,25.85-36.68,25.85s-37.75-19.69-37.75-40.66c0-25.07,12.87-42.98,38.54-42.98,27.45,0,36.79,19.86,36.79,39.81,0,2.71,0,4.46-.29,6.74h-52.75ZM312.88,262.66c-.15-9.31-3.87-17.14-14.66-17.14s-14.87,7.31-15.75,17.14h30.41Z" />
+              <path d="M342.84,251.69c0-6.79,0-14.23-.15-20.14h21.43c.44,2.06.74,7.61.85,10.18,2.72-5.02,9.19-12.04,23.19-12.04,16.06,0,26.49,10.85,26.49,30.94v50.85h-22.13v-48.39c0-8.99-3-15.5-12.76-15.5s-14.78,5.23-14.78,19.34v44.55h-22.13v-59.8Z" />
+            </g>
+            <circle cx="444.97" cy="294.08" r="18.03" fill={FLAME} />
+          </svg>
+          <p
+            className="font-heading text-[24px] md:text-[34px] lg:text-[42px] font-extrabold tracking-[-1px] leading-tight"
+            style={{ color: '#FFFFFF' }}
           >
-            <p
-              className="font-heading text-[22px] md:text-[32px] lg:text-[40px] font-extrabold tracking-[-1px] leading-tight"
-              style={{ color: '#FFFFFF' }}
-            >
-              Vakidioten wachten niet op verandering
-              <span style={{ color: FLAME }}>.</span>
-              <br />
-              <span style={{ color: 'rgba(255,255,255,0.55)' }}>
-                Die maken &apos;m zelf. Daarom{' '}
-              </span>
-              <span style={{ color: '#FFFFFF' }}>doen</span>
-              <span style={{ color: FLAME }}>.</span>
-            </p>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function OrbIcon({
-  Icon,
-  baseX,
-  baseY,
-  spread,
-  index,
-}: {
-  Icon: LucideIcon
-  baseX: number
-  baseY: number
-  spread: MotionValue<number>
-  index: number
-}) {
-  const x = useTransform(spread, (v) => `${baseX * v}%`)
-  const y = useTransform(spread, (v) => `${baseY * v}%`)
-  const opacity = useTransform(spread, [0, 0.4, 1], [0, 1, 1])
-  const iconColor = useTransform(spread, [0, 0.5], [PETROL, FLAME])
-
-  return (
-    <motion.div
-      style={{
-        position: 'absolute',
-        left: '50%',
-        top: '50%',
-        x,
-        y,
-        translateX: '-50%',
-        translateY: '-50%',
-        opacity,
-      }}
-      animate={{
-        scale: [1, 1.06, 1],
-      }}
-      transition={{
-        duration: 3 + (index % 3),
-        repeat: Infinity,
-        ease: 'easeInOut',
-        delay: index * 0.3,
-      }}
-    >
-      <div
-        className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center"
-        style={{
-          backgroundColor: '#FFFFFF',
-          boxShadow: '0 4px 20px rgba(26,83,92,0.15)',
-        }}
-      >
-        <motion.div style={{ color: iconColor }}>
-          <Icon className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.8} />
+            Vakidioten wachten niet op verandering
+            <span style={{ color: FLAME }}>.</span>
+            <br />
+            <span style={{ color: 'rgba(255,255,255,0.55)' }}>
+              Die maken &apos;m zelf. Daarom{' '}
+            </span>
+            <span style={{ color: '#FFFFFF' }}>doen</span>
+            <span style={{ color: FLAME }}>.</span>
+          </p>
         </motion.div>
       </div>
-    </motion.div>
+    </section>
   )
 }
 
@@ -1221,7 +1039,7 @@ export default function HoeHetWerktContent() {
   }
 
   return (
-    <div>
+    <div className="pt-28 md:pt-36">
       <Act1Opening />
       <Act2Pain />
       <Act3Pivot />
