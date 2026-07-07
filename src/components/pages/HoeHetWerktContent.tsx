@@ -211,6 +211,42 @@ function Act2Pain() {
             <PainCard key={i} pain={p} index={i} isInView={isInView} />
           ))}
         </div>
+
+        {/* Het monteur-moment — de pijn raakt niet alleen de eigenaar */}
+        <SectionReveal delay={0.15}>
+          <div
+            className="mt-14 md:mt-20 max-w-3xl mx-auto rounded-2xl px-7 py-9 md:px-12 md:py-12"
+            style={{
+              backgroundColor: '#0F3A42',
+              boxShadow: '0 24px 56px -30px rgba(19,62,69,0.4)',
+            }}
+          >
+            <p className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase mb-6" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              07:52 · Woensdag · bij de bus
+            </p>
+            <p
+              className="text-[22px] md:text-[28px] leading-[1.3] tracking-[-0.3px] mb-5"
+              style={{
+                color: '#FFFFFF',
+                fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif',
+                fontStyle: 'italic',
+                fontWeight: 400,
+              }}
+            >
+              &ldquo;Welke versie moet ik monteren &mdash; die van dinsdag, of die uit de mail van gisteravond?&rdquo;
+            </p>
+            <p className="font-mono text-[11px] tracking-[0.18em] uppercase mb-8" style={{ color: '#F15025' }}>
+              Mark · monteur
+            </p>
+            <p className="text-[15px] md:text-[17px] leading-[1.7]" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              Jij zit in de auto. Het antwoord zit in een mailthread die alleen jij kunt zien.
+              Mark kan pas verder als jij opneemt.{' '}
+              <span style={{ color: '#FFFFFF' }}>
+                Vier van de vijf vragen aan jou zijn eigenlijk vragen aan je systeem.
+              </span>
+            </p>
+          </div>
+        </SectionReveal>
       </div>
     </section>
   )
