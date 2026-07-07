@@ -6,7 +6,7 @@ import FeaturesContent from '@/components/pages/FeaturesContent'
 
 export const metadata: Metadata = {
   title: 'Functies | doen.',
-  description: 'Tien modules voor je signbedrijf: projecten, offertes, facturen, planning, klantportaal, werkbonnen, visualizer, email, taken en Daan AI.',
+  description: 'Tien modules voor je signbedrijf: projecten, offertes, facturen, planning, klantportaal, werkbonnen, studio, email, taken en Daan AI.',
   alternates: { canonical: '/features' },
 }
 

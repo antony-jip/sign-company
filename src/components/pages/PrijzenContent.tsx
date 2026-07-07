@@ -20,7 +20,7 @@ const allFeatures = [
   'Mollie betaallinks (iDEAL, creditcard)',
   'Email met gedeelde inbox',
   'CRM met klantbeheer',
-  'Visualizer (10 credits)',
+  'Studio (10 credits)',
   'Rapportages en tijdregistratie',
   'Alle toekomstige updates',
   'Nederlandse support',

@@ -78,7 +78,7 @@ const modules = [
   },
   {
     id: 'visualizer',
-    name: 'Visualizer',
+    name: 'Studio',
     color: '#9A5A48',
     image: '/images/modules/visualizer.jpg',
     headline: 'Laat zien. Niet vertellen.',
@@ -610,7 +610,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       overlays: [],
     },
     visualizer: {
-      label: 'Visualizer',
+      label: 'Studio',
       heading: ['Laat zien', 'Niet vertellen'],
       sub: 'Upload een foto van een bus, gevel of pand. Beschrijf wat je wilt. AI maakt een realistische visualisatie. Je klant ziet het eindresultaat voordat je begint.',
       subMobile: 'Upload foto, beschrijf wat je wilt. AI maakt het beeld.',
@@ -670,25 +670,6 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
 
             {/* Text content */}
             <div className="container-site text-center pt-32 md:pt-40 relative z-10">
-              {/* Coming soon badge — for modules niet live */}
-              {moduleSlug === 'visualizer' && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.85, rotate: -8 }}
-                  animate={{ opacity: 1, scale: 1, rotate: -3 }}
-                  transition={{ duration: 0.7, type: 'spring', stiffness: 180, damping: 14 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 mb-6 rounded-[4px]"
-                  style={{
-                    backgroundColor: '#1A1A1A',
-                    boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
-                  }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
-                  <span className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase text-white">
-                    Binnenkort beschikbaar
-                  </span>
-                </motion.div>
-              )}
-
               {/* Eyebrow — Hero pattern with ping dot */}
               <motion.div
                 className="inline-flex items-center gap-2 mb-7"
@@ -1805,7 +1786,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                         planning: { prefix: 'Hoe', subject: 'planning', verb: 'werkt' },
                         werkbonnen: { prefix: 'Hoe', subject: 'werkbonnen', verb: 'werken' },
                         facturen: { prefix: 'Hoe', subject: 'facturen', verb: 'werken' },
-                        visualizer: { prefix: 'Hoe', subject: 'de visualizer', verb: 'werkt' },
+                        visualizer: { prefix: 'Hoe', subject: 'de studio', verb: 'werkt' },
                         ai: { prefix: 'Hoe', subject: 'Daan', verb: 'werkt' },
                         email: { prefix: 'Hoe', subject: 'mailen', verb: 'werkt' },
                         taken: { prefix: 'Hoe', subject: 'taken', verb: 'werken' },

@@ -26,7 +26,7 @@ export type Category =
   | 'Facturen'
   | 'Email'
   | 'Taken'
-  | 'Visualizer'
+  | 'Studio'
   | 'AI-assistent'
   | 'Integraties'
   | 'Instellingen'
@@ -42,7 +42,7 @@ export const CATEGORY_ORDER: Category[] = [
   'Facturen',
   'Email',
   'Taken',
-  'Visualizer',
+  'Studio',
   'AI-assistent',
   'Integraties',
   'Instellingen',
@@ -644,20 +644,20 @@ export const articles: Article[] = [
   },
   {
     slug: 'visualizer',
-    title: 'Visualizer: AI-impressies',
-    category: 'Visualizer',
-    excerpt: 'Upload een schets, de Visualizer maakt er een realistische visualisatie van. Draait op Nano Banana 2.',
+    title: 'Studio: AI-impressies',
+    category: 'Studio',
+    excerpt: 'Upload een schets, Studio maakt er een realistische visualisatie van. Draait op Nano Banana 2.',
     updatedAt: '2026-04-23',
     readingTime: 2,
     sections: [
       {
         id: 'wat-is-het',
-        title: 'Wat is de Visualizer?',
+        title: 'Wat is Studio?',
         content: (
           <>
             <P>
               Upload een foto of schets van een locatie, beschrijf wat er moet komen (*"rood-witte gevelreclame
-              met LED-verlichting"*), en de Visualizer genereert een <B>realistische visualisatie</B> van het
+              met LED-verlichting"*), en Studio genereert een <B>realistische visualisatie</B> van het
               eindresultaat.
             </P>
             <P>
@@ -690,7 +690,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              De Visualizer draait op <B>Nano Banana 2</B> — Google's image-generation model. Claude Sonnet 4.6
+              Studio draait op <B>Nano Banana 2</B> — Google's image-generation model. Claude Sonnet 4.6
               verbetert eerst je tekstuele input voordat het naar Nano Banana gaat, zodat je resultaten consistenter
               zijn.
             </P>
