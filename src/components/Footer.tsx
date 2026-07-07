@@ -64,6 +64,7 @@ export default function Footer() {
                 { href: '/features', label: 'Cockpit' },
                 { href: '/prijzen', label: 'Prijzen' },
                 { href: '/hoe-het-werkt', label: 'Hoe het werkt' },
+                { href: '/vergelijk/james-pro', label: 'doen. vs. James PRO' },
               ],
             },
             {
