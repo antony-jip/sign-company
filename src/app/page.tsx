@@ -11,6 +11,8 @@ import FaqSection from '@/components/home/FaqSection'
 import CTASection from '@/components/home/CTASection'
 import Footer from '@/components/Footer'
 import SignTypesStrip from '@/components/SignTypesStrip'
+import JsonLd from '@/components/JsonLd'
+import { organizationSchema, softwareApplicationSchema } from '@/lib/structured-data'
 
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
@@ -19,6 +21,8 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
+      <JsonLd data={organizationSchema} />
+      <JsonLd data={softwareApplicationSchema} />
       <Navbar />
       <main id="main-content">
         <Hero />

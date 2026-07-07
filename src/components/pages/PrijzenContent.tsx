@@ -6,6 +6,7 @@ import { ArrowRight, Check } from 'lucide-react'
 import SerifItalic from '@/components/SerifItalic'
 import PageBackdrop from '@/components/PageBackdrop'
 import { TrimCorners, FlameStamp } from '@/components/brand/BrandMarks'
+import { PRICE_PER_MONTH } from '@/data/pricing'
 
 const allFeatures = [
   'Onbeperkt projecten, offertes en facturen',
@@ -363,7 +364,7 @@ function PricingSlider() {
   // Realistische concurrent: €25/user/mo + €495 eenmalige opzetkosten
   const COMPETITOR_PER_USER = 25
   const COMPETITOR_SETUP = 495
-  const DOEN_PRICE = 79
+  const DOEN_PRICE = PRICE_PER_MONTH
 
   const competitorMonthly = users * COMPETITOR_PER_USER
   const monthlySaving = competitorMonthly - DOEN_PRICE

@@ -3,6 +3,8 @@ import Navbar from '@/components/Navbar'
 import ScrollProgress from '@/components/ScrollProgress'
 import Footer from '@/components/Footer'
 import PrijzenContent from '@/components/pages/PrijzenContent'
+import JsonLd from '@/components/JsonLd'
+import { softwareApplicationSchema } from '@/lib/structured-data'
 
 export const metadata: Metadata = {
   title: 'Prijzen — één plan voor je signbedrijf | doen.',
@@ -13,6 +15,7 @@ export const metadata: Metadata = {
 export default function PrijzenPage() {
   return (
     <>
+      <JsonLd data={softwareApplicationSchema} />
       <ScrollProgress />
       <Navbar />
       <main id="main-content">
