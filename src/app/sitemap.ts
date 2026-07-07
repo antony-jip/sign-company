@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { modules } from '@/data/modules'
 import { articles } from '@/data/kennisbank/articles'
+import { verticals } from '@/data/verticals'
 
 const BASE_URL = 'https://doen.team'
 
@@ -13,6 +14,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     ...modules.map((module) => ({
       url: `${BASE_URL}${module.href}`,
+    })),
+    ...verticals.map((vertical) => ({
+      url: `${BASE_URL}/voor/${vertical.slug}`,
     })),
     ...articles.map((article) => ({
       url: `${BASE_URL}/kennisbank/${article.slug}`,

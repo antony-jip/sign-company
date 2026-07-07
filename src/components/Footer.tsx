@@ -56,7 +56,7 @@ export default function Footer() {
         </div>
 
         {/* Links grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-14">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-14">
           {[
             {
               title: 'Product',
@@ -69,10 +69,19 @@ export default function Footer() {
             {
               title: 'Modules',
               items: [
-                { href: '/features', label: 'Projecten' },
-                { href: '/features', label: 'Offertes' },
-                { href: '/features', label: 'Klantportaal' },
-                { href: '/features', label: 'Planning' },
+                { href: '/features/projecten', label: 'Projecten' },
+                { href: '/features/offertes', label: 'Offertes' },
+                { href: '/features/portaal', label: 'Klantportaal' },
+                { href: '/features/planning', label: 'Planning' },
+              ],
+            },
+            {
+              title: 'Voor wie',
+              items: [
+                { href: '/voor/signmakers', label: 'Signmakers' },
+                { href: '/voor/autobelettering', label: 'Autobelettering' },
+                { href: '/voor/grootformaat-print', label: 'Grootformaat print' },
+                { href: '/voor/lichtreclame', label: 'Lichtreclame' },
               ],
             },
             {
