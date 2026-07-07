@@ -30,6 +30,7 @@ export type Category =
   | 'AI-assistent'
   | 'Integraties'
   | 'Instellingen'
+  | 'Vakkennis'
 
 export const CATEGORY_ORDER: Category[] = [
   'Aan de slag',
@@ -45,6 +46,7 @@ export const CATEGORY_ORDER: Category[] = [
   'AI-assistent',
   'Integraties',
   'Instellingen',
+  'Vakkennis',
 ]
 
 /* Helpers for content authoring */
@@ -871,6 +873,266 @@ export const articles: Article[] = [
               privé-inbox. Niemand anders ziet die.
             </P>
             <P>Dit is bewust zo gebouwd. Jouw mail is jouw mail.</P>
+          </>
+        ),
+      },
+    ],
+  },
+
+  /* ── Vakkennis — voor signmakers die zich oriënteren ── */
+  {
+    slug: 'wat-kost-software-voor-een-signbedrijf',
+    title: 'Wat kost software voor een signbedrijf?',
+    category: 'Vakkennis',
+    excerpt:
+      'Per gebruiker of flat, opzetkosten, add-ons: zo lees je de tarieven van bedrijfssoftware voor de signbranche — en dit betaal je echt.',
+    updatedAt: '2026-07-07',
+    readingTime: 6,
+    sections: [
+      {
+        id: 'prijsmodellen',
+        title: 'Twee prijsmodellen: per gebruiker of flat',
+        content: (
+          <>
+            <P>
+              Bijna alle bedrijfssoftware voor de signbranche werkt met een van twee modellen.
+              <B> Per gebruiker</B>: je betaalt een bedrag per persoon per maand. Gangbare
+              branchesoftware zit al snel boven de €100 per gebruiker per maand. <B>Flat</B>:
+              één vaste prijs voor je hele team, ongeact hoeveel mensen meedoen.
+            </P>
+            <P>
+              Het verschil lijkt klein, maar bepaalt hoe je met de software omgaat. Bij een
+              prijs per gebruiker ga je rekenen: krijgt de monteur wél een account, de
+              zaterdaghulp niet? Dan belandt de werkbon alsnog op papier en ben je het
+              overzicht kwijt waar je juist voor betaalde.
+            </P>
+            <Callout>
+              Vuistregel: reken een prijs per gebruiker altijd om naar je héle team, inclusief
+              monteurs. Vijf mensen × €100 is €500 per maand — €6.000 per jaar.
+            </Callout>
+          </>
+        ),
+      },
+      {
+        id: 'opzetkosten',
+        title: 'Opzetkosten en onboarding',
+        content: (
+          <>
+            <P>
+              Naast het abonnement rekenen veel pakketten <B>eenmalige opzetkosten</B> voor
+              installatie, migratie en training. In de signbranche lopen die uiteen van een
+              paar honderd tot enkele duizenden euro's, afhankelijk van het pakket.
+            </P>
+            <P>
+              Vraag altijd wat er precies in die opzetkosten zit. Migratie van je klanten en
+              producten? Training voor het hele team, of alleen voor jou? En wat kost het als
+              je er later een collega bij traint?
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'verborgen-kosten',
+        title: 'De checklist tegen verborgen kosten',
+        content: (
+          <>
+            <P>Stel deze vragen voordat je tekent:</P>
+            <UL>
+              <LI>Zit het <B>klantportaal</B> erin, of is dat een add-on?</LI>
+              <LI>Betaal je extra voor <B>koppelingen</B> met je boekhoudpakket of betaalprovider?</LI>
+              <LI>Wat kost een <B>extra gebruiker</B> als je groeit?</LI>
+              <LI>Is er een <B>jaarcontract</B>, of kun je maandelijks opzeggen?</LI>
+              <LI>Kun je je <B>data exporteren</B> als je weggaat — en wat kost dat?</LI>
+            </UL>
+          </>
+        ),
+      },
+      {
+        id: 'wat-doen-kost',
+        title: 'Wat doen. kost',
+        content: (
+          <>
+            <P>
+              Wij geloven in één simpele som: <B>€79 per maand ex. btw</B>, flat, tot 10
+              gebruikers. Geen opzetkosten, geen add-ons, alle 10 modules en de AI-assistent
+              inbegrepen. Maandelijks opzegbaar.
+            </P>
+            <P>
+              De volledige opbouw staat op de{' '}
+              <a href="/prijzen" style={{ color: '#1A535C', textDecoration: 'underline' }}>
+                prijzenpagina
+              </a>
+              , en wie doen. naast James PRO wil leggen vindt de feiten op de{' '}
+              <a href="/vergelijk/james-pro" style={{ color: '#1A535C', textDecoration: 'underline' }}>
+                vergelijkingspagina
+              </a>
+              .
+            </P>
+          </>
+        ),
+      },
+    ],
+  },
+  {
+    slug: 'offerte-maken-gevelreclame',
+    title: 'Offerte maken voor gevelreclame: zo calculeer je',
+    category: 'Vakkennis',
+    excerpt:
+      'Van m²-prijs tot hoogwerker: welke posten horen in een offerte voor gevelreclame, hoe bewaak je je marge en hoe krijg je sneller akkoord.',
+    updatedAt: '2026-07-07',
+    readingTime: 7,
+    sections: [
+      {
+        id: 'de-posten',
+        title: 'Welke posten horen erin',
+        content: (
+          <>
+            <P>
+              Een offerte voor gevelreclame is meer dan een m²-prijs. De posten die je niet
+              opneemt, betaal je zelf:
+            </P>
+            <UL>
+              <LI><B>Materiaal</B> — panelen, folie, doosletters, LED-modules, bevestiging.</LI>
+              <LI><B>Productie</B> — print-, frees- of zetwerk, confectie, laminaat.</LI>
+              <LI><B>Voorbereiding</B> — ontwerp of aanpassing, drukproef, schouwen op locatie.</LI>
+              <LI><B>Montage</B> — uren × mensen, plus reistijd.</LI>
+              <LI><B>Materieel</B> — hoogwerker of steiger, en wie die huurt.</LI>
+              <LI><B>Onvoorzien</B> — gevelstaat, boren in beton, parkeerontheffing.</LI>
+            </UL>
+            <Callout tone="warning">
+              Check bij grotere gevelreclame altijd of er een <B>omgevingsvergunning</B> nodig
+              is. Gemeenten verschillen; leg in je offerte vast wie de aanvraag doet en dat
+              levertijd pas loopt na vergunning.
+            </Callout>
+          </>
+        ),
+      },
+      {
+        id: 'calculeren',
+        title: 'Calculeren: van inkoop naar verkoopprijs',
+        content: (
+          <>
+            <P>
+              De veiligste route is calculeren vanuit <B>inkoopprijs plus marge per post</B>,
+              niet vanuit één totaalprijs die "wel goed voelt". Materiaal heeft een andere
+              marge dan montage-uren; wie alles op één hoop gooit, ziet nooit welke klussen
+              geld opleveren en welke niet.
+            </P>
+            <P>
+              Werk met <B>templates per producttype</B> — gevelbord, doosletters, lichtbak —
+              waarin je opbouw en marges al staan. Dan is een nieuwe offerte een kwestie van
+              maten en aantallen invullen, en klopt de marge automatisch.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'sneller-akkoord',
+        title: 'Sneller akkoord krijgen',
+        content: (
+          <>
+            <P>
+              De meeste offertes sterven niet aan de prijs, maar aan <B>stilte</B>. De klant
+              heeft nog een vraag, de mail zakt weg, en drie weken later is het momentum weg.
+            </P>
+            <UL>
+              <LI>Stuur de <B>drukproef of visual mee</B> — een klant tekent voor wat hij ziet.</LI>
+              <LI>Maak akkoord geven <B>één klik</B>, geen print-, teken- en scanwerk.</LI>
+              <LI>Volg <B>binnen een week</B> op, en daarna nog een keer. Automatisch als het kan.</LI>
+            </UL>
+            <P>
+              In doen. keurt je klant de offerte en de tekening goed via het{' '}
+              <a href="/features/portaal" style={{ color: '#1A535C', textDecoration: 'underline' }}>
+                klantportaal
+              </a>{' '}
+              — één link, geen inlog — en herinnert het systeem hem eraan als hij niet reageert.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'veelgemaakte-fouten',
+        title: 'Veelgemaakte fouten',
+        content: (
+          <>
+            <UL>
+              <LI>Reistijd en <B>tweede montagedag</B> vergeten bij tegenslag op locatie.</LI>
+              <LI>Hoogwerker <B>per dag</B> gehuurd, maar <B>per klus</B> gecalculeerd.</LI>
+              <LI>Geen <B>geldigheidsdatum</B> op de offerte — materiaalprijzen bewegen.</LI>
+              <LI>Akkoord per appje geaccepteerd <B>zonder versienummer</B> van het ontwerp.</LI>
+            </UL>
+          </>
+        ),
+      },
+    ],
+  },
+  {
+    slug: 'werkbon-app-kiezen',
+    title: 'Een werkbon-app kiezen: waar let je op?',
+    category: 'Vakkennis',
+    excerpt:
+      'Digitale werkbonnen voor je monteurs: welke functies zijn onmisbaar, en wanneer kies je een losse werkbon-app of een geïntegreerd systeem?',
+    updatedAt: '2026-07-07',
+    readingTime: 5,
+    sections: [
+      {
+        id: 'waarom-digitaal',
+        title: 'Waarom papier je geld kost',
+        content: (
+          <>
+            <P>
+              Een papieren werkbon lijkt gratis, maar je betaalt hem drie keer: de monteur
+              belt om te vragen wat er ook alweer moest gebeuren, de uren komen op vrijdag
+              uit het hoofd, en de foto's van de oplevering staan op iemands privételefoon.
+            </P>
+            <P>
+              Een goede werkbon-app draait dat om: de monteur <B>ziet zijn klus op zijn
+              telefoon</B>, legt uren en foto's vast op het moment zelf, en kantoor ziet het
+              live terug.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'checklist',
+        title: 'De checklist',
+        content: (
+          <>
+            <UL>
+              <LI><B>Telefoon-eerst</B> — geen app die eigenlijk een website voor desktop is.</LI>
+              <LI><B>Foto's bij de bon</B> — voor, tijdens en na, direct in het project.</LI>
+              <LI><B>Digitale handtekening</B> van de klant op locatie.</LI>
+              <LI><B>Urenregistratie</B> per klus, zonder los briefje.</LI>
+              <LI><B>Gekoppeld aan de planning</B> — verschuift de klus, dan verschuift de bon.</LI>
+              <LI><B>Doorstroom naar de factuur</B> — getekende bon erbij, discussie voorbij.</LI>
+            </UL>
+          </>
+        ),
+      },
+      {
+        id: 'los-of-geintegreerd',
+        title: 'Losse app of geïntegreerd systeem?',
+        content: (
+          <>
+            <P>
+              Losse werkbon-apps zijn er genoeg, en ze doen het bon-gedeelte vaak prima. Het
+              probleem zit in wat eromheen gebeurt: de klus staat in je planning, de
+              afspraken staan in de offerte, en de factuur moet erna. Met een losse app ben
+              jij de koppeling — elke dag opnieuw.
+            </P>
+            <P>
+              In een geïntegreerd systeem zoals doen. <B>ontstaat de werkbon uit de
+              planning</B> en staat erop wat er in de offerte is verkocht. Wat de monteur
+              vastlegt, zit meteen in het project — zie de{' '}
+              <a href="/features/werkbonnen" style={{ color: '#1A535C', textDecoration: 'underline' }}>
+                werkbonnen-module
+              </a>
+              .
+            </P>
+            <Callout>
+              Test welke route je ook kiest één ding in de proefperiode: laat je monteur een
+              échte klus afronden op zijn eigen telefoon. Als dat wringt, wringt de rest ook.
+            </Callout>
           </>
         ),
       },
