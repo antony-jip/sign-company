@@ -49,16 +49,18 @@ const overigNav: NavItem[] = [
   { icon: Wallet, label: 'Financieel', activeOn: [] },
 ]
 
-export default function AppShowcase() {
+export default function AppShowcase({ hideHeader = false }: { hideHeader?: boolean }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-80px' })
   const [view, setView] = useState<View>('dashboard')
 
   return (
     <section ref={ref} className="relative" style={{ backgroundColor: '#F3F2ED' }}>
-      <div className="container-site relative py-24 md:py-32">
+      <div className={`container-site relative ${hideHeader ? 'pt-6 pb-20 md:pt-8 md:pb-24' : 'py-24 md:py-32'}`}>
 
-        {/* Section heading */}
+        {/* Section heading — verborgen wanneer de omliggende pagina zelf
+            al een kop boven de showcase zet (zoals /features) */}
+        {!hideHeader && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -91,6 +93,7 @@ export default function AppShowcase() {
             </span>
           </p>
         </motion.div>
+        )}
 
         {/* TOGGLE — view switcher */}
         <motion.div

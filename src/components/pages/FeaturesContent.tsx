@@ -7,6 +7,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import SectionReveal from '../SectionReveal'
 import FaqSection from '../home/FaqSection'
+import AppShowcase from '../home/AppShowcase'
 
 const modules = [
   {
@@ -1647,16 +1648,47 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                 </span>
               </h1>
               <p className="text-[16px] md:text-[18px] max-w-lg mx-auto leading-[1.55]" style={{ color: '#3F3F3A' }}>
-                Elke module is gebouwd voor hoe jij werkt. Van eerste klantvraag tot oplevering. Klik op een module en stap in.
+                Dit is het echte werk: negen schermen, geen mockup, geen video. Klik erdoorheen en zie hoe alles samenhangt.
               </p>
             </SectionReveal>
           </div>
         </section>
       )}
 
+      {/* Interactieve showcase — alleen op de cockpit-indexpagina, zodat
+          bezoekers het echte product zien zodra ze op Cockpit klikken.
+          De eigen kop blijft verborgen: de hero hierboven kondigt hem aan. */}
+      {!moduleSlug && <AppShowcase hideHeader />}
+
       {/* Module thumbnail grid */}
       <section className="pt-4 pb-0">
         <div className="container-site">
+          {!moduleSlug && (
+            <SectionReveal>
+              <div className="text-center pt-10 md:pt-16 mb-10 md:mb-12">
+                <div className="inline-flex items-center gap-2 mb-6">
+                  <span className="relative inline-flex items-center justify-center w-2 h-2">
+                    <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />
+                    <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+                  </span>
+                  <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>
+                    De modules
+                  </span>
+                </div>
+                <h2
+                  className="font-heading font-bold tracking-[-1px] md:tracking-[-2px] leading-[1.0] mb-5"
+                  style={{ fontSize: 'clamp(28px, 4vw, 48px)', color: '#1A535C' }}
+                >
+                  Stap een{' '}
+                  <span style={{ fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>module</span>{' '}
+                  in<span className="text-flame">.</span>
+                </h2>
+                <p className="text-[15px] md:text-[17px] max-w-lg mx-auto leading-[1.55]" style={{ color: '#3F3F3A' }}>
+                  Elke module is gebouwd voor hoe jij werkt. Van eerste klantvraag tot oplevering.
+                </p>
+              </div>
+            </SectionReveal>
+          )}
           <div
             ref={scrollRef}
             className="flex justify-center gap-3 md:gap-4 flex-wrap pb-8"
