@@ -5,8 +5,8 @@ import Footer from '@/components/Footer'
 import FeaturesContent from '@/components/pages/FeaturesContent'
 
 export const metadata: Metadata = {
-  title: 'Cockpit | doen.',
-  description: 'De cockpit van doen. Tien krachtige modules: projecten, offertes, facturen, planning, klantportaal, werkbonnen, visualizer, email, taken en Daan AI.',
+  title: 'Functies | doen.',
+  description: 'Tien modules voor je signbedrijf: projecten, offertes, facturen, planning, klantportaal, werkbonnen, visualizer, email, taken en Daan AI.',
   alternates: { canonical: '/features' },
 }
 

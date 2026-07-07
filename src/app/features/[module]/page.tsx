@@ -3,32 +3,20 @@ import Navbar from '@/components/Navbar'
 import ScrollProgress from '@/components/ScrollProgress'
 import Footer from '@/components/Footer'
 import FeaturesContent from '@/components/pages/FeaturesContent'
+import { modules } from '@/data/modules'
 
 const moduleIds = ['projecten', 'offertes', 'portaal', 'planning', 'werkbonnen', 'facturen', 'visualizer', 'ai', 'email', 'taken'] as const
-
-const moduleNames: Record<string, string> = {
-  projecten: 'Projecten',
-  offertes: 'Offertes',
-  portaal: 'Klantportaal',
-  planning: 'Planning',
-  werkbonnen: 'Werkbonnen',
-  facturen: 'Facturen',
-  visualizer: 'Visualizer',
-  ai: 'AI-assistent',
-  email: 'Email',
-  taken: 'Taken',
-}
 
 export async function generateStaticParams() {
   return moduleIds.map((module) => ({ module }))
 }
 
 export async function generateMetadata({ params }: { params: { module: string } }): Promise<Metadata> {
-  const name = moduleNames[params.module] || 'Cockpit'
+  const mod = modules.find((m) => m.href === `/features/${params.module}`)
   const isKnownModule = moduleIds.includes(params.module as typeof moduleIds[number])
   return {
-    title: `${name} | doen.`,
-    description: `Ontdek de ${name} module van doen. — alles-in-één software voor het signbedrijf.`,
+    title: mod?.seoTitle ?? 'Functies | doen.',
+    description: mod?.seoDescription ?? 'Ontdek de modules van doen. — alles-in-één software voor het signbedrijf.',
     alternates: { canonical: isKnownModule ? `/features/${params.module}` : '/features' },
   }
 }

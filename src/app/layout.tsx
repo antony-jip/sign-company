@@ -33,8 +33,8 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://doen.team'),
-  title: 'doen. | Software voor creatieve maakbedrijven',
-  description: 'Van offerte tot factuur. Zo gedaan. Alles-in-een bedrijfssoftware voor €79/maand ex. btw. Tot 10 gebruikers inbegrepen, meer op aanvraag.',
+  title: 'doen. | Software voor signmakers en reclamebedrijven',
+  description: 'Van offerte tot factuur. Zo gedaan. Alles-in-één bedrijfssoftware voor signmakers en reclamebedrijven, €79/maand ex. btw. Tot 10 gebruikers inbegrepen.',
   keywords: [
     'signmaker software',
     'reclame bedrijf software',
