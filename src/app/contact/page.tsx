@@ -7,6 +7,7 @@ import ContactContent from '@/components/pages/ContactContent'
 export const metadata: Metadata = {
   title: 'Contact | doen.',
   description: 'Neem contact op. We reageren binnen een werkdag.',
+  alternates: { canonical: '/contact' },
 }
 
 export default function ContactPage() {

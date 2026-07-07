@@ -7,6 +7,7 @@ import HoeHetWerktContent from '@/components/pages/HoeHetWerktContent'
 export const metadata: Metadata = {
   title: 'Hoe het werkt | doen.',
   description: 'Je werkdag draait om zeven tabbladen en vier logins. Zie hoe doen. dat terugbrengt naar één. Van klantaanvraag tot betaalde factuur.',
+  alternates: { canonical: '/hoe-het-werkt' },
 }
 
 export default function HoeHetWerktPage() {

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: 'Kennisbank | doen.',
   description:
     'Alles wat je moet weten over doen. Per module uitgelegd. Van aan de slag tot geavanceerde tips.',
+  alternates: { canonical: '/kennisbank' },
 }
 
 const PETROL = '#1A535C'

@@ -25,9 +25,11 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: { module: string } }): Promise<Metadata> {
   const name = moduleNames[params.module] || 'Cockpit'
+  const isKnownModule = moduleIds.includes(params.module as typeof moduleIds[number])
   return {
     title: `${name} | doen.`,
     description: `Ontdek de ${name} module van doen. — alles-in-één software voor het signbedrijf.`,
+    alternates: { canonical: isKnownModule ? `/features/${params.module}` : '/features' },
   }
 }
 

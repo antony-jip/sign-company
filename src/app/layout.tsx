@@ -67,9 +67,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="nl" className={`${bricolage.variable} ${inter.variable} ${plexMono.variable} ${instrumentSerif.variable}`}>
-      <head>
-        <link rel="canonical" href="https://doen.team" />
-      </head>
       <body className="font-sans bg-bg text-ink antialiased">
         <a href="#main-content" className="skip-link">
           Ga naar inhoud

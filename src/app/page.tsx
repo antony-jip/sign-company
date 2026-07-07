@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
 import AppShowcase from '@/components/home/AppShowcase'
@@ -10,6 +11,10 @@ import FaqSection from '@/components/home/FaqSection'
 import CTASection from '@/components/home/CTASection'
 import Footer from '@/components/Footer'
 import SignTypesStrip from '@/components/SignTypesStrip'
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+}
 
 export default function Home() {
   return (

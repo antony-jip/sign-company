@@ -7,6 +7,7 @@ import OverContent from '@/components/pages/OverContent'
 export const metadata: Metadata = {
   title: 'Over ons | doen.',
   description: 'Waarom doen. bestaat. Vakmanschap verdient beter gereedschap.',
+  alternates: { canonical: '/over' },
 }
 
 export default function OverPage() {
