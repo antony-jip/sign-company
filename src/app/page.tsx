@@ -31,7 +31,7 @@ export default function Home() {
         <ModulesCarousel />
         <SignTypesStrip />
         <MarqueeStrip />
-        <SectionCTA title="Alles, op één plek" sub="Eén systeem voor je hele signbedrijf. 30 dagen gratis." />
+        <SectionCTA title="Je hele signbedrijf, op één plek" sub="Eén systeem voor alles. 30 dagen gratis." />
         <ValueProps />
         <PricingSection />
         <FaqSection />

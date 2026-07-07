@@ -80,7 +80,7 @@ export default function AppShowcase() {
           >
             Stop met scrollen<span style={{ color: FLAME }}>.</span>{' '}
             <span style={{ color: MUTED }}>
-              Ga <SerifItalic>klikken</SerifItalic>
+              Klik door je <SerifItalic>signbedrijf</SerifItalic>
               <span style={{ color: FLAME }}>.</span>
             </span>
           </h2>

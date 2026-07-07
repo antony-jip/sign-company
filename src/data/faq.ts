@@ -1,5 +1,6 @@
-// Eén bron voor de FAQ: gerenderd door FaqSection en gebruikt voor het
-// FAQPage-schema in lib/structured-data.ts.
+// Eén bron voor de FAQ's: gerenderd door FaqSection (homepage/features)
+// en PrijzenContent, en gebruikt voor de FAQPage-schema's in
+// lib/structured-data.ts.
 export const categories = [
   { id: 'prijs', label: 'Prijs' },
   { id: 'product', label: 'Product' },
@@ -135,4 +136,13 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
     q: 'Op welke apparaten werkt doen.?',
     a: 'doen. draait **in de browser**. Werkt op **desktop, laptop, tablet en telefoon**. Geen installatie, geen updates. Chrome, Safari, Firefox, Edge — allemaal prima.',
   },
+]
+
+export const prijzenFaqs: { q: string; a: string }[] = [
+  { q: 'Kan ik het eerst proberen?', a: 'Eerste 30 dagen gratis. Geen creditcard nodig. Geen verplichtingen.' },
+  { q: 'Moet ik extra betalen voor AI of het klantportaal?', a: 'Nee. Alles zit erin. Bij ons geen feature-gates of premium-tiers.' },
+  { q: 'Welke koppelingen zitten erbij?', a: 'Mollie, Exact Online, email (IMAP/SMTP) en AI. Alles standaard, geen extra kosten.' },
+  { q: 'Kan ik mijn data exporteren?', a: 'Altijd. CSV, PDF, wat je nodig hebt. Jouw data is van jou.' },
+  { q: 'Moet ik een contract tekenen?', a: 'Nee. Maandelijks opzegbaar. Je blijft omdat het werkt.' },
+  { q: 'Hoe verschilt doen. van andere software?', a: 'Gebouwd door vakmensen uit de branche. Alles in één systeem. Klantportaal, AI en planning zitten standaard in je abonnement.' },
 ]

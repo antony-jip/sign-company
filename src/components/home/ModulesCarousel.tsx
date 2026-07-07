@@ -72,7 +72,7 @@ export default function ModulesCarousel() {
               <span style={{ color: '#F15025' }}>10</span>{' '}
               <SerifItalic>krachtige</SerifItalic> modules<span style={{ color: '#F15025' }}>,</span>{' '}
               <span style={{ color: '#1A535C' }}>1</span>{' '}
-              <span style={{ color: '#6B6B66' }}>overzicht</span>
+              <span style={{ color: '#6B6B66' }}>signbedrijf</span>
               <span style={{ color: '#F15025' }}>.</span>
             </h2>
 

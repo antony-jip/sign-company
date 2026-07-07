@@ -1,12 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 import SerifItalic from '@/components/SerifItalic'
 import PageBackdrop from '@/components/PageBackdrop'
 import { TrimCorners, FlameStamp } from '@/components/brand/BrandMarks'
 import { PRICE_PER_MONTH } from '@/data/pricing'
+import { prijzenFaqs } from '@/data/faq'
+import JsonLd from '@/components/JsonLd'
+import { prijzenFaqPageSchema } from '@/lib/structured-data'
 
 const allFeatures = [
   'Onbeperkt projecten, offertes en facturen',
@@ -21,15 +24,6 @@ const allFeatures = [
   'Rapportages en tijdregistratie',
   'Alle toekomstige updates',
   'Nederlandse support',
-]
-
-const faqs = [
-  { q: 'Kan ik het eerst proberen?', a: 'Eerste 30 dagen gratis. Geen creditcard nodig. Geen verplichtingen.' },
-  { q: 'Moet ik extra betalen voor AI of het klantportaal?', a: 'Nee. Alles zit erin. Bij ons geen feature-gates of premium-tiers.' },
-  { q: 'Welke koppelingen zitten erbij?', a: 'Mollie, Exact Online, email (IMAP/SMTP) en AI. Alles standaard, geen extra kosten.' },
-  { q: 'Kan ik mijn data exporteren?', a: 'Altijd. CSV, PDF, wat je nodig hebt. Jouw data is van jou.' },
-  { q: 'Moet ik een contract tekenen?', a: 'Nee. Maandelijks opzegbaar. Je blijft omdat het werkt.' },
-  { q: 'Hoe verschilt doen. van andere software?', a: 'Gebouwd door vakmensen uit de branche. Alles in één systeem. Klantportaal, AI en planning zitten standaard in je abonnement.' },
 ]
 
 export default function PrijzenContent() {
@@ -299,7 +293,8 @@ export default function PrijzenContent() {
           </div>
 
           <div className="max-w-2xl space-y-3">
-            {faqs.map((faq, i) => {
+            <JsonLd data={prijzenFaqPageSchema} />
+            {prijzenFaqs.map((faq, i) => {
               const isOpen = openFaq === i
               return (
                 <div
@@ -313,6 +308,7 @@ export default function PrijzenContent() {
                   <button
                     onClick={() => setOpenFaq(isOpen ? null : i)}
                     aria-expanded={isOpen}
+                    aria-controls={`prijzen-faq-${i}`}
                     className="w-full flex items-center justify-between px-5 md:px-6 py-5 text-left group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A535C] rounded-[10px]"
                   >
                     <span
@@ -331,21 +327,26 @@ export default function PrijzenContent() {
                       </svg>
                     </motion.span>
                   </button>
-                  <AnimatePresence>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                        className="overflow-hidden"
-                      >
-                        <p className="text-[14px] md:text-[15px] leading-[1.65] px-5 md:px-6 pb-5" style={{ color: '#3F3F3A' }}>
-                          {faq.a}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {/* Antwoord staat altijd in de HTML; open/dicht via
+                      grid-template-rows zodat de animatie blijft. */}
+                  <div
+                    id={`prijzen-faq-${i}`}
+                    role="region"
+                    aria-hidden={!isOpen}
+                    style={{
+                      display: 'grid',
+                      gridTemplateRows: isOpen ? '1fr' : '0fr',
+                      opacity: isOpen ? 1 : 0,
+                      transition:
+                        'grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                    }}
+                  >
+                    <div className="overflow-hidden">
+                      <p className="text-[14px] md:text-[15px] leading-[1.65] px-5 md:px-6 pb-5" style={{ color: '#3F3F3A' }}>
+                        {faq.a}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )
             })}

@@ -1,5 +1,5 @@
 import { PRICE_PER_MONTH } from '@/data/pricing'
-import { faqs } from '@/data/faq'
+import { faqs, prijzenFaqs } from '@/data/faq'
 
 const BASE_URL = 'https://doen.team'
 
@@ -27,15 +27,20 @@ export const softwareApplicationSchema = {
   },
 }
 
-export const faqPageSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: faqs.map((faq) => ({
-    '@type': 'Question',
-    name: faq.q,
-    acceptedAnswer: {
-      '@type': 'Answer',
-      text: faq.a.replace(/\*\*/g, ''),
-    },
-  })),
+function buildFaqPageSchema(items: { q: string; a: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.a.replace(/\*\*/g, ''),
+      },
+    })),
+  }
 }
+
+export const faqPageSchema = buildFaqPageSchema(faqs)
+export const prijzenFaqPageSchema = buildFaqPageSchema(prijzenFaqs)
