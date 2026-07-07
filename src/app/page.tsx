@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
+import HomepageReframe from '@/components/home/HomepageReframe'
 import AppShowcase from '@/components/home/AppShowcase'
 import SectionCTA from '@/components/home/SectionCTA'
 import ValueProps from '@/components/home/ValueProps'
@@ -26,6 +27,7 @@ export default function Home() {
       <Navbar />
       <main id="main-content">
         <Hero />
+        <HomepageReframe />
         <AppShowcase />
         <SectionCTA title="Zie het in je eigen cockpit" sub="Maak gratis een account en klik direct door doen." />
         <ModulesCarousel />
