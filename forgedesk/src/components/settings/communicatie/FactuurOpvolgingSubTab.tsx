@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import { Mail, Loader2, Save, Send } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
@@ -24,6 +25,7 @@ export function FactuurOpvolgingSubTab() {
   const [herinnering2Onderwerp, setHerinnering2Onderwerp] = useState('2e herinnering: Factuur {factuur_nummer}')
   const [aanmaningTekst, setAanmaningTekst] = useState('')
   const [aanmaningOnderwerp, setAanmaningOnderwerp] = useState('Aanmaning: Factuur {factuur_nummer}')
+  const [automatisch, setAutomatisch] = useState(false)
 
   useEffect(() => {
     if (!user?.id) return
@@ -34,6 +36,7 @@ export function FactuurOpvolgingSubTab() {
       setHerinnering2Onderwerp(data.herinnering_2_onderwerp || '2e herinnering: Factuur {factuur_nummer}')
       setAanmaningTekst(data.aanmaning_tekst || '')
       setAanmaningOnderwerp(data.aanmaning_onderwerp || 'Aanmaning: Factuur {factuur_nummer}')
+      setAutomatisch(data.factuur_opvolging_automatisch === true)
       setIsLoading(false)
     }).catch(() => setIsLoading(false))
   }, [user?.id])
@@ -49,11 +52,12 @@ export function FactuurOpvolgingSubTab() {
         herinnering_2_onderwerp: herinnering2Onderwerp,
         aanmaning_tekst: aanmaningTekst,
         aanmaning_onderwerp: aanmaningOnderwerp,
+        factuur_opvolging_automatisch: automatisch,
       })
-      toast.success('Templates opgeslagen.')
+      toast.success('Instellingen opgeslagen.')
     } catch (err) {
       logger.error('Fout bij opslaan templates:', err)
-      toast.error('Kon templates niet opslaan')
+      toast.error('Kon instellingen niet opslaan')
     } finally {
       setIsSaving(false)
     }
@@ -118,6 +122,24 @@ export function FactuurOpvolgingSubTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-border/50 bg-muted/20">
+            <div className="space-y-1">
+              <Label htmlFor="factuur-opvolging-automatisch" className="text-sm font-medium">
+                Automatisch versturen
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Verstuurt herinneringen dagelijks (09:30) vanzelf: herinnering 1 na 7 dagen,
+                herinnering 2 na 14 dagen en de aanmaning na 30 dagen over de vervaldatum.
+                Alleen voor facturen met status verzonden of vervallen; handmatig verstuurde
+                herinneringen tellen mee, dus dubbel mailen kan niet.
+              </p>
+            </div>
+            <Switch
+              id="factuur-opvolging-automatisch"
+              checked={automatisch}
+              onCheckedChange={setAutomatisch}
+            />
+          </div>
           <div className="rounded-md border bg-muted/50 px-3 py-2.5">
             <p className="text-xs font-medium text-muted-foreground mb-1">Beschikbare variabelen:</p>
             <div className="flex flex-wrap gap-1.5">

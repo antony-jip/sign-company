@@ -748,6 +748,7 @@ export interface AppSettings {
   herinnering_2_onderwerp: string;
   aanmaning_tekst: string;
   aanmaning_onderwerp: string;
+  factuur_opvolging_automatisch?: boolean;
   standaard_uurtarief: number;
   // Offerte teksten
   offerte_intro_tekst: string;
