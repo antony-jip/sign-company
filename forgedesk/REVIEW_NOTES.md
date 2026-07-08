@@ -817,3 +817,25 @@ thread-zichtbaarheid via koppeling (policy 109) correct, koppeling zet organisat
   (c) factuurService.createCreditnota (ongebruikt door UI) volgt nog de harde CN-reeks,
       niet de creditnota_doornummeren-setting. Latente valkuil als die service ooit vanuit
       UI gebruikt wordt.
+
+## 2026-07-08 — feat/portaal-cx (portaal-CX-overhaul, senior review)
+
+Verdict na review-fix: AKKOORD-MET-OPMERKINGEN. Blocker (org-settings-lookup
+zonder order/limit + org-resolutie via maker-profiel) en 4 opmerkingen
+(bericht-default server-side, notificatie-type, verloopt_op-inkorting,
+from-header-quoting) gefixt in "fix(review)". Resterende opmerkingen:
+
+  (a) PortaalFeedItemTekening: de "Ja, revisie"-confirm post type 'revisie'
+      zonder bericht en krijgt altijd 400 (bericht verplicht) — pre-existing,
+      nu wel zichtbaar via de nieuwe feedbackregel. Nette fix: berichtveld in
+      de revisie-confirm opnemen, of revisie via het inline-formulier laten
+      lopen met type 'revisie'.
+  (b) mollie-webhook betaalbevestiging toont het laatst betaalde bedrag, niet
+      het factuurtotaal — bij deelbetalingen cosmetisch verwarrend.
+  (c) Betalen vanuit de portaal-feed vereist nog een vooraf gezette
+      mollie_payment_url; betaal_token wordt bewust niet via het portaal-pad
+      teruggegeven (kortere link-TTL). Online betalen vanuit de feed zonder
+      voorbereide URL is een productbeslissing (token-exposure vs. gemak).
+  (d) Klantgerichte voortgangstijdlijn in het portaal (stepper i.p.v. alleen
+      status-label) bewust niet gebouwd — nieuw visueel ontwerp, eerst
+      hero-checkpoint met Antony.

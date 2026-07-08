@@ -238,7 +238,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try {
           await supabase.from('notificaties').insert({
             user_id: factuur.user_id,
-            type: 'factuur_betaald',
+            type: 'betaling_ontvangen',
             titel: factuur.nummer ? `Factuur ${factuur.nummer} betaald` : 'Factuur betaald',
             bericht: `${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(betaaldNu)} ontvangen via Mollie`,
             link: '/facturen',
@@ -287,7 +287,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const { Resend } = await import('resend')
             const resendClient = new Resend(process.env.RESEND_API_KEY)
             await resendClient.emails.send({
-              from: `${bedrijfsnaam || 'doen.'} <noreply@doen.team>`,
+              from: `"${(bedrijfsnaam || 'doen.').replace(/"/g, '')}" <noreply@doen.team>`,
               to: klantEmail,
               replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
               subject: factuur.nummer

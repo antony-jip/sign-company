@@ -26,18 +26,27 @@ function decrypt(encrypted: string): string {
   return decrypted
 }
 
-async function getPortaalInstellingen(userId: string): Promise<Record<string, unknown>> {
-  const { data: profiel } = await supabaseAdmin
-    .from('profiles')
-    .select('organisatie_id')
-    .eq('id', userId)
-    .maybeSingle()
+// Spiegel van DEFAULT_INSTELLINGEN in api/portaal-get.ts voor de velden die
+// hier gehandhaafd worden — berichten staan standaard UIT.
+const INSTELLINGEN_DEFAULTS = {
+  klant_kan_offerte_goedkeuren: true,
+  klant_kan_tekening_goedkeuren: true,
+  klant_kan_bestanden_uploaden: true,
+  klant_kan_berichten_sturen: false,
+  max_bestandsgrootte_mb: 10,
+}
+
+// Org-first via portaal.organisatie_id, met order+limit omdat een org
+// meerdere app_settings-rijen kan hebben (zelfde patroon als portaal-get).
+async function getPortaalInstellingen(orgId: string | null, userId: string): Promise<Record<string, unknown>> {
   let rij: { portaal_instellingen: unknown } | null = null
-  if (profiel?.organisatie_id) {
+  if (orgId) {
     const { data } = await supabaseAdmin
       .from('app_settings')
       .select('portaal_instellingen')
-      .eq('organisatie_id', profiel.organisatie_id)
+      .eq('organisatie_id', orgId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
     rij = data
   }
@@ -49,7 +58,7 @@ async function getPortaalInstellingen(userId: string): Promise<Record<string, un
       .maybeSingle()
     rij = data
   }
-  return (rij?.portaal_instellingen as Record<string, unknown>) || {}
+  return { ...INSTELLINGEN_DEFAULTS, ...((rij?.portaal_instellingen as Record<string, unknown>) || {}) }
 }
 
 // ---- Inline email template (Vercel bundelt geen lokale imports in api/) ----
@@ -116,7 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Valideer token
     const { data: portaal } = await supabaseAdmin
       .from('project_portalen')
-      .select('id, actief, verloopt_op, user_id, project_id')
+      .select('id, actief, verloopt_op, user_id, project_id, organisatie_id')
       .eq('token', token)
       .single()
 
@@ -146,7 +155,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Portaal-instellingen server-side afdwingen — de capaciteit-toggles
     // werden voorheen alleen deels client-side gerespecteerd.
-    const instellingen = await getPortaalInstellingen(portaal.user_id)
+    const instellingen = await getPortaalInstellingen(portaal.organisatie_id ?? null, portaal.user_id)
     if (type === 'bericht' && instellingen.klant_kan_berichten_sturen === false) {
       return res.status(403).json({ error: 'Berichten sturen is uitgeschakeld voor dit portaal.' })
     }
@@ -421,7 +430,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const { Resend } = await import('resend')
           const resendClient = new Resend(process.env.RESEND_API_KEY)
           await resendClient.emails.send({
-            from: `${bedrijfsnaam || 'doen.'} <noreply@doen.team>`,
+            from: `"${(bedrijfsnaam || 'doen.').replace(/"/g, '')}" <noreply@doen.team>`,
             to: klantEmail,
             replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
             subject: offerteVooraf.nummer

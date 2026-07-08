@@ -87,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Zoek portaal op basis van token
     const { data: portaal } = await supabaseAdmin
       .from('project_portalen')
-      .select('id, project_id, user_id, actief')
+      .select('id, project_id, user_id, actief, verloopt_op')
       .eq('token', token)
       .single()
 
@@ -135,12 +135,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvangt u een nieuwe link.' })
     }
 
-    // Email matcht en portaal is alleen verlopen — verleng 30 dagen en mail de
-    // link direct naar het geverifieerde klant-adres.
+    // Email matcht en portaal is alleen verlopen — verleng tot minimaal 30
+    // dagen vanaf nu (nooit inkorten) en mail de link direct naar het
+    // geverifieerde klant-adres.
+    const minVerloopt = Date.now() + 30 * 24 * 60 * 60 * 1000
+    const huidigVerloopt = new Date(portaal.verloopt_op).getTime() || 0
     await supabaseAdmin
       .from('project_portalen')
       .update({
-        verloopt_op: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        verloopt_op: new Date(Math.max(minVerloopt, huidigVerloopt)).toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', portaal.id)
@@ -183,7 +186,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { Resend } = await import('resend')
       const resendClient = new Resend(process.env.RESEND_API_KEY)
       await resendClient.emails.send({
-        from: `${bedrijfsnaam || 'doen.'} <noreply@doen.team>`,
+        from: `"${(bedrijfsnaam || 'doen.').replace(/"/g, '')}" <noreply@doen.team>`,
         to: email,
         replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
         subject: projectInfo?.naam ? `Uw nieuwe portaallink voor ${projectInfo.naam}` : 'Uw nieuwe portaallink',

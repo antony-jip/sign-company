@@ -296,7 +296,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { Resend } = await import('resend')
         const resendClient = new Resend(process.env.RESEND_API_KEY)
         await resendClient.emails.send({
-          from: `${bedrijfsnaam || 'doen.'} <noreply@doen.team>`,
+          from: `"${(bedrijfsnaam || 'doen.').replace(/"/g, '')}" <noreply@doen.team>`,
           to: klantEmail,
           replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
           subject: `Bevestiging: offerte ${offerte.nummer} geaccepteerd`,
