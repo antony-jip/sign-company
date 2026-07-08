@@ -1669,7 +1669,7 @@ export function ProjectDetail() {
             if (project.status === 'actief' && allTasksDone) {
               suggestion = {
                 text: 'Alle taken afgerond. Klaar voor montage?',
-                action: () => handleCockpitStatusChange('montage' as any),
+                action: () => handleCockpitStatusChange('ingepland'),
               }
             } else if (project.status === 'te-factureren') {
               suggestion = {
