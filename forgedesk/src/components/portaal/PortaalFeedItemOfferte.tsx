@@ -52,10 +52,12 @@ export function PortaalFeedItemOfferte({
 }: PortaalFeedItemOfferteProps) {
   const [loading, setLoading] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; tekst: string } | null>(null)
   const isAfgehandeld = ['goedgekeurd', 'geaccepteerd', 'betaald'].includes(item.status)
 
   async function handleAccepteren() {
     setLoading(true)
+    setFeedback(null)
     try {
       const response = await fetch('/api/portaal-reactie', {
         method: 'POST',
@@ -72,9 +74,13 @@ export function PortaalFeedItemOfferte({
         throw new Error(err.error || 'Kon niet accepteren')
       }
       setConfirmOpen(false)
+      setFeedback({ type: 'success', tekst: 'Uw akkoord is ontvangen. Bedankt voor uw vertrouwen.' })
       onReactie()
     } catch (err) {
-      console.error('Accepteren mislukt:', err)
+      setFeedback({
+        type: 'error',
+        tekst: err instanceof Error ? err.message : 'Er ging iets mis. Probeer het opnieuw of neem contact op.',
+      })
     } finally {
       setLoading(false)
     }
@@ -159,6 +165,15 @@ export function PortaalFeedItemOfferte({
             </div>
           )}
         </div>
+
+        {feedback && (
+          <p
+            className="px-5 pb-3 text-sm font-medium"
+            style={{ color: feedback.type === 'success' ? '#3A7D52' : '#C0451A' }}
+          >
+            {feedback.tekst}
+          </p>
+        )}
 
         {/* Actions */}
         {!isAfgehandeld && kanGoedkeuren && (

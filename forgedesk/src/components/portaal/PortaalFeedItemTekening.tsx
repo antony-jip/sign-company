@@ -54,6 +54,7 @@ export function PortaalFeedItemTekening({
 }: PortaalFeedItemTekeningProps) {
   const [loading, setLoading] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'goedkeuren' | 'revisie' | null>(null)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; tekst: string } | null>(null)
   const isAfgehandeld = ['goedgekeurd', 'revisie'].includes(item.status)
   const images = (item.bestanden || []).filter(b => b.mime_type?.startsWith('image/'))
   const pdfFiles = (item.bestanden || []).filter(b => b.mime_type === 'application/pdf' || b.bestandsnaam?.toLowerCase().endsWith('.pdf'))
@@ -61,6 +62,7 @@ export function PortaalFeedItemTekening({
 
   async function handleAction(type: 'goedkeuring' | 'revisie') {
     setLoading(true)
+    setFeedback(null)
     try {
       const response = await fetch('/api/portaal-reactie', {
         method: 'POST',
@@ -77,9 +79,16 @@ export function PortaalFeedItemTekening({
         throw new Error(err.error || 'Actie mislukt')
       }
       setConfirmAction(null)
+      setFeedback({
+        type: 'success',
+        tekst: type === 'goedkeuring' ? 'Uw goedkeuring is ontvangen.' : 'Uw revisieverzoek is verstuurd.',
+      })
       onReactie()
     } catch (err) {
-      console.error('Tekening actie mislukt:', err)
+      setFeedback({
+        type: 'error',
+        tekst: err instanceof Error ? err.message : 'Er ging iets mis. Probeer het opnieuw of neem contact op.',
+      })
     } finally {
       setLoading(false)
     }
@@ -194,6 +203,15 @@ export function PortaalFeedItemTekening({
             </div>
           )}
         </div>
+
+        {feedback && (
+          <p
+            className="px-5 pb-3 text-sm font-medium"
+            style={{ color: feedback.type === 'success' ? '#3A7D52' : '#C0451A' }}
+          >
+            {feedback.tekst}
+          </p>
+        )}
 
         {/* Actions */}
         {!isAfgehandeld && kanGoedkeuren && (

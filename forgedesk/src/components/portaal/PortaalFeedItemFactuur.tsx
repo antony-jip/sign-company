@@ -45,6 +45,7 @@ export function PortaalFeedItemFactuur({
 }: PortaalFeedItemFactuurProps) {
   const isBetaald = ['betaald', 'goedgekeurd'].includes(item.status)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   // Klantportaal draait token-based (geen Supabase auth), dus de RLS-policy
   // op storage.buckets.facturen blokkeert directe downloads. Bewust on-the-fly
@@ -54,6 +55,7 @@ export function PortaalFeedItemFactuur({
     const factuurId = item.factuur_id
     if (!factuurId || !token) return
     setIsDownloading(true)
+    setDownloadError(null)
     try {
       // Haal factuur data op via het portaal endpoint
       const resp = await fetch(`/api/factuur-portaal?token=${encodeURIComponent(token)}&factuur_id=${encodeURIComponent(factuurId)}`)
@@ -113,7 +115,7 @@ export function PortaalFeedItemFactuur({
       doc.save(`Factuur-${data.factuur.nummer || 'download'}.pdf`)
     } catch (err) {
       console.error('Factuur PDF downloaden mislukt:', err)
-      alert('PDF downloaden mislukt. Probeer het opnieuw.')
+      setDownloadError('PDF downloaden mislukt. Probeer het opnieuw of neem contact op.')
     } finally {
       setIsDownloading(false)
     }
@@ -182,6 +184,12 @@ export function PortaalFeedItemFactuur({
             Vragen stellen
           </button>
         </div>
+
+        {downloadError && (
+          <p className="px-5 pb-3 text-sm font-medium" style={{ color: '#C0451A' }}>
+            {downloadError}
+          </p>
+        )}
       </div>
     </div>
   )
