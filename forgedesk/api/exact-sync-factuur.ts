@@ -120,9 +120,9 @@ interface ExactSettings {
 async function getValidToken(user_id: string): Promise<string> {
   const { data: tokenData } = await supabaseAdmin
     .from('exact_tokens')
-    .select('access_token, refresh_token, expires_at')
+    .select('access_token, refresh_token, expires_at, division')
     .eq('user_id', user_id)
-    .single() as { data: { access_token: string; refresh_token: string; expires_at: string } | null }
+    .single() as { data: { access_token: string; refresh_token: string; expires_at: string; division: number | null } | null }
 
   if (!tokenData) {
     throw new Error('Geen Exact Online tokens gevonden. Verbind opnieuw via Instellingen.')
@@ -159,36 +159,57 @@ async function getValidToken(user_id: string): Promise<string> {
     })
 
     if (!refreshRes.ok) {
+      const errorBody = await refreshRes.text()
+
       if (refreshRes.status === 400 || refreshRes.status === 401) {
-        // Per-user token-status. Bij invalid_grant heeft Exact DEZE user
-        // uitgegooid — vaak doordat een collega zojuist opnieuw OAuth'de
-        // op hetzelfde Exact-bedrijfsaccount (Exact staat geen twee
-        // gelijktijdige sessies toe). Verwijder alleen DEZE user's
-        // tokens; raak de org-brede `exact_online_connected` niet aan.
-        // Smaller behavior shift t.o.v. voorheen: deze sync flipte de
-        // org-flag bij ELKE refresh-failure (ook netwerk/5xx). Nu pas
-        // bij expliciete 400/401 van Exact — consistent met de andere
-        // endpoints.
-        await supabaseAdmin.from('exact_tokens').delete().eq('user_id', user_id)
-        console.error('[Exact] invalid_grant — token rejected', {
-          user_id, endpoint: 'exact-sync-factuur.ts', status: refreshRes.status,
-        })
-        Sentry.captureException(new Error('Exact invalid_grant'), {
-          level: 'warning',
-          tags: { exact_endpoint: 'exact-sync-factuur', oauth_error: 'invalid_grant' },
-          extra: { user_id, status: refreshRes.status },
-        })
+        // Exact refresh tokens zijn single-use: een parallel request kan de
+        // keten net geroteerd hebben. Wacht kort en herlees — staat er
+        // inmiddels een nieuw token, gebruik dat dan i.p.v. los te koppelen.
+        await new Promise((r) => setTimeout(r, 1500))
+        const { data: herlezen } = await supabaseAdmin
+          .from('exact_tokens')
+          .select('access_token, refresh_token')
+          .eq('user_id', user_id)
+          .maybeSingle()
+        if (herlezen?.refresh_token && herlezen.refresh_token !== tokenData.refresh_token) {
+          return decryptSecret(herlezen.access_token)
+        }
+
+        if (errorBody.includes('invalid_grant')) {
+          // Bij invalid_grant heeft Exact DEZE user echt uitgegooid — vaak
+          // doordat een collega zojuist opnieuw OAuth'de op hetzelfde
+          // Exact-bedrijfsaccount (Exact staat geen twee gelijktijdige
+          // sessies toe). Verwijder alleen DEZE user's tokens; raak de
+          // org-brede `exact_online_connected` niet aan.
+          await supabaseAdmin.from('exact_tokens').delete().eq('user_id', user_id)
+          console.error('[Exact] invalid_grant — token rejected', {
+            user_id, endpoint: 'exact-sync-factuur.ts', status: refreshRes.status,
+          })
+          Sentry.captureException(new Error('Exact invalid_grant'), {
+            level: 'warning',
+            tags: { exact_endpoint: 'exact-sync-factuur', oauth_error: 'invalid_grant' },
+            extra: { user_id, status: refreshRes.status },
+          })
+          throw new Error('Token vernieuwen mislukt. Verbind Exact Online opnieuw.')
+        }
       }
-      throw new Error('Token vernieuwen mislukt. Verbind Exact Online opnieuw.')
+      console.error('[Exact] token refresh fout', {
+        endpoint: 'exact-sync-factuur.ts', status: refreshRes.status, errorBody,
+      })
+      throw new Error('Exact Online token vernieuwen mislukt. Probeer het opnieuw.')
     }
 
     const tokens = await refreshRes.json()
-    await supabaseAdmin.from('exact_tokens').update({
+    // Upsert i.p.v. update: herstelt de rij als een parallel verliezend
+    // request hem net verwijderde — dit is de nieuwste geldige keten.
+    await supabaseAdmin.from('exact_tokens').upsert({
+      user_id,
       access_token: encryptSecret(tokens.access_token),
       refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(tokenData.refresh_token)),
       expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+      division: tokenData.division,
       updated_at: new Date().toISOString(),
-    }).eq('user_id', user_id)
+    }, { onConflict: 'user_id' })
 
     return tokens.access_token
   }
@@ -196,9 +217,21 @@ async function getValidToken(user_id: string): Promise<string> {
   return decryptSecret(tokenData.access_token)
 }
 
+// Exact hanteert per-minuut rate-limits; bij 429 wachten (Retry-After, gecapt
+// op 15s) en maximaal twee keer opnieuw proberen.
+async function exactFetchMetRetry(url: string, init: RequestInit): Promise<Response> {
+  for (let poging = 0; ; poging++) {
+    const response = await fetch(url, init)
+    if (response.status !== 429 || poging >= 2) return response
+    const retryAfter = Number(response.headers.get('Retry-After'))
+    const wachtMs = Math.min((retryAfter > 0 ? retryAfter : 5) * 1000, 15_000)
+    await new Promise((r) => setTimeout(r, wachtMs))
+  }
+}
+
 async function exactGet(token: string, division: string, endpoint: string): Promise<unknown> {
   const url = `${EXACT_API_BASE}/${division}/${endpoint}`
-  const response = await fetch(url, {
+  const response = await exactFetchMetRetry(url, {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: 'application/json',
@@ -215,7 +248,7 @@ async function exactGet(token: string, division: string, endpoint: string): Prom
 
 async function exactPost(token: string, division: string, endpoint: string, data: unknown): Promise<unknown> {
   const url = `${EXACT_API_BASE}/${division}/${endpoint}`
-  const response = await fetch(url, {
+  const response = await exactFetchMetRetry(url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -311,11 +344,9 @@ async function syncFactuurBijlagenToExact(params: {
   documentId: string
   tokenRef: { current: string }
   division: string
-  protocol: string
-  host: string
   user_id: string
 }): Promise<{ synced: number; failed: number; geprobeerd: number }> {
-  const { factuurId, documentId, tokenRef, division, protocol, host, user_id } = params
+  const { factuurId, documentId, tokenRef, division, user_id } = params
 
   const { data: bijlagen, error: bijErr } = await supabaseAdmin
     .from('factuur_bijlagen')
@@ -356,14 +387,7 @@ async function syncFactuurBijlagenToExact(params: {
         await exactPost(tokenRef.current, division, 'documents/DocumentAttachments', payload)
       } catch (firstErr) {
         try {
-          const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id }),
-          })
-          if (!refreshResponse.ok) throw new Error('Refresh mislukt')
-          const refreshed = (await refreshResponse.json()) as { access_token: string }
-          tokenRef.current = refreshed.access_token
+          tokenRef.current = await getValidToken(user_id)
           await exactPost(tokenRef.current, division, 'documents/DocumentAttachments', payload)
         } catch (retryErr) {
           console.error(`Bijlage DocumentAttachment POST mislukt voor ${bij.bestandsnaam}:`, firstErr, retryErr)
@@ -402,9 +426,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!factuur_id) {
       return res.status(400).json({ error: 'factuur_id is verplicht' })
     }
-
-    const host = (req.headers['x-forwarded-host'] || req.headers.host || 'app.doen.team') as string
-    const protocol = (req.headers['x-forwarded-proto'] || 'https') as string
 
     // 1. Haal factuur + items op
     const { data: factuur, error: factuurError } = await supabaseAdmin
@@ -481,8 +502,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         documentId: factuur.exact_document_id as string,
         tokenRef,
         division,
-        protocol,
-        host,
         user_id,
       })
       return res.status(200).json({
@@ -577,14 +596,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           documentId = docResult?.d?.ID ?? null
         } catch (docErr) {
           try {
-            const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ user_id }),
-            })
-            if (!refreshResponse.ok) throw new Error('Refresh mislukt')
-            const refreshed = await refreshResponse.json() as { access_token: string }
-            token = refreshed.access_token
+            token = await getValidToken(user_id)
             const docResult = await exactPost(
               token,
               division,
@@ -618,14 +630,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bijlageSynced = true
       } catch (attErr) {
         try {
-          const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id }),
-          })
-          if (!refreshResponse.ok) throw new Error('Refresh mislukt')
-          const refreshed = await refreshResponse.json() as { access_token: string }
-          token = refreshed.access_token
+          token = await getValidToken(user_id)
           await exactPost(token, division, 'documents/DocumentAttachments', attPayload)
           bijlageSynced = true
         } catch (retryErr) {
@@ -652,8 +657,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             documentId,
             tokenRef: retryTokenRef,
             division,
-            protocol,
-            host,
             user_id,
           })
         : { synced: 0, failed: 0, geprobeerd: 0 }
@@ -715,14 +718,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (klantError: unknown) {
       // Token verlopen tijdens klant zoeken? Refresh en retry 1x
       try {
-        const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id }),
-        })
-        if (!refreshResponse.ok) throw new Error('Refresh mislukt')
-        const refreshed = await refreshResponse.json() as { access_token: string }
-        token = refreshed.access_token
+        token = await getValidToken(user_id)
 
         customerGuid = await findOrCreateKlant(
           token,
@@ -781,14 +777,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         documentId = docResult?.d?.ID ?? null
       } catch (docErr) {
         try {
-          const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id }),
-          })
-          if (!refreshResponse.ok) throw new Error('Refresh mislukt')
-          const refreshed = await refreshResponse.json() as { access_token: string }
-          token = refreshed.access_token
+          token = await getValidToken(user_id)
 
           const docResult = await exactPost(
             token,
@@ -820,14 +809,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           bijlageSynced = true
         } catch (attErr) {
           try {
-            const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ user_id }),
-            })
-            if (!refreshResponse.ok) throw new Error('Refresh mislukt')
-            const refreshed = await refreshResponse.json() as { access_token: string }
-            token = refreshed.access_token
+            token = await getValidToken(user_id)
 
             await exactPost(token, division, 'documents/DocumentAttachments', attachmentPayload)
             bijlageSynced = true
@@ -852,8 +834,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           documentId,
           tokenRef: mainTokenRef,
           division,
-          protocol,
-          host,
           user_id,
         })
         token = mainTokenRef.current
@@ -923,14 +903,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (syncError: unknown) {
       // Retry 1x na token refresh
       try {
-        const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id }),
-        })
-        if (!refreshResponse.ok) throw new Error('Refresh mislukt')
-        const refreshed = await refreshResponse.json() as { access_token: string }
-        token = refreshed.access_token
+        token = await getValidToken(user_id)
 
         entryResult = await exactPost(
           token,
