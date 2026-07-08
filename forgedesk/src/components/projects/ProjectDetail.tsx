@@ -1503,15 +1503,10 @@ export function ProjectDetail() {
         </div>
       </div>
 
-      {/* ══════════ OVERZICHT TAB ══════════ */}
-      {activeTab === 'overzicht' && (
-      <div>
-      <div className="flex flex-col lg:flex-row gap-6 md:gap-8 px-4 md:px-8 py-4 md:py-8">
-
-        {/* ── Left column (65%) ── */}
-        <div className="flex-1 min-w-0 space-y-6">
-
-          {/* Mail-composer (inline, opens when "Mail contactpersoon" geklikt) */}
+      {/* Mail-composer — boven de tabbladen gemount zodat mailen ook vanaf
+          de E-mail-tab werkt (voorheen alleen bereikbaar via Overzicht) */}
+      {mailComposerOpen && (
+        <div className="px-4 md:px-8 pt-4 md:pt-6">
           <ProjectMailComposer
             ref={mailComposerRef}
             project={project}
@@ -1524,6 +1519,16 @@ export function ProjectDetail() {
             open={mailComposerOpen}
             onOpenChange={setMailComposerOpen}
           />
+        </div>
+      )}
+
+      {/* ══════════ OVERZICHT TAB ══════════ */}
+      {activeTab === 'overzicht' && (
+      <div>
+      <div className="flex flex-col lg:flex-row gap-6 md:gap-8 px-4 md:px-8 py-4 md:py-8">
+
+        {/* ── Left column (65%) ── */}
+        <div className="flex-1 min-w-0 space-y-6">
 
           {/* Fase indicator */}
           <ProjectFaseBar
@@ -2164,6 +2169,17 @@ export function ProjectDetail() {
       <div className="px-4 md:px-8 py-4 md:py-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-foreground tracking-[-0.3px]">E-mailcommunicatie</h2>
+          <button
+            type="button"
+            onClick={() => {
+              setMailComposerOpen(true)
+              setTimeout(() => mailComposerRef.current?.scrollIntoView(), 80)
+            }}
+            className="text-[13px] font-semibold text-flame hover:text-[#D9481F] inline-flex items-center gap-1.5 transition-colors"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            Nieuwe mail
+          </button>
         </div>
 
         {/* Daan-samenvatting bovenin · vat hele thread samen vanuit project-perspectief */}
