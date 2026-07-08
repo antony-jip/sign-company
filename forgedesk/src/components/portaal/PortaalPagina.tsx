@@ -189,6 +189,12 @@ export function PortaalPagina() {
     }).catch(() => {})
   }, [token, data?.status])
 
+  // White-label: de browsertab toont het bedrijf, niet de tool
+  useEffect(() => {
+    const naam = data?.bedrijf?.naam || data?.bedrijfsnaam
+    if (naam) document.title = `${naam} — klantportaal`
+  }, [data?.bedrijf?.naam, data?.bedrijfsnaam])
+
   // Mark items as bekeken
   const unbekekenIds = useMemo(
     () => (data?.items || []).filter(i => !i.bekeken_op).map(i => i.id).join(','),
@@ -265,6 +271,8 @@ export function PortaalPagina() {
   const toonLogo = instellingen.bedrijfslogo_op_portaal !== false
   const kanOfferteGoedkeuren = instellingen.klant_kan_offerte_goedkeuren !== false
   const kanTekeningGoedkeuren = instellingen.klant_kan_tekening_goedkeuren !== false
+  const kanBerichtenSturen = instellingen.klant_kan_berichten_sturen !== false
+  const kanBestandenUploaden = instellingen.klant_kan_bestanden_uploaden !== false
 
   // Build documents list for sidebar from item bestanden
   const documenten = rawItems
@@ -312,8 +320,12 @@ export function PortaalPagina() {
         />
       </div>
 
-      {/* Main content: feed + sidebar */}
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-6">
+      {/* Main content: feed + sidebar. Extra bottom-padding zolang de vaste
+          naam-balk in beeld is, zodat die de laatste kaart niet overlapt. */}
+      <main
+        className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-6"
+        style={{ paddingBottom: !klantNaam && rawItems.length > 0 ? 88 : undefined }}
+      >
         <div className="flex gap-8">
           {/* Feed */}
           <div className="flex-1 min-w-0">
@@ -336,6 +348,8 @@ export function PortaalPagina() {
               bedrijfNaam={bedrijf.naam}
               kanOfferteGoedkeuren={kanOfferteGoedkeuren}
               kanTekeningGoedkeuren={kanTekeningGoedkeuren}
+              kanBerichtenSturen={kanBerichtenSturen}
+              kanBestandenUploaden={kanBestandenUploaden}
               isPublic
               onReactie={fetchPortaal}
               onImageClick={(url) => setLightboxUrl(url)}
