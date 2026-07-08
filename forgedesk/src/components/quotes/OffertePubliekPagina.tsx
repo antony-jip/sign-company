@@ -274,6 +274,10 @@ export function OffertePubliekPagina() {
     }
   }, [token])
 
+  useEffect(() => {
+    if (bedrijf?.bedrijfsnaam) document.title = bedrijf.bedrijfsnaam
+  }, [bedrijf?.bedrijfsnaam])
+
   // Derived: check if offerte has optional items or variants
   const hasOptionalItems = useMemo(() => items.some(i => i.is_optioneel), [items])
   const hasVariants = useMemo(() => items.some(i => i.prijs_varianten && i.prijs_varianten.length > 0), [items])
@@ -445,14 +449,14 @@ export function OffertePubliekPagina() {
   // ============ LOADING STATE ============
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa]">
+      <div className="min-h-screen bg-[#F8F7F5]">
         <Toaster position="top-center" richColors />
         <div className="max-w-[720px] mx-auto p-4 md:p-8 space-y-6">
           <div className="flex flex-col items-center gap-4 pt-8">
             <Skeleton className="h-14 w-32 rounded-lg" />
             <Skeleton className="h-6 w-48" />
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
+          <div className="bg-[#FFFFFF] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-6 space-y-4">
             <Skeleton className="h-6 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
             <div className="space-y-3 pt-4">
@@ -473,14 +477,14 @@ export function OffertePubliekPagina() {
   // ============ NOT FOUND ============
   if (notFound || !offerte) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#F8F7F5] flex items-center justify-center p-4">
         <Toaster position="top-center" richColors />
-        <div className="bg-white rounded-2xl shadow-sm border max-w-md w-full p-8 text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-            <AlertTriangle className="h-8 w-8 text-gray-400" />
+        <div className="bg-[#FFFFFF] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.03)] max-w-md w-full p-8 text-center space-y-4">
+          <div className="mx-auto w-16 h-16 rounded-full bg-[#F8F7F5] flex items-center justify-center">
+            <AlertTriangle className="h-8 w-8 text-[#9B9B95]" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-800">Offerte niet gevonden</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="text-xl font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Offerte niet gevonden</h2>
+          <p className="text-sm text-[#6B6B66]">
             Deze offerte link is niet geldig of verlopen. Neem contact op met het bedrijf voor een nieuwe offerte.
           </p>
         </div>
@@ -503,18 +507,18 @@ export function OffertePubliekPagina() {
   const totaalBedrag = hasSelections ? round2(berekendeSubtotaal + berekendeBtw) : (offerte.aangepast_totaal ?? offerte.totaal)
 
   return (
-    <div className={`min-h-screen bg-[#f8f9fa] transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`min-h-screen bg-[#F8F7F5] transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
       <Toaster position="top-center" richColors />
 
       {/* Success confetti overlay */}
       {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 mx-4 max-w-sm w-full text-center space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-            <div className="mx-auto w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="h-10 w-10 text-green-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-[#FFFFFF] rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.12)] p-8 mx-4 max-w-sm w-full text-center space-y-4 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="mx-auto w-20 h-20 rounded-full bg-[#E8F2EC] flex items-center justify-center">
+              <CheckCircle2 className="h-10 w-10 text-[#3A7D52]" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Offerte geaccepteerd!</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="text-xl font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Offerte geaccepteerd<span className="text-[#F15025]">.</span></h3>
+            <p className="text-sm text-[#6B6B66]">
               Bedankt voor uw vertrouwen. We nemen snel contact met u op.
             </p>
           </div>
@@ -532,7 +536,7 @@ export function OffertePubliekPagina() {
             <div className="pt-2">
               <a
                 href={terugUrl}
-                className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm text-[#6B6B66] hover:text-[#1A1A1A] transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 Terug naar portaal
@@ -547,10 +551,14 @@ export function OffertePubliekPagina() {
             <img
               src={bedrijf.logo_url}
               alt={bedrijf.bedrijfsnaam || 'Bedrijfslogo'}
-              className="h-16 md:h-20 mx-auto object-contain drop-shadow-sm"
+              className="h-16 md:h-20 mx-auto object-contain"
             />
+          ) : bedrijf?.bedrijfsnaam ? (
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-xl bg-[#1A535C]">
+              <span className="text-2xl font-bold text-white">{bedrijf.bedrijfsnaam.charAt(0).toUpperCase()}</span>
+            </div>
           ) : (
-            <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg">
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-xl bg-[#1A535C]">
               <FileText className="h-8 w-8 text-white" />
             </div>
           )}
@@ -558,66 +566,70 @@ export function OffertePubliekPagina() {
 
         {/* ── Status banners ── */}
         {isVerlopen && (
-          <div className="bg-gray-100 border border-gray-200 rounded-xl p-4 flex items-start gap-3">
-            <Clock className="h-5 w-5 text-gray-500 shrink-0 mt-0.5" />
+          <div className="bg-[#FDE8E4] rounded-xl p-4 flex items-start gap-3">
+            <Clock className="h-5 w-5 text-[#C0451A] shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-gray-700">Deze offerte is verlopen op <span className="font-mono">{formatDate(offerte.geldig_tot)}</span></p>
-              <p className="text-sm text-gray-500 mt-1">Neem contact op voor een nieuwe offerte.</p>
+              <p className="font-semibold text-[#C0451A]">Verlopen<span className="text-[#F15025]">.</span></p>
+              <p className="text-sm text-[#6B6B66] mt-1">Deze offerte was geldig tot <span className="font-mono">{formatDate(offerte.geldig_tot)}</span>. Neem contact op voor een nieuwe offerte.</p>
             </div>
           </div>
         )}
 
         {isGeaccepteerd && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
-            <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+          <div className="bg-[#E8F2EC] rounded-xl p-4 flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-[#3A7D52] shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-green-800">
-                Deze offerte is geaccepteerd op {formatDateTime(offerte.geaccepteerd_op || '')}
-                {offerte.geaccepteerd_door ? ` door ${offerte.geaccepteerd_door}` : ''}
+              <p className="font-semibold text-[#3A7D52]">
+                Geaccepteerd<span className="text-[#F15025]">.</span>
               </p>
-              <p className="text-sm text-green-600 mt-1">Bedankt voor uw vertrouwen. We nemen snel contact met u op.</p>
+              <p className="text-sm text-[#6B6B66] mt-1">
+                Op {formatDateTime(offerte.geaccepteerd_op || '')}
+                {offerte.geaccepteerd_door ? ` door ${offerte.geaccepteerd_door}` : ''}. Bedankt voor uw vertrouwen. We nemen snel contact met u op.
+              </p>
             </div>
           </div>
         )}
 
         {isWijzigingGevraagd && (
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3">
-            <Edit3 className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+          <div className="bg-[#F5F2E8] rounded-xl p-4 flex items-start gap-3">
+            <Edit3 className="h-5 w-5 text-[#8A7A4A] shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-orange-800">
-                Wijziging aangevraagd op {formatDateTime(offerte.wijziging_ingediend_op || '')}
+              <p className="font-semibold text-[#8A7A4A]">
+                Wijziging aangevraagd<span className="text-[#F15025]">.</span>
               </p>
-              <p className="text-sm text-orange-600 mt-1">We bekijken uw verzoek en komen bij u terug.</p>
+              <p className="text-sm text-[#6B6B66] mt-1">Op {formatDateTime(offerte.wijziging_ingediend_op || '')}. We bekijken uw verzoek en komen bij u terug.</p>
             </div>
           </div>
         )}
 
         {/* ── Main card ── */}
-        <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+        <div className="bg-[#FFFFFF] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.03)] overflow-hidden">
 
           {/* Offerte header */}
-          <div className="p-6 md:p-8 border-b border-gray-100">
+          <div className="p-6 md:p-8 border-b border-[#EBEBEB]">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
               <div className="space-y-1">
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">{offerte.titel || `Offerte ${offerte.nummer}`}</h1>
-                <p className="text-sm text-gray-500">Offerte {offerte.nummer}</p>
+                <h1 className="text-xl md:text-2xl font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>
+                  {offerte.titel || `Offerte ${offerte.nummer}`}<span className="text-[#F15025]">.</span>
+                </h1>
+                <p className="text-sm text-[#6B6B66]">Offerte {offerte.nummer}</p>
               </div>
               <div className="text-right space-y-1">
-                <p className="text-3xl md:text-4xl font-bold text-gray-900">{formatCurrency(totaalBedrag)}</p>
-                <p className="text-xs text-gray-400">incl. BTW</p>
+                <p className="text-3xl md:text-4xl font-bold font-mono text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>{formatCurrency(totaalBedrag)}</p>
+                <p className="text-xs text-[#9B9B95]">incl. BTW</p>
               </div>
             </div>
 
             {/* Meta info */}
             <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <div>
-                <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Datum</p>
-                <p className="font-medium font-mono text-gray-700">{formatDate(offerte.created_at)}</p>
+                <p className="text-[#9B9B95] text-xs uppercase tracking-wide mb-1">Datum</p>
+                <p className="font-medium font-mono text-[#6B6B66]">{formatDate(offerte.created_at)}</p>
               </div>
               {offerte.geldig_tot && (
                 <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Geldig tot</p>
-                  <p className={`font-medium font-mono ${!isVerlopen && dagenOver <= 7 ? 'text-red-600' : 'text-gray-700'}`}>
+                  <p className="text-[#9B9B95] text-xs uppercase tracking-wide mb-1">Geldig tot</p>
+                  <p className={`font-medium font-mono ${!isVerlopen && dagenOver <= 7 ? 'text-[#C0451A]' : 'text-[#6B6B66]'}`}>
                     {formatDate(offerte.geldig_tot)}
                     {!isVerlopen && dagenOver <= 7 && dagenOver > 0 && (
                       <span className="text-xs ml-1">({dagenOver} {dagenOver === 1 ? 'dag' : 'dagen'} resterend)</span>
@@ -627,9 +639,9 @@ export function OffertePubliekPagina() {
               )}
               {(klant?.bedrijfsnaam || offerte.klant_naam) && (
                 <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Klant</p>
-                  <p className="font-medium text-gray-700">{klant?.bedrijfsnaam || offerte.klant_naam}</p>
-                  {klant?.contactpersoon && <p className="text-xs text-gray-500">t.a.v. {klant.contactpersoon}</p>}
+                  <p className="text-[#9B9B95] text-xs uppercase tracking-wide mb-1">Klant</p>
+                  <p className="font-medium text-[#6B6B66]">{klant?.bedrijfsnaam || offerte.klant_naam}</p>
+                  {klant?.contactpersoon && <p className="text-xs text-[#9B9B95]">t.a.v. {klant.contactpersoon}</p>}
                 </div>
               )}
             </div>
@@ -637,8 +649,8 @@ export function OffertePubliekPagina() {
 
           {/* Intro tekst */}
           {offerte.intro_tekst && (
-            <div className="px-6 md:px-8 py-4 border-b border-gray-100">
-              <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{offerte.intro_tekst}</p>
+            <div className="px-6 md:px-8 py-4 border-b border-[#EBEBEB]">
+              <p className="text-sm text-[#6B6B66] whitespace-pre-line leading-relaxed">{offerte.intro_tekst}</p>
             </div>
           )}
 
@@ -647,7 +659,7 @@ export function OffertePubliekPagina() {
             <div className="px-6 md:px-8 py-6">
               {/* Info banner when there are selectable options */}
               {hasSelections && kanActie && (
-                <div className="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 flex items-start gap-2">
+                <div className="mb-4 rounded-lg bg-[#F8F7F5] px-4 py-3 text-sm text-[#1A535C] flex items-start gap-2">
                   <svg className="h-4 w-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/></svg>
                   <span>
                     {hasOptionalItems && hasVariants
@@ -661,7 +673,7 @@ export function OffertePubliekPagina() {
               <div className="overflow-x-auto -mx-2">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
+                    <tr className="text-left text-xs text-[#9B9B95] uppercase tracking-wide border-b border-[#EBEBEB]">
                       {hasOptionalItems && <th className="pb-3 pl-2 pr-2 font-medium w-8"></th>}
                       <th className="pb-3 pr-4 pl-2 font-medium">Omschrijving</th>
                       <th className="pb-3 pr-4 text-right font-medium whitespace-nowrap">Aantal</th>
@@ -680,7 +692,7 @@ export function OffertePubliekPagina() {
 
                       return (
                         <React.Fragment key={item.id}>
-                          <tr className={`border-b border-gray-50 last:border-0 transition-opacity ${isDeselected ? 'opacity-40' : ''}`}>
+                          <tr className={`border-b border-[#EBEBEB] last:border-0 transition-opacity ${isDeselected ? 'opacity-40' : ''}`}>
                             {/* Checkbox column */}
                             {hasOptionalItems && (
                               <td className="py-3 pl-2 pr-2 align-top">
@@ -699,26 +711,26 @@ export function OffertePubliekPagina() {
                                       className="mt-0.5"
                                     />
                                   ) : (
-                                    <CheckCircle2 className="h-4 w-4 text-gray-300 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-[#9B9B95] mt-0.5" />
                                   )
                                 )}
                               </td>
                             )}
                             <td className="py-3 pr-4 pl-2">
-                              <span className="text-gray-800">{item.beschrijving}</span>
+                              <span className="text-[#1A1A1A]">{item.beschrijving}</span>
                               {item.is_optioneel && (
-                                <span className="ml-2 text-2xs uppercase tracking-wide bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Optioneel</span>
+                                <span className="ml-2 text-2xs uppercase tracking-wide bg-[#F8F7F5] text-[#9B9B95] px-1.5 py-0.5 rounded">Optioneel</span>
                               )}
                             </td>
                             {item.soort === 'tekst' ? (
                               <td colSpan={5} />
                             ) : (
                               <>
-                                <td className="py-3 pr-4 text-right text-gray-600 tabular-nums">{effectiveValues?.aantal ?? item.aantal}</td>
-                                <td className="py-3 pr-4 text-right text-gray-500 hidden md:table-cell">stuk</td>
-                                <td className="py-3 pr-4 text-right text-gray-600 tabular-nums">{formatCurrency(effectiveValues?.eenheidsprijs ?? item.eenheidsprijs)}</td>
-                                <td className="py-3 pr-4 text-right text-gray-500 hidden md:table-cell">{effectiveValues?.btw_percentage ?? item.btw_percentage}%</td>
-                                <td className="py-3 pl-4 text-right font-semibold text-gray-900 tabular-nums">{formatCurrency(effectiveTotal)}</td>
+                                <td className="py-3 pr-4 text-right text-[#6B6B66] font-mono">{effectiveValues?.aantal ?? item.aantal}</td>
+                                <td className="py-3 pr-4 text-right text-[#9B9B95] hidden md:table-cell">stuk</td>
+                                <td className="py-3 pr-4 text-right text-[#6B6B66] font-mono">{formatCurrency(effectiveValues?.eenheidsprijs ?? item.eenheidsprijs)}</td>
+                                <td className="py-3 pr-4 text-right text-[#9B9B95] hidden md:table-cell">{effectiveValues?.btw_percentage ?? item.btw_percentage}%</td>
+                                <td className="py-3 pl-4 text-right font-semibold text-[#1A1A1A] font-mono">{formatCurrency(effectiveTotal)}</td>
                               </>
                             )}
                           </tr>
@@ -728,11 +740,11 @@ export function OffertePubliekPagina() {
                             if (toonbareVarianten.length === 0 || !kanActie || isDeselected) return null
                             const toonBasis = item.eenheidsprijs > 0
                             return (
-                              <tr className="border-b border-gray-50">
+                              <tr className="border-b border-[#EBEBEB]">
                                 {hasOptionalItems && <td />}
                                 <td colSpan={6} className="py-2 pl-2 pr-4">
                                   <div className="flex items-center gap-2 pl-1">
-                                    <span className="text-xs text-gray-500 shrink-0">Kies optie:</span>
+                                    <span className="text-xs text-[#6B6B66] shrink-0">Kies optie:</span>
                                     <select
                                       value={selectedVariants[item.id] || ''}
                                       onChange={(e) => {
@@ -746,7 +758,7 @@ export function OffertePubliekPagina() {
                                           return { ...prev, [item.id]: val }
                                         })
                                       }}
-                                      className="text-xs border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-w-[300px]"
+                                      className="text-xs border border-[#EBEBEB] rounded-md px-2 py-1.5 bg-[#FFFFFF] text-[#6B6B66] focus:ring-2 focus:ring-[#1A535C] focus:border-[#1A535C] max-w-[300px]"
                                     >
                                       {toonBasis ? (
                                         <option value="">Basis · {item.aantal} x {formatCurrency(item.eenheidsprijs)}</option>
@@ -774,27 +786,27 @@ export function OffertePubliekPagina() {
           )}
 
           {/* Totalen sectie */}
-          <div className="bg-gray-50/50 border-t border-gray-100 px-6 md:px-8 py-6">
+          <div className="bg-[#F8F7F5] border-t border-[#EBEBEB] px-6 md:px-8 py-6">
             <div className="max-w-xs ml-auto space-y-2">
-              <div className="flex justify-between text-sm text-gray-500">
+              <div className="flex justify-between text-sm text-[#6B6B66]">
                 <span>Subtotaal</span>
-                <span className="tabular-nums">{formatCurrency(subtotaalBedrag)}</span>
+                <span className="font-mono">{formatCurrency(subtotaalBedrag)}</span>
               </div>
               {btwGroepen.map((g) => (
-                <div key={g.percentage} className="flex justify-between text-sm text-gray-500">
+                <div key={g.percentage} className="flex justify-between text-sm text-[#6B6B66]">
                   <span>BTW {g.percentage}% over {formatCurrency(g.basis)}</span>
-                  <span className="tabular-nums">{formatCurrency(g.btw)}</span>
+                  <span className="font-mono">{formatCurrency(g.btw)}</span>
                 </div>
               ))}
               {offerte.afrondingskorting_excl_btw != null && offerte.afrondingskorting_excl_btw !== 0 && (
-                <div className="flex justify-between text-sm text-gray-500">
+                <div className="flex justify-between text-sm text-[#6B6B66]">
                   <span>Afrondingskorting</span>
-                  <span className="tabular-nums">-{formatCurrency(Math.abs(offerte.afrondingskorting_excl_btw))}</span>
+                  <span className="font-mono">-{formatCurrency(Math.abs(offerte.afrondingskorting_excl_btw))}</span>
                 </div>
               )}
-              <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
-                <span className="text-base font-bold text-gray-900">Totaal incl. BTW</span>
-                <span className="text-2xl md:text-3xl font-bold text-gray-900 tabular-nums">
+              <div className="border-t border-[#EBEBEB] pt-3 flex justify-between items-center">
+                <span className="text-base font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Totaal incl. BTW</span>
+                <span className="text-2xl md:text-3xl font-bold font-mono text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>
                   {formatCurrency(totaalBedrag)}
                 </span>
               </div>
@@ -803,16 +815,16 @@ export function OffertePubliekPagina() {
 
           {/* Outro tekst */}
           {offerte.outro_tekst && (
-            <div className="px-6 md:px-8 py-4 border-t border-gray-100">
-              <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{offerte.outro_tekst}</p>
+            <div className="px-6 md:px-8 py-4 border-t border-[#EBEBEB]">
+              <p className="text-sm text-[#6B6B66] whitespace-pre-line leading-relaxed">{offerte.outro_tekst}</p>
             </div>
           )}
 
           {/* Voorwaarden */}
           {offerte.voorwaarden && (
-            <div className="px-6 md:px-8 py-4 border-t border-gray-100 bg-gray-50/30">
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-2 font-medium">Voorwaarden</p>
-              <p className="text-xs text-gray-500 whitespace-pre-line leading-relaxed">{offerte.voorwaarden}</p>
+            <div className="px-6 md:px-8 py-4 border-t border-[#EBEBEB] bg-[#F8F7F5]">
+              <p className="text-xs text-[#9B9B95] uppercase tracking-wide mb-2 font-medium">Voorwaarden</p>
+              <p className="text-xs text-[#9B9B95] whitespace-pre-line leading-relaxed">{offerte.voorwaarden}</p>
             </div>
           )}
         </div>
@@ -822,7 +834,7 @@ export function OffertePubliekPagina() {
           <Button
             variant="outline"
             onClick={handleDownloadPDF}
-            className="gap-2 text-gray-600 hover:text-gray-900"
+            className="gap-2 text-[#6B6B66] hover:text-[#1A1A1A] border-[#EBEBEB]"
           >
             <Download className="h-4 w-4" />
             Download PDF
@@ -834,7 +846,7 @@ export function OffertePubliekPagina() {
           <div className="hidden md:flex gap-3">
             <Button
               onClick={() => setShowAcceptModal(true)}
-              className="flex-1 h-14 text-base font-semibold bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-sm"
+              className="flex-1 h-14 text-base font-semibold bg-[#F15025] hover:bg-[#D9481F] text-white rounded-xl"
             >
               <CheckCircle2 className="h-5 w-5 mr-2" />
               Offerte accepteren
@@ -842,7 +854,7 @@ export function OffertePubliekPagina() {
             <Button
               onClick={() => setShowWijzigingModal(true)}
               variant="outline"
-              className="flex-1 h-14 text-base font-semibold rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
+              className="flex-1 h-14 text-base font-semibold rounded-xl bg-transparent border-[#1A535C] text-[#1A535C] hover:bg-[#1A535C]/5 hover:text-[#1A535C]"
             >
               <Edit3 className="h-5 w-5 mr-2" />
               Wijziging aanvragen
@@ -853,10 +865,10 @@ export function OffertePubliekPagina() {
         {/* Verlopen disabled buttons */}
         {isVerlopen && !isGeaccepteerd && !isAfgewezen && !isGefactureerd && (
           <div className="hidden md:flex gap-3">
-            <div className="flex-1 h-14 flex items-center justify-center text-sm text-gray-400 bg-gray-100 rounded-xl cursor-not-allowed" title="Deze offerte is niet meer geldig">
+            <div className="flex-1 h-14 flex items-center justify-center text-sm text-[#9B9B95] border border-[#EBEBEB] rounded-xl cursor-not-allowed" title="Deze offerte is niet meer geldig">
               Offerte accepteren
             </div>
-            <div className="flex-1 h-14 flex items-center justify-center text-sm text-gray-400 bg-gray-100 rounded-xl cursor-not-allowed" title="Deze offerte is niet meer geldig">
+            <div className="flex-1 h-14 flex items-center justify-center text-sm text-[#9B9B95] border border-[#EBEBEB] rounded-xl cursor-not-allowed" title="Deze offerte is niet meer geldig">
               Wijziging aanvragen
             </div>
           </div>
@@ -864,14 +876,14 @@ export function OffertePubliekPagina() {
 
         {/* Veilig tekst */}
         {kanActie && (
-          <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
+          <p className="text-center text-xs text-[#9B9B95] flex items-center justify-center gap-1">
             <Shield className="h-3 w-3" />
             Veilig en versleuteld
           </p>
         )}
 
         {/* ── Footer ── */}
-        <div className="text-center text-xs text-gray-400 pb-4 space-y-1">
+        <div className="text-center text-xs text-[#9B9B95] pb-4 space-y-1">
           <p>{bedrijf?.bedrijfsnaam}{bedrijf?.kvk_nummer ? ` · KvK ${bedrijf.kvk_nummer}` : ''}</p>
           {bedrijf?.bedrijfs_adres && <p>{bedrijf.bedrijfs_adres}</p>}
           {bedrijf?.bedrijfs_telefoon && <p>{bedrijf.bedrijfs_telefoon}</p>}
@@ -880,10 +892,10 @@ export function OffertePubliekPagina() {
 
       {/* ── Sticky mobile action bar ── */}
       {kanActie && (
-        <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-gray-200 p-4 flex gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-40">
+        <div className="fixed bottom-0 left-0 right-0 md:hidden bg-[#FFFFFF] border-t border-[#EBEBEB] p-4 flex gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-40">
           <Button
             onClick={() => setShowAcceptModal(true)}
-            className="flex-1 h-12 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white rounded-xl"
+            className="flex-1 h-12 text-sm font-semibold bg-[#F15025] hover:bg-[#D9481F] text-white rounded-xl"
           >
             <CheckCircle2 className="h-4 w-4 mr-1.5" />
             Accepteren
@@ -891,7 +903,7 @@ export function OffertePubliekPagina() {
           <Button
             onClick={() => setShowWijzigingModal(true)}
             variant="outline"
-            className="flex-1 h-12 text-sm font-semibold rounded-xl border-orange-200 text-orange-700"
+            className="flex-1 h-12 text-sm font-semibold rounded-xl bg-transparent border-[#1A535C] text-[#1A535C] hover:bg-[#1A535C]/5 hover:text-[#1A535C]"
           >
             <Edit3 className="h-4 w-4 mr-1.5" />
             Wijziging
@@ -901,44 +913,44 @@ export function OffertePubliekPagina() {
 
       {/* ── Accept Modal ── */}
       {showAcceptModal && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 animate-in fade-in duration-200" onClick={() => setShowAcceptModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowAcceptModal(false)}>
           <div
-            className="bg-white w-full md:max-w-md md:rounded-2xl rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto"
+            className="bg-[#FFFFFF] w-full md:max-w-md md:rounded-2xl rounded-t-2xl shadow-[0_24px_48px_rgba(0,0,0,0.12)] animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto"
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
-            <div className="p-6 space-y-5">
+            <div className="p-8 space-y-5">
               {/* Header */}
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-900">Offerte accepteren</h3>
-                <button onClick={() => setShowAcceptModal(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
+                <h3 className="text-lg font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Offerte accepteren</h3>
+                <button onClick={() => setShowAcceptModal(false)} className="p-1 rounded-lg hover:bg-[#F8F7F5] text-[#9B9B95]">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Samenvatting */}
-              <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between">
+              <div className="bg-[#F8F7F5] rounded-xl p-4 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Offerte {offerte.nummer}</p>
-                  <p className="text-xs text-gray-400">{offerte.titel}</p>
+                  <p className="text-sm text-[#6B6B66]">Offerte {offerte.nummer}</p>
+                  <p className="text-xs text-[#9B9B95]">{offerte.titel}</p>
                 </div>
-                <p className="text-xl font-bold text-gray-900">{formatCurrency(totaalBedrag)}</p>
+                <p className="text-xl font-bold font-mono text-[#1A1A1A]">{formatCurrency(totaalBedrag)}</p>
               </div>
 
               {/* Geselecteerde opties samenvatting */}
               {hasOptionalItems && (
-                <div className="text-xs text-gray-500 space-y-1">
-                  <p className="font-medium text-gray-600">Geselecteerde items:</p>
+                <div className="text-xs text-[#6B6B66] space-y-1">
+                  <p className="font-medium text-[#6B6B66]">Geselecteerde items:</p>
                   {items.filter(i => i.soort !== 'tekst' && selectedItems.has(i.id)).map(i => (
                     <div key={i.id} className="flex justify-between">
-                      <span className="truncate mr-2">{i.is_optioneel ? '✓ ' : ''}{i.beschrijving}</span>
-                      <span className="shrink-0 tabular-nums">{formatCurrency(getEffectiveItemTotal(i, selectedVariants[i.id]))}</span>
+                      <span className="truncate mr-2">{i.beschrijving}</span>
+                      <span className="shrink-0 font-mono">{formatCurrency(getEffectiveItemTotal(i, selectedVariants[i.id]))}</span>
                     </div>
                   ))}
                 </div>
               )}
 
               {/* Tekst */}
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[#6B6B66]">
                 Door uw naam in te vullen en op Bevestigen te klikken, gaat u akkoord met deze offerte
                 {bedrijf?.bedrijfsnaam ? ` van ${bedrijf.bedrijfsnaam}` : ''}
                 {hasOptionalItems ? ' met bovenstaande selectie' : ''}.
@@ -946,7 +958,7 @@ export function OffertePubliekPagina() {
 
               {/* Naam input */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Uw volledige naam *</label>
+                <label className="text-sm font-medium text-[#1A1A1A]">Uw volledige naam *</label>
                 <Input
                   value={acceptNaam}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAcceptNaam(e.target.value)}
@@ -963,14 +975,14 @@ export function OffertePubliekPagina() {
                   onCheckedChange={(checked: boolean) => setAcceptAkkoord(checked === true)}
                   className="mt-0.5"
                 />
-                <span className="text-sm text-gray-600">Ik ga akkoord met deze offerte</span>
+                <span className="text-sm text-[#6B6B66]">Ik ga akkoord met deze offerte</span>
               </label>
 
               {/* Bevestig knop */}
               <Button
                 onClick={handleAccepteren}
                 disabled={acceptLoading || acceptNaam.trim().length < 2 || !acceptAkkoord}
-                className="w-full h-12 text-base font-semibold bg-green-600 hover:bg-green-700 text-white rounded-xl disabled:opacity-40"
+                className="w-full h-12 text-base font-semibold bg-[#F15025] hover:bg-[#D9481F] text-white rounded-xl disabled:opacity-40"
               >
                 {acceptLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -988,36 +1000,36 @@ export function OffertePubliekPagina() {
 
       {/* ── Wijziging Modal ── */}
       {showWijzigingModal && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 animate-in fade-in duration-200" onClick={() => setShowWijzigingModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowWijzigingModal(false)}>
           <div
-            className="bg-white w-full md:max-w-md md:rounded-2xl rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto"
+            className="bg-[#FFFFFF] w-full md:max-w-md md:rounded-2xl rounded-t-2xl shadow-[0_24px_48px_rgba(0,0,0,0.12)] animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto"
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
-            <div className="p-6 space-y-5">
+            <div className="p-8 space-y-5">
               {/* Header */}
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-900">Wijziging aanvragen</h3>
-                <button onClick={() => setShowWijzigingModal(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
+                <h3 className="text-lg font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Wijziging aanvragen</h3>
+                <button onClick={() => setShowWijzigingModal(false)} className="p-1 rounded-lg hover:bg-[#F8F7F5] text-[#9B9B95]">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Textarea */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Wat wilt u aangepast hebben? *</label>
+                <label className="text-sm font-medium text-[#1A1A1A]">Wat wilt u aangepast hebben? *</label>
                 <textarea
                   value={wijzigingOpmerking}
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setWijzigingOpmerking(e.target.value)}
                   placeholder="Beschrijf uw gewenste wijziging (minimaal 10 tekens)..."
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm min-h-[120px] focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
+                  className="w-full rounded-xl border border-[#EBEBEB] px-4 py-3 text-sm min-h-[120px] focus:ring-2 focus:ring-[#1A535C] focus:border-[#1A535C] resize-none"
                   autoFocus
                 />
-                <p className="text-xs text-gray-400">{wijzigingOpmerking.length}/10 tekens minimum</p>
+                <p className="text-xs text-[#9B9B95]">{wijzigingOpmerking.length}/10 tekens minimum</p>
               </div>
 
               {/* Naam */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Uw naam <span className="text-gray-400">(optioneel)</span></label>
+                <label className="text-sm font-medium text-[#1A1A1A]">Uw naam <span className="text-[#9B9B95]">(optioneel)</span></label>
                 <Input
                   value={wijzigingNaam}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWijzigingNaam(e.target.value)}
@@ -1030,7 +1042,8 @@ export function OffertePubliekPagina() {
               <Button
                 onClick={handleWijziging}
                 disabled={wijzigingLoading || wijzigingOpmerking.trim().length < 10}
-                className="w-full h-12 text-base font-semibold bg-orange-600 hover:bg-orange-700 text-white rounded-xl disabled:opacity-40"
+                variant="outline"
+                className="w-full h-12 text-base font-semibold rounded-xl bg-transparent border-[#1A535C] text-[#1A535C] hover:bg-[#1A535C]/5 hover:text-[#1A535C] disabled:opacity-40"
               >
                 {wijzigingLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
