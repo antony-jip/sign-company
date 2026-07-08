@@ -156,7 +156,7 @@ function buildClientEmailHtml(p: ClientEmailParams): string {
           </table>
         </td></tr>
         <tr><td style="padding: 20px 0 0 0; text-align: center;">
-          <span style="font-family: ${font}; font-size: 11px; color: #9B9B95;">Verzonden via <span style="font-weight: 700;">doen</span><span style="color: #F15025; font-weight: 700;">.</span> namens ${escapeHtml(p.bedrijfsnaam)}</span>
+          <span style="font-family: ${font}; font-size: 11px; color: #9B9B95;">Verzonden namens ${escapeHtml(p.bedrijfsnaam)}</span>
         </td></tr>
       </table>
     </td></tr>
