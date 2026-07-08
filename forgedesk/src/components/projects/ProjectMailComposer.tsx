@@ -159,6 +159,37 @@ function mailPreview(m: ProjectMail): string {
   return clean.length > 280 ? `${clean.slice(0, 280)}…` : clean
 }
 
+function markdownNaarHtml(tekst: string): string {
+  const escaped = tekst
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+  const inline = escaped
+    .replace(/__([^_\n](?:[^\n]*?[^_\n])?)__/g, '<u>$1</u>')
+    .replace(/\*\*([^*\n](?:[^\n]*?[^*\n])?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|\s)_(\S(?:[^_\n]*\S)?)_/g, '$1<em>$2</em>')
+    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>')
+  const blokken: string[] = []
+  let lijstItems: string[] = []
+  const sluitLijst = () => {
+    if (lijstItems.length > 0) {
+      blokken.push(`<ul>${lijstItems.map((li) => `<li>${li}</li>`).join('')}</ul>`)
+      lijstItems = []
+    }
+  }
+  for (const regel of inline.split('\n')) {
+    if (regel.startsWith('- ')) {
+      lijstItems.push(regel.slice(2))
+    } else {
+      sluitLijst()
+      blokken.push(regel)
+    }
+  }
+  sluitLijst()
+  return blokken.map((b, i) => (i === 0 || b.startsWith('<ul>') || blokken[i - 1].startsWith('<ul>') ? b : `<br/>${b}`)).join('')
+}
+
 function bronAccent(bron: BijlageBron): { bg: string; border: string } {
   switch (bron) {
     case 'offerte': return { bg: 'rgba(58,107,140,0.08)', border: 'rgba(58,107,140,0.25)' }
@@ -795,12 +826,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         return
       }
 
-      const escapeHtml = (s: string) => s
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-      const bodyHtml = escapeHtml(body).replace(/\n/g, '<br/>')
+      const bodyHtml = markdownNaarHtml(body)
       const signaturImg = handtekeningAfbeelding?.trim()
         ? `<br/><br/><img src="${handtekeningAfbeelding}" alt="Handtekening" style="max-height:${handtekeningAfbeeldingGrootte || 64}px;display:block;"/>`
         : ''

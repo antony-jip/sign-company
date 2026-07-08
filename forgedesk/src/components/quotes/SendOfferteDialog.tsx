@@ -260,7 +260,8 @@ export function SendOfferteDialog({
         await sendEmail(sendTo, sendSubject || subject, plainText, { html, attachments })
       } catch (err) {
         logger.error('Email verzenden mislukt:', err)
-        toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Status is wel bijgewerkt.')
+        toast.error('Offerte niet verstuurd: e-mail kon niet worden verzonden. Controleer je e-mailinstellingen en probeer opnieuw.')
+        return
       }
 
       const now = new Date().toISOString()
