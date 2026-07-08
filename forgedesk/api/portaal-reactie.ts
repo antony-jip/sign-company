@@ -26,6 +26,32 @@ function decrypt(encrypted: string): string {
   return decrypted
 }
 
+async function getPortaalInstellingen(userId: string): Promise<Record<string, unknown>> {
+  const { data: profiel } = await supabaseAdmin
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
+    .maybeSingle()
+  let rij: { portaal_instellingen: unknown } | null = null
+  if (profiel?.organisatie_id) {
+    const { data } = await supabaseAdmin
+      .from('app_settings')
+      .select('portaal_instellingen')
+      .eq('organisatie_id', profiel.organisatie_id)
+      .maybeSingle()
+    rij = data
+  }
+  if (!rij) {
+    const { data } = await supabaseAdmin
+      .from('app_settings')
+      .select('portaal_instellingen')
+      .eq('user_id', userId)
+      .maybeSingle()
+    rij = data
+  }
+  return (rij?.portaal_instellingen as Record<string, unknown>) || {}
+}
+
 // ---- Inline email template (Vercel bundelt geen lokale imports in api/) ----
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -116,6 +142,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!item || !item.zichtbaar_voor_klant) {
       return res.status(404).json({ error: 'Item niet gevonden' })
+    }
+
+    // Portaal-instellingen server-side afdwingen — de capaciteit-toggles
+    // werden voorheen alleen deels client-side gerespecteerd.
+    const instellingen = await getPortaalInstellingen(portaal.user_id)
+    if (type === 'bericht' && instellingen.klant_kan_berichten_sturen === false) {
+      return res.status(403).json({ error: 'Berichten sturen is uitgeschakeld voor dit portaal.' })
+    }
+    if ((foto_url || (bestanden && bestanden.length > 0)) && instellingen.klant_kan_bestanden_uploaden === false) {
+      return res.status(403).json({ error: 'Bestanden meesturen is uitgeschakeld voor dit portaal.' })
+    }
+    if (type === 'goedkeuring' && item.type === 'offerte' && instellingen.klant_kan_offerte_goedkeuren === false) {
+      return res.status(403).json({ error: 'Offertes goedkeuren via het portaal is uitgeschakeld.' })
+    }
+    if ((type === 'goedkeuring' || type === 'revisie') && item.type === 'tekening' && instellingen.klant_kan_tekening_goedkeuren === false) {
+      return res.status(403).json({ error: 'Tekeningen goedkeuren via het portaal is uitgeschakeld.' })
     }
 
     // Goedkeuring-guards: zelfde regels als /api/offerte-accepteren, zodat

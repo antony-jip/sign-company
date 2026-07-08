@@ -8,7 +8,7 @@ interface PortaalFeedItemBerichtProps {
     created_at: string
   }
   bedrijfNaam?: string
-  onVragenStellen: () => void
+  onVragenStellen?: () => void
   onImageClick?: (url: string) => void
 }
 
@@ -31,7 +31,7 @@ export function PortaalFeedItemBericht({
 }: PortaalFeedItemBerichtProps) {
   return (
     <div>
-      <div className="h-1 rounded-t-[10px]" style={{ backgroundcolor: 'hsl(var(--muted-foreground))' }} />
+      <div className="h-1 rounded-t-[10px]" style={{ backgroundColor: 'hsl(var(--muted-foreground))' }} />
       <div
         className="rounded-b-[10px] bg-white"
         style={{ border: '0.5px solid #E8E6E1' }}
@@ -43,7 +43,7 @@ export function PortaalFeedItemBericht({
             </p>
             <span
               className="text-xs flex-shrink-0"
-              style={{ color: '#C0BDB8', fontFamily: "'DM Mono', monospace" }}
+              style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}
             >
               {formatTijd(item.created_at)}
             </span>
@@ -70,15 +70,17 @@ export function PortaalFeedItemBericht({
           )}
         </div>
 
-        <div className="px-5 py-3 border-t" style={{ borderColor: '#F0EEEA' }}>
-          <button
-            onClick={onVragenStellen}
-            className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
-            style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
-          >
-            Reactie
-          </button>
-        </div>
+        {onVragenStellen && (
+          <div className="px-5 py-3 border-t" style={{ borderColor: '#F0EEEA' }}>
+            <button
+              onClick={onVragenStellen}
+              className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
+              style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
+            >
+              Reactie
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

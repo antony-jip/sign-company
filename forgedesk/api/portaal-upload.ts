@@ -15,6 +15,32 @@ async function isRateLimited(ip: string, endpoint: string, maxCount: number, win
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
 
+async function getPortaalInstellingen(userId: string): Promise<Record<string, unknown>> {
+  const { data: profiel } = await supabaseAdmin
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
+    .maybeSingle()
+  let rij: { portaal_instellingen: unknown } | null = null
+  if (profiel?.organisatie_id) {
+    const { data } = await supabaseAdmin
+      .from('app_settings')
+      .select('portaal_instellingen')
+      .eq('organisatie_id', profiel.organisatie_id)
+      .maybeSingle()
+    rij = data
+  }
+  if (!rij) {
+    const { data } = await supabaseAdmin
+      .from('app_settings')
+      .select('portaal_instellingen')
+      .eq('user_id', userId)
+      .maybeSingle()
+    rij = data
+  }
+  return (rij?.portaal_instellingen as Record<string, unknown>) || {}
+}
+
 // Inline kopie van src/utils/storageHelpers.ts :: sanitizeStorageFilename.
 // Vercel serverless mag geen src/-imports doen; canonical versie + tests staan in src/utils.
 function sanitizeStorageFilename(naam: string, maxLength = 100): string {
@@ -83,12 +109,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Valideer token
     const { data: portaal } = await supabaseAdmin
       .from('project_portalen')
-      .select('id, actief, verloopt_op')
+      .select('id, actief, verloopt_op, user_id')
       .eq('token', token)
       .single()
 
     if (!portaal || !portaal.actief || new Date(portaal.verloopt_op) < new Date()) {
       return res.status(403).json({ error: 'Portaal niet beschikbaar' })
+    }
+
+    // Instellingen server-side afdwingen: upload-toggle + eventueel lagere maxgrootte
+    const instellingen = await getPortaalInstellingen(portaal.user_id)
+    if (instellingen.klant_kan_bestanden_uploaden === false) {
+      return res.status(403).json({ error: 'Bestanden uploaden is uitgeschakeld voor dit portaal.' })
+    }
+    const maxMb = Number(instellingen.max_bestandsgrootte_mb)
+    if (maxMb > 0 && buffer.length > Math.min(maxMb, 10) * 1024 * 1024) {
+      return res.status(400).json({ error: `Bestand is te groot (max ${Math.min(maxMb, 10)}MB)` })
     }
 
     // Valideer item
