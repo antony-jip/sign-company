@@ -144,34 +144,72 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
   })
 
   if (!refreshRes.ok) {
+    const errorBody = await refreshRes.text()
+
     if (refreshRes.status === 400 || refreshRes.status === 401) {
-      // Per-user token-status. Bij invalid_grant heeft Exact DEZE user
-      // uitgegooid — vaak doordat een collega zojuist opnieuw OAuth'de
-      // op hetzelfde Exact-bedrijfsaccount (Exact staat geen twee
-      // gelijktijdige sessies toe). Verwijder alleen DEZE user's
-      // tokens; raak de org-brede `exact_online_connected` niet aan.
-      await supabaseAdmin.from('exact_tokens').delete().eq('user_id', userId)
-      console.error('[Exact] invalid_grant — token rejected', {
-        userId, endpoint: 'exact-dagboeken.ts', status: refreshRes.status,
-      })
-      Sentry.captureException(new Error('Exact invalid_grant'), {
-        level: 'warning',
-        tags: { exact_endpoint: 'exact-dagboeken', oauth_error: 'invalid_grant' },
-        extra: { user_id: userId, status: refreshRes.status },
-      })
+      // Exact refresh tokens zijn single-use: een parallel request kan de
+      // keten net geroteerd hebben. Wacht kort en herlees — staat er
+      // inmiddels een nieuw token, gebruik dat dan i.p.v. los te koppelen.
+      await new Promise((r) => setTimeout(r, 1500))
+      const { data: herlezen } = await supabaseAdmin
+        .from('exact_tokens')
+        .select('access_token, refresh_token, expires_at, division')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (herlezen?.refresh_token && herlezen.refresh_token !== data.refresh_token) {
+        return { token: decryptSecret(herlezen.access_token), division: herlezen.division }
+      }
+
+      if (errorBody.includes('invalid_grant')) {
+        // Bij invalid_grant heeft Exact DEZE user echt uitgegooid — vaak
+        // doordat een collega zojuist opnieuw OAuth'de op hetzelfde
+        // Exact-bedrijfsaccount (Exact staat geen twee gelijktijdige
+        // sessies toe). Verwijder alleen DEZE user's tokens; raak de
+        // org-brede `exact_online_connected` niet aan.
+        await supabaseAdmin.from('exact_tokens').delete().eq('user_id', userId)
+        console.error('[Exact] invalid_grant — token rejected', {
+          userId, endpoint: 'exact-dagboeken.ts', status: refreshRes.status,
+        })
+        Sentry.captureException(new Error('Exact invalid_grant'), {
+          level: 'warning',
+          tags: { exact_endpoint: 'exact-dagboeken', oauth_error: 'invalid_grant' },
+          extra: { user_id: userId, status: refreshRes.status },
+        })
+        throw new Error('Token refresh mislukt. Verbind Exact Online opnieuw via Instellingen.')
+      }
     }
-    throw new Error('Token refresh mislukt. Verbind Exact Online opnieuw via Instellingen.')
+    console.error('[Exact] token refresh fout', {
+      endpoint: 'exact-dagboeken.ts', status: refreshRes.status, errorBody,
+    })
+    throw new Error('Exact Online token vernieuwen mislukt. Probeer het opnieuw.')
   }
   const tokens = await refreshRes.json()
 
-  await supabaseAdmin.from('exact_tokens').update({
+  // Upsert i.p.v. update: herstelt de rij als een parallel verliezend
+  // request hem net verwijderde — dit is de nieuwste geldige keten.
+  await supabaseAdmin.from('exact_tokens').upsert({
+    user_id: userId,
     access_token: encryptSecret(tokens.access_token),
     refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
     expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+    division: data.division,
     updated_at: new Date().toISOString(),
-  }).eq('user_id', userId)
+  }, { onConflict: 'user_id' })
 
   return { token: tokens.access_token, division: data.division }
+}
+
+// Exact hanteert per-minuut rate-limits; bij 429 kort wachten (Retry-After,
+// gecapt op 10s) en één keer opnieuw proberen.
+async function exactFetchMetRetry(url: string, init: RequestInit): Promise<Response> {
+  let res = await fetch(url, init)
+  if (res.status === 429) {
+    const retryAfter = Number(res.headers.get('Retry-After'))
+    const wachtMs = Math.min((retryAfter > 0 ? retryAfter : 5) * 1000, 10_000)
+    await new Promise((r) => setTimeout(r, wachtMs))
+    res = await fetch(url, init)
+  }
+  return res
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -185,11 +223,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const divisionId = req.query.division || division
 
     // Type 20 = Verkoopboek
-    const journalsRes = await fetch(
+    const journalsRes = await exactFetchMetRetry(
       `${EXACT_API_BASE}/${divisionId}/financial/Journals?$select=Code,Description&$filter=Type eq 20`,
       { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } }
     )
 
+    if (journalsRes.status === 429) throw new Error('Exact Online rate-limit bereikt. Probeer het over een minuut opnieuw.')
     if (!journalsRes.ok) throw new Error('Kon verkoopboeken niet ophalen')
 
     const body = await journalsRes.json()

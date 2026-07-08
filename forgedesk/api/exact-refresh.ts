@@ -116,16 +116,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-    // 1. Haal refresh_token op uit exact_tokens
+    // 1. Haal tokens op uit exact_tokens
     const { data: tokenData, error: tokenError } = await supabase
       .from('exact_tokens')
-      .select('refresh_token')
+      .select('access_token, refresh_token, expires_at, division')
       .eq('user_id', user_id)
       .single()
 
     if (tokenError || !tokenData?.refresh_token) {
       return res.status(400).json({
         error: 'Geen Exact Online tokens gevonden. Verbind opnieuw via Instellingen > Integraties.',
+      })
+    }
+
+    // Nog ruim geldig? Geef het bestaande token terug i.p.v. de single-use
+    // refresh-keten onnodig te roteren.
+    if (new Date(tokenData.expires_at).getTime() - Date.now() > 5 * 60 * 1000) {
+      return res.status(200).json({
+        access_token: decryptSecret(tokenData.access_token),
+        expires_at: tokenData.expires_at,
       })
     }
 
@@ -164,24 +173,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('Exact token refresh error:', tokenResponse.status, errorBody)
 
       if (tokenResponse.status === 400 || tokenResponse.status === 401) {
-        // Per-user token-status. Bij invalid_grant heeft Exact DEZE user
-        // uitgegooid — vaak doordat een collega zojuist opnieuw OAuth'de
-        // op hetzelfde Exact-bedrijfsaccount (Exact staat geen twee
-        // gelijktijdige sessies toe). Verwijder alleen DEZE user's
-        // tokens; raak de org-brede `exact_online_connected` niet aan.
-        await supabase.from('exact_tokens').delete().eq('user_id', user_id)
-        console.error('[Exact] invalid_grant — token rejected', {
-          user_id, endpoint: 'exact-refresh.ts', status: tokenResponse.status,
-        })
-        Sentry.captureException(new Error('Exact invalid_grant'), {
-          level: 'warning',
-          tags: { exact_endpoint: 'exact-refresh', oauth_error: 'invalid_grant' },
-          extra: { user_id, status: tokenResponse.status },
-        })
+        // Exact refresh tokens zijn single-use: een parallel request kan de
+        // keten net geroteerd hebben. Wacht kort en herlees — staat er
+        // inmiddels een nieuw token, gebruik dat dan i.p.v. los te koppelen.
+        await new Promise((r) => setTimeout(r, 1500))
+        const { data: herlezen } = await supabase
+          .from('exact_tokens')
+          .select('access_token, refresh_token, expires_at')
+          .eq('user_id', user_id)
+          .maybeSingle()
+        if (herlezen?.refresh_token && herlezen.refresh_token !== tokenData.refresh_token) {
+          return res.status(200).json({
+            access_token: decryptSecret(herlezen.access_token),
+            expires_at: herlezen.expires_at,
+          })
+        }
+
+        if (errorBody.includes('invalid_grant')) {
+          // Bij invalid_grant heeft Exact DEZE user echt uitgegooid — vaak
+          // doordat een collega zojuist opnieuw OAuth'de op hetzelfde
+          // Exact-bedrijfsaccount (Exact staat geen twee gelijktijdige
+          // sessies toe). Verwijder alleen DEZE user's tokens; raak de
+          // org-brede `exact_online_connected` niet aan.
+          await supabase.from('exact_tokens').delete().eq('user_id', user_id)
+          console.error('[Exact] invalid_grant — token rejected', {
+            user_id, endpoint: 'exact-refresh.ts', status: tokenResponse.status,
+          })
+          Sentry.captureException(new Error('Exact invalid_grant'), {
+            level: 'warning',
+            tags: { exact_endpoint: 'exact-refresh', oauth_error: 'invalid_grant' },
+            extra: { user_id, status: tokenResponse.status },
+          })
+          return res.status(502).json({
+            error: 'Token vernieuwen mislukt. Verbind Exact Online opnieuw via Instellingen.',
+          })
+        }
       }
 
       return res.status(502).json({
-        error: 'Token vernieuwen mislukt. Verbind Exact Online opnieuw via Instellingen.',
+        error: 'Exact Online token vernieuwen mislukt. Probeer het opnieuw.',
       })
     }
 
@@ -191,24 +221,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       expires_in: number
     }
 
-    // 4. Update exact_tokens
+    // 4. Upsert exact_tokens i.p.v. update: herstelt de rij als een parallel
+    // verliezend request hem net verwijderde — dit is de nieuwste geldige keten.
     const expires_at = new Date(Date.now() + tokens.expires_in * 1000).toISOString()
-
-    const updateData: Record<string, string> = {
-      access_token: encryptSecret(tokens.access_token),
-      expires_at,
-      updated_at: new Date().toISOString(),
-    }
-
-    // Exact Online kan een nieuwe refresh_token teruggeven
-    if (tokens.refresh_token) {
-      updateData.refresh_token = encryptSecret(tokens.refresh_token)
-    }
 
     await supabase
       .from('exact_tokens')
-      .update(updateData)
-      .eq('user_id', user_id)
+      .upsert({
+        user_id,
+        access_token: encryptSecret(tokens.access_token),
+        refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(tokenData.refresh_token)),
+        expires_at,
+        division: tokenData.division,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
 
     return res.status(200).json({
       access_token: tokens.access_token,
