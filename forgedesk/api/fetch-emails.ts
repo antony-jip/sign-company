@@ -8,6 +8,11 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
+async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const { data } = await supabaseAdmin.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
+  return data === true
+}
+
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
@@ -174,6 +179,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { folder = 'INBOX', limit = 100 } = req.body
 
     const user_id = await verifyUser(req)
+
+    // IMAP-verbindingen zijn duur — begrens per gebruiker
+    if (await isRateLimited(`fetch-emails:${user_id}`, 30, 60)) {
+      return res.status(429).json({ error: 'Te veel synchronisatieverzoeken. Probeer het zo opnieuw.' })
+    }
 
     // Get credentials (DB first, fallback to request body)
     let gmail_address: string, app_password: string, imap_host: string, imap_port: number

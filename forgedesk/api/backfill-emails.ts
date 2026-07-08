@@ -20,6 +20,11 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
+async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const { data } = await supabaseAdmin.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
+  return data === true
+}
+
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
@@ -100,6 +105,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { folder = 'inbox' } = req.body
     const user_id = await verifyUser(req)
+
+    // Backfill loopt in batches vanuit de frontend — ruim genoeg voor een
+    // volledige mailbox, maar begrensd tegen runaway loops.
+    if (await isRateLimited(`backfill-emails:${user_id}`, 100, 600)) {
+      return res.status(429).json({ error: 'Te veel backfill-verzoeken. Probeer het over een paar minuten opnieuw.' })
+    }
     const mapValue = String(folder).toUpperCase() === 'INBOX' ? 'inbox' : String(folder).toLowerCase()
 
     const { data: state, error: stateErr } = await supabaseAdmin

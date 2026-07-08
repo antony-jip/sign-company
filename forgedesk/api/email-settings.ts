@@ -139,15 +139,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, message: 'Email instellingen opgeslagen' })
     }
 
-    // Encrypt password: prefer AES if key available, fallback to base64 obfuscation
+    // Wachtwoord alléén AES-versleuteld opslaan. De oude b64-fallback schreef
+    // een omkeerbaar (effectief plaintext) wachtwoord weg — liever hard falen
+    // dan dat stilletjes doen. Bestaande b64-rijen blijven leesbaar in de
+    // decrypt-paden totdat de gebruiker opnieuw opslaat.
     let encryptedPassword: string
     try {
       encryptedPassword = encrypt(app_password)
-      console.log('[email-settings] POST: wachtwoord versleuteld met AES')
-    } catch {
-      // Fallback: base64 obfuscation (when EMAIL_ENCRYPTION_KEY not set)
-      encryptedPassword = 'b64:' + Buffer.from(app_password, 'utf8').toString('base64')
-      console.log('[email-settings] POST: EMAIL_ENCRYPTION_KEY ontbreekt, fallback naar b64 encoding')
+    } catch (encErr) {
+      console.error('[email-settings] POST: versleutelen mislukt (EMAIL_ENCRYPTION_KEY geconfigureerd?):', encErr)
+      return res.status(500).json({
+        error: 'Wachtwoord kon niet veilig worden opgeslagen. Neem contact op met support.',
+      })
     }
 
     const { error } = await supabaseAdmin
