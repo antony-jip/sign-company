@@ -71,6 +71,7 @@ const DocumentsLayout = lazy(() => import('@/components/documents/DocumentsLayou
 // Email
 const EmailLayout = lazy(() => import('@/components/email/EmailLayout'), 'EmailLayout')
 const EmailComposePage = lazy(() => import('@/components/email/EmailComposePage'), 'EmailComposePage')
+const NieuwsbriefLayout = lazy(() => import('@/components/nieuwsbrief/NieuwsbriefLayout'), 'NieuwsbriefLayout')
 // Planning
 const PlanningLayout = lazy(() => import('@/components/planning/PlanningLayout'), 'PlanningLayout')
 const MontagePlanningLayoutMobile = lazy(() => import('@/components/planning/MontagePlanningLayoutMobile'), 'MontagePlanningLayoutMobile')
@@ -283,6 +284,7 @@ function AppContent() {
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
         <Route path="email/compose" element={<EmailLayout />} />
+        <Route path="nieuwsbrief" element={<NieuwsbriefLayout />} />
         <Route path="planning" element={<PlanningRoute />} />
         <Route path="kalender" element={<Navigate to="/planning" replace />} />
         <Route path="montage" element={<Navigate to="/planning" replace />} />

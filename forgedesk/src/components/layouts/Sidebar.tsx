@@ -6,7 +6,7 @@ import {
   Moon, Sun, CreditCard, PanelTop,
   LayoutDashboard, CircleUserRound, BookOpen,
   Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox, Ruler,
-  TrendingUp, Calendar, ListChecks, Mail, Globe, SlidersHorizontal, LifeBuoy, MessageSquare,
+  TrendingUp, Calendar, ListChecks, Mail, Globe, SlidersHorizontal, LifeBuoy, MessageSquare, Newspaper,
   Pin, PinOff, Pencil, Plus, LayoutGrid, Check, ChevronRight,
   type LucideIcon,
 } from 'lucide-react'
@@ -63,6 +63,8 @@ const COMMUNICATIE_ITEMS: NavItem[] = [
 
 const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: 'hsl(var(--muted-foreground))' }
 const SUPPORT_ITEM: NavItem = { label: 'Support', icon: LifeBuoy, path: '/support', color: '#F15025' }
+// Owner-only: nieuwsbrief-module is persoonlijk voor de eigenaar (zie 149_nieuwsbrief.sql).
+const NIEUWSBRIEF_ITEM: NavItem = { label: 'Nieuwsbrief', icon: Newspaper, path: '/nieuwsbrief', color: '#6A5A8A' }
 
 const NAV_GROUPS: NavGroup[] = [
   { section: 'WERK', items: WERK_ITEMS },
@@ -96,6 +98,7 @@ export function Sidebar() {
   const { isCollapsed, setLayoutMode } = useSidebar()
   const { user, logout } = useAuth()
   const isSupportAdmin = user?.id === ADMIN_USER_ID
+  const isEigenaar = user?.id === ADMIN_USER_ID
   const supportAttentie = useSupportAttentie('support-nav', isSupportAdmin)
   const { appThemeId, setAppThemeId } = usePalette()
   const isDarkTheme = appThemeId === 'dark'
@@ -161,9 +164,9 @@ export function Sidebar() {
   const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null)
 
   const mainNavActivePath = useMemo(() => {
-    const all = [...filteredGroups.flatMap(g => g.items), ...(isSupportAdmin ? [SUPPORT_ITEM] : [])]
+    const all = [...filteredGroups.flatMap(g => g.items), ...(isEigenaar ? [NIEUWSBRIEF_ITEM] : []), ...(isSupportAdmin ? [SUPPORT_ITEM] : [])]
     return all.find(i => (i.path === '/' ? location.pathname === '/' : location.pathname.startsWith(i.path)))?.path ?? null
-  }, [filteredGroups, isSupportAdmin, location.pathname])
+  }, [filteredGroups, isSupportAdmin, isEigenaar, location.pathname])
 
   useLayoutEffect(() => {
     if (!expanded) return
@@ -447,6 +450,7 @@ export function Sidebar() {
               {filteredNavItems.filter(i => PLANNING_ITEMS.some(p => p.path === i.path)).map(renderRailItem)}
               {railDivider('div-3')}
               {filteredNavItems.filter(i => COMMUNICATIE_ITEMS.some(c => c.path === i.path)).map(renderRailItem)}
+              {isEigenaar && renderRailItem(NIEUWSBRIEF_ITEM)}
               {isSupportAdmin && (
                 <>
                   {railDivider('div-support')}
@@ -486,6 +490,14 @@ export function Sidebar() {
                   </div>
                 </div>
               ))}
+              {isEigenaar && (
+                <div className="mt-7">
+                  <div className="doen-sidebar-section">NIEUWSBRIEF</div>
+                  <div className="space-y-[1px]">
+                    {renderExpandedItem(NIEUWSBRIEF_ITEM, false, !forMobile)}
+                  </div>
+                </div>
+              )}
               {isSupportAdmin && (
                 <div className="mt-7">
                   <div className="doen-sidebar-section">SUPPORT</div>
