@@ -118,6 +118,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Item niet gevonden' })
     }
 
+    // Goedkeuring-guards: zelfde regels als /api/offerte-accepteren, zodat
+    // de portaal-route geen verlopen of al-afgehandelde offertes goedkeurt.
+    if (type === 'goedkeuring' && item.status === 'goedgekeurd') {
+      return res.status(409).json({ error: 'Dit item is al goedgekeurd.' })
+    }
+
+    let offerteVooraf: { id: string; user_id: string | null; status: string; geldig_tot: string | null } | null = null
+    if (type === 'goedkeuring' && item.type === 'offerte') {
+      const { data: itemMetOfferte } = await supabaseAdmin
+        .from('portaal_items')
+        .select('offerte_id')
+        .eq('id', portaal_item_id)
+        .single()
+
+      if (itemMetOfferte?.offerte_id) {
+        const { data: offerte } = await supabaseAdmin
+          .from('offertes')
+          .select('id, user_id, status, geldig_tot')
+          .eq('id', itemMetOfferte.offerte_id)
+          .single()
+
+        if (offerte) {
+          if (offerte.status === 'goedgekeurd') {
+            return res.status(409).json({ error: 'Deze offerte is al geaccepteerd.' })
+          }
+          if (['afgewezen', 'gefactureerd'].includes(offerte.status)) {
+            return res.status(409).json({ error: 'Deze offerte kan niet meer geaccepteerd worden. Neem contact op met het bedrijf.' })
+          }
+          if (offerte.geldig_tot && new Date(offerte.geldig_tot) < new Date()) {
+            return res.status(410).json({ error: 'Deze offerte is verlopen. Vraag het bedrijf om een nieuwe versie.' })
+          }
+          offerteVooraf = offerte
+        }
+      }
+    }
+
     // Sla reactie op
     const { data: reactie, error: reactieError } = await supabaseAdmin
       .from('portaal_reacties')
@@ -147,33 +183,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Bij offerte goedkeuring: offerte status + keuzes bijwerken
     let offerteUserId: string | null = null
-    if (type === 'goedkeuring' && item.type === 'offerte') {
-      const { data: fullPortaalItem } = await supabaseAdmin
-        .from('portaal_items')
-        .select('offerte_id')
-        .eq('id', portaal_item_id)
-        .single()
+    if (type === 'goedkeuring' && offerteVooraf) {
+      const offerteUpdate: Record<string, unknown> = {
+        status: 'goedgekeurd',
+        geaccepteerd_door: klant_naam?.trim() || null,
+        geaccepteerd_op: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      if (gekozen_items) offerteUpdate.gekozen_items = gekozen_items
+      if (gekozen_varianten) offerteUpdate.gekozen_varianten = gekozen_varianten
+      await supabaseAdmin.from('offertes').update(offerteUpdate).eq('id', offerteVooraf.id)
 
-      if (fullPortaalItem?.offerte_id) {
-        const offerteUpdate: Record<string, unknown> = {
-          status: 'goedgekeurd',
-          geaccepteerd_door: klant_naam?.trim() || null,
-          geaccepteerd_op: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-        if (gekozen_items) offerteUpdate.gekozen_items = gekozen_items
-        if (gekozen_varianten) offerteUpdate.gekozen_varianten = gekozen_varianten
-        await supabaseAdmin.from('offertes').update(offerteUpdate).eq('id', fullPortaalItem.offerte_id)
-
-        // Haal offerte-eigenaar op voor notificatie (kan verschillen van portaal-aanmaker)
-        const { data: offerte } = await supabaseAdmin
-          .from('offertes')
-          .select('user_id')
-          .eq('id', fullPortaalItem.offerte_id)
-          .single()
-        if (offerte?.user_id && offerte.user_id !== portaal.user_id) {
-          offerteUserId = offerte.user_id
-        }
+      // Offerte-eigenaar kan verschillen van portaal-aanmaker
+      if (offerteVooraf.user_id && offerteVooraf.user_id !== portaal.user_id) {
+        offerteUserId = offerteVooraf.user_id
       }
     }
 
