@@ -244,7 +244,9 @@ async function processUserHerinneringen(params: {
 
     const replyTo = emailSettings?.gmail_address || "";
 
-    const idempotencyKey = buildKey("portaal_herinnering", item.project_id);
+    // Key per item, niet per project — anders krijgt een tweede onbeantwoord
+    // item in hetzelfde project nooit een herinnering.
+    const idempotencyKey = buildKey("portaal_herinnering", item.id);
     if (organisatieId) {
       const fresh = await checkAndMark(organisatieId, idempotencyKey);
       if (!fresh) {

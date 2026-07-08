@@ -251,6 +251,10 @@ export const offerteOpvolgingCron = schedules.task({
             afzender_naam: bedrijfsnaam,
             offerte_link: offerteLink,
             portaal_link: offerteLink,
+            // De fallback-templates (offerte_opvolging_dag1/7) gebruiken
+            // {{portaal_url}} — zonder deze alias lekt de placeholder
+            // letterlijk naar de klant.
+            portaal_url: offerteLink,
           };
 
           // Per-stap custom content wint; bij lege velden fallback op het
@@ -300,7 +304,7 @@ export const offerteOpvolgingCron = schedules.task({
               const htmlBody = buildPortalEmailHtml({
                 heading: `Herinnering: Offerte ${offerte.nummer}`,
                 itemTitel: `Offerte ${offerte.nummer}`,
-                beschrijving: inhoud.replace(/\n/g, "<br/>"),
+                beschrijving: inhoud,
                 ctaUrl: portaalLink,
                 ctaLabel: "Bekijk in portaal",
                 bedrijfsnaam,
@@ -308,7 +312,7 @@ export const offerteOpvolgingCron = schedules.task({
                 primaireKleur: docStyle?.primaire_kleur || undefined,
               });
 
-              const emailResult = await sendEmailForUser({
+              let emailResult = await sendEmailForUser({
                 userId: offerte.user_id,
                 to: klantEmail,
                 subject: onderwerp,
@@ -317,6 +321,21 @@ export const offerteOpvolgingCron = schedules.task({
                 organisatieId: schema.organisatie_id,
                 idempotencyKey: `offerte_opvolging:${offerte.id}:${stap.id}`,
               });
+
+              // Eén herkansing bij een transiente SMTP-fout — anders schuift
+              // de stap pas een dag op (de idempotency-key is teruggerold).
+              if (!emailResult.success) {
+                await new Promise((r) => setTimeout(r, 5000));
+                emailResult = await sendEmailForUser({
+                  userId: offerte.user_id,
+                  to: klantEmail,
+                  subject: onderwerp,
+                  text: plainBody,
+                  html: htmlBody,
+                  organisatieId: schema.organisatie_id,
+                  idempotencyKey: `offerte_opvolging:${offerte.id}:${stap.id}`,
+                });
+              }
 
               if (emailResult.skipped) {
                 logger.info("Offerte-opvolging mail overgeslagen (duplicaat)", {
