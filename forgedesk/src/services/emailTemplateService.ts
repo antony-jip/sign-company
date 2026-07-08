@@ -84,7 +84,7 @@ function renderButton(label: string, url: string, kleur: string): string {
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px auto;">
       <tr>
         <td style="border-radius: 6px; background-color: ${kleur};">
-          <a href="${escapeHtml(url)}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">
+          <a href="${escapeHtml(url)}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: 'DM Sans', Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">
             ${escapeHtml(label)}
           </a>
         </td>
@@ -139,7 +139,7 @@ export function getBaseTemplate(data: EmailTemplateData): {
     const handtekeningHtml = data.handtekening
       ? `
           <tr>
-            <td style="padding: 24px 32px 0 32px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #555555; white-space: pre-line;">
+            <td style="padding: 24px 32px 0 32px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #555555; white-space: pre-line;">
               ${escapeHtml(data.handtekening)}${sigImgHtml}
             </td>
           </tr>`
@@ -148,13 +148,13 @@ export function getBaseTemplate(data: EmailTemplateData): {
     const afmeldHtml = afmeldUrl
       ? `
           <tr>
-            <td style="padding: 16px 32px 0 32px; text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #999999;">
+            <td style="padding: 16px 32px 0 32px; text-align: center; font-family: 'DM Sans', Arial, sans-serif; font-size: 12px; color: #999999;">
               <a href="${escapeHtml(afmeldUrl)}" style="color: #999999; text-decoration: underline;">Afmelden voor e-mails</a>
             </td>
           </tr>`
       : `
           <tr>
-            <td style="padding: 16px 32px 0 32px; text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #999999;">
+            <td style="padding: 16px 32px 0 32px; text-align: center; font-family: 'DM Sans', Arial, sans-serif; font-size: 12px; color: #999999;">
               <!-- afmeld-link placeholder -->
             </td>
           </tr>`
@@ -180,14 +180,14 @@ export function getBaseTemplate(data: EmailTemplateData): {
           <!-- Header -->
           <tr>
             <td style="background-color: ${kleur}; padding: 24px 32px; text-align: center;">
-              <span style="font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">
+              <span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">
                 ${escapeHtml(bedrijf)}
               </span>
             </td>
           </tr>
           <!-- Body -->
           <tr>
-            <td style="padding: 32px; font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.7; color: #333333;">
+            <td style="padding: 32px; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #333333;">
               ${bodyHtml}
             </td>
           </tr>
@@ -195,8 +195,8 @@ export function getBaseTemplate(data: EmailTemplateData): {
           ${handtekeningHtml}
           <!-- Footer -->
           <tr>
-            <td style="padding: 24px 32px; border-top: 1px solid #eeeeee; text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #999999;">
-              &copy; ${new Date().getFullYear()} ${escapeHtml(bedrijf)}. Alle rechten voorbehouden.
+            <td style="padding: 24px 32px; border-top: 1px solid #eeeeee; text-align: center; font-family: 'DM Sans', Arial, sans-serif; font-size: 12px; color: #999999;">
+              Verzonden namens ${escapeHtml(bedrijf)}
             </td>
           </tr>
           ${afmeldHtml}
@@ -225,7 +225,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
 
   const acceptLinkHtml = data.bekijkUrl
     ? `<p style="margin: 16px 0 0 0; text-align: center;">
-        <a href="${escapeHtml(data.bekijkUrl)}" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: ${kleur}; text-decoration: underline;">
+        <a href="${escapeHtml(data.bekijkUrl)}" target="_blank" style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: ${kleur}; text-decoration: underline;">
           \u2713 Offerte accepteren of wijzigingen aanvragen
         </a>
       </p>`
@@ -237,7 +237,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     // Splits op regels, render als HTML paragraphs. Bewaar lege regels als spacing.
     return raw
       .split('\n')
-      .map(l => l.trim() === '' ? '<br/>' : `<p style="margin: 0 0 8px 0; font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #333333;">${escapeHtml(l)}</p>`)
+      .map(l => l.trim() === '' ? '<br/>' : `<p style="margin: 0 0 8px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; color: #333333;">${escapeHtml(l)}</p>`)
       .join('\n    ')
   }
 
@@ -245,7 +245,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
   const signatureHtml = data.handtekeningAfbeelding
     ? `<div style="margin-top: 16px;"><img src="${data.handtekeningAfbeelding}" alt="Handtekening" style="max-width: ${data.handtekeningAfbeeldingGrootte || 200}px; height: auto;" /></div>`
     : data.handtekening
-      ? `<div style="margin-top: 16px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555; white-space: pre-line;">${escapeHtml(data.handtekening)}</div>`
+      ? `<div style="margin-top: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555; white-space: pre-line;">${escapeHtml(data.handtekening)}</div>`
       : ''
 
   const bodyHtml = data.customBody
@@ -254,7 +254,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     ${signatureHtml}
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 24px 0 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
-        <td style="padding: 16px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;">
+        <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
           <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
           <strong>Geldig tot:</strong> ${escapeHtml(data.geldigTot)}
         </td>
@@ -270,7 +270,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     </p>
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
-        <td style="padding: 16px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;">
+        <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
           <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
           <strong>Geldig tot:</strong> ${escapeHtml(data.geldigTot)}
         </td>
@@ -437,7 +437,7 @@ export function factuurVerzendTemplate(data: FactuurEmailData): EmailResult {
     ${standaardRegelHtml}
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
-        <td style="padding: 16px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;">
+        <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
           <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
           <strong>Vervaldatum:</strong> ${escapeHtml(data.vervaldatum)}
         </td>
@@ -500,7 +500,7 @@ export function factuurHerinneringTemplate(data: FactuurHerinneringData): EmailR
     </p>
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
-        <td style="padding: 16px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;">
+        <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
           <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
           <strong>Vervaldatum:</strong> ${escapeHtml(data.vervaldatum)}<br />
           <strong>Dagen vervallen:</strong> ${data.dagenVervallen}

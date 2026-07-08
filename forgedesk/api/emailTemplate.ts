@@ -13,7 +13,7 @@ interface PortalEmailParams {
   quote?: string
   /** URL van bedrijfslogo (wordt bovenaan email getoond) */
   logoUrl?: string
-  /** Primaire merkkleur, bijv. '#5A8264'. Fallback: sage groen */
+  /** Primaire merkkleur, bijv. '#1A535C'. Fallback: petrol */
   primaireKleur?: string
 }
 
@@ -38,9 +38,9 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     primaireKleur,
   } = params
 
-  const sage = primaireKleur || '#5A8264'
+  const sage = primaireKleur || '#1A535C'
   // Genereer een lichtere variant van de primaire kleur voor quote-blokken
-  const sageLight = primaireKleur ? `${primaireKleur}18` : '#E4EBE6'
+  const sageLight = primaireKleur ? `${primaireKleur}18` : '#E8EEEF'
   const bgOuter = '#F4F3F0'
   const bgCard = '#FFFFFF'
   const textDark = '#1A1A1A'
@@ -55,7 +55,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
             ${escapeHtml(itemTitel)}
           </td></tr>
           ${beschrijving ? `<tr><td style="padding: 0 20px 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.6;">
-            ${escapeHtml(beschrijving)}
+            ${escapeHtml(beschrijving).replace(/\n/g, '<br/>')}
           </td></tr>` : ''}
         </table>
       </td></tr>`
@@ -63,7 +63,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
 
   const quoteBlock = quote
     ? `<tr><td style="padding: 0 0 20px 0;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${primaireKleur ? sageLight : '#E4EBE6'}; border-radius: 8px; border-left: 4px solid ${sage};">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${sageLight}; border-radius: 8px; border-left: 4px solid ${sage};">
           <tr><td style="padding: 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textDark}; font-style: italic; line-height: 1.6;">
             &ldquo;${escapeHtml(quote)}&rdquo;
           </td></tr>
@@ -76,6 +76,12 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
         <a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background-color: ${sage}; color: #FFFFFF; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">
           ${escapeHtml(ctaLabel)}
         </a>
+      </td></tr>`
+    : ''
+
+  const groetBlock = bedrijfsnaam
+    ? `<tr><td style="padding: 16px 0 0 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.8;">
+        Met vriendelijke groet,<br/><strong style="color: ${textDark};">${escapeHtml(bedrijfsnaam)}</strong>
       </td></tr>`
     : ''
 
@@ -109,6 +115,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
           </td></tr>
           ${itemBlock}
           ${quoteBlock}
+          ${groetBlock}
           ${ctaBlock}
         </table>
       </td></tr>

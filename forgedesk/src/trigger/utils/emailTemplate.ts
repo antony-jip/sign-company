@@ -49,8 +49,8 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     primaireKleur,
   } = params;
 
-  const accent = primaireKleur || "#5A8264";
-  const accentLight = primaireKleur ? `${primaireKleur}18` : "#E4EBE6";
+  const accent = primaireKleur || "#1A535C";
+  const accentLight = primaireKleur ? `${primaireKleur}18` : "#E8EEEF";
   const bgOuter = "#F4F3F0";
   const bgCard = "#FFFFFF";
   const textDark = "#1A1A1A";
@@ -59,7 +59,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
   const borderLight = "#E8E8E3";
 
   const itemBlock = itemTitel
-    ? `<tr><td style="padding:0 0 16px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${borderLight};border-radius:8px;"><tr><td style="padding:16px 20px;font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:600;color:${textDark};">${escapeHtml(itemTitel)}</td></tr>${beschrijving ? `<tr><td style="padding:0 20px 16px 20px;font-family:'DM Sans',Arial,sans-serif;font-size:14px;color:${textMuted};line-height:1.6;">${escapeHtml(beschrijving)}</td></tr>` : ""}</table></td></tr>`
+    ? `<tr><td style="padding:0 0 16px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${borderLight};border-radius:8px;"><tr><td style="padding:16px 20px;font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:600;color:${textDark};">${escapeHtml(itemTitel)}</td></tr>${beschrijving ? `<tr><td style="padding:0 20px 16px 20px;font-family:'DM Sans',Arial,sans-serif;font-size:14px;color:${textMuted};line-height:1.6;">${escapeHtml(beschrijving).replace(/\n/g, "<br/>")}</td></tr>` : ""}</table></td></tr>`
     : "";
 
   const quoteBlock = quote

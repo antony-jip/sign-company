@@ -42,6 +42,10 @@ export async function sendClientEmail(params: ClientEmailParams): Promise<{ succ
       to: params.to,
       subject: params.subject,
       html: buildClientEmailHtml(params),
+      text: buildClientEmailText(params),
+      ...(params.replyTo
+        ? { headers: { 'List-Unsubscribe': `<mailto:${params.replyTo}>` } }
+        : {}),
     })
     return { success: true }
   } catch (err) {
@@ -82,11 +86,23 @@ export async function sendSystemEmail(params: SystemEmailParams): Promise<{ succ
   }
 }
 
+// ─── Plain-text alternative voor client emails (deliverability) ───
+function buildClientEmailText(p: ClientEmailParams): string {
+  const lines: string[] = [p.heading, '']
+  if (p.itemTitel) lines.push(p.itemTitel)
+  if (p.beschrijving) lines.push(p.beschrijving)
+  if (p.quote) lines.push(`"${p.quote}"`)
+  if (p.itemTitel || p.beschrijving || p.quote) lines.push('')
+  if (p.ctaUrl) lines.push(`${p.ctaLabel || 'Bekijk in portaal'}: ${p.ctaUrl}`, '')
+  lines.push('Met vriendelijke groet,', p.bedrijfsnaam)
+  return lines.join('\n').trim()
+}
+
 // ─── Client email template (branded per bedrijf) ───
 function buildClientEmailHtml(p: ClientEmailParams): string {
   const color = p.primaireKleur || '#1A535C'
   const colorLight = `${color}12`
-  const font = "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif"
+  const font = "'DM Sans', Arial, sans-serif"
 
   // Cleanup heading: strip embedded greeting, URLs, signature
   let heading = p.heading

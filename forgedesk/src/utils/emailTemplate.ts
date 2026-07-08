@@ -1,5 +1,6 @@
 /**
- * Professional HTML email template for Doen. portal notifications.
+ * Professional HTML email template for portal notifications.
+ * White-label: no "doen." branding visible to clients.
  * Uses inline CSS only (no <style> blocks, no external CSS) for maximum email client compatibility.
  */
 
@@ -77,7 +78,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
               ${escapeHtml(itemTitel)}
             </span>
             ${beschrijving ? `<br/><span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: ${textMuted}; line-height: 1.6;">
-              ${escapeHtml(beschrijving)}
+              ${escapeHtml(beschrijving).replace(/\n/g, '<br/>')}
             </span>` : ''}
           </td></tr>
         </table>
@@ -112,8 +113,8 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     : ''
 
   const footerText = bedrijfsnaam
-    ? `Verzonden via doen. namens ${escapeHtml(bedrijfsnaam)}`
-    : 'Verzonden via doen.'
+    ? `Verzonden namens ${escapeHtml(bedrijfsnaam)}`
+    : ''
 
   return `<!DOCTYPE html>
 <html lang="nl">
@@ -128,7 +129,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
           ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 44px; max-width: 180px; object-fit: contain;" />`
           : (bedrijfsnaam
             ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; letter-spacing: -0.5px;">${escapeHtml(bedrijfsnaam)}</span>`
-            : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: #2b535c; letter-spacing: -0.5px;">doen<span style="color: #df5c36;">.</span></span><br/><span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 11px; font-weight: 400; color: #8aacb1;">slim gedaan.</span>`
+            : ''
           )
         }
       </td></tr>
