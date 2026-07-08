@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import {
@@ -88,10 +87,10 @@ function QRCodeCanvas({
   if (error) {
     return (
       <div
-        className="flex items-center justify-center border-2 border-dashed border-border rounded-lg"
+        className="flex items-center justify-center border-2 border-dashed border-[#EBEBEB] rounded-lg"
         style={{ width: size, height: size }}
       >
-        <p className="text-xs text-muted-foreground/60 text-center px-2">
+        <p className="text-xs text-[#9B9B95] text-center px-2">
           QR code kon niet geladen worden
         </p>
       </div>
@@ -103,7 +102,7 @@ function QRCodeCanvas({
       ref={canvasRef}
       width={size}
       height={size}
-      className={`rounded-lg ${loaded ? '' : 'animate-pulse bg-muted'}`}
+      className={`rounded-lg ${loaded ? '' : 'animate-pulse bg-[#EBEBEB]'}`}
     />
   )
 }
@@ -187,7 +186,7 @@ export function BetaalPagina() {
           factuur_id: factuur.id,
           bedrag: openBedrag,
           omschrijving: `Factuur ${factuur.nummer}`,
-          redirect_url: `${window.location.origin}/betaald?factuur_id=${factuur.id}`,
+          redirect_url: `${window.location.origin}/betaald?token=${encodeURIComponent(token ?? '')}`,
           betaal_token: token,
         }),
       })
@@ -210,6 +209,10 @@ export function BetaalPagina() {
     }
   }
 
+  useEffect(() => {
+    if (companyProfile?.bedrijfsnaam) document.title = companyProfile.bedrijfsnaam
+  }, [companyProfile?.bedrijfsnaam])
+
   const handleCopyIban = useCallback((iban: string) => {
     navigator.clipboard.writeText(iban.replace(/\s/g, '')).then(() => {
       setCopied(true)
@@ -222,10 +225,10 @@ export function BetaalPagina() {
   // Loading
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F7F5] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-muted-foreground">Factuur laden...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-[#1A535C]" />
+          <p className="text-sm text-[#6B6B66]">Factuur laden...</p>
         </div>
       </div>
     )
@@ -234,12 +237,12 @@ export function BetaalPagina() {
   // Not found
   if (notFound || !factuur) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
+      <div className="min-h-screen bg-[#F8F7F5] flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border-0 rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
           <CardContent className="flex flex-col items-center gap-4 py-12">
-            <AlertTriangle className="h-12 w-12 text-amber-500" />
-            <h2 className="text-xl font-semibold text-foreground/80">Factuur niet gevonden</h2>
-            <p className="text-sm text-muted-foreground text-center">
+            <AlertTriangle className="h-12 w-12 text-[#9B9B95]" />
+            <h2 className="text-xl font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Factuur niet gevonden</h2>
+            <p className="text-sm text-[#6B6B66] text-center">
               Deze betaallink is ongeldig of verlopen. Neem contact op met het bedrijf als u
               denkt dat dit een fout is.
             </p>
@@ -267,7 +270,7 @@ export function BetaalPagina() {
     : null
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen bg-[#F8F7F5] p-4 md:p-8">
       <Toaster position="top-center" richColors />
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
@@ -278,108 +281,106 @@ export function BetaalPagina() {
               alt={companyProfile.bedrijfsnaam || 'Bedrijfslogo'}
               className="h-14 mx-auto object-contain"
             />
+          ) : companyProfile?.bedrijfsnaam ? (
+            <div className="inline-flex items-center justify-center h-14 w-14 rounded-xl bg-[#1A535C]">
+              <span className="text-xl font-bold text-white">{companyProfile.bedrijfsnaam.charAt(0).toUpperCase()}</span>
+            </div>
           ) : (
-            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+            <div className="inline-flex items-center justify-center h-14 w-14 rounded-xl bg-[#1A535C]">
               <FileText className="h-7 w-7 text-white" />
             </div>
           )}
           {companyProfile?.bedrijfsnaam && (
-            <p className="text-sm font-medium text-muted-foreground">{companyProfile.bedrijfsnaam}</p>
+            <p className="text-sm font-medium text-[#6B6B66]">{companyProfile.bedrijfsnaam}</p>
           )}
-          <h1 className="text-2xl font-bold text-foreground">Factuur betalen</h1>
-          <p className="text-sm text-muted-foreground font-mono">
+          <h1 className="text-2xl font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Factuur betalen<span className="text-[#F15025]">.</span></h1>
+          <p className="text-sm text-[#6B6B66] font-mono">
             {factuur.nummer}
           </p>
         </div>
 
         {/* Status banner */}
         {isBetaald && (
-          <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+          <div className="flex items-center gap-3 bg-[#E8F2EC] rounded-xl p-4">
+            <CheckCircle2 className="h-5 w-5 text-[#3A7D52] shrink-0" />
             <div>
-              <p className="font-medium text-emerald-800">Deze factuur is betaald<span style={{ color: '#F15025' }}>.</span></p>
+              <p className="font-medium text-[#3A7D52]">Deze factuur is betaald<span style={{ color: '#F15025' }}>.</span></p>
               {factuur.betaaldatum && (
-                <p className="text-sm text-emerald-600">Betaald op <span className="font-mono">{formatDate(factuur.betaaldatum)}</span></p>
+                <p className="text-sm text-[#6B6B66]">Betaald op <span className="font-mono">{formatDate(factuur.betaaldatum)}</span></p>
               )}
             </div>
           </div>
         )}
 
         {isVervallen && (
-          <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
-            <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
+          <div className="flex items-center gap-3 bg-[#FDE8E4] rounded-xl p-4">
+            <AlertTriangle className="h-5 w-5 text-[#C0451A] shrink-0" />
             <div>
-              <p className="font-medium text-red-800">Deze factuur is vervallen<span style={{ color: '#F15025' }}>.</span></p>
-              <p className="text-sm text-red-600">Vervaldatum was <span className="font-mono">{formatDate(factuur.vervaldatum)}</span></p>
+              <p className="font-medium text-[#C0451A]">Deze factuur is vervallen<span style={{ color: '#F15025' }}>.</span></p>
+              <p className="text-sm text-[#6B6B66]">Vervaldatum was <span className="font-mono">{formatDate(factuur.vervaldatum)}</span></p>
             </div>
           </div>
         )}
 
         {/* Factuur details */}
-        <Card>
+        <Card className="border-0 rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
           <CardContent className="p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">{factuur.titel}</h2>
-              <Badge
-                variant="secondary"
-                className={
-                  isBetaald
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : isVervallen
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-blue-100 text-blue-700'
-                }
+              <h2 className="text-lg font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>{factuur.titel}</h2>
+              <span
+                className="text-sm font-semibold"
+                style={{ color: isBetaald ? '#3A7D52' : isVervallen ? '#C0451A' : '#3A5A9A' }}
               >
                 {isBetaald ? 'Betaald' : isVervallen ? 'Vervallen' : 'Openstaand'}<span style={{ color: '#F15025' }}>.</span>
-              </Badge>
+              </span>
             </div>
 
             <Separator />
 
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-[#6B6B66]">
                 <Building2 className="h-4 w-4" />
                 <span>Klant</span>
               </div>
-              <div className="font-medium text-foreground">{factuur.klant_naam || '-'}</div>
+              <div className="font-medium text-[#1A1A1A]">{factuur.klant_naam || '-'}</div>
 
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-[#6B6B66]">
                 <Calendar className="h-4 w-4" />
                 <span>Factuurdatum</span>
               </div>
-              <div className="font-medium font-mono text-foreground">{formatDate(factuur.factuurdatum)}</div>
+              <div className="font-medium font-mono text-[#1A1A1A]">{formatDate(factuur.factuurdatum)}</div>
 
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-[#6B6B66]">
                 <Calendar className="h-4 w-4" />
                 <span>Vervaldatum</span>
               </div>
-              <div className="font-medium font-mono text-foreground">{formatDate(factuur.vervaldatum)}</div>
+              <div className="font-medium font-mono text-[#1A1A1A]">{formatDate(factuur.vervaldatum)}</div>
             </div>
 
             <Separator />
 
             {/* Bedragen */}
             <div className="space-y-2">
-              <div className="flex justify-between text-sm text-muted-foreground">
+              <div className="flex justify-between text-sm text-[#6B6B66]">
                 <span>Subtotaal</span>
                 <span className="font-mono">{formatCurrency(factuur.subtotaal)}</span>
               </div>
-              <div className="flex justify-between text-sm text-muted-foreground">
+              <div className="flex justify-between text-sm text-[#6B6B66]">
                 <span>BTW</span>
                 <span className="font-mono">{formatCurrency(factuur.btw_bedrag)}</span>
               </div>
               {factuur.betaald_bedrag > 0 && !isBetaald && (
-                <div className="flex justify-between text-sm text-emerald-600">
+                <div className="flex justify-between text-sm text-[#3A7D52]">
                   <span>Reeds betaald</span>
                   <span className="font-mono">-{formatCurrency(factuur.betaald_bedrag)}</span>
                 </div>
               )}
               <Separator />
               <div className="flex justify-between items-center">
-                <span className="text-base font-bold text-foreground">
+                <span className="text-base font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>
                   {isBetaald ? 'Totaal betaald' : 'Te betalen'}
                 </span>
-                <span className="text-2xl font-bold font-mono text-blue-600">
+                <span className="text-2xl font-bold font-mono text-[#1A535C]">
                   {isBetaald
                     ? formatCurrency(factuur.totaal)
                     : formatCurrency(Math.max(0, factuur.totaal - factuur.betaald_bedrag))}
@@ -443,7 +444,7 @@ export function BetaalPagina() {
                 alert('PDF downloaden mislukt. Probeer het opnieuw.')
               }
             }}
-            className="gap-2 text-muted-foreground hover:text-foreground"
+            className="gap-2 text-[#6B6B66] hover:text-[#1A1A1A] border-[#EBEBEB]"
           >
             <Download className="h-4 w-4" />
             Download factuur als PDF
@@ -452,10 +453,10 @@ export function BetaalPagina() {
 
         {/* Creditfactuur: geen betaling, bedrag wordt verrekend/teruggestort */}
         {factuur.totaal < 0 && (
-          <Card>
+          <Card className="border-0 rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-foreground">Creditfactuur<span style={{ color: '#F15025' }}>.</span></h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h3 className="text-lg font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Creditfactuur<span style={{ color: '#F15025' }}>.</span></h3>
+              <p className="text-sm text-[#6B6B66] mt-1">
                 Dit is een creditfactuur van {formatCurrency(factuur.totaal)}. Dit bedrag wordt verrekend met een openstaande factuur of teruggestort. U hoeft niets te betalen.
               </p>
             </CardContent>
@@ -464,16 +465,16 @@ export function BetaalPagina() {
 
         {/* Mollie online betaling */}
         {!isBetaald && mollieEnabled && factuur.totaal > 0 && (
-          <Card className="border-blue-200 bg-blue-50/50">
+          <Card className="border-0 rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
             <CardContent className="p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Direct online betalen</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-lg font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Direct online betalen</h3>
+              <p className="text-sm text-[#6B6B66]">
                 Betaal veilig via iDEAL, creditcard, Bancontact of andere betaalmethoden.
               </p>
               <Button
                 onClick={handleMolliePay}
                 disabled={mollieLoading}
-                className="w-full h-12 text-base font-semibold gap-2"
+                className="w-full h-12 text-base font-semibold gap-2 bg-[#F15025] hover:bg-[#D9481F] text-white rounded-xl"
                 size="lg"
               >
                 {mollieLoading ? (
@@ -488,9 +489,9 @@ export function BetaalPagina() {
 
         {/* Betaalinformatie + QR (IBAN / bankoverschrijving) */}
         {!isBetaald && factuur.totaal > 0 && (
-          <Card>
+          <Card className="border-0 rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
             <CardContent className="p-6 space-y-6">
-              <h3 className="text-lg font-semibold text-foreground">
+              <h3 className="text-lg font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>
                 {mollieEnabled ? 'Of betaal via bankoverschrijving' : 'Betaalinformatie'}
               </h3>
 
@@ -499,7 +500,7 @@ export function BetaalPagina() {
                 {epcData && (
                   <div className="flex flex-col items-center gap-3">
                     <QRCodeCanvas data={epcData} size={180} />
-                    <p className="text-xs text-muted-foreground/60 text-center max-w-[180px]">
+                    <p className="text-xs text-[#9B9B95] text-center max-w-[180px]">
                       Scan met uw bank-app om direct te betalen
                     </p>
                   </div>
@@ -509,11 +510,11 @@ export function BetaalPagina() {
                 <div className="flex-1 space-y-4">
                   {companyIban && (
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                      <p className="text-xs font-medium text-[#9B9B95] uppercase tracking-wide mb-1">
                         IBAN
                       </p>
                       <div className="flex items-center gap-2">
-                        <code className="text-base font-mono font-semibold text-foreground bg-background px-3 py-1.5 rounded-lg">
+                        <code className="text-base font-mono font-semibold text-[#1A1A1A] bg-[#F8F7F5] px-3 py-1.5 rounded-lg">
                           {companyIban.replace(/(.{4})/g, '$1 ').trim()}
                         </code>
                         <Button
@@ -523,14 +524,14 @@ export function BetaalPagina() {
                           className="h-8 w-8 p-0"
                         >
                           {copied ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            <CheckCircle2 className="h-4 w-4 text-[#3A7D52]" />
                           ) : (
-                            <Copy className="h-4 w-4 text-muted-foreground/60" />
+                            <Copy className="h-4 w-4 text-[#9B9B95]" />
                           )}
                         </Button>
                       </div>
                       {companyProfile?.bedrijfsnaam && (
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-[#6B6B66] mt-1">
                           t.n.v. {companyProfile.bedrijfsnaam}
                         </p>
                       )}
@@ -538,28 +539,28 @@ export function BetaalPagina() {
                   )}
 
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                    <p className="text-xs font-medium text-[#9B9B95] uppercase tracking-wide mb-1">
                       Bedrag
                     </p>
-                    <p className="text-base font-semibold font-mono text-foreground">
+                    <p className="text-base font-semibold font-mono text-[#1A1A1A]">
                       {formatCurrency(Math.max(0, factuur.totaal - factuur.betaald_bedrag))}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                    <p className="text-xs font-medium text-[#9B9B95] uppercase tracking-wide mb-1">
                       Omschrijving / Kenmerk
                     </p>
-                    <code className="text-sm font-mono text-foreground bg-background px-3 py-1.5 rounded-lg inline-block">
+                    <code className="text-sm font-mono text-[#1A1A1A] bg-[#F8F7F5] px-3 py-1.5 rounded-lg inline-block">
                       {factuur.nummer}
                     </code>
                   </div>
 
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                    <p className="text-xs font-medium text-[#9B9B95] uppercase tracking-wide mb-1">
                       Uiterlijk betalen voor
                     </p>
-                    <p className="text-base font-semibold font-mono text-foreground">
+                    <p className="text-base font-semibold font-mono text-[#1A1A1A]">
                       {formatDate(factuur.vervaldatum)}
                     </p>
                   </div>
@@ -567,7 +568,7 @@ export function BetaalPagina() {
               </div>
 
               {!companyIban && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+                <div className="bg-[#F5F2E8] rounded-lg p-3 text-sm text-[#8A7A4A]">
                   Neem contact op met het bedrijf voor de bankgegevens om deze factuur te betalen.
                 </div>
               )}
@@ -575,8 +576,23 @@ export function BetaalPagina() {
           </Card>
         )}
 
+        {/* Bedrijfsgegevens (trust) */}
+        {companyProfile && (companyProfile.bedrijfsnaam || companyProfile.bedrijfs_adres || companyProfile.kvk_nummer || companyProfile.btw_nummer) && (
+          <div className="text-center text-xs text-[#9B9B95] space-y-1 pt-2">
+            {companyProfile.bedrijfsnaam && <p>{companyProfile.bedrijfsnaam}</p>}
+            {companyProfile.bedrijfs_adres && <p>{companyProfile.bedrijfs_adres}</p>}
+            {(companyProfile.kvk_nummer || companyProfile.btw_nummer) && (
+              <p>
+                {companyProfile.kvk_nummer ? `KvK ${companyProfile.kvk_nummer}` : ''}
+                {companyProfile.kvk_nummer && companyProfile.btw_nummer ? ' \u00b7 ' : ''}
+                {companyProfile.btw_nummer ? `BTW ${companyProfile.btw_nummer}` : ''}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground/60 pb-8">
+        <p className="text-center text-xs text-[#9B9B95] pb-8">
           Factuur {factuur.nummer}{companyProfile?.bedrijfsnaam ? ` \u00b7 ${companyProfile.bedrijfsnaam}` : ''}
         </p>
       </div>

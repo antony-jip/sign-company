@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { logger } from '@/utils/logger'
-import { useNavigate } from 'react-router-dom'
 import {
   Send, Paperclip, X, ArrowRight, ChevronDown, ChevronRight,
   ImageIcon, FileText, Receipt, CreditCard, Check, Eye, AlertCircle,
@@ -63,7 +62,7 @@ function AfzenderLabel({ item }: { item: PortaalItem }) {
       </span>
       {!isKlant && item.bekeken_op && (
         <span className="text-[10px] font-mono text-[#3A7D52] ml-auto">
-          ✓ Bekeken
+          ✓ Bekeken {relativeDate(item.bekeken_op)}
         </span>
       )}
     </div>
@@ -630,10 +629,7 @@ function InputBar({
 
 // ── Main Component ──
 
-const STORAGE_KEY = 'portaal-collapsed'
-
 export function PortaalCompactBlock({ projectId }: { projectId: string }) {
-  const navigate = useNavigate()
   const { user } = useAuth()
   const [portaal, setPortaal] = useState<ProjectPortaal | null>(null)
   const [items, setItems] = useState<PortaalItem[]>([])
@@ -641,15 +637,25 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
   const [moduleActief, setModuleActief] = useState<boolean | null>(null)
   const [isSending, setIsSending] = useState(false)
   const [activating, setActivating] = useState(false)
+  // Collapse-state per project — een globale key liet één inklap-actie
+  // gelden voor álle projecten.
+  const storageKey = `doen_portaal_collapsed_${projectId}`
   const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem(STORAGE_KEY) === 'true' } catch (err) { return false }
+    try { return localStorage.getItem(storageKey) === 'true' } catch (err) { return false }
   })
   const feedEndRef = useRef<HTMLDivElement>(null)
 
   const toggleCollapsed = () => {
     const next = !collapsed
     setCollapsed(next)
-    try { localStorage.setItem(STORAGE_KEY, String(next)) } catch (err) { logger.warn('[portaal] collapsed persist', err) }
+    try { localStorage.setItem(storageKey, String(next)) } catch (err) { logger.warn('[portaal] collapsed persist', err) }
+  }
+
+  const handleCopyLink = () => {
+    if (!portaal) return
+    navigator.clipboard.writeText(`${window.location.origin}/portaal/${portaal.token}`)
+      .then(() => toast.success('Portaallink gekopieerd'))
+      .catch(() => toast.error('Kopiëren mislukt'))
   }
 
   const hasKlantReactie = (() => {
@@ -693,9 +699,6 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
     fetch()
     return () => { cancelled = true }
   }, [projectId, user?.id])
-
-  // TODO: hooks-volgorde fix (moduleActief check vóór useEffect)
-  if (moduleActief === false) return null
 
   const handleActiveer = async () => {
     if (!user?.id || activating) return
@@ -754,11 +757,17 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
   }, [items.length, collapsed])
 
 
+  // Na alle hooks, zodat de hook-volgorde stabiel blijft bij her-renders
+  if (moduleActief === false) return null
   if (loading) return null
 
   const isVerlopen = portaal ? new Date(portaal.verloopt_op) < new Date() : false
   const isActief = !!portaal && portaal.actief && !isVerlopen
   const sharedCount = items.filter(i => i.type !== 'bericht').length
+  const laatstBekeken = items.reduce<string | null>((acc, i) => {
+    if (i.afzender !== 'klant' && i.bekeken_op && (!acc || new Date(i.bekeken_op) > new Date(acc))) return i.bekeken_op
+    return acc
+  }, null)
 
   return (
     <div className="rounded-xl shadow-[0_1px_3px_rgba(130,100,60,0.04)] overflow-hidden">
@@ -779,6 +788,11 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
           {portaal && sharedCount > 0 && (
             <span className="text-[11px] text-white/40 font-mono">{sharedCount} gedeeld</span>
           )}
+          {portaal && laatstBekeken && (
+            <span className="text-[11px] text-white/40 hidden sm:inline">
+              klant keek {relativeDate(laatstBekeken)}
+            </span>
+          )}
           {portaal && hasKlantReactie && (
             <span className="flex items-center gap-1 text-[11px] font-medium text-flame">
               <span className="w-1.5 h-1.5 rounded-full bg-flame animate-pulse" />
@@ -787,12 +801,22 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
           )}
         </div>
         {portaal ? (
-          <button
-            onClick={(e) => { e.stopPropagation(); navigate('/portalen') }}
-            className="text-[11px] font-medium text-white/60 hover:text-white flex items-center gap-1 transition-colors"
-          >
-            Openen <ArrowRight className="h-3 w-3" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleCopyLink() }}
+              className="text-[11px] font-medium text-white/60 hover:text-white flex items-center gap-1 transition-colors"
+              title="Kopieer de portaallink voor de klant"
+            >
+              <Link2 className="h-3 w-3" /> Kopieer link
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); window.open(`/portaal/${portaal.token}`, '_blank', 'noopener') }}
+              className="text-[11px] font-medium text-white/60 hover:text-white flex items-center gap-1 transition-colors"
+              title="Open het portaal zoals de klant het ziet"
+            >
+              <Eye className="h-3 w-3" /> Bekijk als klant
+            </button>
+          </div>
         ) : (
           <button
             onClick={handleActiveer}

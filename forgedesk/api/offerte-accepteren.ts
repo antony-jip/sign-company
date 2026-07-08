@@ -68,7 +68,7 @@ function buildPortalEmailHtml(params: {
   ctaUrl?: string; bedrijfsnaam?: string; quote?: string; logoUrl?: string; primaireKleur?: string
   extraHtml?: string
 }): string {
-  const { heading, itemTitel, beschrijving, ctaLabel = 'Bekijk in Doen. →', ctaUrl, bedrijfsnaam, quote, logoUrl, primaireKleur, extraHtml } = params
+  const { heading, itemTitel, beschrijving, ctaLabel = 'Bekijk online →', ctaUrl, bedrijfsnaam, quote, logoUrl, primaireKleur, extraHtml } = params
   const sage = primaireKleur || '#5A8264'
   const sageLight = primaireKleur ? `${primaireKleur}18` : '#E4EBE6'
   const bgOuter = '#F4F3F0', bgCard = '#FFFFFF', textDark = '#1A1A1A', textMuted = '#5A5A55', textLight = '#8A8A85', borderLight = '#E8E8E3'
@@ -77,10 +77,12 @@ function buildPortalEmailHtml(params: {
   const extra = extraHtml ? `<tr><td style="padding: 0 0 16px 0;">${extraHtml}</td></tr>` : ''
   const groetBlock = bedrijfsnaam ? `<tr><td style="padding: 16px 0 0 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.8;">Met vriendelijke groet,<br/><strong style="color: ${textDark};">${escapeHtml(bedrijfsnaam)}</strong></td></tr>` : ''
   const ctaBlock = ctaUrl ? `<tr><td style="padding: 8px 0 0 0;" align="center"><a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background-color: ${sage}; color: #FFFFFF; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">${escapeHtml(ctaLabel)}</a></td></tr>` : ''
-  const footerText = bedrijfsnaam ? `Verzonden via Doen. namens ${escapeHtml(bedrijfsnaam)}` : 'Verzonden via Doen.'
+  const footerText = bedrijfsnaam ? `Verzonden namens ${escapeHtml(bedrijfsnaam)}` : ''
   const logoHtml = logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
-    : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;"><strong>Doen.</strong></span>`
+    : bedrijfsnaam
+    ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;"><strong>${escapeHtml(bedrijfsnaam)}</strong></span>`
+    : ''
   return `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin: 0; padding: 0; background-color: ${bgOuter}; -webkit-font-smoothing: antialiased;"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: ${bgOuter}; padding: 40px 0;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 0 0 24px 0; text-align: center;">${logoHtml}</td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: ${bgCard}; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.04);"><tr><td style="padding: 40px 40px 36px 40px;"><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0 0 24px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; line-height: 1.3;">${escapeHtml(heading)}</td></tr>${itemBlock}${extra}${quoteBlock}${groetBlock}${ctaBlock}</table></td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 24px 0 0 0; text-align: center; font-family: 'DM Sans', Arial, sans-serif; font-size: 12px; color: ${textLight}; line-height: 1.6;">${footerText}</td></tr></table></td></tr></table></body></html>`
 }
 // ---- Einde inline email template ----
@@ -251,6 +253,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     } catch (emailErr) {
       console.error('[offerte-accepteren] email notificatie mislukt:', emailErr)
+    }
+
+    // Bevestigingsmail naar de klant — branded namens het bedrijf
+    try {
+      let klantEmail: string | null = null
+      if (offerte.klant_id) {
+        const { data: klant } = await supabaseAdmin
+          .from('klanten')
+          .select('email')
+          .eq('id', offerte.klant_id)
+          .maybeSingle()
+        klantEmail = klant?.email || null
+      }
+
+      if (klantEmail) {
+        let bedrijfUserId = offerte.user_id
+        if (offerte.organisatie_id) {
+          const { data: org } = await supabaseAdmin
+            .from('organisaties')
+            .select('eigenaar_id')
+            .eq('id', offerte.organisatie_id)
+            .maybeSingle()
+          if (org?.eigenaar_id) bedrijfUserId = org.eigenaar_id
+        }
+        const { data: bedrijfsProfiel } = await supabaseAdmin
+          .from('profiles')
+          .select('bedrijfsnaam, logo_url, bedrijfs_email')
+          .eq('id', bedrijfUserId)
+          .maybeSingle()
+        const bedrijfsnaam = bedrijfsProfiel?.bedrijfsnaam || ''
+
+        const html = buildPortalEmailHtml({
+          heading: 'Bedankt voor uw akkoord',
+          itemTitel: `${offerte.nummer}${offerte.titel ? ` — ${offerte.titel}` : ''}`,
+          beschrijving: `Geaccepteerd door ${naam.trim()} op ${formatDate(new Date())}${offerte.totaal ? ` · ${formatCurrency(offerte.totaal)}` : ''}`,
+          quote: 'We nemen zo snel mogelijk contact met u op over de vervolgstappen.',
+          bedrijfsnaam: bedrijfsnaam || undefined,
+          logoUrl: bedrijfsProfiel?.logo_url || undefined,
+        })
+
+        const { Resend } = await import('resend')
+        const resendClient = new Resend(process.env.RESEND_API_KEY)
+        await resendClient.emails.send({
+          from: `"${(bedrijfsnaam || 'doen.').replace(/"/g, '')}" <noreply@doen.team>`,
+          to: klantEmail,
+          replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
+          subject: `Bevestiging: offerte ${offerte.nummer} geaccepteerd`,
+          html,
+        })
+        console.log('[offerte-accepteren] klant-bevestiging verzonden naar:', klantEmail)
+      }
+    } catch (klantMailErr) {
+      console.error('[offerte-accepteren] klant-bevestiging mislukt:', klantMailErr)
     }
 
     return res.status(200).json({

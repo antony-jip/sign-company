@@ -36,6 +36,28 @@ const MOLLIE_WEBHOOK_SECRET = process.env.MOLLIE_WEBHOOK_SECRET || ''
 
 const MOLLIE_API_BASE = 'https://api.mollie.com/v2/payments'
 
+// ---- Inline betaalbevestiging-email (Vercel bundelt geen lokale imports in api/) ----
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function buildBetaalbevestigingHtml(params: {
+  bedrijfsnaam?: string; logoUrl?: string; factuurNummer?: string; bedrag: string
+}): string {
+  const { bedrijfsnaam, logoUrl, factuurNummer, bedrag } = params
+  const textDark = '#1A1A1A', textMuted = '#5A5A55', textLight = '#8A8A85', borderLight = '#E8E8E3'
+  const logoHtml = logoUrl
+    ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
+    : bedrijfsnaam
+    ? `<span style="font-family: Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;"><strong>${escapeHtml(bedrijfsnaam)}</strong></span>`
+    : ''
+  const itemBlock = `<tr><td style="padding: 0 0 16px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid ${borderLight}; border-radius: 8px;"><tr><td style="padding: 16px 20px; font-family: Arial, sans-serif; font-size: 15px; font-weight: 600; color: ${textDark};">${factuurNummer ? `Factuur ${escapeHtml(factuurNummer)}` : 'Uw factuur'}</td></tr><tr><td style="padding: 0 20px 16px 20px; font-family: Arial, sans-serif; font-size: 14px; color: ${textMuted};">Ontvangen bedrag: <strong style="color: ${textDark};">${escapeHtml(bedrag)}</strong></td></tr></table></td></tr>`
+  const groetBlock = bedrijfsnaam ? `<tr><td style="padding: 16px 0 0 0; font-family: Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.8;">Met vriendelijke groet,<br/><strong style="color: ${textDark};">${escapeHtml(bedrijfsnaam)}</strong></td></tr>` : ''
+  const footerText = bedrijfsnaam ? `Verzonden namens ${escapeHtml(bedrijfsnaam)}` : ''
+  return `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin: 0; padding: 0; background-color: #F4F3F0;"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F4F3F0; padding: 40px 0;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 0 0 24px 0; text-align: center;">${logoHtml}</td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #FFFFFF; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.04);"><tr><td style="padding: 40px 40px 36px 40px;"><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0 0 24px 0; font-family: Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; line-height: 1.3;">Betaling ontvangen</td></tr><tr><td style="padding: 0 0 20px 0; font-family: Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.6;">Hartelijk dank voor uw betaling. Hieronder vindt u de bevestiging.</td></tr>${itemBlock}${groetBlock}</table></td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 24px 0 0 0; text-align: center; font-family: Arial, sans-serif; font-size: 12px; color: ${textLight}; line-height: 1.6;">${footerText}</td></tr></table></td></tr></table></body></html>`
+}
+// ---- Einde inline email template ----
+
 // -- Integration credential decryption (copied from api/save-integration-settings.ts) --
 const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
 function decryptSecret(text: string): string {
@@ -89,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Zoek de factuur met dit mollie_payment_id om de user_id te achterhalen
     const { data: factuur, error: factuurLookupError } = await supabase
       .from('facturen')
-      .select('id, user_id, organisatie_id, totaal, betaald_bedrag, status')
+      .select('id, user_id, organisatie_id, totaal, betaald_bedrag, status, nummer, klant_id')
       .eq('mollie_payment_id', paymentId)
       .single()
 
@@ -211,6 +233,73 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (volledigVoldaan) {
         console.log(`Factuur ${factuur.id} gemarkeerd als betaald via Mollie`)
+
+        // In-app notificatie voor het bedrijf (niet-blokkerend)
+        try {
+          await supabase.from('notificaties').insert({
+            user_id: factuur.user_id,
+            type: 'betaling_ontvangen',
+            titel: factuur.nummer ? `Factuur ${factuur.nummer} betaald` : 'Factuur betaald',
+            bericht: `${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(betaaldNu)} ontvangen via Mollie`,
+            link: '/facturen',
+            gelezen: false,
+          })
+        } catch (notifErr) {
+          console.warn('Mollie webhook: notificatie aanmaken mislukt:', notifErr)
+        }
+
+        // Betaalbevestiging naar de klant, branded namens het bedrijf (niet-blokkerend)
+        try {
+          let klantEmail: string | null = null
+          if (factuur.klant_id) {
+            const { data: klant } = await supabase
+              .from('klanten')
+              .select('email')
+              .eq('id', factuur.klant_id)
+              .maybeSingle()
+            klantEmail = klant?.email || null
+          }
+
+          if (klantEmail) {
+            let bedrijfUserId = factuur.user_id
+            if (factuurOrgId) {
+              const { data: org } = await supabase
+                .from('organisaties')
+                .select('eigenaar_id')
+                .eq('id', factuurOrgId)
+                .maybeSingle()
+              if (org?.eigenaar_id) bedrijfUserId = org.eigenaar_id
+            }
+            const { data: bedrijfsProfiel } = await supabase
+              .from('profiles')
+              .select('bedrijfsnaam, logo_url, bedrijfs_email')
+              .eq('id', bedrijfUserId)
+              .maybeSingle()
+            const bedrijfsnaam = bedrijfsProfiel?.bedrijfsnaam || ''
+
+            const html = buildBetaalbevestigingHtml({
+              bedrijfsnaam: bedrijfsnaam || undefined,
+              logoUrl: bedrijfsProfiel?.logo_url || undefined,
+              factuurNummer: factuur.nummer || undefined,
+              bedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(betaaldNu),
+            })
+
+            const { Resend } = await import('resend')
+            const resendClient = new Resend(process.env.RESEND_API_KEY)
+            await resendClient.emails.send({
+              from: `"${(bedrijfsnaam || 'doen.').replace(/"/g, '')}" <noreply@doen.team>`,
+              to: klantEmail,
+              replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
+              subject: factuur.nummer
+                ? `Betaalbevestiging factuur ${factuur.nummer}`
+                : 'Betaalbevestiging',
+              html,
+            })
+            console.log('Mollie webhook: betaalbevestiging verzonden')
+          }
+        } catch (mailErr) {
+          console.warn('Mollie webhook: betaalbevestiging mislukt:', mailErr)
+        }
       } else {
         console.warn(`Mollie webhook: deelbetaling €${betaaldNu} op factuur ${factuur.id} (totaal €${totaal}), niet als voldaan gemarkeerd`)
         Sentry.captureMessage(`Mollie deelbetaling: factuur ${factuur.id} betaald €${nieuwBetaald} van €${totaal}`, 'warning')

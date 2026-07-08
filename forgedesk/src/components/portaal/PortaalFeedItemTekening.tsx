@@ -15,7 +15,7 @@ interface PortaalFeedItemTekeningProps {
   klantNaam: string
   kanGoedkeuren: boolean
   onReactie: () => void
-  onVragenStellen: () => void
+  onVragenStellen?: () => void
   onImageClick?: (url: string) => void
 }
 
@@ -26,19 +26,15 @@ function formatFileSize(bytes: number): string {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { bg: string; color: string; label: string }> = {
-    verstuurd: { bg: '#FDE8E4', color: '#F15025', label: 'verstuurd.' },
-    goedgekeurd: { bg: '#E8F2EC', color: '#2D6B48', label: 'goedgekeurd.' },
-    revisie: { bg: '#EEE8F9', color: '#6A4A9A', label: 'revisie.' },
+  const map: Record<string, { color: string; label: string }> = {
+    verstuurd: { color: '#3A5A9A', label: 'verstuurd' },
+    goedgekeurd: { color: '#3A7D52', label: 'goedgekeurd' },
+    revisie: { color: '#6A4A9A', label: 'revisie' },
   }
   const s = map[status] || map.verstuurd
   return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-      style={{ backgroundColor: s.bg, color: s.color }}
-    >
-      <span style={{ color: '#F15025', fontSize: 8 }}>●</span>
-      {s.label}
+    <span className="inline-flex items-baseline text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>
+      {s.label}<span style={{ color: '#F15025' }}>.</span>
     </span>
   )
 }
@@ -54,6 +50,7 @@ export function PortaalFeedItemTekening({
 }: PortaalFeedItemTekeningProps) {
   const [loading, setLoading] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'goedkeuren' | 'revisie' | null>(null)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; tekst: string } | null>(null)
   const isAfgehandeld = ['goedgekeurd', 'revisie'].includes(item.status)
   const images = (item.bestanden || []).filter(b => b.mime_type?.startsWith('image/'))
   const pdfFiles = (item.bestanden || []).filter(b => b.mime_type === 'application/pdf' || b.bestandsnaam?.toLowerCase().endsWith('.pdf'))
@@ -61,6 +58,7 @@ export function PortaalFeedItemTekening({
 
   async function handleAction(type: 'goedkeuring' | 'revisie') {
     setLoading(true)
+    setFeedback(null)
     try {
       const response = await fetch('/api/portaal-reactie', {
         method: 'POST',
@@ -77,9 +75,16 @@ export function PortaalFeedItemTekening({
         throw new Error(err.error || 'Actie mislukt')
       }
       setConfirmAction(null)
+      setFeedback({
+        type: 'success',
+        tekst: type === 'goedkeuring' ? 'Uw goedkeuring is ontvangen.' : 'Uw revisieverzoek is verstuurd.',
+      })
       onReactie()
     } catch (err) {
-      console.error('Tekening actie mislukt:', err)
+      setFeedback({
+        type: 'error',
+        tekst: err instanceof Error ? err.message : 'Er ging iets mis. Probeer het opnieuw of neem contact op.',
+      })
     } finally {
       setLoading(false)
     }
@@ -195,6 +200,15 @@ export function PortaalFeedItemTekening({
           )}
         </div>
 
+        {feedback && (
+          <p
+            className="px-5 pb-3 text-sm font-medium"
+            style={{ color: feedback.type === 'success' ? '#3A7D52' : '#C0451A' }}
+          >
+            {feedback.tekst}
+          </p>
+        )}
+
         {/* Actions */}
         {!isAfgehandeld && kanGoedkeuren && (
           <div className="px-5 py-3 border-t" style={{ borderColor: '#F0EEEA' }}>
@@ -235,7 +249,7 @@ export function PortaalFeedItemTekening({
                 <button
                   onClick={() => {
                     setConfirmAction('revisie')
-                    onVragenStellen()
+                    onVragenStellen?.()
                   }}
                   className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted"
                   style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}

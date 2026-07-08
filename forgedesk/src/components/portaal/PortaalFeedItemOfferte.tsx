@@ -16,7 +16,7 @@ interface PortaalFeedItemOfferteProps {
   klantNaam: string
   kanGoedkeuren: boolean
   onReactie: () => void
-  onVragenStellen: () => void
+  onVragenStellen?: () => void
 }
 
 function formatBedrag(bedrag: number): string {
@@ -24,20 +24,16 @@ function formatBedrag(bedrag: number): string {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { bg: string; color: string; label: string }> = {
-    verstuurd: { bg: '#FDE8E4', color: '#F15025', label: 'verstuurd.' },
-    geaccepteerd: { bg: '#E8F2EC', color: '#2D6B48', label: 'geaccepteerd.' },
-    goedgekeurd: { bg: '#E8F2EC', color: '#2D6B48', label: 'geaccepteerd.' },
-    betaald: { bg: '#E8F2EC', color: '#2D6B48', label: 'betaald.' },
+  const map: Record<string, { color: string; label: string }> = {
+    verstuurd: { color: '#3A5A9A', label: 'verstuurd' },
+    geaccepteerd: { color: '#3A7D52', label: 'geaccepteerd' },
+    goedgekeurd: { color: '#3A7D52', label: 'geaccepteerd' },
+    betaald: { color: '#3A7D52', label: 'betaald' },
   }
   const s = map[status] || map.verstuurd
   return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-      style={{ backgroundColor: s.bg, color: s.color }}
-    >
-      <span style={{ color: '#F15025', fontSize: 8 }}>●</span>
-      {s.label}
+    <span className="inline-flex items-baseline text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>
+      {s.label}<span style={{ color: '#F15025' }}>.</span>
     </span>
   )
 }
@@ -52,10 +48,12 @@ export function PortaalFeedItemOfferte({
 }: PortaalFeedItemOfferteProps) {
   const [loading, setLoading] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; tekst: string } | null>(null)
   const isAfgehandeld = ['goedgekeurd', 'geaccepteerd', 'betaald'].includes(item.status)
 
   async function handleAccepteren() {
     setLoading(true)
+    setFeedback(null)
     try {
       const response = await fetch('/api/portaal-reactie', {
         method: 'POST',
@@ -72,9 +70,13 @@ export function PortaalFeedItemOfferte({
         throw new Error(err.error || 'Kon niet accepteren')
       }
       setConfirmOpen(false)
+      setFeedback({ type: 'success', tekst: 'Uw akkoord is ontvangen. Bedankt voor uw vertrouwen.' })
       onReactie()
     } catch (err) {
-      console.error('Accepteren mislukt:', err)
+      setFeedback({
+        type: 'error',
+        tekst: err instanceof Error ? err.message : 'Er ging iets mis. Probeer het opnieuw of neem contact op.',
+      })
     } finally {
       setLoading(false)
     }
@@ -93,7 +95,7 @@ export function PortaalFeedItemOfferte({
             <div className="min-w-0">
               <p
                 className="font-semibold truncate"
-                style={{ fontSize: 15, color: 'hsl(var(--foreground))', fontFamily: "'DM Sans', sans-serif" }}
+                style={{ fontSize: 15, color: 'hsl(var(--foreground))' }}
               >
                 {item.titel}
               </p>
@@ -160,6 +162,15 @@ export function PortaalFeedItemOfferte({
           )}
         </div>
 
+        {feedback && (
+          <p
+            className="px-5 pb-3 text-sm font-medium"
+            style={{ color: feedback.type === 'success' ? '#3A7D52' : '#C0451A' }}
+          >
+            {feedback.tekst}
+          </p>
+        )}
+
         {/* Actions */}
         {!isAfgehandeld && kanGoedkeuren && (
           <div className="px-5 py-3 border-t flex items-center gap-2" style={{ borderColor: '#F0EEEA' }}>
@@ -195,13 +206,15 @@ export function PortaalFeedItemOfferte({
                 >
                   Accepteren
                 </button>
-                <button
-                  onClick={onVragenStellen}
-                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
-                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
-                >
-                  Vragen stellen
-                </button>
+                {onVragenStellen && (
+                  <button
+                    onClick={onVragenStellen}
+                    className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
+                    style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
+                  >
+                    Vragen stellen
+                  </button>
+                )}
               </>
             )}
           </div>

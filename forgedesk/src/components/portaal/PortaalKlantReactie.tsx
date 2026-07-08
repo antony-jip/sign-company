@@ -57,7 +57,7 @@ export function PortaalKlantReactie({
         )}
         <span
           className="text-xs ml-auto"
-          style={{ color: '#C0BDB8', fontFamily: "'DM Mono', monospace" }}
+          style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}
         >
           {formatTijd(createdAt)}
         </span>

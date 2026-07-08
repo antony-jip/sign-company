@@ -30,6 +30,8 @@ interface PortaalFeedProps {
   bedrijfNaam?: string
   kanOfferteGoedkeuren?: boolean
   kanTekeningGoedkeuren?: boolean
+  kanBerichtenSturen?: boolean
+  kanBestandenUploaden?: boolean
   isPublic: boolean
   onReactie: () => void
   onImageClick?: (url: string) => void
@@ -42,6 +44,8 @@ export function PortaalFeed({
   bedrijfNaam,
   kanOfferteGoedkeuren = true,
   kanTekeningGoedkeuren = true,
+  kanBerichtenSturen = true,
+  kanBestandenUploaden = true,
   isPublic,
   onReactie,
   onImageClick,
@@ -56,7 +60,7 @@ export function PortaalFeed({
   if (sorted.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm" style={{ color: '#A0A098' }}>
+        <p className="text-sm" style={{ color: '#6B6B66' }}>
           {isPublic
             ? 'Er zijn nog geen items gedeeld.'
             : 'Nog geen items in het portaal. Voeg een item toe via de knop hierboven.'}
@@ -76,6 +80,8 @@ export function PortaalFeed({
           bedrijfNaam={bedrijfNaam}
           kanOfferteGoedkeuren={kanOfferteGoedkeuren}
           kanTekeningGoedkeuren={kanTekeningGoedkeuren}
+          kanBerichtenSturen={kanBerichtenSturen}
+          kanBestandenUploaden={kanBestandenUploaden}
           onReactie={onReactie}
           onImageClick={onImageClick}
           isPublic={isPublic}

@@ -37,6 +37,8 @@ interface PortaalFeedItemProps {
   bedrijfNaam?: string
   kanOfferteGoedkeuren: boolean
   kanTekeningGoedkeuren: boolean
+  kanBerichtenSturen?: boolean
+  kanBestandenUploaden?: boolean
   onReactie: () => void
   onImageClick?: (url: string) => void
   isPublic: boolean
@@ -49,6 +51,8 @@ export function PortaalFeedItem({
   bedrijfNaam,
   kanOfferteGoedkeuren,
   kanTekeningGoedkeuren,
+  kanBerichtenSturen = true,
+  kanBestandenUploaden = true,
   onReactie,
   onImageClick,
   isPublic,
@@ -64,7 +68,8 @@ export function PortaalFeedItem({
       ? 'offerte'
       : item.type
 
-  const handleVragenStellen = () => setShowReactieForm(true)
+  // Zonder berichten-recht geen vragen-stellen-knop en geen reactieformulier
+  const handleVragenStellen = kanBerichtenSturen ? () => setShowReactieForm(true) : undefined
 
   return (
     <div className="space-y-2">
@@ -148,12 +153,13 @@ export function PortaalFeedItem({
       )}
 
       {/* Inline reactie form */}
-      {showReactieForm && isPublic && (
+      {showReactieForm && isPublic && kanBerichtenSturen && (
         <PortaalReactieFormInline
           token={token}
           itemId={item.id}
           itemTitel={item.titel}
           klantNaam={klantNaam}
+          kanFotoToevoegen={kanBestandenUploaden}
           onClose={() => setShowReactieForm(false)}
           onReactie={() => {
             setShowReactieForm(false)

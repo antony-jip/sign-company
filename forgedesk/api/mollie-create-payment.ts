@@ -199,6 +199,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const redirectAfterPayment = (redirect_url && isAllowedRedirectUrl(redirect_url))
       ? redirect_url
+      : betaal_token
+      ? `${DEFAULT_REDIRECT}/betaald?token=${encodeURIComponent(betaal_token)}`
       : `${DEFAULT_REDIRECT}/betaald?factuur_id=${factuur_id}`
 
     // Hergebruik bestaande open Mollie payment indien beschikbaar — voorkomt dat

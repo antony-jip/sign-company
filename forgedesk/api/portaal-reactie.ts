@@ -26,6 +26,41 @@ function decrypt(encrypted: string): string {
   return decrypted
 }
 
+// Spiegel van DEFAULT_INSTELLINGEN in api/portaal-get.ts voor de velden die
+// hier gehandhaafd worden — berichten staan standaard UIT.
+const INSTELLINGEN_DEFAULTS = {
+  klant_kan_offerte_goedkeuren: true,
+  klant_kan_tekening_goedkeuren: true,
+  klant_kan_bestanden_uploaden: true,
+  klant_kan_berichten_sturen: false,
+  max_bestandsgrootte_mb: 10,
+}
+
+// Org-first via portaal.organisatie_id, met order+limit omdat een org
+// meerdere app_settings-rijen kan hebben (zelfde patroon als portaal-get).
+async function getPortaalInstellingen(orgId: string | null, userId: string): Promise<Record<string, unknown>> {
+  let rij: { portaal_instellingen: unknown } | null = null
+  if (orgId) {
+    const { data } = await supabaseAdmin
+      .from('app_settings')
+      .select('portaal_instellingen')
+      .eq('organisatie_id', orgId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    rij = data
+  }
+  if (!rij) {
+    const { data } = await supabaseAdmin
+      .from('app_settings')
+      .select('portaal_instellingen')
+      .eq('user_id', userId)
+      .maybeSingle()
+    rij = data
+  }
+  return { ...INSTELLINGEN_DEFAULTS, ...((rij?.portaal_instellingen as Record<string, unknown>) || {}) }
+}
+
 // ---- Inline email template (Vercel bundelt geen lokale imports in api/) ----
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -90,7 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Valideer token
     const { data: portaal } = await supabaseAdmin
       .from('project_portalen')
-      .select('id, actief, verloopt_op, user_id, project_id')
+      .select('id, actief, verloopt_op, user_id, project_id, organisatie_id')
       .eq('token', token)
       .single()
 
@@ -116,6 +151,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!item || !item.zichtbaar_voor_klant) {
       return res.status(404).json({ error: 'Item niet gevonden' })
+    }
+
+    // Portaal-instellingen server-side afdwingen — de capaciteit-toggles
+    // werden voorheen alleen deels client-side gerespecteerd.
+    const instellingen = await getPortaalInstellingen(portaal.organisatie_id ?? null, portaal.user_id)
+    if (type === 'bericht' && instellingen.klant_kan_berichten_sturen === false) {
+      return res.status(403).json({ error: 'Berichten sturen is uitgeschakeld voor dit portaal.' })
+    }
+    if ((foto_url || (bestanden && bestanden.length > 0)) && instellingen.klant_kan_bestanden_uploaden === false) {
+      return res.status(403).json({ error: 'Bestanden meesturen is uitgeschakeld voor dit portaal.' })
+    }
+    if (type === 'goedkeuring' && item.type === 'offerte' && instellingen.klant_kan_offerte_goedkeuren === false) {
+      return res.status(403).json({ error: 'Offertes goedkeuren via het portaal is uitgeschakeld.' })
+    }
+    if ((type === 'goedkeuring' || type === 'revisie') && item.type === 'tekening' && instellingen.klant_kan_tekening_goedkeuren === false) {
+      return res.status(403).json({ error: 'Tekeningen goedkeuren via het portaal is uitgeschakeld.' })
+    }
+
+    // Goedkeuring-guards: zelfde regels als /api/offerte-accepteren, zodat
+    // de portaal-route geen verlopen of al-afgehandelde offertes goedkeurt.
+    if (type === 'goedkeuring' && item.status === 'goedgekeurd') {
+      return res.status(409).json({ error: 'Dit item is al goedgekeurd.' })
+    }
+
+    let offerteVooraf: { id: string; user_id: string | null; status: string; geldig_tot: string | null; nummer: string | null; titel: string | null } | null = null
+    if (type === 'goedkeuring' && item.type === 'offerte') {
+      const { data: itemMetOfferte } = await supabaseAdmin
+        .from('portaal_items')
+        .select('offerte_id')
+        .eq('id', portaal_item_id)
+        .single()
+
+      if (itemMetOfferte?.offerte_id) {
+        const { data: offerte } = await supabaseAdmin
+          .from('offertes')
+          .select('id, user_id, status, geldig_tot, nummer, titel')
+          .eq('id', itemMetOfferte.offerte_id)
+          .single()
+
+        if (offerte) {
+          if (offerte.status === 'goedgekeurd') {
+            return res.status(409).json({ error: 'Deze offerte is al geaccepteerd.' })
+          }
+          if (['afgewezen', 'gefactureerd'].includes(offerte.status)) {
+            return res.status(409).json({ error: 'Deze offerte kan niet meer geaccepteerd worden. Neem contact op met het bedrijf.' })
+          }
+          if (offerte.geldig_tot && new Date(offerte.geldig_tot) < new Date()) {
+            return res.status(410).json({ error: 'Deze offerte is verlopen. Vraag het bedrijf om een nieuwe versie.' })
+          }
+          offerteVooraf = offerte
+        }
+      }
     }
 
     // Sla reactie op
@@ -147,33 +234,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Bij offerte goedkeuring: offerte status + keuzes bijwerken
     let offerteUserId: string | null = null
-    if (type === 'goedkeuring' && item.type === 'offerte') {
-      const { data: fullPortaalItem } = await supabaseAdmin
-        .from('portaal_items')
-        .select('offerte_id')
-        .eq('id', portaal_item_id)
-        .single()
+    if (type === 'goedkeuring' && offerteVooraf) {
+      const offerteUpdate: Record<string, unknown> = {
+        status: 'goedgekeurd',
+        geaccepteerd_door: klant_naam?.trim() || null,
+        geaccepteerd_op: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      if (gekozen_items) offerteUpdate.gekozen_items = gekozen_items
+      if (gekozen_varianten) offerteUpdate.gekozen_varianten = gekozen_varianten
+      await supabaseAdmin.from('offertes').update(offerteUpdate).eq('id', offerteVooraf.id)
 
-      if (fullPortaalItem?.offerte_id) {
-        const offerteUpdate: Record<string, unknown> = {
-          status: 'goedgekeurd',
-          geaccepteerd_door: klant_naam?.trim() || null,
-          geaccepteerd_op: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-        if (gekozen_items) offerteUpdate.gekozen_items = gekozen_items
-        if (gekozen_varianten) offerteUpdate.gekozen_varianten = gekozen_varianten
-        await supabaseAdmin.from('offertes').update(offerteUpdate).eq('id', fullPortaalItem.offerte_id)
-
-        // Haal offerte-eigenaar op voor notificatie (kan verschillen van portaal-aanmaker)
-        const { data: offerte } = await supabaseAdmin
-          .from('offertes')
-          .select('user_id')
-          .eq('id', fullPortaalItem.offerte_id)
-          .single()
-        if (offerte?.user_id && offerte.user_id !== portaal.user_id) {
-          offerteUserId = offerte.user_id
-        }
+      // Offerte-eigenaar kan verschillen van portaal-aanmaker
+      if (offerteVooraf.user_id && offerteVooraf.user_id !== portaal.user_id) {
+        offerteUserId = offerteVooraf.user_id
       }
     }
 
@@ -298,6 +372,77 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     } catch (notifErr) {
       console.error('[portaal-reactie] notificatie/email error:', notifErr)
+    }
+
+    // --- Bevestigingsmail naar de klant bij offerte-akkoord (niet-blokkerend) ---
+    if (type === 'goedkeuring' && offerteVooraf) {
+      try {
+        const { data: projectVoorKlant } = await supabaseAdmin
+          .from('projecten')
+          .select('klant_id')
+          .eq('id', portaal.project_id)
+          .single()
+
+        let klantEmail: string | null = null
+        if (projectVoorKlant?.klant_id) {
+          const { data: klant } = await supabaseAdmin
+            .from('klanten')
+            .select('email')
+            .eq('id', projectVoorKlant.klant_id)
+            .maybeSingle()
+          klantEmail = klant?.email || null
+        }
+
+        if (klantEmail) {
+          // Bedrijfsbranding via org-eigenaar, zelfde patroon als factuur-portaal
+          let bedrijfUserId = portaal.user_id
+          const { data: profielRij } = await supabaseAdmin
+            .from('profiles')
+            .select('organisatie_id')
+            .eq('id', portaal.user_id)
+            .maybeSingle()
+          if (profielRij?.organisatie_id) {
+            const { data: org } = await supabaseAdmin
+              .from('organisaties')
+              .select('eigenaar_id')
+              .eq('id', profielRij.organisatie_id)
+              .maybeSingle()
+            if (org?.eigenaar_id) bedrijfUserId = org.eigenaar_id
+          }
+          const { data: bedrijfsProfiel } = await supabaseAdmin
+            .from('profiles')
+            .select('bedrijfsnaam, logo_url, bedrijfs_email')
+            .eq('id', bedrijfUserId)
+            .maybeSingle()
+          const bedrijfsnaam = bedrijfsProfiel?.bedrijfsnaam || ''
+
+          const html = buildPortalEmailHtml({
+            heading: 'Bedankt voor uw akkoord',
+            itemTitel: offerteVooraf.nummer
+              ? `${offerteVooraf.nummer}${offerteVooraf.titel ? ` — ${offerteVooraf.titel}` : ''}`
+              : offerteVooraf.titel || 'Offerte',
+            beschrijving: `Geaccepteerd${klant_naam?.trim() ? ` door ${klant_naam.trim()}` : ''}.`,
+            quote: 'We nemen zo snel mogelijk contact met u op over de vervolgstappen.',
+            bedrijfsnaam: bedrijfsnaam || undefined,
+            logoUrl: bedrijfsProfiel?.logo_url || undefined,
+          })
+
+          const { Resend } = await import('resend')
+          const resendClient = new Resend(process.env.RESEND_API_KEY)
+          await resendClient.emails.send({
+            from: `"${(bedrijfsnaam || 'doen.').replace(/"/g, '')}" <noreply@doen.team>`,
+            to: klantEmail,
+            replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
+            subject: offerteVooraf.nummer
+              ? `Bevestiging: offerte ${offerteVooraf.nummer} geaccepteerd`
+              : 'Bevestiging van uw akkoord',
+            html,
+          })
+          console.log('[portaal-reactie] klant-bevestiging verzonden naar:', klantEmail)
+        }
+      } catch (klantMailErr) {
+        console.warn('[portaal-reactie] klant-bevestiging mislukt:', klantMailErr)
+      }
     }
 
     // --- Trigger.dev: log activiteit (fire-and-forget, fallback naar directe insert) ---

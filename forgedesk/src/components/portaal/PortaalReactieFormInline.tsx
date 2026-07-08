@@ -6,6 +6,7 @@ interface PortaalReactieFormInlineProps {
   itemId: string
   itemTitel: string
   klantNaam: string
+  kanFotoToevoegen?: boolean
   onClose: () => void
   onReactie: () => void
 }
@@ -29,6 +30,7 @@ export function PortaalReactieFormInline({
   itemId,
   itemTitel,
   klantNaam,
+  kanFotoToevoegen = true,
   onClose,
   onReactie,
 }: PortaalReactieFormInlineProps) {
@@ -129,7 +131,7 @@ export function PortaalReactieFormInline({
         </p>
         <button
           onClick={onClose}
-          className="p-1 rounded hover:bg-gray-200/50 transition-colors"
+          className="p-1 rounded hover:bg-muted transition-colors"
           aria-label="Sluiten"
         >
           <X className="w-3.5 h-3.5" style={{ color: '#A0A098' }} />
@@ -180,27 +182,32 @@ export function PortaalReactieFormInline({
       )}
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-100"
-          style={{ color: 'hsl(var(--muted-foreground))' }}
-        >
-          <Camera className="w-4 h-4" />
-          Foto toevoegen
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) handleFotoSelect(file)
-            e.target.value = ''
-          }}
-        />
+        {kanFotoToevoegen && (
+          <>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted"
+              style={{ color: 'hsl(var(--muted-foreground))' }}
+            >
+              <Camera className="w-4 h-4" />
+              Foto toevoegen
+            </button>
+            {/* Geen capture-attribuut: dat forceert op veel telefoons de camera
+                en blokkeert kiezen uit de galerij */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleFotoSelect(file)
+                e.target.value = ''
+              }}
+            />
+          </>
+        )}
         <div className="flex-1" />
         <button
           onClick={handleSubmit}
