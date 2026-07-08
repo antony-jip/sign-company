@@ -253,6 +253,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('[offerte-accepteren] email notificatie mislukt:', emailErr)
     }
 
+    // Bevestigingsmail naar de klant — branded namens het bedrijf
+    try {
+      let klantEmail: string | null = null
+      if (offerte.klant_id) {
+        const { data: klant } = await supabaseAdmin
+          .from('klanten')
+          .select('email')
+          .eq('id', offerte.klant_id)
+          .maybeSingle()
+        klantEmail = klant?.email || null
+      }
+
+      if (klantEmail) {
+        let bedrijfUserId = offerte.user_id
+        if (offerte.organisatie_id) {
+          const { data: org } = await supabaseAdmin
+            .from('organisaties')
+            .select('eigenaar_id')
+            .eq('id', offerte.organisatie_id)
+            .maybeSingle()
+          if (org?.eigenaar_id) bedrijfUserId = org.eigenaar_id
+        }
+        const { data: bedrijfsProfiel } = await supabaseAdmin
+          .from('profiles')
+          .select('bedrijfsnaam, logo_url, bedrijfs_email')
+          .eq('id', bedrijfUserId)
+          .maybeSingle()
+        const bedrijfsnaam = bedrijfsProfiel?.bedrijfsnaam || ''
+
+        const html = buildPortalEmailHtml({
+          heading: 'Bedankt voor uw akkoord',
+          itemTitel: `${offerte.nummer}${offerte.titel ? ` — ${offerte.titel}` : ''}`,
+          beschrijving: `Geaccepteerd door ${naam.trim()} op ${formatDate(new Date())}${offerte.totaal ? ` · ${formatCurrency(offerte.totaal)}` : ''}`,
+          quote: 'We nemen zo snel mogelijk contact met u op over de vervolgstappen.',
+          bedrijfsnaam: bedrijfsnaam || undefined,
+          logoUrl: bedrijfsProfiel?.logo_url || undefined,
+        })
+
+        const { Resend } = await import('resend')
+        const resendClient = new Resend(process.env.RESEND_API_KEY)
+        await resendClient.emails.send({
+          from: `${bedrijfsnaam || 'doen.'} <noreply@doen.team>`,
+          to: klantEmail,
+          replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
+          subject: `Bevestiging: offerte ${offerte.nummer} geaccepteerd`,
+          html,
+        })
+        console.log('[offerte-accepteren] klant-bevestiging verzonden naar:', klantEmail)
+      }
+    } catch (klantMailErr) {
+      console.error('[offerte-accepteren] klant-bevestiging mislukt:', klantMailErr)
+    }
+
     return res.status(200).json({
       success: true,
       bericht: 'Offerte succesvol geaccepteerd',

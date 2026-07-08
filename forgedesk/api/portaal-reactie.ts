@@ -124,7 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(409).json({ error: 'Dit item is al goedgekeurd.' })
     }
 
-    let offerteVooraf: { id: string; user_id: string | null; status: string; geldig_tot: string | null } | null = null
+    let offerteVooraf: { id: string; user_id: string | null; status: string; geldig_tot: string | null; nummer: string | null; titel: string | null } | null = null
     if (type === 'goedkeuring' && item.type === 'offerte') {
       const { data: itemMetOfferte } = await supabaseAdmin
         .from('portaal_items')
@@ -135,7 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (itemMetOfferte?.offerte_id) {
         const { data: offerte } = await supabaseAdmin
           .from('offertes')
-          .select('id, user_id, status, geldig_tot')
+          .select('id, user_id, status, geldig_tot, nummer, titel')
           .eq('id', itemMetOfferte.offerte_id)
           .single()
 
@@ -321,6 +321,77 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     } catch (notifErr) {
       console.error('[portaal-reactie] notificatie/email error:', notifErr)
+    }
+
+    // --- Bevestigingsmail naar de klant bij offerte-akkoord (niet-blokkerend) ---
+    if (type === 'goedkeuring' && offerteVooraf) {
+      try {
+        const { data: projectVoorKlant } = await supabaseAdmin
+          .from('projecten')
+          .select('klant_id')
+          .eq('id', portaal.project_id)
+          .single()
+
+        let klantEmail: string | null = null
+        if (projectVoorKlant?.klant_id) {
+          const { data: klant } = await supabaseAdmin
+            .from('klanten')
+            .select('email')
+            .eq('id', projectVoorKlant.klant_id)
+            .maybeSingle()
+          klantEmail = klant?.email || null
+        }
+
+        if (klantEmail) {
+          // Bedrijfsbranding via org-eigenaar, zelfde patroon als factuur-portaal
+          let bedrijfUserId = portaal.user_id
+          const { data: profielRij } = await supabaseAdmin
+            .from('profiles')
+            .select('organisatie_id')
+            .eq('id', portaal.user_id)
+            .maybeSingle()
+          if (profielRij?.organisatie_id) {
+            const { data: org } = await supabaseAdmin
+              .from('organisaties')
+              .select('eigenaar_id')
+              .eq('id', profielRij.organisatie_id)
+              .maybeSingle()
+            if (org?.eigenaar_id) bedrijfUserId = org.eigenaar_id
+          }
+          const { data: bedrijfsProfiel } = await supabaseAdmin
+            .from('profiles')
+            .select('bedrijfsnaam, logo_url, bedrijfs_email')
+            .eq('id', bedrijfUserId)
+            .maybeSingle()
+          const bedrijfsnaam = bedrijfsProfiel?.bedrijfsnaam || ''
+
+          const html = buildPortalEmailHtml({
+            heading: 'Bedankt voor uw akkoord',
+            itemTitel: offerteVooraf.nummer
+              ? `${offerteVooraf.nummer}${offerteVooraf.titel ? ` — ${offerteVooraf.titel}` : ''}`
+              : offerteVooraf.titel || 'Offerte',
+            beschrijving: `Geaccepteerd${klant_naam?.trim() ? ` door ${klant_naam.trim()}` : ''}.`,
+            quote: 'We nemen zo snel mogelijk contact met u op over de vervolgstappen.',
+            bedrijfsnaam: bedrijfsnaam || undefined,
+            logoUrl: bedrijfsProfiel?.logo_url || undefined,
+          })
+
+          const { Resend } = await import('resend')
+          const resendClient = new Resend(process.env.RESEND_API_KEY)
+          await resendClient.emails.send({
+            from: `${bedrijfsnaam || 'doen.'} <noreply@doen.team>`,
+            to: klantEmail,
+            replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
+            subject: offerteVooraf.nummer
+              ? `Bevestiging: offerte ${offerteVooraf.nummer} geaccepteerd`
+              : 'Bevestiging van uw akkoord',
+            html,
+          })
+          console.log('[portaal-reactie] klant-bevestiging verzonden naar:', klantEmail)
+        }
+      } catch (klantMailErr) {
+        console.warn('[portaal-reactie] klant-bevestiging mislukt:', klantMailErr)
+      }
     }
 
     // --- Trigger.dev: log activiteit (fire-and-forget, fallback naar directe insert) ---
