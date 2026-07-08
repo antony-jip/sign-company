@@ -839,3 +839,36 @@ from-header-quoting) gefixt in "fix(review)". Resterende opmerkingen:
   (d) Klantgerichte voortgangstijdlijn in het portaal (stepper i.p.v. alleen
       status-label) bewust niet gebouwd — nieuw visueel ontwerp, eerst
       hero-checkpoint met Antony.
+
+## 2026-07-08 — feat/mail-verbeteringen (mail-audit, senior review)
+
+Verdict na review-fix: AKKOORD-MET-OPMERKINGEN. Blockers gefixt in
+"fix(review)": migratie hernummerd 141→149; cron valt niet meer terug naar een
+lagere herinneringsstap na een handmatig verstuurde hogere stap (+ aanmaning in
+de cool-down); deelbetalingen worden verrekend (openstaand bedrag in de mail,
+skip bij 0); nieuwste app_settings-rij per org is leidend zodat de uit-toggle
+een echte kill-switch is; vlag wordt ook bij idempotency-skip gezet. Extra:
+vangnet voor geïmporteerde facturen (>180d zonder eerdere herinnering = skip).
+
+Resterende opmerkingen (bewust open):
+  (a) SendOfferteDialog maakt het portaal-item aan vóór de e-mailverzending;
+      bij een mislukte send ziet de klant het item dus al in het portaal
+      terwijl de offerte op concept blijft. Nette fix: item pas na geslaagde
+      send aanmaken (herordening met dedupe-risico — aparte klus).
+  (b) Composer-bijlagen zitten niet in de draft-autosave en gaan nu verloren
+      bij sluiten (voorheen overleefden ze sluiten binnen dezelfde mount).
+  (c) List-Unsubscribe is een mailto: naar het reply-adres — auto-unsubscribe
+      -bots mailen dan de ondernemer. Echte unsubscribe-endpoint = vervolgwerk.
+  (d) De send-retry in offerte-opvolging retryt ook permanente fouten (bv.
+      ontbrekende SMTP-instellingen) met een nutteloze 5s-wachttijd.
+  (e) DEPLOY-VOLGORDE: eerst migratie 149 draaien, dan deployen — de
+      Factuur-opvolging-instellingentab schrijft de nieuwe kolom bij elke save.
+  (f) Markdown in de projectcomposer rendert nu echt (** _ __ - [](url)) —
+      wie letterlijke sterretjes typte krijgt nu opmaak.
+
+Groter vervolgwerk uit de audit (niet gestart): server-side inbound-sync-cron,
+composer-consolidatie naar één editor, design-eiland mailmodule (dark-mode
+fork) — designkeuze voor Antony, open/klik-tracking in het verzendpad,
+consolidatie van de drie factuur-template-opslagplaatsen (cron gebruikt nu
+bewust dezelfde bron als de instellingen-tab; de handmatige dialog gebruikt
+nog herinnering_templates).

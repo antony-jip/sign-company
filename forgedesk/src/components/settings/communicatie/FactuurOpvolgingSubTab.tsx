@@ -131,7 +131,9 @@ export function FactuurOpvolgingSubTab() {
                 Verstuurt herinneringen dagelijks (09:30) vanzelf: herinnering 1 na 7 dagen,
                 herinnering 2 na 14 dagen en de aanmaning na 30 dagen over de vervaldatum.
                 Alleen voor facturen met status verzonden of vervallen; handmatig verstuurde
-                herinneringen tellen mee, dus dubbel mailen kan niet.
+                herinneringen tellen mee, dus dubbel mailen kan niet. Deelbetalingen worden
+                verrekend en facturen die al langer dan 180 dagen openstaan zonder eerdere
+                herinnering worden overgeslagen.
               </p>
             </div>
             <Switch

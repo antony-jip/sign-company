@@ -1,5 +1,5 @@
 -- ============================================================
--- 141: Opt-in toggle voor automatische betalingsherinneringen
+-- 149: Opt-in toggle voor automatische betalingsherinneringen
 --
 -- Gebruikt door src/trigger/factuur-herinnering.ts (cron 09:30) en de
 -- Instellingen > Communicatie > Factuur-opvolging tab. Default UIT:

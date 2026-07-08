@@ -54,6 +54,7 @@ interface FactuurRow {
   nummer: string | null;
   titel: string | null;
   totaal: number | null;
+  betaald_bedrag: number | null;
   vervaldatum: string | null;
   factuur_type: string | null;
   betaal_link: string | null;
@@ -71,22 +72,36 @@ export const factuurHerinneringCron = schedules.task({
     const supabase = getSupabaseAdmin();
     const result = { verstuurd: 0, overgeslagen: 0, errors: [] as string[] };
 
-    const { data: orgSettings, error: settingsError } = await supabase
+    const { data: settingsRijen, error: settingsError } = await supabase
       .from("app_settings")
       .select(
-        "organisatie_id, user_id, herinnering_1_tekst, herinnering_1_onderwerp, herinnering_2_tekst, herinnering_2_onderwerp, aanmaning_tekst, aanmaning_onderwerp"
+        "organisatie_id, user_id, updated_at, factuur_opvolging_automatisch, herinnering_1_tekst, herinnering_1_onderwerp, herinnering_2_tekst, herinnering_2_onderwerp, aanmaning_tekst, aanmaning_onderwerp"
       )
-      .eq("factuur_opvolging_automatisch", true)
-      .not("organisatie_id", "is", null);
+      .not("organisatie_id", "is", null)
+      .order("updated_at", { ascending: false });
 
     if (settingsError) {
-      // Kolom bestaat pas na migratie 141 — tot die tijd stilletjes klaar
-      logger.error("factuur-herinnering: settings query faalde (migratie 141 gedraaid?)", {
+      // Kolom bestaat pas na migratie 149 — tot die tijd stilletjes klaar
+      logger.error("factuur-herinnering: settings query faalde (migratie 149 gedraaid?)", {
         error: settingsError.message,
       });
       return result;
     }
-    if (!orgSettings || orgSettings.length === 0) {
+
+    // Nieuwste rij per organisatie is leidend: orgs kunnen door een
+    // historische bug meerdere app_settings-rijen hebben en de frontend
+    // leest/schrijft alleen de nieuwste — anders is de uit-toggle geen
+    // werkende kill-switch en komen templates uit een verouderde rij.
+    const nieuwstePerOrg = new Map<string, NonNullable<typeof settingsRijen>[number]>();
+    for (const rij of settingsRijen || []) {
+      const orgId = rij.organisatie_id as string;
+      if (!nieuwstePerOrg.has(orgId)) nieuwstePerOrg.set(orgId, rij);
+    }
+    const orgSettings = [...nieuwstePerOrg.values()].filter(
+      (r) => r.factuur_opvolging_automatisch === true
+    );
+
+    if (orgSettings.length === 0) {
       logger.info("factuur-herinnering: geen organisaties met automatische opvolging");
       return result;
     }
@@ -97,7 +112,7 @@ export const factuurHerinneringCron = schedules.task({
       const { data: facturen } = await supabase
         .from("facturen")
         .select(
-          "id, user_id, klant_id, nummer, titel, totaal, vervaldatum, factuur_type, betaal_link, herinnering_1_verstuurd, herinnering_2_verstuurd, herinnering_3_verstuurd, aanmaning_verstuurd"
+          "id, user_id, klant_id, nummer, titel, totaal, betaald_bedrag, vervaldatum, factuur_type, betaal_link, herinnering_1_verstuurd, herinnering_2_verstuurd, herinnering_3_verstuurd, aanmaning_verstuurd"
         )
         .eq("organisatie_id", orgId)
         .in("status", ["verzonden", "vervallen"])
@@ -124,6 +139,14 @@ export const factuurHerinneringCron = schedules.task({
         const dagen = dagenSinds(factuur.vervaldatum);
         if (dagen < 7) continue;
 
+        // Deelbetalingen: alleen manen voor wat er echt openstaat
+        const openstaand =
+          Math.round(((Number(factuur.totaal) || 0) - (Number(factuur.betaald_bedrag) || 0)) * 100) / 100;
+        if (openstaand <= 0) {
+          result.overgeslagen++;
+          continue;
+        }
+
         // Laagste nog-niet-verstuurde stap; herinnering_3 blijft handmatig domein
         let stap: Stap | null = null;
         if (!factuur.herinnering_1_verstuurd && dagen >= 7) stap = "herinnering_1";
@@ -134,11 +157,34 @@ export const factuurHerinneringCron = schedules.task({
           continue;
         }
 
+        // Handmatig kan elke stap direct kiezen — nooit terugvallen naar een
+        // lagere stap nadat een hogere al is verstuurd.
+        if (
+          stap === "herinnering_1" &&
+          (factuur.herinnering_2_verstuurd || factuur.herinnering_3_verstuurd || factuur.aanmaning_verstuurd)
+        ) {
+          result.overgeslagen++;
+          continue;
+        }
+        if (stap === "herinnering_2" && (factuur.herinnering_3_verstuurd || factuur.aanmaning_verstuurd)) {
+          result.overgeslagen++;
+          continue;
+        }
+
         const eerdereStappen = [
           factuur.herinnering_1_verstuurd,
           factuur.herinnering_2_verstuurd,
           factuur.herinnering_3_verstuurd,
+          factuur.aanmaning_verstuurd,
         ].filter(Boolean) as string[];
+
+        // Vangnet voor geïmporteerde/legacy facturen: heel oud én nog nooit
+        // herinnerd → niet ineens automatisch gaan manen.
+        if (dagen > 180 && eerdereStappen.length === 0) {
+          result.overgeslagen++;
+          continue;
+        }
+
         const gesorteerd = [...eerdereStappen].sort();
         const laatsteStap = gesorteerd[gesorteerd.length - 1];
         if (laatsteStap && dagenSinds(laatsteStap) < MIN_DAGEN_TUSSEN_STAPPEN) {
@@ -163,9 +209,7 @@ export const factuurHerinneringCron = schedules.task({
         const vars: Record<string, string> = {
           klant_naam: (klant.contactpersoon as string) || (klant.bedrijfsnaam as string) || "klant",
           factuur_nummer: factuur.nummer || "",
-          factuur_bedrag: new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(
-            Number(factuur.totaal) || 0
-          ),
+          factuur_bedrag: new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(openstaand),
           vervaldatum: new Date(factuur.vervaldatum).toLocaleDateString("nl-NL", {
             day: "numeric",
             month: "long",
@@ -208,10 +252,6 @@ export const factuurHerinneringCron = schedules.task({
           result.errors.push(`Factuur ${factuur.nummer}: ${sendResult.error}`);
           continue;
         }
-        if (sendResult.skipped) {
-          result.overgeslagen++;
-          continue;
-        }
 
         const vlagVeld =
           stap === "herinnering_1"
@@ -219,10 +259,25 @@ export const factuurHerinneringCron = schedules.task({
             : stap === "herinnering_2"
               ? "herinnering_2_verstuurd"
               : "aanmaning_verstuurd";
-        await supabase
+        // Ook bij skipped (idempotency-key bestond al, dus eerder verzonden
+        // maar vlag-write toen mislukt) alsnog de vlag zetten — anders zit de
+        // ladder permanent vast op deze stap.
+        const { error: vlagError } = await supabase
           .from("facturen")
           .update({ [vlagVeld]: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq("id", factuur.id);
+        if (vlagError) {
+          logger.error("factuur-herinnering: vlag-update mislukt", {
+            factuurId: factuur.id,
+            veld: vlagVeld,
+            error: vlagError.message,
+          });
+        }
+
+        if (sendResult.skipped) {
+          result.overgeslagen++;
+          continue;
+        }
 
         await supabase.from("notificaties").insert({
           user_id: factuur.user_id,
