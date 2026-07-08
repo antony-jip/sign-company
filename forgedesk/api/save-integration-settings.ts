@@ -179,11 +179,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       mollieWasEnabled = (oldSettings?.mollie_enabled as boolean | null) ?? null
     }
 
-    // Schrijf naar app_settings van eigen organisatie
-    const { error: updateError } = await supabaseAdmin
+    // Schrijf naar app_settings van eigen organisatie. De rij wordt niet
+    // bij signup aangemaakt, dus zonder insert-pad no-opt een kale update
+    // stilletjes (0 rijen) en lijkt opslaan gelukt terwijl er niets staat.
+    const { data: bestaandeRij } = await supabaseAdmin
       .from('app_settings')
-      .update(updates)
+      .select('id')
       .eq('organisatie_id', profile.organisatie_id)
+      .maybeSingle()
+
+    let updateError = null
+    if (bestaandeRij) {
+      ;({ error: updateError } = await supabaseAdmin
+        .from('app_settings')
+        .update(updates)
+        .eq('id', bestaandeRij.id))
+    } else {
+      ;({ error: updateError } = await supabaseAdmin
+        .from('app_settings')
+        .insert({ ...updates, organisatie_id: profile.organisatie_id, user_id: userId }))
+      // 23505: parallel request maakte de rij net aan — alsnog updaten.
+      if (updateError?.code === '23505') {
+        ;({ error: updateError } = await supabaseAdmin
+          .from('app_settings')
+          .update(updates)
+          .eq('organisatie_id', profile.organisatie_id))
+      }
+    }
 
     if (updateError) {
       console.error('[save-integration-settings] update error:', updateError.message)
