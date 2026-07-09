@@ -19,6 +19,7 @@ import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
 import { createDocument, getSigningVisualisatiesByOfferte, getSigningVisualisatiesByProject } from '@/services/supabaseService'
+import { telItemsMetBijlage } from '@/services/offerteService'
 import type { SigningVisualisatie } from '@/types'
 
 // ============================================================
@@ -1197,9 +1198,14 @@ export function QuoteItemsTable({
                     }
                   }}
                   onRemove={async () => {
-                    // Delete from storage if it's a storage path (not a data URL or http URL)
+                    // Delete from storage if it's a storage path (not a data URL or http URL).
+                    // Gekopieerde/gedupliceerde items delen hetzelfde storage-pad;
+                    // alleen fysiek verwijderen als dit de laatste verwijzing is.
                     if (item.bijlage_url && !item.bijlage_url.startsWith('data:') && !item.bijlage_url.startsWith('http')) {
-                      try { await deleteFile(item.bijlage_url) } catch (err) { /* silent */ }
+                      try {
+                        const refs = await telItemsMetBijlage(item.bijlage_url)
+                        if (refs <= 1) await deleteFile(item.bijlage_url)
+                      } catch (err) { /* silent */ }
                     }
                     onUpdateItem(item.id, 'bijlage_url', '')
                     onUpdateItem(item.id, 'bijlage_type', '' as 'image/jpeg')

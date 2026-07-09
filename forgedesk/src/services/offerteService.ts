@@ -443,6 +443,21 @@ export async function syncOfferteItems(
   return newItems
 }
 
+// Telt hoeveel offerte-items naar dezelfde bijlage verwijzen. Kopiëren en
+// dupliceren nemen bijlage_url letterlijk over, dus fysiek verwijderen mag
+// alleen als dit de laatste verwijzing is.
+export async function telItemsMetBijlage(bijlageUrl: string): Promise<number> {
+  if (isSupabaseConfigured() && supabase) {
+    const { count, error } = await supabase
+      .from('offerte_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('bijlage_url', bijlageUrl)
+    if (error) throw error
+    return count || 0
+  }
+  return getLocalData<OfferteItem>('offerte_items').filter(i => i.bijlage_url === bijlageUrl).length
+}
+
 export async function getRecentOfferteItemSuggesties(): Promise<{ beschrijving: string; laatstePrijs: number }[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
