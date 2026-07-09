@@ -352,10 +352,29 @@ export function WerkbonDetail() {
     try {
       setIsSaving(true)
       const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
+      // Strip een eventuele eerdere "Afgerond door: ..."-toevoeging zodat
+      // opnieuw afronden (na terugzetten naar concept) niet stapelt.
+      const baseOpmerkingen = (monteurOpmerkingen || '').replace(/\n\nAfgerond door: [\s\S]*$/, '').trimEnd()
+      const opmerkingenMetAfronder = baseOpmerkingen
+        ? `${baseOpmerkingen}\n\nAfgerond door: ${medewerkerNaam}`
+        : `Afgerond door: ${medewerkerNaam}`
+      // Volledige payload meesturen (incl. header-velden), anders gaan
+      // niet-opgeslagen wijzigingen aan titel/locatie/contact/datum verloren.
       await updateWerkbon(werkbonId, {
+        klant_id: klantId,
+        project_id: projectId || undefined,
+        offerte_id: offerteId || undefined,
+        titel: titel || undefined,
+        locatie_adres: locatieAdres || undefined,
+        locatie_stad: locatieStad || undefined,
+        locatie_postcode: locatiePostcode || undefined,
+        contact_naam: contactNaam || undefined,
+        contact_telefoon: contactTelefoon || undefined,
+        datum,
+        toon_briefpapier: toonBriefpapier,
         status: 'afgerond',
         uren_gewerkt: urenGewerkt,
-        monteur_opmerkingen: monteurOpmerkingen ? `${monteurOpmerkingen}\n\nAfgerond door: ${medewerkerNaam}` : `Afgerond door: ${medewerkerNaam}`,
+        monteur_opmerkingen: opmerkingenMetAfronder,
         klant_handtekening: handtekeningData,
         klant_naam_getekend: klantNaamGetekend || undefined,
         getekend_op: handtekeningData ? new Date().toISOString() : undefined,
@@ -381,7 +400,11 @@ export function WerkbonDetail() {
       setIsSaving(false)
     }
     bumpPreview()
-  }, [werkbonId, klantId, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty, montageAfspraakId, bumpPreview])
+  }, [
+    werkbonId, klantId, projectId, offerteId, titel, locatieAdres, locatieStad, locatiePostcode,
+    contactNaam, contactTelefoon, datum, toonBriefpapier, urenGewerkt, monteurOpmerkingen,
+    handtekeningData, klantNaamGetekend, profile, user, setDirty, montageAfspraakId, bumpPreview,
+  ])
 
   // Item toevoegen · auto-save werkbon als die nog niet bestaat
   const handleItemToevoegen = useCallback(async () => {
