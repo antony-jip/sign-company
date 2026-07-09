@@ -122,6 +122,13 @@ export function WerkbonMonteurView() {
   }, [showPdfPreview])
   useEffect(() => () => { if (bumpTimer.current) clearTimeout(bumpTimer.current) }, [])
 
+  // ── Autosave van monteur-feedback (uren/opmerkingen/naam/handtekening) ──
+  // Zonder dit ging alles behalve foto's pas bij afronden naar de DB; weg-
+  // navigeren of een crash op locatie betekende dataverlies. userChangedRef
+  // voorkomt dat het inladen zelf als wijziging telt.
+  const userChangedRef = useRef(false)
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     let cancelled = false
     async function loadData() {
@@ -173,20 +180,59 @@ export function WerkbonMonteurView() {
   }, [id])
 
   const handleUrenChange = useCallback((val: number | undefined) => {
-    setUrenGewerkt(val); setDirty(true); bumpPreview()
+    userChangedRef.current = true; setUrenGewerkt(val); setDirty(true); bumpPreview()
   }, [setDirty, bumpPreview])
 
   const handleOpmerkingenChange = useCallback((val: string) => {
-    setMonteurOpmerkingen(val); setDirty(true); bumpPreview()
+    userChangedRef.current = true; setMonteurOpmerkingen(val); setDirty(true); bumpPreview()
   }, [setDirty, bumpPreview])
 
   const handleKlantNaamChange = useCallback((val: string) => {
-    setKlantNaamGetekend(val); setDirty(true); bumpPreview()
+    userChangedRef.current = true; setKlantNaamGetekend(val); setDirty(true); bumpPreview()
   }, [setDirty, bumpPreview])
 
   const handleHandtekeningChange = useCallback((data: string | undefined) => {
-    setHandtekeningData(data); setDirty(true); bumpPreview()
+    userChangedRef.current = true; setHandtekeningData(data); setDirty(true); bumpPreview()
   }, [setDirty, bumpPreview])
+
+  // Debounced autosave zodra de monteur iets wijzigt (niet bij afgeronde werkbon).
+  useEffect(() => {
+    if (!userChangedRef.current) return
+    if (!werkbon || werkbon.status === 'afgerond') return
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
+    autosaveTimer.current = setTimeout(async () => {
+      try {
+        await updateWerkbon(werkbon.id, {
+          uren_gewerkt: urenGewerkt,
+          monteur_opmerkingen: monteurOpmerkingen || undefined,
+          klant_handtekening: handtekeningData,
+          klant_naam_getekend: klantNaamGetekend || undefined,
+          getekend_op: handtekeningData ? new Date().toISOString() : undefined,
+        })
+        setDirty(false)
+      } catch (err) {
+        logger.error('Autosave werkbon-feedback mislukt:', err)
+      }
+    }, 1000)
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current) }
+  }, [urenGewerkt, monteurOpmerkingen, klantNaamGetekend, handtekeningData, werkbon, setDirty])
+
+  // Laatste waarden vasthouden voor een flush bij wegnavigeren (de debounce
+  // van 1s zou anders de allerlaatste wijziging kunnen verliezen).
+  const feedbackRef = useRef({ urenGewerkt, monteurOpmerkingen, klantNaamGetekend, handtekeningData, werkbon })
+  feedbackRef.current = { urenGewerkt, monteurOpmerkingen, klantNaamGetekend, handtekeningData, werkbon }
+  useEffect(() => () => {
+    if (!userChangedRef.current) return
+    const f = feedbackRef.current
+    if (!f.werkbon || f.werkbon.status === 'afgerond') return
+    updateWerkbon(f.werkbon.id, {
+      uren_gewerkt: f.urenGewerkt,
+      monteur_opmerkingen: f.monteurOpmerkingen || undefined,
+      klant_handtekening: f.handtekeningData,
+      klant_naam_getekend: f.klantNaamGetekend || undefined,
+      getekend_op: f.handtekeningData ? new Date().toISOString() : undefined,
+    }).catch(() => { /* best-effort flush */ })
+  }, [])
 
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
     if (!werkbon) return
@@ -236,8 +282,9 @@ export function WerkbonMonteurView() {
     try {
       setIsSaving(true)
       const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
-      const nieuweOpmerkingen = monteurOpmerkingen
-        ? `${monteurOpmerkingen}\n\nAfgerond door: ${medewerkerNaam}`
+      const baseOpmerkingen = (monteurOpmerkingen || '').replace(/\n\nAfgerond door: [\s\S]*$/, '').trimEnd()
+      const nieuweOpmerkingen = baseOpmerkingen
+        ? `${baseOpmerkingen}\n\nAfgerond door: ${medewerkerNaam}`
         : `Afgerond door: ${medewerkerNaam}`
       await updateWerkbon(werkbon.id, {
         status: 'afgerond',
