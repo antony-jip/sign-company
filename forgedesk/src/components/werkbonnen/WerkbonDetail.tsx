@@ -55,9 +55,11 @@ const PdfPreviewDialog = React.lazy(() =>
 
 // Resolve a URL: if it's a storage path, convert to a signed URL.
 // Returns '' on failure so render-laag een placeholder kan tonen ipv broken image.
+// Langere TTL (12u) zodat een lang openstaande werkbon geen verlopen foto-URL's krijgt.
+const WERKBON_URL_TTL = 60 * 60 * 12
 async function resolveUrl(url: string): Promise<string> {
   if (!url || url.startsWith('data:') || url.startsWith('http') || url.startsWith('blob:')) return url
-  try { return await getSignedUrl(url) } catch (err) {
+  try { return await getSignedUrl(url, WERKBON_URL_TTL) } catch (err) {
     logger.warn('Kon storage URL niet resolven:', url, err)
     return ''
   }
@@ -479,27 +481,27 @@ export function WerkbonDetail() {
     bumpPreview()
   }, [bumpPreview])
 
-  // Item herordenen
+  // Item herordenen · berekening en DB-writes buiten de state-updater
+  // (een updater hoort puur te zijn; anders dubbele writes onder StrictMode).
   const handleItemMove = useCallback(async (itemId: string, direction: 'up' | 'down') => {
-    setWerkbonItems((prev) => {
-      const idx = prev.findIndex((i) => i.id === itemId)
-      if (idx === -1) return prev
-      const newIdx = direction === 'up' ? idx - 1 : idx + 1
-      if (newIdx < 0 || newIdx >= prev.length) return prev
-      const next = [...prev]
-      const temp = next[idx]
-      next[idx] = next[newIdx]
-      next[newIdx] = temp
-      next.forEach((item, i) => {
-        if (item.volgorde !== i + 1) {
-          updateWerkbonItem(item.id, { volgorde: i + 1 })
-        }
-        item.volgorde = i + 1
-      })
-      return next
-    })
+    const idx = werkbonItems.findIndex((i) => i.id === itemId)
+    if (idx === -1) return
+    const newIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (newIdx < 0 || newIdx >= werkbonItems.length) return
+
+    const oldVolgorde = new Map(werkbonItems.map((i) => [i.id, i.volgorde]))
+    const next = [...werkbonItems]
+    ;[next[idx], next[newIdx]] = [next[newIdx], next[idx]]
+    const reordered = next.map((item, i) => ({ ...item, volgorde: i + 1 }))
+    setWerkbonItems(reordered)
     bumpPreview()
-  }, [bumpPreview])
+
+    await Promise.all(
+      reordered
+        .filter((item) => oldVolgorde.get(item.id) !== item.volgorde)
+        .map((item) => updateWerkbonItem(item.id, { volgorde: item.volgorde }).catch((err) => logger.error('Volgorde opslaan mislukt:', err))),
+    )
+  }, [werkbonItems, bumpPreview])
 
   // Afbeelding toevoegen aan item
   const handleAfbeeldingToevoegen = useCallback(async (itemId: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -941,15 +943,16 @@ export function WerkbonDetail() {
 
     let uploaded = 0
     let lastError: string | null = null
-    for (const file of files) {
+    // Parallel met concurrency-limiet i.p.v. serieel (zie WerkbonMonteurView).
+    const queue = [...files]
+    const uploadFoto = async (file: File) => {
       try {
         const resized = await resizeImage(file, 1200)
         const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
         const safeName = sanitizeStorageFilename(file.name)
-        const storagePath = `werkbon-fotos/${werkbonId}/${Date.now()}-${safeName}`
+        const storagePath = `werkbon-fotos/${werkbonId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safeName}`
         const uploadedPath = await uploadFile(resizedFile, storagePath)
         const displayUrl = await resolveUrl(uploadedPath)
-
         const foto = await createWerkbonFoto({
           user_id: userId,
           werkbon_id: werkbonId,
@@ -965,6 +968,8 @@ export function WerkbonDetail() {
         lastError = err instanceof Error ? err.message : 'Onbekende fout'
       }
     }
+    const worker = async () => { let f; while ((f = queue.shift())) await uploadFoto(f) }
+    await Promise.all(Array.from({ length: Math.min(3, files.length) }, worker))
     if (uploaded > 0) { toast.success(`${uploaded} foto${uploaded > 1 ? "'s" : ''} toegevoegd`); bumpPreview() }
     else toast.error(`Upload mislukt: ${lastError ?? 'Onbekende fout'}`)
     e.target.value = ''

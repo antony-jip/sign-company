@@ -39,9 +39,12 @@ const STATUS_LABEL: Record<Werkbon['status'], string> = {
   gefactureerd: 'Gefactureerd',
 }
 
+// Langere TTL dan de standaard 1 uur: een monteur houdt de werkbon vaak een
+// hele dag op locatie open; anders verlopen de foto-URL's tussentijds.
+const WERKBON_URL_TTL = 60 * 60 * 12
 async function resolveUrl(url: string): Promise<string> {
   if (!url || url.startsWith('data:') || url.startsWith('http') || url.startsWith('blob:')) return url
-  try { return await getSignedUrl(url) } catch (err) {
+  try { return await getSignedUrl(url, WERKBON_URL_TTL) } catch (err) {
     logger.warn('Kon storage URL niet resolven:', url, err)
     return ''
   }
@@ -241,15 +244,18 @@ export function WerkbonMonteurView() {
 
     let uploaded = 0
     let lastError: string | null = null
-    for (const file of files) {
+    // Parallel met een kleine concurrency-limiet: veel sneller dan serieel
+    // wanneer de monteur meerdere foto's tegelijk kiest, zonder een zwakke
+    // mobiele verbinding te verzadigen. Elke foto verschijnt zodra hij klaar is.
+    const queue = [...files]
+    const uploadFoto = async (file: File) => {
       try {
         const resized = await resizeImage(file, 1200)
         const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
         const safeName = sanitizeStorageFilename(file.name)
-        const storagePath = `werkbon-fotos/${werkbon.id}/${Date.now()}-${safeName}`
+        const storagePath = `werkbon-fotos/${werkbon.id}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safeName}`
         const uploadedPath = await uploadFile(resizedFile, storagePath)
         const displayUrl = await resolveUrl(uploadedPath)
-
         const foto = await createWerkbonFoto({
           user_id: userId,
           werkbon_id: werkbon.id,
@@ -265,6 +271,8 @@ export function WerkbonMonteurView() {
         lastError = err instanceof Error ? err.message : 'Onbekende fout'
       }
     }
+    const worker = async () => { let f; while ((f = queue.shift())) await uploadFoto(f) }
+    await Promise.all(Array.from({ length: Math.min(3, files.length) }, worker))
     if (uploaded > 0) { toast.success(`${uploaded} foto${uploaded > 1 ? "'s" : ''} toegevoegd`); bumpPreview() }
     else toast.error(`Upload mislukt: ${lastError ?? 'Onbekende fout'}`)
     e.target.value = ''
