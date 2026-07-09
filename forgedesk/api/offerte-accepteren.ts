@@ -91,6 +91,43 @@ function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount)
 }
 
+// ── Totaalberekening bij acceptatie met keuzes ──
+// Inline (api/ mag geen src/-imports bundelen). Zelfde formule als
+// utils/offerteTotalen.ts::berekenOfferteTotalen, zodat de teruggeschreven
+// offerte-totalen aansluiten op wat de detailpagina en de factuur verwachten.
+function r2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100
+}
+
+interface PrijsRegel { aantal: number; eenheidsprijs: number; btw_percentage: number; korting_percentage: number }
+
+function variantWaarden(item: Record<string, unknown>, variantId?: string): PrijsRegel {
+  const vs = Array.isArray(item.prijs_varianten) ? item.prijs_varianten as Array<Record<string, unknown>> : []
+  const v = variantId ? vs.find((x) => x.id === variantId) : undefined
+  const src = (v || item) as Record<string, unknown>
+  return {
+    aantal: Number(src.aantal) || 0,
+    eenheidsprijs: Number(src.eenheidsprijs) || 0,
+    btw_percentage: Number(src.btw_percentage) || 0,
+    korting_percentage: Number(src.korting_percentage) || 0,
+  }
+}
+
+function regelNetto(r: PrijsRegel): number {
+  const bruto = r.aantal * r.eenheidsprijs
+  return r2(bruto - bruto * (r.korting_percentage / 100))
+}
+
+function berekenTotalen(regels: PrijsRegel[], correctie: number): { subtotaal: number; btw_bedrag: number; totaal: number } {
+  const rawSub = r2(regels.reduce((s, r) => s + regelNetto(r), 0))
+  const subtotaal = r2(rawSub + correctie)
+  const ratio = rawSub > 0
+    ? r2(regels.reduce((s, r) => s + r2(regelNetto(r) * (r.btw_percentage / 100)), 0)) / rawSub
+    : 0.21
+  const btw_bedrag = r2(subtotaal * ratio)
+  return { subtotaal, btw_bedrag, totaal: r2(subtotaal + btw_bedrag) }
+}
+
 function formatDate(d: Date): string {
   return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
@@ -151,6 +188,61 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (gekozen_items) updateData.gekozen_items = gekozen_items
     if (gekozen_varianten) updateData.gekozen_varianten = gekozen_varianten
+
+    // Bij keuzes (optionele items en/of prijsvarianten): materialiseer de door
+    // de klant gekozen configuratie op de items en herbereken de offerte-
+    // totalen, zodat detailpagina én factuur het geaccepteerde bedrag tonen in
+    // plaats van de standaardconfiguratie. Zonder keuzes: niets aanraken.
+    if (gekozen_items || gekozen_varianten) {
+      const { data: rawItems } = await supabaseAdmin
+        .from('offerte_items')
+        .select('*')
+        .eq('offerte_id', offerte.id)
+      const items = (rawItems || []) as Array<Record<string, unknown>>
+      const gekozenSet = new Set(gekozen_items || [])
+      const varianten = gekozen_varianten || {}
+      const isPrijs = (it: Record<string, unknown>) => ((it.soort as string) || 'prijs') === 'prijs'
+
+      // Correctie (afrondingskorting + urencorrectie) uit de opgeslagen
+      // standaard-config afleiden zodat die als lump behouden blijft.
+      const defaultRegels = items
+        .filter((it) => isPrijs(it) && !it.is_optioneel)
+        .map((it) => variantWaarden(it, it.actieve_variant_id as string | undefined))
+      const defaultRawSub = r2(defaultRegels.reduce((s, r) => s + regelNetto(r), 0))
+      const correctie = r2((Number(offerte.subtotaal) || 0) - defaultRawSub)
+
+      // Materialiseer de keuze op de items. Nooit een verplicht item verwijderen:
+      // alleen gekozen optionele items vast zetten en gekozen varianten activeren.
+      for (const it of items) {
+        const patch: Record<string, unknown> = {}
+        const vs = Array.isArray(it.prijs_varianten) ? it.prijs_varianten as Array<Record<string, unknown>> : []
+        const vid = varianten[it.id as string]
+        if (vid && vs.some((x) => x.id === vid) && vid !== it.actieve_variant_id) patch.actieve_variant_id = vid
+        if (it.is_optioneel && gekozenSet.has(it.id as string)) patch.is_optioneel = false
+        const effVid = (patch.actieve_variant_id as string) || (it.actieve_variant_id as string | undefined)
+        const nt = regelNetto(variantWaarden(it, effVid))
+        if (nt !== Number(it.totaal)) patch.totaal = nt
+        if (Object.keys(patch).length > 0) {
+          await supabaseAdmin.from('offerte_items').update(patch).eq('id', it.id)
+        }
+      }
+
+      // Herbereken over de geaccepteerde config: verplichte items + gekozen
+      // optionele items, met de gekozen (of standaard) variant.
+      const finalRegels = items
+        .filter((it) => isPrijs(it) && !(it.is_optioneel && !gekozenSet.has(it.id as string)))
+        .map((it) => variantWaarden(it, (varianten[it.id as string] as string | undefined) || (it.actieve_variant_id as string | undefined)))
+      const totalen = berekenTotalen(finalRegels, correctie)
+      updateData.subtotaal = totalen.subtotaal
+      updateData.btw_bedrag = totalen.btw_bedrag
+      updateData.totaal = totalen.totaal
+      updateData.aangepast_totaal = totalen.totaal
+      // In-memory bijwerken zodat de acceptatie-mail/activiteit hieronder het
+      // geaccepteerde bedrag tonen i.p.v. het standaardbedrag.
+      offerte.subtotaal = totalen.subtotaal
+      offerte.btw_bedrag = totalen.btw_bedrag
+      offerte.totaal = totalen.totaal
+    }
 
     await supabaseAdmin.from('offertes').update(updateData).eq('id', offerte.id)
 
