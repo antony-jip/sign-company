@@ -23,7 +23,8 @@ import {
   getKlanten, getProjecten, getOffertes,
   getMontageAfspraak, updateMontageAfspraak,
 } from '@/services/supabaseService'
-import { uploadFile, getSignedUrl } from '@/services/storageService'
+import { uploadFile } from '@/services/storageService'
+import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder } from '@/utils/werkbonMedia'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
@@ -39,44 +40,8 @@ const STATUS_LABEL: Record<Werkbon['status'], string> = {
   gefactureerd: 'Gefactureerd',
 }
 
-// Langere TTL dan de standaard 1 uur: een monteur houdt de werkbon vaak een
-// hele dag op locatie open; anders verlopen de foto-URL's tussentijds.
-const WERKBON_URL_TTL = 60 * 60 * 12
-async function resolveUrl(url: string): Promise<string> {
-  if (!url || url.startsWith('data:') || url.startsWith('http') || url.startsWith('blob:')) return url
-  try { return await getSignedUrl(url, WERKBON_URL_TTL) } catch (err) {
-    logger.warn('Kon storage URL niet resolven:', url, err)
-    return ''
-  }
-}
-
-function resizeImage(file: File, maxWidth: number): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      const canvas = document.createElement('canvas')
-      let { width, height } = img
-      if (width > maxWidth) {
-        height = (height * maxWidth) / width
-        width = maxWidth
-      }
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) { reject(new Error('Canvas context failed')); return }
-      ctx.drawImage(img, 0, 0, width, height)
-      canvas.toBlob(
-        (blob) => { if (blob) resolve(blob); else reject(new Error('Blob creation failed')) },
-        'image/jpeg',
-        0.8,
-      )
-    }
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image loading failed')) }
-    img.src = url
-  })
-}
+const resolveUrl = resolveWerkbonUrl
+const resizeImage = resizeWerkbonImage
 
 function formatDateNL(s: string | undefined): string {
   if (!s) return ''
@@ -290,10 +255,7 @@ export function WerkbonMonteurView() {
     try {
       setIsSaving(true)
       const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
-      const baseOpmerkingen = (monteurOpmerkingen || '').replace(/\n\nAfgerond door: [\s\S]*$/, '').trimEnd()
-      const nieuweOpmerkingen = baseOpmerkingen
-        ? `${baseOpmerkingen}\n\nAfgerond door: ${medewerkerNaam}`
-        : `Afgerond door: ${medewerkerNaam}`
+      const nieuweOpmerkingen = opmerkingenMetAfronder(monteurOpmerkingen, medewerkerNaam)
       await updateWerkbon(werkbon.id, {
         status: 'afgerond',
         uren_gewerkt: urenGewerkt,

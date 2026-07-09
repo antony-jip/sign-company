@@ -33,7 +33,8 @@ import {
   getMontageAfspraak, updateMontageAfspraak,
 } from '@/services/supabaseService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
-import { uploadFile, downloadFile, getSignedUrl } from '@/services/storageService'
+import { uploadFile, downloadFile } from '@/services/storageService'
+import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder } from '@/utils/werkbonMedia'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { pdfEerstePaginaNaarImage } from '@/utils/pdfToImage'
 import {
@@ -53,46 +54,10 @@ const PdfPreviewDialog = React.lazy(() =>
   import('@/components/shared/PdfPreviewDialog').then((m) => ({ default: m.PdfPreviewDialog })),
 )
 
-// Resolve a URL: if it's a storage path, convert to a signed URL.
-// Returns '' on failure so render-laag een placeholder kan tonen ipv broken image.
-// Langere TTL (12u) zodat een lang openstaande werkbon geen verlopen foto-URL's krijgt.
-const WERKBON_URL_TTL = 60 * 60 * 12
-async function resolveUrl(url: string): Promise<string> {
-  if (!url || url.startsWith('data:') || url.startsWith('http') || url.startsWith('blob:')) return url
-  try { return await getSignedUrl(url, WERKBON_URL_TTL) } catch (err) {
-    logger.warn('Kon storage URL niet resolven:', url, err)
-    return ''
-  }
-}
+const resolveUrl = resolveWerkbonUrl
 
 // Resize image voor localStorage limiet
-function resizeImage(file: File, maxWidth: number): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      const canvas = document.createElement('canvas')
-      let { width, height } = img
-      if (width > maxWidth) {
-        height = (height * maxWidth) / width
-        width = maxWidth
-      }
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) { reject(new Error('Canvas context failed')); return }
-      ctx.drawImage(img, 0, 0, width, height)
-      canvas.toBlob(
-        (blob) => { if (blob) resolve(blob); else reject(new Error('Blob creation failed')) },
-        'image/jpeg',
-        0.8
-      )
-    }
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image loading failed')) }
-    img.src = url
-  })
-}
+const resizeImage = resizeWerkbonImage
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   concept: { label: 'Concept', color: 'text-mod-taken-text', bg: 'bg-mod-taken-light' },
@@ -354,12 +319,6 @@ export function WerkbonDetail() {
     try {
       setIsSaving(true)
       const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
-      // Strip een eventuele eerdere "Afgerond door: ..."-toevoeging zodat
-      // opnieuw afronden (na terugzetten naar concept) niet stapelt.
-      const baseOpmerkingen = (monteurOpmerkingen || '').replace(/\n\nAfgerond door: [\s\S]*$/, '').trimEnd()
-      const opmerkingenMetAfronder = baseOpmerkingen
-        ? `${baseOpmerkingen}\n\nAfgerond door: ${medewerkerNaam}`
-        : `Afgerond door: ${medewerkerNaam}`
       // Volledige payload meesturen (incl. header-velden), anders gaan
       // niet-opgeslagen wijzigingen aan titel/locatie/contact/datum verloren.
       await updateWerkbon(werkbonId, {
@@ -376,7 +335,7 @@ export function WerkbonDetail() {
         toon_briefpapier: toonBriefpapier,
         status: 'afgerond',
         uren_gewerkt: urenGewerkt,
-        monteur_opmerkingen: opmerkingenMetAfronder,
+        monteur_opmerkingen: opmerkingenMetAfronder(monteurOpmerkingen, medewerkerNaam),
         klant_handtekening: handtekeningData,
         klant_naam_getekend: klantNaamGetekend || undefined,
         getekend_op: handtekeningData ? new Date().toISOString() : undefined,
