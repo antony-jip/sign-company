@@ -49,6 +49,9 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fullscreenCanvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
+  // Voorkomt dat een blanco canvas een bestaande handtekening overschrijft:
+  // pas committen als er daadwerkelijk getekend is.
+  const [hasDrawn, setHasDrawn] = useState(false)
   const [isEditingSignature, setIsEditingSignature] = useState(!handtekeningData)
   const [fullscreenSignature, setFullscreenSignature] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -85,13 +88,28 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
     ctx.strokeStyle = '#000'
     ctx.lineTo(x, y)
     ctx.stroke()
-  }, [isDrawing])
+    if (!hasDrawn) setHasDrawn(true)
+  }, [isDrawing, hasDrawn])
 
   const endDraw = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     setIsDrawing(false)
+    if (!hasDrawn) return
     const canvas = e.currentTarget
     onHandtekeningChange(canvas.toDataURL('image/png'))
-  }, [onHandtekeningChange])
+  }, [onHandtekeningChange, hasDrawn])
+
+  // Teken een bestaande handtekening terug op het canvas bij bewerken, zodat
+  // "Klaar" zonder nieuwe streek de bestaande handtekening niet wist.
+  const preloadSignature = useCallback((canvas: HTMLCanvasElement | null) => {
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    if (!handtekeningData) return
+    const img = new Image()
+    img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+    img.src = handtekeningData
+  }, [handtekeningData])
 
   const clearCanvas = useCallback((canvas: HTMLCanvasElement | null) => {
     if (!canvas) return
@@ -103,25 +121,38 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
     clearCanvas(canvasRef.current)
     clearCanvas(fullscreenCanvasRef.current)
     onHandtekeningChange(undefined)
+    setHasDrawn(false)
     setIsEditingSignature(true)
   }, [onHandtekeningChange, clearCanvas])
 
   const handleFullscreenDone = useCallback(() => {
     const canvas = fullscreenCanvasRef.current
-    if (canvas) {
-      const data = canvas.toDataURL('image/png')
-      onHandtekeningChange(data)
+    if (canvas && hasDrawn) {
+      onHandtekeningChange(canvas.toDataURL('image/png'))
       setIsEditingSignature(false)
     }
     setFullscreenSignature(false)
-  }, [onHandtekeningChange])
+  }, [onHandtekeningChange, hasDrawn])
 
+  // Bij openen van het fullscreen-canvas de bestaande handtekening voorladen.
+  // Alleen op de open-flag triggeren (niet op elke commit), anders zou het
+  // canvas na elke streek opnieuw geladen worden.
   useEffect(() => {
-    if (fullscreenSignature && fullscreenCanvasRef.current) {
-      const ctx = fullscreenCanvasRef.current.getContext('2d')
-      if (ctx) ctx.clearRect(0, 0, fullscreenCanvasRef.current.width, fullscreenCanvasRef.current.height)
+    if (fullscreenSignature) {
+      setHasDrawn(false)
+      preloadSignature(fullscreenCanvasRef.current)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fullscreenSignature])
+
+  // Bij starten van inline-bewerken de bestaande handtekening voorladen.
+  useEffect(() => {
+    if (isEditingSignature) {
+      setHasDrawn(false)
+      preloadSignature(canvasRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditingSignature])
 
   if (!showUren && !showOpmerkingen && !showFotos && !showHandtekening) return null
 
@@ -352,8 +383,9 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
                   Volledig scherm
                 </Button>
                 <Button variant="default" size="sm" className="h-10 px-4 text-[13px]" onClick={() => {
+                  // Alleen committen als er getekend is; anders bestaande handtekening behouden.
                   const canvas = canvasRef.current
-                  if (canvas) onHandtekeningChange(canvas.toDataURL('image/png'))
+                  if (canvas && hasDrawn) onHandtekeningChange(canvas.toDataURL('image/png'))
                   setIsEditingSignature(false)
                 }}>
                   Klaar
@@ -388,6 +420,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="h-10" onClick={() => {
                   clearCanvas(fullscreenCanvasRef.current)
+                  setHasDrawn(false)
                 }}>
                   <RotateCcw className="h-4 w-4" />
                 </Button>
