@@ -880,10 +880,13 @@ export function QuoteItemsTable({
     templateLabels.forEach((label, idx) => {
       if (hidden.has(label) || seenLabels.has(label)) return
       seenLabels.add(label)
-      // Index-based id: labels die naar dezelfde slug normaliseren (bv.
-      // "Lay-out" en "Lay out") kregen anders hetzelfde id/React-key.
+      // Index + slug in het id: index voor de label-lookup bij verwijderen,
+      // slug zodat een gematerialiseerde rij nooit botst met een latere
+      // placeholder op dezelfde positie (na herordenen van de labels) en
+      // labels met dezelfde slug (bv. "Lay-out"/"Lay out") uniek blijven.
+      const slug = label.replace(/[^a-z0-9]+/gi, '_').toLowerCase()
       merged.push({
-        id: `${PLACEHOLDER_PREFIX}${item.id}-i${idx}`,
+        id: `${PLACEHOLDER_PREFIX}${item.id}-i${idx}-${slug}`,
         label,
         waarde: '',
       })
@@ -927,7 +930,7 @@ export function QuoteItemsTable({
 
     // Virtuele placeholder-rij: verberg via _hidden_labels
     if (regelId.startsWith(`${PLACEHOLDER_PREFIX}${item.id}-i`)) {
-      const idx = Number(regelId.slice(`${PLACEHOLDER_PREFIX}${item.id}-i`.length))
+      const idx = parseInt(regelId.slice(`${PLACEHOLDER_PREFIX}${item.id}-i`.length), 10)
       const label = templateLabels[idx]
       if (label) {
         const hidden = getHiddenLabels(item)
