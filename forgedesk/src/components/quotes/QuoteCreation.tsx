@@ -218,6 +218,46 @@ function toPdfItem(item: QuoteLineItem, index: number): OfferteItem {
   }
 }
 
+// Payload voor createOfferteItem. Eén bron voor autosave-create,
+// save-create en dupliceren, zodat een nieuw item-veld niet op één plek
+// vergeten kan worden (→ stille dataverlies bij dupliceren/opslaan).
+function toOfferteItemPayload(
+  item: QuoteLineItem,
+  index: number,
+  userId: string,
+  offerteId: string,
+): Omit<OfferteItem, 'id' | 'created_at'> {
+  return {
+    user_id: userId,
+    offerte_id: offerteId,
+    beschrijving: item.beschrijving,
+    aantal: item.aantal,
+    eenheidsprijs: item.eenheidsprijs,
+    btw_percentage: item.btw_percentage,
+    korting_percentage: item.korting_percentage,
+    totaal: item.totaal,
+    volgorde: index + 1,
+    soort: item.soort,
+    extra_velden: item.extra_velden,
+    detail_regels: item.detail_regels,
+    calculatie_regels: item.calculatie_regels,
+    heeft_calculatie: item.heeft_calculatie,
+    prijs_varianten: item.prijs_varianten,
+    actieve_variant_id: item.actieve_variant_id,
+    breedte_mm: item.breedte_mm,
+    hoogte_mm: item.hoogte_mm,
+    oppervlakte_m2: item.oppervlakte_m2,
+    afmeting_vrij: item.afmeting_vrij,
+    foto_url: item.foto_url,
+    foto_op_offerte: item.foto_op_offerte,
+    is_optioneel: item.is_optioneel,
+    interne_notitie: item.interne_notitie,
+    bijlage_url: item.bijlage_url,
+    bijlage_type: item.bijlage_type,
+    bijlage_naam: item.bijlage_naam,
+  }
+}
+
 // ============================================================
 // MAIN COMPONENT
 // ============================================================
@@ -1129,35 +1169,7 @@ export function QuoteCreation() {
 
         await Promise.all(
           items.map((item, index) =>
-            createOfferteItem({
-              user_id: user.id,
-              offerte_id: newOfferte.id,
-              beschrijving: item.beschrijving,
-              aantal: item.aantal,
-              eenheidsprijs: item.eenheidsprijs,
-              btw_percentage: item.btw_percentage,
-              korting_percentage: item.korting_percentage,
-              totaal: item.totaal,
-              volgorde: index + 1,
-              soort: item.soort,
-              extra_velden: item.extra_velden,
-              detail_regels: item.detail_regels,
-              calculatie_regels: item.calculatie_regels,
-              heeft_calculatie: item.heeft_calculatie,
-              prijs_varianten: item.prijs_varianten,
-              actieve_variant_id: item.actieve_variant_id,
-              breedte_mm: item.breedte_mm,
-              hoogte_mm: item.hoogte_mm,
-              oppervlakte_m2: item.oppervlakte_m2,
-              afmeting_vrij: item.afmeting_vrij,
-              foto_url: item.foto_url,
-              foto_op_offerte: item.foto_op_offerte,
-              is_optioneel: item.is_optioneel,
-              interne_notitie: item.interne_notitie,
-              bijlage_url: item.bijlage_url,
-              bijlage_type: item.bijlage_type,
-              bijlage_naam: item.bijlage_naam,
-            })
+            createOfferteItem(toOfferteItemPayload(item, index, user.id, newOfferte.id))
           )
         )
       }
@@ -1289,35 +1301,7 @@ export function QuoteCreation() {
 
       await Promise.all(
         items.map((item, index) =>
-          createOfferteItem({
-            user_id: user.id,
-            offerte_id: newOfferte.id,
-            beschrijving: item.beschrijving,
-            aantal: item.aantal,
-            eenheidsprijs: item.eenheidsprijs,
-            btw_percentage: item.btw_percentage,
-            korting_percentage: item.korting_percentage,
-            totaal: item.totaal,
-            volgorde: index + 1,
-            soort: item.soort,
-            extra_velden: item.extra_velden,
-            detail_regels: item.detail_regels,
-            calculatie_regels: item.calculatie_regels,
-            heeft_calculatie: item.heeft_calculatie,
-            prijs_varianten: item.prijs_varianten,
-            actieve_variant_id: item.actieve_variant_id,
-            breedte_mm: item.breedte_mm,
-            hoogte_mm: item.hoogte_mm,
-            oppervlakte_m2: item.oppervlakte_m2,
-            afmeting_vrij: item.afmeting_vrij,
-            foto_url: item.foto_url,
-            foto_op_offerte: item.foto_op_offerte,
-            is_optioneel: item.is_optioneel,
-            interne_notitie: item.interne_notitie,
-            bijlage_url: item.bijlage_url,
-            bijlage_type: item.bijlage_type,
-            bijlage_naam: item.bijlage_naam,
-          })
+          createOfferteItem(toOfferteItemPayload(item, index, user.id, newOfferte.id))
         )
       )
 
@@ -1431,35 +1415,7 @@ export function QuoteCreation() {
 
         await Promise.all(
           items.map((item, index) =>
-            createOfferteItem({
-              user_id: user.id,
-              offerte_id: newOfferte.id,
-              beschrijving: item.beschrijving,
-              aantal: item.aantal,
-              eenheidsprijs: item.eenheidsprijs,
-              btw_percentage: item.btw_percentage,
-              korting_percentage: item.korting_percentage,
-              totaal: item.totaal,
-              volgorde: index + 1,
-              soort: item.soort,
-              extra_velden: item.extra_velden,
-              detail_regels: item.detail_regels,
-              calculatie_regels: item.calculatie_regels,
-              heeft_calculatie: item.heeft_calculatie,
-              prijs_varianten: item.prijs_varianten,
-              actieve_variant_id: item.actieve_variant_id,
-              breedte_mm: item.breedte_mm,
-              hoogte_mm: item.hoogte_mm,
-              oppervlakte_m2: item.oppervlakte_m2,
-              afmeting_vrij: item.afmeting_vrij,
-              foto_url: item.foto_url,
-              foto_op_offerte: item.foto_op_offerte,
-              is_optioneel: item.is_optioneel,
-              interne_notitie: item.interne_notitie,
-              bijlage_url: item.bijlage_url,
-              bijlage_type: item.bijlage_type,
-              bijlage_naam: item.bijlage_naam,
-            })
+            createOfferteItem(toOfferteItemPayload(item, index, user.id, newOfferte.id))
           )
         )
       }
