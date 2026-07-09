@@ -346,6 +346,9 @@ export function QuoteCreation() {
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hasUnsavedChangesRef = useRef(false)
   const saveLockRef = useRef(false)
+  // Voorkomt dat het inladen van een bestaande offerte zelf als "wijziging"
+  // telt (dirty + autosave bij alleen maar bekijken).
+  const suppressDirtyOnLoadRef = useRef(false)
   const lastKnownUpdatedAtRef = useRef<string | null>(null)
 
   // ── Computed ──
@@ -716,6 +719,7 @@ export function QuoteCreation() {
         }).catch(() => {/* silent */})
 
         // Go straight to editing (skip klant selector)
+        suppressDirtyOnLoadRef.current = true
         setShowKlantSelector(false)
       } catch (err) {
         logger.error('Failed to load offerte for edit:', err)
@@ -1044,7 +1048,13 @@ export function QuoteCreation() {
     // Geen nieuwe offerte aanmaken zonder nummer · voorkom lege nummers in DB
     const currentId = editOfferteId || autoSaveIdRef.current
     if (!currentId && !offerteNummer) return
-    if (isSaving || saveLockRef.current) return
+    if (isSaving || saveLockRef.current) {
+      // Er loopt al een save; herplan zodat wijzigingen die tijdens die save
+      // getypt zijn niet blijven liggen tot de volgende edit of unmount.
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+      autoSaveTimerRef.current = setTimeout(() => performAutoSaveRef.current(), 800)
+      return
+    }
     if (isTrialBlocked) return
 
     saveLockRef.current = true
@@ -1064,7 +1074,6 @@ export function QuoteCreation() {
       const effectiefBtw = _offTot.btw_bedrag
 
       const currentId = editOfferteId || autoSaveIdRef.current
-      const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
 
       if (currentId) {
         // Update existing (met optimistic locking) · geen status meesturen om pipeline wijzigingen niet te overschrijven
@@ -1082,13 +1091,14 @@ export function QuoteCreation() {
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
-          ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
-          ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
+          // Altijd meesturen: conditioneel weglaten betekende dat terugzetten
+          // naar 0 nooit werd opgeslagen en de oude waarde bleef staan.
+          afrondingskorting_excl_btw: afrondingskorting,
+          uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
         }, lastKnownUpdatedAtRef.current || undefined)
         lastKnownUpdatedAtRef.current = saved.updated_at
 
-        // Sync items via batch upsert (geen delete-all/recreate-all)
         await syncOfferteItems(currentId, items as any, user.id)
       } else {
         // Create new as concept
@@ -1109,8 +1119,8 @@ export function QuoteCreation() {
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
-          ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
-          ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
+          afrondingskorting_excl_btw: afrondingskorting,
+          uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
         })
         autoSaveIdRef.current = newOfferte.id
@@ -1172,7 +1182,7 @@ export function QuoteCreation() {
     } finally {
       saveLockRef.current = false
     }
-  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, versioning.versieNummer])
+  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, urenCorrectie, urenCorrectieBedrag, isTrialBlocked, versioning.versieNummer])
 
   // Keep ref in sync so unmount handler can call latest version
   useEffect(() => {
@@ -1183,6 +1193,13 @@ export function QuoteCreation() {
   useEffect(() => {
     if (showKlantSelector) return
     if (!selectedKlantId || !offerteTitel.trim() || items.length === 0) return
+    // De state-batch van loadEditData is geen gebruikerswijziging: zonder deze
+    // guard herschreef alleen al het openen van een offerte alle items
+    // (nieuwe ids, updated_at-bump → valse conflicts bij collega's).
+    if (suppressDirtyOnLoadRef.current) {
+      suppressDirtyOnLoadRef.current = false
+      return
+    }
 
     hasUnsavedChangesRef.current = true
     setDirty(true)
@@ -1360,7 +1377,6 @@ export function QuoteCreation() {
       if ((isEditMode && editOfferteId) || autoSaveIdRef.current) {
         const existingId = editOfferteId || autoSaveIdRef.current!
         // Update existing offerte
-        const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
         const saved = await updateOfferte(existingId, {
           klant_id: selectedKlantId,
           klant_naam: selectedKlant?.bedrijfsnaam,
@@ -1376,8 +1392,9 @@ export function QuoteCreation() {
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
-          ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
-          ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
+          // Altijd meesturen zodat terugzetten naar 0 ook opgeslagen wordt
+          afrondingskorting_excl_btw: afrondingskorting,
+          uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
         }, lastKnownUpdatedAtRef.current || undefined)
         lastKnownUpdatedAtRef.current = saved.updated_at
@@ -1387,7 +1404,6 @@ export function QuoteCreation() {
         await syncOfferteItems(existingId, items as any, user.id)
       } else {
         // Create new offerte
-        const newHeeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
         const newOfferte = await createOfferte({
           user_id: user.id,
           klant_id: selectedKlantId,
@@ -1406,8 +1422,8 @@ export function QuoteCreation() {
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
-          ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
-          ...(newHeeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
+          afrondingskorting_excl_btw: afrondingskorting,
+          uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
         })
         savedOfferteId = newOfferte.id
@@ -1676,11 +1692,14 @@ export function QuoteCreation() {
 
       // Update offerte status
       if (savedQuoteId) {
-        await updateOfferte(savedQuoteId, {
+        const saved = await updateOfferte(savedQuoteId, {
           status: 'verzonden',
           verstuurd_op: new Date().toISOString(),
           verzendwijze: 'via_portaal',
         })
+        // Ref bijwerken, anders ziet de volgende autosave de eigen
+        // status-update als extern conflict en stopt de autosave-loop.
+        lastKnownUpdatedAtRef.current = saved.updated_at
       }
 
       // Stuur email notificatie naar klant
@@ -1864,12 +1883,15 @@ export function QuoteCreation() {
       })
       const verstuurdOp = scheduledAt || new Date().toISOString()
       if (quoteId) {
-        await updateOfferte(quoteId, {
+        const saved = await updateOfferte(quoteId, {
           status: 'verzonden',
           verstuurd_op: verstuurdOp,
           verstuurd_naar: email.emailTo.trim(),
           verzendwijze: 'via_email_pdf',
         })
+        // Ref bijwerken, anders ziet de volgende autosave de eigen
+        // status-update als extern conflict en stopt de autosave-loop.
+        lastKnownUpdatedAtRef.current = saved.updated_at
         setVerstuurdOp(verstuurdOp)
         setVerstuurdNaar(email.emailTo.trim())
       }

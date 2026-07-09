@@ -375,18 +375,12 @@ export async function syncOfferteItems(
       .eq('offerte_id', offerteId)
     if (fetchErr) throw fetchErr
 
-    const existingIds = new Set((existing || []).map(e => e.id))
+    const existingIds = (existing || []).map(e => e.id)
 
-    // 2. Batch delete alle bestaande items voor deze offerte
-    if (existingIds.size > 0) {
-      const { error: delErr } = await supabase
-        .from('offerte_items')
-        .delete()
-        .eq('offerte_id', offerteId)
-      if (delErr) throw delErr
-    }
-
-    // 3. Batch insert alle items in één call
+    // 2. Eerst inserten (één atomair statement), daarna pas de oude rijen
+    // verwijderen. Andersom (delete-all → insert) liet bij een mislukte
+    // insert een offerte zonder items achter; nu is het ergste geval een
+    // tijdelijke dubbeling die de volgende sync opruimt.
     const insertData = items.map((item, index) => ({
       user_id: userId,
       offerte_id: offerteId,
@@ -422,6 +416,15 @@ export async function syncOfferteItems(
       .insert(insertData)
       .select()
     if (insertErr) throw insertErr
+
+    // 3. Oude rijen opruimen (op id, zodat de zojuist geïnsertte set blijft)
+    if (existingIds.length > 0) {
+      const { error: delErr } = await supabase
+        .from('offerte_items')
+        .delete()
+        .in('id', existingIds)
+      if (delErr) throw delErr
+    }
     return result || []
   }
 
