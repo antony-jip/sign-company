@@ -888,3 +888,15 @@ met index+slug). Opmerkingen:
   (c) Vervuilde _hidden_labels-strings uit de oude bug blijven in de DB staan;
       vermoedelijk onschadelijk. Checken als er "verdwenen rijen"-meldingen
       komen.
+
+## 2026-07-09 · fix/offerte-create-hardening · Fase A (40944ba6, 942aca61, 3c170c6f)
+
+Senior review AKKOORD-MET-OPMERKINGEN. Opmerkingen:
+  (a) Ingeplande offerte-mail zet de offerte direct op "verzonden" met
+      verstuurd_op in de toekomst; als de cron faalt of het geplande bericht
+      geannuleerd wordt is er geen terugkoppeling naar de offerte-status.
+  (b) 400-melding van de send-email API werd generiek getoond — direct
+      gefixt: servermelding wordt nu doorgegeven in de toast.
+  (c) Pre-existing: pdfService r842-859 toont "Subtotaal" (incl. korting) én
+      een aparte regel "Afrondingskorting" — visueel telt de som niet op.
+      Centrale fix hoort in pdfService, apart oppakken.

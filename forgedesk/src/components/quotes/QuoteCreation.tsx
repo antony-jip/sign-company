@@ -1903,7 +1903,8 @@ export function QuoteCreation() {
       email.setShowEmailCompose(false)
     } catch (err) {
       logger.error('Failed to send email:', err)
-      toast.error('Kon email niet verzenden')
+      // Servermelding doorgeven (bv. "scheduledAt moet in de toekomst liggen")
+      toast.error(err instanceof Error && err.message ? `Kon email niet verzenden: ${err.message}` : 'Kon email niet verzenden')
     } finally {
       email.setIsSendingEmail(false)
     }
