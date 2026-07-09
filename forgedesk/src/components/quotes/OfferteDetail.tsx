@@ -21,6 +21,7 @@ import type { Offerte, OfferteItem, Klant, OfferteActiviteit } from '@/types'
 import { cn, formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { round2 } from '@/utils/budgetUtils'
+import { getActievePrijsRegel } from '@/utils/offerteTotalen'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTrialGuard } from '@/hooks/useTrialGuard'
@@ -601,16 +602,25 @@ export function OfferteDetail() {
     )
   }
 
-  // Calculate totals
-  const subtotaal = round2(items.reduce((sum, item) => sum + calculateLineTotaal(item), 0))
+  // Toon de opgeslagen offerte-totalen als bron van waarheid: die zijn
+  // variant-bewust, sluiten optionele items uit en bevatten afrondingskorting/
+  // urencorrectie — precies wat de klant en de factuur zien. Zelf herberekenen
+  // uit alle items (zonder die correcties) week daarvan af.
+  const subtotaal = offerte.subtotaal
+  const totaalBtw = offerte.btw_bedrag
+  const totaal = offerte.totaal
+  // BTW-uitsplitsing per tarief · informatieve weergave op basis van de
+  // meetellende (niet-optionele, prijs-)regels met hun actieve variant.
   const btwGroups: Record<number, number> = {}
-  items.forEach((item) => {
-    const lineTotaal = calculateLineTotaal(item)
-    const btwBedrag = round2(lineTotaal * (item.btw_percentage / 100))
-    btwGroups[item.btw_percentage] = round2((btwGroups[item.btw_percentage] || 0) + btwBedrag)
-  })
-  const totaalBtw = round2(Object.values(btwGroups).reduce((sum, val) => sum + val, 0))
-  const totaal = round2(subtotaal + totaalBtw)
+  items
+    .filter((item) => (item.soort || 'prijs') === 'prijs' && !item.is_optioneel)
+    .forEach((item) => {
+      const r = getActievePrijsRegel(item)
+      const bruto = round2(r.aantal * r.eenheidsprijs)
+      const netto = round2(bruto - bruto * (r.korting_percentage / 100))
+      const btwBedrag = round2(netto * (r.btw_percentage / 100))
+      btwGroups[r.btw_percentage] = round2((btwGroups[r.btw_percentage] || 0) + btwBedrag)
+    })
 
   const activiteiten = [...(offerte.activiteiten || [])].sort(
     (a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime()
