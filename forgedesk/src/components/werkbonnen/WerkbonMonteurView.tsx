@@ -23,7 +23,9 @@ import {
   getKlanten, getProjecten, getOffertes,
   getMontageAfspraak, updateMontageAfspraak,
 } from '@/services/supabaseService'
-import { uploadFile, getSignedUrl } from '@/services/storageService'
+import { uploadFile } from '@/services/storageService'
+import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder } from '@/utils/werkbonMedia'
+import { bufferWerkbonFeedback, clearWerkbonFeedback, flushWerkbonFeedbackQueue } from '@/utils/werkbonOfflineQueue'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
@@ -39,41 +41,8 @@ const STATUS_LABEL: Record<Werkbon['status'], string> = {
   gefactureerd: 'Gefactureerd',
 }
 
-async function resolveUrl(url: string): Promise<string> {
-  if (!url || url.startsWith('data:') || url.startsWith('http') || url.startsWith('blob:')) return url
-  try { return await getSignedUrl(url) } catch (err) {
-    logger.warn('Kon storage URL niet resolven:', url, err)
-    return ''
-  }
-}
-
-function resizeImage(file: File, maxWidth: number): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      const canvas = document.createElement('canvas')
-      let { width, height } = img
-      if (width > maxWidth) {
-        height = (height * maxWidth) / width
-        width = maxWidth
-      }
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) { reject(new Error('Canvas context failed')); return }
-      ctx.drawImage(img, 0, 0, width, height)
-      canvas.toBlob(
-        (blob) => { if (blob) resolve(blob); else reject(new Error('Blob creation failed')) },
-        'image/jpeg',
-        0.8,
-      )
-    }
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image loading failed')) }
-    img.src = url
-  })
-}
+const resolveUrl = resolveWerkbonUrl
+const resizeImage = resizeWerkbonImage
 
 function formatDateNL(s: string | undefined): string {
   if (!s) return ''
@@ -122,10 +91,20 @@ export function WerkbonMonteurView() {
   }, [showPdfPreview])
   useEffect(() => () => { if (bumpTimer.current) clearTimeout(bumpTimer.current) }, [])
 
+  // ── Autosave van monteur-feedback (uren/opmerkingen/naam/handtekening) ──
+  // Zonder dit ging alles behalve foto's pas bij afronden naar de DB; weg-
+  // navigeren of een crash op locatie betekende dataverlies. userChangedRef
+  // voorkomt dat het inladen zelf als wijziging telt.
+  const userChangedRef = useRef(false)
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     let cancelled = false
     async function loadData() {
       if (!id) return
+      // Reset de "gewijzigd"-vlag bij het laden van (een andere) werkbon, zodat
+      // een leftover van een vorige werkbon geen ongewenste autosave triggert.
+      userChangedRef.current = false
       try {
         setIsLoading(true)
         const wb = await getWerkbon(id)
@@ -173,20 +152,77 @@ export function WerkbonMonteurView() {
   }, [id])
 
   const handleUrenChange = useCallback((val: number | undefined) => {
-    setUrenGewerkt(val); setDirty(true); bumpPreview()
+    userChangedRef.current = true; setUrenGewerkt(val); setDirty(true); bumpPreview()
   }, [setDirty, bumpPreview])
 
   const handleOpmerkingenChange = useCallback((val: string) => {
-    setMonteurOpmerkingen(val); setDirty(true); bumpPreview()
+    userChangedRef.current = true; setMonteurOpmerkingen(val); setDirty(true); bumpPreview()
   }, [setDirty, bumpPreview])
 
   const handleKlantNaamChange = useCallback((val: string) => {
-    setKlantNaamGetekend(val); setDirty(true); bumpPreview()
+    userChangedRef.current = true; setKlantNaamGetekend(val); setDirty(true); bumpPreview()
   }, [setDirty, bumpPreview])
 
   const handleHandtekeningChange = useCallback((data: string | undefined) => {
-    setHandtekeningData(data); setDirty(true); bumpPreview()
+    userChangedRef.current = true; setHandtekeningData(data); setDirty(true); bumpPreview()
   }, [setDirty, bumpPreview])
+
+  // Debounced autosave zodra de monteur iets wijzigt (niet bij afgeronde werkbon).
+  useEffect(() => {
+    if (!userChangedRef.current) return
+    if (!werkbon || werkbon.status === 'afgerond') return
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
+    autosaveTimer.current = setTimeout(async () => {
+      const payload = {
+        uren_gewerkt: urenGewerkt,
+        monteur_opmerkingen: monteurOpmerkingen || undefined,
+        klant_handtekening: handtekeningData,
+        klant_naam_getekend: klantNaamGetekend || undefined,
+        getekend_op: handtekeningData ? new Date().toISOString() : undefined,
+      }
+      try {
+        await updateWerkbon(werkbon.id, payload)
+        clearWerkbonFeedback(werkbon.id)
+        setDirty(false)
+      } catch (err) {
+        // Geen dekking op locatie: buffer lokaal en sync zodra er verbinding is.
+        logger.error('Autosave werkbon-feedback mislukt, gebufferd voor retry:', err)
+        bufferWerkbonFeedback(werkbon.id, payload, Date.now())
+        // Dedupe-id: toont één melding i.p.v. bij elke mislukte poging.
+        toast.error('Geen verbinding · wijzigingen lokaal bewaard, sync volgt automatisch', { id: 'werkbon-offline-buffer' })
+      }
+    }, 1000)
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current) }
+  }, [urenGewerkt, monteurOpmerkingen, klantNaamGetekend, handtekeningData, werkbon, setDirty])
+
+  // Gebufferde offline-feedback opnieuw proberen bij mount en zodra de
+  // verbinding terugkomt.
+  useEffect(() => {
+    flushWerkbonFeedbackQueue()
+    const onOnline = () => { flushWerkbonFeedbackQueue() }
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+  }, [])
+
+  // Laatste waarden vasthouden voor een flush bij wegnavigeren (de debounce
+  // van 1s zou anders de allerlaatste wijziging kunnen verliezen).
+  const feedbackRef = useRef({ urenGewerkt, monteurOpmerkingen, klantNaamGetekend, handtekeningData, werkbon })
+  feedbackRef.current = { urenGewerkt, monteurOpmerkingen, klantNaamGetekend, handtekeningData, werkbon }
+  useEffect(() => () => {
+    if (!userChangedRef.current) return
+    const f = feedbackRef.current
+    if (!f.werkbon || f.werkbon.status === 'afgerond') return
+    const payload = {
+      uren_gewerkt: f.urenGewerkt,
+      monteur_opmerkingen: f.monteurOpmerkingen || undefined,
+      klant_handtekening: f.handtekeningData,
+      klant_naam_getekend: f.klantNaamGetekend || undefined,
+      getekend_op: f.handtekeningData ? new Date().toISOString() : undefined,
+    }
+    updateWerkbon(f.werkbon.id, payload)
+      .then(() => clearWerkbonFeedback(f.werkbon!.id))
+      .catch(() => bufferWerkbonFeedback(f.werkbon!.id, payload, Date.now()))
+  }, [])
 
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
     if (!werkbon) return
@@ -195,15 +231,18 @@ export function WerkbonMonteurView() {
 
     let uploaded = 0
     let lastError: string | null = null
-    for (const file of files) {
+    // Parallel met een kleine concurrency-limiet: veel sneller dan serieel
+    // wanneer de monteur meerdere foto's tegelijk kiest, zonder een zwakke
+    // mobiele verbinding te verzadigen. Elke foto verschijnt zodra hij klaar is.
+    const queue = [...files]
+    const uploadFoto = async (file: File) => {
       try {
         const resized = await resizeImage(file, 1200)
         const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
         const safeName = sanitizeStorageFilename(file.name)
-        const storagePath = `werkbon-fotos/${werkbon.id}/${Date.now()}-${safeName}`
+        const storagePath = `werkbon-fotos/${werkbon.id}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safeName}`
         const uploadedPath = await uploadFile(resizedFile, storagePath)
         const displayUrl = await resolveUrl(uploadedPath)
-
         const foto = await createWerkbonFoto({
           user_id: userId,
           werkbon_id: werkbon.id,
@@ -219,6 +258,8 @@ export function WerkbonMonteurView() {
         lastError = err instanceof Error ? err.message : 'Onbekende fout'
       }
     }
+    const worker = async () => { let f; while ((f = queue.shift())) await uploadFoto(f) }
+    await Promise.all(Array.from({ length: Math.min(3, files.length) }, worker))
     if (uploaded > 0) { toast.success(`${uploaded} foto${uploaded > 1 ? "'s" : ''} toegevoegd`); bumpPreview() }
     else toast.error(`Upload mislukt: ${lastError ?? 'Onbekende fout'}`)
     e.target.value = ''
@@ -233,12 +274,15 @@ export function WerkbonMonteurView() {
 
   const handleAfronden = useCallback(async () => {
     if (!werkbon) return
+    // Voorkom dat een lopende debounced autosave met de afronden-call racet, en
+    // dat een oudere buffer-entry later een afgeronde werkbon terugzet.
+    if (autosaveTimer.current) { clearTimeout(autosaveTimer.current); autosaveTimer.current = null }
+    userChangedRef.current = false
+    clearWerkbonFeedback(werkbon.id)
     try {
       setIsSaving(true)
       const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
-      const nieuweOpmerkingen = monteurOpmerkingen
-        ? `${monteurOpmerkingen}\n\nAfgerond door: ${medewerkerNaam}`
-        : `Afgerond door: ${medewerkerNaam}`
+      const nieuweOpmerkingen = opmerkingenMetAfronder(monteurOpmerkingen, medewerkerNaam)
       await updateWerkbon(werkbon.id, {
         status: 'afgerond',
         uren_gewerkt: urenGewerkt,
@@ -247,6 +291,7 @@ export function WerkbonMonteurView() {
         klant_naam_getekend: klantNaamGetekend || undefined,
         getekend_op: handtekeningData ? new Date().toISOString() : undefined,
       })
+      clearWerkbonFeedback(werkbon.id)
       setWerkbon((prev) => prev ? { ...prev, status: 'afgerond' } : prev)
       setDirty(false)
       toast.success('Werkbon afgerond')
@@ -452,7 +497,9 @@ export function WerkbonMonteurView() {
             <div className="space-y-3">
               {werkbonItems.map((item, idx) => {
                 const heeftAfmeting = item.afmeting_breedte_mm || item.afmeting_hoogte_mm
-                const thumbs = item.afbeeldingen.slice(0, 2)
+                // Alle afbeeldingen tonen: de monteur op locatie moet elke
+                // tekening/foto kunnen zien (was gekapt op 2).
+                const thumbs = item.afbeeldingen
                 return (
                   <article
                     key={item.id}
