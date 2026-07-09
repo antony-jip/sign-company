@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -32,10 +32,12 @@ import {
   updateOfferteItem,
   createOfferteItem,
   deleteOfferteItem,
+  OfferteConflictError,
 } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
+import { berekenOfferteTotalen, getActievePrijsRegel, berekenRegelTotaal } from '@/utils/offerteTotalen'
 import type { Offerte, OfferteItem } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '../../utils/logger'
@@ -59,6 +61,8 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
   const [items, setItems] = useState<EditableItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  // Optimistic locking: server-timestamp bij laatste laad/opslag
+  const lastKnownUpdatedAtRef = useRef<string | undefined>(undefined)
 
   // Editable offerte fields
   const [titel, setTitel] = useState('')
@@ -81,6 +85,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
         setNotities(offerteData.notities || '')
         setVoorwaarden(offerteData.voorwaarden || '')
         setGeldigTot(offerteData.geldig_tot || '')
+        lastKnownUpdatedAtRef.current = offerteData.updated_at
       }
       setItems(itemsData.map(i => ({ ...i })))
     } catch (err) {
@@ -101,9 +106,9 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
     setItems(prev => {
       const updated = [...prev]
       const item = { ...updated[index], [field]: value }
-      // Recalculate totaal
-      const bruto = item.aantal * item.eenheidsprijs
-      item.totaal = bruto - bruto * (item.korting_percentage / 100)
+      // Volgt het actieve variant (indien aanwezig) en rondt af, net als de
+      // hoofd-offerte-editor.
+      item.totaal = berekenRegelTotaal(item)
       updated[index] = item
       return updated
     })
@@ -156,17 +161,15 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
   }
 
   const calculateTotals = () => {
-    const activeItems = items.filter(i => !i._deleted)
-    const subtotaal = round2(activeItems.reduce((sum, item) => {
-      const bruto = item.aantal * item.eenheidsprijs
-      return sum + round2(bruto - bruto * (item.korting_percentage / 100))
-    }, 0))
-    const btwBedrag = round2(activeItems.reduce((sum, item) => {
-      const bruto = item.aantal * item.eenheidsprijs
-      const netto = round2(bruto - bruto * (item.korting_percentage / 100))
-      return sum + round2(netto * (item.btw_percentage / 100))
-    }, 0))
-    return { subtotaal, btwBedrag, totaal: round2(subtotaal + btwBedrag) }
+    // Zelfde grondslag als de hoofd-offerte-editor: alleen verplichte
+    // prijsregels, met de prijs van het actieve variant.
+    const teltMee = items.filter(
+      i => !i._deleted && (i.soort || 'prijs') === 'prijs' && !i.is_optioneel,
+    )
+    const { subtotaal, btw_bedrag, totaal } = berekenOfferteTotalen(
+      teltMee.map(getActievePrijsRegel),
+    )
+    return { subtotaal, btwBedrag: btw_bedrag, totaal }
   }
 
   const handleSave = async () => {
@@ -175,8 +178,9 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
     try {
       const { subtotaal, btwBedrag, totaal } = calculateTotals()
 
-      // Update offerte
-      await updateOfferte(offerte.id, {
+      // Update offerte (met optimistic locking, zodat we wijzigingen uit de
+      // hoofd-offerte-editor niet stil overschrijven)
+      const saved = await updateOfferte(offerte.id, {
         titel,
         status,
         notities,
@@ -185,7 +189,8 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
         subtotaal,
         btw_bedrag: btwBedrag,
         totaal,
-      })
+      }, lastKnownUpdatedAtRef.current)
+      lastKnownUpdatedAtRef.current = saved.updated_at
 
       // Delete removed items
       const deletedItems = items.filter(i => i._deleted && !i._isNew)
@@ -225,8 +230,12 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
       onSaved()
       onClose()
     } catch (err) {
-      logger.error('Fout bij opslaan offerte:', err)
-      toast.error('Kon offerte niet opslaan')
+      if (err instanceof OfferteConflictError) {
+        toast.error('Deze offerte is intussen elders gewijzigd. Sluit en heropen om de laatste versie te zien.', { duration: 10000 })
+      } else {
+        logger.error('Fout bij opslaan offerte:', err)
+        toast.error('Kon offerte niet opslaan')
+      }
     } finally {
       setIsSaving(false)
     }
