@@ -31,6 +31,9 @@ interface WerkbonMonteurFeedbackProps {
   onAfronden?: () => void
   isSaving?: boolean
   status?: string
+  /** Foto's + handtekening alleen op mobiel tonen (kantoor-editor verbergt ze
+   *  op desktop; de monteur-view laat ze altijd zien). */
+  fotosHandtekeningMobielAlleen?: boolean
 }
 
 export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback({
@@ -40,7 +43,9 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
   klantNaamGetekend, handtekeningData,
   onUrenChange, onOpmerkingenChange, onFotoToevoegen, onFotoVerwijderen,
   onKlantNaamChange, onHandtekeningChange, onLightbox, onDownloadFotos, onAfronden, isSaving, status,
+  fotosHandtekeningMobielAlleen = false,
 }: WerkbonMonteurFeedbackProps) {
+  const mobielAlleenCls = fotosHandtekeningMobielAlleen ? 'md:hidden' : ''
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fullscreenCanvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
@@ -160,7 +165,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
 
       {/* Foto's · prominent voor mobiel */}
       {showFotos && (
-        <div className="bg-white rounded-xl border border-border p-4 space-y-4" ref={containerRef}>
+        <div className={cn("bg-white rounded-xl border border-border p-4 space-y-4", mobielAlleenCls)} ref={containerRef}>
           <div className="flex items-center justify-between">
             <h3 className="text-[13px] font-bold text-foreground flex items-center gap-2">
               <Camera className="h-4 w-4" /> Foto's
@@ -284,7 +289,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
 
       {/* Handtekening klant */}
       {showHandtekening && (
-        <div className="bg-white rounded-xl border border-border p-4 space-y-3">
+        <div className={cn("bg-white rounded-xl border border-border p-4 space-y-3", mobielAlleenCls)}>
           <h3 className="text-[13px] font-bold text-foreground flex items-center gap-2">
             <Pen className="h-4 w-4" /> Handtekening klant
             {readOnly && <Lock className="h-3 w-3 text-muted-foreground" />}

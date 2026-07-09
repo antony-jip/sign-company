@@ -1319,6 +1319,7 @@ export function WerkbonDetail() {
             onAfronden={handleAfronden}
             isSaving={isSaving}
             status={status}
+            fotosHandtekeningMobielAlleen
           />
         </div>
       </div>
