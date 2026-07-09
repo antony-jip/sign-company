@@ -25,6 +25,7 @@ import {
 } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
 import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder } from '@/utils/werkbonMedia'
+import { bufferWerkbonFeedback, clearWerkbonFeedback, flushWerkbonFeedbackQueue } from '@/utils/werkbonOfflineQueue'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
@@ -169,21 +170,34 @@ export function WerkbonMonteurView() {
     if (!werkbon || werkbon.status === 'afgerond') return
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
     autosaveTimer.current = setTimeout(async () => {
+      const payload = {
+        uren_gewerkt: urenGewerkt,
+        monteur_opmerkingen: monteurOpmerkingen || undefined,
+        klant_handtekening: handtekeningData,
+        klant_naam_getekend: klantNaamGetekend || undefined,
+        getekend_op: handtekeningData ? new Date().toISOString() : undefined,
+      }
       try {
-        await updateWerkbon(werkbon.id, {
-          uren_gewerkt: urenGewerkt,
-          monteur_opmerkingen: monteurOpmerkingen || undefined,
-          klant_handtekening: handtekeningData,
-          klant_naam_getekend: klantNaamGetekend || undefined,
-          getekend_op: handtekeningData ? new Date().toISOString() : undefined,
-        })
+        await updateWerkbon(werkbon.id, payload)
+        clearWerkbonFeedback(werkbon.id)
         setDirty(false)
       } catch (err) {
-        logger.error('Autosave werkbon-feedback mislukt:', err)
+        // Geen dekking op locatie: buffer lokaal en sync zodra er verbinding is.
+        logger.error('Autosave werkbon-feedback mislukt, gebufferd voor retry:', err)
+        bufferWerkbonFeedback(werkbon.id, payload, Date.now())
       }
     }, 1000)
     return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current) }
   }, [urenGewerkt, monteurOpmerkingen, klantNaamGetekend, handtekeningData, werkbon, setDirty])
+
+  // Gebufferde offline-feedback opnieuw proberen bij mount en zodra de
+  // verbinding terugkomt.
+  useEffect(() => {
+    flushWerkbonFeedbackQueue()
+    const onOnline = () => { flushWerkbonFeedbackQueue() }
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+  }, [])
 
   // Laatste waarden vasthouden voor een flush bij wegnavigeren (de debounce
   // van 1s zou anders de allerlaatste wijziging kunnen verliezen).
@@ -193,13 +207,16 @@ export function WerkbonMonteurView() {
     if (!userChangedRef.current) return
     const f = feedbackRef.current
     if (!f.werkbon || f.werkbon.status === 'afgerond') return
-    updateWerkbon(f.werkbon.id, {
+    const payload = {
       uren_gewerkt: f.urenGewerkt,
       monteur_opmerkingen: f.monteurOpmerkingen || undefined,
       klant_handtekening: f.handtekeningData,
       klant_naam_getekend: f.klantNaamGetekend || undefined,
       getekend_op: f.handtekeningData ? new Date().toISOString() : undefined,
-    }).catch(() => { /* best-effort flush */ })
+    }
+    updateWerkbon(f.werkbon.id, payload)
+      .then(() => clearWerkbonFeedback(f.werkbon!.id))
+      .catch(() => bufferWerkbonFeedback(f.werkbon!.id, payload, Date.now()))
   }, [])
 
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
