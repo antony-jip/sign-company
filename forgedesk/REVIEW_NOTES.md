@@ -1038,3 +1038,9 @@ klant-keuzes weggelaten (want de publieke pagina toont hem niet, dus de klant
 gaf er geen akkoord op). Verkopers die urencorrectie + klant-selecteerbare opties
 combineren verliezen die correctie stil. Echte oplossing = urencorrectie ook op
 de publieke pagina tonen (vereist opslag van het euro-bedrag) — apart traject.
+
+### Beslissing Antony (2026-07-09): afrondingskorting-BTW nuance NIET nu fixen
+Het verschil (< €1, alleen bij offertes met opties én afrondingskorting) blijft
+als bekende beperking staan. FactuurEditor-correctieregel en OfferteDetail-BTW-
+uitsplitsing worden nu niet aangepast. Later oppakken samen met het gelijktrekken
+van de editor- vs publieke-pagina-totaalformule.
