@@ -499,7 +499,9 @@ export function WerkbonMonteurView() {
             <div className="space-y-3">
               {werkbonItems.map((item, idx) => {
                 const heeftAfmeting = item.afmeting_breedte_mm || item.afmeting_hoogte_mm
-                const thumbs = item.afbeeldingen.slice(0, 2)
+                // Alle afbeeldingen tonen: de monteur op locatie moet elke
+                // tekening/foto kunnen zien (was gekapt op 2).
+                const thumbs = item.afbeeldingen
                 return (
                   <article
                     key={item.id}
