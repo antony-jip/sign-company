@@ -885,8 +885,10 @@ export function QuoteItemsTable({
       // placeholder op dezelfde positie (na herordenen van de labels) en
       // labels met dezelfde slug (bv. "Lay-out"/"Lay out") uniek blijven.
       const slug = label.replace(/[^a-z0-9]+/gi, '_').toLowerCase()
+      const placeholderId = `${PLACEHOLDER_PREFIX}${item.id}-i${idx}-${slug}`
+      if (seenIds.has(placeholderId)) return
       merged.push({
-        id: `${PLACEHOLDER_PREFIX}${item.id}-i${idx}-${slug}`,
+        id: placeholderId,
         label,
         waarde: '',
       })

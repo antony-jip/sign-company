@@ -872,3 +872,19 @@ fork) — designkeuze voor Antony, open/klik-tracking in het verzendpad,
 consolidatie van de drie factuur-template-opslagplaatsen (cron gebruikt nu
 bewust dezelfde bron als de instellingen-tab; de handmatige dialog gebruikt
 nog herinnering_templates).
+
+## 2026-07-09 · fix/offerte-create-hardening · detail-regels placeholder-fix (dba909ab + 2fa684aa)
+
+Senior review AKKOORD-MET-OPMERKINGEN na eerdere BLOKKADE (id-botsing gefixt
+met index+slug). Opmerkingen:
+  (a) Slug-identieke maar string-verschillende labels ("Lay-out"/"Lay out")
+      op dezelfde index konden in theorie nog botsen met een gematerialiseerde
+      rij — dichtgezet met een seenIds-check op placeholder-ids in
+      getDetailRegels (meegenomen in de Fase A-serie).
+  (b) RegelTemplateEditor.handleApply geeft t.labels ongesaneerd door aan
+      onApplyTemplate; gedekt doordat de leeskant (handleApplyTemplate +
+      QuoteItemsTable) saneert. Alleen relevant als er ooit een nieuwe
+      apply-callsite bijkomt.
+  (c) Vervuilde _hidden_labels-strings uit de oude bug blijven in de DB staan;
+      vermoedelijk onschadelijk. Checken als er "verdwenen rijen"-meldingen
+      komen.
