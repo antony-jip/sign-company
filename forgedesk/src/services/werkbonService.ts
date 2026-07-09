@@ -3,7 +3,20 @@ import {
   assertId, getLocalData, setLocalData, generateId, now,
   withUserId, getOrgId, sanitizeDates, getMaxNummer,
 } from './supabaseHelpers'
+import { deleteFile } from './storageService'
 import type { Werkbon, WerkbonItem, WerkbonAfbeelding, WerkbonRegel, WerkbonFoto } from '@/types'
+
+// Best-effort: verwijder een storage-object aan de hand van het opgeslagen pad.
+// De DB bewaart het storage-pad in `url`; signed/http/data-urls slaan we over.
+async function verwijderStorageBestand(pathOrUrl: string | null | undefined): Promise<void> {
+  if (!pathOrUrl) return
+  if (pathOrUrl.startsWith('http') || pathOrUrl.startsWith('data:') || pathOrUrl.startsWith('blob:')) return
+  try {
+    await deleteFile(pathOrUrl)
+  } catch {
+    // Storage-cleanup mag nooit de DB-actie blokkeren.
+  }
+}
 
 export async function generateWerkbonNummer(prefix: string = 'WB', startNummer = 1): Promise<string> {
   const jaar = new Date().getFullYear()
@@ -134,6 +147,12 @@ export async function updateWerkbon(id: string, updates: Partial<Werkbon>): Prom
 export async function deleteWerkbon(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Storage-paden verzamelen vóór de bulk-delete zodat de bijbehorende
+    // bestanden niet als wees in de bucket achterblijven.
+    const [{ data: fotos }, { data: afbeeldingen }] = await Promise.all([
+      supabase.from('werkbon_fotos').select('url').eq('werkbon_id', id),
+      supabase.from('werkbon_afbeeldingen').select('url').eq('werkbon_id', id),
+    ])
     await Promise.all([
       supabase.from('werkbon_regels').delete().eq('werkbon_id', id),
       supabase.from('werkbon_fotos').delete().eq('werkbon_id', id),
@@ -142,6 +161,10 @@ export async function deleteWerkbon(id: string): Promise<void> {
     ])
     const { error } = await supabase.from('werkbonnen').delete().eq('id', id)
     if (error) throw error
+    await Promise.all([
+      ...(fotos || []).map((f) => verwijderStorageBestand(f.url)),
+      ...(afbeeldingen || []).map((a) => verwijderStorageBestand(a.url)),
+    ])
     return
   }
   const items = getLocalData<Werkbon>('werkbonnen')
@@ -223,12 +246,16 @@ export async function createWerkbonFoto(foto: Omit<WerkbonFoto, 'id' | 'created_
 export async function deleteWerkbonFoto(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    const { data: bestaand } = await supabase.from('werkbon_fotos').select('url').eq('id', id).maybeSingle()
     const { error } = await supabase.from('werkbon_fotos').delete().eq('id', id)
     if (error) throw error
+    await verwijderStorageBestand(bestaand?.url)
     return
   }
   const items = getLocalData<WerkbonFoto>('werkbon_fotos')
+  const foto = items.find((f) => f.id === id)
   setLocalData('werkbon_fotos', items.filter((f) => f.id !== id))
+  await verwijderStorageBestand(foto?.url)
 }
 
 export async function getWerkbonItems(werkbonId: string): Promise<WerkbonItem[]> {
@@ -352,12 +379,16 @@ export async function createWerkbonAfbeelding(afbeelding: Omit<WerkbonAfbeelding
 export async function deleteWerkbonAfbeelding(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    const { data: bestaand } = await supabase.from('werkbon_afbeeldingen').select('url').eq('id', id).maybeSingle()
     const { error } = await supabase.from('werkbon_afbeeldingen').delete().eq('id', id)
     if (error) throw error
+    await verwijderStorageBestand(bestaand?.url)
     return
   }
   const items = getLocalData<WerkbonAfbeelding>('werkbon_afbeeldingen')
+  const afb = items.find((a) => a.id === id)
   setLocalData('werkbon_afbeeldingen', items.filter((a) => a.id !== id))
+  await verwijderStorageBestand(afb?.url)
 }
 
 export async function updateWerkbonAfbeelding(
