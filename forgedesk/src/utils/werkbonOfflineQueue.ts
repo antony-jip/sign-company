@@ -1,5 +1,5 @@
 import type { Werkbon } from '@/types'
-import { updateWerkbon } from '@/services/werkbonService'
+import { updateWerkbon, getWerkbon } from '@/services/werkbonService'
 import { safeSetItem } from './localStorageUtils'
 import { logger } from './logger'
 
@@ -47,6 +47,13 @@ export async function flushWerkbonFeedbackQueue(): Promise<void> {
   if (ids.length === 0) return
   for (const id of ids) {
     try {
+      // Een reeds afgeronde werkbon nooit terugzetten met oudere buffer-data:
+      // wis de entry zonder replay.
+      const wb = await getWerkbon(id)
+      if (!wb || wb.status === 'afgerond') {
+        clearWerkbonFeedback(id)
+        continue
+      }
       await updateWerkbon(id, q[id].payload)
       clearWerkbonFeedback(id)
     } catch (err) {

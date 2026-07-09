@@ -102,6 +102,9 @@ export function WerkbonMonteurView() {
     let cancelled = false
     async function loadData() {
       if (!id) return
+      // Reset de "gewijzigd"-vlag bij het laden van (een andere) werkbon, zodat
+      // een leftover van een vorige werkbon geen ongewenste autosave triggert.
+      userChangedRef.current = false
       try {
         setIsLoading(true)
         const wb = await getWerkbon(id)
@@ -185,6 +188,8 @@ export function WerkbonMonteurView() {
         // Geen dekking op locatie: buffer lokaal en sync zodra er verbinding is.
         logger.error('Autosave werkbon-feedback mislukt, gebufferd voor retry:', err)
         bufferWerkbonFeedback(werkbon.id, payload, Date.now())
+        // Dedupe-id: toont één melding i.p.v. bij elke mislukte poging.
+        toast.error('Geen verbinding · wijzigingen lokaal bewaard, sync volgt automatisch', { id: 'werkbon-offline-buffer' })
       }
     }, 1000)
     return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current) }
@@ -269,6 +274,11 @@ export function WerkbonMonteurView() {
 
   const handleAfronden = useCallback(async () => {
     if (!werkbon) return
+    // Voorkom dat een lopende debounced autosave met de afronden-call racet, en
+    // dat een oudere buffer-entry later een afgeronde werkbon terugzet.
+    if (autosaveTimer.current) { clearTimeout(autosaveTimer.current); autosaveTimer.current = null }
+    userChangedRef.current = false
+    clearWerkbonFeedback(werkbon.id)
     try {
       setIsSaving(true)
       const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
@@ -281,6 +291,7 @@ export function WerkbonMonteurView() {
         klant_naam_getekend: klantNaamGetekend || undefined,
         getekend_op: handtekeningData ? new Date().toISOString() : undefined,
       })
+      clearWerkbonFeedback(werkbon.id)
       setWerkbon((prev) => prev ? { ...prev, status: 'afgerond' } : prev)
       setDirty(false)
       toast.success('Werkbon afgerond')

@@ -54,6 +54,9 @@ export function resizeWerkbonImage(file: File, maxWidth: number): Promise<Blob> 
  * een eventuele eerdere toevoeging zodat opnieuw afronden niet stapelt.
  */
 export function opmerkingenMetAfronder(opmerkingen: string | undefined, medewerkerNaam: string): string {
-  const base = (opmerkingen || '').replace(/\n\nAfgerond door: [\s\S]*$/, '').trimEnd()
+  // Strip alleen één of meer TRAILING "Afgerond door: <naam>"-regels (elk zonder
+  // interne newline), zodat een "Afgerond door:" midden in de tekst van de
+  // gebruiker nooit de rest opeet.
+  const base = (opmerkingen || '').replace(/(\n\nAfgerond door: [^\n]*)+$/, '').trimEnd()
   return base ? `${base}\n\nAfgerond door: ${medewerkerNaam}` : `Afgerond door: ${medewerkerNaam}`
 }

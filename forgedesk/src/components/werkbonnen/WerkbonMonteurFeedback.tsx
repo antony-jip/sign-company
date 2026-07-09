@@ -55,6 +55,8 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
   const [isEditingSignature, setIsEditingSignature] = useState(!handtekeningData)
   const [fullscreenSignature, setFullscreenSignature] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  // Voorkomt dat een laat geladen preload-afbeelding over verse streken tekent.
+  const drawStartedRef = useRef(false)
 
   const getCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect()
@@ -68,6 +70,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
 
   const startDraw = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = e.currentTarget
+    drawStartedRef.current = true
     setIsDrawing(true)
     const ctx = canvas.getContext('2d')
     if (!ctx) return
@@ -105,9 +108,10 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+    drawStartedRef.current = false
     if (!handtekeningData) return
     const img = new Image()
-    img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+    img.onload = () => { if (!drawStartedRef.current) ctx.drawImage(img, 0, 0, canvas.width, canvas.height) }
     img.src = handtekeningData
   }, [handtekeningData])
 
