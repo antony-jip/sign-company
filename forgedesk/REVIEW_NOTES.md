@@ -953,3 +953,33 @@ Aanbevolen als losse taken, met Antony's akkoord:
       alleen DB-refs → bestand weg → gebroken link in B na autosave. Smalle race.
   (g) QuoteSidebar eigen totaalformule kan 1 cent afwijken van berekenOfferte-
       Totalen tijdens typen. Cosmetisch.
+
+## 2026-07-09 · fix/offerte-create-hardening · Vervolgpunten a/b/c/d opgelost (op verzoek Antony)
+
+De eerder gelogde restpunten zijn alsnog aangepakt:
+  (b) OffertePubliekPagina: afrondingskorting nu meegenomen in het live klant-
+      totaal bij selecties (6dab8285).
+  (c) OfferteDetail: toont opgeslagen offerte-totalen als bron van waarheid,
+      BTW-uitsplitsing variant-bewust + excl. optioneel (6dab8285).
+  (a) FactuurEditor: factuur-uit-offerte gebruikt actieve variant + correctie-
+      regel "Afronding / correctie" zodat subtotaal = offerte.subtotaal (c7c06f2f).
+  (d) syncOfferteItems: id-behoudende upsert (update-by-id voor bestaande UUID's,
+      insert voor new-*, delete verwijderde). partitionOfferteItemSync pure helper
+      + 7 unit-tests (cdccc9a5).
+
+RESTERENDE bekende beperkingen (klein/bewust, niet gefixt):
+  - Bredere subtotaal/BTW-lijn-reconciliatie op OffertePubliekPagina in de NIET-
+    selectie-tak (offerte.subtotaal bevat de korting al terwijl de kortingsregel
+    apart staat) — vraagt een layout-herziening + visuele verificatie. Alleen de
+    selectie-tak-total is nu gefixt.
+  - FactuurEditor correctieregel gebruikt één gewogen BTW-tarief; bij gemengde
+    tarieven kan de factuur-BTW een cent afwijken van offerte.btw_bedrag.
+  - syncOfferteItems insert/upsert-vóór-delete blijft niet-transactioneel; bij
+    een falende delete blijven dubbele rijen staan tot de volgende save.
+  - Cross-tab item-sync race (twee gebruikers <2s) blijft mogelijk.
+
+VERIFICATIE-VERZOEK: de syncOfferteItems-upsert (kritiek-pad persistence) is
+build+unit-getest maar niet tegen live Supabase gedraaid. Antony: test in-app
+de flow bestaande offerte openen → item wijzigen → opslaan → herladen (id's
+moeten gelijk blijven), item toevoegen (vers id), item verwijderen, en een
+klant-keuze die een offerte-edit overleeft.
