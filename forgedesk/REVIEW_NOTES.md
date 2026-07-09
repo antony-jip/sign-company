@@ -983,3 +983,28 @@ build+unit-getest maar niet tegen live Supabase gedraaid. Antony: test in-app
 de flow bestaande offerte openen → item wijzigen → opslaan → herladen (id's
 moeten gelijk blijven), item toevoegen (vers id), item verwijderen, en een
 klant-keuze die een offerte-edit overleeft.
+
+## 2026-07-09 · fix/offerte-create-hardening · Accept-endpoint schrijft geaccepteerde config terug (69826d0e)
+
+Review-finding 1 (klant kiest optie/variant → detail & factuur toonden het
+standaardbedrag) opgelost aan de bron: api/offerte-accepteren.ts materialiseert
+bij acceptatie mét keuzes de gekozen configuratie op de items (gekozen optioneel
+→ is_optioneel=false, gekozen variant → actieve_variant_id, regel-totaal
+bijgewerkt) en herberekent offerte.subtotaal/btw_bedrag/totaal met dezelfde
+formule als berekenOfferteTotalen, met behoud van de correctie (afrondings-
+korting + urencorrectie) als lump. Sluit de loop:
+  - OfferteDetail toont nu het geaccepteerde bedrag (leest offerte.subtotaal/
+    totaal + variant-bewuste btwGroups over de gematerialiseerde items).
+  - FactuurEditor factureert de gekozen optionele items (nu is_optioneel=false)
+    tegen de gekozen variant, en reconcilieert op offerte.subtotaal.
+Offertes zónder opties/varianten worden niet aangeraakt (guard).
+
+VERIFICATIE-VERZOEK (kritiek, niet live getest): draai de flow publieke offerte
+met optionele items + varianten → klant kiest afwijkend van default → accepteren
+→ controleer dat offerte.totaal = wat de klant zag, dat de detailpagina dat toont
+en dat "Maak factuur" de gekozen items/variant bevat.
+
+Kleine open punten (bewust): correctie-lump draagt over naar een door de klant
+gewijzigde config (afrondingskorting was op de default berekend); en de
+gewogen-BTW-benadering op de factuur-correctieregel kan een cent afwijken bij
+gemengde tarieven.
