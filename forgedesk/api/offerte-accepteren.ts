@@ -118,13 +118,17 @@ function regelNetto(r: PrijsRegel): number {
   return r2(bruto - bruto * (r.korting_percentage / 100))
 }
 
-function berekenTotalen(regels: PrijsRegel[], correctie: number): { subtotaal: number; btw_bedrag: number; totaal: number } {
+// Reproduceert exact het bedrag dat de klant op de publieke pagina zag en
+// accepteerde (OffertePubliekPagina hasSelections-tak): per-regel BTW over de
+// items, en de afrondingskorting plat ná de BTW (geen BTW erover). De
+// urencorrectie zit hier bewust NIET in — die toont de publieke pagina niet bij
+// offertes met keuzes, dus de klant heeft er geen akkoord op gegeven.
+function berekenGeaccepteerdeTotalen(regels: PrijsRegel[], afrondingskorting: number): { subtotaal: number; btw_bedrag: number; totaal: number } {
   const rawSub = r2(regels.reduce((s, r) => s + regelNetto(r), 0))
-  const subtotaal = r2(rawSub + correctie)
-  const ratio = rawSub > 0
-    ? r2(regels.reduce((s, r) => s + r2(regelNetto(r) * (r.btw_percentage / 100)), 0)) / rawSub
-    : 0.21
-  const btw_bedrag = r2(subtotaal * ratio)
+  const btw_bedrag = r2(regels.reduce((s, r) => s + r2(regelNetto(r) * (r.btw_percentage / 100)), 0))
+  // Korting in het subtotaal vouwen (zonder BTW) zodat subtotaal + btw = totaal
+  // intern klopt en gelijk is aan het door de klant geziene totaal.
+  const subtotaal = r2(rawSub + afrondingskorting)
   return { subtotaal, btw_bedrag, totaal: r2(subtotaal + btw_bedrag) }
 }
 
@@ -203,14 +207,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const varianten = gekozen_varianten || {}
       const isPrijs = (it: Record<string, unknown>) => ((it.soort as string) || 'prijs') === 'prijs'
 
-      // Correctie (afrondingskorting + urencorrectie) uit de opgeslagen
-      // standaard-config afleiden zodat die als lump behouden blijft.
-      const defaultRegels = items
-        .filter((it) => isPrijs(it) && !it.is_optioneel)
-        .map((it) => variantWaarden(it, it.actieve_variant_id as string | undefined))
-      const defaultRawSub = r2(defaultRegels.reduce((s, r) => s + regelNetto(r), 0))
-      const correctie = r2((Number(offerte.subtotaal) || 0) - defaultRawSub)
-
       // Materialiseer de keuze op de items. Nooit een verplicht item verwijderen:
       // alleen gekozen optionele items vast zetten en gekozen varianten activeren.
       for (const it of items) {
@@ -232,7 +228,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const finalRegels = items
         .filter((it) => isPrijs(it) && !(it.is_optioneel && !gekozenSet.has(it.id as string)))
         .map((it) => variantWaarden(it, (varianten[it.id as string] as string | undefined) || (it.actieve_variant_id as string | undefined)))
-      const totalen = berekenTotalen(finalRegels, correctie)
+      const afrondingskorting = Number(offerte.afrondingskorting_excl_btw) || 0
+      const totalen = berekenGeaccepteerdeTotalen(finalRegels, afrondingskorting)
       updateData.subtotaal = totalen.subtotaal
       updateData.btw_bedrag = totalen.btw_bedrag
       updateData.totaal = totalen.totaal
