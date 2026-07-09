@@ -562,6 +562,14 @@ export function QuoteCreation() {
     return round2(bedrag)
   }, [urenCorrectie, tariefPerVeld])
 
+  // ── Effectieve totalen (incl. afrondingskorting + urencorrectie) ──
+  // Eén bron voor save, PDF, email, portaal en duplicatie; voorkomt dat de
+  // klant per kanaal een ander bedrag ziet.
+  const effectieveTotalen = berekenOfferteTotalen(
+    verplichtePrijsItems.map(getActivePriceData),
+    { afrondingskorting, urenCorrectieBedrag },
+  )
+
   // Effectieve uren = basis + correctie
   const effectieveUrenPerVeld = useMemo(() => {
     const result: Record<string, number> = {}
@@ -1232,22 +1240,10 @@ export function QuoteCreation() {
       const nieuweNummer = await getNextOfferteNummer(offertePrefix, offerteStartNummer)
       const klant = klanten.find((k) => k.id === doelKlantId)
 
-      const prijsItemsLocal = items.filter((i) => i.soort === 'prijs')
-      const sub = round2(prijsItemsLocal.reduce((sum, item) => {
-        const data = getActivePriceData(item)
-        const bruto = data.aantal * data.eenheidsprijs
-        return sum + round2(bruto - bruto * (data.korting_percentage / 100))
-      }, 0))
-      const btw = round2(prijsItemsLocal.reduce((sum, item) => {
-        const data = getActivePriceData(item)
-        const bruto = data.aantal * data.eenheidsprijs
-        const netto = round2(bruto - bruto * (data.korting_percentage / 100))
-        return sum + round2(netto * (data.btw_percentage / 100))
-      }, 0))
-
       const newGeldigTot = new Date()
       newGeldigTot.setDate(newGeldigTot.getDate() + offerteGeldigheidDagen)
 
+      const dupHeeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
       const newOfferte = await createOfferte({
         user_id: user.id,
         klant_id: doelKlantId,
@@ -1258,14 +1254,16 @@ export function QuoteCreation() {
         nummer: nieuweNummer,
         titel: offerteTitel,
         status: 'concept',
-        subtotaal: sub,
-        btw_bedrag: btw,
-        totaal: round2(sub + btw),
+        subtotaal: effectieveTotalen.subtotaal,
+        btw_bedrag: effectieveTotalen.btw_bedrag,
+        totaal: effectieveTotalen.totaal,
         geldig_tot: newGeldigTot.toISOString().split('T')[0],
         notities,
         voorwaarden,
         intro_tekst: introTekst,
         outro_tekst: outroTekst,
+        ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
+        ...(dupHeeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
       })
       logCreate({ user, entityType: 'offerte', entityId: newOfferte.id })
 
@@ -1359,8 +1357,6 @@ export function QuoteCreation() {
       if ((isEditMode && editOfferteId) || autoSaveIdRef.current) {
         const existingId = editOfferteId || autoSaveIdRef.current!
         // Update existing offerte
-        const effectiefSubtotaal = round2(subtotaal + afrondingskorting + urenCorrectieBedrag)
-        const effectiefBtw = round2(effectiefSubtotaal * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21))
         const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
         const saved = await updateOfferte(existingId, {
           klant_id: selectedKlantId,
@@ -1369,9 +1365,9 @@ export function QuoteCreation() {
           ...(resolvedContactId ? { contactpersoon_id: resolvedContactId } : {}),
           titel: offerteTitel,
           status,
-          subtotaal: effectiefSubtotaal,
-          btw_bedrag: effectiefBtw,
-          totaal: round2(effectiefSubtotaal + effectiefBtw),
+          subtotaal: effectieveTotalen.subtotaal,
+          btw_bedrag: effectieveTotalen.btw_bedrag,
+          totaal: effectieveTotalen.totaal,
           geldig_tot: geldigTot,
           notities,
           voorwaarden,
@@ -1388,8 +1384,6 @@ export function QuoteCreation() {
         await syncOfferteItems(existingId, items as any, user.id)
       } else {
         // Create new offerte
-        const newEffectiefSub = round2(subtotaal + afrondingskorting + urenCorrectieBedrag)
-        const newEffectiefBtw = round2(newEffectiefSub * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21))
         const newHeeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
         const newOfferte = await createOfferte({
           user_id: user.id,
@@ -1401,9 +1395,9 @@ export function QuoteCreation() {
           nummer: offerteNummer,
           titel: offerteTitel,
           status,
-          subtotaal: newEffectiefSub,
-          btw_bedrag: newEffectiefBtw,
-          totaal: round2(newEffectiefSub + newEffectiefBtw),
+          subtotaal: effectieveTotalen.subtotaal,
+          btw_bedrag: effectieveTotalen.btw_bedrag,
+          totaal: effectieveTotalen.totaal,
           geldig_tot: geldigTot,
           notities,
           voorwaarden,
@@ -1482,10 +1476,10 @@ export function QuoteCreation() {
                   offerte_id: savedOfferteId,
                   titel: `Offerte ${offerteNummer}`,
                   omschrijving: offerteTitel,
-                  label: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(round2(subtotaal + btwBedrag)),
+                  label: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(effectieveTotalen.totaal),
                   status: 'verstuurd',
                   zichtbaar_voor_klant: true,
-                  bedrag: round2(subtotaal + btwBedrag),
+                  bedrag: effectieveTotalen.totaal,
                   volgorde: 0,
                 })
               }
@@ -1502,7 +1496,7 @@ export function QuoteCreation() {
             klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
             offerteNummer,
             offerteTitel,
-            totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(round2(subtotaal + btwBedrag)),
+            totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(effectieveTotalen.totaal),
             geldigTot,
             bedrijfsnaam,
             primaireKleur,
@@ -1568,8 +1562,6 @@ export function QuoteCreation() {
     }
     try {
       toast.info('PDF wordt gegenereerd...')
-      const pdfSubtotaal = round2(subtotaal + afrondingskorting)
-      const pdfBtw = round2(pdfSubtotaal * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21))
       const offerteData = {
         id: '',
         user_id: user?.id || '',
@@ -1577,9 +1569,9 @@ export function QuoteCreation() {
         nummer: offerteNummer,
         titel: offerteTitel,
         status: 'concept' as const,
-        subtotaal: pdfSubtotaal,
-        btw_bedrag: pdfBtw,
-        totaal: round2(pdfSubtotaal + pdfBtw),
+        subtotaal: effectieveTotalen.subtotaal,
+        btw_bedrag: effectieveTotalen.btw_bedrag,
+        totaal: effectieveTotalen.totaal,
         geldig_tot: geldigTot,
         notities,
         voorwaarden,
@@ -1671,10 +1663,10 @@ export function QuoteCreation() {
           offerte_id: savedQuoteId,
           titel: `Offerte ${offerteNummer}`,
           omschrijving: offerteTitel,
-          label: formatCurrency(round2(subtotaal + btwBedrag)),
+          label: formatCurrency(effectieveTotalen.totaal),
           status: 'verstuurd',
           zichtbaar_voor_klant: true,
-          bedrag: round2(subtotaal + btwBedrag),
+          bedrag: effectieveTotalen.totaal,
           volgorde: 0,
         })
       }
@@ -1702,13 +1694,13 @@ export function QuoteCreation() {
           const htmlBody = buildPortalEmailHtml({
             heading: `Er staat een nieuwe offerte voor u klaar.`,
             itemTitel: `Offerte ${offerteNummer} · ${offerteTitel}`,
-            beschrijving: `Bedrag: ${formatCurrency(round2(subtotaal + btwBedrag))} incl. BTW`,
+            beschrijving: `Bedrag: ${formatCurrency(effectieveTotalen.totaal)} incl. BTW`,
             ctaLabel: 'Bekijk in portaal →',
             ctaUrl: portaalUrl,
             bedrijfsnaam,
             logoUrl: profile?.logo_url || undefined,
           })
-          const plainBody = `Beste ${klantNaam},\n\nEr staat een nieuwe offerte voor u klaar: ${offerteTitel}\nBedrag: ${formatCurrency(round2(subtotaal + btwBedrag))}\n\nBekijk het hier: ${portaalUrl}\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
+          const plainBody = `Beste ${klantNaam},\n\nEr staat een nieuwe offerte voor u klaar: ${offerteTitel}\nBedrag: ${formatCurrency(effectieveTotalen.totaal)}\n\nBekijk het hier: ${portaalUrl}\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
           await sendEmail(contactEmail, `Nieuwe offerte: ${offerteTitel}`, plainBody, { html: htmlBody })
           toast.success(`Offerte gedeeld via portaal · Notificatie verstuurd naar ${contactEmail}`)
         } catch (err) {
@@ -1762,10 +1754,10 @@ export function QuoteCreation() {
               offerte_id: savedQuoteId,
               titel: `Offerte ${offerteNummer}`,
               omschrijving: offerteTitel,
-              label: formatCurrency(round2(subtotaal + btwBedrag)),
+              label: formatCurrency(effectieveTotalen.totaal),
               status: 'verstuurd',
               zichtbaar_voor_klant: true,
-              bedrag: round2(subtotaal + btwBedrag),
+              bedrag: effectieveTotalen.totaal,
               volgorde: 0,
             })
           }
@@ -1785,7 +1777,7 @@ export function QuoteCreation() {
         klantNaam,
         offerteNummer,
         offerteTitel,
-        totaalBedrag: formatCurrency(round2(subtotaal + btwBedrag)),
+        totaalBedrag: formatCurrency(effectieveTotalen.totaal),
         geldigTot,
         bedrijfsnaam,
         primaireKleur,
@@ -1807,9 +1799,9 @@ export function QuoteCreation() {
           const offerteData = {
             nummer: offerteNummer,
             titel: offerteTitel,
-            subtotaal,
-            btw_bedrag: btwBedrag,
-            totaal: round2(subtotaal + btwBedrag),
+            subtotaal: effectieveTotalen.subtotaal,
+            btw_bedrag: effectieveTotalen.btw_bedrag,
+            totaal: effectieveTotalen.totaal,
             geldig_tot: geldigTot,
             notities,
             voorwaarden,
@@ -2523,9 +2515,9 @@ export function QuoteCreation() {
             nummer: offerteNummer,
             titel: offerteTitel,
             status: 'concept',
-            subtotaal,
-            btw_bedrag: btwBedrag,
-            totaal: round2(subtotaal + btwBedrag),
+            subtotaal: effectieveTotalen.subtotaal,
+            btw_bedrag: effectieveTotalen.btw_bedrag,
+            totaal: effectieveTotalen.totaal,
             geldig_tot: geldigTot,
             notities: '',
             voorwaarden: '',
