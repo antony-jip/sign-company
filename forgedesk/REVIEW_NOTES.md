@@ -872,3 +872,175 @@ fork) — designkeuze voor Antony, open/klik-tracking in het verzendpad,
 consolidatie van de drie factuur-template-opslagplaatsen (cron gebruikt nu
 bewust dezelfde bron als de instellingen-tab; de handmatige dialog gebruikt
 nog herinnering_templates).
+
+## 2026-07-09 · fix/offerte-create-hardening · detail-regels placeholder-fix (dba909ab + 2fa684aa)
+
+Senior review AKKOORD-MET-OPMERKINGEN na eerdere BLOKKADE (id-botsing gefixt
+met index+slug). Opmerkingen:
+  (a) Slug-identieke maar string-verschillende labels ("Lay-out"/"Lay out")
+      op dezelfde index konden in theorie nog botsen met een gematerialiseerde
+      rij — dichtgezet met een seenIds-check op placeholder-ids in
+      getDetailRegels (meegenomen in de Fase A-serie).
+  (b) RegelTemplateEditor.handleApply geeft t.labels ongesaneerd door aan
+      onApplyTemplate; gedekt doordat de leeskant (handleApplyTemplate +
+      QuoteItemsTable) saneert. Alleen relevant als er ooit een nieuwe
+      apply-callsite bijkomt.
+  (c) Vervuilde _hidden_labels-strings uit de oude bug blijven in de DB staan;
+      vermoedelijk onschadelijk. Checken als er "verdwenen rijen"-meldingen
+      komen.
+
+## 2026-07-09 · fix/offerte-create-hardening · Fase A (40944ba6, 942aca61, 3c170c6f)
+
+Senior review AKKOORD-MET-OPMERKINGEN. Opmerkingen:
+  (a) Ingeplande offerte-mail zet de offerte direct op "verzonden" met
+      verstuurd_op in de toekomst; als de cron faalt of het geplande bericht
+      geannuleerd wordt is er geen terugkoppeling naar de offerte-status.
+  (b) 400-melding van de send-email API werd generiek getoond — direct
+      gefixt: servermelding wordt nu doorgegeven in de toast.
+  (c) Pre-existing: pdfService r842-859 toont "Subtotaal" (incl. korting) én
+      een aparte regel "Afrondingskorting" — visueel telt de som niet op.
+      Centrale fix hoort in pdfService, apart oppakken.
+
+## 2026-07-09 · fix/offerte-create-hardening · Fase C render-performance (uitgesteld)
+
+Taak "performance QuoteCreation" is deels gedaan (toOfferteItemPayload-helper,
+gedeelde offerteTotalen-util incl. getActievePrijsRegel/berekenRegelTotaal).
+BEWUST NIET in deze branch: QuoteItemRow-extractie + React.memo + useCallback op
+alle item-handlers + useOfferteTotalen-hook.
+
+Reden: dat is een ~700-regel JSX-verplaatsing per item met drag/drop-reorder,
+focus-beheer, autofill, prijsvariant-UI, inkoop-drag-drop en bijlage-upload.
+React.memo levert pas winst als álle ~30 callbacks gestabiliseerd zijn; fout
+gedrag (focus-verlies bij typen, kapotte drag/drop, stale closures) is niet via
+build/unit-tests te vangen en vraagt handmatige in-app-verificatie met echte
+data. Los oppakken op een eigen branch met /verify-doorloop. Perf-issue is
+merkbaar (re-render bij elke toetsaanslag) maar geen correctness-bug.
+
+## 2026-07-09 · fix/offerte-create-hardening · Onafhankelijke review (2 agents) — geverifieerde restpunten
+
+Correctness- en missed-callsites-review over de hele branch. Direct gefixt in
+commit 0ee038ca: ProjectOfferteEditor variant-regressie (velden read-only bij
+varianten), ingeplande-mail zet offerte niet meer op verzonden met toekomstige
+verstuurd_op, syncOfferteItems lege-array guard, OfferteDetail-duplicate kopieert
+alle velden, null-guard op detail_regels-opschoning. Ook meegenomen: contact-
+autofill overschreef bij openen het geladen contact (→ vals conflict), round2
+dode import weg.
+
+BEWUST NIET auto-gefixt (pre-existing, buiten scope van deze branch — geldmath
+richting klant/factuur of risicovolle wijziging die in-app verificatie vraagt).
+Aanbevolen als losse taken, met Antony's akkoord:
+
+  (a) FactuurEditor factuur-uit-offerte (FactuurEditor.tsx ~484-498/576-591,
+      790-793): negeert offerte.afrondingskorting_excl_btw én uren_correctie, en
+      rekent met basisprijs i.p.v. actieve prijsvariant. €995-offerte → €1000-
+      factuur. Vraagt productkeuze: wordt een correctie een factuurregel?
+  (b) OffertePubliekPagina.tsx:505-507: bij optionele items/varianten valt de
+      afrondingskorting uit het klant-totaal terwijl de kortingsregel wél getoond
+      wordt. Klant ziet inconsistent bedrag. Vrij contained te fixen.
+  (c) OfferteDetail.tsx:585-593: itemtabel toont totaal berekend uit álle items
+      (geen is_optioneel-filter, geen afronding/urencorrectie) → wijkt af van het
+      opgeslagen offerte.totaal. Beter: gewoon offerte.totaal tonen.
+  (d) syncOfferteItems churnt item-ids bij elke autosave → offerte.gekozen_items/
+      gekozen_varianten (OffertePubliekPagina) en Werkbon.offerte_item_id worden
+      dode refs. Klant-keuzes lijken leeg na een edit. Echte fix = id-behoudende
+      upsert in syncOfferteItems (update-by-id voor bestaande UUID's, insert voor
+      new-*), maar dat is kritiek-pad persistence → eigen branch + /verify.
+  (e) syncOfferteItems insert-before-delete: als de delete faalt ná geslaagde
+      insert blijven dubbele rijen staan (zichtbaar bij factuur-conversie). Lage
+      kans; opgeruimd bij volgende save. Bewuste trade-off tegen "0 items".
+  (f) Gedeeld klembord + telItemsMetBijlage: item met bijlage plakken in offerte
+      B (nog niet opgeslagen), daarna bijlage in origineel verwijderen → telt
+      alleen DB-refs → bestand weg → gebroken link in B na autosave. Smalle race.
+  (g) QuoteSidebar eigen totaalformule kan 1 cent afwijken van berekenOfferte-
+      Totalen tijdens typen. Cosmetisch.
+
+## 2026-07-09 · fix/offerte-create-hardening · Vervolgpunten a/b/c/d opgelost (op verzoek Antony)
+
+De eerder gelogde restpunten zijn alsnog aangepakt:
+  (b) OffertePubliekPagina: afrondingskorting nu meegenomen in het live klant-
+      totaal bij selecties (6dab8285).
+  (c) OfferteDetail: toont opgeslagen offerte-totalen als bron van waarheid,
+      BTW-uitsplitsing variant-bewust + excl. optioneel (6dab8285).
+  (a) FactuurEditor: factuur-uit-offerte gebruikt actieve variant + correctie-
+      regel "Afronding / correctie" zodat subtotaal = offerte.subtotaal (c7c06f2f).
+  (d) syncOfferteItems: id-behoudende upsert (update-by-id voor bestaande UUID's,
+      insert voor new-*, delete verwijderde). partitionOfferteItemSync pure helper
+      + 7 unit-tests (cdccc9a5).
+
+RESTERENDE bekende beperkingen (klein/bewust, niet gefixt):
+  - Bredere subtotaal/BTW-lijn-reconciliatie op OffertePubliekPagina in de NIET-
+    selectie-tak (offerte.subtotaal bevat de korting al terwijl de kortingsregel
+    apart staat) — vraagt een layout-herziening + visuele verificatie. Alleen de
+    selectie-tak-total is nu gefixt.
+  - FactuurEditor correctieregel gebruikt één gewogen BTW-tarief; bij gemengde
+    tarieven kan de factuur-BTW een cent afwijken van offerte.btw_bedrag.
+  - syncOfferteItems insert/upsert-vóór-delete blijft niet-transactioneel; bij
+    een falende delete blijven dubbele rijen staan tot de volgende save.
+  - Cross-tab item-sync race (twee gebruikers <2s) blijft mogelijk.
+
+VERIFICATIE-VERZOEK: de syncOfferteItems-upsert (kritiek-pad persistence) is
+build+unit-getest maar niet tegen live Supabase gedraaid. Antony: test in-app
+de flow bestaande offerte openen → item wijzigen → opslaan → herladen (id's
+moeten gelijk blijven), item toevoegen (vers id), item verwijderen, en een
+klant-keuze die een offerte-edit overleeft.
+
+## 2026-07-09 · fix/offerte-create-hardening · Accept-endpoint schrijft geaccepteerde config terug (69826d0e)
+
+Review-finding 1 (klant kiest optie/variant → detail & factuur toonden het
+standaardbedrag) opgelost aan de bron: api/offerte-accepteren.ts materialiseert
+bij acceptatie mét keuzes de gekozen configuratie op de items (gekozen optioneel
+→ is_optioneel=false, gekozen variant → actieve_variant_id, regel-totaal
+bijgewerkt) en herberekent offerte.subtotaal/btw_bedrag/totaal met dezelfde
+formule als berekenOfferteTotalen, met behoud van de correctie (afrondings-
+korting + urencorrectie) als lump. Sluit de loop:
+  - OfferteDetail toont nu het geaccepteerde bedrag (leest offerte.subtotaal/
+    totaal + variant-bewuste btwGroups over de gematerialiseerde items).
+  - FactuurEditor factureert de gekozen optionele items (nu is_optioneel=false)
+    tegen de gekozen variant, en reconcilieert op offerte.subtotaal.
+Offertes zónder opties/varianten worden niet aangeraakt (guard).
+
+VERIFICATIE-VERZOEK (kritiek, niet live getest): draai de flow publieke offerte
+met optionele items + varianten → klant kiest afwijkend van default → accepteren
+→ controleer dat offerte.totaal = wat de klant zag, dat de detailpagina dat toont
+en dat "Maak factuur" de gekozen items/variant bevat.
+
+Kleine open punten (bewust): correctie-lump draagt over naar een door de klant
+gewijzigde config (afrondingskorting was op de default berekend); en de
+gewogen-BTW-benadering op de factuur-correctieregel kan een cent afwijken bij
+gemengde tarieven.
+
+## 2026-07-09 · fix/offerte-create-hardening · Accept-total exact + open BTW-beslissing (cb248a0f)
+
+Adversariële review vond dat mijn eerste accept-herberekening de EDITOR-formule
+gebruikte (BTW over de afrondingskorting + urencorrectie meegeteld), terwijl de
+klant op de publieke pagina een ANDER getal ziet. Gefixt (cb248a0f):
+berekenGeaccepteerdeTotalen reproduceert nu regel-voor-regel het publieke-pagina-
+totaal → offerte.totaal = exact wat de klant accepteerde. Correctie-lump-aanname
+(review-finding 2) verwijderd.
+
+ROOT-CAUSE die nog speelt (pre-existing, twee formules in de codebase):
+  - Editor/berekenOfferteTotalen: afrondingskorting verlaagt de BTW-grondslag
+    (BTW over subtotaal ná korting).
+  - Publieke pagina + nieuwe accept-formule: afrondingskorting plat ná de BTW
+    (geen BTW erover); urencorrectie niet zichtbaar.
+
+Gevolg — twee kleine restinconsistenties, WACHT OP BESLISSING Antony (BTW-
+behandeling afrondingskorting) voordat ik ze fix:
+  1. FactuurEditor correctieregel gebruikt gewogen BTW → factuur kan ~ (BTW ×
+     afrondingskorting), meestal < €1, afwijken van het geaccepteerde totaal bij
+     offertes mét opties én afrondingskorting.
+  2. OfferteDetail BTW-uitsplitsing (per item, rauw) telt met subtotaal niet
+     exact op tot het opgeslagen totaal bij offertes met afrondingskorting
+     (verkoper-zichtbaar, ~cent-niveau).
+
+PROMINENT AANDACHTSPUNT: urencorrectie wordt bij acceptatie van een offerte MÉT
+klant-keuzes weggelaten (want de publieke pagina toont hem niet, dus de klant
+gaf er geen akkoord op). Verkopers die urencorrectie + klant-selecteerbare opties
+combineren verliezen die correctie stil. Echte oplossing = urencorrectie ook op
+de publieke pagina tonen (vereist opslag van het euro-bedrag) — apart traject.
+
+### Beslissing Antony (2026-07-09): afrondingskorting-BTW nuance NIET nu fixen
+Het verschil (< €1, alleen bij offertes met opties én afrondingskorting) blijft
+als bekende beperking staan. FactuurEditor-correctieregel en OfferteDetail-BTW-
+uitsplitsing worden nu niet aangepast. Later oppakken samen met het gelijktrekken
+van de editor- vs publieke-pagina-totaalformule.

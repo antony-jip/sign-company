@@ -113,6 +113,7 @@ const BOEKHOUD_PAKKET_NAAM: Record<BoekhoudPakket, string> = {
   eboekhouden: 'e-Boekhouden',
 }
 import { round2 } from '@/utils/budgetUtils'
+import { getActievePrijsRegel } from '@/utils/offerteTotalen'
 import { generateFactuurPDF, generateOffertePDF } from '@/services/pdfService'
 import { getFactuurClipboard } from '@/utils/factuurClipboard'
 import { genereerEnUploadFactuurPdf, downloadFactuurPdfFromStorage } from '@/services/factuurPdfService'
@@ -166,6 +167,49 @@ function calcLineTotal(item: LineItem): number {
   const subtotaal = round2(item.aantal * item.eenheidsprijs)
   const korting = round2(subtotaal * (item.korting_percentage / 100))
   return round2(subtotaal - korting)
+}
+
+// Zet offerte-items om naar factuurregels. Gebruikt de actieve prijsvariant
+// (niet de basisprijs) en voegt één correctieregel toe die afrondingskorting +
+// urencorrectie bundelt, zodat het factuur-subtotaal exact gelijk is aan het
+// opgeslagen offerte.subtotaal — anders wijkt de factuur af van wat de klant
+// op de offerte accepteerde.
+function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Offerte): LineItem[] {
+  const regels: LineItem[] = offerteItems
+    .filter((oi) => (oi.soort || 'prijs') === 'prijs' && !oi.is_optioneel)
+    .sort((a, b) => a.volgorde - b.volgorde)
+    .map((oi) => {
+      const r = getActievePrijsRegel(oi)
+      return {
+        id: crypto.randomUUID(),
+        beschrijving: oi.beschrijving,
+        aantal: r.aantal,
+        eenheidsprijs: r.eenheidsprijs,
+        btw_percentage: r.btw_percentage,
+        korting_percentage: r.korting_percentage,
+        grootboek_code: oi.grootboek_code || '',
+        detail_regels: oi.detail_regels || [],
+      }
+    })
+
+  const regelsNetto = round2(regels.reduce((sum, r) => sum + calcLineTotal(r), 0))
+  const correctie = round2((offerte.subtotaal || 0) - regelsNetto)
+  if (correctie !== 0) {
+    const weightedBtw = offerte.subtotaal > 0
+      ? Math.round((offerte.btw_bedrag / offerte.subtotaal) * 100)
+      : 21
+    regels.push({
+      id: crypto.randomUUID(),
+      beschrijving: 'Afronding / correctie',
+      aantal: 1,
+      eenheidsprijs: correctie,
+      btw_percentage: weightedBtw,
+      korting_percentage: 0,
+      grootboek_code: '',
+      detail_regels: [],
+    })
+  }
+  return regels
 }
 
 function calcSubtotaal(items: LineItem[]): number {
@@ -483,19 +527,7 @@ export function FactuurEditor() {
 
                   const offerteItems = await getOfferteItems(offerte.id).catch(() => [])
                   if (offerteItems.length > 0) {
-                    const mapped = offerteItems
-                      .filter((oi) => !oi.is_optioneel)
-                      .sort((a, b) => a.volgorde - b.volgorde)
-                      .map((oi) => ({
-                        id: crypto.randomUUID(),
-                        beschrijving: oi.beschrijving,
-                        aantal: oi.aantal,
-                        eenheidsprijs: oi.eenheidsprijs,
-                        btw_percentage: oi.btw_percentage,
-                        korting_percentage: oi.korting_percentage,
-                        grootboek_code: oi.grootboek_code || '',
-                        detail_regels: oi.detail_regels || [],
-                      }))
+                    const mapped = offerteItemsNaarFactuurRegels(offerteItems, offerte)
                     setItems(mapped)
                     setOrigineleItems(mapped.map((item) => ({ ...item })))
                     setHasOfferteItems(true)
@@ -574,21 +606,7 @@ export function FactuurEditor() {
                 // zijn eigen standaard-outro (factuurOutroTekst).
 
                 if (offerteItems.length > 0) {
-                  setItems(
-                    offerteItems
-                      .filter((oi) => !oi.is_optioneel)
-                      .sort((a, b) => a.volgorde - b.volgorde)
-                      .map((oi) => ({
-                        id: crypto.randomUUID(),
-                        beschrijving: oi.beschrijving,
-                        aantal: oi.aantal,
-                        eenheidsprijs: oi.eenheidsprijs,
-                        btw_percentage: oi.btw_percentage,
-                        korting_percentage: oi.korting_percentage,
-                        grootboek_code: oi.grootboek_code || '',
-                        detail_regels: oi.detail_regels || [],
-                      }))
-                  )
+                  setItems(offerteItemsNaarFactuurRegels(offerteItems, offerte))
                 } else {
                   setItems([
                     {

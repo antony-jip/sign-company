@@ -501,10 +501,14 @@ export function OffertePubliekPagina() {
   const kanActie = !isVerlopen && !isGeaccepteerd && !isAfgewezen && !isGefactureerd
   const dagenOver = dagenTotVerlopen(offerte.geldig_tot)
 
-  // Use live-computed totals if there are selections to make, otherwise use server totals
+  // Use live-computed totals if there are selections to make, otherwise use server totals.
+  // Bij live-berekening ook de afrondingskorting meenemen, anders wijkt het
+  // totaal af van de kortingsregel die eronder wordt getoond.
   const subtotaalBedrag = hasSelections ? berekendeSubtotaal : offerte.subtotaal
   const btwBedrag = hasSelections ? berekendeBtw : offerte.btw_bedrag
-  const totaalBedrag = hasSelections ? round2(berekendeSubtotaal + berekendeBtw) : (offerte.aangepast_totaal ?? offerte.totaal)
+  const totaalBedrag = hasSelections
+    ? round2(berekendeSubtotaal + berekendeBtw + (offerte.afrondingskorting_excl_btw ?? 0))
+    : (offerte.aangepast_totaal ?? offerte.totaal)
 
   return (
     <div className={`min-h-screen bg-[#F8F7F5] transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
