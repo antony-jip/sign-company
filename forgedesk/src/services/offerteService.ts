@@ -411,11 +411,19 @@ export async function syncOfferteItems(
       bijlage_naam: item.bijlage_naam,
     }))
 
-    const { data: result, error: insertErr } = await supabase
-      .from('offerte_items')
-      .insert(insertData)
-      .select()
-    if (insertErr) throw insertErr
+    // Lege insert overslaan: een lege array kan door PostgREST als fout
+    // behandeld worden, waardoor de delete hieronder niet gebeurt en oude
+    // rijen achterblijven terwijl de UI nul regels toont. Bij 0 items willen
+    // we juist gewoon alles verwijderen.
+    let result: OfferteItem[] = []
+    if (insertData.length > 0) {
+      const { data, error: insertErr } = await supabase
+        .from('offerte_items')
+        .insert(insertData)
+        .select()
+      if (insertErr) throw insertErr
+      result = data || []
+    }
 
     // 3. Oude rijen opruimen (op id, zodat de zojuist geïnsertte set blijft)
     if (existingIds.length > 0) {
@@ -425,7 +433,7 @@ export async function syncOfferteItems(
         .in('id', existingIds)
       if (delErr) throw delErr
     }
-    return result || []
+    return result
   }
 
   // localStorage fallback

@@ -36,7 +36,6 @@ import {
 } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { formatCurrency } from '@/lib/utils'
-import { round2 } from '@/utils/budgetUtils'
 import { berekenOfferteTotalen, getActievePrijsRegel, berekenRegelTotaal } from '@/utils/offerteTotalen'
 import type { Offerte, OfferteItem } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
@@ -316,6 +315,11 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                   <div className="space-y-3">
                     {items.map((item, index) => {
                       if (item._deleted) return null
+                      // Deze dialog heeft geen variant-UI; het regeltotaal volgt
+                      // de actieve variant. Basisvelden bewerken zou een totaal
+                      // opleveren dat de variant negeert, dus die zijn read-only
+                      // voor variant-items — bewerken gebeurt in de hoofd-editor.
+                      const heeftVarianten = (item.prijs_varianten?.length || 0) > 0
                       return (
                         <div key={item.id} className="bg-background dark:bg-muted/50 rounded-lg p-3 space-y-2">
                           <div className="flex items-start gap-2">
@@ -333,6 +337,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                                     type="number"
                                     min={0}
                                     value={item.aantal}
+                                    disabled={heeftVarianten}
                                     onChange={e => handleUpdateItem(index, 'aantal', parseFloat(e.target.value) || 0)}
                                     className="text-sm h-8"
                                   />
@@ -344,6 +349,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                                     min={0}
                                     step="0.01"
                                     value={item.eenheidsprijs}
+                                    disabled={heeftVarianten}
                                     onChange={e => handleUpdateItem(index, 'eenheidsprijs', parseFloat(e.target.value) || 0)}
                                     className="text-sm h-8"
                                   />
@@ -354,6 +360,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                                     type="number"
                                     min={0}
                                     value={item.btw_percentage}
+                                    disabled={heeftVarianten}
                                     onChange={e => handleUpdateItem(index, 'btw_percentage', parseFloat(e.target.value) || 0)}
                                     className="text-sm h-8"
                                   />
@@ -365,11 +372,17 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                                     min={0}
                                     max={100}
                                     value={item.korting_percentage}
+                                    disabled={heeftVarianten}
                                     onChange={e => handleUpdateItem(index, 'korting_percentage', parseFloat(e.target.value) || 0)}
                                     className="text-sm h-8"
                                   />
                                 </div>
                               </div>
+                              {heeftVarianten && (
+                                <p className="text-2xs text-muted-foreground">
+                                  Prijsvarianten · bewerk bedrag in de offerte-editor
+                                </p>
+                              )}
                             </div>
                             <div className="flex flex-col items-end gap-1 pt-1">
                               <span className="text-sm font-bold font-mono text-foreground whitespace-nowrap">

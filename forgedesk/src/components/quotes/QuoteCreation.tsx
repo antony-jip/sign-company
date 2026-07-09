@@ -683,7 +683,13 @@ export function QuoteCreation() {
         setIsEditMode(true)
         setSelectedKlantId(offerte.klant_id)
         setSelectedProjectId(offerte.project_id || '')
-        if (offerte.contactpersoon_id) setSelectedContactId(offerte.contactpersoon_id)
+        if (offerte.contactpersoon_id) {
+          setSelectedContactId(offerte.contactpersoon_id)
+          // Behoud dit (mogelijk niet-primaire) contact: anders overschrijft
+          // het auto-fill-effect het bij openen met de primaire contactpersoon
+          // en triggert het een ongevraagde autosave (vals conflict).
+          projectContactPrefilledRef.current = true
+        }
         setOfferteTitel(offerte.titel)
         setOfferteNummer(offerte.nummer)
         setVerstuurdOp(offerte.verstuurd_op || undefined)
@@ -703,9 +709,10 @@ export function QuoteCreation() {
             beschrijving: item.beschrijving,
             extra_velden: item.extra_velden || {},
             // Volledig lege default-rijen zijn artefacten van de oude
-            // placeholder-merge-bug; opruimen bij inladen.
+            // placeholder-merge-bug; opruimen bij inladen. r.id defensief
+            // checken: corrupte legacy-rijen kunnen een ontbrekend id hebben.
             detail_regels: item.detail_regels?.filter(
-              (r) => !(r.id.startsWith('default-') && !r.label && !r.waarde)
+              (r) => !(typeof r.id === 'string' && r.id.startsWith('default-') && !r.label && !r.waarde)
             ),
             aantal: item.aantal,
             eenheidsprijs: item.eenheidsprijs,
@@ -1837,8 +1844,12 @@ export function QuoteCreation() {
         bcc: email.emailBcc.trim() || undefined,
         scheduledAt,
       })
-      const verstuurdOp = scheduledAt || new Date().toISOString()
-      if (quoteId) {
+      // Alleen bij een directe verzending de offerte op 'verzonden' zetten.
+      // Bij inplannen is de mail nog niet verstuurd; status + verstuurd_op nu
+      // zetten zou een toekomstige verstuurd_op geven die de opvolg-timeline
+      // verkeerd aanstuurt en de offerte ten onrechte als verzonden toont.
+      if (quoteId && !isScheduled) {
+        const verstuurdOp = new Date().toISOString()
         const saved = await updateOfferte(quoteId, {
           status: 'verzonden',
           verstuurd_op: verstuurdOp,

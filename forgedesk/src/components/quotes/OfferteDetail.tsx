@@ -462,7 +462,9 @@ export function OfferteDetail() {
 
       logCreate({ user, entityType: 'offerte', entityId: newOfferte.id })
 
-      // Copy items
+      // Copy items — alle velden meenemen, anders verliest een duplicaat
+      // foto's, maatvoering, prijsvarianten, calculatie, optioneel-vlag en
+      // interne notities.
       for (const item of items) {
         await createOfferteItem({
           user_id: user?.id || '',
@@ -474,6 +476,24 @@ export function OfferteDetail() {
           korting_percentage: item.korting_percentage,
           totaal: item.totaal,
           volgorde: item.volgorde,
+          soort: item.soort,
+          extra_velden: item.extra_velden,
+          detail_regels: item.detail_regels,
+          calculatie_regels: item.calculatie_regels,
+          heeft_calculatie: item.heeft_calculatie,
+          prijs_varianten: item.prijs_varianten,
+          actieve_variant_id: item.actieve_variant_id,
+          breedte_mm: item.breedte_mm,
+          hoogte_mm: item.hoogte_mm,
+          oppervlakte_m2: item.oppervlakte_m2,
+          afmeting_vrij: item.afmeting_vrij,
+          foto_url: item.foto_url,
+          foto_op_offerte: item.foto_op_offerte,
+          is_optioneel: item.is_optioneel,
+          interne_notitie: item.interne_notitie,
+          bijlage_url: item.bijlage_url,
+          bijlage_type: item.bijlage_type,
+          bijlage_naam: item.bijlage_naam,
         })
       }
 
