@@ -900,3 +900,18 @@ Senior review AKKOORD-MET-OPMERKINGEN. Opmerkingen:
   (c) Pre-existing: pdfService r842-859 toont "Subtotaal" (incl. korting) én
       een aparte regel "Afrondingskorting" — visueel telt de som niet op.
       Centrale fix hoort in pdfService, apart oppakken.
+
+## 2026-07-09 · fix/offerte-create-hardening · Fase C render-performance (uitgesteld)
+
+Taak "performance QuoteCreation" is deels gedaan (toOfferteItemPayload-helper,
+gedeelde offerteTotalen-util incl. getActievePrijsRegel/berekenRegelTotaal).
+BEWUST NIET in deze branch: QuoteItemRow-extractie + React.memo + useCallback op
+alle item-handlers + useOfferteTotalen-hook.
+
+Reden: dat is een ~700-regel JSX-verplaatsing per item met drag/drop-reorder,
+focus-beheer, autofill, prijsvariant-UI, inkoop-drag-drop en bijlage-upload.
+React.memo levert pas winst als álle ~30 callbacks gestabiliseerd zijn; fout
+gedrag (focus-verlies bij typen, kapotte drag/drop, stale closures) is niet via
+build/unit-tests te vangen en vraagt handmatige in-app-verificatie met echte
+data. Los oppakken op een eigen branch met /verify-doorloop. Perf-issue is
+merkbaar (re-render bij elke toetsaanslag) maar geen correctness-bug.
