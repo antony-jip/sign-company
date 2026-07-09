@@ -1856,19 +1856,30 @@ export function QuoteCreation() {
         }
       }
 
-      await sendEmail(email.emailTo.trim(), email.emailSubject.trim(), templateText, { html: templateHtml, attachments })
+      const isScheduled = email.emailScheduled && !!email.emailScheduleDate
+      const scheduledAt = isScheduled
+        ? new Date(`${email.emailScheduleDate}T${email.emailScheduleTime || '08:00'}`).toISOString()
+        : undefined
+      await sendEmail(email.emailTo.trim(), email.emailSubject.trim(), templateText, {
+        html: templateHtml,
+        attachments,
+        cc: email.emailCc.trim() || undefined,
+        bcc: email.emailBcc.trim() || undefined,
+        scheduledAt,
+      })
+      const verstuurdOp = scheduledAt || new Date().toISOString()
       if (quoteId) {
         await updateOfferte(quoteId, {
           status: 'verzonden',
-          verstuurd_op: new Date().toISOString(),
+          verstuurd_op: verstuurdOp,
           verstuurd_naar: email.emailTo.trim(),
           verzendwijze: 'via_email_pdf',
         })
-        setVerstuurdOp(new Date().toISOString())
+        setVerstuurdOp(verstuurdOp)
         setVerstuurdNaar(email.emailTo.trim())
       }
-      if (email.emailScheduled && email.emailScheduleDate) {
-        toast.success(`Email ingepland voor ${new Date(email.emailScheduleDate + 'T' + email.emailScheduleTime).toLocaleString('nl-NL')}`)
+      if (isScheduled) {
+        toast.success(`Email ingepland voor ${new Date(scheduledAt!).toLocaleString('nl-NL')}`)
       } else {
         toast.success(`Offerte verstuurd naar ${email.emailTo.trim()}`)
       }
