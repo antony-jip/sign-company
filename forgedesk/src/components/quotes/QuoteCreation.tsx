@@ -86,7 +86,7 @@ import { supabase } from '@/services/supabaseClient'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
 import { initAutofillDefaults, saveAutofillValue, labelToAutofillField } from '@/utils/autofillUtils'
-import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
+import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS, sanitizeDetailLabels } from './QuoteItemsTable'
 import { RegelTemplateEditor } from './RegelTemplateEditor'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
@@ -231,8 +231,9 @@ export function QuoteCreation() {
   const { user } = useAuth()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   const { settings, updateSettings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, offerteIntroTekst, offerteOutroTekst, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
-  const regelTemplateLabels = settings.offerte_regel_velden && settings.offerte_regel_velden.length > 0
-    ? settings.offerte_regel_velden
+  const sanitizedRegelVelden = sanitizeDetailLabels(settings.offerte_regel_velden || [])
+  const regelTemplateLabels = sanitizedRegelVelden.length > 0
+    ? sanitizedRegelVelden
     : DEFAULT_DETAIL_LABELS
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
@@ -650,7 +651,11 @@ export function QuoteCreation() {
             soort: (item.soort || 'prijs') as 'prijs' | 'tekst',
             beschrijving: item.beschrijving,
             extra_velden: item.extra_velden || {},
-            detail_regels: item.detail_regels,
+            // Volledig lege default-rijen zijn artefacten van de oude
+            // placeholder-merge-bug; opruimen bij inladen.
+            detail_regels: item.detail_regels?.filter(
+              (r) => !(r.id.startsWith('default-') && !r.label && !r.waarde)
+            ),
             aantal: item.aantal,
             eenheidsprijs: item.eenheidsprijs,
             btw_percentage: item.btw_percentage,
@@ -800,9 +805,8 @@ export function QuoteCreation() {
   // ── Helper: maak een leeg calculatie-item met default beschrijving-regels ──
   const createEmptyItem = (label?: string): QuoteLineItem => {
     // Gebruik offerte_regel_velden uit settings, of de defaults
-    const labels = (settings.offerte_regel_velden && settings.offerte_regel_velden.length > 0)
-      ? settings.offerte_regel_velden
-      : DEFAULT_DETAIL_LABELS
+    const cleanVelden = sanitizeDetailLabels(settings.offerte_regel_velden || [])
+    const labels = cleanVelden.length > 0 ? cleanVelden : DEFAULT_DETAIL_LABELS
 
     const detail_regels: DetailRegel[] = labels.map((l, i) => ({
       id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
@@ -939,9 +943,12 @@ export function QuoteCreation() {
 
   // Pas template-labels toe op alle huidige items. Bestaande waarden blijven
   // behouden waar het label overeenkomt. Hidden labels worden gereset.
-  const handleApplyTemplate = (templateLabels: string[]) => {
-    if (items.length === 0) {
-      toast.error('Geen items om template op toe te passen')
+  const handleApplyTemplate = (rawTemplateLabels: string[]) => {
+    // Oude templates kunnen lege of dubbele labels bevatten; ongefilterd
+    // toepassen zaait de detail-regels merge-bug in elk item.
+    const templateLabels = sanitizeDetailLabels(rawTemplateLabels)
+    if (items.length === 0 || templateLabels.length === 0) {
+      toast.error(items.length === 0 ? 'Geen items om template op toe te passen' : 'Template bevat geen geldige labels')
       return
     }
     setItems(prev =>

@@ -49,6 +49,20 @@ export const DEFAULT_DETAIL_LABELS = [
   'Opmerking',
 ]
 
+// Lege of dubbele labels in opgeslagen settings/templates veroorzaken anders
+// oneindig aangroeiende placeholder-rijen in de detail-regels merge.
+export function sanitizeDetailLabels(labels: string[]): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const label of labels) {
+    const trimmed = (label || '').trim()
+    if (!trimmed || seen.has(trimmed)) continue
+    seen.add(trimmed)
+    result.push(trimmed)
+  }
+  return result
+}
+
 export interface PrijsVariant {
   id: string
   label: string
@@ -601,8 +615,9 @@ export function QuoteItemsTable({
   offerteId,
   templateLabels: templateLabelsProp,
 }: QuoteItemsTableProps) {
-  const templateLabels = templateLabelsProp && templateLabelsProp.length > 0
-    ? templateLabelsProp
+  const sanitizedTemplateLabels = sanitizeDetailLabels(templateLabelsProp || [])
+  const templateLabels = sanitizedTemplateLabels.length > 0
+    ? sanitizedTemplateLabels
     : DEFAULT_DETAIL_LABELS
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
@@ -851,21 +866,28 @@ export function QuoteItemsTable({
     const existing = item.detail_regels || []
     const hidden = getHiddenLabels(item)
     const seenLabels = new Set<string>()
+    const seenIds = new Set<string>()
     const merged: DetailRegel[] = []
     for (const r of existing) {
       if (r.label && hidden.has(r.label)) continue
+      // Historische data kan rijen met identieke ids bevatten (oude
+      // placeholder-bug); dubbele React-keys en spook-updates voorkomen.
+      if (seenIds.has(r.id)) continue
+      seenIds.add(r.id)
       merged.push(r)
       if (r.label) seenLabels.add(r.label)
     }
-    for (const label of templateLabels) {
-      if (hidden.has(label) || seenLabels.has(label)) continue
-      const slug = label.replace(/[^a-z0-9]+/gi, '_').toLowerCase()
+    templateLabels.forEach((label, idx) => {
+      if (hidden.has(label) || seenLabels.has(label)) return
+      seenLabels.add(label)
+      // Index-based id: labels die naar dezelfde slug normaliseren (bv.
+      // "Lay-out" en "Lay out") kregen anders hetzelfde id/React-key.
       merged.push({
-        id: `${PLACEHOLDER_PREFIX}${item.id}-${slug}`,
+        id: `${PLACEHOLDER_PREFIX}${item.id}-i${idx}`,
         label,
         waarde: '',
       })
-    }
+    })
     return merged
   }
 
@@ -884,12 +906,29 @@ export function QuoteItemsTable({
     const item = items.find((i) => i.id === itemId)
     if (!item) return
 
-    // Placeholder-rij (default die nog geen waarde heeft): verberg via _hidden_labels
-    if (regelId.startsWith(`${PLACEHOLDER_PREFIX}${item.id}-`)) {
-      const slug = regelId.replace(`${PLACEHOLDER_PREFIX}${item.id}-`, '')
-      const label = templateLabels.find(
-        (l) => l.replace(/[^a-z0-9]+/gi, '_').toLowerCase() === slug,
-      )
+    // Echte (gepersisteerde) detail_regel — óók gematerialiseerde placeholders
+    // met een default-id, anders zijn hernoemde default-rijen onverwijderbaar.
+    // Als het label een default is, markeer ook hidden zodat de placeholder
+    // niet meteen terugkomt.
+    const target = (item.detail_regels || []).find((r) => r.id === regelId)
+    if (target) {
+      const regels = (item.detail_regels || []).filter((r) => r.id !== regelId)
+      if (templateLabels.includes(target.label)) {
+        const hidden = getHiddenLabels(item)
+        hidden.add(target.label)
+        onUpdateItem(itemId, 'extra_velden', {
+          ...item.extra_velden,
+          _hidden_labels: Array.from(hidden).join('|'),
+        })
+      }
+      updateDetailRegels(itemId, regels)
+      return
+    }
+
+    // Virtuele placeholder-rij: verberg via _hidden_labels
+    if (regelId.startsWith(`${PLACEHOLDER_PREFIX}${item.id}-i`)) {
+      const idx = Number(regelId.slice(`${PLACEHOLDER_PREFIX}${item.id}-i`.length))
+      const label = templateLabels[idx]
       if (label) {
         const hidden = getHiddenLabels(item)
         hidden.add(label)
@@ -898,23 +937,7 @@ export function QuoteItemsTable({
           _hidden_labels: Array.from(hidden).join('|'),
         })
       }
-      return
     }
-
-    // Echte detail_regel: verwijder uit de array. Als het label een default is,
-    // markeer ook hidden zodat de placeholder niet meteen terugkomt.
-    const target = (item.detail_regels || []).find((r) => r.id === regelId)
-    const regels = (item.detail_regels || []).filter((r) => r.id !== regelId)
-    const isDefaultLabel = target && templateLabels.includes(target.label)
-    if (isDefaultLabel) {
-      const hidden = getHiddenLabels(item)
-      hidden.add(target.label)
-      onUpdateItem(itemId, 'extra_velden', {
-        ...item.extra_velden,
-        _hidden_labels: Array.from(hidden).join('|'),
-      })
-    }
-    updateDetailRegels(itemId, regels)
   }
 
   const duplicateDetailRegel = (itemId: string, regelId: string) => {
