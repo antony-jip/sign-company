@@ -150,7 +150,7 @@ interface QuoteItemsTableProps {
   templateLabels?: string[]
 }
 
-function calculateLineTotaal(item: QuoteLineItem): number {
+export function calculateLineTotaal(item: QuoteLineItem): number {
   // If item has variants, use the active variant for the total
   if (item.prijs_varianten && item.prijs_varianten.length > 0) {
     const active = item.prijs_varianten.find(v => v.id === item.actieve_variant_id) || item.prijs_varianten[0]

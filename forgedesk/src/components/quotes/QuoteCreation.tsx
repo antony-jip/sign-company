@@ -86,7 +86,7 @@ import { supabase } from '@/services/supabaseClient'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
 import { initAutofillDefaults, saveAutofillValue, labelToAutofillField } from '@/utils/autofillUtils'
-import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS, sanitizeDetailLabels } from './QuoteItemsTable'
+import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS, sanitizeDetailLabels, calculateLineTotaal } from './QuoteItemsTable'
 import { RegelTemplateEditor } from './RegelTemplateEditor'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
@@ -937,8 +937,10 @@ export function QuoteCreation() {
         if (item.id !== id) return item
         const updated = { ...item, [field]: value }
         if (updated.soort === 'prijs') {
-          const bruto = round2(updated.aantal * updated.eenheidsprijs)
-          updated.totaal = round2(bruto - round2(bruto * (updated.korting_percentage / 100)))
+          // calculateLineTotaal kijkt naar de actieve prijsvariant; anders
+          // blijft het opgeslagen totaal (DB/PDF/werkbon) op de basisprijs
+          // hangen terwijl de UI de variant toont.
+          updated.totaal = calculateLineTotaal(updated)
         }
         return updated
       })
@@ -1002,8 +1004,7 @@ export function QuoteCreation() {
           calculatie_regels: data.calculatie_regels,
           heeft_calculatie: true,
         }
-        const bruto = round2(updated.aantal * updated.eenheidsprijs)
-        updated.totaal = round2(bruto - round2(bruto * (updated.korting_percentage / 100)))
+        updated.totaal = calculateLineTotaal(updated)
         return updated
       })
     )
@@ -1030,7 +1031,9 @@ export function QuoteCreation() {
             heeft_calculatie: true,
           }
         })
-        return { ...item, prijs_varianten: updatedVarianten }
+        const updated = { ...item, prijs_varianten: updatedVarianten }
+        updated.totaal = calculateLineTotaal(updated)
+        return updated
       })
     )
   }
