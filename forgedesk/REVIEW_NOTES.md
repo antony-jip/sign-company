@@ -915,3 +915,41 @@ gedrag (focus-verlies bij typen, kapotte drag/drop, stale closures) is niet via
 build/unit-tests te vangen en vraagt handmatige in-app-verificatie met echte
 data. Los oppakken op een eigen branch met /verify-doorloop. Perf-issue is
 merkbaar (re-render bij elke toetsaanslag) maar geen correctness-bug.
+
+## 2026-07-09 · fix/offerte-create-hardening · Onafhankelijke review (2 agents) — geverifieerde restpunten
+
+Correctness- en missed-callsites-review over de hele branch. Direct gefixt in
+commit 0ee038ca: ProjectOfferteEditor variant-regressie (velden read-only bij
+varianten), ingeplande-mail zet offerte niet meer op verzonden met toekomstige
+verstuurd_op, syncOfferteItems lege-array guard, OfferteDetail-duplicate kopieert
+alle velden, null-guard op detail_regels-opschoning. Ook meegenomen: contact-
+autofill overschreef bij openen het geladen contact (→ vals conflict), round2
+dode import weg.
+
+BEWUST NIET auto-gefixt (pre-existing, buiten scope van deze branch — geldmath
+richting klant/factuur of risicovolle wijziging die in-app verificatie vraagt).
+Aanbevolen als losse taken, met Antony's akkoord:
+
+  (a) FactuurEditor factuur-uit-offerte (FactuurEditor.tsx ~484-498/576-591,
+      790-793): negeert offerte.afrondingskorting_excl_btw én uren_correctie, en
+      rekent met basisprijs i.p.v. actieve prijsvariant. €995-offerte → €1000-
+      factuur. Vraagt productkeuze: wordt een correctie een factuurregel?
+  (b) OffertePubliekPagina.tsx:505-507: bij optionele items/varianten valt de
+      afrondingskorting uit het klant-totaal terwijl de kortingsregel wél getoond
+      wordt. Klant ziet inconsistent bedrag. Vrij contained te fixen.
+  (c) OfferteDetail.tsx:585-593: itemtabel toont totaal berekend uit álle items
+      (geen is_optioneel-filter, geen afronding/urencorrectie) → wijkt af van het
+      opgeslagen offerte.totaal. Beter: gewoon offerte.totaal tonen.
+  (d) syncOfferteItems churnt item-ids bij elke autosave → offerte.gekozen_items/
+      gekozen_varianten (OffertePubliekPagina) en Werkbon.offerte_item_id worden
+      dode refs. Klant-keuzes lijken leeg na een edit. Echte fix = id-behoudende
+      upsert in syncOfferteItems (update-by-id voor bestaande UUID's, insert voor
+      new-*), maar dat is kritiek-pad persistence → eigen branch + /verify.
+  (e) syncOfferteItems insert-before-delete: als de delete faalt ná geslaagde
+      insert blijven dubbele rijen staan (zichtbaar bij factuur-conversie). Lage
+      kans; opgeruimd bij volgende save. Bewuste trade-off tegen "0 items".
+  (f) Gedeeld klembord + telItemsMetBijlage: item met bijlage plakken in offerte
+      B (nog niet opgeslagen), daarna bijlage in origineel verwijderen → telt
+      alleen DB-refs → bestand weg → gebroken link in B na autosave. Smalle race.
+  (g) QuoteSidebar eigen totaalformule kan 1 cent afwijken van berekenOfferte-
+      Totalen tijdens typen. Cosmetisch.
