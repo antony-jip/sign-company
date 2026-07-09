@@ -1008,3 +1008,33 @@ Kleine open punten (bewust): correctie-lump draagt over naar een door de klant
 gewijzigde config (afrondingskorting was op de default berekend); en de
 gewogen-BTW-benadering op de factuur-correctieregel kan een cent afwijken bij
 gemengde tarieven.
+
+## 2026-07-09 · fix/offerte-create-hardening · Accept-total exact + open BTW-beslissing (cb248a0f)
+
+Adversariële review vond dat mijn eerste accept-herberekening de EDITOR-formule
+gebruikte (BTW over de afrondingskorting + urencorrectie meegeteld), terwijl de
+klant op de publieke pagina een ANDER getal ziet. Gefixt (cb248a0f):
+berekenGeaccepteerdeTotalen reproduceert nu regel-voor-regel het publieke-pagina-
+totaal → offerte.totaal = exact wat de klant accepteerde. Correctie-lump-aanname
+(review-finding 2) verwijderd.
+
+ROOT-CAUSE die nog speelt (pre-existing, twee formules in de codebase):
+  - Editor/berekenOfferteTotalen: afrondingskorting verlaagt de BTW-grondslag
+    (BTW over subtotaal ná korting).
+  - Publieke pagina + nieuwe accept-formule: afrondingskorting plat ná de BTW
+    (geen BTW erover); urencorrectie niet zichtbaar.
+
+Gevolg — twee kleine restinconsistenties, WACHT OP BESLISSING Antony (BTW-
+behandeling afrondingskorting) voordat ik ze fix:
+  1. FactuurEditor correctieregel gebruikt gewogen BTW → factuur kan ~ (BTW ×
+     afrondingskorting), meestal < €1, afwijken van het geaccepteerde totaal bij
+     offertes mét opties én afrondingskorting.
+  2. OfferteDetail BTW-uitsplitsing (per item, rauw) telt met subtotaal niet
+     exact op tot het opgeslagen totaal bij offertes met afrondingskorting
+     (verkoper-zichtbaar, ~cent-niveau).
+
+PROMINENT AANDACHTSPUNT: urencorrectie wordt bij acceptatie van een offerte MÉT
+klant-keuzes weggelaten (want de publieke pagina toont hem niet, dus de klant
+gaf er geen akkoord op). Verkopers die urencorrectie + klant-selecteerbare opties
+combineren verliezen die correctie stil. Echte oplossing = urencorrectie ook op
+de publieke pagina tonen (vereist opslag van het euro-bedrag) — apart traject.
