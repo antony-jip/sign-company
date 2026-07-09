@@ -15,6 +15,9 @@ import type {
   CalculatieRegel,
 } from '@/types'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
+import { partitionOfferteItemSync } from '@/utils/offerteItemSync'
+
+export { partitionOfferteItemSync }
 
 // ============ OFFERTES ============
 
@@ -362,7 +365,7 @@ export async function deleteOfferteItem(id: string): Promise<void> {
 
 export async function syncOfferteItems(
   offerteId: string,
-  items: Omit<OfferteItem, 'id' | 'created_at'>[],
+  items: Array<Omit<OfferteItem, 'id' | 'created_at'> & { id?: string }>,
   userId: string
 ): Promise<OfferteItem[]> {
   assertId(offerteId, 'offerte_id')
@@ -375,13 +378,10 @@ export async function syncOfferteItems(
       .eq('offerte_id', offerteId)
     if (fetchErr) throw fetchErr
 
-    const existingIds = (existing || []).map(e => e.id)
+    const existingIds = new Set((existing || []).map(e => e.id))
 
-    // 2. Eerst inserten (één atomair statement), daarna pas de oude rijen
-    // verwijderen. Andersom (delete-all → insert) liet bij een mislukte
-    // insert een offerte zonder items achter; nu is het ergste geval een
-    // tijdelijke dubbeling die de volgende sync opruimt.
-    const insertData = items.map((item, index) => ({
+    // Velden-payload zonder id; volgorde volgt de positie in de array.
+    const buildRow = (item: typeof items[number], index: number) => ({
       user_id: userId,
       offerte_id: offerteId,
       beschrijving: item.beschrijving,
@@ -409,28 +409,56 @@ export async function syncOfferteItems(
       bijlage_url: item.bijlage_url,
       bijlage_type: item.bijlage_type,
       bijlage_naam: item.bijlage_naam,
-    }))
+    })
 
-    // Lege insert overslaan: een lege array kan door PostgREST als fout
-    // behandeld worden, waardoor de delete hieronder niet gebeurt en oude
-    // rijen achterblijven terwijl de UI nul regels toont. Bij 0 items willen
-    // we juist gewoon alles verwijderen.
-    let result: OfferteItem[] = []
-    if (insertData.length > 0) {
+    // Bestaande items (echt UUID dat bij deze offerte hoort) behouden hun id via
+    // upsert; nieuwe items (new-* of onbekend id) krijgen een vers DB-id. Zo
+    // blijven verwijzingen naar offerte_items.id geldig (offerte.gekozen_items,
+    // werkbon.offerte_item_id) i.p.v. bij elke autosave te veranderen.
+    const { insertIndices, deleteIds } = partitionOfferteItemSync(
+      items.map(i => i.id),
+      existingIds,
+    )
+    const insertSet = new Set(insertIndices)
+    const updateRows: Array<ReturnType<typeof buildRow> & { id: string }> = []
+    const insertRows: Array<ReturnType<typeof buildRow>> = []
+    items.forEach((item, index) => {
+      const row = buildRow(item, index)
+      if (insertSet.has(index)) {
+        insertRows.push(row)
+      } else {
+        updateRows.push({ id: item.id as string, ...row })
+      }
+    })
+
+    const result: OfferteItem[] = []
+    // Bestaande rijen bijwerken (id-behoudend). Aparte batch van de inserts:
+    // een gemengde array waarbij sommige rijen geen id-kolom hebben zou de
+    // insert-rijen een NULL-id geven i.p.v. de DB-default.
+    if (updateRows.length > 0) {
+      const { data, error: upsertErr } = await supabase
+        .from('offerte_items')
+        .upsert(updateRows, { onConflict: 'id' })
+        .select()
+      if (upsertErr) throw upsertErr
+      result.push(...(data || []))
+    }
+    // Nieuwe rijen inserten (zonder id → DB genereert).
+    if (insertRows.length > 0) {
       const { data, error: insertErr } = await supabase
         .from('offerte_items')
-        .insert(insertData)
+        .insert(insertRows)
         .select()
       if (insertErr) throw insertErr
-      result = data || []
+      result.push(...(data || []))
     }
 
-    // 3. Oude rijen opruimen (op id, zodat de zojuist geïnsertte set blijft)
-    if (existingIds.length > 0) {
+    // Verwijderde rijen opruimen: alles wat er was maar niet behouden is.
+    if (deleteIds.length > 0) {
       const { error: delErr } = await supabase
         .from('offerte_items')
         .delete()
-        .in('id', existingIds)
+        .in('id', deleteIds)
       if (delErr) throw delErr
     }
     return result
