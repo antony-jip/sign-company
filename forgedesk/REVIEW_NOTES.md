@@ -893,3 +893,14 @@ Blokkades B1/B2/B3 en M1 zijn gefixt in "fix(review)"-commit. Openstaand:
       van twee verschillende betaalde eerste betalingen kan in theorie een
       dubbele subscription ontstaan (verschillende Idempotency-Keys); de
       reconciliatie uit (a) vangt dit op.
+Her-review 0dcf9217: AKKOORD-MET-OPMERKINGEN. Aanvullend gelogd:
+  (e) Sentry-warning "Dubbele eerste abonnementsbetaling zonder activering"
+      vuurt ook bij een onschuldige duplicate delivery ná geslaagde
+      activering (alert-ruis). Fix t.z.t.: in het skip-pad org-status
+      checken en alleen warnen bij status ≠ actief.
+  (f) Re-subscribe tijdens de betaalde uitloopperiode (opgezegd-pending)
+      incasseert per direct een volle maand die overlapt met de uitloop.
+      Laag risico; bewuste keuze of startDate opschuiven bij vervolgronde.
+  (g) GEFIXT direct na review: cancel-subscription behandelt subscriptions
+      met Mollie-status canceled/completed/suspended nu als niet-bestaand
+      (voorheen 502-loop door DELETE→422).

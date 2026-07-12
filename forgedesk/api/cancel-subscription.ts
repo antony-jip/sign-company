@@ -68,8 +68,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let subscriptionBestaat = true
     const getResponse = await fetch(subscriptionUrl, { headers: mollieHeaders })
     if (getResponse.ok) {
-      const subscription = await getResponse.json() as { nextPaymentDate?: string }
-      if (subscription.nextPaymentDate) {
+      const subscription = await getResponse.json() as { status?: string; nextPaymentDate?: string }
+      if (['canceled', 'completed', 'suspended'].includes(subscription.status || '')) {
+        // Al beëindigd aan Mollie-kant; DELETE zou 422 geven
+        subscriptionBestaat = false
+      } else if (subscription.nextPaymentDate) {
         actiefTot = new Date(`${subscription.nextPaymentDate}T00:00:00Z`).toISOString()
       }
     } else if (getResponse.status === 404 || getResponse.status === 410) {
