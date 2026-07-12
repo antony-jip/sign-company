@@ -133,6 +133,7 @@ import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
+import { useTabs } from '@/contexts/TabsContext'
 import { Skeleton } from '@/components/ui/skeleton'
 
 // ============ TYPES ============
@@ -355,6 +356,11 @@ export function FactuurEditor() {
   const [projectId, setProjectId] = useState('')
   const [titel, setTitel] = useState('')
   const [nummer, setNummer] = useState('')
+
+  const { setActiveTabLabel } = useTabs()
+  useEffect(() => {
+    if (nummer) setActiveTabLabel(`Factuur ${nummer}`)
+  }, [nummer, setActiveTabLabel])
   const [factuurdatum, setFactuurdatum] = useState(getTodayString())
   const [vervaldatum, setVervaldatum] = useState(getDefaultVervaldatum(getTodayString(), factuurBetaaltermijnDagen))
   const [voorwaarden, setVoorwaarden] = useState(factuurVoorwaarden)

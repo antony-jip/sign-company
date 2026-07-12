@@ -84,16 +84,22 @@ export function WerkbonnenLayout() {
         // Lijst staat; skeleton mag weg. De item-tellingen vullen stil bij.
         setIsLoading(false)
 
-        // Tel items per werkbon
+        // Tel items per werkbon · in kleine parallelle batches i.p.v. één
+        // voor één, anders vult de kolom seconden lang traag bij
         const counts: Record<string, number> = {}
-        for (const wb of wbs) {
-          try {
-            const items = await getWerkbonItems(wb.id)
-            if (cancelled) return
-            counts[wb.id] = items.length
-          } catch (err) {
-            counts[wb.id] = 0
-          }
+        const BATCH = 8
+        for (let i = 0; i < wbs.length; i += BATCH) {
+          const batch = wbs.slice(i, i + BATCH)
+          const results = await Promise.all(batch.map(async (wb) => {
+            try {
+              const items = await getWerkbonItems(wb.id)
+              return [wb.id, items.length] as const
+            } catch (err) {
+              return [wb.id, 0] as const
+            }
+          }))
+          if (cancelled) return
+          results.forEach(([id, n]) => { counts[id] = n })
         }
         setItemCounts(counts)
         setCached('werkbonItemCounts', counts)
@@ -565,9 +571,13 @@ export function WerkbonnenLayout() {
                         />
                       </td>
                       <td className="py-3.5 pr-4 text-center">
-                        <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-background text-foreground/70">
-                          {itemCounts[wb.id] || 0}
-                        </span>
+                        {itemCounts[wb.id] ? (
+                          <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-background text-foreground/70">
+                            {itemCounts[wb.id]}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground/40">—</span>
+                        )}
                       </td>
                       <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-0.5">

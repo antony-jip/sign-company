@@ -167,6 +167,7 @@ import { logger } from '../../utils/logger'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
 import { getAuditLogForProject } from '@/services/supabaseService'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
+import { useTabs } from '@/contexts/TabsContext'
 import { getStatusPillClass } from '@/utils/statusColors'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -435,6 +436,11 @@ export function ProjectDetail() {
   const projectMaker = project?.user_id ? medewerkers.find((m) => m.user_id === project.user_id) : undefined
   const [klant, setKlant] = useState<Klant | null>(null)
   const [editKlantOpen, setEditKlantOpen] = useState(false)
+
+  const { setActiveTabLabel } = useTabs()
+  useEffect(() => {
+    if (project?.naam) setActiveTabLabel(project.naam)
+  }, [project?.naam, setActiveTabLabel])
   const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([])
   const [projectTaken, setProjectTaken] = useState<Taak[]>([])
   const [projectDocumenten, setProjectDocumenten] = useState<Document[]>([])

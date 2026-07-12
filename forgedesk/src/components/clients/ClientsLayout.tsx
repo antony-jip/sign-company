@@ -583,36 +583,12 @@ export function ClientsLayout() {
           </div>
         </div>
 
-        {/* Label filter row */}
+        {/* Label + status filters · één rij met groepslabels i.p.v. twee
+            bijna identieke rijen (labels en status delen dezelfde termen) */}
         <div className="flex items-center gap-1 mt-3 flex-nowrap md:flex-wrap overflow-x-auto">
+          <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-muted-foreground/60 pr-1 flex-shrink-0">Status</span>
           {[
-            { value: 'alle', label: 'Alle labels' },
-            { value: 'vooruit_betalen', label: 'Vooruit betalen' },
-            { value: 'niet_helpen', label: 'Niet helpen' },
-            { value: 'voorrang', label: 'Voorrang' },
-            { value: 'grote_klant', label: 'Grote klant' },
-            { value: 'wanbetaler', label: 'Wanbetaler' },
-          ].map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setLabelFilter(opt.value)}
-              className={cn(
-                'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
-                labelFilter === opt.value
-                  ? 'text-petrol dark:text-foreground font-semibold bg-petrol/[0.07] dark:bg-white/[0.06]'
-                  : 'text-muted-foreground hover:text-foreground/70'
-              )}
-            >
-              {opt.label}
-              {labelFilter === opt.value && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-petrol dark:bg-[#5AABB5] rounded-full" />}
-            </button>
-          ))}
-        </div>
-
-        {/* Klant status filter row */}
-        <div className="flex items-center gap-1 mt-2 flex-nowrap md:flex-wrap overflow-x-auto">
-          {[
-            { value: 'alle', label: 'Alle statussen', color: undefined },
+            { value: 'alle', label: 'Alle', color: undefined },
             ...Object.entries(klantStatusConfig).map(([key, cfg]) => ({
               value: key, label: cfg.label, color: cfg.color,
             })),
@@ -632,6 +608,32 @@ export function ClientsLayout() {
               )}
               {opt.label}
               {klantStatusFilter === opt.value && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-petrol dark:bg-[#5AABB5] rounded-full" />}
+            </button>
+          ))}
+
+          <span className="w-px h-4 bg-border mx-2 flex-shrink-0" />
+
+          <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-muted-foreground/60 pr-1 flex-shrink-0">Labels</span>
+          {[
+            { value: 'alle', label: 'Alle' },
+            { value: 'grote_klant', label: 'Grote klant' },
+            { value: 'wanbetaler', label: 'Wanbetaler' },
+            { value: 'vooruit_betalen', label: 'Vooruit betalen' },
+            { value: 'niet_helpen', label: 'Niet helpen' },
+            { value: 'voorrang', label: 'Voorrang' },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setLabelFilter(opt.value)}
+              className={cn(
+                'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
+                labelFilter === opt.value
+                  ? 'text-petrol dark:text-foreground font-semibold bg-petrol/[0.07] dark:bg-white/[0.06]'
+                  : 'text-muted-foreground hover:text-foreground/70'
+              )}
+            >
+              {opt.label}
+              {labelFilter === opt.value && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-petrol dark:bg-[#5AABB5] rounded-full" />}
             </button>
           ))}
         </div>

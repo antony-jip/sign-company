@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { logger } from '../../utils/logger'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
+import { useTabs } from '@/contexts/TabsContext'
 import { BackButton } from '@/components/shared/BackButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -130,6 +131,11 @@ export function ClientProfile() {
   const [contactDialogOpen, setContactDialogOpen] = useState(false)
   const [klant, setKlant] = useState<Klant | null>(null)
   const [clientProjecten, setClientProjecten] = useState<Project[]>([])
+
+  const { setActiveTabLabel } = useTabs()
+  useEffect(() => {
+    if (klant?.bedrijfsnaam) setActiveTabLabel(klant.bedrijfsnaam)
+  }, [klant?.bedrijfsnaam, setActiveTabLabel])
   const [clientEmails, setClientEmails] = useState<Email[]>([])
   const [clientDocumenten, setClientDocumenten] = useState<DocType[]>([])
   const [clientFacturen, setClientFacturen] = useState<Factuur[]>([])
