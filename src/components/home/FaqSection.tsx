@@ -52,12 +52,15 @@ export default function FaqSection() {
             >
               Nog vragen<span className="text-flame">?</span>
             </h2>
-            <p className="text-[15px] text-muted leading-[1.6] max-w-xs">
-              Staat je vraag er niet bij?{' '}
-              <Link href="/contact" className="font-semibold text-petrol hover:text-flame transition-colors">
-                Stel hem direct
+            <p className="text-[15px] text-muted leading-[1.6] max-w-xs mb-3">
+              <Link href="/veelgestelde-vragen" className="font-semibold text-petrol hover:text-flame transition-colors">
+                Bekijk alle vragen
               </Link>
-              , je krijgt binnen een werkdag antwoord.
+              , of{' '}
+              <Link href="/contact" className="font-semibold text-petrol hover:text-flame transition-colors">
+                stel je eigen vraag
+              </Link>
+              . Je krijgt binnen een werkdag antwoord.
             </p>
           </div>
 

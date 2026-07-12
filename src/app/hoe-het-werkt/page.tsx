@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import HoeHetWerktContent from '@/components/pages/HoeHetWerktContent'
 
 export const metadata: Metadata = {
-  title: 'Hoe het werkt | doen.',
+  title: 'Van aanvraag tot factuur in 7 stappen | doen.',
   description: 'Je werkdag draait om zeven tabbladen en vier logins. Zie hoe doen. dat terugbrengt naar één. Van klantaanvraag tot betaalde factuur.',
   alternates: { canonical: '/hoe-het-werkt' },
 }
