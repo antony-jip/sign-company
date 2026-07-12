@@ -47,7 +47,9 @@ export default function Demo() {
               loop
               playsInline
               preload="metadata"
-              className="w-full h-auto block"
+              width={1920}
+              height={1080}
+              className="w-full h-auto block aspect-video"
               aria-label="De project-cockpit van doen. in actie"
             />
           </div>
