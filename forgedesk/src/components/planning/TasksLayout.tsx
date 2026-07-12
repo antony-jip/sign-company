@@ -241,7 +241,12 @@ export function TasksLayout() {
   const [isLoading, setIsLoading] = useState(() => getCached('taken') === undefined)
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
 
-  const [weekOffset, setWeekOffset] = useState(0)
+  // In het weekend is de hele werkweek al verleden tijd (verlopen taken staan
+  // ingeklapt), dus dan opent standaard de komende week
+  const [weekOffset, setWeekOffset] = useState(() => {
+    const dag = new Date().getDay()
+    return dag === 0 || dag === 6 ? 1 : 0
+  })
   const [monthOffset, setMonthOffset] = useState(0)
   const [viewMode, setViewMode] = useState<'week' | 'maand' | 'swimlane'>('week')
   const [collapsedAssignees, setCollapsedAssignees] = useState<Set<string>>(() => {
