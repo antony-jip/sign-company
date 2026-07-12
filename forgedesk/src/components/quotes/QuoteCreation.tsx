@@ -86,7 +86,7 @@ import { supabase } from '@/services/supabaseClient'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
 import { initAutofillDefaults, saveAutofillValue, labelToAutofillField } from '@/utils/autofillUtils'
-import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
+import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS, sanitizeDetailLabels, calculateLineTotaal } from './QuoteItemsTable'
 import { RegelTemplateEditor } from './RegelTemplateEditor'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
@@ -218,6 +218,46 @@ function toPdfItem(item: QuoteLineItem, index: number): OfferteItem {
   }
 }
 
+// Payload voor createOfferteItem. Eén bron voor autosave-create,
+// save-create en dupliceren, zodat een nieuw item-veld niet op één plek
+// vergeten kan worden (→ stille dataverlies bij dupliceren/opslaan).
+function toOfferteItemPayload(
+  item: QuoteLineItem,
+  index: number,
+  userId: string,
+  offerteId: string,
+): Omit<OfferteItem, 'id' | 'created_at'> {
+  return {
+    user_id: userId,
+    offerte_id: offerteId,
+    beschrijving: item.beschrijving,
+    aantal: item.aantal,
+    eenheidsprijs: item.eenheidsprijs,
+    btw_percentage: item.btw_percentage,
+    korting_percentage: item.korting_percentage,
+    totaal: item.totaal,
+    volgorde: index + 1,
+    soort: item.soort,
+    extra_velden: item.extra_velden,
+    detail_regels: item.detail_regels,
+    calculatie_regels: item.calculatie_regels,
+    heeft_calculatie: item.heeft_calculatie,
+    prijs_varianten: item.prijs_varianten,
+    actieve_variant_id: item.actieve_variant_id,
+    breedte_mm: item.breedte_mm,
+    hoogte_mm: item.hoogte_mm,
+    oppervlakte_m2: item.oppervlakte_m2,
+    afmeting_vrij: item.afmeting_vrij,
+    foto_url: item.foto_url,
+    foto_op_offerte: item.foto_op_offerte,
+    is_optioneel: item.is_optioneel,
+    interne_notitie: item.interne_notitie,
+    bijlage_url: item.bijlage_url,
+    bijlage_type: item.bijlage_type,
+    bijlage_naam: item.bijlage_naam,
+  }
+}
+
 // ============================================================
 // MAIN COMPONENT
 // ============================================================
@@ -231,8 +271,9 @@ export function QuoteCreation() {
   const { user } = useAuth()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   const { settings, updateSettings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, offerteIntroTekst, offerteOutroTekst, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
-  const regelTemplateLabels = settings.offerte_regel_velden && settings.offerte_regel_velden.length > 0
-    ? settings.offerte_regel_velden
+  const sanitizedRegelVelden = sanitizeDetailLabels(settings.offerte_regel_velden || [])
+  const regelTemplateLabels = sanitizedRegelVelden.length > 0
+    ? sanitizedRegelVelden
     : DEFAULT_DETAIL_LABELS
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
@@ -345,6 +386,9 @@ export function QuoteCreation() {
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hasUnsavedChangesRef = useRef(false)
   const saveLockRef = useRef(false)
+  // Voorkomt dat het inladen van een bestaande offerte zelf als "wijziging"
+  // telt (dirty + autosave bij alleen maar bekijken).
+  const suppressDirtyOnLoadRef = useRef(false)
   const lastKnownUpdatedAtRef = useRef<string | null>(null)
 
   // ── Computed ──
@@ -561,6 +605,14 @@ export function QuoteCreation() {
     return round2(bedrag)
   }, [urenCorrectie, tariefPerVeld])
 
+  // ── Effectieve totalen (incl. afrondingskorting + urencorrectie) ──
+  // Eén bron voor save, PDF, email, portaal en duplicatie; voorkomt dat de
+  // klant per kanaal een ander bedrag ziet.
+  const effectieveTotalen = berekenOfferteTotalen(
+    verplichtePrijsItems.map(getActivePriceData),
+    { afrondingskorting, urenCorrectieBedrag },
+  )
+
   // Effectieve uren = basis + correctie
   const effectieveUrenPerVeld = useMemo(() => {
     const result: Record<string, number> = {}
@@ -631,7 +683,13 @@ export function QuoteCreation() {
         setIsEditMode(true)
         setSelectedKlantId(offerte.klant_id)
         setSelectedProjectId(offerte.project_id || '')
-        if (offerte.contactpersoon_id) setSelectedContactId(offerte.contactpersoon_id)
+        if (offerte.contactpersoon_id) {
+          setSelectedContactId(offerte.contactpersoon_id)
+          // Behoud dit (mogelijk niet-primaire) contact: anders overschrijft
+          // het auto-fill-effect het bij openen met de primaire contactpersoon
+          // en triggert het een ongevraagde autosave (vals conflict).
+          projectContactPrefilledRef.current = true
+        }
         setOfferteTitel(offerte.titel)
         setOfferteNummer(offerte.nummer)
         setVerstuurdOp(offerte.verstuurd_op || undefined)
@@ -650,7 +708,12 @@ export function QuoteCreation() {
             soort: (item.soort || 'prijs') as 'prijs' | 'tekst',
             beschrijving: item.beschrijving,
             extra_velden: item.extra_velden || {},
-            detail_regels: item.detail_regels,
+            // Volledig lege default-rijen zijn artefacten van de oude
+            // placeholder-merge-bug; opruimen bij inladen. r.id defensief
+            // checken: corrupte legacy-rijen kunnen een ontbrekend id hebben.
+            detail_regels: item.detail_regels?.filter(
+              (r) => !(typeof r.id === 'string' && r.id.startsWith('default-') && !r.label && !r.waarde)
+            ),
             aantal: item.aantal,
             eenheidsprijs: item.eenheidsprijs,
             btw_percentage: item.btw_percentage,
@@ -703,6 +766,7 @@ export function QuoteCreation() {
         }).catch(() => {/* silent */})
 
         // Go straight to editing (skip klant selector)
+        suppressDirtyOnLoadRef.current = true
         setShowKlantSelector(false)
       } catch (err) {
         logger.error('Failed to load offerte for edit:', err)
@@ -800,9 +864,8 @@ export function QuoteCreation() {
   // ── Helper: maak een leeg calculatie-item met default beschrijving-regels ──
   const createEmptyItem = (label?: string): QuoteLineItem => {
     // Gebruik offerte_regel_velden uit settings, of de defaults
-    const labels = (settings.offerte_regel_velden && settings.offerte_regel_velden.length > 0)
-      ? settings.offerte_regel_velden
-      : DEFAULT_DETAIL_LABELS
+    const cleanVelden = sanitizeDetailLabels(settings.offerte_regel_velden || [])
+    const labels = cleanVelden.length > 0 ? cleanVelden : DEFAULT_DETAIL_LABELS
 
     const detail_regels: DetailRegel[] = labels.map((l, i) => ({
       id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
@@ -925,8 +988,10 @@ export function QuoteCreation() {
         if (item.id !== id) return item
         const updated = { ...item, [field]: value }
         if (updated.soort === 'prijs') {
-          const bruto = round2(updated.aantal * updated.eenheidsprijs)
-          updated.totaal = round2(bruto - round2(bruto * (updated.korting_percentage / 100)))
+          // calculateLineTotaal kijkt naar de actieve prijsvariant; anders
+          // blijft het opgeslagen totaal (DB/PDF/werkbon) op de basisprijs
+          // hangen terwijl de UI de variant toont.
+          updated.totaal = calculateLineTotaal(updated)
         }
         return updated
       })
@@ -939,9 +1004,12 @@ export function QuoteCreation() {
 
   // Pas template-labels toe op alle huidige items. Bestaande waarden blijven
   // behouden waar het label overeenkomt. Hidden labels worden gereset.
-  const handleApplyTemplate = (templateLabels: string[]) => {
-    if (items.length === 0) {
-      toast.error('Geen items om template op toe te passen')
+  const handleApplyTemplate = (rawTemplateLabels: string[]) => {
+    // Oude templates kunnen lege of dubbele labels bevatten; ongefilterd
+    // toepassen zaait de detail-regels merge-bug in elk item.
+    const templateLabels = sanitizeDetailLabels(rawTemplateLabels)
+    if (items.length === 0 || templateLabels.length === 0) {
+      toast.error(items.length === 0 ? 'Geen items om template op toe te passen' : 'Template bevat geen geldige labels')
       return
     }
     setItems(prev =>
@@ -987,8 +1055,7 @@ export function QuoteCreation() {
           calculatie_regels: data.calculatie_regels,
           heeft_calculatie: true,
         }
-        const bruto = round2(updated.aantal * updated.eenheidsprijs)
-        updated.totaal = round2(bruto - round2(bruto * (updated.korting_percentage / 100)))
+        updated.totaal = calculateLineTotaal(updated)
         return updated
       })
     )
@@ -1015,7 +1082,9 @@ export function QuoteCreation() {
             heeft_calculatie: true,
           }
         })
-        return { ...item, prijs_varianten: updatedVarianten }
+        const updated = { ...item, prijs_varianten: updatedVarianten }
+        updated.totaal = calculateLineTotaal(updated)
+        return updated
       })
     )
   }
@@ -1026,7 +1095,13 @@ export function QuoteCreation() {
     // Geen nieuwe offerte aanmaken zonder nummer · voorkom lege nummers in DB
     const currentId = editOfferteId || autoSaveIdRef.current
     if (!currentId && !offerteNummer) return
-    if (isSaving || saveLockRef.current) return
+    if (isSaving || saveLockRef.current) {
+      // Er loopt al een save; herplan zodat wijzigingen die tijdens die save
+      // getypt zijn niet blijven liggen tot de volgende edit of unmount.
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+      autoSaveTimerRef.current = setTimeout(() => performAutoSaveRef.current(), 800)
+      return
+    }
     if (isTrialBlocked) return
 
     saveLockRef.current = true
@@ -1046,7 +1121,6 @@ export function QuoteCreation() {
       const effectiefBtw = _offTot.btw_bedrag
 
       const currentId = editOfferteId || autoSaveIdRef.current
-      const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
 
       if (currentId) {
         // Update existing (met optimistic locking) · geen status meesturen om pipeline wijzigingen niet te overschrijven
@@ -1064,13 +1138,14 @@ export function QuoteCreation() {
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
-          ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
-          ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
+          // Altijd meesturen: conditioneel weglaten betekende dat terugzetten
+          // naar 0 nooit werd opgeslagen en de oude waarde bleef staan.
+          afrondingskorting_excl_btw: afrondingskorting,
+          uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
         }, lastKnownUpdatedAtRef.current || undefined)
         lastKnownUpdatedAtRef.current = saved.updated_at
 
-        // Sync items via batch upsert (geen delete-all/recreate-all)
         await syncOfferteItems(currentId, items as any, user.id)
       } else {
         // Create new as concept
@@ -1091,8 +1166,8 @@ export function QuoteCreation() {
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
-          ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
-          ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
+          afrondingskorting_excl_btw: afrondingskorting,
+          uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
         })
         autoSaveIdRef.current = newOfferte.id
@@ -1101,35 +1176,7 @@ export function QuoteCreation() {
 
         await Promise.all(
           items.map((item, index) =>
-            createOfferteItem({
-              user_id: user.id,
-              offerte_id: newOfferte.id,
-              beschrijving: item.beschrijving,
-              aantal: item.aantal,
-              eenheidsprijs: item.eenheidsprijs,
-              btw_percentage: item.btw_percentage,
-              korting_percentage: item.korting_percentage,
-              totaal: item.totaal,
-              volgorde: index + 1,
-              soort: item.soort,
-              extra_velden: item.extra_velden,
-              detail_regels: item.detail_regels,
-              calculatie_regels: item.calculatie_regels,
-              heeft_calculatie: item.heeft_calculatie,
-              prijs_varianten: item.prijs_varianten,
-              actieve_variant_id: item.actieve_variant_id,
-              breedte_mm: item.breedte_mm,
-              hoogte_mm: item.hoogte_mm,
-              oppervlakte_m2: item.oppervlakte_m2,
-              afmeting_vrij: item.afmeting_vrij,
-              foto_url: item.foto_url,
-              foto_op_offerte: item.foto_op_offerte,
-              is_optioneel: item.is_optioneel,
-              interne_notitie: item.interne_notitie,
-              bijlage_url: item.bijlage_url,
-              bijlage_type: item.bijlage_type,
-              bijlage_naam: item.bijlage_naam,
-            })
+            createOfferteItem(toOfferteItemPayload(item, index, user.id, newOfferte.id))
           )
         )
       }
@@ -1154,7 +1201,7 @@ export function QuoteCreation() {
     } finally {
       saveLockRef.current = false
     }
-  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, versioning.versieNummer])
+  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, urenCorrectie, urenCorrectieBedrag, isTrialBlocked, versioning.versieNummer])
 
   // Keep ref in sync so unmount handler can call latest version
   useEffect(() => {
@@ -1165,6 +1212,13 @@ export function QuoteCreation() {
   useEffect(() => {
     if (showKlantSelector) return
     if (!selectedKlantId || !offerteTitel.trim() || items.length === 0) return
+    // De state-batch van loadEditData is geen gebruikerswijziging: zonder deze
+    // guard herschreef alleen al het openen van een offerte alle items
+    // (nieuwe ids, updated_at-bump → valse conflicts bij collega's).
+    if (suppressDirtyOnLoadRef.current) {
+      suppressDirtyOnLoadRef.current = false
+      return
+    }
 
     hasUnsavedChangesRef.current = true
     setDirty(true)
@@ -1225,22 +1279,10 @@ export function QuoteCreation() {
       const nieuweNummer = await getNextOfferteNummer(offertePrefix, offerteStartNummer)
       const klant = klanten.find((k) => k.id === doelKlantId)
 
-      const prijsItemsLocal = items.filter((i) => i.soort === 'prijs')
-      const sub = round2(prijsItemsLocal.reduce((sum, item) => {
-        const data = getActivePriceData(item)
-        const bruto = data.aantal * data.eenheidsprijs
-        return sum + round2(bruto - bruto * (data.korting_percentage / 100))
-      }, 0))
-      const btw = round2(prijsItemsLocal.reduce((sum, item) => {
-        const data = getActivePriceData(item)
-        const bruto = data.aantal * data.eenheidsprijs
-        const netto = round2(bruto - bruto * (data.korting_percentage / 100))
-        return sum + round2(netto * (data.btw_percentage / 100))
-      }, 0))
-
       const newGeldigTot = new Date()
       newGeldigTot.setDate(newGeldigTot.getDate() + offerteGeldigheidDagen)
 
+      const dupHeeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
       const newOfferte = await createOfferte({
         user_id: user.id,
         klant_id: doelKlantId,
@@ -1251,48 +1293,22 @@ export function QuoteCreation() {
         nummer: nieuweNummer,
         titel: offerteTitel,
         status: 'concept',
-        subtotaal: sub,
-        btw_bedrag: btw,
-        totaal: round2(sub + btw),
+        subtotaal: effectieveTotalen.subtotaal,
+        btw_bedrag: effectieveTotalen.btw_bedrag,
+        totaal: effectieveTotalen.totaal,
         geldig_tot: newGeldigTot.toISOString().split('T')[0],
         notities,
         voorwaarden,
         intro_tekst: introTekst,
         outro_tekst: outroTekst,
+        ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
+        ...(dupHeeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
       })
       logCreate({ user, entityType: 'offerte', entityId: newOfferte.id })
 
       await Promise.all(
         items.map((item, index) =>
-          createOfferteItem({
-            user_id: user.id,
-            offerte_id: newOfferte.id,
-            beschrijving: item.beschrijving,
-            aantal: item.aantal,
-            eenheidsprijs: item.eenheidsprijs,
-            btw_percentage: item.btw_percentage,
-            korting_percentage: item.korting_percentage,
-            totaal: item.totaal,
-            volgorde: index + 1,
-            soort: item.soort,
-            extra_velden: item.extra_velden,
-            detail_regels: item.detail_regels,
-            calculatie_regels: item.calculatie_regels,
-            heeft_calculatie: item.heeft_calculatie,
-            prijs_varianten: item.prijs_varianten,
-            actieve_variant_id: item.actieve_variant_id,
-            breedte_mm: item.breedte_mm,
-            hoogte_mm: item.hoogte_mm,
-            oppervlakte_m2: item.oppervlakte_m2,
-            afmeting_vrij: item.afmeting_vrij,
-            foto_url: item.foto_url,
-            foto_op_offerte: item.foto_op_offerte,
-            is_optioneel: item.is_optioneel,
-            interne_notitie: item.interne_notitie,
-            bijlage_url: item.bijlage_url,
-            bijlage_type: item.bijlage_type,
-            bijlage_naam: item.bijlage_naam,
-          })
+          createOfferteItem(toOfferteItemPayload(item, index, user.id, newOfferte.id))
         )
       )
 
@@ -1352,9 +1368,6 @@ export function QuoteCreation() {
       if ((isEditMode && editOfferteId) || autoSaveIdRef.current) {
         const existingId = editOfferteId || autoSaveIdRef.current!
         // Update existing offerte
-        const effectiefSubtotaal = round2(subtotaal + afrondingskorting + urenCorrectieBedrag)
-        const effectiefBtw = round2(effectiefSubtotaal * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21))
-        const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
         const saved = await updateOfferte(existingId, {
           klant_id: selectedKlantId,
           klant_naam: selectedKlant?.bedrijfsnaam,
@@ -1362,16 +1375,17 @@ export function QuoteCreation() {
           ...(resolvedContactId ? { contactpersoon_id: resolvedContactId } : {}),
           titel: offerteTitel,
           status,
-          subtotaal: effectiefSubtotaal,
-          btw_bedrag: effectiefBtw,
-          totaal: round2(effectiefSubtotaal + effectiefBtw),
+          subtotaal: effectieveTotalen.subtotaal,
+          btw_bedrag: effectieveTotalen.btw_bedrag,
+          totaal: effectieveTotalen.totaal,
           geldig_tot: geldigTot,
           notities,
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
-          ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
-          ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
+          // Altijd meesturen zodat terugzetten naar 0 ook opgeslagen wordt
+          afrondingskorting_excl_btw: afrondingskorting,
+          uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
         }, lastKnownUpdatedAtRef.current || undefined)
         lastKnownUpdatedAtRef.current = saved.updated_at
@@ -1381,9 +1395,6 @@ export function QuoteCreation() {
         await syncOfferteItems(existingId, items as any, user.id)
       } else {
         // Create new offerte
-        const newEffectiefSub = round2(subtotaal + afrondingskorting + urenCorrectieBedrag)
-        const newEffectiefBtw = round2(newEffectiefSub * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21))
-        const newHeeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
         const newOfferte = await createOfferte({
           user_id: user.id,
           klant_id: selectedKlantId,
@@ -1394,16 +1405,16 @@ export function QuoteCreation() {
           nummer: offerteNummer,
           titel: offerteTitel,
           status,
-          subtotaal: newEffectiefSub,
-          btw_bedrag: newEffectiefBtw,
-          totaal: round2(newEffectiefSub + newEffectiefBtw),
+          subtotaal: effectieveTotalen.subtotaal,
+          btw_bedrag: effectieveTotalen.btw_bedrag,
+          totaal: effectieveTotalen.totaal,
           geldig_tot: geldigTot,
           notities,
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
-          ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
-          ...(newHeeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
+          afrondingskorting_excl_btw: afrondingskorting,
+          uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
         })
         savedOfferteId = newOfferte.id
@@ -1411,35 +1422,7 @@ export function QuoteCreation() {
 
         await Promise.all(
           items.map((item, index) =>
-            createOfferteItem({
-              user_id: user.id,
-              offerte_id: newOfferte.id,
-              beschrijving: item.beschrijving,
-              aantal: item.aantal,
-              eenheidsprijs: item.eenheidsprijs,
-              btw_percentage: item.btw_percentage,
-              korting_percentage: item.korting_percentage,
-              totaal: item.totaal,
-              volgorde: index + 1,
-              soort: item.soort,
-              extra_velden: item.extra_velden,
-              detail_regels: item.detail_regels,
-              calculatie_regels: item.calculatie_regels,
-              heeft_calculatie: item.heeft_calculatie,
-              prijs_varianten: item.prijs_varianten,
-              actieve_variant_id: item.actieve_variant_id,
-              breedte_mm: item.breedte_mm,
-              hoogte_mm: item.hoogte_mm,
-              oppervlakte_m2: item.oppervlakte_m2,
-              afmeting_vrij: item.afmeting_vrij,
-              foto_url: item.foto_url,
-              foto_op_offerte: item.foto_op_offerte,
-              is_optioneel: item.is_optioneel,
-              interne_notitie: item.interne_notitie,
-              bijlage_url: item.bijlage_url,
-              bijlage_type: item.bijlage_type,
-              bijlage_naam: item.bijlage_naam,
-            })
+            createOfferteItem(toOfferteItemPayload(item, index, user.id, newOfferte.id))
           )
         )
       }
@@ -1475,10 +1458,10 @@ export function QuoteCreation() {
                   offerte_id: savedOfferteId,
                   titel: `Offerte ${offerteNummer}`,
                   omschrijving: offerteTitel,
-                  label: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(round2(subtotaal + btwBedrag)),
+                  label: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(effectieveTotalen.totaal),
                   status: 'verstuurd',
                   zichtbaar_voor_klant: true,
-                  bedrag: round2(subtotaal + btwBedrag),
+                  bedrag: effectieveTotalen.totaal,
                   volgorde: 0,
                 })
               }
@@ -1495,7 +1478,7 @@ export function QuoteCreation() {
             klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
             offerteNummer,
             offerteTitel,
-            totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(round2(subtotaal + btwBedrag)),
+            totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(effectieveTotalen.totaal),
             geldigTot,
             bedrijfsnaam,
             primaireKleur,
@@ -1561,8 +1544,6 @@ export function QuoteCreation() {
     }
     try {
       toast.info('PDF wordt gegenereerd...')
-      const pdfSubtotaal = round2(subtotaal + afrondingskorting)
-      const pdfBtw = round2(pdfSubtotaal * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21))
       const offerteData = {
         id: '',
         user_id: user?.id || '',
@@ -1570,9 +1551,9 @@ export function QuoteCreation() {
         nummer: offerteNummer,
         titel: offerteTitel,
         status: 'concept' as const,
-        subtotaal: pdfSubtotaal,
-        btw_bedrag: pdfBtw,
-        totaal: round2(pdfSubtotaal + pdfBtw),
+        subtotaal: effectieveTotalen.subtotaal,
+        btw_bedrag: effectieveTotalen.btw_bedrag,
+        totaal: effectieveTotalen.totaal,
         geldig_tot: geldigTot,
         notities,
         voorwaarden,
@@ -1664,21 +1645,24 @@ export function QuoteCreation() {
           offerte_id: savedQuoteId,
           titel: `Offerte ${offerteNummer}`,
           omschrijving: offerteTitel,
-          label: formatCurrency(round2(subtotaal + btwBedrag)),
+          label: formatCurrency(effectieveTotalen.totaal),
           status: 'verstuurd',
           zichtbaar_voor_klant: true,
-          bedrag: round2(subtotaal + btwBedrag),
+          bedrag: effectieveTotalen.totaal,
           volgorde: 0,
         })
       }
 
       // Update offerte status
       if (savedQuoteId) {
-        await updateOfferte(savedQuoteId, {
+        const saved = await updateOfferte(savedQuoteId, {
           status: 'verzonden',
           verstuurd_op: new Date().toISOString(),
           verzendwijze: 'via_portaal',
         })
+        // Ref bijwerken, anders ziet de volgende autosave de eigen
+        // status-update als extern conflict en stopt de autosave-loop.
+        lastKnownUpdatedAtRef.current = saved.updated_at
       }
 
       // Stuur email notificatie naar klant
@@ -1695,13 +1679,13 @@ export function QuoteCreation() {
           const htmlBody = buildPortalEmailHtml({
             heading: `Er staat een nieuwe offerte voor u klaar.`,
             itemTitel: `Offerte ${offerteNummer} · ${offerteTitel}`,
-            beschrijving: `Bedrag: ${formatCurrency(round2(subtotaal + btwBedrag))} incl. BTW`,
+            beschrijving: `Bedrag: ${formatCurrency(effectieveTotalen.totaal)} incl. BTW`,
             ctaLabel: 'Bekijk in portaal →',
             ctaUrl: portaalUrl,
             bedrijfsnaam,
             logoUrl: profile?.logo_url || undefined,
           })
-          const plainBody = `Beste ${klantNaam},\n\nEr staat een nieuwe offerte voor u klaar: ${offerteTitel}\nBedrag: ${formatCurrency(round2(subtotaal + btwBedrag))}\n\nBekijk het hier: ${portaalUrl}\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
+          const plainBody = `Beste ${klantNaam},\n\nEr staat een nieuwe offerte voor u klaar: ${offerteTitel}\nBedrag: ${formatCurrency(effectieveTotalen.totaal)}\n\nBekijk het hier: ${portaalUrl}\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
           await sendEmail(contactEmail, `Nieuwe offerte: ${offerteTitel}`, plainBody, { html: htmlBody })
           toast.success(`Offerte gedeeld via portaal · Notificatie verstuurd naar ${contactEmail}`)
         } catch (err) {
@@ -1755,10 +1739,10 @@ export function QuoteCreation() {
               offerte_id: savedQuoteId,
               titel: `Offerte ${offerteNummer}`,
               omschrijving: offerteTitel,
-              label: formatCurrency(round2(subtotaal + btwBedrag)),
+              label: formatCurrency(effectieveTotalen.totaal),
               status: 'verstuurd',
               zichtbaar_voor_klant: true,
-              bedrag: round2(subtotaal + btwBedrag),
+              bedrag: effectieveTotalen.totaal,
               volgorde: 0,
             })
           }
@@ -1778,7 +1762,7 @@ export function QuoteCreation() {
         klantNaam,
         offerteNummer,
         offerteTitel,
-        totaalBedrag: formatCurrency(round2(subtotaal + btwBedrag)),
+        totaalBedrag: formatCurrency(effectieveTotalen.totaal),
         geldigTot,
         bedrijfsnaam,
         primaireKleur,
@@ -1800,9 +1784,9 @@ export function QuoteCreation() {
           const offerteData = {
             nummer: offerteNummer,
             titel: offerteTitel,
-            subtotaal,
-            btw_bedrag: btwBedrag,
-            totaal: round2(subtotaal + btwBedrag),
+            subtotaal: effectieveTotalen.subtotaal,
+            btw_bedrag: effectieveTotalen.btw_bedrag,
+            totaal: effectieveTotalen.totaal,
             geldig_tot: geldigTot,
             notities,
             voorwaarden,
@@ -1849,26 +1833,45 @@ export function QuoteCreation() {
         }
       }
 
-      await sendEmail(email.emailTo.trim(), email.emailSubject.trim(), templateText, { html: templateHtml, attachments })
-      if (quoteId) {
-        await updateOfferte(quoteId, {
+      const isScheduled = email.emailScheduled && !!email.emailScheduleDate
+      const scheduledAt = isScheduled
+        ? new Date(`${email.emailScheduleDate}T${email.emailScheduleTime || '08:00'}`).toISOString()
+        : undefined
+      await sendEmail(email.emailTo.trim(), email.emailSubject.trim(), templateText, {
+        html: templateHtml,
+        attachments,
+        cc: email.emailCc.trim() || undefined,
+        bcc: email.emailBcc.trim() || undefined,
+        scheduledAt,
+      })
+      // Alleen bij een directe verzending de offerte op 'verzonden' zetten.
+      // Bij inplannen is de mail nog niet verstuurd; status + verstuurd_op nu
+      // zetten zou een toekomstige verstuurd_op geven die de opvolg-timeline
+      // verkeerd aanstuurt en de offerte ten onrechte als verzonden toont.
+      if (quoteId && !isScheduled) {
+        const verstuurdOp = new Date().toISOString()
+        const saved = await updateOfferte(quoteId, {
           status: 'verzonden',
-          verstuurd_op: new Date().toISOString(),
+          verstuurd_op: verstuurdOp,
           verstuurd_naar: email.emailTo.trim(),
           verzendwijze: 'via_email_pdf',
         })
-        setVerstuurdOp(new Date().toISOString())
+        // Ref bijwerken, anders ziet de volgende autosave de eigen
+        // status-update als extern conflict en stopt de autosave-loop.
+        lastKnownUpdatedAtRef.current = saved.updated_at
+        setVerstuurdOp(verstuurdOp)
         setVerstuurdNaar(email.emailTo.trim())
       }
-      if (email.emailScheduled && email.emailScheduleDate) {
-        toast.success(`Email ingepland voor ${new Date(email.emailScheduleDate + 'T' + email.emailScheduleTime).toLocaleString('nl-NL')}`)
+      if (isScheduled) {
+        toast.success(`Email ingepland voor ${new Date(scheduledAt!).toLocaleString('nl-NL')}`)
       } else {
         toast.success(`Offerte verstuurd naar ${email.emailTo.trim()}`)
       }
       email.setShowEmailCompose(false)
     } catch (err) {
       logger.error('Failed to send email:', err)
-      toast.error('Kon email niet verzenden')
+      // Servermelding doorgeven (bv. "scheduledAt moet in de toekomst liggen")
+      toast.error(err instanceof Error && err.message ? `Kon email niet verzenden: ${err.message}` : 'Kon email niet verzenden')
     } finally {
       email.setIsSendingEmail(false)
     }
@@ -2505,9 +2508,9 @@ export function QuoteCreation() {
             nummer: offerteNummer,
             titel: offerteTitel,
             status: 'concept',
-            subtotaal,
-            btw_bedrag: btwBedrag,
-            totaal: round2(subtotaal + btwBedrag),
+            subtotaal: effectieveTotalen.subtotaal,
+            btw_bedrag: effectieveTotalen.btw_bedrag,
+            totaal: effectieveTotalen.totaal,
             geldig_tot: geldigTot,
             notities: '',
             voorwaarden: '',

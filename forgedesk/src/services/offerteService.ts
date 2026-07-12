@@ -15,6 +15,9 @@ import type {
   CalculatieRegel,
 } from '@/types'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
+import { partitionOfferteItemSync } from '@/utils/offerteItemSync'
+
+export { partitionOfferteItemSync }
 
 // ============ OFFERTES ============
 
@@ -362,7 +365,7 @@ export async function deleteOfferteItem(id: string): Promise<void> {
 
 export async function syncOfferteItems(
   offerteId: string,
-  items: Omit<OfferteItem, 'id' | 'created_at'>[],
+  items: Array<Omit<OfferteItem, 'id' | 'created_at'> & { id?: string }>,
   userId: string
 ): Promise<OfferteItem[]> {
   assertId(offerteId, 'offerte_id')
@@ -377,17 +380,8 @@ export async function syncOfferteItems(
 
     const existingIds = new Set((existing || []).map(e => e.id))
 
-    // 2. Batch delete alle bestaande items voor deze offerte
-    if (existingIds.size > 0) {
-      const { error: delErr } = await supabase
-        .from('offerte_items')
-        .delete()
-        .eq('offerte_id', offerteId)
-      if (delErr) throw delErr
-    }
-
-    // 3. Batch insert alle items in één call
-    const insertData = items.map((item, index) => ({
+    // Velden-payload zonder id; volgorde volgt de positie in de array.
+    const buildRow = (item: typeof items[number], index: number) => ({
       user_id: userId,
       offerte_id: offerteId,
       beschrijving: item.beschrijving,
@@ -415,14 +409,59 @@ export async function syncOfferteItems(
       bijlage_url: item.bijlage_url,
       bijlage_type: item.bijlage_type,
       bijlage_naam: item.bijlage_naam,
-    }))
+    })
 
-    const { data: result, error: insertErr } = await supabase
-      .from('offerte_items')
-      .insert(insertData)
-      .select()
-    if (insertErr) throw insertErr
-    return result || []
+    // Bestaande items (echt UUID dat bij deze offerte hoort) behouden hun id via
+    // upsert; nieuwe items (new-* of onbekend id) krijgen een vers DB-id. Zo
+    // blijven verwijzingen naar offerte_items.id geldig (offerte.gekozen_items,
+    // werkbon.offerte_item_id) i.p.v. bij elke autosave te veranderen.
+    const { insertIndices, deleteIds } = partitionOfferteItemSync(
+      items.map(i => i.id),
+      existingIds,
+    )
+    const insertSet = new Set(insertIndices)
+    const updateRows: Array<ReturnType<typeof buildRow> & { id: string }> = []
+    const insertRows: Array<ReturnType<typeof buildRow>> = []
+    items.forEach((item, index) => {
+      const row = buildRow(item, index)
+      if (insertSet.has(index)) {
+        insertRows.push(row)
+      } else {
+        updateRows.push({ id: item.id as string, ...row })
+      }
+    })
+
+    const result: OfferteItem[] = []
+    // Bestaande rijen bijwerken (id-behoudend). Aparte batch van de inserts:
+    // een gemengde array waarbij sommige rijen geen id-kolom hebben zou de
+    // insert-rijen een NULL-id geven i.p.v. de DB-default.
+    if (updateRows.length > 0) {
+      const { data, error: upsertErr } = await supabase
+        .from('offerte_items')
+        .upsert(updateRows, { onConflict: 'id' })
+        .select()
+      if (upsertErr) throw upsertErr
+      result.push(...(data || []))
+    }
+    // Nieuwe rijen inserten (zonder id → DB genereert).
+    if (insertRows.length > 0) {
+      const { data, error: insertErr } = await supabase
+        .from('offerte_items')
+        .insert(insertRows)
+        .select()
+      if (insertErr) throw insertErr
+      result.push(...(data || []))
+    }
+
+    // Verwijderde rijen opruimen: alles wat er was maar niet behouden is.
+    if (deleteIds.length > 0) {
+      const { error: delErr } = await supabase
+        .from('offerte_items')
+        .delete()
+        .in('id', deleteIds)
+      if (delErr) throw delErr
+    }
+    return result
   }
 
   // localStorage fallback
@@ -438,6 +477,21 @@ export async function syncOfferteItems(
   } as OfferteItem))
   setLocalData('offerte_items', [...otherItems, ...newItems])
   return newItems
+}
+
+// Telt hoeveel offerte-items naar dezelfde bijlage verwijzen. Kopiëren en
+// dupliceren nemen bijlage_url letterlijk over, dus fysiek verwijderen mag
+// alleen als dit de laatste verwijzing is.
+export async function telItemsMetBijlage(bijlageUrl: string): Promise<number> {
+  if (isSupabaseConfigured() && supabase) {
+    const { count, error } = await supabase
+      .from('offerte_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('bijlage_url', bijlageUrl)
+    if (error) throw error
+    return count || 0
+  }
+  return getLocalData<OfferteItem>('offerte_items').filter(i => i.bijlage_url === bijlageUrl).length
 }
 
 export async function getRecentOfferteItemSuggesties(): Promise<{ beschrijving: string; laatstePrijs: number }[]> {

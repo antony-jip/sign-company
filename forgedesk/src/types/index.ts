@@ -1452,7 +1452,10 @@ export interface WerkbonItem {
   afbeeldingen: WerkbonAfbeelding[];
   // Notitie specifiek voor de monteur
   interne_notitie?: string;
-  // Bron tracking
+  // Bron-snapshot: verwijst naar het offerte-item waarvan dit werkbon-item bij
+  // aanmaken is gekopieerd. Wordt NIET live gesynchroniseerd — wijzigt de
+  // offerte later, dan loopt dit werkbon-item bewust niet mee (het is een
+  // momentopname). Nergens teruggelezen; puur voor herkomst/traceerbaarheid.
   offerte_item_id?: string;
   created_at: string;
 }

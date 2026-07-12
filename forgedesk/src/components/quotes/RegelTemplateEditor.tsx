@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Settings, GripVertical, X, Plus, Check, FileText, Save, Pencil, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { sanitizeDetailLabels } from './QuoteItemsTable'
 
 export interface RegelTemplate {
   naam: string
@@ -95,7 +96,7 @@ export function RegelTemplateEditor({
     setDragOverIdx(null)
   }
 
-  const cleanLabels = () => editLabels.map((l) => l.trim()).filter(Boolean)
+  const cleanLabels = () => sanitizeDetailLabels(editLabels)
 
   const handleSaveDefault = async () => {
     const cleaned = cleanLabels()

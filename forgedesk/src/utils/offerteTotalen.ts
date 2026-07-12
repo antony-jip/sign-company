@@ -13,6 +13,51 @@ export interface OfferteTotalen {
   totaal: number
 }
 
+interface PrijsRegelBron {
+  aantal: number
+  eenheidsprijs: number
+  korting_percentage: number
+  btw_percentage: number
+  prijs_varianten?: Array<{
+    id: string
+    aantal: number
+    eenheidsprijs: number
+    korting_percentage: number
+    btw_percentage: number
+  }>
+  actieve_variant_id?: string
+}
+
+/**
+ * Geeft de prijsregel van het actieve variant, of de basisvelden als het item
+ * geen varianten heeft. Zo tellen totalen altijd met wat de gebruiker in de UI
+ * ziet — in plaats van met de (mogelijk verouderde) basisprijs.
+ */
+export function getActievePrijsRegel(item: PrijsRegelBron): OfferteTotaalRegel {
+  if (item.prijs_varianten && item.prijs_varianten.length > 0) {
+    const actief = item.prijs_varianten.find(v => v.id === item.actieve_variant_id) || item.prijs_varianten[0]
+    return {
+      aantal: actief.aantal,
+      eenheidsprijs: actief.eenheidsprijs,
+      korting_percentage: actief.korting_percentage,
+      btw_percentage: actief.btw_percentage,
+    }
+  }
+  return {
+    aantal: item.aantal,
+    eenheidsprijs: item.eenheidsprijs,
+    korting_percentage: item.korting_percentage,
+    btw_percentage: item.btw_percentage,
+  }
+}
+
+/** Regel-totaal (na korting) van het actieve variant of de basisprijs. */
+export function berekenRegelTotaal(item: PrijsRegelBron): number {
+  const r = getActievePrijsRegel(item)
+  const bruto = round2(r.aantal * r.eenheidsprijs)
+  return round2(bruto - bruto * (r.korting_percentage / 100))
+}
+
 /**
  * Berekent de offerte-totalen uit de prijsregels: subtotaal (netto, na korting),
  * gewogen BTW per regel, en het totaal. Optioneel met afrondingskorting en

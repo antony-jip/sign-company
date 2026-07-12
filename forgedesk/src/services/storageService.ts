@@ -148,12 +148,12 @@ export function resolvePortaalBestandUrl(pathOrUrl: string | null | undefined): 
   return data.publicUrl
 }
 
-export async function getSignedUrl(path: string): Promise<string> {
+export async function getSignedUrl(path: string, ttlSeconden: number = 3600): Promise<string> {
   if (!isSupabaseConfigured() || !supabase) {
     const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')
     return stored[path]?.dataUrl || ''
   }
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600)
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, ttlSeconden)
   if (error) throw error
   return data.signedUrl
 }
