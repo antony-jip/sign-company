@@ -18,7 +18,9 @@ export type Article = {
 
 export type Category =
   | 'Aan de slag'
+  | 'Klanten'
   | 'Projecten'
+  | 'Leads'
   | 'Offertes'
   | 'Klantportaal'
   | 'Planning'
@@ -34,7 +36,9 @@ export type Category =
 
 export const CATEGORY_ORDER: Category[] = [
   'Aan de slag',
+  'Klanten',
   'Projecten',
+  'Leads',
   'Offertes',
   'Klantportaal',
   'Planning',
@@ -164,6 +168,134 @@ export const articles: Article[] = [
               Vastgelopen? Stuur een mailtje naar <B>info@signcompany.nl</B>. We reageren meestal binnen een paar uur op
               werkdagen. Voor complexe vragen plannen we een scherm-deling-sessie.
             </P>
+          </>
+        ),
+      },
+    ],
+  },
+  {
+    slug: 'klanten',
+    title: 'Werken met klanten',
+    category: 'Klanten',
+    excerpt: 'Eén dossier per relatie: contactpersonen, projecten, offertes en facturen bij elkaar, met statussen die je waarschuwen voordat het misgaat.',
+    updatedAt: '2026-07-12',
+    readingTime: 5,
+    sections: [
+      {
+        id: 'profiel',
+        title: 'Wat zie je op een klantprofiel?',
+        content: (
+          <>
+            <P>
+              Klik je op een klant, dan opent het <B>klantprofiel</B>: bedrijfsnaam, status-badge en een
+              <B>Toevoegen</B>-knop waarmee je direct een project, offerte, factuur, afspraak of contactpersoon
+              aanmaakt voor deze klant. Onder de kop vind je tabbladen: <B>Projecten</B>, <B>Deals</B>,
+              <B>Offertes</B>, <B>Facturen</B>, <B>Uren</B>, <B>Communicatie</B>, <B>Documenten</B> en
+              <B>Historie</B>. Alles wat met deze klant te maken heeft, hangt aan dit ene dossier.
+            </P>
+            <P>
+              Daarboven staan twee infokaarten: <B>Contactpersonen</B> (met een primair-label voor de hoofdpersoon)
+              en <B>Vestigingen</B>. Heeft een klant meerdere locaties, dan zie je die kaart automatisch veranderen
+              in een lijst met vestigingen in plaats van één adres.
+            </P>
+            <Callout>
+              Zet je een <B>gepinde notitie</B> op een klant (bijvoorbeeld "altijd via de zijdeur leveren"), dan
+              staat die als gele banner bovenaan het profiel. Niemand in je team mist 'm meer.
+            </Callout>
+          </>
+        ),
+      },
+      {
+        id: 'nieuwe-klant',
+        title: 'Nieuwe klant toevoegen',
+        content: (
+          <>
+            <P>
+              Verplicht zijn alleen <B>bedrijfsnaam</B>, <B>contactpersoon</B> en <B>email</B>. Begin je te typen
+              in het bedrijfsnaam-veld, dan zoekt doen. na drie letters automatisch mee in het <B>KvK-register</B>.
+              Kies je een resultaat, dan vult het adres, de postcode, de stad en het KvK-nummer zich vanzelf.
+              Scheelt overtypen bij elke nieuwe relatie.
+            </P>
+            <P>
+              Verder kun je meteen tags toevoegen (los, komma-gescheiden, voor snel zoeken), een debiteurennummer
+              en btw-nummer invullen, en interne notities kwijt die alleen jouw team ziet.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'statussen-labels',
+        title: 'Hoe werken de statussen en labels?',
+        content: (
+          <>
+            <P>
+              doen. kent drie losse systemen die op een klant kunnen staan, en dat is bewust: ze meten drie
+              verschillende dingen.
+            </P>
+            <UL>
+              <LI>
+                <B>Status</B> (actief, inactief, prospect): waar deze klant staat in de relatie. Bepaalt de
+                kleurstreep in de lijst en de KPI-tegels bovenaan Klanten.
+              </LI>
+              <LI>
+                <B>Klantgroep</B> (normaal, vooruit betalen, niet helpen, voorrang, geblokkeerd): één keuze, in te
+                stellen bij het bewerken van een klant. Staat als badge op de kaart en is filterbaar.
+              </LI>
+              <LI>
+                <B>Labels</B> (grote klant, wanbetaler, vooruit betalen, niet helpen, voorrang): meerdere labels
+                tegelijk mogelijk. Verschijnen als gekleurde stipjes op de kaart en in de lijst.
+              </LI>
+            </UL>
+            <P>
+              De labels <B>Niet helpen</B>, <B>Vooruit betalen</B> en <B>Wanbetaler</B> zorgen daarnaast voor een
+              waarschuwingsbanner bovenaan het klantprofiel, zodat je het niet kunt missen als je het dossier opent.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'snelle-acties',
+        title: 'Wat kun je direct vanuit een klant doen?',
+        content: (
+          <>
+            <P>
+              Vanuit de lijst, de kaartweergave of het profiel open je met het menu-icoontje in één klik:
+              <B>Bekijken</B>, <B>Bewerken</B>, status wijzigen, <B>Project aanmaken</B>, <B>Offerte maken</B>,
+              <B>Factuur aanmaken</B>, <B>Klant mailen</B> (opent een nieuwe email naar het klantadres) en
+              <B>Verwijderen</B>.
+            </P>
+            <P>
+              Er zit geen apart belknopje op de kaart. Wel zijn telefoonnummers van contactpersonen op het
+              klantprofiel klikbare links: klik erop en je toestel start het gesprek.
+            </P>
+            <P>
+              In de lijstweergave kun je meerdere klanten selecteren met de vinkjes en in bulk de status wijzigen
+              of verwijderen. Handig bij een grote opschoning van je klantenbestand.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'importeren',
+        title: 'Kan ik klanten importeren vanuit mijn oude systeem?',
+        content: (
+          <>
+            <P>
+              Ja, via <B>Klanten → Import</B>. Heb je een export uit je oude pakket, plak die in ChatGPT of Claude
+              met de instructie die op de importpagina staat: zet de data om naar een CSV met puntkomma's, in de
+              vaste kolomvolgorde die doen. verwacht. Daarna upload je het bestand in het onderdeel
+              <B>Bedrijfsdata</B> voor klanten, projecten, offertes en facturen, en in <B>Contactpersonen</B> voor
+              losse contactenlijsten.
+            </P>
+            <P>
+              Geïmporteerde historie zie je terug op het tabblad <B>Historie</B> van elke klant: een tijdlijn van
+              oude projecten, offertes en facturen, met datum en bedrag. Onderaan de importpagina staat een log van
+              elke import die je hebt gedraaid.
+            </P>
+            <Callout tone="warning">
+              Iets fout gegaan bij het importeren? Onder <B>Import geschiedenis</B> kun je alle geïmporteerde data
+              (contactpersonen, klanthistorie, logs en klanten) in één keer opschonen en opnieuw beginnen.
+            </Callout>
           </>
         ),
       },
@@ -389,6 +521,81 @@ export const articles: Article[] = [
     ],
   },
   {
+    slug: 'leadformulieren',
+    title: 'Leadformulieren: leads verzamelen via je website',
+    category: 'Leads',
+    excerpt: 'Een leadformulier bouw je zelf en deel je via link of embed. Nieuwe inzendingen landen in één inbox.',
+    updatedAt: '2026-07-12',
+    readingTime: 4,
+    sections: [
+      {
+        id: 'wat-is-het',
+        title: 'Wat is een leadformulier?',
+        content: (
+          <>
+            <P>
+              Een <B>leadformulier</B> bouw je zelf in doen.: je kiest de velden, de tekst en waar je 'm plaatst.
+              Elk formulier krijgt een unieke link en een embed-code, zodat je 'm op je eigen website, in een
+              nieuwsbrief of op social kunt zetten. Inzendingen komen binnen in de <B>Lead Inzendingen</B>-inbox.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'formulier-bouwen',
+        title: 'Een leadformulier bouwen',
+        content: (
+          <>
+            <P>
+              Klik op <B>Nieuw formulier</B>. Geef het een naam en eventueel een korte beschrijving. Standaard
+              staan er al vier velden klaar (naam, email, telefoon, bericht), maar je past ze vrij aan.
+            </P>
+            <P>Per veld stel je in:</P>
+            <UL>
+              <LI><B>Label</B>: de vraag die de bezoeker ziet</LI>
+              <LI><B>Type</B>: tekst, email, telefoon, tekstvlak, dropdown of checkbox</LI>
+              <LI><B>Verplicht</B>: aan of uit</LI>
+              <LI><B>Placeholder</B>: voorbeeldtekst in het veld</LI>
+            </UL>
+            <P>
+              Onderaan stel je de <B>bedanktekst</B> in (wat de bezoeker ziet na versturen) en de{' '}
+              <B>knoptekst</B>. Rechts zie je live een preview van het formulier zoals de bezoeker het straks
+              ziet.
+            </P>
+            <P>
+              Formulier klaar? Kopieer de <B>link</B> om 'm los te delen, of de <B>embed-code</B> (een iframe) om
+              'm in je eigen website te plaatsen.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'inzendingen',
+        title: 'Wat gebeurt er met een nieuwe inzending?',
+        content: (
+          <>
+            <P>
+              Zodra iemand het formulier invult, verschijnt de inzending in <B>Lead Inzendingen</B> met status{' '}
+              <B>Nieuw</B>. Open je 'm, dan springt de status automatisch naar <B>Bekeken</B>. Ben je klaar met
+              opvolgen, markeer 'm dan als <B>Verwerkt</B>.
+            </P>
+            <P>
+              Heb je bij het formulier <B>automatisch deal aanmaken</B> aangezet, dan maakt doen. bij elke
+              inzending met een ingevulde naam meteen een <B>klant</B> (status prospect) en een <B>deal</B> aan,
+              in de fase "lead" met bron "website". Die deal vind je terug via de knop <B>Bekijk deal</B> in het
+              inzendingsdetail.
+            </P>
+            <Callout tone="warning">
+              Staat "automatisch deal aanmaken" uit, dan blijft een inzending alleen een rij in de inbox: er
+              wordt geen klant of deal voor je aangemaakt. Zet 'm aan als je wilt dat elke lead automatisch
+              instroomt in je pijplijn.
+            </Callout>
+          </>
+        ),
+      },
+    ],
+  },
+  {
     slug: 'planning',
     title: 'Planning: montage inplannen',
     category: 'Planning',
@@ -560,6 +767,109 @@ export const articles: Article[] = [
             <P>
               Foto's, uren, handtekening: alles komt <B>direct terug in het project</B>. Geen losse mappen, geen
               "stuur even door", geen rommel. Jij op kantoor ziet live wat er gebeurt.
+            </P>
+          </>
+        ),
+      },
+    ],
+  },
+  {
+    slug: 'maatjes',
+    title: 'Maatjes: maten vastleggen vóór er een offerte is',
+    category: 'Vakkennis',
+    excerpt: 'Een maatje is een foto met maatlijnen, pijlen en tekst die je op locatie vastlegt, nog voordat er een project of offerte bestaat.',
+    updatedAt: '2026-07-12',
+    readingTime: 4,
+    sections: [
+      {
+        id: 'wat-is-een-maatje',
+        title: 'Wat is een maatje?',
+        content: (
+          <>
+            <P>
+              Je staat op locatie bij een (nog) klant, ruim voordat er een offerte of project is. Je wilt een
+              maat vastleggen, een idee voor een gevel, of gewoon een plek markeren waar iets moet komen.
+              Daarvoor is een <B>maatje</B>: een foto waar je meteen op intekent, met maatlijnen, pijlen en
+              tekstlabels.
+            </P>
+            <P>
+              Een maatje hoort bij niemand en niets, tot jij het koppelt. Het staat los in je <B>kladblok</B>,
+              klaar om later aan de offerte of het project te hangen dat er eventueel uit voortkomt.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'maatje-maken',
+        title: 'Een maatje maken op locatie',
+        content: (
+          <>
+            <P>
+              In het kladblok (op je telefoon, onder <B>Maatjes</B>) tik je op <B>Foto maken</B>, dat opent
+              direct je camera. Heb je de foto al staan? Kies dan <B>Importeren</B> voor een opname uit je
+              bibliotheek.
+            </P>
+            <P>
+              Daarna open je meteen de editor. Onderin kies je een gereedschap: <B>Maatlijn</B> (sleep een lijn
+              over de foto, tik erop om de maat in centimeters in te vullen), <B>Pijl</B> (om ergens naartoe te
+              wijzen) of <B>Tekst</B> (tik om een opmerking te plaatsen). Elk element krijgt een kleur naar keuze,
+              zodat maatlijnen en pijlen uit elkaar te houden blijven op een drukke foto. Met twee vingers zoom je
+              in voor precisiewerk, en een fout draai je terug met de undo-knop.
+            </P>
+            <Callout>
+              Geef het maatje een naam bovenin het scherm, bijvoorbeeld "Gevel Kalverstraat". Zonder naam is een
+              kladblok vol foto's lastig terug te vinden.
+            </Callout>
+            <P>
+              Klaar? Tik op <B>Bewaren</B>. Het maatje komt in het kladblok terecht, samen met de losse maatjes
+              van de rest van je team. Maak je meerdere opnames achter elkaar, dan opent de camera na het bewaren
+              automatisch weer voor de volgende foto.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'koppelen',
+        title: 'Wanneer koppel je een maatje aan een project?',
+        content: (
+          <>
+            <P>
+              Zolang er geen project is, blijft een maatje los in het kladblok: org-breed zichtbaar, niet alleen
+              voor de maker. Zodra de offerte rond is of het project bestaat, koppel je het maatje eraan zodat de
+              maten en foto's bij het juiste dossier terechtkomen.
+            </P>
+            <P>
+              Dat doe je door in het kladblok een of meer maatjes te selecteren en op <B>Koppel aan project</B>{' '}
+              te tikken. Je zoekt het project op naam, projectnummer of klantnaam, en klaar. Vanuit de editor kan
+              het ook in één stap: tik op <B>Koppel</B> in plaats van <B>Bewaren</B>, dan bewaar je en koppel je
+              tegelijk.
+            </P>
+            <P>
+              Verkeerd project gekozen? Direct na het koppelen krijg je een melding met een{' '}
+              <B>Ongedaan maken</B>-knop, het maatje gaat dan terug naar het kladblok.
+            </P>
+            <Callout>
+              Op kantoor open je de Maatjes-pagina op je desktop voor het volledige overzicht: alle losse maatjes
+              van het team naast elkaar, filterbaar per medewerker. Handig om maatjes van een monteur alsnog aan
+              het juiste project te koppelen als hij het zelf vergat.
+            </Callout>
+          </>
+        ),
+      },
+      {
+        id: 'offline',
+        title: 'Werkt dit ook zonder bereik op de bouwplaats?',
+        content: (
+          <>
+            <P>
+              Ja. Op een bouwplaats of in een parkeergarage is het signaal vaak zwak. Lukt het opslaan niet omdat
+              je offline bent, dan bewaart doen. de foto, de ingetekende versie en de titel lokaal op je telefoon,
+              in een opslag die grotere bestanden aankan dan een gewone browser-cache.
+            </P>
+            <P>
+              Bovenin het kladblok zie je een balk met het aantal foto's dat nog wacht op upload. Zodra je
+              telefoon weer verbinding heeft, verstuurt doen. de wachtende maatjes automatisch, zonder dat je er
+              iets voor hoeft te doen.
             </P>
           </>
         ),
@@ -1130,6 +1440,125 @@ export const articles: Article[] = [
               Test welke route je ook kiest één ding in de proefperiode: laat je monteur een
               échte klus afronden op zijn eigen telefoon. Als dat wringt, wringt de rest ook.
             </Callout>
+          </>
+        ),
+      },
+    ],
+  },
+  {
+    slug: 'team-en-instellingen',
+    title: 'Team en instellingen: zo richt je doen. in',
+    category: 'Instellingen',
+    excerpt: 'Collega\'s uitnodigen, huisstijl instellen, abonnement beheren: alles wat onder Instellingen zit, op één rij.',
+    updatedAt: '2026-07-12',
+    readingTime: 5,
+    sections: [
+      {
+        id: 'teamlid-uitnodigen',
+        title: 'Hoe nodig ik een collega uit?',
+        content: (
+          <>
+            <P>
+              Ga naar <B>Instellingen → Gebruikers → Teamleden</B> en klik op <B>Teamlid uitnodigen</B>. Vul het
+              e-mailadres in, kies een rol en verstuur. Je collega krijgt een uitnodiging per mail en staat erin
+              zodra hij zijn account activeert.
+            </P>
+            <P>
+              De teamledenlijst heeft drie tabbladen: <B>Actief</B>, <B>Uitgenodigd</B> en <B>Gedeactiveerd</B>.
+              Een openstaande uitnodiging kun je op elk moment intrekken. Een actief teamlid kun je deactiveren
+              (hij verliest toegang, maar zijn data blijft staan) en later weer heractiveren.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'rollen-en-rechten',
+        title: 'Welke rollen en rechten zijn er?',
+        content: (
+          <>
+            <P>doen. kent drie rollen:</P>
+            <UL>
+              <LI><B>Admin</B>: volledige toegang tot de hele organisatie</LI>
+              <LI><B>Medewerker</B>: standaard toegang, geschikt voor kantoorwerk</LI>
+              <LI><B>Monteur</B>: alleen toegang tot werkbonnen</LI>
+            </UL>
+            <P>
+              Je wijzigt de rol van een teamlid later gewoon via het menu naast zijn naam, dat hoeft niet in één
+              keer goed bij het uitnodigen. Los van de rol kun je per teamlid ook specifiek de toegang tot{' '}
+              <B>inkoopfacturen</B> aan- of uitzetten, handig als iemand facturen van leveranciers moet goedkeuren
+              zonder verder bij financiële instellingen te kunnen.
+            </P>
+            <Callout>
+              doen. is binnen één organisatie radicaal transparant: iedereen met een account ziet dezelfde
+              klanten, projecten en planning. De rol bepaalt vooral wát iemand kan bewerken, niet wat hij mag
+              zien.
+            </Callout>
+          </>
+        ),
+      },
+      {
+        id: 'huisstijl-en-portaal',
+        title: 'Hoe pas ik mijn huisstijl en portaal aan?',
+        content: (
+          <>
+            <P>
+              Onder <B>Instellingen → Documenten → Huisstijl</B> stel je de opmaak van offertes, facturen en
+              werkbonnen in: kies een template, je huisstijlkleur, lettertypen en marges. Je ziet een live
+              voorbeeld terwijl je aanpast. Heb je eigen briefpapier? Upload die apart voor de eerste pagina en
+              eventueel een compactere versie voor vervolgpagina's.
+            </P>
+            <P>
+              Het <B>klantportaal</B> (onder <B>Instellingen → Integraties → Portaal</B>) heeft een eigen,
+              beperktere branding: je stelt de header-achtergrondkleur in en of je bedrijfslogo getoond wordt.
+              Logo en bedrijfsnaam zelf beheer je op één plek, bij <B>Instellingen → Algemeen → Bedrijf</B>, en
+              komen vandaar automatisch mee naar het portaal.
+            </P>
+            <P>
+              Daarnaast bepaal je per instelling wat een klant in het portaal mag: offertes en tekeningen
+              goedkeuren, bestanden uploaden, berichten sturen. Ook de automatische e-mails (portaallink, nieuw
+              item, herinnering) kun je hier herschrijven en met een testmail controleren voordat ze live gaan.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'abonnement',
+        title: 'Hoe werkt mijn abonnement?',
+        content: (
+          <>
+            <P>
+              Onder <B>Instellingen → Financieel → Abonnement</B> zie je je huidige status en activeer of beheer
+              je het abonnement. doen. kost <B>€79 per maand</B> (excl. btw), tot 10 gebruikers inbegrepen. Heb
+              je meer mensen nodig, dan werkt dat met een staffel op maat, geen losse rekensom per extra account.
+            </P>
+            <P>
+              Opzeggen doe je met één klik, met een bevestigingsstap erna. Je houdt volledige toegang tot het
+              einde van de lopende betaalperiode, daarna stopt het abonnement en blijft je data gewoon bewaard.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'integraties',
+        title: 'Wat zit er onder Integraties?',
+        content: (
+          <>
+            <P>
+              Onder <B>Instellingen → Integraties</B> koppel je de tools waar doen. mee samenwerkt:
+            </P>
+            <UL>
+              <LI><B>Mollie</B>: vul je API key in en klanten kunnen offertes en facturen direct betalen via iDEAL of creditcard</LI>
+              <LI><B>Exact Online</B>: koppel via OAuth om facturen automatisch te synchroniseren. De koppeling wordt door één teamlid opgezet (de eigenaar), daarna kunnen collega's zelf ook synchroniseren</LI>
+              <LI><B>Moneybird of e-Boekhouden</B>: verbind met een API-token en wijs de juiste grootboekrekeningen en btw-codes toe</LI>
+            </UL>
+            <Callout tone="warning">
+              De koppeling met Exact Online is <B>one-way</B>: factuurgegevens gaan van doen. naar Exact, niet
+              andersom. De betaalstatus vink je dus zelf af in doen. zodra het geld binnen is.
+            </Callout>
+            <P>
+              Je zakelijke mailbox koppel je niet hier maar bij <B>Instellingen → E-mail</B>, waar je kiest tussen
+              Gmail, Outlook of een eigen SMTP/IMAP-server.
+            </P>
           </>
         ),
       },
