@@ -54,6 +54,9 @@ export interface Organisatie {
   is_betaald?: boolean;
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
+  mollie_customer_id?: string;
+  mollie_subscription_id?: string;
+  abonnement_actief_tot?: string | null;
   abonnement_status?: 'trial' | 'actief' | 'verlopen' | 'opgezegd';
   onboarding_compleet?: boolean;
   onboarding_stap?: number;
