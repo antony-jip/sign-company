@@ -211,22 +211,22 @@ export function VisualizerLayout() {
     getOffertes().then(o => { if (!cancelled) setOffertes(o) }).catch(() => {})
     getVisualizerChats().then(c => { if (!cancelled) setChats(c) }).catch(() => {})
 
-    // Handle Stripe payment return
+    // Terug van Mollie checkout; één redirect-URL voor alle uitkomsten,
+    // dus het saldo vertelt of de betaling gelukt is
     const params = new URLSearchParams(window.location.search)
-    let timeoutId: ReturnType<typeof setTimeout> | undefined
-    if (params.get('betaling') === 'succes') {
-      toast.success('Betaling geslaagd! Credits worden bijgeschreven.')
-      timeoutId = setTimeout(() => {
-        if (!cancelled) {
-          getVisualizerCredits(user.id).then(c => { if (!cancelled) setCreditSaldo(c.saldo) }).catch(() => {})
-        }
-      }, 2000)
-      window.history.replaceState({}, '', window.location.pathname)
-    } else if (params.get('betaling') === 'geannuleerd') {
-      toast.info('Betaling geannuleerd')
+    const timeoutIds: ReturnType<typeof setTimeout>[] = []
+    if (params.get('betaling') === 'klaar') {
+      toast.success('Bedankt! Zodra je betaling is verwerkt zie je je credits in je saldo.')
+      for (const delay of [2000, 6000]) {
+        timeoutIds.push(setTimeout(() => {
+          if (!cancelled) {
+            getVisualizerCredits(user.id).then(c => { if (!cancelled) setCreditSaldo(c.saldo) }).catch(() => {})
+          }
+        }, delay))
+      }
       window.history.replaceState({}, '', window.location.pathname)
     }
-    return () => { cancelled = true; if (timeoutId) clearTimeout(timeoutId) }
+    return () => { cancelled = true; timeoutIds.forEach(clearTimeout) }
   }, [user?.id, ladenBibliotheek])
 
   const filteredOffertes = selectedProject

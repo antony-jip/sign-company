@@ -61,12 +61,12 @@ export function CreditsPakketDialog({
   onClose,
   onCreditsToegevoegd,
 }: CreditsPakketDialogProps) {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const [geselecteerdPakket, setGeselecteerdPakket] = useState<CreditsPakket | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleStripeCheckout = useCallback(async (pakket: CreditsPakket) => {
-    if (!user?.id) {
+  const handleMollieCheckout = useCallback(async (pakket: CreditsPakket) => {
+    if (!user?.id || !session?.access_token) {
       toast.error('Je moet ingelogd zijn om credits te kopen')
       return
     }
@@ -75,23 +75,23 @@ export function CreditsPakketDialog({
     try {
       const response = await fetch(`${API_BASE}/api/create-checkout-session`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           pakket_id: pakket.id,
-          user_id: user.id,
-          user_email: user.email,
-          success_url: `${window.location.origin}/visualizer?betaling=succes`,
-          cancel_url: `${window.location.origin}/visualizer?betaling=geannuleerd`,
+          success_url: `${window.location.origin}/visualizer?betaling=klaar`,
         }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Checkout sessie aanmaken mislukt')
+        throw new Error(data.error || 'Betaling aanmaken mislukt')
       }
 
-      // Redirect to Stripe Checkout
+      // Redirect naar Mollie checkout
       if (data.url) {
         window.location.href = data.url
       } else {
@@ -102,7 +102,7 @@ export function CreditsPakketDialog({
       toast.error(`Betaling starten mislukt: ${msg}`)
       setIsLoading(false)
     }
-  }, [user?.id, user?.email])
+  }, [user?.id, session?.access_token])
 
   // For demo/dev: add credits directly
   const handleDemoCredits = useCallback(async (pakket: CreditsPakket) => {
@@ -186,7 +186,7 @@ export function CreditsPakketDialog({
           <div className="mt-4 space-y-3">
             <Button
               className="w-full gap-2 bg-petrol hover:bg-petrol/90 text-white h-12 text-base font-medium"
-              onClick={() => handleStripeCheckout(geselecteerdPakket)}
+              onClick={() => handleMollieCheckout(geselecteerdPakket)}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -202,7 +202,7 @@ export function CreditsPakketDialog({
 
             <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Shield className="h-3 w-3" />
-              Veilig betalen via Stripe · iDEAL & creditcard
+              Veilig betalen via Mollie · iDEAL & creditcard
             </div>
 
             {import.meta.env.DEV && (

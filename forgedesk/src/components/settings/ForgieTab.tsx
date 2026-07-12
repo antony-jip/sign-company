@@ -95,7 +95,7 @@ const PAKKET_ICONS: Record<string, React.ElementType> = {
 }
 
 export function ForgieTab() {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const { settings, updateSettings } = useAppSettings()
   const [bedrijfscontext, setBedrijfscontext] = useState(settings.forgie_bedrijfscontext || '')
   const [toneOfVoice, setToneOfVoice] = useState(settings.ai_tone_of_voice || '')
@@ -251,30 +251,30 @@ export function ForgieTab() {
     catch (err) { logger.error('Toggle forgie:', err); toast.error('Instelling opslaan mislukt') }
   }, [updateSettings])
 
-  const handleStripeCheckout = useCallback(async (pakket: CreditsPakket) => {
-    if (!user?.id) return
+  const handleMollieCheckout = useCallback(async (pakket: CreditsPakket) => {
+    if (!user?.id || !session?.access_token) return
     setIsCheckoutLoading(true)
     try {
       const response = await fetch(`${API_BASE}/api/create-checkout-session`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           pakket_id: pakket.id,
-          user_id: user.id,
-          user_email: user.email,
-          success_url: `${window.location.origin}/instellingen?credits=succes`,
-          cancel_url: `${window.location.origin}/instellingen?credits=geannuleerd`,
+          success_url: `${window.location.origin}/instellingen?credits=klaar`,
         }),
       })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Checkout sessie aanmaken mislukt')
+      if (!response.ok) throw new Error(data.error || 'Betaling aanmaken mislukt')
       if (data.url) window.location.href = data.url
       else throw new Error('Geen checkout URL ontvangen')
     } catch (error) {
       toast.error(`Betaling starten mislukt: ${error instanceof Error ? error.message : 'Onbekende fout'}`)
       setIsCheckoutLoading(false)
     }
-  }, [user?.id, user?.email])
+  }, [user?.id, session?.access_token])
 
   const handleDemoCredits = useCallback(async (pakket: CreditsPakket) => {
     if (!user?.id) return
@@ -450,7 +450,7 @@ export function ForgieTab() {
                 <div className="space-y-2">
                   <Button
                     className="w-full gap-2 h-12 text-base font-medium"
-                    onClick={() => handleStripeCheckout(geselecteerdPakket)}
+                    onClick={() => handleMollieCheckout(geselecteerdPakket)}
                     disabled={isCheckoutLoading}
                   >
                     {isCheckoutLoading ? (
@@ -466,7 +466,7 @@ export function ForgieTab() {
 
                   <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                     <Shield className="h-3 w-3" />
-                    Veilig betalen via Stripe · iDEAL & creditcard
+                    Veilig betalen via Mollie · iDEAL & creditcard
                   </div>
 
                   {import.meta.env.DEV && (
