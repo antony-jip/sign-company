@@ -13,7 +13,7 @@ export default function Statement() {
 
   return (
     <section ref={ref} className="bg-white">
-      <div className="container-site py-16 md:py-36">
+      <div className="container-site pt-4 pb-16 md:pt-6 md:pb-32">
         <motion.blockquote
           initial={reduce ? false : { opacity: 0, y: 24 }}
           animate={show ? { opacity: 1, y: 0 } : {}}
