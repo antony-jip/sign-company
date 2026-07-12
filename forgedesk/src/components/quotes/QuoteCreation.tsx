@@ -103,6 +103,7 @@ import { useQuoteClipboard } from '@/hooks/useQuoteClipboard'
 import { useQuoteVersioning } from '@/hooks/useQuoteVersioning'
 import { useContactManagement } from '@/hooks/useContactManagement'
 import { useTrialGuard } from '@/hooks/useTrialGuard'
+import { useTabs } from '@/contexts/TabsContext'
 import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 
 // Cumulatieve cap voor user-uploads in de offerte-email-dialog. Onder Gmail's
@@ -282,6 +283,12 @@ export function QuoteCreation() {
   })
   const [offerteNummer, setOfferteNummer] = useState('')
   const [verstuurdOp, setVerstuurdOp] = useState<string | undefined>()
+
+  const { setActiveTabLabel } = useTabs()
+  useEffect(() => {
+    const label = offerteTitel.trim() || (offerteNummer ? `Offerte ${offerteNummer}` : '')
+    if (label) setActiveTabLabel(label)
+  }, [offerteTitel, offerteNummer, setActiveTabLabel])
   const [verstuurdNaar, setVerstuurdNaar] = useState<string | undefined>()
 
   // ── Offerte status & linked factuur (for factureren workflow) ──

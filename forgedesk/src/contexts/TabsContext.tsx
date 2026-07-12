@@ -25,6 +25,7 @@ interface TabsContextType {
   setActiveTab: (id: string) => void
   setTabDirty: (id: string, dirty: boolean) => void
   updateTabLabel: (id: string, label: string) => void
+  setActiveTabLabel: (label: string) => void
   reorderTabs: (fromIndex: number, toIndex: number) => void
 }
 
@@ -327,6 +328,20 @@ export function TabsProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  // Detailpagina's zetten hiermee de recordnaam als tab-label zodra hun data
+  // geladen is; navigatie binnen de tab reset het label eerst via labelForPath
+  const setActiveTabLabel = useCallback((label: string) => {
+    const id = activeTabIdRef.current
+    if (!id || !label.trim()) return
+    setTabs(prev => {
+      const tab = prev.find((t: AppTab) => t.id === id)
+      if (!tab || tab.label === label) return prev
+      const next = prev.map((t: AppTab) => (t.id === id ? { ...t, label } : t))
+      saveTabs(next)
+      return next
+    })
+  }, [])
+
   const reorderTabs = useCallback((fromIndex: number, toIndex: number) => {
     setTabs(prev => {
       const next = [...prev]
@@ -349,6 +364,7 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       setActiveTab: setActiveTabFn,
       setTabDirty,
       updateTabLabel,
+      setActiveTabLabel,
       reorderTabs,
     }),
     [
@@ -362,6 +378,7 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       setActiveTabFn,
       setTabDirty,
       updateTabLabel,
+      setActiveTabLabel,
       reorderTabs,
     ],
   )
