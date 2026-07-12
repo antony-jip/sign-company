@@ -137,11 +137,13 @@ async function handleAbonnementStart(payment: MolliePayment, webhookUrl: string,
 
   // Claim de subscription-slot vóór het aanmaken: Mollie levert webhooks
   // at-least-once en een dubbele subscription betekent dubbele incasso's.
+  // Een achtergebleven pending-claim van een eerdere (gecrashte) poging mag
+  // overgenomen worden; alleen een echt subscription-id blokkeert.
   const { data: geclaimd, error: claimError } = await supabase
     .from('organisaties')
     .update({ mollie_subscription_id: claim })
     .eq('id', organisatieId)
-    .is('mollie_subscription_id', null)
+    .or('mollie_subscription_id.is.null,mollie_subscription_id.like.pending*')
     .select('id')
 
   if (claimError) {
@@ -151,56 +153,84 @@ async function handleAbonnementStart(payment: MolliePayment, webhookUrl: string,
   }
 
   if (!geclaimd || geclaimd.length === 0) {
-    const { data: huidige } = await supabase
-      .from('organisaties')
-      .select('mollie_subscription_id')
-      .eq('id', organisatieId)
-      .single()
-
-    // Alleen doorgaan als dit onze eigen claim is (retry na eerdere crash)
-    if (huidige?.mollie_subscription_id !== claim) {
-      console.log(`[billing-webhook] org ${organisatieId} heeft al een subscription(-claim), skip`)
-      return res.status(200).json({ received: true })
-    }
-  }
-
-  const startDatum = eenMaandLater(payment.paidAt ? new Date(payment.paidAt) : new Date())
-
-  const subscriptionResponse = await fetch(
-    `https://api.mollie.com/v2/customers/${payment.customerId}/subscriptions`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${MOLLIE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        amount: { currency: 'EUR', value: ABONNEMENT_BEDRAG },
-        interval: '1 month',
-        startDate: startDatum,
-        description: 'doen. abonnement',
-        webhookUrl,
-        metadata: { type: 'abonnement_termijn', organisatie_id: organisatieId },
-      }),
-    }
-  )
-
-  if (!subscriptionResponse.ok) {
-    const errorBody = await subscriptionResponse.text()
-    console.error(`[billing-webhook] subscription aanmaken mislukt voor org ${organisatieId}:`, subscriptionResponse.status, errorBody)
-    Sentry.captureException(new Error(`Mollie subscription aanmaken faalde: ${subscriptionResponse.status}`), {
+    // Org heeft al een echt subscription-id: dubbele betaling zonder activering.
+    // Geld is geïnd; alert zodat er handmatig gerefund kan worden.
+    console.warn(`[billing-webhook] org ${organisatieId} heeft al een subscription, dubbele eerste betaling ${payment.id}`)
+    Sentry.captureMessage('Dubbele eerste abonnementsbetaling zonder activering', {
+      level: 'warning',
       extra: { paymentId: payment.id, organisatieId },
     })
-    // Claim vrijgeven zodat de Mollie-retry opnieuw kan proberen
-    await supabase
-      .from('organisaties')
-      .update({ mollie_subscription_id: null })
-      .eq('id', organisatieId)
-      .eq('mollie_subscription_id', claim)
-    return res.status(500).json({ error: 'Subscription aanmaken mislukt' })
+    return res.status(200).json({ received: true })
   }
 
-  const subscription = await subscriptionResponse.json() as { id: string }
+  const mollieHeaders = {
+    'Authorization': `Bearer ${MOLLIE_API_KEY}`,
+    'Content-Type': 'application/json',
+  }
+
+  // Adopteer een al bestaande lopende subscription (eerdere run die na de
+  // create crashte, of een parallelle duplicate delivery) in plaats van een
+  // tweede aan te maken.
+  let subscriptionId: string | null = null
+  const bestaandeResponse = await fetch(
+    `https://api.mollie.com/v2/customers/${payment.customerId}/subscriptions?limit=250`,
+    { headers: mollieHeaders }
+  )
+  if (bestaandeResponse.ok) {
+    const bestaande = await bestaandeResponse.json() as {
+      _embedded?: { subscriptions?: Array<{ id: string; status: string; metadata?: { organisatie_id?: string } | null }> }
+    }
+    const lopend = bestaande._embedded?.subscriptions?.find(
+      s => ['active', 'pending'].includes(s.status) && s.metadata?.organisatie_id === organisatieId
+    )
+    if (lopend) {
+      console.log(`[billing-webhook] bestaande subscription ${lopend.id} geadopteerd voor org ${organisatieId}`)
+      subscriptionId = lopend.id
+    }
+  } else {
+    console.error(`[billing-webhook] subscriptions ophalen mislukt: ${bestaandeResponse.status}`)
+    return res.status(502).json({ error: 'Subscriptions ophalen bij Mollie mislukt' })
+  }
+
+  if (!subscriptionId) {
+    const startDatum = eenMaandLater(payment.paidAt ? new Date(payment.paidAt) : new Date())
+
+    const subscriptionResponse = await fetch(
+      `https://api.mollie.com/v2/customers/${payment.customerId}/subscriptions`,
+      {
+        method: 'POST',
+        // Mollie dedupliceert hiermee parallelle duplicate deliveries van
+        // dezelfde payment
+        headers: { ...mollieHeaders, 'Idempotency-Key': `sub_${payment.id}` },
+        body: JSON.stringify({
+          amount: { currency: 'EUR', value: ABONNEMENT_BEDRAG },
+          interval: '1 month',
+          startDate: startDatum,
+          description: 'doen. abonnement',
+          webhookUrl,
+          metadata: { type: 'abonnement_termijn', organisatie_id: organisatieId },
+        }),
+      }
+    )
+
+    if (!subscriptionResponse.ok) {
+      const errorBody = await subscriptionResponse.text()
+      console.error(`[billing-webhook] subscription aanmaken mislukt voor org ${organisatieId}:`, subscriptionResponse.status, errorBody)
+      Sentry.captureException(new Error(`Mollie subscription aanmaken faalde: ${subscriptionResponse.status}`), {
+        extra: { paymentId: payment.id, organisatieId },
+      })
+      // Claim vrijgeven zodat de Mollie-retry opnieuw kan proberen
+      await supabase
+        .from('organisaties')
+        .update({ mollie_subscription_id: null })
+        .eq('id', organisatieId)
+        .eq('mollie_subscription_id', claim)
+      return res.status(500).json({ error: 'Subscription aanmaken mislukt' })
+    }
+
+    const subscription = await subscriptionResponse.json() as { id: string }
+    subscriptionId = subscription.id
+  }
 
   const { error: updateError } = await supabase
     .from('organisaties')
@@ -208,18 +238,20 @@ async function handleAbonnementStart(payment: MolliePayment, webhookUrl: string,
       abonnement_status: 'actief',
       is_betaald: true,
       mollie_customer_id: payment.customerId,
-      mollie_subscription_id: subscription.id,
+      mollie_subscription_id: subscriptionId,
       abonnement_actief_tot: null,
     })
     .eq('id', organisatieId)
 
   if (updateError) {
+    // Subscription bestaat al bij Mollie; de retry adopteert hem en probeert
+    // deze update opnieuw
     console.error(`[billing-webhook] activeren mislukt voor org ${organisatieId}:`, updateError)
-    Sentry.captureException(updateError, { extra: { paymentId: payment.id, subscriptionId: subscription.id } })
+    Sentry.captureException(updateError, { extra: { paymentId: payment.id, subscriptionId } })
     return res.status(500).json({ error: 'Abonnement activeren mislukt' })
   }
 
-  console.log(`[billing-webhook] abonnement actief: org=${organisatieId}, subscription=${subscription.id}, start volgende termijn ${startDatum}`)
+  console.log(`[billing-webhook] abonnement actief: org=${organisatieId}, subscription=${subscriptionId}`)
   return res.status(200).json({ received: true })
 }
 

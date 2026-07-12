@@ -65,19 +65,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // nextPaymentDate = einde van de al betaalde periode; tot die datum
     // houdt de organisatie toegang (cron zet daarna de status om).
     let actiefTot: string | null = null
+    let subscriptionBestaat = true
     const getResponse = await fetch(subscriptionUrl, { headers: mollieHeaders })
     if (getResponse.ok) {
       const subscription = await getResponse.json() as { nextPaymentDate?: string }
       if (subscription.nextPaymentDate) {
         actiefTot = new Date(`${subscription.nextPaymentDate}T00:00:00Z`).toISOString()
       }
+    } else if (getResponse.status === 404 || getResponse.status === 410) {
+      subscriptionBestaat = false
+    } else {
+      // Zonder nextPaymentDate zou de betaalde restperiode verloren gaan;
+      // bij een Mollie-storing dus niet doorzetten
+      const errorBody = await getResponse.text()
+      console.error('Mollie subscription ophalen mislukt:', getResponse.status, errorBody)
+      return res.status(502).json({ error: 'Opzeggen bij Mollie mislukt, probeer het later opnieuw' })
     }
 
-    const deleteResponse = await fetch(subscriptionUrl, { method: 'DELETE', headers: mollieHeaders })
-    if (!deleteResponse.ok && deleteResponse.status !== 404 && deleteResponse.status !== 410) {
-      const errorBody = await deleteResponse.text()
-      console.error('Mollie subscription opzeggen mislukt:', deleteResponse.status, errorBody)
-      return res.status(502).json({ error: 'Opzeggen bij Mollie mislukt' })
+    if (subscriptionBestaat) {
+      const deleteResponse = await fetch(subscriptionUrl, { method: 'DELETE', headers: mollieHeaders })
+      if (!deleteResponse.ok && deleteResponse.status !== 404 && deleteResponse.status !== 410) {
+        const errorBody = await deleteResponse.text()
+        console.error('Mollie subscription opzeggen mislukt:', deleteResponse.status, errorBody)
+        return res.status(502).json({ error: 'Opzeggen bij Mollie mislukt' })
+      }
     }
 
     const eindeNu = !actiefTot || new Date(actiefTot).getTime() <= Date.now()

@@ -872,3 +872,24 @@ fork) — designkeuze voor Antony, open/klik-tracking in het verzendpad,
 consolidatie van de drie factuur-template-opslagplaatsen (cron gebruikt nu
 bewust dezelfde bron als de instellingen-tab; de handmatige dialog gebruikt
 nog herinnering_templates).
+
+## feat/mollie-billing — senior review opmerkingen (12 jul 2026)
+
+Blokkades B1/B2/B3 en M1 zijn gefixt in "fix(review)"-commit. Openstaand:
+  (a) M2: Mollie stuurt géén webhook als een subscription zelf eindigt
+      (dashboard-cancel, mandaat ingetrokken zonder chargeback) — org blijft
+      dan onbeperkt actief zonder incasso's. Vervolgwerk: dagelijkse
+      reconciliatie in cron-trial-expiration die voor orgs met een echt
+      mollie_subscription_id de status bij Mollie GET en niet-actieve
+      subscriptions afhandelt.
+  (b) Billing-kolommen op organisaties zijn client-writable (pre-existing,
+      policy uit migratie 085 zonder WITH CHECK): elk org-lid kan zelf
+      abonnement_status/is_betaald/mollie_* zetten = billing-bypass.
+      Hoort bij de security-sprint (kolom-grants of trigger, service_role
+      only).
+  (c) Elk teamlid kan het abonnement opzeggen (alleen lidmaatschap-check,
+      consistent met productfilosofie); eventueel eigenaar-check overwegen.
+  (d) Restrisico: bij een stale pending-claim + twee gelijktijdige retries
+      van twee verschillende betaalde eerste betalingen kan in theorie een
+      dubbele subscription ontstaan (verschillende Idempotency-Keys); de
+      reconciliatie uit (a) vangt dit op.

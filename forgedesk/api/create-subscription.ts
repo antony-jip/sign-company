@@ -58,13 +58,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Organisatie niet gevonden' })
     }
 
-    if (org.mollie_subscription_id && !org.mollie_subscription_id.startsWith('pending_')) {
-      return res.status(400).json({ error: 'Er loopt al een abonnement voor deze organisatie' })
-    }
-
     const mollieHeaders = {
       'Authorization': `Bearer ${MOLLIE_API_KEY}`,
       'Content-Type': 'application/json',
+    }
+
+    const heeftEchteSubscription = !!org.mollie_subscription_id && !org.mollie_subscription_id.startsWith('pending_')
+
+    if (heeftEchteSubscription && org.abonnement_status === 'actief') {
+      return res.status(400).json({ error: 'Er loopt al een abonnement voor deze organisatie' })
+    }
+
+    // Verlopen/opgezegd met achtergebleven subscription-id (bijv. na een
+    // mislukte incasso of chargeback): oude subscription bij Mollie opruimen
+    // zodat opnieuw activeren mogelijk is zonder dubbele incasso's.
+    if (heeftEchteSubscription && org.mollie_customer_id) {
+      const deleteResponse = await fetch(
+        `https://api.mollie.com/v2/customers/${org.mollie_customer_id}/subscriptions/${org.mollie_subscription_id}`,
+        { method: 'DELETE', headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` } }
+      )
+      if (!deleteResponse.ok && deleteResponse.status !== 404 && deleteResponse.status !== 410) {
+        const errorBody = await deleteResponse.text()
+        console.error('Oude subscription opruimen mislukt:', deleteResponse.status, errorBody)
+        return res.status(502).json({ error: 'Bestaand abonnement opruimen bij Mollie mislukt, probeer het later opnieuw' })
+      }
+      await supabaseAdmin
+        .from('organisaties')
+        .update({ mollie_subscription_id: null })
+        .eq('id', organisatie_id)
+        .eq('mollie_subscription_id', org.mollie_subscription_id)
+    } else if (heeftEchteSubscription) {
+      // Subscription-id zonder customer-id kan niet bij Mollie bestaan;
+      // wees-id opruimen zodat de webhook straks kan activeren
+      await supabaseAdmin
+        .from('organisaties')
+        .update({ mollie_subscription_id: null })
+        .eq('id', organisatie_id)
+        .eq('mollie_subscription_id', org.mollie_subscription_id)
     }
 
     let customerId = org.mollie_customer_id as string | null
