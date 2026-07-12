@@ -471,9 +471,10 @@ Bestanden die al mod-* gebruiken (o.a.):
 | `ai-followup-email.ts` | AI follow-up email |
 | `ai-rewrite.ts` | AI tekst herschrijven |
 | `analyze-inkoop-offerte.ts` | Inkoop offerte AI analyse |
-| `create-checkout-session.ts` | Stripe checkout sessie |
-| `create-portal-session.ts` | Stripe portal sessie |
-| `create-subscription.ts` | Stripe abonnement aanmaken |
+| `create-checkout-session.ts` | Mollie checkout Studio-credits |
+| `create-subscription.ts` | Mollie abonnement starten (first payment) |
+| `cancel-subscription.ts` | Mollie abonnement opzeggen |
+| `billing-webhook.ts` | Mollie webhook eigen billing (credits + abonnement) |
 | `email-settings.ts` | Email instellingen (IMAP/SMTP) |
 | `emailTemplate.ts` | Email template ophalen |
 | `exact-auth.ts` | Exact Online authenticatie |
@@ -501,7 +502,6 @@ Bestanden die al mod-* gebruiken (o.a.):
 | `portaal-verlengen.ts` | Portaal verlengen |
 | `read-email.ts` | Specifieke email lezen (IMAP) |
 | `send-email.ts` | Email verzenden (SMTP) |
-| `stripe-webhook.ts` | Stripe webhook handler |
 | `test-email-connection.ts` | Email verbinding testen |
 
 ---

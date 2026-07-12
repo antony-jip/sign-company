@@ -3,7 +3,7 @@
 ## 1. Stack & werkmap
 
 **Stack:** Vite + React 18 + TypeScript + Tailwind + Shadcn/UI + Supabase + Vercel.
-Trigger.dev voor background jobs, Mollie + Stripe voor payments,
+Trigger.dev voor background jobs, Mollie voor payments,
 Anthropic Claude voor Daan AI-assistent.
 
 **App-naam:** doen. (lowercase, altijd). AI-assistent heet **Daan**

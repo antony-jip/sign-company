@@ -24,7 +24,7 @@ Bron: `~/sign-company/forgedesk/` — gegenereerd op basis van router, services,
 | Serverless | Vercel Functions (`api/*.ts`, standalone — geen `src/` imports) |
 | Background jobs | Trigger.dev SDK 4.4 |
 | Rate limit / cache | Upstash Redis + Ratelimit |
-| Payments | Stripe 17 (abonnement), Mollie (klantbetalingen via API) |
+| Payments | Mollie (abonnement + Studio-credits + klantbetalingen via API) |
 | AI | Anthropic SDK (Claude) — Daan-assistent + email/PDF-extractie; FAL AI (image gen) |
 | Email | Resend (transactioneel), Nodemailer + imapflow + mailparser (user-SMTP/IMAP) |
 | PDF / docs | jsPDF + autotable, react-pdf, XLSX, DOMPurify |
@@ -312,7 +312,7 @@ Vercel serverless. **Constraint: geen imports uit `src/`** — alles inline.
 `offerte-publiek`, `offerte-accepteren`, `offerte-wijziging`, `portaal-create`, `portaal-get`, `portaal-items-get`, `portaal-upload`, `portaal-bekeken`, `portaal-reactie`, `portaal-link-aanvragen`, `portaal-verlengen`, `factuur-portaal`, `goedkeuring-reactie`.
 
 ### Betaling & abonnement
-`create-subscription`, `create-checkout-session`, `create-portal-session` (Stripe), `mollie-create-payment`, `mollie-webhook`, `stripe-webhook`.
+`create-subscription`, `create-checkout-session`, `cancel-subscription`, `billing-webhook` (Mollie, eigen billing), `mollie-create-payment`, `mollie-webhook` (Mollie, klant-facturen).
 
 ### Cron & webhooks
 `cron-trial-expiration` (03:00 UTC), `cron-verzend-geplande-berichten`, `resend-notify`, `csp-report`, `api-status` (health).

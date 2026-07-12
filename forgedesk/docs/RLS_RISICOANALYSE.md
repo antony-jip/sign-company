@@ -249,7 +249,7 @@ Dit is **bewust** — de API doet zelf auth checks.
 | `offerte-accepteren.ts` | offertes, notificaties | Klant accepteert offerte → UPDATE + notificatie INSERT |
 | `goedkeuring-reactie.ts` | tekening_goedkeuringen, notificaties | Klant reageert op tekening → UPDATE |
 | `mollie-webhook.ts` | facturen | Mollie betaling → UPDATE factuur status |
-| `stripe-webhook.ts` | credit_transacties | Stripe betaling → INSERT transactie |
+| `billing-webhook.ts` | credit_transacties | Mollie betaling → INSERT transactie |
 
 ### Fix nodig
 
