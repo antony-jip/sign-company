@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
-import ScrollProgress from '@/components/ScrollProgress'
 import Footer from '@/components/Footer'
-import SectionCTA from '@/components/home/SectionCTA'
+import CTASection from '@/components/home/CTASection'
 import VergelijkJamesProContent from '@/components/pages/VergelijkJamesProContent'
 
 export const metadata: Metadata = {
@@ -15,14 +14,10 @@ export const metadata: Metadata = {
 export default function VergelijkJamesProPage() {
   return (
     <>
-      <ScrollProgress />
       <Navbar />
       <main id="main-content">
         <VergelijkJamesProContent />
-        <SectionCTA
-          title="Probeer het verschil zelf"
-          sub="30 dagen gratis, geen creditcard, geen opzetkosten."
-        />
+        <CTASection />
       </main>
       <Footer />
     </>

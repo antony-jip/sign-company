@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Navbar from '@/components/Navbar'
-import ScrollProgress from '@/components/ScrollProgress'
 import Footer from '@/components/Footer'
 import ArticleLayout from '@/components/kennisbank/ArticleLayout'
 import { articles, getArticleBySlug } from '@/data/kennisbank/articles'
@@ -27,7 +26,6 @@ export default function KennisbankArticlePage({ params }: { params: { slug: stri
 
   return (
     <>
-      <ScrollProgress />
       <Navbar />
       <main id="main-content">
         <ArticleLayout article={article} />

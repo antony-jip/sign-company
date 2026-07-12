@@ -1,34 +1,29 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 import { ChevronLeft, Clock, Calendar } from 'lucide-react'
 import type { Article } from '@/data/kennisbank/articles'
 
-const PETROL = '#1A535C'
-const FLAME = '#F15025'
-const MUTED = '#6B6B66'
-const MUTED_SOFT = '#9B9B95'
+const TOC_ROW_HEIGHT = 36
 
 export default function ArticleLayout({ article }: { article: Article }) {
   const [activeId, setActiveId] = useState<string>(article.sections[0]?.id ?? '')
   const contentRef = useRef<HTMLDivElement>(null)
+  const reduce = useReducedMotion() ?? false
 
   // Scroll-spy via IntersectionObserver
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        // Find entries that are intersecting and pick the one closest to top
         const visible = entries.filter((e) => e.isIntersecting)
         if (visible.length > 0) {
-          // Sort by boundingClientRect.top ascending, pick topmost visible
           visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
           setActiveId(visible[0].target.id)
         }
       },
       {
-        // Section is considered "active" when its top is between 20% and 40% of viewport
         rootMargin: '-20% 0% -60% 0%',
         threshold: 0,
       }
@@ -60,155 +55,124 @@ export default function ArticleLayout({ article }: { article: Article }) {
   })
 
   return (
-    <div className="pt-28 md:pt-36 pb-20 md:pb-32">
+    <div className="bg-bg pt-28 md:pt-40 pb-14 md:pb-32">
       <div className="container-site">
-        {/* Back link */}
-        <motion.div
-          initial={{ opacity: 0, x: -6 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
+        {/* Terug naar de kennisbank */}
+        <div className="mb-6 md:mb-8">
           <Link
             href="/kennisbank"
-            className="inline-flex items-center gap-1.5 text-[13px] font-mono tracking-wider uppercase transition-colors"
-            style={{ color: MUTED }}
+            className="inline-flex items-center gap-1 text-[15px] font-semibold text-muted transition-colors hover:text-petrol"
           >
             <ChevronLeft className="w-4 h-4" />
             <span>Kennisbank</span>
           </Link>
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-12 lg:gap-16">
-          {/* Article content */}
+          {/* Artikel */}
           <article ref={contentRef} className="min-w-0">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {/* Category eyebrow */}
-              <p
-                className="font-mono text-[11px] font-bold tracking-[0.18em] uppercase mb-4"
-                style={{ color: FLAME }}
-              >
+            {/* Paginakop: entree via CSS-keyframes (globals.css: .hero-line / .hero-fade) */}
+            <div>
+              <p className="hero-fade text-[14px] font-semibold text-petrol mb-4" style={{ animationDelay: '0.05s' }}>
                 {article.category}
               </p>
 
-              {/* Title */}
               <h1
-                className="font-heading text-[36px] md:text-[52px] font-extrabold tracking-[-2px] leading-[1.02] mb-6"
-                style={{ color: PETROL }}
+                className="font-heading font-bold text-petrol leading-[1.02] mb-4 md:mb-6"
+                style={{ fontSize: 'clamp(30px, 4.4vw, 56px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
               >
-                {article.title}
-                <span style={{ color: FLAME }}>.</span>
+                <span className="block overflow-hidden pb-[0.08em] -mb-[0.08em]">
+                  <span className="hero-line" style={{ animationDelay: '0.15s' }}>
+                    {article.title}
+                    <span className="text-flame">.</span>
+                  </span>
+                </span>
               </h1>
 
-              {/* Excerpt */}
-              <p className="text-[18px] md:text-[20px] leading-[1.6] mb-8" style={{ color: MUTED }}>
+              <p className="hero-fade text-[17px] md:text-[19px] leading-[1.6] text-muted mb-6 md:mb-8" style={{ animationDelay: '0.3s' }}>
                 {article.excerpt}
               </p>
 
-              {/* Meta */}
-              <div
-                className="flex flex-wrap items-center gap-5 pb-8 mb-12"
-                style={{ borderBottom: '1px solid rgba(26,83,92,0.08)' }}
-              >
-                <div className="flex items-center gap-2 text-[12px] font-mono" style={{ color: MUTED_SOFT }}>
-                  <Clock className="w-3.5 h-3.5" />
+              <div className="hero-fade flex flex-wrap items-center gap-x-6 gap-y-2 pb-6 md:pb-8 mb-8 md:mb-12 border-b border-petrol/10" style={{ animationDelay: '0.4s' }}>
+                <div className="flex items-center gap-2 text-[15px] text-muted">
+                  <Clock className="w-4 h-4" />
                   <span>{article.readingTime} min leestijd</span>
                 </div>
-                <div className="flex items-center gap-2 text-[12px] font-mono" style={{ color: MUTED_SOFT }}>
-                  <Calendar className="w-3.5 h-3.5" />
+                <div className="hidden md:flex items-center gap-2 text-[15px] text-muted">
+                  <Calendar className="w-4 h-4" />
                   <span>Bijgewerkt {formattedDate}</span>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Sections */}
-            <div className="space-y-14">
-              {article.sections.map((section, i) => (
+            {/* Secties */}
+            <div className="space-y-10 md:space-y-14">
+              {article.sections.map((section) => (
                 <motion.section
                   key={section.id}
                   id={section.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={reduce ? false : { opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-50px' }}
-                  transition={{ duration: 0.6, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                   className="scroll-mt-24"
                 >
                   <h2
-                    className="font-heading text-[24px] md:text-[30px] font-extrabold tracking-[-1px] leading-tight mb-5"
-                    style={{ color: PETROL }}
+                    className="font-heading font-bold text-petrol leading-[1.1] mb-5"
+                    style={{ fontSize: 'clamp(24px, 3vw, 32px)', letterSpacing: '-0.03em' }}
                   >
                     {section.title}
-                    <span style={{ color: FLAME }}>.</span>
+                    <span className="text-flame">.</span>
                   </h2>
                   <div>{section.content}</div>
                 </motion.section>
               ))}
             </div>
 
-            {/* Bottom helper */}
-            <div
-              className="mt-20 pt-8 text-center"
-              style={{ borderTop: '1px solid rgba(26,83,92,0.08)' }}
-            >
-              <p className="text-[14px] mb-3" style={{ color: MUTED }}>
-                Deze uitleg niet wat je zocht?
-              </p>
+            {/* Afsluiter */}
+            <div className="mt-12 md:mt-20 pt-8 border-t border-petrol/10">
+              <p className="text-[15px] text-muted mb-3">Deze uitleg niet wat je zocht?</p>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 text-[15px] font-semibold transition-all group"
-                style={{ color: PETROL }}
+                className="group inline-flex items-center gap-2 text-[15px] font-semibold text-ink"
               >
                 <span className="relative">
                   Stel je vraag direct
-                  <span
-                    className="absolute left-0 -bottom-0.5 h-[2px] w-full origin-left scale-x-100 transition-transform duration-300 group-hover:scale-x-0"
-                    style={{ backgroundColor: PETROL }}
-                  />
+                  <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-ink/30" />
                 </span>
-                <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">→</span>
               </Link>
             </div>
           </article>
 
-          {/* Sticky TOC sidebar (desktop only) */}
+          {/* Sticky inhoudsopgave (alleen desktop) */}
           <aside className="hidden lg:block">
             <div className="sticky top-28">
-              <p
-                className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-4 pb-3"
-                style={{ color: MUTED_SOFT, borderBottom: '1px solid rgba(26,83,92,0.08)' }}
-              >
+              <p className="text-[13px] font-semibold text-ink mb-3 pb-3 border-b border-petrol/10">
                 In dit artikel
               </p>
               <nav className="relative">
-                {/* Active indicator */}
                 <div
                   aria-hidden
-                  className="absolute left-0 top-0 w-[2px] rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  className="absolute left-0 top-1 w-[2px] rounded-full bg-flame transition-all duration-300 ease-out-expo"
                   style={{
-                    backgroundColor: FLAME,
                     height: '28px',
-                    transform: `translateY(${article.sections.findIndex((s) => s.id === activeId) * 36}px)`,
+                    transform: `translateY(${article.sections.findIndex((s) => s.id === activeId) * TOC_ROW_HEIGHT}px)`,
                   }}
                 />
-                <ul className="relative space-y-0">
+                <ul className="relative">
                   {article.sections.map((section) => {
                     const isActive = activeId === section.id
                     return (
-                      <li key={section.id}>
+                      <li key={section.id} style={{ height: `${TOC_ROW_HEIGHT}px` }}>
                         <a
                           href={`#${section.id}`}
                           onClick={(e) => handleTocClick(e, section.id)}
-                          className="block pl-4 py-1.5 text-[13px] transition-colors duration-200"
-                          style={{
-                            color: isActive ? PETROL : MUTED,
-                            fontWeight: isActive ? 600 : 400,
-                          }}
+                          className={`flex items-center h-full pl-4 text-[15px] leading-snug transition-colors duration-200 ${
+                            isActive ? 'text-petrol font-semibold' : 'text-muted hover:text-ink'
+                          }`}
                         >
-                          {section.title}
+                          <span className="truncate">{section.title}</span>
                         </a>
                       </li>
                     )

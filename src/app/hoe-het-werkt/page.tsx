@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
-import ScrollProgress from '@/components/ScrollProgress'
 import Footer from '@/components/Footer'
 import HoeHetWerktContent from '@/components/pages/HoeHetWerktContent'
 
@@ -13,7 +12,6 @@ export const metadata: Metadata = {
 export default function HoeHetWerktPage() {
   return (
     <>
-      <ScrollProgress />
       <Navbar />
       <main id="main-content">
         <HoeHetWerktContent />

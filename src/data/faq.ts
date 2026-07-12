@@ -108,7 +108,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'support',
     q: 'Kan ik overstappen vanuit mijn huidige systeem?',
-    a: 'Ja. We hebben **migratiepaden voor de gangbare pakketten**. Stuur ons een export van je klanten en producten, dan zetten wij het netjes in doen. Laat het weten via **info@signcompany.nl**.',
+    a: 'Ja. We hebben **migratiepaden voor de gangbare pakketten**. Stuur ons een export van je klanten en producten, dan zetten wij het netjes in doen. Laat het weten via **hello@doen.team**.',
   },
   {
     category: 'support',
@@ -140,7 +140,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
 
 export const prijzenFaqs: { q: string; a: string }[] = [
   { q: 'Kan ik het eerst proberen?', a: 'Eerste 30 dagen gratis. Geen creditcard nodig. Geen verplichtingen.' },
-  { q: 'Moet ik extra betalen voor AI of het klantportaal?', a: 'Nee. Alles zit erin. Bij ons geen feature-gates of premium-tiers.' },
+  { q: 'Moet ik extra betalen voor AI of het klantportaal?', a: 'Nee. Alles zit erin. Bij ons geen feature-gates of premium-tiers. De enige uitzondering: Studio-visualisaties draaien op credits. Je krijgt er 10 bij je abonnement en koopt bij wanneer je wilt.' },
   { q: 'Welke koppelingen zitten erbij?', a: 'Mollie, Exact Online, email (IMAP/SMTP) en AI. Alles standaard, geen extra kosten.' },
   { q: 'Kan ik mijn data exporteren?', a: 'Altijd. CSV, PDF, wat je nodig hebt. Jouw data is van jou.' },
   { q: 'Moet ik een contract tekenen?', a: 'Nee. Maandelijks opzegbaar. Je blijft omdat het werkt.' },

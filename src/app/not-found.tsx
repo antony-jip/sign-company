@@ -1,126 +1,56 @@
-'use client'
-
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import MagneticButton from '@/components/MagneticButton'
-import AnimatedLink from '@/components/AnimatedLink'
-import { motion } from 'framer-motion'
 
-const PETROL = '#1A535C'
-const FLAME = '#F15025'
-const MUTED = '#6B6B66'
-
+/* Entree via CSS-keyframes (globals.css: .hero-line / .hero-fade) zodat de
+   eindstand ook zonder JS of in achtergrond-tabs bereikt wordt. */
 export default function NotFound() {
   return (
     <>
       <Navbar />
-      <main
-        id="main-content"
-        className="min-h-[85vh] flex items-center justify-center overflow-hidden relative"
-      >
-        {/* Subtle ambient radial behind */}
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse at center, rgba(241,80,37,0.06) 0%, transparent 55%)',
-          }}
-        />
-
-        <div className="container-site text-center relative z-10 px-6">
-          {/* Eyebrow */}
-          <motion.p
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="font-mono text-[12px] font-bold tracking-[0.24em] uppercase mb-8"
-            style={{ color: FLAME }}
-          >
-            404
-          </motion.p>
-
-          {/* Heading with runaway flame punt */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="font-heading text-[44px] md:text-[72px] font-extrabold tracking-[-2.5px] leading-[0.95] mb-6"
-            style={{ color: PETROL }}
-          >
-            Deze pagina werd
-            <br />
-            niet gedaan
-            <motion.span
-              initial={{ x: 0, rotate: 0, opacity: 1 }}
-              animate={{
-                x: [0, 60, 120, 180],
-                rotate: [0, 220, 440, 680],
-                opacity: [1, 1, 0.6, 0],
-              }}
-              transition={{
-                duration: 3,
-                delay: 1.4,
-                ease: [0.16, 1, 0.3, 1],
-                repeat: Infinity,
-                repeatDelay: 2,
-              }}
-              style={{ display: 'inline-block', color: FLAME }}
+      <main id="main-content" className="bg-bg min-h-[75vh] flex items-center">
+        <div className="container-site py-32">
+          <div className="max-w-3xl">
+            <h1
+              className="font-heading font-bold text-petrol leading-[0.98] mb-6"
+              style={{ fontSize: 'clamp(40px, 5.6vw, 76px)', letterSpacing: '-0.035em', textWrap: 'balance' }}
             >
-              .
-            </motion.span>
-          </motion.h1>
-
-          {/* Body */}
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[16px] md:text-[19px] leading-relaxed max-w-lg mx-auto mb-10"
-            style={{ color: MUTED }}
-          >
-            De pagina die je zocht bestaat niet, of is verplaatst. Geen probleem —
-            we brengen je weer op weg.
-          </motion.p>
-
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
-          >
-            <MagneticButton href="/" variant="primary" size="lg">
-              Terug naar home
-              <span aria-hidden>→</span>
-            </MagneticButton>
-            <MagneticButton href="/features" variant="secondary" size="lg">
-              Bekijk de modules
-            </MagneticButton>
-          </motion.div>
-
-          {/* Secondary wayfinding */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[14px]"
-            style={{ color: MUTED }}
-          >
-            <span className="opacity-60">of ga direct naar</span>
-            <AnimatedLink href="/hoe-het-werkt" accent={FLAME}>
-              Hoe het werkt
-            </AnimatedLink>
-            <AnimatedLink href="/prijzen" accent={FLAME}>
-              Prijzen
-            </AnimatedLink>
-            <AnimatedLink href="/over" accent={FLAME}>
-              Waarom doen.
-            </AnimatedLink>
-            <AnimatedLink href="/contact" accent={FLAME}>
-              Contact
-            </AnimatedLink>
-          </motion.div>
+              <span className="block overflow-hidden pb-[0.08em] -mb-[0.08em]">
+                <span className="hero-line" style={{ animationDelay: '0.05s' }}>
+                  Deze pagina werd
+                </span>
+              </span>
+              <span className="block overflow-hidden pb-[0.08em] -mb-[0.08em]">
+                <span className="hero-line" style={{ animationDelay: '0.15s' }}>
+                  niet gedaan<span className="text-flame">.</span>
+                </span>
+              </span>
+            </h1>
+            <p className="hero-fade text-[16px] md:text-[17px] leading-[1.6] text-muted max-w-xl mb-9" style={{ animationDelay: '0.35s' }}>
+              Foutcode 404 · de pagina bestaat niet of is verplaatst. We brengen
+              je weer op weg.
+            </p>
+            <div className="hero-fade flex flex-wrap items-center gap-5 md:gap-7" style={{ animationDelay: '0.45s' }}>
+              <Link
+                href="/"
+                className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white bg-flame px-7 h-[54px] rounded-[6px] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <span>Terug naar home</span>
+                <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
+              </Link>
+              <Link
+                href="/features"
+                className="group inline-flex items-center gap-2 text-[15px] font-semibold text-ink"
+              >
+                <span className="relative">
+                  Bekijk de modules
+                  <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-ink/30" />
+                </span>
+                <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">→</span>
+              </Link>
+            </div>
+          </div>
         </div>
       </main>
       <Footer />

@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Navbar from '@/components/Navbar'
-import ScrollProgress from '@/components/ScrollProgress'
 import Footer from '@/components/Footer'
-import SectionCTA from '@/components/home/SectionCTA'
+import CTASection from '@/components/home/CTASection'
 import VerticalContent from '@/components/pages/VerticalContent'
 import { verticals, getVerticalBySlug } from '@/data/verticals'
 
@@ -28,11 +27,10 @@ export default function VerticalPage({ params }: { params: { vertical: string } 
 
   return (
     <>
-      <ScrollProgress />
       <Navbar />
       <main id="main-content">
         <VerticalContent vertical={vertical} />
-        <SectionCTA title={vertical.ctaTitle} sub={vertical.ctaSub} />
+        <CTASection />
       </main>
       <Footer />
     </>

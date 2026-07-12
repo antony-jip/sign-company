@@ -10,9 +10,9 @@ const config: Config = {
     extend: {
       fontFamily: {
         heading: ['var(--font-bricolage)', 'system-ui', 'sans-serif'],
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-plex-mono)', 'ui-monospace', 'monospace'],
-        serif: ['var(--font-instrument-serif)', 'Georgia', 'serif'],
+        sans: ['var(--font-hanken)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-spline-mono)', 'ui-monospace', 'monospace'],
+        serif: ['Georgia', 'serif'],
       },
       colors: {
         flame: '#F15025',
@@ -20,10 +20,11 @@ const config: Config = {
           DEFAULT: '#1A535C',
           light: '#2A6F7A',
           dark: '#143F46',
+          deep: '#0D343C',
         },
-        bg: '#F5F4F1',
-        ink: '#1A1A1A',
-        muted: '#6B6B66',
+        bg: '#F4F7F7',
+        ink: '#16262B',
+        muted: '#54666A',
       },
       letterSpacing: {
         tighter: '-0.04em',

@@ -1,451 +1,219 @@
 'use client'
 
-import { motion, useInView, useMotionValue, useTransform, animate, useReducedMotion } from 'framer-motion'
-import { useRef, useEffect, useState } from 'react'
+import { useRef } from 'react'
 import Image from 'next/image'
-import { ArrowRight } from 'lucide-react'
-import SectionReveal from '../SectionReveal'
-import SocialProof from '../home/SocialProof'
+import { motion, useInView, useReducedMotion } from 'framer-motion'
+import CTASection from '@/components/home/CTASection'
 
-const pains = [
-  { nr: '01', before: 'Offertes in Word of een systeem uit 2015', after: 'Calculator met templates. Klant keurt goed via het portaal.' },
-  { nr: '02', before: 'Planning op het whiteboard', after: 'Drag-and-drop. Werkbon zit eraan vast. Weerbericht erbij.' },
-  { nr: '03', before: 'Facturen in Excel', after: 'Eén klik vanuit de offerte. Betaallink. Automatische herinneringen.' },
-  { nr: '04', before: 'Klantcommunicatie via WhatsApp', after: 'Klantportaal. Eén link, alles op één plek.' },
-  { nr: '05', before: 'Geen idee hoeveel uren ergens in zitten', after: 'Uren per project, per monteur. Altijd inzicht.' },
-  { nr: '06', before: 'Offerte verstuurd en dan maar hopen', after: 'Automatische opvolging. Je weet wanneer de klant kijkt.' },
-]
+const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
 
-const oldVsNew = [
-  { old: 'Interface uit 2015', nieuw: 'Ontworpen voor hoe je vandaag werkt' },
-  { old: 'Geen klantportaal', nieuw: 'Portaal met één link, geen inlog' },
-  { old: 'Geen offerte-opvolging', nieuw: 'Automatische opvolging en herinneringen' },
-  { old: 'Geen urenoverzicht per project', nieuw: 'Uren per project, per monteur, altijd inzicht' },
-  { old: 'Geen AI', nieuw: 'AI-assistent die je data kent en meedenkt' },
-  { old: 'Modules bijkopen', nieuw: 'Alles erin. Geen add-ons.' },
-]
+/* Kalme reveal per blok: één fade-up, eenmalig. */
+function Reveal({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-80px' })
+  const reduce = useReducedMotion() ?? false
+  const show = reduce || inView
 
-function AnimatedNumber({ value, suffix = '', inView }: { value: number; suffix?: string; inView: boolean }) {
-  const count = useMotionValue(0)
-  const rounded = useTransform(count, (v) => Math.round(v))
-  const [display, setDisplay] = useState(0)
-
-  useEffect(() => {
-    if (inView) {
-      const controls = animate(count, value, { duration: 1.5, ease: [0.16, 1, 0.3, 1] })
-      const unsub = rounded.on('change', (v) => setDisplay(v))
-      return () => { controls.stop(); unsub() }
-    }
-  }, [inView, value, count, rounded])
-
-  return <>{display}{suffix}</>
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial={reduce ? false : { opacity: 0, y: 20 }}
+      animate={show ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.8, delay, ease: easing }}
+    >
+      {children}
+    </motion.div>
+  )
 }
 
 export default function OverContent() {
-  const reduce = useReducedMotion()
-  const portalRef = useRef(null)
-  const portalInView = useInView(portalRef, { once: true, margin: '-80px' })
-  const compareRef = useRef(null)
-  const compareInView = useInView(compareRef, { once: true, margin: '-80px' })
-  const numbersRef = useRef(null)
-  const numbersInView = useInView(numbersRef, { once: true, margin: '-80px' })
-  const [hoveredPain, setHoveredPain] = useState<number | null>(null)
-
   return (
-    <div className="pt-28 md:pt-36">
-
-      {/* === ACT 1: DE OPENING === */}
-      <section className="pb-32 md:pb-44 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <Image
-            src="/images/hero-waarom-doen.webp"
-            alt=""
-            fill
-            className="object-contain object-right-bottom opacity-[0.18]"
-            priority
-          />
-        </div>
-        <div className="container-site relative">
-          <SectionReveal>
-            <div className="max-w-3xl">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-2 mb-7"
-              >
-                <span className="relative inline-flex items-center justify-center w-2 h-2">
-                  {!reduce && (
-                    <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.4 }} />
-                  )}
-                  <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+    <div>
+      {/* === DE OPENING === */}
+      {/* Entree via CSS-keyframes (globals.css: .hero-line / .hero-fade) */}
+      <section className="bg-bg">
+        <div className="container-site pt-28 md:pt-48 pb-14 md:pb-32">
+          <div className="max-w-3xl">
+            <h1
+              className="font-heading font-bold text-petrol leading-[0.97] mb-5 md:mb-8"
+              style={{ fontSize: 'clamp(36px, 6.4vw, 88px)', letterSpacing: '-0.035em', textWrap: 'balance' }}
+            >
+              <span className="block overflow-hidden pb-[0.08em] -mb-[0.08em]">
+                <span className="hero-line" style={{ animationDelay: '0.05s' }}>
+                  Je werd ondernemer om te maken<span className="text-flame">.</span>
                 </span>
-                <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>
-                  Waarom doen. bestaat
-                </span>
-              </motion.div>
-              <h1
-                className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.92] mb-8"
-                style={{ fontSize: 'clamp(44px, 6vw, 88px)', color: '#1A535C' }}
-              >
-                <span className="block">Je werd ondernemer</span>
-                <span className="block">
-                  om te <span style={{ fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>maken</span>
-                  <span className="text-flame">.</span>
-                </span>
-                <span className="block" style={{ color: '#6B6B66' }}>
+              </span>
+              <span className="block overflow-hidden pb-[0.08em] -mb-[0.08em]">
+                <span className="hero-line text-muted" style={{ animationDelay: '0.15s' }}>
                   Niet om te administreren<span className="text-flame">.</span>
                 </span>
-              </h1>
-              <p className="text-[17px] md:text-[19px] leading-[1.6] max-w-xl" style={{ color: '#3F3F3A' }}>
-                Signing, wrapping, lichtreclame, belettering. Dat is waar je goed in bent. Maar elke dag gaat er uren op aan offertes, planning, facturen en klantcommunicatie. Dat moet anders.
-              </p>
-            </div>
-          </SectionReveal>
-        </div>
-      </section>
-
-      {/* === TUSSENSTATEMENT === */}
-      <section className="py-20 md:py-28" style={{ backgroundColor: '#F3F2ED' }}>
-        <div className="container-site">
-          <SectionReveal>
-            <blockquote className="max-w-3xl mx-auto text-center">
-              <p className="font-heading text-[24px] md:text-[36px] lg:text-[42px] font-bold text-petrol tracking-[-1.5px] leading-[1.1]">
-                &ldquo;We hebben het altijd zo gedaan&rdquo;<br />
-                <span style={{ color: '#6B6B66' }}>is geen reden om het zo te blijven doen</span><span className="text-flame">.</span>
-              </p>
-            </blockquote>
-          </SectionReveal>
-        </div>
-      </section>
-
-      {/* === ACT 2: HET PROBLEEM === */}
-      <section className="py-24 md:py-36 relative">
-        <div className="container-site relative">
-          <SectionReveal>
-            <p className="font-mono text-[12px] font-bold tracking-[0.3em] uppercase text-flame mb-4">
-              Herkenbaar?
+              </span>
+            </h1>
+            <p className="hero-fade text-[17px] md:text-[19px] leading-[1.6] max-w-xl text-ink" style={{ animationDelay: '0.35s' }}>
+              Signing, wrapping, lichtreclame, belettering. Dat is waar je goed in
+              bent. Maar elke dag gaan er uren op aan offertes, planning, facturen
+              en klantcommunicatie. Dat moet anders.
             </p>
-            <h2 className="font-heading text-[28px] md:text-[44px] font-bold text-petrol tracking-[-2px] leading-[0.92] mb-3">
-              Zo werkte je<span className="text-flame">.</span><br />
-              <span style={{ color: '#6B6B66' }}>Zo werk je met doen</span><span className="text-flame">.</span>
-            </h2>
-            <p className="text-[15px] mb-14" style={{ color: '#6B6B66' }}>Hover en herken je eigen werkdag.</p>
-          </SectionReveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {pains.map((p, i) => (
-              <SectionReveal key={i} delay={i * 0.06}>
-                <motion.div
-                  className="relative rounded-2xl p-6 cursor-default overflow-hidden min-h-[140px]"
-                  style={{
-                    backgroundColor: hoveredPain === i ? '#1A535C' : '#F3F2ED',
-                    transition: 'background-color 0.4s ease',
-                  }}
-                  onMouseEnter={() => setHoveredPain(i)}
-                  onMouseLeave={() => setHoveredPain(null)}
-                  whileHover={{ y: -4 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <span className="font-mono text-[11px] font-bold tracking-[0.1em] mb-4 block"
-                    style={{ color: hoveredPain === i ? 'rgba(255,255,255,0.3)' : '#C8C8C0', transition: 'color 0.3s ease' }}>
-                    {p.nr}
-                  </span>
-
-                  <div style={{
-                    opacity: hoveredPain === i ? 0 : 1,
-                    transform: hoveredPain === i ? 'translateY(-8px)' : 'translateY(0)',
-                    transition: 'all 0.3s ease',
-                    position: hoveredPain === i ? 'absolute' : 'relative',
-                    pointerEvents: hoveredPain === i ? 'none' : 'auto',
-                    left: hoveredPain === i ? '1.5rem' : undefined,
-                    right: hoveredPain === i ? '1.5rem' : undefined,
-                  }}>
-                    <p className="text-[15px] leading-[1.6] line-through" style={{ color: '#6B6B66' }}>
-                      {p.before}
-                    </p>
-                  </div>
-
-                  <div style={{
-                    opacity: hoveredPain === i ? 1 : 0,
-                    transform: hoveredPain === i ? 'translateY(0)' : 'translateY(8px)',
-                    transition: 'all 0.3s ease',
-                    position: hoveredPain === i ? 'relative' : 'absolute',
-                    pointerEvents: hoveredPain === i ? 'auto' : 'none',
-                    left: hoveredPain !== i ? '1.5rem' : undefined,
-                    right: hoveredPain !== i ? '1.5rem' : undefined,
-                  }}>
-                    <p className="text-[15px] font-medium leading-[1.6] text-white">
-                      {p.after}
-                    </p>
-                  </div>
-
-                  <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-2xl"
-                    style={{
-                      background: 'linear-gradient(90deg, #F15025, #1A535C)',
-                      opacity: hoveredPain === i ? 1 : 0,
-                      transition: 'opacity 0.3s ease',
-                    }} />
-                </motion.div>
-              </SectionReveal>
-            ))}
           </div>
         </div>
       </section>
 
-      {/* === ORIGIN STORY === */}
-      <section className="py-24 md:py-36" style={{ backgroundColor: '#0F3A42' }}>
-        <div className="container-site">
-          <div className="max-w-3xl mx-auto">
-            <SectionReveal>
-              <p className="font-mono text-[12px] font-bold tracking-[0.3em] uppercase mb-6" style={{ color: '#F15025' }}>
-                Ons verhaal
-              </p>
-              <h2 className="font-heading text-[28px] md:text-[44px] font-bold text-white tracking-[-2px] leading-[0.95] mb-10">
-                Gebouwd vanuit de werkplaats<span className="text-flame">.</span><br />
-                <span className="text-white/30">Niet vanuit een kantoor</span><span className="text-flame">.</span>
+      {/* === HET ORIGIN-VERHAAL === */}
+      <section className="relative overflow-hidden bg-petrol-deep">
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse 80% 85% at 88% 0%, rgba(42,111,122,0.5) 0%, rgba(42,111,122,0) 60%)',
+          }}
+        />
+        <div className="container-site relative py-16 md:py-32">
+          <div className="max-w-3xl">
+            <Reveal>
+              <h2
+                className="font-heading font-bold text-white leading-[1.02] mb-6 md:mb-10"
+                style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
+              >
+                Gebouwd vanuit de werkplaats, niet vanuit een kantoor
+                <span className="text-flame">.</span>
               </h2>
-            </SectionReveal>
-            <SectionReveal delay={0.1}>
-              <p className="text-[17px] md:text-[19px] leading-[1.9] text-white/50 mb-8">
-                doen. is geboren uit frustratie. De frustratie van een signbedrijf dat al sinds 1983 bestaat. Elke dag dezelfde strijd: offertes die kwijtraken, planning die niet klopt, klanten die niet reageren, en software die aanvoelt alsof die in een ander tijdperk is gebouwd.
-              </p>
-            </SectionReveal>
-            <SectionReveal delay={0.15}>
-              <p className="text-[17px] md:text-[19px] leading-[1.9] text-white/50 mb-8">
-                Dus bouwden we ons eigen systeem. Geen consultants die kwamen vertellen hoe het moest. Geen framework dat bedacht is voor elke branche. Maar software die begrijpt hoe jouw dag eruitziet.
-              </p>
-            </SectionReveal>
-            <SectionReveal delay={0.2}>
-              <p className="text-[17px] md:text-[19px] leading-[1.9] text-white/70 font-medium">
-                En nu delen we het met iedereen die hetzelfde voelt.
-              </p>
-            </SectionReveal>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <div className="space-y-5 md:space-y-7 text-[17px] md:text-[19px] leading-[1.7]" style={{ color: 'rgba(226,240,241,0.82)' }}>
+                <p>
+                  doen. is geboren uit frustratie. De frustratie van een signbedrijf
+                  dat al sinds 1983 bestaat. Elke dag dezelfde strijd: offertes die
+                  kwijtraken, planning die niet klopt, klanten die niet reageren, en
+                  software die aanvoelt alsof die in een ander tijdperk is gebouwd.
+                </p>
+                <p>
+                  Dus bouwden we ons eigen systeem. Geen consultants die kwamen
+                  vertellen hoe het moest. Geen framework dat bedacht is voor elke
+                  branche. Maar software die begrijpt hoe jouw dag eruitziet.
+                </p>
+                <p className="font-medium text-white">
+                  En nu delen we het met iedereen die hetzelfde voelt.
+                </p>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>
 
       {/* === BRIEF VAN DE MAKER === */}
-      <SocialProof />
-
-      {/* === ACT 3: DE OPLOSSING — PORTAAL === */}
-      <section ref={portalRef} className="py-24 md:py-36 relative overflow-hidden">
-        <div className="container-site relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={portalInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <span className="font-mono text-[12px] font-bold tracking-[0.3em] uppercase mb-6 block" style={{ color: '#F15025' }}>
-                Klantportaal
-              </span>
-              <h2 className="font-heading text-[32px] md:text-[48px] font-bold text-petrol tracking-[-2.5px] leading-[0.92] mb-8">
-                Je klant doet mee<span className="text-flame">.</span><br />
-                <span style={{ color: '#6B6B66' }}>Zonder gedoe</span><span className="text-flame">.</span>
-              </h2>
-              <p className="text-[16px] md:text-[17px] leading-[1.8] mb-10 max-w-lg" style={{ color: '#6B6B66' }}>
-                Geen WhatsApp-groepen. Geen eindeloze mailthreads. Je klant krijgt een link en ziet alles. Tekeningen goedkeuren, offertes accorderen, reageren op bestanden. Geen inlog nodig.
-              </p>
-              <div className="space-y-4">
-                {[
-                  'Tekeningen goedkeuren met een klik',
-                  'Offertes accorderen zonder te printen',
-                  'Reageert de klant niet? doen. herinnert automatisch',
-                  'Meerdere contactpersonen per klant',
-                ].map((item, i) => (
-                  <motion.div
-                    key={i}
-                    className="flex items-center gap-4"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={portalInView ? { opacity: 1, x: 0 } : {}}
-                    transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
-                  >
-                    <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-[13px] font-bold"
-                      style={{ backgroundColor: 'rgba(241, 80, 37, 0.1)', color: '#F15025' }}>
-                      {i + 1}
-                    </span>
-                    <span className="text-[15px]" style={{ color: '#4A4A46' }}>{item}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={portalInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="relative"
-            >
-              <div className="relative">
+      <section className="bg-white">
+        <div className="container-site py-16 md:py-32">
+          <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-8 lg:gap-20 items-start max-w-6xl mx-auto">
+            {/* Portret */}
+            <Reveal>
+              <div className="relative aspect-[3/4] w-full max-w-md overflow-hidden rounded-[8px]">
                 <Image
-                  src="/images/klantportaal-illustratie.webp"
-                  alt="Klantportaal"
-                  width={800}
-                  height={800}
-                  className="w-full max-w-md mx-auto h-auto"
+                  src="/images/maker/founder.webp"
+                  alt="Antony Bootsma, maker van doen."
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 40vw"
                 />
               </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* === VERGELIJKING === */}
-      <section ref={compareRef} className="py-24 md:py-36" style={{ backgroundColor: '#F3F2ED' }}>
-        <div className="container-site">
-          <SectionReveal>
-            <p className="font-mono text-[12px] font-bold tracking-[0.3em] uppercase text-flame mb-4">
-              Tijd om te switchen
-            </p>
-            <h2 className="font-heading text-[28px] md:text-[44px] font-bold text-petrol tracking-[-2px] leading-[0.92] mb-4">
-              Je huidige software was ooit prima<span className="text-flame">.</span><br />
-              <span style={{ color: '#6B6B66' }}>Ooit</span><span className="text-flame">.</span>
-            </h2>
-            <p className="text-[15px] md:text-[16px] max-w-xl mb-14" style={{ color: '#6B6B66' }}>
-              Dezelfde knoppen, dezelfde beperkingen, al jaren. Software hoort mee te groeien met je bedrijf.
-            </p>
-          </SectionReveal>
-
-          <div className="max-w-3xl">
-            <div className="grid grid-cols-[1fr,auto,1fr] gap-4 md:gap-6 pb-4 mb-2" style={{ borderBottom: '2px solid #1A535C' }}>
-              <p className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase" style={{ color: '#6B6B66' }}>
-                Wat je gewend bent
+              <p className="text-[14px] text-muted mt-4">
+                Antony Bootsma · Sign Company, sinds 1983
               </p>
-              <div />
-              <p className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase" style={{ color: '#1A535C' }}>
-                Wat doen<span className="text-flame">.</span> doet
-              </p>
-            </div>
+            </Reveal>
 
-            {oldVsNew.map((row, i) => (
-              <motion.div
-                key={i}
-                className="grid grid-cols-[1fr,auto,1fr] gap-4 md:gap-6 py-5"
-                style={{ borderBottom: '1px solid #E4E4E0' }}
-                initial={{ opacity: 0, y: 15 }}
-                animate={compareInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
+            {/* De brief */}
+            <Reveal delay={0.15}>
+              <h2
+                className="font-heading font-bold text-petrol leading-[1.02] mb-5 md:mb-8"
+                style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
               >
-                <p className="text-[14px] flex items-center gap-2" style={{ color: '#C0451A' }}>
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px]"
-                    style={{ backgroundColor: 'rgba(192, 69, 26, 0.08)' }}>
-                    &#x2717;
-                  </span>
-                  <span className="line-through opacity-60">{row.old}</span>
-                </p>
-                <span className="text-[18px] self-center" style={{ color: '#DADAD6' }}>&#8594;</span>
-                <p className="text-[14px] font-medium flex items-center gap-2" style={{ color: '#1A535C' }}>
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px]"
-                    style={{ backgroundColor: 'rgba(26, 83, 92, 0.08)' }}>
-                    &#x2713;
-                  </span>
-                  {row.nieuw}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* === WAT JE KRIJGT === */}
-      <section className="py-24 md:py-36 relative overflow-hidden" style={{ backgroundColor: '#1A535C' }}>
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full opacity-[0.08] blur-[120px] pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #F15025 0%, transparent 60%)' }} />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full opacity-[0.06] blur-[100px] pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #fff 0%, transparent 60%)' }} />
-        <div className="container-site relative">
-          <SectionReveal>
-            <p className="font-mono text-[12px] font-bold tracking-[0.3em] uppercase mb-4" style={{ color: '#F15025' }}>
-              Wat je krijgt
-            </p>
-            <h2 className="font-heading text-[28px] md:text-[44px] font-bold text-white tracking-[-2px] leading-[0.92] mb-16">
-              Gebouwd door het vak<span className="text-flame">.</span><br />
-              <span className="text-white/30">Niet door consultants</span><span className="text-flame">.</span>
-            </h2>
-          </SectionReveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl">
-            {[
-              { title: 'Alles erin', text: 'Planning, portaal, AI, werkbonnen, facturatie. Geen modules bijkopen.' },
-              { title: '79 euro per maand', text: 'Ex. btw. Tot 10 gebruikers. Meer? Neem contact op. Geen verrassingen, geen opzetkosten.' },
-              { title: 'Door vakmensen', text: 'Niet door mensen die het vak googlen. Door mensen die in de werkplaats staan.' },
-              { title: 'Geen lock-in', text: 'Jouw data is van jou. Maandelijks opzegbaar. Je blijft omdat het werkt.' },
-            ].map((item, i) => (
-              <SectionReveal key={i} delay={i * 0.08}>
-                <motion.div
-                  className="rounded-2xl p-6 md:p-8 h-full"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.07)', borderLeft: '3px solid rgba(241, 80, 37, 0.4)' }}
-                  whileHover={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h3 className="font-heading text-[20px] font-bold text-white tracking-tight mb-3">
-                    {item.title}<span className="text-flame">.</span>
-                  </h3>
-                  <p className="text-[14px] leading-[1.8] text-white/50">
-                    {item.text}
-                  </p>
-                </motion.div>
-              </SectionReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* === NUMBERS === */}
-      <section ref={numbersRef} className="py-20 md:py-28" style={{ backgroundColor: '#F3F2ED' }}>
-        <div className="container-site">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto text-center">
-            {[
-              { value: 30, suffix: '%', text: 'minder tijd aan administratie' },
-              { value: 0, suffix: '', text: 'kwijtgeraakte offertes' },
-              { value: 1, suffix: '', text: 'systeem voor alles' },
-            ].map((r, i) => (
-              <SectionReveal key={i} delay={i * 0.12}>
-                <div className="py-6">
-                  <p className="font-heading text-[52px] md:text-[68px] font-bold tracking-[-3px] leading-none" style={{ color: '#1A535C' }}>
-                    <AnimatedNumber value={r.value} suffix={r.suffix} inView={numbersInView} />
-                  </p>
-                  <div className="w-8 h-[3px] mx-auto my-4 rounded-full" style={{ background: 'linear-gradient(90deg, #F15025, #1A535C)' }} />
-                  <p className="text-[14px]" style={{ color: '#6B6B66' }}>
-                    {r.text}
-                  </p>
-                </div>
-              </SectionReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* === ACT 4: DE AFSLUITING === */}
-      <section className="py-24 md:py-36">
-        <div className="container-site">
-          <div className="max-w-2xl mx-auto text-center">
-            <SectionReveal>
-              <p className="font-mono text-[12px] font-bold tracking-[0.3em] uppercase text-flame mb-6">
-                Nu beschikbaar
-              </p>
-              <h2 className="font-heading text-[28px] md:text-[44px] font-bold text-petrol tracking-[-2px] leading-[1] mb-6">
-                Stop met rommelen<span className="text-flame">.</span><br />
-                Begin met doen<span className="text-flame">.</span>
+                <span className="block">Familiebedrijf<span className="text-flame">.</span></span>
+                <span className="block text-muted">Ruim 40 jaar vak<span className="text-flame">.</span></span>
+                <span className="block">Eén maker<span className="text-flame">.</span></span>
               </h2>
-              <p className="text-[16px] mb-10 max-w-md mx-auto" style={{ color: '#6B6B66' }}>
-                Eerste 30 dagen gratis. Geen creditcard. Maandelijks opzegbaar.
-              </p>
-              <div className="flex justify-center">
+
+              <div className="space-y-5 text-[16px] md:text-[17px] leading-[1.65] max-w-xl text-ink">
+                <p>
+                  Ik ben <strong>Antony Bootsma</strong>. Wij zijn een
+                  familiebedrijf. Sign Company bestaat sinds 1983. Mijn vader heeft
+                  het opgebouwd, doet de montage nog steeds. Ik neem het over.
+                </p>
+                <p>
+                  En ik had geen zin om nog jaren te werken met software die niet
+                  past bij hoe wij werken. Op een vrijdagmiddag telde ik vijf open
+                  tabbladen, drie WhatsApp-gesprekken en een post-it die ik niet
+                  meer kon lezen. Mijn vader belde voor de werkbon. Een klant
+                  wachtte op een bevestiging. En ik stond nog midden in een offerte.
+                </p>
+              </div>
+
+              <blockquote
+                className="font-heading font-bold text-petrol my-7 md:my-10 max-w-xl leading-[1.15]"
+                style={{ fontSize: 'clamp(22px, 2.6vw, 30px)', letterSpacing: '-0.02em', textWrap: 'balance' }}
+              >
+                Niet omdat ik het niet kon<span className="text-flame">.</span> Maar
+                omdat het systeem het me niet makkelijk maakte
+                <span className="text-flame">.</span>
+              </blockquote>
+
+              <div className="space-y-5 text-[16px] md:text-[17px] leading-[1.65] max-w-xl text-ink">
+                <p>
+                  Ik zocht software die paste bij ruim 40 jaar vakmanschap en de
+                  manier waarop wij werken. Die er niet was. Dus heb ik het zelf
+                  gebouwd, in de avonden, tussen de werkdagen door. Niet vanuit een
+                  glazen kantoor, maar vanuit dezelfde werkplaats waar mijn vader
+                  elke ochtend binnenloopt.
+                </p>
+                <p>
+                  Een van de dingen waar ik het meest trots op ben is het
+                  klantportaal. Geen mailtjes heen en weer. Je klant krijgt één
+                  link, ziet de tekeningen, keurt de offerte goed. Dat scheelt ons
+                  elke week uren.
+                </p>
+                <p>
+                  En AI? Ik vind het geen toverwoord, ik vind het een werkwoord.
+                  Onze assistent Daan schrijft offerteteksten, vat mails samen,
+                  rekent vierkante meters uit. Niet omdat het indrukwekkend klinkt,
+                  maar omdat het gewoon werkt.
+                </p>
+                <p>
+                  Ik noemde het <strong>doen.</strong> Omdat dat is wat wij doen.
+                  Andere signmakers herkenden hetzelfde: de losse eindjes, de
+                  administratie die het echte werk in de weg zit. Ik wilde dit niet
+                  voor mezelf houden. doen. is gebouwd voor ons vak. Ik deel het
+                  graag met iedereen die er beter van wordt.
+                </p>
+                <p className="font-heading font-bold text-petrol text-[19px] md:text-[21px]">
+                  Voor het vak<span className="text-flame">.</span> Door het vak
+                  <span className="text-flame">.</span> Gewoon doen
+                  <span className="text-flame">.</span>
+                </p>
+              </div>
+
+              <div className="flex items-end justify-between mt-10 pt-7 max-w-xl border-t border-petrol/10">
+                <p className="text-[14px] font-semibold text-ink">
+                  Antony Bootsma
+                  <span className="block text-[13px] font-normal text-muted mt-0.5">maker van doen.</span>
+                </p>
                 <a
-                  href="https://app.doen.team/register"
-                  className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
-                  style={{ backgroundColor: '#F15025', boxShadow: '0 8px 24px rgba(241,80,37,0.25)' }}
+                  href="mailto:hello@doen.team"
+                  className="group inline-flex items-center gap-2 text-[15px] font-semibold text-ink"
                 >
-                  <span>Start gratis</span>
-                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
+                  <span className="relative">
+                    Schrijf me
+                    <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-ink/30" />
+                  </span>
+                  <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">→</span>
                 </a>
               </div>
-            </SectionReveal>
+            </Reveal>
           </div>
         </div>
       </section>
+
+      {/* === AFSLUITING === */}
+      <CTASection />
     </div>
   )
 }

@@ -38,25 +38,25 @@ export const pains: Pain[] = [
   {
     icon: MessageCircle,
     title: 'Geen klantportaal',
-    body: 'Tekening als bijlage, offerte in een aparte mail, factuur in de derde. Je klant moet zelf bijhouden wat er waar staat.',
+    body: 'Tekening als bijlage, offerte in een aparte mail, factuur in de derde. Je klant moet zelf bijhouden waar wat staat.',
     cost: 'Klanten die afhaken zonder te bellen',
   },
   {
     icon: Mail,
     title: 'Mail draait los van alles',
-    body: 'Outlook apart. Klantgesprekken in threads die je team niet ziet. Wat is er gisteren beloofd? Dat zit in de inbox van één persoon.',
+    body: 'Klantgesprekken zitten in de inbox van één persoon. Wat er gisteren is beloofd, ziet de rest van het team niet.',
     cost: 'Context kwijt, dubbele antwoorden',
   },
   {
     icon: FileText,
     title: 'Offerte verstuurd, en dan?',
-    body: 'Geen opvolging. Geen weten of ze is gelezen. Je wacht, je belt, je mailt een herinnering. Je klant is intussen verder gegaan.',
+    body: 'Verstuurd, en dan stilte. Je weet niet of ze gelezen is, dus je wacht en belt. Je klant is intussen verder.',
     cost: 'Deals die je nooit hebt zien afkoelen',
   },
   {
     icon: ClipboardList,
     title: 'Geen log per project',
-    body: 'Wat is er in dit project gebeurd? Wie reageerde waarop, wanneer? Je scrolt door drie mail-threads en hoopt dat je niks mist.',
+    body: 'Wie reageerde waarop, en wanneer? Je scrolt door drie mailthreads en hoopt dat je niks mist.',
     cost: 'Gaten in je geheugen worden gaten in je service',
   },
 ]

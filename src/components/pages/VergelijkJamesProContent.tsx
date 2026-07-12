@@ -1,17 +1,15 @@
-import Link from 'next/link'
-import { ArrowRight, Check } from 'lucide-react'
-import SectionReveal from '../SectionReveal'
-import SerifItalic from '../SerifItalic'
-import { PRICE_PER_MONTH } from '@/data/pricing'
+'use client'
 
-const PETROL = '#1A535C'
-const FLAME = '#F15025'
-const MUTED = '#6B6B66'
+import { useRef } from 'react'
+import Link from 'next/link'
+import { motion, useInView, useReducedMotion } from 'framer-motion'
+import { Check } from 'lucide-react'
+import { PRICE_PER_MONTH } from '@/data/pricing'
 
 // Tarieven James PRO volgens jamespro.nl/tarieven, geraadpleegd juli 2026:
 // €113 p/mnd per gebruiker; opzetkosten €495 (Basic), €749 (Business),
 // €2.490 (Enterprise); 14 dagen proefperiode. Alleen geverifieerde feiten
-// vergelijken — geen aannames over features van James PRO.
+// vergelijken, geen aannames over features van James PRO.
 const JAMES_PER_USER = 113
 const JAMES_SETUP_BASIC = 495
 const VOORBEELD_GEBRUIKERS = 5
@@ -19,13 +17,13 @@ const VOORBEELD_GEBRUIKERS = 5
 const vergelijking = [
   {
     label: 'Prijsmodel',
-    james: `€ ${JAMES_PER_USER} per maand, per gebruiker`,
-    doen: `€ ${PRICE_PER_MONTH} per maand, flat — tot 10 gebruikers`,
+    james: `€${JAMES_PER_USER} per maand, per gebruiker`,
+    doen: `€${PRICE_PER_MONTH} per maand, ex btw, voor je hele team tot 10 gebruikers`,
   },
   {
     label: 'Opzetkosten',
-    james: '€ 495 tot € 2.490 eenmalig, afhankelijk van pakket',
-    doen: '€ 0',
+    james: '€495 tot €2.490 eenmalig, afhankelijk van pakket',
+    doen: '€0',
   },
   {
     label: 'Proefperiode',
@@ -45,13 +43,15 @@ const vergelijking = [
 ]
 
 const inbegrepen = [
-  'Alle 10 modules — projecten, offertes, planning, werkbonnen, facturen',
-  'Klantportaal — één link, geen inlog voor je klant',
-  'Daan AI — vat mails samen, leest inkoopfacturen uit',
+  'Alle tien modules: projecten, offertes, planning, werkbonnen, facturen',
+  'Klantportaal met één link, geen inlog voor je klant',
+  'AI-assistent Daan: vat mails samen, leest inkoopfacturen uit',
   'Eigen mailbox per gebruiker (IMAP/SMTP)',
   'Mollie-betaallinks en koppeling met Exact Online',
   'Nederlandse support en een live onboarding-sessie',
 ]
+
+const EASE = [0.16, 1, 0.3, 1] as const
 
 export default function VergelijkJamesProContent() {
   const jamesMaand = VOORBEELD_GEBRUIKERS * JAMES_PER_USER
@@ -60,196 +60,186 @@ export default function VergelijkJamesProContent() {
   const besparing = jamesJaar1 - doenJaar1
 
   return (
-    <div className="pt-28 md:pt-36" style={{ backgroundColor: '#F3F2ED' }}>
-      {/* Kop */}
-      <section className="pb-16 md:pb-24">
-        <div className="container-site">
-          <SectionReveal>
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 mb-7">
-                <span className="relative inline-flex items-center justify-center w-2 h-2">
-                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
-                  <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
-                </span>
-                <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
-                  Vergelijking
-                </span>
-              </div>
-
-              <h1
-                className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.98] mb-7"
-                style={{ fontSize: 'clamp(38px, 5.2vw, 72px)', color: PETROL }}
-              >
-                <span className="block">
-                  doen<span style={{ color: FLAME }}>.</span> of James PRO<span style={{ color: FLAME }}>?</span>
-                </span>
-                <span className="block" style={{ color: MUTED }}>
-                  <SerifItalic>Vergelijk</SerifItalic> zelf
-                  <span style={{ color: FLAME }}>.</span>
-                </span>
-              </h1>
-
-              <p className="text-[16px] md:text-[19px] leading-[1.6] max-w-2xl" style={{ color: '#3F3F3A' }}>
-                James PRO is een gevestigde naam in de signbranche, en niet voor niets.
-                Wij bouwden doen. omdat wij het anders wilden: één vaste prijs voor je
-                hele team, geen opzetkosten, en AI die meewerkt. Hieronder de feiten
-                naast elkaar — beslis zelf wat bij je bedrijf past.
-              </p>
-            </div>
-          </SectionReveal>
-        </div>
-      </section>
-
-      {/* Vergelijkingstabel */}
-      <section className="pb-20 md:pb-28">
-        <div className="container-site">
-          <SectionReveal>
-            <div
-              className="max-w-4xl rounded-2xl overflow-hidden"
-              style={{ backgroundColor: '#FFFFFF', border: '1px solid rgba(26,83,92,0.10)', boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 24px 56px -30px rgba(19,62,69,0.2)' }}
+    <div className="bg-bg">
+      {/* Kop + vergelijkingstabel.
+          Entree via CSS-keyframes (globals.css: .hero-line / .hero-fade). */}
+      <section className="bg-bg">
+        <div className="container-site pt-28 md:pt-44 pb-14 md:pb-32">
+          <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5 mb-8 md:mb-16">
+            <h1
+              className="font-heading font-bold text-petrol leading-[0.97]"
+              style={{ fontSize: 'clamp(34px, 5.2vw, 72px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
             >
-              <div className="overflow-x-auto">
-                <table className="w-full text-left" style={{ minWidth: 560 }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(26,83,92,0.10)' }}>
-                      <th className="px-5 md:px-7 py-5 font-mono text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: MUTED }}></th>
-                      <th className="px-5 md:px-7 py-5 font-mono text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: MUTED }}>
-                        James PRO
-                      </th>
-                      <th className="px-5 md:px-7 py-5 font-mono text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: PETROL, backgroundColor: '#F5F4F1' }}>
-                        doen.
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {vergelijking.map((row) => (
-                      <tr key={row.label} style={{ borderBottom: '1px solid rgba(26,83,92,0.06)' }}>
-                        <td className="px-5 md:px-7 py-5 text-[13px] md:text-[14px] font-semibold align-top" style={{ color: PETROL }}>
-                          {row.label}
-                        </td>
-                        <td className="px-5 md:px-7 py-5 text-[13px] md:text-[14px] align-top" style={{ color: MUTED }}>
-                          {row.james}
-                        </td>
-                        <td className="px-5 md:px-7 py-5 text-[13px] md:text-[14px] align-top font-medium" style={{ color: '#1A1A1A', backgroundColor: '#F5F4F1' }}>
-                          {row.doen}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="px-5 md:px-7 py-4 text-[12px]" style={{ color: MUTED, borderTop: '1px solid rgba(26,83,92,0.06)' }}>
-                Tarieven James PRO volgens{' '}
-                <a href="https://www.jamespro.nl/tarieven" rel="nofollow noopener" target="_blank" className="underline">
-                  jamespro.nl/tarieven
-                </a>
-                , geraadpleegd juli 2026. Prijzen kunnen wijzigen — klopt er iets niet meer? Mail ons, dan passen we het aan.
-              </p>
-            </div>
-          </SectionReveal>
+              <span className="block overflow-hidden pb-[0.08em] -mb-[0.08em]">
+                <span className="hero-line" style={{ animationDelay: '0.05s' }}>
+                  doen<span className="text-flame">.</span> of James PRO<span className="text-flame">?</span>
+                </span>
+              </span>
+            </h1>
+            <p className="hero-fade hidden md:block text-[15px] md:text-[16px] text-muted max-w-md leading-[1.55]" style={{ animationDelay: '0.25s' }}>
+              James PRO is een gevestigde naam in de signbranche. Wij bouwden doen. met
+              één vaste prijs voor je hele team, zonder opzetkosten. Hieronder de feiten
+              naast elkaar, beslis zelf wat bij je bedrijf past.
+            </p>
+          </div>
+
+          <VergelijkTabel />
         </div>
       </section>
 
       {/* Rekenvoorbeeld */}
-      <section className="py-20 md:py-28" style={{ backgroundColor: '#F5F4F1' }}>
-        <div className="container-site">
-          <SectionReveal>
+      <section className="bg-white">
+        <div className="container-site py-16 md:py-32">
+          <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 mb-8 md:mb-16">
             <h2
-              className="font-heading font-bold tracking-[-1px] md:tracking-[-2px] leading-[1.0] mb-10 md:mb-14 max-w-2xl"
-              style={{ fontSize: 'clamp(28px, 4vw, 48px)', color: PETROL }}
+              className="font-heading font-bold text-petrol leading-[1.0]"
+              style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em' }}
             >
-              Reken het na<span style={{ color: FLAME }}>.</span>{' '}
-              <span style={{ color: MUTED }}>Met {VOORBEELD_GEBRUIKERS} gebruikers</span>
-              <span style={{ color: FLAME }}>.</span>
+              Reken het na<span className="text-flame">.</span>
             </h2>
-          </SectionReveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 max-w-4xl">
-            <SectionReveal>
-              <div className="p-7 md:p-9 rounded-2xl h-full" style={{ backgroundColor: '#FFFFFF', border: '1px solid rgba(26,83,92,0.10)' }}>
-                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] mb-4" style={{ color: MUTED }}>
-                  James PRO · jaar 1
-                </p>
-                <p className="font-heading text-[34px] md:text-[42px] font-bold tracking-tight mb-3" style={{ color: MUTED }}>
-                  € {jamesJaar1.toLocaleString('nl-NL')}
-                </p>
-                <p className="text-[13px] md:text-[14px] leading-relaxed" style={{ color: MUTED }}>
-                  {VOORBEELD_GEBRUIKERS} × € {JAMES_PER_USER} per maand × 12, plus € {JAMES_SETUP_BASIC} eenmalige opzetkosten (Basic-pakket).
-                </p>
-              </div>
-            </SectionReveal>
-            <SectionReveal delay={0.08}>
-              <div className="p-7 md:p-9 rounded-2xl h-full" style={{ backgroundColor: '#0F3A42', boxShadow: '0 24px 56px -30px rgba(19,62,69,0.4)' }}>
-                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  doen. · jaar 1
-                </p>
-                <p className="font-heading text-[34px] md:text-[42px] font-bold tracking-tight mb-3 text-white">
-                  € {doenJaar1.toLocaleString('nl-NL')}
-                </p>
-                <p className="text-[13px] md:text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  € {PRICE_PER_MONTH} flat per maand × 12, voor je hele team tot 10 gebruikers. Geen opzetkosten.
-                </p>
-                <p className="mt-5 pt-5 text-[14px] md:text-[15px] font-semibold text-white" style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>
-                  Verschil: € {besparing.toLocaleString('nl-NL')} in jaar één<span style={{ color: FLAME }}>.</span>
-                </p>
-              </div>
-            </SectionReveal>
+            <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
+              Eén rekenvoorbeeld: een team van {VOORBEELD_GEBRUIKERS} gebruikers, het
+              eerste jaar, instaptarieven.
+            </p>
           </div>
+
+          <RekenKaarten jamesJaar1={jamesJaar1} doenJaar1={doenJaar1} besparing={besparing} />
         </div>
       </section>
 
-      {/* Wat bij doen. inbegrepen zit */}
-      <section className="py-20 md:py-28">
-        <div className="container-site">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 max-w-5xl items-start">
-            <SectionReveal>
+      {/* Wat er bij doen. altijd in zit */}
+      <section className="bg-bg">
+        <div className="container-site py-16 md:py-32">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-start">
+            <div>
               <h2
-                className="font-heading font-bold tracking-[-1px] md:tracking-[-2px] leading-[1.0] mb-6"
-                style={{ fontSize: 'clamp(28px, 4vw, 48px)', color: PETROL }}
+                className="font-heading font-bold text-petrol leading-[1.05] mb-5"
+                style={{ fontSize: 'clamp(30px, 4vw, 48px)', letterSpacing: '-0.03em' }}
               >
-                Wat er bij doen<span style={{ color: FLAME }}>.</span>{' '}
-                <span style={{ color: MUTED }}>altijd in zit</span>
-                <span style={{ color: FLAME }}>.</span>
+                Wat er altijd in zit<span className="text-flame">.</span>
               </h2>
-              <p className="text-[15px] md:text-[17px] leading-[1.6] mb-8" style={{ color: '#3F3F3A' }}>
-                Geen pakketten, geen add-ons, geen prijs per gebruiker. Wat je ziet is
-                wat je krijgt — en het beste oordeel vel je zelf, in je eigen omgeving,
-                met je eigen offertes.
+              <p className="text-[15px] md:text-[16px] text-muted leading-[1.6] mb-5 md:mb-8 max-w-md">
+                Geen pakketten, geen add-ons, geen prijs per gebruiker. Het beste oordeel
+                vel je zelf, in je eigen omgeving, met je eigen offertes.
               </p>
-              <Link
-                href="/prijzen"
-                className="inline-flex items-center gap-2 text-[15px] font-semibold transition-all group"
-                style={{ color: PETROL }}
-              >
+              <Link href="/prijzen" className="group inline-flex items-center gap-2 text-[15px] font-semibold text-petrol">
                 <span className="relative">
-                  Bekijk de volledige prijsopbouw
-                  <span
-                    className="absolute left-0 -bottom-0.5 h-[2px] w-full origin-left scale-x-100 transition-transform duration-300 group-hover:scale-x-0"
-                    style={{ backgroundColor: PETROL }}
-                  />
+                  Bekijk de prijs
+                  <span className="absolute left-0 -bottom-1 h-px w-full origin-left bg-petrol/40 transition-transform duration-300 group-hover:scale-x-0" />
                 </span>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" style={{ color: FLAME }} />
+                <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">→</span>
               </Link>
-            </SectionReveal>
-            <SectionReveal delay={0.1}>
-              <ul className="space-y-4">
-                {inbegrepen.map((item) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                      style={{ backgroundColor: '#FEE8E2' }}
-                    >
-                      <Check className="w-3.5 h-3.5" style={{ color: FLAME }} strokeWidth={2.5} />
-                    </span>
-                    <span className="text-[14px] md:text-[15px] leading-relaxed" style={{ color: '#3F3F3A' }}>
-                      {item}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </SectionReveal>
+            </div>
+
+            <ul className="border-t border-petrol/10">
+              {inbegrepen.map((item) => (
+                <li key={item} className="flex items-start gap-3 py-4 border-b border-petrol/10">
+                  <Check className="w-4 h-4 mt-1 shrink-0 text-flame" strokeWidth={3} />
+                  <span className="text-[15px] text-ink leading-[1.55]">{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
+    </div>
+  )
+}
+
+/* Boven de vouw, dus geen framer-mount-animatie: .hero-fade uit globals.css. */
+function VergelijkTabel() {
+  return (
+    <div
+      className="hero-fade max-w-4xl rounded-[12px] overflow-hidden bg-white border border-petrol/15"
+      style={{ animationDelay: '0.4s' }}
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full text-left" style={{ minWidth: 560 }}>
+          <thead>
+            <tr className="border-b border-petrol/10">
+              <th className="px-5 md:px-7 py-5" />
+              <th className="px-5 md:px-7 py-5 text-[13px] font-semibold text-muted">James PRO</th>
+              <th className="px-5 md:px-7 py-5 text-[13px] font-semibold text-petrol bg-bg">
+                doen<span className="text-flame">.</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {vergelijking.map((row) => (
+              <tr key={row.label} className="border-b border-petrol/10 last:border-b-0">
+                <td className="px-5 md:px-7 py-5 text-[13px] md:text-[14px] font-semibold text-petrol align-top">
+                  {row.label}
+                </td>
+                <td className="px-5 md:px-7 py-5 text-[13px] md:text-[14px] text-muted align-top">{row.james}</td>
+                <td className="px-5 md:px-7 py-5 text-[13px] md:text-[14px] font-medium text-ink align-top bg-bg">
+                  {row.doen}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="px-5 md:px-7 py-4 text-[13px] text-muted border-t border-petrol/10">
+        Tarieven James PRO volgens{' '}
+        <a href="https://www.jamespro.nl/tarieven" rel="nofollow noopener" target="_blank" className="underline">
+          jamespro.nl/tarieven
+        </a>
+        , geraadpleegd juli 2026. Prijzen kunnen wijzigen. Klopt er iets niet meer? Mail ons, dan passen we het aan.
+      </p>
+    </div>
+  )
+}
+
+function RekenKaarten({ jamesJaar1, doenJaar1, besparing }: { jamesJaar1: number; doenJaar1: number; besparing: number }) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-60px' })
+  const reduce = useReducedMotion() ?? false
+  const show = reduce || inView
+
+  return (
+    <div ref={ref} className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 max-w-4xl">
+      <motion.div
+        initial={reduce ? false : { opacity: 0, y: 24 }}
+        animate={show ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.7, ease: EASE }}
+        className="p-7 md:p-9 rounded-[12px] h-full bg-bg border border-petrol/10"
+      >
+        <p className="text-[13px] font-semibold text-muted mb-4">James PRO · jaar 1</p>
+        <p
+          className="font-heading font-bold text-muted leading-none tabular-nums mb-3"
+          style={{ fontSize: 'clamp(34px, 4vw, 44px)', letterSpacing: '-0.03em' }}
+        >
+          €{jamesJaar1.toLocaleString('nl-NL')}
+        </p>
+        <p className="text-[14px] text-muted leading-[1.6]">
+          {VOORBEELD_GEBRUIKERS} gebruikers × €{JAMES_PER_USER} per maand × 12, plus €{JAMES_SETUP_BASIC} eenmalige
+          opzetkosten (Basic-pakket).
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={reduce ? false : { opacity: 0, y: 24 }}
+        animate={show ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.7, delay: reduce ? 0 : 0.1, ease: EASE }}
+        className="p-7 md:p-9 rounded-[12px] h-full bg-petrol-deep"
+      >
+        <p className="text-[13px] font-semibold mb-4" style={{ color: 'rgba(226,240,241,0.55)' }}>
+          doen. · jaar 1
+        </p>
+        <p
+          className="font-heading font-bold text-white leading-none tabular-nums mb-3"
+          style={{ fontSize: 'clamp(34px, 4vw, 44px)', letterSpacing: '-0.03em' }}
+        >
+          €{doenJaar1.toLocaleString('nl-NL')}
+        </p>
+        <p className="text-[14px] leading-[1.6]" style={{ color: 'rgba(226,240,241,0.82)' }}>
+          €{PRICE_PER_MONTH} per maand, ex btw, × 12, voor je hele team tot 10 gebruikers. Geen opzetkosten.
+        </p>
+        <p className="mt-5 pt-5 border-t border-white/10 text-[15px] font-semibold text-white">
+          Verschil: <span className="text-flame tabular-nums">€{besparing.toLocaleString('nl-NL')}</span> in jaar
+          één<span className="text-flame">.</span>
+        </p>
+      </motion.div>
     </div>
   )
 }

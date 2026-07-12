@@ -51,30 +51,27 @@ export const CATEGORY_ORDER: Category[] = [
 
 /* Helpers for content authoring */
 const P = ({ children }: { children: ReactNode }) => (
-  <p className="mb-5 leading-[1.75] text-[16px]" style={{ color: '#3A3A35' }}>{children}</p>
+  <p className="mb-5 leading-[1.75] text-[16px] text-ink">{children}</p>
 )
 const B = ({ children }: { children: ReactNode }) => (
-  <strong style={{ color: '#1A535C', fontWeight: 700 }}>{children}</strong>
+  <strong className="font-bold text-petrol">{children}</strong>
 )
 const UL = ({ children }: { children: ReactNode }) => (
   <ul className="mb-5 space-y-2 pl-0">{children}</ul>
 )
 const LI = ({ children }: { children: ReactNode }) => (
-  <li className="flex gap-3 text-[16px] leading-[1.7]" style={{ color: '#3A3A35' }}>
-    <span aria-hidden className="mt-[10px] flex-shrink-0 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+  <li className="flex gap-3 text-[16px] leading-[1.7] text-ink">
+    <span aria-hidden className="mt-[10px] flex-shrink-0 w-1.5 h-1.5 rounded-full bg-flame" />
     <span>{children}</span>
   </li>
 )
+/* Callout als hairline-blok: geen kaart, geen zijstreep. */
 const Callout = ({ children, tone = 'info' }: { children: ReactNode; tone?: 'info' | 'warning' }) => (
-  <div
-    className="rounded-xl p-5 mb-6 flex gap-3"
-    style={{
-      backgroundColor: tone === 'info' ? 'rgba(26,83,92,0.05)' : 'rgba(241,80,37,0.06)',
-      border: `1px solid ${tone === 'info' ? 'rgba(26,83,92,0.12)' : 'rgba(241,80,37,0.18)'}`,
-    }}
-  >
-    <span className="flex-shrink-0 text-[18px]">{tone === 'info' ? '💡' : '⚠️'}</span>
-    <div className="text-[14px] leading-[1.65]" style={{ color: '#3A3A35' }}>{children}</div>
+  <div className="border-y border-petrol/10 py-4 mb-6">
+    <p className={`text-[13px] font-semibold mb-1.5 ${tone === 'info' ? 'text-petrol' : 'text-flame'}`}>
+      {tone === 'info' ? 'Goed om te weten' : 'Let op'}
+    </p>
+    <div className="text-[14px] leading-[1.65] text-ink">{children}</div>
   </div>
 )
 
@@ -85,7 +82,7 @@ export const articles: Article[] = [
     slug: 'aan-de-slag',
     title: 'Aan de slag met doen.',
     category: 'Aan de slag',
-    excerpt: 'De eerste stappen. Van inloggen tot je eerste offerte verstuurd — in één middag klaar.',
+    excerpt: 'De eerste stappen. Van inloggen tot je eerste offerte verstuurd, in één middag klaar.',
     updatedAt: '2026-04-23',
     readingTime: 4,
     sections: [
@@ -111,7 +108,7 @@ export const articles: Article[] = [
           <>
             <P>
               Na je inschrijving krijg je een welkomstmail. Klik op de link en maak je wachtwoord. Activeer
-              direct <B>twee-factor-authenticatie</B> in je profiel-instellingen — sterk aangeraden voor admin-accounts.
+              direct <B>twee-factor-authenticatie</B> in je profiel-instellingen. Sterk aangeraden voor admin-accounts.
             </P>
             <P>
               Daarna vul je je <B>bedrijfsgegevens</B> in: naam, adres, KvK-nummer, btw-nummer, logo. Die gegevens
@@ -129,9 +126,9 @@ export const articles: Article[] = [
               Ga naar <B>Instellingen → Gebruikers</B> en nodig je team uit. Per gebruiker kies je een <B>rol</B>:
             </P>
             <UL>
-              <LI><B>Admin</B> — volledige toegang, ziet marges en financieel</LI>
-              <LI><B>Werkvoorbereider</B> — offertes, planning, werkbonnen; geen financiële details</LI>
-              <LI><B>Monteur</B> — alleen eigen werkbonnen en planning</LI>
+              <LI><B>Admin</B>: volledige toegang, ziet marges en financieel</LI>
+              <LI><B>Werkvoorbereider</B>: offertes, planning, werkbonnen; geen financiële details</LI>
+              <LI><B>Monteur</B>: alleen eigen werkbonnen en planning</LI>
             </UL>
             <P>Je team krijgt een uitnodiging per mail. Zodra ze hun account activeren, staan ze erin.</P>
           </>
@@ -144,7 +141,7 @@ export const articles: Article[] = [
           <>
             <P>
               Ga naar <B>Offertes → Nieuwe offerte</B>. Kies een klant (of maak er een aan via de KvK-lookup).
-              Voeg producten toe uit je catalogus, of bouw een nieuw product op met inkoop + marge — doen. rekent
+              Voeg producten toe uit je catalogus, of bouw een nieuw product op met inkoop + marge. doen. rekent
               de verkoopprijs automatisch uit.
             </P>
             <Callout>
@@ -190,7 +187,7 @@ export const articles: Article[] = [
               bestaande klant start, of een nieuwe klant aanmaakt.
             </P>
             <P>
-              Voor nieuwe klanten: gebruik de <B>KvK-lookup</B> — typ het KvK-nummer en adresgegevens worden
+              Voor nieuwe klanten: gebruik de <B>KvK-lookup</B>: typ het KvK-nummer en adresgegevens worden
               automatisch ingevuld. Scheelt veel typen.
             </P>
           </>
@@ -203,9 +200,9 @@ export const articles: Article[] = [
           <>
             <P>
               Klik op <B>Product toevoegen</B>. Kies uit je catalogus, of maak ter plekke een nieuw product aan.
-              Per regel kun je aantal, eenheid, inkoopprijs en marge invullen — de verkoopprijs rolt er automatisch uit.
+              Per regel kun je aantal, eenheid, inkoopprijs en marge invullen, de verkoopprijs rolt er automatisch uit.
             </P>
-            <P>Combineer losse onderdelen door ze in een <B>groep</B> te zetten — dan toont de klant één totaalprijs maar zie jij de opbouw.</P>
+            <P>Combineer losse onderdelen door ze in een <B>groep</B> te zetten, dan toont de klant één totaalprijs maar zie jij de opbouw.</P>
           </>
         ),
       },
@@ -216,9 +213,9 @@ export const articles: Article[] = [
           <>
             <P>
               Sleep je werktekening (PDF of afbeelding) naar het upload-veld. doen. probeert de omschrijving
-              automatisch te lezen en voor te stellen — je kunt altijd aanpassen.
+              automatisch te lezen en voor te stellen. Je kunt altijd aanpassen.
             </P>
-            <P>Meerdere tekeningen nodig? Upload ze allemaal — ze blijven per offerte gegroepeerd.</P>
+            <P>Meerdere tekeningen nodig? Upload ze allemaal, ze blijven per offerte gegroepeerd.</P>
           </>
         ),
       },
@@ -231,8 +228,8 @@ export const articles: Article[] = [
               Klaar? Twee opties:
             </P>
             <UL>
-              <LI><B>Verstuur via portaal</B> — klant krijgt een mail met unieke link, keurt goed met één klik, geen inlog</LI>
-              <LI><B>Download PDF</B> — als je 'm per email wilt meesturen</LI>
+              <LI><B>Verstuur via portaal</B>: klant krijgt een mail met unieke link, keurt goed met één klik, geen inlog</LI>
+              <LI><B>Download PDF</B>: als je 'm per email wilt meesturen</LI>
             </UL>
             <P>
               Wij raden het <B>portaal</B> aan. Je ziet dan precies wanneer je klant de offerte heeft bekeken en wanneer
@@ -263,7 +260,7 @@ export const articles: Article[] = [
     slug: 'klantportaal-uitleg',
     title: 'Hoe werkt het klantportaal?',
     category: 'Klantportaal',
-    excerpt: 'Je klant krijgt een link. Geen inlog. Alles wat hij moet zien — bij elkaar op één plek.',
+    excerpt: 'Je klant krijgt een link. Geen inlog. Alles wat hij moet zien, bij elkaar op één plek.',
     updatedAt: '2026-04-23',
     readingTime: 3,
     sections: [
@@ -278,7 +275,7 @@ export const articles: Article[] = [
             </P>
             <P>
               Op dat portaal ziet hij alles wat bij zijn project hoort: tekeningen, offertes, opdrachtbevestigingen,
-              foto's van de montage, facturen — in chronologische volgorde.
+              foto's van de montage, facturen, in chronologische volgorde.
             </P>
           </>
         ),
@@ -325,7 +322,7 @@ export const articles: Article[] = [
           <>
             <P>
               In <B>Instellingen → Huisstijl</B> stel je je logo, kleuren en bedrijfsnaam in. Het portaal toont dat
-              allemaal — je klant ziet jouw merk, niet dat van doen.
+              allemaal. Je klant ziet jouw merk, niet dat van doen.
             </P>
           </>
         ),
@@ -336,7 +333,7 @@ export const articles: Article[] = [
     slug: 'projecten',
     title: 'Werken met projecten',
     category: 'Projecten',
-    excerpt: 'Het project is de basis. Alles — offerte, werkbon, factuur, klantcommunicatie — hangt hieraan vast.',
+    excerpt: 'Het project is de basis. Offerte, werkbon, factuur, klantcommunicatie: alles hangt hieraan vast.',
     updatedAt: '2026-04-23',
     readingTime: 3,
     sections: [
@@ -347,7 +344,7 @@ export const articles: Article[] = [
           <>
             <P>
               Een project is een <B>verzameling van alles</B> rondom één opdracht voor één klant. Offerte, tekeningen,
-              opdrachtbevestiging, planning, werkbonnen, foto's, facturen, emails en taken — alles in één dossier.
+              opdrachtbevestiging, planning, werkbonnen, foto's, facturen, emails en taken: alles in één dossier.
             </P>
             <P>
               Ieder project heeft een eigen pagina waar je in één oogopslag ziet wat de status is en wat er nog moet
@@ -365,9 +362,9 @@ export const articles: Article[] = [
               Een project kan op drie manieren ontstaan:
             </P>
             <UL>
-              <LI><B>Vanuit een aanvraag</B> — klant stuurt een mail, doen. koppelt 'm automatisch aan de klant en je maakt er een project van</LI>
-              <LI><B>Vanuit een offerte</B> — zodra de klant akkoord geeft, wordt automatisch een project aangemaakt</LI>
-              <LI><B>Handmatig</B> — via de knop "Nieuw project" in de bovenbalk</LI>
+              <LI><B>Vanuit een aanvraag</B>: klant stuurt een mail, doen. koppelt 'm automatisch aan de klant en je maakt er een project van</LI>
+              <LI><B>Vanuit een offerte</B>: zodra de klant akkoord geeft, wordt automatisch een project aangemaakt</LI>
+              <LI><B>Handmatig</B>: via de knop "Nieuw project" in de bovenbalk</LI>
             </UL>
           </>
         ),
@@ -409,7 +406,7 @@ export const articles: Article[] = [
               doet. Klik op een dag voor de dag-view, of swipe per week.
             </P>
             <P>
-              Wil je alleen het weekoverzicht van één monteur? Filter linksboven — handig voor 1-op-1 gesprekken.
+              Wil je alleen het weekoverzicht van één monteur? Filter linksboven, handig voor 1-op-1 gesprekken.
             </P>
           </>
         ),
@@ -436,7 +433,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Moet een montage verschuiven? Sleep 'm naar een andere dag — de werkbon schuift mee. Monteurs krijgen
+              Moet een montage verschuiven? Sleep 'm naar een andere dag, de werkbon schuift mee. Monteurs krijgen
               automatisch een notificatie met de nieuwe datum en tijd. Klant ook, als je dat instelt.
             </P>
           </>
@@ -448,7 +445,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Planning is <B>alleen voor montage</B> — de momenten waarop je monteurs on-location werk doen. Alles
+              Planning is <B>alleen voor montage</B>: de momenten waarop je monteurs on-location werk doen. Alles
               wat náást de montage moet gebeuren (offertes opvolgen, inkoop, drukproeven) zet je in <B>Taken</B>.
             </P>
             <P>
@@ -550,7 +547,7 @@ export const articles: Article[] = [
               <LI><B>Foto's maken</B> van het werk (voor, tijdens, na)</LI>
               <LI><B>Opmerkingen toevoegen</B> per onderdeel</LI>
               <LI><B>Materiaal bijbestellen</B> als blijkt dat er meer nodig is</LI>
-              <LI><B>Klant laten tekenen</B> — digitale handtekening op het scherm</LI>
+              <LI><B>Klant laten tekenen</B>: digitale handtekening op het scherm</LI>
             </UL>
           </>
         ),
@@ -561,7 +558,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Foto's, uren, handtekening — alles komt <B>direct terug in het project</B>. Geen losse mappen, geen
+              Foto's, uren, handtekening: alles komt <B>direct terug in het project</B>. Geen losse mappen, geen
               "stuur even door", geen rommel. Jij op kantoor ziet live wat er gebeurt.
             </P>
           </>
@@ -584,11 +581,11 @@ export const articles: Article[] = [
           <>
             <P>
               Offerte goedgekeurd en werk gedaan? <B>Factuur staat klaar</B>, in één klik vanuit de offerte of vanaf
-              scratch. Mollie-betaallink automatisch mee — klant betaalt direct via iDEAL of creditcard.
+              scratch. Mollie-betaallink automatisch mee, klant betaalt direct via iDEAL of creditcard.
             </P>
             <Callout>
               <B>Niet op tijd betaald?</B> doen. herinnert automatisch op het moment dat jij instelt (standaard: 7 en
-              14 dagen na de vervaldatum). Je klant krijgt de herinnering vanaf jouw eigen domein — niet vanaf doen.team.
+              14 dagen na de vervaldatum). Je klant krijgt de herinnering vanaf jouw eigen domein, niet vanaf doen.team.
             </Callout>
           </>
         ),
@@ -599,7 +596,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Factuurgegevens <B>gaan rechtstreeks van doen. naar Exact Online</B> — one-way. Je boekhouder hoeft
+              Factuurgegevens <B>gaan rechtstreeks van doen. naar Exact Online</B>, one-way. Je boekhouder hoeft
               niks dubbel in te voeren. Dagboeken, grootboekrekeningen, btw-codes: allemaal automatisch.
             </P>
             <P>
@@ -634,7 +631,7 @@ export const articles: Article[] = [
           <>
             <P>
               In je dashboard zie je in één blok hoeveel <B>openstaande verkoopfacturen</B> je hebt, en hoeveel
-              <B> openstaande inkoopfacturen</B> wachten op goedkeuring. Gekleurd naar leeftijd — rood als het te
+              <B> openstaande inkoopfacturen</B> wachten op goedkeuring. Gekleurd naar leeftijd: rood als het te
               lang duurt.
             </P>
           </>
@@ -661,7 +658,7 @@ export const articles: Article[] = [
               eindresultaat.
             </P>
             <P>
-              Werkt voor autobelettering, gevelreclame, lichtreclame, raamstickers, signing-borden, wrapping — in
+              Werkt voor autobelettering, gevelreclame, lichtreclame, raamstickers, signing-borden, wrapping, in
               principe alles wat jullie maken.
             </P>
           </>
@@ -674,7 +671,7 @@ export const articles: Article[] = [
           <>
             <P>
               Elke visualisatie kost <B>1 credit</B>. Je begint met <B>10 credits inbegrepen</B> in je abonnement.
-              Meer nodig? Koop een <B>credit-pack</B> bij — 50 credits, 100 credits, of een groot pak. Credits
+              Meer nodig? Koop een <B>credit-pack</B> bij: 50 credits, 100 credits, of een groot pak. Credits
               verlopen niet.
             </P>
             <Callout>
@@ -690,7 +687,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Studio draait op <B>Nano Banana 2</B> — Google's image-generation model. Claude Sonnet 4.6
+              Studio draait op <B>Nano Banana 2</B>, Google's image-generation model. Claude Sonnet 4.6
               verbetert eerst je tekstuele input voordat het naar Nano Banana gaat, zodat je resultaten consistenter
               zijn.
             </P>
@@ -704,7 +701,7 @@ export const articles: Article[] = [
           <>
             <P>
               Elke visualisatie kun je <B>koppelen aan een project of offerte</B>. Zo kun je 'm via het portaal
-              delen met je klant — handig als verkoop-argument vooraf. Klant ziet het eindresultaat voordat je
+              delen met je klant, handig als verkoop-argument vooraf. Klant ziet het eindresultaat voordat je
               aan de slag gaat.
             </P>
           </>
@@ -727,7 +724,7 @@ export const articles: Article[] = [
           <>
             <P>
               Daan is doen.'s ingebouwde <B>AI-assistent</B>. Hij draait op <B>Claude Sonnet 4.6</B> en heeft directe
-              toegang tot jouw bedrijfsdata — klanten, projecten, offertes, facturen, mails.
+              toegang tot jouw bedrijfsdata: klanten, projecten, offertes, facturen, mails.
             </P>
             <P>
               Dat betekent: als je hem vraagt <B>"hoeveel staat er open bij Bakker BV?"</B>, kan hij het echte antwoord
@@ -742,12 +739,12 @@ export const articles: Article[] = [
         content: (
           <>
             <UL>
-              <LI><B>Offerteteksten schrijven</B> — op basis van je notitie maakt hij een professionele beschrijving</LI>
-              <LI><B>Mails samenvatten</B> — 20 mails lang? Daan geeft de kern in 3 regels</LI>
-              <LI><B>Data-vragen beantwoorden</B> — "wie is mijn grootste klant dit kwartaal?"</LI>
-              <LI><B>Calculaties</B> — vierkante meters, hoeveelheden materiaal, marges</LI>
-              <LI><B>Teksten verbeteren</B> — selecteer en Daan herschrijft korter, professioneler of informeler</LI>
-              <LI><B>Vertalingen</B> — Nederlands ↔ Engels voor internationale klanten</LI>
+              <LI><B>Offerteteksten schrijven</B>: op basis van je notitie maakt hij een professionele beschrijving</LI>
+              <LI><B>Mails samenvatten</B>: 20 mails lang? Daan geeft de kern in 3 regels</LI>
+              <LI><B>Data-vragen beantwoorden</B>: "wie is mijn grootste klant dit kwartaal?"</LI>
+              <LI><B>Calculaties</B>: vierkante meters, hoeveelheden materiaal, marges</LI>
+              <LI><B>Teksten verbeteren</B>: selecteer en Daan herschrijft korter, professioneler of informeler</LI>
+              <LI><B>Vertalingen</B>: Nederlands ↔ Engels voor internationale klanten</LI>
             </UL>
           </>
         ),
@@ -758,7 +755,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Daan zit <B>overal in doen.</B> — in een drijvende knop rechtsonder, in elk tekstveld met een klein
+              Daan zit <B>overal in doen.</B>: in een drijvende knop rechtsonder, in elk tekstveld met een klein
               magische-wand-icoon, in het dashboard als chat. Vraag wat je wilt, wanneer je wilt.
             </P>
             <Callout>
@@ -775,7 +772,7 @@ export const articles: Article[] = [
           <>
             <P>
               Jouw data gaat <B>nooit</B> naar het AI-model om hem te trainen. Daan gebruikt je data alleen om jouw
-              vragen te beantwoorden. Conversaties worden niet gedeeld tussen bedrijven — ieder bedrijf heeft zijn
+              vragen te beantwoorden. Conversaties worden niet gedeeld tussen bedrijven, ieder bedrijf heeft zijn
               eigen Daan.
             </P>
           </>
@@ -802,7 +799,7 @@ export const articles: Article[] = [
               niks raakt kwijt.
             </P>
             <Callout>
-              Belangrijk: iedere gebruiker koppelt zijn <B>eigen mailbox</B>. Je privé-inbox blijft privé — alleen
+              Belangrijk: iedere gebruiker koppelt zijn <B>eigen mailbox</B>. Je privé-inbox blijft privé. Alleen
               mails die bij een klant of project horen worden in de projectcontext zichtbaar voor je team.
             </Callout>
           </>
@@ -815,7 +812,7 @@ export const articles: Article[] = [
           <>
             <P>
               Voor Google-, Microsoft- en andere zakelijke mailboxen heb je meestal een <B>app-wachtwoord</B> nodig
-              (niet je gewone inlogwachtwoord). Dit is veiliger — zo kan doen. alleen bij je mail, niets anders.
+              (niet je gewone inlogwachtwoord). Dit is veiliger, zo kan doen. alleen bij je mail, niets anders.
             </P>
             <UL>
               <LI><B>Google Workspace</B>: Account → Beveiliging → App-wachtwoorden</LI>
@@ -868,7 +865,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Je team ziet <B>alleen</B> mails die bij een klant of project horen — via de project-timeline. Alle
+              Je team ziet <B>alleen</B> mails die bij een klant of project horen, via de project-timeline. Alle
               andere mail in je inbox (vrienden, onze jubileum-uitnodiging, nieuwsbrieven) blijft in je eigen
               privé-inbox. Niemand anders ziet die.
             </P>
@@ -885,7 +882,7 @@ export const articles: Article[] = [
     title: 'Wat kost software voor een signbedrijf?',
     category: 'Vakkennis',
     excerpt:
-      'Per gebruiker of flat, opzetkosten, add-ons: zo lees je de tarieven van bedrijfssoftware voor de signbranche — en dit betaal je echt.',
+      'Per gebruiker of flat, opzetkosten, add-ons: zo lees je de tarieven van bedrijfssoftware voor de signbranche, en dit betaal je echt.',
     updatedAt: '2026-07-07',
     readingTime: 6,
     sections: [
@@ -908,7 +905,7 @@ export const articles: Article[] = [
             </P>
             <Callout>
               Vuistregel: reken een prijs per gebruiker altijd om naar je héle team, inclusief
-              monteurs. Vijf mensen × €100 is €500 per maand — €6.000 per jaar.
+              monteurs. Vijf mensen × €100 is €500 per maand, €6.000 per jaar.
             </Callout>
           </>
         ),
@@ -942,7 +939,7 @@ export const articles: Article[] = [
               <LI>Betaal je extra voor <B>koppelingen</B> met je boekhoudpakket of betaalprovider?</LI>
               <LI>Wat kost een <B>extra gebruiker</B> als je groeit?</LI>
               <LI>Is er een <B>jaarcontract</B>, of kun je maandelijks opzeggen?</LI>
-              <LI>Kun je je <B>data exporteren</B> als je weggaat — en wat kost dat?</LI>
+              <LI>Kun je je <B>data exporteren</B> als je weggaat, en wat kost dat?</LI>
             </UL>
           </>
         ),
@@ -992,12 +989,12 @@ export const articles: Article[] = [
               opneemt, betaal je zelf:
             </P>
             <UL>
-              <LI><B>Materiaal</B> — panelen, folie, doosletters, LED-modules, bevestiging.</LI>
-              <LI><B>Productie</B> — print-, frees- of zetwerk, confectie, laminaat.</LI>
-              <LI><B>Voorbereiding</B> — ontwerp of aanpassing, drukproef, schouwen op locatie.</LI>
-              <LI><B>Montage</B> — uren × mensen, plus reistijd.</LI>
-              <LI><B>Materieel</B> — hoogwerker of steiger, en wie die huurt.</LI>
-              <LI><B>Onvoorzien</B> — gevelstaat, boren in beton, parkeerontheffing.</LI>
+              <LI><B>Materiaal</B>: panelen, folie, doosletters, LED-modules, bevestiging.</LI>
+              <LI><B>Productie</B>: print-, frees- of zetwerk, confectie, laminaat.</LI>
+              <LI><B>Voorbereiding</B>: ontwerp of aanpassing, drukproef, schouwen op locatie.</LI>
+              <LI><B>Montage</B>: uren × mensen, plus reistijd.</LI>
+              <LI><B>Materieel</B>: hoogwerker of steiger, en wie die huurt.</LI>
+              <LI><B>Onvoorzien</B>: gevelstaat, boren in beton, parkeerontheffing.</LI>
             </UL>
             <Callout tone="warning">
               Check bij grotere gevelreclame altijd of er een <B>omgevingsvergunning</B> nodig
@@ -1019,7 +1016,7 @@ export const articles: Article[] = [
               geld opleveren en welke niet.
             </P>
             <P>
-              Werk met <B>templates per producttype</B> — gevelbord, doosletters, lichtbak —
+              Werk met <B>templates per producttype</B> (gevelbord, doosletters, lichtbak)
               waarin je opbouw en marges al staan. Dan is een nieuwe offerte een kwestie van
               maten en aantallen invullen, en klopt de marge automatisch.
             </P>
@@ -1036,7 +1033,7 @@ export const articles: Article[] = [
               heeft nog een vraag, de mail zakt weg, en drie weken later is het momentum weg.
             </P>
             <UL>
-              <LI>Stuur de <B>drukproef of visual mee</B> — een klant tekent voor wat hij ziet.</LI>
+              <LI>Stuur de <B>drukproef of visual mee</B>, een klant tekent voor wat hij ziet.</LI>
               <LI>Maak akkoord geven <B>één klik</B>, geen print-, teken- en scanwerk.</LI>
               <LI>Volg <B>binnen een week</B> op, en daarna nog een keer. Automatisch als het kan.</LI>
             </UL>
@@ -1045,7 +1042,7 @@ export const articles: Article[] = [
               <a href="/features/portaal" style={{ color: '#1A535C', textDecoration: 'underline' }}>
                 klantportaal
               </a>{' '}
-              — één link, geen inlog — en herinnert het systeem hem eraan als hij niet reageert.
+              (één link, geen inlog) en herinnert het systeem hem eraan als hij niet reageert.
             </P>
           </>
         ),
@@ -1058,7 +1055,7 @@ export const articles: Article[] = [
             <UL>
               <LI>Reistijd en <B>tweede montagedag</B> vergeten bij tegenslag op locatie.</LI>
               <LI>Hoogwerker <B>per dag</B> gehuurd, maar <B>per klus</B> gecalculeerd.</LI>
-              <LI>Geen <B>geldigheidsdatum</B> op de offerte — materiaalprijzen bewegen.</LI>
+              <LI>Geen <B>geldigheidsdatum</B> op de offerte, materiaalprijzen bewegen.</LI>
               <LI>Akkoord per appje geaccepteerd <B>zonder versienummer</B> van het ontwerp.</LI>
             </UL>
           </>
@@ -1099,12 +1096,12 @@ export const articles: Article[] = [
         content: (
           <>
             <UL>
-              <LI><B>Telefoon-eerst</B> — geen app die eigenlijk een website voor desktop is.</LI>
-              <LI><B>Foto's bij de bon</B> — voor, tijdens en na, direct in het project.</LI>
+              <LI><B>Telefoon-eerst</B>: geen app die eigenlijk een website voor desktop is.</LI>
+              <LI><B>Foto's bij de bon</B>: voor, tijdens en na, direct in het project.</LI>
               <LI><B>Digitale handtekening</B> van de klant op locatie.</LI>
               <LI><B>Urenregistratie</B> per klus, zonder los briefje.</LI>
-              <LI><B>Gekoppeld aan de planning</B> — verschuift de klus, dan verschuift de bon.</LI>
-              <LI><B>Doorstroom naar de factuur</B> — getekende bon erbij, discussie voorbij.</LI>
+              <LI><B>Gekoppeld aan de planning</B>: verschuift de klus, dan verschuift de bon.</LI>
+              <LI><B>Doorstroom naar de factuur</B>: getekende bon erbij, discussie voorbij.</LI>
             </UL>
           </>
         ),
@@ -1118,12 +1115,12 @@ export const articles: Article[] = [
               Losse werkbon-apps zijn er genoeg, en ze doen het bon-gedeelte vaak prima. Het
               probleem zit in wat eromheen gebeurt: de klus staat in je planning, de
               afspraken staan in de offerte, en de factuur moet erna. Met een losse app ben
-              jij de koppeling — elke dag opnieuw.
+              jij de koppeling, elke dag opnieuw.
             </P>
             <P>
               In een geïntegreerd systeem zoals doen. <B>ontstaat de werkbon uit de
               planning</B> en staat erop wat er in de offerte is verkocht. Wat de monteur
-              vastlegt, zit meteen in het project — zie de{' '}
+              vastlegt, zit meteen in het project, zie de{' '}
               <a href="/features/werkbonnen" style={{ color: '#1A535C', textDecoration: 'underline' }}>
                 werkbonnen-module
               </a>

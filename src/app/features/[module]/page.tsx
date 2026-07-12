@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
-import ScrollProgress from '@/components/ScrollProgress'
 import Footer from '@/components/Footer'
 import FeaturesContent from '@/components/pages/FeaturesContent'
 import { modules } from '@/data/modules'
@@ -16,21 +15,17 @@ export async function generateMetadata({ params }: { params: { module: string } 
   const isKnownModule = moduleIds.includes(params.module as typeof moduleIds[number])
   return {
     title: mod?.seoTitle ?? 'Functies | doen.',
-    description: mod?.seoDescription ?? 'Ontdek de modules van doen. — alles-in-één software voor het signbedrijf.',
+    description: mod?.seoDescription ?? 'Ontdek de modules van doen. Alles-in-één software voor het signbedrijf.',
     alternates: { canonical: isKnownModule ? `/features/${params.module}` : '/features' },
   }
 }
 
 export default function FeatureModulePage({ params }: { params: { module: string } }) {
-  const index = moduleIds.indexOf(params.module as typeof moduleIds[number])
-  const initialModule = index >= 0 ? index : 0
-
   return (
     <>
-      <ScrollProgress />
       <Navbar />
       <main id="main-content">
-        <FeaturesContent initialModule={initialModule} moduleSlug={params.module} />
+        <FeaturesContent moduleSlug={params.module} />
       </main>
       <Footer />
     </>

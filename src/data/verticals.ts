@@ -6,14 +6,11 @@ export type Vertical = {
   naam: string
   seoTitle: string
   seoDescription: string
-  eyebrow: string
   h1Lead: string
   h1Accent: string
   intro: string
   pains: { title: string; body: string }[]
   highlights: { href: string; blurb: string }[]
-  ctaTitle: string
-  ctaSub: string
 }
 
 export const verticals: Vertical[] = [
@@ -23,15 +20,14 @@ export const verticals: Vertical[] = [
     seoTitle: 'Software voor signmakers | doen.',
     seoDescription:
       'Alles-in-één software voor signmakers: offertes, planning, werkbonnen, klantportaal en facturatie in één systeem. €79/maand, 30 dagen gratis.',
-    eyebrow: 'Voor signmakers',
     h1Lead: 'Software voor signmakers',
     h1Accent: 'Van aanvraag tot montage',
     intro:
-      'Gevelreclame, belettering, bewegwijzering — elk project loopt van offerte tot montage door je hele bedrijf heen. doen. houdt het bij elkaar: één systeem van eerste klantvraag tot betaalde factuur.',
+      'Gevelreclame, belettering, bewegwijzering: elk project loopt van offerte tot montage door je hele bedrijf heen. doen. houdt het bij elkaar: één systeem van eerste klantvraag tot betaalde factuur.',
     pains: [
       {
         title: 'Elke klus is anders',
-        body: 'Een doek, een lichtbak, een gevel van acht meter. Standaardsoftware kent je producten niet — dus reken je elke offerte weer half opnieuw uit.',
+        body: 'Een doek, een lichtbak, een gevel van acht meter. Standaardsoftware kent je producten niet, dus reken je elke offerte weer half opnieuw uit.',
       },
       {
         title: 'De status zit in je hoofd',
@@ -48,8 +44,6 @@ export const verticals: Vertical[] = [
       { href: '/features/planning', blurb: 'Sleep projecten naar een dag, de werkbon hangt eraan. Weerbericht erbij voor buitenmontages.' },
       { href: '/features/werkbonnen', blurb: 'Je monteur ziet zijn klus op zijn telefoon: uren, foto\'s, handtekening van de klant.' },
     ],
-    ctaTitle: 'Eén systeem voor je hele signbedrijf',
-    ctaSub: 'Van eerste klantvraag tot betaalde factuur. 30 dagen gratis.',
   },
   {
     slug: 'autobelettering',
@@ -57,7 +51,6 @@ export const verticals: Vertical[] = [
     seoTitle: 'Software voor autobelettering en carwrapping | doen.',
     seoDescription:
       'Snelle klussen, strakke planning: offertes, drukproef-akkoord via het klantportaal, planning per bus en digitale werkbonnen met foto\'s. 30 dagen gratis.',
-    eyebrow: 'Voor autobeletteraars & wrappers',
     h1Lead: 'Software voor autobelettering',
     h1Accent: 'en carwrapping',
     intro:
@@ -69,7 +62,7 @@ export const verticals: Vertical[] = [
       },
       {
         title: 'Het akkoord komt per appje',
-        body: '"Ja is goed" in WhatsApp — maar op welke versie van het ontwerp? Bij discussie achteraf heb je niks om op terug te vallen.',
+        body: '"Ja is goed" in WhatsApp. Maar op welke versie van het ontwerp? Bij discussie achteraf heb je niks om op terug te vallen.',
       },
       {
         title: 'Foto\'s overal en nergens',
@@ -80,10 +73,8 @@ export const verticals: Vertical[] = [
       { href: '/features/offertes', blurb: 'Offerte voor een wrap of belettering in een paar klikken, uit je eigen templates.' },
       { href: '/features/portaal', blurb: 'Ontwerp en drukproef op één link; de klant tekent digitaal af op de juiste versie.' },
       { href: '/features/planning', blurb: 'Plan per dag en per bus; verschuif een klus en de werkbon schuift mee.' },
-      { href: '/features/werkbonnen', blurb: 'Foto\'s van de oplevering direct in het project — bewijs bij schade, materiaal voor je portfolio.' },
+      { href: '/features/werkbonnen', blurb: 'Foto\'s van de oplevering direct in het project: bewijs bij schade, materiaal voor je portfolio.' },
     ],
-    ctaTitle: 'Van aanvraag tot opgeleverde bus in één systeem',
-    ctaSub: 'Vandaag je eerste offerte erdoorheen. 30 dagen gratis.',
   },
   {
     slug: 'grootformaat-print',
@@ -91,11 +82,10 @@ export const verticals: Vertical[] = [
     seoTitle: 'Software voor grootformaat print | doen.',
     seoDescription:
       'Offertes met m²-calculatie, inkoop, drukproef-akkoord via het klantportaal en facturatie in één systeem voor grootformaat printbedrijven.',
-    eyebrow: 'Voor grootformaat print',
     h1Lead: 'Software voor',
     h1Accent: 'grootformaat print',
     intro:
-      'Doeken, banieren, bouwhekzeil, raamfolie: de marge zit in de vierkante meter en in de doorloop. doen. rekent mee en bewaakt de deadline — van aanvraag tot oplevering.',
+      'Doeken, banieren, bouwhekzeil, raamfolie: de marge zit in de vierkante meter en in de doorloop. doen. rekent mee en bewaakt de deadline, van aanvraag tot oplevering.',
     pains: [
       {
         title: 'Marge per m² is giswerk',
@@ -107,17 +97,15 @@ export const verticals: Vertical[] = [
       },
       {
         title: 'Inkoop naast de order',
-        body: 'Materiaal bestellen gebeurt buiten het systeem om. Komt de rol te laat binnen, dan hoor je het van de planning — niet van je software.',
+        body: 'Materiaal bestellen gebeurt buiten het systeem om. Komt de rol te laat binnen, dan hoor je het van de planning, niet van je software.',
       },
     ],
     highlights: [
       { href: '/features/offertes', blurb: 'Calculeer per m² met je eigen materialen en marges; de verkoopprijs rolt er automatisch uit.' },
-      { href: '/features/portaal', blurb: 'De klant keurt de drukproef goed op de juiste versie — vastgelegd, met tijdstempel.' },
+      { href: '/features/portaal', blurb: 'De klant keurt de drukproef goed op de juiste versie, vastgelegd met tijdstempel.' },
       { href: '/features/facturen', blurb: 'Verkoop én inkoop in één systeem; Daan leest inkoopfacturen van je leveranciers uit.' },
       { href: '/features/planning', blurb: 'Productie en montage in één planning, met de werkbon eraan vast.' },
     ],
-    ctaTitle: 'Grip op elke vierkante meter',
-    ctaSub: 'Calculatie, drukproef en facturatie in één systeem. 30 dagen gratis.',
   },
   {
     slug: 'lichtreclame',
@@ -125,7 +113,6 @@ export const verticals: Vertical[] = [
     seoTitle: 'Software voor lichtreclamebedrijven | doen.',
     seoDescription:
       'Van tekening en akkoord tot montageplanning en servicedossier: projectsoftware voor lichtreclame. Klantportaal, werkbonnen en facturatie inbegrepen.',
-    eyebrow: 'Voor lichtreclame',
     h1Lead: 'Software voor',
     h1Accent: 'lichtreclamebedrijven',
     intro:
@@ -137,7 +124,7 @@ export const verticals: Vertical[] = [
       },
       {
         title: 'Montage hangt van alles af',
-        body: 'Hoogwerker geregeld, twee man ingepland — en dan slaat het weer om. Omplannen betekent bellen, schuiven en hopen dat niemand iets mist.',
+        body: 'Hoogwerker geregeld, twee man ingepland. En dan slaat het weer om. Omplannen betekent bellen, schuiven en hopen dat niemand iets mist.',
       },
       {
         title: 'Service verdwijnt uit beeld',
@@ -147,11 +134,9 @@ export const verticals: Vertical[] = [
     highlights: [
       { href: '/features/portaal', blurb: 'Tekeningen en revisies op één link; het akkoord staat vast op de juiste versie.' },
       { href: '/features/planning', blurb: 'Montage plannen met het weerbericht erbij; verschuif en de werkbon schuift mee.' },
-      { href: '/features/werkbonnen', blurb: 'Foto\'s en gemonteerd materiaal vastgelegd per project — je servicedossier bouwt zichzelf.' },
+      { href: '/features/werkbonnen', blurb: 'Foto\'s en gemonteerd materiaal vastgelegd per project. Je servicedossier bouwt zichzelf.' },
       { href: '/features/projecten', blurb: 'Alles van schets tot service in één projectlog. Niks valt tussen wal en schip.' },
     ],
-    ctaTitle: 'Het hele traject in één project',
-    ctaSub: 'Van tekening tot servicedossier. 30 dagen gratis.',
   },
 ]
 

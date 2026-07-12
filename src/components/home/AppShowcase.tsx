@@ -1,18 +1,26 @@
 'use client'
 
-import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import SerifItalic from '@/components/SerifItalic'
+import { Space_Grotesk } from 'next/font/google'
 import { useRef, useState } from 'react'
 import {
-  LayoutGrid, Folder, Users, FileText, Receipt, FileSignature, CheckSquare,
+  LayoutGrid, Folder, Users, FileText, Receipt, CheckSquare,
   ClipboardCheck, Calendar, Mail, Wallet, Search, Bell, Sun, CloudRain, CloudSun,
-  Sparkles, Send, DollarSign, Eye, Upload, Plus, Download, AlertCircle, Moon,
+  Sparkles, Send, DollarSign, Eye, Upload, Plus, Download, AlertCircle,
   Activity, CheckCircle2, ArrowUpRight, Wrench, ChevronRight, Image as ImageIcon,
   Pencil, Camera, Inbox, Archive, Paperclip, Pin, Clock, FileEdit, Trash2,
   CalendarClock, ArrowLeft, MoreHorizontal, Copy, ChevronDown, ChevronsRight,
   RefreshCw, Tag, Reply, ReplyAll, Forward, ChevronUp, Ruler,
+  Hammer, Building2, Wand2, Banknote, TrendingUp, ListChecks, MessageSquare,
+  Globe, SlidersHorizontal, MapPin, Flame, CalendarOff, StickyNote, ChevronLeft, Moon,
   type LucideIcon,
 } from 'lucide-react'
-import SerifItalic from '@/components/SerifItalic'
+
+// De echte app zet alle cijfers/codes in Space Grotesk (tabular-nums);
+// binnen de mockup overschrijven we daarom de site-brede Spline Sans Mono.
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600', '700'], display: 'swap' })
+
 
 const PETROL = '#1A535C'
 const PETROL_DEEP = '#0F3A42'
@@ -28,78 +36,62 @@ const PANEL_SHADOW = '0 1px 2px rgba(20,40,40,0.04), 0 8px 24px -16px rgba(19,62
 // Dashboard-hero: dimensionale petrol-gradient (lift linksboven, diepte rechtsonder).
 const HERO_GRADIENT = 'radial-gradient(ellipse 90% 110% at 0% 0%, #237580 0%, transparent 60%), linear-gradient(135deg, #1A535C 0%, #103740 100%)'
 
-type View = 'dashboard' | 'projecten' | 'detail' | 'klanten' | 'offerte' | 'email' | 'factuur' | 'inkoop' | 'taken' | 'planning'
+export type View = 'dashboard' | 'projecten' | 'detail' | 'klanten' | 'offerte' | 'email' | 'factuur' | 'inkoop' | 'taken' | 'planning'
 
-type NavItem = { icon: LucideIcon; label: string; activeOn: View[] }
-// Meest gebruikte modules staan los in de balk; de rest komt onder "Overig".
-const primaryNav: NavItem[] = [
-  { icon: LayoutGrid, label: 'Dashboard', activeOn: ['dashboard'] },
-  { icon: Folder, label: 'Projecten', activeOn: ['projecten', 'detail'] },
-  { icon: CheckSquare, label: 'Taken', activeOn: ['taken'] },
-  { icon: FileText, label: 'Offertes', activeOn: ['offerte'] },
-  { icon: Calendar, label: 'Planning', activeOn: ['planning'] },
-  { icon: ClipboardCheck, label: 'Werkbonnen', activeOn: [] },
-  { icon: Mail, label: 'Email', activeOn: ['email'] },
-]
-const overigNav: NavItem[] = [
-  { icon: Users, label: 'Klanten', activeOn: ['klanten'] },
-  { icon: Receipt, label: 'Facturen', activeOn: ['factuur'] },
-  { icon: FileSignature, label: 'Inkoopfacturen', activeOn: ['inkoop'] },
-  { icon: Ruler, label: 'Maatjes', activeOn: [] },
-  { icon: Wallet, label: 'Financieel', activeOn: [] },
+type NavItem = { icon: LucideIcon; label: string; activeOn: View[]; color: string }
+type NavGroup = { section: string; items: NavItem[] }
+
+// Zelfde secties, volgorde, iconen en module-kleuren als de sidebar van de
+// echte app (forgedesk/src/components/layouts/Sidebar.tsx).
+const navGroups: NavGroup[] = [
+  {
+    section: 'Werk',
+    items: [
+      { icon: Hammer, label: 'Projecten', activeOn: ['projecten', 'detail'], color: '#1A535C' },
+      { icon: FileText, label: 'Offertes', activeOn: ['offerte'], color: '#F15025' },
+      { icon: Building2, label: 'Klanten', activeOn: ['klanten'], color: '#3A6B8C' },
+      { icon: Wrench, label: 'Werkbonnen', activeOn: [], color: '#C44830' },
+      { icon: Ruler, label: 'Maatjes', activeOn: [], color: '#F15025' },
+      { icon: Wand2, label: 'Studio', activeOn: [], color: '#9A5A48' },
+    ],
+  },
+  {
+    section: 'Financieel',
+    items: [
+      { icon: Banknote, label: 'Facturen', activeOn: ['factuur'], color: '#2D6B48' },
+      { icon: Inbox, label: 'Inkoopfacturen', activeOn: ['inkoop'], color: '#C44830' },
+      { icon: TrendingUp, label: 'Financieel', activeOn: [], color: '#2D6B48' },
+    ],
+  },
+  {
+    section: 'Planning',
+    items: [
+      { icon: Calendar, label: 'Planning', activeOn: ['planning'], color: '#9A5A48' },
+      { icon: ListChecks, label: 'Taken', activeOn: ['taken'], color: '#6B6B66' },
+    ],
+  },
+  {
+    section: 'Communicatie',
+    items: [
+      { icon: Mail, label: 'Email', activeOn: ['email'], color: '#6A5A8A' },
+      { icon: MessageSquare, label: 'Aanvragen', activeOn: [], color: '#6A5A8A' },
+      { icon: Globe, label: 'Portaal', activeOn: [], color: '#6A5A8A' },
+    ],
+  },
 ]
 
-export default function AppShowcase({ hideHeader = false }: { hideHeader?: boolean }) {
+const settingsItem: NavItem = { icon: SlidersHorizontal, label: 'Instellingen', activeOn: [], color: '#6B6B66' }
+
+export default function AppShowcase({ initialView = 'dashboard' }: { initialView?: View }) {
   const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-80px' })
-  const [view, setView] = useState<View>('dashboard')
+  const [view, setView] = useState<View>(initialView)
 
   return (
-    <section ref={ref} className="relative" style={{ backgroundColor: '#F3F2ED' }}>
-      <div className={`container-site relative ${hideHeader ? 'pt-6 pb-20 md:pt-8 md:pb-24' : 'py-24 md:py-32'}`}>
-
-        {/* Section heading — verborgen wanneer de omliggende pagina zelf
-            al een kop boven de showcase zet (zoals /features) */}
-        {!hideHeader && (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-3xl mb-10 md:mb-14"
-        >
-          <div className="inline-flex items-center gap-2 mb-5">
-            <span className="relative inline-flex items-center justify-center w-2 h-2">
-              <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.4 }} />
-              <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
-            </span>
-            <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
-              Dit is doen.
-            </span>
-          </div>
-          <h2
-            className="font-heading font-bold tracking-[-1px] md:tracking-[-2.5px] leading-[1.0] md:leading-[0.95] mb-5"
-            style={{ fontSize: 'clamp(32px, 5vw, 64px)', color: PETROL }}
-          >
-            Stop met scrollen<span style={{ color: FLAME }}>.</span>{' '}
-            <span style={{ color: MUTED }}>
-              Klik door je <SerifItalic>signbedrijf</SerifItalic>
-              <span style={{ color: FLAME }}>.</span>
-            </span>
-          </h2>
-          <p className="text-[15px] md:text-[18px] leading-[1.6] max-w-xl" style={{ color: '#3F3F3A' }}>
-            <span className="md:hidden">Negen schermen. Geen mockup. Het echte werk.</span>
-            <span className="hidden md:inline">
-              Negen schermen, allemaal echt. Wissel tussen dashboard, projecten, offerte, mail, factuur, planning en taken — geen mockup, geen video, het ding zelf.
-            </span>
-          </p>
-        </motion.div>
-        )}
+    <section ref={ref} className="relative">
+      <div className="container-site relative pt-8 pb-20 md:pt-10 md:pb-24">
 
         {/* TOGGLE — view switcher */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, delay: 0.1 }}
           className="mx-auto mb-5 md:mb-6 flex p-1 rounded-full overflow-x-auto max-w-full"
           style={{
             backgroundColor: CARD,
@@ -142,15 +134,9 @@ export default function AppShowcase({ hideHeader = false }: { hideHeader?: boole
         </motion.div>
 
         {/* App shell — browser frame (compacter, gecentreerd) */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.85, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="mx-auto"
-          style={{ maxWidth: 1240 }}
-        >
+        <div className="mx-auto" style={{ maxWidth: 1240 }}>
           <AppFrame view={view} setView={setView} />
-        </motion.div>
+        </div>
 
         {/* Pinpoints — wat kan je op deze tab */}
         <FeatureList view={view} />
@@ -178,13 +164,24 @@ function AppFrame({ view, setView }: { view: View; setView: (v: View) => void })
 
   return (
     <div
-      className="relative flex flex-col overflow-hidden rounded-[16px]"
+      className="doen-mock relative flex flex-col overflow-hidden rounded-[16px]"
       style={{
         backgroundColor: BG,
         border: `1px solid ${LINE}`,
         boxShadow: '0 4px 10px rgba(20,40,40,0.05), 0 24px 60px -20px rgba(19,62,69,0.18)',
+        // App-body font: systeem/Inter, zoals forgedesk/src/index.css
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'IBM Plex Sans', system-ui, sans-serif",
       }}
     >
+      {/* Cijfers/codes in Space Grotesk met tabular-nums, zoals de echte app.
+          Via dangerouslySetInnerHTML: SSR escapet quotes in een gewone
+          style-tag anders dan de client (hydration-mismatch). */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `.doen-mock .font-mono{font-family:${spaceGrotesk.style.fontFamily},ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:-0.3px;}`,
+        }}
+      />
+
       {/* Browser bar */}
       <div
         className="flex items-center gap-3 px-4 py-2.5 shrink-0"
@@ -203,33 +200,36 @@ function AppFrame({ view, setView }: { view: View; setView: (v: View) => void })
         </div>
       </div>
 
-      {/* Top nav (modules) */}
-      <TopNav view={view} setView={setView} />
+      {/* App shell — sidebar links (zoals de echte app), content rechts */}
+      <div className="flex items-stretch flex-1 min-h-0">
+        <SideNav view={view} setView={setView} />
 
-      {/* Sub-tab strip */}
-      <SubTabs view={view} setView={setView} />
+        <div className="flex-1 min-w-0 flex flex-col">
+          <FrameHeader view={view} />
 
-      {/* CONTENT */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={view}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.3 }}
-        >
-          {view === 'dashboard' && <DashboardView setView={setView} />}
-          {view === 'projecten' && <ProjectenView setView={setView} />}
-          {view === 'detail' && <ProjectDetailView setView={setView} />}
-          {view === 'klanten' && <KlantenView />}
-          {view === 'offerte' && <OfferteView />}
-          {view === 'email' && <EmailView />}
-          {view === 'factuur' && <FactuurView />}
-          {view === 'inkoop' && <InkoopView />}
-          {view === 'taken' && <TakenView />}
-          {view === 'planning' && <PlanningView />}
-        </motion.div>
-      </AnimatePresence>
+          {/* CONTENT */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={view}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3 }}
+            >
+              {view === 'dashboard' && <DashboardView setView={setView} />}
+              {view === 'projecten' && <ProjectenView setView={setView} />}
+              {view === 'detail' && <ProjectDetailView setView={setView} />}
+              {view === 'klanten' && <KlantenView />}
+              {view === 'offerte' && <OfferteView />}
+              {view === 'email' && <EmailView />}
+              {view === 'factuur' && <FactuurView />}
+              {view === 'inkoop' && <InkoopView />}
+              {view === 'taken' && <TakenView />}
+              {view === 'planning' && <PlanningView />}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   )
 }
@@ -353,8 +353,9 @@ const viewMeta: Record<View, { titel: string; sub: string; bullets: string[] }> 
       'Voor al het werk náást de planning (opvolgen, inkoop, drukproef, bestellen)',
       'Per project of per klant koppelen — automatisch in de context',
       'Toewijzen aan teamlid met deadline',
-      'Week- of maandweergave, of per persoon',
-      'Filter op Alle, Project, Los of speciale labels (Montage etc.)',
+      'Week-, maand- of teamweergave: alle taken per collega per dag',
+      'Filter op Alle, Project of Los, en toon montages ernaast',
+      'Prioriteit met één klik, kritieke taken springen eruit in flame',
       'Afvinken in de kalender — direct gesynct met activiteit-log',
       'Notificaties bij wijziging of vervaldatum',
     ],
@@ -389,12 +390,6 @@ function FeatureList({ view }: { view: View }) {
         >
           {/* Left: title + sub */}
           <div>
-            <div className="inline-flex items-center gap-2 mb-4">
-              <span className="w-6 h-px" style={{ backgroundColor: FLAME }} />
-              <span className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: MUTED }}>
-                Wat je hier kunt doen
-              </span>
-            </div>
             <h3
               className="font-heading font-bold tracking-tight leading-[1.05] mb-3"
               style={{ fontSize: 'clamp(26px, 3.4vw, 42px)', color: PETROL }}
@@ -431,114 +426,23 @@ function FeatureList({ view }: { view: View }) {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   APP CHROME — Top nav + Sub-tabs
+   APP CHROME — Sidebar + slanke topbalk (zoals de echte app)
    ────────────────────────────────────────────────────────────── */
 
-function TopNav({ view, setView }: { view: View; setView: (v: View) => void }) {
-  const [overigOpen, setOverigOpen] = useState(false)
-  const overigActive = overigNav.some((i) => i.activeOn.includes(view))
+// Warm petrol-getint papier, zelfde recept als .doen-sidebar in de app.
+const SIDEBAR_BG =
+  'radial-gradient(ellipse 120% 45% at 50% 100%, rgba(26,83,92,0.07), transparent 70%), linear-gradient(180deg, #EDF1F0 0%, #DFE8E6 100%)'
+
+function SidebarDivider({ className = '' }: { className?: string }) {
   return (
     <div
-      className="flex items-center gap-1 md:gap-2 px-4 md:px-6 pt-4 pb-0 overflow-visible"
-      style={{ borderBottom: `1px solid ${LINE}` }}
-    >
-      <button
-        type="button"
-        onClick={() => setView('dashboard')}
-        aria-label="doen."
-        className="mr-4 md:mr-6 shrink-0 cursor-pointer inline-flex items-center"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logos/doen-logo.svg" alt="doen." className="h-5 w-auto" />
-      </button>
-
-      {/* Desktop: primaire modules + Overig-dropdown */}
-      <div className="hidden lg:flex items-center gap-1 flex-1">
-        {primaryNav.map((item) => <NavTab key={item.label} item={item} view={view} setView={setView} compact={false} />)}
-
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setOverigOpen((o) => !o)}
-            aria-expanded={overigOpen}
-            className="inline-flex items-center gap-1 px-2.5 pt-2 pb-3 -mb-px text-[12px] font-semibold whitespace-nowrap transition-colors cursor-pointer hover:text-[#1A535C]"
-            style={{
-              color: overigActive ? INK : '#6B6B66',
-              borderBottom: overigActive ? `2px solid ${PETROL}` : '2px solid transparent',
-            }}
-          >
-            Overig<span style={{ color: overigActive ? FLAME : 'transparent' }}>.</span>
-            <ChevronDown className="w-3 h-3 transition-transform" style={{ opacity: 0.55, transform: overigOpen ? 'rotate(180deg)' : 'none' }} />
-          </button>
-          {overigOpen && (
-            <div
-              className="absolute left-0 top-full mt-1.5 z-50 w-52 rounded-[12px] p-1.5"
-              style={{ backgroundColor: CARD, border: `1px solid ${LINE}`, boxShadow: '0 12px 30px -8px rgba(19,62,69,0.20)' }}
-            >
-              {overigNav.map((item) => {
-                const Icon = item.icon
-                const target: View | null = item.activeOn[0] ?? null
-                const active = item.activeOn.includes(view)
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => { if (target) setView(target); setOverigOpen(false) }}
-                    disabled={!target}
-                    className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[12.5px] font-semibold text-left transition-colors ${target ? 'cursor-pointer hover:bg-[rgba(26,83,92,0.05)]' : 'cursor-not-allowed opacity-50'}`}
-                    style={{ color: active ? PETROL : INK }}
-                  >
-                    <Icon className="w-3.5 h-3.5" style={{ color: active ? PETROL : MUTED }} strokeWidth={1.9} />
-                    {item.label}<span style={{ color: FLAME }}>.</span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Mobiel: eerste vijf modules compact */}
-      <div className="flex lg:hidden items-center gap-1 flex-1 overflow-x-auto">
-        {primaryNav.slice(0, 5).map((item) => <NavTab key={item.label} item={item} view={view} setView={setView} compact={true} />)}
-      </div>
-
-      {/* Zoekbalk */}
-      <div
-        className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md mr-1.5 ml-auto"
-        style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}
-      >
-        <Search className="w-3.5 h-3.5" style={{ color: '#9B9B95' }} />
-        <span className="font-mono text-[11px]" style={{ color: '#9B9B95' }}>Zoeken…</span>
-      </div>
-
-      {/* Notificatie-pill */}
-      <span
-        className="hidden lg:inline-flex items-center gap-1.5 h-8 pl-2 pr-3 rounded-full mr-1.5 shrink-0 text-white"
-        style={{ backgroundColor: FLAME, boxShadow: '0 4px 12px rgba(241,80,37,0.28)' }}
-      >
-        <Bell className="w-3.5 h-3.5" strokeWidth={2} />
-        <span className="text-[11px] font-semibold whitespace-nowrap">5 nieuwe notificaties</span>
-      </span>
-
-      {/* Pin + dark-mode */}
-      <Pin className="hidden md:block w-4 h-4 mr-1.5" style={{ color: MUTED }} strokeWidth={1.8} />
-      <Moon className="hidden md:block w-4 h-4 mr-2" style={{ color: MUTED }} strokeWidth={1.8} />
-
-      {/* Gebruiker */}
-      <span
-        className="inline-flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg shrink-0"
-        style={{ border: `1px solid ${LINE}`, backgroundColor: CARD }}
-      >
-        <span className="w-6 h-6 rounded-[7px] inline-flex items-center justify-center font-mono text-[10px] font-bold text-white" style={{ backgroundColor: PETROL }}>J</span>
-        <span className="text-[12px] font-semibold hidden md:inline" style={{ color: INK }}>Jan</span>
-        <ChevronDown className="hidden md:block w-3 h-3" style={{ color: MUTED, opacity: 0.6 }} />
-      </span>
-    </div>
+      className={`h-px ${className}`}
+      style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.07) 20%, rgba(0,0,0,0.07) 80%, transparent 100%)' }}
+    />
   )
 }
 
-function NavTab({ item, view, setView, compact }: { item: NavItem; view: View; setView: (v: View) => void; compact: boolean }) {
+function SideNavItem({ item, view, setView }: { item: NavItem; view: View; setView: (v: View) => void }) {
   const Icon = item.icon
   const active = item.activeOn.includes(view)
   const target: View | null = item.activeOn[0] ?? null
@@ -547,57 +451,158 @@ function NavTab({ item, view, setView, compact }: { item: NavItem; view: View; s
       type="button"
       onClick={() => target && setView(target)}
       disabled={!target}
-      className={`inline-flex items-center gap-1.5 ${compact ? 'px-2 text-[11px]' : 'px-2.5 text-[12px]'} pt-2 pb-3 -mb-px font-semibold whitespace-nowrap transition-colors ${target ? 'cursor-pointer hover:text-[#1A535C]' : 'cursor-not-allowed opacity-60'}`}
-      style={{
-        color: active ? INK : '#6B6B66',
-        borderBottom: active ? `2px solid ${PETROL}` : '2px solid transparent',
-      }}
+      className={`relative flex w-auto items-center justify-center lg:justify-start gap-0 lg:gap-[11px] mx-1.5 lg:mx-2 h-10 lg:h-auto lg:py-[8.5px] px-0 lg:px-4 rounded-[11px] text-left transition-colors ${target ? 'cursor-pointer hover:bg-[rgba(26,83,92,0.07)]' : 'cursor-default'}`}
+      style={active ? {
+        backgroundColor: 'rgba(255,255,255,0.62)',
+        boxShadow: '0 1px 2px rgba(26,83,92,0.10), inset 0 0 0 0.5px rgba(255,255,255,0.7)',
+      } : undefined}
     >
-      <Icon className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} strokeWidth={active ? 2.4 : 1.8} />
-      {item.label}<span style={{ color: FLAME }}>.</span>
+      {/* Flame accent (actief) — zelfde signatuur als de app */}
+      {active && (
+        <span
+          className="absolute left-0 top-1/2 -translate-y-1/2"
+          style={{ width: 2.5, height: 18, borderRadius: '0 3px 3px 0', background: FLAME, boxShadow: '0 0 6px rgba(241,80,37,0.25)' }}
+        />
+      )}
+      <Icon
+        className="h-[18px] w-[18px] flex-shrink-0"
+        style={{ color: active ? item.color : 'rgba(26,83,92,0.5)' }}
+        strokeWidth={1.6}
+      />
+      <span
+        className="hidden lg:block truncate text-[13px]"
+        style={active
+          ? { color: PETROL, fontWeight: 600, letterSpacing: '-0.01em' }
+          : { color: 'rgba(26,26,26,0.65)', fontWeight: 500, letterSpacing: '-0.01em' }}
+      >
+        {item.label}
+      </span>
     </button>
   )
 }
 
-function SubTabs({ view, setView }: { view: View; setView: (v: View) => void }) {
-  type Tab = { t: string; active?: boolean; goto?: View }
-  const tabs: Tab[] =
-    view === 'dashboard'
-      ? [{ t: 'Offertes', goto: 'offerte' }, { t: 'Klanten' }, { t: 'Projecten', goto: 'projecten' }, { t: 'Dashboard', active: true }]
-      : view === 'projecten'
-      ? [{ t: 'Offertes', goto: 'offerte' }, { t: 'Klanten' }, { t: 'Dashboard', goto: 'dashboard' }, { t: 'Projecten', active: true }]
-      : view === 'detail'
-      ? [{ t: 'Dashboard', goto: 'dashboard' }, { t: 'Projecten', goto: 'projecten' }, { t: 'PRJ-2026-044', active: true }]
-      : view === 'klanten'
-      ? [{ t: 'Offertes', goto: 'offerte' }, { t: 'Dashboard', goto: 'dashboard' }, { t: 'Projecten', goto: 'projecten' }, { t: 'Klanten', active: true }]
-      : view === 'offerte'
-      ? [{ t: 'Klanten' }, { t: 'Projecten', goto: 'projecten' }, { t: 'Facturen', goto: 'factuur' }, { t: 'Offerte', active: true }]
-      : view === 'email'
-      ? [{ t: 'Offertes', goto: 'offerte' }, { t: 'Klanten' }, { t: 'Projecten', goto: 'projecten' }, { t: 'Email', active: true }]
-      : view === 'factuur'
-      ? [{ t: 'Dashboard', goto: 'dashboard' }, { t: 'Projecten', goto: 'projecten' }, { t: 'Facturen', goto: 'factuur' }, { t: 'FAC-2026234', active: true }]
-      : view === 'inkoop'
-      ? [{ t: 'Dashboard', goto: 'dashboard' }, { t: 'Facturen', goto: 'factuur' }, { t: 'Inkoopfacturen', active: true }]
-      : view === 'taken'
-      ? [{ t: 'Dashboard', goto: 'dashboard' }, { t: 'Projecten', goto: 'projecten' }, { t: 'Planning', goto: 'planning' }, { t: 'Taken', active: true }]
-      : [{ t: 'Offertes', goto: 'offerte' }, { t: 'Klanten' }, { t: 'Projecten', goto: 'projecten' }, { t: 'Facturen', goto: 'factuur' }, { t: 'Planning', active: true }]
-
+function SideNav({ view, setView }: { view: View; setView: (v: View) => void }) {
   return (
-    <div className="flex items-center gap-5 px-4 md:px-6 pt-3 pb-3 overflow-x-auto" style={{ borderBottom: `1px solid ${LINE}` }}>
-      {tabs.map((t) => (
-        <button
-          key={t.t}
-          type="button"
-          onClick={() => t.goto && setView(t.goto)}
-          disabled={t.active || !t.goto}
-          className={`text-[12px] font-semibold whitespace-nowrap inline-flex items-center gap-1.5 transition-colors ${t.active ? 'cursor-default' : t.goto ? 'cursor-pointer hover:text-[#1A1A1A]' : 'cursor-not-allowed'}`}
-          style={{ color: t.active ? INK : '#9B9B95' }}
+    <aside
+      className="hidden md:flex flex-col shrink-0 w-14 lg:w-[224px]"
+      style={{ background: SIDEBAR_BG, borderRight: '1px solid rgba(26,83,92,0.10)' }}
+    >
+      {/* Logo — klik = dashboard, zoals in de app */}
+      <button
+        type="button"
+        onClick={() => setView('dashboard')}
+        aria-label="doen."
+        className="flex items-center justify-center lg:justify-start h-[56px] lg:px-6 shrink-0 cursor-pointer"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logos/doen-logo.svg" alt="doen." className="hidden lg:block h-5 w-auto" />
+        <span className="lg:hidden font-heading text-[17px] font-extrabold leading-none" style={{ color: PETROL }}>
+          d<span style={{ color: FLAME }}>.</span>
+        </span>
+      </button>
+
+      <SidebarDivider className="mx-3 lg:mx-5" />
+
+      {/* Navigatie — secties met labels (uitgeklapt) of iconen-rail (md) */}
+      <nav className="flex-1 flex flex-col pt-3 lg:pt-4 min-h-0">
+        {navGroups.map((group, gi) => (
+          <div key={group.section} className={gi > 0 ? 'lg:mt-6' : ''}>
+            {gi > 0 && <div className="lg:hidden w-6 mx-auto my-2"><SidebarDivider /></div>}
+            <div
+              className="hidden lg:block font-heading uppercase"
+              style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: '1.3px', color: '#9C9C96', padding: '4px 24px 7px' }}
+            >
+              {group.section}<span style={{ color: FLAME, fontWeight: 800 }}>.</span>
+            </div>
+            <div className="flex flex-col gap-[1px]">
+              {group.items.map((item) => (
+                <SideNavItem key={item.label} item={item} view={view} setView={setView} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {/* Onderin — utilities, Instellingen en gebruiker */}
+      <div className="shrink-0 pb-3 pt-2">
+        <div className="hidden lg:flex items-center gap-0.5 mx-4 mb-1" style={{ color: 'rgba(107,107,102,0.45)' }}>
+          <span className="flex items-center justify-center w-8 h-8"><Pencil className="w-[15px] h-[15px]" strokeWidth={1.8} /></span>
+          <span className="flex items-center justify-center w-8 h-8"><Pin className="w-[15px] h-[15px]" strokeWidth={1.8} /></span>
+        </div>
+        <SidebarDivider className="mx-3 lg:mx-5 mb-2" />
+        <SideNavItem item={settingsItem} view={view} setView={setView} />
+        <div className="flex items-center justify-center lg:justify-start gap-2.5 h-11 mx-1.5 lg:mx-2 lg:px-3 mt-1 rounded-[12px]">
+          <span
+            className="w-[30px] h-[30px] rounded-full inline-flex items-center justify-center shrink-0"
+            style={{
+              background: 'linear-gradient(145deg, rgba(26,83,92,0.12), rgba(26,83,92,0.04))',
+              border: '1.5px solid rgba(241,80,37,0.18)',
+            }}
+          >
+            <span className="text-[12px] font-bold" style={{ color: PETROL }}>J</span>
+          </span>
+          <span className="hidden lg:block flex-1 min-w-0 truncate text-[13px] font-medium leading-tight" style={{ color: INK }}>Jan Visser</span>
+        </div>
+      </div>
+    </aside>
+  )
+}
+
+/* Slanke topbalk boven de content: breadcrumb "Module." + zoeken + bel + avatar,
+   zoals forgedesk/src/components/layouts/Header.tsx */
+const headerMeta: Record<View, { module: string; sub?: string }> = {
+  dashboard: { module: 'Dashboard' },
+  projecten: { module: 'Projecten' },
+  detail: { module: 'Projecten', sub: 'PRJ-2026-044' },
+  klanten: { module: 'Klanten' },
+  offerte: { module: 'Offertes', sub: 'OFF-2026-236' },
+  email: { module: 'Email' },
+  factuur: { module: 'Facturen', sub: '2026234' },
+  inkoop: { module: 'Inkoopfacturen' },
+  taken: { module: 'Taken' },
+  planning: { module: 'Planning' },
+}
+
+function FrameHeader({ view }: { view: View }) {
+  const m = headerMeta[view]
+  return (
+    <div
+      className="flex items-center justify-between h-11 px-4 md:px-5 shrink-0"
+      style={{ backgroundColor: BG, borderBottom: `1px solid ${LINE}` }}
+    >
+      <div className="flex items-center gap-1.5 min-w-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logos/doen-logo.svg" alt="doen." className="md:hidden h-4 w-auto mr-1.5" />
+        <span className="text-[13px] font-semibold whitespace-nowrap" style={{ color: INK }}>
+          {m.module}<span style={{ color: FLAME }}>.</span>
+        </span>
+        {m.sub && (
+          <>
+            <span className="text-[13px] mx-0.5" style={{ color: '#D8D6D0' }}>/</span>
+            <span className="text-[13px] truncate" style={{ color: MUTED }}>{m.sub}</span>
+          </>
+        )}
+      </div>
+
+      <div className="hidden md:flex flex-1 justify-center mx-8">
+        <div
+          className="flex items-center gap-2 w-full max-w-xs rounded-lg px-3 py-1.5"
+          style={{ backgroundColor: 'hsl(38,20%,95.5%)' }}
         >
-          {t.t}
-          {t.active && <span className="text-[14px] leading-none">×</span>}
-        </button>
-      ))}
-      <span className="font-mono text-[14px] font-bold" style={{ color: '#C8C8C0' }}>+</span>
+          <Search className="w-3.5 h-3.5 shrink-0" style={{ color: '#9B9B95' }} />
+          <span className="text-[12px]" style={{ color: '#9B9B95' }}>Zoeken...</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 shrink-0">
+        <span className="relative inline-flex">
+          <Bell className="w-4 h-4" style={{ color: MUTED }} strokeWidth={1.8} />
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full" style={{ backgroundColor: FLAME, border: '1.5px solid #F8F7F5' }} />
+        </span>
+        <span className="w-7 h-7 rounded-full inline-flex items-center justify-center" style={{ backgroundColor: PETROL }}>
+          <span className="text-[10px] font-semibold text-white leading-none">JV</span>
+        </span>
+      </div>
     </div>
   )
 }
@@ -911,13 +916,14 @@ function KpiCard({ label, value, sub, tone, icon }: { label: string; value: stri
    ────────────────────────────────────────────────────────────── */
 
 type ProjStatus = 'te-factureren' | 'actief' | 'in-review' | 'te-plannen' | 'gepland' | 'afgerond'
-const statusMeta: Record<ProjStatus, { label: string; color: string }> = {
-  'te-factureren': { label: 'Te factureren.', color: '#3A7D52' },
-  actief:           { label: 'Actief.',         color: '#3A5A9A' },
-  'in-review':      { label: 'In review.',      color: '#3A5A9A' },
-  'te-plannen':     { label: 'Te plannen.',     color: '#8A7A4A' },
-  gepland:          { label: 'Gepland.',        color: '#8A7A4A' },
-  afgerond:         { label: 'Afgerond.',       color: '#3A7D52' },
+// fase = positie in de 6-punts fase-indicator ("Fase X van 6") uit ProjectsList.
+const statusMeta: Record<ProjStatus, { label: string; color: string; fase: number }> = {
+  'te-factureren': { label: 'Te factureren.', color: '#3A7D52', fase: 5 },
+  actief:           { label: 'Actief.',         color: '#3A5A9A', fase: 2 },
+  'in-review':      { label: 'In review.',      color: '#3A5A9A', fase: 3 },
+  'te-plannen':     { label: 'Te plannen.',     color: '#8A7A4A', fase: 1 },
+  gepland:          { label: 'Gepland.',        color: '#8A7A4A', fase: 4 },
+  afgerond:         { label: 'Afgerond.',       color: '#3A7D52', fase: 6 },
 }
 
 const projecten: { naam: string; sub?: string; ref: string; klant: string; klantInitial: string; status: ProjStatus; bedrag: string; datum: string }[] = [
@@ -1000,6 +1006,7 @@ function ProjectenView({ setView }: { setView: (v: View) => void }) {
             { l: 'Gepland', n: '38' },
             { l: 'In review', n: '5' },
             { l: 'Akkoord klant', n: '1' },
+            { l: 'Ingepland', n: '2' },
             { l: 'Te factureren', n: '8' },
             { l: 'Gefactureerd', n: '30' },
             { l: 'On-hold', n: '4' },
@@ -1061,8 +1068,17 @@ function ProjectenView({ setView }: { setView: (v: View) => void }) {
                 <span className="w-6 h-6 rounded-full inline-flex items-center justify-center font-mono text-[9px] font-bold flex-shrink-0" style={{ backgroundColor: '#FAFAF8', color: INK, border: `1px solid ${LINE}` }}>{p.klantInitial}</span>
                 <span className="text-[12.5px] truncate" style={{ color: INK }}>{p.klant}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: sm.color }} />
+              <div className="min-w-0">
+                {/* 6-punts fase-indicator ("Fase X van 6") + statuslabel, zoals ProjectsList */}
+                <div className="flex items-center gap-[3px] mb-1">
+                  {Array.from({ length: 6 }, (_, fi) => (
+                    <span
+                      key={fi}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: fi < sm.fase ? sm.color : 'rgba(26,83,92,0.12)' }}
+                    />
+                  ))}
+                </div>
                 <span className="text-[12px] font-semibold" style={{ color: sm.color }}>{sm.label}</span>
               </div>
               <span className="text-right font-mono text-[12px] tabular-nums" style={{ color: INK }}>{p.bedrag}</span>
@@ -1092,13 +1108,51 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
             <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-1.5" style={{ color: MUTED }}>
-              PRJ-2026-044 · <span style={{ color: '#3A6B8C' }}>Actief.</span>
+              PRJ-2026-044 · <span style={{ color: '#3A5A9A' }}>Actief.</span>
             </p>
             <h1 className="font-heading text-[26px] md:text-[32px] font-bold tracking-tight leading-none" style={{ color: INK }}>
               Geveltekst / Stalen letters<span style={{ color: FLAME }}>.</span>
             </h1>
-            <p className="text-[12.5px] mt-1.5" style={{ color: MUTED }}>De Vries Reclame · 16 mei 2026</p>
+            <p className="text-[12.5px] mt-1.5" style={{ color: MUTED }}>
+              De Vries Reclame · 16 mei 2026 · <span className="italic" style={{ fontFamily: '"Instrument Serif", Georgia, serif' }}>+ deadline</span>
+            </p>
           </div>
+        </div>
+
+        {/* Tab-bar — Overzicht actief met flame-underline, zoals ProjectDetail */}
+        <div className="flex items-center gap-5 overflow-x-auto whitespace-nowrap" style={{ borderBottom: `1px solid ${LINE}` }}>
+          {[
+            { l: 'Overzicht', active: true },
+            { l: 'Werkbon', n: '1' },
+            { l: 'Financieel', n: '1' },
+            { l: 'E-mail', n: '3' },
+            { l: 'Notities' },
+          ].map((t) => (
+            <span
+              key={t.l}
+              className="text-[12.5px] font-semibold inline-flex items-baseline gap-1.5 pb-2"
+              style={{
+                color: t.active ? INK : MUTED,
+                borderBottom: t.active ? `2px solid ${FLAME}` : '2px solid transparent',
+              }}
+            >
+              {t.l}{t.n && <span className="font-mono text-[10px]" style={{ color: '#9B9B95' }}>{t.n}</span>}
+            </span>
+          ))}
+        </div>
+
+        {/* Fase-bar — 6-punts reisbalk + status + bedrag, zoals ProjectFaseBar */}
+        <div className="rounded-[12px] px-4 py-3 flex items-center justify-between gap-3 flex-wrap" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 6 }, (_, fi) => (
+                <span key={fi} className="w-2 h-2 rounded-full" style={{ backgroundColor: fi < 2 ? '#3A5A9A' : 'rgba(26,83,92,0.12)' }} />
+              ))}
+            </div>
+            <span className="font-mono text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: MUTED }}>Fase 2 van 6</span>
+            <span className="text-[12px] font-semibold" style={{ color: '#3A5A9A' }}>Actief<span style={{ color: FLAME }}>.</span></span>
+          </div>
+          <span className="font-mono text-[13px] font-bold tabular-nums" style={{ color: INK }}>€ 0,00</span>
         </div>
 
         {/* Briefing card */}
@@ -1189,6 +1243,17 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
             Openen <ArrowUpRight className="w-3 h-3" strokeWidth={2.5} />
           </span>
         </div>
+
+        {/* "Doen"-suggestie — contextuele volgende stap, zoals in ProjectDetail */}
+        <div className="rounded-[12px] px-4 py-3 flex items-center justify-between gap-3" style={{ backgroundColor: 'rgba(241,80,37,0.05)', border: `1px solid rgba(241,80,37,0.18)` }}>
+          <p className="text-[12.5px]" style={{ color: INK }}>
+            <span className="font-semibold">Offerte staat klaar.</span>{' '}
+            <span className="italic" style={{ color: MUTED, fontFamily: '"Instrument Serif", Georgia, serif' }}>versturen naar de klant?</span>
+          </p>
+          <span className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md text-[12px] font-bold text-white shrink-0" style={{ backgroundColor: FLAME }}>
+            Doen<span>.</span>
+          </span>
+        </div>
       </div>
 
       {/* RIGHT RAIL */}
@@ -1212,6 +1277,18 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
           </p>
         </div>
 
+        {/* Team */}
+        <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
+          <p className="font-heading text-[14px] font-bold mb-3" style={{ color: INK }}>Team<span style={{ color: FLAME }}>.</span></p>
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-full inline-flex items-center justify-center font-mono text-[9px] font-bold text-white" style={{ backgroundColor: '#7BB89A' }}>JV</span>
+            <span className="w-7 h-7 rounded-full inline-flex items-center justify-center font-mono text-[9px] font-bold text-white" style={{ backgroundColor: '#3A6B8C' }}>MV</span>
+            <span className="w-7 h-7 rounded-full inline-flex items-center justify-center" style={{ border: `1px dashed ${LINE}`, color: MUTED }}>
+              <Plus className="w-3 h-3" strokeWidth={2} />
+            </span>
+          </div>
+        </div>
+
         {/* Acties */}
         <div className="rounded-[12px] p-4" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
           <div className="flex items-center justify-between mb-3">
@@ -1220,10 +1297,10 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
           </div>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {([
-              { icon: FileText,        label: 'Offerte',  sub: 'Stuur een p…', goto: 'offerte' as View },
-              { icon: ClipboardCheck,  label: 'Werkbon',  sub: 'Voor de mo…', goto: 'taken' as View },
-              { icon: Wrench,          label: 'Montage',  sub: 'Plan de uit…', goto: 'planning' as View },
-              { icon: Receipt,         label: 'Factuur',  sub: 'Verstuur d…', goto: 'factuur' as View },
+              { icon: FileText,        label: 'Offerte',  sub: 'Stuur een prijsopgave', goto: 'offerte' as View },
+              { icon: ClipboardCheck,  label: 'Werkbon',  sub: 'Voor de monteur',       goto: 'taken' as View },
+              { icon: Wrench,          label: 'Montage',  sub: 'Plan de uitvoering',    goto: 'planning' as View },
+              { icon: Receipt,         label: 'Factuur',  sub: 'Verstuur de rekening',  goto: 'factuur' as View },
             ]).map((a) => {
               const Icon = a.icon
               return (
@@ -1286,15 +1363,17 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
    EMAIL VIEW
    ────────────────────────────────────────────────────────────── */
 
-const mailboxen: { icon: LucideIcon; label: string; count?: string; active?: boolean }[] = [
+// Zelfde mappen als de icoon-rail in EmailLayout (folderTabs); Opvolgen krijgt
+// een flame-stip, onder een divider volgt "Ingeplande berichten".
+const mailboxen: { icon: LucideIcon; label: string; count?: string; active?: boolean; divider?: boolean }[] = [
   { icon: Inbox, label: 'Inbox', active: true },
   { icon: Send, label: 'Verzonden' },
-  { icon: Clock, label: 'Opvolgen' },
+  { icon: Clock, label: 'Opvolgen', count: '3' },
   { icon: CheckCircle2, label: 'Beantwoord' },
-  { icon: Archive, label: 'Gesnoozed', count: '1' },
+  { icon: Moon, label: 'Gesnoozed', count: '1' },
   { icon: FileEdit, label: 'Concepten' },
   { icon: Trash2, label: 'Prullenbak' },
-  { icon: CalendarClock, label: 'Ingeplande berichten' },
+  { icon: CalendarClock, label: 'Ingeplande berichten', divider: true },
 ]
 
 const emails: { av: string; avBg: string; sender: string; subject: string; time: string; unread?: boolean; attachment?: boolean }[] = [
@@ -1330,18 +1409,25 @@ function EmailView() {
         {mailboxen.map((m) => {
           const Icon = m.icon
           return (
-            <span
-              key={m.label}
-              className="relative w-9 h-9 rounded-[10px] inline-flex items-center justify-center"
-              style={{ backgroundColor: m.active ? PETROL : 'transparent', color: m.active ? '#FFFFFF' : MUTED }}
-            >
-              <Icon className="w-4 h-4" strokeWidth={2} />
-              {m.count && (
-                <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full inline-flex items-center justify-center font-mono text-[8px] font-bold text-white" style={{ backgroundColor: FLAME }}>{m.count}</span>
-              )}
-            </span>
+            <FragmentRow key={m.label}>
+              {m.divider && <span className="w-5 h-px my-1" style={{ backgroundColor: 'rgba(26,83,92,0.12)' }} />}
+              <span
+                className="relative w-9 h-9 rounded-[10px] inline-flex items-center justify-center"
+                title={m.label}
+                style={{ backgroundColor: m.active ? PETROL : 'transparent', color: m.active ? '#FFFFFF' : MUTED }}
+              >
+                <Icon className="w-4 h-4" strokeWidth={2} />
+                {m.count && (
+                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full inline-flex items-center justify-center font-mono text-[8px] font-bold text-white" style={{ backgroundColor: FLAME }}>{m.count}</span>
+                )}
+              </span>
+            </FragmentRow>
           )
         })}
+        {/* Focus modus onderin, zoals de echte rail */}
+        <span className="mt-auto w-9 h-9 rounded-[10px] inline-flex items-center justify-center" title="Focus modus" style={{ color: '#9B9B95', border: `1px dashed ${LINE}` }}>
+          <Moon className="w-4 h-4" strokeWidth={1.8} />
+        </span>
       </aside>
 
       {/* Inbox list */}
@@ -1355,7 +1441,7 @@ function EmailView() {
             style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(241,80,37,0.28)' }}
           >
             <Pencil className="w-3.5 h-3.5" strokeWidth={2.4} />
-            Nieuw bericht
+            Opstellen
           </button>
         </div>
 
@@ -1383,7 +1469,7 @@ function EmailView() {
         <div className="px-4 pb-3">
           <div className="flex items-center gap-2 px-3 py-2 rounded-md" style={{ backgroundColor: BG, border: `1px solid ${LINE}` }}>
             <Search className="w-3.5 h-3.5" style={{ color: '#9B9B95' }} />
-            <span className="text-[12px]" style={{ color: '#9B9B95' }}>Zoek in emails…</span>
+            <span className="text-[12px] truncate" style={{ color: '#9B9B95' }}>Zoek in emails... (van:naam, na:2024, bijlage:ja)</span>
           </div>
         </div>
 
@@ -1439,13 +1525,13 @@ function EmailView() {
             <Tag className="w-4 h-4" strokeWidth={1.8} />
           </span>
           <span className="ml-auto inline-flex items-center gap-4">
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: MUTED }}>
-              <Sparkles className="w-3.5 h-3.5" style={{ color: '#6A5A8A' }} strokeWidth={2} />
-              Samenvatten
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-2 py-1 rounded-md" style={{ color: '#6A5A8A', backgroundColor: 'rgba(106,90,138,0.08)' }}>
+              <Sparkles className="w-3.5 h-3.5" strokeWidth={2} />
+              Daan
             </span>
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: MUTED }}>
-              <Sparkles className="w-3.5 h-3.5" style={{ color: '#6A5A8A' }} strokeWidth={2} />
-              Beantwoord
+            <span className="inline-flex items-center gap-2.5 font-mono text-[11px] font-bold" style={{ color: MUTED }}>
+              <span>NL</span>
+              <span>EN</span>
             </span>
             <span className="font-mono text-[11px] tabular-nums" style={{ color: '#9B9B95' }}>15/166</span>
             <span className="inline-flex flex-col items-center" style={{ color: MUTED }}>
@@ -1729,130 +1815,156 @@ function FactuurView() {
    PLANNING VIEW
    ────────────────────────────────────────────────────────────── */
 
-type CalEvent = { day: number; from: string; to: string; titel: string; sub: string; ref?: string; tone: string }
+/* De echte Planning (MontagePlanningLayout): links inklapbaar "Te plannen"-
+   paneel, rechts een toolbar met scope-dropdown + ‹ Week n › + Week/Maand-
+   toggle + Nieuw, en bij één geselecteerde monteur een tijd-grid per week.
+   Statussen: Gepland / Onderweg / Bezig / Afgerond / Uitgesteld. */
+
+type PlanStatus = 'gepland' | 'bezig' | 'afgerond'
+const planStatusMeta: Record<PlanStatus, { stripe: string; bg: string; tekst: string }> = {
+  gepland:  { stripe: '#4A7AC7', bg: '#E8EEF9', tekst: '#3A5A9A' },
+  bezig:    { stripe: '#4AA366', bg: '#E8F2EC', tekst: '#3A7D52' },
+  afgerond: { stripe: '#CBC9C4', bg: '#F3F2EF', tekst: '#9B9B95' },
+}
+
+type CalEvent = { day: number; from: string; to: string; titel: string; klant: string; ref?: string; plaats?: string; status: PlanStatus; prio?: boolean }
 
 const planEvents: CalEvent[] = [
-  { day: 1, from: '09:00', to: '11:00', titel: 'Op locatie inmeten',     sub: 'De Wit Bouw',   tone: PETROL },
-  { day: 1, from: '11:00', to: '12:00', titel: 'Voorbespreking',         sub: 'Bakkerij Steeg', ref: 'WB-2026-035', tone: PETROL },
-  { day: 1, from: '13:00', to: '18:00', titel: 'Drukproef voorbereiding', sub: 'Atelier 9',    tone: PETROL },
-  { day: 2, from: '08:00', to: '12:00', titel: 'Montage gevelletters',   sub: 'Van Meer & Co',  ref: 'WB-2026-036', tone: '#9A5A48' },
-  { day: 3, from: '10:00', to: '11:30', titel: 'Klantbespreking',        sub: 'Café De Zon',    tone: '#2D6B48' },
-  { day: 4, from: '14:00', to: '17:00', titel: 'Wrap bedrijfsauto',      sub: 'Groenland BV',   ref: 'WB-2026-037', tone: '#6A5A8A' },
+  { day: 0, from: '08:00', to: '12:00', titel: 'Montage gevelletters', klant: 'Van Meer & Co',       ref: 'WB-2026-036', plaats: 'Delft',    status: 'bezig' },
+  { day: 0, from: '13:00', to: '15:00', titel: 'Inmeten reclamezuil',  klant: 'Jansen Bouw',                              plaats: 'Beemster', status: 'gepland' },
+  { day: 1, from: '09:00', to: '13:00', titel: 'Doek voor hek plaatsen', klant: 'Bouwbedrijf Atelier 9', ref: 'WB-2026-037',                 status: 'gepland', prio: true },
+  { day: 2, from: '08:00', to: '10:00', titel: 'Bordje monteren',      klant: 'De Wit Bouw',                                                 status: 'afgerond' },
+  { day: 3, from: '10:00', to: '14:00', titel: 'Wrap bedrijfsauto',    klant: 'Groenland BV',        ref: 'WB-2026-038',  plaats: 'Amstelveen', status: 'gepland' },
+  { day: 4, from: '08:00', to: '12:00', titel: 'Signing vernieuwen',   klant: 'Bakkerij Steeg',      ref: 'WB-2026-039',  plaats: 'Beemster', status: 'gepland' },
 ]
 
 const planDays = [
-  { d: 'Maandag',   date: '18 mei', weather: 'rain', temp: '15°', perc: '100%', today: true },
-  { d: 'Dinsdag',   date: '19 mei', weather: 'rain', temp: '15°', perc: '100%' },
-  { d: 'Woensdag',  date: '20 mei', weather: 'rain', temp: '14°', perc: '77%'  },
-  { d: 'Donderdag', date: '21 mei', weather: 'rain', temp: '16°', perc: '97%'  },
-  { d: 'Vrijdag',   date: '22 mei', weather: 'sun',  temp: '18°', perc: ''     },
-]
+  { d: 'Maandag',   date: '18/5', weather: 'rain', temp: '15°', perc: '100%', teller: '0/2', today: true },
+  { d: 'Dinsdag',   date: '19/5', weather: 'rain', temp: '15°', perc: '100%', teller: '0/1' },
+  { d: 'Woensdag',  date: '20/5', weather: 'rain', temp: '14°', perc: '77%',  teller: '1/1', notitie: 'Materiaal ophalen bij Probo' },
+  { d: 'Donderdag', date: '21/5', weather: 'rain', temp: '16°', perc: '97%',  teller: '0/1' },
+  { d: 'Vrijdag',   date: '22/5', weather: 'sun',  temp: '18°', perc: '',     teller: '0/1' },
+] as { d: string; date: string; weather: string; temp: string; perc: string; teller: string; today?: boolean; notitie?: string }[]
 
 const HOURS = ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00']
+
+const tePlannen = [
+  { naam: 'Reclamezuil parkeerterrein', klant: 'Jansen Bouw', prio: true },
+  { naam: 'Koekoeken', klant: 'Café De Zon' },
+]
 
 function PlanningView() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr]" style={{ minHeight: 620 }}>
-      {/* Sidebar */}
-      <aside className="hidden md:block p-4 md:p-5" style={{ borderRight: `1px solid ${LINE}`, backgroundColor: CARD }}>
+      {/* "Te plannen"-zijpaneel — projecten die je de week in sleept */}
+      <aside className="hidden md:flex flex-col p-4 md:p-5" style={{ borderRight: `1px solid ${LINE}`, backgroundColor: CARD }}>
         <h1 className="font-heading text-[20px] font-bold tracking-tight leading-none mb-1 inline-flex items-baseline gap-2" style={{ color: INK }}>
           Planning<span style={{ color: FLAME }}>.</span>
           <span className="font-mono text-[12px] font-semibold" style={{ color: MUTED }}>22</span>
         </h1>
         <div className="flex items-center justify-between mt-5 mb-2">
           <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: FLAME }}>Te plannen</p>
-          <span className="font-mono text-[11px] font-bold tabular-nums" style={{ color: FLAME }}>0</span>
+          <span className="rounded-full inline-flex items-center justify-center font-mono text-[10px] font-bold text-white" style={{ backgroundColor: FLAME, width: 18, height: 18 }}>2</span>
         </div>
-        <p className="text-[12px] inline-flex items-center gap-1.5" style={{ color: MUTED }}>
-          <CheckCircle2 className="w-3 h-3" style={{ color: '#2D6B48' }} strokeWidth={2} />
-          Niets te plannen
-        </p>
+        <div className="space-y-2">
+          {tePlannen.map((p) => (
+            <div
+              key={p.naam}
+              className="rounded-[8px] px-2.5 py-2 cursor-grab"
+              style={{
+                border: `1px solid ${LINE}`,
+                borderLeft: p.prio ? `3px solid ${FLAME}` : `1px solid ${LINE}`,
+                backgroundColor: p.prio ? 'rgba(241,80,37,0.05)' : BG,
+              }}
+            >
+              <div className="flex items-start justify-between gap-1.5">
+                <p className="text-[12px] font-semibold leading-snug" style={{ color: INK }}>{p.naam}</p>
+                <Flame className="w-3 h-3 shrink-0 mt-0.5" style={{ color: p.prio ? FLAME : '#C8C8C0' }} strokeWidth={2.2} />
+              </div>
+              <p className="text-[10.5px] mt-0.5" style={{ color: MUTED }}>{p.klant}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-auto pt-4 space-y-1" style={{ borderTop: `1px solid ${LINE}` }}>
+          <p className="font-mono text-[11px] tabular-nums" style={{ color: MUTED }}>22 montages<span style={{ color: FLAME }}>.</span></p>
+          <p className="font-mono text-[11px] tabular-nums" style={{ color: MUTED }}>2 beschikbaar<span style={{ color: FLAME }}>.</span></p>
+        </div>
       </aside>
 
       {/* Main planning */}
       <div className="flex flex-col">
-        {/* Top filter bar */}
-        <div className="flex items-center justify-between gap-3 px-4 md:px-5 py-3 flex-wrap" style={{ borderBottom: `1px solid ${LINE}` }}>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-semibold" style={{ color: MUTED, border: `1px solid ${LINE}` }}>
-              <Users className="w-3.5 h-3.5" strokeWidth={2} /> Iedereen
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-semibold" style={{ color: MUTED, border: `1px solid ${LINE}` }}>
-              <Users className="w-3.5 h-3.5" strokeWidth={2} /> Mijn week
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-semibold text-white" style={{ backgroundColor: PETROL_DEEP }}>
+        {/* Toolbar: scope-dropdown · ‹ Week n › · Week/Maand · afwezigheid · Nieuw · meer */}
+        <div className="flex items-center justify-between gap-3 px-4 md:px-5 py-3 flex-wrap" style={{ borderBottom: `1px solid ${LINE}`, backgroundColor: CARD }}>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-semibold" style={{ color: INK, border: `1px solid ${LINE}` }}>
               <Users className="w-3.5 h-3.5" strokeWidth={2} /> Mark Visser
-              <ChevronDown className="w-3 h-3" strokeWidth={2} />
+              <ChevronDown className="w-3 h-3" style={{ color: MUTED }} strokeWidth={2} />
             </span>
-          </div>
-          <div className="inline-flex p-0.5 rounded-md" style={{ border: `1px solid ${LINE}` }}>
-            <span className="px-3 h-7 inline-flex items-center text-[12px] font-bold rounded-[6px] text-white" style={{ backgroundColor: PETROL_DEEP }}>Week</span>
-            <span className="px-3 h-7 inline-flex items-center text-[12px] font-bold" style={{ color: MUTED }}>Maand</span>
-          </div>
-        </div>
-
-        {/* Sub header — person + week + actions */}
-        <div className="flex items-center justify-between gap-3 px-4 md:px-5 py-3 flex-wrap" style={{ borderBottom: `1px solid ${LINE}` }}>
-          <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: INK }}>
-              <Users className="w-3.5 h-3.5" strokeWidth={2} /> Mark Visser
-            </span>
-            <span className="text-[12px] font-semibold" style={{ color: INK }}>
-              {'<'} Week <span className="font-mono text-[13px]">21</span> {'>'}
+              <ChevronLeft className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
+              Week <span className="font-mono text-[13px]">21</span>
+              <ChevronRight className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: MUTED }}>
-              <FileText className="w-3.5 h-3.5" strokeWidth={2} /> Print
+            <div className="inline-flex p-0.5 rounded-md" style={{ backgroundColor: BG, border: `1px solid ${LINE}` }}>
+              <span className="px-3 h-7 inline-flex items-center text-[12px] font-bold rounded-[6px]" style={{ backgroundColor: CARD, color: INK, boxShadow: '0 1px 2px rgba(20,40,40,0.08)' }}>Week</span>
+              <span className="px-3 h-7 inline-flex items-center text-[12px] font-bold" style={{ color: MUTED }}>Maand</span>
+            </div>
+            <span className="inline-flex items-center justify-center h-8 w-8 rounded-md" title="Afwezigheid / vrije dagen" style={{ border: `1px solid ${LINE}` }}>
+              <CalendarOff className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: FLAME }}>
+            <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: FLAME }}>
               <Plus className="w-3.5 h-3.5" strokeWidth={2.5} /> Nieuw
             </span>
-            <span className="inline-flex items-center justify-center h-9 w-9 rounded-md" style={{ border: `1px solid ${LINE}` }}>
-              <Calendar className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
+            <span className="inline-flex items-center justify-center h-8 w-8 rounded-md" style={{ border: `1px solid ${LINE}` }}>
+              <MoreHorizontal className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
             </span>
           </div>
         </div>
 
         {/* Weekly grid */}
         <div className="overflow-x-auto">
-          <div className="grid" style={{ gridTemplateColumns: '60px repeat(5, minmax(150px, 1fr))', minWidth: 800 }}>
-            {/* Weather row */}
-            <div />
+          <div className="grid" style={{ gridTemplateColumns: '60px repeat(5, minmax(160px, 1fr))', minWidth: 860 }}>
+            {/* Dag-headers: dagnaam + datum + afgerond-teller, met weer en dagnotitie */}
+            <div className="px-2 py-3 font-mono text-[10px] tracking-[0.15em] uppercase" style={{ borderBottom: `1px solid ${LINE}`, color: MUTED }}>
+              Tijd
+            </div>
             {planDays.map((day, i) => {
               const Icon = day.weather === 'rain' ? CloudRain : Sun
               return (
-                <div key={i} className="px-3 py-2 inline-flex items-center justify-center gap-2 text-[11px]" style={{ borderBottom: `1px solid ${LINE}`, color: MUTED }}>
-                  <Icon className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={1.8} />
-                  <span className="font-mono">{day.temp}</span>
-                  {day.perc && <span className="font-mono text-[10px]" style={{ color: '#9B9B95' }}>{day.perc}</span>}
+                <div
+                  key={i}
+                  className="px-3 py-2.5"
+                  style={{
+                    borderBottom: `1px solid ${LINE}`,
+                    borderTop: day.today ? `2px solid ${FLAME}` : '2px solid transparent',
+                    backgroundColor: day.today ? 'rgba(26,83,92,0.03)' : 'transparent',
+                  }}
+                >
+                  <p className="text-[13px] font-bold inline-flex items-baseline gap-1.5" style={{ color: day.today ? PETROL : INK }}>
+                    {day.d}
+                    <span className="font-mono text-[11px] font-normal" style={{ color: MUTED }}>{day.date}</span>
+                    <span className="inline-flex items-center gap-0.5 font-mono text-[10px] font-normal" style={{ color: '#9B9B95' }}>
+                      <CheckCircle2 className="w-2.5 h-2.5" strokeWidth={2} />{day.teller}
+                    </span>
+                  </p>
+                  <p className="mt-1 inline-flex items-center gap-1.5 text-[10.5px]" style={{ color: MUTED }}>
+                    <Icon className="w-3 h-3" strokeWidth={1.8} />
+                    <span className="font-mono">{day.temp}</span>
+                    {day.perc && <span className="font-mono text-[10px]" style={{ color: '#9B9B95' }}>{day.perc}</span>}
+                  </p>
+                  {day.notitie && (
+                    <p className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[5px] text-[10px] font-semibold truncate max-w-full" style={{ backgroundColor: 'rgba(241,80,37,0.08)', color: '#C03A18' }}>
+                      <StickyNote className="w-2.5 h-2.5 shrink-0" strokeWidth={2} /> {day.notitie}
+                    </p>
+                  )}
                 </div>
               )
             })}
 
-            {/* Days header row */}
-            <div className="px-2 py-3 font-mono text-[10px] tracking-[0.15em] uppercase" style={{ borderBottom: `1px solid ${LINE}`, color: MUTED }}>
-              Tijd
-            </div>
-            {planDays.map((day, i) => (
-              <div
-                key={i}
-                className="px-3 py-3"
-                style={{
-                  borderBottom: `1px solid ${LINE}`,
-                  backgroundColor: day.today ? 'rgba(241,80,37,0.04)' : 'transparent',
-                  borderTop: day.today ? `2px solid ${FLAME}` : 'none',
-                }}
-              >
-                <p className="text-[13px] font-bold inline-flex items-baseline gap-1.5" style={{ color: INK }}>
-                  {day.d}
-                  <span className="font-mono text-[11px] font-normal" style={{ color: MUTED }}>{day.date}</span>
-                </p>
-              </div>
-            ))}
-
             {/* Time slots — 10 hours */}
-            {HOURS.map((h, hourIdx) => (
+            {HOURS.map((h) => (
               <FragmentRow key={h}>
                 <div className="px-2 py-4 font-mono text-[10px] tabular-nums" style={{ color: '#9B9B95', borderBottom: `1px dashed ${LINE}` }}>
                   {h}
@@ -1869,7 +1981,7 @@ function PlanningView() {
                         borderLeft: dayIdx === 0 ? `1px solid ${LINE}` : 'none',
                         borderRight: `1px solid ${LINE}`,
                         minHeight: 56,
-                        backgroundColor: day.today && hourIdx === 0 ? 'rgba(241,80,37,0.02)' : 'transparent',
+                        backgroundColor: day.today ? 'rgba(26,83,92,0.015)' : 'transparent',
                       }}
                     >
                       {evts.map((e, i) => {
@@ -1878,21 +1990,32 @@ function PlanningView() {
                         const fromMin = parseInt(e.from.split(':')[1] || '0')
                         const toMin = parseInt(e.to.split(':')[1] || '0')
                         const durationH = toH + toMin / 60 - (fromH + fromMin / 60)
+                        const sm = planStatusMeta[e.status]
+                        const afgerond = e.status === 'afgerond'
                         return (
                           <div
                             key={i}
                             className="absolute left-1 right-1 top-1 rounded-[6px] px-2 py-1.5 overflow-hidden"
                             style={{
                               height: `${durationH * 56 - 4}px`,
-                              backgroundColor: 'rgba(26,83,92,0.08)',
-                              borderLeft: `3px solid ${e.tone}`,
+                              backgroundColor: sm.bg,
+                              borderLeft: `3px solid ${e.prio ? FLAME : sm.stripe}`,
                             }}
                           >
-                            <p className="text-[11.5px] font-bold leading-tight truncate" style={{ color: INK }}>{e.titel}</p>
-                            <p className="text-[10.5px] truncate" style={{ color: MUTED }}>{e.sub}</p>
-                            <p className="font-mono text-[10px] mt-1 inline-flex items-center gap-1.5" style={{ color: MUTED }}>
-                              <Clock className="w-2.5 h-2.5" />{e.from} - {e.to}
-                              {e.ref && <span className="inline-flex items-center gap-0.5 ml-1"><FileText className="w-2.5 h-2.5" />{e.ref}</span>}
+                            <div className="flex items-start justify-between gap-1">
+                              <p className="text-[11.5px] font-bold leading-tight truncate" style={{ color: afgerond ? '#9B9B95' : PETROL, textDecoration: afgerond ? 'line-through' : 'none' }}>
+                                {e.titel}
+                              </p>
+                              <span className="inline-flex items-center gap-1 shrink-0">
+                                {e.prio && <Flame className="w-2.5 h-2.5" style={{ color: FLAME }} strokeWidth={2.4} />}
+                                <CheckCircle2 className="w-3 h-3" style={{ color: afgerond ? '#4AA366' : '#C8C8C0' }} strokeWidth={2} />
+                              </span>
+                            </div>
+                            <p className="text-[10.5px] truncate" style={{ color: MUTED }}>{e.klant}</p>
+                            <p className="font-mono text-[10px] mt-1 inline-flex items-center gap-1.5 flex-wrap" style={{ color: sm.tekst }}>
+                              <span className="inline-flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{e.from} – {e.to}</span>
+                              {e.ref && <span className="inline-flex items-center gap-0.5"><FileText className="w-2.5 h-2.5" />{e.ref}</span>}
+                              {e.plaats && <span className="inline-flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{e.plaats}</span>}
                             </p>
                           </div>
                         )
@@ -2275,10 +2398,10 @@ function InkoopView() {
   const [approved, setApproved] = useState<Record<number, boolean>>({})
   return (
     <div className="p-4 md:p-6">
-      {/* Top tabs */}
+      {/* Top tabs — Inkoopfacturen actief in terracotta, zoals FacturenLayout */}
       <div className="flex items-center gap-5 mb-5">
         <span className="text-[13px] font-semibold" style={{ color: MUTED }}>Facturen</span>
-        <span className="text-[13px] font-semibold inline-flex items-center gap-1 px-3 py-1 rounded-full" style={{ color: FLAME, backgroundColor: 'rgba(241,80,37,0.08)' }}>
+        <span className="text-[13px] font-semibold inline-flex items-center gap-1 px-3 py-1 rounded-full" style={{ color: '#C44830', backgroundColor: 'rgba(196,72,48,0.08)' }}>
           Inkoopfacturen
         </span>
       </div>
@@ -2326,22 +2449,27 @@ function InkoopView() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-5 overflow-x-auto whitespace-nowrap">
-          {[
-            { l: 'Alle', n: '41', active: true },
-            { l: 'Nieuw', n: '1' },
-            { l: 'Te reviewen', n: '11' },
-            { l: 'Goedgekeurd', n: '28' },
-            { l: 'Afgewezen', n: '1' },
-          ].map((f) => (
-            <span key={f.l} className="text-[12px] font-semibold inline-flex items-baseline gap-1.5" style={{
-              color: f.active ? FLAME : MUTED,
-              borderBottom: f.active ? `2px solid ${FLAME}` : '2px solid transparent',
-              paddingBottom: 4,
-            }}>
-              {f.l}<span className="font-mono text-[10px]" style={{ color: '#9B9B95' }}>{f.n}</span>
-            </span>
-          ))}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-5 overflow-x-auto whitespace-nowrap">
+            {[
+              { l: 'Alle', n: '41', active: true },
+              { l: 'Nieuw', n: '1' },
+              { l: 'Te reviewen', n: '11' },
+              { l: 'Goedgekeurd', n: '28' },
+              { l: 'Afgewezen', n: '1' },
+            ].map((f) => (
+              <span key={f.l} className="text-[12px] font-semibold inline-flex items-baseline gap-1.5" style={{
+                color: f.active ? '#C44830' : MUTED,
+                borderBottom: f.active ? `2px solid #C44830` : '2px solid transparent',
+                paddingBottom: 4,
+              }}>
+                {f.l}<span className="font-mono text-[10px]" style={{ color: '#9B9B95' }}>{f.n}</span>
+              </span>
+            ))}
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: MUTED }}>
+            Alle maanden <ChevronDown className="w-3 h-3" strokeWidth={2} />
+          </span>
         </div>
       </div>
 
@@ -2398,157 +2526,190 @@ function InkoopView() {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   TAKEN VIEW — week calendar with todo items
+   TAKEN VIEW — Team-weergave (swimlane per medewerker), zoals
+   forgedesk/src/components/planning/TasksLayout.tsx (viewMode
+   'swimlane'). Prioriteiten: kritiek = flame, rest = petrol.
    ────────────────────────────────────────────────────────────── */
 
-type Taak = { day: number; hour: number; titel: string; sub?: string; done?: boolean; highlight?: boolean }
+type Taak = { id: number; day: number; tijd: string; titel: string; project?: string; done?: boolean; kritiek?: boolean }
+type TaakLane = { initialen: string; naam: string; avBg: string; onbekend?: boolean; taken: Taak[] }
 
-const taken: Taak[] = [
-  { day: 0, hour: 1.5,  titel: 'Even contact opnemen',         sub: 'Doek voor hek',     done: true },
-  { day: 0, hour: 3,    titel: 'Klant bellen',                 sub: 'Doek voor hek',     done: true },
-  { day: 0, hour: 4.5,  titel: 'Design bestanden maken',       sub: 'Plafond signing',   highlight: true },
-  { day: 0, hour: 6,    titel: 'RE: Voorbeeld letters',        sub: '1.25u',             done: true },
-  { day: 0, hour: 7.5,  titel: 'Bordjes bestellen met EPS logo', sub: 'Plaatjes voor nam…', done: true },
-  { day: 0, hour: 9,    titel: 'Drukproef goedkeuren',         sub: 'Van Meer & Co',     highlight: true },
-  { day: 0, hour: 12,   titel: 'Eindcheck montage',            sub: 'Lichtreclame',      done: true },
-  { day: 0, hour: 14.5, titel: 'Werkbonnen maken',             sub: 'Diversen buitenre…', done: true },
-  { day: 1, hour: 8,    titel: 'Bestellen?',                   sub: 'Geveltekst',        highlight: true },
-  { day: 1, hour: 10,   titel: 'Shirt bestellen',              sub: 'Mokken + Display …', done: true },
-  { day: 1, hour: 12,   titel: 'Offerte maken',                sub: 'Logo Bakkerij Steeg', highlight: true },
+const taakLanes: TaakLane[] = [
+  {
+    initialen: 'JV', naam: 'Jan Visser', avBg: '#7BB89A',
+    taken: [
+      { id: 1,  day: 0, tijd: '09:00', titel: 'Drukproef goedkeuren', project: 'Van Meer & Co' },
+      { id: 2,  day: 0, tijd: '11:30', titel: 'Offerte opvolgen', project: 'Jansen Bouw', kritiek: true },
+      { id: 3,  day: 1, tijd: '09:00', titel: 'Design bestanden maken', project: 'Plafond signing' },
+      { id: 4,  day: 2, tijd: '14:00', titel: 'Klant bellen', project: 'Doek voor hek', done: true },
+      { id: 5,  day: 4, tijd: '10:00', titel: 'Factuur versturen', project: 'Bakkerij Steeg' },
+    ],
+  },
+  {
+    initialen: 'MV', naam: 'Mark Visser', avBg: '#3A6B8C',
+    taken: [
+      { id: 6,  day: 0, tijd: '08:30', titel: 'Vinyl bestellen', project: 'Gevelreclame', done: true },
+      { id: 7,  day: 1, tijd: '13:00', titel: 'Werkbon voorbereiden', project: 'Boottekst' },
+      { id: 8,  day: 3, tijd: '09:00', titel: 'Materialen ophalen', project: 'Sign Supply' },
+    ],
+  },
+  {
+    initialen: 'SH', naam: 'Sven Hendriks', avBg: '#9A5A48',
+    taken: [
+      { id: 9,  day: 1, tijd: '10:30', titel: 'Bordjes bestellen met EPS logo' },
+      { id: 10, day: 2, tijd: '09:00', titel: 'Eindcheck montage', project: 'Lichtreclame', done: true },
+      { id: 11, day: 4, tijd: '15:00', titel: 'Situatiefoto’s maken', project: 'Atelier 9' },
+    ],
+  },
+  {
+    initialen: '?', naam: 'Niet toegewezen', avBg: FLAME, onbekend: true,
+    taken: [
+      { id: 12, day: 2, tijd: '12:00', titel: 'Offerte maken', project: 'Logo Bakkerij Steeg', kritiek: true },
+    ],
+  },
 ]
 
-const takenDays = [
-  { d: 'Ma', n: 18, today: true,  count: '' },
-  { d: 'Di', n: 19,                count: '3' },
-  { d: 'Wo', n: 20,                count: '' },
-  { d: 'Do', n: 21,                count: '' },
-  { d: 'Vr', n: 22,                count: '' },
+const taakDagen = [
+  { d: 'MA', n: 18, today: true },
+  { d: 'DI', n: 19 },
+  { d: 'WO', n: 20 },
+  { d: 'DO', n: 21 },
+  { d: 'VR', n: 22 },
 ]
-const TAKEN_HOURS = Array.from({ length: 16 }, (_, i) => i + 1)
 
 function TakenView() {
   const [overrides, setOverrides] = useState<Record<number, boolean>>({})
-  const toggle = (i: number, current: boolean) =>
-    setOverrides((o) => ({ ...o, [i]: !(i in o ? o[i] : current) }))
+  const toggle = (id: number, current: boolean) =>
+    setOverrides((o) => ({ ...o, [id]: !(id in o ? o[id] : current) }))
+
   return (
     <div className="flex flex-col" style={{ minHeight: 620 }}>
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 px-4 md:px-6 py-4 flex-wrap" style={{ borderBottom: `1px solid ${LINE}` }}>
+      {/* Toolbar — zelfde opbouw als TasksLayout: titel+teller, filter-pills,
+          mijn-taken avatar, medewerker-filter, view-toggle, weeknavigatie, zoom */}
+      <div className="flex items-center justify-between gap-3 px-4 md:px-6 py-3.5 flex-wrap" style={{ borderBottom: `1px solid ${LINE}`, backgroundColor: CARD }}>
         <div className="flex items-center gap-4 flex-wrap">
           <h1 className="font-heading text-[22px] font-bold tracking-tight leading-none inline-flex items-baseline gap-2" style={{ color: INK }}>
             Taken<span style={{ color: FLAME }}>.</span>
-            <span className="font-mono text-[12px] font-semibold" style={{ color: MUTED }}>42/106</span>
+            <span className="font-mono text-[12px] font-semibold" style={{ color: MUTED }}>4/12</span>
           </h1>
           <div className="flex items-center gap-3 text-[12px]" style={{ color: MUTED }}>
             <span style={{ color: INK, fontWeight: 700 }}>Alle</span>
             <span>Project</span>
             <span>Los</span>
-            <span>|</span>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md" style={{ color: PETROL, backgroundColor: 'rgba(26,83,92,0.06)' }}>
+            <span style={{ color: '#D8D6D0' }}>|</span>
+            <span className="inline-flex items-center gap-1.5">
               <Wrench className="w-3 h-3" /> Montage
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="w-8 h-8 rounded-full inline-flex items-center justify-center font-mono text-[11px] font-bold" style={{ backgroundColor: '#E2F0F0', color: PETROL }}>J</span>
-          <span className="inline-flex items-center gap-2 h-9 px-3 rounded-md text-[12px] font-semibold" style={{ color: '#2D6B48', backgroundColor: 'rgba(45,107,72,0.08)' }}>
-            <span className="w-5 h-5 rounded-full inline-flex items-center justify-center font-mono text-[10px] font-bold" style={{ backgroundColor: '#7BB89A', color: '#FFFFFF' }}>J</span>
-            Jan Visser <ChevronDown className="w-3 h-3" />
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="w-8 h-8 rounded-full inline-flex items-center justify-center font-mono text-[10px] font-bold" title="Mijn taken" style={{ backgroundColor: '#E2F0F0', color: PETROL, border: `1px solid ${LINE}` }}>JV</span>
+          <span className="inline-flex items-center gap-2 h-8 px-3 rounded-md text-[12px] font-semibold" style={{ color: INK, border: `1px solid ${LINE}` }}>
+            Alle medewerkers <ChevronDown className="w-3 h-3" style={{ color: MUTED }} />
           </span>
-          <div className="inline-flex p-0.5 rounded-md" style={{ border: `1px solid ${LINE}` }}>
-            <span className="px-3 h-7 inline-flex items-center text-[12px] font-bold rounded-[6px]" style={{ backgroundColor: INK, color: '#FFFFFF' }}>Week</span>
-            <span className="px-3 h-7 inline-flex items-center text-[12px] font-bold" style={{ color: MUTED }}>Maand</span>
-            <span className="px-3 h-7 inline-flex items-center text-[12px] font-bold" style={{ color: MUTED }}>Team</span>
+          <div className="flex items-center gap-3 text-[12px]" style={{ color: MUTED }}>
+            <span>Week</span>
+            <span>Maand</span>
+            <span style={{ color: INK, fontWeight: 700 }}>Team</span>
           </div>
-          <span className="text-[12px] font-semibold" style={{ color: INK }}>{'<'} 18 – 22 mei {'>'}</span>
-          <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: MUTED }}>
-            <span>A</span><span style={{ color: INK, fontWeight: 700 }}>A</span>
+          <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: INK }}>
+            <ChevronLeft className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
+            18 – 22 mei
+            <ChevronRight className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
+          </span>
+          <span className="inline-flex items-baseline gap-1 text-[11px]" style={{ color: MUTED }}>
+            <span>A</span><span className="text-[13px]" style={{ color: INK, fontWeight: 700 }}>A</span>
           </span>
         </div>
       </div>
 
-      {/* Week grid */}
+      {/* Team-grid: kolom Medewerker + 5 dagkolommen */}
       <div className="overflow-x-auto flex-1">
-        <div className="grid" style={{ gridTemplateColumns: '40px repeat(5, minmax(150px, 1fr))', minWidth: 800 }}>
-          {/* Day headers */}
-          <div className="px-2 py-3" style={{ borderBottom: `1px solid ${LINE}` }} />
-          {takenDays.map((d, i) => (
-            <div
-              key={i}
-              className="px-3 py-3 text-center"
-              style={{
-                borderBottom: `1px solid ${LINE}`,
-                borderLeft: `1px solid ${LINE}`,
-              }}
-            >
-              <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-1" style={{ color: MUTED }}>{d.d}.</p>
+        <div className="grid" style={{ gridTemplateColumns: '176px repeat(5, minmax(140px, 1fr))', minWidth: 880 }}>
+          {/* Kop-rij */}
+          <div className="px-4 py-3 font-mono text-[10px] font-bold tracking-[0.15em] uppercase" style={{ borderBottom: `1px solid ${LINE}`, color: MUTED }}>
+            Medewerker
+          </div>
+          {taakDagen.map((d, i) => (
+            <div key={i} className="px-3 py-2.5 text-center" style={{ borderBottom: `1px solid ${LINE}`, borderLeft: `1px solid ${LINE}` }}>
+              <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: MUTED }}>
+                {d.d}{d.today && <span style={{ color: FLAME }}>.</span>}
+              </p>
               <p
-                className="inline-flex items-center justify-center font-heading text-[18px] font-bold rounded-full"
+                className="inline-flex items-center justify-center font-heading text-[15px] font-bold rounded-full mt-0.5"
                 style={{
-                  width: 30, height: 30,
+                  width: 26, height: 26,
                   backgroundColor: d.today ? PETROL : 'transparent',
                   color: d.today ? '#FFFFFF' : INK,
                 }}
               >
                 {d.n}
               </p>
-              {d.count && <span className="ml-1 font-mono text-[10px]" style={{ color: '#9B9B95' }}>{d.count}</span>}
-              <p className="text-[11px] mt-1" style={{ color: '#C8C8C0' }}>+</p>
             </div>
           ))}
 
-          {/* Hour rows */}
-          {TAKEN_HOURS.map((h) => (
-            <FragmentRow key={h}>
-              <div className="px-2 py-3 font-mono text-[10px] tabular-nums" style={{ color: '#9B9B95', borderBottom: `1px dashed ${LINE}` }}>
-                {String(h).padStart(2, '0')}
+          {/* Lanes — rij per medewerker */}
+          {taakLanes.map((lane, li) => (
+            <FragmentRow key={lane.naam}>
+              <div className="flex items-center gap-2 px-3 py-3" style={{ borderBottom: `1px solid ${LINE}`, backgroundColor: li % 2 === 1 ? '#FAFAF9' : 'transparent' }}>
+                <ChevronDown className="w-3 h-3 shrink-0" style={{ color: '#C8C8C0' }} strokeWidth={2} />
+                <span
+                  className="w-6 h-6 rounded-full inline-flex items-center justify-center font-mono text-[9px] font-bold text-white shrink-0"
+                  style={{ backgroundColor: lane.onbekend ? 'rgba(241,80,37,0.15)' : lane.avBg, color: lane.onbekend ? '#C03A18' : '#FFFFFF' }}
+                >
+                  {lane.initialen}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[12px] font-bold truncate" style={{ color: lane.onbekend ? '#C03A18' : INK }}>{lane.naam}</p>
+                  <p className="font-mono text-[10px]" style={{ color: '#9B9B95' }}>{lane.taken.length} {lane.taken.length === 1 ? 'taak' : 'taken'}</p>
+                </div>
               </div>
-              {takenDays.map((day, dayIdx) => {
-                const slot = taken.filter((t) => t.day === dayIdx && Math.floor(t.hour) === h && (t.hour - h) < 1)
+              {taakDagen.map((dag, di) => {
+                const cel = lane.taken.filter((t) => t.day === di)
                 return (
                   <div
-                    key={dayIdx}
-                    className="relative"
+                    key={di}
+                    className="p-1.5 space-y-1.5"
                     style={{
-                      borderBottom: `1px dashed ${LINE}`,
+                      borderBottom: `1px solid ${LINE}`,
                       borderLeft: `1px solid ${LINE}`,
-                      minHeight: 56,
-                      backgroundColor: day.today ? 'rgba(241,80,37,0.015)' : 'transparent',
+                      minHeight: 84,
+                      backgroundColor: dag.today ? 'rgba(26,83,92,0.02)' : li % 2 === 1 ? '#FAFAF9' : 'transparent',
                     }}
                   >
-                    {slot.map((t) => {
-                      const idx = taken.indexOf(t)
-                      const offsetMin = (t.hour - h) * 60
-                      const done = idx in overrides ? overrides[idx] : Boolean(t.done)
+                    {cel.map((t) => {
+                      const done = t.id in overrides ? overrides[t.id] : Boolean(t.done)
+                      const prioKleur = t.kritiek ? '#C03A18' : PETROL
                       return (
                         <div
-                          key={idx}
-                          className="absolute left-1 right-1 rounded-[6px] px-2.5 py-1.5 transition-colors cursor-pointer hover:bg-[rgba(26,83,92,0.05)]"
-                          style={{
-                            top: `${offsetMin / 60 * 56 + 2}px`,
-                            backgroundColor: t.highlight && !done ? 'rgba(58,107,140,0.10)' : 'transparent',
-                            borderLeft: t.highlight && !done ? `3px solid #3A6B8C` : `3px solid transparent`,
-                          }}
-                          onClick={() => toggle(idx, Boolean(t.done))}
+                          key={t.id}
                           role="button"
                           tabIndex={0}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(idx, Boolean(t.done)) } }}
+                          onClick={() => toggle(t.id, Boolean(t.done))}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(t.id, Boolean(t.done)) } }}
+                          className="rounded-[6px] px-2 py-1.5 cursor-pointer transition-colors hover:brightness-[0.98]"
+                          style={{
+                            backgroundColor: done ? '#E8F0F0' : t.kritiek ? 'rgba(241,80,37,0.09)' : 'rgba(26,83,92,0.07)',
+                            borderLeft: `2px solid ${done ? '#CBC9C4' : t.kritiek ? FLAME : PETROL}`,
+                          }}
                         >
-                          <div className="flex items-start gap-2">
-                            <span className="w-3.5 h-3.5 rounded-full mt-0.5 flex-shrink-0 inline-flex items-center justify-center transition-colors" style={{ backgroundColor: done ? PETROL : 'transparent', border: done ? 'none' : `1.5px solid ${t.highlight ? '#3A6B8C' : MUTED}` }}>
-                              {done && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                          <div className="flex items-start gap-1.5">
+                            <span className="w-3.5 h-3.5 rounded-full mt-[1px] flex-shrink-0 inline-flex items-center justify-center transition-colors" style={{ backgroundColor: done ? PETROL : 'transparent', border: done ? 'none' : `1.5px solid ${prioKleur}` }}>
+                              {done
+                                ? <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                : <span className="w-1 h-1 rounded-full" style={{ backgroundColor: prioKleur }} />}
                             </span>
                             <div className="min-w-0 flex-1">
-                              <p className="text-[12px] font-semibold leading-snug truncate" style={{
-                                color: done ? '#9B9B95' : t.highlight ? '#3A6B8C' : INK,
+                              <p className="text-[11.5px] font-semibold leading-snug truncate" style={{
+                                color: done ? '#9B9B95' : prioKleur,
                                 textDecoration: done ? 'line-through' : 'none',
-                              }}>{t.titel}</p>
-                              {t.sub && (
-                                <p className="font-mono text-[10px] mt-0.5 truncate" style={{ color: '#9B9B95' }}>
-                                  {String(h).padStart(2, '0')}:{String(Math.round(offsetMin)).padStart(2, '0')}
-                                  <span className="ml-1.5">{t.sub}</span>
-                                </p>
-                              )}
+                              }}>
+                                {t.kritiek && !done && <Flame className="w-2.5 h-2.5 inline-block mr-0.5 -mt-0.5" style={{ color: FLAME }} strokeWidth={2.4} />}
+                                {t.titel}
+                              </p>
+                              <p className="font-mono text-[9.5px] mt-0.5 truncate" style={{ color: '#9B9B95' }}>
+                                {t.tijd}{t.project && <span className="ml-1.5">{t.project}</span>}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -2560,6 +2721,8 @@ function TakenView() {
             </FragmentRow>
           ))}
         </div>
+
+        {/* Lege staat onder de lanes, zoals 'Geen taken voor deze week.' bij lege lane */}
       </div>
     </div>
   )
@@ -2762,8 +2925,8 @@ function KlantenView() {
           Klanten<span style={{ color: FLAME }}>.</span>
           <span className="font-mono text-[13px] font-semibold" style={{ color: MUTED }}>1876</span>
         </h1>
-        <span className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: PETROL_DEEP }}>
-          <Users className="w-3.5 h-3.5" strokeWidth={2} /> Nieuwe klant
+        <span className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: FLAME }}>
+          <Plus className="w-3.5 h-3.5" strokeWidth={2.5} /> Nieuwe klant
         </span>
       </div>
 
@@ -2797,7 +2960,7 @@ function KlantenView() {
             <span className="px-2 h-7 inline-flex items-center rounded-[4px]" style={{ backgroundColor: 'rgba(26,83,92,0.08)', color: PETROL }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span>
           </div>
           <div className="inline-flex items-center gap-3 text-[12px]">
-            <span className="px-3 h-7 inline-flex items-center rounded-md font-semibold" style={{ backgroundColor: 'rgba(45,107,72,0.10)', color: '#2D6B48' }}>Naam ↑</span>
+            <span className="px-3 h-7 inline-flex items-center rounded-md font-semibold" style={{ backgroundColor: 'rgba(26,83,92,0.08)', color: PETROL }}>Naam ↑</span>
             <span style={{ color: MUTED }}>Stad</span>
             <span style={{ color: MUTED }}>Status</span>
             <span style={{ color: MUTED }}>Datum</span>
@@ -2819,8 +2982,8 @@ function KlantenView() {
             { l: 'Met aandacht', n: '0' },
           ].map((f) => (
             <span key={f.l} className="text-[12px] font-semibold inline-flex items-baseline gap-1.5" style={{
-              color: f.active ? '#2D6B48' : MUTED,
-              borderBottom: f.active ? `2px solid #2D6B48` : '2px solid transparent',
+              color: f.active ? INK : MUTED,
+              borderBottom: f.active ? `2px solid ${PETROL}` : '2px solid transparent',
               paddingBottom: 4,
             }}>
               {f.l}{f.n !== '0' && <span className="font-mono text-[10px]" style={{ color: '#9B9B95' }}>{f.n}</span>}
@@ -2828,17 +2991,10 @@ function KlantenView() {
           ))}
         </div>
 
-        {/* Labels row */}
+        {/* Status row — klant-status (Normaal / Vooruit betalen / …), zoals ClientsLayout */}
         <div className="flex items-center gap-4 mb-3 overflow-x-auto whitespace-nowrap text-[12px]" style={{ color: MUTED }}>
-          <span className="font-semibold" style={{ color: '#2D6B48', borderBottom: `2px solid #2D6B48`, paddingBottom: 4 }}>Alle labels</span>
-          {['Vooruit betalen', 'Niet helpen', 'Voorrang', 'Grote klant', 'Wanbetaler'].map((l) => (
-            <span key={l}>{l}</span>
-          ))}
-        </div>
-
-        {/* Statussen row */}
-        <div className="flex items-center gap-4 overflow-x-auto whitespace-nowrap text-[12px]" style={{ color: MUTED }}>
-          <span className="font-semibold" style={{ color: '#2D6B48', borderBottom: `2px solid #2D6B48`, paddingBottom: 4 }}>Alle statussen</span>
+          <span className="font-mono text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: '#9B9B95' }}>Status</span>
+          <span className="font-semibold" style={{ color: INK, borderBottom: `2px solid ${PETROL}`, paddingBottom: 4 }}>Alle</span>
           {(['normaal', 'vooruit', 'niet-helpen', 'voorrang', 'geblokkeerd'] as KlantStatus[]).map((s) => {
             const label = s === 'vooruit' ? 'Vooruit betalen' : s === 'niet-helpen' ? 'Niet helpen' : s === 'normaal' ? 'Normaal' : s === 'voorrang' ? 'Voorrang' : 'Geblokkeerd'
             return (
@@ -2848,6 +3004,15 @@ function KlantenView() {
               </span>
             )
           })}
+        </div>
+
+        {/* Labels row */}
+        <div className="flex items-center gap-4 overflow-x-auto whitespace-nowrap text-[12px]" style={{ color: MUTED }}>
+          <span className="font-mono text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: '#9B9B95' }}>Labels</span>
+          <span className="font-semibold" style={{ color: INK, borderBottom: `2px solid ${PETROL}`, paddingBottom: 4 }}>Alle</span>
+          {['Grote klant', 'Wanbetaler', 'Vooruit betalen', 'Niet helpen', 'Voorrang'].map((l) => (
+            <span key={l}>{l}</span>
+          ))}
         </div>
       </div>
 
