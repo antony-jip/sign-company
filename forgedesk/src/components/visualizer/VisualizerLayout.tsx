@@ -983,7 +983,7 @@ export function VisualizerLayout() {
                 Studio<span className="text-flame">.</span>
               </h1>
               <p className="text-xs text-muted-foreground mt-1">
-                <span className="font-medium text-foreground/80">Claude Sonnet 4.6</span> bedenkt het ontwerp · <span className="font-medium text-foreground/80">Nano Banana 2</span> genereert het beeld
+                <span className="font-medium text-foreground/80">Daan</span> bedenkt het ontwerp en zet je idee op de foto
               </p>
             </div>
           </div>
