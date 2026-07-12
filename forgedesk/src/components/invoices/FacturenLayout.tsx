@@ -169,10 +169,9 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'open', label: 'Open' },
   { value: 'verzonden', label: 'Verzonden' },
   { value: 'betaald', label: 'Betaald' },
-  { value: 'vervallen', label: 'Vervallen' },
-  { value: 'verlopen', label: 'Verlopen' },
+  { value: 'verlopen', label: 'Vervallen' },
   { value: 'gecrediteerd', label: 'Gecrediteerd' },
-  { value: 'credit', label: 'Creditfacturen' },
+  { value: 'credit', label: "Creditnota's" },
   { value: 'te_factureren', label: 'Te factureren' },
 ]
 
@@ -201,6 +200,14 @@ function factuurNeedsAttention(f: Factuur): boolean {
     if (f.vervaldatum < today) return true
   }
   return false
+}
+
+// Eén definitie van achterstallig voor stat-tile, filter en teller: de
+// vervallen-status óf over de vervaldatum heen zonder betaald/gecrediteerd
+function isAchterstallig(f: Factuur, vandaag: string): boolean {
+  if (f.status === 'betaald' || f.status === 'gecrediteerd') return false
+  if (f.status === 'vervallen') return true
+  return !!f.vervaldatum && f.vervaldatum < vandaag
 }
 
 
@@ -458,7 +465,7 @@ export function FacturenLayout() {
 
     if (filterStatus === 'verlopen') {
       const vandaag = getTodayString()
-      result = result.filter((f) => f.vervaldatum < vandaag && f.status !== 'betaald' && f.status !== 'gecrediteerd')
+      result = result.filter((f) => isAchterstallig(f, vandaag))
     } else if (filterStatus === 'credit') {
       result = result.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit')
     } else if (filterStatus !== 'alle') {
@@ -512,6 +519,8 @@ export function FacturenLayout() {
     }
     counts['te_factureren'] = teFacturerenProjecten.length
     counts['credit'] = facturen.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit').length
+    const vandaag = getTodayString()
+    counts['verlopen'] = facturen.filter((f) => isAchterstallig(f, vandaag)).length
     return counts
   }, [facturen, teFacturerenProjecten])
 
@@ -1472,13 +1481,13 @@ export function FacturenLayout() {
 
   const verlopenCount = useMemo(() => {
     const vandaag = getTodayString()
-    return facturen.filter((f) => f.vervaldatum < vandaag && f.status !== 'betaald' && f.status !== 'gecrediteerd').length
+    return facturen.filter((f) => isAchterstallig(f, vandaag)).length
   }, [facturen])
 
   const verlopenTotaal = useMemo(() => {
     const vandaag = getTodayString()
     return round2(facturen
-      .filter((f) => f.vervaldatum < vandaag && f.status !== 'betaald' && f.status !== 'gecrediteerd')
+      .filter((f) => isAchterstallig(f, vandaag))
       .reduce((sum, f) => sum + f.totaal, 0))
   }, [facturen])
 
