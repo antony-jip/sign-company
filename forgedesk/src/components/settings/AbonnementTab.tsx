@@ -128,12 +128,12 @@ export function AbonnementTab() {
 
       {/* Status banner */}
       {isActive && !isOpgezegdPending && (
-        <div className="flex items-center justify-between rounded-xl p-5" style={{ backgroundColor: '#E2F0F0', border: '1px solid #C0DDDD' }}>
+        <div className="flex items-center justify-between rounded-xl p-5 border bg-[#E2F0F0] border-[#C0DDDD] dark:bg-petrol/[0.18] dark:border-petrol/40">
           <div className="flex items-center gap-3">
-            <Check className="h-5 w-5" style={{ color: '#1A535C' }} />
+            <Check className="h-5 w-5 text-[#1A535C] dark:text-[#5AABB5]" />
             <div>
-              <span className="text-[14px] font-bold" style={{ color: '#1A535C' }}>Abonnement actief</span>
-              <p className="text-[12px]" style={{ color: '#1A535C', opacity: 0.6 }}>Je hebt volledige toegang tot alle features.</p>
+              <span className="text-[14px] font-bold text-[#1A535C] dark:text-[#5AABB5]">Abonnement actief</span>
+              <p className="text-[12px] text-[#1A535C]/60 dark:text-[#5AABB5]/70">Je hebt volledige toegang tot alle features.</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -142,7 +142,7 @@ export function AbonnementTab() {
                 Toch niet
               </Button>
             )}
-            <Button onClick={handleOpzeggen} disabled={isLoading} variant="outline" className="border-petrol/20 text-petrol">
+            <Button onClick={handleOpzeggen} disabled={isLoading} variant="outline" className="border-petrol/20 text-petrol dark:border-white/15 dark:text-[#5AABB5]">
               {loadingAction === 'opzeggen' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {bevestigOpzeggen ? 'Bevestig opzegging' : 'Opzeggen'}
             </Button>
@@ -151,11 +151,11 @@ export function AbonnementTab() {
       )}
 
       {isOpgezegdPending && (
-        <div className="flex items-center gap-3 rounded-xl p-5" style={{ backgroundColor: '#F5F2E8', border: '1px solid #E5DCC8' }}>
-          <CalendarClock className="h-5 w-5 flex-shrink-0" style={{ color: '#8A7A4A' }} />
+        <div className="flex items-center gap-3 rounded-xl p-5 border bg-[#F5F2E8] border-[#E5DCC8] dark:bg-[#8A7A4A]/[0.14] dark:border-[#8A7A4A]/40">
+          <CalendarClock className="h-5 w-5 flex-shrink-0 text-[#8A7A4A] dark:text-[#C9B87A]" />
           <div>
-            <span className="text-[14px] font-bold" style={{ color: '#8A7A4A' }}>Abonnement opgezegd</span>
-            <p className="text-[12px]" style={{ color: '#8A7A4A', opacity: 0.7 }}>
+            <span className="text-[14px] font-bold text-[#8A7A4A] dark:text-[#C9B87A]">Abonnement opgezegd</span>
+            <p className="text-[12px] text-[#8A7A4A]/70 dark:text-[#C9B87A]/70">
               Je houdt volledige toegang tot {formatDatum(opgezegdTot!)}. Daarna stopt het abonnement, je data blijft bewaard.
             </p>
           </div>
@@ -163,23 +163,23 @@ export function AbonnementTab() {
       )}
 
       {isExpired && (
-        <div className="flex items-center gap-3 rounded-xl p-5" style={{ backgroundColor: '#FDE8E2', border: '1px solid #F0C8BC' }}>
-          <AlertTriangle className="h-5 w-5 flex-shrink-0" style={{ color: '#C03A18' }} />
+        <div className="flex items-center gap-3 rounded-xl p-5 border bg-[#FDE8E2] border-[#F0C8BC] dark:bg-[#C03A18]/[0.14] dark:border-[#C03A18]/40">
+          <AlertTriangle className="h-5 w-5 flex-shrink-0 text-[#C03A18] dark:text-[#E8906E]" />
           <div>
-            <span className="text-[14px] font-bold" style={{ color: '#C03A18' }}>
+            <span className="text-[14px] font-bold text-[#C03A18] dark:text-[#E8906E]">
               {trialStatus === 'verlopen' ? 'Je proefperiode is verlopen' : 'Je abonnement is opgezegd'}
             </span>
-            <p className="text-[12px]" style={{ color: '#C03A18', opacity: 0.7 }}>Je data staat veilig. Activeer een abonnement om verder te werken.</p>
+            <p className="text-[12px] text-[#C03A18]/70 dark:text-[#E8906E]/70">Je data staat veilig. Activeer een abonnement om verder te werken.</p>
           </div>
         </div>
       )}
 
       {!isActive && !isExpired && trialDagenOver !== undefined && (
-        <div className="flex items-center gap-3 rounded-xl p-5" style={{ backgroundColor: '#F5F2E8', border: '1px solid #E5DCC8' }}>
-          <div className="text-[24px] font-bold font-mono" style={{ color: '#8A7A4A' }}>{trialDagenOver}</div>
+        <div className="flex items-center gap-3 rounded-xl p-5 border bg-[#F5F2E8] border-[#E5DCC8] dark:bg-[#8A7A4A]/[0.14] dark:border-[#8A7A4A]/40">
+          <div className="text-[24px] font-bold font-mono text-[#8A7A4A] dark:text-[#C9B87A]">{trialDagenOver}</div>
           <div>
-            <span className="text-[14px] font-bold" style={{ color: '#8A7A4A' }}>dagen proefperiode over</span>
-            <p className="text-[12px]" style={{ color: '#8A7A4A', opacity: 0.7 }}>Alle features beschikbaar, geen beperkingen.</p>
+            <span className="text-[14px] font-bold text-[#8A7A4A] dark:text-[#C9B87A]">dagen proefperiode over</span>
+            <p className="text-[12px] text-[#8A7A4A]/70 dark:text-[#C9B87A]/70">Alle features beschikbaar, geen beperkingen.</p>
           </div>
         </div>
       )}
