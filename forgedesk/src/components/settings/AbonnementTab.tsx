@@ -7,11 +7,11 @@ import { toast } from 'sonner'
 import {
   Check,
   Loader2,
-  ExternalLink,
   AlertTriangle,
   Users,
   Plus,
   ArrowRight,
+  CalendarClock,
 } from 'lucide-react'
 
 const FEATURES = [
@@ -27,24 +27,34 @@ const FEATURES = [
   'Eenvoudig data overzetten',
 ]
 
+function formatDatum(iso: string): string {
+  return new Date(iso).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
 export function AbonnementTab() {
   const { trialStatus, trialDagenOver, organisatie, session } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
-  const [loadingAction, setLoadingAction] = useState<'activate' | 'portal' | null>(null)
+  const [loadingAction, setLoadingAction] = useState<'activate' | 'opzeggen' | null>(null)
+  const [bevestigOpzeggen, setBevestigOpzeggen] = useState(false)
+  const [opgezegdTot, setOpgezegdTot] = useState<string | null>(organisatie?.abonnement_actief_tot ?? null)
+
+  useEffect(() => {
+    setOpgezegdTot(organisatie?.abonnement_actief_tot ?? null)
+  }, [organisatie?.abonnement_actief_tot])
 
   useEffect(() => {
     const result = searchParams.get('abonnement')
-    if (result === 'success') {
-      toast.success('Abonnement geactiveerd! Welkom bij Doen.')
-      searchParams.delete('abonnement')
-      setSearchParams(searchParams, { replace: true })
-    } else if (result === 'canceled') {
-      toast('Betaling geannuleerd')
+    if (result === 'klaar') {
+      if (trialStatus === 'actief') {
+        toast.success('Abonnement geactiveerd! Welkom bij doen.')
+      } else {
+        toast('Betaling wordt verwerkt. Je abonnement is zo actief, ververs de pagina over een minuutje.')
+      }
       searchParams.delete('abonnement')
       setSearchParams(searchParams, { replace: true })
     }
-  }, [searchParams, setSearchParams])
+  }, [searchParams, setSearchParams, trialStatus])
 
   const handleActivate = async () => {
     if (!organisatie?.id || !session?.access_token) return
@@ -70,12 +80,16 @@ export function AbonnementTab() {
     }
   }
 
-  const handleManage = async () => {
+  const handleOpzeggen = async () => {
     if (!organisatie?.id || !session?.access_token) return
+    if (!bevestigOpzeggen) {
+      setBevestigOpzeggen(true)
+      return
+    }
     setIsLoading(true)
-    setLoadingAction('portal')
+    setLoadingAction('opzeggen')
     try {
-      const res = await fetch('/api/create-portal-session', {
+      const res = await fetch('/api/cancel-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,17 +99,24 @@ export function AbonnementTab() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Er ging iets mis')
-      if (data.url) window.location.href = data.url
+      setOpgezegdTot(data.actief_tot ?? null)
+      toast.success(
+        data.actief_tot
+          ? `Abonnement opgezegd. Je houdt toegang tot ${formatDatum(data.actief_tot)}.`
+          : 'Abonnement opgezegd.'
+      )
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Kon portaal niet openen')
+      toast.error(error instanceof Error ? error.message : 'Kon abonnement niet opzeggen')
     } finally {
       setIsLoading(false)
       setLoadingAction(null)
+      setBevestigOpzeggen(false)
     }
   }
 
   const isActive = trialStatus === 'actief'
   const isExpired = trialStatus === 'verlopen' || trialStatus === 'opgezegd'
+  const isOpgezegdPending = isActive && !!opgezegdTot
 
   return (
     <div className="space-y-8">
@@ -106,7 +127,7 @@ export function AbonnementTab() {
       </div>
 
       {/* Status banner */}
-      {isActive && (
+      {isActive && !isOpgezegdPending && (
         <div className="flex items-center justify-between rounded-xl p-5" style={{ backgroundColor: '#E2F0F0', border: '1px solid #C0DDDD' }}>
           <div className="flex items-center gap-3">
             <Check className="h-5 w-5" style={{ color: '#1A535C' }} />
@@ -115,10 +136,29 @@ export function AbonnementTab() {
               <p className="text-[12px]" style={{ color: '#1A535C', opacity: 0.6 }}>Je hebt volledige toegang tot alle features.</p>
             </div>
           </div>
-          <Button onClick={handleManage} disabled={isLoading} variant="outline" className="border-petrol/20 text-petrol">
-            {loadingAction === 'portal' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
-            Beheren
-          </Button>
+          <div className="flex items-center gap-2">
+            {bevestigOpzeggen && !isLoading && (
+              <Button onClick={() => setBevestigOpzeggen(false)} variant="ghost" className="text-muted-foreground">
+                Toch niet
+              </Button>
+            )}
+            <Button onClick={handleOpzeggen} disabled={isLoading} variant="outline" className="border-petrol/20 text-petrol">
+              {loadingAction === 'opzeggen' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {bevestigOpzeggen ? 'Bevestig opzegging' : 'Opzeggen'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isOpgezegdPending && (
+        <div className="flex items-center gap-3 rounded-xl p-5" style={{ backgroundColor: '#F5F2E8', border: '1px solid #E5DCC8' }}>
+          <CalendarClock className="h-5 w-5 flex-shrink-0" style={{ color: '#8A7A4A' }} />
+          <div>
+            <span className="text-[14px] font-bold" style={{ color: '#8A7A4A' }}>Abonnement opgezegd</span>
+            <p className="text-[12px]" style={{ color: '#8A7A4A', opacity: 0.7 }}>
+              Je houdt volledige toegang tot {formatDatum(opgezegdTot!)}. Daarna stopt het abonnement, je data blijft bewaard.
+            </p>
+          </div>
         </div>
       )}
 
@@ -159,6 +199,7 @@ export function AbonnementTab() {
                 <span className="text-[42px] font-bold font-mono tracking-tight text-foreground">€79</span>
                 <span className="text-[15px] text-muted-foreground">/ maand</span>
               </div>
+              <p className="text-[12px] text-muted-foreground mt-1">excl. btw · €95,59 incl. btw per maand</p>
 
               <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: 'hsl(var(--background))' }}>
                 <Users className="h-4 w-4" style={{ color: '#1A535C' }} />

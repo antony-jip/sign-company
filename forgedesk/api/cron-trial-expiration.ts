@@ -1,5 +1,7 @@
 /**
- * Zet trial-abonnementen om naar 'verlopen' zodra trial_einde gepasseerd is.
+ * Zet trial-abonnementen om naar 'verlopen' zodra trial_einde gepasseerd is,
+ * en opgezegde Mollie-abonnementen naar 'opgezegd' zodra de al betaalde
+ * periode (abonnement_actief_tot) voorbij is.
  *
  * BEVEILIGD: vereist Authorization: Bearer ${CRON_SECRET} header.
  * Vercel Cron stuurt deze automatisch mee op basis van vercel.json.
@@ -49,24 +51,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: fetchError.message })
     }
 
-    if (!verlopen || verlopen.length === 0) {
-      return res.status(200).json({ processed: 0 })
+    const ids = (verlopen || []).map((o) => o.id)
+    if (ids.length > 0) {
+      const { error: updateError } = await supabaseAdmin
+        .from('organisaties')
+        .update({ abonnement_status: 'verlopen' })
+        .in('id', ids)
+
+      if (updateError) {
+        Sentry.captureException(updateError)
+        console.error('[cron-trial] Update verlopen status mislukt:', updateError)
+        return res.status(500).json({ error: updateError.message })
+      }
+      console.log(`[cron-trial] ${ids.length} organisatie(s) naar verlopen gezet`)
     }
 
-    const ids = verlopen.map((o) => o.id)
-    const { error: updateError } = await supabaseAdmin
+    const { data: opgezegd, error: opzegError } = await supabaseAdmin
       .from('organisaties')
-      .update({ abonnement_status: 'verlopen' })
-      .in('id', ids)
+      .update({ abonnement_status: 'opgezegd', is_betaald: false, abonnement_actief_tot: null })
+      .eq('abonnement_status', 'actief')
+      .lt('abonnement_actief_tot', nu)
+      .select('id')
 
-    if (updateError) {
-      Sentry.captureException(updateError)
-      console.error('[cron-trial] Update verlopen status mislukt:', updateError)
-      return res.status(500).json({ error: updateError.message })
+    if (opzegError) {
+      Sentry.captureException(opzegError)
+      console.error('[cron-trial] Update opgezegd status mislukt:', opzegError)
+      return res.status(500).json({ error: opzegError.message })
     }
 
-    console.log(`[cron-trial] ${ids.length} organisatie(s) naar verlopen gezet`)
-    return res.status(200).json({ processed: ids.length, ids })
+    const opgezegdIds = (opgezegd || []).map((o) => o.id)
+    if (opgezegdIds.length > 0) {
+      console.log(`[cron-trial] ${opgezegdIds.length} opgezegde abonnement(en) beëindigd`)
+    }
+
+    return res.status(200).json({ processed: ids.length + opgezegdIds.length, ids, opgezegd: opgezegdIds })
   } catch (err) {
     Sentry.captureException(err)
     console.error('[cron-trial] Fatale fout:', err)

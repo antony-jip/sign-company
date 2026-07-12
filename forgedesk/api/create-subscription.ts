@@ -1,12 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
-const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || ''
+const MOLLIE_API_KEY = process.env.MOLLIE_API_KEY_LIVE || process.env.MOLLIE_API_KEY_TEST || ''
 const APP_URL = process.env.VITE_APP_URL || 'https://app.doen.team'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+
+// €79 ex btw, afgeschreven bedrag is incl 21% btw
+const ABONNEMENT_BEDRAG = '95.59'
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -26,14 +27,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    if (!STRIPE_SECRET_KEY) {
-      return res.status(500).json({ error: 'STRIPE_SECRET_KEY niet geconfigureerd' })
-    }
-    if (!STRIPE_PRICE_ID) {
-      return res.status(500).json({ error: 'STRIPE_PRICE_ID niet geconfigureerd' })
+    if (!MOLLIE_API_KEY) {
+      return res.status(500).json({ error: 'MOLLIE_API_KEY niet geconfigureerd' })
     }
 
-    const stripe = new Stripe(STRIPE_SECRET_KEY)
     const user = await verifyUser(req)
 
     const { organisatie_id } = req.body as { organisatie_id: string }
@@ -41,7 +38,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'organisatie_id is verplicht' })
     }
 
-    // Verify user belongs to this organisation
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('organisatie_id')
@@ -52,10 +48,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: 'Geen toegang tot deze organisatie' })
     }
 
-    // Haal organisatie op
     const { data: org, error: orgError } = await supabaseAdmin
       .from('organisaties')
-      .select('stripe_customer_id')
+      .select('naam, mollie_customer_id, mollie_subscription_id, abonnement_status')
       .eq('id', organisatie_id)
       .single()
 
@@ -63,39 +58,86 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Organisatie niet gevonden' })
     }
 
-    // Maak Stripe Customer aan als die nog niet bestaat
-    let customerId = org.stripe_customer_id as string | null
+    if (org.mollie_subscription_id && !org.mollie_subscription_id.startsWith('pending_')) {
+      return res.status(400).json({ error: 'Er loopt al een abonnement voor deze organisatie' })
+    }
+
+    const mollieHeaders = {
+      'Authorization': `Bearer ${MOLLIE_API_KEY}`,
+      'Content-Type': 'application/json',
+    }
+
+    let customerId = org.mollie_customer_id as string | null
     if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: user.email || undefined,
-        metadata: { organisatie_id, user_id: user.id },
+      const customerResponse = await fetch('https://api.mollie.com/v2/customers', {
+        method: 'POST',
+        headers: mollieHeaders,
+        body: JSON.stringify({
+          name: org.naam || undefined,
+          email: user.email || undefined,
+          metadata: { organisatie_id, user_id: user.id },
+        }),
       })
+
+      if (!customerResponse.ok) {
+        const errorBody = await customerResponse.text()
+        console.error('Mollie customer aanmaken mislukt:', customerResponse.status, errorBody)
+        return res.status(502).json({ error: 'Klant aanmaken bij Mollie mislukt' })
+      }
+
+      const customer = await customerResponse.json() as { id: string }
       customerId = customer.id
 
-      // Sla customer ID op
       await supabaseAdmin
         .from('organisaties')
-        .update({ stripe_customer_id: customerId })
+        .update({ mollie_customer_id: customerId })
         .eq('id', organisatie_id)
     }
 
-    // Maak Checkout Session aan voor subscription
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer: customerId,
-      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
-      success_url: `${APP_URL}/instellingen?tab=abonnement&abonnement=success`,
-      cancel_url: `${APP_URL}/instellingen?tab=abonnement&abonnement=canceled`,
-      metadata: { organisatie_id },
+    const host = req.headers.host || new URL(APP_URL).host
+    const protocol = host.includes('localhost') ? 'http' : 'https'
+    const webhookUrl = `${protocol}://${host}/api/billing-webhook`
+
+    // Eerste betaling: maand 1 + incasso-mandaat in één. De webhook maakt na
+    // 'paid' de maandelijkse Mollie-subscription aan.
+    const paymentResponse = await fetch('https://api.mollie.com/v2/payments', {
+      method: 'POST',
+      headers: mollieHeaders,
+      body: JSON.stringify({
+        amount: { currency: 'EUR', value: ABONNEMENT_BEDRAG },
+        description: 'doen. abonnement · eerste maand',
+        customerId,
+        sequenceType: 'first',
+        redirectUrl: `${APP_URL}/instellingen?tab=abonnement&abonnement=klaar`,
+        webhookUrl,
+        metadata: { type: 'abonnement', organisatie_id },
+      }),
     })
 
-    return res.status(200).json({ url: session.url })
+    if (!paymentResponse.ok) {
+      const errorBody = await paymentResponse.text()
+      console.error('Mollie eerste betaling aanmaken mislukt:', paymentResponse.status, errorBody)
+      return res.status(502).json({ error: 'Betaling aanmaken bij Mollie mislukt' })
+    }
+
+    const payment = await paymentResponse.json() as {
+      id: string
+      _links?: { checkout?: { href?: string } }
+    }
+
+    const checkoutUrl = payment._links?.checkout?.href
+    if (!checkoutUrl) {
+      console.error('Mollie payment zonder checkout URL:', payment.id)
+      return res.status(502).json({ error: 'Geen checkout URL ontvangen van Mollie' })
+    }
+
+    return res.status(200).json({ url: checkoutUrl })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
     if (message === 'Niet geautoriseerd' || message === 'Ongeldige sessie') {
       return res.status(401).json({ error: message })
     }
     console.error('Create subscription error:', message)
-    return res.status(500).json({ error: `Stripe fout: ${message}` })
+    return res.status(500).json({ error: `Mollie fout: ${message}` })
   }
 }
