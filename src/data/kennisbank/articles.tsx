@@ -1269,11 +1269,9 @@ export const articles: Article[] = [
               <a href="/prijzen" style={{ color: '#1A535C', textDecoration: 'underline' }}>
                 prijzenpagina
               </a>
-              , en wie doen. naast James PRO wil leggen vindt de feiten op de{' '}
-              <a href="/vergelijk/james-pro" style={{ color: '#1A535C', textDecoration: 'underline' }}>
-                vergelijkingspagina
-              </a>
-              .
+              . Wie doen. naast een pakket als James PRO wil leggen: bij ons is
+              het één flat bedrag tot 10 gebruikers in plaats van een tarief per
+              gebruiker, en zonder opzetkosten.
             </P>
           </>
         ),
