@@ -636,6 +636,7 @@ export function EmailReader({
       return null
     }
     const html = editorRef.current.innerHTML
+    const bodyText = editorRef.current.innerText
     if (!html.replace(/<[^>]*>/g, '').trim()) {
       toast.error('Bericht is leeg')
       return null
@@ -715,7 +716,7 @@ export function EmailReader({
       cc: replyCc || undefined,
       bcc: replyBcc || undefined,
       subject,
-      body: editorRef.current.innerText + linksText,
+      body: bodyText + linksText,
       html: html + linksHtml + quotedOriginal,
       attachments: attachmentPayload.length > 0 ? attachmentPayload : undefined,
     }
