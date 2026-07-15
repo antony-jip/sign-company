@@ -77,7 +77,7 @@ export {
 
 export {
   getFacturen, getFactuur, createFactuur, updateFactuur, deleteFactuur,
-  getFactuurItems, createFactuurItem,
+  getFactuurItems, createFactuurItem, replaceFactuurItems,
   getFacturenByKlant, getFacturenByProject,
   getVerlopenFacturen, updateFactuurStatus,
   getHerinneringTemplates, getDefaultHerinneringTemplates,

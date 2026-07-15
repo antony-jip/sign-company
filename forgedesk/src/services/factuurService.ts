@@ -111,6 +111,47 @@ export async function createFactuurItem(item: Omit<FactuurItem, 'id' | 'created_
   return newItem
 }
 
+// Vervangt alle regels van een factuur. Insert gaat bewust vóór de delete:
+// faalt de insert, dan staan de oude regels er nog. Andersom zou een mislukte
+// insert de factuur regelloos achterlaten.
+export async function replaceFactuurItems(
+  factuurId: string,
+  items: Array<Omit<FactuurItem, 'id' | 'created_at' | 'factuur_id'>>
+): Promise<FactuurItem[]> {
+  assertId(factuurId, 'factuur_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data: bestaand, error: leesError } = await supabase
+      .from('factuur_items').select('id').eq('factuur_id', factuurId)
+    if (leesError) throw leesError
+    const oudeIds = (bestaand || []).map((r) => r.id)
+
+    let nieuw: FactuurItem[] = []
+    if (items.length > 0) {
+      const rijen = await Promise.all(
+        items.map(async (item) => await withUserId({
+          ...item, factuur_id: factuurId, id: generateId(), created_at: now(),
+        } as FactuurItem))
+      )
+      const { data, error } = await supabase.from('factuur_items').insert(rijen).select()
+      if (error) throw error
+      nieuw = data || []
+    }
+
+    if (oudeIds.length > 0) {
+      const { error } = await supabase.from('factuur_items').delete().in('id', oudeIds)
+      if (error) throw error
+    }
+    return nieuw
+  }
+
+  const alle = getLocalData<FactuurItem>('factuur_items')
+  const nieuw = items.map((item) => ({
+    ...item, factuur_id: factuurId, id: generateId(), created_at: now(),
+  })) as FactuurItem[]
+  setLocalData('factuur_items', [...alle.filter((i) => i.factuur_id !== factuurId), ...nieuw])
+  return nieuw
+}
+
 // ============ FACTUUR STATUS ============
 
 export async function updateFactuurStatus(

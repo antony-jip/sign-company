@@ -1059,7 +1059,7 @@ export interface Factuur {
   factuur_postcode?: string;
   factuur_plaats?: string;
   // PDF artifact
-  pdf_storage_path?: string;
+  pdf_storage_path?: string | null;
   pdf_gegenereerd_op?: string;
   // Exact Online sync
   exact_entry_id?: string;

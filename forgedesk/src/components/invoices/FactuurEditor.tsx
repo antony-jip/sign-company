@@ -74,6 +74,7 @@ import {
   getFactuurItems,
   createFactuur,
   createFactuurItem,
+  replaceFactuurItems,
   updateFactuur,
   updateFactuurStatus,
   generateFactuurNummer as generateFactuurNrDb,
@@ -612,7 +613,10 @@ export function FactuurEditor() {
                 // zijn eigen standaard-outro (factuurOutroTekst).
 
                 if (offerteItems.length > 0) {
-                  setItems(offerteItemsNaarFactuurRegels(offerteItems, offerte))
+                  const mapped = offerteItemsNaarFactuurRegels(offerteItems, offerte)
+                  setItems(mapped)
+                  setOrigineleItems(mapped.map((item) => ({ ...item })))
+                  setHasOfferteItems(true)
                 } else {
                   setItems([
                     {
@@ -1002,6 +1006,11 @@ export function FactuurEditor() {
       }
 
       if (isEditMode && existingFactuur) {
+        // De PDF van een verzonden factuur staat bevroren in storage en is
+        // storage-first bij downloaden. Zonder invalidatie blijft de oude PDF
+        // terugkomen na een wijziging (bv. een adrescorrectie).
+        const pdfVerouderd = !!existingFactuur.pdf_storage_path
+
         const updates: Partial<Factuur> = {
           ...adresOverride,
           klant_id: klantId,
@@ -1019,8 +1028,23 @@ export function FactuurEditor() {
           totaal,
           kostenplaats_id: kostenplaatsId || undefined,
           werkbon_id: werkbonId || undefined,
+          ...(pdfVerouderd ? { pdf_storage_path: null } : {}),
           ...(verwerken ? { nummer: effectiefNummer, status: 'open' as const } : {}),
         }
+
+        await replaceFactuurItems(existingFactuur.id, validItems.map((item, i) => ({
+          user_id: user?.id || '',
+          beschrijving: item.beschrijving,
+          aantal: item.aantal,
+          eenheidsprijs: item.eenheidsprijs,
+          btw_percentage: item.btw_percentage,
+          korting_percentage: item.korting_percentage,
+          totaal: calcLineTotal(item),
+          volgorde: i + 1,
+          grootboek_code: item.grootboek_code || '',
+          detail_regels: (item.detail_regels || []).filter((r) => r.label || r.waarde),
+        })))
+
         const updated = await updateFactuur(existingFactuur.id, updates)
         setExistingFactuur({ ...existingFactuur, ...updated })
         setNummer(updated.nummer ?? nummer)
@@ -2681,7 +2705,7 @@ export function FactuurEditor() {
           </Card>
 
           {/* Factureerpercentage (DEEL 2) */}
-          {hasOfferteItems && paramProjectId && (
+          {hasOfferteItems && (
             <Card className={cn(
               'border',
               factureerPercentage !== 100
