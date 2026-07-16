@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Calendar, Hammer, Eye, Receipt, Smile, CheckCircle2 } from 'lucide-react'
+import { Calendar, Hammer, Eye, Receipt, CalendarCheck, CheckCircle2 } from 'lucide-react'
 import type { Project } from '@/types'
 import { formatAmount, cn } from '@/lib/utils'
 
@@ -8,8 +8,8 @@ const FASES = [
   { key: 'in-review',      label: 'In review',      caption: 'offerte gestuurd',       Icon: Eye          },
   { key: 'akkoord-klant',  label: 'Akkoord klant',  caption: 'klant akkoord, te plannen', Icon: CheckCircle2 },
   { key: 'actief',         label: 'Actief',         caption: 'aan het werk',           Icon: Hammer       },
-  { key: 'ingepland',      label: 'Ingepland',      caption: 'montage ingepland',      Icon: Receipt      },
-  { key: 'afgerond',       label: 'Gedaan',         caption: 'klaar om te factureren', Icon: Smile        },
+  { key: 'ingepland',      label: 'Ingepland',      caption: 'montage ingepland',      Icon: CalendarCheck },
+  { key: 'te-factureren',  label: 'Te factureren',  caption: 'klaar voor de factuur',  Icon: Receipt       },
 ] as const
 
 function faseIndex(status: string): number {
@@ -17,8 +17,9 @@ function faseIndex(status: string): number {
   if (idx >= 0) return idx
   if (status === 'te-plannen') return 0
   if (status === 'on-hold') return 3
-  if (status === 'te-factureren') return 5
-  if (status === 'gefactureerd') return 5
+  // 'afgerond' en 'gefactureerd' vallen samen op de laatste (Te factureren-)stap
+  if (status === 'afgerond') return FASES.length - 1
+  if (status === 'gefactureerd') return FASES.length - 1
   return 1
 }
 
