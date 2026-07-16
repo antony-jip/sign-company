@@ -3,7 +3,7 @@ import { logger } from '@/utils/logger'
 import {
   Send, Paperclip, X, ArrowRight, ChevronDown, ChevronRight,
   ImageIcon, FileText, Receipt, CreditCard, Check, Eye, AlertCircle,
-  Bold, Italic, Underline, List, Link2, FileCheck,
+  Bold, Italic, Underline, List, Link2, FileCheck, MonitorSmartphone,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject, createPortaal } from '@/services/supabaseService'
@@ -79,10 +79,9 @@ function OfferteKaart({ item }: { item: PortaalItem }) {
   return (
     <div className="max-w-[400px]">
       <AfzenderLabel item={item} />
-      <div className="rounded-xl overflow-hidden bg-card shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-        <div className="h-1 bg-flame" />
-        <div className="p-4">
-        <p className="text-[11px] font-mono uppercase tracking-wide text-flame/70">Offerte</p>
+      <div className="rounded-xl bg-card ring-1 ring-border/50 overflow-hidden" style={{ boxShadow: 'inset 3px 0 0 #F15025, 0 1px 4px rgba(0,0,0,0.05)' }}>
+        <div className="p-4 pl-[17px]">
+        <p className="text-[11px] font-mono uppercase tracking-wide text-flame/80 flex items-center gap-1.5"><Receipt className="h-3.5 w-3.5" strokeWidth={2} />Offerte</p>
         <p className="text-sm font-medium text-foreground mt-1">{item.titel}</p>
         {item.bedrag != null && (
           <div className="flex items-center justify-between mt-1">
@@ -100,8 +99,8 @@ function OfferteKaart({ item }: { item: PortaalItem }) {
         {/* Actieknoppen · disabled in interne view */}
         {item.status !== 'goedgekeurd' && item.status !== 'betaald' && (
           <div className="flex gap-2 mt-3 pt-3 border-t border-border/40">
-            <span className="flex-1 text-center text-sm font-medium py-2 bg-background rounded-md text-muted-foreground cursor-default" title="Zichtbaar voor klant">Goedkeuren</span>
-            <span className="flex-1 text-center text-sm font-medium py-2 bg-background rounded-md text-muted-foreground cursor-default" title="Zichtbaar voor klant">Vragen stellen</span>
+            <span className="flex-1 text-center text-[13px] font-medium py-2 bg-muted/40 border border-border/50 rounded-lg text-muted-foreground cursor-default" title="Zichtbaar voor klant">Goedkeuren</span>
+            <span className="flex-1 text-center text-[13px] font-medium py-2 bg-muted/40 border border-border/50 rounded-lg text-muted-foreground cursor-default" title="Zichtbaar voor klant">Vragen stellen</span>
           </div>
         )}
         </div>
@@ -115,10 +114,9 @@ function FactuurKaart({ item }: { item: PortaalItem }) {
   return (
     <div className="max-w-[400px]">
       <AfzenderLabel item={item} />
-      <div className="rounded-xl overflow-hidden bg-card shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-        <div className="h-1 bg-[#2D6B48]" />
-        <div className="p-4">
-        <p className="text-[11px] font-mono uppercase tracking-wide text-[#2D6B48]/70">Factuur</p>
+      <div className="rounded-xl bg-card ring-1 ring-border/50 overflow-hidden" style={{ boxShadow: 'inset 3px 0 0 #2D6B48, 0 1px 4px rgba(0,0,0,0.05)' }}>
+        <div className="p-4 pl-[17px]">
+        <p className="text-[11px] font-mono uppercase tracking-wide text-[#2D6B48]/80 flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" strokeWidth={2} />Factuur</p>
         <p className="text-sm font-medium text-foreground mt-1">{item.titel}</p>
         {item.bedrag != null && (
           <div className="flex items-center justify-between mt-1">
@@ -130,7 +128,7 @@ function FactuurKaart({ item }: { item: PortaalItem }) {
         )}
         {item.status !== 'betaald' && item.mollie_payment_url && (
           <div className="mt-3 pt-3 border-t border-border/40">
-            <span className="block text-center text-sm font-medium py-2 bg-background rounded-md text-muted-foreground cursor-default" title="Zichtbaar voor klant">Betalen</span>
+            <span className="block text-center text-[13px] font-medium py-2 bg-muted/40 border border-border/50 rounded-lg text-muted-foreground cursor-default" title="Zichtbaar voor klant">Betalen</span>
           </div>
         )}
         </div>
@@ -148,12 +146,11 @@ function TekeningKaart({ item }: { item: PortaalItem }) {
   return (
     <div className="max-w-[400px]">
       <AfzenderLabel item={item} />
-      <div className="rounded-xl overflow-hidden bg-card shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-        <div className="h-1 bg-petrol" />
-        <div className="p-4">
+      <div className="rounded-xl bg-card ring-1 ring-border/50 overflow-hidden" style={{ boxShadow: 'inset 3px 0 0 #1A535C, 0 1px 4px rgba(0,0,0,0.05)' }}>
+        <div className="p-4 pl-[17px]">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-mono uppercase tracking-wide text-petrol/70">Tekening</p>
+            <p className="text-[11px] font-mono uppercase tracking-wide text-petrol/80 flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" strokeWidth={2} />Tekening</p>
             <p className="text-sm font-medium text-foreground mt-1">{item.titel}</p>
             {item.omschrijving && <p className="text-xs text-foreground/70 mt-0.5">{item.omschrijving}</p>}
             <span className="text-sm flex items-center gap-1 mt-1.5" style={{ color: st.color }}>
@@ -574,10 +571,7 @@ function InputBar({
               key={btn.label}
               onClick={btn.onClick}
               disabled={isSending}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all disabled:opacity-40"
-              style={{ backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--muted-foreground))', border: '0.5px solid #EBEBEB' }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F0EEEA'; e.currentTarget.style.color = '#1A1A1A' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#F8F7F5'; e.currentTarget.style.color = '#6B6B66' }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground bg-muted/50 border border-border/60 hover:bg-muted hover:text-foreground hover:border-border transition-colors disabled:opacity-40"
             >
               {btn.icon}
               {btn.label}
@@ -587,8 +581,7 @@ function InputBar({
         <button
           onClick={handleSendBericht}
           disabled={isSending || !berichtTekst.trim()}
-          className="p-2.5 rounded-xl text-white disabled:opacity-20 transition-all flex-shrink-0"
-          style={{ backgroundColor: '#1A535C' }}
+          className="p-2.5 rounded-xl text-white bg-petrol hover:bg-[#164A52] disabled:opacity-20 disabled:hover:bg-petrol transition-colors flex-shrink-0 shadow-sm"
         >
           <Send className="h-4 w-4" />
         </button>
@@ -597,27 +590,24 @@ function InputBar({
       {/* Notificeer klant · prominent toggle */}
       <button
         onClick={() => setNotificeerKlant(!notificeerKlant)}
-        className="flex items-center gap-2.5 mt-3 w-full px-3 py-2.5 rounded-lg transition-all cursor-pointer select-none"
-        style={{
-          backgroundColor: notificeerKlant ? '#E2F0F0' : '#F8F7F5',
-          border: `0.5px solid ${notificeerKlant ? '#1A535C40' : '#EBEBEB'}`,
-        }}
+        className={`flex items-center gap-2.5 mt-3 w-full px-3 py-2.5 rounded-xl border transition-colors cursor-pointer select-none text-left ${
+          notificeerKlant
+            ? 'bg-[rgba(26,83,92,0.06)] border-[rgba(26,83,92,0.22)]'
+            : 'bg-muted/40 border-border/60 hover:bg-muted/60'
+        }`}
       >
-        <div
-          className="w-8 h-[18px] rounded-full relative transition-colors flex-shrink-0"
-          style={{ backgroundColor: notificeerKlant ? '#1A535C' : '#D0CFC9' }}
-        >
+        <div className={`w-8 h-[18px] rounded-full relative transition-colors flex-shrink-0 ${notificeerKlant ? 'bg-petrol' : 'bg-muted-foreground/30'}`}>
           <div
-            className="absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white transition-all"
+            className="absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-all"
             style={{ left: notificeerKlant ? 15 : 2 }}
           />
         </div>
-        <div className="flex-1 text-left">
-          <span className="text-[12px] font-medium" style={{ color: notificeerKlant ? '#1A535C' : '#6B6B66' }}>
+        <div className="flex-1">
+          <span className={`text-[12px] font-medium ${notificeerKlant ? 'text-petrol' : 'text-muted-foreground'}`}>
             Klant notificeren per email
           </span>
           {notificeerKlant && (
-            <span className="text-[10px] ml-1.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
+            <span className="text-[10px] ml-1.5 text-muted-foreground">
               Klant ontvangt een email bij verzending
             </span>
           )}
@@ -770,58 +760,73 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
   }, null)
 
   return (
-    <div className="rounded-xl shadow-[0_1px_3px_rgba(130,100,60,0.04)] overflow-hidden">
+    <div className="rounded-2xl shadow-[0_2px_10px_rgba(26,83,92,0.08)] ring-1 ring-[rgba(26,83,92,0.08)] overflow-hidden">
       {/* Header bar */}
       <div
-        className={`flex items-center justify-between select-none group bg-petrol px-5 py-4 ${portaal ? `cursor-pointer ${!collapsed ? 'rounded-t-xl' : 'rounded-xl'}` : 'cursor-default rounded-xl'}`}
+        className={`flex items-center justify-between gap-3 select-none group px-5 py-3.5 ${portaal ? `cursor-pointer ${!collapsed ? 'rounded-t-2xl' : 'rounded-2xl'}` : 'cursor-default rounded-2xl'}`}
+        style={{ background: 'linear-gradient(135deg, #1E5B65 0%, #143F47 100%)' }}
         onClick={portaal ? toggleCollapsed : undefined}
       >
-        <div className="flex items-center gap-2.5">
-          {portaal && (collapsed
-            ? <ChevronRight className="h-3.5 w-3.5 text-white/50 group-hover:text-white/80 transition-colors" />
-            : <ChevronDown className="h-3.5 w-3.5 text-white/50 group-hover:text-white/80 transition-colors" />
-          )}
-          <h3 className="text-[12px] font-semibold text-white uppercase tracking-widest">Portaal</h3>
-          <span className="text-[11px] font-medium text-white/60">
-            {portaal ? (isActief ? 'Actief' : 'Verlopen') : 'Niet actief'}<span className="text-flame">.</span>
-          </span>
-          {portaal && sharedCount > 0 && (
-            <span className="text-[11px] text-white/40 font-mono">{sharedCount} gedeeld</span>
-          )}
-          {portaal && laatstBekeken && (
-            <span className="text-[11px] text-white/40 hidden sm:inline">
-              klant keek {relativeDate(laatstBekeken)}
-            </span>
-          )}
-          {portaal && hasKlantReactie && (
-            <span className="flex items-center gap-1 text-[11px] font-medium text-flame">
-              <span className="w-1.5 h-1.5 rounded-full bg-flame animate-pulse" />
-              Reactie
-            </span>
-          )}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-white/10 ring-1 ring-white/15 flex-shrink-0">
+            <MonitorSmartphone className="h-[18px] w-[18px] text-white/90" strokeWidth={1.75} />
+          </div>
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-heading text-[14px] font-bold text-white tracking-tight leading-none">Portaal</h3>
+              {portaal && (collapsed
+                ? <ChevronRight className="h-3.5 w-3.5 text-white/45 group-hover:text-white/80 transition-colors" />
+                : <ChevronDown className="h-3.5 w-3.5 text-white/45 group-hover:text-white/80 transition-colors" />
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 leading-none flex-wrap">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/85">
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActief ? 'bg-[#6FD79A]' : 'bg-white/35'}`} />
+                {portaal ? (isActief ? 'Actief' : 'Verlopen') : 'Niet actief'}<span className="text-flame">.</span>
+              </span>
+              {portaal && sharedCount > 0 && (
+                <>
+                  <span className="text-white/25">·</span>
+                  <span className="text-[11px] text-white/55 font-mono tabular-nums">{sharedCount} gedeeld</span>
+                </>
+              )}
+              {portaal && laatstBekeken && (
+                <>
+                  <span className="text-white/25 hidden sm:inline">·</span>
+                  <span className="text-[11px] text-white/50 hidden sm:inline">klant keek {relativeDate(laatstBekeken)}</span>
+                </>
+              )}
+              {portaal && hasKlantReactie && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-flame ml-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-flame animate-pulse" />
+                  Reactie
+                </span>
+              )}
+            </div>
+          </div>
         </div>
         {portaal ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
               onClick={(e) => { e.stopPropagation(); handleCopyLink() }}
-              className="text-[11px] font-medium text-white/60 hover:text-white flex items-center gap-1 transition-colors"
+              className="text-[11px] font-medium text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 transition-colors"
               title="Kopieer de portaallink voor de klant"
             >
-              <Link2 className="h-3 w-3" /> Kopieer link
+              <Link2 className="h-3 w-3" /> <span className="hidden sm:inline">Kopieer link</span>
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); window.open(`/portaal/${portaal.token}`, '_blank', 'noopener') }}
-              className="text-[11px] font-medium text-white/60 hover:text-white flex items-center gap-1 transition-colors"
+              className="text-[11px] font-medium text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 transition-colors"
               title="Open het portaal zoals de klant het ziet"
             >
-              <Eye className="h-3 w-3" /> Bekijk als klant
+              <Eye className="h-3 w-3" /> <span className="hidden sm:inline">Bekijk als klant</span>
             </button>
           </div>
         ) : (
           <button
             onClick={handleActiveer}
             disabled={activating}
-            className="text-[11px] font-medium text-white/60 hover:text-white flex items-center gap-1 transition-colors disabled:opacity-50 disabled:cursor-wait"
+            className="text-[11px] font-semibold text-white bg-white/12 hover:bg-white/22 rounded-lg px-3 py-1.5 flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-wait flex-shrink-0"
           >
             {activating ? 'Activeren…' : 'Activeer'} <ArrowRight className="h-3 w-3" />
           </button>
@@ -830,7 +835,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
 
       {/* Content · alleen bij actief portaal */}
       {portaal && !collapsed && (
-        <div className="bg-background rounded-b-xl px-5 py-4">
+        <div className="bg-background rounded-b-2xl px-5 py-4">
           <Feed items={items} feedEndRef={feedEndRef} />
 
           {user?.id && (
