@@ -30,6 +30,7 @@ const STATUS_CONFIG: Record<
   MontageAfspraak['status'],
   { label: string; text: string; bg: string; border: string; dot: string }
 > = {
+  'te-plannen': { label: 'Te plannen', text: '#B5451F', bg: '#FCEEE8', border: '#F3D2C4', dot: '#F15025' },
   gepland: { label: 'Gepland', text: '#3A5A9A', bg: '#E8EEF9', border: '#C5D5EA', dot: '#4A7AC7' },
   onderweg: { label: 'Onderweg', text: '#8A6A2A', bg: '#F5F2E8', border: '#E5DCC8', dot: '#C49A30' },
   bezig: { label: 'Bezig', text: '#3A7D52', bg: '#E8F2EC', border: '#C5E0D0', dot: '#4AA366' },

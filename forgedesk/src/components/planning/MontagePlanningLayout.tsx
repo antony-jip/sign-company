@@ -163,6 +163,7 @@ const STATUS_CONFIG: Record<
   MontageAfspraak["status"],
   { label: string; text: string; bg: string; border: string; dot: string }
 > = {
+  "te-plannen": { label: "Te plannen", text: "#B5451F", bg: "#FCEEE8", border: "#F3D2C4", dot: "#F15025" },
   gepland: { label: "Gepland", text: "#3A5A9A", bg: "#E8EEF9", border: "#C5D5EA", dot: "#4A7AC7" },
   onderweg: { label: "Onderweg", text: "#8A6A2A", bg: "#F5F2E8", border: "#E5DCC8", dot: "#C49A30" },
   bezig: { label: "Bezig", text: "#3A7D52", bg: "#E8F2EC", border: "#C5E0D0", dot: "#4AA366" },
@@ -174,6 +175,7 @@ const STATUS_CONFIG: Record<
 // inline style; in dark mode moeten bg en tekst via classes schakelen,
 // anders krijg je witte tekst op pastel (onleesbaar).
 const STATUS_CARD_BG: Record<MontageAfspraak["status"], string> = {
+  "te-plannen": "bg-[#FCEEE8] dark:bg-[rgba(241,80,37,0.13)]",
   gepland: "bg-[#E8EEF9] dark:bg-[rgba(74,122,199,0.16)]",
   onderweg: "bg-[#F5F2E8] dark:bg-[rgba(196,154,48,0.15)]",
   bezig: "bg-[#E8F2EC] dark:bg-[rgba(74,163,102,0.15)]",
@@ -181,6 +183,7 @@ const STATUS_CARD_BG: Record<MontageAfspraak["status"], string> = {
   uitgesteld: "bg-[#FDE8E2] dark:bg-[rgba(224,74,40,0.15)]",
 };
 const STATUS_PILL_CLASSES: Record<MontageAfspraak["status"], string> = {
+  "te-plannen": "bg-[#FCEEE8] text-[#B5451F] dark:bg-[rgba(241,80,37,0.16)] dark:text-[#FF9166]",
   gepland: "bg-[#E8EEF9] text-[#3A5A9A] dark:bg-[rgba(74,122,199,0.20)] dark:text-[#7FA8E6]",
   onderweg: "bg-[#F5F2E8] text-[#8A6A2A] dark:bg-[rgba(196,154,48,0.18)] dark:text-[#D4B566]",
   bezig: "bg-[#E8F2EC] text-[#3A7D52] dark:bg-[rgba(74,163,102,0.18)] dark:text-[#7AAF85]",
@@ -489,7 +492,7 @@ export function MontagePlanningLayout() {
     writeScopeToStorage('mijn', null);
   }, []);
   const [statusFilter, setStatusFilter] = useState<Set<MontageAfspraak["status"]>>(
-    new Set(["gepland", "onderweg", "bezig", "afgerond", "uitgesteld"])
+    new Set(["te-plannen", "gepland", "onderweg", "bezig", "afgerond", "uitgesteld"])
   );
   const [draggingAfspraakId, setDraggingAfspraakId] = useState<string | null>(null);
   const [draggingProjectId, setDraggingProjectId] = useState<string | null>(null);
