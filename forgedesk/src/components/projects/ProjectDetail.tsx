@@ -428,7 +428,7 @@ export function ProjectDetail() {
   const [nieuweTaakTitel, setNieuweTaakTitel] = useState('')
   const [nieuweTaakBeschrijving, setNieuweTaakBeschrijving] = useState('')
   const [nieuweTaakToegewezen, setNieuweTaakToegewezen] = useState('')
-  const [nieuweTaakDeadline, setNieuweTaakDeadline] = useState('')
+  const [nieuweTaakDeadline, setNieuweTaakDeadline] = useState(() => new Date().toISOString().split('T')[0])
   const [nieuweTaakStatus, setNieuweTaakStatus] = useState<Taak['status']>('todo')
   const [nieuweTaakPrioriteit, setNieuweTaakPrioriteit] = useState<Taak['prioriteit']>('medium')
 
@@ -645,6 +645,7 @@ export function ProjectDetail() {
   const [montageMonteurs, setMontageMonteurs] = useState<string[]>([])
   const [montageBijlagen, setMontageBijlagen] = useState<MontageBijlage[]>([])
   const [montageWerkbonId, setMontageWerkbonId] = useState('')
+  const [montageStatus, setMontageStatus] = useState<MontageAfspraak['status']>('gepland')
   const [isSavingMontage, setIsSavingMontage] = useState(false)
   const [toewijzingMedewerkerId, setToewijzingMedewerkerId] = useState('')
   const [toewijzingRol, setToewijzingRol] = useState<ProjectToewijzing['rol']>('medewerker')
@@ -682,6 +683,7 @@ export function ProjectDetail() {
     setMontageMonteurs([])
     setMontageBijlagen([])
     setMontageWerkbonId('')
+    setMontageStatus('gepland')
     setMontageDialogOpen(true)
   }
 
@@ -696,6 +698,7 @@ export function ProjectDetail() {
     setMontageMonteurs(m.monteurs || [])
     setMontageBijlagen(m.bijlagen || [])
     setMontageWerkbonId(m.werkbon_id || '')
+    setMontageStatus(m.status || 'gepland')
     setMontageDialogOpen(true)
   }
 
@@ -718,7 +721,7 @@ export function ProjectDetail() {
 
   const handleSaveMontage = async () => {
     if (!montageTitel.trim()) { toast.error('Vul een titel in'); return }
-    if (!montageDatum) { toast.error('Selecteer een datum'); return }
+    if (montageStatus !== 'te-plannen' && !montageDatum) { toast.error('Selecteer een datum'); return }
     if (!montageLocatie.trim()) { toast.error('Vul een locatie in'); return }
 
     try {
@@ -734,6 +737,7 @@ export function ProjectDetail() {
           locatie: montageLocatie,
           monteurs: montageMonteurs,
           notities: montageNotities,
+          status: montageStatus,
           werkbon_id: montageWerkbonId || undefined,
           werkbon_nummer: werkbonNummer,
           bijlagen: montageBijlagen.length > 0 ? montageBijlagen : undefined,
@@ -764,7 +768,7 @@ export function ProjectDetail() {
         werkbon_id: montageWerkbonId || undefined,
         werkbon_nummer: werkbonNummer,
         bijlagen: montageBijlagen.length > 0 ? montageBijlagen : undefined,
-        status: 'gepland',
+        status: montageStatus,
       })
       logCreate({ user, medewerkers: alleMedewerkers, entityType: 'montage', entityId: newMontage.id })
       setProjectMontages(prev => [...prev, newMontage])
@@ -1579,6 +1583,7 @@ export function ProjectDetail() {
             projectId={id!}
             onMontageEdit={handleEditMontage}
             onMontageDelete={handleDeleteMontage}
+            onNewMontage={handleOpenMontageDialog}
             onNewTaak={() => setNieuweTaakOpen(true)}
             onNewOfferte={openNieuweOfferte}
             onQuickOfferte={handleQuickOfferte}
@@ -1792,6 +1797,23 @@ export function ProjectDetail() {
             }}
             onPakbon={() => setShowPakbonDialog(true)}
             onBevestiging={() => setShowObOfferteSelect(s => !s)}
+            isTePlannen={project.status === 'te-plannen'}
+            onTePlannen={async () => {
+              try {
+                const oudeStatus = project.status
+                const nieuweStatus: Project['status'] = project.status === 'te-plannen' ? 'gepland' : 'te-plannen'
+                const updated = await updateProject(id!, { status: nieuweStatus })
+                setProject(updated)
+                if (user?.id) {
+                  const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+                  logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: nieuweStatus })
+                }
+                toast.success(`Status: ${statusLabels[nieuweStatus] || nieuweStatus}`)
+              } catch (err) {
+                logger.error('Kon status niet wijzigen:', err)
+                toast.error('Kon status niet wijzigen')
+              }
+            }}
           />
 
           {/* Opdrachtbevestiging · uitklap onder Acties */}
@@ -2495,7 +2517,7 @@ export function ProjectDetail() {
           setNieuweTaakTitel('')
           setNieuweTaakBeschrijving('')
           setNieuweTaakToegewezen('')
-          setNieuweTaakDeadline('')
+          setNieuweTaakDeadline(new Date().toISOString().split('T')[0])
           setNieuweTaakStatus('todo')
           setNieuweTaakPrioriteit('medium')
         }
@@ -3050,7 +3072,18 @@ export function ProjectDetail() {
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <Label className="text-sm">Datum</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-sm">Datum</Label>
+                  <label className="flex items-center gap-1 cursor-pointer select-none text-[11px] font-medium text-muted-foreground hover:text-petrol transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={montageStatus === 'te-plannen'}
+                      onChange={(e) => setMontageStatus(e.target.checked ? 'te-plannen' : 'gepland')}
+                      className="h-3.5 w-3.5 rounded border-border accent-[#F15025]"
+                    />
+                    Te plannen
+                  </label>
+                </div>
                 <DatePicker value={montageDatum} onChange={(v) => setMontageDatum(v)} asInput className="mt-1 h-9" />
               </div>
               <div>

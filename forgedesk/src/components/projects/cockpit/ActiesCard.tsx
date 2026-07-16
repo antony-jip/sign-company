@@ -1,7 +1,8 @@
 import {
-  Receipt, ClipboardList, Wrench, CreditCard, Package, FileSignature, ChevronRight,
+  Receipt, ClipboardList, Wrench, CreditCard, Package, FileSignature, CalendarClock, ChevronRight,
   type LucideIcon,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface ActiesCardProps {
   onOfferte: () => void
@@ -10,6 +11,8 @@ interface ActiesCardProps {
   onFactuur: () => void
   onPakbon: () => void
   onBevestiging: () => void
+  onTePlannen: () => void
+  isTePlannen?: boolean
 }
 
 interface ActieTile {
@@ -21,7 +24,7 @@ interface ActieTile {
   onClick: () => void
 }
 
-export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbon, onBevestiging }: ActiesCardProps) {
+export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbon, onBevestiging, onTePlannen, isTePlannen }: ActiesCardProps) {
   const tiles: ActieTile[] = [
     { key: 'offerte',  label: 'Offerte',  sublabel: 'Stuur een prijsopgave', icon: Receipt,       color: '#F15025', onClick: onOfferte },
     { key: 'werkbon',  label: 'Werkbon',  sublabel: 'Voor de monteur',       icon: ClipboardList, color: '#1A535C', onClick: onWerkbon },
@@ -84,23 +87,35 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
       </div>
 
       {/* Footer · secundaire acties */}
-      <div className="mt-4 pt-3 border-t border-[rgba(26,83,92,0.08)] flex items-center justify-center gap-4">
+      <div className="mt-4 pt-3 border-t border-[rgba(26,83,92,0.08)] grid grid-cols-3 gap-1">
         <button
           onClick={onPakbon}
-          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-petrol transition-colors px-2 py-1 rounded-md"
+          className="group inline-flex items-center justify-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-petrol hover:bg-[rgba(26,83,92,0.05)] transition-colors px-2 py-1.5 rounded-lg whitespace-nowrap"
         >
-          <Package className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: '#1A535C' }} />
+          <Package className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           Pakbon
         </button>
 
-        <span aria-hidden className="text-[10px] text-muted-foreground/70 font-mono">·</span>
-
         <button
           onClick={onBevestiging}
-          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-petrol transition-colors px-2 py-1 rounded-md"
+          className="group inline-flex items-center justify-center gap-1.5 text-[12px] font-medium text-foreground/70 hover:text-petrol hover:bg-[rgba(26,83,92,0.05)] transition-colors px-2 py-1.5 rounded-lg whitespace-nowrap"
         >
-          <FileSignature className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: '#1A535C' }} />
+          <FileSignature className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.75} style={{ color: '#1A535C' }} />
           Bevestiging
+        </button>
+
+        <button
+          onClick={onTePlannen}
+          title={isTePlannen ? 'Project staat op te plannen' : 'Project op te plannen zetten'}
+          className={cn(
+            'group inline-flex items-center justify-center gap-1.5 text-[12px] font-medium transition-colors px-2 py-1.5 rounded-lg whitespace-nowrap',
+            isTePlannen
+              ? 'text-flame bg-[rgba(241,80,37,0.08)]'
+              : 'text-foreground/70 hover:text-flame hover:bg-[rgba(241,80,37,0.06)]',
+          )}
+        >
+          <CalendarClock className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.75} style={{ color: '#F15025' }} />
+          Te plannen{isTePlannen && <span className="text-flame">.</span>}
         </button>
       </div>
     </div>

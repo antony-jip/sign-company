@@ -11,6 +11,7 @@ function parseBedrag(s: string): number {
 }
 
 const montageStatusLabel: Record<MontageAfspraak['status'], string> = {
+  'te-plannen': 'Te plannen',
   gepland:    'Gepland',
   onderweg:   'Onderweg',
   bezig:      'Bezig',
@@ -49,6 +50,7 @@ interface TakenOfferteGridProps {
   projectId: string
   onMontageEdit?: (m: MontageAfspraak) => void
   onMontageDelete?: (m: MontageAfspraak) => Promise<void> | void
+  onNewMontage?: () => void
   onNewTaak: () => void
   onNewOfferte: () => void
   onTaakStatusChange: (taakId: string, newStatus: Taak['status']) => Promise<void>
@@ -66,6 +68,7 @@ export function TakenOfferteGrid({
   medewerkers,
   onMontageEdit,
   onMontageDelete,
+  onNewMontage,
   onNewTaak,
   onNewOfferte,
   onTaakStatusChange,
@@ -133,13 +136,24 @@ export function TakenOfferteGrid({
               </span>
             )}
           </div>
-          <button
-            onClick={onNewTaak}
-            className="inline-flex items-center gap-1 text-[12px] font-semibold text-petrol hover:text-[#0F3D44] hover:underline transition-colors"
-          >
-            <Plus className="h-3 w-3" strokeWidth={2.5} />
-            Taak
-          </button>
+          <div className="flex items-center gap-3">
+            {onNewMontage && (
+              <button
+                onClick={onNewMontage}
+                className="inline-flex items-center gap-1 text-[12px] font-semibold text-petrol hover:text-[#0F3D44] hover:underline transition-colors"
+              >
+                <Wrench className="h-3 w-3" strokeWidth={2} />
+                Montage
+              </button>
+            )}
+            <button
+              onClick={onNewTaak}
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-petrol hover:text-[#0F3D44] hover:underline transition-colors"
+            >
+              <Plus className="h-3 w-3" strokeWidth={2.5} />
+              Taak
+            </button>
+          </div>
         </div>
 
         {montageAfspraken.length > 0 && (
@@ -177,11 +191,15 @@ export function TakenOfferteGrid({
 
                 <div className="flex items-center gap-1.5 text-[11px] text-foreground/70 mt-1">
                   <CalendarDays className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
-                  <span className="font-mono text-foreground">
-                    {new Date(m.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
-                    {' '}
-                    {m.start_tijd}–{m.eind_tijd}
-                  </span>
+                  {m.datum ? (
+                    <span className="font-mono text-foreground">
+                      {new Date(m.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                      {' '}
+                      {m.start_tijd}–{m.eind_tijd}
+                    </span>
+                  ) : (
+                    <span className="italic text-muted-foreground">Nog geen datum</span>
+                  )}
                 </div>
 
                 {m.locatie && (

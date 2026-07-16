@@ -21,7 +21,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
   const [titel, setTitel] = useState('')
   const [projectId, setProjectId] = useState('')
   const [toegewezenAan, setToegewezenAan] = useState('')
-  const [deadline, setDeadline] = useState('')
+  const [deadline, setDeadline] = useState(() => new Date().toISOString().split('T')[0])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
       setTitel('')
       setProjectId('')
       setToegewezenAan('')
-      setDeadline('')
+      setDeadline(new Date().toISOString().split('T')[0])
     } catch (err) {
       logger.error('Taak toevoegen mislukt:', err)
       toast.error('Kon taak niet toevoegen')
