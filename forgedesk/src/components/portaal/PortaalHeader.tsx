@@ -55,7 +55,7 @@ export function PortaalHeader({
           ) : (
             <span
               className="text-lg font-extrabold text-white tracking-tight"
-              style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}
+              style={{ fontFamily: '"Instrument Sans", sans-serif' }}
             >
               {bedrijfNaam}
             </span>

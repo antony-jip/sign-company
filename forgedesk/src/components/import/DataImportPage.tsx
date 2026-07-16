@@ -99,7 +99,7 @@ export function DataImportPage() {
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground" style={{ fontFamily: "'Instrument Sans', sans-serif" }}>
           Data importeren
         </h1>
         <p className="text-sm text-muted-foreground mt-1">

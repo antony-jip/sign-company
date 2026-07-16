@@ -39,7 +39,7 @@ export function CheckInboxPage() {
           <Mail className="w-7 h-7 text-neutral-700 dark:text-muted-foreground" />
         </div>
 
-        <h1 className="text-2xl font-bold text-black dark:text-foreground mb-2" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
+        <h1 className="text-2xl font-bold text-black dark:text-foreground mb-2" style={{ fontFamily: '"Instrument Sans", sans-serif' }}>
           Check je inbox!
         </h1>
 

@@ -300,7 +300,7 @@ export function PortaalPagina() {
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
             <h1
               className="text-base font-bold"
-              style={{ color: 'hsl(var(--foreground))', fontFamily: '"Bricolage Grotesque", sans-serif' }}
+              style={{ color: 'hsl(var(--foreground))', fontFamily: '"Instrument Sans", sans-serif' }}
             >
               {project.naam}
             </h1>

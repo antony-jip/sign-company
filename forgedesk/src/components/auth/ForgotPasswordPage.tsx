@@ -35,14 +35,14 @@ export function ForgotPasswordPage() {
 
         {isSent ? (
           <>
-            <h1 className="text-2xl font-bold text-black dark:text-foreground mb-2" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Check je inbox</h1>
+            <h1 className="text-2xl font-bold text-black dark:text-foreground mb-2" style={{ fontFamily: '"Instrument Sans", sans-serif' }}>Check je inbox</h1>
             <p className="text-[15px] text-neutral-600 dark:text-muted-foreground mb-8">
               We hebben een link gestuurd naar <span className="font-semibold text-black dark:text-foreground">{email}</span> om je wachtwoord te resetten.
             </p>
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-bold text-black dark:text-foreground mb-2" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Wachtwoord vergeten?</h1>
+            <h1 className="text-2xl font-bold text-black dark:text-foreground mb-2" style={{ fontFamily: '"Instrument Sans", sans-serif' }}>Wachtwoord vergeten?</h1>
             <p className="text-[15px] text-neutral-600 dark:text-muted-foreground mb-8">
               Vul je emailadres in en we sturen je een link om je wachtwoord te resetten.
             </p>

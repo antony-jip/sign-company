@@ -42,7 +42,7 @@ export function ResetPasswordPage() {
           <Lock className="w-6 h-6 text-neutral-700 dark:text-muted-foreground" />
         </div>
 
-        <h1 className="text-2xl font-bold text-black dark:text-foreground mb-2" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Nieuw wachtwoord</h1>
+        <h1 className="text-2xl font-bold text-black dark:text-foreground mb-2" style={{ fontFamily: '"Instrument Sans", sans-serif' }}>Nieuw wachtwoord</h1>
         <p className="text-[15px] text-neutral-600 dark:text-muted-foreground mb-8">Kies een nieuw wachtwoord voor je account.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">

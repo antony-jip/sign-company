@@ -222,7 +222,7 @@ function SidebarContent({
       <div className="pt-4 border-t" style={{ borderColor: '#E8E6E1' }}>
         <p className="text-center" style={{ fontSize: 11, color: '#9B9B95' }}>
           mogelijk gemaakt door{' '}
-          <span style={{ fontFamily: '"Bricolage Grotesque", sans-serif', fontWeight: 800 }}>
+          <span style={{ fontFamily: '"Instrument Sans", sans-serif', fontWeight: 800 }}>
             doen<span style={{ color: '#F15025' }}>.</span>
           </span>
         </p>
