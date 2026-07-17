@@ -12,10 +12,33 @@ function escape(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
 }
 
+// In-memory rate-limit per warme instance (best-effort): 5 mails per 10 min
+// per IP, tegen mail-bombing van de inbox en opbranden van het Resend-quotum.
+const pogingen = new Map<string, number[]>()
+function teVaak(ip: string): boolean {
+  const nu = Date.now()
+  const lijst = (pogingen.get(ip) ?? []).filter((t) => nu - t < 10 * 60_000)
+  lijst.push(nu)
+  pogingen.set(ip, lijst)
+  if (pogingen.size > 500) pogingen.clear()
+  return lijst.length > 5
+}
+
 export async function POST(req: Request) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'Mailservice niet geconfigureerd' }, { status: 500 })
+  }
+
+  // cross-site posts weren (het eigen formulier post via fetch en stuurt dus altijd Origin mee)
+  const origin = req.headers.get('origin') ?? ''
+  if (origin && !['https://doen.team', 'https://www.doen.team'].includes(origin) && process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Ongeldige oorsprong' }, { status: 403 })
+  }
+
+  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'onbekend'
+  if (teVaak(ip)) {
+    return NextResponse.json({ error: 'Te veel berichten, probeer het later opnieuw' }, { status: 429 })
   }
 
   let body: { naam?: unknown; email?: unknown; bericht?: unknown }
