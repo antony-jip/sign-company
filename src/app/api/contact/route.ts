@@ -3,10 +3,11 @@ import { Resend } from 'resend'
 
 export const runtime = 'nodejs'
 
-const TO = 'antony@signcompany.nl'
-// Resend's default test sender. Vervang door no-reply@signcompany.nl
-// zodra dat domein in Resend is geverifieerd.
-const FROM = 'doen.team <onboarding@resend.dev>'
+// Ontvanger en afzender komen uit env, met de huidige waarden als default.
+// Zet CONTACT_MAIL_FROM op een geverifieerd domein (bv. no-reply@signcompany.nl)
+// zodra dat in Resend is geverifieerd — de resend.dev-afzender is alleen voor test.
+const TO = process.env.CONTACT_INBOX || 'antony@signcompany.nl'
+const FROM = process.env.CONTACT_MAIL_FROM || 'doen.team <onboarding@resend.dev>'
 
 function escape(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
@@ -18,11 +19,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Mailservice niet geconfigureerd' }, { status: 500 })
   }
 
-  let body: { naam?: unknown; email?: unknown; bericht?: unknown }
+  let body: { naam?: unknown; email?: unknown; bericht?: unknown; website?: unknown }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Ongeldige aanvraag' }, { status: 400 })
+  }
+
+  // Honeypot: als het verborgen veld gevuld is, is het vrijwel zeker een bot.
+  // We doen alsof het gelukt is (200) zonder te mailen, zodat de bot niks leert.
+  if (typeof body.website === 'string' && body.website.trim() !== '') {
+    return NextResponse.json({ ok: true })
   }
 
   const naam = typeof body.naam === 'string' ? body.naam.trim() : ''

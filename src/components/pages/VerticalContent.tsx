@@ -6,6 +6,7 @@ import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import type { Vertical } from '@/data/verticals'
 import { modules } from '@/data/modules'
+import { REGISTER_URL } from '@/lib/site'
 
 /* Verticale landingspagina: lichte hero, pijnpunten als hairline-lijst,
    module-highlights als strakke rijen naar /features/*. */
@@ -42,7 +43,7 @@ export default function VerticalContent({ vertical }: { vertical: Vertical }) {
 
             <div className="hero-fade flex flex-wrap items-center gap-5 md:gap-7" style={{ animationDelay: '0.45s' }}>
               <a
-                href="https://app.doen.team/register"
+                href={REGISTER_URL}
                 className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white bg-flame px-7 h-[54px] rounded-[6px] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Start gratis</span>

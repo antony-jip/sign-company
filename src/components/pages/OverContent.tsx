@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import Image from 'next/image'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
 import CTASection from '@/components/home/CTASection'
+import { CONTACT_EMAIL } from '@/lib/site'
 
 const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
 
@@ -197,7 +198,7 @@ export default function OverContent() {
                   <span className="block text-[13px] font-normal text-muted mt-0.5">maker van doen.</span>
                 </p>
                 <a
-                  href="mailto:hello@doen.team"
+                  href={`mailto:${CONTACT_EMAIL}`}
                   className="group inline-flex items-center gap-2 text-[15px] font-semibold text-ink"
                 >
                   <span className="relative">

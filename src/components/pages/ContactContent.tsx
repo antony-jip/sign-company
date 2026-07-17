@@ -4,13 +4,15 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
+import { CONTACT_EMAIL, REGISTER_URL } from '@/lib/site'
 
 const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
 
 export default function ContactContent() {
   const reduce = useReducedMotion() ?? false
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [formData, setFormData] = useState({ naam: '', email: '', bericht: '' })
+  // `website` is een honeypot: onzichtbaar voor mensen, bots vullen 'm vaak wel.
+  const [formData, setFormData] = useState({ naam: '', email: '', bericht: '', website: '' })
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,14 +27,14 @@ export default function ContactContent() {
       })
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string }
-        setErrorMsg(data.error ?? 'Er ging iets mis. Probeer het opnieuw of mail direct naar hello@doen.team.')
+        setErrorMsg(data.error ?? `Er ging iets mis. Probeer het opnieuw of mail direct naar ${CONTACT_EMAIL}.`)
         setFormState('error')
         return
       }
       setFormState('success')
-      setFormData({ naam: '', email: '', bericht: '' })
+      setFormData({ naam: '', email: '', bericht: '', website: '' })
     } catch {
-      setErrorMsg('Geen verbinding. Probeer het opnieuw of mail direct naar hello@doen.team.')
+      setErrorMsg(`Geen verbinding. Probeer het opnieuw of mail direct naar ${CONTACT_EMAIL}.`)
       setFormState('error')
     }
   }
@@ -71,8 +73,8 @@ export default function ContactContent() {
                 <div className="flex items-baseline justify-between gap-4 py-4 border-t border-petrol/10">
                   <dt className="text-[14px] text-muted shrink-0">Email</dt>
                   <dd>
-                    <a href="mailto:hello@doen.team" className="text-[15px] font-semibold text-petrol hover:text-flame transition-colors">
-                      hello@doen.team
+                    <a href={`mailto:${CONTACT_EMAIL}`} className="text-[15px] font-semibold text-petrol hover:text-flame transition-colors">
+                      {CONTACT_EMAIL}
                     </a>
                   </dd>
                 </div>
@@ -84,7 +86,7 @@ export default function ContactContent() {
                   <dt className="text-[14px] text-muted shrink-0">Demo plannen</dt>
                   <dd>
                     <a
-                      href="mailto:hello@doen.team?subject=Plan%20een%20demo"
+                      href={`mailto:${CONTACT_EMAIL}?subject=Plan%20een%20demo`}
                       className="text-[15px] font-semibold text-petrol hover:text-flame transition-colors"
                     >
                       Mail ons, we plannen direct iets in
@@ -115,7 +117,7 @@ export default function ContactContent() {
                   Maak een account en zet je eerste offerte vandaag de deur uit.
                 </p>
                 <a
-                  href="https://app.doen.team/register"
+                  href={REGISTER_URL}
                   className="relative group inline-flex items-center gap-2.5 text-[15px] font-semibold text-white bg-flame px-7 h-[54px] rounded-[6px] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span>Start gratis</span>
@@ -176,6 +178,20 @@ export default function ContactContent() {
                       required
                       multiline
                     />
+
+                    {/* Honeypot: verborgen voor gebruikers, bots vullen 'm vaak wel. */}
+                    <div aria-hidden className="absolute -left-[9999px] w-px h-px overflow-hidden" style={{ opacity: 0 }}>
+                      <label htmlFor="website">Website (niet invullen)</label>
+                      <input
+                        id="website"
+                        name="website"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={formData.website}
+                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      />
+                    </div>
 
                     {formState === 'error' && errorMsg && (
                       <p
@@ -305,6 +321,8 @@ function Field({
 function SuccessState({ reduce }: { reduce: boolean }) {
   return (
     <motion.div
+      role="status"
+      aria-live="polite"
       initial={reduce ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: easing }}

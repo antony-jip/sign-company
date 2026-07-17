@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { REGISTER_URL } from '@/lib/site'
 
 /* Entree via CSS-keyframes (globals.css: .hero-line / .hero-fade) zodat de
    eindstand ook zonder JS of in achtergrond-tabs bereikt wordt. */
@@ -43,7 +44,7 @@ export default function Hero() {
 
         <div className="hero-fade flex flex-wrap items-center gap-x-7 gap-y-5" style={{ animationDelay: '0.45s' }}>
           <a
-            href="https://app.doen.team/register"
+            href={REGISTER_URL}
             className="group inline-flex items-center gap-2.5 text-[15px] font-semibold text-white px-7 h-[54px] rounded-[6px] bg-flame transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Start gratis</span>

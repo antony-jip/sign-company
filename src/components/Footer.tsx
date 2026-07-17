@@ -1,4 +1,11 @@
 import Link from 'next/link'
+import { CONTACT_EMAIL } from '@/lib/site'
+
+const legalLinks: { label: string; href: string }[] = [
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Cookies', href: '/cookies' },
+  { label: 'Voorwaarden', href: '/voorwaarden' },
+]
 
 const columns: { title: string; links: { label: string; href: string }[] }[] = [
   {
@@ -64,19 +71,33 @@ export default function Footer() {
         </div>
 
         <div
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 pt-6 md:pt-8"
+          className="pt-6 md:pt-8"
           style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
         >
-          <p className="text-[13px]" style={{ color: 'rgba(226,240,241,0.45)' }}>
-            © {new Date().getFullYear()} doen. · Gemaakt door signmakers, voor signmakers
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <nav aria-label="Juridisch" className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              {legalLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-[13px] transition-colors hover:text-white"
+                  style={{ color: 'rgba(226,240,241,0.6)' }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="text-[13px] font-medium transition-colors hover:text-white"
+              style={{ color: 'rgba(226,240,241,0.6)' }}
+            >
+              {CONTACT_EMAIL}
+            </a>
+          </div>
+          <p className="mt-5 text-[13px]" style={{ color: 'rgba(226,240,241,0.45)' }}>
+            © {new Date().getFullYear()} doen. · een product van [bedrijfsnaam] · KvK [KvK-nummer] · Gemaakt door signmakers, voor signmakers
           </p>
-          <a
-            href="mailto:hello@doen.team"
-            className="text-[13px] font-medium transition-colors hover:text-white"
-            style={{ color: 'rgba(226,240,241,0.6)' }}
-          >
-            hello@doen.team
-          </a>
         </div>
       </div>
     </footer>

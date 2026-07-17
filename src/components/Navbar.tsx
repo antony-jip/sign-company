@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Toast, { useEasterEgg } from './Toast'
+import { REGISTER_URL, LOGIN_URL } from '@/lib/site'
 
 const navLinks = [
   { href: '/features', label: 'Product' },
@@ -117,14 +118,14 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
             {/* Right cluster */}
             <div className="hidden md:flex items-center gap-2">
               <a
-                href="https://app.doen.team/login"
+                href={LOGIN_URL}
                 className="text-[14px] font-medium px-3 py-2 transition-opacity hover:opacity-60"
                 style={{ color: linkColor }}
               >
                 Inloggen
               </a>
               <a
-                href="https://app.doen.team/register"
+                href={REGISTER_URL}
                 className="group inline-flex items-center gap-1.5 text-[14px] font-semibold text-white px-5 h-[42px] rounded-[6px] bg-flame transition-transform duration-300 hover:scale-[1.03] active:scale-[0.97]"
               >
                 <span>Start gratis</span>
@@ -209,7 +210,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                 className="flex flex-col gap-4"
               >
                 <a
-                  href="https://app.doen.team/register"
+                  href={REGISTER_URL}
                   onClick={() => setIsMobileOpen(false)}
                   className="flex items-center justify-between text-[16px] font-semibold text-white px-6 h-[56px] rounded-[6px] bg-flame"
                 >
@@ -217,7 +218,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                   <span aria-hidden>→</span>
                 </a>
                 <a
-                  href="https://app.doen.team/login"
+                  href={LOGIN_URL}
                   onClick={() => setIsMobileOpen(false)}
                   className="text-center text-[15px] font-medium text-muted"
                 >

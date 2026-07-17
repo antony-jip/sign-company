@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Bricolage_Grotesque, Hanken_Grotesk, Spline_Sans_Mono } from 'next/font/google'
+import { SITE_URL, SITE_LANG, OG_LOCALE } from '@/lib/site'
 import './globals.css'
 
 const bricolage = Bricolage_Grotesque({
@@ -24,7 +25,7 @@ const splineMono = Spline_Sans_Mono({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://doen.team'),
+  metadataBase: new URL(SITE_URL),
   title: 'doen. | Software voor signmakers en reclamebedrijven',
   description: 'Van offerte tot factuur. Zo gedaan. Alles-in-één bedrijfssoftware voor signmakers en reclamebedrijven, €79/maand ex. btw. Tot 10 gebruikers inbegrepen.',
   keywords: [
@@ -39,9 +40,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'doen. | Slim gedaan.',
     description: 'Van offerte tot factuur. Zo gedaan. €79/maand ex. btw, tot 10 gebruikers.',
-    url: 'https://doen.team',
+    url: SITE_URL,
     siteName: 'doen.',
-    locale: 'nl_NL',
+    locale: OG_LOCALE,
     type: 'website',
   },
   twitter: {
@@ -58,7 +59,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="nl" className={`${bricolage.variable} ${hanken.variable} ${splineMono.variable}`}>
+    <html lang={SITE_LANG} className={`${bricolage.variable} ${hanken.variable} ${splineMono.variable}`}>
       <body className="font-sans bg-bg text-ink antialiased">
         <a href="#main-content" className="skip-link">
           Ga naar inhoud

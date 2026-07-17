@@ -10,16 +10,18 @@ import FaqSection from '@/components/home/FaqSection'
 import CTASection from '@/components/home/CTASection'
 import Footer from '@/components/Footer'
 import JsonLd from '@/components/JsonLd'
-import { organizationSchema, softwareApplicationSchema } from '@/lib/structured-data'
+import { organizationSchema, softwareApplicationSchema, websiteSchema } from '@/lib/structured-data'
+import { alternatesFor } from '@/lib/seo'
 
 export const metadata: Metadata = {
-  alternates: { canonical: '/' },
+  alternates: alternatesFor('/'),
 }
 
 export default function Home() {
   return (
     <>
       <JsonLd data={organizationSchema} />
+      <JsonLd data={websiteSchema} />
       <JsonLd data={softwareApplicationSchema} />
       <Navbar theme="dark" />
       <main id="main-content">

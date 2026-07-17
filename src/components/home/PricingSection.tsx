@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 import { PRICE_PER_MONTH } from '@/data/pricing'
+import { REGISTER_URL } from '@/lib/site'
 
 const INCLUDED = [
   'Alle tien modules',
@@ -65,7 +66,7 @@ export default function PricingSection() {
             </p>
             <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
               <a
-                href="https://app.doen.team/register"
+                href={REGISTER_URL}
                 className="group inline-flex items-center gap-2.5 text-[15px] font-semibold text-white px-7 h-[54px] rounded-[6px] bg-flame transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Start gratis</span>

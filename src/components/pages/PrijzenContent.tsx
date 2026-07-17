@@ -6,6 +6,7 @@ import { ArrowRight, Check, Plus } from 'lucide-react'
 import CTASection from '@/components/home/CTASection'
 import JsonLd from '@/components/JsonLd'
 import { PRICE_PER_MONTH } from '@/data/pricing'
+import { REGISTER_URL } from '@/lib/site'
 import { prijzenFaqs } from '@/data/faq'
 import { prijzenFaqPageSchema } from '@/lib/structured-data'
 
@@ -100,7 +101,7 @@ function PriceHero() {
 
             <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
               <a
-                href="https://app.doen.team/register"
+                href={REGISTER_URL}
                 className="group inline-flex items-center gap-2.5 text-[15px] font-semibold text-white px-7 h-[54px] rounded-[6px] bg-flame transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Start gratis</span>

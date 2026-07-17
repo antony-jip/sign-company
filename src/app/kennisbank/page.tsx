@@ -5,13 +5,14 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { articles, CATEGORY_ORDER } from '@/data/kennisbank/articles'
 import type { Article, Category } from '@/data/kennisbank/articles'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Kennisbank | doen.',
+export const metadata: Metadata = pageMetadata({
+  title: 'Kennisbank voor signmakers | doen.',
   description:
     'Alles wat je moet weten over doen. Per module uitgelegd. Van aan de slag tot geavanceerde tips.',
-  alternates: { canonical: '/kennisbank' },
-}
+  path: '/kennisbank',
+})
 
 export default function KennisbankPage() {
   const filledCategories = CATEGORY_ORDER.filter((category) =>

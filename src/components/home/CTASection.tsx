@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
+import { REGISTER_URL } from '@/lib/site'
 
 /* Flame-band als afsluiter: één zin, één knop. */
 export default function CTASection() {
@@ -32,7 +33,7 @@ export default function CTASection() {
             </p>
           </div>
           <a
-            href="https://app.doen.team/register"
+            href={REGISTER_URL}
             className="group inline-flex items-center gap-2.5 self-start md:self-auto shrink-0 text-[15px] font-semibold text-flame bg-white px-8 h-[56px] rounded-[6px] transition-transform duration-300 hover:scale-[1.03] active:scale-[0.97]"
           >
             <span>Start gratis</span>
