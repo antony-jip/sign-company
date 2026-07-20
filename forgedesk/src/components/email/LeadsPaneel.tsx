@@ -49,6 +49,7 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'alle'>('alle')
   const [geselecteerdId, setGeselecteerdId] = useState<string | null>(null)
   const [notitieConcept, setNotitieConcept] = useState('')
+  const [aanwijzing, setAanwijzing] = useState('')
   const [schrijftVoorId, setSchrijftVoorId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -82,6 +83,7 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
   const kiesLead = useCallback((lead: Lead) => {
     setGeselecteerdId(lead.id)
     setNotitieConcept(lead.notities)
+    setAanwijzing('')
   }, [])
 
   const zetStatus = useCallback(async (lead: Lead, status: LeadStatus) => {
@@ -99,7 +101,7 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
   const mailMetOpzet = useCallback(async (lead: Lead) => {
     setSchrijftVoorId(lead.id)
     try {
-      const { result } = await callForgie('write-lead-email', '', leadContext(lead))
+      const { result } = await callForgie('write-lead-email', aanwijzing.trim(), leadContext(lead))
       onMailLead(lead.email, result)
     } catch (err) {
       logger.error('Opzetje schrijven mislukt:', err)
@@ -107,7 +109,7 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
     } finally {
       setSchrijftVoorId(null)
     }
-  }, [onMailLead])
+  }, [aanwijzing, onMailLead])
 
   const bewaarNotitie = useCallback(async (lead: Lead) => {
     if (notitieConcept === lead.notities) return
@@ -283,6 +285,15 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
                     {schrijftVoorId === geselecteerd.id ? 'Daan schrijft…' : 'Schrijf opzetje'}
                   </button>
                 </div>
+              )}
+              {geselecteerd.email && (
+                <input
+                  type="text"
+                  value={aanwijzing}
+                  onChange={(e) => setAanwijzing(e.target.value)}
+                  placeholder="Aanwijzing voor Daan, bijvoorbeeld: noem dat we elkaar op de beurs zagen"
+                  className="w-full px-3 py-2 rounded-lg bg-muted/40 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-petrol/30"
+                />
               )}
               {geselecteerd.bron && (
                 <div className="flex items-center gap-2 text-muted-foreground">
