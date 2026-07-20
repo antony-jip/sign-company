@@ -1791,7 +1791,7 @@ export interface DealActiviteit {
 
 // ============ LEADS / OUTBOUND ============
 
-export type LeadStatus = 'benaderd' | 'gereageerd' | 'geen_interesse' | 'follow-up_later';
+export type LeadStatus = 'nieuw' | 'benaderd' | 'gereageerd' | 'geen_interesse' | 'follow-up_later';
 
 export interface Lead {
   id: string;

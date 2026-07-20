@@ -10,6 +10,7 @@ import type { Lead, LeadStatus } from '@/types'
 // Statuskleuren uit het doen-design-systeem. Status is tekst + Flame punt,
 // nadrukkelijk geen gekleurde pill-badge.
 const STATUS_KLEUR: Record<LeadStatus, string> = {
+  nieuw: '#6E6E68',
   benaderd: '#8A7A4A',
   gereageerd: '#3A7D52',
   geen_interesse: '#C0451A',
@@ -26,9 +27,16 @@ function StatusTekst({ status }: { status: LeadStatus }) {
 }
 
 interface LeadsPaneelProps {
-  onMailLead: (email: string, body?: string) => void
+  /**
+   * leadId wordt alleen meegegeven voor leads die nog op 'nieuw' staan: na
+   * verzenden zet EmailLayout die op 'benaderd'. Een lead die al gereageerd
+   * heeft, mag door een tweede mail niet terugvallen naar benaderd.
+   */
+  onMailLead: (email: string, body?: string, leadId?: string) => void
   /** Tijdens opstellen neemt de compose-kolom de detailplek in. */
   verbergDetail?: boolean
+  /** Lead die zojuist gemaild is; status lokaal bijwerken zonder refetch. */
+  benaderdeLeadId?: string | null
 }
 
 /** Alleen ingevulde velden; ontbrekende gegevens laat de prompt liever weg. */
@@ -42,7 +50,7 @@ function leadContext(lead: Lead): string {
   ].filter(Boolean).join('\n')
 }
 
-export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelProps) {
+export function LeadsPaneel({ onMailLead, verbergDetail = false, benaderdeLeadId }: LeadsPaneelProps) {
   const [leads, setLeads] = useState<Lead[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [zoek, setZoek] = useState('')
@@ -98,11 +106,18 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
     }
   }, [])
 
+  useEffect(() => {
+    if (!benaderdeLeadId) return
+    setLeads((huidig) => huidig.map((l) => (
+      l.id === benaderdeLeadId && l.status === 'nieuw' ? { ...l, status: 'benaderd' } : l
+    )))
+  }, [benaderdeLeadId])
+
   const mailMetOpzet = useCallback(async (lead: Lead) => {
     setSchrijftVoorId(lead.id)
     try {
       const { result } = await callForgie('write-lead-email', aanwijzing.trim(), leadContext(lead))
-      onMailLead(lead.email, result)
+      onMailLead(lead.email, result, lead.status === 'nieuw' ? lead.id : undefined)
     } catch (err) {
       logger.error('Opzetje schrijven mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Opzetje schrijven mislukt')
@@ -270,7 +285,7 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
                   <span className="text-foreground">{geselecteerd.email}</span>
                   <button
                     type="button"
-                    onClick={() => onMailLead(geselecteerd.email)}
+                    onClick={() => onMailLead(geselecteerd.email, undefined, geselecteerd.status === 'nieuw' ? geselecteerd.id : undefined)}
                     className="text-[13px] text-muted-foreground hover:text-petrol"
                   >
                     Mail deze lead
