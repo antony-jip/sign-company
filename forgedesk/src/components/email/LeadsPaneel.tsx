@@ -6,11 +6,22 @@ import { logger } from '@/utils/logger'
 import { getLeads, updateLeadStatus, updateLeadNotities, whatsappLink, LEAD_STATUSSEN } from '@/services/leadsService'
 import type { Lead, LeadStatus } from '@/types'
 
-const STATUS_STIJL: Record<LeadStatus, string> = {
-  benaderd: 'bg-petrol/[0.08] text-petrol dark:bg-petrol/20 dark:text-petrol-200',
-  gereageerd: 'bg-flame/[0.10] text-flame',
-  geen_interesse: 'bg-muted text-muted-foreground',
-  'follow-up_later': 'bg-amber-500/[0.12] text-amber-700 dark:text-amber-400',
+// Statuskleuren uit het doen-design-systeem. Status is tekst + Flame punt,
+// nadrukkelijk geen gekleurde pill-badge.
+const STATUS_KLEUR: Record<LeadStatus, string> = {
+  benaderd: '#8A7A4A',
+  gereageerd: '#3A7D52',
+  geen_interesse: '#C0451A',
+  'follow-up_later': '#3A5A9A',
+}
+
+function StatusTekst({ status }: { status: LeadStatus }) {
+  return (
+    <span className="text-[13px] font-medium whitespace-nowrap" style={{ color: STATUS_KLEUR[status] }}>
+      {LEAD_STATUSSEN.find((s) => s.id === status)?.label}
+      <span className="text-flame">.</span>
+    </span>
+  )
 }
 
 interface LeadsPaneelProps {
@@ -102,20 +113,20 @@ export function LeadsPaneel({ onMailLead }: LeadsPaneelProps) {
               />
             </div>
           </div>
-          <div className="flex gap-1.5 px-4 pb-3 overflow-x-auto">
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 px-4 pb-3">
             {([{ id: 'alle' as const, label: 'Alle' }, ...LEAD_STATUSSEN]).map((optie) => (
               <button
                 key={optie.id}
                 type="button"
                 onClick={() => setStatusFilter(optie.id as LeadStatus | 'alle')}
                 className={cn(
-                  'px-2.5 py-1 rounded-full text-[12px] font-medium whitespace-nowrap transition-colors duration-150',
+                  'text-[13px] whitespace-nowrap transition-colors duration-150',
                   statusFilter === optie.id
-                    ? 'bg-petrol text-white'
-                    : 'bg-muted/60 text-muted-foreground hover:text-petrol',
+                    ? 'font-semibold text-foreground'
+                    : 'text-[#9B9B95] hover:text-foreground',
                 )}
               >
-                {optie.label} {tellers[optie.id] ?? 0}
+                {optie.label} <span className="font-mono text-[12px]">{tellers[optie.id] ?? 0}</span>
               </button>
             ))}
           </div>
@@ -143,9 +154,7 @@ export function LeadsPaneel({ onMailLead }: LeadsPaneelProps) {
                   <span className="text-[14px] font-semibold text-foreground truncate">
                     {lead.bedrijf || lead.naam || '(naamloos)'}
                   </span>
-                  <span className={cn('px-2 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0', STATUS_STIJL[lead.status])}>
-                    {LEAD_STATUSSEN.find((s) => s.id === lead.status)?.label}
-                  </span>
+                  <span className="flex-shrink-0"><StatusTekst status={lead.status} /></span>
                 </div>
                 <div className="mt-0.5 text-[12px] text-muted-foreground truncate">
                   {[lead.naam && lead.bedrijf ? lead.naam : '', lead.plaats].filter(Boolean).join(' · ')}
@@ -177,20 +186,21 @@ export function LeadsPaneel({ onMailLead }: LeadsPaneelProps) {
               <p className="mt-1 text-[14px] text-muted-foreground">{geselecteerd.naam}</p>
             )}
 
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-5 flex flex-wrap items-center gap-5">
               {LEAD_STATUSSEN.map((status) => (
                 <button
                   key={status.id}
                   type="button"
                   onClick={() => zetStatus(geselecteerd, status.id)}
                   className={cn(
-                    'px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors duration-150',
+                    'text-[13px] transition-colors duration-150',
                     geselecteerd.status === status.id
-                      ? 'bg-flame text-white'
-                      : 'bg-muted/60 text-muted-foreground hover:text-petrol',
+                      ? 'font-semibold text-foreground'
+                      : 'text-[#9B9B95] hover:text-foreground',
                   )}
                 >
                   {status.label}
+                  {geselecteerd.status === status.id && <span className="text-flame">.</span>}
                 </button>
               ))}
             </div>
@@ -205,7 +215,7 @@ export function LeadsPaneel({ onMailLead }: LeadsPaneelProps) {
               {geselecteerd.telefoon && (
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${geselecteerd.telefoon}`} className="text-foreground hover:text-petrol">
+                  <a href={`tel:${geselecteerd.telefoon}`} className="font-mono text-[13px] text-foreground hover:text-petrol">
                     {geselecteerd.telefoon}
                   </a>
                   {whatsappLink(geselecteerd.telefoon) && (
@@ -228,7 +238,7 @@ export function LeadsPaneel({ onMailLead }: LeadsPaneelProps) {
                   <button
                     type="button"
                     onClick={() => onMailLead(geselecteerd.email)}
-                    className="px-2 py-0.5 rounded-md bg-flame text-white text-[12px] font-medium hover:bg-[#D8421F] transition-colors duration-150"
+                    className="text-[13px] font-medium text-flame hover:underline underline-offset-2"
                   >
                     Mail deze lead
                   </button>
@@ -256,7 +266,7 @@ export function LeadsPaneel({ onMailLead }: LeadsPaneelProps) {
                       {contact.functie && <div className="text-[12px] text-muted-foreground">{contact.functie}</div>}
                       {contact.telefoon && (
                         <div className="mt-1 flex items-center gap-2">
-                          <a href={`tel:${contact.telefoon}`} className="text-muted-foreground hover:text-petrol">
+                          <a href={`tel:${contact.telefoon}`} className="font-mono text-[12px] text-muted-foreground hover:text-petrol">
                             {contact.telefoon}
                           </a>
                           {whatsappLink(contact.telefoon) && (
