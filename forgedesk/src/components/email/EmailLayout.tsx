@@ -1859,8 +1859,11 @@ export function EmailLayout() {
       )}
 
       {/* ─── LEADS · eigen tabel, dus eigen paneel in plaats van de e-mailkolommen ─── */}
-      {selectedFolder === 'leads' && viewMode === 'idle' && (
-        <LeadsPaneel onMailLead={(email) => handleCompose({ to: email })} />
+      {selectedFolder === 'leads' && (
+        <LeadsPaneel
+          onMailLead={(email) => handleCompose({ to: email })}
+          verbergDetail={viewMode !== 'idle'}
+        />
       )}
 
       {/* ─── LIST COLUMN · altijd zichtbaar op desktop (resizable), op mobile alleen wanneer idle ─── */}
@@ -1869,7 +1872,7 @@ export function EmailLayout() {
           'bg-white dark:bg-card flex-col min-w-0 relative',
           'md:flex-shrink-0 md:border-r md:border-border md:flex',
           viewMode === 'idle' ? 'flex flex-1' : 'hidden',
-          selectedFolder === 'leads' && viewMode === 'idle' && 'hidden md:hidden',
+          selectedFolder === 'leads' && 'hidden md:hidden',
         )}
         style={isDesktop ? { width: listWidth } : undefined}
       >

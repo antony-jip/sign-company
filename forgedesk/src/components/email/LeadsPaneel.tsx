@@ -26,9 +26,11 @@ function StatusTekst({ status }: { status: LeadStatus }) {
 
 interface LeadsPaneelProps {
   onMailLead: (email: string) => void
+  /** Tijdens opstellen neemt de compose-kolom de detailplek in. */
+  verbergDetail?: boolean
 }
 
-export function LeadsPaneel({ onMailLead }: LeadsPaneelProps) {
+export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelProps) {
   const [leads, setLeads] = useState<Lead[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [zoek, setZoek] = useState('')
@@ -93,9 +95,12 @@ export function LeadsPaneel({ onMailLead }: LeadsPaneelProps) {
   }, [notitieConcept])
 
   return (
-    <div className="flex flex-1 min-w-0 bg-white dark:bg-card">
+    <div className={cn('flex min-w-0 bg-white dark:bg-card', verbergDetail ? 'md:flex-shrink-0' : 'flex-1')}>
       {/* Lijst */}
-      <div className="flex flex-col min-w-0 w-full md:w-[380px] md:flex-shrink-0 md:border-r md:border-border">
+      <div className={cn(
+        'flex-col min-w-0 w-full md:w-[380px] md:flex-shrink-0 md:border-r md:border-border',
+        verbergDetail ? 'hidden md:flex' : 'flex',
+      )}>
         <div className="sticky top-0 z-20 bg-white dark:bg-card border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 flex-shrink-0">
           <div className="px-4 pt-4 pb-3">
             <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
@@ -172,7 +177,7 @@ export function LeadsPaneel({ onMailLead }: LeadsPaneelProps) {
       </div>
 
       {/* Detail */}
-      <div className="hidden md:flex flex-1 min-w-0 flex-col overflow-y-auto">
+      <div className={cn('flex-1 min-w-0 flex-col overflow-y-auto', verbergDetail ? 'hidden' : 'hidden md:flex')}>
         {!geselecteerd ? (
           <div className="flex-1 flex items-center justify-center text-[13px] text-muted-foreground">
             Kies een lead
