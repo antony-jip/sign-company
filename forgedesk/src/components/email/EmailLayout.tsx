@@ -233,6 +233,7 @@ export function EmailLayout() {
         body: params.get('body') || undefined,
         bodyIsBericht: true,
       })
+      setComposeLeadId(null)
       setViewMode('composing')
     }
   }, [location.pathname, location.search])
@@ -1502,6 +1503,7 @@ export function EmailLayout() {
       // Reset compose-keuzes zodat een afgebroken sessie niet bij een
       // volgende compose (bv. via /email/compose deeplink) door-lekt.
       setComposeProjectId(null)
+      setComposeLeadId(null)
       setViewMode('idle')
     }, 'back')
   }, [])

@@ -12,8 +12,10 @@ ALTER TABLE leads
 ALTER TABLE leads ALTER COLUMN status SET DEFAULT 'nieuw';
 
 -- De bestaande vulling is nooit benaderd: alles terug naar de startstatus.
--- status_sinds blijft staan; die zegt sinds wanneer de rij op deze status staat
--- en dat moment is nu.
+-- Alleen rijen waarvan de status nooit handmatig is gezet (status_sinds staat
+-- dan nog gelijk aan created_at), zodat een tweede run van deze migratie geen
+-- echt benaderde leads terugdraait.
 UPDATE leads
 SET status = 'nieuw', status_sinds = now()
-WHERE status = 'benaderd';
+WHERE status = 'benaderd'
+  AND status_sinds = created_at;
