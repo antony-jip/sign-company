@@ -1789,6 +1789,39 @@ export interface DealActiviteit {
   updated_at?: string;
 }
 
+// ============ LEADS / OUTBOUND ============
+
+export type LeadStatus = 'benaderd' | 'gereageerd' | 'geen_interesse' | 'follow-up_later';
+
+export interface Lead {
+  id: string;
+  user_id: string;
+
+  naam: string;
+  bedrijf: string;
+  telefoon: string;
+  email: string;
+  provincie: string;
+  plaats: string;
+
+  status: LeadStatus;
+  status_sinds: string;
+
+  bron: string;
+  bron_status: string;
+  tags: string[];
+
+  contactpersonen: Contactpersoon[];
+  notities: string;
+
+  import_bron: string;
+  import_datum?: string | null;
+  import_sleutel: string;
+
+  created_at: string;
+  updated_at: string;
+}
+
 // ============ LEAD CAPTURE (Tier 3 Feature 2) ============
 
 export interface LeadFormulier {
