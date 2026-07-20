@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
-  Rows3, StretchHorizontal, Clock, Moon, Menu, Edit3, ChevronLeft,
+  Rows3, StretchHorizontal, Clock, Moon, Menu, Edit3, ChevronLeft, Target,
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
+import { LeadsPaneel } from './LeadsPaneel'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, backfillEmailsFromIMAP } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
@@ -42,6 +43,7 @@ const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] 
   { id: 'sales-beantwoord', label: 'Beantwoord', icon: CheckCheck },
   { id: 'gesnoozed', label: 'Gesnoozed', icon: Moon },
   { id: 'concepten', label: 'Concepten', icon: FileEdit },
+  { id: 'leads', label: 'Leads', icon: Target },
   { id: 'prullenbak', label: 'Prullenbak', icon: Trash2 },
 ]
 
@@ -53,7 +55,7 @@ const filtersList: { id: FilterType; label: string }[] = [
   { id: 'bijlagen', label: 'Bijlagen' },
 ]
 
-const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 'gesnoozed', 'prullenbak', 'sales-wacht', 'sales-beantwoord']
+const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 'gesnoozed', 'prullenbak', 'sales-wacht', 'sales-beantwoord', 'leads']
 
 // Mobile drawer surfaces these two as primary; the rest sits below a divider.
 const PRIMARY_FOLDER_IDS = new Set<EmailFolder>(['inbox', 'sales-wacht'])
@@ -995,6 +997,8 @@ export function EmailLayout() {
   }, [])
 
   const handleFolderLoad = useCallback(async (folder: EmailFolder) => {
+    // Leads leven in een eigen tabel; geen e-mails ophalen voor die tab.
+    if (folder === 'leads') { setIsLoading(false); return }
     // Read from Supabase only · no IMAP sync on folder switch
     try {
       const cached = await readFromSupabase()
@@ -1854,12 +1858,18 @@ export function EmailLayout() {
         document.body,
       )}
 
+      {/* ─── LEADS · eigen tabel, dus eigen paneel in plaats van de e-mailkolommen ─── */}
+      {selectedFolder === 'leads' && viewMode === 'idle' && (
+        <LeadsPaneel onMailLead={(email) => handleCompose({ to: email })} />
+      )}
+
       {/* ─── LIST COLUMN · altijd zichtbaar op desktop (resizable), op mobile alleen wanneer idle ─── */}
       <div
         className={cn(
           'bg-white dark:bg-card flex-col min-w-0 relative',
           'md:flex-shrink-0 md:border-r md:border-border md:flex',
           viewMode === 'idle' ? 'flex flex-1' : 'hidden',
+          selectedFolder === 'leads' && viewMode === 'idle' && 'hidden md:hidden',
         )}
         style={isDesktop ? { width: listWidth } : undefined}
       >
@@ -2233,6 +2243,7 @@ export function EmailLayout() {
         'bg-white dark:bg-card flex-col min-w-0',
         'md:flex md:flex-1',
         viewMode === 'idle' ? 'hidden md:flex' : 'flex flex-1',
+        selectedFolder === 'leads' && viewMode === 'idle' && 'hidden md:hidden',
       )}>
 
         {/* Compose view */}
