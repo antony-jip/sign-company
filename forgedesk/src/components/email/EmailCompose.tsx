@@ -35,6 +35,12 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
+  /**
+   * Bij reply/forward is defaultBody het citaat van de originele mail en hoort
+   * de handtekening erboven. Is defaultBody de mail zelf (bv. een AI-opzetje),
+   * zet deze vlag dan aan zodat de handtekening eronder komt.
+   */
+  defaultBodyIsBericht?: boolean
   /** Platte tekst van de originele mail — aanwezig betekent: dit is een reply. */
   replyToText?: string
   onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
@@ -111,6 +117,7 @@ export function EmailCompose({
   defaultTo = '',
   defaultSubject = '',
   defaultBody = '',
+  defaultBodyIsBericht = false,
   replyToText,
   onSend,
   allEmails = [],
@@ -214,7 +221,10 @@ export function EmailCompose({
       const timer = setTimeout(() => {
         if (!editorRef.current) return
         if (defaultBody) {
-          editorRef.current.innerHTML = `<br>${signatureHtml}${defaultBody.replace(/\n/g, '<br>')}`
+          const bodyHtml = defaultBody.replace(/\n/g, '<br>')
+          editorRef.current.innerHTML = defaultBodyIsBericht
+            ? `${bodyHtml}${signatureHtml}`
+            : `<br>${signatureHtml}${bodyHtml}`
         } else {
           editorRef.current.innerHTML = signatureHtml || '<br>'
         }
@@ -229,7 +239,7 @@ export function EmailCompose({
       }, 100)
       return () => clearTimeout(timer)
     }
-  }, [open, defaultBody, signatureHtml])
+  }, [open, defaultBody, defaultBodyIsBericht, signatureHtml])
 
   useEffect(() => {
     setTo(defaultTo)

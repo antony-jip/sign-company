@@ -190,7 +190,7 @@ export function EmailLayout() {
 
   // ─── Compose state ───
   const [composeDefaults, setComposeDefaults] = useState<{
-    to?: string; subject?: string; body?: string; replyToText?: string
+    to?: string; subject?: string; body?: string; bodyIsBericht?: boolean; replyToText?: string
   }>({})
   const [composeProjectId, setComposeProjectId] = useState<string | null>(null)
   // Ref-mirror zodat handleSendEmail (lege deps) de actuele waarde leest
@@ -225,6 +225,7 @@ export function EmailLayout() {
         to: params.get('to') || undefined,
         subject: params.get('subject') || undefined,
         body: params.get('body') || undefined,
+        bodyIsBericht: true,
       })
       setViewMode('composing')
     }
@@ -1345,7 +1346,7 @@ export function EmailLayout() {
     })
   }, [loadEmailBody, selectedFolder, toggleCheckEmail])
 
-  const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string; replyToText?: string }) => {
+  const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string; bodyIsBericht?: boolean; replyToText?: string }) => {
     viewTransition(() => {
       setComposeDefaults(defaults || {})
       // Verse compose-sessie: vorige project-koppelingskeuze niet hergebruiken
@@ -1861,7 +1862,7 @@ export function EmailLayout() {
       {/* ─── LEADS · eigen tabel, dus eigen paneel in plaats van de e-mailkolommen ─── */}
       {selectedFolder === 'leads' && (
         <LeadsPaneel
-          onMailLead={(email, body) => handleCompose({ to: email, body })}
+          onMailLead={(email, body) => handleCompose({ to: email, body, bodyIsBericht: true })}
           verbergDetail={viewMode !== 'idle'}
         />
       )}
@@ -2257,6 +2258,7 @@ export function EmailLayout() {
             defaultTo={composeDefaults.to}
             defaultSubject={composeDefaults.subject}
             defaultBody={composeDefaults.body}
+            defaultBodyIsBericht={composeDefaults.bodyIsBericht}
             replyToText={composeDefaults.replyToText}
             onSend={handleSendEmail}
             allEmails={emails}
