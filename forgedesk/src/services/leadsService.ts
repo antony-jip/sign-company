@@ -13,12 +13,15 @@ export const LEAD_STATUSSEN: { id: LeadStatus; label: string }[] = [
 
 export async function getLeads(): Promise<Lead[]> {
   if (!isSupabaseConfigured() || !supabase) return []
-  const { data, error } = await supabase
-    .from('leads')
-    .select('*')
-    .order('bedrijf', { ascending: true })
+  const { data, error } = await supabase.from('leads').select('*')
   if (error) throw error
-  return (data || []) as unknown as Lead[]
+  const leads = (data || []) as unknown as Lead[]
+  // Leads met een bedrijfsnaam eerst; de losse namen zonder bedrijf zijn
+  // vaak alleen een voornaam en horen niet bovenaan de lijst.
+  return leads.sort((a, b) => {
+    if (!a.bedrijf !== !b.bedrijf) return a.bedrijf ? -1 : 1
+    return (a.bedrijf || a.naam).localeCompare(b.bedrijf || b.naam, 'nl')
+  })
 }
 
 export async function updateLeadStatus(id: string, status: LeadStatus): Promise<void> {
