@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Search, Phone, Mail, MessageCircle, Building2, MapPin, Users, Tag } from 'lucide-react'
+import { Search, Phone, Mail, MessageCircle, Building2, MapPin, Users, Tag, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { getLeads, updateLeadStatus, updateLeadNotities, whatsappLink, LEAD_STATUSSEN } from '@/services/leadsService'
+import { callForgie } from '@/services/forgieService'
 import type { Lead, LeadStatus } from '@/types'
 
 // Statuskleuren uit het doen-design-systeem. Status is tekst + Flame punt,
@@ -25,9 +26,20 @@ function StatusTekst({ status }: { status: LeadStatus }) {
 }
 
 interface LeadsPaneelProps {
-  onMailLead: (email: string) => void
+  onMailLead: (email: string, body?: string) => void
   /** Tijdens opstellen neemt de compose-kolom de detailplek in. */
   verbergDetail?: boolean
+}
+
+/** Alleen ingevulde velden; ontbrekende gegevens laat de prompt liever weg. */
+function leadContext(lead: Lead): string {
+  return [
+    lead.bedrijf && `Bedrijf: ${lead.bedrijf}`,
+    lead.naam && `Contactpersoon: ${lead.naam}`,
+    [lead.plaats, lead.provincie].filter(Boolean).join(', ') && `Plaats: ${[lead.plaats, lead.provincie].filter(Boolean).join(', ')}`,
+    lead.bron && `Gevonden via: ${lead.bron}`,
+    lead.notities && `Eigen notitie: ${lead.notities}`,
+  ].filter(Boolean).join('\n')
 }
 
 export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelProps) {
@@ -37,6 +49,7 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'alle'>('alle')
   const [geselecteerdId, setGeselecteerdId] = useState<string | null>(null)
   const [notitieConcept, setNotitieConcept] = useState('')
+  const [schrijftVoorId, setSchrijftVoorId] = useState<string | null>(null)
 
   useEffect(() => {
     getLeads()
@@ -82,6 +95,19 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
       toast.error('Status opslaan mislukt')
     }
   }, [])
+
+  const mailMetOpzet = useCallback(async (lead: Lead) => {
+    setSchrijftVoorId(lead.id)
+    try {
+      const { result } = await callForgie('write-lead-email', '', leadContext(lead))
+      onMailLead(lead.email, result)
+    } catch (err) {
+      logger.error('Opzetje schrijven mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Opzetje schrijven mislukt')
+    } finally {
+      setSchrijftVoorId(null)
+    }
+  }, [onMailLead])
 
   const bewaarNotitie = useCallback(async (lead: Lead) => {
     if (notitieConcept === lead.notities) return
@@ -243,9 +269,18 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
                   <button
                     type="button"
                     onClick={() => onMailLead(geselecteerd.email)}
-                    className="text-[13px] font-medium text-flame hover:underline underline-offset-2"
+                    className="text-[13px] text-muted-foreground hover:text-petrol"
                   >
                     Mail deze lead
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => mailMetOpzet(geselecteerd)}
+                    disabled={schrijftVoorId === geselecteerd.id}
+                    className="inline-flex items-center gap-1 text-[13px] font-medium text-flame hover:underline underline-offset-2 disabled:opacity-50 disabled:no-underline"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {schrijftVoorId === geselecteerd.id ? 'Daan schrijft…' : 'Schrijf opzetje'}
                   </button>
                 </div>
               )}

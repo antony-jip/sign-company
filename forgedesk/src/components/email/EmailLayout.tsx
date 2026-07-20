@@ -1861,7 +1861,7 @@ export function EmailLayout() {
       {/* ─── LEADS · eigen tabel, dus eigen paneel in plaats van de e-mailkolommen ─── */}
       {selectedFolder === 'leads' && (
         <LeadsPaneel
-          onMailLead={(email) => handleCompose({ to: email })}
+          onMailLead={(email, body) => handleCompose({ to: email, body })}
           verbergDetail={viewMode !== 'idle'}
         />
       )}

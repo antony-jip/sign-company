@@ -75,7 +75,18 @@ const PROMPTS: Record<string, string> = {
   'translate-nl': 'Vertaal deze email naar het Nederlands. Behoud de toon. Antwoord alleen met de vertaling.\n\nEmail:\n{text}',
   'generate-reply': 'Schrijf een kort en professioneel antwoord op deze email in het Nederlands. Antwoord alleen met de reply-tekst.\n\nEmail:\n{text}',
   'write-email': 'Schrijf een volledige, professionele e-mail in het Nederlands op basis van de opdracht van de gebruiker. Gebruik een passende aanhef en afsluiting en schrijf zo uitgebreid en informatief als de opdracht vraagt. Antwoord alleen met de e-mailtekst, zonder onderwerp-regel.\n\nContext (onderwerp en ontvanger):\n{context}\n\nOpdracht van de gebruiker:\n{text}',
+  // Koude outreach naar de SIBON-ledenlijst. Van de lead is alleen naam, plaats
+  // en bron bekend, dus het verbod op aannames staat er nadrukkelijk in: zonder
+  // dat verzint het model wat het bedrijf maakt of welke software het gebruikt.
+  'write-lead-email': 'Je schrijft een eerste, koude e-mail aan een collega-signbedrijf uit de ledenlijst van SIBON. Doel: doen. introduceren, de software die we zelf gebruiken voor offertes, projecten, werkbonnen en facturatie.\n\nSchrijf als ondernemer tegen ondernemer, niet als verkoper. Maximaal 120 woorden. Noem concreet wat het oplost in plaats van wat het "biedt". Geen superlatieven, geen opsommingstekens, geen onderwerpregel en geen ondertekening — de handtekening staat er al onder. Sluit af met een lage drempel: een vraag of hij het een keer wil zien, geen harde call-to-action.\n\nJe weet weinig over dit bedrijf. Doe daarom GEEN aannames over wat ze maken, hoe groot ze zijn, welke software ze nu gebruiken of hoe hun werk loopt. Gebruik uitsluitend de gegevens hieronder; als een gegeven ontbreekt, laat je het weg in plaats van het in te vullen.\n\nGegevens van de lead:\n{context}\n\nExtra aanwijzing van de gebruiker (leeg = geen):\n{text}\n\nAntwoord alleen met de e-mailtekst.',
 }
+
+// Outreach is kwaliteitsgevoelig en gaat naar echte bedrijven; de overige
+// acties blijven op Sonnet staan.
+const MODEL_PER_ACTIE: Record<string, string> = {
+  'write-lead-email': 'claude-opus-4-8',
+}
+const STANDAARD_MODEL = 'claude-sonnet-4-6'
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -102,9 +113,17 @@ async function checkUsageLimit(userId: string): Promise<boolean> {
   return !data || (data.geschatte_kosten ?? 0) < MONTHLY_LIMIT
 }
 
-async function updateUsage(userId: string, inputTokens: number, outputTokens: number): Promise<void> {
+// Tarief per miljoen tokens, per model. Zonder deze splitsing werd een
+// Opus-call op Sonnet-tarief geteld en liep het maandbudget stil te ver door.
+const TARIEVEN: Record<string, { in: number; uit: number }> = {
+  'claude-opus-4-8': { in: 5, uit: 25 },
+  'claude-sonnet-4-6': { in: 3, uit: 15 },
+}
+
+async function updateUsage(userId: string, inputTokens: number, outputTokens: number, model: string): Promise<void> {
   const maand = getCurrentMonth()
-  const kosten = (inputTokens / 1_000_000 * 3) + (outputTokens / 1_000_000 * 15)
+  const tarief = TARIEVEN[model] || TARIEVEN['claude-sonnet-4-6']
+  const kosten = (inputTokens / 1_000_000 * tarief.in) + (outputTokens / 1_000_000 * tarief.uit)
 
   const { data: existing } = await supabase
     .from('ai_usage')
@@ -290,6 +309,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const daanContext = await buildDaanContext(supabase, userId)
     const systemPrompt = buildSystemPrompt(action, daanContext)
+    const model = MODEL_PER_ACTIE[action] || STANDAARD_MODEL
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -299,8 +319,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
+        model,
+        // Adaptive thinking staat expliciet aan: met thinking uit schrijft
+        // Opus 4.8 zijn afwegingen soms in het zichtbare antwoord, en dat
+        // komt hier ongefilterd in de mailtekst terecht.
+        ...(MODEL_PER_ACTIE[action]
+          ? { max_tokens: 4000, thinking: { type: 'adaptive' }, output_config: { effort: 'low' } }
+          : { max_tokens: 1024 }),
         ...(systemPrompt ? { system: systemPrompt } : {}),
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -321,11 +346,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       content: Array<{ type: string; text: string }>
       usage: { input_tokens: number; output_tokens: number }
     }
-    const resultText = data.content?.[0]?.text || ''
+    // Niet content[0]: met adaptive thinking staat er een thinking-blok voor.
+    const resultText = (data.content || []).find(blok => blok.type === 'text')?.text || ''
 
     // Update usage tracking
     try {
-      await updateUsage(userId, data.usage.input_tokens, data.usage.output_tokens)
+      await updateUsage(userId, data.usage.input_tokens, data.usage.output_tokens, model)
     } catch {
       // Usage tracking is niet-kritiek
     }
