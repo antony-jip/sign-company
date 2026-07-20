@@ -1076,3 +1076,29 @@ Her-review 0dcf9217: AKKOORD-MET-OPMERKINGEN. Aanvullend gelogd:
   (g) GEFIXT direct na review: cancel-subscription behandelt subscriptions
       met Mollie-status canceled/completed/suspended nu als niet-bestaand
       (voorheen 502-loop door DELETE→422).
+
+Branch fix/lead-mail-handtekening-en-prompt (leadmail: handtekening, prompt,
+startstatus). Twee reviews, beide AKKOORD-MET-OPMERKINGEN. Gefixt tijdens de
+branch: $-expansie in de prompt-substitutie, placeholder die de prompt
+tegensprak, niet-idempotente UPDATE in migratie 154, en composeLeadId dat
+bleef hangen na annuleren of via de compose-deeplink. Restpunten:
+  (a) EmailCompose.tsx:224 zet defaultBody ongeescaped in innerHTML. Via de
+      deeplink /email/compose?body=<img src=x onerror=...> is dat XSS in de
+      app-origin. Pre-existing, verdient een eigen commit: escapen voor de
+      \n-naar-<br>-conversie.
+  (b) De aanwijzing bij "Schrijf opzetje" gaat ongefilterd de prompt in en kan
+      de guardrails overschrijven. Eigen invoer, eigen budget, dus geen
+      privilegegrens; wel output die naar externe bedrijven gaat.
+  (c) benaderdeLeadId wordt nooit gereset, dus hetzelfde signaal twee keer
+      geeft geen effect-run. Alleen zichtbaar als je een lead handmatig
+      terugzet op nieuw en opnieuw mailt: de lijst toont dan nieuw terwijl de
+      DB benaderd zegt, tot een refetch. Oplossing: signaal als {id, ts}.
+  (d) Bij een ingepland bericht springt de lead direct op benaderd terwijl de
+      mail nog niet verstuurd is. Bewuste keuze, heroverwegen als inplannen
+      vaker gebruikt gaat worden.
+  (e) LeadsPaneel geeft de leadId via een losse setter na handleCompose. Op
+      mobiel zou viewTransition die volgorde omdraaien; nu onbereikbaar omdat
+      de mailknoppen desktop-only zijn (hidden md:flex). Fragiel zodra er een
+      mobiele mailknop bij komt.
+  (f) CLAUDE.md verwijst naar .claude/skills/doen-design/SKILL.md voor visuele
+      wijzigingen, maar die map bestaat niet in de repo.
