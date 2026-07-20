@@ -78,7 +78,7 @@ const PROMPTS: Record<string, string> = {
   // Koude outreach naar de SIBON-ledenlijst. Van de lead is alleen naam, plaats
   // en bron bekend, dus het verbod op aannames staat er nadrukkelijk in: zonder
   // dat verzint het model wat het bedrijf maakt of welke software het gebruikt.
-  'write-lead-email': 'Je schrijft een eerste, koude e-mail aan een collega-signbedrijf uit de ledenlijst van SIBON. Doel: doen. introduceren, de software die we zelf gebruiken voor offertes, projecten, werkbonnen en facturatie.\n\nSchrijf als ondernemer tegen ondernemer, niet als verkoper. Maximaal 120 woorden. Noem concreet wat het oplost in plaats van wat het "biedt". Geen superlatieven, geen opsommingstekens, geen onderwerpregel en geen ondertekening — de handtekening staat er al onder. Sluit af met een lage drempel: een vraag of hij het een keer wil zien, geen harde call-to-action.\n\nJe weet weinig over dit bedrijf. Doe daarom GEEN aannames over wat ze maken, hoe groot ze zijn, welke software ze nu gebruiken of hoe hun werk loopt. Gebruik uitsluitend de gegevens hieronder; als een gegeven ontbreekt, laat je het weg in plaats van het in te vullen.\n\nGegevens van de lead:\n{context}\n\nExtra aanwijzing van de gebruiker (leeg = geen):\n{text}\n\nAntwoord alleen met de e-mailtekst.',
+  'write-lead-email': 'Je schrijft een eerste, koude e-mail aan een collega-signbedrijf uit de ledenlijst van SIBON. Doel: doen. introduceren, de software die we zelf gebruiken voor offertes, projecten, werkbonnen en facturatie.\n\nDe kern van de mail, in deze geest:\n- Vertel het vanuit eigen ervaring: het heeft ons team echt geholpen, vooral in overzicht — je ziet in één oogpunt waar alles staat.\n- Zeg expliciet dat dit geen salespitch is. Je deelt iets dat bij jullie goed werkt, meer niet.\n- Verwijs naar de video in de bijlage als de makkelijkste manier om te zien wat het is.\n\nSchrijf als ondernemer tegen ondernemer. Maximaal 120 woorden. Noem concreet wat het oplost in plaats van wat het "biedt". Geen superlatieven, geen opsommingstekens, geen onderwerpregel en geen ondertekening — de handtekening staat er al onder. Sluit af met een lage drempel: laat merken dat een reactie niet hoeft, geen harde call-to-action.\n\nJe weet weinig over dit bedrijf. Doe daarom GEEN aannames over wat ze maken, hoe groot ze zijn, welke software ze nu gebruiken of hoe hun werk loopt. Gebruik uitsluitend de gegevens hieronder; als een gegeven ontbreekt, laat je het weg in plaats van het in te vullen.\n\nGegevens van de lead:\n{context}\n\nExtra aanwijzing van de gebruiker (leeg = geen):\n{text}\n\nAntwoord alleen met de e-mailtekst.',
 }
 
 // Outreach is kwaliteitsgevoelig en gaat naar echte bedrijven; de overige
@@ -272,7 +272,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ usage: usage.geschatte_kosten, limiet: MONTHLY_LIMIT })
     }
 
-    if (!action || !text) {
+    // Bij een lead-opzetje zit alles in {context}; een eigen aanwijzing is optioneel.
+    if (!action || (!text && action !== 'write-lead-email')) {
       return res.status(400).json({ error: 'Action en text zijn verplicht' })
     }
 
