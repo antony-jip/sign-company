@@ -306,9 +306,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Build prompt
+    // Vervangen via een functie: anders expandeert String.replace patronen als
+    // $& en $` in de gebruikersinvoer, die dan stukken prompt terugplakken.
     const prompt = promptTemplate
-      .replace('{text}', text)
-      .replace('{context}', context || '7')
+      .replace('{text}', () => text || '')
+      .replace('{context}', () => context || '7')
 
     const daanContext = await buildDaanContext(supabase, userId)
     const systemPrompt = buildSystemPrompt(action, daanContext)

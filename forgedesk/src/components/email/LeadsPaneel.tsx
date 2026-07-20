@@ -291,7 +291,7 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false }: LeadsPaneelPr
                   type="text"
                   value={aanwijzing}
                   onChange={(e) => setAanwijzing(e.target.value)}
-                  placeholder="Aanwijzing voor Daan, bijvoorbeeld: noem dat we elkaar op de beurs zagen"
+                  placeholder="Aanwijzing voor Daan, bijvoorbeeld: houd het extra kort"
                   className="w-full px-3 py-2 rounded-lg bg-muted/40 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-petrol/30"
                 />
               )}
