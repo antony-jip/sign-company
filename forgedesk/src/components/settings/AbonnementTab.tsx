@@ -38,10 +38,26 @@ export function AbonnementTab() {
   const [loadingAction, setLoadingAction] = useState<'activate' | 'opzeggen' | null>(null)
   const [bevestigOpzeggen, setBevestigOpzeggen] = useState(false)
   const [opgezegdTot, setOpgezegdTot] = useState<string | null>(organisatie?.abonnement_actief_tot ?? null)
+  const [volgendeIncasso, setVolgendeIncasso] = useState<string | null>(null)
 
   useEffect(() => {
     setOpgezegdTot(organisatie?.abonnement_actief_tot ?? null)
   }, [organisatie?.abonnement_actief_tot])
+
+  useEffect(() => {
+    if (trialStatus !== 'actief' || !session?.access_token) {
+      setVolgendeIncasso(null)
+      return
+    }
+    let geannuleerd = false
+    fetch('/api/subscription-info', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!geannuleerd && d?.volgendeIncasso) setVolgendeIncasso(d.volgendeIncasso) })
+      .catch(() => { /* zonder datum tonen we de algemene tekst */ })
+    return () => { geannuleerd = true }
+  }, [trialStatus, session?.access_token, organisatie?.mollie_subscription_id])
 
   useEffect(() => {
     if (searchParams.get('abonnement') !== 'klaar') return
@@ -147,12 +163,25 @@ export function AbonnementTab() {
 
       {/* Status banner */}
       {isActive && !isOpgezegdPending && (
-        <div className="flex items-center justify-between rounded-xl p-5 border bg-[#E2F0F0] border-[#C0DDDD] dark:bg-petrol/[0.18] dark:border-petrol/40">
-          <div className="flex items-center gap-3">
-            <Check className="h-5 w-5 text-[#1A535C] dark:text-[#5AABB5]" />
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 rounded-xl p-5 border bg-[#E2F0F0] border-[#C0DDDD] dark:bg-petrol/[0.18] dark:border-petrol/40">
+          <div className="flex items-start gap-3">
+            <Check className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#1A535C] dark:text-[#5AABB5]" />
             <div>
               <span className="text-[14px] font-bold text-[#1A535C] dark:text-[#5AABB5]">Abonnement actief</span>
               <p className="text-[12px] text-[#1A535C]/60 dark:text-[#5AABB5]/70">Je hebt volledige toegang tot alle features.</p>
+
+              <ul className="mt-3 space-y-1 text-[12px] text-[#1A535C]/80 dark:text-[#5AABB5]/80">
+                <li>
+                  <strong>€95,59 incl. btw</strong> per maand · €79,00 excl. btw, 21% btw
+                </li>
+                <li>
+                  {volgendeIncasso
+                    ? <>Volgende automatische incasso op <strong>{formatDatum(volgendeIncasso)}</strong></>
+                    : <>Wordt elke maand automatisch van je rekening afgeschreven</>}
+                </li>
+                <li>Je ontvangt na elke incasso een factuur per e-mail</li>
+                <li>Opzeggen kan altijd, je houdt toegang tot het einde van de betaalde maand</li>
+              </ul>
             </div>
           </div>
           <div className="flex items-center gap-2">

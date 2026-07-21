@@ -98,6 +98,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     let customerId = org.mollie_customer_id as string | null
+
+    // Een opgeslagen klant-id kan onbruikbaar zijn: verwijderd bij Mollie, of
+    // aangemaakt op het andere account bij een wissel tussen test en live.
+    // Zonder deze controle loopt de klant tegen een harde 502 aan in plaats van
+    // gewoon te kunnen betalen.
+    if (customerId) {
+      const checkResponse = await fetch(`https://api.mollie.com/v2/customers/${customerId}`, {
+        headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` },
+      })
+      if (checkResponse.status === 404 || checkResponse.status === 410) {
+        console.warn(`Mollie kent klant ${customerId} niet meer voor org ${organisatie_id}; nieuwe wordt aangemaakt`)
+        customerId = null
+        await supabaseAdmin
+          .from('organisaties')
+          .update({ mollie_customer_id: null })
+          .eq('id', organisatie_id)
+      } else if (!checkResponse.ok) {
+        const errorBody = await checkResponse.text()
+        console.error('Mollie klant controleren mislukt:', checkResponse.status, errorBody)
+        return res.status(502).json({ error: 'Klantgegevens ophalen bij Mollie mislukt' })
+      }
+    }
+
     if (!customerId) {
       const customerResponse = await fetch('https://api.mollie.com/v2/customers', {
         method: 'POST',
