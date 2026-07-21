@@ -191,6 +191,21 @@ export function SettingsLayout() {
   const [activeSubTabs, setActiveSubTabs] = useState<Record<string, string>>({})
   const navigate = useNavigate()
 
+  // Een ?tab= die binnenkomt terwijl we al op deze pagina staan moet ook
+  // aanslaan. Zonder dit blijven deeplinks vanuit het accountmenu en de
+  // Aan de slag-checklist hangen op de sectie die toevallig openstond.
+  const gevraagdeTab = searchParams.get('tab')
+  useEffect(() => {
+    if (!gevraagdeTab) return
+    const sectie = tabToSectionMap[gevraagdeTab] || gevraagdeTab
+    if (!visibleSections.some((s) => s.id === sectie)) return
+    setActiveSection(sectie)
+    if (tabToSectionMap[gevraagdeTab]) {
+      setActiveSubTabs(prev => ({ ...prev, [sectie]: gevraagdeTab }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gevraagdeTab])
+
   const currentSection = visibleSections.find((s) => s.id === activeSection)
   const currentSubTab = currentSection?.tabs.length
     ? (activeSubTabs[activeSection] || currentSection.tabs[0].id)

@@ -675,7 +675,7 @@ export function Sidebar() {
                   <div className="h-px bg-border/50 mx-2 my-1" />
 
                   <button
-                    onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
+                    onClick={() => { setUserPopoverOpen(false); navigate('/instellingen?tab=profiel') }}
                     className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                   >
                     <SlidersHorizontal className="w-[17px] h-[17px] text-muted-foreground" /> Profiel
