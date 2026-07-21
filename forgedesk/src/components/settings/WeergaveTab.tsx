@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { QUICK_ACTIONS, type QuickActionsPosition } from '@/components/dashboard/FloatingQuickActions'
 import { SubTabNav } from './SubTabNav'
 import type { SubTab } from './settingsShared'
+import { logger } from '@/utils/logger'
 import {
   FontSize,
   BESCHIKBARE_FONT_SIZES,

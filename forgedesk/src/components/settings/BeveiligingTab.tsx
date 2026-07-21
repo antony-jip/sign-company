@@ -4,14 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
 import {
   Shield,
   Lock,
   Eye,
   EyeOff,
-  Globe,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
@@ -24,10 +21,13 @@ import { firstBlockingError } from '@/lib/passwordValidation'
 import { usePasswordCheck } from '@/lib/usePasswordCheck'
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter'
 
+// Tweefactor en Sessies zijn verwijderd: beide waren schijnschermen. De
+// 2FA-schakelaar toonde alleen een toast en sloeg niets op, en de
+// sessielijst was hardcoded HTML met een verzonnen apparaat. Een
+// beveiligingsscherm dat bescherming suggereert die er niet is, is erger
+// dan geen scherm.
 const BEVEILIGING_TABS: SubTab[] = [
   { id: 'wachtwoord', label: 'Wachtwoord', icon: Lock },
-  { id: 'tweefactor', label: 'Tweefactor', icon: Shield },
-  { id: 'sessies', label: 'Sessies', icon: Globe },
 ]
 
 export function BeveiligingTab() {
@@ -36,7 +36,6 @@ export function BeveiligingTab() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPasswords, setShowPasswords] = useState(false)
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [isChanging, setIsChanging] = useState(false)
   const { user } = useAuth()
 
@@ -171,88 +170,6 @@ export function BeveiligingTab() {
       </Card>
       )}
 
-      {subTab === 'tweefactor' && (
-      <Card>
-        <CardHeader>
-          <CardTitle>Tweefactorauthenticatie</CardTitle>
-          <CardDescription>
-            Voeg een extra beveiligingslaag toe aan uw account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between max-w-md">
-            <div>
-              <p className="text-sm font-medium text-foreground dark:text-white">
-                2FA Inschakelen
-              </p>
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-1">
-                {twoFactorEnabled
-                  ? 'Tweefactorauthenticatie is actief'
-                  : 'Beveilig uw account met een extra verificatiestap'}
-              </p>
-            </div>
-            <Switch
-              checked={twoFactorEnabled}
-              onCheckedChange={(checked) => {
-                setTwoFactorEnabled(checked)
-                toast.info(
-                  checked
-                    ? 'Tweefactorauthenticatie geactiveerd (placeholder)'
-                    : 'Tweefactorauthenticatie gedeactiveerd'
-                )
-              }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-      )}
-
-      {subTab === 'sessies' && (
-      <Card>
-        <CardHeader>
-          <CardTitle>Actieve Sessies</CardTitle>
-          <CardDescription>
-            Bekijk en beheer apparaten die bij uw account zijn ingelogd
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <div>
-                  <p className="text-sm font-medium text-foreground dark:text-white">
-                    Huidige sessie
-                  </p>
-                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                    Browser - Laatst actief: Nu
-                  </p>
-                </div>
-              </div>
-              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                Actief
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-muted/50">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
-                <div>
-                  <p className="text-sm font-medium text-foreground dark:text-white">
-                    Chrome - Windows
-                  </p>
-                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                    Laatst actief: 2 dagen geleden
-                  </p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" className="text-flame hover:text-flame/80 hover:bg-flame/5">
-                Beëindigen
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      )}
     </>
   )
 }

@@ -125,16 +125,6 @@ export function ForgieTab() {
   const [geselecteerdPakket, setGeselecteerdPakket] = useState<CreditsPakket | null>(null)
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
 
-  // Daan moet aan staan zodra je de instellingen-tab opent · ook als 'm ooit is uitgezet.
-  const forgieGeforceerdRef = useRef(false)
-  useEffect(() => {
-    if (forgieGeforceerdRef.current) return
-    if (settings.forgie_enabled === false) {
-      forgieGeforceerdRef.current = true
-      updateSettings({ forgie_enabled: true }).catch(() => {})
-    }
-  }, [settings.forgie_enabled, updateSettings])
-
   useEffect(() => {
     setBedrijfscontext(settings.forgie_bedrijfscontext || '')
   }, [settings.forgie_bedrijfscontext])

@@ -2,6 +2,7 @@
 // All templates are in Dutch and return { subject, html, text } objects
 
 import { supabase, isSupabaseConfigured } from './supabaseHelpers'
+import { handtekeningNaarHtml } from '@/utils/handtekening'
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -141,11 +142,13 @@ export function getBaseTemplate(data: EmailTemplateData): {
     const sigImgHtml = data.handtekeningAfbeelding
       ? `<br /><img src="${escapeHtml(data.handtekeningAfbeelding)}" alt="" style="max-height:${sigImgHeight}px;max-width:240px;object-fit:contain;margin-top:8px;display:block;" />`
       : ''
+    // De handtekening kan opmaak bevatten. handtekeningNaarHtml schoont die en
+    // zet oude platte tekst om, dus hier mag het als HTML de mail in.
     const handtekeningHtml = data.handtekening
       ? `
           <tr>
-            <td style="padding: 24px 32px 0 32px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #555555; white-space: pre-line;">
-              ${escapeHtml(data.handtekening)}${sigImgHtml}
+            <td style="padding: 24px 32px 0 32px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #555555;">
+              ${handtekeningNaarHtml(data.handtekening)}${sigImgHtml}
             </td>
           </tr>`
       : ''

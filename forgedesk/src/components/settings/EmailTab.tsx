@@ -45,6 +45,8 @@ import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import type { Medewerker } from '@/types'
 import { SubTabNav } from './SubTabNav'
+import { HandtekeningEditor } from './HandtekeningEditor'
+import { handtekeningNaarHtml } from '@/utils/handtekening'
 import type { SubTab } from './settingsShared'
 import { EmailSettings, DEFAULT_EMAIL_SETTINGS, EMAIL_PROVIDER_DEFAULTS } from './settingsShared'
 import type { EmailProvider } from './settingsShared'
@@ -418,9 +420,12 @@ function SignaturePreview({
               className="object-contain mb-2"
             />
           )}
-          <div className="text-sm whitespace-pre-line text-foreground/80">
-            {handtekening || `Met vriendelijke groet,\n\n${naam}`}
-          </div>
+          <div
+            className="text-sm text-foreground/80 [&_a]:text-petrol [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5"
+            dangerouslySetInnerHTML={{
+              __html: handtekeningNaarHtml(handtekening || `Met vriendelijke groet,\n\n${naam}`),
+            }}
+          />
         </div>
       </div>
     </div>
@@ -706,18 +711,11 @@ export function EmailTab() {
               />
 
               <div className="space-y-2">
-                <Label htmlFor="email-handtekening">Handtekening tekst</Label>
-                <Textarea
-                  id="email-handtekening"
-                  value={emailHandtekening}
-                  onChange={(e) => setEmailHandtekening(e.target.value)}
-                  placeholder={"Met vriendelijke groet,\n\nJan de Vries\nSales Manager\nSign Company B.V.\nTel: 020-1234567"}
-                  rows={6}
-                  enableAiTone={false}
+                <Label>Handtekening</Label>
+                <HandtekeningEditor
+                  waarde={emailHandtekening}
+                  onChange={setEmailHandtekening}
                 />
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                  Naam, functie, telefoonnummer en bedrijfsgegevens
-                </p>
               </div>
 
               <SignaturePreview

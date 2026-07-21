@@ -23,6 +23,7 @@ import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolb
 import { DatePicker } from '@/components/ui/date-picker'
 import { Switch } from '@/components/ui/switch'
 import { getWachtendeEmailNaarAdres } from '@/services/emailService'
+import { handtekeningNaarHtml } from '@/utils/handtekening'
 
 export interface ComposeActions {
   forgieWrite: () => void
@@ -35,7 +36,7 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
-  /** Platte tekst van de originele mail — aanwezig betekent: dit is een reply. */
+  /** Platte tekst van de originele mail · aanwezig betekent: dit is een reply. */
   replyToText?: string
   onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
   allEmails?: Email[]
@@ -75,7 +76,7 @@ function getFileTypeColor(name: string): string {
     case 'pdf': return 'bg-red-500'
     case 'doc': case 'docx': return 'bg-blue-600'
     case 'xls': case 'xlsx': return 'bg-green-600'
-    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-[#1A535C]'
+    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-petrol'
     default: return 'bg-[#9B9B95]'
   }
 }
@@ -100,7 +101,7 @@ function FileGlyph({ name }: { name: string }) {
         className="absolute top-0 right-0 w-2.5 h-2.5 bg-white/25"
         style={{ clipPath: 'polygon(0 0, 100% 100%, 100% 0)' }}
       />
-      <span className="text-[6.5px] font-bold text-white tracking-[0.04em] leading-none">{getFileExt(name)}</span>
+      <span className="text-[6px] font-bold text-white tracking-[0.04em] leading-none">{getFileExt(name)}</span>
     </div>
   )
 }
@@ -197,7 +198,7 @@ export function EmailCompose({
     const imgMaxWidth = Math.round(imgHeight * 2.5)
     const parts: string[] = []
     if (emailHandtekening) {
-      parts.push(emailHandtekening.replace(/\n/g, '<br>'))
+      parts.push(handtekeningNaarHtml(emailHandtekening))
     }
     if (handtekeningAfbeelding) {
       parts.push(`<img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`)
@@ -292,7 +293,7 @@ export function EmailCompose({
         if (matches.length >= 12) break
       }
 
-      // DB-contactpersonen (los van JSONB) — bv. losse cps die alleen via
+      // DB-contactpersonen (los van JSONB) · bv. losse cps die alleen via
       // de contactpersonen-tabel zijn aangemaakt vinden we hier
       for (const c of dbContacten) {
         if (matches.length >= 12) break
@@ -462,6 +463,51 @@ export function EmailCompose({
     editorRef.current?.focus()
   }, [])
 
+  // Geplakte/gesleepte afbeeldingen altijd als data:-URI in de body zetten.
+  // Anders voegt de browser (m.n. Safari/WebKit) een lokale blob:/webkit-fake-url
+  // in die de ontvanger niet kan laden; een data:-URI wordt server-side naar een
+  // CID-inline-bijlage omgezet (zie api/send-email.ts).
+  const voegAfbeeldingenIn = useCallback((files: File[]) => {
+    for (const file of files) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = reader.result
+        if (typeof dataUrl !== 'string') return
+        editorRef.current?.focus()
+        document.execCommand('insertHTML', false, `<img src="${dataUrl}" alt="" style="max-width:100%;height:auto;" />`)
+      }
+      reader.readAsDataURL(file)
+    }
+  }, [])
+
+  const imageFilesFromList = (list: DataTransferItemList | FileList | null | undefined): File[] => {
+    const files: File[] = []
+    if (!list) return files
+    for (const entry of Array.from(list as ArrayLike<DataTransferItem | File>)) {
+      if (entry instanceof File) {
+        if (entry.type.startsWith('image/')) files.push(entry)
+      } else if (entry.kind === 'file' && entry.type.startsWith('image/')) {
+        const f = entry.getAsFile()
+        if (f) files.push(f)
+      }
+    }
+    return files
+  }
+
+  const handleEditorPaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+    const images = imageFilesFromList(e.clipboardData?.items)
+    if (images.length === 0) return // gewone tekst-paste: standaardgedrag
+    e.preventDefault()
+    voegAfbeeldingenIn(images)
+  }, [voegAfbeeldingenIn])
+
+  const handleEditorDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    const images = imageFilesFromList(e.dataTransfer?.files)
+    if (images.length === 0) return
+    e.preventDefault()
+    voegAfbeeldingenIn(images)
+  }, [voegAfbeeldingenIn])
+
   const buildAttachmentPayload = useCallback(async (): Promise<BijlagenPayload | undefined> => {
     if (!attachments.length) return { attachments: undefined, linksHtml: '', linksText: '' }
 
@@ -471,7 +517,7 @@ export function EmailCompose({
       return undefined
     }
 
-    // Upload naar Supabase Storage — payload bevat alleen paden; alles boven
+    // Upload naar Supabase Storage · payload bevat alleen paden; alles boven
     // het 25MB-totaal gaat automatisch als downloadlink in de mailbody mee.
     try {
       return await uploadBijlagenMetLinkFallback(attachments)
@@ -534,7 +580,7 @@ export function EmailCompose({
         loading: attachments.length > 0
           ? `${attachments.length} bijlage${attachments.length > 1 ? 'n' : ''} (${formatFileSize(attachments.reduce((s, f) => s + f.size, 0))}) uploaden en verzenden...`
           : 'Email wordt verzonden...',
-        success: capturedWacht ? 'Email verzonden — toegevoegd aan Opvolgen' : 'Email verzonden',
+        success: capturedWacht ? 'Email verzonden · toegevoegd aan Opvolgen' : 'Email verzonden',
       }
     )
   }, [to, subject, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie, attachments])
@@ -624,24 +670,24 @@ export function EmailCompose({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-        {/* Sleep-overlay — dekt het hele paneel zodat je overal kunt droppen */}
+        {/* Sleep-overlay · dekt het hele paneel zodat je overal kunt droppen */}
         {isDragging && (
           <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
-            <div className="absolute inset-3 rounded-2xl border-2 border-dashed border-[#1A535C]/40 bg-[#1A535C]/[0.05] backdrop-blur-[1px]" />
-            <div className="relative flex flex-col items-center gap-2.5 text-[#1A535C] dark:text-[#7FB5BF]">
+            <div className="absolute inset-3 rounded-2xl border-2 border-dashed border-petrol/40 bg-petrol/[0.05] backdrop-blur-[1px]" />
+            <div className="relative flex flex-col items-center gap-2.5 text-petrol dark:text-[#7FB5BF]">
               <div className="h-14 w-14 rounded-2xl bg-white dark:bg-card shadow-[0_4px_20px_rgba(26,83,92,0.18)] flex items-center justify-center">
                 <Paperclip className="h-6 w-6" />
               </div>
               <p className="text-[15px] font-semibold leading-none">Sleep bestanden hierheen</p>
-              <p className="text-[12px] text-[#1A535C]/70 dark:text-[#7FB5BF]/70 leading-none">om ze als bijlage toe te voegen</p>
+              <p className="text-[12px] text-petrol/70 dark:text-[#7FB5BF]/70 leading-none">om ze als bijlage toe te voegen</p>
             </div>
           </div>
         )}
 
-        {/* Panel header — title + back affordance, matches list-header pattern */}
+        {/* Panel header · title + back affordance, matches list-header pattern */}
         <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-border/60 flex-shrink-0">
           <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
-            Nieuw bericht<span className="text-[#F15025]">.</span>
+            Nieuw bericht<span className="text-flame">.</span>
           </h1>
           <button
             type="button"
@@ -659,7 +705,7 @@ export function EmailCompose({
           <div className="px-6">
             {/* Aan field */}
             <div className="relative">
-              <div className="flex items-center border-b border-border py-3 focus-within:border-[#1A535C] transition-colors duration-150">
+              <div className="flex items-center border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
                 <input
                   ref={toInputRef}
                   type="email"
@@ -680,7 +726,7 @@ export function EmailCompose({
                 {!showCcBcc && (
                   <button
                     onClick={() => setShowCcBcc(true)}
-                    className="text-[12px] text-muted-foreground hover:text-[#1A535C] flex-shrink-0 ml-3 transition-colors duration-150"
+                    className="text-[12px] text-muted-foreground hover:text-petrol flex-shrink-0 ml-3 transition-colors duration-150"
                   >
                     CC / BCC
                   </button>
@@ -698,8 +744,8 @@ export function EmailCompose({
                           onClick={() => handleSelectSuggestion(item)}
                           className="w-full text-left px-3.5 py-2.5 hover:bg-background flex items-center gap-2.5 transition-colors"
                         >
-                          <div className="w-7 h-7 rounded-lg bg-[#1A535C]/8 flex items-center justify-center flex-shrink-0">
-                            <span className="text-[10px] font-semibold text-[#1A535C]">{getInitials(k.bedrijfsnaam || k.contactpersoon || '')}</span>
+                          <div className="w-7 h-7 rounded-lg bg-petrol/8 flex items-center justify-center flex-shrink-0">
+                            <span className="text-[10px] font-semibold text-petrol">{getInitials(k.bedrijfsnaam || k.contactpersoon || '')}</span>
                           </div>
                           <div className="min-w-0">
                             <div className="text-[13px] font-medium text-foreground truncate">{k.bedrijfsnaam || k.contactpersoon}</div>
@@ -714,8 +760,8 @@ export function EmailCompose({
                         onClick={() => handleSelectSuggestion(item)}
                         className="w-full text-left px-3.5 py-2.5 hover:bg-background flex items-center gap-2.5 transition-colors"
                       >
-                        <div className="w-7 h-7 rounded-full bg-[#F15025]/8 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-semibold text-[#F15025]">{getInitials(item.cp.naam || '')}</span>
+                        <div className="w-7 h-7 rounded-full bg-flame/8 flex items-center justify-center flex-shrink-0">
+                          <span className="text-[10px] font-semibold text-flame">{getInitials(item.cp.naam || '')}</span>
                         </div>
                         <div className="min-w-0">
                           <div className="text-[13px] font-medium text-foreground truncate">
@@ -734,7 +780,7 @@ export function EmailCompose({
             {/* CC/BCC */}
             {showCcBcc && (
               <>
-                <div className="flex items-center border-b border-border py-3 focus-within:border-[#1A535C] transition-colors duration-150">
+                <div className="flex items-center border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
                   <input
                     type="email"
                     value={cc}
@@ -743,7 +789,7 @@ export function EmailCompose({
                     placeholder="CC..."
                   />
                 </div>
-                <div className="flex items-center border-b border-border py-3 focus-within:border-[#1A535C] transition-colors duration-150">
+                <div className="flex items-center border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
                   <input
                     type="email"
                     value={bcc}
@@ -766,7 +812,7 @@ export function EmailCompose({
                       type="checkbox"
                       checked={wachtOpReactie}
                       onChange={(e) => setWachtOpReactie(e.target.checked)}
-                      className="h-3 w-3 rounded border-blue-300 cursor-pointer accent-[#1A535C]"
+                      className="h-3 w-3 rounded border-blue-300 cursor-pointer accent-petrol"
                     />
                     <span>Ook deze opvolgen?</span>
                   </label>
@@ -775,7 +821,7 @@ export function EmailCompose({
             })()}
 
             {/* Onderwerp */}
-            <div className="border-b border-border py-3 focus-within:border-[#1A535C] transition-colors duration-150">
+            <div className="border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
               <input
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
@@ -784,7 +830,7 @@ export function EmailCompose({
               />
             </div>
 
-            {/* Tools — subtle text links */}
+            {/* Tools · subtle text links */}
             <div className="flex items-center gap-4 py-3">
               <div className="relative">
                 <button
@@ -808,13 +854,13 @@ export function EmailCompose({
                           </button>
                         ))
                       ) : (
-                        <p className="px-4 py-3 text-[12px] text-muted-foreground">Geen templates — maak er een aan in Instellingen</p>
+                        <p className="px-4 py-3 text-[12px] text-muted-foreground">Geen templates · maak er een aan in Instellingen</p>
                       )}
                       <div className="border-t border-border mt-1 pt-1">
                         {!showSaveTemplate ? (
                           <button
                             onClick={() => setShowSaveTemplate(true)}
-                            className="w-full text-left px-4 py-2.5 text-[13px] text-[#1A535C] hover:bg-background transition-colors"
+                            className="w-full text-left px-4 py-2.5 text-[13px] text-petrol hover:bg-background transition-colors"
                           >
                             + Huidig bericht opslaan als template
                           </button>
@@ -825,13 +871,13 @@ export function EmailCompose({
                               value={newTemplateName}
                               onChange={e => setNewTemplateName(e.target.value)}
                               placeholder="Naam van template..."
-                              className="w-full px-2.5 py-1.5 text-[13px] bg-background rounded-lg border border-border outline-none focus:border-[#1A535C]"
+                              className="w-full px-2.5 py-1.5 text-[13px] bg-background rounded-lg border border-border outline-none focus:border-petrol"
                               autoFocus
                               onKeyDown={e => { if (e.key === 'Enter') handleSaveAsTemplate() }}
                             />
                             <button
                               onClick={handleSaveAsTemplate}
-                              className="w-full py-1.5 rounded-lg bg-[#1A535C] text-white text-[12px] font-medium hover:opacity-90"
+                              className="w-full py-1.5 rounded-lg bg-petrol text-white text-[12px] font-medium hover:opacity-90"
                             >
                               Opslaan
                             </button>
@@ -884,7 +930,7 @@ export function EmailCompose({
                   <button
                     onClick={() => setReplyAiOpen(v => !v)}
                     disabled={forgieLoading}
-                    className="flex items-center gap-1.5 text-[12px] text-[#F15025] hover:underline transition-colors duration-150 disabled:opacity-40"
+                    className="flex items-center gap-1.5 text-[12px] text-flame hover:underline transition-colors duration-150 disabled:opacity-40"
                   >
                     {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                     Beantwoord met AI
@@ -894,7 +940,7 @@ export function EmailCompose({
                   <button
                     onClick={handleForgieWrite}
                     disabled={forgieLoading}
-                    className="flex items-center gap-1.5 text-[12px] text-[#F15025] hover:underline transition-colors duration-150 disabled:opacity-40"
+                    className="flex items-center gap-1.5 text-[12px] text-flame hover:underline transition-colors duration-150 disabled:opacity-40"
                   >
                     {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                     Schrijf mijn e-mail
@@ -908,7 +954,7 @@ export function EmailCompose({
                         onClick={() => { setReplyAiOpen(false); handleReplyFromContext() }}
                         className="w-full text-left px-3.5 py-2.5 text-[13px] text-foreground hover:bg-background transition-colors flex items-center gap-2"
                       >
-                        <Sparkles className="h-3.5 w-3.5 text-[#F15025]" />
+                        <Sparkles className="h-3.5 w-3.5 text-flame" />
                         Uit context mail
                       </button>
                       <button
@@ -926,7 +972,7 @@ export function EmailCompose({
                     <div className="fixed inset-0 z-40" onClick={() => setWriteBriefOpen(false)} />
                     <div className="absolute left-0 top-full mt-2 w-[340px] max-w-[calc(100vw-2rem)] bg-card rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-border z-50 p-3.5 space-y-2.5">
                       <div className="flex items-center gap-1.5">
-                        <Sparkles className="h-3.5 w-3.5 text-[#F15025]" />
+                        <Sparkles className="h-3.5 w-3.5 text-flame" />
                         <p className="text-[13px] font-semibold text-foreground">{isReply ? 'Wat wil je antwoorden?' : 'Wat voor mail wil je schrijven?'}</p>
                       </div>
                       <textarea
@@ -935,8 +981,8 @@ export function EmailCompose({
                         onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleGenerateFromBrief() }}
                         rows={3}
                         autoFocus
-                        placeholder={isReply ? 'Bijv. Bevestig de afspraak en vraag om het juiste leveradres.' : 'Bijv. Offerte opvolgen bij de klant — vriendelijk, kort, vraag of er nog vragen zijn.'}
-                        className="w-full text-[13px] text-foreground bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-[#1A535C] resize-none"
+                        placeholder={isReply ? 'Bijv. Bevestig de afspraak en vraag om het juiste leveradres.' : 'Bijv. Offerte opvolgen bij de klant · vriendelijk, kort, vraag of er nog vragen zijn.'}
+                        className="w-full text-[13px] text-foreground bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-petrol resize-none"
                       />
                       <p className="text-[11px] text-muted-foreground">Daan schrijft in jouw tone of voice. <span className="text-muted-foreground/70">⌘↵ om te genereren</span></p>
                       <div className="flex justify-end gap-2">
@@ -949,7 +995,7 @@ export function EmailCompose({
                         <button
                           onClick={handleGenerateFromBrief}
                           disabled={!writeBrief.trim() || forgieLoading}
-                          className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-[#F15025] hover:bg-[#D9421C] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
+                          className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-flame hover:bg-[#D9421C] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
                         >
                           {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                           Genereer
@@ -961,7 +1007,7 @@ export function EmailCompose({
               </div>
             </div>
 
-            {/* Editor — open canvas, no borders */}
+            {/* Editor · open canvas, no borders */}
             <div
               ref={editorRef}
               contentEditable
@@ -969,6 +1015,8 @@ export function EmailCompose({
               className="min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 [&_img]:max-w-[200px]"
               data-placeholder="Schrijf je bericht..."
               style={{ caretColor: '#1A535C', boxShadow: 'none', outline: 'none' }}
+              onPaste={handleEditorPaste}
+              onDrop={handleEditorDrop}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault()
@@ -980,16 +1028,16 @@ export function EmailCompose({
             {/* AI Text Selection Toolbar */}
             <AIContentEditableToolbar editorRef={editorRef} />
 
-            {/* Attachments — getinte sectie zodat de frosted-glass chips ergens op rusten */}
+            {/* Attachments · getinte sectie zodat de frosted-glass chips ergens op rusten */}
             {attachments.length > 0 && (
-              <div className="mt-2 mb-4 rounded-2xl bg-gradient-to-br from-[#1A535C]/[0.07] via-[#F7F6F3]/80 to-[#F15025]/[0.06] border border-border/40 p-4">
+              <div className="mt-2 mb-4 rounded-2xl bg-gradient-to-br from-petrol/[0.07] via-[#F7F6F3]/80 to-flame/[0.06] border border-border/40 p-4">
                 <div className="flex items-center gap-1.5 mb-2.5 text-muted-foreground">
                   <Paperclip className="h-3.5 w-3.5" />
                   <span className="text-[12px] font-medium">
                     {attachments.length} {attachments.length === 1 ? 'bijlage' : 'bijlagen'}
                     <span className="text-muted-foreground/60"> · {formatFileSize(attachments.reduce((sum, f) => sum + f.size, 0))}</span>
                     {viaLinkBestanden.size > 0 && (
-                      <span className="text-[#1A535C]"> · {viaLinkBestanden.size} via downloadlink</span>
+                      <span className="text-petrol"> · {viaLinkBestanden.size} via downloadlink</span>
                     )}
                   </span>
                 </div>
@@ -999,7 +1047,7 @@ export function EmailCompose({
                     return (
                       <div
                         key={i}
-                        className="group relative flex items-center gap-2.5 w-[228px] pl-2.5 pr-2 py-2 rounded-xl bg-gradient-to-b from-white/75 to-white/40 dark:from-white/[0.08] dark:to-white/[0.04] backdrop-blur-md border border-white/70 dark:border-white/15 ring-1 ring-black/[0.04] dark:ring-white/[0.04] shadow-[0_4px_16px_rgba(16,24,40,0.08)] hover:ring-[#1A535C]/20 hover:shadow-[0_6px_20px_rgba(26,83,92,0.12)] transition-all duration-200 before:absolute before:inset-x-0 before:top-0 before:h-px before:rounded-t-xl before:bg-white/80 dark:before:bg-white/10 before:pointer-events-none"
+                        className="group relative flex items-center gap-2.5 w-[228px] pl-2.5 pr-2 py-2 rounded-xl bg-gradient-to-b from-white/75 to-white/40 dark:from-white/[0.08] dark:to-white/[0.04] backdrop-blur-md border border-white/70 dark:border-white/15 ring-1 ring-black/[0.04] dark:ring-white/[0.04] shadow-[0_4px_16px_rgba(16,24,40,0.08)] hover:ring-petrol/20 hover:shadow-[0_6px_20px_rgba(26,83,92,0.12)] transition-all duration-200 before:absolute before:inset-x-0 before:top-0 before:h-px before:rounded-t-xl before:bg-white/80 dark:before:bg-white/10 before:pointer-events-none"
                       >
                         {previewUrl ? (
                           <img src={previewUrl} alt={file.name} className="w-7 h-9 rounded-[5px] object-cover flex-shrink-0 ring-1 ring-black/5" />
@@ -1010,12 +1058,12 @@ export function EmailCompose({
                           <span className="text-foreground text-[13px] font-medium leading-tight truncate">{file.name}</span>
                           <span className="text-muted-foreground text-[11px] leading-tight mt-0.5">
                             {formatFileSize(file.size)}
-                            {viaLinkBestanden.has(file) && <span className="text-[#1A535C]"> · via downloadlink</span>}
+                            {viaLinkBestanden.has(file) && <span className="text-petrol"> · via downloadlink</span>}
                           </span>
                         </div>
                         <button
                           onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}
-                          className="h-6 w-6 flex items-center justify-center rounded-lg text-muted-foreground/70 opacity-0 group-hover:opacity-100 hover:bg-[#F15025]/10 hover:text-[#F15025] transition-all duration-150 flex-shrink-0"
+                          className="h-6 w-6 flex items-center justify-center rounded-lg text-muted-foreground/70 opacity-0 group-hover:opacity-100 hover:bg-flame/10 hover:text-flame transition-all duration-150 flex-shrink-0"
                           title="Bijlage verwijderen"
                         >
                           <X className="h-3.5 w-3.5" />
@@ -1029,7 +1077,7 @@ export function EmailCompose({
           </div>
         </div>
 
-        {/* Bottom bar — formatting + send */}
+        {/* Bottom bar · formatting + send */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 px-3 md:px-6 py-2.5 border-t border-border flex-shrink-0">
           <div className="flex items-center gap-0.5">
             <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => execCommand('bold')} title="Vet"><Bold className="h-4 w-4" /></button>
@@ -1063,7 +1111,7 @@ export function EmailCompose({
             {/* Schedule button */}
             <div className="relative">
               <button
-                className="h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-[#1A535C] hover:bg-[#1A535C]/[0.08] transition-colors duration-150 disabled:opacity-50"
+                className="h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-petrol hover:bg-petrol/[0.08] transition-colors duration-150 disabled:opacity-50"
                 onClick={() => setShowScheduleMenu(s => !s)}
                 disabled={isSending}
                 title="Inplannen"
@@ -1102,7 +1150,7 @@ export function EmailCompose({
                             tomorrow.setDate(tomorrow.getDate() + 1)
                             setCustomScheduleDate(tomorrow.toISOString().split('T')[0])
                           }}
-                          className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A535C] hover:bg-background transition-colors duration-150 flex items-center gap-2"
+                          className="w-full px-3.5 py-2.5 text-left text-[13px] text-petrol hover:bg-background transition-colors duration-150 flex items-center gap-2"
                         >
                           <Clock className="h-3.5 w-3.5" />
                           Kies datum en tijd...
@@ -1120,7 +1168,7 @@ export function EmailCompose({
                             type="time"
                             value={customScheduleTime}
                             onChange={e => setCustomScheduleTime(e.target.value)}
-                            className="w-full px-2.5 py-1.5 text-[13px] text-foreground bg-background rounded-lg border border-border outline-none focus:border-[#1A535C] transition-colors font-mono"
+                            className="w-full px-2.5 py-1.5 text-[13px] text-foreground bg-background rounded-lg border border-border outline-none focus:border-petrol transition-colors font-mono"
                           />
                           <button
                             onClick={() => {
@@ -1131,7 +1179,7 @@ export function EmailCompose({
                               handleScheduleSend(dt.toISOString(), label)
                               setShowCustomSchedule(false)
                             }}
-                            className="w-full py-1.5 rounded-lg bg-[#1A535C] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
+                            className="w-full py-1.5 rounded-lg bg-petrol text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
                           >
                             Inplannen
                           </button>
@@ -1142,9 +1190,9 @@ export function EmailCompose({
                 </>
               )}
             </div>
-            {/* Send button — matcht inline reply (flame, terminal action) */}
+            {/* Send button · matcht inline reply (flame, terminal action) */}
             <button
-              className="tap-press h-10 md:h-9 px-5 md:px-6 rounded-[10px] text-[14px] md:text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
+              className="tap-press h-10 md:h-9 px-5 md:px-6 rounded-[10px] text-[14px] md:text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
               onClick={handleSend}
               disabled={isSending}
             >

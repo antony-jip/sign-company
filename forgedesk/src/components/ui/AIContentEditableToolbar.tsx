@@ -251,7 +251,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
               <Pen className="w-3 h-3 text-muted-foreground shrink-0" />
               <span className="text-[11px] text-foreground/70">
                 Tip · stel je schrijfstijl in via{' '}
-                <Link to="/instellingen?tab=daan" className="underline hover:text-foreground">Instellingen</Link>
+                <Link to="/instellingen?tab=forgie" className="underline hover:text-foreground">Instellingen</Link>
                 {' '}voor resultaten die meer als jou klinken
               </span>
             </div>
@@ -349,7 +349,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
                     {!heeftSchrijfstijl && (
                       <TooltipContent side="top" className="max-w-[240px] text-xs">
                         Vul je schrijfstijl in via{' '}
-                        <Link to="/instellingen?tab=daan" className="underline font-medium">instellingen</Link>
+                        <Link to="/instellingen?tab=forgie" className="underline font-medium">instellingen</Link>
                         {' '}om dit te gebruiken
                       </TooltipContent>
                     )}
