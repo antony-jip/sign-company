@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,6 +31,7 @@ import {
   Building2,
   Image,
   Upload,
+  Search,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -87,58 +88,82 @@ interface SettingsSection {
   tabs: { id: string; label: string; icon: React.ElementType }[]
 }
 
-const settingsSections: SettingsSection[] = [
-  { id: 'algemeen', label: 'Algemeen', icon: Home, tabs: [
-    { id: 'profiel', label: 'Profiel', icon: FileText },
-    { id: 'bedrijf', label: 'Bedrijf', icon: Building2 },
-    { id: 'weergave', label: 'Voorkeuren', icon: Sliders },
+interface SettingsGroup {
+  id: string
+  label: string
+  sections: SettingsSection[]
+}
+
+// Gegroepeerd op wat de gebruiker komt doen, niet op welke module het raakt.
+// De tab-id's zijn bewust ongewijzigd: daar hangen alle ?tab=-deeplinks aan.
+const settingsGroups: SettingsGroup[] = [
+  { id: 'account', label: 'Account', sections: [
+    { id: 'algemeen', label: 'Profiel', icon: Home, tabs: [
+      { id: 'profiel', label: 'Profiel', icon: FileText },
+      { id: 'weergave', label: 'Voorkeuren', icon: Sliders },
+    ]},
+    { id: 'financieel', label: 'Abonnement', icon: CreditCard, tabs: [
+      { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
+    ]},
+    { id: 'apparaten', label: 'Beveiliging', icon: Shield, tabs: [
+      { id: 'beveiliging', label: 'Beveiliging', icon: Shield },
+    ]},
   ]},
-  { id: 'gebruikers', label: 'Gebruikers', icon: Users, tabs: [
-    { id: 'teamleden', label: 'Teamleden', icon: Users },
+  { id: 'bedrijf', label: 'Bedrijf', sections: [
+    { id: 'bedrijfsgegevens', label: 'Bedrijfsgegevens', icon: Building2, tabs: [
+      { id: 'bedrijf', label: 'Bedrijfsgegevens', icon: Building2 },
+    ]},
+    { id: 'gebruikers', label: 'Team', icon: Users, tabs: [
+      { id: 'teamleden', label: 'Teamleden', icon: Users },
+    ]},
+    { id: 'boekhouding', label: 'Boekhouding', icon: BookOpen, tabs: [
+      { id: 'grootboek', label: 'Grootboekrekening', icon: BookOpen },
+      { id: 'btw-codes', label: 'BTW Codes', icon: Percent },
+      { id: 'kortingen', label: 'Kortingen', icon: Tag },
+    ]},
   ]},
-  { id: 'financieel', label: 'Financieel', icon: CreditCard, tabs: [
-    { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
-    { id: 'grootboek', label: 'Grootboekrekening', icon: BookOpen },
-    { id: 'btw-codes', label: 'BTW Codes', icon: Percent },
-    { id: 'kortingen', label: 'Kortingen', icon: Tag },
+  { id: 'werk', label: 'Werk', sections: [
+    { id: 'offertes', label: 'Offertes', icon: FileText, tabs: [
+      { id: 'calculatie', label: 'Calculatie', icon: Calculator },
+    ]},
+    { id: 'projecten', label: 'Projecten', icon: LayoutGrid, tabs: [
+      { id: 'sidebar', label: 'Sidebar', icon: PanelLeft },
+    ]},
+    { id: 'producten', label: 'Documenten', icon: FileText, tabs: [
+      { id: 'briefpapier', label: 'Briefpapier', icon: Image },
+      { id: 'tekeningen', label: 'Tekeningen', icon: Image },
+      { id: 'documenten', label: 'Documenten', icon: FileText },
+    ]},
   ]},
-  { id: 'offertes', label: 'Offertes', icon: FileText, tabs: [
-    { id: 'calculatie', label: 'Calculatie', icon: Calculator },
+  { id: 'koppelingen', label: 'Koppelingen', sections: [
+    { id: 'email-settings', label: 'E-mail', icon: Mail, tabs: [
+      { id: 'email', label: 'E-mail', icon: Mail },
+    ]},
+    { id: 'communicatie', label: 'Communicatie', icon: MessageSquare, tabs: [
+      { id: 'communicatie', label: 'Communicatie', icon: MessageSquare },
+    ]},
+    { id: 'integraties-all', label: 'Integraties', icon: Puzzle, tabs: [
+      { id: 'integraties', label: 'Integraties', icon: Puzzle },
+      { id: 'portaal', label: 'Portaal', icon: Link2 },
+    ]},
+    { id: 'inkoopfacturen-settings', label: 'Inkoopfacturen', icon: Receipt, tabs: [
+      { id: 'inkoopfactuur-inbox', label: 'Inbox Setup', icon: Mail },
+    ]},
+    { id: 'importeren', label: 'Importeren', icon: Upload, tabs: [
+      { id: 'import', label: 'Importeren', icon: Upload },
+    ]},
   ]},
-  { id: 'projecten', label: 'Projecten', icon: LayoutGrid, tabs: [
-    { id: 'sidebar', label: 'Sidebar', icon: PanelLeft },
-  ]},
-  { id: 'email-settings', label: 'E-mail', icon: Mail, tabs: [
-    { id: 'email', label: 'E-mail', icon: Mail },
-  ]},
-  { id: 'communicatie', label: 'Communicatie', icon: MessageSquare, tabs: [
-    { id: 'communicatie', label: 'Communicatie', icon: MessageSquare },
-  ]},
-  { id: 'inkoopfacturen-settings', label: 'Inkoopfacturen', icon: Receipt, tabs: [
-    { id: 'inkoopfactuur-inbox', label: 'Inbox Setup', icon: Mail },
-  ]},
-  { id: 'producten', label: 'Documenten', icon: FileText, tabs: [
-    { id: 'briefpapier', label: 'Briefpapier', icon: Image },
-    { id: 'tekeningen', label: 'Tekeningen', icon: Image },
-    { id: 'documenten', label: 'Documenten', icon: FileText },
-  ]},
-  { id: 'integraties-all', label: 'Integraties', icon: Puzzle, tabs: [
-    { id: 'integraties', label: 'Integraties', icon: Puzzle },
-    { id: 'portaal', label: 'Portaal', icon: Link2 },
-  ]},
-  { id: 'apparaten', label: 'Apparaten', icon: Monitor, tabs: [
-    { id: 'beveiliging', label: 'Beveiliging', icon: Shield },
-  ]},
-  { id: 'importeren', label: 'Importeren', icon: Upload, tabs: [
-    { id: 'import', label: 'Importeren', icon: Upload },
-  ]},
-  { id: 'daan-ai', label: 'Daan AI', icon: Sparkles, tabs: [
-    { id: 'forgie', label: 'Daan AI', icon: Sparkles },
-  ]},
-  { id: 'whats-new', label: "What's new", icon: Sparkles, tabs: [
-    { id: 'changelog', label: "What's new", icon: Sparkles },
+  { id: 'doen', label: 'doen.', sections: [
+    { id: 'daan-ai', label: 'Daan AI', icon: Sparkles, tabs: [
+      { id: 'forgie', label: 'Daan AI', icon: Sparkles },
+    ]},
+    { id: 'whats-new', label: "What's new", icon: Sparkles, tabs: [
+      { id: 'changelog', label: "What's new", icon: Sparkles },
+    ]},
   ]},
 ]
+
+const settingsSections: SettingsSection[] = settingsGroups.flatMap((g) => g.sections)
 
 const tabToSectionMap: Record<string, string> = {}
 settingsSections.forEach(section => {
@@ -189,7 +214,27 @@ export function SettingsLayout() {
 
   const [activeSection, setActiveSection] = useState(validSection)
   const [activeSubTabs, setActiveSubTabs] = useState<Record<string, string>>({})
+  const [zoek, setZoek] = useState('')
   const navigate = useNavigate()
+
+  // Zoeken kijkt ook naar de subtabs: wie "btw" typt zoekt de BTW-codes, niet
+  // de categorie waar ze toevallig onder hangen.
+  const zichtbareGroepen = useMemo(() => {
+    const term = zoek.trim().toLowerCase()
+    return settingsGroups
+      .map((groep) => ({
+        ...groep,
+        sections: groep.sections.filter((s) => {
+          if (!visibleSections.some((v) => v.id === s.id)) return false
+          if (!term) return true
+          return (
+            s.label.toLowerCase().includes(term) ||
+            s.tabs.some((t) => t.label.toLowerCase().includes(term))
+          )
+        }),
+      }))
+      .filter((groep) => groep.sections.length > 0)
+  }, [zoek, visibleSections])
 
   // Een ?tab= die binnenkomt terwijl we al op deze pagina staan moet ook
   // aanslaan. Zonder dit blijven deeplinks vanuit het accountmenu en de
@@ -254,40 +299,58 @@ export function SettingsLayout() {
               })}
             </div>
 
-            <div className="hidden md:block doen-slate-surface rounded-2xl p-1.5 space-y-0.5">
-              <div className="px-3 pt-2 pb-1.5 flex items-baseline justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Categorieën
-                </span>
-                <span className="text-[10px] font-mono tabular-nums text-muted-foreground/70">
-                  {visibleSections.length}
-                </span>
+            <div className="hidden md:block doen-slate-surface rounded-2xl p-1.5">
+              <div className="relative px-1.5 pt-1.5 pb-2">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/70 pointer-events-none" />
+                <input
+                  value={zoek}
+                  onChange={(e) => setZoek(e.target.value)}
+                  placeholder="Zoeken"
+                  aria-label="Zoek in instellingen"
+                  className="w-full h-8 pl-8 pr-2 rounded-lg bg-card text-[13px] text-foreground placeholder:text-muted-foreground/70 border border-transparent focus:border-petrol/30 focus:outline-none transition-colors"
+                />
               </div>
-              {visibleSections.map((section) => {
-                const Icon = section.icon
-                const isActive = activeSection === section.id
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={cn(
-                      'group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 relative',
-                      isActive
-                        ? 'text-foreground font-semibold bg-card shadow-[0_1px_3px_rgba(20,62,71,0.08),0_0_0_1px_rgba(26,83,92,0.06)]'
-                        : 'text-foreground/70 hover:text-foreground hover:bg-card/50'
-                    )}
-                  >
-                    {isActive && (
-                      <span
-                        aria-hidden
-                        className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2.5px] rounded-r-full bg-flame"
-                      />
-                    )}
-                    <Icon className={cn('w-4 h-4 transition-colors', isActive ? 'text-petrol' : 'text-muted-foreground group-hover:text-foreground/70')} />
-                    <span className="text-[13px] truncate">{section.label}</span>
-                  </button>
-                )
-              })}
+
+              {zichtbareGroepen.length === 0 && (
+                <p className="px-3 py-6 text-[12px] text-muted-foreground text-center">
+                  Niets gevonden voor &ldquo;{zoek}&rdquo;.
+                </p>
+              )}
+
+              {zichtbareGroepen.map((groep) => (
+                <div key={groep.id} className="pb-1">
+                  <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    {groep.label}
+                  </p>
+                  <div className="space-y-0.5">
+                    {groep.sections.map((section) => {
+                      const Icon = section.icon
+                      const isActive = activeSection === section.id
+                      return (
+                        <button
+                          key={section.id}
+                          onClick={() => setActiveSection(section.id)}
+                          className={cn(
+                            'group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 relative',
+                            isActive
+                              ? 'text-foreground font-semibold bg-card shadow-[0_1px_3px_rgba(20,62,71,0.08),0_0_0_1px_rgba(26,83,92,0.06)]'
+                              : 'text-foreground/70 hover:text-foreground hover:bg-card/50'
+                          )}
+                        >
+                          {isActive && (
+                            <span
+                              aria-hidden
+                              className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2.5px] rounded-r-full bg-flame"
+                            />
+                          )}
+                          <Icon className={cn('w-4 h-4 transition-colors', isActive ? 'text-petrol' : 'text-muted-foreground group-hover:text-foreground/70')} />
+                          <span className="text-[13px] truncate">{section.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </nav>
