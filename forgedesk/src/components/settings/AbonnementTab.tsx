@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,8 @@ import {
   Plus,
   ArrowRight,
   CalendarClock,
+  FileText,
+  Download,
 } from 'lucide-react'
 
 const FEATURES = [
@@ -27,6 +29,22 @@ const FEATURES = [
   'Eenvoudig data overzetten',
 ]
 
+interface Factuurrij {
+  id: string
+  nummer: string
+  datum: string
+  bedrag_excl: number
+  btw_bedrag: number
+  bedrag_incl: number
+  periode_start: string | null
+  periode_eind: string | null
+  pdf_url: string | null
+}
+
+function formatBedrag(n: number): string {
+  return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(n)
+}
+
 function formatDatum(iso: string): string {
   return new Date(iso).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
 }
@@ -39,10 +57,21 @@ export function AbonnementTab() {
   const [bevestigOpzeggen, setBevestigOpzeggen] = useState(false)
   const [opgezegdTot, setOpgezegdTot] = useState<string | null>(organisatie?.abonnement_actief_tot ?? null)
   const [volgendeIncasso, setVolgendeIncasso] = useState<string | null>(null)
+  const [facturen, setFacturen] = useState<Factuurrij[]>([])
+  // De poll-lus na terugkomst van Mollie mag maar één keer starten, en mag niet
+  // opgeruimd worden door een re-render: het wegstrepen van de query-parameter
+  // veroorzaakt er zelf een.
+  const terugkomstAfgehandeld = useRef(false)
+  const pollTimers = useRef<ReturnType<typeof setTimeout>[]>([])
+  const statusRef = useRef(trialStatus)
 
   useEffect(() => {
     setOpgezegdTot(organisatie?.abonnement_actief_tot ?? null)
   }, [organisatie?.abonnement_actief_tot])
+
+  useEffect(() => { statusRef.current = trialStatus }, [trialStatus])
+
+  useEffect(() => () => { pollTimers.current.forEach(clearTimeout) }, [])
 
   useEffect(() => {
     if (trialStatus !== 'actief' || !session?.access_token) {
@@ -60,34 +89,50 @@ export function AbonnementTab() {
   }, [trialStatus, session?.access_token, organisatie?.mollie_subscription_id])
 
   useEffect(() => {
+    if (!session?.access_token) return
+    let geannuleerd = false
+    fetch('/api/abonnement-facturen', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!geannuleerd && Array.isArray(d?.facturen)) setFacturen(d.facturen) })
+      .catch(() => { /* lijst is aanvullend, niet blokkerend */ })
+    return () => { geannuleerd = true }
+  }, [session?.access_token, trialStatus])
+
+  useEffect(() => {
+    if (terugkomstAfgehandeld.current) return
     if (searchParams.get('abonnement') !== 'klaar') return
+    terugkomstAfgehandeld.current = true
     searchParams.delete('abonnement')
     setSearchParams(searchParams, { replace: true })
 
-    if (trialStatus === 'actief') {
+    if (statusRef.current === 'actief') {
       toast.success('Abonnement geactiveerd! Welkom bij doen.')
       return
     }
 
     // De status flipt pas als Mollie's webhook binnen is. Dat duurt meestal
     // een paar seconden, dus we halen de organisatie zelf een aantal keer op
-    // in plaats van de gebruiker te vragen te verversen.
+    // in plaats van de gebruiker te vragen te verversen. Bewust geen cleanup
+    // die de timers stopt: dit effect hoort bij de terugkomst, niet bij de
+    // levensduur van een render.
     toast('Betaling wordt verwerkt...')
     let pogingen = 0
-    let gestopt = false
-    const timers: ReturnType<typeof setTimeout>[] = []
     const controleer = async () => {
       pogingen += 1
       try { await refreshOrganisatie() } catch { /* volgende poging */ }
-      if (gestopt) return
+      if (statusRef.current === 'actief') {
+        toast.success('Abonnement geactiveerd! Welkom bij doen.')
+        return
+      }
       if (pogingen >= 6) {
         toast('Betaling is nog niet verwerkt. Ververs de pagina over een minuutje.')
         return
       }
-      timers.push(setTimeout(controleer, 2500))
+      pollTimers.current.push(setTimeout(controleer, 2500))
     }
-    timers.push(setTimeout(controleer, 2000))
-    return () => { gestopt = true; timers.forEach(clearTimeout) }
+    pollTimers.current.push(setTimeout(controleer, 2000))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, setSearchParams])
 
@@ -179,7 +224,7 @@ export function AbonnementTab() {
                     ? <>Volgende automatische incasso op <strong>{formatDatum(volgendeIncasso)}</strong></>
                     : <>Wordt elke maand automatisch van je rekening afgeschreven</>}
                 </li>
-                <li>Je ontvangt na elke incasso een factuur per e-mail</li>
+                <li>Je ontvangt <strong>elke maand een factuur</strong> per e-mail, met btw gespecificeerd</li>
                 <li>Opzeggen kan altijd, je houdt toegang tot het einde van de betaalde maand</li>
               </ul>
             </div>
@@ -303,6 +348,54 @@ export function AbonnementTab() {
           </div>
         </div>
       </div>
+
+      {facturen.length > 0 && (
+        <div>
+          <h3 className="text-[15px] font-bold text-foreground">Facturen</h3>
+          <p className="text-[13px] text-muted-foreground mb-4">
+            Elke maandelijkse incasso levert een factuur op. Je krijgt hem ook per e-mail.
+          </p>
+
+          <div className="rounded-xl border border-border overflow-hidden">
+            {facturen.map((f, i) => (
+              <div
+                key={f.id}
+                className={`flex items-center gap-4 px-5 py-3.5 ${i > 0 ? 'border-t border-border' : ''}`}
+              >
+                <FileText className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-foreground font-mono">{f.nummer}</p>
+                  <p className="text-[12px] text-muted-foreground">
+                    {formatDatum(f.datum)}
+                    {f.periode_start && f.periode_eind && (
+                      <> · periode {formatDatum(f.periode_start)} t/m {formatDatum(f.periode_eind)}</>
+                    )}
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-[13px] font-mono text-foreground">{formatBedrag(f.bedrag_excl)}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {formatBedrag(f.bedrag_incl)} incl. btw
+                  </p>
+                </div>
+                {f.pdf_url ? (
+                  <a
+                    href={f.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-petrol hover:opacity-70 transition-opacity flex-shrink-0"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    PDF
+                  </a>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground flex-shrink-0">geen PDF</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
