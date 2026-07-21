@@ -130,10 +130,12 @@ export function getBaseTemplate(data: EmailTemplateData): {
   const bedrijf = data.bedrijfsnaam || DEFAULT_BEDRIJFSNAAM
 
   const wrap = (bodyHtml: string, afmeldUrl?: string): string => {
+    // Logo wint van de bedrijfsnaam in de header. Dat is ook wat het
+    // instellingenscherm belooft bij het uploaden van een logo.
     const hasLogo = !!(data.logoUrl && data.logoUrl.trim())
-  const logoHtml = hasLogo
-      ? `<img src="${escapeHtml(data.logoUrl!)}" alt="${escapeHtml(bedrijf)}" style="max-height: 48px; margin-bottom: 8px; display: block;" />`
-      : ''
+    const headerHtml = hasLogo
+      ? `<img src="${escapeHtml(data.logoUrl!)}" alt="${escapeHtml(bedrijf)}" style="max-height: 44px; max-width: 220px; display: inline-block;" />`
+      : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">${escapeHtml(bedrijf)}</span>`
 
     const sigImgHeight = data.handtekeningAfbeeldingGrootte ?? 64
     const sigImgHtml = data.handtekeningAfbeelding
@@ -183,9 +185,7 @@ export function getBaseTemplate(data: EmailTemplateData): {
           <!-- Header -->
           <tr>
             <td style="background-color: ${kleur}; padding: 24px 32px; text-align: center;">
-              <span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">
-                ${escapeHtml(bedrijf)}
-              </span>
+              ${headerHtml}
             </td>
           </tr>
           <!-- Body -->

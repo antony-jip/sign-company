@@ -37,7 +37,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getBackfillTarget, setBackfillTarget, type BackfillTarget } from '@/services/emailService'
-import { getProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
+import { getProfile, getProfielenVoorTeam, getAppSettings, updateAppSettings, getMedewerkers, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import { uploadFile, downloadFile } from '@/services/storageService'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
@@ -428,7 +428,7 @@ function SignaturePreview({
 }
 
 export function EmailTab() {
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, session } = useAuth()
   const { refreshSettings, refreshProfile, profile, emailFetchLimit: currentFetchLimit } = useAppSettings()
   const initialSub = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('sub') || 'handtekening' : 'handtekening'
   const [subTab, setSubTab] = useState(initialSub)
@@ -474,11 +474,22 @@ export function EmailTab() {
     try {
       setTeamLoading(true)
       const data = await getMedewerkers()
-      setMedewerkers(data.filter(m => m.status === 'actief'))
-      // Init edits
+      const actief = data.filter(m => m.status === 'actief')
+      setMedewerkers(actief)
+
+      // Handtekeningen staan op profiles, niet op medewerkers. Teamleden zonder
+      // gekoppeld account hebben er dus geen.
+      const userIds = actief.map(m => m.user_id).filter((id): id is string => !!id)
+      const profielen = userIds.length > 0 ? await getProfielenVoorTeam(userIds) : []
+      const perUser = new Map(profielen.map(p => [p.id, p]))
+
       const edits: Record<string, { handtekening: string; afbeelding: string }> = {}
-      data.forEach(m => {
-        edits[m.id] = { handtekening: m.email_handtekening || '', afbeelding: m.handtekening_afbeelding || '' }
+      actief.forEach(m => {
+        const p = m.user_id ? perUser.get(m.user_id) : undefined
+        edits[m.id] = {
+          handtekening: p?.email_handtekening || '',
+          afbeelding: p?.handtekening_afbeelding || '',
+        }
       })
       setTeamEdits(edits)
     } catch (err) {
@@ -513,19 +524,39 @@ export function EmailTab() {
     }
   }
 
+  const bewaarHandtekeningen = async (acties: { user_id: string; email_handtekening: string; handtekening_afbeelding: string }[]) => {
+    if (!session?.access_token) throw new Error('Niet ingelogd')
+    const res = await fetch('/api/team-handtekening', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ acties }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || 'Opslaan mislukt')
+    return data as { bijgewerkt: number; overgeslagen: number }
+  }
+
   const handleSaveTeamMember = async (mw: Medewerker) => {
     const edits = teamEdits[mw.id]
     if (!edits) return
+    if (!mw.user_id) {
+      toast.error(`${mw.naam} heeft nog geen account, dus geen eigen handtekening`)
+      return
+    }
     try {
       setSavingMwId(mw.id)
-      await updateMedewerker(mw.id, {
+      await bewaarHandtekeningen([{
+        user_id: mw.user_id,
         email_handtekening: edits.handtekening,
         handtekening_afbeelding: edits.afbeelding,
-      })
+      }])
       toast.success(`Handtekening van ${mw.naam} opgeslagen`)
     } catch (err) {
       logger.error('Fout bij opslaan teamlid handtekening:', err)
-      toast.error(`Kon handtekening van ${mw.naam} niet opslaan`)
+      toast.error(err instanceof Error ? err.message : `Kon handtekening van ${mw.naam} niet opslaan`)
     } finally {
       setSavingMwId(null)
     }
@@ -541,22 +572,31 @@ export function EmailTab() {
       toast.error('Geen actieve teamleden gevonden')
       return
     }
+    const metAccount = medewerkers.filter(m => !!m.user_id)
+    if (metAccount.length === 0) {
+      toast.error('Geen teamleden met een gekoppeld account')
+      return
+    }
     try {
       setIsSaving(true)
-      for (const mw of medewerkers) {
+      const resultaat = await bewaarHandtekeningen(metAccount.map(mw => ({
+        user_id: mw.user_id as string,
         // Personaliseer: vervang eigen naam door teamlid naam
-        const personalised = emailHandtekening
-          .replace(afzenderNaam || '', mw.naam)
-        await updateMedewerker(mw.id, {
-          email_handtekening: personalised,
-          handtekening_afbeelding: handtekeningAfbeelding,
-        })
-      }
+        email_handtekening: afzenderNaam
+          ? emailHandtekening.replace(afzenderNaam, mw.naam)
+          : emailHandtekening,
+        handtekening_afbeelding: handtekeningAfbeelding,
+      })))
       await loadTeam()
-      toast.success(`Handtekening toegepast op ${count} teamleden`)
+      const zonderAccount = count - metAccount.length
+      toast.success(
+        zonderAccount > 0
+          ? `Handtekening toegepast op ${resultaat.bijgewerkt} teamleden · ${zonderAccount} zonder account overgeslagen`
+          : `Handtekening toegepast op ${resultaat.bijgewerkt} teamleden`
+      )
     } catch (err) {
       logger.error('Fout bij toepassen op team:', err)
-      toast.error('Kon handtekening niet op alle teamleden toepassen')
+      toast.error(err instanceof Error ? err.message : 'Kon handtekening niet op alle teamleden toepassen')
     } finally {
       setIsSaving(false)
     }
