@@ -201,7 +201,8 @@ function renderTabContent(tabId: string) {
   }
 }
 
-export function SettingsLayout() {
+export function SettingsLayout({ variant = 'pagina' }: { variant?: 'pagina' | 'modal' } = {}) {
+  const isModal = variant === 'modal'
   const { doenCommunicatieTabEnabled } = useAppSettings()
   const visibleSections = settingsSections.filter(
     (s) => s.id !== 'communicatie' || doenCommunicatieTabEnabled,
@@ -261,9 +262,9 @@ export function SettingsLayout() {
   }, [activeSection])
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-baseline gap-4 min-w-0">
-        <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
+    <div className={cn(isModal ? 'h-full flex flex-col' : 'space-y-6')}>
+      <div className={cn('flex items-baseline gap-4 min-w-0', isModal && 'px-7 pt-7 pb-5 pr-16 flex-shrink-0')}>
+        <h1 className={cn('font-extrabold tracking-[-0.5px] text-foreground', isModal ? 'text-[24px]' : 'text-[32px]')}>
           Instellingen<span className="text-flame">.</span>
         </h1>
         <span
@@ -274,9 +275,12 @@ export function SettingsLayout() {
         </span>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8 min-h-[calc(100vh-12rem)]">
-        <nav className="w-full md:w-52 flex-shrink-0">
-          <div className="md:sticky md:top-6">
+      <div className={cn(
+        'flex flex-col md:flex-row gap-8',
+        isModal ? 'flex-1 min-h-0 px-7 pb-7' : 'min-h-[calc(100vh-12rem)]',
+      )}>
+        <nav className={cn('w-full md:w-52 flex-shrink-0', isModal && 'md:overflow-y-auto')}>
+          <div className={cn(!isModal && 'md:sticky md:top-6')}>
             <div className="md:hidden flex overflow-x-auto gap-0.5 p-1 doen-slate-surface rounded-xl">
               {visibleSections.map((section) => {
                 const Icon = section.icon
@@ -355,7 +359,7 @@ export function SettingsLayout() {
           </div>
         </nav>
 
-        <div className="flex-1 min-w-0">
+        <div className={cn('flex-1 min-w-0', isModal && 'overflow-y-auto pr-1')}>
           {currentSection && currentSection.tabs.length > 1 && (
             <SubTabNav
               tabs={currentSection.tabs}

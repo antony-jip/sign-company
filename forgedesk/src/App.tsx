@@ -1,5 +1,5 @@
-import React, { Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import React, { Suspense, useRef, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
@@ -114,6 +114,7 @@ const ForecastLayout = lazy(() => import('@/components/reports/ForecastLayout'),
 
 // Settings
 const SettingsLayout = lazy(() => import('@/components/settings/SettingsLayout'), 'SettingsLayout')
+const SettingsModal = lazy(() => import('@/components/settings/SettingsModal'), 'SettingsModal')
 const DataImportPage = lazy(() => import('@/components/import/DataImportPage'), 'DataImportPage')
 const TeamLayout = lazy(() => import('@/components/settings/TeamLayout'), 'TeamLayout')
 
@@ -214,6 +215,20 @@ function OfferteDetailRedirect() {
 
 function AppContent() {
   const { isReady } = useDataInit()
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Instellingen opent als overlay over het scherm waar je vandaan kwam. We
+  // onthouden dat scherm hier in plaats van het via link-state mee te geven:
+  // er verwijzen vijftien plekken naar /instellingen en er hoeft er maar één
+  // vergeten te worden. Kom je direct binnen (refresh, link uit een mail),
+  // dan is er geen vorig scherm en val je terug op de gewone pagina.
+  const vorigeLocatieRef = useRef<typeof location | null>(null)
+  const isInstellingen = location.pathname === '/instellingen'
+  useEffect(() => {
+    if (!isInstellingen) vorigeLocatieRef.current = location
+  }, [location, isInstellingen])
+  const achtergrond = isInstellingen ? vorigeLocatieRef.current : null
 
   if (!isReady) {
     return <BootSplash />
@@ -224,7 +239,7 @@ function AppContent() {
     <CommandPalette />
     <ErrorBoundary>
     <Suspense fallback={<LoadingSpinner />}>
-    <Routes>
+    <Routes location={achtergrond ?? location}>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/registreren" element={<RegisterPage />} />
@@ -329,6 +344,9 @@ function AppContent() {
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    {achtergrond && (
+      <SettingsModal onClose={() => navigate({ pathname: achtergrond.pathname, search: achtergrond.search })} />
+    )}
     </Suspense>
     </ErrorBoundary>
     </>
