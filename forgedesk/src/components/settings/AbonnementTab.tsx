@@ -14,6 +14,8 @@ import {
   CalendarClock,
   FileText,
   Download,
+  MessageCircle,
+  Phone,
 } from 'lucide-react'
 
 const FEATURES = [
@@ -208,37 +210,105 @@ export function AbonnementTab() {
 
       {/* Status banner */}
       {isActive && !isOpgezegdPending && (
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 rounded-xl p-5 border bg-[#E2F0F0] border-[#C0DDDD] dark:bg-petrol/[0.18] dark:border-petrol/40">
-          <div className="flex items-start gap-3">
-            <Check className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#1A535C] dark:text-[#5AABB5]" />
-            <div>
-              <span className="text-[14px] font-bold text-[#1A535C] dark:text-[#5AABB5]">Abonnement actief</span>
-              <p className="text-[12px] text-[#1A535C]/60 dark:text-[#5AABB5]/70">Je hebt volledige toegang tot alle features.</p>
-
-              <ul className="mt-3 space-y-1 text-[12px] text-[#1A535C]/80 dark:text-[#5AABB5]/80">
-                <li>
-                  <strong>€95,59 incl. btw</strong> per maand · €79,00 excl. btw, 21% btw
-                </li>
-                <li>
-                  {volgendeIncasso
-                    ? <>Volgende automatische incasso op <strong>{formatDatum(volgendeIncasso)}</strong></>
-                    : <>Wordt elke maand automatisch van je rekening afgeschreven</>}
-                </li>
-                <li>Je ontvangt <strong>elke maand een factuur</strong> per e-mail, met btw gespecificeerd</li>
-                <li>Opzeggen kan altijd, je houdt toegang tot het einde van de betaalde maand</li>
-              </ul>
+        <div className="rounded-xl p-6 sm:p-7 border bg-[#E2F0F0] border-[#C0DDDD] dark:bg-petrol/[0.18] dark:border-petrol/40">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <Check className="h-5 w-5 mt-1 flex-shrink-0 text-[#1A535C] dark:text-[#5AABB5]" />
+              <div>
+                <h3
+                  className="font-heading text-[#1A535C] dark:text-[#5AABB5]"
+                  style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.3px' }}
+                >
+                  Welkom bij doen<span className="text-flame">.</span>
+                </h3>
+                <p className="mt-1 text-[13px] text-[#1A535C]/70 dark:text-[#5AABB5]/70 max-w-[460px] leading-[1.55]">
+                  Fijn dat je meedoet. Je hebt volledige toegang, dus vanaf nu regel je
+                  alles vanuit je projecten.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {bevestigOpzeggen && !isLoading && (
+                <Button onClick={() => setBevestigOpzeggen(false)} variant="ghost" className="text-muted-foreground">
+                  Toch niet
+                </Button>
+              )}
+              <Button onClick={handleOpzeggen} disabled={isLoading} variant="outline" className="border-petrol/20 text-petrol dark:border-white/15 dark:text-[#5AABB5]">
+                {loadingAction === 'opzeggen' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {bevestigOpzeggen ? 'Bevestig opzegging' : 'Opzeggen'}
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {bevestigOpzeggen && !isLoading && (
-              <Button onClick={() => setBevestigOpzeggen(false)} variant="ghost" className="text-muted-foreground">
-                Toch niet
-              </Button>
-            )}
-            <Button onClick={handleOpzeggen} disabled={isLoading} variant="outline" className="border-petrol/20 text-petrol dark:border-white/15 dark:text-[#5AABB5]">
-              {loadingAction === 'opzeggen' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {bevestigOpzeggen ? 'Bevestig opzegging' : 'Opzeggen'}
-            </Button>
+
+          <dl className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
+            {[
+              {
+                label: 'Per maand',
+                waarde: <span className="font-mono">€95,59</span>,
+                sub: 'incl. btw · €79,00 excl. btw, 21% btw',
+              },
+              {
+                label: 'Volgende incasso',
+                waarde: volgendeIncasso
+                  ? <span className="font-mono">{formatDatum(volgendeIncasso)}</span>
+                  : 'Elke maand automatisch',
+                sub: 'Wordt van je rekening afgeschreven',
+              },
+              {
+                label: 'Factuur',
+                waarde: 'Elke maand per e-mail',
+                sub: 'Met btw gespecificeerd, als PDF',
+              },
+              {
+                label: 'Opzeggen',
+                waarde: 'Kan altijd',
+                sub: 'Je houdt toegang tot het einde van de betaalde maand',
+              },
+            ].map(item => (
+              <div key={item.label}>
+                <dt className="text-[11px] uppercase tracking-wider text-[#1A535C]/50 dark:text-[#5AABB5]/50">
+                  {item.label}
+                </dt>
+                <dd className="mt-1 text-[14px] font-medium text-[#1A535C] dark:text-[#5AABB5]">
+                  {item.waarde}
+                </dd>
+                <dd className="text-[12px] text-[#1A535C]/60 dark:text-[#5AABB5]/60 leading-[1.5]">
+                  {item.sub}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <div className="mt-6 rounded-xl bg-card p-5 flex flex-col sm:flex-row sm:items-center gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+            <span className="inline-flex items-center justify-center w-11 h-11 rounded-full flex-shrink-0 bg-petrol text-white text-[14px] font-bold tracking-wide">
+              AB
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13.5px] text-foreground leading-[1.55]">
+                Loop je vast of heb je een vraag? App of bel me gerust, ik help je graag op weg.
+              </p>
+              <p className="mt-1 text-[12px] text-muted-foreground">
+                Antony Bootsma<span className="mx-1.5 text-muted-foreground/50">·</span>Founder
+              </p>
+            </div>
+            <div className="flex items-center gap-5 flex-shrink-0">
+              <a
+                href="https://wa.me/31629399326"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-petrol hover:opacity-70 transition-opacity"
+              >
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </a>
+              <a
+                href="tel:+31629399326"
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-petrol hover:opacity-70 transition-opacity"
+              >
+                <Phone className="h-4 w-4" />
+                <span className="font-mono">06 29 39 93 26</span>
+              </a>
+            </div>
           </div>
         </div>
       )}
