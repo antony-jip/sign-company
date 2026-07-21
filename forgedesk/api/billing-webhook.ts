@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import crypto from 'crypto'
 import * as Sentry from '@sentry/node'
 
 // ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
@@ -33,7 +32,6 @@ if (process.env.SENTRY_DSN && !Sentry.getClient()) {
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const MOLLIE_API_KEY = process.env.MOLLIE_API_KEY_LIVE || process.env.MOLLIE_API_KEY_TEST || ''
-const MOLLIE_WEBHOOK_SECRET = process.env.MOLLIE_WEBHOOK_SECRET || ''
 
 // €79 ex btw, afgeschreven bedrag is incl 21% btw
 const ABONNEMENT_BEDRAG = '95.59'
@@ -292,27 +290,33 @@ async function handleAbonnementTermijn(payment: MolliePayment, res: VercelRespon
   return res.status(200).json({ received: true })
 }
 
+// Mollie post `id=tr_...` als application/x-www-form-urlencoded. Vercel parst
+// dat normaal naar een object, maar bij een afwijkende content-type komt de
+// body als string binnen. Beide afhandelen, want dit pad mag niet stilvallen.
+function leesPaymentId(body: unknown): string | null {
+  if (typeof body === 'string') {
+    const params = new URLSearchParams(body)
+    return params.get('id')
+  }
+  if (body && typeof body === 'object') {
+    const id = (body as { id?: unknown }).id
+    return typeof id === 'string' ? id : null
+  }
+  return null
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    // Verifieer webhook signature — verplicht (fail-closed)
-    if (!MOLLIE_WEBHOOK_SECRET) {
-      console.error('MOLLIE_WEBHOOK_SECRET is niet geconfigureerd — webhook geweigerd')
-      return res.status(500).json({ error: 'Webhook verificatie niet geconfigureerd' })
-    }
-    const signature = req.headers['x-mollie-signature'] as string | undefined
-    const expectedSignature = crypto
-      .createHmac('sha256', MOLLIE_WEBHOOK_SECRET)
-      .update(JSON.stringify(req.body))
-      .digest('hex')
-    if (!signature || signature !== expectedSignature) {
-      console.warn('[billing-webhook] ongeldige signature')
-      return res.status(401).json({ error: 'Ongeldige webhook signature' })
-    }
+    // Mollie's payment-webhook stuurt geen signature: de body is alleen
+    // `id=tr_...` en verder niets. De beveiliging zit erin dat we die id
+    // hieronder bij Mollie opvragen met onze eigen API-key en de status
+    // daarvan volgen. Een vervalste POST kan dus nooit iets op betaald zetten,
+    // hooguit een echte betaling opnieuw laten verwerken (en dat is idempotent).
 
-    const { id: paymentId } = req.body as { id?: string }
+    const paymentId = leesPaymentId(req.body)
     if (!paymentId || !/^tr_[a-zA-Z0-9]+$/.test(paymentId)) {
       return res.status(400).json({ error: 'Ongeldig of ontbrekend Payment ID' })
     }

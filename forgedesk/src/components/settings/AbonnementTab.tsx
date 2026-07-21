@@ -32,7 +32,7 @@ function formatDatum(iso: string): string {
 }
 
 export function AbonnementTab() {
-  const { trialStatus, trialDagenOver, organisatie, session } = useAuth()
+  const { trialStatus, trialDagenOver, organisatie, session, refreshOrganisatie } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [loadingAction, setLoadingAction] = useState<'activate' | 'opzeggen' | null>(null)
@@ -44,17 +44,36 @@ export function AbonnementTab() {
   }, [organisatie?.abonnement_actief_tot])
 
   useEffect(() => {
-    const result = searchParams.get('abonnement')
-    if (result === 'klaar') {
-      if (trialStatus === 'actief') {
-        toast.success('Abonnement geactiveerd! Welkom bij doen.')
-      } else {
-        toast('Betaling wordt verwerkt. Je abonnement is zo actief, ververs de pagina over een minuutje.')
-      }
-      searchParams.delete('abonnement')
-      setSearchParams(searchParams, { replace: true })
+    if (searchParams.get('abonnement') !== 'klaar') return
+    searchParams.delete('abonnement')
+    setSearchParams(searchParams, { replace: true })
+
+    if (trialStatus === 'actief') {
+      toast.success('Abonnement geactiveerd! Welkom bij doen.')
+      return
     }
-  }, [searchParams, setSearchParams, trialStatus])
+
+    // De status flipt pas als Mollie's webhook binnen is. Dat duurt meestal
+    // een paar seconden, dus we halen de organisatie zelf een aantal keer op
+    // in plaats van de gebruiker te vragen te verversen.
+    toast('Betaling wordt verwerkt...')
+    let pogingen = 0
+    let gestopt = false
+    const timers: ReturnType<typeof setTimeout>[] = []
+    const controleer = async () => {
+      pogingen += 1
+      try { await refreshOrganisatie() } catch { /* volgende poging */ }
+      if (gestopt) return
+      if (pogingen >= 6) {
+        toast('Betaling is nog niet verwerkt. Ververs de pagina over een minuutje.')
+        return
+      }
+      timers.push(setTimeout(controleer, 2500))
+    }
+    timers.push(setTimeout(controleer, 2000))
+    return () => { gestopt = true; timers.forEach(clearTimeout) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, setSearchParams])
 
   const handleActivate = async () => {
     if (!organisatie?.id || !session?.access_token) return
@@ -230,6 +249,13 @@ export function AbonnementTab() {
                   Abonnement activeren
                   <ArrowRight className="h-4 w-4" />
                 </button>
+              )}
+
+              {!isActive && (
+                <p className="text-[12px] mt-3 max-w-[380px] leading-[1.5] text-muted-foreground">
+                  Je rekent nu de eerste maand af en geeft toestemming voor automatische
+                  incasso. Daarna schrijven we elke maand €95,59 incl. btw af tot je opzegt.
+                </p>
               )}
             </div>
 

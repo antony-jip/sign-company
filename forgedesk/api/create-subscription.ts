@@ -135,7 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers: mollieHeaders,
       body: JSON.stringify({
         amount: { currency: 'EUR', value: ABONNEMENT_BEDRAG },
-        description: 'doen. abonnement · eerste maand',
+        description: 'doen. abonnement · eerste maand, daarna maandelijks',
         customerId,
         sequenceType: 'first',
         redirectUrl: `${APP_URL}/instellingen?tab=abonnement&abonnement=klaar`,
