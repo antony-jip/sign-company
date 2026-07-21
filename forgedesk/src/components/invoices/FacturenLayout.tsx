@@ -299,7 +299,7 @@ export function FacturenLayout() {
   const { medewerkers } = useMedewerkers()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   // App settings (bedrijfsprofiel for PDF generation)
-  const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, creditnotaDoornummeren, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
+  const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, creditnotaDoornummeren, creditnotaPrefix, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
   const exactConnected = settings.exact_online_connected ?? false
   const documentStyle = useDocumentStyle()
 
@@ -1287,7 +1287,7 @@ export function FacturenLayout() {
       setIsSaving(true)
       const nummer = creditnotaDoornummeren
         ? await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
-        : generateTypedNummer(facturen, 'CN')
+        : generateTypedNummer(facturen, creditnotaPrefix)
       const selectedKlant = klanten.find((k) => k.id === creditnotaFactuur.klant_id)
 
       const cnToken = generateBetaalToken()

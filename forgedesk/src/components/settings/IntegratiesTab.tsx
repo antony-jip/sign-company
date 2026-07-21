@@ -1523,7 +1523,9 @@ export function IntegratiesTab() {
                     if (!user?.id) return
                     setKvkSaving(true)
                     try {
-                      await updateAppSettings(user.id, {
+                      // Via het encryptie-endpoint: de key is een secret en
+                      // hoort niet onversleuteld in app_settings te staan.
+                      await saveIntegrationSettings({
                         kvk_api_key: kvkApiKey,
                         kvk_api_enabled: !!kvkApiKey,
                       })

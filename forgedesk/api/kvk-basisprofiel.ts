@@ -1,5 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
+
+const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
+
+// Spiegelt encryptSecret in api/save-integration-settings.ts. Valt terug op de
+// ruwe waarde, zodat sleutels die nog van vóór de encryptie stammen blijven
+// werken zonder migratie.
+function decryptSecret(text: string): string {
+  if (!text || !text.includes(':') || text.length < 34) return text
+  if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
+  try {
+    const key = crypto.scryptSync(INT_KEY, 'integration', 32)
+    const [ivHex, enc] = text.split(':')
+    if (!ivHex || ivHex.length !== 32 || !enc) return text
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
+    return decipher.update(enc, 'hex', 'utf8') + decipher.final('utf8')
+  } catch { console.warn('[encryption] decrypt failed, treating as plaintext'); return text }
+}
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -106,7 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (settings?.kvk_api_key) {
-        apiKey = settings.kvk_api_key
+        apiKey = decryptSecret(settings.kvk_api_key)
       }
     }
 

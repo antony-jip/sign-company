@@ -73,6 +73,8 @@ import { InkoopfactuurInboxSetup } from '../inkoopfacturen/InkoopfactuurInboxSet
 
 // Communicatie supertab (achter feature flag doen_communicatie_tab_enabled)
 import { CommunicatieTab } from './communicatie/CommunicatieTab'
+import { OfferteOpvolgingSubTab } from './communicatie/OfferteOpvolgingSubTab'
+import { FactuurOpvolgingSubTab } from './communicatie/FactuurOpvolgingSubTab'
 import { MessageSquare } from 'lucide-react'
 
 // Shared
@@ -125,6 +127,13 @@ const settingsGroups: SettingsGroup[] = [
   { id: 'werk', label: 'Werk', sections: [
     { id: 'offertes', label: 'Offertes', icon: FileText, tabs: [
       { id: 'calculatie', label: 'Calculatie', icon: Calculator },
+      { id: 'offerte-opvolging', label: 'Opvolging', icon: MessageSquare },
+    ]},
+    // De opvolg-editors zaten achter de Communicatie-feature-vlag, die uit
+    // staat en nergens aan te zetten is. De teksten worden wel echt door de
+    // trigger-jobs gebruikt, dus ze horen gewoon bereikbaar te zijn.
+    { id: 'facturen', label: 'Facturen', icon: Receipt, tabs: [
+      { id: 'factuur-opvolging', label: 'Herinneringen', icon: MessageSquare },
     ]},
     { id: 'projecten', label: 'Projecten', icon: LayoutGrid, tabs: [
       { id: 'sidebar', label: 'Sidebar', icon: PanelLeft },
@@ -133,6 +142,14 @@ const settingsGroups: SettingsGroup[] = [
       { id: 'briefpapier', label: 'Briefpapier', icon: Image },
       { id: 'tekeningen', label: 'Tekeningen', icon: Image },
       { id: 'documenten', label: 'Documenten', icon: FileText },
+    ]},
+    // Deze drie waren alleen via lockedSubTab bereikbaar en werden daardoor
+    // nooit getoond: alle template-, lettertype- en marge-instellingen stonden
+    // in de code maar konden niet meer gewijzigd worden.
+    { id: 'huisstijl', label: 'Huisstijl', icon: Palette, tabs: [
+      { id: 'huisstijl-template', label: 'Template & Kleuren', icon: Palette },
+      { id: 'huisstijl-typografie', label: 'Typografie', icon: FileText },
+      { id: 'huisstijl-layout', label: 'Layout', icon: LayoutGrid },
     ]},
   ]},
   { id: 'koppelingen', label: 'Koppelingen', sections: [
@@ -178,6 +195,9 @@ function renderTabContent(tabId: string) {
     case 'bedrijf': return <BedrijfTab />
     case 'documenten': return <DocumentenTab />
     case 'briefpapier': return <HuisstijlTab lockedSubTab="briefpapier" />
+    case 'huisstijl-template': return <HuisstijlTab lockedSubTab="template" />
+    case 'huisstijl-typografie': return <HuisstijlTab lockedSubTab="typografie" />
+    case 'huisstijl-layout': return <HuisstijlTab lockedSubTab="layout" />
     case 'tekeningen': return <HuisstijlTab lockedSubTab="tekeningen" />
     case 'calculatie': return <CalculatieTab />
     case 'email': return <EmailTab />
@@ -193,6 +213,8 @@ function renderTabContent(tabId: string) {
     case 'btw-codes': return <VATCodesSettings />
     case 'kortingen': return <DiscountsSettings />
     case 'communicatie': return <CommunicatieTab />
+    case 'offerte-opvolging': return <OfferteOpvolgingSubTab />
+    case 'factuur-opvolging': return <FactuurOpvolgingSubTab />
     case 'kb-artikelen': return <KennisbankTab />
     case 'changelog': return <ChangelogPage />
     case 'import': return <ImportTab />
@@ -368,19 +390,7 @@ export function SettingsLayout({ variant = 'pagina' }: { variant?: 'pagina' | 'm
             />
           )}
 
-          {currentSection && currentSection.tabs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-12 h-12 rounded-xl bg-muted/60 flex items-center justify-center mb-4">
-                <Receipt className="w-6 h-6 text-muted-foreground/50" />
-              </div>
-              <h3 className="text-[15px] font-semibold text-foreground/70 mb-1">Factuur-instellingen</h3>
-              <p className="text-[13px] text-muted-foreground max-w-[280px]">
-                Factuur-instellingen komen binnenkort beschikbaar.
-              </p>
-            </div>
-          ) : currentSubTab ? (
-            renderTabContent(currentSubTab)
-          ) : null}
+          {currentSubTab ? renderTabContent(currentSubTab) : null}
         </div>
       </div>
     </div>
@@ -443,8 +453,11 @@ function DocumentenTab() {
       setOfferteVoorwaarden(data.offerte_voorwaarden || DEFAULT_OFFERTE_VOORWAARDEN)
       setWerkbonMonteurUren(data.werkbon_monteur_uren ?? true)
       setWerkbonMonteurOpmerkingen(data.werkbon_monteur_opmerkingen ?? true)
-      setWerkbonMonteurFotos(data.werkbon_monteur_fotos ?? false)
-      setWerkbonKlantHandtekening(data.werkbon_klant_handtekening ?? false)
+      // Zelfde default als AppSettingsContext: stond hier op false, waardoor de
+      // schakelaar uit leek te staan terwijl de werkbon-module de instelling
+      // als aan behandelde.
+      setWerkbonMonteurFotos(data.werkbon_monteur_fotos ?? true)
+      setWerkbonKlantHandtekening(data.werkbon_klant_handtekening ?? true)
       setWerkbonBriefpapier(data.werkbon_briefpapier ?? true)
       setFactuurPrefix(data.factuur_prefix || 'FAC')
       setFactuurStartNummer(String(data.factuur_volgnummer ?? 1))
