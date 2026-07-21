@@ -137,12 +137,27 @@ async function handleAbonnementStart(payment: MolliePayment, webhookUrl: string,
   // at-least-once en een dubbele subscription betekent dubbele incasso's.
   // Een achtergebleven pending-claim van een eerdere (gecrashte) poging mag
   // overgenomen worden; alleen een echt subscription-id blokkeert.
-  const { data: geclaimd, error: claimError } = await supabase
-    .from('organisaties')
-    .update({ mollie_subscription_id: claim })
-    .eq('id', organisatieId)
-    .or('mollie_subscription_id.is.null,mollie_subscription_id.like.pending*')
-    .select('id')
+  // Twee losse pogingen in plaats van één or-filter: PostgREST verwerkt een
+  // or-filter op een UPDATE niet en geeft dan "column
+  // organisaties.mollie_subscription_id does not exist", ook al bestaat de
+  // kolom. Elke poging is op zichzelf atomair, dus de claim blijft veilig.
+  const claimPoging = (filter: 'leeg' | 'pending') => {
+    const q = supabase
+      .from('organisaties')
+      .update({ mollie_subscription_id: claim })
+      .eq('id', organisatieId)
+    return (filter === 'leeg'
+      ? q.is('mollie_subscription_id', null)
+      : q.like('mollie_subscription_id', 'pending%')
+    ).select('id')
+  }
+
+  let { data: geclaimd, error: claimError } = await claimPoging('leeg')
+
+  // Achtergebleven pending-claim van een eerdere (gecrashte) poging overnemen.
+  if (!claimError && (!geclaimd || geclaimd.length === 0)) {
+    ({ data: geclaimd, error: claimError } = await claimPoging('pending'))
+  }
 
   if (claimError) {
     console.error(`[billing-webhook] claim mislukt voor org ${organisatieId}:`, claimError)
