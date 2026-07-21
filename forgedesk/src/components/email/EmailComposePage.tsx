@@ -112,14 +112,16 @@ export function EmailComposePage() {
         setTimeout(() => {
           if (editorRef.current && !cancelled) {
             const klantNaam = fetchedKlant?.contactpersonen?.[0]?.naam || fetchedKlant?.contactpersoon || fetchedKlant?.bedrijfsnaam || ''
-            const totaal = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(fetchedOfferte.totaal || 0)
+            const fmtBedrag = (n: number) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(n)
+            const totaalExcl = fmtBedrag(fetchedOfferte.subtotaal ?? fetchedOfferte.totaal ?? 0)
+            const totaalIncl = fmtBedrag(fetchedOfferte.totaal || 0)
             const sigText = emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`
             const sigImgHeight = handtekeningAfbeeldingGrootte ?? 64
             const sigImgMaxWidth = Math.round(sigImgHeight * 2.5)
             const sigImgHtml = handtekeningAfbeelding
               ? `<img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${sigImgHeight}px;max-width:${sigImgMaxWidth}px;object-fit:contain;" /><br>`
               : ''
-            const bodyHtml = `Beste ${klantNaam},<br><br>Hierbij ontvangt u onze offerte ${fetchedOfferte.nummer} voor &ldquo;${fetchedOfferte.titel}&rdquo;.<br><br>Het totaalbedrag van deze offerte is ${totaal} (incl. BTW).<br><br>De offerte is geldig tot ${fetchedOfferte.geldig_tot ? new Date(fetchedOfferte.geldig_tot).toLocaleDateString('nl-NL') : '-'}. Bijgevoegd vindt u de offerte als PDF.<br><br>Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.<br><br>--<br>${sigImgHtml}${sigText.replace(/\n/g, '<br>')}`
+            const bodyHtml = `Beste ${klantNaam},<br><br>Hierbij ontvangt u onze offerte ${fetchedOfferte.nummer} voor &ldquo;${fetchedOfferte.titel}&rdquo;.<br><br>Het totaalbedrag van deze offerte is ${totaalExcl} excl. btw${totaalExcl !== totaalIncl ? ` (${totaalIncl} incl. btw)` : ''}.<br><br>De offerte is geldig tot ${fetchedOfferte.geldig_tot ? new Date(fetchedOfferte.geldig_tot).toLocaleDateString('nl-NL') : '-'}. Bijgevoegd vindt u de offerte als PDF.<br><br>Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.<br><br>--<br>${sigImgHtml}${sigText.replace(/\n/g, '<br>')}`
 
             editorRef.current.innerHTML = bodyHtml
             setEditorEmpty(false)

@@ -509,6 +509,9 @@ export function OffertePubliekPagina() {
   const totaalBedrag = hasSelections
     ? round2(berekendeSubtotaal + berekendeBtw + (offerte.afrondingskorting_excl_btw ?? 0))
     : (offerte.aangepast_totaal ?? offerte.totaal)
+  // De klant ziet exclusief btw als hoofdbedrag; inclusief btw staat er klein bij.
+  const totaalExclBedrag = round2(totaalBedrag - btwBedrag)
+  const toonInclRegel = round2(btwBedrag) !== 0
 
   return (
     <div className={`min-h-screen bg-[#F8F7F5] transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
@@ -619,8 +622,11 @@ export function OffertePubliekPagina() {
                 <p className="text-sm text-[#6B6B66]">Offerte {offerte.nummer}</p>
               </div>
               <div className="text-right space-y-1">
-                <p className="text-3xl md:text-4xl font-bold font-mono text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>{formatCurrency(totaalBedrag)}</p>
-                <p className="text-xs text-[#9B9B95]">incl. BTW</p>
+                <p className="text-3xl md:text-4xl font-bold font-mono text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>{formatCurrency(totaalExclBedrag)}</p>
+                <p className="text-xs text-[#9B9B95]">excl. btw</p>
+                {toonInclRegel && (
+                  <p className="text-xs text-[#9B9B95]">{formatCurrency(totaalBedrag)} incl. btw</p>
+                )}
               </div>
             </div>
 
@@ -684,7 +690,7 @@ export function OffertePubliekPagina() {
                       <th className="pb-3 pr-4 text-right font-medium whitespace-nowrap hidden md:table-cell">Eenheid</th>
                       <th className="pb-3 pr-4 text-right font-medium whitespace-nowrap">Prijs excl.</th>
                       <th className="pb-3 pr-4 text-right font-medium whitespace-nowrap hidden md:table-cell">BTW</th>
-                      <th className="pb-3 pl-4 text-right font-medium whitespace-nowrap">Totaal</th>
+                      <th className="pb-3 pl-4 text-right font-medium whitespace-nowrap">Totaal excl.</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -793,7 +799,7 @@ export function OffertePubliekPagina() {
           <div className="bg-[#F8F7F5] border-t border-[#EBEBEB] px-6 md:px-8 py-6">
             <div className="max-w-xs ml-auto space-y-2">
               <div className="flex justify-between text-sm text-[#6B6B66]">
-                <span>Subtotaal</span>
+                <span>Subtotaal excl. btw</span>
                 <span className="font-mono">{formatCurrency(subtotaalBedrag)}</span>
               </div>
               {btwGroepen.map((g) => (
@@ -809,11 +815,17 @@ export function OffertePubliekPagina() {
                 </div>
               )}
               <div className="border-t border-[#EBEBEB] pt-3 flex justify-between items-center">
-                <span className="text-base font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Totaal incl. BTW</span>
+                <span className="text-base font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Totaal excl. btw</span>
                 <span className="text-2xl md:text-3xl font-bold font-mono text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>
-                  {formatCurrency(totaalBedrag)}
+                  {formatCurrency(totaalExclBedrag)}
                 </span>
               </div>
+              {toonInclRegel && (
+                <div className="flex justify-between text-sm text-[#6B6B66]">
+                  <span>Totaal incl. btw</span>
+                  <span className="font-mono">{formatCurrency(totaalBedrag)}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -937,7 +949,12 @@ export function OffertePubliekPagina() {
                   <p className="text-sm text-[#6B6B66]">Offerte {offerte.nummer}</p>
                   <p className="text-xs text-[#9B9B95]">{offerte.titel}</p>
                 </div>
-                <p className="text-xl font-bold font-mono text-[#1A1A1A]">{formatCurrency(totaalBedrag)}</p>
+                <div className="text-right">
+                  <p className="text-xl font-bold font-mono text-[#1A1A1A]">{formatCurrency(totaalExclBedrag)}</p>
+                  <p className="text-xs text-[#9B9B95]">
+                    excl. btw{toonInclRegel ? ` · ${formatCurrency(totaalBedrag)} incl. btw` : ''}
+                  </p>
+                </div>
               </div>
 
               {/* Geselecteerde opties samenvatting */}

@@ -20,7 +20,10 @@ interface OfferteEmailData extends EmailTemplateData {
   klantNaam: string
   offerteNummer: string
   offerteTitel: string
-  totaalBedrag: string
+  /** Hoofdbedrag in de mail: exclusief btw. */
+  totaalBedragExcl: string
+  /** Optioneel, klein onder het hoofdbedrag. Weglaten als er geen btw is. */
+  totaalBedragIncl?: string
   geldigTot: string
   bekijkUrl?: string
   customBody?: string
@@ -231,6 +234,13 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
       </p>`
     : ''
 
+  // Bedragen: exclusief btw is het hoofdbedrag, inclusief btw klein eronder.
+  const toonIncl = !!data.totaalBedragIncl && data.totaalBedragIncl !== data.totaalBedragExcl
+  const bedragHtml = `<strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedragExcl)} excl. btw<br />`
+    + (toonIncl
+      ? `<span style="color: #999999;">${escapeHtml(data.totaalBedragIncl!)} incl. btw</span><br />`
+      : '')
+
   // Split body van handtekening: alles na "Met vriendelijke groet," of de hele handtekening is apart
   function buildCustomBody(raw: string): string {
     // De body bevat plain text met \n. De handtekening zit via de template er al in.
@@ -255,7 +265,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 24px 0 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
         <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
-          <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
+          ${bedragHtml}
           <strong>Geldig tot:</strong> ${escapeHtml(data.geldigTot)}
         </td>
       </tr>
@@ -271,7 +281,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
         <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
-          <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
+          ${bedragHtml}
           <strong>Geldig tot:</strong> ${escapeHtml(data.geldigTot)}
         </td>
       </tr>
@@ -291,7 +301,8 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     '',
     `Hierbij ontvangt u onze offerte ${data.offerteNummer} voor ${data.offerteTitel}.`,
     '',
-    `Totaalbedrag: ${data.totaalBedrag}`,
+    `Totaalbedrag: ${data.totaalBedragExcl} excl. btw`,
+    ...(toonIncl ? [`${data.totaalBedragIncl} incl. btw`] : []),
     `Geldig tot: ${data.geldigTot}`,
     '',
     data.bekijkUrl ? `Bekijk, accepteer of reageer op deze offerte: ${data.bekijkUrl}` : '',

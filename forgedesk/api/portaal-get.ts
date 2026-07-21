@@ -280,13 +280,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .map((i: Record<string, unknown>) => i.offerte_id as string)
 
     let offerteTokenMap: Record<string, string> = {}
+    // Portaal-items bewaren het bedrag inclusief btw; de klant ziet exclusief btw
+    // als hoofdbedrag. Dat leiden we hier af uit de offerte zelf, zodat ook
+    // bestaande items het juiste bedrag tonen.
+    const offerteBedragExclMap: Record<string, number> = {}
     if (offerteIds.length > 0) {
       const { data: offertes } = await supabaseAdmin
         .from('offertes')
-        .select('id, publiek_token')
+        .select('id, publiek_token, subtotaal, btw_bedrag, totaal')
         .in('id', offerteIds)
       if (offertes) {
         for (const o of offertes) {
+          if (o.subtotaal != null) {
+            offerteBedragExclMap[o.id] = Number(o.subtotaal)
+          } else if (o.totaal != null) {
+            offerteBedragExclMap[o.id] = Number(o.totaal) - Number(o.btw_bedrag || 0)
+          }
           if (o.publiek_token) {
             offerteTokenMap[o.id] = o.publiek_token
           } else {
@@ -364,6 +373,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bekeken_op: item.bekeken_op,
         mollie_payment_url: item.mollie_payment_url,
         bedrag: item.bedrag,
+        bedrag_excl: item.offerte_id
+          ? offerteBedragExclMap[item.offerte_id as string] ?? null
+          : null,
         volgorde: item.volgorde,
         created_at: item.created_at,
         bericht_type: item.bericht_type || 'item',
@@ -573,6 +585,7 @@ async function handleGoedkeuringToken(supabase: any, token: string, res: VercelR
     bekeken_op: gk.eerste_bekeken_op,
     mollie_payment_url: null,
     bedrag: null,
+    bedrag_excl: null,
     volgorde: 0,
     created_at: gk.created_at,
     bestanden: [...bestanden, ...offerteBestanden],

@@ -99,7 +99,7 @@ export function SendOfferteDialog({
   const buildFallbackFollowUp = useCallback((): { onderwerp: string; body: string } => {
     const naam = resolveContactNaam(offerte, klant)
     const voornaam = naam.split(' ')[0] || naam
-    const bedrag = formatCurrency(offerte.totaal || 0)
+    const bedrag = `${formatCurrency(offerte.subtotaal ?? offerte.totaal ?? 0)} excl. btw`
     const pogingen = offerte.contact_pogingen || 0
     const aanhef = voornaam ? `Beste ${voornaam}` : 'Beste'
     let body: string
@@ -131,7 +131,7 @@ export function SendOfferteDialog({
         projectnaam: project?.naam,
         offerte_nummer: offerte.nummer,
         offerte_titel: offerte.titel,
-        bedrag: offerte.totaal || 0,
+        bedrag: offerte.subtotaal ?? offerte.totaal ?? 0,
         dagen_open: dagenOpen,
         geldig_tot: offerte.geldig_tot || '',
         dagen_tot_verlopen: dagenTotVerlopen,
@@ -228,7 +228,8 @@ export function SendOfferteDialog({
         klantNaam,
         offerteNummer: offerte.nummer,
         offerteTitel: offerte.titel,
-        totaalBedrag: formatCurrency(offerte.totaal),
+        totaalBedragExcl: formatCurrency(offerte.subtotaal ?? offerte.totaal),
+        totaalBedragIncl: formatCurrency(offerte.totaal),
         geldigTot: offerte.geldig_tot ? formatDate(offerte.geldig_tot) : '—',
         bedrijfsnaam: bedrijfsnaam || 'Uw bedrijf',
         primaireKleur,
