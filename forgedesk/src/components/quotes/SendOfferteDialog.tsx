@@ -20,6 +20,7 @@ import {
 } from '@/services/supabaseService'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
+import { vierMijlpaal, markeerEenmalig } from '@/lib/mijlpaal'
 import { generateOffertePDF } from '@/services/pdfService'
 import { generateFollowUpEmail } from '@/services/followUpService'
 import type { FollowUpContext } from '@/services/followUpService'
@@ -308,12 +309,19 @@ export function SendOfferteDialog({
 
       onSent(updated)
       onOpenChange(false)
-      toast.success(
-        mode === 'follow-up'
-          ? `Follow-up verstuurd naar ${klant?.bedrijfsnaam || sendTo}`
-          : 'Offerte verstuurd',
-        mode === 'eerste' ? { description: `Email verstuurd naar ${sendTo}` } : undefined,
-      )
+      if (mode === 'eerste' && markeerEenmalig('eerste_offerte_verstuurd')) {
+        vierMijlpaal({
+          titel: 'Je eerste offerte is onderweg',
+          tekst: 'Je klant kan hem online bekijken en accepteren. Je ziet het meteen terug in je pipeline.',
+        })
+      } else {
+        toast.success(
+          mode === 'follow-up'
+            ? `Follow-up verstuurd naar ${klant?.bedrijfsnaam || sendTo}`
+            : 'Offerte verstuurd',
+          mode === 'eerste' ? { description: `Email verstuurd naar ${sendTo}` } : undefined,
+        )
+      }
 
       // Silence unused-var warning for createdToken (handler relies on closure side-effect)
       void createdToken

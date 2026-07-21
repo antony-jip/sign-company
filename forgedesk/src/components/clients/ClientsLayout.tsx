@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +50,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 // ModuleHeader removed · using DOEN inline header
 import { confirm } from '@/components/shared/ConfirmDialog'
+import { vierMijlpaal, markeerEenmalig } from '@/lib/mijlpaal'
 
 type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect' | 'met-aandacht'
@@ -77,12 +78,23 @@ function klantNeedsAttention(k: Klant): boolean {
 
 export function ClientsLayout() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { navigateWithTab } = useNavigateWithTab()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editingKlant, setEditingKlant] = useState<Klant | undefined>(undefined)
+
+  // Deeplink vanuit de onboarding: open meteen het formulier voor de eerste klant.
+  useEffect(() => {
+    if (searchParams.get('nieuw') !== '1') return
+    setEditingKlant(undefined)
+    setAddDialogOpen(true)
+    const rest = new URLSearchParams(searchParams)
+    rest.delete('nieuw')
+    setSearchParams(rest, { replace: true })
+  }, [searchParams, setSearchParams])
   const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
   const [projectCounts, setProjectCounts] = useState<Record<string, number>>(() => getCached<Record<string, number>>('projectCounts') ?? {})
   const [loading, setLoading] = useState(() => getCached('klanten') === undefined)
@@ -204,9 +216,17 @@ export function ClientsLayout() {
   }
 
   function handleClientSaved(klant: Klant) {
+    const wasEerste = !editingKlant && klanten.length === 0
     setAddDialogOpen(false)
     setEditingKlant(undefined)
-    toast.success(`Klant "${klant.bedrijfsnaam}" opgeslagen`)
+    if (wasEerste && markeerEenmalig('eerste_klant')) {
+      vierMijlpaal({
+        titel: 'Je eerste klant staat erin',
+        tekst: 'Vanaf hier maak je met een paar klikken een project, offerte of factuur voor deze klant.',
+      })
+    } else {
+      toast.success(`Klant "${klant.bedrijfsnaam}" opgeslagen`)
+    }
     fetchData()
   }
 
@@ -650,6 +670,24 @@ export function ClientsLayout() {
             description={searchQuery || statusFilter !== 'alle'
               ? 'Probeer andere zoektermen of filters.'
               : 'Voeg je eerste klant toe. Winkels, horeca, bedrijven die signing nodig hebben.'}
+            action={!searchQuery && statusFilter === 'alle' ? (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }}
+                  className="inline-flex items-center gap-2 bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#E04520] transition-colors"
+                >
+                  <UserPlus className="w-4 h-4 opacity-80" />
+                  Eerste klant toevoegen
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/importeren')}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+                >
+                  Importeren uit Excel
+                </Button>
+              </div>
+            ) : undefined}
           />
         </div>
       ) : viewMode === 'grid' ? (

@@ -1936,6 +1936,23 @@ export function FacturenLayout() {
                       description={searchQuery || filterStatus !== 'alle'
                         ? 'Probeer een ander filter of zoekterm.'
                         : 'Keur een offerte goed en factureer je eerste sign-opdracht.'}
+                      action={!searchQuery && filterStatus === 'alle' ? (
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          <Button
+                            onClick={() => navigate('/offertes')}
+                            className="bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#E04520] transition-colors"
+                          >
+                            Naar je offertes
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => navigate('/facturen/nieuw')}
+                            className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+                          >
+                            Losse factuur maken
+                          </Button>
+                        </div>
+                      ) : undefined}
                     />
                   </td>
                 </tr>

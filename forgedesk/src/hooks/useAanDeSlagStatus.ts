@@ -4,7 +4,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import supabase, { isSupabaseConfigured } from '@/services/supabaseClient'
 import { logger } from '@/utils/logger'
 
-export type StapId = 'klanten' | 'logo' | 'bedrijf' | 'email' | 'project' | 'team'
+export type StapId = 'account' | 'klanten' | 'logo' | 'bedrijf' | 'email' | 'project' | 'team'
 
 export interface AanDeSlagStap {
   id: StapId
@@ -15,6 +15,7 @@ export interface AanDeSlagStatus {
   isLoading: boolean
   stappen: Record<StapId, boolean>
   klaarCount: number
+  totaal: number
   verplichtKlaarCount: number
   totaalVerplicht: number
   alleVerplichtKlaar: boolean
@@ -23,6 +24,7 @@ export interface AanDeSlagStatus {
 }
 
 const VERPLICHTE_STAPPEN: StapId[] = ['klanten', 'logo', 'bedrijf', 'email', 'project']
+const ALLE_STAPPEN: StapId[] = ['account', 'klanten', 'logo', 'bedrijf', 'email', 'project', 'team']
 
 async function countRows(tabel: string, filterUser?: string): Promise<number> {
   if (!supabase) return 0
@@ -80,6 +82,9 @@ export function useAanDeSlagStatus(): AanDeSlagStatus {
   const ibanKlaar = !!profile?.iban?.trim()
 
   const stappen: Record<StapId, boolean> = {
+    // Account + bedrijfsgegevens zijn in de onboarding al gedaan. Ze staan hier
+    // afgevinkt zodat de gebruiker met voortgang begint, niet op nul.
+    account: true,
     klanten: klantenCount > 0,
     logo: !!organisatie?.logo_url?.trim(),
     bedrijf: kvkKlaar && btwKlaar && ibanKlaar,
@@ -91,7 +96,9 @@ export function useAanDeSlagStatus(): AanDeSlagStatus {
   const klaarCount = Object.values(stappen).filter(Boolean).length
   const verplichtKlaarCount = VERPLICHTE_STAPPEN.filter(id => stappen[id]).length
   const alleVerplichtKlaar = verplichtKlaarCount === VERPLICHTE_STAPPEN.length
-  const verborgen = !!profile?.dashboard_aan_de_slag_verborgen || alleVerplichtKlaar
+  // Niet automatisch verbergen bij alles-klaar: de sectie toont dan eerst een
+  // afrondmoment, dat de gebruiker zelf wegklikt (dat zet de vlag pas).
+  const verborgen = !!profile?.dashboard_aan_de_slag_verborgen
 
   const dismiss = useCallback(async () => {
     try {
@@ -105,6 +112,7 @@ export function useAanDeSlagStatus(): AanDeSlagStatus {
     isLoading,
     stappen,
     klaarCount,
+    totaal: ALLE_STAPPEN.length,
     verplichtKlaarCount,
     totaalVerplicht: VERPLICHTE_STAPPEN.length,
     alleVerplichtKlaar,

@@ -14,6 +14,7 @@ import { AppLayout } from '@/components/layouts/AppLayout'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { CommandPalette } from '@/components/shared/CommandPalette'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { MijlpaalOverlay } from '@/components/shared/MijlpaalOverlay'
 import { useDataInit } from '@/hooks/useDataInit'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useParams } from 'react-router-dom'
@@ -369,6 +370,7 @@ function App() {
                         }}
                       />
                       <ConfirmDialog />
+                      <MijlpaalOverlay />
                       <AppContent />
                     </ErrorBoundary>
                     </TabsProvider>
