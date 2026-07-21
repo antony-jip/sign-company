@@ -81,14 +81,14 @@ export function PortaalTab() {
     setSettings(prev => ({ ...prev, [key]: value }))
   }
 
-  function updateTemplate(templateKey: 'template_portaallink' | 'template_nieuw_item' | 'template_herinnering', field: keyof PortaalEmailTemplate, value: string) {
+  function updateTemplate(templateKey: 'template_nieuw_item' | 'template_herinnering', field: keyof PortaalEmailTemplate, value: string) {
     setSettings(prev => ({
       ...prev,
       [templateKey]: { ...prev[templateKey], [field]: value },
     }))
   }
 
-  async function sendTestEmail(templateKey: 'template_portaallink' | 'template_nieuw_item' | 'template_herinnering') {
+  async function sendTestEmail(templateKey: 'template_nieuw_item' | 'template_herinnering') {
     if (!user?.email) return
     setIsSendingTest(templateKey)
     try {
@@ -313,28 +313,6 @@ export function PortaalTab() {
               </div>
             )}
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Email bij nieuw item</Label>
-                <p className="text-xs text-muted-foreground">Stuur klant een email als er een nieuw item wordt gedeeld</p>
-              </div>
-              <Switch
-                checked={settings.email_naar_klant_bij_nieuw_item}
-                onCheckedChange={(v) => update('email_naar_klant_bij_nieuw_item', v)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Email bij reactie</Label>
-                <p className="text-xs text-muted-foreground">Ontvang een email wanneer de klant reageert</p>
-              </div>
-              <Switch
-                checked={settings.email_naar_mij_bij_reactie}
-                onCheckedChange={(v) => update('email_naar_mij_bij_reactie', v)}
-              />
-            </div>
-
             <div>
               <Label className="text-sm font-medium">Herinnering na (dagen)</Label>
               <p className="text-xs text-muted-foreground mb-1.5">Stuur automatisch een herinnering als klant niet reageert</p>
@@ -374,39 +352,6 @@ export function PortaalTab() {
                 ))}
               </div>
             </div>
-
-            {/* Portaallink template */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm font-medium">Portaallink email</Label>
-                  <p className="text-xs text-muted-foreground">Verstuurd wanneer u een portaallink deelt met een klant.</p>
-                </div>
-                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground" disabled={isSendingTest === 'template_portaallink'} onClick={() => sendTestEmail('template_portaallink')}>
-                  {isSendingTest === 'template_portaallink' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                  Testmail
-                </Button>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Onderwerp</Label>
-                <Input
-                  value={settings.template_portaallink.onderwerp}
-                  onChange={(e) => updateTemplate('template_portaallink', 'onderwerp', e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Inhoud</Label>
-                <Textarea
-                  value={settings.template_portaallink.inhoud}
-                  onChange={(e) => updateTemplate('template_portaallink', 'inhoud', e.target.value)}
-                  rows={5}
-                  className="mt-1 font-mono text-sm"
-                />
-              </div>
-            </div>
-
-            <Separator />
 
             {/* Nieuw item template */}
             <div className="space-y-3">

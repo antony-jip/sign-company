@@ -54,6 +54,7 @@ import { AbonnementTab } from './AbonnementTab'
 import { GeneralLedgerSettings } from '../financial/GeneralLedgerSettings'
 import { VATCodesSettings } from '../financial/VATCodesSettings'
 import { DiscountsSettings } from '../financial/DiscountsSettings'
+import { KostenplaatsenTab } from './KostenplaatsenTab'
 import { KennisbankTab } from './KennisbankTab'
 import { ChangelogPage } from '../changelog/ChangelogPage'
 import { DataImportPage } from '../import/DataImportPage'
@@ -122,6 +123,9 @@ const settingsGroups: SettingsGroup[] = [
       { id: 'grootboek', label: 'Grootboekrekening', icon: BookOpen },
       { id: 'btw-codes', label: 'BTW Codes', icon: Percent },
       { id: 'kortingen', label: 'Kortingen', icon: Tag },
+      // Bestond als compleet beheerscherm maar hing nergens in de navigatie,
+      // terwijl FactuurEditor de tabel wel uitleest.
+      { id: 'kostenplaatsen', label: 'Kostenplaatsen', icon: LayoutGrid },
     ]},
   ]},
   { id: 'werk', label: 'Werk', sections: [
@@ -212,6 +216,7 @@ function renderTabContent(tabId: string) {
     case 'grootboek': return <GeneralLedgerSettings />
     case 'btw-codes': return <VATCodesSettings />
     case 'kortingen': return <DiscountsSettings />
+    case 'kostenplaatsen': return <KostenplaatsenTab />
     case 'communicatie': return <CommunicatieTab />
     case 'offerte-opvolging': return <OfferteOpvolgingSubTab />
     case 'factuur-opvolging': return <FactuurOpvolgingSubTab />
@@ -437,7 +442,6 @@ function DocumentenTab() {
   const [projectPrefix, setProjectPrefix] = useState('PRJ')
   const [betaaltermijn, setBetaaltermijn] = useState('30')
   const [voorwaarden, setVoorwaarden] = useState('')
-  const [standaardUurtarief, setStandaardUurtarief] = useState('75')
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
@@ -468,7 +472,6 @@ function DocumentenTab() {
       setProjectPrefix(data.project_prefix || 'PRJ')
       setBetaaltermijn(String(data.factuur_betaaltermijn_dagen || 30))
       setVoorwaarden(data.factuur_voorwaarden || '')
-      setStandaardUurtarief(String(data.standaard_uurtarief || 75))
       setFactuurIntroTekst(data.factuur_intro_tekst || '')
       setFactuurOutroTekst(data.factuur_outro_tekst || '')
     } catch (err) {
@@ -509,7 +512,6 @@ function DocumentenTab() {
         project_prefix: projectPrefix,
         factuur_betaaltermijn_dagen: parseInt(betaaltermijn) || 30,
         factuur_voorwaarden: voorwaarden,
-        standaard_uurtarief: parseFloat(standaardUurtarief) || 75,
         factuur_intro_tekst: factuurIntroTekst,
         factuur_outro_tekst: factuurOutroTekst,
       })
@@ -663,13 +665,6 @@ function DocumentenTab() {
                 <div className="space-y-2">
                   <Label htmlFor="betaaltermijn">Betaaltermijn (dagen)</Label>
                   <Input id="betaaltermijn" type="number" value={betaaltermijn} onChange={(e) => setBetaaltermijn(e.target.value)} min="1" max="365" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="standaard-uurtarief">Standaard uurtarief</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">&euro;</span>
-                    <Input id="standaard-uurtarief" type="number" value={standaardUurtarief} onChange={(e) => setStandaardUurtarief(e.target.value)} min="0" className="pl-7" />
-                  </div>
                 </div>
               </div>
               <div className="space-y-2">

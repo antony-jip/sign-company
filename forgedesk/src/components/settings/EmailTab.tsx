@@ -1161,24 +1161,6 @@ function EmailSettingsInline({
                 onChange={(e) => setSettings({ ...settings, smtp_port: parseInt(e.target.value) || 587 })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="smtp_encryption" className="text-sm font-medium">
-                Mail encryptie
-              </Label>
-              <Select
-                value={settings.smtp_encryption}
-                onValueChange={(val) => setSettings({ ...settings, smtp_encryption: val as EmailSettings['smtp_encryption'] })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="TLS" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TLS">TLS</SelectItem>
-                  <SelectItem value="SSL">SSL</SelectItem>
-                  <SelectItem value="Geen">Geen</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           {/* IMAP Server */}
@@ -1251,18 +1233,6 @@ function EmailSettingsInline({
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-          </div>
-
-          {/* Self-signed certs */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="self_signed" className="text-sm text-muted-foreground">
-              Zelf-ondertekende certificaten accepteren
-            </Label>
-            <Switch
-              id="self_signed"
-              checked={settings.accept_self_signed}
-              onCheckedChange={(checked) => setSettings({ ...settings, accept_self_signed: checked })}
-            />
           </div>
 
           {/* Provider-specifieke instructies */}
