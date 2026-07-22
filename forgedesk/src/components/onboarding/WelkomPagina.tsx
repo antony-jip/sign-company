@@ -77,8 +77,13 @@ function Wordmark() {
 
 export function WelkomPagina() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, organisatieId, refreshOrganisatie, logout } = useAuth()
   const [voornaam, setVoornaam] = useState('')
+  // De organisatie wordt door een DB-trigger aangemaakt. Zolang die er niet is
+  // heeft doorklikken naar /onboarding geen zin: ProtectedRoute stuurt je dan
+  // meteen terug hierheen. Dus wachten we actief af en bieden we een uitweg.
+  const [orgStatus, setOrgStatus] = useState<'ok' | 'wacht' | 'mislukt'>(organisatieId ? 'ok' : 'wacht')
+  const [poging, setPoging] = useState(0)
 
   useEffect(() => {
     if (!user) return
@@ -92,6 +97,26 @@ export function WelkomPagina() {
       }
     })()
   }, [user])
+
+  useEffect(() => {
+    if (organisatieId) {
+      setOrgStatus('ok')
+      return
+    }
+    if (!user) return
+    let pogingen = 0
+    let gestopt = false
+    let timer: ReturnType<typeof setTimeout>
+    const probeer = async () => {
+      pogingen += 1
+      try { await refreshOrganisatie() } catch { /* volgende poging */ }
+      if (gestopt) return
+      if (pogingen >= 5) setOrgStatus('mislukt')
+      else timer = setTimeout(probeer, 1500)
+    }
+    timer = setTimeout(probeer, 1000)
+    return () => { gestopt = true; clearTimeout(timer) }
+  }, [user, organisatieId, refreshOrganisatie, poging])
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-6 bg-background overflow-hidden">
@@ -159,17 +184,42 @@ export function WelkomPagina() {
         <motion.div variants={item} className="flex flex-col items-start gap-2 mb-16">
           <Button
             onClick={() => navigate('/onboarding')}
-            className="h-11 px-6 rounded-lg bg-flame hover:bg-flame-text text-white font-semibold text-[14px] shadow-sm hover:shadow-md transition-all group"
+            disabled={orgStatus !== 'ok'}
+            className="h-11 px-6 rounded-lg bg-flame hover:bg-flame-text text-white font-semibold text-[14px] shadow-sm hover:shadow-md transition-all group disabled:opacity-60"
           >
-            Mijn bedrijf instellen
-            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+            {orgStatus === 'wacht' ? 'Je account wordt klaargezet...' : 'Mijn bedrijf instellen'}
+            {orgStatus === 'ok' && (
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+            )}
           </Button>
-          <span
-            className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70"
-            style={MONO}
-          >
-            ± 2 min
-          </span>
+          {orgStatus === 'mislukt' ? (
+            <div className="flex items-center gap-3">
+              <span className="text-[13px] text-flame-text">
+                Je account kon niet worden klaargezet.
+              </span>
+              <button
+                type="button"
+                onClick={() => { setOrgStatus('wacht'); setPoging(p => p + 1) }}
+                className="text-[13px] font-semibold text-petrol underline underline-offset-2"
+              >
+                Opnieuw proberen
+              </button>
+              <button
+                type="button"
+                onClick={() => { void logout() }}
+                className="text-[13px] text-muted-hex dark:text-muted-foreground/70 underline underline-offset-2"
+              >
+                Uitloggen
+              </button>
+            </div>
+          ) : (
+            <span
+              className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70"
+              style={MONO}
+            >
+              ± 2 min
+            </span>
+          )}
         </motion.div>
 
         <motion.p

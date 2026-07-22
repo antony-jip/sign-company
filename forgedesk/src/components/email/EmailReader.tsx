@@ -24,7 +24,7 @@ import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
 import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
-import { handtekeningAfbeeldingHtml } from '@/utils/handtekening'
+import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -169,7 +169,7 @@ export function EmailReader({
     const imgHeight = handtekeningAfbeeldingGrootte ?? 64
     const parts: string[] = []
     if (emailHandtekening) {
-      parts.push(emailHandtekening.replace(/\n/g, '<br>'))
+      parts.push(handtekeningNaarHtml(emailHandtekening))
     }
     const imgHtml = handtekeningAfbeeldingHtml({
       url: handtekeningAfbeelding,

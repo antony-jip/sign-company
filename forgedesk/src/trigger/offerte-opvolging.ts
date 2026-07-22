@@ -63,7 +63,7 @@ export const offerteOpvolgingCron = schedules.task({
       // Get all offertes with opvolging active, status verzonden/bekeken
       const { data: offertes } = await supabase
         .from("offertes")
-        .select("id, user_id, klant_id, project_id, nummer, titel, totaal, status, verstuurd_op, verzendwijze, opvolging_actief, opvolging_schema_id, bekeken_door_klant, aantal_keer_bekeken, publiek_token")
+        .select("id, user_id, klant_id, project_id, nummer, titel, subtotaal, totaal, status, verstuurd_op, verzendwijze, opvolging_actief, opvolging_schema_id, bekeken_door_klant, aantal_keer_bekeken, publiek_token")
         .in("user_id", userIds)
         .in("status", ["verzonden", "bekeken"])
         .or("opvolging_actief.is.null,opvolging_actief.eq.true");
@@ -243,7 +243,7 @@ export const offerteOpvolgingCron = schedules.task({
             klant_naam: klantNaam,
             contactpersoon,
             offerte_nummer: offerte.nummer,
-            offerte_bedrag: new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(offerte.totaal),
+            offerte_bedrag: `${new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(offerte.subtotaal ?? offerte.totaal)} excl. btw`,
             project_naam: projectNaam,
             verstuurd_op: verstuurdOp.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }),
             dagen_open: String(dagenOpen),

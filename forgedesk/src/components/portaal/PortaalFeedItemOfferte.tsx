@@ -8,6 +8,7 @@ interface PortaalFeedItemOfferteProps {
     omschrijving?: string | null
     status: string
     bedrag?: number | null
+    bedrag_excl?: number | null
     offerte_publiek_token?: string | null
     bestanden?: { url: string; bestandsnaam: string }[]
     created_at: string
@@ -108,13 +109,23 @@ export function PortaalFeedItemOfferte({
             <StatusBadge status={item.status} />
           </div>
 
-          {item.bedrag != null && (
-            <p
-              className="mt-2 text-lg font-medium"
-              style={{ color: 'hsl(var(--foreground))', fontFamily: "'DM Mono', monospace" }}
-            >
-              {formatBedrag(item.bedrag)}
-            </p>
+          {(item.bedrag_excl ?? item.bedrag) != null && (
+            <div className="mt-2">
+              <p
+                className="text-lg font-medium"
+                style={{ color: 'hsl(var(--foreground))', fontFamily: "'DM Mono', monospace" }}
+              >
+                {formatBedrag((item.bedrag_excl ?? item.bedrag) as number)}
+                <span className="ml-1.5 text-xs font-normal" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                  excl. btw
+                </span>
+              </p>
+              {item.bedrag != null && item.bedrag_excl != null && item.bedrag !== item.bedrag_excl && (
+                <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                  {formatBedrag(item.bedrag)} incl. btw
+                </p>
+              )}
+            </div>
           )}
 
           {/* Offerte bekijken link */}

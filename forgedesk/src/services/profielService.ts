@@ -21,6 +21,25 @@ import type {
 
 // ============ PROFILE ============
 
+/**
+ * Handtekening-velden van meerdere teamleden tegelijk. Leest uit `profiles`,
+ * de enige plek waar handtekeningen staan; RLS beperkt dit tot de eigen
+ * organisatie, dus dit levert nooit profielen van buiten je bedrijf.
+ */
+export async function getProfielenVoorTeam(userIds: string[]): Promise<Profile[]> {
+  if (userIds.length === 0) return []
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email_handtekening, handtekening_afbeelding, handtekening_afbeelding_grootte')
+      .in('id', userIds)
+    if (error) throw error
+    return (data || []) as Profile[]
+  }
+  const profiles = getLocalData<Profile>('profiles')
+  return profiles.filter((p) => userIds.includes(p.id))
+}
+
 export async function getProfile(userId: string): Promise<Profile | null> {
   assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {

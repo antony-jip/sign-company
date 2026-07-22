@@ -376,7 +376,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const html = buildPortalEmailHtml({
           heading: 'Bedankt voor uw akkoord',
           itemTitel: `${offerte.nummer}${offerte.titel ? ` — ${offerte.titel}` : ''}`,
-          beschrijving: `Geaccepteerd door ${naam.trim()} op ${formatDate(new Date())}${offerte.totaal ? ` · ${formatCurrency(offerte.totaal)}` : ''}`,
+          beschrijving: `Geaccepteerd door ${naam.trim()} op ${formatDate(new Date())}${offerte.totaal ? ` · ${formatCurrency(offerte.subtotaal ?? offerte.totaal)} excl. btw` : ''}`,
           quote: 'We nemen zo snel mogelijk contact met u op over de vervolgstappen.',
           bedrijfsnaam: bedrijfsnaam || undefined,
           logoUrl: bedrijfsProfiel?.logo_url || undefined,

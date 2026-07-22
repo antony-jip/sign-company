@@ -31,7 +31,8 @@
   ],
   "functions": {
     "api/inkoopfactuur-extract.ts": { "maxDuration": 300 },
-    "api/inkoopfactuur-sync.ts": { "maxDuration": 120 }
+    "api/inkoopfactuur-sync.ts": { "maxDuration": 120 },
+    "api/billing-webhook.ts": { "maxDuration": 60 }
   },
   "crons": [
     {

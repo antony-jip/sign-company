@@ -97,7 +97,7 @@ export {
 } from './projectService'
 
 export {
-  getProfile, uploadAvatar, updateProfile,
+  getProfile, getProfielenVoorTeam, uploadAvatar, updateProfile,
   getDefaultAppSettings, getAppSettings, updateAppSettings,
   createOrganisatie, getOrganisatie, updateOrganisatie,
   getMedewerkers, createMedewerker, updateMedewerker, deleteMedewerker,

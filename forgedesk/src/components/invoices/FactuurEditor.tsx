@@ -301,6 +301,7 @@ export function FactuurEditor() {
     factuurPrefix,
     factuurStartNummer,
     creditnotaDoornummeren,
+    creditnotaPrefix,
     factuurBetaaltermijnDagen,
     factuurVoorwaarden,
     factuurIntroTekst,
@@ -1700,7 +1701,7 @@ export function FactuurEditor() {
       setIsSaving(true)
       const cnNummer = creditnotaDoornummeren
         ? await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
-        : generateTypedNummer(allFacturen, 'CN')
+        : generateTypedNummer(allFacturen, creditnotaPrefix)
 
       const cnToken = generateBetaalToken()
       const creditnota: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {

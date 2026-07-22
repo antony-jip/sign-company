@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,8 +31,7 @@ import {
   Building2,
   Image,
   Upload,
-  Maximize2,
-  Minimize2,
+  Search,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -55,6 +54,7 @@ import { AbonnementTab } from './AbonnementTab'
 import { GeneralLedgerSettings } from '../financial/GeneralLedgerSettings'
 import { VATCodesSettings } from '../financial/VATCodesSettings'
 import { DiscountsSettings } from '../financial/DiscountsSettings'
+import { KostenplaatsenTab } from './KostenplaatsenTab'
 import { KennisbankTab } from './KennisbankTab'
 import { ChangelogPage } from '../changelog/ChangelogPage'
 import { DataImportPage } from '../import/DataImportPage'
@@ -74,6 +74,8 @@ import { InkoopfactuurInboxSetup } from '../inkoopfacturen/InkoopfactuurInboxSet
 
 // Communicatie supertab (achter feature flag doen_communicatie_tab_enabled)
 import { CommunicatieTab } from './communicatie/CommunicatieTab'
+import { OfferteOpvolgingSubTab } from './communicatie/OfferteOpvolgingSubTab'
+import { FactuurOpvolgingSubTab } from './communicatie/FactuurOpvolgingSubTab'
 import { MessageSquare } from 'lucide-react'
 
 // Shared
@@ -89,58 +91,100 @@ interface SettingsSection {
   tabs: { id: string; label: string; icon: React.ElementType }[]
 }
 
-const settingsSections: SettingsSection[] = [
-  { id: 'algemeen', label: 'Algemeen', icon: Home, tabs: [
-    { id: 'profiel', label: 'Profiel', icon: FileText },
-    { id: 'bedrijf', label: 'Bedrijf', icon: Building2 },
-    { id: 'weergave', label: 'Voorkeuren', icon: Sliders },
+interface SettingsGroup {
+  id: string
+  label: string
+  sections: SettingsSection[]
+}
+
+// Gegroepeerd op wat de gebruiker komt doen, niet op welke module het raakt.
+// De tab-id's zijn bewust ongewijzigd: daar hangen alle ?tab=-deeplinks aan.
+const settingsGroups: SettingsGroup[] = [
+  { id: 'account', label: 'Account', sections: [
+    { id: 'algemeen', label: 'Profiel', icon: Home, tabs: [
+      { id: 'profiel', label: 'Profiel', icon: FileText },
+      { id: 'weergave', label: 'Voorkeuren', icon: Sliders },
+    ]},
+    { id: 'financieel', label: 'Abonnement', icon: CreditCard, tabs: [
+      { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
+    ]},
+    { id: 'apparaten', label: 'Beveiliging', icon: Shield, tabs: [
+      { id: 'beveiliging', label: 'Beveiliging', icon: Shield },
+    ]},
   ]},
-  { id: 'gebruikers', label: 'Gebruikers', icon: Users, tabs: [
-    { id: 'teamleden', label: 'Teamleden', icon: Users },
+  { id: 'bedrijf', label: 'Bedrijf', sections: [
+    { id: 'bedrijfsgegevens', label: 'Bedrijfsgegevens', icon: Building2, tabs: [
+      { id: 'bedrijf', label: 'Bedrijfsgegevens', icon: Building2 },
+    ]},
+    { id: 'gebruikers', label: 'Team', icon: Users, tabs: [
+      { id: 'teamleden', label: 'Teamleden', icon: Users },
+    ]},
+    { id: 'boekhouding', label: 'Boekhouding', icon: BookOpen, tabs: [
+      { id: 'grootboek', label: 'Grootboekrekening', icon: BookOpen },
+      { id: 'btw-codes', label: 'BTW Codes', icon: Percent },
+      { id: 'kortingen', label: 'Kortingen', icon: Tag },
+      // Bestond als compleet beheerscherm maar hing nergens in de navigatie,
+      // terwijl FactuurEditor de tabel wel uitleest.
+      { id: 'kostenplaatsen', label: 'Kostenplaatsen', icon: LayoutGrid },
+    ]},
   ]},
-  { id: 'financieel', label: 'Financieel', icon: CreditCard, tabs: [
-    { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
-    { id: 'grootboek', label: 'Grootboekrekening', icon: BookOpen },
-    { id: 'btw-codes', label: 'BTW Codes', icon: Percent },
-    { id: 'kortingen', label: 'Kortingen', icon: Tag },
+  { id: 'werk', label: 'Werk', sections: [
+    { id: 'offertes', label: 'Offertes', icon: FileText, tabs: [
+      { id: 'calculatie', label: 'Calculatie', icon: Calculator },
+      { id: 'offerte-opvolging', label: 'Opvolging', icon: MessageSquare },
+    ]},
+    // De opvolg-editors zaten achter de Communicatie-feature-vlag, die uit
+    // staat en nergens aan te zetten is. De teksten worden wel echt door de
+    // trigger-jobs gebruikt, dus ze horen gewoon bereikbaar te zijn.
+    { id: 'facturen', label: 'Facturen', icon: Receipt, tabs: [
+      { id: 'factuur-opvolging', label: 'Herinneringen', icon: MessageSquare },
+    ]},
+    { id: 'projecten', label: 'Projecten', icon: LayoutGrid, tabs: [
+      { id: 'sidebar', label: 'Sidebar', icon: PanelLeft },
+    ]},
+    { id: 'producten', label: 'Documenten', icon: FileText, tabs: [
+      { id: 'briefpapier', label: 'Briefpapier', icon: Image },
+      { id: 'tekeningen', label: 'Tekeningen', icon: Image },
+      { id: 'documenten', label: 'Documenten', icon: FileText },
+    ]},
+    // Deze drie waren alleen via lockedSubTab bereikbaar en werden daardoor
+    // nooit getoond: alle template-, lettertype- en marge-instellingen stonden
+    // in de code maar konden niet meer gewijzigd worden.
+    { id: 'huisstijl', label: 'Huisstijl', icon: Palette, tabs: [
+      { id: 'huisstijl-template', label: 'Template & Kleuren', icon: Palette },
+      { id: 'huisstijl-typografie', label: 'Typografie', icon: FileText },
+      { id: 'huisstijl-layout', label: 'Layout', icon: LayoutGrid },
+    ]},
   ]},
-  { id: 'offertes', label: 'Offertes', icon: FileText, tabs: [
-    { id: 'calculatie', label: 'Calculatie', icon: Calculator },
+  { id: 'koppelingen', label: 'Koppelingen', sections: [
+    { id: 'email-settings', label: 'E-mail', icon: Mail, tabs: [
+      { id: 'email', label: 'E-mail', icon: Mail },
+    ]},
+    { id: 'communicatie', label: 'Communicatie', icon: MessageSquare, tabs: [
+      { id: 'communicatie', label: 'Communicatie', icon: MessageSquare },
+    ]},
+    { id: 'integraties-all', label: 'Integraties', icon: Puzzle, tabs: [
+      { id: 'integraties', label: 'Integraties', icon: Puzzle },
+      { id: 'portaal', label: 'Portaal', icon: Link2 },
+    ]},
+    { id: 'inkoopfacturen-settings', label: 'Inkoopfacturen', icon: Receipt, tabs: [
+      { id: 'inkoopfactuur-inbox', label: 'Inbox Setup', icon: Mail },
+    ]},
+    { id: 'importeren', label: 'Importeren', icon: Upload, tabs: [
+      { id: 'import', label: 'Importeren', icon: Upload },
+    ]},
   ]},
-  { id: 'projecten', label: 'Projecten', icon: LayoutGrid, tabs: [
-    { id: 'sidebar', label: 'Sidebar', icon: PanelLeft },
-  ]},
-  { id: 'email-settings', label: 'E-mail', icon: Mail, tabs: [
-    { id: 'email', label: 'E-mail', icon: Mail },
-  ]},
-  { id: 'communicatie', label: 'Communicatie', icon: MessageSquare, tabs: [
-    { id: 'communicatie', label: 'Communicatie', icon: MessageSquare },
-  ]},
-  { id: 'inkoopfacturen-settings', label: 'Inkoopfacturen', icon: Receipt, tabs: [
-    { id: 'inkoopfactuur-inbox', label: 'Inbox Setup', icon: Mail },
-  ]},
-  { id: 'producten', label: 'Documenten', icon: FileText, tabs: [
-    { id: 'briefpapier', label: 'Briefpapier', icon: Image },
-    { id: 'tekeningen', label: 'Tekeningen', icon: Image },
-    { id: 'documenten', label: 'Documenten', icon: FileText },
-  ]},
-  { id: 'integraties-all', label: 'Integraties', icon: Puzzle, tabs: [
-    { id: 'integraties', label: 'Integraties', icon: Puzzle },
-    { id: 'portaal', label: 'Portaal', icon: Link2 },
-  ]},
-  { id: 'apparaten', label: 'Apparaten', icon: Monitor, tabs: [
-    { id: 'beveiliging', label: 'Beveiliging', icon: Shield },
-  ]},
-  { id: 'importeren', label: 'Importeren', icon: Upload, tabs: [
-    { id: 'import', label: 'Importeren', icon: Upload },
-  ]},
-  { id: 'daan-ai', label: 'Daan AI', icon: Sparkles, tabs: [
-    { id: 'forgie', label: 'Daan AI', icon: Sparkles },
-  ]},
-  { id: 'whats-new', label: "What's new", icon: Sparkles, tabs: [
-    { id: 'changelog', label: "What's new", icon: Sparkles },
+  { id: 'doen', label: 'doen.', sections: [
+    { id: 'daan-ai', label: 'Daan AI', icon: Sparkles, tabs: [
+      { id: 'forgie', label: 'Daan AI', icon: Sparkles },
+    ]},
+    { id: 'whats-new', label: "What's new", icon: Sparkles, tabs: [
+      { id: 'changelog', label: "What's new", icon: Sparkles },
+    ]},
   ]},
 ]
+
+const settingsSections: SettingsSection[] = settingsGroups.flatMap((g) => g.sections)
 
 const tabToSectionMap: Record<string, string> = {}
 settingsSections.forEach(section => {
@@ -155,6 +199,9 @@ function renderTabContent(tabId: string) {
     case 'bedrijf': return <BedrijfTab />
     case 'documenten': return <DocumentenTab />
     case 'briefpapier': return <HuisstijlTab lockedSubTab="briefpapier" />
+    case 'huisstijl-template': return <HuisstijlTab lockedSubTab="template" />
+    case 'huisstijl-typografie': return <HuisstijlTab lockedSubTab="typografie" />
+    case 'huisstijl-layout': return <HuisstijlTab lockedSubTab="layout" />
     case 'tekeningen': return <HuisstijlTab lockedSubTab="tekeningen" />
     case 'calculatie': return <CalculatieTab />
     case 'email': return <EmailTab />
@@ -169,7 +216,10 @@ function renderTabContent(tabId: string) {
     case 'grootboek': return <GeneralLedgerSettings />
     case 'btw-codes': return <VATCodesSettings />
     case 'kortingen': return <DiscountsSettings />
+    case 'kostenplaatsen': return <KostenplaatsenTab />
     case 'communicatie': return <CommunicatieTab />
+    case 'offerte-opvolging': return <OfferteOpvolgingSubTab />
+    case 'factuur-opvolging': return <FactuurOpvolgingSubTab />
     case 'kb-artikelen': return <KennisbankTab />
     case 'changelog': return <ChangelogPage />
     case 'import': return <ImportTab />
@@ -178,7 +228,8 @@ function renderTabContent(tabId: string) {
   }
 }
 
-export function SettingsLayout() {
+export function SettingsLayout({ variant = 'pagina' }: { variant?: 'pagina' | 'modal' } = {}) {
+  const isModal = variant === 'modal'
   const { doenCommunicatieTabEnabled } = useAppSettings()
   const visibleSections = settingsSections.filter(
     (s) => s.id !== 'communicatie' || doenCommunicatieTabEnabled,
@@ -191,7 +242,42 @@ export function SettingsLayout() {
 
   const [activeSection, setActiveSection] = useState(validSection)
   const [activeSubTabs, setActiveSubTabs] = useState<Record<string, string>>({})
+  const [zoek, setZoek] = useState('')
   const navigate = useNavigate()
+
+  // Zoeken kijkt ook naar de subtabs: wie "btw" typt zoekt de BTW-codes, niet
+  // de categorie waar ze toevallig onder hangen.
+  const zichtbareGroepen = useMemo(() => {
+    const term = zoek.trim().toLowerCase()
+    return settingsGroups
+      .map((groep) => ({
+        ...groep,
+        sections: groep.sections.filter((s) => {
+          if (!visibleSections.some((v) => v.id === s.id)) return false
+          if (!term) return true
+          return (
+            s.label.toLowerCase().includes(term) ||
+            s.tabs.some((t) => t.label.toLowerCase().includes(term))
+          )
+        }),
+      }))
+      .filter((groep) => groep.sections.length > 0)
+  }, [zoek, visibleSections])
+
+  // Een ?tab= die binnenkomt terwijl we al op deze pagina staan moet ook
+  // aanslaan. Zonder dit blijven deeplinks vanuit het accountmenu en de
+  // Aan de slag-checklist hangen op de sectie die toevallig openstond.
+  const gevraagdeTab = searchParams.get('tab')
+  useEffect(() => {
+    if (!gevraagdeTab) return
+    const sectie = tabToSectionMap[gevraagdeTab] || gevraagdeTab
+    if (!visibleSections.some((s) => s.id === sectie)) return
+    setActiveSection(sectie)
+    if (tabToSectionMap[gevraagdeTab]) {
+      setActiveSubTabs(prev => ({ ...prev, [sectie]: gevraagdeTab }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gevraagdeTab])
 
   const currentSection = visibleSections.find((s) => s.id === activeSection)
   const currentSubTab = currentSection?.tabs.length
@@ -202,30 +288,10 @@ export function SettingsLayout() {
     setActiveSubTabs(prev => ({ ...prev, [activeSection]: tabId }))
   }, [activeSection])
 
-  // Volledig scherm: instellingen over de hele app heen, zonder sidebar en
-  // topbar. Keuze onthouden zodat wie het aanzet het zo houdt.
-  const [volledigScherm, setVolledigScherm] = useState(
-    () => typeof window !== 'undefined' && localStorage.getItem('doen_instellingen_volledig_scherm') === '1'
-  )
-  useEffect(() => {
-    localStorage.setItem('doen_instellingen_volledig_scherm', volledigScherm ? '1' : '0')
-  }, [volledigScherm])
-  useEffect(() => {
-    if (!volledigScherm) return
-    const opEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') setVolledigScherm(false) }
-    window.addEventListener('keydown', opEscape)
-    return () => window.removeEventListener('keydown', opEscape)
-  }, [volledigScherm])
-
   return (
-    <div
-      className={cn(
-        'space-y-6',
-        volledigScherm && 'fixed inset-0 z-50 bg-background overflow-y-auto p-6 md:p-10'
-      )}
-    >
-      <div className="flex items-baseline gap-4 min-w-0">
-        <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
+    <div className={cn(isModal ? 'h-full flex flex-col' : 'space-y-6')}>
+      <div className={cn('flex items-baseline gap-4 min-w-0', isModal && 'px-7 pt-7 pb-5 pr-16 flex-shrink-0')}>
+        <h1 className={cn('font-extrabold tracking-[-0.5px] text-foreground', isModal ? 'text-[24px]' : 'text-[32px]')}>
           Instellingen<span className="text-flame">.</span>
         </h1>
         <span
@@ -234,21 +300,14 @@ export function SettingsLayout() {
         >
           profiel, bedrijf, voorkeuren · alles op één plek
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setVolledigScherm(v => !v)}
-          className="ml-auto flex-shrink-0 self-center text-muted-foreground hover:text-foreground"
-          title={volledigScherm ? 'Terug naar normale weergave (Esc)' : 'Instellingen op volledig scherm'}
-        >
-          {volledigScherm ? <Minimize2 className="w-4 h-4 mr-1.5" /> : <Maximize2 className="w-4 h-4 mr-1.5" />}
-          <span className="hidden sm:inline">{volledigScherm ? 'Verkleinen' : 'Volledig scherm'}</span>
-        </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8 min-h-[calc(100vh-12rem)]">
-        <nav className="w-full md:w-52 flex-shrink-0">
-          <div className="md:sticky md:top-6">
+      <div className={cn(
+        'flex flex-col md:flex-row gap-8',
+        isModal ? 'flex-1 min-h-0 px-7 pb-7' : 'min-h-[calc(100vh-12rem)]',
+      )}>
+        <nav className={cn('w-full md:w-52 flex-shrink-0', isModal && 'md:overflow-y-auto')}>
+          <div className={cn(!isModal && 'md:sticky md:top-6')}>
             <div className="md:hidden flex overflow-x-auto gap-0.5 p-1 doen-slate-surface rounded-xl">
               {visibleSections.map((section) => {
                 const Icon = section.icon
@@ -271,45 +330,63 @@ export function SettingsLayout() {
               })}
             </div>
 
-            <div className="hidden md:block doen-slate-surface rounded-2xl p-1.5 space-y-0.5">
-              <div className="px-3 pt-2 pb-1.5 flex items-baseline justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Categorieën
-                </span>
-                <span className="text-[10px] font-mono tabular-nums text-muted-foreground/70">
-                  {visibleSections.length}
-                </span>
+            <div className="hidden md:block doen-slate-surface rounded-2xl p-1.5">
+              <div className="relative px-1.5 pt-1.5 pb-2">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/70 pointer-events-none" />
+                <input
+                  value={zoek}
+                  onChange={(e) => setZoek(e.target.value)}
+                  placeholder="Zoeken"
+                  aria-label="Zoek in instellingen"
+                  className="w-full h-8 pl-8 pr-2 rounded-lg bg-card text-[13px] text-foreground placeholder:text-muted-foreground/70 border border-transparent focus:border-petrol/30 focus:outline-none transition-colors"
+                />
               </div>
-              {visibleSections.map((section) => {
-                const Icon = section.icon
-                const isActive = activeSection === section.id
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={cn(
-                      'group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 relative',
-                      isActive
-                        ? 'text-foreground font-semibold bg-card shadow-[0_1px_3px_rgba(20,62,71,0.08),0_0_0_1px_rgba(26,83,92,0.06)]'
-                        : 'text-foreground/70 hover:text-foreground hover:bg-card/50'
-                    )}
-                  >
-                    {isActive && (
-                      <span
-                        aria-hidden
-                        className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2.5px] rounded-r-full bg-flame"
-                      />
-                    )}
-                    <Icon className={cn('w-4 h-4 transition-colors', isActive ? 'text-petrol' : 'text-muted-foreground group-hover:text-foreground/70')} />
-                    <span className="text-[13px] truncate">{section.label}</span>
-                  </button>
-                )
-              })}
+
+              {zichtbareGroepen.length === 0 && (
+                <p className="px-3 py-6 text-[12px] text-muted-foreground text-center">
+                  Niets gevonden voor &ldquo;{zoek}&rdquo;.
+                </p>
+              )}
+
+              {zichtbareGroepen.map((groep) => (
+                <div key={groep.id} className="pb-1">
+                  <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    {groep.label}
+                  </p>
+                  <div className="space-y-0.5">
+                    {groep.sections.map((section) => {
+                      const Icon = section.icon
+                      const isActive = activeSection === section.id
+                      return (
+                        <button
+                          key={section.id}
+                          onClick={() => setActiveSection(section.id)}
+                          className={cn(
+                            'group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 relative',
+                            isActive
+                              ? 'text-foreground font-semibold bg-card shadow-[0_1px_3px_rgba(20,62,71,0.08),0_0_0_1px_rgba(26,83,92,0.06)]'
+                              : 'text-foreground/70 hover:text-foreground hover:bg-card/50'
+                          )}
+                        >
+                          {isActive && (
+                            <span
+                              aria-hidden
+                              className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2.5px] rounded-r-full bg-flame"
+                            />
+                          )}
+                          <Icon className={cn('w-4 h-4 transition-colors', isActive ? 'text-petrol' : 'text-muted-foreground group-hover:text-foreground/70')} />
+                          <span className="text-[13px] truncate">{section.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </nav>
 
-        <div className="flex-1 min-w-0">
+        <div className={cn('flex-1 min-w-0', isModal && 'overflow-y-auto pr-1')}>
           {currentSection && currentSection.tabs.length > 1 && (
             <SubTabNav
               tabs={currentSection.tabs}
@@ -318,19 +395,7 @@ export function SettingsLayout() {
             />
           )}
 
-          {currentSection && currentSection.tabs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-12 h-12 rounded-xl bg-muted/60 flex items-center justify-center mb-4">
-                <Receipt className="w-6 h-6 text-muted-foreground/50" />
-              </div>
-              <h3 className="text-[15px] font-semibold text-foreground/70 mb-1">Factuur-instellingen</h3>
-              <p className="text-[13px] text-muted-foreground max-w-[280px]">
-                Factuur-instellingen komen binnenkort beschikbaar.
-              </p>
-            </div>
-          ) : currentSubTab ? (
-            renderTabContent(currentSubTab)
-          ) : null}
+          {currentSubTab ? renderTabContent(currentSubTab) : null}
         </div>
       </div>
     </div>
@@ -377,7 +442,6 @@ function DocumentenTab() {
   const [projectPrefix, setProjectPrefix] = useState('PRJ')
   const [betaaltermijn, setBetaaltermijn] = useState('30')
   const [voorwaarden, setVoorwaarden] = useState('')
-  const [standaardUurtarief, setStandaardUurtarief] = useState('75')
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
@@ -393,8 +457,11 @@ function DocumentenTab() {
       setOfferteVoorwaarden(data.offerte_voorwaarden || DEFAULT_OFFERTE_VOORWAARDEN)
       setWerkbonMonteurUren(data.werkbon_monteur_uren ?? true)
       setWerkbonMonteurOpmerkingen(data.werkbon_monteur_opmerkingen ?? true)
-      setWerkbonMonteurFotos(data.werkbon_monteur_fotos ?? false)
-      setWerkbonKlantHandtekening(data.werkbon_klant_handtekening ?? false)
+      // Zelfde default als AppSettingsContext: stond hier op false, waardoor de
+      // schakelaar uit leek te staan terwijl de werkbon-module de instelling
+      // als aan behandelde.
+      setWerkbonMonteurFotos(data.werkbon_monteur_fotos ?? true)
+      setWerkbonKlantHandtekening(data.werkbon_klant_handtekening ?? true)
       setWerkbonBriefpapier(data.werkbon_briefpapier ?? true)
       setFactuurPrefix(data.factuur_prefix || 'FAC')
       setFactuurStartNummer(String(data.factuur_volgnummer ?? 1))
@@ -405,7 +472,6 @@ function DocumentenTab() {
       setProjectPrefix(data.project_prefix || 'PRJ')
       setBetaaltermijn(String(data.factuur_betaaltermijn_dagen || 30))
       setVoorwaarden(data.factuur_voorwaarden || '')
-      setStandaardUurtarief(String(data.standaard_uurtarief || 75))
       setFactuurIntroTekst(data.factuur_intro_tekst || '')
       setFactuurOutroTekst(data.factuur_outro_tekst || '')
     } catch (err) {
@@ -446,7 +512,6 @@ function DocumentenTab() {
         project_prefix: projectPrefix,
         factuur_betaaltermijn_dagen: parseInt(betaaltermijn) || 30,
         factuur_voorwaarden: voorwaarden,
-        standaard_uurtarief: parseFloat(standaardUurtarief) || 75,
         factuur_intro_tekst: factuurIntroTekst,
         factuur_outro_tekst: factuurOutroTekst,
       })
@@ -600,13 +665,6 @@ function DocumentenTab() {
                 <div className="space-y-2">
                   <Label htmlFor="betaaltermijn">Betaaltermijn (dagen)</Label>
                   <Input id="betaaltermijn" type="number" value={betaaltermijn} onChange={(e) => setBetaaltermijn(e.target.value)} min="1" max="365" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="standaard-uurtarief">Standaard uurtarief</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">&euro;</span>
-                    <Input id="standaard-uurtarief" type="number" value={standaardUurtarief} onChange={(e) => setStandaardUurtarief(e.target.value)} min="0" className="pl-7" />
-                  </div>
                 </div>
               </div>
               <div className="space-y-2">

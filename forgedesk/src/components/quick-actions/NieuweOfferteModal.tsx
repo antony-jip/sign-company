@@ -391,7 +391,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
           klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
           offerteNummer: offerte.nummer || 'Concept',
           offerteTitel: offerte.titel,
-          totaalBedrag: formatEuro(effectiefBedrag),
+          totaalBedragExcl: formatEuro(effectiefBedrag),
           geldigTot: offerte.geldig_tot,
           bedrijfsnaam: bedrijfsnaam || '',
           handtekening: emailHandtekening || '',

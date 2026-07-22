@@ -1486,7 +1486,8 @@ export function QuoteCreation() {
             klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
             offerteNummer,
             offerteTitel,
-            totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(effectieveTotalen.totaal),
+            totaalBedragExcl: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(effectieveTotalen.subtotaal),
+            totaalBedragIncl: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(effectieveTotalen.totaal),
             geldigTot,
             bedrijfsnaam,
             primaireKleur,
@@ -1687,13 +1688,13 @@ export function QuoteCreation() {
           const htmlBody = buildPortalEmailHtml({
             heading: `Er staat een nieuwe offerte voor u klaar.`,
             itemTitel: `Offerte ${offerteNummer} · ${offerteTitel}`,
-            beschrijving: `Bedrag: ${formatCurrency(effectieveTotalen.totaal)} incl. BTW`,
+            beschrijving: `Bedrag: ${formatCurrency(effectieveTotalen.subtotaal)} excl. btw · ${formatCurrency(effectieveTotalen.totaal)} incl. btw`,
             ctaLabel: 'Bekijk in portaal →',
             ctaUrl: portaalUrl,
             bedrijfsnaam,
             logoUrl: profile?.logo_url || undefined,
           })
-          const plainBody = `Beste ${klantNaam},\n\nEr staat een nieuwe offerte voor u klaar: ${offerteTitel}\nBedrag: ${formatCurrency(effectieveTotalen.totaal)}\n\nBekijk het hier: ${portaalUrl}\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
+          const plainBody = `Beste ${klantNaam},\n\nEr staat een nieuwe offerte voor u klaar: ${offerteTitel}\nBedrag: ${formatCurrency(effectieveTotalen.subtotaal)} excl. btw (${formatCurrency(effectieveTotalen.totaal)} incl. btw)\n\nBekijk het hier: ${portaalUrl}\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
           await sendEmail(contactEmail, `Nieuwe offerte: ${offerteTitel}`, plainBody, { html: htmlBody })
           toast.success(`Offerte gedeeld via portaal · Notificatie verstuurd naar ${contactEmail}`)
         } catch (err) {
@@ -1770,7 +1771,8 @@ export function QuoteCreation() {
         klantNaam,
         offerteNummer,
         offerteTitel,
-        totaalBedrag: formatCurrency(effectieveTotalen.totaal),
+        totaalBedragExcl: formatCurrency(effectieveTotalen.subtotaal),
+        totaalBedragIncl: formatCurrency(effectieveTotalen.totaal),
         geldigTot,
         bedrijfsnaam,
         primaireKleur,

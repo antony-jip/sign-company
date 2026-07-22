@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Search, Phone, Mail, MessageCircle, Building2, MapPin, Users, Tag, Sparkles } from 'lucide-react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { Search, Phone, Mail, MessageCircle, Building2, MapPin, Users, Tag, Sparkles, CornerUpLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { getLeads, updateLeadStatus, updateLeadNotities, whatsappLink, LEAD_STATUSSEN } from '@/services/leadsService'
+import { getEmailsMetAdres } from '@/services/emailService'
 import { callForgie } from '@/services/forgieService'
-import type { Lead, LeadStatus } from '@/types'
+import type { Email, Lead, LeadStatus } from '@/types'
 
 // Statuskleuren uit het doen-design-systeem. Status is tekst + Flame punt,
 // nadrukkelijk geen gekleurde pill-badge.
@@ -33,8 +34,12 @@ interface LeadsPaneelProps {
    * heeft, mag door een tweede mail niet terugvallen naar benaderd.
    */
   onMailLead: (email: string, body?: string, leadId?: string) => void
-  /** Tijdens opstellen neemt de compose-kolom de detailplek in. */
-  verbergDetail?: boolean
+  /** Tijdens opstellen staat compose rechts ernaast; de lead blijft dus zichtbaar. */
+  naastCompose?: boolean
+  /** Desktop: kies je een lead, dan staat de mail er meteen naast. */
+  mailDirect?: boolean
+  /** Kort reageren op een binnengekomen mail van deze lead. */
+  onBeantwoordMail?: (email: Email) => void
   /** Lead die zojuist gemaild is; status lokaal bijwerken zonder refetch. */
   benaderdeLeadId?: string | null
 }
@@ -50,7 +55,7 @@ function leadContext(lead: Lead): string {
   ].filter(Boolean).join('\n')
 }
 
-export function LeadsPaneel({ onMailLead, verbergDetail = false, benaderdeLeadId }: LeadsPaneelProps) {
+export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = false, onBeantwoordMail, benaderdeLeadId }: LeadsPaneelProps) {
   const [leads, setLeads] = useState<Lead[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [zoek, setZoek] = useState('')
@@ -59,6 +64,8 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false, benaderdeLeadId
   const [notitieConcept, setNotitieConcept] = useState('')
   const [aanwijzing, setAanwijzing] = useState('')
   const [schrijftVoorId, setSchrijftVoorId] = useState<string | null>(null)
+  const [correspondentie, setCorrespondentie] = useState<Email[]>([])
+  const actieveLeadRef = useRef<string | null>(null)
 
   useEffect(() => {
     getLeads()
@@ -89,10 +96,19 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false, benaderdeLeadId
   }, [leads])
 
   const kiesLead = useCallback((lead: Lead) => {
+    actieveLeadRef.current = lead.id
     setGeselecteerdId(lead.id)
     setNotitieConcept(lead.notities)
     setAanwijzing('')
-  }, [])
+    if (mailDirect && lead.email) onMailLead(lead.email, undefined, lead.status === 'nieuw' ? lead.id : undefined)
+    setCorrespondentie([])
+    if (lead.email) {
+      getEmailsMetAdres(lead.email)
+        // Snel doorklikken: alleen tonen als deze lead nog geselecteerd is.
+        .then((mails) => { if (actieveLeadRef.current === lead.id) setCorrespondentie(mails) })
+        .catch((err) => logger.error('Correspondentie laden mislukt:', err))
+    }
+  }, [mailDirect, onMailLead])
 
   const zetStatus = useCallback(async (lead: Lead, status: LeadStatus) => {
     const vorige = lead.status
@@ -138,11 +154,11 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false, benaderdeLeadId
   }, [notitieConcept])
 
   return (
-    <div className={cn('flex min-w-0 bg-white dark:bg-card', verbergDetail ? 'md:flex-shrink-0' : 'flex-1')}>
+    <div className={cn('flex min-w-0 bg-white dark:bg-card', naastCompose ? 'md:flex-shrink-0' : 'flex-1')}>
       {/* Lijst */}
       <div className={cn(
         'flex-col min-w-0 w-full md:w-[380px] md:flex-shrink-0 md:border-r md:border-border',
-        verbergDetail ? 'hidden md:flex' : 'flex',
+        naastCompose ? 'hidden 2xl:flex' : 'flex',
       )}>
         <div className="sticky top-0 z-20 bg-white dark:bg-card border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 flex-shrink-0">
           <div className="px-4 pt-4 pb-3">
@@ -220,7 +236,10 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false, benaderdeLeadId
       </div>
 
       {/* Detail */}
-      <div className={cn('flex-1 min-w-0 flex-col overflow-y-auto', verbergDetail ? 'hidden' : 'hidden md:flex')}>
+      <div className={cn(
+        'min-w-0 flex-col overflow-y-auto hidden md:flex',
+        naastCompose ? 'md:w-[380px] md:flex-shrink-0 md:border-r md:border-border' : 'flex-1',
+      )}>
         {!geselecteerd ? (
           <div className="flex-1 flex items-center justify-center text-[13px] text-muted-foreground">
             Kies een lead
@@ -280,25 +299,29 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false, benaderdeLeadId
                 </div>
               )}
               {geselecteerd.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-foreground">{geselecteerd.email}</span>
-                  <button
-                    type="button"
-                    onClick={() => onMailLead(geselecteerd.email, undefined, geselecteerd.status === 'nieuw' ? geselecteerd.id : undefined)}
-                    className="text-[13px] text-muted-foreground hover:text-petrol"
-                  >
-                    Mail deze lead
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => mailMetOpzet(geselecteerd)}
-                    disabled={schrijftVoorId === geselecteerd.id}
-                    className="inline-flex items-center gap-1 text-[13px] font-medium text-flame hover:underline underline-offset-2 disabled:opacity-50 disabled:no-underline"
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {schrijftVoorId === geselecteerd.id ? 'Daan schrijft…' : 'Schrijf opzetje'}
-                  </button>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-foreground truncate">{geselecteerd.email}</span>
+                  </div>
+                  <div className="mt-1 pl-6 flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => onMailLead(geselecteerd.email, undefined, geselecteerd.status === 'nieuw' ? geselecteerd.id : undefined)}
+                      className="text-[13px] text-muted-foreground hover:text-petrol whitespace-nowrap"
+                    >
+                      Nieuwe mail
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => mailMetOpzet(geselecteerd)}
+                      disabled={schrijftVoorId === geselecteerd.id}
+                      className="inline-flex items-center gap-1 text-[13px] font-medium text-flame hover:underline underline-offset-2 disabled:opacity-50 disabled:no-underline whitespace-nowrap"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      {schrijftVoorId === geselecteerd.id ? 'Daan schrijft…' : 'Schrijf opzetje'}
+                    </button>
+                  </div>
                 </div>
               )}
               {geselecteerd.email && (
@@ -350,6 +373,39 @@ export function LeadsPaneel({ onMailLead, verbergDetail = false, benaderdeLeadId
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {correspondentie.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-[13px] font-semibold text-foreground">Mailwisseling</h3>
+                <div className="mt-2 space-y-1">
+                  {correspondentie.map((mail) => {
+                    const vanLead = mail.van?.toLowerCase().includes(geselecteerd.email.toLowerCase()) ?? false
+                    return (
+                      <div key={mail.id} className="group flex items-start gap-2 py-1.5 border-b border-[rgba(26,83,92,0.06)] dark:border-white/[0.06] last:border-b-0">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[13px] text-foreground truncate">
+                            {mail.onderwerp || '(geen onderwerp)'}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {vanLead ? 'Van deze lead' : 'Door jou verstuurd'} · {new Date(mail.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                          </div>
+                        </div>
+                        {vanLead && onBeantwoordMail && (
+                          <button
+                            type="button"
+                            onClick={() => onBeantwoordMail(mail)}
+                            className="flex-shrink-0 inline-flex items-center gap-1 text-[12px] text-muted-foreground hover:text-petrol transition-colors duration-150"
+                          >
+                            <CornerUpLeft className="h-3.5 w-3.5" />
+                            Reageer
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}

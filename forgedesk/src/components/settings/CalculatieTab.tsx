@@ -1961,7 +1961,6 @@ function InstellingenSection() {
   const [eenheden, setEenheden] = useState<string[]>(
     settings.calculatie_eenheden || ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set']
   )
-  const [toonInkoopInOfferte, setToonInkoopInOfferte] = useState(settings.calculatie_toon_inkoop_in_offerte ?? false)
   const [toonM2, setToonM2] = useState(settings.offerte_toon_m2 ?? true)
   const [regelVelden, setRegelVelden] = useState<string[]>(
     settings.offerte_regel_velden || ['Materiaal', 'Lay-out', 'Montage', 'Opmerking']
@@ -1980,7 +1979,6 @@ function InstellingenSection() {
     setStandaardMarge(settings.calculatie_standaard_marge ?? 35)
     setCategorieen(settings.calculatie_categorieen || ['Materiaal', 'Arbeid', 'Transport', 'Apparatuur', 'Overig'])
     setEenheden(settings.calculatie_eenheden || ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'])
-    setToonInkoopInOfferte(settings.calculatie_toon_inkoop_in_offerte ?? false)
     setToonM2(settings.offerte_toon_m2 ?? true)
     setRegelVelden(settings.offerte_regel_velden || ['Materiaal', 'Lay-out', 'Montage', 'Opmerking'])
     setUrenVelden((settings.calculatie_uren_velden && settings.calculatie_uren_velden.length > 0)
@@ -1996,7 +1994,6 @@ function InstellingenSection() {
         calculatie_standaard_marge: standaardMarge,
         calculatie_categorieen: categorieen,
         calculatie_eenheden: eenheden,
-        calculatie_toon_inkoop_in_offerte: toonInkoopInOfferte,
         offerte_toon_m2: toonM2,
         offerte_regel_velden: regelVelden,
         calculatie_uren_velden: urenVelden,
@@ -2049,15 +2046,6 @@ function InstellingenSection() {
                 />
                 <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Wordt ingevuld bij nieuwe calculatieregels
-                </p>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Toon inkoopprijs in offerte</Label>
-              <div className="flex items-center gap-3">
-                <Switch checked={toonInkoopInOfferte} onCheckedChange={setToonInkoopInOfferte} />
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                  {toonInkoopInOfferte ? 'Zichtbaar voor klant' : 'Verborgen (aanbevolen)'}
                 </p>
               </div>
             </div>

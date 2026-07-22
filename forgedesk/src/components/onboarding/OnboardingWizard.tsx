@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
@@ -174,6 +174,7 @@ interface BedrijfsgegevensState {
   plaats: string
   email: string
   telefoon: string
+  iban: string
 }
 
 function StepBedrijfsgegevens({
@@ -307,6 +308,19 @@ function StepBedrijfsgegevens({
             />
           </div>
         </div>
+
+        <div className="space-y-1.5">
+          <Label style={labelStyle} className={labelClass}>
+            IBAN{' '}
+            <span className="text-muted-hex dark:text-muted-foreground/70 font-normal">voor op je facturen</span>
+          </Label>
+          <Input
+            value={gegevens.iban}
+            onChange={(e) => update('iban', e.target.value)}
+            placeholder="NL00 BANK 0123 4567 89"
+            className={`${inputClass} font-mono`}
+          />
+        </div>
       </div>
 
       <PrimaryButton
@@ -329,26 +343,28 @@ function StepBeginnen({
   setKeuze,
   onNext,
   onBack,
+  onImporteren,
   isSaving,
 }: {
   keuze: 'schoon' | 'demo' | null
   setKeuze: (v: 'schoon' | 'demo') => void
   onNext: () => void
   onBack: () => void
+  onImporteren: () => void
   isSaving: boolean
 }) {
   const options = [
     {
-      id: 'schoon' as const,
-      Icon: Layers,
-      title: 'Schone lei',
-      description: 'Leeg beginnen, alles zelf invoeren',
-    },
-    {
       id: 'demo' as const,
       Icon: Sparkles,
-      title: 'Demo data',
-      description: 'Voorbeeldklanten en offertes om te verkennen',
+      title: 'Laat me rondkijken',
+      description: 'Start met een ingevuld voorbeeldproject. Later met \u00e9\u00e9n klik weg.',
+    },
+    {
+      id: 'schoon' as const,
+      Icon: Layers,
+      title: 'Direct mijn eerste klant',
+      description: 'Begin leeg. We brengen je meteen naar het klantformulier.',
     },
   ]
 
@@ -391,7 +407,7 @@ function StepBeginnen({
         <button
           className="text-[11px] uppercase tracking-wider text-muted-hex dark:text-muted-foreground/70 hover:text-ink dark:hover:text-foreground transition-colors"
           style={MONO}
-          onClick={() => toast('Importeren is binnenkort beschikbaar.')}
+          onClick={onImporteren}
         >
           Ik heb een Excel bestand om te importeren
         </button>
@@ -463,11 +479,14 @@ export function OnboardingWizard() {
   // Step 1 state
   const [gegevens, setGegevens] = useState<BedrijfsgegevensState>({
     voornaam: '', achternaam: '',
-    naam: '', kvk_nummer: '', btw_nummer: '', adres: '', postcode: '', plaats: '', email: '', telefoon: '',
+    naam: '', kvk_nummer: '', btw_nummer: '', adres: '', postcode: '', plaats: '', email: '', telefoon: '', iban: '',
   })
 
   // Step 2 state
   const [startKeuze, setStartKeuze] = useState<'schoon' | 'demo' | null>(null)
+  // Bepaalt waar de gebruiker landt na afronden. Een ref zodat finishOnboarding
+  // stabiel blijft en de Excel-route ('import') hier ook in past.
+  const startKeuzeRef = useRef<'schoon' | 'demo' | 'import' | null>(null)
 
   // Keep localOrgId in sync
   useEffect(() => {
@@ -486,6 +505,8 @@ export function OnboardingWizard() {
           if (profile && !cancelled) {
             if (profile.voornaam) setGegevens(prev => ({ ...prev, voornaam: profile.voornaam || '' }))
             if (profile.achternaam) setGegevens(prev => ({ ...prev, achternaam: profile.achternaam || '' }))
+            if (profile.bedrijfs_email) setGegevens(prev => ({ ...prev, email: profile.bedrijfs_email || '' }))
+            if (profile.iban) setGegevens(prev => ({ ...prev, iban: profile.iban || '' }))
           }
           if (!orgId) {
             if (profile?.organisatie_id) {
@@ -509,9 +530,11 @@ export function OnboardingWizard() {
         const org = await getOrganisatie(orgId)
         if (org && !cancelled) {
           const dbStap = org.onboarding_stap ?? 0
-          if (dbStap >= 4 || org.onboarding_compleet) {
-            setCurrentStep(2)
-          } else if (dbStap >= 3) {
+          if (org.onboarding_compleet) {
+            navigate('/', { replace: true })
+            return
+          }
+          if (dbStap >= 3) {
             setCurrentStep(2)
           } else if (dbStap >= 1) {
             setCurrentStep(1)
@@ -574,7 +597,11 @@ export function OnboardingWizard() {
       }
 
       await refreshOrganisatie()
-      navigate('/', { replace: true })
+      const bestemming =
+        startKeuzeRef.current === 'import' ? '/importeren'
+        : startKeuzeRef.current === 'schoon' ? '/klanten?nieuw=1'
+        : '/'
+      navigate(bestemming, { replace: true })
     } catch (err) {
       logger.error('Onboarding finish:', err)
       toast.error(err instanceof Error ? err.message : 'Afronden mislukt. Probeer opnieuw.')
@@ -623,6 +650,11 @@ export function OnboardingWizard() {
           voornaam: gegevens.voornaam.trim(),
           achternaam: gegevens.achternaam.trim(),
           bedrijfsnaam: gegevens.naam.trim(),
+          bedrijfs_email: gegevens.email.trim(),
+          bedrijfs_telefoon: gegevens.telefoon.trim(),
+          iban: gegevens.iban.trim(),
+          kvk_nummer: gegevens.kvk_nummer.trim(),
+          btw_nummer: gegevens.btw_nummer.trim(),
         } as Parameters<typeof updateProfile>[1])
       } catch (err) {
         logger.error('Update profiel stap 1:', err)
@@ -637,6 +669,7 @@ export function OnboardingWizard() {
   // Step 2 → load demo data if chosen, then go to step 3
   const handleStep2Next = async () => {
     if (!startKeuze) return
+    startKeuzeRef.current = startKeuze
     setIsSaving(true)
 
     try {
@@ -752,12 +785,25 @@ export function OnboardingWizard() {
           logger.error('Update onboarding stap:', err)
         }
       }
+      setCurrentStep(2)
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Er ging iets mis')
+      logger.error('Onboarding stap 2:', error)
+      toast.error(
+        startKeuze === 'demo'
+          ? 'Voorbeelddata aanmaken lukte niet. Probeer het opnieuw of kies "Direct mijn eerste klant".'
+          : 'Er ging iets mis. Probeer het opnieuw.',
+      )
     } finally {
       setIsSaving(false)
-      setCurrentStep(2)
     }
+  }
+
+  // Excel-import: onboarding afronden en direct naar de importpagina
+  const handleImporteren = async () => {
+    setIsSaving(true)
+    startKeuzeRef.current = 'import'
+    await finishOnboarding()
+    setIsSaving(false)
   }
 
   // Step 3 → finish
@@ -805,6 +851,7 @@ export function OnboardingWizard() {
                   setKeuze={setStartKeuze}
                   onNext={handleStep2Next}
                   onBack={() => setCurrentStep(0)}
+                  onImporteren={handleImporteren}
                   isSaving={isSaving}
                 />
               </div>

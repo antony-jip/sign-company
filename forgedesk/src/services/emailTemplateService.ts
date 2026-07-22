@@ -2,7 +2,7 @@
 // All templates are in Dutch and return { subject, html, text } objects
 
 import { supabase, isSupabaseConfigured } from './supabaseHelpers'
-import { handtekeningAfbeeldingHtml } from '@/utils/handtekening'
+import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -22,7 +22,10 @@ interface OfferteEmailData extends EmailTemplateData {
   klantNaam: string
   offerteNummer: string
   offerteTitel: string
-  totaalBedrag: string
+  /** Hoofdbedrag in de mail: exclusief btw. */
+  totaalBedragExcl: string
+  /** Optioneel, klein onder het hoofdbedrag. Weglaten als er geen btw is. */
+  totaalBedragIncl?: string
   geldigTot: string
   bekijkUrl?: string
   customBody?: string
@@ -129,10 +132,12 @@ export function getBaseTemplate(data: EmailTemplateData): {
   const bedrijf = data.bedrijfsnaam || DEFAULT_BEDRIJFSNAAM
 
   const wrap = (bodyHtml: string, afmeldUrl?: string): string => {
+    // Logo wint van de bedrijfsnaam in de header. Dat is ook wat het
+    // instellingenscherm belooft bij het uploaden van een logo.
     const hasLogo = !!(data.logoUrl && data.logoUrl.trim())
-  const logoHtml = hasLogo
-      ? `<img src="${escapeHtml(data.logoUrl!)}" alt="${escapeHtml(bedrijf)}" style="max-height: 48px; margin-bottom: 8px; display: block;" />`
-      : ''
+    const headerHtml = hasLogo
+      ? `<img src="${escapeHtml(data.logoUrl!)}" alt="${escapeHtml(bedrijf)}" style="max-height: 44px; max-width: 220px; display: inline-block;" />`
+      : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">${escapeHtml(bedrijf)}</span>`
 
     const sigImgHeight = data.handtekeningAfbeeldingGrootte ?? 64
     const sigImg = handtekeningAfbeeldingHtml({
@@ -143,11 +148,13 @@ export function getBaseTemplate(data: EmailTemplateData): {
       extraStyle: 'margin-top:8px;display:block;',
     })
     const sigImgHtml = sigImg ? `<br />${sigImg}` : ''
+    // De handtekening kan opmaak bevatten. handtekeningNaarHtml schoont die en
+    // zet oude platte tekst om, dus hier mag het als HTML de mail in.
     const handtekeningHtml = data.handtekening
       ? `
           <tr>
-            <td style="padding: 24px 32px 0 32px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #555555; white-space: pre-line;">
-              ${escapeHtml(data.handtekening)}${sigImgHtml}
+            <td style="padding: 24px 32px 0 32px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #555555;">
+              ${handtekeningNaarHtml(data.handtekening)}${sigImgHtml}
             </td>
           </tr>`
       : ''
@@ -187,9 +194,7 @@ export function getBaseTemplate(data: EmailTemplateData): {
           <!-- Header -->
           <tr>
             <td style="background-color: ${kleur}; padding: 24px 32px; text-align: center;">
-              <span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">
-                ${escapeHtml(bedrijf)}
-              </span>
+              ${headerHtml}
             </td>
           </tr>
           <!-- Body -->
@@ -238,6 +243,13 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
       </p>`
     : ''
 
+  // Bedragen: exclusief btw is het hoofdbedrag, inclusief btw klein eronder.
+  const toonIncl = !!data.totaalBedragIncl && data.totaalBedragIncl !== data.totaalBedragExcl
+  const bedragHtml = `<strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedragExcl)} excl. btw<br />`
+    + (toonIncl
+      ? `<span style="color: #999999;">${escapeHtml(data.totaalBedragIncl!)} incl. btw</span><br />`
+      : '')
+
   // Split body van handtekening: alles na "Met vriendelijke groet," of de hele handtekening is apart
   function buildCustomBody(raw: string): string {
     // De body bevat plain text met \n. De handtekening zit via de template er al in.
@@ -268,7 +280,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 24px 0 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
         <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
-          <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
+          ${bedragHtml}
           <strong>Geldig tot:</strong> ${escapeHtml(data.geldigTot)}
         </td>
       </tr>
@@ -284,7 +296,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
         <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
-          <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
+          ${bedragHtml}
           <strong>Geldig tot:</strong> ${escapeHtml(data.geldigTot)}
         </td>
       </tr>
@@ -304,7 +316,8 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     '',
     `Hierbij ontvangt u onze offerte ${data.offerteNummer} voor ${data.offerteTitel}.`,
     '',
-    `Totaalbedrag: ${data.totaalBedrag}`,
+    `Totaalbedrag: ${data.totaalBedragExcl} excl. btw`,
+    ...(toonIncl ? [`${data.totaalBedragIncl} incl. btw`] : []),
     `Geldig tot: ${data.geldigTot}`,
     '',
     data.bekijkUrl ? `Bekijk, accepteer of reageer op deze offerte: ${data.bekijkUrl}` : '',

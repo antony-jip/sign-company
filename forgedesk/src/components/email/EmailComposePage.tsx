@@ -29,7 +29,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
 import type { Offerte, OfferteItem, Klant } from '@/types'
-import { handtekeningAfbeeldingHtml } from '@/utils/handtekening'
+import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 
 export function EmailComposePage() {
   const navigate = useNavigate()
@@ -113,7 +113,9 @@ export function EmailComposePage() {
         setTimeout(() => {
           if (editorRef.current && !cancelled) {
             const klantNaam = fetchedKlant?.contactpersonen?.[0]?.naam || fetchedKlant?.contactpersoon || fetchedKlant?.bedrijfsnaam || ''
-            const totaal = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(fetchedOfferte.totaal || 0)
+            const fmtBedrag = (n: number) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(n)
+            const totaalExcl = fmtBedrag(fetchedOfferte.subtotaal ?? fetchedOfferte.totaal ?? 0)
+            const totaalIncl = fmtBedrag(fetchedOfferte.totaal || 0)
             const sigText = emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`
             const sigImgHeight = handtekeningAfbeeldingGrootte ?? 64
             const sigImg = handtekeningAfbeeldingHtml({
@@ -123,7 +125,7 @@ export function EmailComposePage() {
               maxBreedte: Math.round(sigImgHeight * 2.5),
             })
             const sigImgHtml = sigImg ? `${sigImg}<br>` : ''
-            const bodyHtml = `Beste ${klantNaam},<br><br>Hierbij ontvangt u onze offerte ${fetchedOfferte.nummer} voor &ldquo;${fetchedOfferte.titel}&rdquo;.<br><br>Het totaalbedrag van deze offerte is ${totaal} (incl. BTW).<br><br>De offerte is geldig tot ${fetchedOfferte.geldig_tot ? new Date(fetchedOfferte.geldig_tot).toLocaleDateString('nl-NL') : '-'}. Bijgevoegd vindt u de offerte als PDF.<br><br>Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.<br><br>--<br>${sigImgHtml}${sigText.replace(/\n/g, '<br>')}`
+            const bodyHtml = `Beste ${klantNaam},<br><br>Hierbij ontvangt u onze offerte ${fetchedOfferte.nummer} voor &ldquo;${fetchedOfferte.titel}&rdquo;.<br><br>Het totaalbedrag van deze offerte is ${totaalExcl} excl. btw${totaalExcl !== totaalIncl ? ` (${totaalIncl} incl. btw)` : ''}.<br><br>De offerte is geldig tot ${fetchedOfferte.geldig_tot ? new Date(fetchedOfferte.geldig_tot).toLocaleDateString('nl-NL') : '-'}. Bijgevoegd vindt u de offerte als PDF.<br><br>Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.<br><br>--<br>${sigImgHtml}${handtekeningNaarHtml(sigText)}`
 
             editorRef.current.innerHTML = bodyHtml
             setEditorEmpty(false)
@@ -155,6 +157,51 @@ export function EmailComposePage() {
     editorRef.current?.focus()
     updateFormatState()
   }, [updateFormatState])
+
+  // Geplakte/gesleepte afbeeldingen altijd als data:-URI invoegen, zodat ze
+  // server-side naar CID-inline-bijlagen worden omgezet en de ontvanger ze ziet
+  // (een browser-blob:/webkit-fake-url is lokaal-only). Zie api/send-email.ts.
+  const imageFilesFromList = (list: DataTransferItemList | FileList | null | undefined): File[] => {
+    const files: File[] = []
+    if (!list) return files
+    for (const entry of Array.from(list as ArrayLike<DataTransferItem | File>)) {
+      if (entry instanceof File) {
+        if (entry.type.startsWith('image/')) files.push(entry)
+      } else if (entry.kind === 'file' && entry.type.startsWith('image/')) {
+        const f = entry.getAsFile()
+        if (f) files.push(f)
+      }
+    }
+    return files
+  }
+
+  const voegAfbeeldingenIn = useCallback((files: File[]) => {
+    for (const file of files) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = reader.result
+        if (typeof dataUrl !== 'string') return
+        editorRef.current?.focus()
+        document.execCommand('insertHTML', false, `<img src="${dataUrl}" alt="" style="max-width:100%;height:auto;" />`)
+        setEditorEmpty(false)
+      }
+      reader.readAsDataURL(file)
+    }
+  }, [])
+
+  const handleEditorPaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+    const images = imageFilesFromList(e.clipboardData?.items)
+    if (images.length === 0) return
+    e.preventDefault()
+    voegAfbeeldingenIn(images)
+  }, [voegAfbeeldingenIn])
+
+  const handleEditorDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    const images = imageFilesFromList(e.dataTransfer?.files)
+    if (images.length === 0) return
+    e.preventDefault()
+    voegAfbeeldingenIn(images)
+  }, [voegAfbeeldingenIn])
 
   const handleEditorInput = useCallback(() => {
     if (editorRef.current) {
@@ -303,6 +350,8 @@ export function EmailComposePage() {
                 ref={editorRef}
                 contentEditable
                 onInput={handleEditorInput}
+                onPaste={handleEditorPaste}
+                onDrop={handleEditorDrop}
                 onMouseUp={updateFormatState}
                 onKeyUp={updateFormatState}
                 className="min-h-[300px] max-h-[600px] overflow-y-auto px-4 py-3 text-sm leading-relaxed focus:outline-none whitespace-pre-wrap"

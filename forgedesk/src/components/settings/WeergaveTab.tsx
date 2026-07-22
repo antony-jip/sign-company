@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { QUICK_ACTIONS, type QuickActionsPosition } from '@/components/dashboard/FloatingQuickActions'
 import { SubTabNav } from './SubTabNav'
 import type { SubTab } from './settingsShared'
+import { logger } from '@/utils/logger'
 import {
   FontSize,
   BESCHIKBARE_FONT_SIZES,
@@ -122,10 +123,6 @@ export function WeergaveTab() {
     toast.success(`Lettergrootte "${sizeLabel}" ingesteld`)
   }
 
-  const [autoCollapse, setAutoCollapse] = useState(() => {
-    const stored = localStorage.getItem('doen_autoCollapse')
-    return stored !== null ? JSON.parse(stored) : true
-  })
 
   return (
     <>
@@ -443,35 +440,8 @@ export function WeergaveTab() {
         <CardDescription>Gedrag van de applicatie</CardDescription>
       </CardHeader>
       <CardContent className="divide-y divide-[rgba(26,83,92,0.08)]">
-        {/* Auto-collapse Sidebar */}
-        <div className="flex items-center justify-between py-4 first:pt-0">
-          <div className="flex items-start gap-3">
-            <PanelLeft className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                Sidebar automatisch inklappen
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Klap de sidebar automatisch in op mobiele apparaten
-              </p>
-            </div>
-          </div>
-          <Switch
-            checked={autoCollapse}
-            onCheckedChange={(checked) => {
-              setAutoCollapse(checked)
-              localStorage.setItem('doen_autoCollapse', JSON.stringify(checked))
-              toast.success(
-                checked
-                  ? 'Sidebar klapt automatisch in op mobiel'
-                  : 'Sidebar blijft zichtbaar op mobiel'
-              )
-            }}
-          />
-        </div>
-
         {/* Email snelknop */}
-        <div className="flex items-center justify-between py-4">
+        <div className="flex items-center justify-between py-4 first:pt-0">
           <div className="flex items-start gap-3">
             <Mail className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div>

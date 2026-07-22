@@ -299,7 +299,7 @@ export function FacturenLayout() {
   const { medewerkers } = useMedewerkers()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   // App settings (bedrijfsprofiel for PDF generation)
-  const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, creditnotaDoornummeren, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
+  const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, creditnotaDoornummeren, creditnotaPrefix, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
   const exactConnected = settings.exact_online_connected ?? false
   const documentStyle = useDocumentStyle()
 
@@ -1287,7 +1287,7 @@ export function FacturenLayout() {
       setIsSaving(true)
       const nummer = creditnotaDoornummeren
         ? await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
-        : generateTypedNummer(facturen, 'CN')
+        : generateTypedNummer(facturen, creditnotaPrefix)
       const selectedKlant = klanten.find((k) => k.id === creditnotaFactuur.klant_id)
 
       const cnToken = generateBetaalToken()
@@ -1936,6 +1936,23 @@ export function FacturenLayout() {
                       description={searchQuery || filterStatus !== 'alle'
                         ? 'Probeer een ander filter of zoekterm.'
                         : 'Keur een offerte goed en factureer je eerste sign-opdracht.'}
+                      action={!searchQuery && filterStatus === 'alle' ? (
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          <Button
+                            onClick={() => navigate('/offertes')}
+                            className="bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#E04520] transition-colors"
+                          >
+                            Naar je offertes
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => navigate('/facturen/nieuw')}
+                            className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+                          >
+                            Losse factuur maken
+                          </Button>
+                        </div>
+                      ) : undefined}
                     />
                   </td>
                 </tr>

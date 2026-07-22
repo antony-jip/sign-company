@@ -42,6 +42,7 @@ interface AppSettingsContextType {
   factuurPrefix: string
   factuurStartNummer: number
   creditnotaDoornummeren: boolean
+  creditnotaPrefix: string
   factuurBetaaltermijnDagen: number
   factuurVoorwaarden: string
   factuurIntroTekst: string
@@ -199,6 +200,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     factuurPrefix: settings.factuur_prefix ?? '',
     factuurStartNummer: settings.factuur_volgnummer ?? 1,
     creditnotaDoornummeren: settings.creditnota_doornummeren ?? false,
+    creditnotaPrefix: settings.creditnota_prefix || 'CN',
     factuurBetaaltermijnDagen: settings.factuur_betaaltermijn_dagen ?? 30,
     factuurVoorwaarden: settings.factuur_voorwaarden || 'Betaling binnen 30 dagen na factuurdatum.',
     factuurIntroTekst: settings.factuur_intro_tekst || '',

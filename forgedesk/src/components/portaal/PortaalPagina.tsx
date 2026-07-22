@@ -42,6 +42,7 @@ interface PortaalItemData {
   bekeken_op: string | null
   mollie_payment_url: string | null
   bedrag: number | null
+  bedrag_excl?: number | null
   volgorde: number
   created_at: string
   bestanden: PortaalBestandData[]

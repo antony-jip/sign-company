@@ -11,9 +11,11 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  Rocket,
   type LucideIcon,
 } from 'lucide-react'
 import { useAanDeSlagStatus, type StapId } from '@/hooks/useAanDeSlagStatus'
+import { ConfettiBurst } from '@/components/shared/ConfettiBurst'
 
 interface TegelDef {
   id: StapId
@@ -24,6 +26,7 @@ interface TegelDef {
 }
 
 const TEGELS: TegelDef[] = [
+  { id: 'account', titel: 'Account ingericht',  uitleg: 'Bedrijfsgegevens staan klaar.', route: '/instellingen?tab=bedrijf', Icon: Rocket },
   { id: 'klanten', titel: 'Klanten importeren', uitleg: 'Begin met je bestaande klanten.', route: '/importeren', Icon: Users },
   { id: 'logo',    titel: 'Logo & briefpapier', uitleg: 'Voor mooie offertes en facturen.', route: '/instellingen?tab=briefpapier', Icon: Image },
   { id: 'bedrijf', titel: 'Bedrijfsgegevens',   uitleg: 'KVK, BTW en IBAN invullen.',       route: '/instellingen?tab=bedrijf',     Icon: Building2 },
@@ -40,7 +43,38 @@ export function AanDeSlagSectie() {
   if (status.isLoading) return null
   if (status.verborgen) return null
 
-  const moetCollapsen = status.klaarCount >= 4 && !status.alleVerplichtKlaar
+  if (status.alleVerplichtKlaar) {
+    return (
+      <div className="relative overflow-hidden rounded-xl bg-card shadow-[var(--shadow-sm)] px-7 py-8 sm:px-9 text-center">
+        <ConfettiBurst />
+        <div className="relative">
+          <span className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-[hsl(var(--status-green-bg))] mb-4">
+            <Check className="h-5 w-5 text-[#3A7D52]" strokeWidth={2.5} />
+          </span>
+          <h2
+            className="font-heading text-foreground"
+            style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px' }}
+          >
+            Je bent ingericht<span className="text-flame">.</span>
+          </h2>
+          <p className="mt-2 text-[14px] text-muted-foreground max-w-[440px] mx-auto leading-[1.6]">
+            Alles staat klaar: klanten, briefpapier, bedrijfsgegevens, e-mail en je eerste project.
+            Vanaf hier werk je gewoon vanuit je projecten.
+          </p>
+          <button
+            type="button"
+            onClick={() => { void status.dismiss() }}
+            className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-flame text-white text-sm font-semibold hover:bg-[#E04520] transition-colors"
+          >
+            Aan het werk
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // 'account' staat altijd af gevinkt, dus de drempel schuift met de tegel mee.
+  const moetCollapsen = status.klaarCount >= 5 && !status.alleVerplichtKlaar
   const ingeklapt = moetCollapsen && !forceUitgevouwen
 
   if (ingeklapt) {
@@ -52,7 +86,7 @@ export function AanDeSlagSectie() {
       >
         <span className="text-[14px] text-foreground">
           Aan de slag<span className="text-flame">.</span>{' '}
-          <span className="text-foreground/70">{status.klaarCount} van 6 klaar.</span>
+          <span className="text-foreground/70">{status.klaarCount} van {status.totaal} klaar.</span>
         </span>
         <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-petrol">
           Uitvouwen
@@ -157,11 +191,11 @@ export function AanDeSlagSectie() {
           <div className="flex-1 h-[3px] bg-border rounded-full overflow-hidden">
             <div
               className="h-full bg-flame transition-all duration-500 ease-out"
-              style={{ width: `${(status.klaarCount / 6) * 100}%` }}
+              style={{ width: `${(status.klaarCount / status.totaal) * 100}%` }}
             />
           </div>
           <span className="text-[12px] font-mono text-foreground/70 tabular-nums">
-            {status.klaarCount} / 6
+            {status.klaarCount} / {status.totaal}
           </span>
         </div>
       </div>

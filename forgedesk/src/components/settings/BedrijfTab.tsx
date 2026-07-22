@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { SubTabNav } from './SubTabNav'
+import { getBaseTemplate } from '@/services/emailTemplateService'
 import type { SubTab } from './settingsShared'
 
 const BEDRIJF_TABS: SubTab[] = [
@@ -143,6 +144,42 @@ export function BedrijfTab() {
     </div>
   )
 
+  // Bewust de echte templatefunctie: een nagebouwde preview loopt vroeg of laat
+  // uit de pas met wat er werkelijk verstuurd wordt.
+  const mailVoorbeeld = useMemo(() => {
+    const { wrap } = getBaseTemplate({
+      bedrijfsnaam: bedrijfsnaam || 'Jouw bedrijf',
+      logoUrl: logoPreview || undefined,
+      primaireKleur: emailKleur,
+    })
+    return wrap(`
+      <p style="margin: 0 0 16px 0;">Beste Jan,</p>
+      <p style="margin: 0 0 16px 0;">
+        Hierbij ontvangt u onze offerte <strong>OFF-2026-001</strong> voor
+        <strong>Gevelreclame</strong>.
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
+        <tr>
+          <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
+            <strong>Totaalbedrag:</strong> \u20AC 1.250,00 excl. btw<br />
+            <span style="color: #999999;">\u20AC 1.512,50 incl. btw</span><br />
+            <strong>Geldig tot:</strong> 31 december 2026
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px auto;">
+        <tr>
+          <td style="border-radius: 6px; background-color: ${emailKleur};">
+            <span style="display: inline-block; padding: 14px 32px; font-family: 'DM Sans', Arial, sans-serif; font-size: 16px; color: #ffffff; font-weight: bold;">
+              Bekijk de offerte \u2192
+            </span>
+          </td>
+        </tr>
+      </table>
+      <p style="margin: 16px 0 0 0;">Met vriendelijke groet,</p>
+    `)
+  }, [bedrijfsnaam, logoPreview, emailKleur])
+
   return (
     <>
       <SubTabNav tabs={BEDRIJF_TABS} active={subTab} onChange={setSubTab} variant="underline" />
@@ -220,10 +257,27 @@ export function BedrijfTab() {
                   placeholder="#1A535C"
                 />
                 <div className="flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-semibold text-white" style={{ backgroundColor: emailKleur }}>
-                  Voorbeeld
+                  {emailKleur}
                 </div>
               </div>
               <p className="text-[10px] text-muted-foreground">Kleur voor de email header en knoppen in verzonden emails</p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-baseline justify-between">
+                <label className="text-[11px] text-muted-foreground block">Voorbeeld</label>
+                <span className="text-[10px] text-muted-foreground/70">
+                  Zo ziet je klant een mail uit doen.
+                </span>
+              </div>
+              <div className="rounded-xl overflow-hidden border border-border bg-[#f4f4f7]">
+                <iframe
+                  title="Voorbeeld van een e-mail"
+                  srcDoc={mailVoorbeeld}
+                  sandbox=""
+                  className="w-full h-[440px] block border-0"
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5">

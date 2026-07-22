@@ -20,6 +20,7 @@ import {
 } from '@/services/supabaseService'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
+import { vierMijlpaal, markeerEenmalig } from '@/lib/mijlpaal'
 import { generateOffertePDF } from '@/services/pdfService'
 import { generateFollowUpEmail } from '@/services/followUpService'
 import type { FollowUpContext } from '@/services/followUpService'
@@ -99,7 +100,7 @@ export function SendOfferteDialog({
   const buildFallbackFollowUp = useCallback((): { onderwerp: string; body: string } => {
     const naam = resolveContactNaam(offerte, klant)
     const voornaam = naam.split(' ')[0] || naam
-    const bedrag = formatCurrency(offerte.totaal || 0)
+    const bedrag = `${formatCurrency(offerte.subtotaal ?? offerte.totaal ?? 0)} excl. btw`
     const pogingen = offerte.contact_pogingen || 0
     const aanhef = voornaam ? `Beste ${voornaam}` : 'Beste'
     let body: string
@@ -131,7 +132,7 @@ export function SendOfferteDialog({
         projectnaam: project?.naam,
         offerte_nummer: offerte.nummer,
         offerte_titel: offerte.titel,
-        bedrag: offerte.totaal || 0,
+        bedrag: offerte.subtotaal ?? offerte.totaal ?? 0,
         dagen_open: dagenOpen,
         geldig_tot: offerte.geldig_tot || '',
         dagen_tot_verlopen: dagenTotVerlopen,
@@ -228,7 +229,8 @@ export function SendOfferteDialog({
         klantNaam,
         offerteNummer: offerte.nummer,
         offerteTitel: offerte.titel,
-        totaalBedrag: formatCurrency(offerte.totaal),
+        totaalBedragExcl: formatCurrency(offerte.subtotaal ?? offerte.totaal),
+        totaalBedragIncl: formatCurrency(offerte.totaal),
         geldigTot: offerte.geldig_tot ? formatDate(offerte.geldig_tot) : '—',
         bedrijfsnaam: bedrijfsnaam || 'Uw bedrijf',
         primaireKleur,
@@ -308,12 +310,19 @@ export function SendOfferteDialog({
 
       onSent(updated)
       onOpenChange(false)
-      toast.success(
-        mode === 'follow-up'
-          ? `Follow-up verstuurd naar ${klant?.bedrijfsnaam || sendTo}`
-          : 'Offerte verstuurd',
-        mode === 'eerste' ? { description: `Email verstuurd naar ${sendTo}` } : undefined,
-      )
+      if (mode === 'eerste' && markeerEenmalig('eerste_offerte_verstuurd')) {
+        vierMijlpaal({
+          titel: 'Je eerste offerte is onderweg',
+          tekst: 'Je klant kan hem online bekijken en accepteren. Je ziet het meteen terug in je pipeline.',
+        })
+      } else {
+        toast.success(
+          mode === 'follow-up'
+            ? `Follow-up verstuurd naar ${klant?.bedrijfsnaam || sendTo}`
+            : 'Offerte verstuurd',
+          mode === 'eerste' ? { description: `Email verstuurd naar ${sendTo}` } : undefined,
+        )
+      }
 
       // Silence unused-var warning for createdToken (handler relies on closure side-effect)
       void createdToken

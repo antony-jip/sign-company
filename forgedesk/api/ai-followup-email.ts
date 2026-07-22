@@ -286,7 +286,7 @@ Contactpersoon: ${context.contactpersoon || 'onbekend'}
 Project: ${context.projectnaam || 'niet opgegeven'}
 Offerte nummer: ${context.offerte_nummer}
 Offerte omschrijving: ${context.offerte_titel}
-Bedrag: €${context.bedrag?.toLocaleString('nl-NL') || '0'}
+Bedrag: €${context.bedrag?.toLocaleString('nl-NL') || '0'} exclusief btw (noem het bedrag altijd met "excl. btw" erbij)
 Dagen open: ${context.dagen_open}
 Geldig tot: ${context.geldig_tot}
 Dagen tot verlopen: ${context.dagen_tot_verlopen}
