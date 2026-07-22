@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
 import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
+import { handtekeningAfbeeldingHtml } from '@/utils/handtekening'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -116,7 +117,7 @@ export function EmailReader({
   onSelectEmail,
   onOpenContextPanel,
 }: EmailReaderProps) {
-  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam } = useAppSettings()
 
   const [replyMode, setReplyMode] = useState<'reply' | 'reply-all' | 'forward' | null>(null)
   const [replyTo, setReplyTo] = useState('')
@@ -166,19 +167,24 @@ export function EmailReader({
   // Build signature HTML
   const signatureHtml = useMemo(() => {
     const imgHeight = handtekeningAfbeeldingGrootte ?? 64
-    const imgMaxWidth = Math.round(imgHeight * 2.5)
     const parts: string[] = []
     if (emailHandtekening) {
       parts.push(emailHandtekening.replace(/\n/g, '<br>'))
     }
-    if (handtekeningAfbeelding) {
-      parts.push(`<img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`)
+    const imgHtml = handtekeningAfbeeldingHtml({
+      url: handtekeningAfbeelding,
+      link: handtekeningAfbeeldingLink,
+      hoogte: imgHeight,
+      maxBreedte: Math.round(imgHeight * 2.5),
+    })
+    if (imgHtml) {
+      parts.push(imgHtml)
     }
     if (!parts.length && bedrijfsnaam) {
       parts.push(bedrijfsnaam)
     }
     return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
-  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam])
+  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam])
 
   // Track per-attachment download state (alleen visueel · losse spinner per bijlage)
   const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null)

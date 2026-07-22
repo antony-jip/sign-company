@@ -31,6 +31,7 @@ export interface Profile {
   email_handtekening?: string;
   handtekening_afbeelding?: string;
   handtekening_afbeelding_grootte?: number;
+  handtekening_afbeelding_link?: string;
   afzender_naam?: string;
   // Per-user navigatie — null/undefined = gebruik UI-defaults
   sidebar_items?: string[] | null;
@@ -695,6 +696,8 @@ export interface AppSettings {
   handtekening_afbeelding: string;
   /** @deprecated Verhuisd naar profiles (migratie 091). */
   handtekening_afbeelding_grootte: number;
+  /** @deprecated Verhuisd naar profiles (migratie 091). */
+  handtekening_afbeelding_link: string;
   // Branding
   primaire_kleur: string;
   secundaire_kleur: string;

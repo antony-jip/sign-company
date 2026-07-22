@@ -23,6 +23,7 @@ import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolb
 import { DatePicker } from '@/components/ui/date-picker'
 import { Switch } from '@/components/ui/switch'
 import { getWachtendeEmailNaarAdres } from '@/services/emailService'
+import { handtekeningAfbeeldingHtml } from '@/utils/handtekening'
 
 export interface ComposeActions {
   forgieWrite: () => void
@@ -127,7 +128,7 @@ export function EmailCompose({
 }: EmailComposeProps) {
   const isReply = !!(replyToText && replyToText.trim())
   const navigate = useNavigate()
-  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam } = useAppSettings()
   const { organisatieId } = useAuth()
 
   const [to, setTo] = useState(defaultTo)
@@ -201,19 +202,24 @@ export function EmailCompose({
   // Build signature HTML
   const signatureHtml = useMemo(() => {
     const imgHeight = handtekeningAfbeeldingGrootte ?? 64
-    const imgMaxWidth = Math.round(imgHeight * 2.5)
     const parts: string[] = []
     if (emailHandtekening) {
       parts.push(emailHandtekening.replace(/\n/g, '<br>'))
     }
-    if (handtekeningAfbeelding) {
-      parts.push(`<img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`)
+    const imgHtml = handtekeningAfbeeldingHtml({
+      url: handtekeningAfbeelding,
+      link: handtekeningAfbeeldingLink,
+      hoogte: imgHeight,
+      maxBreedte: Math.round(imgHeight * 2.5),
+    })
+    if (imgHtml) {
+      parts.push(imgHtml)
     }
     if (!parts.length && bedrijfsnaam) {
       parts.push(bedrijfsnaam)
     }
     return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
-  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam])
+  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam])
 
   // Initialize editor with signature
   useEffect(() => {

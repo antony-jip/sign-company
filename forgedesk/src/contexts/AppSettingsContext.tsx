@@ -26,6 +26,7 @@ interface AppSettingsContextType {
   emailHandtekening: string
   handtekeningAfbeelding: string
   handtekeningAfbeeldingGrootte: number
+  handtekeningAfbeeldingLink: string
   primaireKleur: string
   secundaireKleur: string
   toonConversieRate: boolean
@@ -110,7 +111,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       // Per-user velden (handtekening, sidebar_items, afzender_naam) worden
       // door updateAppSettings doorgesluisd naar profiles. Vernieuw profile
       // ook in state als zo'n veld in de update zit.
-      const perUserKeys = ['email_handtekening', 'handtekening_afbeelding', 'handtekening_afbeelding_grootte', 'afzender_naam', 'sidebar_items']
+      const perUserKeys = ['email_handtekening', 'handtekening_afbeelding', 'handtekening_afbeelding_grootte', 'handtekening_afbeelding_link', 'afzender_naam', 'sidebar_items']
       const heeftPerUserUpdate = perUserKeys.some(k => k in updates)
       const updated = await updateAppSettings(user.id, updates)
       setSettings(updated)
@@ -182,6 +183,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     emailHandtekening: (profile?.email_handtekening?.trim() ? profile.email_handtekening : null) || settings.email_handtekening || '',
     handtekeningAfbeelding: profile?.handtekening_afbeelding || settings.handtekening_afbeelding || '',
     handtekeningAfbeeldingGrootte: profile?.handtekening_afbeelding_grootte || settings.handtekening_afbeelding_grootte || 64,
+    handtekeningAfbeeldingLink: profile?.handtekening_afbeelding_link || settings.handtekening_afbeelding_link || '',
     primaireKleur: settings.primaire_kleur || '#1A535C',
     secundaireKleur: settings.secundaire_kleur || '#7c3aed',
     toonConversieRate: settings.toon_conversie_rate ?? true,

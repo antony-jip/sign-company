@@ -266,12 +266,14 @@ function toOfferteItemPayload(
 export function QuoteCreation() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { setDirty } = useTabDirtyState()
+  // Vooraan zodat de tab-saver hem kan aanroepen (flush pending autosave bij tab-wissel)
+  const performAutoSaveRef = useRef<() => Promise<void>>(async () => {})
+  const { setDirty } = useTabDirtyState(() => performAutoSaveRef.current())
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
-  const { settings, updateSettings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, offerteIntroTekst, offerteOutroTekst, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
+  const { settings, updateSettings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, offerteIntroTekst, offerteOutroTekst, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink } = useAppSettings()
   const sanitizedRegelVelden = sanitizeDetailLabels(settings.offerte_regel_velden || [])
   const regelTemplateLabels = sanitizedRegelVelden.length > 0
     ? sanitizedRegelVelden
@@ -368,7 +370,6 @@ export function QuoteCreation() {
   const [omschrijvingSuggesties, setOmschrijvingSuggesties] = useState<OmschrijvingSuggestie[]>([])
 
   const autoSaveIdRef = useRef<string | null>(null)
-  const performAutoSaveRef = useRef<() => Promise<void>>(async () => {})
   const introOutroPrefilledRef = useRef(false)
 
   // ── FIX 12: Versie tracking (extracted to hook) ──
@@ -1776,6 +1777,7 @@ export function QuoteCreation() {
         handtekening: emailHandtekening || undefined,
         handtekeningAfbeelding: handtekeningAfbeelding || undefined,
         handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
+        handtekeningAfbeeldingLink: handtekeningAfbeeldingLink || undefined,
         logoUrl: profile?.logo_url || undefined,
         bekijkUrl,
         customBody: email.emailBody || undefined,
