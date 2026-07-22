@@ -7,6 +7,14 @@ import { buildKey, checkAndMark, rollbackKey } from "./utils/idempotency";
 
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY;
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function decrypt(encrypted: string): string {
   if (encrypted.startsWith("b64:")) {
     return Buffer.from(encrypted.slice(4), "base64").toString("utf8");
@@ -277,7 +285,7 @@ export const emailOpvolgingTask = task({
 
     // Bouw HTML met reply threading headers
     const htmlBody = `<div style="font-family: -apple-system, system-ui, sans-serif; font-size: 14px; color: #1A1A1A;">
-${volledigeTekst.replace(/\n/g, "<br/>")}
+${escapeHtml(volledigeTekst).replace(/\n/g, "<br/>")}
 </div>`;
 
     // Idempotency: orgId via profiles om dubbele sends te voorkomen

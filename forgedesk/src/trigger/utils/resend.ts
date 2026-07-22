@@ -123,7 +123,7 @@ function buildClientEmailHtml(p: ClientEmailParams): string {
       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${colorLight}; border-radius: 8px; border-left: 3px solid ${color};">
         <tr><td style="padding: 16px 20px;">
           <span style="font-family: ${font}; font-size: 15px; font-weight: 600; color: #1A1A1A;">${escapeHtml(p.itemTitel)}</span>
-          ${p.beschrijving ? `<br><span style="font-family: ${font}; font-size: 13px; color: #6B6B66;">${escapeHtml(p.beschrijving)}</span>` : ''}
+          ${p.beschrijving ? `<br><span style="font-family: ${font}; font-size: 13px; color: #6B6B66; line-height: 1.6;">${escapeHtml(p.beschrijving).replace(/\n/g, '<br>')}</span>` : ''}
         </td></tr>
       </table>
     </td></tr>` : ''
