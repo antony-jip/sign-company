@@ -1,4 +1,4 @@
--- Migratie 053: klikbare handtekening-afbeelding
+-- Migratie 155: klikbare handtekening-afbeelding
 --
 -- De afbeelding in de e-mailhandtekening kon nergens naartoe wijzen. Met dit
 -- veld hangt er een URL achter, zodat de banner in de mail klikbaar wordt.
