@@ -52,6 +52,7 @@ import {
   Receipt,
   X,
   Copy,
+  CopyPlus,
   MoreHorizontal,
   CreditCard,
   Bell,
@@ -335,6 +336,7 @@ export function FactuurEditor() {
   const paramProjectId = searchParams.get('project_id') || ''
   const paramTitel = searchParams.get('titel') || ''
   const paramCreditVoor = searchParams.get('credit_voor') || ''
+  const paramKopieVan = searchParams.get('kopie_van') || ''
   const editFactuurId = routeId || ''
 
   // Form state
@@ -693,6 +695,48 @@ export function FactuurEditor() {
               toast.error('Kon originele factuur niet laden voor creditering')
             }
           }
+
+          // Dupliceren: neem alles over behalve nummer, datums en status
+          if (paramKopieVan) {
+            try {
+              const [bron, bronItems] = await Promise.all([
+                getFactuur(paramKopieVan),
+                getFactuurItems(paramKopieVan),
+              ])
+              if (bron && !cancelled) {
+                setKlantId(bron.klant_id)
+                setContactpersoonId(bron.contactpersoon_id || '')
+                setShowKlantSelector(false)
+                setTitel(`${bron.titel} (kopie)`)
+                setProjectId(bron.project_id || '')
+                setKostenplaatsId(bron.kostenplaats_id || '')
+                setVoorwaarden(bron.voorwaarden || '')
+                setNotities(bron.notities || '')
+                setIntroTekst(bron.intro_tekst || '')
+                setOutroTekst(bron.outro_tekst || '')
+
+                if (bronItems.length > 0) {
+                  setItems(
+                    bronItems
+                      .sort((a, b) => a.volgorde - b.volgorde)
+                      .map((fi) => ({
+                        id: crypto.randomUUID(),
+                        beschrijving: fi.beschrijving,
+                        aantal: fi.aantal,
+                        eenheidsprijs: fi.eenheidsprijs,
+                        btw_percentage: fi.btw_percentage,
+                        korting_percentage: fi.korting_percentage,
+                        grootboek_code: fi.grootboek_code || '',
+                        detail_regels: fi.detail_regels || [],
+                      }))
+                  )
+                }
+              }
+            } catch (err) {
+              logger.error('Failed to duplicate factuur:', err)
+              toast.error('Kon factuur niet kopiëren')
+            }
+          }
         }
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -702,7 +746,7 @@ export function FactuurEditor() {
     return () => {
       cancelled = true
     }
-  }, [editFactuurId, paramKlantId, paramOfferteId, paramProjectId, paramTitel, paramCreditVoor, factuurPrefix, standaardBtw, factuurBetaaltermijnDagen, factuurVoorwaarden, factuurIntroTekst, factuurOutroTekst])
+  }, [editFactuurId, paramKlantId, paramOfferteId, paramProjectId, paramTitel, paramCreditVoor, paramKopieVan, factuurPrefix, standaardBtw, factuurBetaaltermijnDagen, factuurVoorwaarden, factuurIntroTekst, factuurOutroTekst])
 
   // Werkbonnen laden bij klant-selectie
   useEffect(() => {
@@ -2229,6 +2273,12 @@ export function FactuurEditor() {
                       <FileDown className="h-4 w-4 mr-2" />
                       Download UBL XML
                     </DropdownMenuItem>
+                    {existingFactuur && (
+                      <DropdownMenuItem onClick={() => navigate(`/facturen/nieuw?kopie_van=${existingFactuur.id}`)}>
+                        <CopyPlus className="h-4 w-4 mr-2" />
+                        Dupliceer factuur
+                      </DropdownMenuItem>
+                    )}
                     {(currentStatus === 'open' || currentStatus === 'verzonden' || isVervallen) && (
                       <DropdownMenuItem onClick={handleMarkAsBetaald}>
                         <CreditCard className="h-4 w-4 mr-2" />
@@ -2356,6 +2406,7 @@ export function FactuurEditor() {
                 onKlantenRefresh={() => getKlanten().then(setKlanten).catch(() => {})}
                 contactLabelAccent
                 compactContactList
+                klantProfielLink
               />
               {resolvedCp && (
                 <label className="mt-3 flex items-center gap-2 text-xs cursor-pointer text-muted-foreground">

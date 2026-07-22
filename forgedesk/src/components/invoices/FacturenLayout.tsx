@@ -54,6 +54,7 @@ import {
   Link,
   Globe,
   Copy,
+  CopyPlus,
   Receipt,
   Share2,
   MinusCircle,
@@ -1577,10 +1578,10 @@ export function FacturenLayout() {
         {/* KPI tiles · clickable triage entry-points */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
-            { key: 'verlopen' as FilterStatus,      label: 'Vervallen',        sub: 'achterstallig',         count: verlopenCount,                              isMoney: false, dot: '#F15025', pulse: true },
+            { key: 'verlopen' as FilterStatus,      label: 'Vervallen',        sub: 'te laat betaald',         count: verlopenCount,                              isMoney: false, dot: '#F15025', pulse: true },
             { key: 'verzonden' as FilterStatus,     label: 'Openstaand',       sub: 'wacht op betaling',     count: statistics.totaalOpenstaand,                isMoney: true,  dot: '#3A5A9A', pulse: false },
-            { key: 'te_factureren' as FilterStatus, label: 'Te factureren',    sub: 'projecten klaar',       count: teFacturerenProjecten.length,               isMoney: false, dot: '#8A7A4A', pulse: false },
-            { key: 'betaald' as FilterStatus,       label: 'Betaald',          sub: 'deze maand.',           count: statistics.betaaldDezeMaand,                isMoney: true,  dot: '#2D6B48', pulse: false },
+            { key: 'te_factureren' as FilterStatus, label: 'Te factureren',    sub: 'projecten zijn af',       count: teFacturerenProjecten.length,               isMoney: false, dot: '#8A7A4A', pulse: false },
+            { key: 'betaald' as FilterStatus,       label: 'Betaald',          sub: 'deze maand',            count: statistics.betaaldDezeMaand,                isMoney: true,  dot: '#2D6B48', pulse: false },
           ]).map((tile) => {
             const isActive = filterStatus === tile.key
             const display = tile.isMoney ? formatCurrency(tile.count) : tile.count
@@ -1608,16 +1609,13 @@ export function FacturenLayout() {
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className={cn(
-                    'font-heading font-bold leading-none text-foreground tabular-nums',
-                    tile.isMoney ? 'text-[22px] font-mono' : 'text-[28px]'
+                    'font-cijfer font-bold leading-none text-foreground tabular-nums',
+                    tile.isMoney ? 'text-[22px]' : 'text-[28px]'
                   )}>
                     {display}
                   </span>
-                  <span
-                    className="text-[13px] text-muted-foreground truncate"
-                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-                  >
-                    · {tile.sub}
+                  <span className="doen-subtitel truncate">
+                    {tile.sub}<span className="text-flame">.</span>
                   </span>
                 </div>
               </button>
@@ -2184,9 +2182,13 @@ export function FacturenLayout() {
                             <FileDown className="h-4 w-4 mr-2" />
                             Download PDF
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigateWithTab({ path: `/facturen/nieuw?kopie_van=${factuur.id}`, label: 'Nieuwe factuur', id: `/facturen/nieuw?kopie_van=${factuur.id}` })}>
+                            <CopyPlus className="h-4 w-4 mr-2" />
+                            Dupliceer factuur
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleKopieerFactuur(factuur)}>
                             <Copy className="h-4 w-4 mr-2" />
-                            Kopieer factuur
+                            Kopieer regels
                           </DropdownMenuItem>
                           {factuur.betaal_link && (<>
                             <DropdownMenuItem onClick={() => {

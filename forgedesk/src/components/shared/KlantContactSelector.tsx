@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -47,6 +48,8 @@ interface KlantContactSelectorProps {
   autoSelect?: 'firstOrPrimary' | 'singleOnly' | 'never'
   /** Maak e-mail verplicht bij het inline aanmaken van een nieuwe contactpersoon. */
   requireContactEmail?: boolean
+  /** Maak de geselecteerde klant klikbaar naar het klantprofiel. */
+  klantProfielLink?: boolean
 }
 
 export function KlantContactSelector({
@@ -66,6 +69,7 @@ export function KlantContactSelector({
   contactOnly = false,
   autoSelect = 'firstOrPrimary',
   requireContactEmail = false,
+  klantProfielLink = false,
 }: KlantContactSelectorProps) {
   const { user } = useAuth()
   const [search, setSearch] = useState('')
@@ -306,13 +310,27 @@ export function KlantContactSelector({
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-petrol to-petrol/70 flex items-center justify-center flex-shrink-0">
               <span className="text-white font-bold text-[10px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold truncate" style={{ color: 'hsl(var(--foreground))' }}>{selectedKlant.bedrijfsnaam}</p>
-              <div className="flex items-center gap-3">
-                {selectedKlant.email && <span className="text-[11px] truncate" style={{ color: 'hsl(var(--muted-foreground))' }}>{selectedKlant.email}</span>}
-                {selectedKlant.stad && <span className="text-[11px]" style={{ color: '#A0A098' }}>{selectedKlant.stad}</span>}
+            {klantProfielLink ? (
+              <Link
+                to={`/klanten/${selectedKlant.id}`}
+                className="flex-1 min-w-0 group"
+                title={`Open het profiel van ${selectedKlant.bedrijfsnaam}`}
+              >
+                <p className="text-[13px] font-semibold truncate group-hover:text-flame transition-colors" style={{ color: 'hsl(var(--foreground))' }}>{selectedKlant.bedrijfsnaam}</p>
+                <div className="flex items-center gap-3">
+                  {selectedKlant.email && <span className="text-[11px] truncate" style={{ color: 'hsl(var(--muted-foreground))' }}>{selectedKlant.email}</span>}
+                  {selectedKlant.stad && <span className="text-[11px]" style={{ color: '#A0A098' }}>{selectedKlant.stad}</span>}
+                </div>
+              </Link>
+            ) : (
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold truncate" style={{ color: 'hsl(var(--foreground))' }}>{selectedKlant.bedrijfsnaam}</p>
+                <div className="flex items-center gap-3">
+                  {selectedKlant.email && <span className="text-[11px] truncate" style={{ color: 'hsl(var(--muted-foreground))' }}>{selectedKlant.email}</span>}
+                  {selectedKlant.stad && <span className="text-[11px]" style={{ color: '#A0A098' }}>{selectedKlant.stad}</span>}
+                </div>
               </div>
-            </div>
+            )}
             <button
               className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:bg-muted"
               onClick={handleClearKlant}
