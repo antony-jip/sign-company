@@ -24,6 +24,9 @@ interface TabsContextType {
   closeAllTabs: () => void
   setActiveTab: (id: string) => void
   setTabDirty: (id: string, dirty: boolean) => void
+  // Editors registreren een stille save-functie voor hun tab; die wordt
+  // automatisch geflusht vóórdat je van tab wisselt (of 'm sluit).
+  registerTabSaver: (id: string, saver: (() => Promise<void> | void) | null) => void
   updateTabLabel: (id: string, label: string) => void
   setActiveTabLabel: (label: string) => void
   reorderTabs: (fromIndex: number, toIndex: number) => void
@@ -145,6 +148,33 @@ export function TabsProvider({ children }: { children: ReactNode }) {
   const isNavigatingRef = useRef(false)
   const isSwitchingTabRef = useRef(false)
 
+  // ── Stille save-functies per tab (alleen de actieve tab is gemount) ──
+  const saversRef = useRef<Map<string, () => Promise<void> | void>>(new Map())
+  const registerTabSaver = useCallback(
+    (id: string, saver: (() => Promise<void> | void) | null) => {
+      if (!id) return
+      if (saver) saversRef.current.set(id, saver)
+      else saversRef.current.delete(id)
+    },
+    [],
+  )
+
+  // Sla de huidige actieve tab stil op als 'ie onopgeslagen wijzigingen heeft,
+  // vóórdat we ervan wegwisselen. Bij een fout blijft de tab dirty staan.
+  const flushActiveTabSaver = useCallback(async () => {
+    const id = activeTabIdRef.current
+    if (!id) return
+    const tab = tabsRef.current.find((t: AppTab) => t.id === id)
+    if (!tab?.isDirty) return
+    const saver = saversRef.current.get(id)
+    if (!saver) return
+    try {
+      await saver()
+    } catch {
+      /* save mislukt · dirty blijft staan zodat niets stil verdwijnt */
+    }
+  }, [])
+
   // ── Track location changes → update active tab's path ──────────────
   useEffect(() => {
     if (isSwitchingTabRef.current) {
@@ -175,8 +205,9 @@ export function TabsProvider({ children }: { children: ReactNode }) {
 
   // ── Open a specific tab (for detail pages opened from lists) ───────
   const openTab = useCallback(
-    (tab: Omit<AppTab, 'id'> & { id?: string }) => {
+    async (tab: Omit<AppTab, 'id'> & { id?: string }) => {
       const id = tab.id ?? tab.path
+      if (id !== activeTabIdRef.current) await flushActiveTabSaver()
       const prev = tabsRef.current
       const existing = prev.find((t: AppTab) => t.id === id)
 
@@ -195,11 +226,12 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       setActiveTabId(id)
       navigateRef.current(newTab.path)
     },
-    []
+    [flushActiveTabSaver]
   )
 
   // ── New blank tab (like Cmd+T in a browser) ────────────────────────
-  const newTab = useCallback(() => {
+  const newTab = useCallback(async () => {
+    await flushActiveTabSaver()
     const id = nextTabId()
     const tab: AppTab = { id, path: '/', label: 'Dashboard', isDirty: false }
     const next = [...tabsRef.current, tab]
@@ -208,11 +240,14 @@ export function TabsProvider({ children }: { children: ReactNode }) {
     isSwitchingTabRef.current = true
     setActiveTabId(id)
     navigateRef.current('/')
-  }, [])
+  }, [flushActiveTabSaver])
 
   // ── Close tab ──────────────────────────────────────────────────────
   const closeTab = useCallback(
     async (id: string) => {
+      // Sluit je de actieve tab, sla 'm dan eerst stil op (auto-save).
+      if (id === activeTabIdRef.current) await flushActiveTabSaver()
+
       const prev = tabsRef.current
       const idx = prev.findIndex((t: AppTab) => t.id === id)
       if (idx === -1) return
@@ -255,7 +290,7 @@ export function TabsProvider({ children }: { children: ReactNode }) {
         navigateRef.current(newActive.path)
       }
     },
-    []
+    [flushActiveTabSaver]
   )
 
   const closeOtherTabs = useCallback(
@@ -301,7 +336,9 @@ export function TabsProvider({ children }: { children: ReactNode }) {
 
   // ── Switch to existing tab ─────────────────────────────────────────
   const setActiveTabFn = useCallback(
-    (id: string) => {
+    async (id: string) => {
+      if (id === activeTabIdRef.current) return
+      await flushActiveTabSaver()
       const tab = tabsRef.current.find((t: AppTab) => t.id === id)
       setActiveTabId(id)
       if (tab) {
@@ -309,7 +346,7 @@ export function TabsProvider({ children }: { children: ReactNode }) {
         navigateRef.current(tab.path)
       }
     },
-    []
+    [flushActiveTabSaver]
   )
 
   const setTabDirty = useCallback((id: string, dirty: boolean) => {
@@ -363,6 +400,7 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       closeAllTabs,
       setActiveTab: setActiveTabFn,
       setTabDirty,
+      registerTabSaver,
       updateTabLabel,
       setActiveTabLabel,
       reorderTabs,
@@ -377,6 +415,7 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       closeAllTabs,
       setActiveTabFn,
       setTabDirty,
+      registerTabSaver,
       updateTabLabel,
       setActiveTabLabel,
       reorderTabs,

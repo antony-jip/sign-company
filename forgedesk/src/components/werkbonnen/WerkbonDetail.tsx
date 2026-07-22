@@ -68,7 +68,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 export function WerkbonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { setDirty } = useTabDirtyState()
+  // Stille save bij tab-wissel (alleen bestaande werkbon; ref i.v.m. declaratievolgorde)
+  const silentSaveRef = useRef<() => Promise<void> | void>()
+  const { setDirty } = useTabDirtyState(() => silentSaveRef.current?.())
   const { user } = useAuth()
   const { medewerkers } = useMedewerkers()
   const {
@@ -263,31 +265,46 @@ export function WerkbonDetail() {
   }, [setDirty, bumpPreview])
 
   // Save
+  const buildWerkbonData = useCallback(() => ({
+    user_id: userId,
+    klant_id: klantId,
+    project_id: projectId || undefined,
+    offerte_id: offerteId || undefined,
+    titel: titel || undefined,
+    locatie_adres: locatieAdres || undefined,
+    locatie_stad: locatieStad || undefined,
+    locatie_postcode: locatiePostcode || undefined,
+    contact_naam: contactNaam || undefined,
+    contact_telefoon: contactTelefoon || undefined,
+    datum,
+    status,
+    toon_briefpapier: toonBriefpapier,
+    uren_gewerkt: urenGewerkt,
+    monteur_opmerkingen: monteurOpmerkingen || undefined,
+    klant_handtekening: handtekeningData,
+    klant_naam_getekend: klantNaamGetekend || undefined,
+    getekend_op: handtekeningData ? new Date().toISOString() : undefined,
+  }), [
+    userId, klantId, projectId, offerteId, titel, locatieAdres, locatieStad,
+    locatiePostcode, contactNaam, contactTelefoon, datum, status, toonBriefpapier,
+    urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend,
+  ])
+
+  // Stille opslag bij tab-wissel: alleen een reeds bestaande werkbon, zonder
+  // toast of navigatie, zodat header-invoer niet verloren gaat bij wisselen.
+  const silentSave = useCallback(async () => {
+    if (isNew || !werkbonId || !klantId) return
+    await updateWerkbon(werkbonId, buildWerkbonData())
+    setDirty(false)
+  }, [isNew, werkbonId, klantId, buildWerkbonData, setDirty])
+  silentSaveRef.current = silentSave
+
   const handleSave = useCallback(async () => {
     if (!klantId) { toast.error('Selecteer een klant'); return }
 
     try {
       setIsSaving(true)
-      const data = {
-        user_id: userId,
-        klant_id: klantId,
-        project_id: projectId || undefined,
-        offerte_id: offerteId || undefined,
-        titel: titel || undefined,
-        locatie_adres: locatieAdres || undefined,
-        locatie_stad: locatieStad || undefined,
-        locatie_postcode: locatiePostcode || undefined,
-        contact_naam: contactNaam || undefined,
-        contact_telefoon: contactTelefoon || undefined,
-        datum,
-        status,
-        toon_briefpapier: toonBriefpapier,
-        uren_gewerkt: urenGewerkt,
-        monteur_opmerkingen: monteurOpmerkingen || undefined,
-        klant_handtekening: handtekeningData,
-        klant_naam_getekend: klantNaamGetekend || undefined,
-        getekend_op: handtekeningData ? new Date().toISOString() : undefined,
-      }
+      const data = buildWerkbonData()
 
       if (isNew) {
         const created = await createWerkbon(data as Parameters<typeof createWerkbon>[0])
