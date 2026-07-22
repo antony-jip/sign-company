@@ -675,19 +675,17 @@ export function WeergaveTab() {
             Instellingen
           </span>
           <span
-            className="text-[12px] text-muted-foreground"
-            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            className="doen-subtitel"
           >
-            · altijd zichtbaar
+            altijd zichtbaar<span className="text-flame">.</span>
           </span>
         </div>
 
         {/* Notice: alleen voor sidebar-modus */}
         <p
-          className="text-[12px] text-muted-foreground"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel"
         >
-          · deze instellingen gelden alleen voor de zijbalk-navigatie. Met top-navigatie als layout zijn alle items altijd zichtbaar.
+          dit geldt alleen voor de zijbalk. Kies je de navigatie bovenaan, dan zie je altijd alles.<span className="text-flame">.</span>
         </p>
 
         {/* Save action */}

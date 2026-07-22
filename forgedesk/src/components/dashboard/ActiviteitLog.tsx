@@ -100,18 +100,16 @@ export function ActiviteitLog() {
             Activiteit<span className="text-flame">.</span>
           </h2>
           <span
-            className="text-[14px] text-muted-foreground"
-            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            className="doen-subtitel"
           >
-            · portaal-logs
+            van verstuurd tot betaald<span className="text-flame">.</span>
           </span>
         </div>
       </header>
 
       {events.length === 0 ? (
         <p
-          className="text-sm text-muted-foreground py-2"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel py-2"
         >
           Nog geen activiteit<span className="text-flame">.</span>
         </p>

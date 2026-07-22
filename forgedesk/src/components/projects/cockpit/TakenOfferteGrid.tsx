@@ -252,7 +252,6 @@ export function TakenOfferteGrid({
               <p className="text-[13px] font-semibold text-foreground">Eerste taak toevoegen</p>
               <p
                 className="text-[12px] text-muted-foreground mt-0.5"
-                style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
               >
                 wat moet er gebeuren?
               </p>
@@ -409,7 +408,6 @@ export function TakenOfferteGrid({
               <p className="text-[13px] font-semibold text-foreground">Offerte maken</p>
               <p
                 className="text-[12px] text-muted-foreground mt-0.5"
-                style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
               >
                 stuur een prijsopgave
               </p>

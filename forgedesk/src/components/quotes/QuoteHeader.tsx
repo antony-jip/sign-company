@@ -195,10 +195,9 @@ export function QuoteHeader({
               </span>
             ) : (
               <span
-                className="text-muted-foreground"
-                style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                className="doen-subtitel"
               >
-                · selecteer een klant en vul de details in
+                kies een klant en vul aan<span className="text-flame">.</span>
               </span>
             )}
             {autoSaveStatus === 'saving' && (
@@ -424,8 +423,7 @@ export function QuoteHeader({
                   }
                   {klanten.filter((k) => !kopieerZoek || (k.bedrijfsnaam || '').toLowerCase().includes(kopieerZoek.toLowerCase())).length === 0 && (
                     <p
-                      className="text-center text-sm text-muted-foreground py-4"
-                      style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                      className="doen-subtitel text-center py-4"
                     >
                       geen klanten gevonden
                     </p>

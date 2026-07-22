@@ -521,8 +521,8 @@ export function InkoopfacturenLayout() {
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
             { key: 'verwerkt' as FilterStatus,    label: 'Te reviewen',    sub: 'wacht op goedkeuring',   count: wachtendCount,                          isMoney: false, dot: '#F15025', pulse: true },
-            { key: 'nieuw' as FilterStatus,       label: 'Open',           sub: 'totaal openstaand',      count: statistics.totaalOpen,                  isMoney: true,  dot: '#D4621A', pulse: false },
-            { key: 'goedgekeurd' as FilterStatus, label: 'Goedgekeurd',    sub: 'verwerkt.',              count: statistics.goedgekeurdCount,            isMoney: false, dot: '#2D6B48', pulse: false },
+            { key: 'nieuw' as FilterStatus,       label: 'Open',           sub: 'nog te betalen',      count: statistics.totaalOpen,                  isMoney: true,  dot: '#D4621A', pulse: false },
+            { key: 'goedgekeurd' as FilterStatus, label: 'Goedgekeurd',    sub: 'verwerkt',               count: statistics.goedgekeurdCount,            isMoney: false, dot: '#2D6B48', pulse: false },
             { key: 'alle' as FilterStatus,        label: 'Deze maand',     sub: `${maandStats.aantalDezeMaand} stuks`, count: maandStats.totaalDezeMaand, isMoney: true,  dot: '#8A7A4A', pulse: false },
           ]).map((tile) => {
             const isActive = filterStatus === tile.key && tile.key !== 'alle'
@@ -555,16 +555,13 @@ export function InkoopfacturenLayout() {
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className={cn(
-                    'font-heading font-bold leading-none text-foreground tabular-nums',
-                    tile.isMoney ? 'text-[22px] font-mono' : 'text-[28px]'
+                    'font-cijfer font-bold leading-none text-foreground tabular-nums',
+                    tile.isMoney ? 'text-[22px]' : 'text-[28px]'
                   )}>
                     {display}
                   </span>
-                  <span
-                    className="text-[13px] text-muted-foreground truncate"
-                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-                  >
-                    · {tile.sub}
+                  <span className="doen-subtitel truncate">
+                    {tile.sub}<span className="text-flame">.</span>
                   </span>
                 </div>
               </button>

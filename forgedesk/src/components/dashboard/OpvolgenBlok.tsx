@@ -48,10 +48,9 @@ export function OpvolgenBlok() {
             Opvolgen<span className="text-flame">.</span>
           </h2>
           <span
-            className="text-[14px] text-muted-foreground truncate"
-            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            className="doen-subtitel truncate"
           >
-            · wacht op antwoord
+            wacht op antwoord<span className="text-flame">.</span>
           </span>
         </div>
         {items.length > 0 && (
@@ -63,8 +62,7 @@ export function OpvolgenBlok() {
 
       {items.length === 0 ? (
         <p
-          className="text-sm text-muted-foreground py-2"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel py-2"
         >
           Geen offertes wachten op reactie<span className="text-flame">.</span>
         </p>

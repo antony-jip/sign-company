@@ -108,10 +108,9 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
       <Card className="border-dashed">
         <CardContent className="py-12 text-center">
           <Folder className="mb-3 inline-block h-10 w-10" strokeWidth={1.5} style={{ color: 'rgba(26,83,92,0.45)' }} />
-          <p className="text-sm font-semibold text-foreground">Geen activiteiten</p>
+          <p className="doen-subtitel font-semibold text-foreground">Geen activiteiten</p>
           <p
             className="text-xs text-muted-foreground mt-1"
-            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             importeer historie via Klanten · Importeren
           </p>

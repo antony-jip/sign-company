@@ -268,7 +268,6 @@ function FORGEdeskDashboardInner() {
                     </div>
                     <p
                       className="text-[13px] text-white/60"
-                      style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                     >
                       {weather.label}
                     </p>

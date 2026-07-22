@@ -33,8 +33,8 @@ export function NieuwsbriefStats({ nieuwsbrief, onTerug }: Props) {
 
   const tegels = [
     { key: 'delivered', label: 'Afgeleverd', Icon: MailCheck, kleur: '#3A7D52', waarde: stats?.delivered ?? 0, sub: `van ${ontvangers} verzonden`, rate: pct(stats?.delivered ?? 0, ontvangers) },
-    { key: 'opened', label: 'Geopend', Icon: Eye, kleur: '#3A5A9A', waarde: stats?.opened ?? 0, sub: 'open rate', rate: pct(stats?.opened ?? 0, stats?.delivered || ontvangers) },
-    { key: 'clicked', label: 'Geklikt', Icon: MousePointerClick, kleur: '#F15025', waarde: stats?.clicked ?? 0, sub: 'click rate', rate: pct(stats?.clicked ?? 0, stats?.delivered || ontvangers) },
+    { key: 'opened', label: 'Geopend', Icon: Eye, kleur: '#3A5A9A', waarde: stats?.opened ?? 0, sub: 'hebben hem geopend', rate: pct(stats?.opened ?? 0, stats?.delivered || ontvangers) },
+    { key: 'clicked', label: 'Geklikt', Icon: MousePointerClick, kleur: '#F15025', waarde: stats?.clicked ?? 0, sub: 'klikten door', rate: pct(stats?.clicked ?? 0, stats?.delivered || ontvangers) },
     { key: 'bounced', label: 'Bounced', Icon: AlertTriangle, kleur: '#C0451A', waarde: stats?.bounced ?? 0, sub: 'niet bezorgd', rate: pct(stats?.bounced ?? 0, ontvangers) },
   ]
 
@@ -79,9 +79,9 @@ export function NieuwsbriefStats({ nieuwsbrief, onTerug }: Props) {
                   <span className="font-heading text-[28px] font-bold leading-none text-foreground tabular-nums">
                     {laden ? '—' : t.waarde}
                   </span>
-                  <span className="font-mono text-[13px] tabular-nums text-muted-foreground">{t.rate}</span>
+                  <span className="font-mono text-[13px] tabular-nums">{t.rate}</span>
                 </div>
-                <div className="mt-1 text-[12px] text-muted-foreground" style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}>
+                <div className="mt-1 text-[12px] text-muted-foreground">
                   {t.sub}
                 </div>
               </div>

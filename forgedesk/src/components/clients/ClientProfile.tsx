@@ -891,10 +891,9 @@ export function ClientProfile() {
             <Card>
               {clientProjecten.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <Folder className="mb-3 inline-block h-12 w-12 text-[rgba(26,83,92,0.5)] dark:text-petrol-light/40" strokeWidth={1.5} />
+                  <Folder className="doen-subtitel mb-3 inline-block h-12 w-12 text-[rgba(26,83,92,0.5)] dark:text-petrol-light/40" strokeWidth={1.5} />
                   <p
                     className="text-muted-foreground"
-                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     geen projecten voor deze klant
                   </p>
@@ -1031,10 +1030,9 @@ export function ClientProfile() {
             <Card>
               {clientOffertes.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <FileText className="mb-3 inline-block h-12 w-12" strokeWidth={1.5} style={{ color: 'rgba(241,80,37,0.6)' }} />
+                  <FileText className="doen-subtitel mb-3 inline-block h-12 w-12" strokeWidth={1.5} style={{ color: 'rgba(241,80,37,0.6)' }} />
                   <p
                     className="text-muted-foreground"
-                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     geen offertes voor deze klant
                   </p>
@@ -1235,10 +1233,9 @@ export function ClientProfile() {
               {clientEmails.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <MailLg className="mb-3 inline-block h-12 w-12 text-[rgba(26,83,92,0.5)] dark:text-petrol-light/40" strokeWidth={1.5} />
+                    <MailLg className="doen-subtitel mb-3 inline-block h-12 w-12 text-[rgba(26,83,92,0.5)] dark:text-petrol-light/40" strokeWidth={1.5} />
                     <p
                       className="text-muted-foreground"
-                      style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                     >
                       geen emailcommunicatie gevonden
                     </p>

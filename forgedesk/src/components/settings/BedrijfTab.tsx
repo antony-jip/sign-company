@@ -191,8 +191,7 @@ export function BedrijfTab() {
               Bedrijfsgegevens<span className="text-flame">.</span>
             </h2>
             <p
-              className="text-[14px] text-foreground/70"
-              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+              className="doen-subtitel"
             >
               logo, naam, adres en email-kleur
             </p>
@@ -306,8 +305,7 @@ export function BedrijfTab() {
               Contactgegevens<span className="text-flame">.</span>
             </h2>
             <p
-              className="text-[14px] text-foreground/70"
-              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+              className="doen-subtitel"
             >
               telefoon, e-mail en website
             </p>
@@ -337,8 +335,7 @@ export function BedrijfTab() {
               Juridisch &amp; financieel<span className="text-flame">.</span>
             </h2>
             <p
-              className="text-[14px] text-foreground/70"
-              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+              className="doen-subtitel"
             >
               wordt op facturen en offertes weergegeven
             </p>

@@ -18,6 +18,7 @@ export default {
         sans: ['"Inter"', '"IBM Plex Sans"', 'system-ui', 'sans-serif'],
         heading: ['"Instrument Sans"', 'system-ui', 'sans-serif'],
         mono: ['"IBM Plex Mono"', '"DM Mono"', '"Space Grotesk"', 'ui-monospace', 'monospace'],
+        cijfer: ['"Space Grotesk"', '"Instrument Sans"', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         "2xs": ["10px", { lineHeight: "14px" }],

@@ -123,7 +123,6 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
             <p className="text-[13px] font-semibold text-foreground">Eerste bestand uploaden</p>
             <p
               className="text-[12px] text-muted-foreground mt-0.5"
-              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
             >
               sleep of klik om te kiezen
             </p>

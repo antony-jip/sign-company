@@ -174,14 +174,14 @@ export function FinancialLayout() {
     {
       label: 'Gefactureerd',
       value: formatCurrency(gefactureerd),
-      sub: `${facturen.filter((f) => f.status !== 'concept' && f.status !== 'gecrediteerd').length} facturen.`,
+      sub: `${facturen.filter((f) => f.status !== 'concept' && f.status !== 'gecrediteerd').length} facturen`,
       dot: '#1A535C',
       pulse: false,
     },
     {
       label: 'Ontvangen',
       value: formatCurrency(totaleOmzet),
-      sub: `${facturen.filter((f) => f.status === 'betaald').length} betaald.`,
+      sub: `${facturen.filter((f) => f.status === 'betaald').length} betaald`,
       dot: '#2D6B48',
       pulse: false,
     },
@@ -189,8 +189,8 @@ export function FinancialLayout() {
       label: 'Openstaand',
       value: formatCurrency(openstaandBedrag),
       sub: vervallenFacturen.length > 0
-        ? `${vervallenFacturen.length} vervallen.`
-        : `${facturen.filter((f) => f.status === 'verzonden').length} wachtend.`,
+        ? `${vervallenFacturen.length} vervallen`
+        : `${facturen.filter((f) => f.status === 'verzonden').length} wachtend`,
       dot: vervallenFacturen.length > 0 ? '#F15025' : '#8A7A4A',
       pulse: vervallenFacturen.length > 0,
     },
@@ -204,7 +204,7 @@ export function FinancialLayout() {
     {
       label: 'Netto resultaat',
       value: formatCurrency(nettoResultaat),
-      sub: 'ontvangen min inkoopkosten',
+      sub: 'wat er overblijft',
       dot: nettoResultaat >= 0 ? '#2D6B48' : '#C03A18',
       pulse: false,
     },
@@ -229,11 +229,8 @@ export function FinancialLayout() {
         <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
           Financieel<span className="text-flame">.</span>
         </h1>
-        <span
-          className="text-[13px] text-muted-foreground"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-        >
-          omzet, openstaand, inkoop · {currentYear}
+        <span className="doen-subtitel truncate">
+          {currentYear}<span className="text-flame">.</span>
         </span>
       </div>
 
@@ -264,15 +261,12 @@ export function FinancialLayout() {
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="font-mono font-bold text-[22px] leading-none text-foreground tabular-nums">
+                  <span className="font-cijfer font-bold text-[22px] leading-none text-foreground tabular-nums">
                     {stat.value}
                   </span>
                 </div>
-                <span
-                  className="block mt-1 text-[12px] text-muted-foreground truncate"
-                  style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-                >
-                  · {stat.sub}
+                <span className="block mt-1 doen-subtitel truncate">
+                  {stat.sub}<span className="text-flame">.</span>
                 </span>
               </div>
             ))}

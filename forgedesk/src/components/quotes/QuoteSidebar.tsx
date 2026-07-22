@@ -768,8 +768,7 @@ export function QuoteSidebar({
                               Inkoop<span className="text-flame">.</span>
                             </p>
                             <p
-                              className="text-[11px] text-muted-foreground"
-                              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                              className="doen-subtitel"
                             >
                               leveranciersprijzen
                             </p>

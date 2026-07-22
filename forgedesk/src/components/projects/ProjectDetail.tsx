@@ -1431,10 +1431,9 @@ export function ProjectDetail() {
           )}
           {project.created_at && (
             <>
-              <span className="text-muted-foreground/70">·</span>
+              <span className="doen-subtitel/70">·</span>
               <span
                 className="text-[12px] text-muted-foreground"
-                style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
               >
                 aangemaakt {new Date(project.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
                 {projectMaker ? ` door ${projectMaker.naam}` : ''}
@@ -2572,8 +2571,7 @@ export function ProjectDetail() {
                 })}
                 {alleMedewerkers.filter((m) => m.status === 'actief').length === 0 && (
                   <span
-                    className="text-[12px] text-muted-foreground"
-                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                    className="doen-subtitel"
                   >
                     geen medewerkers beschikbaar
                   </span>

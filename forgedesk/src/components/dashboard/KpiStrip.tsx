@@ -151,7 +151,6 @@ function DoenVibeCard() {
       <p
         key={`text-${idx}`}
         className="relative flex-1 text-[16px] leading-[1.3] text-foreground doen-fact-text"
-        style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
       >
         {fact.text}
       </p>

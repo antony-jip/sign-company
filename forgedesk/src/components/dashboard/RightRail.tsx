@@ -269,10 +269,9 @@ function DezeWeekCard() {
             <span className="text-flame">.</span>
           </h2>
           <span
-            className="text-[14px] text-muted-foreground truncate"
-            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            className="doen-subtitel truncate"
           >
-            · week {getISOWeek(weekStart)}
+            week {getISOWeek(weekStart)}
           </span>
         </div>
         <div className="flex items-center gap-0.5">
@@ -343,8 +342,7 @@ function DezeWeekCard() {
 
       {items.length === 0 ? (
         <p
-          className="text-sm text-muted-foreground py-2"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel py-2"
         >
           {filterNaam
             ? `Geen afspraken voor ${filterNaam.split(' ')[0]} deze week`
@@ -507,12 +505,11 @@ function TeamCard() {
     <section className="doen-panel doen-wash rounded-xl p-6">
       <header className="flex items-baseline justify-between mb-4">
         <h2 className="font-heading text-[14px] font-bold text-foreground">
-          Gedaan<span className="text-flame">.</span>
+          Gedaan<span className="doen-subtitel text-flame">.</span>
           <span
             className="text-muted-foreground ml-2 font-normal"
-            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
-            · team-log
+            wie wat deed<span className="text-flame">.</span>
           </span>
         </h2>
         <span className="text-[11px] font-mono text-muted-foreground">
@@ -522,8 +519,7 @@ function TeamCard() {
 
       {activiteit.length === 0 ? (
         <p
-          className="text-sm text-muted-foreground py-2"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel py-2"
         >
           Nog geen activiteit deze week<span className="text-flame">.</span>
         </p>

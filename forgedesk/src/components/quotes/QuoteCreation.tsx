@@ -2130,10 +2130,9 @@ export function QuoteCreation() {
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Introductietekst<span className="text-flame">.</span>
+                Introductietekst<span className="doen-subtitel text-flame">.</span>
                 <span
                   className="ml-2 text-[12px] text-muted-foreground font-normal"
-                  style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                 >
                   optioneel
                 </span>
@@ -2216,10 +2215,9 @@ export function QuoteCreation() {
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Afsluittekst<span className="text-flame">.</span>
+                Afsluittekst<span className="doen-subtitel text-flame">.</span>
                 <span
                   className="ml-2 text-[12px] text-muted-foreground font-normal"
-                  style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                 >
                   optioneel
                 </span>

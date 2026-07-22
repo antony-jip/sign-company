@@ -1008,10 +1008,10 @@ export function ProjectsList() {
             {/* KPI tiles · triage entry-points, clickable filter targets */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {([
-                { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'in-review of >30d open',  count: stats.metAandacht,   Icon: AlertCircle, accent: '#F15025' },
-                { key: 'actief',        label: 'Actief',        sub: 'in uitvoering',           count: stats.actief,        Icon: Activity,    accent: '#3A5A9A' },
-                { key: 'te-factureren', label: 'Te factureren', sub: 'wachten op factuur',      count: stats.teFactureren,  Icon: Receipt,     accent: '#2D6B48' },
-                { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar.',                  count: stats.afgerond,      Icon: CheckCircle, accent: '#1A535C' },
+                { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'blijft te lang liggen',  count: stats.metAandacht,   Icon: AlertCircle, accent: '#F15025' },
+                { key: 'actief',        label: 'Actief',        sub: 'hier wordt aan gewerkt',           count: stats.actief,        Icon: Activity,    accent: '#3A5A9A' },
+                { key: 'te-factureren', label: 'Te factureren', sub: 'mag gefactureerd',      count: stats.teFactureren,  Icon: Receipt,     accent: '#2D6B48' },
+                { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar',                   count: stats.afgerond,      Icon: CheckCircle, accent: '#1A535C' },
               ] as const).map(tile => {
                 const isActive = statusFilters.size === 1 && statusFilters.has(tile.key)
                 const TileIcon = tile.Icon
@@ -1036,14 +1036,11 @@ export function ProjectsList() {
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="font-heading font-bold text-[28px] leading-none text-[#1A4A52] dark:text-foreground tabular-nums">
+                      <span className="font-cijfer font-bold text-[28px] leading-none text-[#1A4A52] dark:text-foreground tabular-nums">
                         {tile.count}
                       </span>
-                      <span
-                        className="text-[13px] text-muted-foreground truncate"
-                        style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-                      >
-                        · {tile.sub}
+                      <span className="doen-subtitel truncate">
+                        {tile.sub}<span className="text-flame">.</span>
                       </span>
                     </div>
                   </button>
@@ -1143,10 +1140,9 @@ export function ProjectsList() {
 
               {/* Sub-filters · open sinds + groep */}
               <div className="hidden lg:flex items-center gap-5">
-                <div className="flex items-center gap-1.5">
+                <div className="doen-subtitel flex items-center gap-1.5">
                   <span
                     className="text-[12px] text-muted-foreground mr-1"
-                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     open sinds ·
                   </span>
@@ -1175,10 +1171,9 @@ export function ProjectsList() {
                     )
                   })}
                 </div>
-                <div className="flex items-center gap-1.5 ml-auto">
+                <div className="doen-subtitel flex items-center gap-1.5 ml-auto">
                   <span
                     className="text-[12px] text-muted-foreground mr-1"
-                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                   >
                     groep ·
                   </span>

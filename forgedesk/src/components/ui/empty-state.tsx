@@ -38,8 +38,7 @@ export function EmptyState({ module = 'default', title, description, action, cla
       </h3>
       {description && (
         <p
-          className="text-center max-w-[320px] mb-5 text-[12px] text-muted-foreground"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel text-center max-w-[320px] mb-5"
         >
           {description}
         </p>

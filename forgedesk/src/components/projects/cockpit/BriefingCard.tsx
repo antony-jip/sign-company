@@ -112,10 +112,9 @@ Antwoord ALLEEN met de briefing, niets anders.`
             Briefing<span className="text-flame">.</span>
           </h3>
           <span
-            className="text-[12px] text-muted-foreground hidden sm:inline"
-            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            className="doen-subtitel hidden sm:inline"
           >
-            · wat moet er gebeuren
+            wat moet er gebeuren<span className="text-flame">.</span>
           </span>
         </div>
 

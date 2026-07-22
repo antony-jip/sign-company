@@ -40,8 +40,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
           Acties<span className="text-flame">.</span>
         </h3>
         <span
-          className="text-[12px] text-muted-foreground"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel"
         >
           wat is de volgende stap?
         </span>

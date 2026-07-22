@@ -58,8 +58,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
           Voortgang<span className="text-flame">.</span>
         </h3>
         <span
-          className="text-[12px] text-muted-foreground"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel"
         >
           fase {currentIdx + 1} van {FASES.length} · {currentFase.caption}
         </span>

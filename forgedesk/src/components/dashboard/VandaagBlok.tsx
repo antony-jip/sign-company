@@ -407,10 +407,9 @@ export function VandaagBlok() {
             <span className="text-flame">.</span>
           </h2>
           <span
-            className="text-[14px] text-muted-foreground truncate"
-            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            className="doen-subtitel truncate"
           >
-            · wat staat er klaar
+            wat staat er klaar<span className="text-flame">.</span>
           </span>
         </div>
         {counts && (
@@ -467,8 +466,7 @@ export function VandaagBlok() {
       {items.length === 0 ? (
         <p
           key={`empty-${selectedDayIndex}`}
-          className="text-sm text-muted-foreground py-3 animate-fade-in"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel py-3 animate-fade-in"
         >
           {selectedDayIndex === todayIndex
             ? 'Niets ingepland voor vandaag'

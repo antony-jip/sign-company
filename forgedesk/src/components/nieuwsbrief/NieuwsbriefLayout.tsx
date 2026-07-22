@@ -145,14 +145,11 @@ export function NieuwsbriefLayout() {
           </span>
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="font-heading text-[28px] font-bold leading-none text-foreground tabular-nums">
+          <span className="font-cijfer text-[28px] font-bold leading-none text-foreground tabular-nums">
             {tellingen[key]}
           </span>
-          <span
-            className="truncate text-[13px] text-muted-foreground"
-            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-          >
-            · {sub}
+          <span className="doen-subtitel truncate">
+            {sub}<span className="text-flame">.</span>
           </span>
         </div>
       </button>
@@ -187,8 +184,8 @@ export function NieuwsbriefLayout() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {tegel('alle', Layers, 'Alle', 'nieuwsbrieven', '#1A535C')}
-              {tegel('concept', FileText, 'Concept', 'in bewerking', statusColor('concept'))}
+              {tegel('alle', Layers, 'Alle', 'alles bij elkaar', '#1A535C')}
+              {tegel('concept', FileText, 'Concept', 'nog aan het schrijven', statusColor('concept'))}
               {tegel('gepland', Clock, 'Gepland', 'staat klaar', statusColor('gepland'))}
               {tegel('verzonden', Send, 'Verzonden', 'de deur uit', statusColor('verzonden'))}
             </div>

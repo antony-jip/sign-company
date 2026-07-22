@@ -326,10 +326,10 @@ export function WerkbonnenLayout() {
         {/* KPI tiles · clickable triage entry-points */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
-            { key: 'definitief' as FilterStatus, label: 'In uitvoering', sub: 'lopende werkbonnen',  count: statusCounts['definitief'] || 0, Icon: Wrench,    pulse: true,  accent: '#3A5A9A' },
+            { key: 'definitief' as FilterStatus, label: 'In uitvoering', sub: 'buiten bezig',  count: statusCounts['definitief'] || 0, Icon: Wrench,    pulse: true,  accent: '#3A5A9A' },
             { key: 'vandaag'    as FilterStatus, label: 'Vandaag',       sub: 'ingepland vandaag',   count: vandaagCount,                    Icon: Sun,       pulse: false, accent: '#F15025' },
             { key: 'concept'    as FilterStatus, label: 'Open',          sub: 'wacht op uitvoering', count: statusCounts['concept'] || 0,    Icon: Clipboard, pulse: false, accent: '#5A5A55' },
-            { key: 'afgerond'   as FilterStatus, label: 'Afgetekend',    sub: 'klaar.',              count: statusCounts['afgerond'] || 0,   Icon: Flag,      pulse: false, accent: '#3A7D52' },
+            { key: 'afgerond'   as FilterStatus, label: 'Afgetekend',    sub: 'klaar',               count: statusCounts['afgerond'] || 0,   Icon: Flag,      pulse: false, accent: '#3A7D52' },
           ]).map((tile) => {
             const isActive = filterStatus === tile.key
             const TileIcon = tile.Icon
@@ -354,14 +354,11 @@ export function WerkbonnenLayout() {
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-heading font-bold text-[28px] leading-none text-[#1A4A52] dark:text-foreground tabular-nums">
+                  <span className="font-cijfer font-bold text-[28px] leading-none text-[#1A4A52] dark:text-foreground tabular-nums">
                     {tile.count}
                   </span>
-                  <span
-                    className="text-[13px] text-muted-foreground truncate"
-                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-                  >
-                    · {tile.sub}
+                  <span className="doen-subtitel truncate">
+                    {tile.sub}<span className="text-flame">.</span>
                   </span>
                 </div>
               </button>

@@ -82,8 +82,7 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
           </h3>
         </div>
         <p
-          className="text-[12px] text-muted-foreground py-3 text-center"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel py-3 text-center"
         >
           nog geen activiteit
         </p>

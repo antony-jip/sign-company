@@ -435,10 +435,10 @@ export function ClientsLayout() {
         {/* KPI tiles · clickable triage entry-points */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
-            { key: 'met-aandacht' as StatusFilter, label: 'Met aandacht',  sub: 'niet helpen of geblokkeerd', count: kpiCounts.metAandacht, Icon: AlertCircle },
-            { key: 'actief'       as StatusFilter, label: 'Actief',        sub: 'lopende klanten',            count: kpiCounts.actief,      Icon: Activity    },
-            { key: 'prospect'     as StatusFilter, label: 'Prospect',      sub: 'in opvolging',               count: kpiCounts.prospect,    Icon: UserPlus    },
-            { key: 'inactief'     as StatusFilter, label: 'Inactief',      sub: 'rust.',                      count: kpiCounts.inactief,    Icon: Moon        },
+            { key: 'met-aandacht' as StatusFilter, label: 'Met aandacht',  sub: 'hier is iets mee', count: kpiCounts.metAandacht, Icon: AlertCircle },
+            { key: 'actief'       as StatusFilter, label: 'Actief',        sub: 'hier loopt werk',            count: kpiCounts.actief,      Icon: Activity    },
+            { key: 'prospect'     as StatusFilter, label: 'Prospect',      sub: 'nog binnen te halen',               count: kpiCounts.prospect,    Icon: UserPlus    },
+            { key: 'inactief'     as StatusFilter, label: 'Inactief',      sub: 'rust',                              count: kpiCounts.inactief,    Icon: Moon        },
           ]).map((tile) => {
             const isActive = statusFilter === tile.key
             const TileIcon = tile.Icon
@@ -462,14 +462,11 @@ export function ClientsLayout() {
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-heading font-bold text-[28px] leading-none text-foreground tabular-nums">
+                  <span className="font-cijfer font-bold text-[28px] leading-none text-foreground tabular-nums">
                     {tile.count}
                   </span>
-                  <span
-                    className="text-[13px] text-muted-foreground truncate"
-                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-                  >
-                    · {tile.sub}
+                  <span className="doen-subtitel truncate">
+                    {tile.sub}<span className="text-flame">.</span>
                   </span>
                 </div>
               </button>

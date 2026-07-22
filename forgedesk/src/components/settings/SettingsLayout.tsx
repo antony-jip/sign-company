@@ -295,8 +295,7 @@ export function SettingsLayout({ variant = 'pagina' }: { variant?: 'pagina' | 'm
           Instellingen<span className="text-flame">.</span>
         </h1>
         <span
-          className="text-[14px] text-foreground/70 hidden sm:inline truncate"
-          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          className="doen-subtitel hidden sm:inline truncate"
         >
           profiel, bedrijf, voorkeuren · alles op één plek
         </span>

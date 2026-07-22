@@ -2352,8 +2352,7 @@ export function EmailLayout() {
               Niets geopend<span className="text-flame">.</span>
             </h3>
             <p
-              className="text-[14px] text-muted-foreground max-w-[280px] leading-relaxed"
-              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+              className="doen-subtitel max-w-[280px] leading-relaxed"
             >
               kies een bericht uit de lijst, dan lees je het hier rustig na.
             </p>

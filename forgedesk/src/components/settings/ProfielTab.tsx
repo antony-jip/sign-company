@@ -115,10 +115,9 @@ export function ProfielTab() {
               <span className="w-2 h-2 rounded-full bg-[#2D6B48] doen-pulse" aria-hidden />
             </span>
           </div>
-          <div className="min-w-0 flex-1 pt-1">
+          <div className="doen-subtitel min-w-0 flex-1 pt-1">
             <p
               className="text-[14px] text-foreground/70"
-              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
             >
               {greeting}<span className="text-flame">·</span>
             </p>
@@ -181,10 +180,9 @@ export function ProfielTab() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-[rgba(26,83,92,0.08)]">
+        <div className="doen-subtitel flex items-center justify-between pt-4 border-t border-[rgba(26,83,92,0.08)]">
           <p
             className="text-[12px] text-muted-foreground"
-            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
             wijzigingen zijn direct zichtbaar in jouw verzonden offertes en emails.
           </p>
@@ -249,18 +247,17 @@ export function ProfielTab() {
                 <span className="truncate font-mono">{telefoon}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-muted-foreground/70">
+              <div className="doen-subtitel flex items-center gap-2/70">
                 <Phone className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} style={{ color: '#C0BDB8' }} />
-                <span className="italic" style={{ fontFamily: '"Instrument Serif", serif' }}>geen telefoonnummer</span>
+                <span className="italic">geen telefoonnummer</span>
               </div>
             )}
           </div>
 
           <div className="relative mt-4 pt-3 border-t border-[rgba(26,83,92,0.1)] flex items-center gap-2">
-            <User className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} style={{ color: 'hsl(var(--muted-foreground))' }} />
+            <User className="doen-subtitel h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} style={{ color: 'hsl(var(--muted-foreground))' }} />
             <p
               className="text-[11px] text-muted-foreground"
-              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
             >
               afzender · offertes, facturen en mails
             </p>

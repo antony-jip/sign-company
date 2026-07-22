@@ -873,7 +873,7 @@ export function QuotesPipeline() {
                 { key: 'wacht_op_reactie', label: 'Opvolgen',  sub: 'wacht op reactie',         count: offerteKpis.opvolgen, Icon: Timer,     accent: '#F15025' },
                 { key: 'concept',          label: 'Concept',   sub: 'nog niet verstuurd',       count: offerteKpis.concept,  Icon: PenLine,   accent: '#5A5A55' },
                 { key: 'goedgekeurd',      label: 'Akkoord',   sub: 'klaar om te factureren',   count: offerteKpis.akkoord,  Icon: Heart,     accent: '#2D6B48' },
-                { key: 'verlopen',         label: 'Verlopen',  sub: 'geldigheid voorbij.',      count: offerteKpis.verlopen, Icon: Hourglass, accent: '#1A535C' },
+                { key: 'verlopen',         label: 'Verlopen',  sub: 'te lang blijven liggen',      count: offerteKpis.verlopen, Icon: Hourglass, accent: '#1A535C' },
               ] as const).map((tile) => {
                 const isActive = statusFilter === tile.key
                 const TileIcon = tile.Icon
@@ -897,14 +897,11 @@ export function QuotesPipeline() {
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="font-heading font-bold text-[28px] leading-none text-foreground tabular-nums">
+                      <span className="font-cijfer font-bold text-[28px] leading-none text-foreground tabular-nums">
                         {tile.count}
                       </span>
-                      <span
-                        className="text-[13px] text-muted-foreground truncate"
-                        style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-                      >
-                        · {tile.sub}
+                      <span className="doen-subtitel truncate">
+                        {tile.sub}<span className="text-flame">.</span>
                       </span>
                     </div>
                   </button>
