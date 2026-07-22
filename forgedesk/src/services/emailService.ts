@@ -219,6 +219,27 @@ export async function getThread(threadId: string): Promise<Email[]> {
     .sort((a, b) => Date.parse(a.datum) - Date.parse(b.datum))
 }
 
+/** Alle correspondentie met één adres · zowel ontvangen als verstuurd. */
+export async function getEmailsMetAdres(adres: string, limit = 20): Promise<Email[]> {
+  const bareEmail = adres.trim().toLowerCase()
+  if (!bareEmail) return []
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('emails_list_view')
+      .select(LIST_VIEW_COLUMNS)
+      .or(`from_address.ilike.%${bareEmail}%,van.ilike.%${bareEmail}%,aan.ilike.%${bareEmail}%`)
+      .order('datum', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    return (data || []).map(e => ({ ...e, inhoud: '', body_html: null }))
+  }
+  const emails = getLocalData<Email>('emails')
+  return emails
+    .filter((e) => [e.van, e.aan].some((v) => v?.toLowerCase().includes(bareEmail)))
+    .sort((a, b) => Date.parse(b.datum) - Date.parse(a.datum))
+    .slice(0, limit)
+}
+
 export async function createEmail(email: Omit<Email, 'id' | 'created_at'>): Promise<Email> {
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()

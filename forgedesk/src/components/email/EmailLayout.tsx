@@ -1862,7 +1862,13 @@ export function EmailLayout() {
       {selectedFolder === 'leads' && (
         <LeadsPaneel
           onMailLead={(email, body) => handleCompose({ to: email, body })}
-          verbergDetail={viewMode !== 'idle'}
+          naastCompose={viewMode !== 'idle'}
+          mailDirect={isDesktop}
+          onBeantwoordMail={(mail) => {
+            loadEmailBody(mail, 'inbox')
+              .then((metBody) => handleReply(metBody))
+              .catch(() => handleReply(mail))
+          }}
         />
       )}
 
@@ -2263,6 +2269,8 @@ export function EmailLayout() {
             onToChange={setComposeToAddress}
             onRegisterActions={(a) => { composeActionsRef.current = a }}
             onForgieLoadingChange={setComposeForgieLoading}
+            titel={selectedFolder === 'leads' ? 'Mail deze lead' : 'Nieuw bericht'}
+            sluitLabel={selectedFolder === 'leads' ? 'Terug naar leads' : 'Terug naar inbox'}
           />
         )}
 

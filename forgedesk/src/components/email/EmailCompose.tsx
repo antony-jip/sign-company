@@ -43,6 +43,9 @@ interface EmailComposeProps {
   onToChange?: (to: string) => void
   onRegisterActions?: (actions: ComposeActions) => void
   onForgieLoadingChange?: (loading: boolean) => void
+  /** Kop van het paneel · anders wanneer compose ergens anders inline staat. */
+  titel?: string
+  sluitLabel?: string
 }
 
 const mergeFields = [
@@ -118,6 +121,8 @@ export function EmailCompose({
   onToChange,
   onRegisterActions,
   onForgieLoadingChange,
+  titel = 'Nieuw bericht',
+  sluitLabel = 'Terug naar inbox',
 }: EmailComposeProps) {
   const isReply = !!(replyToText && replyToText.trim())
   const navigate = useNavigate()
@@ -687,16 +692,16 @@ export function EmailCompose({
         {/* Panel header · title + back affordance, matches list-header pattern */}
         <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-border/60 flex-shrink-0">
           <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
-            Nieuw bericht<span className="text-flame">.</span>
+            {titel}<span className="text-flame">.</span>
           </h1>
           <button
             type="button"
             className="inline-flex items-center gap-1.5 text-[13px] text-foreground/70 hover:text-foreground transition-colors duration-150"
             onClick={() => onOpenChange(false)}
-            title="Sluiten en terug naar inbox"
+            title={`Sluiten en ${sluitLabel.toLowerCase()}`}
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Terug naar inbox
+            {sluitLabel}
           </button>
         </div>
 
