@@ -31,6 +31,8 @@ import {
   Building2,
   Image,
   Upload,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -200,8 +202,28 @@ export function SettingsLayout() {
     setActiveSubTabs(prev => ({ ...prev, [activeSection]: tabId }))
   }, [activeSection])
 
+  // Volledig scherm: instellingen over de hele app heen, zonder sidebar en
+  // topbar. Keuze onthouden zodat wie het aanzet het zo houdt.
+  const [volledigScherm, setVolledigScherm] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem('doen_instellingen_volledig_scherm') === '1'
+  )
+  useEffect(() => {
+    localStorage.setItem('doen_instellingen_volledig_scherm', volledigScherm ? '1' : '0')
+  }, [volledigScherm])
+  useEffect(() => {
+    if (!volledigScherm) return
+    const opEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') setVolledigScherm(false) }
+    window.addEventListener('keydown', opEscape)
+    return () => window.removeEventListener('keydown', opEscape)
+  }, [volledigScherm])
+
   return (
-    <div className="space-y-6">
+    <div
+      className={cn(
+        'space-y-6',
+        volledigScherm && 'fixed inset-0 z-50 bg-background overflow-y-auto p-6 md:p-10'
+      )}
+    >
       <div className="flex items-baseline gap-4 min-w-0">
         <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
           Instellingen<span className="text-flame">.</span>
@@ -212,6 +234,16 @@ export function SettingsLayout() {
         >
           profiel, bedrijf, voorkeuren · alles op één plek
         </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setVolledigScherm(v => !v)}
+          className="ml-auto flex-shrink-0 self-center text-muted-foreground hover:text-foreground"
+          title={volledigScherm ? 'Terug naar normale weergave (Esc)' : 'Instellingen op volledig scherm'}
+        >
+          {volledigScherm ? <Minimize2 className="w-4 h-4 mr-1.5" /> : <Maximize2 className="w-4 h-4 mr-1.5" />}
+          <span className="hidden sm:inline">{volledigScherm ? 'Verkleinen' : 'Volledig scherm'}</span>
+        </Button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8 min-h-[calc(100vh-12rem)]">
