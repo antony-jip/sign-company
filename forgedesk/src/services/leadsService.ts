@@ -5,6 +5,7 @@ import type { Lead, LeadStatus } from '@/types'
 // dus geen organisatie_id-filter zoals bij de kerntabellen.
 
 export const LEAD_STATUSSEN: { id: LeadStatus; label: string }[] = [
+  { id: 'nieuw', label: 'Nieuw' },
   { id: 'benaderd', label: 'Benaderd' },
   { id: 'gereageerd', label: 'Gereageerd' },
   { id: 'geen_interesse', label: 'Geen interesse' },
@@ -48,7 +49,7 @@ export async function maakLead(lead: Partial<Lead>): Promise<Lead | null> {
     email: '',
     provincie: '',
     plaats: '',
-    status: 'benaderd' as LeadStatus,
+    status: 'nieuw' as LeadStatus,
     bron: '',
     bron_status: '',
     tags: [],

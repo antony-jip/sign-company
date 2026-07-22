@@ -19,6 +19,7 @@ import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
 import { EmailContextSidebar } from './EmailContextSidebar'
 import { koppelEmailAanProject } from '@/services/emailProjectService'
+import { updateLeadStatus } from '@/services/leadsService'
 import { EmailCompose } from './EmailCompose'
 import type { ComposeActions } from './EmailCompose'
 import { EmailListItem } from './EmailListItem'
@@ -190,12 +191,17 @@ export function EmailLayout() {
 
   // ─── Compose state ───
   const [composeDefaults, setComposeDefaults] = useState<{
-    to?: string; subject?: string; body?: string; replyToText?: string
+    to?: string; subject?: string; body?: string; bodyIsBericht?: boolean; replyToText?: string
   }>({})
   const [composeProjectId, setComposeProjectId] = useState<string | null>(null)
   // Ref-mirror zodat handleSendEmail (lege deps) de actuele waarde leest
   const composeProjectIdRef = useRef<string | null>(null)
   composeProjectIdRef.current = composeProjectId
+  // Lead waarvoor deze mail wordt opgesteld; na verzenden gaat die op benaderd.
+  const [composeLeadId, setComposeLeadId] = useState<string | null>(null)
+  const [benaderdeLeadId, setBenaderdeLeadId] = useState<string | null>(null)
+  const composeLeadIdRef = useRef<string | null>(null)
+  composeLeadIdRef.current = composeLeadId
 
   // ─── Compose-sidebar communication ───
   const [composeToAddress, setComposeToAddress] = useState('')
@@ -225,7 +231,9 @@ export function EmailLayout() {
         to: params.get('to') || undefined,
         subject: params.get('subject') || undefined,
         body: params.get('body') || undefined,
+        bodyIsBericht: true,
       })
+      setComposeLeadId(null)
       setViewMode('composing')
     }
   }, [location.pathname, location.search])
@@ -1345,11 +1353,12 @@ export function EmailLayout() {
     })
   }, [loadEmailBody, selectedFolder, toggleCheckEmail])
 
-  const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string; replyToText?: string }) => {
+  const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string; bodyIsBericht?: boolean; replyToText?: string }) => {
     viewTransition(() => {
       setComposeDefaults(defaults || {})
       // Verse compose-sessie: vorige project-koppelingskeuze niet hergebruiken
       setComposeProjectId(null)
+      setComposeLeadId(null)
       setViewMode('composing')
       setSelectedEmail(null)
     }, 'forward')
@@ -1411,6 +1420,16 @@ export function EmailLayout() {
           logger.warn('Project-koppeling na compose mislukt:', e)
         }
         setComposeProjectId(null)
+      }
+      const pendingLeadId = composeLeadIdRef.current
+      if (pendingLeadId) {
+        try {
+          await updateLeadStatus(pendingLeadId, 'benaderd')
+          setBenaderdeLeadId(pendingLeadId)
+        } catch (e) {
+          logger.warn('Leadstatus na verzenden bijwerken mislukt:', e)
+        }
+        setComposeLeadId(null)
       }
     } catch (err) {
       logger.error('Email verzenden mislukt:', err)
@@ -1484,6 +1503,7 @@ export function EmailLayout() {
       // Reset compose-keuzes zodat een afgebroken sessie niet bij een
       // volgende compose (bv. via /email/compose deeplink) door-lekt.
       setComposeProjectId(null)
+      setComposeLeadId(null)
       setViewMode('idle')
     }, 'back')
   }, [])
@@ -1861,9 +1881,13 @@ export function EmailLayout() {
       {/* ─── LEADS · eigen tabel, dus eigen paneel in plaats van de e-mailkolommen ─── */}
       {selectedFolder === 'leads' && (
         <LeadsPaneel
-          onMailLead={(email, body) => handleCompose({ to: email, body })}
+          onMailLead={(email, body, leadId) => {
+            handleCompose({ to: email, body, bodyIsBericht: true })
+            setComposeLeadId(leadId || null)
+          }}
           naastCompose={viewMode !== 'idle'}
           mailDirect={isDesktop}
+          benaderdeLeadId={benaderdeLeadId}
           onBeantwoordMail={(mail) => {
             loadEmailBody(mail, 'inbox')
               .then((metBody) => handleReply(metBody))
@@ -2263,6 +2287,7 @@ export function EmailLayout() {
             defaultTo={composeDefaults.to}
             defaultSubject={composeDefaults.subject}
             defaultBody={composeDefaults.body}
+            defaultBodyIsBericht={composeDefaults.bodyIsBericht}
             replyToText={composeDefaults.replyToText}
             onSend={handleSendEmail}
             allEmails={emails}

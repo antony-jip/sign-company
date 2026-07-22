@@ -18,6 +18,7 @@ import { getEmailsVoorProject, koppelEmailAanProject, type ProjectMail } from '@
 import { uploadEmailAttachment, deleteFile } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem, SigningVisualisatie } from '@/types'
+import { handtekeningAfbeeldingHtml } from '@/utils/handtekening'
 
 const MAX_BIJLAGE_BYTES = 20 * 1024 * 1024
 const MAX_BIJLAGEN_TOTAAL_BYTES = 25 * 1024 * 1024
@@ -280,7 +281,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   { project, klant, contactpersoon, userId, medewerkerNaam, open, onOpenChange },
   ref,
 ) {
-  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, profile, primaireKleur } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, profile, primaireKleur } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -827,9 +828,13 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       }
 
       const bodyHtml = markdownNaarHtml(body)
-      const signaturImg = handtekeningAfbeelding?.trim()
-        ? `<br/><br/><img src="${handtekeningAfbeelding}" alt="Handtekening" style="max-height:${handtekeningAfbeeldingGrootte || 64}px;display:block;"/>`
-        : ''
+      const sigImg = handtekeningAfbeeldingHtml({
+        url: handtekeningAfbeelding,
+        link: handtekeningAfbeeldingLink,
+        hoogte: handtekeningAfbeeldingGrootte || 64,
+        extraStyle: 'display:block;',
+      })
+      const signaturImg = sigImg ? `<br/><br/>${sigImg}` : ''
       const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#1A1A1A">${bodyHtml}${signaturImg}</div>`
 
       const toStr = toEmails.join(', ')

@@ -23,7 +23,7 @@ import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolb
 import { DatePicker } from '@/components/ui/date-picker'
 import { Switch } from '@/components/ui/switch'
 import { getWachtendeEmailNaarAdres } from '@/services/emailService'
-import { handtekeningNaarHtml } from '@/utils/handtekening'
+import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 
 export interface ComposeActions {
   forgieWrite: () => void
@@ -36,7 +36,13 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
-  /** Platte tekst van de originele mail · aanwezig betekent: dit is een reply. */
+  /**
+   * Bij reply/forward is defaultBody het citaat van de originele mail en hoort
+   * de handtekening erboven. Is defaultBody de mail zelf (bv. een AI-opzetje),
+   * zet deze vlag dan aan zodat de handtekening eronder komt.
+   */
+  defaultBodyIsBericht?: boolean
+  /** Platte tekst van de originele mail — aanwezig betekent: dit is een reply. */
   replyToText?: string
   onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
   allEmails?: Email[]
@@ -115,6 +121,7 @@ export function EmailCompose({
   defaultTo = '',
   defaultSubject = '',
   defaultBody = '',
+  defaultBodyIsBericht = false,
   replyToText,
   onSend,
   allEmails = [],
@@ -126,7 +133,7 @@ export function EmailCompose({
 }: EmailComposeProps) {
   const isReply = !!(replyToText && replyToText.trim())
   const navigate = useNavigate()
-  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam } = useAppSettings()
   const { organisatieId } = useAuth()
 
   const [to, setTo] = useState(defaultTo)
@@ -200,19 +207,24 @@ export function EmailCompose({
   // Build signature HTML
   const signatureHtml = useMemo(() => {
     const imgHeight = handtekeningAfbeeldingGrootte ?? 64
-    const imgMaxWidth = Math.round(imgHeight * 2.5)
     const parts: string[] = []
     if (emailHandtekening) {
       parts.push(handtekeningNaarHtml(emailHandtekening))
     }
-    if (handtekeningAfbeelding) {
-      parts.push(`<img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`)
+    const imgHtml = handtekeningAfbeeldingHtml({
+      url: handtekeningAfbeelding,
+      link: handtekeningAfbeeldingLink,
+      hoogte: imgHeight,
+      maxBreedte: Math.round(imgHeight * 2.5),
+    })
+    if (imgHtml) {
+      parts.push(imgHtml)
     }
     if (!parts.length && bedrijfsnaam) {
       parts.push(bedrijfsnaam)
     }
     return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
-  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam])
+  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam])
 
   // Initialize editor with signature
   useEffect(() => {
@@ -220,7 +232,10 @@ export function EmailCompose({
       const timer = setTimeout(() => {
         if (!editorRef.current) return
         if (defaultBody) {
-          editorRef.current.innerHTML = `<br>${signatureHtml}${defaultBody.replace(/\n/g, '<br>')}`
+          const bodyHtml = defaultBody.replace(/\n/g, '<br>')
+          editorRef.current.innerHTML = defaultBodyIsBericht
+            ? `${bodyHtml}${signatureHtml}`
+            : `<br>${signatureHtml}${bodyHtml}`
         } else {
           editorRef.current.innerHTML = signatureHtml || '<br>'
         }
@@ -235,7 +250,7 @@ export function EmailCompose({
       }, 100)
       return () => clearTimeout(timer)
     }
-  }, [open, defaultBody, signatureHtml])
+  }, [open, defaultBody, defaultBodyIsBericht, signatureHtml])
 
   useEffect(() => {
     setTo(defaultTo)

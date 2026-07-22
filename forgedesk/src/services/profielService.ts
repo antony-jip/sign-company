@@ -182,6 +182,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     email_handtekening: '',
     handtekening_afbeelding: '',
     handtekening_afbeelding_grootte: 64,
+    handtekening_afbeelding_link: '',
     primaire_kleur: '#1A535C',
     secundaire_kleur: '#7c3aed',
     toon_conversie_rate: true,
@@ -314,6 +315,7 @@ const PER_USER_VELDEN_IN_PROFILE = [
   'email_handtekening',
   'handtekening_afbeelding',
   'handtekening_afbeelding_grootte',
+  'handtekening_afbeelding_link',
   'afzender_naam',
   'sidebar_items',
 ] as const

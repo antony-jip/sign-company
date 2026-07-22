@@ -277,6 +277,8 @@ function EmailTemplatesBeheerTab() {
 
 function SignatureImageUpload({
   imageUrl,
+  imageLink,
+  onImageLinkChange,
   onImageChange,
   imageSize,
   onImageSizeChange,
@@ -284,6 +286,8 @@ function SignatureImageUpload({
 }: {
   imageUrl: string
   onImageChange: (url: string) => void
+  imageLink?: string
+  onImageLinkChange?: (link: string) => void
   imageSize?: number
   onImageSizeChange?: (size: number) => void
   label?: string
@@ -351,6 +355,22 @@ function SignatureImageUpload({
               </Button>
             </div>
           </div>
+          {onImageLinkChange && (
+            <div className="space-y-1.5">
+              <Label htmlFor="handtekening-link" className="text-xs">Link achter de afbeelding</Label>
+              <Input
+                id="handtekening-link"
+                type="url"
+                inputMode="url"
+                value={imageLink ?? ''}
+                onChange={(e) => onImageLinkChange(e.target.value)}
+                placeholder="https://jouwsite.nl/onze-merken"
+              />
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
+                Ontvangers komen hier terecht als ze op de afbeelding klikken. Leeg laten = niet klikbaar.
+              </p>
+            </div>
+          )}
           {onImageSizeChange && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -362,7 +382,7 @@ function SignatureImageUpload({
                 <input
                   type="range"
                   min={24}
-                  max={200}
+                  max={700}
                   step={4}
                   value={currentSize}
                   onChange={(e) => onImageSizeChange(Number(e.target.value))}
@@ -444,6 +464,7 @@ export function EmailTab() {
   const [afzenderNaam, setAfzenderNaam] = useState('')
   const [handtekeningAfbeelding, setHandtekeningAfbeelding] = useState('')
   const [afbeeldingGrootte, setAfbeeldingGrootte] = useState(64)
+  const [afbeeldingLink, setAfbeeldingLink] = useState('')
   const [emailFetchLimit, setEmailFetchLimit] = useState(currentFetchLimit || 200)
   const [backfillTarget, setBackfillTargetState] = useState<BackfillTarget>('1jaar')
   useEffect(() => {
@@ -468,6 +489,7 @@ export function EmailTab() {
       setAfzenderNaam((userProfile?.afzender_naam?.trim() ? userProfile.afzender_naam : null) || data.afzender_naam || '')
       setHandtekeningAfbeelding(userProfile?.handtekening_afbeelding || data.handtekening_afbeelding || '')
       setAfbeeldingGrootte(userProfile?.handtekening_afbeelding_grootte || data.handtekening_afbeelding_grootte || 64)
+      setAfbeeldingLink(userProfile?.handtekening_afbeelding_link || data.handtekening_afbeelding_link || '')
     } catch (err) {
       logger.error('Fout bij laden e-mailinstellingen:', err)
     } finally {
@@ -518,6 +540,7 @@ export function EmailTab() {
         afzender_naam: afzenderNaam,
         handtekening_afbeelding: handtekeningAfbeelding,
         handtekening_afbeelding_grootte: afbeeldingGrootte,
+        handtekening_afbeelding_link: afbeeldingLink.trim(),
       })
       await Promise.all([refreshProfile(), refreshSettings()])
       toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
@@ -708,6 +731,8 @@ export function EmailTab() {
                 onImageChange={setHandtekeningAfbeelding}
                 imageSize={afbeeldingGrootte}
                 onImageSizeChange={setAfbeeldingGrootte}
+                imageLink={afbeeldingLink}
+                onImageLinkChange={setAfbeeldingLink}
               />
 
               <div className="space-y-2">

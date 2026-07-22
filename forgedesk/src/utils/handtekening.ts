@@ -136,3 +136,46 @@ export function handtekeningNaarHtml(waarde: string | null | undefined): string 
   if (bevatOpmaak(tekst)) return schoonHandtekeningHtml(tekst)
   return escapeHtml(tekst).replace(/\n/g, '<br />')
 }
+
+/**
+ * Alleen http(s) toestaan achter de handtekening-afbeelding: een
+ * javascript:-URL uit een instellingenveld mag nooit in uitgaande mail belanden.
+ */
+export function veiligeAfbeeldingLink(link?: string | null): string {
+  const schoon = (link || '').trim()
+  if (!schoon) return ''
+  try {
+    const url = new URL(schoon)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : ''
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * De <img> voor de handtekening-afbeelding, met een link eromheen als de
+ * gebruiker die heeft ingesteld. Eén plek, zodat elke mail (offerte, project,
+ * los bericht, antwoord) dezelfde klikbare banner krijgt.
+ */
+export function handtekeningAfbeeldingHtml({
+  url,
+  link,
+  hoogte = 64,
+  maxBreedte,
+  extraStyle = '',
+}: {
+  url?: string | null
+  link?: string | null
+  hoogte?: number
+  maxBreedte?: number
+  extraStyle?: string
+}): string {
+  const bron = veiligeSrc((url || '').trim())
+  if (!bron) return ''
+  const breedte = maxBreedte ?? Math.round(hoogte * 3.5)
+  const img = `<img src="${escapeHtml(bron)}" alt="" style="max-height:${hoogte}px;max-width:${breedte}px;object-fit:contain;border:0;${extraStyle}" />`
+  const href = veiligeAfbeeldingLink(link)
+  return href
+    ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;border:0;">${img}</a>`
+    : img
+}

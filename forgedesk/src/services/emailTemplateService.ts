@@ -2,7 +2,7 @@
 // All templates are in Dutch and return { subject, html, text } objects
 
 import { supabase, isSupabaseConfigured } from './supabaseHelpers'
-import { handtekeningNaarHtml } from '@/utils/handtekening'
+import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -12,6 +12,7 @@ interface EmailTemplateData {
   bedrijfsnaam?: string
   handtekening?: string
   handtekeningAfbeelding?: string
+  handtekeningAfbeeldingLink?: string
   handtekeningAfbeeldingGrootte?: number
   logoUrl?: string
   primaireKleur?: string
@@ -139,9 +140,14 @@ export function getBaseTemplate(data: EmailTemplateData): {
       : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">${escapeHtml(bedrijf)}</span>`
 
     const sigImgHeight = data.handtekeningAfbeeldingGrootte ?? 64
-    const sigImgHtml = data.handtekeningAfbeelding
-      ? `<br /><img src="${escapeHtml(data.handtekeningAfbeelding)}" alt="" style="max-height:${sigImgHeight}px;max-width:240px;object-fit:contain;margin-top:8px;display:block;" />`
-      : ''
+    const sigImg = handtekeningAfbeeldingHtml({
+      url: data.handtekeningAfbeelding,
+      link: data.handtekeningAfbeeldingLink,
+      hoogte: sigImgHeight,
+      maxBreedte: 240,
+      extraStyle: 'margin-top:8px;display:block;',
+    })
+    const sigImgHtml = sigImg ? `<br />${sigImg}` : ''
     // De handtekening kan opmaak bevatten. handtekeningNaarHtml schoont die en
     // zet oude platte tekst om, dus hier mag het als HTML de mail in.
     const handtekeningHtml = data.handtekening
@@ -256,7 +262,13 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
 
   // De handtekening afbeelding apart renderen (niet escapen — is HTML/img)
   const signatureHtml = data.handtekeningAfbeelding
-    ? `<div style="margin-top: 16px;"><img src="${data.handtekeningAfbeelding}" alt="Handtekening" style="max-width: ${data.handtekeningAfbeeldingGrootte || 200}px; height: auto;" /></div>`
+    ? `<div style="margin-top: 16px;">${handtekeningAfbeeldingHtml({
+        url: data.handtekeningAfbeelding,
+        link: data.handtekeningAfbeeldingLink,
+        hoogte: data.handtekeningAfbeeldingGrootte || 200,
+        maxBreedte: data.handtekeningAfbeeldingGrootte || 200,
+        extraStyle: 'height:auto;',
+      })}</div>`
     : data.handtekening
       ? `<div style="margin-top: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555; white-space: pre-line;">${escapeHtml(data.handtekening)}</div>`
       : ''

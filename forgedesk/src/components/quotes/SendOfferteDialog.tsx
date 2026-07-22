@@ -79,7 +79,7 @@ export function SendOfferteDialog({
   onTrialBlocked,
   medewerkerNaam,
 }: SendOfferteDialogProps) {
-  const { bedrijfsnaam, primaireKleur, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, profile } = useAppSettings()
+  const { bedrijfsnaam, primaireKleur, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, profile } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   const [sendTo, setSendTo] = useState('')
@@ -237,6 +237,7 @@ export function SendOfferteDialog({
         handtekening: emailHandtekening || undefined,
         handtekeningAfbeelding: handtekeningAfbeelding || undefined,
         handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
+        handtekeningAfbeeldingLink: handtekeningAfbeeldingLink || undefined,
         logoUrl: profile?.logo_url || undefined,
         bekijkUrl: publiekeUrl,
         customBody: sendBody || undefined,
@@ -334,7 +335,7 @@ export function SendOfferteDialog({
   }, [
     offerte, klant, items, userId, mode, sendTo, sendSubject, sendBody,
     bedrijfsnaam, primaireKleur, emailHandtekening, handtekeningAfbeelding,
-    handtekeningAfbeeldingGrootte, profile, documentStyle,
+    handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, profile, documentStyle,
     isTrialBlocked, onTrialBlocked, onOpenChange, onPortaalCreated, onSent,
     medewerkerNaam,
   ])

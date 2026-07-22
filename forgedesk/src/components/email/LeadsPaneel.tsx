@@ -11,6 +11,7 @@ import type { Email, Lead, LeadStatus } from '@/types'
 // Statuskleuren uit het doen-design-systeem. Status is tekst + Flame punt,
 // nadrukkelijk geen gekleurde pill-badge.
 const STATUS_KLEUR: Record<LeadStatus, string> = {
+  nieuw: '#6E6E68',
   benaderd: '#8A7A4A',
   gereageerd: '#3A7D52',
   geen_interesse: '#C0451A',
@@ -27,13 +28,20 @@ function StatusTekst({ status }: { status: LeadStatus }) {
 }
 
 interface LeadsPaneelProps {
-  onMailLead: (email: string, body?: string) => void
+  /**
+   * leadId wordt alleen meegegeven voor leads die nog op 'nieuw' staan: na
+   * verzenden zet EmailLayout die op 'benaderd'. Een lead die al gereageerd
+   * heeft, mag door een tweede mail niet terugvallen naar benaderd.
+   */
+  onMailLead: (email: string, body?: string, leadId?: string) => void
   /** Tijdens opstellen staat compose rechts ernaast; de lead blijft dus zichtbaar. */
   naastCompose?: boolean
   /** Desktop: kies je een lead, dan staat de mail er meteen naast. */
   mailDirect?: boolean
   /** Kort reageren op een binnengekomen mail van deze lead. */
   onBeantwoordMail?: (email: Email) => void
+  /** Lead die zojuist gemaild is; status lokaal bijwerken zonder refetch. */
+  benaderdeLeadId?: string | null
 }
 
 /** Alleen ingevulde velden; ontbrekende gegevens laat de prompt liever weg. */
@@ -47,13 +55,14 @@ function leadContext(lead: Lead): string {
   ].filter(Boolean).join('\n')
 }
 
-export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = false, onBeantwoordMail }: LeadsPaneelProps) {
+export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = false, onBeantwoordMail, benaderdeLeadId }: LeadsPaneelProps) {
   const [leads, setLeads] = useState<Lead[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [zoek, setZoek] = useState('')
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'alle'>('alle')
   const [geselecteerdId, setGeselecteerdId] = useState<string | null>(null)
   const [notitieConcept, setNotitieConcept] = useState('')
+  const [aanwijzing, setAanwijzing] = useState('')
   const [schrijftVoorId, setSchrijftVoorId] = useState<string | null>(null)
   const [correspondentie, setCorrespondentie] = useState<Email[]>([])
   const actieveLeadRef = useRef<string | null>(null)
@@ -90,7 +99,8 @@ export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = fal
     actieveLeadRef.current = lead.id
     setGeselecteerdId(lead.id)
     setNotitieConcept(lead.notities)
-    if (mailDirect && lead.email) onMailLead(lead.email)
+    setAanwijzing('')
+    if (mailDirect && lead.email) onMailLead(lead.email, undefined, lead.status === 'nieuw' ? lead.id : undefined)
     setCorrespondentie([])
     if (lead.email) {
       getEmailsMetAdres(lead.email)
@@ -112,18 +122,25 @@ export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = fal
     }
   }, [])
 
+  useEffect(() => {
+    if (!benaderdeLeadId) return
+    setLeads((huidig) => huidig.map((l) => (
+      l.id === benaderdeLeadId && l.status === 'nieuw' ? { ...l, status: 'benaderd' } : l
+    )))
+  }, [benaderdeLeadId])
+
   const mailMetOpzet = useCallback(async (lead: Lead) => {
     setSchrijftVoorId(lead.id)
     try {
-      const { result } = await callForgie('write-lead-email', '', leadContext(lead))
-      onMailLead(lead.email, result)
+      const { result } = await callForgie('write-lead-email', aanwijzing.trim(), leadContext(lead))
+      onMailLead(lead.email, result, lead.status === 'nieuw' ? lead.id : undefined)
     } catch (err) {
       logger.error('Opzetje schrijven mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Opzetje schrijven mislukt')
     } finally {
       setSchrijftVoorId(null)
     }
-  }, [onMailLead])
+  }, [aanwijzing, onMailLead])
 
   const bewaarNotitie = useCallback(async (lead: Lead) => {
     if (notitieConcept === lead.notities) return
@@ -290,7 +307,7 @@ export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = fal
                   <div className="mt-1 pl-6 flex items-center gap-4">
                     <button
                       type="button"
-                      onClick={() => onMailLead(geselecteerd.email)}
+                      onClick={() => onMailLead(geselecteerd.email, undefined, geselecteerd.status === 'nieuw' ? geselecteerd.id : undefined)}
                       className="text-[13px] text-muted-foreground hover:text-petrol whitespace-nowrap"
                     >
                       Nieuwe mail
@@ -306,6 +323,15 @@ export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = fal
                     </button>
                   </div>
                 </div>
+              )}
+              {geselecteerd.email && (
+                <input
+                  type="text"
+                  value={aanwijzing}
+                  onChange={(e) => setAanwijzing(e.target.value)}
+                  placeholder="Aanwijzing voor Daan, bijvoorbeeld: houd het extra kort"
+                  className="w-full px-3 py-2 rounded-lg bg-muted/40 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-petrol/30"
+                />
               )}
               {geselecteerd.bron && (
                 <div className="flex items-center gap-2 text-muted-foreground">

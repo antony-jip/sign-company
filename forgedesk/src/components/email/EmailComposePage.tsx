@@ -29,13 +29,13 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
 import type { Offerte, OfferteItem, Klant } from '@/types'
-import { handtekeningNaarHtml } from '@/utils/handtekening'
+import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 
 export function EmailComposePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const quoteId = searchParams.get('quote_id') || ''
-  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   const [isLoading, setIsLoading] = useState(true)
@@ -118,10 +118,13 @@ export function EmailComposePage() {
             const totaalIncl = fmtBedrag(fetchedOfferte.totaal || 0)
             const sigText = emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`
             const sigImgHeight = handtekeningAfbeeldingGrootte ?? 64
-            const sigImgMaxWidth = Math.round(sigImgHeight * 2.5)
-            const sigImgHtml = handtekeningAfbeelding
-              ? `<img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${sigImgHeight}px;max-width:${sigImgMaxWidth}px;object-fit:contain;" /><br>`
-              : ''
+            const sigImg = handtekeningAfbeeldingHtml({
+              url: handtekeningAfbeelding,
+              link: handtekeningAfbeeldingLink,
+              hoogte: sigImgHeight,
+              maxBreedte: Math.round(sigImgHeight * 2.5),
+            })
+            const sigImgHtml = sigImg ? `${sigImg}<br>` : ''
             const bodyHtml = `Beste ${klantNaam},<br><br>Hierbij ontvangt u onze offerte ${fetchedOfferte.nummer} voor &ldquo;${fetchedOfferte.titel}&rdquo;.<br><br>Het totaalbedrag van deze offerte is ${totaalExcl} excl. btw${totaalExcl !== totaalIncl ? ` (${totaalIncl} incl. btw)` : ''}.<br><br>De offerte is geldig tot ${fetchedOfferte.geldig_tot ? new Date(fetchedOfferte.geldig_tot).toLocaleDateString('nl-NL') : '-'}. Bijgevoegd vindt u de offerte als PDF.<br><br>Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.<br><br>--<br>${sigImgHtml}${handtekeningNaarHtml(sigText)}`
 
             editorRef.current.innerHTML = bodyHtml
