@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
 import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
+import { AanvraagKaart } from './AanvraagKaart'
 import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -1668,6 +1669,10 @@ export function EmailReader({
                   </div>
                   <EmailReaderAIToolbar containerRef={emailBodyRef} />
                 </div>
+              )}
+
+              {email.is_aanvraag && !email.aanvraag_verborgen && (
+                <AanvraagKaart email={email} senderName={senderName} />
               )}
 
               {/* Attachments · image-grid + losse rij-cards voor non-images */}
