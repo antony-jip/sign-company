@@ -166,6 +166,9 @@ function addColorStrip(doc: jsPDF, color: [number, number, number], height: numb
   doc.rect(0, 0, pageWidth, height, 'F')
 }
 
+// jsPDF rekent hier in millimeters, fontgroottes zijn in punten.
+const PT_NAAR_MM = 25.4 / 72
+
 // ============ BRIEFPAPIER BACKGROUND ============
 
 export function detectImageFormat(url: string): string {
@@ -667,7 +670,10 @@ export async function generateOffertePDF(
     if (item.detail_regels?.length) {
       for (const regel of item.detail_regels) {
         if (regel.label && regel.waarde) {
-          detailLines.push(`${regel.label}: ${regel.waarde}`)
+          // Labels die zelf al op een dubbele punt eindigen ("Plakken:") zouden
+          // anders "Plakken::" opleveren.
+          const label = regel.label.trim().replace(/:+$/, '')
+          detailLines.push(`${label}: ${regel.waarde}`)
         }
       }
     }
@@ -704,9 +710,16 @@ export async function generateOffertePDF(
         {
           content: detailLines.join('\n'),
           colSpan: hasVariants ? 4 : 1,
+          // Herkenningspunt voor willDrawCell; autoTable geeft dit object
+          // ongewijzigd door als cell.raw.
+          detailCel: true,
           styles: {
-            cellPadding: { top: 0.5, bottom: hasVariants ? 1.5 : 3.5, left: 4, right: 4 },
+            cellPadding: { top: 1, bottom: hasVariants ? 1.5 : 3.5, left: 4, right: 4 },
             textColor: detailColor,
+            fontSize: 9.5,
+            // Deze cel wordt in willDrawCell zelf getekend, met het label vet.
+            // Bovenlijnen maakt die positie voorspelbaar.
+            valign: 'top',
           },
         },
       ])
@@ -810,10 +823,14 @@ export async function generateOffertePDF(
       valign: 'middle',
     },
     columnStyles: {
+      // Omschrijving is de kolom die tekst moet dragen; de getalkolommen zijn
+      // teruggebracht tot wat een bedrag nodig heeft zodat die ruimte overhoudt.
       0: { cellWidth: 'auto', halign: 'left' },
+      // AANTAL moet op één regel passen (8pt bold + padding), vandaar 22.
+      // De extra ruimte voor de omschrijving komt uit PRIJS en TOTAAL.
       1: { cellWidth: 22, halign: 'center' },
-      2: { cellWidth: 32, halign: 'right' },
-      3: { cellWidth: 32, halign: 'right' },
+      2: { cellWidth: 26, halign: 'right' },
+      3: { cellWidth: 28, halign: 'right' },
     },
     margin: {
       left: tableMarginLeft,
@@ -822,6 +839,70 @@ export async function generateOffertePDF(
       bottom: margins.bottom,
     },
     showHead: 'everyPage',
+    // Detail-regels ("Aantal: ...", "Materiaal: ...") krijgen hun label vet.
+    // autoTable kan geen twee stijlen in één cel, dus die cel tekenen we zelf
+    // en slaan we de standaard-tekening over door false terug te geven.
+    willDrawCell: (data) => {
+      if (data.section !== 'body' || data.column.index !== 0) return
+      if (!(data.cell.raw as { detailCel?: boolean } | null)?.detailCel) return
+
+      const regels = Array.isArray(data.cell.text) ? data.cell.text : [String(data.cell.text)]
+      if (!regels.length) return
+
+      const fontSize = data.cell.styles.fontSize
+      const links = data.cell.x + data.cell.padding('left')
+      const rechts = data.cell.x + data.cell.width - data.cell.padding('right')
+      const regelHoogte = fontSize * doc.getLineHeightFactor() * PT_NAAR_MM
+      let regelY = data.cell.y + data.cell.padding('top') + fontSize * PT_NAAR_MM
+
+      doc.setFontSize(fontSize)
+      doc.setTextColor(detailColor[0], detailColor[1], detailColor[2])
+
+      // Alle waarden op dezelfde inspringing zetten leest als een blokje in
+      // plaats van als rafelige regels. Breedste label bepaalt de kolom, maar
+      // nooit meer dan de helft van de cel — anders houdt een lang label geen
+      // ruimte over voor zijn eigen waarde.
+      doc.setFont(bodyFont, 'bold')
+      const labels = regels
+        .map((r) => (r.indexOf(': ') === -1 ? null : r.slice(0, r.indexOf(': ') + 1)))
+        .filter((l): l is string => l !== null)
+      const labelKolom = labels.length
+        ? Math.min(Math.max(...labels.map((l) => doc.getTextWidth(l + ' '))), (rechts - links) / 2)
+        : 0
+
+      for (const regel of regels) {
+        const scheiding = regel.indexOf(': ')
+        // Geen label? Dan is het een doorgelopen regel; die volgt de inspringing.
+        if (scheiding === -1) {
+          doc.setFont(bodyFont, 'normal')
+          doc.text(regel, links + labelKolom, regelY)
+          regelY += regelHoogte
+          continue
+        }
+        const label = regel.slice(0, scheiding + 1)
+        const waarde = regel.slice(scheiding + 2)
+
+        doc.setFont(bodyFont, 'bold')
+        doc.text(label, links, regelY)
+
+        doc.setFont(bodyFont, 'normal')
+        const waardeLinks = links + labelKolom
+        let x = waardeLinks
+        for (const woord of waarde.split(' ')) {
+          const breedte = doc.getTextWidth(woord + ' ')
+          if (x + breedte > rechts && x > waardeLinks) {
+            regelY += regelHoogte
+            x = waardeLinks
+          }
+          doc.text(woord, x, regelY)
+          x += breedte
+        }
+        regelY += regelHoogte
+      }
+
+      doc.setFont(bodyFont, 'normal')
+      return false
+    },
     // Briefpapier op vervolgpagina's wordt automatisch getekend door de
     // doc.addPage wrapper bovenaan generateOffertePDF.
   })
