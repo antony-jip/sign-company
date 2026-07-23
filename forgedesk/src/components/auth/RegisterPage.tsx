@@ -127,7 +127,7 @@ export function RegisterPage() {
           <motion.div variants={item} className="mt-8 max-w-[460px]">
             <div className="flex items-baseline gap-3">
               <span className="font-heading text-[26px] sm:text-[28px] font-extrabold tracking-tight text-petrol dark:text-[#8FC3CC] leading-none tabular-nums">
-                €<CountUp target={79} duration={900} delay={400} />
+                €<CountUp target={129} duration={900} delay={400} />
               </span>
               <span className="text-[13px] text-foreground/70 font-medium">/maand</span>
             </div>
@@ -308,7 +308,7 @@ export function RegisterPage() {
         <div className="grid sm:grid-cols-2 gap-4 sm:gap-5 max-w-[820px] mx-auto">
           <ConversionCard
             kicker="01 · Prijs"
-            title="€79 per maand."
+            title="€129 per maand."
             body="Minder dan 1 uur monteurstijd per week. Goedkoper dan de tijd die je nu kwijt bent aan losse Excel- en WhatsApp-werk."
           />
           <ConversionCard

@@ -244,8 +244,8 @@ export function AbonnementTab() {
             {[
               {
                 label: 'Per maand',
-                waarde: <span className="font-mono">€95,59</span>,
-                sub: 'incl. btw · €79,00 excl. btw, 21% btw',
+                waarde: <span className="font-mono">€156,09</span>,
+                sub: 'incl. btw · €129,00 excl. btw, 21% btw',
               },
               {
                 label: 'Volgende incasso',
@@ -359,10 +359,10 @@ export function AbonnementTab() {
               </h3>
 
               <div className="flex items-baseline gap-1.5 mt-3">
-                <span className="text-[42px] font-bold font-mono tracking-tight text-foreground">€79</span>
+                <span className="text-[42px] font-bold font-mono tracking-tight text-foreground">€129</span>
                 <span className="text-[15px] text-muted-foreground">/ maand</span>
               </div>
-              <p className="text-[12px] text-muted-foreground mt-1">excl. btw · €95,59 incl. btw per maand</p>
+              <p className="text-[12px] text-muted-foreground mt-1">excl. btw · €156,09 incl. btw per maand</p>
 
               <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: 'hsl(var(--background))' }}>
                 <Users className="h-4 w-4" style={{ color: '#1A535C' }} />
@@ -398,7 +398,7 @@ export function AbonnementTab() {
               {!isActive && (
                 <p className="text-[12px] mt-3 max-w-[380px] leading-[1.5] text-muted-foreground">
                   Je rekent nu de eerste maand af en geeft toestemming voor automatische
-                  incasso. Daarna schrijven we elke maand €95,59 incl. btw af tot je opzegt.
+                  incasso. Daarna schrijven we elke maand €156,09 incl. btw af tot je opzegt.
                 </p>
               )}
             </div>

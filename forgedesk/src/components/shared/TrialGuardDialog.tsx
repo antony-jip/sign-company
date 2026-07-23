@@ -47,7 +47,7 @@ export function TrialGuardDialog({ open, onOpenChange }: TrialGuardDialogProps) 
             className="text-white font-bold sm:order-2 inline-flex items-center gap-2"
             style={{ backgroundColor: '#F15025' }}
           >
-            Activeer abonnement · €79/maand
+            Activeer abonnement · €129/maand
             <ArrowRight className="h-4 w-4" />
           </Button>
         </DialogFooter>
