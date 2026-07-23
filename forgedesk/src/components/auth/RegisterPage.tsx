@@ -29,7 +29,9 @@ const item = {
 export function RegisterPage() {
   const navigate = useNavigate()
 
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(
+    () => new URLSearchParams(window.location.search).get('email') ?? '',
+  )
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
