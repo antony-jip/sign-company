@@ -26,7 +26,7 @@ const splineMono = Spline_Sans_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://doen.team'),
   title: 'doen. | Software voor signmakers en reclamebedrijven',
-  description: 'Van offerte tot factuur. Zo gedaan. Alles-in-één bedrijfssoftware voor signmakers en reclamebedrijven, €79/maand ex. btw. Tot 10 gebruikers inbegrepen.',
+  description: 'Van offerte tot factuur. Zo gedaan. Alles-in-één bedrijfssoftware voor signmakers en reclamebedrijven, €129/maand ex. btw. Tot 10 gebruikers inbegrepen.',
   keywords: [
     'signmaker software',
     'reclame bedrijf software',
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: 'doen. | Slim gedaan.',
-    description: 'Van offerte tot factuur. Zo gedaan. €79/maand ex. btw, tot 10 gebruikers.',
+    description: 'Van offerte tot factuur. Zo gedaan. €129/maand ex. btw, tot 10 gebruikers.',
     url: 'https://doen.team',
     siteName: 'doen.',
     locale: 'nl_NL',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'doen. | Slim gedaan.',
-    description: 'Van offerte tot factuur. Zo gedaan. €79/maand ex. btw, tot 10 gebruikers.',
+    description: 'Van offerte tot factuur. Zo gedaan. €129/maand ex. btw, tot 10 gebruikers.',
   },
   robots: { index: true, follow: true },
 }

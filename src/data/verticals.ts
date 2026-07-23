@@ -19,7 +19,7 @@ export const verticals: Vertical[] = [
     naam: 'Signmakers',
     seoTitle: 'Software voor signmakers | doen.',
     seoDescription:
-      'Alles-in-één software voor signmakers: offertes, planning, werkbonnen, klantportaal en facturatie in één systeem. €79/maand, 30 dagen gratis.',
+      'Alles-in-één software voor signmakers: offertes, planning, werkbonnen, klantportaal en facturatie in één systeem. €129/maand, 30 dagen gratis.',
     h1Lead: 'Software voor signmakers',
     h1Accent: 'Van aanvraag tot montage',
     intro:
