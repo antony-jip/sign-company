@@ -12,7 +12,7 @@ Eigenaren en meewerkend voormannen van Nederlandse signbedrijven (2–15 man): s
 
 ## Product Purpose
 
-De site verkoopt doen.: alles-in-één software voor signbedrijven, van eerste klantvraag tot betaalde factuur. Eén plan, €79 per maand, alles inbegrepen, 30 dagen gratis. Succes = bezoeker start een gratis account of plant een demo. De interactieve app-demo (AppShowcase) is het belangrijkste verkoopmiddel: laten zien in plaats van beloven.
+De site verkoopt doen.: alles-in-één software voor signbedrijven, van eerste klantvraag tot betaalde factuur. Eén plan, €129 per maand, alles inbegrepen, 30 dagen gratis. Succes = bezoeker start een gratis account of plant een demo. De interactieve app-demo (AppShowcase) is het belangrijkste verkoopmiddel: laten zien in plaats van beloven.
 
 ## Brand Personality
 
