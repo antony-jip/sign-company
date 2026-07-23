@@ -71,11 +71,11 @@ export default function Footer() {
             © {new Date().getFullYear()} doen. · Gemaakt door signmakers, voor signmakers
           </p>
           <a
-            href="mailto:hello@doen.team"
+            href="/contact"
             className="text-[13px] font-medium transition-colors hover:text-white"
             style={{ color: 'rgba(226,240,241,0.6)' }}
           >
-            hello@doen.team
+            Stuur een bericht
           </a>
         </div>
       </div>

@@ -197,7 +197,7 @@ export default function OverContent() {
                   <span className="block text-[13px] font-normal text-muted mt-0.5">maker van doen.</span>
                 </p>
                 <a
-                  href="mailto:hello@doen.team"
+                  href="/contact"
                   className="group inline-flex items-center gap-2 text-[15px] font-semibold text-ink"
                 >
                   <span className="relative">

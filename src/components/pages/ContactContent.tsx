@@ -25,14 +25,14 @@ export default function ContactContent() {
       })
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string }
-        setErrorMsg(data.error ?? 'Er ging iets mis. Probeer het opnieuw of mail direct naar hello@doen.team.')
+        setErrorMsg(data.error ?? 'Er ging iets mis. Probeer het later nog eens.')
         setFormState('error')
         return
       }
       setFormState('success')
       setFormData({ naam: '', email: '', bericht: '' })
     } catch {
-      setErrorMsg('Geen verbinding. Probeer het opnieuw of mail direct naar hello@doen.team.')
+      setErrorMsg('Geen verbinding. Probeer het later nog eens.')
       setFormState('error')
     }
   }
@@ -69,14 +69,6 @@ export default function ContactContent() {
             <div className="hero-fade" style={{ animationDelay: '0.4s' }}>
               <dl>
                 <div className="flex items-baseline justify-between gap-4 py-4 border-t border-petrol/10">
-                  <dt className="text-[14px] text-muted shrink-0">Email</dt>
-                  <dd>
-                    <a href="mailto:hello@doen.team" className="text-[15px] font-semibold text-petrol hover:text-flame transition-colors">
-                      hello@doen.team
-                    </a>
-                  </dd>
-                </div>
-                <div className="flex items-baseline justify-between gap-4 py-4 border-t border-petrol/10">
                   <dt className="text-[14px] text-muted shrink-0">Reactietijd</dt>
                   <dd className="text-[15px] font-semibold text-petrol">Binnen één werkdag</dd>
                 </div>
@@ -84,10 +76,10 @@ export default function ContactContent() {
                   <dt className="text-[14px] text-muted shrink-0">Demo plannen</dt>
                   <dd>
                     <a
-                      href="mailto:hello@doen.team?subject=Plan%20een%20demo"
+                      href="#contact-formulier"
                       className="text-[15px] font-semibold text-petrol hover:text-flame transition-colors"
                     >
-                      Mail ons, we plannen direct iets in
+                      Gebruik het formulier, we plannen direct iets in
                     </a>
                   </dd>
                 </div>
@@ -129,7 +121,7 @@ export default function ContactContent() {
           </div>
 
           {/* Rechts: formulier */}
-          <div className="hero-fade lg:col-span-3" style={{ animationDelay: '0.35s' }}>
+          <div id="contact-formulier" className="hero-fade lg:col-span-3 scroll-mt-28" style={{ animationDelay: '0.35s' }}>
             <div className="bg-white rounded-[8px] border border-petrol/10 p-6 md:p-12">
               <AnimatePresence mode="wait">
                 {formState === 'success' ? (
