@@ -6,16 +6,17 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { getKlanten, getContactpersonenDB, getEmailTemplates, createEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
+import { getKlanten, getContactpersonenDB, getMedewerkers, getEmailTemplates, createEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { splitsBijlagen, valideerBijlagen, uploadBijlagenMetLinkFallback, type BijlagenPayload } from '@/utils/groteBijlagen'
 import { toast } from 'sonner'
 import { cn, getInitials } from '@/lib/utils'
-import type { Klant, Contactpersoon, ContactpersoonRecord, Email } from '@/types'
+import type { Klant, Contactpersoon, ContactpersoonRecord, Email, Medewerker } from '@/types'
 
 type ToSuggestion =
   | { kind: 'klant'; klant: Klant }
   | { kind: 'contactpersoon'; cp: Contactpersoon; klantNaam: string; klantId: string }
+  | { kind: 'medewerker'; medewerker: Medewerker }
 import { callForgie, type ForgieAction } from '@/services/forgieService'
 import { logger } from '../../utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
@@ -152,6 +153,7 @@ export function EmailCompose({
   // Contacts autocomplete
   const [contacts, setContacts] = useState<Klant[]>([])
   const [dbContacten, setDbContacten] = useState<ContactpersoonRecord[]>([])
+  const [collegas, setCollegas] = useState<Medewerker[]>([])
   const [suggestions, setSuggestions] = useState<ToSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const toInputRef = useRef<HTMLInputElement>(null)
@@ -261,6 +263,7 @@ export function EmailCompose({
   useEffect(() => {
     if (open) {
       getKlanten().then(setContacts).catch(() => {})
+      getMedewerkers().then(setCollegas).catch(() => {})
       getEmailTemplates().then(setDbTemplates).catch(() => {})
       if (organisatieId) {
         getContactpersonenDB(organisatieId).then(setDbContacten).catch(() => {})
@@ -283,10 +286,22 @@ export function EmailCompose({
 
   const handleToChange = useCallback((value: string) => {
     setTo(value)
-    if (value.length >= 2 && (contacts.length > 0 || dbContacten.length > 0)) {
+    if (value.length >= 2 && (contacts.length > 0 || dbContacten.length > 0 || collegas.length > 0)) {
       const q = value.toLowerCase()
       const matches: ToSuggestion[] = []
       const seenEmails = new Set<string>()
+
+      // Collega's eerst: intern mailen gebeurt vaak en die adressen ken je
+      // niet uit je hoofd zoals klantadressen uit lopende correspondentie.
+      for (const mw of collegas) {
+        if (!mw.email || mw.status !== 'actief') continue
+        const key = mw.email.toLowerCase()
+        if (seenEmails.has(key)) continue
+        if (mw.naam?.toLowerCase().includes(q) || key.includes(q)) {
+          matches.push({ kind: 'medewerker', medewerker: mw })
+          seenEmails.add(key)
+        }
+      }
 
       for (const k of contacts) {
         const klantMatches =
@@ -343,10 +358,10 @@ export function EmailCompose({
     } else {
       setShowSuggestions(false)
     }
-  }, [contacts, dbContacten])
+  }, [contacts, dbContacten, collegas])
 
   const handleSelectSuggestion = useCallback((item: ToSuggestion) => {
-    const email = item.kind === 'klant' ? item.klant.email : item.cp.email
+    const email = item.kind === 'klant' ? item.klant.email : item.kind === 'medewerker' ? item.medewerker.email : item.cp.email
     setTo(email || '')
     setShowSuggestions(false)
   }, [])
@@ -756,6 +771,27 @@ export function EmailCompose({
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute left-0 top-full mt-1 w-80 bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1 overflow-hidden">
                   {suggestions.map((item, idx) => {
+                    if (item.kind === 'medewerker') {
+                      const mw = item.medewerker
+                      return (
+                        <button
+                          key={`mw-${mw.id}`}
+                          onClick={() => handleSelectSuggestion(item)}
+                          className="w-full text-left px-3.5 py-2.5 hover:bg-background flex items-center gap-2.5 transition-colors"
+                        >
+                          <div className="w-7 h-7 rounded-full bg-petrol/12 flex items-center justify-center flex-shrink-0">
+                            <span className="text-[10px] font-semibold text-petrol">{getInitials(mw.naam || '')}</span>
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-[13px] font-medium text-foreground truncate">
+                              {mw.naam}
+                              <span className="ml-1.5 text-[11px] font-normal text-muted-foreground">collega</span>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground truncate">{mw.email}</div>
+                          </div>
+                        </button>
+                      )
+                    }
                     if (item.kind === 'klant') {
                       const k = item.klant
                       return (
