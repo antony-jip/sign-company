@@ -183,7 +183,7 @@ export function EmailReader({
     if (!parts.length && bedrijfsnaam) {
       parts.push(bedrijfsnaam)
     }
-    return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
+    return parts.length ? `<br><br>${parts.join('<br>')}` : ''
   }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam])
 
   // Track per-attachment download state (alleen visueel · losse spinner per bijlage)

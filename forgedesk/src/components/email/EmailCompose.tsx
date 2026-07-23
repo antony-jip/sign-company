@@ -223,7 +223,7 @@ export function EmailCompose({
     if (!parts.length && bedrijfsnaam) {
       parts.push(bedrijfsnaam)
     }
-    return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
+    return parts.length ? `<br><br>${parts.join('<br>')}` : ''
   }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam])
 
   // Initialize editor with signature

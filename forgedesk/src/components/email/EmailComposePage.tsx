@@ -125,7 +125,7 @@ export function EmailComposePage() {
               maxBreedte: Math.round(sigImgHeight * 2.5),
             })
             const sigImgHtml = sigImg ? `${sigImg}<br>` : ''
-            const bodyHtml = `Beste ${klantNaam},<br><br>Hierbij ontvangt u onze offerte ${fetchedOfferte.nummer} voor &ldquo;${fetchedOfferte.titel}&rdquo;.<br><br>Het totaalbedrag van deze offerte is ${totaalExcl} excl. btw${totaalExcl !== totaalIncl ? ` (${totaalIncl} incl. btw)` : ''}.<br><br>De offerte is geldig tot ${fetchedOfferte.geldig_tot ? new Date(fetchedOfferte.geldig_tot).toLocaleDateString('nl-NL') : '-'}. Bijgevoegd vindt u de offerte als PDF.<br><br>Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.<br><br>--<br>${sigImgHtml}${handtekeningNaarHtml(sigText)}`
+            const bodyHtml = `Beste ${klantNaam},<br><br>Hierbij ontvangt u onze offerte ${fetchedOfferte.nummer} voor &ldquo;${fetchedOfferte.titel}&rdquo;.<br><br>Het totaalbedrag van deze offerte is ${totaalExcl} excl. btw${totaalExcl !== totaalIncl ? ` (${totaalIncl} incl. btw)` : ''}.<br><br>De offerte is geldig tot ${fetchedOfferte.geldig_tot ? new Date(fetchedOfferte.geldig_tot).toLocaleDateString('nl-NL') : '-'}. Bijgevoegd vindt u de offerte als PDF.<br><br>Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.<br><br>${sigImgHtml}${handtekeningNaarHtml(sigText)}`
 
             editorRef.current.innerHTML = bodyHtml
             setEditorEmpty(false)
