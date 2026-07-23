@@ -1260,7 +1260,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Wij geloven in één simpele som: <B>€79 per maand ex. btw</B>, flat, tot 10
+              Wij geloven in één simpele som: <B>€129 per maand ex. btw</B>, flat, tot 10
               gebruikers. Geen opzetkosten, geen add-ons, alle 10 modules en de AI-assistent
               inbegrepen. Maandelijks opzegbaar.
             </P>
@@ -1526,7 +1526,7 @@ export const articles: Article[] = [
           <>
             <P>
               Onder <B>Instellingen → Financieel → Abonnement</B> zie je je huidige status en activeer of beheer
-              je het abonnement. doen. kost <B>€79 per maand</B> (excl. btw), tot 10 gebruikers inbegrepen. Heb
+              je het abonnement. doen. kost <B>€129 per maand</B> (excl. btw), tot 10 gebruikers inbegrepen. Heb
               je meer mensen nodig, dan werkt dat met een staffel op maat, geen losse rekensom per extra account.
             </P>
             <P>

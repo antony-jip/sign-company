@@ -20,7 +20,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'prijs',
     q: 'Hoeveel kost doen. na de proefperiode?',
-    a: '**€79 per maand ex. btw**, tot **10 gebruikers**. Dat is alles. Geen opzetkosten, geen add-ons, geen aparte prijs per gebruiker die later omhoog duikt. Heb je een groter team? Stuur ons een bericht.',
+    a: '**€129 per maand ex. btw**, tot **10 gebruikers**. Dat is alles. Geen opzetkosten, geen add-ons, geen aparte prijs per gebruiker die later omhoog duikt. Heb je een groter team? Stuur ons een bericht.',
   },
   {
     category: 'prijs',
