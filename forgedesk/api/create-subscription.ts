@@ -6,8 +6,12 @@ const APP_URL = process.env.VITE_APP_URL || 'https://app.doen.team'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-// €79 ex btw, afgeschreven bedrag is incl 21% btw
-const ABONNEMENT_BEDRAG = '95.59'
+// Prijs staat als ex-btw-bedrag; wat Mollie afschrijft is incl btw. Alleen het
+// ex-bedrag aanpassen, het incl-bedrag volgt daaruit — anders lopen de twee
+// uiteen en incasseren we iets anders dan we factureren.
+const ABONNEMENT_BEDRAG_EXCL = 129
+const BTW_PERCENTAGE = 21
+const ABONNEMENT_BEDRAG = (ABONNEMENT_BEDRAG_EXCL * (1 + BTW_PERCENTAGE / 100)).toFixed(2)
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
