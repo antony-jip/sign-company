@@ -547,6 +547,12 @@ export interface Email {
   vervangen_door_email_id?: string | null;
   wacht_op_reactie_uitgezet_op?: string | null;
   niet_match_email_ids?: string[];
+  // Aanvraagherkenning · null = nog niet beoordeeld
+  is_aanvraag?: boolean | null;
+  aanvraag_zekerheid?: number | null;
+  aanvraag_samenvatting?: string | null;
+  aanvraag_beoordeeld_op?: string | null;
+  aanvraag_verborgen?: boolean;
   created_at: string;
   updated_at?: string;
 }
