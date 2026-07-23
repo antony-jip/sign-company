@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
 import Demo from '@/components/home/Demo'
+import DemoFilm from '@/components/home/DemoFilm'
 import Journey from '@/components/home/Journey'
 import Statement from '@/components/home/Statement'
 import Modules from '@/components/home/Modules'
@@ -26,6 +27,7 @@ export default function Home() {
         <Hero />
         <Demo />
         <Journey />
+        <DemoFilm />
         <Statement />
         <Modules />
         <PricingSection />
