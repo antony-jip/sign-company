@@ -72,7 +72,7 @@ const DEFAULT_BEDRIJFSNAAM = 'Ons Bedrijf'
 /**
  * Escape special HTML characters to prevent injection.
  */
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -575,7 +575,7 @@ export function tekeningGoedkeuringTemplate(data: TekeningGoedkeuringData): Emai
   const subject = `Tekening ter goedkeuring - ${data.projectNaam}`
 
   const beschrijvingHtml = data.beschrijving
-    ? `<p style="margin: 0 0 16px 0; color: #555555; font-style: italic;">${escapeHtml(data.beschrijving)}</p>`
+    ? `<p style="margin: 0 0 16px 0; color: #555555; font-style: italic;">${escapeHtml(data.beschrijving).replace(/\n/g, '<br>')}</p>`
     : ''
 
   const bodyHtml = `

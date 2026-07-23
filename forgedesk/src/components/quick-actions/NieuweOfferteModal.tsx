@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DatePicker } from '@/components/ui/date-picker'
 import { createOfferte, createOfferteItem, updateOfferte, getKlanten, getCalculatieTemplates, getMedewerkers, createTaak, updateTaak, createProject, createKlant, uploadTaakBijlage } from '@/services/supabaseService'
 import { sendEmail } from '@/services/gmailService'
-import { offerteVerzendTemplate } from '@/services/emailTemplateService'
+import { offerteVerzendTemplate, escapeHtml } from '@/services/emailTemplateService'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -420,7 +420,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
         try {
           await sendEmail(verzendEmail.trim(), emailData.subject, bodyText, {
             html: emailTekst.trim()
-              ? `<div style="font-family:sans-serif;font-size:14px;line-height:1.6;white-space:pre-wrap">${emailTekst.trim().replace(/\n/g, '<br>')}</div>`
+              ? `<div style="font-family:sans-serif;font-size:14px;line-height:1.6;white-space:pre-wrap">${escapeHtml(emailTekst.trim())}</div>`
               : emailData.html,
             attachments,
           })
