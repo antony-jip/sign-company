@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+/* Design-tokens geport uit forgedesk (src/index.css + tailwind.config.js),
+   omgezet naar Tailwind v4 @theme-stijl. Niet de v3-config klakkeloos
+   gekopieerd: alleen merk-kleuren, module-kleuren, app-content-pastels en
+   fonts. Twee lagen: merk (doen. identiteit) en app-content (FORGEdesk
+   warm-pastel, voor mockups). */
+@theme {
+  /* Merk-laag */
+  --color-flame: #df5c36;
+  --color-petrol: #2b535c;
+  --color-offwhite: #f8f7f5;
+  --color-ink: #1a1a18;
+
+  /* Module-kleuren */
+  --color-mod-projecten: #2b535c;
+  --color-mod-offertes: #df5c36;
+  --color-mod-facturen: #2d6b48;
+  --color-mod-klanten: #3a6b8c;
+  --color-mod-planning: #9a5a48;
+  --color-mod-werkbonnen: #c44830;
+  --color-mod-team: #5a5a55;
+  --color-mod-email: #6a5a8a;
+
+  /* App-content-laag (FORGEdesk warm-pastel) */
+  --color-app-page: #f4f3f0;
+  --color-app-card: #fffffe;
+  --color-app-accent: #cc8a3f;
+
+  /* Status-pastels */
+  --color-status-sage: #3a7d52;
+  --color-status-sage-bg: #e8f2ec;
+  --color-status-mist: #3a5a9a;
+  --color-status-mist-bg: #e8eef9;
+  --color-status-coral: #c0451a;
+  --color-status-coral-bg: #fde8e4;
+
+  /* Fonts (families geladen via fonts.ts) */
+  --font-kop: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, monospace;
+}
