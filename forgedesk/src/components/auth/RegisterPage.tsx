@@ -32,6 +32,12 @@ export function RegisterPage() {
   const [email, setEmail] = useState(
     () => new URLSearchParams(window.location.search).get('email') ?? '',
   )
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has('email')) {
+      window.history.replaceState(null, '', window.location.pathname)
+    }
+  }, [])
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
