@@ -348,6 +348,29 @@ export async function fetchEmailsFromIMAP(
   return response.json()
 }
 
+/**
+ * Beoordeelt net binnengekomen inbox-mail op aanvragen (zie
+ * api/classificeer-aanvraag). Draait na de sync en faalt stil: de mail staat
+ * er dan al, alleen de kaart in de reader blijft weg.
+ */
+export async function classificeerAanvragen(): Promise<{ beoordeeld: number; aanvragen: number } | null> {
+  try {
+    const token = await getAuthToken()
+    const response = await fetch('/api/classificeer-aanvraag', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: '{}',
+    })
+    if (!response.ok) return null
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
 /** Eén backfill-batch oudere mail (zie api/backfill-emails). */
 export async function backfillEmailsFromIMAP(
   folder?: string

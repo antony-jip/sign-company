@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { LeadsPaneel } from './LeadsPaneel'
-import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, backfillEmailsFromIMAP } from '@/services/gmailService'
+import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, backfillEmailsFromIMAP, classificeerAanvragen } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
 import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers } from '@/services/emailService'
@@ -304,6 +304,17 @@ export function EmailLayout() {
     return { total, synced }
   }
 
+  // ─── Aanvraagherkenning: draait na de sync, mail is dan al zichtbaar ───
+  // Levert de beoordeling op waar AanvraagKaart in de reader op afgaat. De
+  // lijst wordt alleen opnieuw gelezen als er daadwerkelijk iets herkend is.
+  const herkenAanvragen = useCallback(async () => {
+    const uitkomst = await classificeerAanvragen()
+    if (!uitkomst?.aanvragen) return
+    const fresh = await readFromSupabase()
+    if (fresh.length > 0) setEmails(fresh)
+    logger.log(`[Email] Aanvraagherkenning: ${uitkomst.aanvragen} van ${uitkomst.beoordeeld} beoordeeld als aanvraag`)
+  }, [])
+
   // ─── Historie-backfill: rustig op de achtergrond oudere mail binnenhalen ───
   // Max 8 batches (±2400 mails) per map per sessie, met pauze tussen batches
   // zodat de IMAP-server en de UI er geen last van hebben. Stopt vanzelf op
@@ -354,6 +365,7 @@ export function EmailLayout() {
               // Re-read from Supabase after sync
               const fresh = await readFromSupabase()
               if (fresh.length > 0) setEmails(fresh)
+              void herkenAanvragen()
               void runBackfillAchtergrond()
             })
             .catch((err) => {
@@ -370,6 +382,7 @@ export function EmailLayout() {
           // Read synced emails from Supabase
           const synced = await readFromSupabase()
           setEmails(synced)
+          void herkenAanvragen()
           void runBackfillAchtergrond()
         } catch (err) {
           logger.error('IMAP sync failed:', err)
