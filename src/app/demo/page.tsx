@@ -72,9 +72,8 @@ export default function DemoPage() {
                 </h2>
                 <p className="mt-2 text-[15px] md:text-[16px] text-muted leading-[1.6]">
                   Ik ben Antony Bootsma van Sign Company, familiebedrijf sinds 1983.
-                  We werkten jaren met James Pro, maar liepen vast. Dus bouwde ik zelf
-                  wat ik miste; wat je hierboven ziet is de software waar wij elke dag
-                  mee draaien.
+                  We liepen vast in onze oude software. Dus bouwde ik zelf wat ik
+                  miste; wat je hierboven ziet is waar wij elke dag mee draaien.
                 </p>
                 <p className="mt-3 text-[14px] md:text-[15px] text-muted">
                   Liever eerst even contact? Stel je vraag via{' '}
