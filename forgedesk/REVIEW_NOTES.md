@@ -1102,3 +1102,40 @@ bleef hangen na annuleren of via de compose-deeplink. Restpunten:
       mobiele mailknop bij komt.
   (f) CLAUDE.md verwijst naar .claude/skills/doen-design/SKILL.md voor visuele
       wijzigingen, maar die map bestaat niet in de repo.
+
+## Activatie-ronde first-login (2026-07-24)
+
+Context: 5 commits (f71feed1..33394790) — mijlpalen, dashboard/module-empty-
+states, Daan-FAB, eerste-view-notificatie. Verdict was BLOKKADE op de race in
+`api/offerte-publiek.ts`; gefixt met atomische `.is(null)`-claim (fix-commit).
+Niet-blocking opmerkingen uit de review:
+
+- **Latency publieke offertepagina bij eerste view.** `meldEersteView`
+  (notificatie-insert + settings-select + Resend-call) draait serieel vóór de
+  response. Kost de klant eenmalig ~1s. Kan later parallel aan de
+  items/profiel/klant-fetches gestart worden en pas vlak voor `res.json`
+  geawait worden.
+- **Dekking: alleen fallback-pad.** Offertes via het klantportaal
+  (`/portaal/<token>`, primaire verzendpad) raken `offerte-publiek.ts` nooit;
+  de eerste-view-melding werkt alleen voor het publiek_token-pad. Zelfde
+  mechaniek in het portaal-endpoint (`portaal-bekeken.ts`) is de logische
+  vervolgstap.
+- **Vals positief mogelijk:** maker die zijn eigen verzonden link opent (knop
+  in `OfferteDetail.tsx:732`) of een mail-scanner (Outlook SafeLinks) telt als
+  eerste view en triggert de mail. Later te dempen via user-agent-check of
+  korte delay.
+- **Gemiste eerste keer:** opent de maker de link terwijl status nog concept
+  is, dan is `publieke_link_geopend_op` al gezet en meldt de echte klant-view
+  nooit. Niets reset dit veld bij verzenden; overwegen om bij verzenden te
+  resetten.
+- **Mijlpaal-edge-cases (veteraan op nieuw apparaat):** FacturenLayout checkt
+  `facturen.length === 0` op state die bij koude cache nog leeg kan zijn; en
+  de services vallen bij Supabase-fouten stil terug op localStorage waardoor
+  de "is dit de eerste?"-check op een lege lijst kan rekenen. Vergt samenloop.
+- **Mijlpaal bij mislukte DB-save:** in het catch-fallback-pad van
+  FacturenLayout (factuur alleen lokaal) wordt eerste_factuur toch gevierd.
+- **`handleMarkAsBetaald` deps:** `user`/`medewerkers` ontbreken nog steeds
+  (pre-existing, raakt alleen de audit-log-naam).
+- **Dashboard-flicker bij koude cache:** KpiStrip/OpvolgenBlok tonen kort de
+  doel-kaarten/eerste-offerte-CTA tot de data binnen is; isLoading-gate zou
+  dit oplossen. Cosmetisch.

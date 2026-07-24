@@ -161,17 +161,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(410).json({ error: 'Deze publieke link is verlopen' })
     }
 
-    // Increment views + zet eerste geopend
+    // Increment views
     const updates: Record<string, unknown> = {
       publieke_link_views: (offerte.publieke_link_views || 0) + 1,
       bekeken_door_klant: true,
       laatst_bekeken_op: new Date().toISOString(),
       aantal_keer_bekeken: (offerte.aantal_keer_bekeken || 0) + 1,
-    }
-
-    if (!offerte.publieke_link_geopend_op) {
-      updates.publieke_link_geopend_op = new Date().toISOString()
-      updates.eerste_bekeken_op = offerte.eerste_bekeken_op || new Date().toISOString()
     }
 
     // Status → bekeken als nog verzonden
@@ -181,9 +176,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await supabaseAdmin.from('offertes').update(updates).eq('id', offerte.id)
 
-    // Voor de response afhandelen: na res.json() kapt Vercel async werk af.
-    if (!offerte.publieke_link_geopend_op && offerte.status === 'verzonden') {
-      await meldEersteView(offerte)
+    // Eerste-view-claim apart en atomisch: het .is(null)-filter laat de DB
+    // arbitreren, zodat twee gelijktijdige eerste views (mail-scanner + klant)
+    // nooit allebei een notificatie/mail afvuren.
+    let claimUpdates: Record<string, unknown> = {}
+    if (!offerte.publieke_link_geopend_op) {
+      const nu = new Date().toISOString()
+      claimUpdates = {
+        publieke_link_geopend_op: nu,
+        eerste_bekeken_op: offerte.eerste_bekeken_op || nu,
+      }
+      const { data: claim } = await supabaseAdmin
+        .from('offertes')
+        .update(claimUpdates)
+        .eq('id', offerte.id)
+        .is('publieke_link_geopend_op', null)
+        .select('id')
+      const eersteClaim = (claim?.length ?? 0) > 0
+
+      // Voor de response afhandelen: na res.json() kapt Vercel async werk af.
+      if (eersteClaim && offerte.status === 'verzonden') {
+        await meldEersteView(offerte)
+      }
     }
 
     // Haal items op
@@ -244,7 +258,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Merge status update in return data
-    const safeOfferte = pick({ ...offerte, ...updates }, OFFERTE_VELDEN)
+    const safeOfferte = pick({ ...offerte, ...updates, ...claimUpdates }, OFFERTE_VELDEN)
 
     return res.status(200).json({
       offerte: safeOfferte,
