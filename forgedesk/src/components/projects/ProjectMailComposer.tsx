@@ -3,6 +3,7 @@ import { Paperclip, Send, X, FileText, Image as ImageIcon, File, Bold, Italic, U
 import { cn, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
+import { LinkPopoverPaneel, normaliseerUrl } from '@/components/shared/LinkInvoegKnop'
 import { sendEmail } from '@/services/gmailService'
 import { logWijziging } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -757,18 +758,32 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     setBody(next)
   }, [body])
 
+  // Link-popover in plaats van window.prompt: de selectie-indexen worden bij
+  // openen vastgelegd, want de textarea verliest focus aan het invoerveld.
+  const [linkOpen, setLinkOpen] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
+  const linkSelRef = useRef({ start: 0, end: 0 })
+  const linkInputRef = useRef<HTMLInputElement>(null)
+
   const insertLink = useCallback(() => {
     const t = textareaRef.current
     if (!t) return
-    const url = window.prompt('URL:')
+    linkSelRef.current = { start: t.selectionStart, end: t.selectionEnd }
+    setLinkUrl('')
+    setLinkOpen(true)
+    setTimeout(() => linkInputRef.current?.focus(), 0)
+  }, [])
+
+  const pasLinkToe = useCallback(() => {
+    const url = normaliseerUrl(linkUrl)
     if (!url) return
-    const start = t.selectionStart
-    const end = t.selectionEnd
+    const { start, end } = linkSelRef.current
     const selected = body.substring(start, end) || url
     const linkText = `[${selected}](${url})`
-    const next = body.substring(0, start) + linkText + body.substring(end)
-    setBody(next)
-  }, [body])
+    setBody(body.substring(0, start) + linkText + body.substring(end))
+    setLinkOpen(false)
+    textareaRef.current?.focus()
+  }, [body, linkUrl])
 
   function handleSchedule() {
     if (!scheduleAt) {
@@ -1106,9 +1121,20 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
           <button type="button" onClick={insertList} title="Lijst" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
             <List className="h-3.5 w-3.5" />
           </button>
-          <button type="button" onClick={insertLink} title="Link toevoegen" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
-            <LinkIcon className="h-3.5 w-3.5" />
-          </button>
+          <div className="relative inline-flex">
+            <button type="button" onClick={insertLink} title="Link toevoegen" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
+              <LinkIcon className="h-3.5 w-3.5" />
+            </button>
+            {linkOpen && (
+              <LinkPopoverPaneel
+                url={linkUrl}
+                onUrlChange={setLinkUrl}
+                onToepassen={pasLinkToe}
+                onSluiten={() => setLinkOpen(false)}
+                inputRef={linkInputRef}
+              />
+            )}
+          </div>
           <div className="w-px h-4 bg-border mx-0.5" />
           <button type="button" onClick={() => fileInputRef.current?.click()} title="Eigen bestand toevoegen" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
             <Paperclip className="h-3.5 w-3.5" />

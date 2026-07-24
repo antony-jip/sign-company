@@ -62,11 +62,6 @@ import {
   Pin,
   FolderPlus,
   FolderOpen,
-  Bold,
-  Italic,
-  Underline,
-  List,
-  Link2,
   AlertTriangle,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject, syncOfferteItems, getRecentOfferteItemSuggesties, getNextOfferteNummer, OfferteConflictError, createContactpersoonDB, getContactpersonenByKlant } from '@/services/supabaseService'
@@ -2317,34 +2312,8 @@ export function QuoteCreation() {
 
                   {/* Bericht */}
                   <div className="border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus-within:border-petrol dark:focus-within:border-white/30 focus-within:ring-[3px] focus-within:ring-[rgba(26,83,92,0.12)] dark:focus-within:ring-white/10 transition-colors overflow-hidden">
-                    {/* Toolbar */}
-                    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border/30">
-                      {[
-                        { cmd: 'bold', icon: <Bold className="h-3.5 w-3.5" />, title: 'Vet' },
-                        { cmd: 'italic', icon: <Italic className="h-3.5 w-3.5" />, title: 'Cursief' },
-                        { cmd: 'underline', icon: <Underline className="h-3.5 w-3.5" />, title: 'Onderstreept' },
-                        { cmd: 'insertUnorderedList', icon: <List className="h-3.5 w-3.5" />, title: 'Opsomming' },
-                        { cmd: 'createLink', icon: <Link2 className="h-3.5 w-3.5" />, title: 'Link' },
-                      ].map((btn) => (
-                        <button
-                          key={btn.cmd}
-                          title={btn.title}
-                          type="button"
-                          onMouseDown={(e) => {
-                            e.preventDefault()
-                            if (btn.cmd === 'createLink') {
-                              const url = prompt('URL invoeren:')
-                              if (url) document.execCommand('createLink', false, url)
-                            } else {
-                              document.execCommand(btn.cmd)
-                            }
-                          }}
-                          className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-border/40 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          {btn.icon}
-                        </button>
-                      ))}
-                    </div>
+                    {/* Geen opmaak-toolbar: dit is een platte textarea, execCommand
+                        deed hier niets. De mail gaat als platte tekst de deur uit. */}
                     <textarea
                       value={email.emailBody}
                       onChange={(e) => email.setEmailBody(e.target.value)}

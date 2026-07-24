@@ -12,6 +12,7 @@ import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { offerteTokenExpiry } from '@/lib/tokenExpiry'
 import type { ProjectPortaal, PortaalItem, Offerte, Factuur } from '@/types'
+import { LinkInvoegKnop } from '@/components/shared/LinkInvoegKnop'
 
 // ── Utilities ──
 
@@ -516,25 +517,25 @@ function InputBar({
             { cmd: 'italic', icon: <Italic className="h-3.5 w-3.5" />, title: 'Cursief' },
             { cmd: 'underline', icon: <Underline className="h-3.5 w-3.5" />, title: 'Onderstreept' },
             { cmd: 'insertUnorderedList', icon: <List className="h-3.5 w-3.5" />, title: 'Opsomming' },
-            { cmd: 'createLink', icon: <Link2 className="h-3.5 w-3.5" />, title: 'Link' },
           ].map((btn) => (
             <button
               key={btn.cmd}
               title={btn.title}
               onMouseDown={(e) => {
                 e.preventDefault()
-                if (btn.cmd === 'createLink') {
-                  const url = prompt('URL invoeren:')
-                  if (url) document.execCommand('createLink', false, url)
-                } else {
-                  document.execCommand(btn.cmd)
-                }
+                document.execCommand(btn.cmd)
               }}
               className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
             >
               {btn.icon}
             </button>
           ))}
+          <LinkInvoegKnop
+            editorRef={editorRef}
+            richting="onder"
+            className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
+            iconClassName="h-3.5 w-3.5"
+          />
           <div className="w-px h-4 bg-border mx-1" />
           <button onClick={() => fotoInputRef.current?.click()} disabled={isSending} title="Afbeelding" className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40">
             <Paperclip className="h-3.5 w-3.5" />

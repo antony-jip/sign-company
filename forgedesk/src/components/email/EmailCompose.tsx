@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   Send, Paperclip, Sparkles, ArrowLeft, X, Loader2,
-  Bold, Italic, Underline, List, ListOrdered, Link2,
+  Bold, Italic, Underline, List, ListOrdered,
   ChevronDown, Image, Trash2, Clock, Settings,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -25,6 +25,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Switch } from '@/components/ui/switch'
 import { getWachtendeEmailNaarAdres } from '@/services/emailService'
 import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
+import { LinkInvoegKnop, type LinkInvoegHandle } from '@/components/shared/LinkInvoegKnop'
 
 export interface ComposeActions {
   forgieWrite: () => void
@@ -504,6 +505,27 @@ export function EmailCompose({
     editorRef.current?.focus()
   }, [])
 
+  const linkKnopRef = useRef<LinkInvoegHandle>(null)
+
+  // Actieve opmaak onder de cursor, zodat de toolbar-knoppen oplichten.
+  const [opmaakActief, setOpmaakActief] = useState({ bold: false, italic: false, underline: false, lijst: false })
+  useEffect(() => {
+    const bijwerken = () => {
+      const sel = window.getSelection()
+      if (!sel || !sel.anchorNode || !editorRef.current?.contains(sel.anchorNode)) return
+      try {
+        setOpmaakActief({
+          bold: document.queryCommandState('bold'),
+          italic: document.queryCommandState('italic'),
+          underline: document.queryCommandState('underline'),
+          lijst: document.queryCommandState('insertUnorderedList'),
+        })
+      } catch { /* queryCommandState kan in sommige browsers gooien */ }
+    }
+    document.addEventListener('selectionchange', bijwerken)
+    return () => document.removeEventListener('selectionchange', bijwerken)
+  }, [])
+
   // Geplakte/gesleepte afbeeldingen altijd als data:-URI in de body zetten.
   // Anders voegt de browser (m.n. Safari/WebKit) een lokale blob:/webkit-fake-url
   // in die de ontvanger niet kan laden; een data:-URI wordt server-side naar een
@@ -537,9 +559,25 @@ export function EmailCompose({
 
   const handleEditorPaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
     const images = imageFilesFromList(e.clipboardData?.items)
-    if (images.length === 0) return // gewone tekst-paste: standaardgedrag
-    e.preventDefault()
-    voegAfbeeldingenIn(images)
+    if (images.length > 0) {
+      e.preventDefault()
+      voegAfbeeldingenIn(images)
+      return
+    }
+    // Een geplakte kale URL wordt een klikbare link; staat er tekst
+    // geselecteerd, dan wordt die tekst de linktekst.
+    const tekst = e.clipboardData?.getData('text/plain')?.trim()
+    if (tekst && /^https?:\/\/\S+$/i.test(tekst)) {
+      e.preventDefault()
+      const url = tekst.replace(/"/g, '%22')
+      const sel = window.getSelection()
+      if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) {
+        document.execCommand('createLink', false, url)
+      } else {
+        document.execCommand('insertHTML', false, `<a href="${url}">${url}</a>`)
+      }
+    }
+    // Overige tekst-paste: standaardgedrag
   }, [voegAfbeeldingenIn])
 
   const handleEditorDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -1084,6 +1122,10 @@ export function EmailCompose({
                   e.preventDefault()
                   handleSend()
                 }
+                if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault()
+                  linkKnopRef.current?.open()
+                }
               }}
             />
 
@@ -1142,12 +1184,45 @@ export function EmailCompose({
         {/* Bottom bar · formatting + send */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 px-3 md:px-6 py-2.5 border-t border-border flex-shrink-0">
           <div className="flex items-center gap-0.5">
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => execCommand('bold')} title="Vet"><Bold className="h-4 w-4" /></button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => execCommand('italic')} title="Cursief"><Italic className="h-4 w-4" /></button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => execCommand('underline')} title="Onderstrepen"><Underline className="h-4 w-4" /></button>
+            {/* mousedown-preventDefault: anders verliest WebKit de tekstselectie
+                zodra de knop focus pakt en doet het commando niets. */}
+            {([
+              { cmd: 'bold', actief: opmaakActief.bold, titel: 'Vet', icoon: <Bold className="h-4 w-4" /> },
+              { cmd: 'italic', actief: opmaakActief.italic, titel: 'Cursief', icoon: <Italic className="h-4 w-4" /> },
+              { cmd: 'underline', actief: opmaakActief.underline, titel: 'Onderstrepen', icoon: <Underline className="h-4 w-4" /> },
+            ]).map((knop) => (
+              <button
+                key={knop.cmd}
+                type="button"
+                className={cn(
+                  'h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150',
+                  knop.actief ? 'text-petrol bg-petrol/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                )}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => execCommand(knop.cmd)}
+                title={knop.titel}
+              >
+                {knop.icoon}
+              </button>
+            ))}
             <div className="w-px h-4 bg-border mx-1.5" />
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => execCommand('insertUnorderedList')} title="Lijst"><List className="h-4 w-4" /></button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} title="Link"><Link2 className="h-4 w-4" /></button>
+            <button
+              type="button"
+              className={cn(
+                'h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150',
+                opmaakActief.lijst ? 'text-petrol bg-petrol/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+              )}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => execCommand('insertUnorderedList')}
+              title="Lijst"
+            >
+              <List className="h-4 w-4" />
+            </button>
+            <LinkInvoegKnop
+              ref={linkKnopRef}
+              editorRef={editorRef}
+              className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
+            />
             <div className="w-px h-4 bg-border mx-1.5" />
             <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => fileInputRef.current?.click()} title="Bijlage">
               <Paperclip className="h-4 w-4" />

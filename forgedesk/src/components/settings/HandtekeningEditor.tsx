@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  Bold, Italic, Underline, Link2, List, Image as ImageIcon,
+  Bold, Italic, Underline,  List, Image as ImageIcon,
   Palette, Type, Undo2, Eraser,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { LinkInvoegKnop } from '@/components/shared/LinkInvoegKnop'
 import { handtekeningNaarHtml, bevatOpmaak } from '@/utils/handtekening'
 
 interface Props {
@@ -98,16 +99,6 @@ export function HandtekeningEditor({ waarde, onChange }: Props) {
     } catch { /* queryCommandState kan in sommige browsers gooien */ }
   }
 
-  const voegLinkToe = () => {
-    const url = window.prompt('Naar welke link?', 'https://')
-    if (!url) return
-    if (!/^(https?:|mailto:|tel:)/i.test(url.trim())) {
-      window.alert('Gebruik een link die begint met https://, mailto: of tel:')
-      return
-    }
-    voerUit('createLink', url.trim())
-  }
-
   const voegAfbeeldingToe = () => {
     const invoer = document.createElement('input')
     invoer.type = 'file'
@@ -196,9 +187,12 @@ export function HandtekeningEditor({ waarde, onChange }: Props) {
           <Knop titel="Opsomming" onClick={() => voerUit('insertUnorderedList')}>
             <List className="h-4 w-4" />
           </Knop>
-          <Knop titel="Link toevoegen" onClick={voegLinkToe}>
-            <Link2 className="h-4 w-4" />
-          </Knop>
+          <LinkInvoegKnop
+            editorRef={editorRef}
+            richting="onder"
+            onIngevoegd={meld}
+            className="h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+          />
           <Knop titel="Afbeelding invoegen" onClick={voegAfbeeldingToe}>
             <ImageIcon className="h-4 w-4" />
           </Knop>

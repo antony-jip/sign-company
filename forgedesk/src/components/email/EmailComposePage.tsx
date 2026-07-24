@@ -13,7 +13,6 @@ import {
   Underline,
   List,
   ListOrdered,
-  Link2,
   Undo2,
   Redo2,
   FileText,
@@ -30,6 +29,7 @@ import { logger } from '../../utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
+import { LinkInvoegKnop } from '@/components/shared/LinkInvoegKnop'
 
 export function EmailComposePage() {
   const navigate = useNavigate()
@@ -209,11 +209,6 @@ export function EmailComposePage() {
     }
   }, [])
 
-  const insertLink = useCallback(() => {
-    const url = prompt('Voer de URL in:', 'https://')
-    if (url) execFormat('createLink', url)
-  }, [execFormat])
-
   const handleSend = async () => {
     if (!to.trim() || !subject.trim()) {
       toast.error('Vul een ontvanger en onderwerp in')
@@ -375,6 +370,7 @@ export function EmailComposePage() {
               <Separator orientation="vertical" className="h-4 mx-1" />
 
               <button
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => execFormat('bold')}
                 className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.bold && 'bg-accent text-foreground')}
                 title="Vet"
@@ -382,6 +378,7 @@ export function EmailComposePage() {
                 <Bold className="w-3.5 h-3.5" />
               </button>
               <button
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => execFormat('italic')}
                 className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.italic && 'bg-accent text-foreground')}
                 title="Cursief"
@@ -389,6 +386,7 @@ export function EmailComposePage() {
                 <Italic className="w-3.5 h-3.5" />
               </button>
               <button
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => execFormat('underline')}
                 className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.underline && 'bg-accent text-foreground')}
                 title="Onderstrepen"
@@ -398,18 +396,16 @@ export function EmailComposePage() {
 
               <Separator orientation="vertical" className="h-4 mx-1" />
 
-              <button onClick={() => execFormat('insertUnorderedList')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Opsommingslijst">
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => execFormat('insertUnorderedList')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Opsommingslijst">
                 <List className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
-              <button onClick={() => execFormat('insertOrderedList')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Genummerde lijst">
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => execFormat('insertOrderedList')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Genummerde lijst">
                 <ListOrdered className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
 
               <Separator orientation="vertical" className="h-4 mx-1" />
 
-              <button onClick={insertLink} className="p-1.5 rounded hover:bg-accent transition-colors" title="Link invoegen">
-                <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
+              <LinkInvoegKnop editorRef={editorRef} className="p-1.5 rounded hover:bg-accent transition-colors text-muted-foreground" iconClassName="w-3.5 h-3.5" />
             </div>
           </div>
         </div>

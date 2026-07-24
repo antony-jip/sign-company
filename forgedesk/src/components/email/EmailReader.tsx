@@ -7,7 +7,7 @@ import {
   ArrowLeft, Trash2, Pin, Archive, MailOpen,
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
-  List, ListOrdered, Link2, Sparkles, Loader2, Download,
+  List, ListOrdered, Sparkles, Loader2, Download,
   Undo2, Redo2, X, Clock, Tag,
 } from 'lucide-react'
 import { EmailActionsPopover } from './EmailActionsPopover'
@@ -26,6 +26,7 @@ import { sendInBackground } from '@/utils/sendInBackground'
 import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
 import { AanvraagKaart } from './AanvraagKaart'
 import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
+import { LinkInvoegKnop } from '@/components/shared/LinkInvoegKnop'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -1155,24 +1156,26 @@ export function EmailReader({
             {/* ─── Toolbar (sticky bottom · iOS-style frosted material) ─── */}
             <div className="sticky bottom-0 z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 pl-3 pr-3 md:pl-5 md:pr-3 py-2.5 border-t border-black/[0.06] dark:border-white/[0.08] bg-card/85 backdrop-blur-xl shadow-[0_-1px_0_rgba(0,0,0,0.02),0_-8px_24px_-12px_rgba(0,0,0,0.08)]">
               <div className="flex items-center">
+                {/* mousedown-preventDefault: anders verliest WebKit de selectie
+                    zodra de knop focus pakt en doet het commando niets. */}
                 <div className="flex items-center gap-px mr-2">
-                  <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
                 </div>
                 <div className="w-px h-5 bg-petrol/10 mr-2" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
                 </div>
                 <div className="w-px h-5 bg-petrol/10 mx-1" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
                 </div>
                 <div className="w-px h-5 bg-petrol/10 mx-1" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Link"><Link2 className="h-4 w-4" /></button>
+                  <LinkInvoegKnop editorRef={editorRef} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" />
                   <button onClick={() => replyFileInputRef.current?.click()} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
                   <input
                     ref={replyFileInputRef}
