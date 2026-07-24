@@ -12,12 +12,12 @@ import { getForgieUsage, type ForgieUsage } from '@/services/forgieService'
 import { renderForgieMarkdown } from '@/utils/forgieMarkdown'
 
 const SUGGESTIE_CHIPS = [
+  'Maak een offerte voor een klant',
+  'Zet een nieuw project op',
   'Wat staat er open?',
   'Omzet deze maand',
-  'Laatste offertes',
   'Hoeveel klanten heb ik?',
   'Openstaande facturen',
-  'Projecten in uitvoering',
 ]
 
 export function ForgieChatPage() {

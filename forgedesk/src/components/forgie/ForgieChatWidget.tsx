@@ -40,10 +40,10 @@ function DaanAvatar() {
 }
 
 const SUGGESTIE_CHIPS = [
+  'Maak een offerte voor een klant',
+  'Zet een nieuw project op',
   'Wat staat er open?',
   'Omzet deze maand',
-  'Openstaande facturen',
-  'Projecten in uitvoering',
 ]
 
 function formatTijd(iso: string): string {
@@ -249,6 +249,11 @@ export function ForgieChatWidget() {
   const isMobile = useMediaQuery('(max-width: 767px)')
 
   const [isOpen, setIsOpen] = useState(false)
+  // Tot de eerste keer openen draagt de FAB het label "Daan": een anoniem
+  // icoontje wordt door nieuwe gebruikers niet gezien als digitale collega.
+  const [fabLabel, setFabLabel] = useState(() => {
+    try { return localStorage.getItem('doen_daan_fab_gezien') === null } catch { return false }
+  })
   const [view, setView] = useState<WidgetView>('daan')
   const [messages, setMessages] = useState<WidgetMessage[]>([])
   const [input, setInput] = useState('')
@@ -859,15 +864,22 @@ export function ForgieChatWidget() {
 
       {/* ── FAB (Floating Action Button) ── */}
       <button
-        onClick={() => setIsOpen(prev => !prev)}
+        onClick={() => {
+          setIsOpen(prev => !prev)
+          if (fabLabel) {
+            setFabLabel(false)
+            try { localStorage.setItem('doen_daan_fab_gezien', '1') } catch { /* niet kritisch */ }
+          }
+        }}
         className={cn(
-          'fixed z-[9999] flex items-center justify-center transition-all duration-200',
+          'fixed z-[9999] flex items-center justify-center gap-2 transition-all duration-200',
           isAdminOrg ? 'flex' : 'hidden md:flex',
         )}
         style={{
           right: 16,
           bottom: 16,
-          width: 48,
+          width: !isOpen && fabLabel ? undefined : 48,
+          padding: !isOpen && fabLabel ? '0 18px 0 14px' : 0,
           height: 48,
           borderRadius: 14,
           backgroundColor: '#1A535C',
@@ -891,6 +903,11 @@ export function ForgieChatWidget() {
         ) : (
           <>
             <MessageSquare className="w-[22px] h-[22px] text-white" />
+            {fabLabel && (
+              <span className="text-white text-[13px] font-semibold">
+                Daan<span className="text-flame">.</span>
+              </span>
+            )}
             {showUnread && (
               <span
                 className="absolute -top-1 -right-1 rounded-full animate-pulse"
