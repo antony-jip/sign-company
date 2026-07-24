@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -41,7 +42,7 @@ export default function DemoPage() {
               Eén klus, van eerste mail tot betaling<span className="text-flame">.</span>
             </h1>
             <p className="mt-4 text-[16px] md:text-[18px] text-muted max-w-2xl leading-[1.6]">
-              Twee minuten, met geluid. Je ziet de aanvraag binnenkomen, het project ontstaan,
+              Twee minuten. Je ziet de aanvraag binnenkomen, het project ontstaan,
               de offerte met marge en uren, de drukproef, het klantportaal, de montageplanning
               en de factuur die eruit rolt.
             </p>
@@ -50,6 +51,50 @@ export default function DemoPage() {
           {/* Full-bleed: de video pakt de hele paginabreedte en speelt direct (gedempt) */}
           <div className="mt-8 md:mt-12">
             <DemoVideo autoStart ctaHref="#aanmelden" />
+          </div>
+        </section>
+
+        {/* De brug voor koud verkeer (outreach-mail): wie zit hierachter, plus een
+            contactroute met lagere drempel dan meteen een account aanmaken. */}
+        <section className="border-b border-petrol/10">
+          <div className="container-site py-10 md:py-14">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6 md:gap-8 max-w-3xl">
+              <Image
+                src="/images/maker/founder.webp"
+                alt="Antony Bootsma, maker van doen."
+                width={112}
+                height={149}
+                className="rounded-[12px] object-cover w-[88px] h-[117px] md:w-[112px] md:h-[149px] flex-shrink-0"
+              />
+              <div>
+                <h2 className="font-heading text-[20px] md:text-[22px] font-bold text-petrol">
+                  Gebouwd in ons eigen signbedrijf<span className="text-flame">.</span>
+                </h2>
+                <p className="mt-2 text-[15px] md:text-[16px] text-muted leading-[1.6]">
+                  Ik ben Antony Bootsma van Sign Company, familiebedrijf sinds 1983.
+                  We werkten jaren met James Pro, maar liepen vast. Dus bouwde ik zelf
+                  wat ik miste; wat je hierboven ziet is de software waar wij elke dag
+                  mee draaien.
+                </p>
+                <p className="mt-3 text-[14px] md:text-[15px] text-muted">
+                  Liever eerst even contact? Mail me op{' '}
+                  <a
+                    href="mailto:hello@doen.team"
+                    className="font-semibold text-petrol underline decoration-flame decoration-2 underline-offset-4 hover:text-flame transition-colors"
+                  >
+                    hello@doen.team
+                  </a>{' '}
+                  of{' '}
+                  <a
+                    href="/over"
+                    className="font-semibold text-petrol underline decoration-flame decoration-2 underline-offset-4 hover:text-flame transition-colors"
+                  >
+                    lees het hele verhaal
+                  </a>
+                  .
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
