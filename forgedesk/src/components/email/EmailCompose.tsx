@@ -1112,7 +1112,7 @@ export function EmailCompose({
               ref={editorRef}
               contentEditable
               suppressContentEditableWarning
-              className="min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 [&_img]:max-w-[200px]"
+              className="min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 [&_img]:max-w-[200px] [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2"
               data-placeholder="Schrijf je bericht..."
               style={{ caretColor: '#1A535C', boxShadow: 'none', outline: 'none' }}
               onPaste={handleEditorPaste}

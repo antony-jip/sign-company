@@ -349,7 +349,7 @@ export function EmailComposePage() {
                 onDrop={handleEditorDrop}
                 onMouseUp={updateFormatState}
                 onKeyUp={updateFormatState}
-                className="min-h-[300px] max-h-[600px] overflow-y-auto px-4 py-3 text-sm leading-relaxed focus:outline-none whitespace-pre-wrap"
+                className="min-h-[300px] max-h-[600px] overflow-y-auto px-4 py-3 text-sm leading-relaxed focus:outline-none whitespace-pre-wrap [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2"
                 suppressContentEditableWarning
               />
               <AIContentEditableToolbar

@@ -554,7 +554,7 @@ function InputBar({
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendBericht() }
           }}
           data-placeholder="Bericht..."
-          className="min-h-[60px] max-h-[140px] overflow-y-auto px-4 py-3 text-sm text-foreground focus:outline-none leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40"
+          className="min-h-[60px] max-h-[140px] overflow-y-auto px-4 py-3 text-sm text-foreground focus:outline-none leading-relaxed [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2 empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40"
         />
       </div>
 
