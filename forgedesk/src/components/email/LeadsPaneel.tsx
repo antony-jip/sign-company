@@ -69,6 +69,28 @@ function parseOpzet(result: string): { onderwerpen: string[]; body: string } {
   return { onderwerpen, body: regels.slice(i).join('\n').trim() }
 }
 
+const DEMO_URL = 'https://doen.team/demo?van=mail'
+
+/**
+ * De demofilm-verwijzing als klikbaar woord in plaats van een uitgeschreven
+ * URL. De prompt vraagt om het woord demofilm zonder link; schrijft het model
+ * de URL toch uit, dan vangt de fallback dat af. De body gaat als HTML de
+ * editor in (innerHTML in EmailCompose), dus een anchor werkt hier.
+ */
+function demofilmAlsLink(tekst: string): string {
+  const urlRegex = /https:\/\/doen\.team\/demo\S*/i
+  if (/demofilm/i.test(tekst)) {
+    const zonderUrl = tekst
+      .replace(/\s+(?:op|via)\s+https:\/\/doen\.team\/demo\S*/i, '')
+      .replace(urlRegex, '')
+    return zonderUrl.replace(/demofilm/i, (m) => `<a href="${DEMO_URL}">${m}</a>`)
+  }
+  if (urlRegex.test(tekst)) {
+    return tekst.replace(urlRegex, `<a href="${DEMO_URL}">demofilm</a>`)
+  }
+  return tekst
+}
+
 /** Alleen ingevulde velden; ontbrekende gegevens laat de prompt liever weg. */
 function leadContext(lead: Lead): string {
   return [
@@ -160,7 +182,8 @@ export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = fal
     setSchrijftVoorId(lead.id)
     try {
       const { result } = await callForgie('write-lead-email', aanwijzing.trim(), leadContext(lead))
-      const { onderwerpen, body } = parseOpzet(result)
+      const { onderwerpen, body: ruweBody } = parseOpzet(result)
+      const body = demofilmAlsLink(ruweBody)
       setOpzet(onderwerpen.length > 0 ? { leadId: lead.id, onderwerpen, gekozen: onderwerpen[0], body } : null)
       onMailLead(lead.email, body, lead.status === 'nieuw' ? lead.id : undefined, onderwerpen[0])
     } catch (err) {

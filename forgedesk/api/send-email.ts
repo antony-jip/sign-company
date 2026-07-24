@@ -466,6 +466,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('[send-email] Verzonden mail opslaan mislukt:', saveErr)
     }
 
+    // Leads: elke verstuurde mail naar het adres van een nieuwe lead zet die
+    // lead op 'benaderd', ongeacht het verzendpad (compose, reply, opzetje).
+    // Alleen vooruit vanaf 'nieuw'; gereageerd en geen_interesse blijven staan.
+    try {
+      const naarAdres = to.split(',')[0].trim().toLowerCase()
+      if (naarAdres) {
+        const { error: leadErr } = await supabaseAdmin
+          .from('leads')
+          .update({ status: 'benaderd', status_sinds: new Date().toISOString() })
+          .eq('user_id', user_id)
+          .eq('status', 'nieuw')
+          .ilike('email', naarAdres)
+        if (leadErr) console.error('[send-email] leadstatus benaderd zetten mislukt:', leadErr)
+      }
+    } catch (leadErr) {
+      console.error('[send-email] leadstatus-update mislukt:', leadErr)
+    }
+
     // Ruim tijdelijke bestanden op uit Storage. Email is al verzonden, dus niet
     // fataal — maar wel error-niveau, want hangende bijlagen lekken storage.
     // Per bucket gegroepeerd zodat we niet kruislings deleten.
