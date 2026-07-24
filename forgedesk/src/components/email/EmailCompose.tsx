@@ -45,6 +45,8 @@ interface EmailComposeProps {
   defaultBodyIsBericht?: boolean
   /** Platte tekst van de originele mail — aanwezig betekent: dit is een reply. */
   replyToText?: string
+  /** Outreach vanuit Leads: verstuurde mail hoort standaard in Opvolgen. */
+  defaultWachtOpReactie?: boolean
   onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
   allEmails?: Email[]
   onToChange?: (to: string) => void
@@ -124,6 +126,7 @@ export function EmailCompose({
   defaultBody = '',
   defaultBodyIsBericht = false,
   replyToText,
+  defaultWachtOpReactie = false,
   onSend,
   allEmails = [],
   onToChange,
@@ -159,7 +162,10 @@ export function EmailCompose({
   const toInputRef = useRef<HTMLInputElement>(null)
 
   // Sales Inbox v1: toggle + compose-hint (skipt bij meer-dan-1 ontvanger)
-  const [wachtOpReactie, setWachtOpReactie] = useState(false)
+  const [wachtOpReactie, setWachtOpReactie] = useState(defaultWachtOpReactie)
+  useEffect(() => {
+    setWachtOpReactie(defaultWachtOpReactie)
+  }, [defaultWachtOpReactie])
   const [hintMail, setHintMail] = useState<{ id: string; datum: string } | null>(null)
 
   // Files

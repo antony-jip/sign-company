@@ -33,7 +33,7 @@ interface LeadsPaneelProps {
    * verzenden zet EmailLayout die op 'benaderd'. Een lead die al gereageerd
    * heeft, mag door een tweede mail niet terugvallen naar benaderd.
    */
-  onMailLead: (email: string, body?: string, leadId?: string) => void
+  onMailLead: (email: string, body?: string, leadId?: string, onderwerp?: string) => void
   /** Tijdens opstellen staat compose rechts ernaast; de lead blijft dus zichtbaar. */
   naastCompose?: boolean
   /** Desktop: kies je een lead, dan staat de mail er meteen naast. */
@@ -42,6 +42,31 @@ interface LeadsPaneelProps {
   onBeantwoordMail?: (email: Email) => void
   /** Lead die zojuist gemaild is; status lokaal bijwerken zonder refetch. */
   benaderdeLeadId?: string | null
+}
+
+/**
+ * Daan levert het opzetje als drie "Onderwerp: ..."-regels, een witregel en
+ * dan de mailtekst. Wijkt het antwoord af, dan is alles gewoon body en
+ * blijft het onderwerpveld leeg zoals voorheen.
+ */
+function parseOpzet(result: string): { onderwerpen: string[]; body: string } {
+  const regels = result.trim().split('\n')
+  const onderwerpen: string[] = []
+  let i = 0
+  while (i < regels.length) {
+    const match = regels[i].match(/^onderwerp\s*:\s*(.+)$/i)
+    if (match) {
+      onderwerpen.push(match[1].trim())
+      i++
+      continue
+    }
+    if (!regels[i].trim() && onderwerpen.length > 0) {
+      i++
+      continue
+    }
+    break
+  }
+  return { onderwerpen, body: regels.slice(i).join('\n').trim() }
 }
 
 /** Alleen ingevulde velden; ontbrekende gegevens laat de prompt liever weg. */
@@ -64,6 +89,7 @@ export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = fal
   const [notitieConcept, setNotitieConcept] = useState('')
   const [aanwijzing, setAanwijzing] = useState('')
   const [schrijftVoorId, setSchrijftVoorId] = useState<string | null>(null)
+  const [opzet, setOpzet] = useState<{ leadId: string; onderwerpen: string[]; gekozen: string; body: string } | null>(null)
   const [correspondentie, setCorrespondentie] = useState<Email[]>([])
   const actieveLeadRef = useRef<string | null>(null)
 
@@ -100,6 +126,7 @@ export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = fal
     setGeselecteerdId(lead.id)
     setNotitieConcept(lead.notities)
     setAanwijzing('')
+    setOpzet(null)
     if (mailDirect && lead.email) onMailLead(lead.email, undefined, lead.status === 'nieuw' ? lead.id : undefined)
     setCorrespondentie([])
     if (lead.email) {
@@ -133,7 +160,9 @@ export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = fal
     setSchrijftVoorId(lead.id)
     try {
       const { result } = await callForgie('write-lead-email', aanwijzing.trim(), leadContext(lead))
-      onMailLead(lead.email, result, lead.status === 'nieuw' ? lead.id : undefined)
+      const { onderwerpen, body } = parseOpzet(result)
+      setOpzet(onderwerpen.length > 0 ? { leadId: lead.id, onderwerpen, gekozen: onderwerpen[0], body } : null)
+      onMailLead(lead.email, body, lead.status === 'nieuw' ? lead.id : undefined, onderwerpen[0])
     } catch (err) {
       logger.error('Opzetje schrijven mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Opzetje schrijven mislukt')
@@ -332,6 +361,34 @@ export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = fal
                   placeholder="Aanwijzing voor Daan, bijvoorbeeld: houd het extra kort"
                   className="w-full px-3 py-2 rounded-lg bg-muted/40 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-petrol/30"
                 />
+              )}
+              {opzet && opzet.leadId === geselecteerd.id && opzet.onderwerpen.length > 1 && (
+                <div>
+                  <div className="text-[12px] text-muted-foreground">Onderwerp</div>
+                  {/* Zelfde body-string doorgeven: compose herlaadt de tekst dan
+                      niet en alleen het onderwerpveld wisselt mee. */}
+                  <div className="mt-1.5 flex flex-col items-start gap-1.5">
+                    {opzet.onderwerpen.map((onderwerp) => (
+                      <button
+                        key={onderwerp}
+                        type="button"
+                        onClick={() => {
+                          setOpzet({ ...opzet, gekozen: onderwerp })
+                          onMailLead(geselecteerd.email, opzet.body, geselecteerd.status === 'nieuw' ? geselecteerd.id : undefined, onderwerp)
+                        }}
+                        className={cn(
+                          'text-left text-[13px] transition-colors duration-150',
+                          opzet.gekozen === onderwerp
+                            ? 'font-semibold text-foreground'
+                            : 'text-[#9B9B95] hover:text-foreground',
+                        )}
+                      >
+                        {onderwerp}
+                        {opzet.gekozen === onderwerp && <span className="text-flame">.</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
               {geselecteerd.bron && (
                 <div className="flex items-center gap-2 text-muted-foreground">

@@ -1894,8 +1894,8 @@ export function EmailLayout() {
       {/* ─── LEADS · eigen tabel, dus eigen paneel in plaats van de e-mailkolommen ─── */}
       {selectedFolder === 'leads' && (
         <LeadsPaneel
-          onMailLead={(email, body, leadId) => {
-            handleCompose({ to: email, body, bodyIsBericht: true })
+          onMailLead={(email, body, leadId, onderwerp) => {
+            handleCompose({ to: email, subject: onderwerp, body, bodyIsBericht: true })
             setComposeLeadId(leadId || null)
           }}
           naastCompose={viewMode !== 'idle'}
@@ -2302,6 +2302,7 @@ export function EmailLayout() {
             defaultBody={composeDefaults.body}
             defaultBodyIsBericht={composeDefaults.bodyIsBericht}
             replyToText={composeDefaults.replyToText}
+            defaultWachtOpReactie={selectedFolder === 'leads'}
             onSend={handleSendEmail}
             allEmails={emails}
             onToChange={setComposeToAddress}

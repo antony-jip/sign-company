@@ -616,6 +616,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('[fetch-emails] auto-match-loop mislukt:', matchErr)
     }
 
+    // ─── Leads: reactie van een benaderde lead zet de status op 'gereageerd' ───
+    // Zelfde 72u-inbound-venster als de sales-match hierboven. Alleen mail
+    // nieuwer dan status_sinds telt: een al verwerkte reply mag een handmatig
+    // teruggezette status (bv. follow-up_later) niet opnieuw omzetten.
+    // 'gereageerd' en 'geen_interesse' blijven altijd staan.
+    try {
+      const { data: openLeads } = await supabaseAdmin
+        .from('leads')
+        .select('id, email, status_sinds')
+        .eq('user_id', user_id)
+        .in('status', ['nieuw', 'benaderd', 'follow-up_later'])
+        .neq('email', '')
+
+      if (openLeads && openLeads.length > 0) {
+        const leadWindow = new Date(Date.now() - INBOX_WINDOW_HOURS * 60 * 60 * 1000).toISOString()
+        const { data: inkomendVanLeads } = await supabaseAdmin
+          .from('emails')
+          .select('from_address, datum')
+          .eq('user_id', user_id)
+          .eq('map', 'inbox')
+          .gte('datum', leadWindow)
+          .not('from_address', 'is', null)
+          .limit(500)
+
+        const nieuwsteVanAfzender = new Map<string, string>()
+        for (const mail of inkomendVanLeads || []) {
+          const adres = (mail.from_address as string).toLowerCase()
+          const datum = mail.datum as string
+          const huidig = nieuwsteVanAfzender.get(adres)
+          if (!huidig || datum > huidig) nieuwsteVanAfzender.set(adres, datum)
+        }
+
+        for (const lead of openLeads) {
+          const replyDatum = nieuwsteVanAfzender.get((lead.email as string).toLowerCase())
+          if (!replyDatum || replyDatum <= (lead.status_sinds as string)) continue
+          const { error: leadErr } = await supabaseAdmin
+            .from('leads')
+            .update({ status: 'gereageerd', status_sinds: new Date().toISOString() })
+            .eq('id', lead.id)
+            .eq('user_id', user_id)
+          if (leadErr) console.error('[fetch-emails] leadstatus-update mislukt:', leadErr)
+        }
+      }
+    } catch (leadMatchErr) {
+      console.error('[fetch-emails] lead-reply-match mislukt:', leadMatchErr)
+    }
+
     return res.status(200).json({
       synced,
       total,
