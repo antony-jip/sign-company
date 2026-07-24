@@ -161,6 +161,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(410).json({ error: 'Deze publieke link is verlopen' })
     }
 
+    // Eerste-view-claim eerst en atomisch: het .is(null)-filter laat de DB
+    // arbitreren, zodat twee gelijktijdige eerste views (mail-scanner + klant)
+    // nooit allebei een notificatie/mail afvuren. Bewust vóór de teller-update:
+    // die zet status → 'bekeken', en een verliezende claim mag de melding van
+    // de winnaar niet via een gewijzigde status-snapshot verdringen.
+    let claimUpdates: Record<string, unknown> = {}
+    if (!offerte.publieke_link_geopend_op) {
+      const nu = new Date().toISOString()
+      claimUpdates = {
+        publieke_link_geopend_op: nu,
+        eerste_bekeken_op: offerte.eerste_bekeken_op || nu,
+      }
+      const { data: claim, error: claimError } = await supabaseAdmin
+        .from('offertes')
+        .update(claimUpdates)
+        .eq('id', offerte.id)
+        .is('publieke_link_geopend_op', null)
+        .select('id')
+      if (claimError) console.error('[offerte-publiek] first-view claim mislukt:', claimError)
+      const eersteClaim = (claim?.length ?? 0) > 0
+
+      // Voor de response afhandelen: na res.json() kapt Vercel async werk af.
+      if (eersteClaim && offerte.status === 'verzonden') {
+        await meldEersteView(offerte)
+      }
+    }
+
     // Increment views
     const updates: Record<string, unknown> = {
       publieke_link_views: (offerte.publieke_link_views || 0) + 1,
@@ -175,30 +202,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     await supabaseAdmin.from('offertes').update(updates).eq('id', offerte.id)
-
-    // Eerste-view-claim apart en atomisch: het .is(null)-filter laat de DB
-    // arbitreren, zodat twee gelijktijdige eerste views (mail-scanner + klant)
-    // nooit allebei een notificatie/mail afvuren.
-    let claimUpdates: Record<string, unknown> = {}
-    if (!offerte.publieke_link_geopend_op) {
-      const nu = new Date().toISOString()
-      claimUpdates = {
-        publieke_link_geopend_op: nu,
-        eerste_bekeken_op: offerte.eerste_bekeken_op || nu,
-      }
-      const { data: claim } = await supabaseAdmin
-        .from('offertes')
-        .update(claimUpdates)
-        .eq('id', offerte.id)
-        .is('publieke_link_geopend_op', null)
-        .select('id')
-      const eersteClaim = (claim?.length ?? 0) > 0
-
-      // Voor de response afhandelen: na res.json() kapt Vercel async werk af.
-      if (eersteClaim && offerte.status === 'verzonden') {
-        await meldEersteView(offerte)
-      }
-    }
 
     // Haal items op
     const { data: rawItems } = await supabaseAdmin
