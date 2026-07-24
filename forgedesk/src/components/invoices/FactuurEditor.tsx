@@ -125,6 +125,7 @@ import { sendEmail } from '@/services/gmailService'
 import { factuurVerzendTemplate, factuurHerinneringTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
+import { vierEenmalig, isMijlpaalGehaald, MIJLPAAL_COPY } from '@/lib/mijlpaal'
 import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { KlantContactSelector, type ResolvedContactpersoon } from '@/components/shared/KlantContactSelector'
@@ -1224,6 +1225,14 @@ export function FactuurEditor() {
           } catch (err) {
             logger.error('Kon project status niet bijwerken:', err)
           }
+        }
+
+        if (!isCredit && !isMijlpaalGehaald('eerste_factuur')) {
+          try {
+            const alleFacturen = await getFacturen()
+            const isEerste = !alleFacturen.some((f) => f.id !== newFactuur.id)
+            vierEenmalig('eerste_factuur', isEerste, MIJLPAAL_COPY.eerste_factuur)
+          } catch { /* dan gewoon de toast */ }
         }
 
         // Check of er nog meer offertes te factureren zijn

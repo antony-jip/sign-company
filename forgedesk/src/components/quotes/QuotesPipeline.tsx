@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/select'
 import { getOffertes, updateOfferte, deleteOfferte, getKlant, getOfferteItems, getProject, createTaak, getMedewerkers } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
+import { vierEenmalig, MIJLPAAL_COPY } from '@/lib/mijlpaal'
 import { sendPortaalHerinneringEmail } from '@/services/portaalNotificatieService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -429,6 +430,11 @@ export function QuotesPipeline() {
 
   const handleDragLeave = useCallback(() => { setDragOverColumn(null) }, [])
 
+  const vierAkkoordAlsEerste = useCallback((offerteId: string) => {
+    const anderAkkoord = offertes.some(o => o.id !== offerteId && (o.status === 'goedgekeurd' || o.status === 'gefactureerd'))
+    return vierEenmalig('eerste_offerte_akkoord', !anderAkkoord, MIJLPAAL_COPY.eerste_offerte_akkoord)
+  }, [offertes])
+
   const handleDrop = useCallback(async (e: React.DragEvent, newStatus: string) => {
     e.preventDefault()
     setDragOverColumn(null)
@@ -452,8 +458,10 @@ export function QuotesPipeline() {
       logger.error('Drag & drop status update failed')
       return
     }
-    toast.success(`${offerte.nummer} → ${STATUS_LABELS[newStatus] || newStatus}`)
-  }, [offertes, runOptimistic])
+    if (!(newStatus === 'goedgekeurd' && vierAkkoordAlsEerste(offerteId))) {
+      toast.success(`${offerte.nummer} → ${STATUS_LABELS[newStatus] || newStatus}`)
+    }
+  }, [offertes, runOptimistic, vierAkkoordAlsEerste])
 
   const handleOpenMail = useCallback(async (offerte: Offerte) => {
     try {
@@ -667,8 +675,10 @@ export function QuotesPipeline() {
       logger.error('Fout bij statuswijziging')
       return
     }
-    toast.success(`Status gewijzigd naar ${STATUS_LABELS[newStatus] || newStatus}`)
-  }, [offertes, runOptimistic])
+    if (!(newStatus === 'goedgekeurd' && vierAkkoordAlsEerste(offerteId))) {
+      toast.success(`Status gewijzigd naar ${STATUS_LABELS[newStatus] || newStatus}`)
+    }
+  }, [offertes, runOptimistic, vierAkkoordAlsEerste])
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next })

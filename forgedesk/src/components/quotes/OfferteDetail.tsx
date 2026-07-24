@@ -16,7 +16,9 @@ import {
   getPortaalItems,
   getProject,
   updateProject,
+  getOffertes,
 } from '@/services/supabaseService'
+import { vierEenmalig, isMijlpaalGehaald, MIJLPAAL_COPY } from '@/lib/mijlpaal'
 import type { Offerte, OfferteItem, Klant, OfferteActiviteit } from '@/types'
 import { cn, formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
@@ -414,7 +416,15 @@ export function OfferteDetail() {
         const naam = user.user_metadata?.voornaam ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim() : user.email || ''
         logWijziging({ userId: user.id, entityType: 'offerte', entityId: offerte.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: offerte.status, nieuweWaarde: newStatus })
       }
-      toast.success(`Status bijgewerkt naar ${STATUS_LABELS[newStatus]}`)
+      let gevierd = false
+      if (newStatus === 'goedgekeurd' && !isMijlpaalGehaald('eerste_offerte_akkoord')) {
+        try {
+          const alle = await getOffertes()
+          const anderAkkoord = alle.some(o => o.id !== offerte.id && (o.status === 'goedgekeurd' || o.status === 'gefactureerd'))
+          gevierd = vierEenmalig('eerste_offerte_akkoord', !anderAkkoord, MIJLPAAL_COPY.eerste_offerte_akkoord)
+        } catch { /* dan gewoon de toast */ }
+      }
+      if (!gevierd) toast.success(`Status bijgewerkt naar ${STATUS_LABELS[newStatus]}`)
     } catch (err) {
       logger.error('Failed to update status:', err)
       toast.error('Kon status niet bijwerken')

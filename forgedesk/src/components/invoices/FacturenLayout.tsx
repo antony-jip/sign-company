@@ -82,6 +82,7 @@ import {
 } from '@/services/supabaseService'
 import { setFactuurClipboard } from '@/utils/factuurClipboard'
 import { getCached, fetchQuery } from '@/lib/queryCache'
+import { vierEenmalig, MIJLPAAL_COPY } from '@/lib/mijlpaal'
 import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate, Project } from '@/types'
 import { getFactuurBijlageCounts } from '@/services/factuurBijlagenService'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -718,7 +719,9 @@ export function FacturenLayout() {
           }
           setFacturen((prev) => [localFactuur, ...prev])
         }
-        toast.success('Concept opgeslagen')
+        if (!vierEenmalig('eerste_factuur', facturen.length === 0, MIJLPAAL_COPY.eerste_factuur)) {
+          toast.success('Concept opgeslagen')
+        }
       }
 
       setCreateDialogOpen(false)
@@ -758,9 +761,12 @@ export function FacturenLayout() {
           }
         } catch (err) { /* ignore */ }
       }
-      toast.success(`${factuur.nummer} gemarkeerd als betaald`)
+      const anderBetaald = facturen.some((f) => f.id !== factuur.id && f.status === 'betaald')
+      if (!vierEenmalig('eerste_betaling', !anderBetaald, MIJLPAAL_COPY.eerste_betaling)) {
+        toast.success(`${factuur.nummer} gemarkeerd als betaald`)
+      }
     },
-    []
+    [facturen]
   )
 
   const handleSendReminder = useCallback(
