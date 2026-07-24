@@ -117,6 +117,8 @@ export interface Klant {
   // Klant labels + gepinde notitie
   klant_labels?: string[];
   gepinde_notitie?: string;
+  /** Voorbeelddata uit de onboarding; met één actie te verwijderen. */
+  is_demo_data?: boolean;
   // Klant status & vrije labels (Quick Win 1)
   klant_status?: 'normaal' | 'vooruit_betalen' | 'niet_helpen' | 'voorrang' | 'geblokkeerd';
   labels?: string[];

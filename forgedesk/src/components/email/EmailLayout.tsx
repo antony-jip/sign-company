@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { LeadsPaneel } from './LeadsPaneel'
-import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, backfillEmailsFromIMAP, classificeerAanvragen } from '@/services/gmailService'
+import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
 import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers } from '@/services/emailService'
@@ -76,6 +76,15 @@ export function EmailLayout() {
 
   // ─── Core state ───
   const [emails, setEmails] = useState<Email[]>(() => getCached<Email[]>('emails') ?? [])
+  // null = nog niet bekend; false stuurt de lege inbox naar de koppel-uitleg.
+  const [mailboxGekoppeld, setMailboxGekoppeld] = useState<boolean | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    authenticateGmail()
+      .then((ok) => { if (!cancelled) setMailboxGekoppeld(ok) })
+      .catch(() => { if (!cancelled) setMailboxGekoppeld(null) })
+    return () => { cancelled = true }
+  }, [])
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   const [selectedFolder, setSelectedFolder] = useState<EmailFolder>('inbox')
   const [viewMode, setViewMode] = useState<ViewMode>('idle')
@@ -2137,16 +2146,33 @@ export function EmailLayout() {
                 <Inbox className="h-6 w-6 text-muted-foreground/80" />
               </div>
               <h3 className="font-heading text-[16px] font-bold text-foreground tracking-[-0.01em] mb-1.5">
-                {searchQuery ? 'Geen resultaten' : filter !== 'alle' ? 'Geen emails met dit filter' : 'Inbox is leeg'}
+                {searchQuery
+                  ? 'Geen resultaten'
+                  : filter !== 'alle'
+                    ? 'Geen emails met dit filter'
+                    : mailboxGekoppeld === false
+                      ? 'Koppel je mailbox'
+                      : 'Inbox is leeg'}
               </h3>
-              <p className="text-[13px] text-foreground/70 max-w-[260px] leading-relaxed">
+              <p className="text-[13px] text-foreground/70 max-w-[280px] leading-relaxed">
                 {searchQuery
                   ? `Geen emails gevonden voor "${searchQuery}"`
                   : filter !== 'alle'
                     ? 'Probeer een ander filter of bekijk alle emails'
-                    : 'Nieuwe emails verschijnen hier automatisch'
+                    : mailboxGekoppeld === false
+                      ? 'Verbind je zakelijke mailbox en behandel klantmail, offertes en leads gewoon hier in doen.'
+                      : 'Nieuwe emails verschijnen hier automatisch'
                 }
               </p>
+              {!searchQuery && filter === 'alle' && mailboxGekoppeld === false && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/instellingen?tab=email')}
+                  className="mt-4 text-sm text-flame hover:underline focus-visible:outline-none focus-visible:underline"
+                >
+                  Mailbox koppelen →
+                </button>
+              )}
             </div>
           ) : (
             <div>

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { ModuleIntro } from '@/components/shared/ModuleIntro'
 import { cn } from '@/lib/utils'
 // ModuleHeader removed · using DOEN inline header
 import { EmptyState } from '@/components/ui/empty-state'
@@ -295,6 +296,11 @@ export function WerkbonnenLayout() {
 
       <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
+
+      <ModuleIntro
+        id="werkbonnen"
+        tekst="Een werkbon maak je vanuit een offerte of los. Je monteur vult hem op locatie in en na aftekenen staat alles klaar voor de factuur."
+      />
 
       {/* ── Header + KPI tiles ── */}
       <div className="space-y-4">

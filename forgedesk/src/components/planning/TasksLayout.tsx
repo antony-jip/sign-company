@@ -60,6 +60,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage, getMedewerkers } from '@/services/supabaseService'
 import { getDisplayFilename } from '@/services/projectService'
 import { confirm } from '@/components/shared/ConfirmDialog'
+import { ModuleIntro } from '@/components/shared/ModuleIntro'
 import type { Taak, Project, Klant, MontageAfspraak, Offerte, Medewerker } from '@/types'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
@@ -1398,6 +1399,12 @@ export function TasksLayout() {
             <button onClick={() => handleZoom(4)} className="px-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors font-medium" title="Groter">A</button>
           </div>
         </div>
+
+        <ModuleIntro
+          id="taken"
+          tekst="Taken is al het werk om de montage heen: offertes opvolgen, bestellingen, admin. De montage zelf plan je in Planning."
+          className="mx-4 mt-3"
+        />
 
         {viewMode === 'swimlane' && selectedTaskIds.size > 0 && (
           <TakenBulkActionBar

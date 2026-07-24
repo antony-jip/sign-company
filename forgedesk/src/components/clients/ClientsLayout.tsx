@@ -34,7 +34,8 @@ import {
   CheckSquare,
   X,
 } from 'lucide-react'
-import { AlertCircle, Activity, Moon } from 'lucide-react'
+import { AlertCircle, Activity, Moon, Info } from 'lucide-react'
+import { ModuleIntro } from '@/components/shared/ModuleIntro'
 import { cn } from '@/lib/utils'
 import { avatarTint } from '@/utils/avatarTint'
 import { exportCSV, exportExcel } from '@/lib/export'
@@ -404,6 +405,36 @@ export function ClientsLayout() {
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
+
+      {klanten.length > 0 && klanten.every(k => k.is_demo_data) ? (
+        <div className="flex items-start gap-2.5 rounded-xl bg-petrol/[0.06] dark:bg-petrol/15 px-4 py-3">
+          <Info className="h-4 w-4 text-petrol dark:text-[#7FB5BF] mt-0.5 flex-shrink-0" aria-hidden />
+          <p className="flex-1 text-[13px] text-foreground/80 leading-relaxed">
+            Dit zijn voorbeeldklanten om mee rond te kijken.{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/importeren')}
+              className="text-petrol dark:text-[#7FB5BF] font-medium hover:underline focus-visible:outline-none focus-visible:underline"
+            >
+              Importeer je echte klanten →
+            </button>
+            {' '}of{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/instellingen?tab=bedrijf')}
+              className="text-petrol dark:text-[#7FB5BF] font-medium hover:underline focus-visible:outline-none focus-visible:underline"
+            >
+              verwijder de voorbeelddata →
+            </button>
+          </p>
+        </div>
+      ) : (
+        <ModuleIntro
+          id="klanten"
+          tekst="Klanten zijn je vertrekpunt: vanaf een klant maak je met een paar klikken een project, offerte of factuur."
+          actie={{ label: 'Klanten importeren', naar: '/importeren' }}
+        />
+      )}
 
       {/* ── Header + KPI tiles ── */}
       <div className="space-y-4">

@@ -26,10 +26,13 @@ export interface AanDeSlagStatus {
 const VERPLICHTE_STAPPEN: StapId[] = ['klanten', 'logo', 'bedrijf', 'email', 'project']
 const ALLE_STAPPEN: StapId[] = ['account', 'klanten', 'logo', 'bedrijf', 'email', 'project', 'team']
 
-async function countRows(tabel: string, filterUser?: string): Promise<number> {
+async function countRows(tabel: string, opts?: { filterUser?: string; zonderDemo?: boolean }): Promise<number> {
   if (!supabase) return 0
   let q = supabase.from(tabel).select('id', { count: 'exact', head: true })
-  if (filterUser) q = q.eq('user_id', filterUser)
+  if (opts?.filterUser) q = q.eq('user_id', opts.filterUser)
+  // Voorbeelddata telt niet als "klaar": wie de demo-route koos moet de
+  // klanten- en project-stap nog echt zetten. NOT (is TRUE) laat null/false door.
+  if (opts?.zonderDemo) q = q.not('is_demo_data', 'is', true)
   const { count, error } = await q
   if (error) {
     logger.warn(`[AanDeSlag] count ${tabel}:`, error.message)
@@ -57,10 +60,10 @@ export function useAanDeSlagStatus(): AanDeSlagStatus {
       }
       try {
         const [klanten, projecten, medewerkers, emailSettings] = await Promise.all([
-          countRows('klanten'),
-          countRows('projecten'),
+          countRows('klanten', { zonderDemo: true }),
+          countRows('projecten', { zonderDemo: true }),
           countRows('medewerkers'),
-          countRows('user_email_settings', user.id),
+          countRows('user_email_settings', { filterUser: user.id }),
         ])
         if (cancelled) return
         setKlantenCount(klanten)

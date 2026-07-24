@@ -89,6 +89,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { avatarTint } from '@/utils/avatarTint'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { ModuleIntro } from '@/components/shared/ModuleIntro'
 import { round2 } from '@/utils/budgetUtils'
 import { toast } from 'sonner'
 import { exportCSV, exportExcel } from '@/lib/export'
@@ -1545,6 +1546,11 @@ export function FacturenLayout() {
         <InkoopfacturenLayout />
       ) : (
       <>
+      <ModuleIntro
+        id="facturen"
+        tekst="Keur een offerte goed en maak er hier met één klik een factuur van. Betaald vink je zelf af, ook met een boekhoudkoppeling."
+      />
+
       {/* ── Header + Stats ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">

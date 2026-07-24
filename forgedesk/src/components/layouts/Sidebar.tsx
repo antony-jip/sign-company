@@ -7,11 +7,12 @@ import {
   LayoutDashboard, CircleUserRound, BookOpen,
   Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox, Ruler,
   TrendingUp, Calendar, ListChecks, Mail, Globe, SlidersHorizontal, LifeBuoy, MessageSquare, Newspaper,
-  Pin, PinOff, Pencil, Plus, LayoutGrid, Check, ChevronRight,
+  Pin, PinOff, Pencil, Plus, LayoutGrid, Check, ChevronRight, Lightbulb,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { prefetchRoute } from '@/lib/routePrefetch'
+import { guidanceAan, zetGuidance } from '@/lib/guidance'
 import { useSidebar, RAIL_WIDTH, EXPANDED_WIDTH } from '@/contexts/SidebarContext'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useSupportAttentie } from '@/hooks/useSupportInbox'
@@ -128,6 +129,7 @@ export function Sidebar() {
   //  · gepind      = enkel-iconen-rail (klapt NIET uit bij hover)
   const expanded = !isPinned
   const [userPopoverOpen, setUserPopoverOpen] = useState(false)
+  const [guidanceAanState, setGuidanceAanState] = useState(() => guidanceAan())
   const [popoverPos, setPopoverPos] = useState<{ left: number; bottom: number } | null>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const userPopoverRef = useRef<HTMLDivElement>(null)
@@ -706,6 +708,13 @@ export function Sidebar() {
                     className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                   >
                     <PanelTop className="w-[17px] h-[17px] text-muted-foreground" /> Top navigatie
+                  </button>
+                  <button
+                    onClick={() => { setGuidanceAanState(!guidanceAanState); zetGuidance(!guidanceAanState) }}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-[13px] font-medium text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
+                  >
+                    <Lightbulb className="w-[17px] h-[17px] text-muted-foreground" />
+                    {guidanceAanState ? 'Uitleg verbergen' : 'Uitleg tonen'}
                   </button>
 
                   <div className="h-px bg-border/50 mx-2 my-1" />

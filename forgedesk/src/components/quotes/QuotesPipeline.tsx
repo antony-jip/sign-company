@@ -43,6 +43,7 @@ import {
 import { getOffertes, updateOfferte, deleteOfferte, getKlant, getOfferteItems, getProject, createTaak, getMedewerkers } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { vierEenmalig, MIJLPAAL_COPY } from '@/lib/mijlpaal'
+import { ModuleIntro } from '@/components/shared/ModuleIntro'
 import { sendPortaalHerinneringEmail } from '@/services/portaalNotificatieService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -849,6 +850,11 @@ export function QuotesPipeline() {
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
+
+          <ModuleIntro
+            id="offertes"
+            tekst="Sleep offertes door de pijplijn. Zodra je klant opent of akkoord geeft, schuift de status vanzelf mee en krijg je een seintje."
+          />
 
           {/* ── Header + KPI tiles ── */}
           <div className="space-y-4">

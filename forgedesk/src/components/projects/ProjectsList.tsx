@@ -33,6 +33,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import { MedewerkerSelector } from '@/components/shared/MedewerkerSelector'
+import { ModuleIntro } from '@/components/shared/ModuleIntro'
 import { Button } from '@/components/ui/button'
 import { getFase } from '@/utils/projectFases'
 import { avatarTint } from '@/utils/avatarTint'
@@ -968,6 +969,11 @@ export function ProjectsList() {
       {/* Page content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
+
+          <ModuleIntro
+            id="projecten"
+            tekst="In doen. hangt alles aan een project: offertes, taken, planning, werkbonnen en facturen. Maak voor elke opdracht een project aan."
+          />
 
           {/* Header + Stats */}
           <div className="space-y-4">
