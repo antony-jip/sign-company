@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   FileText,
   CheckCircle2,
@@ -24,6 +25,8 @@ interface Kpi {
   bg: string
   subColor: string
   trend: number[]
+  /** Bij een verse organisatie: doel-tekst + link in plaats van een € 0. */
+  doel?: { tekst: string; cta: string; route: string }
 }
 
 type FactCategory = 'ai' | 'finance' | 'planning' | 'sales' | 'vibe'
@@ -212,6 +215,7 @@ function Sparkline({ color, values }: { color: string; values: number[] }) {
 }
 
 export function KpiStrip() {
+  const navigate = useNavigate()
   const { facturen, offertes, montages } = useDashboardData()
 
   const kpis = useMemo<Kpi[]>(() => {
@@ -269,6 +273,9 @@ export function KpiStrip() {
         bg: 'rgba(26,83,92,0.08)',
         subColor: 'hsl(var(--muted-foreground))',
         trend: pijplijnTrend,
+        doel: offertes.length === 0
+          ? { tekst: 'Elke offerte die je verstuurt telt hier op.', cta: 'Naar offertes', route: '/offertes' }
+          : undefined,
       },
       {
         label: 'Deze week',
@@ -279,6 +286,9 @@ export function KpiStrip() {
         bg: '#E8F2EC',
         subColor: 'hsl(var(--muted-foreground))',
         trend: weekTrend,
+        doel: facturen.length === 0 && montages.length === 0
+          ? { tekst: 'Wat je deze week factureert en monteert, zie je hier.', cta: 'Start je eerste project', route: '/projecten/nieuw' }
+          : undefined,
       },
     ]
   }, [facturen, offertes, montages])
@@ -289,6 +299,36 @@ export function KpiStrip() {
       {kpis.map(kpi => {
         const Icon = kpi.icon
         const [euros, cents] = formatCurrency(kpi.bedrag).replace(/^€\s*/, '').split(',')
+        if (kpi.doel) {
+          return (
+            <div
+              key={kpi.label}
+              className="doen-panel doen-wash rounded-xl p-5 flex flex-col gap-3"
+            >
+              <div className="flex items-start justify-between">
+                <span
+                  className="inline-flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0"
+                  style={{ backgroundColor: kpi.bg }}
+                >
+                  <Icon className="w-4 h-4" style={{ color: kpi.accent }} />
+                </span>
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  {kpi.label}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-[1.55] flex-1">
+                {kpi.doel.tekst}
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate(kpi.doel!.route)}
+                className="self-start text-sm text-petrol dark:text-petrol-light hover:underline focus-visible:outline-none focus-visible:underline"
+              >
+                {kpi.doel.cta} →
+              </button>
+            </div>
+          )
+        }
         return (
           <div
             key={kpi.label}

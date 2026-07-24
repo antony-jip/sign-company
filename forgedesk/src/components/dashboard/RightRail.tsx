@@ -346,7 +346,9 @@ function DezeWeekCard() {
         >
           {filterNaam
             ? `Geen afspraken voor ${filterNaam.split(' ')[0]} deze week`
-            : 'Geen afspraken deze week'}
+            : montages.length === 0 && events.length === 0
+              ? 'Je montages en afspraken van de week komen hier te staan'
+              : 'Geen afspraken deze week'}
           <span className="text-flame">.</span>
         </p>
       ) : (
@@ -521,7 +523,7 @@ function TeamCard() {
         <p
           className="doen-subtitel py-2"
         >
-          Nog geen activiteit deze week<span className="text-flame">.</span>
+          Wat je team afrondt, zie je hier terug<span className="text-flame">.</span>
         </p>
       ) : (
         <ul className="space-y-3 max-h-[200px] overflow-y-auto pr-1 -mr-2">

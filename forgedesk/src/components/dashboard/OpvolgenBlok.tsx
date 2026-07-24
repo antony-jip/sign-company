@@ -61,11 +61,26 @@ export function OpvolgenBlok() {
       </header>
 
       {items.length === 0 ? (
-        <p
-          className="doen-subtitel py-2"
-        >
-          Geen offertes wachten op reactie<span className="text-flame">.</span>
-        </p>
+        offertes.length === 0 ? (
+          <div className="py-2">
+            <p className="doen-subtitel">
+              Hier volg je offertes die op antwoord wachten<span className="text-flame">.</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/offertes/nieuw')}
+              className="mt-1.5 text-sm text-flame hover:underline focus-visible:outline-none focus-visible:underline"
+            >
+              Maak je eerste offerte →
+            </button>
+          </div>
+        ) : (
+          <p
+            className="doen-subtitel py-2"
+          >
+            Geen offertes wachten op reactie<span className="text-flame">.</span>
+          </p>
+        )
       ) : (
         <ul className="divide-y divide-border/60">
           {items.map(item => {

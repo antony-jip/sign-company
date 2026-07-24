@@ -111,7 +111,7 @@ export function ActiviteitLog() {
         <p
           className="doen-subtitel py-2"
         >
-          Nog geen activiteit<span className="text-flame">.</span>
+          Nog geen activiteit. Je eerste verstuurde offerte verschijnt hier vanzelf<span className="text-flame">.</span>
         </p>
       ) : (
         <ul className="space-y-1 max-h-[220px] overflow-y-auto pr-1 -mr-2">

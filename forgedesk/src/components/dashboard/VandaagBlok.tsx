@@ -464,15 +464,19 @@ export function VandaagBlok() {
       </div>
 
       {items.length === 0 ? (
-        <p
-          key={`empty-${selectedDayIndex}`}
-          className="doen-subtitel py-3 animate-fade-in"
-        >
-          {selectedDayIndex === todayIndex
-            ? 'Niets ingepland voor vandaag'
-            : `Niets ingepland voor ${WEEKDAY_LABELS_FULL[selectedDayIndex].toLowerCase()}`}
-          <span className="text-flame">.</span>
-        </p>
+        <div key={`empty-${selectedDayIndex}`} className="py-3 animate-fade-in">
+          <p className="doen-subtitel">
+            {selectedDayIndex === todayIndex
+              ? 'Niets ingepland voor vandaag'
+              : `Niets ingepland voor ${WEEKDAY_LABELS_FULL[selectedDayIndex].toLowerCase()}`}
+            <span className="text-flame">.</span>
+          </p>
+          {montages.length === 0 && taken.length === 0 && events.length === 0 && (
+            <p className="doen-subtitel mt-1">
+              Typ hieronder je eerste taak en hij staat er meteen in<span className="text-flame">.</span>
+            </p>
+          )}
+        </div>
       ) : (
         <ul key={`items-${selectedDayIndex}`} className="-mx-2">
           {items.map((item, idx) => {
