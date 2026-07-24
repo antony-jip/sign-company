@@ -77,12 +77,12 @@ export default function DemoPage() {
                   mee draaien.
                 </p>
                 <p className="mt-3 text-[14px] md:text-[15px] text-muted">
-                  Liever eerst even contact? Mail me op{' '}
+                  Liever eerst even contact? Stel je vraag via{' '}
                   <a
-                    href="mailto:hello@doen.team"
+                    href="/contact"
                     className="font-semibold text-petrol underline decoration-flame decoration-2 underline-offset-4 hover:text-flame transition-colors"
                   >
-                    hello@doen.team
+                    het contactformulier
                   </a>{' '}
                   of{' '}
                   <a
