@@ -439,7 +439,23 @@ export function DealsLayout() {
             {gefilterd.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-16">
                 <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#2A5580' }} />
-                <p className="font-semibold" style={{ fontSize: '14px', color: 'hsl(var(--foreground))' }}>Geen deals gevonden</p>
+                <p className="font-semibold" style={{ fontSize: '14px', color: 'hsl(var(--foreground))' }}>
+                  {deals.length === 0 ? 'Nog geen deals' : 'Geen deals gevonden'}
+                </p>
+                {deals.length === 0 && (
+                  <>
+                    <p className="text-sm text-muted-foreground text-center max-w-[320px]">
+                      Volg hier elke kans van eerste contact tot gewonnen opdracht.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setNewDealOpen(true)}
+                      className="text-sm text-flame hover:underline focus-visible:outline-none focus-visible:underline"
+                    >
+                      Zet je eerste deal op →
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <table className="w-full">

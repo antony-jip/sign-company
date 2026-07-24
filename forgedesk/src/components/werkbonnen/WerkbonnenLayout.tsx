@@ -457,8 +457,19 @@ export function WerkbonnenLayout() {
         <div className="doen-slate-surface rounded-2xl p-12 text-center">
           <EmptyState
             module="werkbonnen"
-            title="Nog geen werkbonnen"
-            description="Maak een werkbon aan vanuit een offerte of handmatig."
+            title={werkbonnen.length === 0 ? 'Nog geen werkbonnen' : 'Geen werkbonnen gevonden'}
+            description={werkbonnen.length === 0
+              ? 'Maak een werkbon aan vanuit een offerte of handmatig.'
+              : 'Pas je filters of zoekterm aan.'}
+            action={werkbonnen.length === 0 ? (
+              <button
+                type="button"
+                onClick={() => navigate('/werkbonnen/nieuw')}
+                className="text-sm text-flame hover:underline focus-visible:outline-none focus-visible:underline"
+              >
+                Maak je eerste werkbon →
+              </button>
+            ) : undefined}
           />
         </div>
       ) : (

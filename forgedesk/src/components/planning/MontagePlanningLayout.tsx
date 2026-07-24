@@ -2870,7 +2870,7 @@ export function MontagePlanningLayout() {
 
           {activeMonteurs.length === 0 && !hasUnassigned && (
             <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
-              Geen montages deze week
+              Geen montages deze week. Plan montage in vanuit een project.
             </div>
           )}
         </div>

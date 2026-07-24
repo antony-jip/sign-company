@@ -1787,7 +1787,9 @@ export function TasksLayout() {
             </div>
             {swimlaneLanes.length === 0 ? (
               <div className="px-6 py-12 text-center text-[13px] text-muted-foreground">
-                Geen taken voor deze week.
+                {taken.length === 0
+                  ? 'Nog geen taken. Maak je eerste taak met de plus rechtsonder, dan verschijnt hij hier in de weekplanning.'
+                  : 'Geen taken voor deze week.'}
               </div>
             ) : (
               swimlaneLanes.map((lane, idx) => {

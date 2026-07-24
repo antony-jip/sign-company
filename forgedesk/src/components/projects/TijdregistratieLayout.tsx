@@ -1055,8 +1055,28 @@ export function TijdregistratieLayout() {
               <tbody>
                 {sortedRegistraties.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-12 text-center text-muted-foreground">
-                      Geen tijdregistraties gevonden voor het geselecteerde filter.
+                    <td colSpan={10} className="py-12 text-center">
+                      {registraties.length === 0 ? (
+                        <>
+                          <p className="text-sm font-semibold text-foreground">
+                            Nog geen uren geschreven<span className="text-flame">.</span>
+                          </p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Schrijf uren op een project en factureer ze met één klik door.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={openNewDialog}
+                            className="mt-3 text-sm text-flame hover:underline focus-visible:outline-none focus-visible:underline"
+                          >
+                            Schrijf je eerste uren →
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          Geen tijdregistraties gevonden voor het geselecteerde filter.
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ) : (

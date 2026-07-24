@@ -222,6 +222,16 @@ export function NieuwsbriefLayout() {
                 description={heeftFilter
                   ? 'Pas je zoekopdracht of filter aan.'
                   : 'Stel je eerste nieuwsbrief op en verstuur ’m naar je contacten.'}
+                action={!heeftFilter ? (
+                  <button
+                    type="button"
+                    onClick={handleNieuw}
+                    disabled={bezig}
+                    className="text-sm text-flame hover:underline focus-visible:outline-none focus-visible:underline disabled:opacity-60"
+                  >
+                    Stel je eerste nieuwsbrief op →
+                  </button>
+                ) : undefined}
               />
             </div>
           ) : (
