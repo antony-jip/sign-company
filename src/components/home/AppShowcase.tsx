@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import SerifItalic from '@/components/SerifItalic'
-import { Space_Grotesk } from 'next/font/google'
 import { useRef, useState } from 'react'
 import {
   LayoutGrid, Folder, Users, FileText, Receipt, CheckSquare,
@@ -17,24 +16,12 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-// De echte app zet alle cijfers/codes in Space Grotesk (tabular-nums);
-// binnen de mockup overschrijven we daarom de site-brede Spline Sans Mono.
-const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600', '700'], display: 'swap' })
-
-
-const PETROL = '#1A535C'
-const PETROL_DEEP = '#0F3A42'
-const FLAME = '#F15025'
-const INK = '#1A1A1A'
-const MUTED = '#6B6B66'
-const LINE = 'rgba(26,83,92,0.08)'
-const BG = '#F8F7F5'
-const CARD = '#FFFFFF'
-// Apple-feel "material": zachte diepte met hairline-rand i.p.v. harde border.
-const HAIRLINE = 'rgba(26,83,92,0.10)'
-const PANEL_SHADOW = '0 1px 2px rgba(20,40,40,0.04), 0 8px 24px -16px rgba(19,62,69,0.20)'
-// Dashboard-hero: dimensionale petrol-gradient (lift linksboven, diepte rechtsonder).
-const HERO_GRADIENT = 'radial-gradient(ellipse 90% 110% at 0% 0%, #237580 0%, transparent 60%), linear-gradient(135deg, #1A535C 0%, #103740 100%)'
+// Tokens komen uit de gedeelde bron, zodat de showcase en de stap-panelen
+// op /hoe-het-werkt niet uit elkaar lopen.
+import {
+  spaceGrotesk, PETROL, PETROL_DEEP, FLAME, INK, MUTED, LINE, BG, CARD,
+  HAIRLINE, PANEL_SHADOW, HERO_GRADIENT,
+} from '@/components/app-ui/tokens'
 
 export type View = 'dashboard' | 'projecten' | 'detail' | 'klanten' | 'offerte' | 'email' | 'factuur' | 'inkoop' | 'taken' | 'planning'
 
@@ -208,7 +195,7 @@ function AppFrame({ view, setView }: { view: View; setView: (v: View) => void })
           <FrameHeader view={view} />
 
           {/* CONTENT */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={view}
               initial={{ opacity: 0, y: 8 }}
@@ -379,7 +366,7 @@ function FeatureList({ view }: { view: View }) {
   const meta = viewMeta[view]
   return (
     <div className="mt-12 md:mt-16 max-w-[1240px] mx-auto">
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={view}
           initial={{ opacity: 0, y: 12 }}

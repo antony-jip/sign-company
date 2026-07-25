@@ -1,25 +1,13 @@
-'use client'
-
-import { useRef } from 'react'
 import Link from 'next/link'
-import { motion, useInView, useReducedMotion } from 'framer-motion'
 
-/* Eén typografisch moment, geen cards. De volledige werkdag staat op /hoe-het-werkt. */
+/* Eén typografisch moment, geen cards. De volledige flow staat op /hoe-het-werkt.
+   Geen entree-animatie: deze zin draagt de hele positionering en mag niet
+   afhangen van een observer die in een niet-renderende tab niet vuurt. */
 export default function Statement() {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-120px' })
-  const reduce = useReducedMotion() ?? false
-  const show = reduce || inView
-
   return (
-    <section ref={ref} className="bg-white">
+    <section className="bg-white">
       <div className="container-site pt-4 pb-16 md:pt-6 md:pb-32">
-        <motion.blockquote
-          initial={reduce ? false : { opacity: 0, y: 24 }}
-          animate={show ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-3xl mx-auto text-center"
-        >
+        <blockquote className="max-w-3xl mx-auto text-center">
           <p
             className="font-heading font-bold text-petrol leading-[1.08] mb-7"
             style={{ fontSize: 'clamp(28px, 3.8vw, 46px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
@@ -37,7 +25,7 @@ export default function Statement() {
             </span>
             <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">→</span>
           </Link>
-        </motion.blockquote>
+        </blockquote>
       </div>
     </section>
   )

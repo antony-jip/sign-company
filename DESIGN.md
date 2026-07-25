@@ -25,7 +25,7 @@ Op petrol-deep mag maximaal één zachte radial-lichtval (`petrol-light`, opacit
 
 ## Typografie
 
-- Koppen: `font-heading` (Bricolage Grotesque 700/800), `letter-spacing: -0.03em` (hero -0.035em), `leading-[0.97..1.08]`, flame-punt als afsluiting: `<span className="text-flame">.</span>`
+- Koppen: `font-heading` (Instrument Sans 600/700, hetzelfde kopfont als de app), `letter-spacing: -0.03em` (hero -0.035em), `leading-[0.97..1.08]`, flame-punt als afsluiting: `<span className="text-flame">.</span>`
 - Body: `font-sans` (Hanken Grotesk), 15–17px, leading 1.55–1.65, max ~65ch.
 - `font-mono` (Spline Sans Mono) ALLEEN binnen de app-demo/mockups voor data (tijden, bedragen). Nooit voor site-labels of CTA's.
 - Schaal: hero `clamp(44px,6.4vw,88px)`, sectiekop `clamp(30px,4vw,52px)`, subkop `clamp(24px,3vw,36px)`.
@@ -33,7 +33,7 @@ Op petrol-deep mag maximaal één zachte radial-lichtval (`petrol-light`, opacit
 
 ## Sectie-grammatica
 
-- GEEN eyebrow-labels (mono-uppercase + ping-dot) boven secties. Verwijder ze overal. Een kicker mag alleen als het échte content is (bijv. "08:15 · maandagochtend" in de werkdag-story).
+- GEEN eyebrow-labels (mono-uppercase + ping-dot) boven secties. Verwijder ze overal. Een kicker mag alleen als het échte content is (bijv. "Stap 3 van 7" boven een stap).
 - Sectiekop links, korte toelichting (max 2 zinnen, `text-muted`) rechts ernaast of eronder. Zie `Modules.tsx`/`Demo.tsx`.
 - Ritme: mobiel compact, desktop ruim: `py-14` of `py-16` als base, `md:py-24`/`md:py-32` op desktop. Hero-toppadding: `pt-28` base, `md:pt-44`/`md:pt-48` op desktop. Containers via `.container-site` (1200px).
 - Lijsten: hairline-rijen (`border-petrol/10`), geen icon-kaart-grids. Kaarten alleen als het echt de beste vorm is; nooit geneste kaarten, nooit zijstreep-borders.
@@ -48,14 +48,15 @@ Op petrol-deep mag maximaal één zachte radial-lichtval (`petrol-light`, opacit
 
 ## Motion
 
-- framer-motion, ease `[0.16, 1, 0.3, 1]`, duur 0.5–0.9s, `useInView({ once: true })`.
-- Elke reveal past bij wat hij onthult (regels rijzen uit een mask in de hero; rijen staggeren in een lijst). Niet dezelfde fade-up op elke sectie plakken.
-- `useReducedMotion` overal: bij reduce direct zichtbaar (`initial={false}` of geen variants).
-- Content mag nooit onzichtbaar blijven als de animatie niet afspeelt.
+- **Inhoud is nooit afhankelijk van een animatie.** Geen scroll-reveals meer op tekst: in een tab die niet tekent vuren `requestAnimationFrame`, IntersectionObserver en zelfs React-hydratie niet, en dan blijft de pagina leeg. Dat is in juli 2026 sitebreed weggehaald.
+- De hero-entree draait op CSS-keyframes en hangt aan `html.anim-ready`. Die klasse zet het scriptje in `layout.tsx` alleen als de eerste frame echt gerenderd wordt. Blijft hij weg, dan verbergt `globals.css` niets.
+- `AnimatePresence` altijd met `initial={false}`, zodat de eerste render meteen zichtbaar is en alleen latere wissels animeren.
+- framer-motion mag nog voor interactie (menu's, tab-wissels, overlays), niet voor het tonen van tekst. Ease `[0.16, 1, 0.3, 1]`, duur 0.5–0.9s.
+- Test: haal de pagina op met `curl` en tel `opacity:0` in de HTML. Alles boven nul is een bug.
 
 ## Copy
 
 - Nederlands, actief, vaktaal (werkbon, montage, nacalculatie). Geen em-dashes in UI-copy; gebruik punten/komma's, middle dot als separator.
-- Eén boodschap staat op precies één plek: modules uitleggen doet /features, rekenen doet /prijzen, de werkdag-story staat op /hoe-het-werkt, het verhaal op /over.
+- Eén boodschap staat op precies één plek: modules uitleggen doet /features, rekenen doet /prijzen, de flow van aanvraag tot factuur staat op /hoe-het-werkt, het verhaal op /over. De pijn ("dat doe je er nu naast") staat alleen in `Statement.tsx` op de homepage, nergens anders uitgerekt.
 - Officieel e-mailadres: hello@doen.team.
 - Pay-off: "Slim gedaan." Labels actief formuleren.

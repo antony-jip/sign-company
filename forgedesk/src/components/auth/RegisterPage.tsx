@@ -42,6 +42,7 @@ export function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [akkoord, setAkkoord] = useState(false)
 
   const userInputs = useMemo(() => (email ? [email] : []), [email])
   const passwordCheck = usePasswordCheck(password, userInputs)
@@ -52,6 +53,10 @@ export function RegisterPage() {
 
     if (!email || !password || !confirmPassword) {
       toast.error('Vul alle velden in')
+      return
+    }
+    if (!akkoord) {
+      toast.error('Ga akkoord met de algemene voorwaarden om verder te gaan')
       return
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -264,9 +269,30 @@ export function RegisterPage() {
                 )}
               </Button>
 
-              <p className="text-[11px] text-muted-foreground text-center pt-1">
-                Door aan te melden ga je akkoord met onze voorwaarden.
-              </p>
+              {/* Akkoord is een expliciete handeling, geen mededeling: zonder
+                  vinkje komt er geen overeenkomst tot stand. De link opent de
+                  voorwaarden inclusief de verwerkersovereenkomst. */}
+              <label className="flex items-start gap-2.5 pt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={akkoord}
+                  onChange={(e) => setAkkoord(e.target.checked)}
+                  required
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-flame cursor-pointer"
+                />
+                <span className="text-[11px] leading-[1.5] text-muted-foreground">
+                  Ik ga akkoord met de{' '}
+                  <a
+                    href="https://doen.team/voorwaarden"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-petrol dark:text-[#8FC3CC] underline underline-offset-2"
+                  >
+                    algemene voorwaarden
+                  </a>
+                  , inclusief de verwerkersovereenkomst in Bijlage A.
+                </span>
+              </label>
             </form>
 
             <p className="text-center text-[12px] text-muted-foreground mt-5 sm:hidden">

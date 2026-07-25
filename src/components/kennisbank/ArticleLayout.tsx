@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 import { ChevronLeft, Clock, Calendar } from 'lucide-react'
 import type { Article } from '@/data/kennisbank/articles'
@@ -11,7 +10,6 @@ const TOC_ROW_HEIGHT = 36
 export default function ArticleLayout({ article }: { article: Article }) {
   const [activeId, setActiveId] = useState<string>(article.sections[0]?.id ?? '')
   const contentRef = useRef<HTMLDivElement>(null)
-  const reduce = useReducedMotion() ?? false
 
   // Scroll-spy via IntersectionObserver
   useEffect(() => {
@@ -108,13 +106,9 @@ export default function ArticleLayout({ article }: { article: Article }) {
             {/* Secties */}
             <div className="space-y-10 md:space-y-14">
               {article.sections.map((section) => (
-                <motion.section
+                <section
                   key={section.id}
                   id={section.id}
-                  initial={reduce ? false : { opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-50px' }}
-                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                   className="scroll-mt-24"
                 >
                   <h2
@@ -125,7 +119,7 @@ export default function ArticleLayout({ article }: { article: Article }) {
                     <span className="text-flame">.</span>
                   </h2>
                   <div>{section.content}</div>
-                </motion.section>
+                </section>
               ))}
             </div>
 

@@ -4,24 +4,9 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { categories, faqs, type CategoryId } from '@/data/faq'
+import FaqAnswer from '@/components/FaqAnswer'
 
 /* Rendert alleen **vet** uit de antwoord-strings; meer markdown is er niet. */
-function Answer({ text }: { text: string }) {
-  const parts = text.split('**')
-  return (
-    <p className="text-[15px] leading-[1.65] text-muted max-w-2xl pb-6">
-      {parts.map((part, i) =>
-        i % 2 === 1 ? (
-          <strong key={i} className="font-semibold text-ink">
-            {part}
-          </strong>
-        ) : (
-          part
-        )
-      )}
-    </p>
-  )
-}
 
 function CategoryBlock({ id, label }: { id: CategoryId; label: string }) {
   const items = faqs.filter((f) => f.category === id)
@@ -60,7 +45,7 @@ function CategoryBlock({ id, label }: { id: CategoryId; label: string }) {
                 style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
               >
                 <div className="overflow-hidden">
-                  <Answer text={item.a} />
+                  <FaqAnswer text={item.a} />
                 </div>
               </div>
             </div>

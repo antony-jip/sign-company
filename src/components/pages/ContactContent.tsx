@@ -123,7 +123,7 @@ export default function ContactContent() {
           {/* Rechts: formulier */}
           <div id="contact-formulier" className="hero-fade lg:col-span-3 scroll-mt-28" style={{ animationDelay: '0.35s' }}>
             <div className="bg-white rounded-[8px] border border-petrol/10 p-6 md:p-12">
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait" initial={false}>
                 {formState === 'success' ? (
                   <SuccessState key="success" reduce={reduce} />
                 ) : (

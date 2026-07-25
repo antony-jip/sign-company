@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Toast, { useEasterEgg } from './Toast'
+import { modules } from '@/data/modules'
 
 const navLinks = [
   { href: '/features', label: 'Product' },
@@ -19,6 +20,7 @@ const navLinks = [
 export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }) {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [productOpen, setProductOpen] = useState(false)
   const { handlePuntClick, showToast, closeToast } = useEasterEgg()
   const pathname = usePathname()
 
@@ -37,6 +39,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
 
   useEffect(() => {
     setIsMobileOpen(false)
+    setProductOpen(false)
   }, [pathname])
 
   const onDark = theme === 'dark' && !isScrolled && !isMobileOpen
@@ -85,23 +88,39 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
               />
             </Link>
 
-            {/* Desktop nav */}
+            {/* Desktop nav. Product klapt de tien modules uit, zodat je
+                vanaf elke pagina direct naar een module kunt. */}
             <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => {
                 const isActive =
                   pathname === link.href ||
                   (link.href === '/features' && pathname.startsWith('/features'))
-                return (
+                const heeftMenu = link.href === '/features'
+
+                const linkEl = (
                   <Link
-                    key={link.href}
                     href={link.href}
-                    className="relative px-3.5 py-2 text-[14px] font-medium transition-colors duration-200 hover:opacity-100"
+                    className="relative px-3.5 py-2 text-[14px] font-medium transition-colors duration-200 hover:opacity-100 inline-flex items-center gap-1.5"
                     style={{
                       color: isActive ? activeColor : linkColor,
                       fontWeight: isActive ? 600 : 500,
                     }}
+                    aria-expanded={heeftMenu ? productOpen : undefined}
                   >
                     {link.label}
+                    {heeftMenu && (
+                      <span
+                        aria-hidden
+                        className="transition-transform duration-200"
+                        style={{
+                          transform: productOpen ? 'rotate(180deg)' : 'none',
+                          opacity: 0.55,
+                          fontSize: 9,
+                        }}
+                      >
+                        ▼
+                      </span>
+                    )}
                     {isActive && (
                       <span
                         aria-hidden
@@ -110,6 +129,65 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                       />
                     )}
                   </Link>
+                )
+
+                if (!heeftMenu) return <div key={link.href}>{linkEl}</div>
+
+                return (
+                  <div
+                    key={link.href}
+                    className="relative"
+                    onMouseEnter={() => setProductOpen(true)}
+                    onMouseLeave={() => setProductOpen(false)}
+                    onFocus={() => setProductOpen(true)}
+                    onBlur={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) setProductOpen(false)
+                    }}
+                  >
+                    {linkEl}
+                    {productOpen && (
+                      <div
+                        className="absolute left-0 top-full pt-3 w-[420px]"
+                        role="group"
+                        aria-label="Modules"
+                      >
+                        <div
+                          className="rounded-[10px] border border-petrol/10 bg-white p-2.5"
+                          style={{ boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 18px 44px -20px rgba(19,62,69,0.35)' }}
+                        >
+                          <div className="grid grid-cols-2 gap-x-1 gap-y-0.5">
+                            {modules.map((mod) => {
+                              const modActief = pathname === mod.href
+                              return (
+                                <Link
+                                  key={mod.href}
+                                  href={mod.href}
+                                  onClick={() => setProductOpen(false)}
+                                  className={`group flex flex-col gap-0.5 rounded-[7px] px-3 py-2 transition-colors duration-150 ${
+                                    modActief ? 'bg-petrol/[0.07]' : 'hover:bg-petrol/[0.05]'
+                                  }`}
+                                >
+                                  <span className="text-[13.5px] font-semibold text-ink group-hover:text-petrol transition-colors">
+                                    {mod.label}
+                                    <span className="text-flame">.</span>
+                                  </span>
+                                  <span className="text-[11.5px] leading-tight text-muted">{mod.sub}</span>
+                                </Link>
+                              )
+                            })}
+                          </div>
+                          <Link
+                            href="/features"
+                            onClick={() => setProductOpen(false)}
+                            className="mt-1.5 flex items-center justify-between rounded-[7px] px-3 py-2 text-[13px] font-semibold text-petrol hover:bg-petrol/[0.05] transition-colors"
+                          >
+                            Alle modules op een rij
+                            <span aria-hidden className="text-flame">→</span>
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>
@@ -197,6 +275,26 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                         {link.label}
                         {isActive && <span style={{ color: '#F15025' }}>.</span>}
                       </Link>
+
+                      {/* De modules direct onder Product, anders is dit op
+                          mobiel een doodlopende link naar een overzicht. */}
+                      {link.href === '/features' && (
+                        <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5 -mt-1 mb-3 pl-0.5">
+                          {modules.map((mod) => (
+                            <li key={mod.href}>
+                              <Link
+                                href={mod.href}
+                                onClick={() => setIsMobileOpen(false)}
+                                className="block py-1.5 text-[15px] font-medium"
+                                style={{ color: pathname === mod.href ? '#1A535C' : '#54666A' }}
+                              >
+                                {mod.label}
+                                <span style={{ color: '#F15025' }}>.</span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </motion.div>
                   )
                 })}

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { faqs } from '@/data/faq'
+import FaqAnswer from '@/components/FaqAnswer'
 
 /* Acht vragen die de koop beslissen. De rest beantwoorden we via /contact. */
 const HOME_QUESTIONS = [
@@ -17,23 +18,6 @@ const HOME_QUESTIONS = [
   'Wat gebeurt er met mijn data als ik opzeg?',
 ]
 
-/* Rendert alleen **vet** uit de antwoord-strings; meer markdown is er niet. */
-function Answer({ text }: { text: string }) {
-  const parts = text.split('**')
-  return (
-    <p className="text-[15px] leading-[1.65] text-muted max-w-2xl pb-6">
-      {parts.map((part, i) =>
-        i % 2 === 1 ? (
-          <strong key={i} className="font-semibold text-ink">
-            {part}
-          </strong>
-        ) : (
-          part
-        )
-      )}
-    </p>
-  )
-}
 
 export default function FaqSection() {
   const [open, setOpen] = useState<number | null>(0)
@@ -88,7 +72,7 @@ export default function FaqSection() {
                     style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
                   >
                     <div className="overflow-hidden">
-                      <Answer text={item.a} />
+                      <FaqAnswer text={item.a} />
                     </div>
                   </div>
                 </div>

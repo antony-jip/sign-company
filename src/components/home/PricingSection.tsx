@@ -1,8 +1,4 @@
-'use client'
-
-import { useRef } from 'react'
 import Link from 'next/link'
-import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 import { PRICE_PER_MONTH } from '@/data/pricing'
 
@@ -15,15 +11,11 @@ const INCLUDED = [
   'Updates en support',
 ]
 
-/* Eén prijs, één keer verteld. Het rekenwerk staat op /prijzen. */
+/* Eén prijs, één keer verteld. Het rekenwerk staat op /prijzen.
+   Geen entree-animatie: de prijs mag nooit onzichtbaar blijven. */
 export default function PricingSection() {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-  const reduce = useReducedMotion() ?? false
-  const show = reduce || inView
-
   return (
-    <section ref={ref} className="relative overflow-hidden bg-petrol-deep">
+    <section className="relative overflow-hidden bg-petrol-deep">
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
@@ -33,12 +25,7 @@ export default function PricingSection() {
         }}
       />
       <div className="container-site relative py-16 md:py-32">
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: 20 }}
-          animate={show ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center"
-        >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
           <div>
             <h2
               className="font-heading font-bold text-white leading-[1.0] mb-6"
@@ -89,7 +76,7 @@ export default function PricingSection() {
               </li>
             ))}
           </ul>
-        </motion.div>
+        </div>
       </div>
     </section>
   )

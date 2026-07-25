@@ -77,12 +77,12 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'security',
     q: 'Waar staat mijn data?',
-    a: 'In de **EU**, op Supabase (AWS Frankfurt). **Geen data verlaat Europa.**',
+    a: 'Je gegevens staan in de **EU**, op Supabase (AWS Frankfurt). Voor de AI-functies gaat de inhoud die je laat bewerken naar onze AI-leveranciers **buiten de EU**, onder de standaardcontractbepalingen van de Europese Commissie. Ze trainen daar niet op. Wil je dat niet, dan zetten we de AI-functies voor je uit. De volledige lijst staat in [Bijlage B van de voorwaarden](/voorwaarden#bijlage-b).',
   },
   {
     category: 'security',
     q: 'Is doen. AVG-compliant?',
-    a: 'Ja. Gebouwd volgens de **Europese AVG-richtlijnen**. Jouw klantdata blijft van jou en wordt **nooit gedeeld met derden**. Verwerkersovereenkomst op aanvraag.',
+    a: 'Ja. Jouw klantdata blijft van jou en wij **verkopen of verhuren die nooit**. Om doen. te kunnen leveren schakelen we wel verwerkers in, bijvoorbeeld voor hosting, betalingen en AI. Wie dat zijn en waarvoor staat in [Bijlage B](/voorwaarden#bijlage-b). De **verwerkersovereenkomst** hoef je niet aan te vragen: die geldt automatisch zodra je een account aanmaakt en staat in [Bijlage A](/voorwaarden#bijlage-a).',
   },
   {
     category: 'security',

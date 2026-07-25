@@ -1,11 +1,15 @@
 import type { Metadata } from 'next'
-import { Bricolage_Grotesque, Hanken_Grotesk, Spline_Sans_Mono } from 'next/font/google'
+import { Instrument_Sans, Hanken_Grotesk, Spline_Sans_Mono } from 'next/font/google'
 import './globals.css'
 
-const bricolage = Bricolage_Grotesque({
+/* Koppen draaien op Instrument Sans, hetzelfde kopfont als de app
+   (forgedesk/tailwind.config.js). Zo leest de site als hetzelfde product.
+   Instrument Sans gaat tot gewicht 700; waar de site 800 vroeg valt hij
+   terug op 700. */
+const instrumentSans = Instrument_Sans({
   subsets: ['latin'],
-  weight: ['600', '700', '800'],
-  variable: '--font-bricolage',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-heading',
   display: 'swap',
 })
 
@@ -58,8 +62,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="nl" className={`${bricolage.variable} ${hanken.variable} ${splineMono.variable}`}>
+    <html lang="nl" className={`${instrumentSans.variable} ${hanken.variable} ${splineMono.variable}`}>
       <body className="font-sans bg-bg text-ink antialiased">
+        {/* Zet `anim-ready` alleen als de eerste frame ook echt gerenderd
+            wordt. Blijft de klasse weg, dan verbergt globals.css niets en
+            staat de pagina er compleet, zonder entree. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){var t=Date.now();requestAnimationFrame(function(){if(Date.now()-t<300&&document.visibilityState==='visible'){document.documentElement.classList.add('anim-ready')}})})()",
+          }}
+        />
         <a href="#main-content" className="skip-link">
           Ga naar inhoud
         </a>

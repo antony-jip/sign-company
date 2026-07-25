@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import CTASection from '@/components/home/CTASection'
@@ -363,19 +363,11 @@ function StudioBadges() {
   )
 }
 
-function Reveal({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
-  const reduce = useReducedMotion() ?? false
-  return (
-    <motion.div
-      className={className}
-      initial={reduce ? false : { opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.6, delay: reduce ? 0 : delay, ease: easing }}
-    >
-      {children}
-    </motion.div>
-  )
+/* Was een fade-up bij in beeld komen. Nu een gewone wrapper: geen enkele
+   tekst mag afhangen van een observer die in een niet-renderende tab niet
+   vuurt. Signatuur blijft staan zodat de aanroepen ongemoeid blijven. */
+function Reveal({ children, className }: { children: React.ReactNode; delay?: number; className?: string }) {
+  return <div className={className}>{children}</div>
 }
 
 /* ------------------------------------------------------------------ */
@@ -547,7 +539,7 @@ function WerktekeningDemo() {
               </button>
             </div>
 
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               {!showResult ? (
                 <motion.div
                   key="upload"
@@ -693,8 +685,6 @@ function VisualizerFlow() {
 /* ------------------------------------------------------------------ */
 
 function FeaturesOverview() {
-  const reduce = useReducedMotion() ?? false
-
   return (
     <>
       {/* Hero: entree via CSS-keyframes (globals.css: .hero-line / .hero-fade) */}
@@ -724,14 +714,7 @@ function FeaturesOverview() {
         <div className="container-site py-14 md:py-28">
           <ul className="border-t border-petrol/10">
             {details.map((d, i) => (
-              <motion.li
-                key={d.slug}
-                className="border-b border-petrol/10"
-                initial={reduce ? false : { opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: reduce ? 0 : 0.03 * i, ease: easing }}
-              >
+              <li key={d.slug} className="border-b border-petrol/10">
                 <Link
                   href={`/features/${d.slug}`}
                   className="group grid grid-cols-1 md:grid-cols-[260px_1fr_auto] gap-x-10 gap-y-2 items-baseline py-5 md:py-8"
@@ -750,7 +733,7 @@ function FeaturesOverview() {
                     Bekijk module <span aria-hidden className="inline-block transition-transform duration-200 group-hover:translate-x-0.5">→</span>
                   </span>
                 </Link>
-              </motion.li>
+              </li>
             ))}
           </ul>
         </div>
@@ -929,6 +912,70 @@ function ModuleDemo({ slug }: { slug: string }) {
   )
 }
 
+/* Moduleschakelaar bovenaan de modulepagina. Tien modules is te veel om
+   pas onderaan te kunnen wisselen: wie op Offertes staat en naar Planning
+   wil, moest eerst de hele pagina door. De actieve module blijft staan als
+   plaatsbepaling, en op smalle schermen scrollt de rij horizontaal mee met
+   de actieve pill in beeld. */
+function ModuleSwitcher({ actief }: { actief: string }) {
+  const railRef = useRef<HTMLDivElement>(null)
+
+  /* Op smalle schermen staat de actieve module verderop in de rij en dus
+     buiten beeld. Alleen de rij zelf scrollt, nooit de pagina, dus als dit
+     niet draait verandert er niets aan wat je ziet. */
+  useEffect(() => {
+    const centreer = () => {
+      const rail = railRef.current
+      if (!rail) return
+      const pill = rail.querySelector<HTMLElement>('[aria-current="page"]')
+      if (!pill) return
+      const doel = pill.offsetLeft - (rail.clientWidth - pill.offsetWidth) / 2
+      rail.scrollLeft = Math.max(0, doel)
+    }
+    centreer()
+    // Webfonts veranderen de pill-breedtes, dus na het laden nog een keer.
+    document.fonts?.ready.then(centreer).catch(() => {})
+  }, [actief])
+
+  return (
+    <nav aria-label="Modules" className="mb-8 md:mb-12">
+      <div
+        ref={railRef}
+        className="-mx-6 px-6 md:mx-0 md:px-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <ul className="flex items-center gap-1.5 w-max md:w-auto md:flex-wrap">
+          <li>
+            <Link
+              href="/features"
+              className="inline-flex items-center h-9 px-3.5 rounded-full text-[13.5px] font-semibold text-muted hover:text-petrol transition-colors duration-200"
+            >
+              Alle modules
+            </Link>
+          </li>
+          {details.map((d) => {
+            const isActief = d.slug === actief
+            return (
+              <li key={d.slug}>
+                <Link
+                  href={`/features/${d.slug}`}
+                  aria-current={isActief ? 'page' : undefined}
+                  className={`inline-flex items-center h-9 px-3.5 rounded-full text-[13.5px] font-semibold whitespace-nowrap transition-colors duration-200 ${
+                    isActief
+                      ? 'bg-petrol text-white'
+                      : 'bg-white border border-petrol/10 text-ink hover:border-petrol/30 hover:text-petrol'
+                  }`}
+                >
+                  {d.name}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </nav>
+  )
+}
+
 function ModuleDetailPage({ detail }: { detail: ModuleDetail }) {
   const index = details.findIndex((d) => d.slug === detail.slug)
   const prev = details[(index - 1 + details.length) % details.length]
@@ -936,10 +983,11 @@ function ModuleDetailPage({ detail }: { detail: ModuleDetail }) {
 
   return (
     <>
-      {/* Hero: kop + subregel, verder niks.
+      {/* Hero: schakelaar, kop en subregel, verder niks.
           Entree via CSS-keyframes (globals.css: .hero-line / .hero-fade). */}
       <section className="bg-bg">
-        <div className="container-site pt-28 md:pt-44 pb-10 md:pb-20">
+        <div className="container-site pt-24 md:pt-36 pb-10 md:pb-20">
+          <ModuleSwitcher actief={detail.slug} />
           {detail.slug === 'visualizer' && (
             <div className="hero-fade mb-5" style={{ animationDelay: '0.05s' }}>
               <StudioBadges />

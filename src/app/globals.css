@@ -29,9 +29,13 @@ summary:focus-visible {
   border-radius: 2px;
 }
 
-/* ─── Hero-entree ───
-   CSS in plaats van JS zodat de eindstand ook bereikt wordt in
-   achtergrond-tabs en headless renders. */
+/* ─── Entree-animaties ───
+   Regel: tekst is standaard zichtbaar. Pas als `html.anim-ready` gezet is
+   verbergen we de beginstand en spelen we de entree af. Die klasse zet het
+   scriptje in layout.tsx alleen wanneer requestAnimationFrame écht in de
+   eerste frame draait. Rendert de tab niet (achtergrondtab, throttling,
+   screenshot-tooling), dan blijft de klasse weg en staat alle inhoud er
+   gewoon. Een lege pagina is nooit een acceptabele uitkomst. */
 @keyframes hero-rise {
   from { transform: translateY(110%); }
   to { transform: translateY(0); }
@@ -42,14 +46,17 @@ summary:focus-visible {
 }
 .hero-line {
   display: block;
+}
+.anim-ready .hero-line {
   animation: hero-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.hero-fade {
+.anim-ready .hero-fade {
   animation: hero-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .hero-line,
-  .hero-fade {
+  .anim-ready .hero-line,
+  .anim-ready .hero-fade {
     animation: none;
   }
 }

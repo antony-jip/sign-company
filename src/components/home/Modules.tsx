@@ -1,19 +1,11 @@
-'use client'
-
-import { useRef } from 'react'
 import Link from 'next/link'
-import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { modules } from '@/data/modules'
 
-/* Tien modules als strakke index: hairlines, geen icon-kaarten. */
+/* Tien modules als strakke index: hairlines, geen icon-kaarten.
+   Geen entree-animatie: de lijst moet er staan, ook als er niets afspeelt. */
 export default function Modules() {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-  const reduce = useReducedMotion() ?? false
-  const show = reduce || inView
-
   return (
-    <section ref={ref} className="bg-bg">
+    <section className="bg-bg">
       <div className="container-site py-16 md:py-32">
         <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 mb-12 md:mb-16">
           <h2
@@ -31,16 +23,10 @@ export default function Modules() {
         </div>
 
         <ul className="grid grid-cols-1 md:grid-cols-2 md:gap-x-16 border-t border-petrol/10">
-          {modules.map((mod, i) => {
+          {modules.map((mod) => {
             const isStudio = mod.href === '/features/visualizer'
             return (
-              <motion.li
-                key={mod.href}
-                initial={reduce ? false : { opacity: 0, y: 12 }}
-                animate={show ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: reduce ? 0 : 0.04 * i, ease: [0.16, 1, 0.3, 1] }}
-                className="border-b border-petrol/10"
-              >
+              <li key={mod.href} className="border-b border-petrol/10">
                 <Link
                   href={mod.href}
                   className="group flex items-baseline gap-4 py-5 md:py-6"
@@ -64,7 +50,7 @@ export default function Modules() {
                     →
                   </span>
                 </Link>
-              </motion.li>
+              </li>
             )
           })}
         </ul>

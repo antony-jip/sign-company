@@ -1,30 +1,11 @@
-'use client'
-
-import { useRef } from 'react'
 import Image from 'next/image'
-import { motion, useInView, useReducedMotion } from 'framer-motion'
 import CTASection from '@/components/home/CTASection'
 
-const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
-
-/* Kalme reveal per blok: één fade-up, eenmalig. */
-function Reveal({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-80px' })
-  const reduce = useReducedMotion() ?? false
-  const show = reduce || inView
-
-  return (
-    <motion.div
-      ref={ref}
-      className={className}
-      initial={reduce ? false : { opacity: 0, y: 20 }}
-      animate={show ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, delay, ease: easing }}
-    >
-      {children}
-    </motion.div>
-  )
+/* Was een fade-up per blok. Nu een gewone wrapper: tekst mag niet afhangen
+   van een observer die in een niet-renderende tab niet vuurt. De signatuur
+   blijft staan zodat de aanroepen ongemoeid blijven. */
+function Reveal({ children, className }: { children: React.ReactNode; delay?: number; className?: string }) {
+  return <div className={className}>{children}</div>
 }
 
 export default function OverContent() {

@@ -1,32 +1,25 @@
 'use client'
 
-import { useRef } from 'react'
-import { motion, useInView, useReducedMotion } from 'framer-motion'
+import {
+  ArrowLeft, CalendarClock, Check, CheckCircle2, CloudRain, Download, Send, Sparkles, Sun,
+} from 'lucide-react'
 import CTASection from '@/components/home/CTASection'
-import { morningNotifications, pains, type Notification, type Pain } from '@/data/werkdag'
-
-const FLAME = '#F15025'
-const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
+import Journey from '@/components/home/Journey'
+import {
+  spaceGrotesk, PETROL, PETROL_DEEP, FLAME, INK, MUTED, LINE, BG, CARD,
+  HAIRLINE, PANEL_SHADOW, STATUS, SERIF_ITALIC,
+} from '@/components/app-ui/tokens'
 
 /* ─────────────────────────────────────────────────────────────────
-   Hero · lost de paginabelofte direct in: zeven stappen, klikbaar.
+   Hero · kop, één zin, en meteen het diagram. Geen aanloop: wie
+   hier binnenkomt vanuit een outreach-mail ziet de hele flow voor
+   de eerste scroll. De pijn staat op de homepage, niet hier.
    ───────────────────────────────────────────────────────────────── */
 
-const stepIndex = [
-  { nr: '01', label: 'Aanvraag' },
-  { nr: '02', label: 'Offerte' },
-  { nr: '03', label: 'Portaal' },
-  { nr: '04', label: 'Planning' },
-  { nr: '05', label: 'Montage' },
-  { nr: '06', label: 'Factuur' },
-  { nr: '07', label: 'Gedaan' },
-]
-
-/* Kop-entree via CSS-keyframes (globals.css: .hero-line / .hero-fade). */
 function Hero() {
   return (
     <section className="bg-bg">
-      <div className="container-site pt-28 md:pt-44 pb-12 md:pb-24">
+      <div className="container-site pt-28 md:pt-40 pb-4 md:pb-8">
         <h1
           className="font-heading font-bold text-petrol leading-[1.0] mb-6 max-w-3xl"
           style={{ fontSize: 'clamp(34px, 5.2vw, 68px)', letterSpacing: '-0.035em', textWrap: 'balance' }}
@@ -44,331 +37,74 @@ function Hero() {
         </h1>
 
         <p
-          className="hero-fade text-[16px] md:text-[19px] leading-[1.6] text-muted max-w-xl mb-9"
+          className="hero-fade text-[16px] md:text-[19px] leading-[1.6] text-muted max-w-xl"
           style={{ animationDelay: '0.3s' }}
         >
-          Dit is een werkweek met doen., van de eerste klantvraag op maandag tot
-          een afgesloten vrijdag. Elke stap hieronder is er één uit de echte app.
+          Eén klus, van de eerste klantvraag tot de betaalde factuur. Elk scherm
+          hieronder komt uit de app.
         </p>
-
-        {/* Stappenoverzicht: klikbaar, springt naar de uitwerking */}
-        <nav aria-label="De zeven stappen" className="hero-fade" style={{ animationDelay: '0.42s' }}>
-          <ol className="flex flex-wrap items-center gap-y-2.5 gap-x-1.5">
-            {stepIndex.map((s, i) => (
-              <li key={s.nr} className="flex items-center gap-1.5">
-                <a
-                  href={`#stap-${s.nr}`}
-                  className="group inline-flex items-center gap-2 pl-3 pr-3.5 h-10 rounded-full bg-white border border-petrol/10 transition-colors hover:border-petrol/30"
-                >
-                  <span className="font-mono text-[11px] font-semibold text-flame">{s.nr}</span>
-                  <span className="text-[14px] font-semibold text-ink group-hover:text-petrol transition-colors">
-                    {s.label}
-                  </span>
-                </a>
-                {i < stepIndex.length - 1 && (
-                  <span aria-hidden className="text-petrol/25 text-[13px]">→</span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
       </div>
     </section>
   )
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Herkenning · zo gaat het nu: maandag-notificaties + de vier gaten.
-   ───────────────────────────────────────────────────────────────── */
-
-/* Notificaties druppelen één voor één binnen zodra de sectie in beeld is. */
-function NotificationRow({ n, i, reduce, show }: { n: Notification; i: number; reduce: boolean; show: boolean }) {
-  const Icon = n.icon
-  return (
-    <motion.div
-      initial={reduce ? false : { opacity: 0, y: 18, scale: 0.97 }}
-      animate={show ? { opacity: 1, y: 0, scale: 1 } : {}}
-      transition={{ duration: 0.5, delay: reduce ? 0 : 0.3 + i * 0.14, ease: easing }}
-      className="flex items-center gap-3.5 bg-bg border border-petrol/10 rounded-lg px-4 py-3 mb-2.5"
-    >
-      <div className="w-9 h-9 rounded-full bg-bg flex items-center justify-center shrink-0">
-        <Icon className="w-[18px] h-[18px] text-petrol" strokeWidth={1.8} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline justify-between gap-2">
-          <p className="text-[14px] font-semibold text-ink truncate">{n.from}</p>
-          <span className="font-mono text-[11px] text-muted shrink-0">{n.when}</span>
-        </div>
-        <p className="text-[13px] text-muted truncate">{n.text}</p>
-      </div>
-    </motion.div>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────────
-   Act 2 · De diagnose: vier gaten in je werkdag, als hairline-rijen.
-   ───────────────────────────────────────────────────────────────── */
-
-function Diagnose({ reduce }: { reduce: boolean }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-  const show = reduce || inView
-
-  return (
-    <section className="bg-white">
-      <div className="container-site py-16 md:py-28">
-        <motion.div
-          ref={ref}
-          initial={reduce ? false : { opacity: 0, y: 20 }}
-          animate={show ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7, ease: easing }}
-          className="md:grid md:grid-cols-12 md:gap-10 mb-8 md:mb-14"
-        >
-          <h2
-            className="md:col-span-7 font-heading font-bold text-petrol leading-[1.02] mb-5 md:mb-0"
-            style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
-          >
-            Eerst even eerlijk: zo gaat het nu<span className="text-flame">.</span>
-          </h2>
-          <p className="md:col-span-5 self-end text-[16px] md:text-[17px] leading-[1.6] text-muted">
-            Offertes en facturen heb je vast al ergens geregeld. Maar portaal, mail, opvolging en
-            projectlog, waar het werk gewonnen wordt, doe je erbij.
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr] gap-10 lg:gap-16 items-start">
-          {/* Links: maandagochtend 08:15, dit staat er al */}
-          <div>
-            <p className="font-mono text-[12px] font-medium tracking-[0.08em] text-flame mb-4">
-              Maandag 08:15 · je opent je laptop
-            </p>
-            <div className="mb-3">
-              {morningNotifications.map((n, i) => (
-                <NotificationRow key={i} n={n} i={i} reduce={reduce} show={show} />
-              ))}
-            </div>
-            <p className="text-[14px] text-muted">Dit is je maandag. En je dinsdag. En je vrijdag.</p>
-          </div>
-
-          {/* Rechts: de vier gaten in je werkdag */}
-          <div className="border-b border-petrol/10">
-            {pains.map((p, i) => (
-              <PainRow key={p.title} pain={p} index={i} show={show} reduce={reduce} />
-            ))}
-          </div>
-        </div>
-
-        <MonteurMoment reduce={reduce} />
-      </div>
-    </section>
-  )
-}
-
-function PainRow({ pain, index, show, reduce }: { pain: Pain; index: number; show: boolean; reduce: boolean }) {
-  return (
-    <motion.div
-      initial={reduce ? false : { opacity: 0, y: 16 }}
-      animate={show ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay: reduce ? 0 : 0.15 + index * 0.08, ease: easing }}
-      className="border-t border-petrol/10 py-5 md:py-6"
-    >
-      <h3
-        className="font-heading text-[19px] md:text-[21px] font-bold text-petrol leading-snug mb-1.5"
-        style={{ letterSpacing: '-0.02em' }}
-      >
-        {pain.title}
-        <span className="text-flame">.</span>
-      </h3>
-      <div className="max-w-xl">
-        <p className="text-[15px] md:text-[16px] leading-[1.6] text-muted">{pain.body}</p>
-        <p className="mt-2.5 text-[14px]">
-          <span className="font-semibold text-flame">Kost je:</span>{' '}
-          <span className="text-muted">{pain.cost}</span>
-        </p>
-      </div>
-    </motion.div>
-  )
-}
-
-/* Het monteur-moment: de pijn raakt niet alleen de eigenaar. */
-function MonteurMoment({ reduce }: { reduce: boolean }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-  const show = reduce || inView
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={reduce ? false : { opacity: 0, y: 20 }}
-      animate={show ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, ease: easing }}
-      className="max-w-2xl mx-auto text-center mt-12 md:mt-20"
-    >
-      <p className="font-mono text-[12px] font-medium tracking-[0.18em] uppercase text-muted mb-6">
-        07:52 · woensdag · bij de bus
-      </p>
-      <blockquote>
-        <p
-          className="font-heading font-bold text-petrol leading-[1.15] mb-4"
-          style={{ fontSize: 'clamp(24px, 3vw, 36px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
-        >
-          &ldquo;Welke versie moet ik monteren: die van dinsdag, of die uit de mail van
-          gisteravond?&rdquo;
-        </p>
-        <footer className="text-[14px] font-semibold text-flame mb-6">Mark, monteur</footer>
-      </blockquote>
-      <p className="text-[15px] md:text-[16px] leading-[1.65] text-muted max-w-md mx-auto">
-        Het antwoord zit in een mailthread die alleen jij kunt zien.{' '}
-        <span className="text-ink font-medium">
-          Vier van de vijf vragen aan jou zijn eigenlijk vragen aan je systeem.
-        </span>
-      </p>
-    </motion.div>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────────
-   Overgang · smalle petrol-band: vanaf hier dezelfde week, mét doen.
-   ───────────────────────────────────────────────────────────────── */
-
-function Kantelpunt({ reduce }: { reduce: boolean }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-  const show = reduce || inView
-
-  return (
-    <section className="relative overflow-hidden bg-petrol-deep">
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 90% at 50% 0%, rgba(42,111,122,0.5) 0%, rgba(42,111,122,0) 60%)',
-        }}
-      />
-      <div ref={ref} className="container-site relative py-14 md:py-20 text-center">
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: 24 }}
-          animate={show ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8, ease: easing }}
-        >
-          <h2
-            className="font-heading font-bold text-white leading-[1.1] max-w-3xl mx-auto mb-3"
-            style={{ fontSize: 'clamp(26px, 3.6vw, 44px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
-          >
-            Nu dezelfde week, mét doen<span className="text-flame">.</span>
-          </h2>
-          <p className="text-[15px] md:text-[17px]" style={{ color: 'rgba(226,240,241,0.7)' }}>
-            Zeven stappen, stap voor stap. Bij elke stap: wat er verandert.
-          </p>
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────────
-   Act 4 · De doen.-dag: zeven stappen, elk met een mini-mockup.
+   De zeven stappen · per stap één regel en het scherm erbij.
+   Laten zien wint van vertellen, dus geen body-paragraaf en geen
+   zonder/met-vergelijking: die boodschap staat op de homepage.
    ───────────────────────────────────────────────────────────────── */
 
 type FlowStep = {
   nr: string
   title: string
-  when: string
-  was: string
-  is: string
-  body: string
+  line: string
 }
 
 const flowSteps: FlowStep[] = [
   {
     nr: '01',
     title: 'Aanvraag binnen',
-    when: 'Maandag 08:15',
-    was: 'Gemiste oproep. Mail gelezen, moet je nog terugbellen.',
-    is: 'Aanvraag landt in doen., gekoppeld aan de klant. Daan vat samen.',
-    body: 'Via je website, je inbox of een telefoontje: alles landt op één plek. Je ziet wie het is, wat hij wil en wanneer je moet reageren.',
+    line: 'Via je website, je mail of de telefoon: alles landt op één plek, gekoppeld aan de klant. Daan vat samen wat er gevraagd wordt.',
   },
   {
     nr: '02',
     title: 'Offerte uit template',
-    when: 'Maandag 08:32',
-    was: '40 minuten in Excel. Marge-formule klopt niet meer.',
-    is: 'Template, producten erbij, marge klopt. Verstuurd voor de koffie koud is.',
-    body: 'Bouw één keer je producten op en combineer ze in een paar klikken tot een offerte. Versturen per mail of goedkeuren via het klantportaal. Geen Excel, geen losse versies.',
+    line: 'Je producten en marges staan klaar, dus calculeren kost minuten. Na het versturen zie je wie hem opent, en wie je moet opvolgen.',
   },
   {
     nr: '03',
     title: 'Klant in het portaal',
-    when: 'Maandag 09:00',
-    was: 'Tekening via WeTransfer. Klant belt: ik kan hem niet openen.',
-    is: 'Eén link, geen inlog. Klant ziet alles en reageert met één klik.',
-    body: 'Tekening, offerte, bevestiging en factuur staan in één portaal, op volgorde. Je klant keurt goed, reageert en tekent digitaal. Jij ziet wanneer hij kijkt.',
+    line: 'Eén link, geen inlog. Tekening, offerte en factuur staan op volgorde. Je klant keurt goed of reageert met één klik.',
   },
   {
     nr: '04',
-    title: 'Akkoord, direct in planning',
-    when: 'Maandag 10:12',
-    was: 'Handmatig op het whiteboard. Mark bellen of hij kan.',
-    is: 'Sleep naar woensdag, monteur erbij. Werkbon maakt zichzelf.',
-    body: 'Planning en werkbonnen zijn hetzelfde in doen. Verschuif een project en de werkbon schuift mee, je monteur ziet het op zijn telefoon. Regen op woensdag? Dat weet je voordat je inplant.',
+    title: 'Akkoord, direct in de planning',
+    line: 'Sleep het project naar een dag en zet je monteur erbij. De werkbon maakt zichzelf en schuift mee als je verplaatst.',
   },
   {
     nr: '05',
     title: 'Op locatie',
-    when: 'Woensdag 09:00',
-    was: "Werkbon uitgeprint. Foto's uren later doorgemaild.",
-    is: "Uren in de app, foto's erbij, klant tekent digitaal.",
-    body: "Je monteur werkt vanaf zijn telefoon: uren registreren, foto's maken, klant laten tekenen. Jij ziet het live in het project, zonder te bellen.",
+    line: "Je monteur werkt vanaf zijn telefoon: uren, foto's en de handtekening van de klant. Jij ziet het live in het project.",
   },
   {
     nr: '06',
     title: 'Factuur de deur uit',
-    when: 'Donderdag 11:00',
-    was: 'Overtikken in Exact. Klant belt: waarom nog niet betaald?',
-    is: 'Factuur uit de offerte, Mollie-link erbij, gegevens naar Exact.',
-    body: 'Offerte wordt factuur in één klik, met Mollie-betaallink. De gegevens gaan rechtstreeks naar Exact Online, geen dubbele invoer. Geld binnen? Eén vinkje.',
+    line: 'Offerte wordt factuur in één klik, met Mollie-betaallink. De gegevens gaan door naar Exact Online, geen dubbele invoer.',
   },
   {
     nr: '07',
     title: 'Gedaan',
-    when: 'Vrijdag 16:45',
-    was: 'Vrijdag 17:30 nog checken of alles klopt. Weekendstress.',
-    is: 'Vrijdag 16:45 sluit jij af. Je klant weet waar hij aan toe is. Jij ook.',
-    body: 'Geen vergeten facturen, geen offertes onder de radar. Alles zichtbaar, alles afgehandeld. Het weekend is echt weekend.',
+    line: 'Alles afgehandeld en terug te vinden bij de klant. Wat de klus werkelijk verdiend heeft, lees je af in de nacalculatie.',
   },
 ]
 
-function DoenDag({ reduce }: { reduce: boolean }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-  const show = reduce || inView
-
+function Stappen() {
   return (
-    <section className="bg-bg">
-      <div className="container-site py-16 md:py-32">
-        <motion.div
-          ref={ref}
-          initial={reduce ? false : { opacity: 0, y: 20 }}
-          animate={show ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7, ease: easing }}
-          className="md:grid md:grid-cols-12 md:gap-10 mb-8 md:mb-16"
-        >
-          <h2
-            className="md:col-span-7 font-heading font-bold text-petrol leading-[1.02] mb-5 md:mb-0"
-            style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
-          >
-            Zo werkt het<span className="text-flame">.</span>
-          </h2>
-          <p className="md:col-span-5 self-end text-[16px] md:text-[17px] leading-[1.6] text-muted">
-            Van eerste klantvraag tot betaalde factuur. Bij elke stap zie je het scherm uit de app,
-            en wat er verandert ten opzichte van hoe je het nu doet.
-          </p>
-        </motion.div>
-
+    <section className="bg-white">
+      <div className="container-site pt-4 md:pt-8 pb-16 md:pb-24">
         <div className="border-b border-petrol/10">
           {flowSteps.map((step) => (
-            <StepBlock key={step.nr} step={step} reduce={reduce} />
+            <StepBlock key={step.nr} step={step} />
           ))}
         </div>
       </div>
@@ -376,55 +112,40 @@ function DoenDag({ reduce }: { reduce: boolean }) {
   )
 }
 
-function StepBlock({ step, reduce }: { step: FlowStep; reduce: boolean }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-120px' })
-  const show = reduce || inView
-
+function StepBlock({ step }: { step: FlowStep }) {
   return (
     <div
-      ref={ref}
       id={`stap-${step.nr}`}
-      className="border-t border-petrol/10 py-8 md:py-16 grid md:grid-cols-2 gap-7 md:gap-14 items-center scroll-mt-24"
+      className="border-t border-petrol/10 py-8 md:py-12 grid md:grid-cols-2 gap-6 md:gap-14 items-center scroll-mt-24"
     >
-      <motion.div initial={reduce ? false : { opacity: 0, y: 24 }} animate={show ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7, ease: easing }}>
-        <p className="font-mono text-[12px] font-medium tracking-[0.08em] text-flame mb-3">
-          Stap {Number(step.nr)} van 7 · {step.when}
-        </p>
-        <h3
-          className="font-heading text-[26px] md:text-[32px] font-bold text-petrol leading-tight mb-4"
+      <div>
+        <p className="text-[13px] font-semibold text-flame mb-2">Stap {Number(step.nr)} van 7</p>
+        <h2
+          className="font-heading text-[24px] md:text-[30px] font-bold text-petrol leading-tight mb-3"
           style={{ letterSpacing: '-0.025em' }}
         >
           {step.title}
           <span className="text-flame">.</span>
-        </h3>
-        <p className="text-[15px] md:text-[16px] leading-[1.6] text-muted max-w-lg">{step.body}</p>
-        <div className="mt-6 max-w-lg rounded-lg border border-petrol/10 overflow-hidden">
-          <div className="px-4 py-2.5 bg-bg flex gap-3 items-baseline">
-            <span className="text-[12px] font-semibold text-muted shrink-0 w-[86px]">Zonder doen.</span>
-            <span className="text-[13.5px] leading-snug text-muted">{step.was}</span>
-          </div>
-          <div className="px-4 py-2.5 bg-white border-t border-petrol/10 flex gap-3 items-baseline">
-            <span className="text-[12px] font-semibold text-flame shrink-0 w-[86px]">Met doen.</span>
-            <span className="text-[13.5px] leading-snug font-medium text-ink">{step.is}</span>
-          </div>
-        </div>
-      </motion.div>
+        </h2>
+        <p className="text-[15px] md:text-[16px] leading-[1.6] text-muted max-w-md">{step.line}</p>
+      </div>
 
-      <motion.div
-        initial={reduce ? false : { opacity: 0, y: 20 }}
-        animate={show ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.7, delay: reduce ? 0 : 0.2, ease: easing }}
-      >
+      <div className="md:justify-self-end">
         <StepMockup nr={step.nr} />
-      </motion.div>
+      </div>
     </div>
   )
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Mini-mockups: laten zien wint van vertellen.
-   font-mono alleen hier, voor data (tijden, bedragen, statussen).
+   De zeven schermen · nagebouwd in de vormtaal van de échte app.
+
+   Tokens komen uit @/components/app-ui/tokens, dezelfde bron als de
+   klikbare showcase op de homepage. Wat de app doet en hier terugkomt:
+   witte panelen met hairline-rand en zachte schaduw, cijfers in Space
+   Grotesk met tabular-nums, een status als woord met flame-punt
+   ("Gepland.") in plaats van een gekleurde pil, en secundaire bijzinnen
+   in serif-italic.
    ───────────────────────────────────────────────────────────────── */
 
 function StepMockup({ nr }: { nr: string }) {
@@ -440,305 +161,572 @@ function StepMockup({ nr }: { nr: string }) {
   }
 }
 
-function Frame({ children }: { children: React.ReactNode }) {
+/* Het paneel zoals de app het tekent: hairline-rand, zachte diepte,
+   geen harde border. */
+function Panel({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className="w-full max-w-[420px] rounded-xl overflow-hidden bg-white border border-petrol/10"
-      style={{ boxShadow: '0 2px 8px rgba(13,52,60,0.05), 0 20px 44px -24px rgba(13,52,60,0.2)' }}
+      className={`w-full max-w-[440px] rounded-[12px] overflow-hidden ${spaceGrotesk.className} ${className}`}
+      style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}
     >
       {children}
     </div>
   )
 }
 
+/* Statusnotatie van de app: het woord in zijn eigen kleur, punt in flame. */
+function Status({ label, color }: { label: string; color: string }) {
+  return (
+    <span className="text-[11.5px] font-semibold shrink-0" style={{ color }}>
+      {label}
+      <span style={{ color: FLAME }}>.</span>
+    </span>
+  )
+}
+
+function Serif({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="italic font-normal" style={{ color: MUTED, fontFamily: SERIF_ITALIC }}>
+      {children}
+    </span>
+  )
+}
+
+/* Kolomkop-label: mono, klein, wijd gespatieerd. */
+function Kop({ children, color = MUTED }: { children: React.ReactNode; color?: string }) {
+  return (
+    <p className="text-[9.5px] font-bold tracking-[0.18em] uppercase" style={{ color }}>
+      {children}
+    </p>
+  )
+}
+
+/* 01 · Aanvragen-inbox met de samenvatting van Daan. */
 function MockupAanvraag() {
   return (
-    <Frame>
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-petrol/10">
-        <span className="font-heading font-bold text-[13px] text-petrol">
-          doen<span className="text-flame">.</span>
-        </span>
-        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted">
-          <span className="w-1.5 h-1.5 rounded-full bg-flame motion-safe:animate-pulse" />
-          Nieuwe aanvraag
-        </div>
-      </div>
-      <div className="p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-heading font-bold text-[13px] text-flame"
-            style={{ backgroundColor: '#FDE8E2' }}
-          >
-            JB
-          </div>
-          <div className="min-w-0">
-            <p className="text-[12px] font-bold text-ink truncate">Jansen Bouw</p>
-            <p className="font-mono text-[10px] text-muted">contact@jansenbouw.nl · 08:15</p>
-          </div>
-        </div>
-        <p className="text-[12px] leading-relaxed text-muted mb-3">
-          Interesse in gevelreclame voor nieuw pand. ±8m breed, met LED-verlichting.
+    <Panel>
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${LINE}` }}>
+        <p className="font-heading text-[15px] font-bold leading-none inline-flex items-baseline gap-2" style={{ color: INK }}>
+          Aanvragen<span style={{ color: FLAME }}>.</span>
+          <span className="text-[11px] font-semibold tabular-nums" style={{ color: MUTED }}>12</span>
         </p>
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-petrol/5">
-          <span className="text-[10px]" aria-hidden>✨</span>
-          <span className="text-[10px] font-semibold text-petrol">Daan vat samen</span>
+        <span
+          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-[0.1em]"
+          style={{ backgroundColor: 'rgba(241,80,37,0.10)', color: FLAME }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full motion-safe:animate-pulse" style={{ backgroundColor: FLAME }} />
+          1 nieuw
+        </span>
+      </div>
+
+      <div className="px-4 py-3.5" style={{ borderBottom: `1px solid ${LINE}` }}>
+        <div className="flex items-start gap-2.5">
+          <span
+            className="w-7 h-7 rounded-full inline-flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+            style={{ backgroundColor: '#7BA89A' }}
+          >
+            J
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-[13px] font-bold truncate" style={{ color: INK }}>Jansen Bouw</p>
+              <span className="text-[10px] tabular-nums shrink-0" style={{ color: MUTED }}>08:15</span>
+            </div>
+            <p className="text-[10.5px] truncate" style={{ color: MUTED }}>contact@jansenbouw.nl · via signcompany.nl</p>
+            <p className="text-[12px] leading-[1.5] mt-1.5" style={{ color: INK }}>
+              Interesse in gevelreclame voor ons nieuwe pand. Ongeveer 8 meter breed, met LED-verlichting.
+            </p>
+          </div>
         </div>
       </div>
-    </Frame>
+
+      <div className="px-4 py-3" style={{ backgroundColor: 'rgba(26,83,92,0.04)' }}>
+        <p className="inline-flex items-center gap-1.5 mb-1.5">
+          <Sparkles className="w-3 h-3" style={{ color: PETROL }} strokeWidth={2} />
+          <span className="text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: PETROL }}>Daan</span>
+          <Serif>vat samen</Serif>
+        </p>
+        <p className="text-[11.5px] leading-[1.5]" style={{ color: INK }}>
+          Nieuwe klant, gevelreclame ±8 m met verlichting. Vraagt om een inmeetafspraak.
+        </p>
+        <div className="flex items-center gap-2 mt-3">
+          <span className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md text-[11px] font-bold text-white" style={{ backgroundColor: FLAME }}>
+            Maak project
+          </span>
+          <span className="inline-flex items-center h-7 px-3 rounded-md text-[11px] font-semibold" style={{ color: MUTED, border: `1px solid ${LINE}`, backgroundColor: CARD }}>
+            Beantwoord
+          </span>
+        </div>
+      </div>
+    </Panel>
   )
 }
 
+/* 02 · Offerte bewerken: regels met inkoop, marge en verkoop. */
 function MockupOfferte() {
-  const items = [
-    { name: 'Gevelreclame basic', price: '€ 1.850' },
-    { name: 'LED-verlichting 5m', price: '€ 340' },
-    { name: 'Montage · 2p', price: '€ 420' },
+  const regels = [
+    { naam: 'Gevelreclame frame 800×60', inkoop: '1.180,00', marge: '36%', totaal: '1.850,00' },
+    { naam: 'LED-verlichting 5 m', inkoop: '215,00', marge: '38%', totaal: '340,00' },
+    { naam: 'Montage · 2 monteurs', inkoop: '260,00', marge: '38%', totaal: '420,00' },
   ]
   return (
-    <Frame>
-      <div className="flex items-center justify-between px-4 py-3 border-b border-petrol/10">
-        <div>
-          <p className="text-[10px] font-semibold text-muted">Offerte</p>
-          <p className="font-mono text-[13px] font-bold text-petrol">2026-0042</p>
+    <Panel>
+      <div className="px-4 py-3" style={{ borderBottom: `1px solid ${LINE}` }}>
+        <p className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold mb-1.5" style={{ color: MUTED }}>
+          <ArrowLeft className="w-3 h-3" strokeWidth={2} /> Offertes
+          <span>·</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] tabular-nums" style={{ backgroundColor: BG, border: `1px solid ${LINE}` }}>
+            OFF-2026-236
+          </span>
+        </p>
+        <div className="flex items-end justify-between gap-3">
+          <p className="font-heading text-[17px] font-bold leading-none" style={{ color: INK }}>
+            Offerte bewerken<span style={{ color: FLAME }}>.</span>
+            <span className="ml-2 text-[10.5px]"><Serif>t/m 16 jun</Serif></span>
+          </p>
+          <Status label="Concept" color={STATUS.gepland} />
         </div>
-        <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full text-flame" style={{ backgroundColor: '#FDE8E2' }}>
-          CONCEPT
-        </span>
       </div>
-      <div className="p-4">
-        {items.map((item, i) => (
-          <div key={i} className={`flex items-center justify-between py-1.5 ${i < 2 ? 'border-b border-dashed border-petrol/10' : ''}`}>
-            <p className="text-[11px] text-ink">{item.name}</p>
-            <p className="font-mono text-[11px] font-semibold text-petrol">{item.price}</p>
+
+      <div className="px-4 pt-3 pb-2">
+        <div className="flex items-center gap-2 pb-1.5" style={{ borderBottom: `1px solid ${LINE}` }}>
+          <div className="flex-1"><Kop>Regel</Kop></div>
+          <div className="w-[54px] text-right"><Kop>Inkoop</Kop></div>
+          <div className="w-[34px] text-right"><Kop>Marge</Kop></div>
+          <div className="w-[58px] text-right"><Kop>Verkoop</Kop></div>
+        </div>
+        {regels.map((r) => (
+          <div key={r.naam} className="flex items-center gap-2 py-2" style={{ borderBottom: `1px solid ${LINE}` }}>
+            <p className="flex-1 text-[11.5px] truncate" style={{ color: INK }}>{r.naam}</p>
+            <p className="w-[54px] text-right text-[11px] tabular-nums" style={{ color: MUTED }}>{r.inkoop}</p>
+            <p className="w-[34px] text-right text-[11px] font-semibold tabular-nums" style={{ color: STATUS.afgerond }}>{r.marge}</p>
+            <p className="w-[58px] text-right text-[11.5px] font-bold tabular-nums" style={{ color: INK }}>{r.totaal}</p>
           </div>
         ))}
-        <div className="flex items-center justify-between pt-3 mt-3 border-t-2 border-petrol">
-          <p className="text-[11px] font-bold text-petrol">Totaal ex. btw</p>
-          <p className="font-mono text-[14px] font-bold text-petrol">€ 2.610</p>
-        </div>
-        <div className="w-full mt-4 py-2.5 rounded-md bg-flame font-semibold text-[11px] text-white flex items-center justify-center gap-1.5">
-          Verstuur via portaal <span aria-hidden>→</span>
+        <div className="flex items-baseline justify-between pt-2.5">
+          <p className="text-[11px] font-semibold" style={{ color: MUTED }}>
+            Totaal <Serif>excl. btw</Serif>
+          </p>
+          <p className="font-heading text-[19px] font-bold leading-none tabular-nums" style={{ color: INK }}>€ 2.610,00</p>
         </div>
       </div>
-    </Frame>
+
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderTop: `1px solid ${LINE}`, backgroundColor: BG }}>
+        <span className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-[11px] font-semibold" style={{ color: MUTED, border: `1px solid ${LINE}`, backgroundColor: CARD }}>
+          <Download className="w-3 h-3" strokeWidth={2} /> PDF
+        </span>
+        <span className="inline-flex items-center h-8 px-3 rounded-md text-[11px] font-bold text-white" style={{ backgroundColor: PETROL_DEEP }}>
+          Opslaan
+        </span>
+        <span
+          className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md text-[11px] font-bold text-white ml-auto"
+          style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(241,80,37,0.28)' }}
+        >
+          <Send className="w-3 h-3" strokeWidth={2.4} /> Verstuur
+        </span>
+      </div>
+    </Panel>
   )
 }
 
+/* 03 · Het klantportaal, dus geen app-chrome maar de publieke pagina:
+   petrol-header met stippatroon, feed-kaart met flame-accent bovenaan. */
 function MockupPortaal() {
   return (
-    <Frame>
-      <div className="px-3 py-2 flex items-center gap-2 bg-bg border-b border-petrol/10">
-        <div className="flex gap-1" aria-hidden>
-          <span className="w-2 h-2 rounded-full bg-petrol/15" />
-          <span className="w-2 h-2 rounded-full bg-petrol/15" />
-          <span className="w-2 h-2 rounded-full bg-petrol/15" />
-        </div>
-        <div className="flex-1 text-center">
-          <span className="font-mono text-[9px] text-muted">portaal.doen.team/jansen-bouw</span>
+    <Panel>
+      <div className="relative overflow-hidden" style={{ backgroundColor: PETROL }}>
+        <svg width="100%" height="100%" className="absolute inset-0 opacity-[0.08]" aria-hidden>
+          <defs>
+            <pattern id="portaal-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+              <circle cx="4" cy="4" r="2" fill={FLAME} />
+              <circle cx="16" cy="16" r="1.5" fill="#ffffff" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#portaal-dots)" />
+        </svg>
+        <div className="relative px-4 py-3.5 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-heading text-[14px] font-extrabold text-white leading-none tracking-tight">Mark Signing</p>
+            <p className="text-[10.5px] text-white/60 truncate mt-1">Gevelreclame nieuw pand</p>
+          </div>
+          <p className="inline-flex items-center gap-1.5 text-[10px] shrink-0" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <CalendarClock className="w-3 h-3" strokeWidth={2} />
+            <span className="tabular-nums">Geldig tot 16 juni 2026</span>
+          </p>
         </div>
       </div>
-      <div className="p-4">
-        <p className="font-heading text-[14px] font-bold leading-tight text-petrol">
-          Jouw project bij Mark<span className="text-flame">.</span>
-        </p>
-        <p className="text-[10px] text-muted mb-3">Gevelreclame · start woensdag</p>
-        <div className="rounded-lg mb-3 h-20 flex items-center justify-center bg-bg border border-dashed border-petrol/20">
-          <svg width="100" height="34" viewBox="0 0 100 34" aria-hidden>
-            <rect x="4" y="12" width="92" height="14" fill="none" stroke="#1A535C" strokeWidth="1.2" />
-            <text x="50" y="23" textAnchor="middle" fontSize="7" fontFamily="monospace" fontWeight="700" fill="#1A535C">
-              JANSEN BOUW
-            </text>
-            <circle cx="4" cy="4" r="1.5" fill={FLAME} />
-            <circle cx="96" cy="4" r="1.5" fill={FLAME} />
-            <line x1="4" y1="4" x2="96" y2="4" stroke={FLAME} strokeWidth="0.6" strokeDasharray="2 2" />
-            <text x="50" y="9" textAnchor="middle" fontSize="5.5" fontFamily="monospace" fontWeight="700" fill={FLAME}>
-              800 CM
-            </text>
-          </svg>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex-1 py-2 rounded-md bg-flame text-[11px] font-semibold text-white flex items-center justify-center gap-1">
-            <span aria-hidden>✓</span> Akkoord
+
+      <div style={{ backgroundColor: BG }} className="px-3 py-3.5">
+        <div className="h-1 rounded-t-[10px]" style={{ backgroundColor: FLAME }} />
+        <div className="rounded-b-[10px] bg-white px-4 py-3.5" style={{ border: '0.5px solid #E8E6E1' }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold truncate" style={{ color: INK }}>Offerte gevelreclame</p>
+              <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>Frame, verlichting en montage</p>
+            </div>
+            <Status label="verstuurd" color={STATUS.verstuurd} />
           </div>
-          <div className="flex-1 py-2 rounded-md border border-petrol text-petrol text-[11px] font-semibold text-center">
-            Reageren
+          <p className="text-[17px] font-medium mt-2 tabular-nums" style={{ color: INK }}>
+            € 2.610,00
+            <span className="ml-1.5 text-[10.5px] font-normal" style={{ color: MUTED }}>excl. btw</span>
+          </p>
+          <div className="flex items-center gap-2 mt-3">
+            <span className="inline-flex items-center justify-center gap-1.5 flex-1 h-9 rounded-lg text-[12px] font-bold text-white" style={{ backgroundColor: FLAME }}>
+              <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> Akkoord geven
+            </span>
+            <span className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-[12px] font-semibold" style={{ color: PETROL, border: `1px solid ${LINE}` }}>
+              Vragen stellen
+            </span>
           </div>
+          <p className="text-[10px] mt-2.5 text-center" style={{ color: MUTED }}>Geen account of wachtwoord nodig.</p>
         </div>
       </div>
-    </Frame>
+    </Panel>
   )
 }
 
+/* 04 · Weekplanning: dagkoppen met weer, blokken met statusstreep. */
 function MockupPlanning() {
-  const days = ['Ma', 'Di', 'Wo', 'Do', 'Vr']
-  const scheduled = [null, null, { title: 'Jansen Bouw', crew: 'Mark + Sophie', weather: '☀' }, null, null]
-  return (
-    <Frame>
-      <div className="px-4 py-3 flex items-center justify-between border-b border-petrol/10">
-        <p className="font-heading text-[13px] font-bold text-petrol">
-          Week 12<span className="text-flame">.</span>
-        </p>
-        <span className="font-mono text-[10px] font-semibold text-muted">Maart</span>
-      </div>
-      <div className="p-3">
-        <div className="grid grid-cols-5 gap-1.5">
-          {days.map((d, i) => {
-            const job = scheduled[i]
-            return (
-              <div key={d} className="text-center">
-                <p className="font-mono text-[9px] font-bold text-muted mb-1">{d}</p>
-                <div
-                  className={`h-[72px] rounded-md flex items-center justify-center text-[9px] p-1.5 ${
-                    job ? 'bg-flame text-white' : 'bg-bg text-muted'
-                  }`}
-                >
-                  {job ? (
-                    <div className="leading-tight">
-                      <div className="font-bold">{job.title}</div>
-                      <div className="text-[8px] mt-0.5 opacity-85">{job.weather} {job.crew}</div>
-                    </div>
-                  ) : (
-                    <span>·</span>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </Frame>
-  )
-}
-
-function MockupWerkbon() {
-  const checks = [
-    { text: 'Materiaal geladen', done: true },
-    { text: 'Montage afgerond', done: true },
-    { text: "3 foto's geüpload", done: true },
-    { text: 'Klant getekend', done: false },
+  const dagen = [
+    { d: 'Ma', datum: '18/5', temp: '15°', regen: true, vandaag: true },
+    { d: 'Di', datum: '19/5', temp: '15°', regen: true },
+    { d: 'Wo', datum: '20/5', temp: '14°', regen: true },
+    { d: 'Do', datum: '21/5', temp: '16°', regen: false },
+    { d: 'Vr', datum: '22/5', temp: '18°', regen: false },
   ]
   return (
-    <div className="flex items-start">
-      <div className="rounded-[24px] p-1.5 bg-ink" style={{ boxShadow: '0 20px 44px -24px rgba(13,52,60,0.35)' }}>
-        <div className="rounded-[18px] overflow-hidden w-[200px] bg-white">
-          <div className="px-3 py-2.5 bg-petrol-deep">
-            <p className="text-[9px] font-semibold" style={{ color: 'rgba(226,240,241,0.55)' }}>Werkbon</p>
-            <p className="text-[11px] font-bold text-white leading-tight">Jansen Bouw · woensdag</p>
+    <Panel>
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${LINE}` }}>
+        <p className="font-heading text-[15px] font-bold leading-none inline-flex items-baseline gap-2" style={{ color: INK }}>
+          Planning<span style={{ color: FLAME }}>.</span>
+          <span className="text-[11px] font-semibold" style={{ color: MUTED }}>week 21</span>
+        </p>
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: FLAME }}>
+          <span className="rounded-full inline-flex items-center justify-center text-[9px] font-bold text-white" style={{ backgroundColor: FLAME, width: 15, height: 15 }}>2</span>
+          Te plannen
+        </span>
+      </div>
+
+      <div className="grid grid-cols-5" style={{ borderBottom: `1px solid ${LINE}` }}>
+        {dagen.map((d) => (
+          <div
+            key={d.d}
+            className="px-1.5 py-2 text-center"
+            style={{ backgroundColor: d.vandaag ? 'rgba(26,83,92,0.05)' : 'transparent' }}
+          >
+            <p className="text-[10px] font-bold" style={{ color: d.vandaag ? PETROL : INK }}>{d.d}</p>
+            <p className="text-[9px] tabular-nums" style={{ color: MUTED }}>{d.datum}</p>
+            <p className="inline-flex items-center justify-center gap-0.5 mt-1 text-[9px] tabular-nums" style={{ color: MUTED }}>
+              {d.regen ? <CloudRain className="w-2.5 h-2.5" strokeWidth={2} /> : <Sun className="w-2.5 h-2.5" strokeWidth={2} />}
+              {d.temp}
+            </p>
           </div>
-          <div className="p-3 space-y-2">
-            {checks.map((item) => (
-              <div key={item.text} className="flex items-center gap-2">
-                <span
-                  className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${item.done ? '' : 'bg-bg'}`}
-                  style={item.done ? { backgroundColor: '#2D6B48' } : undefined}
-                >
-                  {item.done && <span className="text-white text-[8px] font-bold">✓</span>}
-                </span>
-                <p className={`text-[10px] ${item.done ? 'text-ink' : 'text-muted'}`}>{item.text}</p>
-              </div>
-            ))}
-            <div className="mt-2 p-2 rounded-md flex items-center justify-between" style={{ backgroundColor: '#FDE8E2' }}>
-              <p className="text-[9px] font-semibold text-flame">Uren vandaag</p>
-              <p className="font-mono text-[14px] font-bold text-flame">6:45</p>
+        ))}
+      </div>
+
+      <div className="p-3 space-y-2" style={{ backgroundColor: BG }}>
+        <PlanBlok
+          tijd="08:00 – 12:00"
+          titel="Montage gevelreclame"
+          klant="Jansen Bouw · Beemster"
+          ref="WB-2026-039"
+          stripe="#4A7AC7"
+          bg="#E8EEF9"
+          tekst={STATUS.actief}
+          status="Gepland"
+          crew="Mark + Sophie"
+        />
+        <PlanBlok
+          tijd="13:00 – 15:00"
+          titel="Inmeten reclamezuil"
+          klant="Café De Zon"
+          stripe="#CBC9C4"
+          bg="#F3F2EF"
+          tekst="#9B9B95"
+          status="Afgerond"
+        />
+      </div>
+    </Panel>
+  )
+}
+
+function PlanBlok({
+  tijd, titel, klant, ref: refnr, stripe, bg, tekst, status, crew,
+}: {
+  tijd: string; titel: string; klant: string; ref?: string
+  stripe: string; bg: string; tekst: string; status: string; crew?: string
+}) {
+  return (
+    <div className="rounded-[8px] overflow-hidden flex" style={{ backgroundColor: bg }}>
+      <div className="w-[3px] shrink-0" style={{ backgroundColor: stripe }} />
+      <div className="flex-1 min-w-0 px-3 py-2">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-[10px] font-semibold tabular-nums" style={{ color: tekst }}>{tijd}</p>
+          <Status label={status} color={tekst} />
+        </div>
+        <p className="text-[12px] font-bold truncate mt-0.5" style={{ color: INK }}>{titel}</p>
+        <p className="text-[10.5px] truncate" style={{ color: MUTED }}>{klant}</p>
+        {(refnr || crew) && (
+          <p className="flex items-center gap-2 mt-1 text-[9.5px] tabular-nums" style={{ color: MUTED }}>
+            {refnr && <span className="px-1.5 py-0.5 rounded-[3px]" style={{ backgroundColor: 'rgba(255,255,255,0.7)' }}>{refnr}</span>}
+            {crew && <span>{crew}</span>}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* 05 · De werkbon op de telefoon van de monteur. De app zet hier geen
+   randen om de kaarten, alleen een lichte schaduw op een warme grijstint. */
+function MockupWerkbon() {
+  const kaarten = [
+    { label: 'Uren', waarde: '6:45', sub: 'Mark 3:30 · Sophie 3:15' },
+    { label: "Foto's", waarde: '3', sub: 'gevel voor, tijdens, na' },
+  ]
+  return (
+    <div className={`w-full max-w-[260px] rounded-[22px] overflow-hidden ${spaceGrotesk.className}`} style={{ backgroundColor: BG, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
+      <div className="px-4 pt-4 pb-3">
+        <p className="flex items-baseline gap-2">
+          <span className="text-[11px] font-semibold tabular-nums" style={{ color: MUTED }}>WB-2026-039</span>
+          <span className="text-[11px]" style={{ color: MUTED }}>
+            In uitvoering<span style={{ color: FLAME }}>.</span>
+          </span>
+        </p>
+        <p className="text-[16px] font-semibold leading-tight mt-0.5" style={{ color: INK }}>Montage gevelreclame</p>
+      </div>
+
+      <div className="px-3 pb-3 space-y-2.5">
+        <div className="bg-white rounded-xl p-3.5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <Kop>Klant</Kop>
+          <p className="text-[13px] font-medium mt-1" style={{ color: INK }}>Jansen Bouw</p>
+          <div className="flex gap-5 mt-2.5">
+            <div>
+              <Kop>Datum</Kop>
+              <p className="text-[11.5px] mt-0.5 tabular-nums" style={{ color: INK }}>20 mei</p>
+            </div>
+            <div>
+              <Kop>Locatie</Kop>
+              <p className="text-[11.5px] mt-0.5" style={{ color: INK }}>Beemster</p>
             </div>
           </div>
         </div>
+
+        {kaarten.map((k) => (
+          <div key={k.label} className="bg-white rounded-xl p-3.5 flex items-center justify-between gap-3" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+            <div className="min-w-0">
+              <Kop>{k.label}</Kop>
+              <p className="text-[10.5px] truncate mt-0.5" style={{ color: MUTED }}>{k.sub}</p>
+            </div>
+            <p className="text-[19px] font-semibold leading-none tabular-nums shrink-0" style={{ color: INK }}>{k.waarde}</p>
+          </div>
+        ))}
+
+        <div className="bg-white rounded-xl p-3.5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <Kop>Handtekening klant</Kop>
+          <div className="mt-2 h-9 rounded-lg flex items-center px-3" style={{ backgroundColor: BG }}>
+            <svg width="76" height="20" viewBox="0 0 76 20" aria-hidden>
+              <path d="M2 15 C 10 2, 16 18, 24 9 S 38 2, 46 12 S 60 4, 74 8" fill="none" stroke={INK} strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <span className="ml-auto text-[9.5px]" style={{ color: MUTED }}>M. Jansen</span>
+          </div>
+        </div>
+
+        <div className="h-10 rounded-xl flex items-center justify-center gap-1.5 text-[12.5px] font-bold text-white" style={{ backgroundColor: FLAME }}>
+          <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> Werkbon afronden
+        </div>
       </div>
     </div>
   )
 }
 
+/* 06 · Factuur met betaalstatus, Mollie-link en Exact-koppeling. */
 function MockupFactuur() {
   return (
-    <Frame>
-      <div className="flex items-center justify-between px-4 py-3 border-b border-petrol/10">
-        <div>
-          <p className="text-[10px] font-semibold text-muted">Factuur</p>
-          <p className="font-mono text-[13px] font-bold text-petrol">F-2026-0087</p>
+    <Panel>
+      <div className="px-4 py-3" style={{ borderBottom: `1px solid ${LINE}` }}>
+        <p className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold mb-1.5" style={{ color: MUTED }}>
+          <ArrowLeft className="w-3 h-3" strokeWidth={2} /> Facturen
+        </p>
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="font-heading text-[17px] font-bold leading-none" style={{ color: INK }}>Factuur 2026234</p>
+            <p className="text-[10.5px] mt-1.5 inline-flex items-center gap-1.5" style={{ color: INK }}>
+              <Send className="w-3 h-3" style={{ color: PETROL }} strokeWidth={2} />
+              Verstuurd · <Serif>wachtend op betaling</Serif>
+            </p>
+          </div>
+          <p className="font-heading text-[20px] font-bold leading-none tabular-nums shrink-0" style={{ color: INK }}>€ 3.158,10</p>
         </div>
-        <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#E4F0EA', color: '#2D6B48' }}>
-          BETAALD
+      </div>
+
+      <div className="px-4 py-3 space-y-2" style={{ borderBottom: `1px solid ${LINE}` }}>
+        <RegelRij label="Subtotaal excl. btw" waarde="€ 2.610,00" />
+        <RegelRij label="Btw 21%" waarde="€ 548,10" />
+      </div>
+
+      <div className="px-4 py-3 flex flex-wrap items-center gap-2">
+        <span
+          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-[11px] font-semibold"
+          style={{ color: '#2D6B48', border: '1px solid rgba(45,107,72,0.30)', backgroundColor: 'rgba(45,107,72,0.07)' }}
+        >
+          <CheckCircle2 className="w-3 h-3" strokeWidth={2} /> Markeer als betaald
+        </span>
+        <span
+          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-[10px] font-bold uppercase tracking-wide"
+          style={{ color: '#2D6B48', border: '1px solid rgba(45,107,72,0.30)', backgroundColor: 'rgba(45,107,72,0.07)' }}
+        >
+          <CheckCircle2 className="w-3 h-3" strokeWidth={2} /> Exact
         </span>
       </div>
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3 pb-3 border-b border-dashed border-petrol/10">
-          <p className="text-[11px] text-muted">Jansen Bouw</p>
-          <p className="font-mono text-[14px] font-bold text-petrol">€ 2.610</p>
-        </div>
-        <div className="space-y-2">
-          <StatusRow tone="green" label="Betaald via Mollie (iDEAL)" value="€ 2.610" />
-          <StatusRow tone="green" label="Verstuurd naar Exact Online" arrow />
-          <StatusRow tone="muted" label="Handmatig afgevinkt" />
-        </div>
+
+      <div className="px-4 py-2.5 flex items-center gap-2" style={{ backgroundColor: BG, borderTop: `1px solid ${LINE}` }}>
+        <span className="text-[9.5px] font-bold uppercase tracking-[0.14em] shrink-0" style={{ color: MUTED }}>Betaallink</span>
+        <span className="text-[10px] truncate" style={{ color: '#9B9B95' }}>app.doen.team/betalen/3d752882-ddc7-…</span>
       </div>
-    </Frame>
+    </Panel>
   )
 }
 
-function StatusRow({ tone, label, value, arrow }: { tone: 'green' | 'muted'; label: string; value?: string; arrow?: boolean }) {
-  const green = tone === 'green'
+function RegelRij({ label, waarde }: { label: string; waarde: string }) {
   return (
-    <div className="flex items-center gap-2">
-      <span
-        className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${green ? '' : 'bg-bg text-muted'}`}
-        style={green ? { backgroundColor: '#E4F0EA', color: '#2D6B48' } : undefined}
-      >
-        {arrow ? '→' : '✓'}
-      </span>
-      <p className="text-[10px] text-ink flex-1">{label}</p>
-      {value && <p className="font-mono text-[10px] font-semibold" style={{ color: '#2D6B48' }}>{value}</p>}
+    <div className="flex items-baseline justify-between gap-3">
+      <p className="text-[11.5px]" style={{ color: MUTED }}>{label}</p>
+      <p className="text-[11.5px] font-semibold tabular-nums" style={{ color: INK }}>{waarde}</p>
     </div>
   )
 }
 
+/* 07 · Project afgerond: de fase-indicator uit de projectlijst plus de
+   nacalculatie, want daar staat wat de klus echt heeft opgeleverd. */
 function MockupGedaan() {
-  const steps = ['Aanvraag', 'Offerte', 'Akkoord', 'Planning', 'Montage', 'Factuur']
+  const fases = ['Aanvraag', 'Offerte', 'Akkoord', 'Planning', 'Montage', 'Factuur']
   return (
-    <Frame>
-      <div className="flex items-center justify-between px-4 py-3 border-b border-petrol/10">
-        <div>
-          <p className="text-[10px] font-semibold text-muted">Project</p>
-          <p className="font-heading text-[13px] font-bold text-petrol">
-            Jansen Bouw<span className="text-flame">.</span>
+    <Panel>
+      <div className="px-4 py-3" style={{ borderBottom: `1px solid ${LINE}` }}>
+        <p className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold mb-1.5" style={{ color: MUTED }}>
+          <ArrowLeft className="w-3 h-3" strokeWidth={2} /> Projecten
+          <span>·</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] tabular-nums" style={{ backgroundColor: BG, border: `1px solid ${LINE}` }}>
+            PRJ-2026-044
+          </span>
+        </p>
+        <div className="flex items-end justify-between gap-3">
+          <p className="font-heading text-[16px] font-bold leading-tight" style={{ color: INK }}>
+            Gevelreclame Jansen Bouw<span style={{ color: FLAME }}>.</span>
           </p>
+          <Status label="Afgerond" color={STATUS.afgerond} />
         </div>
-        <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#E4F0EA', color: '#2D6B48' }}>
-          AFGEROND
-        </span>
       </div>
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4 relative">
-          <div className="absolute top-3 left-3 right-3 h-[1.5px]" style={{ backgroundColor: '#D0E3D5' }} />
-          {steps.map((s) => (
-            <div key={s} className="relative flex flex-col items-center flex-1 z-10">
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                style={{ backgroundColor: '#2D6B48' }}
-              >
-                ✓
-              </div>
-              <p className="text-[7px] font-bold uppercase tracking-wider mt-1.5 text-center text-muted">{s}</p>
+
+      <div className="px-4 py-3.5" style={{ borderBottom: `1px solid ${LINE}` }}>
+        <div className="flex items-center justify-between mb-2">
+          <Kop>Fase 6 van 6</Kop>
+          <span className="text-[9.5px] tabular-nums" style={{ color: MUTED }}>doorlooptijd 12 dagen</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {fases.map((f) => (
+            <div key={f} className="flex-1 min-w-0">
+              <div className="h-1 rounded-full" style={{ backgroundColor: STATUS.afgerond }} />
+              <p className="text-[8px] font-semibold truncate mt-1" style={{ color: MUTED }}>{f}</p>
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between p-2.5 rounded-md bg-bg">
-          <p className="text-[10px] font-semibold text-muted">Doorlooptijd</p>
-          <p className="font-mono text-[13px] font-bold text-petrol">5 dagen</p>
+      </div>
+
+      <div className="px-4 py-3.5">
+        <div className="flex items-center justify-between mb-2.5">
+          <Kop color={PETROL}>Nacalculatie</Kop>
+          <span className="text-[9.5px]"><Serif>begroot tegen werkelijk</Serif></span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <Cijfer label="Begroot" waarde="€ 940" />
+          <Cijfer label="Werkelijk" waarde="€ 884" />
+          <Cijfer label="Marge" waarde="36%" accent />
         </div>
       </div>
-    </Frame>
+    </Panel>
+  )
+}
+
+function Cijfer({ label, waarde, accent }: { label: string; waarde: string; accent?: boolean }) {
+  return (
+    <div className="rounded-[8px] px-2.5 py-2" style={{ backgroundColor: BG, border: `1px solid ${LINE}` }}>
+      <Kop>{label}</Kop>
+      <p
+        className="font-heading text-[15px] font-bold leading-none mt-1 tabular-nums"
+        style={{ color: accent ? STATUS.afgerond : INK }}
+      >
+        {waarde}
+      </p>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Uitkomst · wat die zeven stappen samen opleveren. Drie feiten
+   op petrol-deep, geen pijnverhaal, geen herhaling van de modules.
+   ───────────────────────────────────────────────────────────────── */
+
+const uitkomsten = [
+  {
+    title: 'Eén keer invoeren',
+    body: 'De offerte wordt de werkbon wordt de factuur. Niks overtikken, dus ook geen verschillen tussen je documenten.',
+  },
+  {
+    title: 'Je klant hoeft niks te installeren',
+    body: 'Geen inlog, geen wachtwoord, geen WeTransfer. Eén link waarop hij alles ziet en goedkeurt.',
+  },
+  {
+    title: 'Je weet wat een klus verdient',
+    body: 'Geschreven uren en inkoop naast je calculatie. Na afloop zie je zwart op wit wat er onder de streep overbleef.',
+  },
+]
+
+function Uitkomst() {
+  return (
+    <section className="relative overflow-hidden bg-petrol-deep">
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 90% at 50% 0%, rgba(42,111,122,0.5) 0%, rgba(42,111,122,0) 60%)',
+        }}
+      />
+      <div className="container-site relative py-14 md:py-24">
+        <h2
+          className="font-heading font-bold text-white leading-[1.05] max-w-2xl mb-10 md:mb-14"
+          style={{ fontSize: 'clamp(26px, 3.6vw, 44px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
+        >
+          Zeven stappen, één systeem<span className="text-flame">.</span>
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-x-10 gap-y-8">
+          {uitkomsten.map((u) => (
+            <div key={u.title} className="border-t border-white/15 pt-5">
+              <h3 className="font-heading text-[18px] md:text-[20px] font-bold text-white leading-tight mb-2">
+                {u.title}
+                <span className="text-flame">.</span>
+              </h3>
+              <p className="text-[15px] leading-[1.6]" style={{ color: 'rgba(226,240,241,0.82)' }}>
+                {u.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
 
 export default function HoeHetWerktContent() {
-  const reduce = useReducedMotion() ?? false
-
   return (
     <>
       <Hero />
-      <Diagnose reduce={reduce} />
-      <Kantelpunt reduce={reduce} />
-      <DoenDag reduce={reduce} />
+      <Journey className="bg-bg" padding="pt-2 pb-6 md:pt-4 md:pb-8" />
+      <Stappen />
+      <Uitkomst />
       <CTASection />
     </>
   )

@@ -1,8 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
 import Link from 'next/link'
-import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import type { Vertical } from '@/data/verticals'
 import { modules } from '@/data/modules'
@@ -10,8 +8,6 @@ import { modules } from '@/data/modules'
 /* Verticale landingspagina: lichte hero, pijnpunten als hairline-lijst,
    module-highlights als strakke rijen naar /features/*. */
 export default function VerticalContent({ vertical }: { vertical: Vertical }) {
-  const reduce = useReducedMotion() ?? false
-
   return (
     <div className="bg-bg">
       {/* Hero: entree via CSS-keyframes (globals.css: .hero-line / .hero-fade) */}
@@ -67,21 +63,17 @@ export default function VerticalContent({ vertical }: { vertical: Vertical }) {
       </section>
 
       {/* Pijnpunten als hairline-lijst */}
-      <PainSection vertical={vertical} reduce={reduce} />
+      <PainSection vertical={vertical} />
 
       {/* Module-highlights als strakke rijen */}
-      <HighlightSection vertical={vertical} reduce={reduce} />
+      <HighlightSection vertical={vertical} />
     </div>
   )
 }
 
-function PainSection({ vertical, reduce }: { vertical: Vertical; reduce: boolean }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-  const show = reduce || inView
-
+function PainSection({ vertical }: { vertical: Vertical }) {
   return (
-    <section ref={ref} className="bg-white">
+    <section className="bg-white">
       <div className="container-site py-16 md:py-32">
         <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 mb-8 md:mb-16">
           <h2
@@ -96,12 +88,9 @@ function PainSection({ vertical, reduce }: { vertical: Vertical; reduce: boolean
         </div>
 
         <ul className="border-t border-petrol/10">
-          {vertical.pains.map((pain, i) => (
-            <motion.li
+          {vertical.pains.map((pain) => (
+            <li
               key={pain.title}
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              animate={show ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: reduce ? 0 : 0.06 * i, ease: [0.16, 1, 0.3, 1] }}
               className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-x-12 gap-y-2 py-6 md:py-7 border-b border-petrol/10"
             >
               <h3 className="font-heading text-[19px] md:text-[21px] font-bold text-ink leading-snug">
@@ -111,7 +100,7 @@ function PainSection({ vertical, reduce }: { vertical: Vertical; reduce: boolean
               <p className="text-[15px] md:text-[16px] leading-[1.6] text-muted max-w-2xl">
                 {pain.body}
               </p>
-            </motion.li>
+            </li>
           ))}
         </ul>
       </div>
@@ -119,13 +108,9 @@ function PainSection({ vertical, reduce }: { vertical: Vertical; reduce: boolean
   )
 }
 
-function HighlightSection({ vertical, reduce }: { vertical: Vertical; reduce: boolean }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-  const show = reduce || inView
-
+function HighlightSection({ vertical }: { vertical: Vertical }) {
   return (
-    <section ref={ref} className="bg-bg">
+    <section className="bg-bg">
       <div className="container-site py-16 md:py-32">
         <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 mb-8 md:mb-16">
           <h2
@@ -140,15 +125,12 @@ function HighlightSection({ vertical, reduce }: { vertical: Vertical; reduce: bo
         </div>
 
         <ul className="border-t border-petrol/10">
-          {vertical.highlights.map((highlight, i) => {
+          {vertical.highlights.map((highlight) => {
             const mod = modules.find((m) => m.href === highlight.href)
             if (!mod) return null
             return (
-              <motion.li
+              <li
                 key={highlight.href}
-                initial={reduce ? false : { opacity: 0, y: 12 }}
-                animate={show ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: reduce ? 0 : 0.06 * i, ease: [0.16, 1, 0.3, 1] }}
                 className="border-b border-petrol/10"
               >
                 <Link
@@ -169,7 +151,7 @@ function HighlightSection({ vertical, reduce }: { vertical: Vertical; reduce: bo
                     →
                   </span>
                 </Link>
-              </motion.li>
+              </li>
             )
           })}
         </ul>

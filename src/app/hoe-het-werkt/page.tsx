@@ -5,7 +5,7 @@ import HoeHetWerktContent from '@/components/pages/HoeHetWerktContent'
 
 export const metadata: Metadata = {
   title: 'Van aanvraag tot factuur in 7 stappen | doen.',
-  description: 'Je werkdag draait om zeven tabbladen en vier logins. Zie hoe doen. dat terugbrengt naar één. Van klantaanvraag tot betaalde factuur.',
+  description: 'Aanvraag, offerte, portaal, planning, montage, factuur, gedaan. Zeven stappen door doen., met het scherm uit de app bij elke stap.',
   alternates: { canonical: '/hoe-het-werkt' },
 }
 

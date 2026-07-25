@@ -1,7 +1,5 @@
 'use client'
 
-import { useRef } from 'react'
-import { motion, useInView, useReducedMotion } from 'framer-motion'
 import {
   User,
   Hammer,
@@ -52,16 +50,19 @@ const DOTTED: [string, string][] = [
 
 /* Eén rij, de hele reis in één oogopslag. Ondersteunt de quote hieronder
    met een beeld in plaats van nog meer tekst. Offerte en tekening lopen
-   parallel en komen samen bij het portaal, zoals in de app. */
-export default function Journey() {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-  const reduce = useReducedMotion() ?? false
-  const show = reduce || inView
-
+   parallel en komen samen bij het portaal, zoals in de app.
+   Kleurvlak en ritme zijn instelbaar omdat /hoe-het-werkt hetzelfde
+   diagram direct onder de hero zet, op bg in plaats van wit. */
+export default function Journey({
+  className = 'bg-white',
+  padding = 'pt-16 pb-10 md:pt-24 md:pb-14',
+}: {
+  className?: string
+  padding?: string
+} = {}) {
   return (
-    <section ref={ref} className="bg-white">
-      <div className="container-site pt-16 pb-10 md:pt-24 md:pb-14">
+    <section className={className}>
+      <div className={`container-site ${padding}`}>
         <div className="overflow-x-auto -mx-6 px-6 md:mx-0 md:px-0">
           <div className="relative" style={{ width: W, height: H }}>
             <svg
@@ -121,20 +122,15 @@ export default function Journey() {
             {NODES.map((node, i) => {
               const Icon = node.icon
               return (
-                // Buitenste div: statische centrering. Framer-motion beheert de
-                // transform-property zelf voor de y-animatie, dus centreren via
-                // transform moet op een laag die framer niet aanraakt.
+                // Buitenste div: statische centrering. De entree animeert de
+                // transform van de binnenlaag, dus centreren via transform
+                // moet op een laag die de animatie niet aanraakt.
                 <div
                   key={node.id}
                   className="absolute"
                   style={{ left: node.x, top: node.y, width: 104, transform: 'translate(-50%, -50%)' }}
                 >
-                  <motion.div
-                    initial={reduce ? false : { opacity: 0, y: 10 }}
-                    animate={show ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.5, delay: reduce ? 0 : 0.06 * i, ease: [0.16, 1, 0.3, 1] }}
-                    className="flex flex-col items-center text-center"
-                  >
+                  <div className="flex flex-col items-center text-center">
                     <div
                       className={`flex items-center justify-center rounded-full shrink-0 ${
                         node.final ? 'w-14 h-14 bg-petrol-deep' : 'w-12 h-12 bg-white border border-petrol/20'
@@ -154,7 +150,7 @@ export default function Journey() {
                     {node.sub && (
                       <p className="mt-0.5 text-[11px] text-muted leading-tight">{node.sub}</p>
                     )}
-                  </motion.div>
+                  </div>
                 </div>
               )
             })}
