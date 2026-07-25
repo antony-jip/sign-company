@@ -492,6 +492,11 @@ export interface EmailAttachment {
   filename: string;
   contentType: string;
   size: number;
+  /**
+   * True voor CID-inline beeld: logo's en banners uit een e-mailhandtekening.
+   * Die zitten al in de body-HTML en horen niet in de bijlagenlijst.
+   */
+  isInlineCid?: boolean;
 }
 
 export interface FactuurBijlage {

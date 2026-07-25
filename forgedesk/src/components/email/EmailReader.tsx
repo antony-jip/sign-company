@@ -7,7 +7,7 @@ import {
   ArrowLeft, Trash2, Pin, Archive, MailOpen,
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
-  List, ListOrdered, Sparkles, Loader2, Download,
+  List, ListOrdered, Sparkles, Loader2, Download, FolderPlus,
   Undo2, Redo2, X, Clock, Tag,
 } from 'lucide-react'
 import { EmailActionsPopover } from './EmailActionsPopover'
@@ -19,6 +19,8 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/comp
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
 import { downloadEmailAttachment, downloadAllEmailAttachments } from '@/services/gmailService'
+import { getProjectVoorThread } from '@/services/emailProjectService'
+import { bijlageNaarProject } from '@/services/documentenService'
 import { valideerBijlagen, uploadBijlagenMetLinkFallback } from '@/utils/groteBijlagen'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -414,6 +416,62 @@ export function EmailReader({
       return null
     })
   }, [email?.id])
+
+  // Bijlage als bestand onder het gekoppelde project zetten. Zelfde
+  // ophaalroute als downloaden (signed URL bij cache-hit, anders base64),
+  // maar in plaats van naar de schijf gaat de blob naar de documenten-bucket.
+  const [koppelendeBijlage, setKoppelendeBijlage] = useState<string | null>(null)
+  const handleBijlageNaarProject = useCallback(async (filename: string, contentType: string) => {
+    if (!email) return
+    const uid = Number(email.gmail_id || email.id)
+    if (Number.isNaN(uid)) {
+      toast.error('Kan deze bijlage niet ophalen · geen geldig email-id')
+      return
+    }
+    if (!email.thread_id) {
+      toast.error('Deze mail hangt nog niet aan een thread')
+      return
+    }
+    setKoppelendeBijlage(filename)
+    try {
+      const koppeling = await getProjectVoorThread(email.thread_id)
+      if (!koppeling) {
+        toast.error('Koppel deze mail eerst aan een project', {
+          description: 'Dat doe je in de zijbalk onder Project.',
+        })
+        return
+      }
+      const result = await downloadEmailAttachment(uid, imapFolder, filename)
+      let blob: Blob
+      if (result.storage_url) {
+        const resp = await fetch(result.storage_url)
+        if (!resp.ok) throw new Error(`Bijlage ophalen mislukt (${resp.status})`)
+        blob = await resp.blob()
+      } else if (result.content) {
+        const binary = atob(result.content)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+        blob = new Blob([bytes], { type: result.contentType || contentType })
+      } else {
+        throw new Error('Geen content of storage_url ontvangen')
+      }
+      await bijlageNaarProject({
+        projectId: koppeling.project.id,
+        klantId: koppeling.project.klant_id,
+        bestandsnaam: result.filename || filename,
+        contentType: result.contentType || contentType,
+        data: blob,
+      })
+      toast.success('Toegevoegd aan project', {
+        description: `${filename} staat nu bij ${koppeling.project.naam} onder Bestanden.`,
+      })
+    } catch (err) {
+      logger.error('Bijlage aan project koppelen mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Toevoegen aan project mislukt')
+    } finally {
+      setKoppelendeBijlage(null)
+    }
+  }, [email, imapFolder])
 
   const handleDownloadAttachment = useCallback(async (filename: string) => {
     if (!email) return
@@ -1680,15 +1738,21 @@ export function EmailReader({
 
               {/* Attachments · image-grid + losse rij-cards voor non-images */}
               {email.attachment_meta && email.attachment_meta.length > 0 && (() => {
-                const imageAtts = email.attachment_meta.filter((a) => isImageAttachment(a.filename, a.contentType))
-                const fileAtts = email.attachment_meta.filter((a) => !isImageAttachment(a.filename, a.contentType))
+                // CID-inline beeld is de logo-strip uit iemands
+                // e-mailhandtekening. Die staat al in de body en hoort niet
+                // tussen de echte bijlagen; anders lijkt elke mail er drie
+                // te hebben.
+                const echteBijlagen = email.attachment_meta.filter((a) => !a.isInlineCid)
+                if (echteBijlagen.length === 0) return null
+                const imageAtts = echteBijlagen.filter((a) => isImageAttachment(a.filename, a.contentType))
+                const fileAtts = echteBijlagen.filter((a) => !isImageAttachment(a.filename, a.contentType))
                 return (
                 <div className="mt-6 pt-5 border-t border-border">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[12px] text-muted-foreground">
-                      {email.attachment_meta.length} bijlage{email.attachment_meta.length > 1 ? 'n' : ''}
+                      {echteBijlagen.length} bijlage{echteBijlagen.length > 1 ? 'n' : ''}
                     </span>
-                    {email.attachment_meta.length > 1 && (
+                    {echteBijlagen.length > 1 && (
                       <button
                         type="button"
                         onClick={handleDownloadAllAttachments}
@@ -1816,18 +1880,37 @@ export function EmailReader({
                             {isPreviewing || isDownloading ? (
                               <Loader2 className="h-3.5 w-3.5 text-petrol/60 animate-spin ml-1 flex-shrink-0" />
                             ) : (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDownloadAttachment(att.filename)
-                                }}
-                                className="ml-1 p-1 rounded hover:bg-[#E8E7E4] dark:hover:bg-white/10 flex-shrink-0"
-                                title={`Download ${att.filename}`}
-                                aria-label={`Download ${att.filename}`}
-                              >
-                                <Download className="h-3.5 w-3.5 text-muted-foreground/80 group-hover/att:text-foreground/70 transition-colors duration-150" />
-                              </button>
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleBijlageNaarProject(att.filename, att.contentType)
+                                  }}
+                                  disabled={koppelendeBijlage === att.filename}
+                                  className="ml-1 p-1 rounded hover:bg-[#E8E7E4] dark:hover:bg-white/10 flex-shrink-0 disabled:cursor-wait"
+                                  title={`${att.filename} aan project toevoegen`}
+                                  aria-label={`${att.filename} aan project toevoegen`}
+                                >
+                                  {koppelendeBijlage === att.filename ? (
+                                    <Loader2 className="h-3.5 w-3.5 text-petrol/60 animate-spin" />
+                                  ) : (
+                                    <FolderPlus className="h-3.5 w-3.5 text-muted-foreground/80 group-hover/att:text-foreground/70 transition-colors duration-150" />
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDownloadAttachment(att.filename)
+                                  }}
+                                  className="ml-1 p-1 rounded hover:bg-[#E8E7E4] dark:hover:bg-white/10 flex-shrink-0"
+                                  title={`Download ${att.filename}`}
+                                  aria-label={`Download ${att.filename}`}
+                                >
+                                  <Download className="h-3.5 w-3.5 text-muted-foreground/80 group-hover/att:text-foreground/70 transition-colors duration-150" />
+                                </button>
+                              </>
                             )}
                           </div>
                         )

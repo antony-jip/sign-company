@@ -57,6 +57,25 @@ function decryptPassword(encrypted: string): string {
     console.error('[decryptPassword] EMAIL_ENCRYPTION_KEY niet geconfigureerd')
     throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd — sla je wachtwoord opnieuw op in Instellingen > Email > Verbinding')
   }
+  // g1: AES-256-GCM met willekeurige salt en auth-tag. Het oude CBC-formaat
+  // gebruikte een vaste salt ('salt') en had geen integriteitscontrole, dus
+  // geknoei aan de ciphertext viel niet op. Beide oude vormen blijven
+  // leesbaar zodat niemand buitengesloten raakt.
+  if (encrypted.startsWith('g1:')) {
+    try {
+      const raw = Buffer.from(encrypted.slice(3), 'base64')
+      const salt = raw.subarray(0, 16)
+      const iv = raw.subarray(16, 28)
+      const tag = raw.subarray(28, 44)
+      const ct = raw.subarray(44)
+      const key = crypto.scryptSync(ENCRYPTION_KEY, salt, 32)
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv)
+      decipher.setAuthTag(tag)
+      return Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8')
+    } catch {
+      throw new Error('Wachtwoord ontsleutelen mislukt — sla je wachtwoord opnieuw op')
+    }
+  }
   try {
     const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
     const [ivHex, encryptedHex] = encrypted.split(':')
@@ -253,7 +272,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Lookup gecachde bijlagen voor signed URLs (instant previews/downloads).
         const cachedSigned = await readCachedSignedUrls(user_id, cached.id)
-        const meta = (cached.attachment_meta as Array<{ filename: string; contentType: string; size: number }> | null) || []
+        const meta = (cached.attachment_meta as Array<{ filename: string; contentType: string; size: number; isInlineCid?: boolean }> | null) || []
         const attachmentsOut = meta.map((a) => ({
           ...a,
           storage_url: cachedSigned.get(a.filename),
@@ -283,8 +302,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Step 3: Cache the result in Supabase. Strip inline image-bytes uit
       // attachment_meta — die zijn alleen voor de directe response, niet
       // bedoeld om in de DB-row te persisten (zou rijen onnodig opblazen).
-      const attachmentMetaForDb = result.attachments.map(({ filename, contentType, size }) => ({
-        filename, contentType, size,
+      const attachmentMetaForDb = result.attachments.map(({ filename, contentType, size, isInlineCid }) => ({
+        filename, contentType, size, isInlineCid,
       }))
       let email_uuid: string | null = null
       if (cached) {
@@ -361,7 +380,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const attachmentsOut = result.attachments.map((a) => {
         const storage_url = signedMap.get(a.filename)
         if (storage_url) {
-          return { filename: a.filename, contentType: a.contentType, size: a.size, storage_url }
+          return { filename: a.filename, contentType: a.contentType, size: a.size, isInlineCid: a.isInlineCid, storage_url }
         }
         return a
       })
@@ -451,15 +470,20 @@ async function fetchFromIMAP(opts: {
     // CID-inline images (logo's in HTML-mails) zitten al in body_html als
     // data-URI; nogmaals meesturen blaast de response op tot tientallen MB
     // bij newsletters met veel inline beeldjes.
-    const isInlineCid = !!a.contentId || a.contentDisposition === 'inline'
+    // Alleen echt inline: er is een contentId én de body verwijst er ook
+    // naar met cid:. Op alleen contentDisposition==='inline' afgaan is te
+    // breed — iOS Mail en Outlook zetten dat ook op foto's die de afzender
+    // wel degelijk als bijlage bedoelde, en die zou je dan verbergen.
+    const cidNaam = a.contentId ? a.contentId.replace(/^<|>$/g, '') : ''
+    const isInlineCid = !!cidNaam && (parsed.html || '').includes(`cid:${cidNaam}`)
     let inlineContent: string | undefined
     if (isImage && !isInlineCid && size > 0 && size <= MAX_INLINE_IMAGE_BYTES && a.content) {
       const buf = Buffer.isBuffer(a.content) ? a.content : Buffer.from(a.content)
       inlineContent = buf.toString('base64')
     }
     return inlineContent
-      ? { filename, contentType, size, content: inlineContent }
-      : { filename, contentType, size }
+      ? { filename, contentType, size, isInlineCid, content: inlineContent }
+      : { filename, contentType, size, isInlineCid }
   })
 
   let bodyHtml = parsed.html || ''

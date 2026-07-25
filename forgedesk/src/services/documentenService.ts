@@ -278,3 +278,61 @@ export async function getDocumentenByKlant(klantId: string): Promise<Document[]>
   }
   return getLocalData<Document>('documenten').filter((d) => d.klant_id === klantId)
 }
+
+/**
+ * Zet een e-mailbijlage als bestand onder een project.
+ *
+ * De combinatie upload + rij stond tot nu toe twee keer inline in
+ * componenten. Bewust een Blob in plaats van een File: `uploadFile` heeft een
+ * MIME-allowlist die willekeurige mailbijlagen (.ai, .eps, .zip) weigert, en
+ * dat is precies wat hier langskomt. Het pad moet met `projects/{orgId}/`
+ * beginnen; de storage-RLS uit migratie 070 eist dat bij een client-insert.
+ */
+export async function bijlageNaarProject(params: {
+  projectId: string
+  klantId?: string | null
+  bestandsnaam: string
+  contentType: string
+  data: Blob
+}): Promise<Document> {
+  if (!isSupabaseConfigured() || !supabase) {
+    throw new Error('Supabase niet geconfigureerd')
+  }
+  const orgId = await getOrgId()
+  if (!orgId) throw new Error('Geen organisatie gevonden')
+
+  const ruweExt = params.bestandsnaam.includes('.')
+    ? params.bestandsnaam.split('.').pop()?.toLowerCase() ?? ''
+    : ''
+  const ext = /^[a-z0-9]{1,8}$/.test(ruweExt) ? ruweExt : 'bin'
+  const storagePath = `projects/${orgId}/${params.projectId}/${generateId()}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('documenten')
+    .upload(storagePath, params.data, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: params.contentType || 'application/octet-stream',
+    })
+  if (uploadError) throw uploadError
+
+  try {
+    return await createDocument({
+      project_id: params.projectId,
+      klant_id: params.klantId ?? undefined,
+      naam: params.bestandsnaam,
+      type: params.contentType || 'application/octet-stream',
+      grootte: params.data.size,
+      map: 'Bijlagen',
+      storage_path: storagePath,
+      status: 'concept',
+      tags: ['email'],
+      gedeeld_met: [],
+    } as Omit<Document, 'id' | 'created_at' | 'updated_at'>)
+  } catch (err) {
+    // Rij mislukt: het geüploade object opruimen, anders blijft er een
+    // bestand in de bucket staan waar niets meer naar wijst.
+    await supabase.storage.from('documenten').remove([storagePath]).catch(() => {})
+    throw err
+  }
+}

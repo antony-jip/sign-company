@@ -39,6 +39,25 @@ function decryptPassword(encrypted: string): string {
   if (!ENCRYPTION_KEY) {
     throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd — sla je wachtwoord opnieuw op in Instellingen > Email > Verbinding')
   }
+  // g1: AES-256-GCM met willekeurige salt en auth-tag. Het oude CBC-formaat
+  // gebruikte een vaste salt ('salt') en had geen integriteitscontrole, dus
+  // geknoei aan de ciphertext viel niet op. Beide oude vormen blijven
+  // leesbaar zodat niemand buitengesloten raakt.
+  if (encrypted.startsWith('g1:')) {
+    try {
+      const raw = Buffer.from(encrypted.slice(3), 'base64')
+      const salt = raw.subarray(0, 16)
+      const iv = raw.subarray(16, 28)
+      const tag = raw.subarray(28, 44)
+      const ct = raw.subarray(44)
+      const key = crypto.scryptSync(ENCRYPTION_KEY, salt, 32)
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv)
+      decipher.setAuthTag(tag)
+      return Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8')
+    } catch {
+      throw new Error('Wachtwoord ontsleutelen mislukt — sla je wachtwoord opnieuw op')
+    }
+  }
   try {
     const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
     const [ivHex, encryptedHex] = encrypted.split(':')
@@ -272,18 +291,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const teHalen = nieuweUids.slice(0, MAX_PER_RUN)
       if (teHalen.length > 0) fetchQuery = { uid: teHalen.join(',') }
     } else {
-      const fetchCount = Math.min(limit, total)
+      // Begrensd: `limit` komt uit de request body. Zonder plafond probeert
+      // een mailbox met tienduizenden berichten alles in één run op te halen
+      // en loopt de functie tegen maxDuration aan. De rest volgt vanzelf in
+      // de volgende call, want daarna is de sync-state incrementeel.
+      const gevraagd = Number(limit)
+      const veiligeLimit = Number.isFinite(gevraagd) && gevraagd > 0
+        ? Math.min(Math.floor(gevraagd), MAX_PER_RUN)
+        : 100
+      const fetchCount = Math.min(veiligeLimit, total)
       const startSeq = Math.max(1, total - fetchCount + 1)
       fetchQuery = { seq: `${startSeq}:${total}` }
     }
 
     const newEmails: Array<Record<string, unknown>> = []
+    // Parallel aan newEmails: de message-id van de ouder, afgeleid uit
+    // In-Reply-To of anders uit References. Bewust niet in de rij zelf, want
+    // in_reply_to hoort de letterlijke header te blijven en een onbekende
+    // kolom breekt de upsert.
+    const ouderIds: Array<string | null> = []
     let minUidGezien = 0
     let maxUidGezien = 0
 
     if (fetchQuery) for await (const message of client.fetch(
       fetchQuery,
-      { envelope: true, flags: true, uid: true, bodyStructure: true }
+      // headers: References zit NIET in de IMAP ENVELOPE (RFC 3501), dus
+      // zonder deze regel is de threading-fallback hieronder dode code.
+      { envelope: true, flags: true, uid: true, bodyStructure: true, headers: ['references'] }
     )) {
       if (!message.envelope) continue
 
@@ -304,8 +338,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const messageId = message.envelope.messageId || ''
       const inReplyTo = message.envelope.inReplyTo || null
+      // Sommige clients vullen alleen References en laten In-Reply-To leeg.
+      // Zonder deze fallback vielen die gesprekken uiteen in losse mails.
+      // Laatste entry = de directe ouder (RFC 5322 §3.6.4).
+      const referenties = parseReferences(message.headers)
+      const ouderId = inReplyTo || (referenties.length > 0 ? referenties[referenties.length - 1] : null)
       const hasAttachments = hasAttachmentParts(message.bodyStructure)
 
+      ouderIds.push(ouderId)
       newEmails.push({
         user_id,
         uid: message.uid,
@@ -336,7 +376,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // geen \Seen op IMAP, dus andersom zou lokaal-gelezen mail terugflippen.
     const seenByUid = new Map<number, boolean>()
     try {
-      const flagsCount = Math.min(Math.max(limit, 100), 200, total)
+      const flagsCount = Math.min(Math.max(veiligeLimit, 100), 200, total)
       const flagsStart = Math.max(1, total - flagsCount + 1)
       for await (const msg of client.fetch({ seq: `${flagsStart}:${total}` }, { uid: true, flags: true })) {
         if (msg.uid) seenByUid.set(msg.uid, msg.flags?.has('\\Seen') || false)
@@ -349,23 +389,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     client = null
 
     // ─── Thread ID berekening ───
-    // Zoek voor elke mail met In-Reply-To of die parent al in de DB zit.
-    // Zo ja → gebruik dezelfde thread_id. Zo niet → maak een nieuwe aan.
-    // Dit zorgt ervoor dat reply-chains automatisch gegroepeerd worden.
-    const inReplyTos = newEmails
-      .filter((e) => e.in_reply_to)
-      .map((e) => e.in_reply_to as string)
+    // Zoek voor elke mail of de ouder al in de DB zit. Zo ja → gebruik
+    // dezelfde thread_id. Zo niet → maak een nieuwe aan. De ouder komt uit
+    // In-Reply-To, of anders uit de laatste entry van References (zie
+    // ouderIds hierboven), zodat clients die alleen References zetten hun
+    // gesprekken niet uiteen zien vallen.
+    const ouderMessageIds = ouderIds.filter((id): id is string => !!id)
 
     const threadMap = new Map<string, string>() // message_id → thread_id
 
-    if (inReplyTos.length > 0) {
+    if (ouderMessageIds.length > 0) {
       // Scope op user_id: service-role omzeilt RLS, dus zonder filter
       // zou de scan globaal over alle organisaties gaan.
       const { data: parentRows } = await supabaseAdmin
         .from('emails')
         .select('message_id, thread_id')
         .eq('user_id', user_id)
-        .in('message_id', inReplyTos)
+        .in('message_id', ouderMessageIds)
         .not('thread_id', 'is', null)
 
       for (const row of parentRows || []) {
@@ -376,8 +416,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Wijs thread_id toe aan elke email
-    for (const email of newEmails) {
-      const parentReply = email.in_reply_to as string | null
+    for (const [i, email] of newEmails.entries()) {
+      const parentReply = ouderIds[i]
       if (parentReply && threadMap.has(parentReply)) {
         // Parent gevonden in DB → zelfde thread
         email.thread_id = threadMap.get(parentReply)
@@ -402,16 +442,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       for (let i = 0; i < newEmails.length; i += 50) {
         const batch = newEmails.slice(i, i + 50)
 
-        // Try batch upsert with onConflict
-        const { error } = await supabaseAdmin
+        // Try batch upsert with onConflict. `select()` erbij zodat we tellen
+        // wat er echt is ingevoegd: met ignoreDuplicates worden bestaande
+        // rijen overgeslagen en telde batch.length structureel te hoog.
+        const { data: ingevoegd, error } = await supabaseAdmin
           .from('emails')
           .upsert(batch, {
             onConflict: 'user_id,message_id',
             ignoreDuplicates: true,
           })
+          .select('id')
 
         if (!error) {
-          synced += batch.length
+          synced += ingevoegd?.length ?? 0
           continue
         }
 
@@ -621,10 +664,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // nieuwer dan status_sinds telt: een al verwerkte reply mag een handmatig
     // teruggezette status (bv. follow-up_later) niet opnieuw omzetten.
     // 'gereageerd' en 'geen_interesse' blijven altijd staan.
+    const leadStartedAt = Date.now()
+    const LEAD_DEADLINE_MS = 8_000
     try {
       const { data: openLeads } = await supabaseAdmin
         .from('leads')
         .select('id, email, status_sinds')
+        .limit(500)
         .eq('user_id', user_id)
         .in('status', ['nieuw', 'benaderd', 'follow-up_later'])
         .neq('email', '')
@@ -648,15 +694,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (!huidig || datum > huidig) nieuwsteVanAfzender.set(adres, datum)
         }
 
-        for (const lead of openLeads) {
-          const replyDatum = nieuwsteVanAfzender.get((lead.email as string).toLowerCase())
-          if (!replyDatum || replyDatum <= (lead.status_sinds as string)) continue
-          const { error: leadErr } = await supabaseAdmin
-            .from('leads')
-            .update({ status: 'gereageerd', status_sinds: new Date().toISOString() })
-            .eq('id', lead.id)
-            .eq('user_id', user_id)
-          if (leadErr) console.error('[fetch-emails] leadstatus-update mislukt:', leadErr)
+        // Eén update voor alle gereageerde leads samen. Was N sequentiële
+        // round-trips zonder deadline; de sales-match hierboven had die wel.
+        const gereageerdeIds = openLeads
+          .filter((lead) => {
+            const replyDatum = nieuwsteVanAfzender.get((lead.email as string).toLowerCase())
+            return !!replyDatum && replyDatum > (lead.status_sinds as string)
+          })
+          .map((lead) => lead.id)
+
+        // Eigen deadline: de klok van de sales-sweep hierboven start eerder en
+        // is per definitie op als die zijn eigen limiet raakt. Daarop gaten
+        // zou juist deze update — nu één query — structureel overslaan.
+        if (gereageerdeIds.length > 0 && Date.now() - leadStartedAt <= LEAD_DEADLINE_MS) {
+          // In blokken: honderden UUID's in één .in() maken de querystring
+          // te lang voor de gateway, en dan faalt de hele batch in plaats van
+          // één lead.
+          for (let i = 0; i < gereageerdeIds.length; i += 100) {
+            const { error: leadErr } = await supabaseAdmin
+              .from('leads')
+              .update({ status: 'gereageerd', status_sinds: new Date().toISOString() })
+              .in('id', gereageerdeIds.slice(i, i + 100))
+              .eq('user_id', user_id)
+            if (leadErr) console.error('[fetch-emails] leadstatus-update mislukt:', leadErr)
+          }
+        } else if (gereageerdeIds.length > 0) {
+          console.warn('[fetch-emails] lead-match: soft deadline bereikt, overgeslagen', {
+            leads: gereageerdeIds.length,
+          })
         }
       }
     } catch (leadMatchErr) {
@@ -684,6 +749,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try { await client.logout() } catch { /* ignore */ }
     }
   }
+}
+
+// References is per RFC 5322 een spatie-gescheiden lijst van message-ids,
+// oudste eerst; de laatste is de directe ouder. Komt binnen als ruwe
+// headerbuffer omdat het veld niet in de IMAP ENVELOPE zit. De header mag
+// over meerdere regels gevouwen zijn (leading whitespace = vervolgregel).
+function parseReferences(headers: unknown): string[] {
+  if (!headers) return []
+  const tekst = Buffer.isBuffer(headers) ? headers.toString('utf8') : String(headers)
+  const match = tekst.match(/^references:\s*([\s\S]*?)(?:\r?\n(?![ \t])|$)/im)
+  if (!match) return []
+  return (match[1].match(/<[^<>\s]+>/g) || [])
 }
 
 function hasAttachmentParts(structure: unknown): boolean {
