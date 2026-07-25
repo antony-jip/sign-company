@@ -17,12 +17,34 @@ function decrypt(encrypted: string): string {
       "Voeg deze toe aan het Trigger.dev dashboard."
     );
   }
-  const key = crypto.scryptSync(ENCRYPTION_KEY, "salt", 32);
-  const [ivHex, encHex] = encrypted.split(":");
-  const decipher = crypto.createDecipheriv("aes-256-cbc", key, Buffer.from(ivHex, "hex"));
-  let decrypted = decipher.update(encHex, "hex", "utf8");
-  decrypted += decipher.final("utf8");
-  return decrypted;
+  // g1: AES-256-GCM met willekeurige salt en auth-tag. Het oude CBC-formaat
+  // had een vaste salt en geen integriteitscontrole. Beide oude vormen blijven
+  // leesbaar zodat niemand buitengesloten raakt.
+  if (encrypted.startsWith("g1:")) {
+    try {
+      const raw = Buffer.from(encrypted.slice(3), "base64");
+      const salt = raw.subarray(0, 16);
+      const iv = raw.subarray(16, 28);
+      const tag = raw.subarray(28, 44);
+      const ct = raw.subarray(44);
+      const key = crypto.scryptSync(ENCRYPTION_KEY, salt, 32);
+      const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+      decipher.setAuthTag(tag);
+      return Buffer.concat([decipher.update(ct), decipher.final()]).toString("utf8");
+    } catch {
+      throw new Error("Wachtwoord ontsleutelen mislukt — sla je wachtwoord opnieuw op");
+    }
+  }
+  try {
+    const key = crypto.scryptSync(ENCRYPTION_KEY, "salt", 32);
+    const [ivHex, encHex] = encrypted.split(":");
+    const decipher = crypto.createDecipheriv("aes-256-cbc", key, Buffer.from(ivHex, "hex"));
+    let decrypted = decipher.update(encHex, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
+  } catch {
+    throw new Error("Wachtwoord ontsleutelen mislukt — sla je wachtwoord opnieuw op");
+  }
 }
 
 interface UserEmailCredentials {

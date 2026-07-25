@@ -17,31 +17,66 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || ''
 
+/**
+ * Het enige schrijfpad voor mailwachtwoorden in de hele codebase.
+ *
+ * AES-256-GCM met een willekeurige salt per wachtwoord en een auth-tag. Het
+ * oude CBC-formaat leidde de sleutel af met een vaste, in de code
+ * opgeschreven salt en had geen integriteitscontrole, dus geknoei aan de
+ * opgeslagen ciphertext viel niet op.
+ *
+ * Bestaande rijen in het oude CBC-formaat en de nog oudere `b64:`-vorm
+ * blijven leesbaar: alle tien de leespaden herkennen alle drie de vormen.
+ * Een rij schuift pas op naar g1 zodra iemand zijn wachtwoord opnieuw
+ * opslaat, dus niemand raakt buitengesloten.
+ */
 function encrypt(text: string): string {
   if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
-  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
-  const iv = crypto.randomBytes(16)
-  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
-  let encrypted = cipher.update(text, 'utf8', 'hex')
-  encrypted += cipher.final('hex')
-  return iv.toString('hex') + ':' + encrypted
+  const salt = crypto.randomBytes(16)
+  const key = crypto.scryptSync(ENCRYPTION_KEY, salt, 32)
+  const iv = crypto.randomBytes(12)
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
+  const ct = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()])
+  const tag = cipher.getAuthTag()
+  return 'g1:' + Buffer.concat([salt, iv, tag, ct]).toString('base64')
 }
 
 function decrypt(encryptedText: string): string {
-  // New format: base64-encoded (saved from frontend direct save)
+  // Oudste vorm: base64, dus feitelijk leesbaar. Blijft ondersteund tot de
+  // laatste rij is omgezet.
   if (encryptedText.startsWith('b64:')) {
     return Buffer.from(encryptedText.slice(4), 'base64').toString('utf8')
   }
-
-  // Legacy format: AES-256-CBC encrypted (via API endpoint)
   if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
-  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
-  const [ivHex, encrypted] = encryptedText.split(':')
-  const iv = Buffer.from(ivHex, 'hex')
-  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-  return decrypted
+
+  if (encryptedText.startsWith('g1:')) {
+    try {
+      const raw = Buffer.from(encryptedText.slice(3), 'base64')
+      const salt = raw.subarray(0, 16)
+      const iv = raw.subarray(16, 28)
+      const tag = raw.subarray(28, 44)
+      const ct = raw.subarray(44)
+      const key = crypto.scryptSync(ENCRYPTION_KEY, salt, 32)
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv)
+      decipher.setAuthTag(tag)
+      return Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8')
+    } catch {
+      throw new Error('Wachtwoord ontsleutelen mislukt — sla je wachtwoord opnieuw op')
+    }
+  }
+
+  // Oud CBC-formaat.
+  try {
+    const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
+    const [ivHex, encrypted] = encryptedText.split(':')
+    const iv = Buffer.from(ivHex, 'hex')
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8')
+    decrypted += decipher.final('utf8')
+    return decrypted
+  } catch {
+    throw new Error('Wachtwoord ontsleutelen mislukt — sla je wachtwoord opnieuw op')
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
