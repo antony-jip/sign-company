@@ -16,6 +16,7 @@ import { getCached, setCached } from '@/lib/queryCache'
 import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers } from '@/services/emailService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { leesConcept, opschonen as ruimConceptenOp, type EmailConcept } from '@/utils/emailConceptDraft'
 import { EmailReader } from './EmailReader'
 import { EmailContextSidebar } from './EmailContextSidebar'
 import { koppelEmailAanProject } from '@/services/emailProjectService'
@@ -200,8 +201,16 @@ export function EmailLayout() {
 
   // ─── Compose state ───
   const [composeDefaults, setComposeDefaults] = useState<{
-    to?: string; subject?: string; body?: string; bodyIsBericht?: boolean; replyToText?: string
+    to?: string; subject?: string; body?: string; bodyIsBericht?: boolean; replyToText?: string; bodyHtml?: string
   }>({})
+  // Identificeert de schrijfsessie voor de conceptopslag. Elke nieuwe
+  // compose krijgt een verse id, zodat het vorige concept onder zijn eigen
+  // sleutel blijft staan in plaats van overschreven te worden.
+  const [composeDraftId, setComposeDraftId] = useState<string>(() => crypto.randomUUID())
+  // Laatst bekende conceptstand, zodat we bij het verlaten van compose kunnen
+  // aanbieden hem te heropenen. Zonder dit is een bewaard concept wel veilig
+  // maar onbereikbaar, en dat lost de klacht niet op.
+  const laatsteConceptRef = useRef<EmailConcept | null>(null)
   const [composeProjectId, setComposeProjectId] = useState<string | null>(null)
   // Ref-mirror zodat handleSendEmail (lege deps) de actuele waarde leest
   const composeProjectIdRef = useRef<string | null>(null)
@@ -236,6 +245,7 @@ export function EmailLayout() {
   useEffect(() => {
     if (location.pathname.endsWith('/email/compose')) {
       const params = new URLSearchParams(location.search)
+      setComposeDraftId(crypto.randomUUID())
       setComposeDefaults({
         to: params.get('to') || undefined,
         subject: params.get('subject') || undefined,
@@ -1375,8 +1385,37 @@ export function EmailLayout() {
     })
   }, [loadEmailBody, selectedFolder, toggleCheckEmail])
 
-  const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string; bodyIsBericht?: boolean; replyToText?: string }) => {
+  // Verlopen concepten opruimen bij het openen van de module; zonder dit
+  // blijven ze eeuwig in localStorage staan.
+  useEffect(() => { ruimConceptenOp(30) }, [])
+
+  // Compose verlaten met een niet-verzonden concept: bied direct aan hem te
+  // heropenen. Het concept staat dan al veilig in localStorage; deze toast is
+  // puur het terugvindpad, want "Nieuw bericht" begint bewust leeg.
+  const vorigeViewModeRef = useRef<ViewMode>('idle')
+  useEffect(() => {
+    const vorige = vorigeViewModeRef.current
+    vorigeViewModeRef.current = viewMode
+    if (vorige !== 'composing' || viewMode === 'composing') return
+    const concept = laatsteConceptRef.current
+    laatsteConceptRef.current = null
+    if (!concept) return
+    // Alleen als hij nog echt bestaat: na verzenden is hij gewist.
+    if (!leesConcept(concept.draftId)) return
+    const omschrijving = concept.subject.trim() || concept.to.trim() || 'zonder onderwerp'
+    toast('Concept bewaard', {
+      description: omschrijving,
+      duration: 8000,
+      action: {
+        label: 'Openen',
+        onClick: () => handleComposeRef.current?.({ draftId: concept.draftId }),
+      },
+    })
+  }, [viewMode])
+
+  const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string; bodyIsBericht?: boolean; replyToText?: string; bodyHtml?: string; draftId?: string }) => {
     viewTransition(() => {
+      setComposeDraftId(defaults?.draftId || crypto.randomUUID())
       setComposeDefaults(defaults || {})
       // Verse compose-sessie: vorige project-koppelingskeuze niet hergebruiken
       setComposeProjectId(null)
@@ -1385,6 +1424,9 @@ export function EmailLayout() {
       setSelectedEmail(null)
     }, 'forward')
   }, [])
+
+  const handleComposeRef = useRef<typeof handleCompose | null>(null)
+  handleComposeRef.current = handleCompose
 
   const handleReply = useCallback((email: Email) => {
     handleCompose({
@@ -1421,7 +1463,7 @@ export function EmailLayout() {
     handleSelectEmail(threadedEmails[0])
   }, [isDesktop, isLoading, viewMode, selectedFolder, threadedEmails, handleSelectEmail])
 
-  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
+  const handleSendEmail = useCallback(async (data: { to: string; subject: string; cc?: string; bcc?: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
     try {
       // Genereer thread_id client-side zodat we een eventueel gekoppeld
       // project direct na verzenden kunnen aanhaken · de backend accepteert
@@ -1430,6 +1472,10 @@ export function EmailLayout() {
       const clientThreadId = pendingProjectId ? crypto.randomUUID() : undefined
       await sendEmailViaApi(data.to, data.subject, data.body, {
         html: data.html,
+        // cc/bcc werden in compose wel ingevuld en gevalideerd, maar nooit
+        // meegestuurd: de payload had de velden simpelweg niet.
+        cc: data.cc,
+        bcc: data.bcc,
         scheduledAt: data.scheduledAt,
         wacht_op_reactie: data.wacht_op_reactie,
         attachments: data.attachments,
@@ -1883,7 +1929,7 @@ export function EmailLayout() {
         document.body,
       )}
 
-      {/* Mobile floating "Opstellen" pill · bottom-right above MobileBottomNav.
+      {/* Mobile floating "Opstellen" pill · bottom-right, vrij van de Daan-knop.
           Portaled to body to escape main's stacking context. Verberg tijdens
           bulk-selectie zodat de bulk action-bar (zelfde y-positie) niet
           overlapt met de pill. */}
@@ -2327,6 +2373,9 @@ export function EmailLayout() {
             defaultSubject={composeDefaults.subject}
             defaultBody={composeDefaults.body}
             defaultBodyIsBericht={composeDefaults.bodyIsBericht}
+            defaultBodyHtml={composeDefaults.bodyHtml}
+            draftId={composeDraftId}
+            onDraftChange={(c) => { laatsteConceptRef.current = c }}
             replyToText={composeDefaults.replyToText}
             defaultWachtOpReactie={selectedFolder === 'leads'}
             onSend={handleSendEmail}

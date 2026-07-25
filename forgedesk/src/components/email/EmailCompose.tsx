@@ -25,6 +25,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Switch } from '@/components/ui/switch'
 import { getWachtendeEmailNaarAdres } from '@/services/emailService'
 import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
+import { leesConcept, schrijfConcept, wisConcept, isLeegConcept, type EmailConcept } from '@/utils/emailConceptDraft'
 import { LinkInvoegKnop, type LinkInvoegHandle } from '@/components/shared/LinkInvoegKnop'
 
 export interface ComposeActions {
@@ -48,7 +49,17 @@ interface EmailComposeProps {
   replyToText?: string
   /** Outreach vanuit Leads: verstuurde mail hoort standaard in Opvolgen. */
   defaultWachtOpReactie?: boolean
-  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
+  /**
+   * Identificeert de schrijfsessie. Bepaalt onder welke sleutel het concept
+   * bewaard wordt en wanneer er opnieuw geseed mag worden: een nieuwe
+   * draftId = een nieuw bericht, dezelfde draftId = doorwerken.
+   */
+  draftId: string
+  /** Body als kant-en-klare HTML (heropend concept); gaat verbatim de editor in. */
+  defaultBodyHtml?: string
+  /** Meldt de huidige conceptstand aan de parent (voor de Concepten-map). */
+  onDraftChange?: (concept: EmailConcept | null) => void
+  onSend?: (data: { to: string; subject: string; cc?: string; bcc?: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
   allEmails?: Email[]
   onToChange?: (to: string) => void
   onRegisterActions?: (actions: ComposeActions) => void
@@ -128,6 +139,9 @@ export function EmailCompose({
   defaultBodyIsBericht = false,
   replyToText,
   defaultWachtOpReactie = false,
+  draftId,
+  defaultBodyHtml = '',
+  onDraftChange,
   onSend,
   allEmails = [],
   onToChange,
@@ -163,10 +177,10 @@ export function EmailCompose({
   const toInputRef = useRef<HTMLInputElement>(null)
 
   // Sales Inbox v1: toggle + compose-hint (skipt bij meer-dan-1 ontvanger)
+  // Wordt geseed door het seed-effect verderop, niet door een eigen effect:
+  // defaultWachtOpReactie verandert bij elke mapwissel en overschreef anders
+  // een handmatig gezette toggle.
   const [wachtOpReactie, setWachtOpReactie] = useState(defaultWachtOpReactie)
-  useEffect(() => {
-    setWachtOpReactie(defaultWachtOpReactie)
-  }, [defaultWachtOpReactie])
   const [hintMail, setHintMail] = useState<{ id: string; datum: string } | null>(null)
 
   // Files
@@ -210,9 +224,6 @@ export function EmailCompose({
   const [customScheduleDate, setCustomScheduleDate] = useState('')
   const [customScheduleTime, setCustomScheduleTime] = useState('09:00')
 
-  // Auto-save timer
-  const autoSaveRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
   // Build signature HTML
   const signatureHtml = useMemo(() => {
     const imgHeight = handtekeningAfbeeldingGrootte ?? 64
@@ -235,36 +246,198 @@ export function EmailCompose({
     return parts.length ? `<br><br>${parts.join('<br>')}` : ''
   }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam])
 
-  // Initialize editor with signature
-  useEffect(() => {
-    if (open && editorRef.current) {
-      const timer = setTimeout(() => {
-        if (!editorRef.current) return
-        if (defaultBody) {
-          const bodyHtml = defaultBody.replace(/\n/g, '<br>')
-          editorRef.current.innerHTML = defaultBodyIsBericht
-            ? `${bodyHtml}${signatureHtml}`
-            : `<br>${signatureHtml}${bodyHtml}`
-        } else {
-          editorRef.current.innerHTML = signatureHtml || '<br>'
-        }
-        // Place cursor at start
-        const range = document.createRange()
-        const sel = window.getSelection()
-        range.setStart(editorRef.current, 0)
-        range.collapse(true)
-        sel?.removeAllRanges()
-        sel?.addRange(range)
-        editorRef.current.focus()
-      }, 100)
-      return () => clearTimeout(timer)
-    }
-  }, [open, defaultBody, defaultBodyIsBericht, signatureHtml])
+  // ── Concept-opslag ────────────────────────────────────────────────
+  // Eén seed-effect vervangt de drie effecten die elkaar overschreven
+  // (editor-init, to/subject, wachtOpReactie). Die vuurden opnieuw zodra
+  // signatureHtml async binnenkwam of een prop een nieuwe literal werd, en
+  // wisten dan een net herstelde tekst. Precies één schrijver van innerHTML
+  // bij init, gekoppeld aan draftId in plaats van aan de props.
+  const seededVoorRef = useRef<string | null>(null)
+  // Pas ná de seed-timer mag er opgeslagen worden; daarvoor is de editor nog
+  // leeg en zou een save het herstelde concept overschrijven of wissen.
+  const seedKlaarRef = useRef(false)
+  const laatsteSeedHtmlRef = useRef<string>('')
+  // Spiegel van de editor-HTML. React ontkoppelt de ref vóórdat de cleanup
+  // van een passive effect draait, dus bij unmount is editorRef.current al
+  // null en zou de flush een lege body wegschrijven.
+  const laatsteHtmlRef = useRef<string>('')
+  const bezigMetVerzendenRef = useRef(false)
+  const bewaarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Props via refs, zodat ze de seed niet opnieuw kunnen triggeren.
+  const propsRef = useRef({ defaultTo, defaultSubject, defaultBody, defaultBodyIsBericht, defaultBodyHtml, defaultWachtOpReactie, signatureHtml })
   useEffect(() => {
-    setTo(defaultTo)
-    setSubject(defaultSubject)
-  }, [defaultTo, defaultSubject])
+    propsRef.current = { defaultTo, defaultSubject, defaultBody, defaultBodyIsBericht, defaultBodyHtml, defaultWachtOpReactie, signatureHtml }
+  })
+
+  const conceptEmailIdRef = useRef<string | null>(null)
+
+  const huidigConcept = useCallback((): EmailConcept => ({
+    versie: 1,
+    draftId,
+    to, cc, bcc, showCcBcc,
+    subject,
+    html: editorRef.current?.innerHTML ?? laatsteHtmlRef.current,
+    wachtOpReactie,
+    bijlagenNamen: attachments.map(f => ({ naam: f.name, grootte: f.size })),
+    conceptEmailId: conceptEmailIdRef.current ?? undefined,
+    bijgewerkt: Date.now(),
+  }), [draftId, to, cc, bcc, showCcBcc, subject, wachtOpReactie, attachments])
+
+  const bewaarNu = useCallback(() => {
+    if (bezigMetVerzendenRef.current || !draftId) return
+    if (!seedKlaarRef.current) return
+    const concept = huidigConcept()
+    if (isLeegConcept(concept, propsRef.current.signatureHtml)) {
+      wisConcept(draftId)
+      onDraftChange?.(null)
+      return
+    }
+    schrijfConcept(concept)
+    onDraftChange?.(concept)
+  }, [draftId, huidigConcept, onDraftChange])
+
+  const bewaarNuRef = useRef(bewaarNu)
+  useEffect(() => { bewaarNuRef.current = bewaarNu }, [bewaarNu])
+
+  const bewaarDebounced = useCallback(() => {
+    if (bewaarTimerRef.current) clearTimeout(bewaarTimerRef.current)
+    bewaarTimerRef.current = setTimeout(() => bewaarNuRef.current(), 500)
+  }, [])
+
+  // Seed één keer per draftId.
+  useEffect(() => {
+    if (!open || !draftId) return
+    if (seededVoorRef.current === draftId) return
+    seedKlaarRef.current = false
+    // Synchroon zetten, vóór de setTimeout: een re-render binnen die 100ms
+    // mag niet opnieuw seeden. De cleanup draait dit terug als de seed nog
+    // niet gevuurd heeft — anders zou StrictMode's setup→cleanup→setup in
+    // dev de tweede pass blokkeren en werd er nóóit geseed.
+    seededVoorRef.current = draftId
+    let seedGevuurd = false
+
+    const p = propsRef.current
+    const bestaand = leesConcept(draftId)
+
+    // Meteen primen: bij een unmount binnen de 100ms is editorRef al null en
+    // zou de flush een lege body over het bewaarde concept heen schrijven.
+    laatsteHtmlRef.current = bestaand ? bestaand.html : ''
+
+    if (bestaand) {
+      setTo(bestaand.to)
+      setCc(bestaand.cc)
+      setBcc(bestaand.bcc)
+      setShowCcBcc(bestaand.showCcBcc)
+      setSubject(bestaand.subject)
+      setWachtOpReactie(bestaand.wachtOpReactie)
+      conceptEmailIdRef.current = bestaand.conceptEmailId ?? null
+    } else {
+      setTo(p.defaultTo)
+      setSubject(p.defaultSubject)
+      setWachtOpReactie(p.defaultWachtOpReactie)
+      conceptEmailIdRef.current = null
+    }
+
+    const timer = setTimeout(() => {
+      seedGevuurd = true
+      seedKlaarRef.current = true
+      if (!editorRef.current) return
+      if (bestaand) {
+        editorRef.current.innerHTML = bestaand.html
+        toast.info('Concept hersteld', {
+          duration: 8000,
+          action: {
+            label: 'Ongedaan maken',
+            onClick: () => {
+              wisConcept(draftId)
+              if (editorRef.current) editorRef.current.innerHTML = p.signatureHtml || '<br>'
+              setTo(p.defaultTo); setCc(''); setBcc(''); setShowCcBcc(false)
+              setSubject(p.defaultSubject); setWachtOpReactie(p.defaultWachtOpReactie)
+              conceptEmailIdRef.current = null
+            },
+          },
+        })
+      } else if (p.defaultBodyHtml) {
+        // Heropend concept uit de Concepten-map: al HTML, niet nog eens
+        // door de \n→<br>-molen en zonder extra handtekening.
+        editorRef.current.innerHTML = p.defaultBodyHtml
+      } else if (p.defaultBody) {
+        const bodyHtml = p.defaultBody.replace(/\n/g, '<br>')
+        editorRef.current.innerHTML = p.defaultBodyIsBericht
+          ? `${bodyHtml}${p.signatureHtml}`
+          : `<br>${p.signatureHtml}${bodyHtml}`
+      } else {
+        editorRef.current.innerHTML = p.signatureHtml || '<br>'
+      }
+      laatsteSeedHtmlRef.current = editorRef.current.innerHTML
+      laatsteHtmlRef.current = editorRef.current.innerHTML
+
+      const range = document.createRange()
+      const sel = window.getSelection()
+      range.setStart(editorRef.current, 0)
+      range.collapse(true)
+      sel?.removeAllRanges()
+      sel?.addRange(range)
+      editorRef.current.focus()
+    }, 100)
+    return () => {
+      clearTimeout(timer)
+      if (!seedGevuurd) seededVoorRef.current = null
+    }
+  }, [open, draftId])
+
+  // Late handtekening: settings komen async binnen. Alleen bijwerken als de
+  // editor nog exact staat zoals we hem geseed hebben — anders heeft de
+  // gebruiker getypt en blijven we eraf.
+  const vorigeSignatureRef = useRef(signatureHtml)
+  useEffect(() => {
+    const vorige = vorigeSignatureRef.current
+    vorigeSignatureRef.current = signatureHtml
+    if (vorige || !signatureHtml) return
+    if (!editorRef.current) return
+    if (editorRef.current.innerHTML !== laatsteSeedHtmlRef.current) return
+    editorRef.current.innerHTML = `${laatsteSeedHtmlRef.current}${signatureHtml}`
+    laatsteSeedHtmlRef.current = editorRef.current.innerHTML
+    laatsteHtmlRef.current = editorRef.current.innerHTML
+  }, [signatureHtml])
+
+  // Opslaan bij elke wijziging van de kopvelden.
+  useEffect(() => {
+    if (seededVoorRef.current !== draftId) return
+    bewaarDebounced()
+  }, [to, cc, bcc, showCcBcc, subject, wachtOpReactie, attachments, draftId, bewaarDebounced])
+
+  // De body is DOM, en wordt ook buiten typen om gemuteerd (template, Daan,
+  // plakken, link invoegen). Directe innerHTML-toewijzing vuurt geen
+  // input-event, dus een MutationObserver is hier de enige volledige
+  // trigger; onInput staat er als goedkope tweede lijn in de JSX.
+  useEffect(() => {
+    if (!open || !editorRef.current) return
+    const observer = new MutationObserver(() => {
+      if (seededVoorRef.current !== draftId) return
+      // Synchroon spiegelen, debounced pas wegschrijven.
+      if (editorRef.current) laatsteHtmlRef.current = editorRef.current.innerHTML
+      bewaarDebounced()
+    })
+    observer.observe(editorRef.current, { childList: true, subtree: true, characterData: true, attributes: true })
+    return () => observer.disconnect()
+  }, [open, draftId, bewaarDebounced])
+
+  // Flush bij unmount en bij het sluiten van het tabblad. Alle unmount-paden
+  // (mail aanklikken, X, mapwissel, archiveren, wegnavigeren) lopen hier
+  // langs; beforeunload dekt Cmd+W en reload.
+  useEffect(() => {
+    const flush = () => {
+      if (bewaarTimerRef.current) clearTimeout(bewaarTimerRef.current)
+      bewaarNuRef.current()
+    }
+    window.addEventListener('beforeunload', flush)
+    return () => {
+      window.removeEventListener('beforeunload', flush)
+      flush()
+    }
+  }, [])
 
   // Load contacts + templates
   useEffect(() => {
@@ -277,19 +450,6 @@ export function EmailCompose({
       }
     }
   }, [open, organisatieId])
-
-  // Auto-save concept every 30s
-  useEffect(() => {
-    if (open) {
-      autoSaveRef.current = setInterval(() => {
-        // Could save to localStorage or Supabase
-        logger.log('Auto-save concept')
-      }, 30000)
-      return () => {
-        if (autoSaveRef.current) clearInterval(autoSaveRef.current)
-      }
-    }
-  }, [open])
 
   const handleToChange = useCallback((value: string) => {
     setTo(value)
@@ -636,6 +796,18 @@ export function EmailCompose({
     const capturedWacht = wachtOpReactie
     const buildPayload = buildAttachmentPayload
 
+    // Concept blijft staan tot het versturen echt geslaagd is: de component
+    // is dan al ge-unmount, dus een mislukte verzending verloor anders alles.
+    const conceptVanDezeVerzending = draftId
+    // Eerst de openstaande debounce binnenhalen: anders raak je alles kwijt
+    // wat je sinds de laatste tick typte als het versturen faalt.
+    if (bewaarTimerRef.current) clearTimeout(bewaarTimerRef.current)
+    bewaarNuRef.current()
+    bezigMetVerzendenRef.current = true
+    // De parent toont anders "Concept bewaard" bij élke verzending, want het
+    // wissen gebeurt pas na de netwerkcall.
+    onDraftChange?.(null)
+
     setIsSending(true)
     setAttachments([])
     setWachtOpReactie(false)
@@ -649,11 +821,14 @@ export function EmailCompose({
         await onSend?.({
           to,
           subject,
+          cc: cc.trim() || undefined,
+          bcc: bcc.trim() || undefined,
           body: body + payload.linksText,
           html: html + payload.linksHtml,
           wacht_op_reactie: capturedWacht,
           attachments: payload.attachments,
         })
+        wisConcept(conceptVanDezeVerzending)
       },
       {
         loading: attachments.length > 0
@@ -662,7 +837,7 @@ export function EmailCompose({
         success: capturedWacht ? 'Email verzonden · toegevoegd aan Opvolgen' : 'Email verzonden',
       }
     )
-  }, [to, subject, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie, attachments])
+  }, [to, subject, cc, bcc, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie, attachments, draftId])
 
   const handleScheduleSend = useCallback(async (scheduledAt: string, label: string) => {
     if (!to.trim()) { toast.error('Vul een ontvanger in'); return }
@@ -672,6 +847,16 @@ export function EmailCompose({
     const body = editorRef.current?.innerText || ''
     const capturedWacht = wachtOpReactie
     const buildPayload = buildAttachmentPayload
+
+    const conceptVanDezeVerzending = draftId
+    // Eerst de openstaande debounce binnenhalen: anders raak je alles kwijt
+    // wat je sinds de laatste tick typte als het versturen faalt.
+    if (bewaarTimerRef.current) clearTimeout(bewaarTimerRef.current)
+    bewaarNuRef.current()
+    bezigMetVerzendenRef.current = true
+    // De parent toont anders "Concept bewaard" bij élke verzending, want het
+    // wissen gebeurt pas na de netwerkcall.
+    onDraftChange?.(null)
 
     setIsSending(true)
     setShowScheduleMenu(false)
@@ -687,12 +872,15 @@ export function EmailCompose({
         await onSend?.({
           to,
           subject,
+          cc: cc.trim() || undefined,
+          bcc: bcc.trim() || undefined,
           body: body + payload.linksText,
           html: html + payload.linksHtml,
           scheduledAt,
           wacht_op_reactie: capturedWacht,
           attachments: payload.attachments,
         })
+        wisConcept(conceptVanDezeVerzending)
       },
       {
         loading: 'Bezig met inplannen...',
@@ -700,7 +888,7 @@ export function EmailCompose({
         error: 'Inplannen mislukt',
       }
     )
-  }, [to, subject, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie])
+  }, [to, subject, cc, bcc, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie, draftId])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -1115,6 +1303,11 @@ export function EmailCompose({
               className="min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 [&_img]:max-w-[200px] [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2"
               data-placeholder="Schrijf je bericht..."
               style={{ caretColor: '#1A535C', boxShadow: 'none', outline: 'none' }}
+              onInput={() => {
+                if (seededVoorRef.current !== draftId) return
+                if (editorRef.current) laatsteHtmlRef.current = editorRef.current.innerHTML
+                bewaarDebounced()
+              }}
               onPaste={handleEditorPaste}
               onDrop={handleEditorDrop}
               onKeyDown={(e) => {

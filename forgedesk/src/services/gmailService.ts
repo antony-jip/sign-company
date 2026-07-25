@@ -610,3 +610,32 @@ export async function saveEmailSettings(settings: {
     imap_port: settings.imap_port || 993,
   })
 }
+
+// ── IMAP-actie (verwijderen / archiveren) ─────────────────────────────────
+// Staat achter de env-vlag EMAIL_IMAP_WRITEBACK. Zolang die uit staat geeft
+// het endpoint {overgeslagen:true} terug en verandert er niets aan de
+// mailbox; de aanroeper valt dan terug op alleen de DB-mutatie.
+export interface ImapActieResultaat {
+  overgeslagen?: boolean
+  reden?: string
+  resultaten?: Array<{ id: string; ok: boolean; imap: string; error?: string }>
+  geslaagd?: number
+  mislukt?: number
+}
+
+export async function emailImapActie(
+  action: 'trash' | 'purge' | 'archive',
+  emailIds: string[],
+): Promise<ImapActieResultaat> {
+  const token = await getAuthToken()
+  const response = await fetch('/api/email-imap-action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ action, emailIds }),
+  })
+  if (!response.ok) {
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || `Actie mislukt: ${response.status}`)
+  }
+  return response.json()
+}
