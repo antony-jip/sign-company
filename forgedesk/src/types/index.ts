@@ -200,7 +200,9 @@ export interface ImportResultaat {
 export interface ContactpersoonRecord {
   id: string;
   organisatie_id: string;
+  /** Een contactpersoon hangt aan een klant OF aan een leverancier, nooit aan beide. */
   klant_id: string | null;
+  leverancier_id?: string | null;
   voornaam: string;
   achternaam: string;
   email: string;

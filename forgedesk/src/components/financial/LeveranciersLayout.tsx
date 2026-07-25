@@ -16,11 +16,13 @@ import {
 } from '@/components/ui/select'
 import { cn, formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Leverancier, Uitgave, KvkResultaat } from '@/types'
+import type { Leverancier, Uitgave, KvkResultaat, ContactpersoonRecord } from '@/types'
 import { KvkZoekVeld } from '@/components/shared/KvkZoekVeld'
 import {
   getLeveranciers, createLeverancier, updateLeverancier, deleteLeverancier,
   getUitgavenByLeverancier,
+  getContactpersonenByLeverancier, createContactpersoonDB, updateContactpersoonDB,
+  deleteContactpersoonDB,
 } from '@/services/supabaseService'
 import { getCached, setCached, fetchQuery } from '@/lib/queryCache'
 import { round2 } from '@/utils/budgetUtils'
@@ -50,6 +52,20 @@ const EMPTY_FORM: FormData = {
   actief: true,
 }
 
+interface ContactForm {
+  voornaam: string
+  achternaam: string
+  functie: string
+  email: string
+  telefoon: string
+}
+
+const EMPTY_CONTACT: ContactForm = { voornaam: '', achternaam: '', functie: '', email: '', telefoon: '' }
+
+function contactNaam(c: ContactpersoonRecord): string {
+  return [c.voornaam, c.achternaam].filter(Boolean).join(' ') || c.email || 'Naamloos'
+}
+
 export function LeveranciersLayout() {
   const { user } = useAuth()
   const userId = user?.id || ''
@@ -65,6 +81,13 @@ export function LeveranciersLayout() {
   const [isSaving, setIsSaving] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Leverancier | null>(null)
+
+  const [contacten, setContacten] = useState<ContactpersoonRecord[]>([])
+  const [contactenLaden, setContactenLaden] = useState(false)
+  const [contactForm, setContactForm] = useState<ContactForm>({ ...EMPTY_CONTACT })
+  const [contactFormOpen, setContactFormOpen] = useState(false)
+  const [editingContactId, setEditingContactId] = useState<string | null>(null)
+  const [contactOpslaan, setContactOpslaan] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -113,11 +136,19 @@ export function LeveranciersLayout() {
     )
   }, [leveranciers, searchQuery])
 
+  const sluitContactForm = useCallback(() => {
+    setContactFormOpen(false)
+    setEditingContactId(null)
+    setContactForm({ ...EMPTY_CONTACT })
+  }, [])
+
   const openNieuw = useCallback(() => {
     setFormData({ ...EMPTY_FORM })
     setEditingId(null)
+    setContacten([])
+    sluitContactForm()
     setDialogOpen(true)
-  }, [])
+  }, [sluitContactForm])
 
   const openEdit = useCallback((l: Leverancier) => {
     setFormData({
@@ -137,8 +168,19 @@ export function LeveranciersLayout() {
       actief: l.actief,
     })
     setEditingId(l.id)
+    setContacten([])
+    sluitContactForm()
     setDialogOpen(true)
-  }, [])
+
+    setContactenLaden(true)
+    getContactpersonenByLeverancier(l.id)
+      .then(setContacten)
+      .catch((err) => {
+        logger.error('Fout bij laden contactpersonen:', err)
+        toast.error('Contactpersonen konden niet geladen worden')
+      })
+      .finally(() => setContactenLaden(false))
+  }, [sluitContactForm])
 
   const handleSave = useCallback(async () => {
     if (!formData.bedrijfsnaam.trim()) { toast.error('Bedrijfsnaam is verplicht'); return }
@@ -178,6 +220,57 @@ export function LeveranciersLayout() {
       setIsSaving(false)
     }
   }, [formData, editingId, userId])
+
+  const handleSaveContact = useCallback(async () => {
+    if (!editingId) return
+    const naamIngevuld = contactForm.voornaam.trim() || contactForm.achternaam.trim()
+    if (!naamIngevuld && !contactForm.email.trim()) {
+      toast.error('Vul een naam of e-mailadres in')
+      return
+    }
+    try {
+      setContactOpslaan(true)
+      const velden = {
+        voornaam: contactForm.voornaam.trim(),
+        achternaam: contactForm.achternaam.trim(),
+        functie: contactForm.functie.trim(),
+        email: contactForm.email.trim(),
+        telefoon: contactForm.telefoon.trim(),
+      }
+      if (editingContactId) {
+        const updated = await updateContactpersoonDB(editingContactId, velden)
+        setContacten((prev) => prev.map((c) => (c.id === editingContactId ? { ...c, ...updated } : c)))
+        toast.success('Contactpersoon bijgewerkt')
+      } else {
+        const created = await createContactpersoonDB({
+          ...velden,
+          leverancier_id: editingId,
+          klant_id: null,
+          notities: '',
+          user_id: userId,
+        })
+        setContacten((prev) => [...prev, created])
+        toast.success('Contactpersoon toegevoegd')
+      }
+      sluitContactForm()
+    } catch (err) {
+      logger.error('Fout bij opslaan contactpersoon:', err)
+      toast.error('Fout bij opslaan contactpersoon')
+    } finally {
+      setContactOpslaan(false)
+    }
+  }, [contactForm, editingContactId, editingId, userId, sluitContactForm])
+
+  const handleDeleteContact = useCallback(async (contact: ContactpersoonRecord) => {
+    try {
+      await deleteContactpersoonDB(contact.id)
+      setContacten((prev) => prev.filter((c) => c.id !== contact.id))
+      toast.success('Contactpersoon verwijderd')
+    } catch (err) {
+      logger.error('Fout bij verwijderen contactpersoon:', err)
+      toast.error('Fout bij verwijderen contactpersoon')
+    }
+  }, [])
 
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return
@@ -332,6 +425,85 @@ export function LeveranciersLayout() {
                 <input type="checkbox" checked={formData.actief} onChange={(e) => setFormData((p) => ({ ...p, actief: e.target.checked }))} className="rounded" />
                 Actief
               </label>
+
+              <div className="pt-4 border-t space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Contactpersonen</Label>
+                  {editingId && !contactFormOpen && (
+                    <button
+                      type="button"
+                      onClick={() => { setEditingContactId(null); setContactForm({ ...EMPTY_CONTACT }); setContactFormOpen(true) }}
+                      className="text-sm text-[#F15025] hover:underline"
+                    >
+                      + Contactpersoon
+                    </button>
+                  )}
+                </div>
+
+                {!editingId ? (
+                  <p className="text-sm text-muted-foreground">
+                    Sla de leverancier eerst op, daarna kun je contactpersonen toevoegen.
+                  </p>
+                ) : contactenLaden ? (
+                  <p className="text-sm text-muted-foreground">Laden...</p>
+                ) : contacten.length === 0 && !contactFormOpen ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nog geen contactpersonen. Het algemene e-mailadres hierboven wordt gebruikt.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {contacten.map((c) => (
+                      <div key={c.id} className="flex items-start justify-between gap-2 rounded-lg bg-[#F8F7F5] px-3 py-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{contactNaam(c)}</p>
+                          {c.functie && <p className="text-xs text-muted-foreground">{c.functie}</p>}
+                          <div className="mt-0.5 space-y-0.5 text-xs text-muted-foreground">
+                            {c.email && <div className="flex items-center gap-1.5 truncate"><Mail className="h-3 w-3 shrink-0" /> {c.email}</div>}
+                            {c.telefoon && <div className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" /> {c.telefoon}</div>}
+                          </div>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={() => {
+                              setEditingContactId(c.id)
+                              setContactForm({
+                                voornaam: c.voornaam || '', achternaam: c.achternaam || '',
+                                functie: c.functie || '', email: c.email || '', telefoon: c.telefoon || '',
+                              })
+                              setContactFormOpen(true)
+                            }}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                            onClick={() => handleDeleteContact(c)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {editingId && contactFormOpen && (
+                  <div className="space-y-3 rounded-lg border p-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label className="text-xs">Voornaam</Label><Input value={contactForm.voornaam} onChange={(e) => setContactForm((p) => ({ ...p, voornaam: e.target.value }))} /></div>
+                      <div><Label className="text-xs">Achternaam</Label><Input value={contactForm.achternaam} onChange={(e) => setContactForm((p) => ({ ...p, achternaam: e.target.value }))} /></div>
+                    </div>
+                    <div><Label className="text-xs">Functie</Label><Input value={contactForm.functie} onChange={(e) => setContactForm((p) => ({ ...p, functie: e.target.value }))} /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label className="text-xs">E-mail</Label><Input type="email" value={contactForm.email} onChange={(e) => setContactForm((p) => ({ ...p, email: e.target.value }))} /></div>
+                      <div><Label className="text-xs">Telefoon</Label><Input value={contactForm.telefoon} onChange={(e) => setContactForm((p) => ({ ...p, telefoon: e.target.value }))} /></div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={sluitContactForm}>Annuleren</Button>
+                      <Button size="sm" onClick={handleSaveContact} disabled={contactOpslaan}>
+                        {contactOpslaan ? 'Opslaan...' : 'Opslaan'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </ScrollArea>
           <DialogFooter>

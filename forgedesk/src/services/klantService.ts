@@ -246,12 +246,27 @@ export async function deleteKlant(id: string): Promise<void> {
 
 // ============ CONTACTPERSONEN (DB) ============
 
+// Levert alleen klant-contacten. Leverancier-contacten staan in dezelfde tabel
+// maar horen niet thuis in de klant-overzichten die deze functie voeden.
 export async function getContactpersonenDB(organisatieId: string): Promise<ContactpersoonRecord[]> {
   if (!isSupabaseConfigured() || !supabase) return []
   const { data, error } = await supabase
     .from('contactpersonen')
     .select('*')
     .eq('organisatie_id', organisatieId)
+    .is('leverancier_id', null)
+    .order('achternaam', { ascending: true })
+  if (error) throw error
+  return (data || []) as ContactpersoonRecord[]
+}
+
+export async function getContactpersonenByLeverancier(leverancierId: string): Promise<ContactpersoonRecord[]> {
+  assertId(leverancierId, 'leverancier_id')
+  if (!isSupabaseConfigured() || !supabase) return []
+  const { data, error } = await supabase
+    .from('contactpersonen')
+    .select('*')
+    .eq('leverancier_id', leverancierId)
     .order('achternaam', { ascending: true })
   if (error) throw error
   return (data || []) as ContactpersoonRecord[]

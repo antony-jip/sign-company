@@ -68,7 +68,8 @@ export {
 export {
   getKlanten, getKlant, createKlant, updateKlant, deleteKlant,
   getAllKlantLabels,
-  getContactpersonenDB, getContactpersonenByKlant, createContactpersoonDB, updateContactpersoonDB, deleteContactpersoonDB,
+  getContactpersonenDB, getContactpersonenByKlant, getContactpersonenByLeverancier,
+  createContactpersoonDB, updateContactpersoonDB, deleteContactpersoonDB,
   koppelContactAanKlant, ontkoppelContact,
   getKlantHistorie,
   getImportLogs, createImportLog, deleteImportLog, deleteAllImportLogs, opschonenAlleImportData,
