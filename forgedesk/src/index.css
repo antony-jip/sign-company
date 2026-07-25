@@ -1217,6 +1217,17 @@ tbody tr:hover {
   background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 20%, rgba(255, 255, 255, 0.08) 80%, transparent 100%);
 }
 
+/* Menu-lijst — onderrand vervaagt zodra er items onder de vouw staan, zodat
+   zichtbaar is dat de lijst doorloopt. Scrollbar blijft verborgen. */
+.doen-sidebar-scroll {
+  scrollbar-width: none;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent 100%);
+}
+.doen-sidebar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 /* Active dot — static (iOS-clean: no idle pulse) */
 .doen-sidebar-active-dot {
   width: 5px;
@@ -3375,16 +3386,18 @@ button.doen-panel:hover {
 }
 
 /* Hero: dimensionale gradient i.p.v. vlak vlak. Licht = petrol met
-   subtiele lichtval rechtsboven, dark = warme maroon met lift
-   linksboven en diepte rechtsonder. */
+   subtiele lichtval rechtsboven, dark = verdiepte petrol met lift
+   linksboven en diepte rechtsonder. Blijft in de petrol-familie: het is
+   het grootste merkvlak van de app, rood leest daar als waarschuwing. */
 .doen-hero {
   background-color: #1A535C;
   background-image: radial-gradient(ellipse 90% 130% at 88% -20%, rgba(255, 255, 255, 0.07), transparent 55%);
 }
 .dark .doen-hero {
+  background-color: #10353C;
   background-image:
-    radial-gradient(ellipse 85% 90% at 12% 0%, #5C2417 0%, transparent 68%),
-    linear-gradient(135deg, #4A1810 0%, #371108 100%);
+    radial-gradient(ellipse 85% 90% at 12% 0%, #1C5A64 0%, transparent 68%),
+    linear-gradient(135deg, #14424A 0%, #0C2A30 100%);
 }
 
 /* ================================================================

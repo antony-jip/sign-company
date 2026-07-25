@@ -90,21 +90,6 @@ export function AppLayout() {
     }
   }, [])
 
-  // Auto-hide search header (Header) in sidebar layout: the tab strip stays
-  // permanently visible, but the search/header row slides in only when the
-  // mouse reaches the top edge. A short close-delay avoids flicker.
-  const [topHovered, setTopHovered] = useState(false)
-  const topCloseTimer = useRef<number | null>(null)
-  const openTop = () => {
-    if (topCloseTimer.current) { window.clearTimeout(topCloseTimer.current); topCloseTimer.current = null }
-    setTopHovered(true)
-  }
-  const closeTop = () => {
-    if (topCloseTimer.current) window.clearTimeout(topCloseTimer.current)
-    topCloseTimer.current = window.setTimeout(() => setTopHovered(false), 180)
-  }
-  useEffect(() => () => { if (topCloseTimer.current) window.clearTimeout(topCloseTimer.current) }, [])
-
   if (layoutMode === 'topnav') {
     return (
       <>
@@ -153,8 +138,12 @@ export function AppLayout() {
           <TrialBanner />
           <InkoopAILimietBanner variant="globaal" />
           <div className="relative flex-1 flex flex-col min-h-0">
-            {/* Tabbalk: altijd zichtbaar bovenaan */}
+            {/* Kopbalk en tabbalk: altijd zichtbaar. De kopbalk draagt de
+                paginatitel, globale zoek en meldingen; die stonden eerder
+                achter een hover-strook van een paar pixels en waren daardoor
+                praktisch onvindbaar. */}
             <div className="flex-shrink-0 bg-background">
+              <Header />
               <TabBar />
             </div>
 
@@ -166,33 +155,6 @@ export function AppLayout() {
                 <Outlet />
               </div>
             </main>
-
-            {/* Hover-trigger aan de bovenrand (smal, gecentreerd): opent de verborgen zoekbalk */}
-            <div
-              className="absolute top-0 left-1/2 -translate-x-1/2 h-2.5 w-40 z-40 flex justify-center"
-              onMouseEnter={openTop}
-            >
-              <div
-                className={cn(
-                  'mt-1 h-1 w-20 rounded-full bg-foreground/15 transition-opacity duration-200',
-                  topHovered ? 'opacity-0' : 'opacity-100',
-                )}
-              />
-            </div>
-
-            {/* Auto-hide zoekbalk (Header), glijdt bij hover over de tabs in beeld */}
-            <div
-              className={cn(
-                'absolute top-0 inset-x-0 z-30 bg-background border-b border-border/60 transition-transform duration-300 ease-out',
-                topHovered
-                  ? 'translate-y-0 shadow-[0_8px_24px_rgba(0,0,0,0.06)]'
-                  : '-translate-y-full pointer-events-none',
-              )}
-              onMouseEnter={openTop}
-              onMouseLeave={closeTop}
-            >
-              <Header />
-            </div>
           </div>
         </div>
       </div>

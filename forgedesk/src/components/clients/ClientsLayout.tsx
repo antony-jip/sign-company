@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
+  Plus,
   UserPlus,
   Search,
   LayoutGrid,
@@ -454,13 +455,13 @@ export function ClientsLayout() {
               )}
             </span>
           </div>
-          <Button
+          <button
             onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }}
             className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
           >
-            <UserPlus className="w-4 h-4 opacity-80" />
+            <Plus className="w-4 h-4 opacity-80" />
             <span className="hidden md:inline">Nieuwe klant</span>
-          </Button>
+          </button>
         </div>
 
         {/* KPI tiles · clickable triage entry-points */}
@@ -525,18 +526,18 @@ export function ClientsLayout() {
           {/* View toggle */}
           <div className="flex items-center bg-background rounded-lg p-0.5 border border-border">
             <button
-              onClick={() => setViewMode('grid')}
-              className={cn('p-1.5 rounded-md transition-all', viewMode === 'grid' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground/70')}
-              title="Rasterweergave"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-            </button>
-            <button
               onClick={() => setViewMode('list')}
               className={cn('p-1.5 rounded-md transition-all', viewMode === 'list' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground/70')}
               title="Lijstweergave"
             >
               <List className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={cn('p-1.5 rounded-md transition-all', viewMode === 'grid' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground/70')}
+              title="Rasterweergave"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
             </button>
           </div>
 

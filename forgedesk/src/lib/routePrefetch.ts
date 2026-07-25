@@ -12,6 +12,7 @@ const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
   '/': () => import('@/components/dashboard/FORGEdeskDashboard'),
   '/projecten': () => import('@/components/projects/ProjectsList'),
   '/klanten': () => import('@/components/clients/ClientsLayout'),
+  '/leveranciers': () => import('@/components/financial/LeveranciersLayout'),
   '/offertes': () => import('@/components/quotes/QuotesPipeline'),
   '/facturen': () => import('@/components/invoices/FacturenLayout'),
   '/inkoopfacturen': () => import('@/components/invoices/FacturenLayout'),

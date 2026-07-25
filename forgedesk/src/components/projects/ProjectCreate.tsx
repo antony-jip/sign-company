@@ -275,7 +275,8 @@ export function ProjectCreate() {
       </form>
       </div>
 
-      {/* Sticky bottom action bar · mobile only, sits above MobileBottomNav (h-14 + safe-area) */}
+      {/* Sticky bottom action bar · mobiel, blijft vrij van de Daan-knop
+          (48px + 16px marge) plus de safe-area */}
       <div
         className="md:hidden fixed inset-x-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 flex items-center gap-2 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
         style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}

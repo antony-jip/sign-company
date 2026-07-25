@@ -4,11 +4,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LogOut, Menu, X,
   Moon, Sun, CreditCard, PanelTop,
-  LayoutDashboard, CircleUserRound, BookOpen,
-  Hammer, FileText, Building2, Wrench, Wand2, Banknote, Inbox, Ruler,
-  TrendingUp, Calendar, ListChecks, Mail, Globe, SlidersHorizontal, LifeBuoy, MessageSquare, Newspaper,
+  BookOpen, SlidersHorizontal,
   Pin, PinOff, Pencil, Plus, LayoutGrid, Check, ChevronRight, Lightbulb,
-  type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { prefetchRoute } from '@/lib/routePrefetch'
@@ -22,65 +19,11 @@ import { usePalette } from '@/contexts/PaletteContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
-
-interface NavItem {
-  label: string
-  icon: LucideIcon
-  path: string
-  color: string
-}
-
-interface NavGroup {
-  section: string
-  items: NavItem[]
-}
-
-// Module colors per the DOEN design system
-const WERK_ITEMS: NavItem[] = [
-  { label: 'Projecten', icon: Hammer, path: '/projecten', color: '#1A535C' },
-  { label: 'Offertes', icon: FileText, path: '/offertes', color: '#F15025' },
-  { label: 'Klanten', icon: Building2, path: '/klanten', color: '#3A6B8C' },
-  { label: 'Werkbonnen', icon: Wrench, path: '/werkbonnen', color: '#C44830' },
-  { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#F15025' },
-  { label: 'Studio', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
-]
-
-const FINANCIEEL_ITEMS: NavItem[] = [
-  { label: 'Facturen', icon: Banknote, path: '/facturen', color: '#2D6B48' },
-  { label: 'Inkoopfacturen', icon: Inbox, path: '/inkoopfacturen', color: '#C44830' },
-  { label: 'Financieel', icon: TrendingUp, path: '/financieel', color: '#2D6B48' },
-]
-
-const PLANNING_ITEMS: NavItem[] = [
-  { label: 'Planning', icon: Calendar, path: '/planning', color: '#9A5A48' },
-  { label: 'Taken', icon: ListChecks, path: '/taken', color: 'hsl(var(--muted-foreground))' },
-]
-
-const COMMUNICATIE_ITEMS: NavItem[] = [
-  { label: 'Email', icon: Mail, path: '/email', color: '#6A5A8A' },
-  { label: 'Aanvragen', icon: MessageSquare, path: '/aanvragen', color: '#6A5A8A' },
-  { label: 'Portaal', icon: Globe, path: '/portalen', color: '#6A5A8A' },
-]
-
-const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: 'hsl(var(--muted-foreground))' }
-const SUPPORT_ITEM: NavItem = { label: 'Support', icon: LifeBuoy, path: '/support', color: '#F15025' }
-// Owner-only: nieuwsbrief-module is persoonlijk voor de eigenaar (zie 149_nieuwsbrief.sql).
-const NIEUWSBRIEF_ITEM: NavItem = { label: 'Nieuwsbrief', icon: Newspaper, path: '/nieuwsbrief', color: '#6A5A8A' }
-
-const NAV_GROUPS: NavGroup[] = [
-  { section: 'WERK', items: WERK_ITEMS },
-  { section: 'FINANCIEEL', items: FINANCIEEL_ITEMS },
-  { section: 'PLANNING', items: PLANNING_ITEMS },
-  { section: 'COMMUNICATIE', items: COMMUNICATIE_ITEMS },
-]
-
-// Flat list for rail mode
-const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...FINANCIEEL_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS]
-
-// Mobiel is bewust lean: alleen het hoogstnodige voor de buitendienst
-// (projecten, mail, maatje) plus Instellingen. De rest doe je op desktop.
-// Geldt altijd op mobiel, los van de desktop-menukeuze.
-const MOBIELE_NAV_LABELS = ['Projecten', 'Email', 'Maatjes']
+import {
+  DASHBOARD_ITEM, SETTINGS_ITEM, SUPPORT_ITEM, NIEUWSBRIEF_ITEM,
+  NAV_GROEPEN, ALLE_MODULES, MOBIELE_NAV_LABELS, normaliseerMenuVoorkeur,
+  type NavItem,
+} from '@/lib/navigatie'
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768)
@@ -139,7 +82,7 @@ export function Sidebar() {
   const isItemVisible = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
     const heeftVoorkeur = Array.isArray(sidebarItems) && sidebarItems.length > 0
-    const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
+    const normalized = normaliseerMenuVoorkeur(sidebarItems)
     return (label: string) => {
       // Maatjes altijd zichtbaar (mobiel = kladblok, desktop = beheer).
       if (label === 'Maatjes') return true
@@ -149,10 +92,10 @@ export function Sidebar() {
     }
   }, [settings?.sidebar_items, isMobieleNav])
 
-  const filteredNavItems = useMemo(() => ALL_NAV_ITEMS.filter(i => isItemVisible(i.label)), [isItemVisible])
+  const filteredNavItems = useMemo(() => ALLE_MODULES.filter(i => isItemVisible(i.label)), [isItemVisible])
 
   const filteredGroups = useMemo(() => {
-    return NAV_GROUPS
+    return NAV_GROEPEN
       .map(g => ({ ...g, items: g.items.filter(i => isItemVisible(i.label)) }))
       .filter(g => g.items.length > 0)
   }, [isItemVisible])
@@ -191,7 +134,7 @@ export function Sidebar() {
   // Items die niet in het hoofdmenu staan, gegroepeerd per sectie → "Overig".
   const overigGroups = useMemo(() => {
     if (isMobieleNav) return []
-    return NAV_GROUPS
+    return NAV_GROEPEN
       .map(g => ({ ...g, items: g.items.filter(i => !isItemVisible(i.label)) }))
       .filter(g => g.items.length > 0)
   }, [isItemVisible, isMobieleNav])
@@ -200,8 +143,8 @@ export function Sidebar() {
   // Huidige selectie als concrete lijst (default = alles).
   const curatedLabels = useMemo(() => {
     const pref = settings?.sidebar_items
-    if (Array.isArray(pref) && pref.length > 0) return pref.map((s: string) => s === 'Kalender' ? 'Planning' : s)
-    return ALL_NAV_ITEMS.map(i => i.label)
+    if (Array.isArray(pref) && pref.length > 0) return normaliseerMenuVoorkeur(pref)
+    return ALLE_MODULES.map(i => i.label)
   }, [settings?.sidebar_items])
 
   const removeFromMenu = (label: string) => {
@@ -441,17 +384,20 @@ export function Sidebar() {
           <div className="doen-sidebar-divider" />
         </div>
 
-        {/* Main navigation · scrollt bij overflow (veel items / kleine viewport) */}
-        <nav className="flex-1 flex flex-col justify-start pt-4 overflow-y-auto overflow-x-hidden min-h-0">
+        {/* Main navigation · scrollt bij overflow (veel items / kleine viewport).
+            De onderrand krijgt een fade-masker zodat zichtbaar is dat er nog
+            meer onder staat; Overig en Instellingen staan vast onderin. */}
+        <nav className="doen-sidebar-scroll flex-1 flex flex-col justify-start pt-4 overflow-y-auto overflow-x-hidden min-h-0">
           {collapsed ? (
             <div className="flex flex-col items-center gap-0">
-              {filteredNavItems.filter(i => WERK_ITEMS.some(w => w.path === i.path)).map(renderRailItem)}
-              {railDivider('div-1')}
-              {filteredNavItems.filter(i => FINANCIEEL_ITEMS.some(f => f.path === i.path)).map(renderRailItem)}
-              {railDivider('div-2')}
-              {filteredNavItems.filter(i => PLANNING_ITEMS.some(p => p.path === i.path)).map(renderRailItem)}
-              {railDivider('div-3')}
-              {filteredNavItems.filter(i => COMMUNICATIE_ITEMS.some(c => c.path === i.path)).map(renderRailItem)}
+              {renderRailItem(DASHBOARD_ITEM)}
+              {railDivider('div-dashboard')}
+              {filteredGroups.map((group, gi) => (
+                <React.Fragment key={group.section}>
+                  {gi > 0 && railDivider(`div-${group.section}`)}
+                  {group.items.map(renderRailItem)}
+                </React.Fragment>
+              ))}
               {isEigenaar && renderRailItem(NIEUWSBRIEF_ITEM)}
               {isSupportAdmin && (
                 <>
@@ -484,8 +430,11 @@ export function Sidebar() {
                   <span className="doen-sidebar-flame-accent" />
                 </div>
               )}
-              {filteredGroups.map((group, gi) => (
-                <div key={group.section} className={gi > 0 ? 'mt-7' : ''}>
+              <div className="space-y-[1px]">
+                {renderExpandedItem(DASHBOARD_ITEM, false, !forMobile)}
+              </div>
+              {filteredGroups.map(group => (
+                <div key={group.section} className="mt-7">
                   <div className="doen-sidebar-section">{group.section}</div>
                   <div className="space-y-[1px]">
                     {group.items.map(item => renderExpandedItem(item, false, !forMobile))}
@@ -516,23 +465,6 @@ export function Sidebar() {
                   </div>
                 </div>
               )}
-
-              {/* Overig · opent het mega-menu met niet-gekozen items */}
-              {heeftOverig && (
-                <div className="mt-7">
-                  <div className="doen-sidebar-section">OVERIG</div>
-                  <button
-                    type="button"
-                    onClick={() => setOverigOpen(v => !v)}
-                    className="relative flex w-full items-center gap-[11px] py-[8.5px] px-4 mx-2 rounded-[11px] group/nav text-[13px]"
-                  >
-                    {overigOpen ? <div className="doen-sidebar-active-surface" /> : <div className="doen-sidebar-item-hover" />}
-                    <LayoutGrid className="relative z-10 h-[18px] w-[18px] flex-shrink-0 text-petrol/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-petrol transition-colors" strokeWidth={1.6} />
-                    <span className="relative z-10 truncate font-medium tracking-[-0.01em] text-foreground/65 group-hover/nav:text-foreground/90">Overig</span>
-                    <span className="relative z-10 ml-auto rounded-full bg-petrol/[0.07] px-1.5 text-[10px] font-mono tabular-nums text-petrol/60">{overigGroups.reduce((n, g) => n + g.items.length, 0)}</span>
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </nav>
@@ -542,6 +474,22 @@ export function Sidebar() {
           'flex-shrink-0',
           collapsed ? 'pb-4 pt-2 flex flex-col items-center gap-1' : 'pb-4 pt-2 space-y-[2px]',
         )}>
+          {/* Overig · staat vast onderin, niet in de scrollende lijst: anders
+              vallen Klanten en Offertes op een korte viewport onder de vouw. */}
+          {!collapsed && heeftOverig && (
+            <button
+              type="button"
+              onClick={() => setOverigOpen(v => !v)}
+              aria-expanded={overigOpen}
+              className="relative flex w-[calc(100%-16px)] items-center gap-[11px] py-[8.5px] px-4 mx-2 mb-1 rounded-[11px] group/nav text-[13px]"
+            >
+              {overigOpen ? <div className="doen-sidebar-active-surface" /> : <div className="doen-sidebar-item-hover" />}
+              <LayoutGrid className="relative z-10 h-[18px] w-[18px] flex-shrink-0 text-petrol/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-petrol transition-colors" strokeWidth={1.6} />
+              <span className="relative z-10 truncate font-medium tracking-[-0.01em] text-foreground/65 group-hover/nav:text-foreground/90">Overig</span>
+              <span className="relative z-10 ml-auto rounded-full bg-petrol/[0.07] px-1.5 text-[10px] font-mono tabular-nums text-petrol/60">{overigGroups.reduce((n, g) => n + g.items.length, 0)}</span>
+            </button>
+          )}
+
           {/* Utilities · compacte icoon-rij (bewerken · Overig · vastzetten) */}
           {!forMobile && (collapsed ? (
             <div className="flex flex-col items-center gap-1">

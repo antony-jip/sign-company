@@ -832,7 +832,7 @@ export function QuotesPipeline() {
     <button
       onClick={() => handleListSort(column)}
       className={cn(
-        'flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground hover:text-foreground transition-colors',
+        'flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground hover:text-foreground transition-colors',
         align === 'right' && 'ml-auto',
       )}
     >
@@ -1557,7 +1557,9 @@ export function QuotesPipeline() {
                                 {/* Geldig tot */}
                                 <td className="py-3.5 pr-4 text-right hidden md:table-cell">
                                   <div className="flex items-center gap-1.5 justify-end">
-                                    <span className="text-[12px] font-mono tabular-nums text-muted-foreground/80">{formatDate(offerte.geldig_tot)}</span>
+                                    <span className="whitespace-nowrap text-[12px] font-mono tabular-nums text-muted-foreground/80">
+                                      {new Date(offerte.geldig_tot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
+                                    </span>
                                     {expiryStatus === 'expired' && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18]" />}
                                     {expiryStatus === 'soon' && <span className="w-1.5 h-1.5 rounded-full bg-flame" />}
                                   </div>

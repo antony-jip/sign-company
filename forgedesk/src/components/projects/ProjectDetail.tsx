@@ -1298,7 +1298,7 @@ export function ProjectDetail() {
         }}
       />
 
-      {/* Mobile floating camera button · clears MobileBottomNav (h-14) */}
+      {/* Mobiele camera-knop · blijft vrij van de Daan-knop plus safe-area */}
       <div className="fixed right-4 z-40 md:hidden bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)]">
         <label
           className="flex items-center justify-center h-14 w-14 rounded-full bg-petrol text-white shadow-lg shadow-petrol/25 active:scale-95 transition-transform cursor-pointer"

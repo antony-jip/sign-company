@@ -1922,7 +1922,7 @@ export function TasksLayout() {
         )}
       </div>
 
-      {/* === FLOATING ACTION BUTTON · DOEN. Clears MobileBottomNav (h-14) on mobile. === */}
+      {/* === FLOATING ACTION BUTTON · DOEN. Mobiel vrij van de Daan-knop. === */}
       <div className="fixed right-4 md:right-6 z-50 flex flex-col items-end gap-3 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)] md:bottom-6">
         {fabOpen && (
           <div className="w-80 rounded-xl bg-card border border-border shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18)] p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">

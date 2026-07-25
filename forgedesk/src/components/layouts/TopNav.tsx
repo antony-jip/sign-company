@@ -1,13 +1,11 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, FolderKanban, Users, FileText,
-  Mail, Calendar, Settings,
-  Receipt, CheckSquare, ClipboardCheck, Inbox, Ruler,
+  FolderKanban, Users, FileText, Mail, Settings,
+  Receipt, ClipboardCheck,
   LogOut, ChevronDown, Menu, X, Search,
-  Plus, Moon, Sun, Monitor, CreditCard, Sparkles, PiggyBank, BookOpen,
-  Pin, PinOff, LifeBuoy, MessageSquare,
-  type LucideIcon,
+  Plus, Monitor, CreditCard, BookOpen,
+  Pin, PinOff,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { prefetchRoute } from '@/lib/routePrefetch'
@@ -21,40 +19,15 @@ import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
 import { DarkModeToggle } from '@/components/shared/DarkModeToggle'
+import {
+  DASHBOARD_ITEM, SUPPORT_ITEM, ALLE_MODULES,
+  PRIMAIRE_LABELS, MOBIELE_NAV_LABELS, normaliseerMenuVoorkeur,
+  type NavItem,
+} from '@/lib/navigatie'
 
-interface NavItem {
-  label: string
-  icon: LucideIcon
-  path: string
-  color: string
-}
-
-const navItems: NavItem[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/', color: '#1A535C' },
-  { label: 'Projecten', icon: FolderKanban, path: '/projecten', color: '#7EB5A6' },
-  { label: 'Klanten', icon: Users, path: '/klanten', color: '#8BAFD4' },
-  { label: 'Offertes', icon: FileText, path: '/offertes', color: '#9B8EC4' },
-  { label: 'Facturen', icon: Receipt, path: '/facturen', color: '#E8866A' },
-  { label: 'Inkoopfacturen', icon: Inbox, path: '/inkoopfacturen', color: '#C44830' },
-  { label: 'Taken', icon: CheckSquare, path: '/taken', color: '#C4A882' },
-  { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen', color: '#D4836A' },
-  { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#E8866A' },
-  { label: 'Planning', icon: Calendar, path: '/planning', color: '#7EB5A6' },
-  { label: 'Email', icon: Mail, path: '/email', color: '#8BAFD4' },
-  { label: 'Aanvragen', icon: MessageSquare, path: '/aanvragen', color: '#8BAFD4' },
-  { label: 'Financieel', icon: PiggyBank, path: '/financieel', color: '#2D6B48' },
-]
-
-// Meest gebruikte modules staan los in de balk; de rest komt onder "Overig".
-const PRIMARY_LABELS = ['Dashboard', 'Projecten', 'Taken', 'Offertes', 'Planning', 'Werkbonnen', 'Email']
-
-// Admin-only: support-inbox, leeft onder "Overig".
-const SUPPORT_ITEM: NavItem = { label: 'Support', icon: LifeBuoy, path: '/support', color: '#F15025' }
-
-// Mobiel is bewust lean: alleen het hoogstnodige voor de buitendienst
-// (projecten, mail, maatje). De rest doe je op desktop. Geldt altijd op
-// mobiel, los van de desktop-menukeuze.
-const MOBIELE_NAV_LABELS = ['Projecten', 'Email', 'Maatjes']
+// Dashboard staat los; de modules komen uit de gedeelde navigatiebron zodat
+// zijbalk en topbalk dezelfde iconen, kleuren en paden gebruiken.
+const navItems: NavItem[] = [DASHBOARD_ITEM, ...ALLE_MODULES]
 
 const quickAddItems = [
   { label: 'Nieuw Project', icon: FolderKanban, path: '/projecten/nieuw', color: '#7EB5A6' },
@@ -89,7 +62,7 @@ export function TopNav() {
   const visibleItems = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
     const heeftVoorkeur = Array.isArray(sidebarItems) && sidebarItems.length > 0
-    const normalized = heeftVoorkeur ? sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s) : []
+    const normalized = normaliseerMenuVoorkeur(sidebarItems)
     return navItems.filter(item => {
       // Maatjes is altijd zichtbaar: mobiel als capture-tool, desktop als beheer.
       if (item.label === 'Maatjes') return true
@@ -100,16 +73,26 @@ export function TopNav() {
   }, [settings?.sidebar_items, isMobieleNav])
 
   // Splits de zichtbare modules in een vaste primaire set + een "Overig"-rest.
-  // Primair volgt de PRIMARY_LABELS-volgorde; Overig houdt de menu-volgorde aan.
+  // Primair volgt de PRIMAIRE_LABELS-volgorde; Overig houdt de menu-volgorde aan.
   const primaryItems = useMemo(
-    () => PRIMARY_LABELS.map((label) => visibleItems.find((i) => i.label === label)).filter(Boolean) as NavItem[],
+    () => PRIMAIRE_LABELS.map((label) => visibleItems.find((i) => i.label === label)).filter(Boolean) as NavItem[],
     [visibleItems],
   )
   const overigItems = useMemo(() => {
-    const rest = visibleItems.filter((i) => !PRIMARY_LABELS.includes(i.label))
+    const rest = visibleItems.filter((i) => !PRIMAIRE_LABELS.includes(i.label))
     return isSupportAdmin ? [...rest, SUPPORT_ITEM] : rest
   }, [visibleItems, isSupportAdmin])
-  const overigActive = overigItems.some((i) => location.pathname.startsWith(i.path))
+
+  // Modules die de gebruiker uit zijn menu heeft gehaald. De zijbalk toont die
+  // onder "Overig"; zonder dit blok waren ze in topbalk-modus onbereikbaar,
+  // want de bewerk-modus bestaat alleen in de zijbalk.
+  const verborgenItems = useMemo(() => {
+    if (isMobieleNav) return []
+    const zichtbaar = new Set(visibleItems.map((i) => i.label))
+    return ALLE_MODULES.filter((i) => !zichtbaar.has(i.label))
+  }, [visibleItems, isMobieleNav])
+
+  const overigActive = [...overigItems, ...verborgenItems].some((i) => location.pathname.startsWith(i.path))
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -256,7 +239,7 @@ export function TopNav() {
           })}
 
           {/* Overig · minder gebruikte modules in een strak lijstje */}
-          {overigItems.length > 0 && (
+          {overigItems.length + verborgenItems.length > 0 && (
             <div ref={overigRef} className="relative flex items-center">
               <button
                 type="button"
@@ -289,12 +272,12 @@ export function TopNav() {
                         onPointerEnter={() => prefetchRoute(item.path)}
                         onClick={() => setOverigOpen(false)}
                         className={cn(
-                          'flex items-center gap-2.5 px-2.5 py-2 rounded-[9px] text-[13px] font-medium transition-colors',
+                          'group flex items-center gap-2.5 px-2.5 py-2 rounded-[9px] text-[13px] font-medium transition-colors',
                           isActive ? 'text-foreground bg-[hsl(38,20%,95.5%)] dark:bg-white/[0.06]' : 'text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06]',
                         )}
                       >
                         <Icon className="w-4 h-4" style={{ color: isActive ? item.color : undefined, opacity: isActive ? 1 : 0.6 }} />
-                        <span>{item.label}<span className="text-flame">.</span></span>
+                        <span>{item.label}<span className={cn('transition-colors', isActive ? 'text-flame' : 'text-transparent group-hover:text-flame')}>.</span></span>
                         {item.path === '/support' && supportAttentie > 0 && (
                           <span className="ml-auto inline-flex items-center justify-center text-white font-bold" style={{ minWidth: 16, height: 16, padding: '0 4px', fontSize: 10, borderRadius: 999, backgroundColor: '#F15025' }}>
                             {supportAttentie}
@@ -303,6 +286,32 @@ export function TopNav() {
                       </NavLink>
                     )
                   })}
+
+                  {verborgenItems.length > 0 && (
+                    <>
+                      <div className="h-px bg-border/50 mx-2 my-1.5" />
+                      <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Niet in je menu</div>
+                      {verborgenItems.map((item) => {
+                        const isActive = location.pathname.startsWith(item.path)
+                        const Icon = item.icon
+                        return (
+                          <NavLink
+                            key={item.path}
+                            to={item.path}
+                            onPointerEnter={() => prefetchRoute(item.path)}
+                            onClick={() => setOverigOpen(false)}
+                            className={cn(
+                              'group flex items-center gap-2.5 px-2.5 py-2 rounded-[9px] text-[13px] font-medium transition-colors',
+                              isActive ? 'text-foreground bg-[hsl(38,20%,95.5%)] dark:bg-white/[0.06]' : 'text-foreground/75 hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06]',
+                            )}
+                          >
+                            <Icon className="w-4 h-4" style={{ color: isActive ? item.color : undefined, opacity: isActive ? 1 : 0.6 }} />
+                            <span>{item.label}<span className={cn('transition-colors', isActive ? 'text-flame' : 'text-transparent group-hover:text-flame')}>.</span></span>
+                          </NavLink>
+                        )
+                      })}
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -472,7 +481,7 @@ export function TopNav() {
                   >
                     <Icon className="w-[18px] h-[18px]" style={isActive ? { color: item.color } : { opacity: 0.4 }} />
                   </div>
-                  <span>{item.label}<span className="text-flame">.</span></span>
+                  <span>{item.label}<span className={cn(isActive ? 'text-flame' : 'text-transparent')}>.</span></span>
                 </NavLink>
               )
             })}
@@ -489,7 +498,7 @@ export function TopNav() {
               <div className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-muted/30">
                 <Settings className="w-[18px] h-[18px]" style={{ opacity: 0.4 }} />
               </div>
-              <span>Instellingen<span className="text-flame">.</span></span>
+              <span>Instellingen<span className={cn(location.pathname.startsWith('/instellingen') ? 'text-flame' : 'text-transparent')}>.</span></span>
             </NavLink>
           </nav>
 

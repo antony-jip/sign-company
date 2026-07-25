@@ -51,6 +51,7 @@ import { PortaalTab } from './PortaalTab'
 import { SidebarTab } from './SidebarTab'
 import { TeamledenTab } from './TeamledenTab'
 import { AbonnementTab } from './AbonnementTab'
+import { MijnFacturenTab } from './MijnFacturenTab'
 import { GeneralLedgerSettings } from '../financial/GeneralLedgerSettings'
 import { VATCodesSettings } from '../financial/VATCodesSettings'
 import { DiscountsSettings } from '../financial/DiscountsSettings'
@@ -107,6 +108,9 @@ const settingsGroups: SettingsGroup[] = [
     ]},
     { id: 'financieel', label: 'Abonnement', icon: CreditCard, tabs: [
       { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
+    ]},
+    { id: 'mijn-facturen', label: 'Mijn facturen', icon: Receipt, tabs: [
+      { id: 'mijn-facturen', label: 'Mijn facturen', icon: Receipt },
     ]},
     { id: 'apparaten', label: 'Beveiliging', icon: Shield, tabs: [
       { id: 'beveiliging', label: 'Beveiliging', icon: Shield },
@@ -213,6 +217,7 @@ function renderTabContent(tabId: string) {
     case 'forgie': return <ForgieTab />
     case 'teamleden': return <TeamledenTab />
     case 'abonnement': return <AbonnementTab />
+    case 'mijn-facturen': return <MijnFacturenTab />
     case 'grootboek': return <GeneralLedgerSettings />
     case 'btw-codes': return <VATCodesSettings />
     case 'kortingen': return <DiscountsSettings />
