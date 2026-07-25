@@ -12,8 +12,6 @@ import {
   Plus,
   ArrowRight,
   CalendarClock,
-  FileText,
-  Download,
   MessageCircle,
   Phone,
 } from 'lucide-react'
@@ -31,22 +29,6 @@ const FEATURES = [
   'Eenvoudig data overzetten',
 ]
 
-interface Factuurrij {
-  id: string
-  nummer: string
-  datum: string
-  bedrag_excl: number
-  btw_bedrag: number
-  bedrag_incl: number
-  periode_start: string | null
-  periode_eind: string | null
-  pdf_url: string | null
-}
-
-function formatBedrag(n: number): string {
-  return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(n)
-}
-
 function formatDatum(iso: string): string {
   return new Date(iso).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
 }
@@ -59,7 +41,6 @@ export function AbonnementTab() {
   const [bevestigOpzeggen, setBevestigOpzeggen] = useState(false)
   const [opgezegdTot, setOpgezegdTot] = useState<string | null>(organisatie?.abonnement_actief_tot ?? null)
   const [volgendeIncasso, setVolgendeIncasso] = useState<string | null>(null)
-  const [facturen, setFacturen] = useState<Factuurrij[]>([])
   // De poll-lus na terugkomst van Mollie mag maar één keer starten, en mag niet
   // opgeruimd worden door een re-render: het wegstrepen van de query-parameter
   // veroorzaakt er zelf een.
@@ -90,17 +71,6 @@ export function AbonnementTab() {
     return () => { geannuleerd = true }
   }, [trialStatus, session?.access_token, organisatie?.mollie_subscription_id])
 
-  useEffect(() => {
-    if (!session?.access_token) return
-    let geannuleerd = false
-    fetch('/api/abonnement-facturen', {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (!geannuleerd && Array.isArray(d?.facturen)) setFacturen(d.facturen) })
-      .catch(() => { /* lijst is aanvullend, niet blokkerend */ })
-    return () => { geannuleerd = true }
-  }, [session?.access_token, trialStatus])
 
   useEffect(() => {
     if (terugkomstAfgehandeld.current) return
@@ -419,53 +389,6 @@ export function AbonnementTab() {
         </div>
       </div>
 
-      {facturen.length > 0 && (
-        <div>
-          <h3 className="text-[15px] font-bold text-foreground">Facturen</h3>
-          <p className="text-[13px] text-muted-foreground mb-4">
-            Elke maandelijkse incasso levert een factuur op. Je krijgt hem ook per e-mail.
-          </p>
-
-          <div className="rounded-xl border border-border overflow-hidden">
-            {facturen.map((f, i) => (
-              <div
-                key={f.id}
-                className={`flex items-center gap-4 px-5 py-3.5 ${i > 0 ? 'border-t border-border' : ''}`}
-              >
-                <FileText className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-semibold text-foreground font-mono">{f.nummer}</p>
-                  <p className="text-[12px] text-muted-foreground">
-                    {formatDatum(f.datum)}
-                    {f.periode_start && f.periode_eind && (
-                      <> · periode {formatDatum(f.periode_start)} t/m {formatDatum(f.periode_eind)}</>
-                    )}
-                  </p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-[13px] font-mono text-foreground">{formatBedrag(f.bedrag_excl)}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {formatBedrag(f.bedrag_incl)} incl. btw
-                  </p>
-                </div>
-                {f.pdf_url ? (
-                  <a
-                    href={f.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-petrol hover:opacity-70 transition-opacity flex-shrink-0"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    PDF
-                  </a>
-                ) : (
-                  <span className="text-[11px] text-muted-foreground flex-shrink-0">geen PDF</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
