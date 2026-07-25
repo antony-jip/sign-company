@@ -191,14 +191,22 @@ async function haalPartijen(organisatieId: string): Promise<{
   return {
     doen: {
       ...leegBedrijf(),
-      bedrijfsnaam: doenProfiel.bedrijfsnaam || 'doen.',
+      // De abonnementsfactuur komt van doen., niet van het bedrijf waar het
+      // profiel toevallig bij hoort. Alleen de zakelijke gegevens hieronder
+      // (KVK, btw, IBAN, adres) blijven uit dat profiel komen.
+      bedrijfsnaam: 'doen.',
       adres: doenProfiel.bedrijfs_adres || '',
       email: doenProfiel.bedrijfs_email || '',
       telefoon: doenProfiel.bedrijfs_telefoon || '',
       kvk: doenProfiel.kvk_nummer || '',
       btw: doenProfiel.btw_nummer || '',
       iban: doenProfiel.iban || '',
-      logoUrl: doenProfiel.logo_url || '',
+      // Bewust leeg: de abonnementsfactuur komt altijd van doen. zelf. Het
+      // profiel levert de zakelijke gegevens (KVK, btw, IBAN), maar niet het
+      // beeldmerk. Dat profiel hoort bij Sign Company en zette dus het
+      // verkeerde logo op de factuur. Leeg laten laat het briefhoofd
+      // terugvallen op het doen.-woordmerk (zie bouwFactuurPdf).
+      logoUrl: '',
     },
     klant: {
       ...leegBedrijf(),

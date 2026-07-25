@@ -65,13 +65,8 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 const MONTHLY_LIMIT = 5.0
 
 const PROMPTS: Record<string, string> = {
-  'rewrite-professional': 'Herschrijf deze email professioneler en zakelijker. Behoud de boodschap. Antwoord alleen met de herschreven tekst.\n\nEmail:\n{text}',
-  'rewrite-shorter': 'Maak deze email korter en bondiger. Behoud de kernboodschap. Antwoord alleen met de kortere versie.\n\nEmail:\n{text}',
-  'formalize': 'Herschrijf deze informele tekst als een zakelijke email in het Nederlands met aanhef en afsluiting. Antwoord alleen met de email tekst.\n\nInformele tekst:\n{text}',
-  'write-followup': 'Schrijf een korte, beleefde follow-up email in het Nederlands. Er is {context} dagen geen reactie geweest. Niet opdringerig maar wel duidelijk. Antwoord alleen met de email tekst.\n\nOriginele email:\n{text}',
   'summarize': 'Vat deze email samen in 2-3 korte zinnen in het Nederlands. Antwoord alleen met de samenvatting.\n\nEmail:\n{text}',
   'summarize-thread': 'Je vat een e-mailconversatie samen voor het projectteam van een signing-bedrijf. Focus op: (1) wat de klant heeft gevraagd of bevestigd, (2) welke afspraken zijn gemaakt — data, prijzen, leveringen, materialen, (3) welke openstaande vragen er nog zijn, (4) huidige status. Schrijf maximaal 5 korte bullets, in het Nederlands. Begin elke bullet met een gedachtenstreepje. Antwoord alleen met de bullets, geen aanhef of slotzin.\n\nConversatie (chronologisch, oudste eerst):\n{text}',
-  'translate-en': 'Vertaal deze email naar het Engels. Behoud de toon. Antwoord alleen met de vertaling.\n\nEmail:\n{text}',
   'translate-nl': 'Vertaal deze email naar het Nederlands. Behoud de toon. Antwoord alleen met de vertaling.\n\nEmail:\n{text}',
   'generate-reply': 'Schrijf een kort en professioneel antwoord op deze email in het Nederlands. Antwoord alleen met de reply-tekst.\n\nEmail:\n{text}',
   'write-email': 'Schrijf een volledige, professionele e-mail in het Nederlands op basis van de opdracht van de gebruiker. Gebruik een passende aanhef en afsluiting en schrijf zo uitgebreid en informatief als de opdracht vraagt. Antwoord alleen met de e-mailtekst, zonder onderwerp-regel.\n\nContext (onderwerp en ontvanger):\n{context}\n\nOpdracht van de gebruiker:\n{text}',
@@ -88,7 +83,7 @@ const PROMPTS: Record<string, string> = {
 const MODEL_PER_ACTIE: Record<string, string> = {
   'write-lead-email': 'claude-opus-4-8',
 }
-const STANDAARD_MODEL = 'claude-sonnet-4-6'
+const STANDAARD_MODEL = 'claude-sonnet-5'
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -117,14 +112,19 @@ async function checkUsageLimit(userId: string): Promise<boolean> {
 
 // Tarief per miljoen tokens, per model. Zonder deze splitsing werd een
 // Opus-call op Sonnet-tarief geteld en liep het maandbudget stil te ver door.
+// Sonnet 5 staat tot 31-08-2026 op introductieprijs ($2/$10); we rekenen met
+// het reguliere tarief zodat het maandbudget niet te laag wordt ingeschat.
+// Let op: Sonnet 5 gebruikt een nieuwe tokenizer die ~30% meer tokens telt
+// voor dezelfde tekst, dus de schatting moet op echte data geijkt worden.
 const TARIEVEN: Record<string, { in: number; uit: number }> = {
   'claude-opus-4-8': { in: 5, uit: 25 },
+  'claude-sonnet-5': { in: 3, uit: 15 },
   'claude-sonnet-4-6': { in: 3, uit: 15 },
 }
 
 async function updateUsage(userId: string, inputTokens: number, outputTokens: number, model: string): Promise<void> {
   const maand = getCurrentMonth()
-  const tarief = TARIEVEN[model] || TARIEVEN['claude-sonnet-4-6']
+  const tarief = TARIEVEN[model] || TARIEVEN['claude-sonnet-5']
   const kosten = (inputTokens / 1_000_000 * tarief.in) + (outputTokens / 1_000_000 * tarief.uit)
 
   const { data: existing } = await supabase
@@ -161,7 +161,7 @@ async function updateUsage(userId: string, inputTokens: number, outputTokens: nu
 
 function buildSystemPrompt(action: string, context: DaanContext): string {
   if (!context.hasContext) return ''
-  if (action === 'translate-en' || action === 'translate-nl') return ''
+  if (action === 'translate-nl') return ''
 
   const onderdelen: string[] = []
   if (context.bedrijfscontext) onderdelen.push(`Over het bedrijf: ${context.bedrijfscontext}`)
@@ -328,9 +328,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Adaptive thinking staat expliciet aan: met thinking uit schrijft
         // Opus 4.8 zijn afwegingen soms in het zichtbare antwoord, en dat
         // komt hier ongefilterd in de mailtekst terecht.
+        //
+        // De korte acties zetten thinking expliciet UIT. Op Sonnet 4.6
+        // betekende een ontbrekend thinking-veld vanzelf "niet nadenken",
+        // maar op Sonnet 5 is adaptive de default: dan moeten denken en
+        // antwoord samen in 1024 tokens en kapt het antwoord midden in een
+        // zin af. Weglaten van dit veld is dus geen optie meer.
         ...(MODEL_PER_ACTIE[action]
           ? { max_tokens: 4000, thinking: { type: 'adaptive' }, output_config: { effort: 'low' } }
-          : { max_tokens: 1024 }),
+          : { max_tokens: 1024, thinking: { type: 'disabled' } }),
         ...(systemPrompt ? { system: systemPrompt } : {}),
         messages: [{ role: 'user', content: prompt }],
       }),

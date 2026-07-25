@@ -2,13 +2,8 @@ import supabase, { isSupabaseConfigured } from './supabaseClient'
 import { gooiBijBudgetError } from '@/lib/aiBudgetError'
 
 export type ForgieAction =
-  | 'rewrite-professional'
-  | 'rewrite-shorter'
-  | 'formalize'
-  | 'write-followup'
   | 'summarize'
   | 'summarize-thread'
-  | 'translate-en'
   | 'translate-nl'
   | 'generate-reply'
   | 'write-email'

@@ -18,11 +18,13 @@ interface EmailReaderAIToolbarProps {
   disabled?: boolean
 }
 
-type ReaderAction = 'translate-nl' | 'translate-en' | 'copy'
+type ReaderAction = 'translate-nl' | 'copy'
 
+// Alleen naar het Nederlands vertalen. Je leest hier mail van een ander, en
+// dat is voor een NL-gebruiker af en toe een buitenlandse leverancier. De
+// omgekeerde richting (naar het Engels) hielp niemand: de lezer las het al.
 const ACTIONS: { id: ReaderAction; label: string; icon: React.ElementType }[] = [
-  { id: 'translate-nl', label: 'NL', icon: Languages },
-  { id: 'translate-en', label: 'EN', icon: Languages },
+  { id: 'translate-nl', label: 'Vertaal', icon: Languages },
   { id: 'copy', label: 'Kopieer', icon: Copy },
 ]
 

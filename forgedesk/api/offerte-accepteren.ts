@@ -44,19 +44,7 @@ function getClientIp(req: VercelRequest): string {
   return 'unknown'
 }
 
-const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || ''
 const APP_URL = process.env.APP_URL || 'https://app.doen.team'
-
-function decrypt(encrypted: string): string {
-  if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
-  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
-  const [ivHex, encHex] = encrypted.split(':')
-  const iv = Buffer.from(ivHex, 'hex')
-  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
-  let decrypted = decipher.update(encHex, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-  return decrypted
-}
 
 // ---- Inline email template (Vercel bundelt geen lokale imports in api/) ----
 function escapeHtml(str: string): string {

@@ -679,8 +679,14 @@ ${JSON.stringify(dataContext, null, 2)}`
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
+        model: 'claude-sonnet-5',
+        // Als enige route hier tools aan (stel_actie_voor). Thinking uitzetten
+        // verlaagt op Sonnet 5 meetbaar de neiging om een tool aan te roepen,
+        // en dan stelt Daan stilletjes minder acties voor. Dus adaptive aan,
+        // met genoeg budget zodat denken én antwoord passen.
+        thinking: { type: 'adaptive' },
+        output_config: { effort: 'low' },
+        max_tokens: 6000,
         system: [
           { type: 'text', text: systemStatic, cache_control: { type: 'ephemeral' } },
           { type: 'text', text: systemDynamic },

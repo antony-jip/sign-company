@@ -44,7 +44,6 @@ function getClientIp(req: VercelRequest): string {
   return 'unknown'
 }
 
-const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || ''
 const APP_URL = process.env.VITE_APP_URL || 'https://app.doen.team'
 
 // ---- Inline email template (Vercel bundelt geen lokale imports in api/) ----
@@ -71,18 +70,6 @@ function buildPortalEmailHtml(params: {
     ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;"><strong>${escapeHtml(bedrijfsnaam)}</strong></span>`
     : ''
   return `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin: 0; padding: 0; background-color: ${bgOuter}; -webkit-font-smoothing: antialiased;"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: ${bgOuter}; padding: 40px 0;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 0 0 24px 0; text-align: center;">${logoHtml}</td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: ${bgCard}; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.04);"><tr><td style="padding: 40px 40px 36px 40px;"><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0 0 24px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; line-height: 1.3;">${escapeHtml(heading)}</td></tr>${itemBlock}${quoteBlock}${groetBlock}${ctaBlock}</table></td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 24px 0 0 0; text-align: center; font-family: 'DM Sans', Arial, sans-serif; font-size: 12px; color: ${textLight}; line-height: 1.6;">${footerText}</td></tr></table></td></tr></table></body></html>`
-}
-// ---- Einde inline email template ----
-
-function decrypt(encrypted: string): string {
-  if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
-  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
-  const [ivHex, encHex] = encrypted.split(':')
-  const iv = Buffer.from(ivHex, 'hex')
-  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
-  let decrypted = decipher.update(encHex, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-  return decrypted
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

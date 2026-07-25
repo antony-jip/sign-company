@@ -191,7 +191,10 @@ async function generatePromptWithClaude(
   }
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
+    // Sonnet 5 zet adaptive thinking standaard aan; dat zou hier uit
+    // hetzelfde max_tokens-budget komen en het antwoord afkappen.
+    thinking: { type: 'disabled' },
     max_tokens: 1536,
     messages: [
       {

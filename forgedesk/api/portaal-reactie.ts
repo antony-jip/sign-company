@@ -12,19 +12,7 @@ async function isRateLimited(ip: string, endpoint: string, maxCount: number, win
   return data === true
 }
 import { createTransport } from 'nodemailer'
-import crypto from 'crypto'
 
-const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
-
-function decrypt(encrypted: string): string {
-  if (!ENCRYPTION_KEY) throw new Error('No encryption key')
-  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
-  const [ivHex, encHex] = encrypted.split(':')
-  const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
-  let decrypted = decipher.update(encHex, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-  return decrypted
-}
 
 // Spiegel van DEFAULT_INSTELLINGEN in api/portaal-get.ts voor de velden die
 // hier gehandhaafd worden — berichten staan standaard UIT.

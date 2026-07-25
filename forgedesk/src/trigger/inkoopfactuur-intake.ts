@@ -260,7 +260,10 @@ Bedragen altijd als number, niet string met comma.`;
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-5",
+        // Sonnet 5 zet adaptive thinking standaard aan; dat zou hier uit
+        // hetzelfde max_tokens-budget komen en het antwoord afkappen.
+        thinking: { type: "disabled" },
         max_tokens: 4096,
         system: systemPrompt,
         messages: [
