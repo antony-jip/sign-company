@@ -281,6 +281,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let incremental = false
     let remaining = 0
 
+    // Buiten het else-blok, want de flags-resync verderop gebruikt hem ook.
+    // Stond hij binnen dat blok, dan gooide die regel een ReferenceError die
+    // stil werd weggevangen, waardoor elders-gelezen mail hier ongelezen bleef.
+    const gevraagdeLimit = Number(limit)
+    const veiligeLimit = Number.isFinite(gevraagdeLimit) && gevraagdeLimit > 0
+      ? Math.min(Math.floor(gevraagdeLimit), MAX_PER_RUN)
+      : 100
+
     if (stateBruikbaar) {
       incremental = true
       const lastSeen = Number(syncState!.last_seen_uid)
@@ -295,10 +303,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // een mailbox met tienduizenden berichten alles in één run op te halen
       // en loopt de functie tegen maxDuration aan. De rest volgt vanzelf in
       // de volgende call, want daarna is de sync-state incrementeel.
-      const gevraagd = Number(limit)
-      const veiligeLimit = Number.isFinite(gevraagd) && gevraagd > 0
-        ? Math.min(Math.floor(gevraagd), MAX_PER_RUN)
-        : 100
       const fetchCount = Math.min(veiligeLimit, total)
       const startSeq = Math.max(1, total - fetchCount + 1)
       fetchQuery = { seq: `${startSeq}:${total}` }

@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { LeadsPaneel } from './LeadsPaneel'
-import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail } from '@/services/gmailService'
+import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, markeerEmailGelezenOpServer, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail, emailImapActie } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
 import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers } from '@/services/emailService'
@@ -46,6 +46,7 @@ const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] 
   { id: 'gesnoozed', label: 'Gesnoozed', icon: Moon },
   { id: 'concepten', label: 'Concepten', icon: FileEdit },
   { id: 'leads', label: 'Leads', icon: Target },
+  { id: 'archief', label: 'Archief', icon: Archive },
   { id: 'prullenbak', label: 'Prullenbak', icon: Trash2 },
 ]
 
@@ -57,7 +58,7 @@ const filtersList: { id: FilterType; label: string }[] = [
   { id: 'bijlagen', label: 'Bijlagen' },
 ]
 
-const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 'gesnoozed', 'prullenbak', 'sales-wacht', 'sales-beantwoord', 'leads']
+const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 'gesnoozed', 'prullenbak', 'archief', 'sales-wacht', 'sales-beantwoord', 'leads']
 
 // Mobile drawer surfaces these two as primary; the rest sits below a divider.
 const PRIMARY_FOLDER_IDS = new Set<EmailFolder>(['inbox', 'sales-wacht'])
@@ -69,6 +70,7 @@ const DB_MAP_FOLDERS: Partial<Record<EmailFolder, string>> = {
   verzonden: 'verzonden',
   concepten: 'concepten',
   prullenbak: 'prullenbak',
+  archief: 'archief',
 }
 
 export function EmailLayout() {
@@ -496,6 +498,10 @@ export function EmailLayout() {
         const next = prev.map((e) => {
           if (e.snoozed_until && e.snoozed_until <= now) {
             changed = true
+            // Ook wegschrijven. Zonder deze regel werd de mail alleen in de
+            // state gewekt en zette de eerstvolgende poll snoozed_until weer
+            // terug uit de database: "morgenochtend" werd dan "voorgoed weg".
+            updateEmail(e.id, { snoozed_until: null, map: 'inbox' }).catch(() => {})
             return { ...e, snoozed_until: undefined, map: 'inbox' }
           }
           return e
@@ -624,7 +630,10 @@ export function EmailLayout() {
       return b.ts - a.ts
     })
     return withTs.map(x => x.e)
-  }, [emails, salesEmails, selectedFolder, searchQuery, filter])
+    // searchResults hoort in de deps: zonder die entry bleef de lijst hangen op
+    // de client-side terugval over de geladen mails, en werden de FTS-resultaten
+    // van de server pas zichtbaar als een andere dep toevallig veranderde.
+  }, [emails, salesEmails, selectedFolder, searchQuery, filter, searchResults])
 
   // Thread grouping
   const threadedEmails = useMemo(() => {
@@ -850,7 +859,8 @@ export function EmailLayout() {
 
   const handleBulkArchive = useCallback(() => {
     const ids = Array.from(checkedEmails)
-    setEmails((prev) => prev.filter((e) => !ids.includes(e.id)))
+    setEmails((prev) => prev.map((e) => ids.includes(e.id) ? { ...e, map: 'archief', labels: ['archief'] } : e))
+    ids.forEach((id) => updateEmail(id, { map: 'archief', labels: ['archief'] }).catch(() => {}))
     setCheckedEmails(new Set())
     toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} gearchiveerd`)
   }, [checkedEmails])
@@ -912,18 +922,59 @@ export function EmailLayout() {
     updateEmail(email.id, { gelezen: newGelezen }).catch(() => {})
   }, [])
 
+  // Schrijft de actie door naar de echte mailbox. Staat EMAIL_IMAP_WRITEBACK
+  // uit, dan geeft het endpoint {overgeslagen:true} en blijft doen. de enige
+  // waarheid — precies het gedrag van vóór deze koppeling.
+  //
+  // Alleen aanroepen ná het verlopen van de 5s-undobuffer: dit endpoint kent
+  // geen omgekeerde actie, dus een undo ná een IMAP-move is niet terug te
+  // draaien. De bulk-acties hebben die buffer niet en zijn daarom bewust niet
+  // gekoppeld.
+  const imapDoorschrijven = useCallback(async (actie: 'trash' | 'purge' | 'archive', ids: string[]) => {
+    if (ids.length === 0) return
+    try {
+      const uitkomst = await emailImapActie(actie, ids)
+      if (uitkomst.overgeslagen) return
+      if ((uitkomst.mislukt ?? 0) > 0) {
+        toast.warning('Je mailbox is niet bijgewerkt', {
+          description: 'De mail is in doen. verplaatst, maar bij je mailprovider niet. Vernieuw om te zien wat er echt staat.',
+        })
+      }
+    } catch {
+      toast.warning('Je mailbox is niet bijgewerkt', {
+        description: 'De mail is in doen. verplaatst, maar bij je mailprovider niet.',
+      })
+    }
+  }, [])
+
   const handleArchive = useCallback((email: Email) => {
+    // Archiveren schreef hiervoor niets weg: alleen uit de state filteren, dus
+    // na een refresh stond de mail er weer. Nu naar map 'archief', met dezelfde
+    // 5s-undobuffer als verwijderen zodat undo geen DB-schrijfactie kost.
+    const snapshot = { map: email.map, labels: email.labels }
     viewTransition(() => {
-      setEmails((prev) => prev.filter((e) => e.id !== email.id))
+      setEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, map: 'archief', labels: ['archief'] } : e))
       setSelectedEmail(null)
       setViewMode('idle')
     }, 'back')
+    const flush = () => {
+      updateEmail(email.id, { map: 'archief', labels: ['archief'] }).catch(() => {})
+      imapDoorschrijven('archive', [email.id])
+      pendingDeleteTimersRef.current.delete(email.id)
+    }
+    const timer = setTimeout(flush, 5000)
+    pendingDeleteTimersRef.current.set(email.id, { timer, flush })
     toast.success('Email gearchiveerd', {
       duration: 5000,
       action: {
         label: 'Ongedaan maken',
         onClick: () => {
-          setEmails((prev) => (prev.some((e) => e.id === email.id) ? prev : [email, ...prev]))
+          const existing = pendingDeleteTimersRef.current.get(email.id)
+          if (existing) {
+            clearTimeout(existing.timer)
+            pendingDeleteTimersRef.current.delete(email.id)
+          }
+          setEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, ...snapshot } : e))
         },
       },
     })
@@ -943,6 +994,9 @@ export function EmailLayout() {
     }, 'back')
     // Vertraag de DB-mutatie met 5s zodat undo nog kan ingrijpen
     const flush = () => {
+      // Volgorde telt: eerst IMAP. Purge weigert zodra de rij weg is, want dan
+      // kan het endpoint de bronmap niet meer tegen de Trash-map controleren.
+      imapDoorschrijven(wasInTrash ? 'purge' : 'trash', [email.id])
       if (wasInTrash) {
         deleteEmailDb(email.id).catch(() => {})
       } else {
@@ -1365,7 +1419,20 @@ export function EmailLayout() {
   }, [])
 
   // ─── Handlers ───
-  const handleSelectEmail = useCallback(async (email: Email, e?: React.MouseEvent) => {
+  // Het ophalen van een body markeert niets meer, want prefetch en hover
+  // lopen over datzelfde pad. Alleen het openen van een mail zet de
+  // leesstatus door naar de database en de echte mailbox.
+  const markeerGelezen = useCallback((email: Email, folder: EmailFolder) => {
+    if (email.gelezen) return
+    updateEmail(email.id, { gelezen: true }).catch(() => {})
+    const uid = Number(email.gmail_id || email.id)
+    if (isNaN(uid)) return
+    markeerEmailGelezenOpServer(uid, IMAP_FOLDER_MAP[folder] || 'INBOX').catch((err) => {
+      logger.error('Markeren als gelezen mislukt:', err)
+    })
+  }, [])
+
+  const handleSelectEmail = useCallback(async (email: Email, e?: React.MouseEvent, markeerAlsGelezen = true) => {
     // Shift / Cmd / Ctrl klik → toggle checkbox ipv mail openen.
     // Zo kan je makkelijk meerdere mails selecteren voor bulk acties.
     if (e && (e.shiftKey || e.metaKey || e.ctrlKey)) {
@@ -1373,17 +1440,20 @@ export function EmailLayout() {
       return
     }
     // Normale klik: open de mail
+    if (markeerAlsGelezen) markeerGelezen(email, selectedFolder)
     viewTransition(() => {
-      setEmails(prev => prev.map(em => em.id === email.id ? { ...em, gelezen: true } : em))
-      setSelectedEmail({ ...email, gelezen: true })
+      if (markeerAlsGelezen) {
+        setEmails(prev => prev.map(em => em.id === email.id ? { ...em, gelezen: true } : em))
+      }
+      setSelectedEmail(markeerAlsGelezen ? { ...email, gelezen: true } : email)
       setViewMode('reading')
     }, 'forward')
 
     // Load body in background (async)
     loadEmailBody(email, selectedFolder).then((withBody) => {
-      setSelectedEmail(withBody)
+      setSelectedEmail(markeerAlsGelezen ? withBody : { ...withBody, gelezen: email.gelezen })
     })
-  }, [loadEmailBody, selectedFolder, toggleCheckEmail])
+  }, [loadEmailBody, selectedFolder, toggleCheckEmail, markeerGelezen])
 
   // Verlopen concepten opruimen bij het openen van de module; zonder dit
   // blijven ze eeuwig in localStorage staan.
@@ -1451,6 +1521,8 @@ export function EmailLayout() {
   // Vult de lege reader-kolom direct na openen van het Email-tab. Eén keer
   // per sessie zodat handleBack niet meteen opnieuw triggert; alleen voor
   // de inbox en alleen op desktop (mobiel is de lijst zelf de hoofdview).
+  // Zonder markeren: de gebruiker koos deze mail niet, dus hij blijft
+  // ongelezen tot hij hem zelf aanklikt.
   const autoOpenedRef = useRef(false)
   useEffect(() => {
     if (autoOpenedRef.current) return
@@ -1460,7 +1532,7 @@ export function EmailLayout() {
     if (selectedFolder !== 'inbox') return
     if (threadedEmails.length === 0) return
     autoOpenedRef.current = true
-    handleSelectEmail(threadedEmails[0])
+    handleSelectEmail(threadedEmails[0], undefined, false)
   }, [isDesktop, isLoading, viewMode, selectedFolder, threadedEmails, handleSelectEmail])
 
   const handleSendEmail = useCallback(async (data: { to: string; subject: string; cc?: string; bcc?: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
@@ -2404,6 +2476,7 @@ export function EmailLayout() {
               emailTotal={threadedEmails.length}
               allEmails={emails}
               imapFolder={IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'}
+              eigenAdres={user?.email}
               prefetchedAttachmentBytes={attachmentBytesCacheRef.current.get(selectedEmail.id)}
               prefetchedAttachmentUrls={attachmentUrlsCacheRef.current.get(selectedEmail.id)}
               onTogglePin={handleTogglePin}
