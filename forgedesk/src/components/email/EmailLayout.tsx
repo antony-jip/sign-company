@@ -1521,8 +1521,8 @@ export function EmailLayout() {
   // Vult de lege reader-kolom direct na openen van het Email-tab. Eén keer
   // per sessie zodat handleBack niet meteen opnieuw triggert; alleen voor
   // de inbox en alleen op desktop (mobiel is de lijst zelf de hoofdview).
-  // Zonder markeren: de gebruiker koos deze mail niet, dus hij blijft
-  // ongelezen tot hij hem zelf aanklikt.
+  // Zonder markeren bij het openen zelf: de gebruiker koos deze mail niet.
+  // De leestijd hieronder beslist of hij hem ook echt gelezen heeft.
   const autoOpenedRef = useRef(false)
   useEffect(() => {
     if (autoOpenedRef.current) return
@@ -1534,6 +1534,27 @@ export function EmailLayout() {
     autoOpenedRef.current = true
     handleSelectEmail(threadedEmails[0], undefined, false)
   }, [isDesktop, isLoading, viewMode, selectedFolder, threadedEmails, handleSelectEmail])
+
+  // ─── Leestijd: openstaande mail telt na twee seconden als gelezen ───
+  // Alleen de auto-open laat een mail ongelezen in de reader achter; een
+  // klik markeert meteen. Wie meteen doorklikt of wegnavigeert markeert
+  // niets, wie hem laat staan heeft hem gelezen. Zonder dit blijft juist
+  // de mail die je zit te lezen vetgedrukt in de lijst staan.
+  const LEESTIJD_MS = 2000
+  const selectedEmailRef = useRef<Email | null>(null)
+  selectedEmailRef.current = selectedEmail
+  const openOngelezenId = selectedEmail && !selectedEmail.gelezen ? selectedEmail.id : null
+  useEffect(() => {
+    if (!openOngelezenId || viewMode !== 'reading') return
+    const timer = setTimeout(() => {
+      const email = selectedEmailRef.current
+      if (!email || email.id !== openOngelezenId) return
+      markeerGelezen(email, selectedFolder)
+      setEmails((prev) => prev.map((e) => (e.id === openOngelezenId ? { ...e, gelezen: true } : e)))
+      setSelectedEmail((prev) => (prev?.id === openOngelezenId ? { ...prev, gelezen: true } : prev))
+    }, LEESTIJD_MS)
+    return () => clearTimeout(timer)
+  }, [openOngelezenId, viewMode, selectedFolder, markeerGelezen])
 
   const handleSendEmail = useCallback(async (data: { to: string; subject: string; cc?: string; bcc?: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
     try {
