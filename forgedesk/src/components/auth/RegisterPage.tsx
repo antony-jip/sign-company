@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { signUp } from '@/services/authService'
+import { CONTACT_URL } from '@/lib/contact'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -398,9 +399,14 @@ export function RegisterPage() {
         </div>
 
         <p className="mt-8 text-center text-[12px] text-muted-foreground">
-          Onbekend exportformaat? Mail{' '}
-          <a href="mailto:hello@doen.team" className="text-petrol dark:text-[#8FC3CC] font-semibold hover:underline underline-offset-4">
-            hello@doen.team
+          Onbekend exportformaat?{' '}
+          <a
+            href={CONTACT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-petrol dark:text-[#8FC3CC] font-semibold hover:underline underline-offset-4"
+          >
+            Laat het ons weten
           </a>
           . We kijken samen wat het beste werkt.
         </p>

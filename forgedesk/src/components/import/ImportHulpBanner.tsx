@@ -1,8 +1,5 @@
 import { ArrowUpRight } from 'lucide-react'
-
-// hello@doen.team is geen postbus die iemand leest · alle hulpvragen lopen
-// via het contactformulier op de site.
-const CONTACT_URL = 'https://doen.team/contact'
+import { CONTACT_URL } from '@/lib/contact'
 
 export function ImportHulpBanner() {
   return (

@@ -95,7 +95,7 @@ Drie dagen geleden ben je begonnen met doen. Hoe bevalt het? We helpen je graag 
 
 Open je dashboard: {{app_url}}
 
-Vragen? Mail ons op hello@doen.team.`,
+Vragen? Stel ze via doen.team/contact.`,
   },
   onboarding_dag7: {
     onderwerp: "Hoe gaat het met doen.?",
@@ -105,7 +105,7 @@ Een week onderweg met doen. Veel gebruikers vinden de combinatie offertes plus p
 
 Open je dashboard: {{app_url}}
 
-Vragen? Mail ons op hello@doen.team.`,
+Vragen? Stel ze via doen.team/contact.`,
   },
   trial_reminder_5: {
     onderwerp: "Nog 5 dagen in je proefperiode",

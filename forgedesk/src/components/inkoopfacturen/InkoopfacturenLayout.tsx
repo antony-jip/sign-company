@@ -116,7 +116,7 @@ export function InkoopfacturenLayout() {
       const usage = await getInkoopAIUsage()
       const remaining = usage.extract.remaining
       if (remaining <= 0) {
-        toast.error('AI-limiet bereikt. Mail hello@doen.team om te verhogen.')
+        toast.error('AI-limiet bereikt. Vraag een hogere limiet aan via doen.team/contact.')
         return
       }
       if (remaining < ids.length) {
@@ -150,7 +150,7 @@ export function InkoopfacturenLayout() {
     const capReached = truncatedByPreflight || capRaceHit
     if (capReached) {
       const totaal = ids.length
-      toast.error(`${gelukt} van ${totaal} verwerkt · AI-limiet bereikt. Mail hello@doen.team om te verhogen.`)
+      toast.error(`${gelukt} van ${totaal} verwerkt · AI-limiet bereikt. Vraag een hogere limiet aan via doen.team/contact.`)
     } else if (gelukt > 0) {
       toast.success(`${gelukt} factuur${gelukt > 1 ? 'en' : ''} geextraheerd`)
     } else if (laatsteFout) {

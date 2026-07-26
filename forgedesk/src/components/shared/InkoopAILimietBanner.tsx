@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useInkoopAIUsage, type RouteUsage } from '@/hooks/useInkoopAIUsage'
-
-const SUPPORT_EMAIL = 'hello@doen.team'
+import { CONTACT_URL } from '@/lib/contact'
 
 const ROUTE_LABEL: Record<'extract' | 'analyze', string> = {
   extract: 'inkoopfacturen',
@@ -17,7 +16,9 @@ type Props =
 function Cta({ children }: { children: React.ReactNode }) {
   return (
     <a
-      href={`mailto:${SUPPORT_EMAIL}`}
+      href={CONTACT_URL}
+      target="_blank"
+      rel="noopener noreferrer"
       className="underline font-semibold hover:no-underline"
     >
       {children}
@@ -46,7 +47,7 @@ function LokaalBanner({ route, usage }: { route: 'extract' | 'analyze'; usage: R
       <span className="text-center">
         Je organisatie nadert de AI-limiet voor {ROUTE_LABEL[route]}:{' '}
         <strong>{usage.used} van {usage.cap}</strong> deze maand
-        {isAdmin && <> · <Cta>Mail {SUPPORT_EMAIL} om te verhogen</Cta></>}
+        {isAdmin && <> · <Cta>vraag een hogere limiet aan</Cta></>}
       </span>
       <button
         onClick={handleDismiss}
@@ -78,7 +79,7 @@ function GlobaalBanner({ usage }: { usage: { extract: RouteUsage; analyze: Route
     >
       <span className="text-center">
         AI-limiet bereikt voor <strong>{labels}</strong>
-        {isAdmin && <> · <Cta>Mail {SUPPORT_EMAIL} om te verhogen</Cta></>}
+        {isAdmin && <> · <Cta>vraag een hogere limiet aan</Cta></>}
       </span>
     </div>
   )

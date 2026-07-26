@@ -257,7 +257,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await markCapHit(orgId).catch(() => { /* niet-kritiek */ })
       return res.status(429).json({
         error: 'AI-limiet bereikt',
-        message: `Je organisatie heeft de maandlimiet (${cap.cap}) voor AI-extractie van inkoopfacturen bereikt. Mail hello@doen.team om te verhogen.`,
+        message: `Je organisatie heeft de maandlimiet (${cap.cap}) voor AI-extractie van inkoopfacturen bereikt. Vraag een hogere limiet aan via doen.team/contact.`,
       })
     }
 

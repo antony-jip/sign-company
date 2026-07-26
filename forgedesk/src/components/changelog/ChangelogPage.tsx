@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Zap, ChevronRight, Mail, Sparkles, ArrowRight, MessageCircle } from 'lucide-react'
+import { Zap, ChevronRight, Sparkles, ArrowRight, ArrowUpRight, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CONTACT_URL } from '@/lib/contact'
 
 // ── Types ──
 
@@ -154,12 +155,14 @@ export function ChangelogPage() {
           </div>
 
           <a
-            href="mailto:hello@doen.team"
+            href={CONTACT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 h-9 px-4 rounded-xl text-[12px] font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
             style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}
           >
             <MessageCircle className="h-3.5 w-3.5" />
-            Suggestie? hello@doen.team
+            Suggestie? Laat het weten
           </a>
         </div>
       </div>
@@ -239,11 +242,13 @@ export function ChangelogPage() {
         <h3 className="text-[20px] font-bold text-white mb-2">Iets missen? Laat het weten.</h3>
         <p className="text-[14px] text-white/50 mb-5">We bouwen Doen. samen met onze gebruikers.</p>
         <a
-          href="mailto:hello@doen.team"
+          href={CONTACT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-2 h-11 px-6 text-[14px] font-bold text-petrol bg-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
         >
-          <Mail className="h-4 w-4" />
-          hello@doen.team
+          Neem contact op
+          <ArrowUpRight className="h-4 w-4" />
         </a>
       </div>
 
