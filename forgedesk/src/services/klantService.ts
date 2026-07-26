@@ -283,6 +283,29 @@ export async function getContactpersonenByKlant(klantId: string): Promise<Contac
   return (data || []) as ContactpersoonRecord[]
 }
 
+/**
+ * Zoekt de klant waar een e-mailadres als contactpersoon bij staat.
+ * Gebruikt door de e-mailmodule om een afzender aan een klant te herkennen,
+ * ook als het adres niet op de klantkaart zelf staat.
+ */
+export async function getKlantIdByContactEmail(email: string): Promise<string | null> {
+  const adres = (email || '').trim()
+  if (!adres || !isSupabaseConfigured() || !supabase) return null
+  const orgId = await getOrgId()
+  if (!orgId) return null
+  // % en _ zijn ilike-wildcards; escapen zodat een adres nooit breder matcht.
+  const patroon = adres.replace(/[%_\\]/g, '\\$&')
+  const { data, error } = await supabase
+    .from('contactpersonen')
+    .select('klant_id')
+    .eq('organisatie_id', orgId)
+    .not('klant_id', 'is', null)
+    .ilike('email', patroon)
+    .limit(1)
+  if (error) throw error
+  return (data?.[0]?.klant_id as string) || null
+}
+
 export async function createContactpersoonDB(data: Partial<ContactpersoonRecord>): Promise<ContactpersoonRecord> {
   if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
   const _orgId = await getOrgId()

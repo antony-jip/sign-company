@@ -70,6 +70,7 @@ export {
   getAllKlantLabels,
   getContactpersonenDB, getContactpersonenByKlant, getContactpersonenByLeverancier,
   createContactpersoonDB, updateContactpersoonDB, deleteContactpersoonDB,
+  getKlantIdByContactEmail,
   koppelContactAanKlant, ontkoppelContact,
   getKlantHistorie,
   getImportLogs, createImportLog, deleteImportLog, deleteAllImportLogs, opschonenAlleImportData,
