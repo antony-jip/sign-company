@@ -253,6 +253,10 @@ export interface ImportOperationResult {
   overgeslagen: number;
   fouten: number;
   foutMeldingen: string[];
+  /** Namen die zijn overgeslagen omdat ze al bestonden · zodat de gebruiker
+   *  kan controleren of dat terecht was en niet twee bedrijven met een
+   *  gelijkende naam stilzwijgend één zijn geworden. */
+  overgeslagenNamen?: string[];
 }
 
 export interface Project {

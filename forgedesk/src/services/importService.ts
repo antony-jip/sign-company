@@ -14,7 +14,8 @@ export function parseCSV(file: File): Promise<{ headers: string[]; rows: Record<
     const reader = new FileReader()
     reader.onload = (e) => {
       try {
-        let text = e.target?.result as string
+        const buffer = e.target?.result as ArrayBuffer
+        let text = buffer ? decodeerCsvTekst(buffer) : ''
         if (!text) {
           resolve({ headers: [], rows: [] })
           return
@@ -87,8 +88,24 @@ export function parseCSV(file: File): Promise<{ headers: string[]; rows: Record<
       }
     }
     reader.onerror = () => reject(new Error('Bestand kon niet gelezen worden'))
-    reader.readAsText(file, 'utf-8')
+    reader.readAsArrayBuffer(file)
   })
+}
+
+/**
+ * Exports uit oudere Nederlandse boekhoudpakketten zijn vaak Windows-1252,
+ * niet UTF-8. Dat blindelings als UTF-8 lezen maakte van "Café Zonneveld"
+ * stilzwijgend "Caf<?> Zonneveld" — een klantnaam die daarna fout in de
+ * database stond. We proberen daarom eerst strikt UTF-8; faalt dat, dan is
+ * het geen UTF-8 en lezen we het als Windows-1252 (dat kent geen ongeldige
+ * bytes, dus dit kan niet alsnog stuklopen).
+ */
+function decodeerCsvTekst(buffer: ArrayBuffer): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buffer)
+  } catch {
+    return new TextDecoder('windows-1252').decode(buffer)
+  }
 }
 
 // ============ VALIDATIE ============
@@ -248,12 +265,20 @@ export function normaliseerDatum(datum: string): string | null {
   return null
 }
 
-/** Bedrijfsnaam normaliseren voor matching: lowercase, strip "B.V.", "BV", etc. */
+/**
+ * Bedrijfsnaam normaliseren voor matching: lowercase, zonder rechtsvorm.
+ *
+ * "Holding" hoort hier NIET bij en stond er eerder wel in. Holding plus
+ * werkmaatschappij is de standaardconstructie in het MKB: "Bakker Holding
+ * B.V." en "Bakker B.V." zijn twee relaties met elk een eigen
+ * debiteurennummer. Die vielen op elkaar en de tweede werd stil overgeslagen
+ * als duplicaat — de klant was daarna weg zonder dat iemand het zag.
+ */
 export function normaliseerBedrijfsnaam(naam: string): string {
   return naam
     .trim()
     .toLowerCase()
-    .replace(/\b(b\.?v\.?|n\.?v\.?|v\.?o\.?f\.?|holding)\b/g, '')
+    .replace(/\b(b\.?v\.?|n\.?v\.?|v\.?o\.?f\.?)\b/g, '')
     .replace(/\.+$/, '')
     .replace(/\s{2,}/g, ' ')
     .trim()
@@ -262,6 +287,58 @@ export function normaliseerBedrijfsnaam(naam: string): string {
 // ============ IMPORT: BEDRIJFSDATA ============
 
 const CHUNK_SIZE = 500
+
+interface HistorieRegel {
+  klant_id: string | null
+  type: string
+  nummer: string
+  naam: string
+  datum: string | null
+  bedrag: number | null
+}
+
+/**
+ * Herkenpunt van één historieregel. Een offerte- of factuurnummer is uniek
+ * per klant, dus dat is de sleutel zodra hij er is. Ontbreekt het nummer,
+ * dan vallen we terug op de combinatie van omschrijving, datum en bedrag —
+ * ruwer, maar genoeg om hetzelfde bestand niet twee keer binnen te halen.
+ */
+function historieSleutel(regel: HistorieRegel): string {
+  const klant = regel.klant_id || 'losse-regel'
+  const nummer = regel.nummer.trim().toLowerCase()
+  if (nummer) return `${regel.type}|${klant}|${nummer}`
+  return `${regel.type}|${klant}|${regel.naam.trim().toLowerCase()}|${regel.datum || ''}|${regel.bedrag ?? ''}`
+}
+
+/** Sleutels van de historie die al in de database staat, gepagineerd. */
+async function laadHistorieSleutels(organisatieId: string): Promise<Set<string>> {
+  const sleutels = new Set<string>()
+  if (!isSupabaseConfigured() || !supabase) return sleutels
+
+  const pageSize = 1000
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from('klant_historie')
+      .select('klant_id,type,nummer,naam,datum,bedrag')
+      .eq('organisatie_id', organisatieId)
+      .range(offset, offset + pageSize - 1)
+    // Lukt het ophalen niet, dan importeren we liever met kans op dubbels
+    // dan dat we de hele import laten klappen.
+    if (error || !data || data.length === 0) break
+    for (const rij of data) {
+      sleutels.add(historieSleutel({
+        klant_id: rij.klant_id ?? null,
+        type: rij.type ?? '',
+        nummer: rij.nummer ?? '',
+        naam: rij.naam ?? '',
+        datum: rij.datum ?? null,
+        bedrag: rij.bedrag ?? null,
+      }))
+    }
+    if (data.length < pageSize) break
+  }
+  return sleutels
+}
 
 export async function importeerBedrijfsdata(
   rows: Record<string, string>[],
@@ -275,6 +352,7 @@ export async function importeerBedrijfsdata(
     overgeslagen: 0,
     fouten: 0,
     foutMeldingen: [],
+    overgeslagenNamen: [],
   }
 
   // Split rows by type
@@ -315,6 +393,14 @@ export async function importeerBedrijfsdata(
         const zoekNaam = normaliseerBedrijfsnaam(bedrijfsnaam)
         if (klantMap.has(zoekNaam)) {
           resultaat.overgeslagen++
+          // Naam meesturen: overslaan op naam is een gok, dus de gebruiker
+          // moet kunnen zien welke relaties het betrof.
+          const bestaande = klantMap.get(zoekNaam)!
+          resultaat.overgeslagenNamen?.push(
+            bestaande.bedrijfsnaam === bedrijfsnaam
+              ? bedrijfsnaam
+              : `${bedrijfsnaam} (bestaat al als "${bestaande.bedrijfsnaam}")`
+          )
           processed++
           onProgress?.(processed, totalSteps)
           continue
@@ -356,6 +442,11 @@ export async function importeerBedrijfsdata(
 
   // 3. Import project/offerte/factuur → klant_historie tabel
   if (isSupabaseConfigured() && supabase) {
+    // Wat er al staat eerst ophalen. Zonder deze stap levert twee keer
+    // hetzelfde bestand importeren — wat gebeurt zodra de eerste poging een
+    // foutmelding gaf — alle projecten, offertes en facturen dubbel op.
+    const bekendeSleutels = await laadHistorieSleutels(organisatieId)
+
     for (let i = 0; i < historieRijen.length; i += CHUNK_SIZE) {
       const chunk = historieRijen.slice(i, i + CHUNK_SIZE)
       const batchData: Array<{
@@ -376,7 +467,7 @@ export async function importeerBedrijfsdata(
         const zoekNaam = bedrijfsnaam ? normaliseerBedrijfsnaam(bedrijfsnaam) : ''
         const klant = zoekNaam ? klantMap.get(zoekNaam) : undefined
 
-        batchData.push({
+        const regel = {
           organisatie_id: organisatieId,
           klant_id: klant?.id || null,
           type,
@@ -386,7 +477,23 @@ export async function importeerBedrijfsdata(
           bedrag: normaliseerBedrag(rij.bedrag || ''),
           verantwoordelijke: rij.verantwoordelijke || '',
           user_id: userId,
-        })
+        }
+
+        // Dekt zowel een herhaalde import als dubbele regels binnen één
+        // bestand: de sleutel gaat direct de set in.
+        const sleutel = historieSleutel(regel)
+        if (bekendeSleutels.has(sleutel)) {
+          resultaat.overgeslagen++
+          continue
+        }
+        bekendeSleutels.add(sleutel)
+        batchData.push(regel)
+      }
+
+      if (batchData.length === 0) {
+        processed += chunk.length
+        onProgress?.(processed, totalSteps)
+        continue
       }
 
       try {
