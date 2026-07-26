@@ -19,8 +19,8 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/comp
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
 import { downloadEmailAttachment, downloadAllEmailAttachments } from '@/services/gmailService'
-import { getProjectVoorThread } from '@/services/emailProjectService'
 import { bijlageNaarProject } from '@/services/documentenService'
+import { BijlageProjectDialog, type BijlageProjectKeuze } from './BijlageProjectDialog'
 import { valideerBijlagen, uploadBijlagenMetLinkFallback } from '@/utils/groteBijlagen'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -76,6 +76,8 @@ interface EmailReaderProps {
   emailTotal?: number
   allEmails?: Email[]
   imapFolder?: string
+  // Eigen adres van de gebruiker · blijft weg uit de cc bij allen beantwoorden.
+  eigenAdres?: string
   // Optionele inline image-bytes (base64) per filename, vooraf opgehaald
   // door /api/read-email. Wanneer aanwezig slaat de reader de tweede
   // IMAP-roundtrip over voor thumbnails.
@@ -106,6 +108,7 @@ export function EmailReader({
   emailTotal,
   allEmails,
   imapFolder = 'INBOX',
+  eigenAdres,
   prefetchedAttachmentBytes,
   prefetchedAttachmentUrls,
   onTogglePin,
@@ -246,7 +249,11 @@ export function EmailReader({
       setThumbnailsLoading(false)
       return
     }
-    const imageAtts = email.attachment_meta.filter((a) => isImageAttachment(a.filename, a.contentType))
+    // Inline-CID beeld wordt niet als bijlage getoond; thumbnails ervoor
+    // ophalen kost een volledige IMAP-roundtrip zonder dat er iets rendert.
+    const imageAtts = email.attachment_meta.filter(
+      (a) => !a.isInlineCid && isImageAttachment(a.filename, a.contentType),
+    )
     if (!imageAtts.length) {
       setAttachmentThumbnails({})
       setThumbnailsLoading(false)
@@ -417,30 +424,32 @@ export function EmailReader({
     })
   }, [email?.id])
 
-  // Bijlage als bestand onder het gekoppelde project zetten. Zelfde
-  // ophaalroute als downloaden (signed URL bij cache-hit, anders base64),
-  // maar in plaats van naar de schijf gaat de blob naar de documenten-bucket.
+  // Bijlage als bestand onder een project zetten. De keuze van het project en
+  // de map loopt via BijlageProjectDialog; hier gebeurt alleen het ophalen en
+  // wegschrijven. Zelfde ophaalroute als downloaden (signed URL bij cache-hit,
+  // anders base64), maar de blob gaat naar de documenten-bucket.
   const [koppelendeBijlage, setKoppelendeBijlage] = useState<string | null>(null)
-  const handleBijlageNaarProject = useCallback(async (filename: string, contentType: string) => {
+  const [bijlageVoorDialog, setBijlageVoorDialog] = useState<{ filename: string; contentType: string } | null>(null)
+  const handleBijlageNaarProject = useCallback((filename: string, contentType: string) => {
     if (!email) return
     const uid = Number(email.gmail_id || email.id)
     if (Number.isNaN(uid)) {
       toast.error('Kan deze bijlage niet ophalen · geen geldig email-id')
       return
     }
-    if (!email.thread_id) {
-      toast.error('Deze mail hangt nog niet aan een thread')
+    setBijlageVoorDialog({ filename, contentType })
+  }, [email])
+
+  const handleBijlageBevestig = useCallback(async (keuze: BijlageProjectKeuze) => {
+    if (!email || !bijlageVoorDialog) return
+    const { filename, contentType } = bijlageVoorDialog
+    const uid = Number(email.gmail_id || email.id)
+    if (Number.isNaN(uid)) {
+      toast.error('Kan deze bijlage niet ophalen · geen geldig email-id')
       return
     }
     setKoppelendeBijlage(filename)
     try {
-      const koppeling = await getProjectVoorThread(email.thread_id)
-      if (!koppeling) {
-        toast.error('Koppel deze mail eerst aan een project', {
-          description: 'Dat doe je in de zijbalk onder Project.',
-        })
-        return
-      }
       const result = await downloadEmailAttachment(uid, imapFolder, filename)
       let blob: Blob
       if (result.storage_url) {
@@ -456,14 +465,16 @@ export function EmailReader({
         throw new Error('Geen content of storage_url ontvangen')
       }
       await bijlageNaarProject({
-        projectId: koppeling.project.id,
-        klantId: koppeling.project.klant_id,
+        projectId: keuze.project.id,
+        klantId: keuze.project.klant_id,
         bestandsnaam: result.filename || filename,
         contentType: result.contentType || contentType,
+        map: keuze.map,
         data: blob,
       })
+      setBijlageVoorDialog(null)
       toast.success('Toegevoegd aan project', {
-        description: `${filename} staat nu bij ${koppeling.project.naam} onder Bestanden.`,
+        description: `${filename} staat nu bij ${keuze.project.naam} onder Bestanden · ${keuze.map}.`,
       })
     } catch (err) {
       logger.error('Bijlage aan project koppelen mislukt:', err)
@@ -471,7 +482,7 @@ export function EmailReader({
     } finally {
       setKoppelendeBijlage(null)
     }
-  }, [email, imapFolder])
+  }, [email, imapFolder, bijlageVoorDialog])
 
   const handleDownloadAttachment = useCallback(async (filename: string) => {
     if (!email) return
@@ -553,6 +564,11 @@ export function EmailReader({
 
   const handleDownloadAllAttachments = useCallback(async () => {
     if (!email?.attachment_meta?.length) return
+    // De server geeft ook inline-CID beeld terug; downloaden wat de reader
+    // niet toont geeft onverwachte bestanden en een tellerstand die niet
+    // klopt met de kop erboven.
+    const echteBijlagen = email.attachment_meta.filter((a) => !a.isInlineCid)
+    if (!echteBijlagen.length) return
     const uid = Number(email.gmail_id || email.id)
     if (Number.isNaN(uid)) {
       toast.error('Kan deze bijlagen niet ophalen · geen geldig email-id')
@@ -561,8 +577,10 @@ export function EmailReader({
     setDownloadingAll(true)
     let success = 0
     try {
-      const results = await downloadAllEmailAttachments(uid, imapFolder)
-      const expected = email.attachment_meta.length
+      const gevraagd = new Set(echteBijlagen.map((a) => a.filename))
+      const results = (await downloadAllEmailAttachments(uid, imapFolder))
+        .filter((r) => gevraagd.has(r.filename))
+      const expected = echteBijlagen.length
       for (const result of results) {
         try {
           const binary = atob(result.content)
@@ -633,6 +651,27 @@ export function EmailReader({
     }
   }, [email, summaryLoading])
 
+  // Allen beantwoorden houdt iedereen uit Aan en Cc in het gesprek. De
+  // afzender valt af (die staat al in het aan-veld) en je eigen adres ook,
+  // anders mail je jezelf bij elk antwoord.
+  const bouwAllenCc = useCallback((mail: Email): string => {
+    const gezien = new Set(
+      [extractSenderEmail(mail.van), eigenAdres]
+        .filter((a): a is string => !!a)
+        .map((a) => a.trim().toLowerCase()),
+    )
+    const adressen: string[] = []
+    for (const ontvanger of [...(mail.to_addresses || []), ...(mail.cc_addresses || [])]) {
+      const adres = (ontvanger?.email || '').trim()
+      if (!adres) continue
+      const sleutel = adres.toLowerCase()
+      if (gezien.has(sleutel)) continue
+      gezien.add(sleutel)
+      adressen.push(adres)
+    }
+    return adressen.join(', ')
+  }, [eigenAdres])
+
   const handleReply = useCallback((mode: 'reply' | 'reply-all' | 'forward') => {
     if (!email) return
 
@@ -660,6 +699,11 @@ export function EmailReader({
       } else {
         setReplyTo(extractSenderEmail(email.van))
       }
+      if (mode === 'reply-all') {
+        const cc = bouwAllenCc(email)
+        setReplyCc(cc)
+        if (cc) setShowCcBcc(true)
+      }
     }
 
     if (mode === 'forward' && email.attachment_meta && email.attachment_meta.length > 0) {
@@ -681,7 +725,7 @@ export function EmailReader({
       }
       if (hasDraft) toast.info('Concept hersteld')
     }, 50)
-  }, [email, signatureHtml, loadDraft])
+  }, [email, signatureHtml, loadDraft, bouwAllenCc])
 
   const buildReplyPayload = useCallback(async () => {
     if (!email || !editorRef.current) return null
@@ -987,6 +1031,7 @@ export function EmailReader({
                   onClick={() => {
                     setReplyMode('reply')
                     setReplyTo(extractSenderEmail(email.van))
+                    setReplyCc('')
                   }}
                   className={cn(
                     'flex items-center justify-center w-6 h-5 rounded-[5px] transition-all duration-200',
@@ -1002,6 +1047,9 @@ export function EmailReader({
                   onClick={() => {
                     setReplyMode('reply-all')
                     setReplyTo(extractSenderEmail(email.van))
+                    const cc = bouwAllenCc(email)
+                    setReplyCc(cc)
+                    if (cc) setShowCcBcc(true)
                   }}
                   className={cn(
                     'flex items-center justify-center w-6 h-5 rounded-[5px] transition-all duration-200',
@@ -1017,6 +1065,7 @@ export function EmailReader({
                   onClick={() => {
                     setReplyMode('forward')
                     setReplyTo('')
+                    setReplyCc('')
                   }}
                   className={cn(
                     'flex items-center justify-center w-6 h-5 rounded-[5px] transition-all duration-200',
@@ -2010,6 +2059,17 @@ export function EmailReader({
             </div>
           </div>
         )}
+
+        <BijlageProjectDialog
+          open={!!bijlageVoorDialog}
+          onOpenChange={(v) => { if (!v) setBijlageVoorDialog(null) }}
+          bestandsnaam={bijlageVoorDialog?.filename || ''}
+          contentType={bijlageVoorDialog?.contentType || ''}
+          threadId={email.thread_id}
+          senderEmail={senderEmail}
+          bezig={koppelendeBijlage !== null}
+          onBevestig={handleBijlageBevestig}
+        />
     </div>
   )
 }
