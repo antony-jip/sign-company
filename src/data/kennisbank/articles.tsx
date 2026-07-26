@@ -997,7 +997,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Studio draait op <B>Nano Banana 2</B>, Google's image-generation model. Claude Sonnet 4.6
+              Studio draait op <B>Nano Banana 2</B>, Google's image-generation model. Claude Sonnet 5
               verbetert eerst je tekstuele input voordat het naar Nano Banana gaat, zodat je resultaten consistenter
               zijn.
             </P>
@@ -1023,7 +1023,7 @@ export const articles: Article[] = [
     slug: 'daan-ai',
     title: 'Daan: de AI-assistent',
     category: 'AI-assistent',
-    excerpt: 'Daan kent je data. Schrijft teksten, vat mails samen, rekent vierkante meters uit. Draait op Claude Sonnet 4.6.',
+    excerpt: 'Daan kent je data. Schrijft teksten, vat mails samen, rekent vierkante meters uit. Draait op Claude Sonnet 5.',
     updatedAt: '2026-04-23',
     readingTime: 3,
     sections: [
@@ -1033,7 +1033,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Daan is doen.'s ingebouwde <B>AI-assistent</B>. Hij draait op <B>Claude Sonnet 4.6</B> en heeft directe
+              Daan is doen.'s ingebouwde <B>AI-assistent</B>. Hij draait op <B>Claude Sonnet 5</B> en heeft directe
               toegang tot jouw bedrijfsdata: klanten, projecten, offertes, facturen, mails.
             </P>
             <P>
