@@ -417,6 +417,33 @@ export async function readEmailFromIMAP(
   return response.json()
 }
 
+/**
+ * Zet \Seen op de mail zelf, zonder de body op te halen. Het lees-endpoint
+ * raakt de vlaggen niet meer aan (dat pad draait ook op prefetch en hover),
+ * dus alleen een echte klik komt hier langs.
+ */
+export async function markeerEmailGelezenOpServer(uid: number, folder?: string): Promise<void> {
+  const token = await getAuthToken()
+
+  const response = await fetch('/api/read-email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      uid,
+      folder: folder || 'INBOX',
+      markSeenOnly: true,
+    }),
+  })
+
+  if (!response.ok) {
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || `Markeren als gelezen mislukt: ${response.status}`)
+  }
+}
+
 export interface EmailAttachmentDownload {
   filename: string
   contentType: string

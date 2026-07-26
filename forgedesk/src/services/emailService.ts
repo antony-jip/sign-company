@@ -65,7 +65,9 @@ export async function getCachedEmails(
 // Lijst-kolommen voor de inbox-rendering. body_text wordt server-side
 // getrunc'd via de emails_list_view (migration 106). body_html en inhoud
 // blijven uit — die zijn groot en alleen relevant bij body-open.
-const LIST_VIEW_COLUMNS = 'id,user_id,gmail_id,uid,message_id,van,aan,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,body_text,created_at,updated_at,cached_at,is_aanvraag,aanvraag_zekerheid,aanvraag_samenvatting,aanvraag_beoordeeld_op,aanvraag_verborgen'
+// to_addresses en cc_addresses staan erbij omdat "Allen beantwoorden" anders
+// de meelezers uit de thread laat vallen; `aan` bevat alleen de tekstvorm.
+const LIST_VIEW_COLUMNS = 'id,user_id,gmail_id,uid,message_id,van,aan,to_addresses,cc_addresses,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,body_text,created_at,updated_at,cached_at,is_aanvraag,aanvraag_zekerheid,aanvraag_samenvatting,aanvraag_beoordeeld_op,aanvraag_verborgen'
 
 export async function getEmails(limit = 200): Promise<Email[]> {
   if (isSupabaseConfigured() && supabase) {

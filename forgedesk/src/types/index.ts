@@ -514,6 +514,12 @@ export interface FactuurBijlage {
   aangemaakt_op: string;
 }
 
+/** Ontvanger uit de IMAP-envelope, zoals de sync hem opslaat. */
+export interface EmailOntvanger {
+  email: string;
+  name?: string;
+}
+
 export interface Email {
   id: string;
   user_id?: string;
@@ -521,6 +527,8 @@ export interface Email {
   gmail_id: string;
   van: string;
   aan: string;
+  to_addresses?: EmailOntvanger[] | null;
+  cc_addresses?: EmailOntvanger[] | null;
   onderwerp: string;
   inhoud: string;
   body_text?: string | null;

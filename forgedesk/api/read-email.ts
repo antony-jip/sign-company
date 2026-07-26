@@ -111,6 +111,100 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   }
 }
 
+// ───── Folder-resolutie (gelijk aan api/fetch-emails.ts) ─────
+// De client stuurt een logische mapnaam ('verzonden'), niet de echte
+// IMAP-naam. Die verschilt per server: Gmail-NL heeft
+// '[Gmail]/Verzonden berichten', Outlook 'Sent Items'. Een vaste tabel
+// dekt daarom alleen Gmail; daarbuiten faalt de mailboxOpen.
+const FOLDER_MAP: Record<string, string> = {
+  'inbox': 'INBOX',
+  'verzonden': '[Gmail]/Verzonden berichten',
+  'sent': '[Gmail]/Sent Mail',
+  'concepten': '[Gmail]/Concepten',
+  'drafts': '[Gmail]/Drafts',
+  'prullenbak': '[Gmail]/Prullenbak',
+  'trash': '[Gmail]/Trash',
+  'spam': '[Gmail]/Spam',
+  'alle': '[Gmail]/Alle berichten',
+  'all': '[Gmail]/All Mail',
+}
+
+// Special-use flags per logische folder. IMAP servers exposen deze via
+// LIST extension (RFC 6154). Gmail, Outlook, FastMail e.a. ondersteunen het.
+const SPECIAL_USE_MAP: Record<string, string> = {
+  inbox: '\\Inbox',
+  verzonden: '\\Sent',
+  sent: '\\Sent',
+  concepten: '\\Drafts',
+  drafts: '\\Drafts',
+  prullenbak: '\\Trash',
+  trash: '\\Trash',
+  spam: '\\Junk',
+  alle: '\\All',
+  all: '\\All',
+}
+
+// Naam-fallback patterns als special-use ontbreekt
+const NAME_PATTERNS: Record<string, RegExp> = {
+  verzonden: /sent|verzonden|gesendet|envoy/i,
+  sent: /sent|verzonden|gesendet|envoy/i,
+  concepten: /draft|concept|brouillon|entwurf/i,
+  drafts: /draft|concept|brouillon|entwurf/i,
+  prullenbak: /trash|deleted|prullen|corbeille|papierkorb/i,
+  trash: /trash|deleted|prullen|corbeille|papierkorb/i,
+  spam: /spam|junk|ongewenst/i,
+  alle: /all\s*mail|alle\s*berichten|all messages/i,
+  all: /all\s*mail|alle\s*berichten|all messages/i,
+}
+
+interface ImapMailbox {
+  path: string
+  name?: string
+  specialUse?: string
+  flags?: Set<string> | string[]
+}
+
+async function resolveImapFolder(client: ImapFlow, folder: string): Promise<string> {
+  const lower = folder.toLowerCase()
+
+  // 1. INBOX is universeel
+  if (lower === 'inbox') return 'INBOX'
+
+  // 2. Probeer eerst de hardcoded mapping (werkt op Gmail-NL)
+  const mapped = FOLDER_MAP[lower]
+  if (mapped) {
+    try {
+      const status = await client.status(mapped, { messages: true })
+      if (status) return mapped
+    } catch {
+      // mailbox bestaat niet, ga door naar dynamische fallback
+    }
+  }
+
+  // 3. Dynamische fallback: list alle folders en zoek op special-use of naam
+  try {
+    const mailboxes = (await client.list()) as ImapMailbox[]
+    const wantedSpecialUse = SPECIAL_USE_MAP[lower]
+    if (wantedSpecialUse) {
+      const bySpecialUse = mailboxes.find((m) => m.specialUse === wantedSpecialUse)
+      if (bySpecialUse) return bySpecialUse.path
+    }
+    const namePattern = NAME_PATTERNS[lower]
+    if (namePattern) {
+      const candidates = mailboxes.filter((m) => namePattern.test(m.path) || namePattern.test(m.name || ''))
+      if (candidates.length > 0) {
+        const gmailVariant = candidates.find((m) => m.path.startsWith('[Gmail]/'))
+        return (gmailVariant || candidates[0]).path
+      }
+    }
+  } catch (err) {
+    console.error('[read-email] folder list lookup failed:', err)
+  }
+
+  // 4. Last resort: gebruik de input zoals hij is
+  return folder
+}
+
 // ───── Persistent attachment-cache (sprint 3) ─────
 const STORAGE_BUCKET = 'email-attachments'
 const SIGNED_URL_TTL = 60 * 60 // 1 uur — voldoende voor reading-sessie
@@ -213,6 +307,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const {
       uid,
       folder = 'INBOX',
+      markSeenOnly = false,
     } = req.body
 
     // Haal user_id uit JWT en credentials uit database (fallback naar request body)
@@ -238,17 +333,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Email UID is verplicht' })
     }
 
-    const folderMap: Record<string, string> = {
-      'INBOX': 'INBOX',
-      'verzonden': '[Gmail]/Verzonden berichten',
-      'sent': '[Gmail]/Sent Mail',
-      'concepten': '[Gmail]/Concepten',
-      'drafts': '[Gmail]/Drafts',
-      'prullenbak': '[Gmail]/Prullenbak',
-      'trash': '[Gmail]/Trash',
-    }
+    // `map` houdt de logische mapnaam vast, `imap_folder` de server-specifieke.
+    // Die laatste kennen we pas ná een IMAP-verbinding, dus zoeken we rijen op
+    // `map` — anders mist het cache-pad buiten INBOX altijd.
+    const mapValue = folder.toUpperCase() === 'INBOX' ? 'inbox' : folder.toLowerCase()
 
-    const imapFolder = folderMap[folder.toLowerCase()] || folder
+    // Alleen markeren, geen body. De client heeft de body meestal al uit de
+    // prefetch-cache; het lezen zelf raakt de vlaggen niet meer aan, dus een
+    // echte klik zet \Seen via deze route.
+    if (markSeenOnly) {
+      await markeerGelezenOpImap({
+        gmail_address, app_password, uid, folder, imap_host, imap_port,
+      })
+      return res.status(200).json({ ok: true })
+    }
 
     // Step 1: Check Supabase cache first
     {
@@ -258,21 +356,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .select('id, van, aan, onderwerp, datum, gelezen, body_html, body_text, attachment_meta, message_id')
         .eq('user_id', user_id)
         .eq('uid', Number(uid))
-        .eq('imap_folder', imapFolder)
+        .eq('map', mapValue)
+        .limit(1)
         .maybeSingle()
 
       if (cached && (cached.body_html || cached.body_text)) {
-        // Mark as read in Supabase
-        if (!cached.gelezen) {
-          await supabaseAdmin
-            .from('emails')
-            .update({ gelezen: true })
-            .eq('id', cached.id)
-        }
-
         // Lookup gecachde bijlagen voor signed URLs (instant previews/downloads).
         const cachedSigned = await readCachedSignedUrls(user_id, cached.id)
-        const meta = (cached.attachment_meta as Array<{ filename: string; contentType: string; size: number; isInlineCid?: boolean }> | null) || []
+        let meta = (cached.attachment_meta as Array<{ filename: string; contentType: string; size: number; isInlineCid?: boolean }> | null) || []
+
+        // Meta van vóór de inline-detectie mist isInlineCid, waardoor
+        // handtekening-logo's tussen de echte bijlagen blijven staan. De vlag
+        // is niet af te leiden uit de opgeslagen body — daarin zijn de
+        // cid:-verwijzingen al vervangen door data-URI's — dus eenmalig
+        // opnieuw parsen en wegschrijven. Alleen bij ontbrekende vlag; een
+        // mail zonder bijlagen raakt dit pad nooit.
+        const metaOnvolledig = meta.length > 0 && meta.some((a) => typeof a?.isInlineCid !== 'boolean')
+        if (metaOnvolledig) {
+          try {
+            const vers = await fetchFromIMAP({
+              gmail_address, app_password, uid, folder, imap_host, imap_port,
+            })
+            meta = vers.attachments.map(({ filename, contentType, size, isInlineCid }) => ({
+              filename, contentType, size, isInlineCid,
+            }))
+            // Teller en zoekfilter mee, zelfde reden als op het koude pad.
+            const echteBijlagen = meta.filter((a) => !a.isInlineCid).length
+            await supabaseAdmin
+              .from('emails')
+              .update({
+                attachment_meta: meta.length > 0 ? meta : null,
+                bijlagen: echteBijlagen,
+                has_attachments: echteBijlagen > 0,
+              })
+              .eq('id', cached.id)
+          } catch (err) {
+            // Mail kan van de server verdwenen zijn; de cache blijft leesbaar.
+            console.warn('[read-email] meta-aanvulling mislukt:', err)
+          }
+        }
+
         const attachmentsOut = meta.map((a) => ({
           ...a,
           storage_url: cachedSigned.get(a.filename),
@@ -296,7 +419,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Step 2: Not in cache or no body — fetch from IMAP
       const result = await fetchFromIMAP({
-        gmail_address, app_password, uid, imapFolder, imap_host, imap_port,
+        gmail_address, app_password, uid, folder, imap_host, imap_port,
       })
 
       // Step 3: Cache the result in Supabase. Strip inline image-bytes uit
@@ -305,6 +428,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const attachmentMetaForDb = result.attachments.map(({ filename, contentType, size, isInlineCid }) => ({
         filename, contentType, size, isInlineCid,
       }))
+      // De paperclip in de lijst hoort hetzelfde te tellen als de reader
+      // toont: handtekening-logo's zijn geen bijlage. De sync kent dat
+      // onderscheid niet (bodyStructure alleen), wij nu wel.
+      // has_attachments gaat bewust mee: dat is de kolom waar het zoekfilter
+      // `bijlage:ja` op draait. Corrigeren we alleen `bijlagen`, dan spreekt
+      // de zoekbalk de lijst tegen. Hier weten we het zeker omdat de mail
+      // geparsed is — nooit gokken op bodyStructure, dat blijft aan de sync.
+      const echteBijlagen = attachmentMetaForDb.filter((a) => !a.isInlineCid).length
       let email_uuid: string | null = null
       if (cached) {
         // Update existing row with body
@@ -314,7 +445,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             body_html: result.bodyHtml || null,
             body_text: result.bodyText || null,
             attachment_meta: attachmentMetaForDb.length > 0 ? attachmentMetaForDb : null,
-            gelezen: true,
+            bijlagen: echteBijlagen,
+            has_attachments: echteBijlagen > 0,
             cached_at: new Date().toISOString(),
           })
           .eq('id', cached.id)
@@ -329,16 +461,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             user_id,
             uid: Number(uid),
             message_id: result.messageId || null,
-            imap_folder: imapFolder,
-            map: folder === 'INBOX' ? 'inbox' : folder.toLowerCase(),
+            imap_folder: result.imapFolder,
+            map: mapValue,
             from_address: fromMatch ? fromMatch[2].trim() : from,
             from_name: fromMatch ? fromMatch[1].trim() : '',
             van: from,
             aan: result.to,
             onderwerp: result.subject || '(geen onderwerp)',
             datum: result.date || new Date().toISOString(),
-            gelezen: true,
-            bijlagen: attachmentMetaForDb.length,
+            // Leesstatus komt van de server, niet van het feit dat wij de
+            // body ophalen — dat gebeurt ook bij prefetch en hover.
+            gelezen: result.seen,
+            bijlagen: echteBijlagen,
+            has_attachments: echteBijlagen > 0,
             attachment_meta: attachmentMetaForDb.length > 0 ? attachmentMetaForDb : null,
             body_html: result.bodyHtml || null,
             body_text: result.bodyText || null,
@@ -360,7 +495,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .select('id')
             .eq('user_id', user_id)
             .eq('uid', Number(uid))
-            .eq('imap_folder', imapFolder)
+            .eq('map', mapValue)
+            .limit(1)
             .maybeSingle()
           email_uuid = refetched?.id || null
         }
@@ -409,11 +545,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
+async function markeerGelezenOpImap(opts: {
+  gmail_address: string
+  app_password: string
+  uid: number | string
+  folder: string
+  imap_host: string
+  imap_port: number
+}): Promise<void> {
+  const client = new ImapFlow({
+    host: opts.imap_host,
+    port: opts.imap_port,
+    secure: opts.imap_port === 993,
+    auth: { user: opts.gmail_address, pass: opts.app_password },
+    logger: false,
+    emitLogs: false,
+    greetingTimeout: 10000,
+    socketTimeout: 30000,
+  })
+
+  await client.connect()
+  try {
+    const imapFolder = await resolveImapFolder(client, opts.folder)
+    await client.mailboxOpen(imapFolder)
+    await client.messageFlagsAdd({ uid: `${opts.uid}:${opts.uid}` }, ['\\Seen'])
+  } finally {
+    try { await client.logout() } catch { /* al gesloten */ }
+  }
+}
+
 async function fetchFromIMAP(opts: {
   gmail_address: string
   app_password: string
   uid: number | string
-  imapFolder: string
+  folder: string
   imap_host: string
   imap_port: number
 }) {
@@ -429,25 +594,33 @@ async function fetchFromIMAP(opts: {
   })
 
   await client.connect()
-  await client.mailboxOpen(opts.imapFolder)
 
+  // Finally, zodat een mislukte mailboxOpen of fetch geen IMAP-verbinding
+  // laat hangen tot de socket-timeout.
   let message = null
-  for await (const msg of client.fetch(
-    { uid: `${opts.uid}:${opts.uid}` },
-    { envelope: true, source: true, flags: true }
-  )) {
-    message = msg
-    break
+  let imapFolder = opts.folder
+  try {
+    imapFolder = await resolveImapFolder(client, opts.folder)
+    await client.mailboxOpen(imapFolder)
+
+    // imapflow haalt de source op met BODY.PEEK, dus dit laat de \Seen-vlag
+    // ongemoeid. Markeren gebeurt uitsluitend via markeerGelezenOpImap, want
+    // dit pad draait ook op prefetch en hover — mail die de gebruiker nooit
+    // opende mag niet gelezen raken in zijn echte mailbox.
+    for await (const msg of client.fetch(
+      { uid: `${opts.uid}:${opts.uid}` },
+      { envelope: true, source: true, flags: true }
+    )) {
+      message = msg
+      break
+    }
+  } finally {
+    try { await client.logout() } catch { /* al gesloten */ }
   }
 
   if (!message || !('source' in message) || !message.source) {
-    await client.logout()
     throw new Error('Email niet gevonden')
   }
-
-  // Mark as read on IMAP
-  await client.messageFlagsAdd({ uid: `${opts.uid}:${opts.uid}` }, ['\\Seen'])
-  await client.logout()
 
   // Parse de email — we hebben de hele bytes al in handen. Body + meta voor
   // alle bijlagen, en optioneel inline base64-content voor image-bijlagen
@@ -508,8 +681,12 @@ async function fetchFromIMAP(opts: {
     isInlineCid: !!a.contentId || a.contentDisposition === 'inline',
   }))
 
+  const flags = message.flags as Set<string> | undefined
+
   return {
     uid: opts.uid,
+    imapFolder,
+    seen: flags?.has('\\Seen') ?? false,
     from: parsed.from?.text || '',
     to: Array.isArray(parsed.to) ? parsed.to.map(a => a.text).join(', ') : (parsed.to?.text || ''),
     cc: Array.isArray(parsed.cc) ? parsed.cc.map(a => a.text).join(', ') : (parsed.cc?.text || ''),
