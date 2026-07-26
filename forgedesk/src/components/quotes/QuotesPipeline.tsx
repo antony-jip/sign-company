@@ -742,8 +742,8 @@ export function QuotesPipeline() {
 
   if (isLoading) {
     return (
-      <div className="h-full flex flex-col bg-background -m-3 sm:-m-4 md:-m-6">
-        <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="bg-background -m-3 sm:-m-4 md:-m-6">
+        <div>
           <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
             {/* Header */}
             <div className="space-y-4">
@@ -846,9 +846,9 @@ export function QuotesPipeline() {
   )
 
   return (
-    <div className="h-full flex flex-col -m-3 sm:-m-4 md:-m-6">
+    <div className="-m-3 sm:-m-4 md:-m-6">
 
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div>
         <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
 
           <ModuleIntro
