@@ -38,6 +38,18 @@ const MOLLIE_API_URL = 'https://api.mollie.com/v2/payments'
 // -- Integration credential decryption (copied from api/save-integration-settings.ts) --
 const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
 function decryptSecret(text: string): string {
+  if (text && text.startsWith('g1:')) {
+    if (!INT_KEY) throw new Error('Server-encryptie is niet geconfigureerd (INTEGRATION_ENCRYPTION_KEY). Neem contact op met support.')
+    try {
+      const raw = Buffer.from(text.slice(3), 'base64')
+      const key = crypto.scryptSync(INT_KEY, raw.subarray(0, 16), 32)
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, raw.subarray(16, 28))
+      decipher.setAuthTag(raw.subarray(28, 44))
+      return Buffer.concat([decipher.update(raw.subarray(44)), decipher.final()]).toString('utf8')
+    } catch {
+      throw new Error('Integratie-token kan niet ontsleuteld worden (encryptie-key gewijzigd?). Verbind opnieuw via Instellingen > Integraties.')
+    }
+  }
   if (!text || !text.includes(':') || text.length < 34) return text
   if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
   try {

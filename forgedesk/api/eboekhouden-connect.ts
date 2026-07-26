@@ -14,16 +14,37 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
-// -- Integration credential encryption (copied from api/save-integration-settings.ts) --
+// -- Integration credential encryption (AES-256-GCM, zelfde formaat als api/save-integration-settings.ts) --
 const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
+/**
+ * Nieuwe tokens gaan als 'g1:' de deur uit: AES-256-GCM met een willekeurige
+ * salt per token en een auth-tag. Het oude CBC-formaat leidde de sleutel af met
+ * een vaste salt die in de code staat en had geen integriteitscontrole, dus
+ * geknoei aan een opgeslagen token viel niet op. Bestaande CBC-waarden blijven
+ * leesbaar; een rij schuift pas op naar g1 zodra hij opnieuw wordt weggeschreven.
+ */
 function encryptSecret(text: string): string {
   if (!INT_KEY) throw new Error('INTEGRATION_ENCRYPTION_KEY niet geconfigureerd')
-  const key = crypto.scryptSync(INT_KEY, 'integration', 32)
-  const iv = crypto.randomBytes(16)
-  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
-  return iv.toString('hex') + ':' + cipher.update(text, 'utf8', 'hex') + cipher.final('hex')
+  const salt = crypto.randomBytes(16)
+  const key = crypto.scryptSync(INT_KEY, salt, 32)
+  const iv = crypto.randomBytes(12)
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
+  const ct = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()])
+  return 'g1:' + Buffer.concat([salt, iv, cipher.getAuthTag(), ct]).toString('base64')
 }
 function decryptSecret(text: string): string {
+  if (text && text.startsWith('g1:')) {
+    if (!INT_KEY) throw new Error('Server-encryptie is niet geconfigureerd (INTEGRATION_ENCRYPTION_KEY). Neem contact op met support.')
+    try {
+      const raw = Buffer.from(text.slice(3), 'base64')
+      const key = crypto.scryptSync(INT_KEY, raw.subarray(0, 16), 32)
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, raw.subarray(16, 28))
+      decipher.setAuthTag(raw.subarray(28, 44))
+      return Buffer.concat([decipher.update(raw.subarray(44)), decipher.final()]).toString('utf8')
+    } catch {
+      throw new Error('Integratie-token kan niet ontsleuteld worden (encryptie-key gewijzigd?). Verbind opnieuw via Instellingen > Integraties.')
+    }
+  }
   if (!text || !text.includes(':') || text.length < 34) return text
   // Een onontsleutelbare encrypted blob mag nooit als token naar de externe
   // API — dat geeft een misleidende "token ongeldig"-melding bij de gebruiker.

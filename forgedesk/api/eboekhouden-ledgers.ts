@@ -11,9 +11,21 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
-// -- Integration credential decryption (copied from api/save-integration-settings.ts) --
+// -- Integration credential decryption (leest g1:-GCM en het oude CBC-formaat) --
 const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
 function decryptSecret(text: string): string {
+  if (text && text.startsWith('g1:')) {
+    if (!INT_KEY) throw new Error('Server-encryptie is niet geconfigureerd (INTEGRATION_ENCRYPTION_KEY). Neem contact op met support.')
+    try {
+      const raw = Buffer.from(text.slice(3), 'base64')
+      const key = crypto.scryptSync(INT_KEY, raw.subarray(0, 16), 32)
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, raw.subarray(16, 28))
+      decipher.setAuthTag(raw.subarray(28, 44))
+      return Buffer.concat([decipher.update(raw.subarray(44)), decipher.final()]).toString('utf8')
+    } catch {
+      throw new Error('Integratie-token kan niet ontsleuteld worden (encryptie-key gewijzigd?). Verbind opnieuw via Instellingen > Integraties.')
+    }
+  }
   if (!text || !text.includes(':') || text.length < 34) return text
   // Een onontsleutelbare encrypted blob mag nooit als token naar de externe
   // API — dat geeft een misleidende "token ongeldig"-melding bij de gebruiker.

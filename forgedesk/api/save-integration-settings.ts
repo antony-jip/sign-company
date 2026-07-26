@@ -3,7 +3,7 @@
  *
  * BEVEILIGD: verifyUser() + organisatie_id check.
  * Secrets (mollie_api_key, exact_online_client_secret) worden encrypted
- * met INTEGRATION_ENCRYPTION_KEY (AES-256-CBC). Client_id blijft plaintext.
+ * met INTEGRATION_ENCRYPTION_KEY (AES-256-GCM). Client_id blijft plaintext.
  *
  * Dit is de "master" versie van het encryption patroon.
  * Andere api/ bestanden kopiëren decryptSecret() hieruit.
@@ -28,15 +28,24 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   return user.id
 }
 
-// -- Integration credential encryption (AES-256-CBC) --
+// -- Integration credential encryption (AES-256-GCM) --
 const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
 
+/**
+ * Nieuwe tokens gaan als 'g1:' de deur uit: AES-256-GCM met een willekeurige
+ * salt per token en een auth-tag. Het oude CBC-formaat leidde de sleutel af met
+ * een vaste salt die in de code staat en had geen integriteitscontrole, dus
+ * geknoei aan een opgeslagen token viel niet op. Bestaande CBC-waarden blijven
+ * leesbaar; een rij schuift pas op naar g1 zodra hij opnieuw wordt weggeschreven.
+ */
 function encryptSecret(text: string): string {
   if (!INT_KEY) throw new Error('INTEGRATION_ENCRYPTION_KEY niet geconfigureerd')
-  const key = crypto.scryptSync(INT_KEY, 'integration', 32)
-  const iv = crypto.randomBytes(16)
-  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
-  return iv.toString('hex') + ':' + cipher.update(text, 'utf8', 'hex') + cipher.final('hex')
+  const salt = crypto.randomBytes(16)
+  const key = crypto.scryptSync(INT_KEY, salt, 32)
+  const iv = crypto.randomBytes(12)
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
+  const ct = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()])
+  return 'g1:' + Buffer.concat([salt, iv, cipher.getAuthTag(), ct]).toString('base64')
 }
 
 const ALLOWED_FIELDS = [

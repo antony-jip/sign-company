@@ -101,6 +101,9 @@ export function IntegratiesTab() {
 
   // KvK API state
   const [kvkApiKey, setKvkApiKey] = useState('')
+  // Er staat al een sleutel, maar die tonen we niet: het invoerveld is dan leeg
+  // terwijl de koppeling wel actief hoort te blijven.
+  const [kvkSleutelOpgeslagen, setKvkSleutelOpgeslagen] = useState(false)
   const [kvkSaving, setKvkSaving] = useState(false)
 
   // Boekhoudkoppeling state
@@ -151,7 +154,10 @@ export function IntegratiesTab() {
 
   useEffect(() => {
     if (!user?.id) return
-    const isEncrypted = (v: string) => /^[0-9a-f]{32}:/.test(v)
+    // Herkent beide opslagformaten. Mist deze check een formaat, dan komt de
+    // ciphertext in het invoerveld en wordt hij bij de volgende Opslaan
+    // dubbel versleuteld.
+    const isEncrypted = (v: string) => /^[0-9a-f]{32}:/.test(v) || v.startsWith('g1:')
     getAppSettings(user.id).then((s) => {
       setMollieEnabled(s.mollie_enabled ?? false)
       setMollieApiKey(isEncrypted(s.mollie_api_key ?? '') ? '' : (s.mollie_api_key ?? ''))
@@ -168,7 +174,8 @@ export function IntegratiesTab() {
       setExactBtwNul(s.exact_btw_nul ?? '')
       setExactDocumentTypeId(s.exact_document_type_id ?? null)
       setExactDocumentTypeNaam(s.exact_document_type_naam ?? '')
-      setKvkApiKey(s.kvk_api_key ?? '')
+      setKvkApiKey(isEncrypted(s.kvk_api_key ?? '') ? '' : (s.kvk_api_key ?? ''))
+      setKvkSleutelOpgeslagen(!!s.kvk_api_key)
       const pakket = s.boekhoud_pakket ?? ''
       setBoekhoudPakket(pakket)
       const tokenPerPakket: Record<BoekhoudPakket, string | undefined> = {
@@ -1500,7 +1507,9 @@ export function IntegratiesTab() {
                   type="password"
                   value={kvkApiKey}
                   onChange={(e) => setKvkApiKey(e.target.value)}
-                  placeholder="l7xx..."
+                  placeholder={kvkSleutelOpgeslagen && !kvkApiKey
+                    ? 'Sleutel opgeslagen. Vul alleen in om te vervangen.'
+                    : 'l7xx...'}
                   className="font-mono text-sm"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -1527,7 +1536,9 @@ export function IntegratiesTab() {
                       // hoort niet onversleuteld in app_settings te staan.
                       await saveIntegrationSettings({
                         kvk_api_key: kvkApiKey,
-                        kvk_api_enabled: !!kvkApiKey,
+                        // Een leeg veld betekent "sleutel ongewijzigd", niet
+                        // "geen sleutel": het endpoint slaat lege secrets over.
+                        kvk_api_enabled: !!kvkApiKey || kvkSleutelOpgeslagen,
                       })
                       toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
                     } catch (err) {
