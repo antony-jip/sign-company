@@ -18,24 +18,47 @@
 --   · src/services/gmailService.ts        .select('id')
 --   · src/hooks/useAanDeSlagStatus.ts     .select('id', { head: true })
 -- Schrijven gaat volledig via api/email-settings.ts (service_role).
+--
+-- De kolomlijst wordt uit het schema gelezen in plaats van hier uitgeschreven.
+-- Er staan twee conflicterende CREATE TABLE-definities voor deze tabel in de
+-- migratiehistorie (001_create_all_tables vs 001_missing_tables) en 004 voegt
+-- IMAP-kolommen toe met IF NOT EXISTS, dus welke kolommen een omgeving
+-- werkelijk heeft verschilt per database. Een hardgecodeerde lijst faalt dan
+-- op de ene omgeving en klopt op de andere.
 
--- Kolom-privileges werken alleen als het table-brede SELECT-recht weg is;
--- daarna geven we expliciet alles terug behalve encrypted_app_password.
-REVOKE SELECT ON user_email_settings FROM authenticated;
+DO $$
+DECLARE
+  kolommen text;
+BEGIN
+  -- Kolom-privileges werken alleen als het table-brede SELECT-recht weg is;
+  -- daarna geven we expliciet alles terug behalve het wachtwoord.
+  SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position)
+    INTO kolommen
+    FROM information_schema.columns
+   WHERE table_schema = 'public'
+     AND table_name = 'user_email_settings'
+     AND column_name <> 'encrypted_app_password';
 
-GRANT SELECT (
-  id,
-  user_id,
-  gmail_address,
-  smtp_host,
-  smtp_port,
-  imap_host,
-  imap_port,
-  is_verified,
-  last_sync_at,
-  created_at,
-  updated_at
-) ON user_email_settings TO authenticated;
+  IF kolommen IS NULL THEN
+    RAISE EXCEPTION 'Tabel public.user_email_settings niet gevonden';
+  END IF;
+
+  EXECUTE 'REVOKE SELECT ON public.user_email_settings FROM authenticated';
+  EXECUTE format(
+    'GRANT SELECT (%s) ON public.user_email_settings TO authenticated',
+    kolommen
+  );
+END $$;
+
+-- Controle: encrypted_app_password mag hier NIET tussen staan.
+--   SELECT column_name FROM information_schema.column_privileges
+--    WHERE table_name = 'user_email_settings'
+--      AND grantee = 'authenticated' AND privilege_type = 'SELECT'
+--    ORDER BY column_name;
+
+-- LET OP bij nieuwe kolommen: een kolom die later wordt toegevoegd erft geen
+-- grant, want het table-brede SELECT is ingetrokken. Voeg je een kolom toe aan
+-- deze tabel, draai dan dit blok opnieuw — het is idempotent.
 
 -- NOG TE DOEN, bewust niet in deze migratie:
 -- De `b64:`-rijen blijven bestaan tot iemand zijn wachtwoord opnieuw opslaat.
