@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { logger } from '../../utils/logger'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { useTabs } from '@/contexts/TabsContext'
+import { useTabSnapshot } from '@/hooks/useTabSnapshot'
 import { BackButton } from '@/components/shared/BackButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -123,6 +124,8 @@ const statusLabels: Record<string, string> = {
   'te-plannen': 'Te plannen',
 }
 
+const KLANT_TABS = ['projecten', 'deals', 'offertes', 'facturen', 'tijdregistratie', 'communicatie', 'documenten', 'historie']
+
 export function ClientProfile() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -143,7 +146,14 @@ export function ClientProfile() {
   const [clientTijdregistraties, setClientTijdregistraties] = useState<Tijdregistratie[]>([])
   const [clientOffertes, setClientOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('projecten')
+  // Sub-tab in de URL zodat hij een refresh en een tabblad-wissel overleeft.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = KLANT_TABS.includes(searchParams.get('tab') || '') ? searchParams.get('tab')! : 'projecten'
+  const setActiveTab = (tab: string) => {
+    const params = new URLSearchParams(searchParams)
+    params.set('tab', tab)
+    setSearchParams(params, { replace: true })
+  }
   const [notitie, setNotitie] = useState('')
   const [savingNotitie, setSavingNotitie] = useState(false)
   // Contact person form
@@ -210,6 +220,22 @@ export function ClientProfile() {
     })
     return () => { cancelled = true }
   }, [id])
+
+  // ── Invoer bewaren bij tabblad-wissel ─────────────────────────────────
+  // Een getypte maar nog niet opgeslagen opmerking overleeft zo een
+  // uitstapje naar een ander tabblad. Terugzetten pas als de klant geladen
+  // is, want die vult hetzelfde veld met de opgeslagen tekst.
+  const notitieHerstelRef = useRef<string | null>(null)
+  useTabSnapshot<string>(
+    `klant-notitie-${id || 'onbekend'}`,
+    () => (klant && notitie !== (klant.notities || '') ? notitie : null),
+    (opname) => { notitieHerstelRef.current = opname },
+  )
+  useEffect(() => {
+    if (!klant || notitieHerstelRef.current === null) return
+    setNotitie(notitieHerstelRef.current)
+    notitieHerstelRef.current = null
+  }, [klant])
 
   async function handleSaveNotitie() {
     if (!klant) return

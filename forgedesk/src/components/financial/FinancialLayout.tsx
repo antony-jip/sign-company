@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -45,9 +45,19 @@ function formatTooltipValue(value: number) {
   return formatCurrency(value)
 }
 
+const FINANCIEEL_TABS = ['overzicht', 'grootboek', 'btw', 'kortingen']
+
 export function FinancialLayout() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('overzicht')
+  // Sub-tab in de URL: deelbaar, overleeft een refresh en blijft staan als
+  // je naar een ander tabblad van de app gaat en terugkomt.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = FINANCIEEL_TABS.includes(searchParams.get('tab') || '') ? searchParams.get('tab')! : 'overzicht'
+  const setActiveTab = (tab: string) => {
+    const params = new URLSearchParams(searchParams)
+    params.set('tab', tab)
+    setSearchParams(params, { replace: true })
+  }
   const [facturen, setFacturen] = useState<Factuur[]>(() => getCached<Factuur[]>('facturen') ?? [])
   const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
   const [inkoopfacturen, setInkoopfacturen] = useState<InkoopFactuur[]>(() => getCached<InkoopFactuur[]>('inkoopfacturen') ?? [])

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 // BackButton removed · inline back link in header
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
+import { useTabSnapshot } from '@/hooks/useTabSnapshot'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
@@ -367,6 +368,19 @@ function getStatusDotColor(status: string): string {
 }
 
 type ProjectTab = 'overzicht' | 'werkbon' | 'financieel' | 'email' | 'notities' | 'maatjes'
+const PROJECT_TABS: ProjectTab[] = ['overzicht', 'werkbon', 'financieel', 'email', 'notities', 'maatjes']
+
+// Wat er van een openstaand project bewaard blijft bij een tabblad-wissel:
+// alleen tekst die je hebt getypt maar nog niet opgeslagen. `briefingText`
+// is null als je niets aan de briefing veranderde.
+interface ProjectMomentopname {
+  briefingText: string | null
+  nieuweTaakOpen: boolean
+  nieuweTaakTitel: string
+  nieuweTaakBeschrijving: string
+  nieuweTaakToegewezen: string
+  nieuweTaakDeadline: string
+}
 
 
 
@@ -413,15 +427,16 @@ export function ProjectDetail() {
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
   }, [])
-  const [activeTab, setActiveTab] = useState<ProjectTab>(() => {
-    const tabParam = new URLSearchParams(window.location.search).get('tab')
-    return (['overzicht', 'werkbon', 'financieel', 'email', 'notities', 'maatjes'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
-  })
+  // De sub-tab loopt via de router, niet via history.replaceState: alleen
+  // dan zien de tabbladen van de app hem ook, en sta je bij terugkomst nog
+  // op Financieel in plaats van weer op Overzicht.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const activeTab: ProjectTab = (PROJECT_TABS.includes(tabParam as ProjectTab) ? tabParam : 'overzicht') as ProjectTab
   const handleTabChange = (tab: ProjectTab) => {
-    setActiveTab(tab)
-    const params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(searchParams)
     params.set('tab', tab)
-    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
+    setSearchParams(params, { replace: true })
   }
   // takenWeergave removed · using TaskChecklistView only
   const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
@@ -671,6 +686,42 @@ export function ProjectDetail() {
       setBriefingText(project.beschrijving)
     }
   }, [project?.beschrijving])
+
+  // ── Invoer bewaren bij tabblad-wissel ─────────────────────────────────
+  // Een getypte briefing of een half ingevulde nieuwe taak staat nog
+  // nergens in de database. Terugzetten gebeurt pas als het project geladen
+  // is, want de regel hierboven vult de briefing dan opnieuw uit de database.
+  const projectHerstelRef = useRef<ProjectMomentopname | null>(null)
+  useTabSnapshot<ProjectMomentopname>(
+    `project-detail-${id || 'onbekend'}`,
+    () => {
+      const briefingGewijzigd = briefingText !== (project?.beschrijving || '')
+      const taakBegonnen = Boolean(nieuweTaakTitel.trim() || nieuweTaakBeschrijving.trim())
+      if (!briefingGewijzigd && !taakBegonnen) return null
+      return {
+        briefingText: briefingGewijzigd ? briefingText : null,
+        nieuweTaakOpen, nieuweTaakTitel, nieuweTaakBeschrijving,
+        nieuweTaakToegewezen, nieuweTaakDeadline,
+      }
+    },
+    (opname) => { projectHerstelRef.current = opname },
+  )
+  useEffect(() => {
+    const opname = projectHerstelRef.current
+    if (!project || !opname) return
+    projectHerstelRef.current = null
+    if (opname.briefingText !== null) {
+      setBriefingText(opname.briefingText)
+      setDirty(true)
+    }
+    if (opname.nieuweTaakTitel || opname.nieuweTaakBeschrijving) {
+      setNieuweTaakOpen(opname.nieuweTaakOpen)
+      setNieuweTaakTitel(opname.nieuweTaakTitel)
+      setNieuweTaakBeschrijving(opname.nieuweTaakBeschrijving)
+      setNieuweTaakToegewezen(opname.nieuweTaakToegewezen)
+      setNieuweTaakDeadline(opname.nieuweTaakDeadline)
+    }
+  }, [project])
 
   const handleOpenMontageDialog = () => {
     setEditingMontageId(null)

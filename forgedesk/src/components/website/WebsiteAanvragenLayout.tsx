@@ -32,8 +32,15 @@ export function WebsiteAanvragenLayout() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedAanvraag, setSelectedAanvraag] = useState<WebsiteAanvraag | null>(null)
-  const [searchParams] = useSearchParams()
-  const [tab, setTab] = useState<'aanvragen' | 'chat'>(() => searchParams.get('tab') === 'chat' ? 'chat' : 'aanvragen')
+  // Sub-tab in de URL, niet in losse state: anders val je bij terugkomst
+  // uit een ander tabblad terug op Aanvragen.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab: 'aanvragen' | 'chat' = searchParams.get('tab') === 'chat' ? 'chat' : 'aanvragen'
+  const setTab = (waarde: 'aanvragen' | 'chat') => {
+    const params = new URLSearchParams(searchParams)
+    params.set('tab', waarde)
+    setSearchParams(params, { replace: true })
+  }
   const [verwerkOpen, setVerwerkOpen] = useState(false)
 
   useEffect(() => {

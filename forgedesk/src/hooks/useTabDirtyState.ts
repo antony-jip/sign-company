@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
 import { useTabs } from '@/contexts/TabsContext'
 
 /**
@@ -12,13 +11,14 @@ import { useTabs } from '@/contexts/TabsContext'
  * er niets stil verloren gaat. De saver mag pending debounced saves flushen.
  */
 export function useTabDirtyState(saver?: () => Promise<void> | void) {
-  const { tabs, setTabDirty, registerTabSaver } = useTabs()
-  const location = useLocation()
+  const { activeTabId, setTabDirty, registerTabSaver } = useTabs()
   const dirtyRef = useRef(false)
 
-  // Find the tab that matches the current path
-  const currentTab = tabs.find(t => t.path === location.pathname)
-  const tabId = currentTab?.id ?? null
+  // Alleen het actieve tabblad is gemount, dus dat is per definitie het
+  // tabblad van dit scherm. Zoeken op pad ging mis zodra twee tabbladen
+  // hetzelfde pad hadden (twee nieuwe facturen) of het pad een querystring
+  // kreeg — dan hoorde de dirty-vlag bij het verkeerde of bij geen tabblad.
+  const tabId = activeTabId
 
   const setDirty = (dirty: boolean) => {
     dirtyRef.current = dirty

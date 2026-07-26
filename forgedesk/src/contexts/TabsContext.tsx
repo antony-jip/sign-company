@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { confirm } from '@/components/shared/ConfirmDialog'
+import { wisTabSnapshots } from '@/hooks/useTabSnapshot'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -54,7 +55,16 @@ const PATH_LABELS: Record<string, string> = {
   '/werkbonnen/nieuw': 'Nieuwe werkbon',
 }
 
-function labelForPath(path: string): string {
+// Een tabpad bewaart óók de querystring: sub-tabs, filters en zoektermen
+// leven daarin. Zonder search kom je op /facturen terug in plaats van op
+// /facturen?tab=inkoop. Voor het label telt alleen het pad zelf.
+export function pathnameVan(path: string): string {
+  const q = path.indexOf('?')
+  return q === -1 ? path : path.slice(0, q)
+}
+
+function labelForPath(fullPath: string): string {
+  const path = pathnameVan(fullPath)
   // Exact match first
   if (PATH_LABELS[path]) return PATH_LABELS[path]
 
@@ -148,6 +158,13 @@ export function TabsProvider({ children }: { children: ReactNode }) {
   const isNavigatingRef = useRef(false)
   const isSwitchingTabRef = useRef(false)
 
+  // Waar de browser nú staat, inclusief querystring. Wissel je naar een
+  // tabblad dat toevallig op hetzelfde pad staat, dan volgt er geen
+  // location-wijziging; zonder deze vergelijking bleef de skip-vlag hangen
+  // en sloeg het tabblad daarna zijn eerstvolgende navigatie niet meer op.
+  const huidigPadRef = useRef(location.pathname + location.search)
+  huidigPadRef.current = location.pathname + location.search
+
   // ── Stille save-functies per tab (alleen de actieve tab is gemount) ──
   const saversRef = useRef<Map<string, () => Promise<void> | void>>(new Map())
   const registerTabSaver = useCallback(
@@ -183,20 +200,24 @@ export function TabsProvider({ children }: { children: ReactNode }) {
     }
     if (!activeTabId) return
 
-    const currentPath = location.pathname
+    const currentPath = location.pathname + location.search
     setTabs(prev => {
       const tab = prev.find((t: AppTab) => t.id === activeTabId)
       if (!tab || tab.path === currentPath) return prev
 
+      // Blijf je binnen dezelfde pagina en verandert alleen de querystring
+      // (sub-tab, filter), dan houdt het tabblad zijn eigen label: een
+      // detailpagina heet dan nog steeds naar zijn record en niet "Project".
+      const zelfdePagina = pathnameVan(tab.path) === pathnameVan(currentPath)
       const next = prev.map((t: AppTab) =>
         t.id === activeTabId
-          ? { ...t, path: currentPath, label: labelForPath(currentPath) }
+          ? { ...t, path: currentPath, label: zelfdePagina ? t.label : labelForPath(currentPath) }
           : t
       )
       saveTabs(next)
       return next
     })
-  }, [location.pathname, activeTabId])
+  }, [location.pathname, location.search, activeTabId])
 
   // ── Persist active tab id ──────────────────────────────────────────
   useEffect(() => {
@@ -212,9 +233,14 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       const existing = prev.find((t: AppTab) => t.id === id)
 
       if (existing) {
-        isSwitchingTabRef.current = true
         setActiveTabId(id)
-        navigateRef.current(existing.path)
+        if (existing.path !== huidigPadRef.current) {
+          isSwitchingTabRef.current = true
+          // Wisselen van tabblad is geen navigatie: met een push zou elke
+          // tabklik in de browsergeschiedenis komen en zou "terug" je naar de
+          // pagina van een ánder tabblad sturen.
+          navigateRef.current(existing.path, { replace: true })
+        }
         return
       }
 
@@ -264,6 +290,7 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       }
 
       const next = tabsRef.current.filter((t: AppTab) => t.id !== id)
+      wisTabSnapshots(id)
 
       // Never go to zero tabs — create a fresh one
       if (next.length === 0) {
@@ -306,6 +333,7 @@ export function TabsProvider({ children }: { children: ReactNode }) {
         })
         if (!confirmed) return
       }
+      prev.forEach((t: AppTab) => { if (t.id !== id) wisTabSnapshots(t.id) })
       const next = tabsRef.current.filter((t: AppTab) => t.id === id)
       saveTabs(next)
       setActiveTabId(id)
@@ -326,6 +354,7 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       })
       if (!confirmed) return
     }
+    prev.forEach((t: AppTab) => wisTabSnapshots(t.id))
     const fresh: AppTab = { id: nextTabId(), path: '/', label: 'Dashboard', isDirty: false }
     saveTabs([fresh])
     setTabs([fresh])
@@ -341,9 +370,9 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       await flushActiveTabSaver()
       const tab = tabsRef.current.find((t: AppTab) => t.id === id)
       setActiveTabId(id)
-      if (tab) {
+      if (tab && tab.path !== huidigPadRef.current) {
         isSwitchingTabRef.current = true
-        navigateRef.current(tab.path)
+        navigateRef.current(tab.path, { replace: true })
       }
     },
     [flushActiveTabSaver]

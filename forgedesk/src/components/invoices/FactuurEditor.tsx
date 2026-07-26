@@ -132,6 +132,7 @@ import { KlantContactSelector, type ResolvedContactpersoon } from '@/components/
 import { FactuurBijlagenSectie } from '@/components/invoices/FactuurBijlagenSectie'
 import { getFactuurBijlagen } from '@/services/factuurBijlagenService'
 import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
+import { useTabSnapshot } from '@/hooks/useTabSnapshot'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
@@ -150,6 +151,39 @@ interface LineItem {
   korting_percentage: number
   grootboek_code: string
   detail_regels?: OfferteItemDetailRegel[]
+}
+
+// Wat er van een openstaande factuur bewaard blijft als je van tabblad
+// wisselt. Alleen wat je zelf intypt of kiest · geladen lijsten (klanten,
+// werkbonnen, grootboek) komen bij terugkomst gewoon opnieuw uit de database.
+interface FactuurMomentopname {
+  klantId: string
+  contactpersoonId: string
+  offerteId: string
+  projectId: string
+  titel: string
+  nummer: string
+  factuurdatum: string
+  vervaldatum: string
+  voorwaarden: string
+  notities: string
+  introTekst: string
+  outroTekst: string
+  items: LineItem[]
+  kostenplaatsId: string
+  werkbonId: string
+  factureerPercentage: number
+  isCreditFactuur: boolean
+  creditVoorFactuurId: string
+  creditVoorNummer: string
+  adresOverrideOpen: boolean
+  adresBedrijfsnaam: string
+  adresTav: string
+  adresRegel: string
+  adresPostcode: string
+  adresPlaats: string
+  adresOokOpKlant: boolean
+  extraTekstOpen: boolean
 }
 
 // ============ HELPERS ============
@@ -777,6 +811,61 @@ export function FactuurEditor() {
       setExtraTekstOpen(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading])
+
+  // ── Invoer bewaren bij tabblad-wissel ─────────────────────────────────
+  // Wisselen van tabblad unmount deze editor. Zonder momentopname is een
+  // half getypte factuur weg zodra je even in je mail kijkt. Terugzetten
+  // gebeurt bewust pas ná het laden: de database vult dezelfde velden en
+  // zou anders overschrijven wat we net hersteld hadden.
+  const herstelWachtrijRef = useRef<FactuurMomentopname | null>(null)
+  useTabSnapshot<FactuurMomentopname>(
+    // Sleutel per factuur: open je in hetzelfde tabblad daarna een andere
+    // factuur, dan mag het concept van de vorige daar niet in landen.
+    `factuur-editor-${editFactuurId || 'nieuw'}`,
+    () => isDirty ? {
+      klantId, contactpersoonId, offerteId, projectId, titel, nummer,
+      factuurdatum, vervaldatum, voorwaarden, notities, introTekst, outroTekst,
+      items, kostenplaatsId, werkbonId, factureerPercentage,
+      isCreditFactuur, creditVoorFactuurId, creditVoorNummer,
+      adresOverrideOpen, adresBedrijfsnaam, adresTav, adresRegel,
+      adresPostcode, adresPlaats, adresOokOpKlant, extraTekstOpen,
+    } : null,
+    (opname) => { herstelWachtrijRef.current = opname },
+  )
+  useEffect(() => {
+    const opname = herstelWachtrijRef.current
+    if (isLoading || !opname) return
+    herstelWachtrijRef.current = null
+    setKlantId(opname.klantId)
+    setContactpersoonId(opname.contactpersoonId)
+    setOfferteId(opname.offerteId)
+    setProjectId(opname.projectId)
+    setTitel(opname.titel)
+    setNummer(opname.nummer)
+    setFactuurdatum(opname.factuurdatum)
+    setVervaldatum(opname.vervaldatum)
+    setVoorwaarden(opname.voorwaarden)
+    setNotities(opname.notities)
+    setIntroTekst(opname.introTekst)
+    setOutroTekst(opname.outroTekst)
+    setItems(opname.items)
+    setKostenplaatsId(opname.kostenplaatsId)
+    setWerkbonId(opname.werkbonId)
+    setFactureerPercentage(opname.factureerPercentage)
+    setIsCreditFactuur(opname.isCreditFactuur)
+    setCreditVoorFactuurId(opname.creditVoorFactuurId)
+    setCreditVoorNummer(opname.creditVoorNummer)
+    setAdresOverrideOpen(opname.adresOverrideOpen)
+    setAdresBedrijfsnaam(opname.adresBedrijfsnaam)
+    setAdresTav(opname.adresTav)
+    setAdresRegel(opname.adresRegel)
+    setAdresPostcode(opname.adresPostcode)
+    setAdresPlaats(opname.adresPlaats)
+    setAdresOokOpKlant(opname.adresOokOpKlant)
+    setExtraTekstOpen(opname.extraTekstOpen)
+    setIsDirty(true)
+    if (opname.klantId) setShowKlantSelector(false)
   }, [isLoading])
 
   // Laad bijlagen voor de verzend-dialog. Default alle bijlagen aangevinkt.

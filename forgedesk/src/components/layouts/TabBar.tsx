@@ -8,12 +8,14 @@ import { cn } from '@/lib/utils'
 function TabItem({
   tab,
   isActive,
+  canClose,
   onActivate,
   onClose,
   onContextMenu,
 }: {
   tab: AppTab
   isActive: boolean
+  canClose: boolean
   onActivate: () => void
   onClose: (e: React.MouseEvent) => void
   onContextMenu: (e: React.MouseEvent) => void
@@ -34,17 +36,19 @@ function TabItem({
         <span className="w-[5.5px] h-[5.5px] rounded-full bg-flame flex-shrink-0" />
       )}
       <span className="truncate flex-1 text-left">{tab.label}</span>
-      <span
-        className={cn(
-          'flex-shrink-0 flex items-center justify-center w-[17px] h-[17px] rounded-[5px] text-petrol/40 transition-all hover:bg-[rgba(241,80,37,0.13)] hover:text-flame',
-          isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-        )}
-        onClick={onClose}
-        role="button"
-        tabIndex={-1}
-      >
-        <X className="w-[11px] h-[11px]" />
-      </span>
+      {canClose && (
+        <span
+          className={cn(
+            'flex-shrink-0 flex items-center justify-center w-[17px] h-[17px] rounded-[5px] text-petrol/40 transition-all hover:bg-[rgba(241,80,37,0.13)] hover:text-flame',
+            isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          )}
+          onClick={onClose}
+          role="button"
+          tabIndex={-1}
+        >
+          <X className="w-[11px] h-[11px]" />
+        </span>
+      )}
     </button>
   )
 }
@@ -145,8 +149,6 @@ export function TabBar() {
     }
   }
 
-  if (tabs.length <= 1) return null
-
   return (
     <>
       <div
@@ -173,6 +175,7 @@ export function TabBar() {
               <TabItem
                 tab={tab}
                 isActive={tab.id === activeTabId}
+                canClose={tabs.length > 1}
                 onActivate={() => setActiveTab(tab.id)}
                 onClose={(e) => {
                   e.stopPropagation()
@@ -189,7 +192,8 @@ export function TabBar() {
           <button
             className="flex-shrink-0 w-7 h-7 rounded-[7px] text-petrol/40 hover:text-flame hover:bg-[hsl(38,22%,92.5%)] flex items-center justify-center transition-colors duration-150 ml-0.5"
             onClick={newTab}
-            title="Nieuw tabblad (Cmd+T)"
+            title="Nieuw tabblad · ⌘T"
+            aria-label="Nieuw tabblad"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
