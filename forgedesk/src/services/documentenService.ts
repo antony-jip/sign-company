@@ -293,6 +293,7 @@ export async function bijlageNaarProject(params: {
   klantId?: string | null
   bestandsnaam: string
   contentType: string
+  map?: string
   data: Blob
 }): Promise<Document> {
   if (!isSupabaseConfigured() || !supabase) {
@@ -323,7 +324,7 @@ export async function bijlageNaarProject(params: {
       naam: params.bestandsnaam,
       type: params.contentType || 'application/octet-stream',
       grootte: params.data.size,
-      map: 'Bijlagen',
+      map: params.map || 'Bijlagen',
       storage_path: storagePath,
       status: 'concept',
       tags: ['email'],

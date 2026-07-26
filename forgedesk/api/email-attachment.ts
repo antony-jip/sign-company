@@ -106,6 +106,100 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   }
 }
 
+// ───── Folder-resolutie (gelijk aan api/fetch-emails.ts) ─────
+// De client stuurt een logische mapnaam ('verzonden'), niet de echte
+// IMAP-naam. Die verschilt per server: Gmail-NL heeft
+// '[Gmail]/Verzonden berichten', Outlook 'Sent Items'. Letterlijk openen
+// werkt daarom alleen voor INBOX.
+const FOLDER_MAP: Record<string, string> = {
+  'inbox': 'INBOX',
+  'verzonden': '[Gmail]/Verzonden berichten',
+  'sent': '[Gmail]/Sent Mail',
+  'concepten': '[Gmail]/Concepten',
+  'drafts': '[Gmail]/Drafts',
+  'prullenbak': '[Gmail]/Prullenbak',
+  'trash': '[Gmail]/Trash',
+  'spam': '[Gmail]/Spam',
+  'alle': '[Gmail]/Alle berichten',
+  'all': '[Gmail]/All Mail',
+}
+
+// Special-use flags per logische folder. IMAP servers exposen deze via
+// LIST extension (RFC 6154). Gmail, Outlook, FastMail e.a. ondersteunen het.
+const SPECIAL_USE_MAP: Record<string, string> = {
+  inbox: '\\Inbox',
+  verzonden: '\\Sent',
+  sent: '\\Sent',
+  concepten: '\\Drafts',
+  drafts: '\\Drafts',
+  prullenbak: '\\Trash',
+  trash: '\\Trash',
+  spam: '\\Junk',
+  alle: '\\All',
+  all: '\\All',
+}
+
+// Naam-fallback patterns als special-use ontbreekt
+const NAME_PATTERNS: Record<string, RegExp> = {
+  verzonden: /sent|verzonden|gesendet|envoy/i,
+  sent: /sent|verzonden|gesendet|envoy/i,
+  concepten: /draft|concept|brouillon|entwurf/i,
+  drafts: /draft|concept|brouillon|entwurf/i,
+  prullenbak: /trash|deleted|prullen|corbeille|papierkorb/i,
+  trash: /trash|deleted|prullen|corbeille|papierkorb/i,
+  spam: /spam|junk|ongewenst/i,
+  alle: /all\s*mail|alle\s*berichten|all messages/i,
+  all: /all\s*mail|alle\s*berichten|all messages/i,
+}
+
+interface ImapMailbox {
+  path: string
+  name?: string
+  specialUse?: string
+  flags?: Set<string> | string[]
+}
+
+async function resolveImapFolder(client: ImapFlow, folder: string): Promise<string> {
+  const lower = folder.toLowerCase()
+
+  // 1. INBOX is universeel
+  if (lower === 'inbox') return 'INBOX'
+
+  // 2. Probeer eerst de hardcoded mapping (werkt op Gmail-NL)
+  const mapped = FOLDER_MAP[lower]
+  if (mapped) {
+    try {
+      const status = await client.status(mapped, { messages: true })
+      if (status) return mapped
+    } catch {
+      // mailbox bestaat niet, ga door naar dynamische fallback
+    }
+  }
+
+  // 3. Dynamische fallback: list alle folders en zoek op special-use of naam
+  try {
+    const mailboxes = (await client.list()) as ImapMailbox[]
+    const wantedSpecialUse = SPECIAL_USE_MAP[lower]
+    if (wantedSpecialUse) {
+      const bySpecialUse = mailboxes.find((m) => m.specialUse === wantedSpecialUse)
+      if (bySpecialUse) return bySpecialUse.path
+    }
+    const namePattern = NAME_PATTERNS[lower]
+    if (namePattern) {
+      const candidates = mailboxes.filter((m) => namePattern.test(m.path) || namePattern.test(m.name || ''))
+      if (candidates.length > 0) {
+        const gmailVariant = candidates.find((m) => m.path.startsWith('[Gmail]/'))
+        return (gmailVariant || candidates[0]).path
+      }
+    }
+  } catch (err) {
+    console.error('[email-attachment] folder list lookup failed:', err)
+  }
+
+  // 4. Last resort: gebruik de input zoals hij is
+  return folder
+}
+
 // ───── Persistent attachment-cache (sprint 3) ─────
 const STORAGE_BUCKET = 'email-attachments'
 const SIGNED_URL_TTL = 60 * 60 // 1 uur
@@ -155,6 +249,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  let client: ImapFlow | null = null
+
   try {
     const { uid, folder = 'INBOX', filename, all } = req.body as {
       uid?: number | string
@@ -168,13 +264,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const user_id = await verifyUser(req)
 
-    // Resolve email_uuid voor cache-lookup (snel pad bij hits).
+    // Resolve email_uuid voor cache-lookup (snel pad bij hits). Matchen op
+    // `map` en niet op `imap_folder`: die laatste bevat de server-specifieke
+    // naam ('[Gmail]/Verzonden berichten'), die we hier nog niet kennen.
+    const mapValue = folder.toUpperCase() === 'INBOX' ? 'inbox' : folder.toLowerCase()
     const { data: emailRow } = await supabaseAdmin
       .from('emails')
       .select('id')
       .eq('user_id', user_id)
       .eq('uid', Number(uid))
-      .eq('imap_folder', folder)
+      .eq('map', mapValue)
+      .limit(1)
       .maybeSingle()
     const email_uuid = emailRow?.id || null
 
@@ -205,7 +305,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // IMAP-fallback: bestaande pad + cache-write voor volgende keer.
     const creds = await getEmailCredentials(user_id)
 
-    const client = new ImapFlow({
+    client = new ImapFlow({
       host: creds.imap_host,
       port: creds.imap_port,
       secure: creds.imap_port === 993,
@@ -217,7 +317,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     await client.connect()
-    await client.mailboxOpen(folder)
+    const imapFolder = await resolveImapFolder(client, folder)
+    await client.mailboxOpen(imapFolder)
 
     let message = null
     for await (const msg of client.fetch(
@@ -229,6 +330,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     await client.logout()
+    client = null
 
     if (!message || !('source' in message) || !message.source) {
       return res.status(404).json({ error: 'Email niet gevonden' })
@@ -303,6 +405,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       content: contentBuffer.toString('base64'),
     })
   } catch (err: unknown) {
+    // Zonder logout blijft de IMAP-verbinding hangen tot de socket-timeout
+    // als mailboxOpen of fetch gooit. Faalt de logout zelf, dan telt de
+    // oorspronkelijke fout — die wil de gebruiker zien.
+    if (client) {
+      try { await client.logout() } catch { /* al gesloten */ }
+    }
     const message = err instanceof Error ? err.message : 'Onbekende fout'
     console.error('[email-attachment] error:', message)
     return res.status(500).json({ error: message })

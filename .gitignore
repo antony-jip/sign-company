@@ -17,3 +17,7 @@ tsconfig.tsbuildinfo
 .env
 .env*.local
 .vercel
+
+# Agent-worktrees en Trigger.dev build-artefacten
+.claude/worktrees/
+forgedesk/.trigger/

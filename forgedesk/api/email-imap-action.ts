@@ -250,7 +250,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: `Geef 1 tot ${MAX_PER_REQUEST} email-ids mee` })
     }
     const actie = action as Actie
-    const ids = emailIds.filter((i): i is string => typeof i === 'string' && i.length > 0)
+    // Ontdubbelen: dezelfde rij twee keer in de lijst zou anders twee keer in
+    // de uitkomst komen en de tellingen scheeftrekken.
+    const ids = [...new Set(emailIds.filter((i): i is string => typeof i === 'string' && i.length > 0))]
     if (ids.length === 0) return res.status(400).json({ error: 'Geen geldige email-ids' })
 
     // De client stuurt alleen onze eigen rij-ids; uid en map leiden we hier
@@ -272,6 +274,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const resultaten: Array<{ id: string; ok: boolean; imap: string; error?: string }> = []
 
+    // Een id dat geen rij oplevert (andere eigenaar, inmiddels weg) mag niet
+    // stil uit de uitkomst verdwijnen: de client zou denken dat het gelukt is.
+    const gevonden = new Set(alle.map((r) => r.id))
+    for (const id of ids) {
+      if (!gevonden.has(id)) resultaten.push({ id, ok: false, imap: 'onbekend', error: 'niet_gevonden' })
+    }
+
     // Definitief verwijderen kan alleen met IMAP-controle erachter. Een rij
     // zonder uid kan niet tegen de server gecheckt worden, dus daar weigeren
     // we in plaats van hem stilletjes hard te deleten.
@@ -285,8 +294,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // verbinding opzetten.
     if (metUid.length === 0) {
       if (actie !== 'purge') {
-        await schrijfDbMutatie(actie, alle.map((r) => r.id), user_id, null)
-        for (const r of alle) resultaten.push({ id: r.id, ok: true, imap: 'overgeslagen' })
+        const dbFout = await schrijfDbMutatie(actie, alle.map((r) => r.id), user_id, null)
+        for (const r of alle) {
+          resultaten.push({ id: r.id, ok: !dbFout, imap: 'overgeslagen', ...(dbFout ? { error: dbFout } : {}) })
+        }
       }
       return res.status(200).json({
         resultaten,
@@ -308,6 +319,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
     await client.connect()
 
+    // Zonder UIDPLUS valt imapflow terug op een kale EXPUNGE, en die wist
+    // élk bericht in de map dat \Deleted draagt — ook wat een andere client
+    // daar heeft staan. Zonder MOVE emuleert imapflow met COPY + \Deleted +
+    // EXPUNGE, en die emulatie wist zelfs door als de COPY mislukte. Beide
+    // gevallen zijn onherstelbaar, dus daar beginnen we niet aan.
+    if (actie === 'purge' && !client.capabilities?.has?.('UIDPLUS')) {
+      try { await client.logout() } catch { /* verbinding al dicht */ }
+      client = null
+      return res.status(409).json({ error: 'Deze mailserver ondersteunt geen UID EXPUNGE. Definitief verwijderen is hier niet veilig.' })
+    }
+    if (actie !== 'purge' && !client.capabilities?.has?.('MOVE')) {
+      try { await client.logout() } catch { /* verbinding al dicht */ }
+      client = null
+      return res.status(409).json({ error: 'Deze mailserver ondersteunt MOVE niet. Verplaatsen is hier niet veilig.' })
+    }
+
     const isGmail = client.capabilities?.has?.('X-GM-EXT-1') ?? false
     const mailboxen = (await client.list()) as ImapMailbox[]
 
@@ -318,7 +345,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const doelPad = actie === 'archive' ? archiefPad : trashPad
     if (actie !== 'purge' && !doelPad) {
-      await client.logout(); client = null
+      try { await client.logout() } catch { /* verbinding al dicht */ }
+      client = null
       return res.status(409).json({
         error: actie === 'archive'
           ? 'Deze mailbox heeft geen archiefmap'
@@ -336,6 +364,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     for (const [bronPad, groep] of perMap) {
       try {
+        // Al in de doelmap: een MOVE naar dezelfde map wijzen servers af of
+        // voeren ze uit als kopie. Alleen de administratie bijwerken; de uid
+        // blijft geldig, dus die laten we staan.
+        if (actie !== 'purge' && bronPad === doelPad) {
+          const dbFout = await schrijfDbMutatie(actie, groep.map((r) => r.id), user_id, null)
+          for (const r of groep) {
+            resultaten.push({ id: r.id, ok: !dbFout, imap: 'al_in_doelmap', ...(dbFout ? { error: dbFout } : {}) })
+          }
+          continue
+        }
+
         const mailbox = await client.mailboxOpen(bronPad)
 
         // UIDVALIDITY-controle. Is die gewisseld, dan wijst een opgeslagen uid
@@ -369,47 +408,105 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           continue
         }
 
-        const uids = groep.map((r) => Number(r.uid))
-
         if (actie === 'purge') {
-          // Onherstelbaar. Twee sloten: élke rij moet in de prullenbak zitten
-          // én de bronmap moet de opgeloste prullenbak zijn. Expungen uit
-          // INBOX is bij Gmail onschuldig, uit Trash definitief — dat verschil
-          // mag niet van toeval afhangen.
-          if (!trashPad || bronPad !== trashPad || groep.some((r) => r.map !== 'prullenbak')) {
+          // Onherstelbaar. Twee sloten: de bronmap moet de opgeloste
+          // prullenbak zijn én de rij moet daar ook volgens onze eigen
+          // administratie staan. Expungen uit INBOX is bij Gmail onschuldig,
+          // uit Trash definitief — dat verschil mag niet van toeval afhangen.
+          if (!trashPad || bronPad !== trashPad) {
             for (const r of groep) resultaten.push({ id: r.id, ok: false, imap: 'geweigerd', error: 'niet_in_prullenbak' })
             continue
           }
-          // Message-id hercontrole: laatste vangnet tegen een hergebruikte uid.
-          const geldig: number[] = []
-          for await (const bericht of client.fetch({ uid: uids.join(',') }, { uid: true, envelope: true })) {
-            const rij = groep.find((r) => Number(r.uid) === bericht.uid)
-            if (!rij) continue
-            // Geen message_id = niets om tegen te vergelijken. Juist dan is
-            // de uid de enige identiteit, dus weigeren in plaats van gokken.
-            if (rij.message_id && rij.message_id === bericht.envelope?.messageId) geldig.push(bericht.uid)
-          }
-          if (geldig.length > 0) await client.messageDelete({ uid: geldig.join(',') })
-          const gelukt: string[] = []
+          // Per rij weigeren, niet per groep: één afwijkende mail in een
+          // bulkselectie mag de rest niet meeslepen.
+          const teWissen = groep.filter((r) => r.map === 'prullenbak')
           for (const r of groep) {
-            const ok = geldig.includes(Number(r.uid))
-            resultaten.push({ id: r.id, ok, imap: ok ? 'verwijderd' : 'overgeslagen' })
-            if (ok) gelukt.push(r.id)
+            if (r.map !== 'prullenbak') resultaten.push({ id: r.id, ok: false, imap: 'geweigerd', error: 'niet_in_prullenbak' })
+          }
+          if (teWissen.length === 0) continue
+
+          const bevestigd = await bevestigBerichten(client, teWissen)
+          for (const r of teWissen) {
+            if (!bevestigd.has(Number(r.uid))) resultaten.push({ id: r.id, ok: false, imap: 'overgeslagen', error: 'bericht_niet_bevestigd' })
+          }
+          const gelukt = teWissen.filter((r) => bevestigd.has(Number(r.uid)))
+          if (gelukt.length === 0) continue
+
+          const gewist = await client.messageDelete({ uid: [...bevestigd].join(',') })
+          if (gewist !== true) {
+            for (const r of gelukt) resultaten.push({ id: r.id, ok: false, imap: 'mislukt', error: 'expunge_geweigerd' })
+            continue
           }
           // Meteen wegschrijven: het bericht is nu écht weg op de server.
-          await schrijfDbMutatie('purge', gelukt, user_id, null)
+          const dbFout = await schrijfDbMutatie('purge', gelukt.map((r) => r.id), user_id, null)
+          for (const r of gelukt) {
+            resultaten.push({ id: r.id, ok: !dbFout, imap: 'verwijderd', ...(dbFout ? { error: dbFout } : {}) })
+          }
         } else {
-          await client.messageMove({ uid: uids.join(',') }, doelPad as string)
-          for (const r of groep) resultaten.push({ id: r.id, ok: true, imap: 'verplaatst' })
+          // Zelfde hercontrole als bij purge: tussen synchroniseren en nu kan
+          // een andere client het bericht verplaatst of gewist hebben, en dan
+          // hangt de uid inmiddels aan een ander bericht.
+          const bevestigd = await bevestigBerichten(client, groep)
+          for (const r of groep) {
+            if (!bevestigd.has(Number(r.uid))) resultaten.push({ id: r.id, ok: false, imap: 'overgeslagen', error: 'bericht_niet_bevestigd' })
+          }
+          const teVerplaatsen = groep.filter((r) => bevestigd.has(Number(r.uid)))
+          if (teVerplaatsen.length === 0) continue
+
+          const bronUids = [...new Set(teVerplaatsen.map((r) => Number(r.uid)))]
+          const moveUitkomst = await client.messageMove({ uid: bronUids.join(',') }, doelPad as string)
+          if (!moveUitkomst) {
+            for (const r of teVerplaatsen) resultaten.push({ id: r.id, ok: false, imap: 'mislukt', error: 'move_geweigerd' })
+            continue
+          }
+
+          // Een MOVE kan deels slagen. COPYUID (UIDPLUS) vertelt precies welke
+          // bron-uid het gehaald heeft; ontbreekt die, dan kijken we zelf na
+          // wat er nog in de bronmap ligt — wat er nog is, is niet verplaatst.
+          const uidMap = moveUitkomst.uidMap
+          let verplaatst: Set<number>
+          if (uidMap && uidMap.size === bronUids.length) {
+            verplaatst = new Set(uidMap.keys())
+          } else {
+            const nogAanwezig = new Set<number>()
+            for await (const bericht of client.fetch({ uid: bronUids.join(',') }, { uid: true })) {
+              nogAanwezig.add(bericht.uid)
+            }
+            verplaatst = new Set(bronUids.filter((u) => !nogAanwezig.has(u)))
+          }
+
+          const gelukt = teVerplaatsen.filter((r) => verplaatst.has(Number(r.uid)))
+          for (const r of teVerplaatsen) {
+            if (!verplaatst.has(Number(r.uid))) resultaten.push({ id: r.id, ok: false, imap: 'mislukt', error: 'niet_verplaatst' })
+          }
+          if (gelukt.length === 0) continue
+
+          // In de doelmap heeft het bericht een andere uid. Kennen we die uit
+          // COPYUID, dan gaat hij mee; anders wordt hij null, want de oude uid
+          // wijst in de nieuwe map een wildvreemd bericht aan.
+          const nieuweUids = new Map<string, number>()
+          for (const r of gelukt) {
+            const nieuw = uidMap?.get(Number(r.uid))
+            if (nieuw) nieuweUids.set(r.id, nieuw)
+          }
           // Direct na de move wegschrijven, niet aan het eind. Faalt de
           // logout daarna, dan klopt de administratie nog steeds en wijst
           // geen bewaarde uid meer naar een verplaatst bericht.
-          await schrijfDbMutatie(actie, groep.map((r) => r.id), user_id, doelPad)
+          const dbFout = await schrijfDbMutatie(actie, gelukt.map((r) => r.id), user_id, doelPad, nieuweUids)
+          for (const r of gelukt) {
+            resultaten.push({ id: r.id, ok: !dbFout, imap: 'verplaatst', ...(dbFout ? { error: dbFout } : {}) })
+          }
         }
       } catch (groepFout) {
         const melding = groepFout instanceof Error ? groepFout.message : 'onbekend'
         console.error('[email-imap-action] groep mislukt:', bronPad, melding)
-        for (const r of groep) resultaten.push({ id: r.id, ok: false, imap: 'mislukt', error: melding })
+        // Alleen rijen die nog geen uitkomst hebben: halverwege de groep kan
+        // er al gemeld zijn (verplaatst, geweigerd), en die uitkomst is waar.
+        // Twee regels voor dezelfde mail maakt de telling onbruikbaar.
+        const alGemeld = new Set(resultaten.map((x) => x.id))
+        for (const r of groep) {
+          if (!alGemeld.has(r.id)) resultaten.push({ id: r.id, ok: false, imap: 'mislukt', error: melding })
+        }
       }
     }
 
@@ -419,8 +516,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     client = null
 
     if (actie !== 'purge' && zonderUid.length > 0) {
-      await schrijfDbMutatie(actie, zonderUid.map((r) => r.id), user_id, null)
-      for (const r of zonderUid) resultaten.push({ id: r.id, ok: true, imap: 'overgeslagen' })
+      const dbFout = await schrijfDbMutatie(actie, zonderUid.map((r) => r.id), user_id, null)
+      for (const r of zonderUid) {
+        resultaten.push({ id: r.id, ok: !dbFout, imap: 'overgeslagen', ...(dbFout ? { error: dbFout } : {}) })
+      }
     }
 
     return res.status(200).json({
@@ -436,29 +535,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[email-imap-action] Fatal error:', error)
     return res.status(500).json({ error: msg })
   } finally {
+    // Hier komen we alleen als er iets misging. close() in plaats van
+    // logout(): een logout op een halfdode socket blijft tot de socketTimeout
+    // hangen, en de geslaagde mutaties staan al in de database.
     if (client) {
-      try { await client.logout() } catch { /* ignore */ }
+      try { client.close() } catch { /* ignore */ }
     }
   }
 }
 
 /**
+ * Controleert vlak vóór de mutatie of elke uid nog steeds hetzelfde bericht is
+ * als wat er in onze database staat. Tussen synchroniseren en nu kan een
+ * andere client het bericht verplaatst of gewist hebben, waarna de server de
+ * uid opnieuw kan uitgeven aan een compleet ander bericht. Een rij zonder
+ * message_id valt af: dan is er niets om tegen te vergelijken, en juist dan is
+ * de uid de enige identiteit die we hebben.
+ */
+async function bevestigBerichten(client: ImapFlow, groep: MailRij[]): Promise<Set<number>> {
+  const bevestigd = new Set<number>()
+  const uids = [...new Set(groep.map((r) => Number(r.uid)))]
+  if (uids.length === 0) return bevestigd
+  for await (const bericht of client.fetch({ uid: uids.join(',') }, { uid: true, envelope: true })) {
+    const rij = groep.find((r) => Number(r.uid) === bericht.uid)
+    if (!rij) continue
+    if (rij.message_id && rij.message_id === bericht.envelope?.messageId) bevestigd.add(bericht.uid)
+  }
+  return bevestigd
+}
+
+/**
  * Na een MOVE is de oude uid dood. imap_folder en uid moeten mee, anders wijst
  * een volgende actie op dezelfde rij naar een uid die inmiddels hergebruikt is
- * — en dat kan een compleet ander bericht zijn. Zonder uidMap zetten we uid op
- * null, zodat de volgende actie netjes degradeert naar alleen-DB.
+ * — en dat kan een compleet ander bericht zijn. De uid in de doelmap kennen we
+ * alleen via COPYUID (nieuweUids); zonder die bevestiging wordt uid null en
+ * degradeert een volgende actie netjes naar alleen-DB.
+ *
+ * Geeft null terug als alles goed ging, anders een korte melding. De aanroeper
+ * moet die doorgeven: het IMAP-deel is dan al gebeurd en alleen de
+ * administratie loopt achter, en dat mag niet als succes op het scherm komen.
  */
 async function schrijfDbMutatie(
   action: Actie,
   ids: string[],
   user_id: string,
   nieuwPad: string | null,
-): Promise<void> {
-  if (ids.length === 0) return
+  nieuweUids?: Map<string, number>,
+): Promise<string | null> {
+  if (ids.length === 0) return null
+  const fouten: string[] = []
   for (let i = 0; i < ids.length; i += 100) {
     const blok = ids.slice(i, i + 100)
     if (action === 'purge') {
-      await supabaseAdmin.from('emails').delete().eq('user_id', user_id).in('id', blok)
+      const { error } = await supabaseAdmin.from('emails').delete().eq('user_id', user_id).in('id', blok)
+      if (error) fouten.push(error.message)
       continue
     }
     const patch: Record<string, unknown> = action === 'archive'
@@ -468,6 +598,23 @@ async function schrijfDbMutatie(
       patch.imap_folder = nieuwPad
       patch.uid = null
     }
-    await supabaseAdmin.from('emails').update(patch).eq('user_id', user_id).in('id', blok)
+    // Rijen met een eigen nieuwe uid kunnen niet mee in de bulk-update: die
+    // zet één waarde voor alle rijen tegelijk.
+    const bulk = nieuwPad && nieuweUids ? blok.filter((id) => !nieuweUids.has(id)) : blok
+    if (bulk.length > 0) {
+      const { error } = await supabaseAdmin.from('emails').update(patch).eq('user_id', user_id).in('id', bulk)
+      if (error) fouten.push(error.message)
+    }
+    if (nieuwPad && nieuweUids) {
+      for (const id of blok) {
+        const uid = nieuweUids.get(id)
+        if (!uid) continue
+        const { error } = await supabaseAdmin.from('emails').update({ ...patch, uid }).eq('user_id', user_id).eq('id', id)
+        if (error) fouten.push(error.message)
+      }
+    }
   }
+  if (fouten.length === 0) return null
+  console.error('[email-imap-action] DB-mutatie mislukt:', action, fouten.join(' | '))
+  return `db_niet_bijgewerkt: ${fouten[0]}`
 }
