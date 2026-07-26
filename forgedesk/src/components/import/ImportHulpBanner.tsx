@@ -1,7 +1,8 @@
-import { Mail } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 
-const MAILTO_HREF =
-  'mailto:hello@doen.team?subject=Import%20hulp&body=Hoi%2C%20ik%20wil%20graag%20hulp%20bij%20het%20importeren%20van%20mijn%20data.%0A%0AMijn%20inlognaam%3A%20%0A'
+// hello@doen.team is geen postbus die iemand leest · alle hulpvragen lopen
+// via het contactformulier op de site.
+const CONTACT_URL = 'https://doen.team/contact'
 
 export function ImportHulpBanner() {
   return (
@@ -9,19 +10,26 @@ export function ImportHulpBanner() {
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-semibold text-foreground">Kom je er niet uit?</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Geen probleem. Stuur je bestanden en je inlognaam naar{' '}
-          <a href={MAILTO_HREF} className="text-petrol hover:underline font-medium">
-            hello@doen.team
+          Geen probleem. Laat via{' '}
+          <a
+            href={CONTACT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-petrol hover:underline font-medium"
+          >
+            het contactformulier
           </a>{' '}
-          en wij regelen de import voor je. Gratis, zonder gedoe.
+          weten wat je hebt liggen, dan regelen wij de import voor je. Gratis, zonder gedoe.
         </p>
       </div>
       <a
-        href={MAILTO_HREF}
+        href={CONTACT_URL}
+        target="_blank"
+        rel="noopener noreferrer"
         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-petrol bg-[hsl(var(--status-green-bg))] hover:bg-[#D0E6E6] transition-colors whitespace-nowrap"
       >
-        <Mail className="w-4 h-4" />
-        Mail ons
+        Neem contact op
+        <ArrowUpRight className="w-4 h-4" />
       </a>
     </div>
   )
