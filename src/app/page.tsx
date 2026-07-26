@@ -5,6 +5,7 @@ import Demo from '@/components/home/Demo'
 import DemoFilm from '@/components/home/DemoFilm'
 import Journey from '@/components/home/Journey'
 import Statement from '@/components/home/Statement'
+import { EigenGebruikBand } from '@/components/EigenGebruik'
 import Modules from '@/components/home/Modules'
 import PricingSection from '@/components/home/PricingSection'
 import FaqSection from '@/components/home/FaqSection'
@@ -29,6 +30,7 @@ export default function Home() {
         <Journey />
         <DemoFilm />
         <Statement />
+        <EigenGebruikBand />
         <Modules />
         <PricingSection />
         <FaqSection />

@@ -26,6 +26,7 @@ const columns: { title: string; links: { label: string; href: string }[] }[] = [
       { label: 'Veelgestelde vragen', href: '/veelgestelde-vragen' },
       { label: 'Contact', href: '/contact' },
       { label: 'Algemene voorwaarden', href: '/voorwaarden' },
+      { label: 'Privacyverklaring', href: '/privacy' },
     ],
   },
 ]

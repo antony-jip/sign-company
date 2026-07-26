@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { paginaMeta } from '@/lib/metadata'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import FeaturesContent from '@/components/pages/FeaturesContent'
@@ -13,11 +14,11 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: { module: string } }): Promise<Metadata> {
   const mod = modules.find((m) => m.href === `/features/${params.module}`)
   const isKnownModule = moduleIds.includes(params.module as typeof moduleIds[number])
-  return {
+  return paginaMeta({
     title: mod?.seoTitle ?? 'Functies | doen.',
     description: mod?.seoDescription ?? 'Ontdek de modules van doen. Alles-in-één software voor het signbedrijf.',
-    alternates: { canonical: isKnownModule ? `/features/${params.module}` : '/features' },
-  }
+    pad: isKnownModule ? `/features/${params.module}` : '/features',
+  })
 }
 
 export default function FeatureModulePage({ params }: { params: { module: string } }) {

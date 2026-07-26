@@ -201,7 +201,12 @@ export default function ContactContent() {
                     </button>
 
                     <p className="text-[13px] text-center text-muted">
-                      Door te versturen ga je akkoord dat we je éénmalig mogen terugmailen.
+                      We gebruiken je naam, e-mailadres en bericht alleen om je vraag te
+                      beantwoorden. Zie de{' '}
+                      <Link href="/privacy" className="font-semibold text-petrol underline underline-offset-2 hover:text-flame transition-colors">
+                        privacyverklaring
+                      </Link>
+                      .
                     </p>
                   </motion.form>
                 )}

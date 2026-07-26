@@ -1,6 +1,11 @@
 import type { Metadata } from 'next'
 import { Instrument_Sans, Hanken_Grotesk, Spline_Sans_Mono } from 'next/font/google'
 import './globals.css'
+/* Cookieloze bezoekstatistiek. Draait op je eigen domein via
+   /_vercel/insights, dus geen cookies, geen banner, geen extern script en
+   geen aanpassing aan de CSP (connect-src 'self' volstaat). Zet het aan
+   onder Analytics in het Vercel-dashboard, anders verzamelt het niets. */
+import { Analytics } from '@vercel/analytics/next'
 
 /* Koppen draaien op Instrument Sans, hetzelfde kopfont als de app
    (forgedesk/tailwind.config.js). Zo leest de site als hetzelfde product.
@@ -77,6 +82,7 @@ export default function RootLayout({
           Ga naar inhoud
         </a>
         {children}
+        <Analytics />
       </body>
     </html>
   )

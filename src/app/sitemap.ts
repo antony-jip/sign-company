@@ -5,7 +5,7 @@ import { verticals } from '@/data/verticals'
 
 const BASE_URL = 'https://doen.team'
 
-const staticRoutes = ['', '/demo', '/hoe-het-werkt', '/features', '/prijzen', '/over', '/contact', '/kennisbank', '/veelgestelde-vragen', '/voorwaarden']
+const staticRoutes = ['', '/demo', '/hoe-het-werkt', '/features', '/prijzen', '/over', '/contact', '/kennisbank', '/veelgestelde-vragen', '/voorwaarden', '/privacy']
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

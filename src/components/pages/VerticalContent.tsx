@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import type { Vertical } from '@/data/verticals'
 import { modules } from '@/data/modules'
+import { EigenGebruikRegel } from '@/components/EigenGebruik'
 
 /* Verticale landingspagina: lichte hero, pijnpunten als hairline-lijst,
    module-highlights als strakke rijen naar /features/*. */
@@ -58,6 +59,7 @@ export default function VerticalContent({ vertical }: { vertical: Vertical }) {
             <p className="hero-fade text-[15px] text-muted mt-6" style={{ animationDelay: '0.55s' }}>
               30 dagen gratis · geen creditcard · maandelijks opzegbaar
             </p>
+            <EigenGebruikRegel className="hero-fade mt-3 max-w-xl" />
           </div>
         </div>
       </section>

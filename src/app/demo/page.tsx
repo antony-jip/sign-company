@@ -1,19 +1,21 @@
 import type { Metadata } from 'next'
+import { paginaMeta } from '@/lib/metadata'
 import Image from 'next/image'
+import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import CTASection from '@/components/home/CTASection'
 import DemoVideo from '@/components/DemoVideo'
+import AppShowcase from '@/components/home/AppShowcase'
+import { EigenGebruikBand, EigenGebruikNotitie } from '@/components/EigenGebruik'
 import JsonLd from '@/components/JsonLd'
 import { softwareApplicationSchema } from '@/lib/structured-data'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = paginaMeta({
   title: 'Demo · één klus van mail tot betaling | doen.',
-  description:
-    'Bekijk in twee minuten hoe één klus door doen. loopt: aanvraag, project, offerte, drukproef, klantportaal, planning en factuur. Gebouwd voor signmakers.',
-  alternates: { canonical: '/demo' },
-}
+  description: 'Bekijk in twee minuten hoe één klus door doen. loopt: aanvraag, project, offerte, drukproef, klantportaal, planning en factuur. Gebouwd voor signmakers.',
+  pad: '/demo',
+})
 
 /* Wat je in de video zag, scanbaar voor wie (nog) niet kijkt. */
 const GEZIEN = [
@@ -46,6 +48,7 @@ export default function DemoPage() {
               de offerte met marge en uren, de drukproef, het klantportaal, de montageplanning
               en de factuur die eruit rolt.
             </p>
+            <EigenGebruikNotitie className="mt-3" />
           </div>
 
           {/* Full-bleed: de video pakt de hele paginabreedte en speelt direct (gedempt) */}
@@ -207,7 +210,92 @@ export default function DemoPage() {
           </div>
         </section>
 
-        <CTASection />
+        {/* De app zelf, onderaan: na de video en de argumenten wil je niet
+            nog een verhaal maar het ding zelf. Dezelfde nabouw als op de
+            homepage, met de tokens uit forgedesk. */}
+        <section id="de-app" className="bg-bg border-t border-petrol/10 scroll-mt-24">
+          <div className="container-site pt-14 md:pt-20">
+            <div className="md:grid md:grid-cols-12 md:gap-10">
+              <h2
+                className="md:col-span-7 font-heading font-bold text-petrol leading-[1.02] mb-4 md:mb-0"
+                style={{ fontSize: 'clamp(28px, 3.8vw, 48px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
+              >
+                Klik zelf door de app<span className="text-flame">.</span>
+              </h2>
+              <p className="md:col-span-5 self-end text-[16px] md:text-[17px] leading-[1.6] text-muted">
+                Tien schermen uit doen., precies zoals ze eruitzien als je inlogt. Geen
+                video, geen plaatje. Klik links door de modules.
+              </p>
+            </div>
+          </div>
+
+          <div className="hidden md:block">
+            <AppShowcase />
+          </div>
+
+          {/* Op een telefoon is de geschaalde desktop-app niet te bedienen,
+              dus daar sturen we door naar de modulepagina's met hun video's. */}
+          <div className="md:hidden container-site pt-8 pb-14">
+            <p className="text-[15px] leading-[1.6] text-muted">
+              Deze demo werkt het best op een groter scherm. Op je telefoon bekijk je per
+              module de korte video.
+            </p>
+            <Link
+              href="/features"
+              className="group inline-flex items-center gap-2 mt-4 text-[15px] font-semibold text-petrol"
+            >
+              <span className="relative">
+                Bekijk de modules
+                <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-petrol/30" />
+              </span>
+              <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </Link>
+          </div>
+        </section>
+
+        <EigenGebruikBand />
+
+        {/* Afsluiter met meer gewicht dan de standaardband: dit is het einde
+            van de demo, dus hier mag de volledige belofte staan. */}
+        <section className="bg-flame">
+          <div className="container-site py-16 md:py-28">
+            <div className="max-w-3xl">
+              <h2
+                className="font-heading font-bold text-white leading-[1.0] mb-5"
+                style={{ fontSize: 'clamp(32px, 4.6vw, 60px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
+              >
+                Gezien hoe het werkt. Nu jouw bedrijf<span className="text-white/60">.</span>
+              </h2>
+              <p className="text-[17px] md:text-[19px] leading-[1.55] mb-8" style={{ color: 'rgba(255,255,255,0.88)' }}>
+                Dertig dagen gratis, alle tien de modules, geen creditcard. Je zet je eigen
+                producten en templates erin en verstuurt vandaag nog je eerste offerte.
+              </p>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+                <a
+                  href="https://app.doen.team/register"
+                  className="group inline-flex items-center gap-2.5 text-[16px] font-semibold text-flame bg-white px-8 h-[58px] rounded-[6px] transition-transform duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                >
+                  <span>Start gratis</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
+                </a>
+                <Link
+                  href="/contact"
+                  className="group inline-flex items-center gap-2 text-[16px] font-semibold text-white"
+                >
+                  <span className="relative">
+                    Liever eerst even bellen
+                    <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-white/50" />
+                  </span>
+                  <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                </Link>
+              </div>
+              <p className="mt-8 text-[14px]" style={{ color: 'rgba(255,255,255,0.72)' }}>
+                Account aanmaken duurt 5 minuten · maandelijks opzegbaar · wij draaien er zelf
+                een half jaar op
+              </p>
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </>

@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import CTASection from '@/components/home/CTASection'
 import AppShowcase, { type View as AppView } from '@/components/home/AppShowcase'
+import { EigenGebruikBand, EigenGebruikNotitie } from '@/components/EigenGebruik'
 
 const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
 
@@ -739,6 +740,7 @@ function FeaturesOverview() {
         </div>
       </section>
 
+      <EigenGebruikBand />
       <CTASection />
     </>
   )
@@ -816,15 +818,46 @@ function ModuleVideo({ slug }: { slug: string }) {
   const video = moduleVideos[slug]
   const videoRef = useRef<HTMLVideoElement>(null)
 
+  /* Niet automatisch downloaden. Deze video's zijn 1 tot 2,3 MB en stonden
+     op autoPlay met loop, dus op een telefoon betaalde de bezoeker dat
+     meteen, nog voor hij iets gezien had. Nu laadt de bron pas als de video
+     in beeld komt, en bij data-besparing of reduce-motion helemaal niet
+     vanzelf: dan krijg je de poster met bediening. */
   useEffect(() => {
     const el = videoRef.current
-    if (!el) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      el.removeAttribute('autoplay')
-      el.pause()
+    if (!el || !video) return
+
+    const conn = (navigator as { connection?: { saveData?: boolean } }).connection
+    const spaarstand = conn?.saveData === true
+    const rustig = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (spaarstand || rustig) {
       el.controls = true
+      return
     }
-  }, [])
+
+    if (!('IntersectionObserver' in window)) {
+      el.controls = true
+      return
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            if (!el.src) el.src = video.src
+            void el.play().catch(() => {
+              el.controls = true
+            })
+          } else {
+            el.pause()
+          }
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [video])
 
   if (!video) return null
   return (
@@ -832,13 +865,11 @@ function ModuleVideo({ slug }: { slug: string }) {
       <div className="rounded-[12px] overflow-hidden border border-petrol/10 shadow-[0_1px_2px_rgba(20,40,40,0.04),0_24px_60px_-32px_rgba(13,52,60,0.35)]">
         <video
           ref={videoRef}
-          src={video.src}
           poster={video.poster}
-          autoPlay
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="none"
           width={1920}
           height={1080}
           className="w-full h-auto block aspect-video"

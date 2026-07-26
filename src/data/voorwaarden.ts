@@ -123,7 +123,7 @@ export const hoofdstukken: Hoofdstuk[] = [
           'Om dat te kunnen doen, sturen wij de betreffende inhoud naar de AI-leveranciers in Bijlage B. Dat kan de tekst van een e-mail zijn, een inkoopfactuur als document, of een foto die je uploadt. Wij sturen niet meer mee dan voor de gevraagde bewerking nodig is.',
           'De uitkomst van een AI-functie is een voorstel, geen vaststaand feit. AI kan zich vergissen, ook bij bedragen, data en namen. Je controleert de uitkomst voordat je die naar een klant stuurt, in je administratie verwerkt of erop besluit. Wij zijn niet aansprakelijk voor schade die ontstaat doordat een AI-uitkomst ongecontroleerd is overgenomen.',
           'Onze AI-leveranciers gebruiken jouw invoer niet om hun modellen te trainen. Dat is contractueel met hen vastgelegd.',
-          'Bij het abonnement hoort een maandelijks AI-budget en een aantal Studio-credits. Is dat op, dan kun je bijkopen of wachten tot de volgende maand. Ongebruikte credits vervallen niet tussentijds, maar zijn niet inwisselbaar voor geld.',
+          'Bij het abonnement hoort een AI-budget van € 15 per maand, per organisatie en niet per gebruiker. Dat is ruim voldoende voor het normale werk. Beeldgeneratie in Studio kost aanmerkelijk meer dan tekst, dus wie daar veel gebruik van maakt kan het budget opmaken. Is het op, dan koop je bij of wacht je tot de volgende maand. Het budget telt per kalendermaand en ongebruikt budget schuift niet door.',
           'Upload in Studio geen foto\'s waarop personen herkenbaar in beeld zijn, tenzij je daarvoor een grondslag hebt. Let ook op kentekens en andere gegevens die op een foto van een bedrijfspand of voertuig kunnen staan.',
         ],
       },
@@ -157,7 +157,7 @@ export const hoofdstukken: Hoofdstuk[] = [
         titel: 'Prijs',
         leden: [
           'Het abonnement kost € 129 per maand, exclusief btw, voor maximaal tien gebruikers. Alle onderdelen zitten erbij. Er zijn geen opstartkosten en geen prijs per gebruiker.',
-          'Extra Studio-credits en extra AI-budget zijn los bij te kopen tegen het tarief dat op dat moment in de app staat.',
+          'Het AI-budget van € 15 per maand zit bij de prijs in. Extra budget koop je los bij tegen het tarief dat op dat moment in de app staat. Bijgekocht budget is niet inwisselbaar voor geld.',
           'Wij mogen de prijs aanpassen. Een verhoging kondigen wij minimaal 30 dagen van tevoren per e-mail aan. Ben je het er niet mee eens, dan mag je opzeggen tegen de datum waarop de nieuwe prijs ingaat.',
         ],
       },

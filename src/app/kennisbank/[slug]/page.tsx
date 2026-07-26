@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { paginaMeta } from '@/lib/metadata'
 import { notFound } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -13,11 +14,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const article = getArticleBySlug(params.slug)
   if (!article) return { title: 'Niet gevonden | doen.' }
 
-  return {
+  return paginaMeta({
     title: `${article.title} | Kennisbank | doen.`,
     description: article.excerpt,
-    alternates: { canonical: `/kennisbank/${article.slug}` },
-  }
+    pad: `/kennisbank/${article.slug}`,
+    type: 'article',
+  })
 }
 
 export default function KennisbankArticlePage({ params }: { params: { slug: string } }) {

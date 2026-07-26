@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { paginaMeta } from '@/lib/metadata'
 import { notFound } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -14,11 +15,11 @@ export async function generateMetadata({ params }: { params: { vertical: string 
   const vertical = getVerticalBySlug(params.vertical)
   if (!vertical) return { title: 'Niet gevonden | doen.' }
 
-  return {
+  return paginaMeta({
     title: vertical.seoTitle,
     description: vertical.seoDescription,
-    alternates: { canonical: `/voor/${vertical.slug}` },
-  }
+    pad: `/voor/${vertical.slug}`,
+  })
 }
 
 export default function VerticalPage({ params }: { params: { vertical: string } }) {

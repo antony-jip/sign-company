@@ -14,6 +14,12 @@ if (process.env.SENTRY_DSN && !Sentry.getClient()) {
 }
 
 const supabase = createClient(
+
+// Anthropic factureert in dollars; doen. rekent en toont in euro's. Alles wat
+// in geschatte_kosten belandt is dus EUR, zodat de maandlimiet, de meter in
+// Instellingen en de blokkade-melding dezelfde eenheid hebben. Zelfde koers
+// als de Visualizer gebruikt (utils/visualizerDefaults.ts).
+const USD_NAAR_EUR = 0.92
   process.env.VITE_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
@@ -84,7 +90,7 @@ async function checkOrgCap(orgId: string): Promise<{ allowed: boolean; current: 
 
 async function incrementOrgUsage(orgId: string, inputTokens: number, outputTokens: number): Promise<void> {
   const maand = getCurrentMonth()
-  const kosten = (inputTokens / 1_000_000) * SONNET_46_INPUT_PRICE + (outputTokens / 1_000_000) * SONNET_46_OUTPUT_PRICE
+  const kosten = ((inputTokens / 1_000_000) * SONNET_46_INPUT_PRICE + (outputTokens / 1_000_000) * SONNET_46_OUTPUT_PRICE) * USD_NAAR_EUR
 
   const { data: existing } = await supabase
     .from('ai_usage_org')
@@ -116,6 +122,21 @@ async function incrementOrgUsage(orgId: string, inputTokens: number, outputToken
   }
 }
 
+const MAANDEN_NL = ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
+  'juli', 'augustus', 'september', 'oktober', 'november', 'december']
+
+/** "1 augustus" — wanneer de teller weer op nul gaat. Geen Intl, want de
+ *  ICU-data op de serverless-runtime is niet gegarandeerd volledig. */
+function resetTekst(): string {
+  const nu = new Date()
+  const volgende = new Date(Date.UTC(nu.getUTCFullYear(), nu.getUTCMonth() + 1, 1))
+  return `1 ${MAANDEN_NL[volgende.getUTCMonth()]}`
+}
+
+// Valt terug op dit bedrag als een organisatie nog geen rij voor deze maand
+// heeft. Houd gelijk aan de DEFAULT van ai_usage_org.maandlimiet (migratie 161).
+const STANDAARD_MAANDLIMIET_EUR = 15.0
+
 // Inline budget-check — niet verplaatsen naar helper (Vercel constraint)
 async function checkAIBudget(
   organisatieId: string,
@@ -129,8 +150,8 @@ async function checkAIBudget(
     .eq('maand', maand)
   const huidig = (rows ?? []).reduce((s, r) => s + Number(r.geschatte_kosten ?? 0), 0)
   const limiet = rows && rows.length > 0
-    ? Math.max(...rows.map(r => Number(r.maandlimiet ?? 10)))
-    : 10
+    ? Math.max(...rows.map(r => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR)))
+    : STANDAARD_MAANDLIMIET_EUR
   if (huidig + geschatteKosten > limiet) {
     await supabase
       .from('ai_usage_org')
@@ -226,7 +247,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (budget.geblokkeerd) {
       return res.status(403).json({
         error: 'ai_budget_bereikt',
-        bericht: 'Je maandbudget voor AI is bereikt. Koop extra credits om door te gaan.',
+        bericht: `Het gedeelde AI-budget van je organisatie is op voor deze maand. Op ${resetTekst()} staat de teller weer op nul.`,
         redirect: '/instellingen?tab=daan-ai',
       })
     }

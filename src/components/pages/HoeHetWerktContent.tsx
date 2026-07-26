@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import CTASection from '@/components/home/CTASection'
 import Journey from '@/components/home/Journey'
+import { EigenGebruikRegel } from '@/components/EigenGebruik'
 import {
   spaceGrotesk, PETROL, PETROL_DEEP, FLAME, INK, MUTED, LINE, BG, CARD,
   HAIRLINE, PANEL_SHADOW, STATUS, SERIF_ITALIC,
@@ -43,6 +44,7 @@ function Hero() {
           Eén klus, van de eerste klantvraag tot de betaalde factuur. Elk scherm
           hieronder komt uit de app.
         </p>
+        <EigenGebruikRegel className="hero-fade mt-4 max-w-xl" />
       </div>
     </section>
   )

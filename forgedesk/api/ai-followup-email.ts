@@ -62,7 +62,17 @@ async function loadDaanContext(client: SupabaseClient, userId: string): Promise<
 }
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
-const MONTHLY_LIMIT = 5.0
+// Anthropic factureert in dollars; doen. rekent en toont in euro's. Alles wat
+// in geschatte_kosten belandt is dus EUR, zodat de maandlimiet, de meter in
+// Instellingen en de blokkade-melding dezelfde eenheid hebben. Zelfde koers
+// als de Visualizer gebruikt (utils/visualizerDefaults.ts).
+const USD_NAAR_EUR = 0.92
+
+// Vangnet per gebruiker, in euro's. De echte rem is de organisatielimiet
+// hieronder; deze grijpt alleen in als een gebruiker geen organisatie heeft
+// en de org-check dus niet kan draaien. Daarom gelijk aan de org-limiet:
+// een eenpitter mag niet op een derde van zijn budget worden afgekapt.
+const MONTHLY_LIMIT = 15.0
 
 const SYSTEM_PROMPT = `Je bent een zakelijke email assistent voor een Nederlands bedrijf in de sign/reclame industrie.
 Schrijf een follow-up email voor een openstaande offerte.
@@ -132,7 +142,7 @@ async function checkUsageLimit(userId: string): Promise<boolean> {
 
 async function updateUsage(userId: string, inputTokens: number, outputTokens: number): Promise<void> {
   const maand = getCurrentMonth()
-  const kosten = (inputTokens / 1_000_000 * 3) + (outputTokens / 1_000_000 * 15)
+  const kosten = ((inputTokens / 1_000_000 * 3) + (outputTokens / 1_000_000 * 15)) * USD_NAAR_EUR
 
   const { data: existing } = await supabase
     .from('ai_usage')
@@ -166,6 +176,21 @@ async function updateUsage(userId: string, inputTokens: number, outputTokens: nu
   }
 }
 
+const MAANDEN_NL = ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
+  'juli', 'augustus', 'september', 'oktober', 'november', 'december']
+
+/** "1 augustus" — wanneer de teller weer op nul gaat. Geen Intl, want de
+ *  ICU-data op de serverless-runtime is niet gegarandeerd volledig. */
+function resetTekst(): string {
+  const nu = new Date()
+  const volgende = new Date(Date.UTC(nu.getUTCFullYear(), nu.getUTCMonth() + 1, 1))
+  return `1 ${MAANDEN_NL[volgende.getUTCMonth()]}`
+}
+
+// Valt terug op dit bedrag als een organisatie nog geen rij voor deze maand
+// heeft. Houd gelijk aan de DEFAULT van ai_usage_org.maandlimiet (migratie 161).
+const STANDAARD_MAANDLIMIET_EUR = 15.0
+
 // Inline budget-check — niet verplaatsen naar helper (Vercel constraint)
 async function checkAIBudget(
   organisatieId: string,
@@ -179,8 +204,8 @@ async function checkAIBudget(
     .eq('maand', maand)
   const huidig = (rows ?? []).reduce((s, r) => s + Number(r.geschatte_kosten ?? 0), 0)
   const limiet = rows && rows.length > 0
-    ? Math.max(...rows.map(r => Number(r.maandlimiet ?? 10)))
-    : 10
+    ? Math.max(...rows.map(r => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR)))
+    : STANDAARD_MAANDLIMIET_EUR
   if (huidig + geschatteKosten > limiet) {
     await supabase
       .from('ai_usage_org')
@@ -211,7 +236,7 @@ async function logOrgUsage(
   outputPrice: number
 ): Promise<void> {
   const maand = getCurrentMonth()
-  const kostenDelta = (inputTokens / 1_000_000) * inputPrice + (outputTokens / 1_000_000) * outputPrice
+  const kostenDelta = ((inputTokens / 1_000_000) * inputPrice + (outputTokens / 1_000_000) * outputPrice) * USD_NAAR_EUR
   const { data: existing } = await supabase
     .from('ai_usage_org')
     .select('id, aantal_calls, geschatte_kosten')
@@ -263,7 +288,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!withinLimit) {
       return res.status(429).json({
         error: 'AI limiet bereikt',
-        message: 'Je hebt het maximum van €5 aan AI-gebruik bereikt deze maand.',
+        message: `Je hebt deze maand voor \u20ac${MONTHLY_LIMIT} aan Daan-gebruik bereikt.`,
       })
     }
 
@@ -273,7 +298,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (budget.geblokkeerd) {
         return res.status(403).json({
           error: 'ai_budget_bereikt',
-          bericht: 'Je maandbudget voor AI is bereikt. Koop extra credits om door te gaan.',
+          bericht: `Het gedeelde AI-budget van je organisatie is op voor deze maand. Op ${resetTekst()} staat de teller weer op nul.`,
           redirect: '/instellingen?tab=daan-ai',
         })
       }

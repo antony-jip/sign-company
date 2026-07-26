@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { paginaMeta } from '@/lib/metadata'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import Navbar from '@/components/Navbar'
@@ -6,12 +7,11 @@ import Footer from '@/components/Footer'
 import { articles, CATEGORY_ORDER } from '@/data/kennisbank/articles'
 import type { Article, Category } from '@/data/kennisbank/articles'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = paginaMeta({
   title: 'Kennisbank | doen.',
-  description:
-    'Alles wat je moet weten over doen. Per module uitgelegd. Van aan de slag tot geavanceerde tips.',
-  alternates: { canonical: '/kennisbank' },
-}
+  description: 'Alles wat je moet weten over doen. Per module uitgelegd. Van aan de slag tot geavanceerde tips.',
+  pad: '/kennisbank',
+})
 
 export default function KennisbankPage() {
   const filledCategories = CATEGORY_ORDER.filter((category) =>

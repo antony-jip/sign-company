@@ -8,6 +8,7 @@ import JsonLd from '@/components/JsonLd'
 import { PRICE_PER_MONTH } from '@/data/pricing'
 import { prijzenFaqs } from '@/data/faq'
 import { prijzenFaqPageSchema } from '@/lib/structured-data'
+import { EigenGebruikBand } from '@/components/EigenGebruik'
 
 /* Gangbare branchesoftware: richtprijs per maand voor een vergelijkbaar
    pakket. De besparing rekent zichzelf uit vanaf PRICE_PER_MONTH. */
@@ -21,7 +22,7 @@ const INBEGREPEN = [
   'Klantportaal zonder inlog',
   'AI-assistent Daan',
   'Koppeling Exact Online en Mollie',
-  'Studio met 10 credits, bijkopen kan altijd',
+  '€ 15 AI-gebruik per maand, bijkopen kan altijd',
   'Nederlandse support',
   'Updates inbegrepen',
 ]
@@ -31,6 +32,7 @@ export default function PrijzenContent() {
     <div className="bg-bg">
       <PriceHero />
       <PrijzenFaq />
+      <EigenGebruikBand />
       <CTASection />
     </div>
   )

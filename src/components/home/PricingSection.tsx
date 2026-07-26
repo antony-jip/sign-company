@@ -48,7 +48,7 @@ export default function PricingSection() {
               Geen pakketten, geen prijs per gebruiker, geen verrassingen.
             </p>
             <p className="text-[13px] mb-10" style={{ color: 'rgba(226,240,241,0.55)' }}>
-              Alleen Studio-visualisaties draaien op credits: 10 inbegrepen, bijkopen wanneer je wilt.
+              AI zit erbij: € 15 aan gebruik per maand, voor je organisatie samen. Genoeg voor normaal werk. Alleen wie veel beelden maakt in Studio komt eraan, en die koopt bij.
             </p>
             <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
               <a
