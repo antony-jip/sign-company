@@ -8,7 +8,7 @@ import {
   clearForgieHistory,
   type ForgieChatMessage,
 } from '@/services/forgieChatService'
-import { getForgieUsage, type ForgieUsage } from '@/services/forgieService'
+import { getForgieUsage, STANDAARD_AI_MAANDLIMIET, type ForgieUsage } from '@/services/forgieService'
 import { renderForgieMarkdown } from '@/utils/forgieMarkdown'
 
 const SUGGESTIE_CHIPS = [
@@ -38,7 +38,7 @@ export function ForgieChatPage() {
     async function load() {
       const [hist, usg] = await Promise.all([
         getForgieHistory().catch(() => []),
-        getForgieUsage().catch(() => ({ usage: 0, limiet: 5 })),
+        getForgieUsage().catch(() => ({ usage: 0, limiet: STANDAARD_AI_MAANDLIMIET })),
       ])
       setMessages(hist)
       setUsage(usg)
@@ -64,7 +64,10 @@ export function ForgieChatPage() {
       const result = await sendForgieChat(question, messages)
       const forgieMsg: ForgieChatMessage = { role: 'forgie', content: result.answer }
       setMessages(prev => [...prev, forgieMsg])
-      setUsage({ usage: result.usage, limiet: result.limiet })
+      // result.usage is het EIGEN verbruik van deze gebruiker; de meter
+      // toont het org-totaal. Die door elkaar halen liet de teller na één
+      // vraag terugspringen van 14,20 naar 0,45. Opnieuw ophalen dus.
+      getForgieUsage().then(setUsage).catch(() => {})
     } catch (err) {
       const errorMsg: ForgieChatMessage = {
         role: 'forgie',

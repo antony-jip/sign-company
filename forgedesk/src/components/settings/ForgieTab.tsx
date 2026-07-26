@@ -35,9 +35,9 @@ import {
   getVisualizerCredits,
   handmatigCreditsToewijzen,
   getCreditTransacties,
-  getForgieGebruik,
   voegCreditsToe,
 } from '@/services/supabaseService'
+import { getForgieUsage, STANDAARD_AI_MAANDLIMIET, type ForgieUsage } from '@/services/forgieService'
 import type { VisualizerInstellingen, CreditTransactie, CreditsPakket } from '@/types'
 import { logger } from '../../utils/logger'
 
@@ -117,8 +117,12 @@ export function ForgieTab() {
   const [transacties, setTransacties] = useState<CreditTransactie[]>([])
   const [showTransacties, setShowTransacties] = useState(false)
 
-  // Daan AI usage
-  const [forgieGebruik, setForgieGebruik] = useState({ geschatte_kosten: 0, aantal_calls: 0, limiet: 5.0 })
+  // Daan AI usage. Dit gaat over de hele organisatie, want dat is wat blokkeert.
+  const [forgieGebruik, setForgieGebruik] = useState<ForgieUsage>({
+    usage: 0,
+    limiet: STANDAARD_AI_MAANDLIMIET,
+    aantal_calls: 0,
+  })
 
   // Credits kopen
   const [showCreditsKopen, setShowCreditsKopen] = useState(false)
@@ -153,7 +157,7 @@ export function ForgieTab() {
       setTotaalGebruikt(c.totaal_gebruikt)
     }).catch(() => {})
     getCreditTransacties(user.id).then(t => { if (!cancelled) setTransacties(t.slice(0, 20)) }).catch(() => {})
-    getForgieGebruik(user.id).then(g => { if (!cancelled) setForgieGebruik(g) }).catch(() => {})
+    getForgieUsage().then(g => { if (!cancelled) setForgieGebruik(g) }).catch(() => {})
     return () => { cancelled = true }
   }, [user?.id])
 
@@ -278,7 +282,15 @@ export function ForgieTab() {
 
   // Credit status indicator
   const creditStatus = creditSaldo <= 0 ? 'leeg' : creditSaldo < 5 ? 'laag' : 'ok'
-  const forgiePercentage = Math.min(100, (forgieGebruik.geschatte_kosten / forgieGebruik.limiet) * 100)
+  // Een limiet van 0 (AI uitgezet voor de org) gaf NaN: ongeldige CSS-breedte
+  // én geen waarschuwing, juist terwijl alles geblokkeerd is.
+  const forgiePercentage = forgieGebruik.limiet > 0
+    ? Math.min(100, (forgieGebruik.usage / forgieGebruik.limiet) * 100)
+    : 100
+  const euro = (bedrag: number) => `€ ${bedrag.toFixed(2).replace('.', ',')}`
+  const resetMaand = forgieGebruik.reset_op
+    ? new Date(forgieGebruik.reset_op).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
+    : null
 
   return (
     <div className="space-y-6">
@@ -338,10 +350,12 @@ export function ForgieTab() {
               {/* Daan usage */}
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Bot className="w-3.5 h-3.5" /> Daan AI
+                  <Bot className="w-3.5 h-3.5" /> AI-verbruik
                 </span>
-                <span className="font-medium">
-                  {round2(forgieGebruik.geschatte_kosten)} / {round2(forgieGebruik.limiet)} ({forgieGebruik.aantal_calls} vragen)
+                <span className="font-medium tabular-nums">
+                  {forgieGebruik.onbekend
+                    ? <span className="text-muted-foreground font-normal">verbruik niet op te halen</span>
+                    : <>{euro(forgieGebruik.usage)} <span className="text-muted-foreground font-normal">van</span> {euro(forgieGebruik.limiet)}</>}
                 </span>
               </div>
               <div className="w-full bg-muted rounded-full h-1.5">
@@ -353,8 +367,35 @@ export function ForgieTab() {
                   style={{ width: `${forgiePercentage}%` }}
                 />
               </div>
+              <div className="text-xs text-muted-foreground">
+                {forgieGebruik.gedeeld
+                  ? 'Gedeeld met je hele organisatie'
+                  : 'Jouw verbruik deze maand'}
+                {resetMaand ? ` · gaat ${resetMaand} weer op nul` : ''}
+                {typeof forgieGebruik.aantal_calls === 'number' && forgieGebruik.aantal_calls > 0
+                  ? ` · ${forgieGebruik.aantal_calls} ${forgieGebruik.aantal_calls === 1 ? 'vraag' : 'vragen'}`
+                  : ''}
+              </div>
+              {forgieGebruik.gedeeld && typeof forgieGebruik.eigen_verbruik === 'number' && forgieGebruik.eigen_verbruik > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  Waarvan {euro(forgieGebruik.eigen_verbruik)} van jou
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Waarschuwing bij een vol AI-budget. Los van credits: credits zijn
+              voor de Visualizer en heffen deze limiet niet op. */}
+          {forgiePercentage >= 80 && (
+            <div className="rounded-lg p-3 flex items-start gap-2 text-sm bg-flame/5 dark:bg-flame/10 text-flame">
+              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div>
+                {forgiePercentage >= 100
+                  ? `Het AI-budget van ${forgieGebruik.gedeeld ? 'je organisatie' : 'deze maand'} is op. Daan werkt weer${resetMaand ? ` op ${resetMaand}` : ' volgende maand'}.`
+                  : `Nog ${euro(Math.max(0, forgieGebruik.limiet - forgieGebruik.usage))} aan AI-budget over deze maand.`}
+              </div>
+            </div>
+          )}
 
           {/* Waarschuwing bij lage credits */}
           {creditStatus !== 'ok' && (
@@ -367,7 +408,7 @@ export function ForgieTab() {
               <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <div>
                 {creditStatus === 'leeg'
-                  ? 'Je hebt geen credits meer. De Visualizer en sommige AI-functies zijn geblokkeerd tot je credits bijkoopt.'
+                  ? 'Je hebt geen credits meer. De Visualizer is geblokkeerd tot je credits bijkoopt. Daan werkt gewoon door: die loopt op het AI-budget hierboven.'
                   : `Nog maar ${creditSaldo} credits over. Koop bij om ononderbroken te blijven werken.`
                 }
               </div>

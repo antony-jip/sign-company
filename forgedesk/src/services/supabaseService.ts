@@ -131,7 +131,6 @@ export {
   logVisualizerActie, getVisualizerLog, getVisualizerStats,
   getVisualizerCredits, gebruikCredit, voegCreditsToe, handmatigCreditsToewijzen, getCreditTransacties,
   DEMO_CREDITS,
-  getForgieGebruik,
   getVisualizerChats, upsertVisualizerChat, deleteVisualizerChat,
 } from './visualizerService'
 

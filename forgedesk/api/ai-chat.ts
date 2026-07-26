@@ -140,10 +140,11 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 // als de Visualizer gebruikt (utils/visualizerDefaults.ts).
 const USD_NAAR_EUR = 0.92
 
-// Vangnet per gebruiker, in euro's. De echte rem is de organisatielimiet
-// hieronder; deze grijpt alleen in als een gebruiker geen organisatie heeft
-// en de org-check dus niet kan draaien. Daarom gelijk aan de org-limiet:
-// een eenpitter mag niet op een derde van zijn budget worden afgekapt.
+// Vangnet per gebruiker, in euro's. Deze check draait onvoorwaardelijk, dus
+// ook mét organisatie; normaal bijt hij nooit omdat het eigen verbruik per
+// definitie kleiner is dan het org-totaal. Hij is er voor gebruikers zonder
+// organisatie, want dan kan de org-check niet draaien. Gelijk aan de
+// org-limiet: een eenpitter mag niet op een derde van zijn budget stoppen.
 const MONTHLY_LIMIT = 15.0
 
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
@@ -184,7 +185,10 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 
 function getCurrentMonth(): string {
   const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  // UTC, niet lokaal: migratie 093 legt de maandsleutel als UTC vast. Zou de
+  // runtime ooit op Europe/Amsterdam staan, dan schrijven routes rond de
+  // maandwisseling anders naar twee verschillende maandrijen voor dezelfde org.
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
 async function checkUsageLimit(userId: string): Promise<boolean> {

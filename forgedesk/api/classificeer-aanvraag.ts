@@ -25,7 +25,21 @@ const MAX_TEKST_TEKENS = 4000
 const MAX_LEEFTIJD_DAGEN = 14
 const TOON_DREMPEL = 70
 // Zelfde maandplafond als api/ai-email.ts; één budget voor alle AI in doen.
-const MONTHLY_LIMIT = 5.0
+// Anthropic factureert in dollars; doen. rekent en toont in euro's. Alles wat
+// in geschatte_kosten belandt is dus EUR, zodat de maandlimiet, de meter in
+// Instellingen en de blokkade-melding dezelfde eenheid hebben. Zelfde koers
+// als de Visualizer gebruikt (utils/visualizerDefaults.ts).
+const USD_NAAR_EUR = 0.92
+
+// Vangnet per gebruiker, in euro's. Deze check draait onvoorwaardelijk, dus
+// ook mét organisatie; normaal bijt hij nooit omdat het eigen verbruik per
+// definitie kleiner is dan het org-totaal. Hij is er voor gebruikers zonder
+// organisatie, want dan kan de org-check niet draaien. Gelijk aan de
+// org-limiet: een eenpitter mag niet op een derde van zijn budget stoppen.
+const MONTHLY_LIMIT = 15.0
+
+// Houd gelijk aan de DEFAULT van ai_usage_org.maandlimiet (migratie 161).
+const STANDAARD_MAANDLIMIET_EUR = 15.0
 
 // Haiku 4.5, tarief per miljoen tokens.
 const TARIEF = { in: 1, uit: 5 }
@@ -272,7 +286,10 @@ async function beoordeelMail(
 
 function getCurrentMonth(): string {
   const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  // UTC, niet lokaal: migratie 093 legt de maandsleutel als UTC vast. Zou de
+  // runtime ooit op Europe/Amsterdam staan, dan schrijven routes rond de
+  // maandwisseling anders naar twee verschillende maandrijen voor dezelfde org.
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
 async function budgetOver(userId: string): Promise<boolean> {
@@ -288,7 +305,7 @@ async function budgetOver(userId: string): Promise<boolean> {
 async function boekUsage(userId: string, inputTokens: number, outputTokens: number, calls: number): Promise<void> {
   if (!calls) return
   const maand = getCurrentMonth()
-  const kosten = (inputTokens / 1_000_000 * TARIEF.in) + (outputTokens / 1_000_000 * TARIEF.uit)
+  const kosten = ((inputTokens / 1_000_000 * TARIEF.in) + (outputTokens / 1_000_000 * TARIEF.uit)) * USD_NAAR_EUR
 
   const { data: bestaand } = await supabaseAdmin
     .from('ai_usage')
@@ -322,6 +339,66 @@ async function boekUsage(userId: string, inputTokens: number, outputTokens: numb
       aanvraag_kosten: Number(kosten.toFixed(4)),
     })
   }
+
+  // Ook op de organisatie boeken. Zonder dit telt aanvraagherkenning niet mee
+  // in de €15-limiet, terwijl het juist de grootste structurele verbruiker is:
+  // het draait per binnenkomende mail, niet per handeling van een gebruiker.
+  const orgId = await resolveOrgId(userId)
+  if (orgId) await boekOrgUsage(orgId, kosten, calls)
+}
+
+async function resolveOrgId(userId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
+    .maybeSingle()
+  return (data?.organisatie_id as string | null) ?? null
+}
+
+async function boekOrgUsage(organisatieId: string, kosten: number, calls: number): Promise<void> {
+  const maand = getCurrentMonth()
+  const { data: bestaand } = await supabaseAdmin
+    .from('ai_usage_org')
+    .select('id, aantal_calls, geschatte_kosten')
+    .eq('organisatie_id', organisatieId)
+    .eq('route', 'classificeer-aanvraag')
+    .eq('maand', maand)
+    .maybeSingle()
+
+  if (bestaand) {
+    await supabaseAdmin
+      .from('ai_usage_org')
+      .update({
+        aantal_calls: (bestaand.aantal_calls ?? 0) + calls,
+        geschatte_kosten: Number((Number(bestaand.geschatte_kosten ?? 0) + kosten).toFixed(4)),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', bestaand.id)
+  } else {
+    await supabaseAdmin.from('ai_usage_org').insert({
+      organisatie_id: organisatieId,
+      route: 'classificeer-aanvraag',
+      maand,
+      aantal_calls: calls,
+      geschatte_kosten: Number(kosten.toFixed(4)),
+    })
+  }
+}
+
+/** Blokkeert de hele run zodra de organisatie door haar maandbudget heen is. */
+async function orgBudgetOp(organisatieId: string): Promise<boolean> {
+  const maand = getCurrentMonth()
+  const { data: rows } = await supabaseAdmin
+    .from('ai_usage_org')
+    .select('geschatte_kosten, maandlimiet')
+    .eq('organisatie_id', organisatieId)
+    .eq('maand', maand)
+  const huidig = (rows ?? []).reduce((s, r) => s + Number(r.geschatte_kosten ?? 0), 0)
+  const limiet = rows && rows.length > 0
+    ? Math.max(...rows.map(r => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR)))
+    : STANDAARD_MAANDLIMIET_EUR
+  return huidig >= limiet
 }
 
 // ───── Bodies ophalen voor kandidaten die nog geen tekst hebben ─────
@@ -414,6 +491,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (!await budgetOver(userId)) {
       return res.status(200).json({ beoordeeld: 0, reden: 'budget_bereikt' })
+    }
+
+    // Ook de organisatielimiet respecteren. Deze route draait automatisch na
+    // elke sync, dus zonder deze poort loopt hij door nadat de org op is.
+    const orgIdVoorBudget = await resolveOrgId(userId)
+    if (orgIdVoorBudget && await orgBudgetOp(orgIdVoorBudget)) {
+      return res.status(200).json({ beoordeeld: 0, reden: 'org_budget_bereikt' })
     }
 
     // ── Laag 1: nog niet beoordeelde inbox-mail van de laatste twee weken ──

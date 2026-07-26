@@ -68,10 +68,11 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 // als de Visualizer gebruikt (utils/visualizerDefaults.ts).
 const USD_NAAR_EUR = 0.92
 
-// Vangnet per gebruiker, in euro's. De echte rem is de organisatielimiet
-// hieronder; deze grijpt alleen in als een gebruiker geen organisatie heeft
-// en de org-check dus niet kan draaien. Daarom gelijk aan de org-limiet:
-// een eenpitter mag niet op een derde van zijn budget worden afgekapt.
+// Vangnet per gebruiker, in euro's. Deze check draait onvoorwaardelijk, dus
+// ook mét organisatie; normaal bijt hij nooit omdat het eigen verbruik per
+// definitie kleiner is dan het org-totaal. Hij is er voor gebruikers zonder
+// organisatie, want dan kan de org-check niet draaien. Gelijk aan de
+// org-limiet: een eenpitter mag niet op een derde van zijn budget stoppen.
 const MONTHLY_LIMIT = 15.0
 
 const PROMPTS: Record<string, string> = {
@@ -106,7 +107,10 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 
 function getCurrentMonth(): string {
   const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  // UTC, niet lokaal: migratie 093 legt de maandsleutel als UTC vast. Zou de
+  // runtime ooit op Europe/Amsterdam staan, dan schrijven routes rond de
+  // maandwisseling anders naar twee verschillende maandrijen voor dezelfde org.
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
 async function checkUsageLimit(userId: string): Promise<boolean> {
@@ -129,7 +133,7 @@ async function checkUsageLimit(userId: string): Promise<boolean> {
 const TARIEVEN: Record<string, { in: number; uit: number }> = {
   'claude-opus-4-8': { in: 5, uit: 25 },
   'claude-sonnet-5': { in: 3, uit: 15 },
-  'claude-sonnet-4-6': { in: 3, uit: 15 },
+  'claude-haiku-4-5-20251001': { in: 1, uit: 5 },
 }
 
 async function updateUsage(userId: string, inputTokens: number, outputTokens: number, model: string): Promise<void> {
@@ -439,7 +443,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (orgIdForBudget) {
       try {
-        await logOrgUsage(orgIdForBudget, 'ai-email', data.usage.input_tokens, data.usage.output_tokens, 3, 15)
+        // Tarief van het model dat écht draaide. Vast op 3/15 boekte een
+        // lead-mail (Opus) 40% te laag, waardoor de org-rem te laat ingreep.
+        const orgTarief = TARIEVEN[model] || TARIEVEN[STANDAARD_MODEL]
+        await logOrgUsage(orgIdForBudget, 'ai-email', data.usage.input_tokens, data.usage.output_tokens, orgTarief.in, orgTarief.uit)
       } catch {
         // Org-usage tracking is niet-kritiek
       }

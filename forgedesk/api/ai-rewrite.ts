@@ -68,10 +68,11 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 // als de Visualizer gebruikt (utils/visualizerDefaults.ts).
 const USD_NAAR_EUR = 0.92
 
-// Vangnet per gebruiker, in euro's. De echte rem is de organisatielimiet
-// hieronder; deze grijpt alleen in als een gebruiker geen organisatie heeft
-// en de org-check dus niet kan draaien. Daarom gelijk aan de org-limiet:
-// een eenpitter mag niet op een derde van zijn budget worden afgekapt.
+// Vangnet per gebruiker, in euro's. Deze check draait onvoorwaardelijk, dus
+// ook mét organisatie; normaal bijt hij nooit omdat het eigen verbruik per
+// definitie kleiner is dan het org-totaal. Hij is er voor gebruikers zonder
+// organisatie, want dan kan de org-check niet draaien. Gelijk aan de
+// org-limiet: een eenpitter mag niet op een derde van zijn budget stoppen.
 const MONTHLY_LIMIT = 15.0
 
 // Rewrite actions with Dutch prompts
@@ -133,7 +134,10 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 
 function getCurrentMonth(): string {
   const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  // UTC, niet lokaal: migratie 093 legt de maandsleutel als UTC vast. Zou de
+  // runtime ooit op Europe/Amsterdam staan, dan schrijven routes rond de
+  // maandwisseling anders naar twee verschillende maandrijen voor dezelfde org.
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
 async function checkUsageLimit(userId: string): Promise<boolean> {
@@ -145,42 +149,6 @@ async function checkUsageLimit(userId: string): Promise<boolean> {
     .eq('maand', maand)
     .single()
   return !data || (data.geschatte_kosten ?? 0) < MONTHLY_LIMIT
-}
-
-async function updateUsage(userId: string, inputTokens: number, outputTokens: number): Promise<void> {
-  const maand = getCurrentMonth()
-  const kosten = ((inputTokens / 1_000_000 * 3) + (outputTokens / 1_000_000 * 15)) * USD_NAAR_EUR
-
-  const { data: existing } = await supabase
-    .from('ai_usage')
-    .select('id, aantal_calls, input_tokens, output_tokens, geschatte_kosten')
-    .eq('user_id', userId)
-    .eq('maand', maand)
-    .single()
-
-  if (existing) {
-    await supabase
-      .from('ai_usage')
-      .update({
-        aantal_calls: (existing.aantal_calls || 0) + 1,
-        input_tokens: (existing.input_tokens || 0) + inputTokens,
-        output_tokens: (existing.output_tokens || 0) + outputTokens,
-        geschatte_kosten: Number(((existing.geschatte_kosten || 0) + kosten).toFixed(4)),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existing.id)
-  } else {
-    await supabase
-      .from('ai_usage')
-      .insert({
-        user_id: userId,
-        maand,
-        aantal_calls: 1,
-        input_tokens: inputTokens,
-        output_tokens: outputTokens,
-        geschatte_kosten: Number(kosten.toFixed(4)),
-      })
-  }
 }
 
 const MAANDEN_NL = ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
@@ -366,11 +334,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const resultText = data.content?.[0]?.text || ''
 
-    // Track usage (Haiku pricing: $1/1M input, $5/1M output)
+    // Track usage (Haiku pricing: $1/1M input, $5/1M output).
+    // Deze route boekt hier inline en gebruikt updateUsage() niet, dus de
+    // omrekening naar euro's moet ook hier staan: ai_usage is de kolom waar
+    // het persoonlijke vangnet op vergelijkt.
     try {
       const haikuInputCost = data.usage.input_tokens / 1_000_000 * 1
       const haikuOutputCost = data.usage.output_tokens / 1_000_000 * 5
-      const totalCost = haikuInputCost + haikuOutputCost
+      const totalCost = (haikuInputCost + haikuOutputCost) * USD_NAAR_EUR
       // Store with actual cost calculation (override the generic updateUsage)
       const maand = getCurrentMonth()
       const { data: existing } = await supabase

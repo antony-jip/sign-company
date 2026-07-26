@@ -471,27 +471,6 @@ export async function getCreditTransacties(user_id: string): Promise<CreditTrans
 }
 
 // Daan AI maandelijks gebruik ophalen
-export async function getForgieGebruik(user_id: string): Promise<{ geschatte_kosten: number; aantal_calls: number; limiet: number }> {
-  assertId(user_id, 'user_id')
-  const limiet = 5.0 // €5 per maand
-
-  if (isSupabaseConfigured() && supabase) {
-    const maand = new Date().toISOString().slice(0, 7) // YYYY-MM
-    const { data } = await supabase
-      .from('ai_usage')
-      .select('geschatte_kosten, aantal_calls')
-      .eq('user_id', user_id)
-      .eq('maand', maand)
-      .maybeSingle()
-    return {
-      geschatte_kosten: data?.geschatte_kosten ?? 0,
-      aantal_calls: data?.aantal_calls ?? 0,
-      limiet,
-    }
-  }
-
-  return { geschatte_kosten: 0, aantal_calls: 0, limiet }
-}
 
 // ============================================================
 // Visualizer chats — org-brede gespreksgeschiedenis

@@ -19,10 +19,23 @@ export interface ForgieResult {
   }
 }
 
+/** Bedragen in euro's. `usage` en `limiet` gaan over de hele organisatie: dat
+ *  is wat Daan blokkeert. `eigen_verbruik` is jouw aandeel daarin. */
 export interface ForgieUsage {
   usage: number
   limiet: number
+  aantal_calls?: number
+  eigen_verbruik?: number
+  /** False als de gebruiker geen organisatie heeft; dan telt alleen zijn eigen verbruik. */
+  gedeeld?: boolean
+  /** ISO-datum waarop de teller op nul gaat. */
+  reset_op?: string
+  /** True als het verbruik niet opgehaald kon worden. Nul tonen zou dan liegen. */
+  onbekend?: boolean
 }
+
+/** Gelijk aan STANDAARD_MAANDLIMIET_EUR in de api's en migratie 161. */
+export const STANDAARD_AI_MAANDLIMIET = 15
 
 async function getAuthToken(): Promise<string> {
   if (!supabase) throw new Error('Supabase niet geconfigureerd')
@@ -71,7 +84,10 @@ export async function getForgieUsage(): Promise<ForgieUsage> {
   })
 
   if (!response.ok) {
-    return { usage: 0, limiet: 5 }
+    // Niet stil op 0 gaan staan: dat leest als "je hebt nog niets verbruikt"
+    // terwijl de organisatie er misschien doorheen zit. Bij een verlopen
+    // sessie of een niet-geconfigureerde sleutel komen we hier ook.
+    return { usage: 0, limiet: STANDAARD_AI_MAANDLIMIET, onbekend: true }
   }
 
   return response.json()
