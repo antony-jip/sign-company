@@ -10,6 +10,28 @@ export function extractSenderEmail(from: string): string {
   return match ? match[1] : from
 }
 
+const BEDRIJFSVORM = /^(b\.?v\.?|n\.?v\.?|v\.?o\.?f\.?|c\.?v\.?|gmbh|ltd|inc|bvba|holding)$/i
+
+/**
+ * Splitst een afzendernaam in voornaam en achternaam voor een contactpersoon.
+ * Bij twijfel (één woord, bedrijfsnaam, e-mailadres als naam) blijft de hele
+ * string in achternaam staan; liever één ongesplitst naamveld dan een gok.
+ */
+export function splitAfzenderNaam(naam: string): { voornaam: string; achternaam: string } {
+  const schoon = (naam || '').replace(/["'`]/g, '').replace(/\s+/g, ' ').trim()
+  if (!schoon) return { voornaam: '', achternaam: '' }
+  if (schoon.includes('@')) return { voornaam: '', achternaam: schoon }
+
+  const komma = schoon.match(/^([^,]+),\s*(.+)$/)
+  if (komma) return { voornaam: komma[2].trim(), achternaam: komma[1].trim() }
+
+  const delen = schoon.split(' ')
+  if (delen.length < 2) return { voornaam: '', achternaam: schoon }
+  if (delen.some((d) => BEDRIJFSVORM.test(d))) return { voornaam: '', achternaam: schoon }
+
+  return { voornaam: delen[0], achternaam: delen.slice(1).join(' ') }
+}
+
 export function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 }

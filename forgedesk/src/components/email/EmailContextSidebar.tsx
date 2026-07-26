@@ -2,19 +2,19 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   UserPlus, FolderPlus, ListPlus, Bell, BellOff, Clock,
   Building2, Phone, Mail, ChevronRight, Loader2, X,
-  ArrowLeft, ExternalLink, Sparkles, Pencil,
+  ArrowLeft, ExternalLink, Sparkles, Pencil, Check,
   FileText, Users, ReceiptText, MailQuestion,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import type { Email, Klant, Medewerker } from '@/types'
-import { getKlanten, getProjectenByKlant, getOffertesByKlant, createKlant, createProject, createTaak, getMedewerkers, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
+import type { Email, Klant, Medewerker, ContactpersoonRecord } from '@/types'
+import { getKlanten, getProjectenByKlant, getOffertesByKlant, createKlant, createProject, createTaak, getMedewerkers, generateProjectNummer, getAppSettings, getContactpersonenByKlant, createContactpersoonDB, getKlantIdByContactEmail } from '@/services/supabaseService'
 import { chatCompletion } from '@/services/aiService'
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
 import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DatePicker } from '@/components/ui/date-picker'
-import { getAvatarStyle, extractSenderName } from './emailHelpers'
+import { getAvatarStyle, extractSenderName, splitAfzenderNaam } from './emailHelpers'
 import { EmailProjectKoppelingPanel } from './EmailProjectKoppelingPanel'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -73,6 +73,8 @@ const GENERIC_EMAIL_DOMAINS = [
   'tele2.nl', 'solcon.nl',
 ]
 
+const PANEL_INPUT_CLS = "w-full px-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-lg outline-none border border-border focus:border-petrol transition-colors duration-150 placeholder:text-muted-foreground"
+
 function extractCompanyName(senderName: string, email: string): string {
   const pipeMatch = senderName.match(/[|–—-]\s*(.+)$/)
   if (pipeMatch) return pipeMatch[1].trim()
@@ -122,8 +124,13 @@ export function EmailContextSidebar({
   const [offerteCount, setOfferteCount] = useState(0)
 
   // ── Panels ──
-  const [activePanel, setActivePanel] = useState<'none' | 'klant' | 'project' | 'taak'>(initialActivePanel ?? 'none')
+  const [activePanel, setActivePanel] = useState<'none' | 'klant' | 'project' | 'taak' | 'contact'>(initialActivePanel ?? 'none')
   const [saving, setSaving] = useState(false)
+
+  // ── Contactpersonen van de gekoppelde klant ──
+  const [klantContacten, setKlantContacten] = useState<ContactpersoonRecord[]>([])
+  const [contactenLoading, setContactenLoading] = useState(false)
+  const [contactForm, setContactForm] = useState({ voornaam: '', achternaam: '', email: '', telefoon: '', functie: '' })
 
   // ── Forms ──
   const [allKlanten, setAllKlanten] = useState<Klant[]>([])
@@ -140,7 +147,6 @@ export function EmailContextSidebar({
     eind_datum: '',
   })
   const [taakForm, setTaakForm] = useState({ titel: '', beschrijving: '', deadline: '', toegewezen_aan: '' })
-  const [addToExistingKlant, setAddToExistingKlant] = useState<Klant | null>(null)
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
 
   useEffect(() => {
@@ -165,6 +171,10 @@ export function EmailContextSidebar({
           k.email?.toLowerCase() === addr ||
           k.contactpersonen?.some(c => c.email?.toLowerCase() === addr)
         )
+        if (!match) {
+          const klantId = await getKlantIdByContactEmail(addr).catch(() => null)
+          if (klantId) match = klanten.find(k => k.id === klantId)
+        }
         if (!match && domain && !GENERIC_EMAIL_DOMAINS.includes(domain)) {
           match = klanten.find(k => k.email?.toLowerCase().endsWith('@' + domain))
         }
@@ -189,6 +199,35 @@ export function EmailContextSidebar({
       }).catch(() => {})
     return () => { cancelled = true }
   }, [linkedKlant])
+
+  // ── Contactpersonen van de gekoppelde klant ──
+  useEffect(() => {
+    const klantId = linkedKlant?.id
+    if (!klantId) { setKlantContacten([]); setContactenLoading(false); return }
+    let cancelled = false
+    setContactenLoading(true)
+    getContactpersonenByKlant(klantId)
+      .then(cps => { if (!cancelled) setKlantContacten(cps) })
+      .catch(() => { if (!cancelled) setKlantContacten([]) })
+      .finally(() => { if (!cancelled) setContactenLoading(false) })
+    return () => { cancelled = true }
+  }, [linkedKlant?.id])
+
+  // Afzender staat al bij de klant: op de kaart zelf, in de embedded lijst of
+  // als losse contactpersoon-rij. Alle drie tellen, anders voegt de gebruiker
+  // hetzelfde adres een tweede keer toe.
+  const bekendContact = useMemo(() => {
+    if (!linkedKlant || !contactEmail) return null
+    const addr = contactEmail.toLowerCase()
+    if (linkedKlant.email?.toLowerCase() === addr) {
+      return linkedKlant.contactpersoon || linkedKlant.bedrijfsnaam || contactEmail
+    }
+    const embedded = (linkedKlant.contactpersonen || []).find(c => c.email?.toLowerCase() === addr)
+    if (embedded) return embedded.naam || contactEmail
+    const rij = klantContacten.find(c => c.email?.toLowerCase() === addr)
+    if (rij) return [rij.voornaam, rij.achternaam].filter(Boolean).join(' ') || contactEmail
+    return null
+  }, [linkedKlant, klantContacten, contactEmail])
 
   // ── Reminder ──
   // ── Panel openers ──
@@ -295,28 +334,52 @@ export function EmailContextSidebar({
     finally { setSaving(false) }
   }
 
-  async function handleAddContactToKlant() {
-    if (!addToExistingKlant || !klantForm.contactpersoon.trim()) { toast.error('Naam is verplicht'); return }
+  // Opent het contactpersoon-paneel voor een klant. De koppeling wordt hier
+  // alleen in beeld gezet; pas de opslaan-knop schrijft naar de database.
+  function openContactPanel(klant: Klant) {
+    if (linkedKlant?.id !== klant.id) setLinkedKlant(klant)
+    const { voornaam, achternaam } = splitAfzenderNaam(personName || contactName)
+    setContactForm({ voornaam, achternaam, email: contactEmail, telefoon: '', functie: '' })
+    setActivePanel('contact')
+  }
+
+  async function handleSaveContactpersoon() {
+    const doelKlant = linkedKlant
+    if (!doelKlant) { toast.error('Kies eerst een klant'); return }
+    const voornaam = contactForm.voornaam.trim()
+    const achternaam = contactForm.achternaam.trim()
+    const contactMail = contactForm.email.trim()
+    if (!voornaam && !achternaam) { toast.error('Vul een naam in'); return }
+    if (!contactMail) { toast.error('Vul een e-mailadres in'); return }
+    const volledigeNaam = [voornaam, achternaam].filter(Boolean).join(' ')
+    const klantNaam = doelKlant.bedrijfsnaam || doelKlant.contactpersoon || 'de klant'
     setSaving(true)
     try {
-      const { updateKlant } = await import('@/services/supabaseService')
-      const bestaande = addToExistingKlant.contactpersonen || []
-      await updateKlant(addToExistingKlant.id, {
-        contactpersonen: [...bestaande, {
-          id: crypto.randomUUID(),
-          naam: klantForm.contactpersoon,
-          functie: '',
-          email: klantForm.email,
-          telefoon: klantForm.telefoon,
-          is_primair: false,
-        }],
+      const bestaande = await getContactpersonenByKlant(doelKlant.id)
+      const dubbel = bestaande.find(c => c.email?.toLowerCase() === contactMail.toLowerCase())
+      if (dubbel) {
+        setKlantContacten(bestaande)
+        setActivePanel('none')
+        toast.success(`${contactMail} stond al bij ${klantNaam}`)
+        return
+      }
+      const nieuw = await createContactpersoonDB({
+        user_id: user?.id,
+        klant_id: doelKlant.id,
+        voornaam,
+        achternaam,
+        email: contactMail,
+        telefoon: contactForm.telefoon.trim(),
+        functie: contactForm.functie.trim(),
+        notities: '',
       })
-      setLinkedKlant({ ...addToExistingKlant, contactpersonen: [...bestaande, { id: crypto.randomUUID(), naam: klantForm.contactpersoon, functie: '', email: klantForm.email, telefoon: klantForm.telefoon, is_primair: false }] })
-      setAddToExistingKlant(null)
+      setKlantContacten(prev => [...prev, nieuw])
       setActivePanel('none')
-      toast.success(`${klantForm.contactpersoon} toegevoegd aan ${addToExistingKlant.bedrijfsnaam}`)
-    } catch (err) { logger.error('Contact toevoegen mislukt:', err); toast.error('Contact toevoegen mislukt') }
-    finally { setSaving(false) }
+      toast.success(`${volledigeNaam} toegevoegd aan ${klantNaam}`)
+    } catch (err) {
+      logger.error('Contactpersoon toevoegen mislukt:', err)
+      toast.error('Contactpersoon toevoegen mislukt')
+    } finally { setSaving(false) }
   }
 
   // ── Klant search ──
@@ -547,7 +610,7 @@ export function EmailContextSidebar({
   // INLINE PANEL
   // ════════════════════════════════════════════
   function renderInlinePanel() {
-    if (activePanel === 'none' || activePanel === 'project') return null
+    if (activePanel === 'none' || activePanel === 'project' || activePanel === 'contact') return null
     return renderInlinePanelContent(activePanel as 'klant' | 'taak')
   }
 
@@ -555,7 +618,7 @@ export function EmailContextSidebar({
   // wrappers zodat klant/taak als centered modals verschijnen ipv sidebar-panels.
   function renderInlinePanelContent(panel: 'klant' | 'taak') {
     if (panel === 'klant' || panel === 'taak') {
-      const inputCls = "w-full px-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-lg outline-none border border-border focus:border-petrol transition-colors duration-150 placeholder:text-muted-foreground"
+      const inputCls = PANEL_INPUT_CLS
       const configs = {
         klant: {
           onSave: klantSearchMode ? undefined : handleSaveKlant,
@@ -567,69 +630,49 @@ export function EmailContextSidebar({
                   value={klantForm.bedrijfsnaam}
                   onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
                   className="w-full pl-9 pr-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-lg outline-none border border-border focus:border-petrol transition-colors duration-150 placeholder:text-muted-foreground"
-                  placeholder="Zoek klant..."
+                  placeholder="Zoek op bedrijf, naam of e-mail"
                   autoFocus
                 />
               </div>
-              {addToExistingKlant ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 p-2 bg-petrol/[0.04] rounded-lg">
-                    <Building2 className="h-3.5 w-3.5 text-petrol" />
-                    <span className="text-[12px] font-medium text-petrol truncate">{addToExistingKlant.bedrijfsnaam}</span>
-                    <button onClick={() => setAddToExistingKlant(null)} className="ml-auto text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
-                  </div>
-                  <input value={klantForm.contactpersoon} onChange={e => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
-                    className={inputCls} placeholder="Naam contactpersoon *" autoFocus />
-                  <input value={klantForm.email} onChange={e => setKlantForm(f => ({ ...f, email: e.target.value }))}
-                    className={inputCls} placeholder="Email" />
-                  <input value={klantForm.telefoon} onChange={e => setKlantForm(f => ({ ...f, telefoon: e.target.value }))}
-                    className={inputCls} placeholder="Telefoon" />
-                  <button onClick={handleAddContactToKlant} disabled={saving}
-                    className="w-full py-2 rounded-lg bg-petrol text-white text-[12px] font-medium disabled:opacity-50 hover:opacity-90 transition-opacity">
-                    {saving ? 'Toevoegen...' : 'Contactpersoon toevoegen'}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-0.5 max-h-[240px] overflow-y-auto -mx-1">
-                    {klantSuggestions.length > 0 ? klantSuggestions.map(k => {
-                      const style = getAvatarStyle(k.bedrijfsnaam || k.contactpersoon || '')
-                      return (
-                        <div key={k.id} className="flex items-center gap-1 px-1">
-                          <button
-                            onClick={() => handleSelectKlant(k)}
-                            className="flex-1 flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-background transition-colors duration-150"
-                          >
-                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-bold" style={{ background: style.bg, color: style.text }}>
-                              {(k.bedrijfsnaam || k.contactpersoon)?.[0]?.toUpperCase()}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[12px] font-medium text-foreground truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
-                              <p className="text-[11px] text-muted-foreground truncate">{k.email}</p>
-                            </div>
-                          </button>
-                          <button
-                            onClick={() => { setAddToExistingKlant(k); setKlantForm(f => ({ ...f, contactpersoon: personName, email: contactEmail })) }}
-                            className="p-1.5 rounded-lg hover:bg-[hsl(var(--status-green-bg))] transition-colors flex-shrink-0"
-                            title={`Contactpersoon toevoegen aan ${k.bedrijfsnaam}`}
-                          >
-                            <UserPlus className="h-3.5 w-3.5 text-[#3A7D52]" />
-                          </button>
+              <div className="space-y-0.5 max-h-[240px] overflow-y-auto -mx-1">
+                {klantSuggestions.length > 0 ? klantSuggestions.map(k => {
+                  const style = getAvatarStyle(k.bedrijfsnaam || k.contactpersoon || '')
+                  return (
+                    <div key={k.id} className="flex items-center gap-1 px-1">
+                      <button
+                        onClick={() => handleSelectKlant(k)}
+                        className="flex-1 flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-background transition-colors duration-150"
+                      >
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-bold" style={{ background: style.bg, color: style.text }}>
+                          {(k.bedrijfsnaam || k.contactpersoon)?.[0]?.toUpperCase()}
                         </div>
-                      )
-                    }) : (
-                      <p className="text-[11px] text-muted-foreground px-3 py-2">Geen resultaten</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setKlantSearchMode(false)}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 text-[12px] text-flame hover:underline transition-colors duration-150"
-                  >
-                    <UserPlus className="h-3 w-3" />
-                    Nieuw contact aanmaken
-                  </button>
-                </>
-              )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12px] font-medium text-foreground truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{k.email}</p>
+                        </div>
+                      </button>
+                      {contactEmail && (
+                        <button
+                          onClick={() => openContactPanel(k)}
+                          className="p-1.5 rounded-lg hover:bg-[hsl(var(--status-green-bg))] transition-colors flex-shrink-0"
+                          title={`Koppelen en afzender toevoegen als contactpersoon van ${k.bedrijfsnaam || k.contactpersoon}`}
+                        >
+                          <UserPlus className="h-3.5 w-3.5 text-[#3A7D52]" />
+                        </button>
+                      )}
+                    </div>
+                  )
+                }) : (
+                  <p className="text-[11px] text-muted-foreground px-3 py-2">Geen resultaten</p>
+                )}
+              </div>
+              <button
+                onClick={() => setKlantSearchMode(false)}
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-[12px] text-flame hover:underline transition-colors duration-150"
+              >
+                <UserPlus className="h-3 w-3" />
+                Nieuwe klant aanmaken
+              </button>
             </>
           ) : (
             <>
@@ -797,6 +840,32 @@ export function EmailContextSidebar({
               )}
             </div>
 
+            {!!hasContact && (
+              <div className="mt-3 pt-3 border-t border-border">
+                {contactenLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    <span className="text-[11px] text-muted-foreground">Contactpersonen laden...</span>
+                  </div>
+                ) : bekendContact ? (
+                  <div className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 flex-shrink-0 text-[#3A7D52]" />
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      Bekend als contactpersoon · {bekendContact}
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => openContactPanel(linkedKlant)}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-border text-[12px] text-petrol font-medium hover:border-petrol/30 hover:bg-petrol/[0.03] transition-colors duration-150"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Toevoegen als contactpersoon
+                  </button>
+                )}
+              </div>
+            )}
+
             {(projectCount > 0 || offerteCount > 0) && (
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
                 {projectCount > 0 && (
@@ -832,7 +901,7 @@ export function EmailContextSidebar({
               className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-border text-[12px] text-petrol font-medium hover:border-petrol/30 hover:bg-petrol/[0.03] transition-colors duration-150"
             >
               <UserPlus className="h-3.5 w-3.5" />
-              Contact toevoegen
+              Koppelen aan klant
             </button>
           </div>
         ) : !hasContact ? (
@@ -898,11 +967,50 @@ export function EmailContextSidebar({
             <div className="px-6 pt-6 pb-5">
               <DialogHeader className="mb-4">
                 <DialogTitle className="text-[20px] font-bold tracking-tight text-foreground">
-                  {klantSearchMode ? <>Contact koppelen<span className="text-flame">.</span></> : <>Nieuw contact<span className="text-flame">.</span></>}
+                  {klantSearchMode ? <>Koppelen aan klant<span className="text-flame">.</span></> : <>Nieuwe klant<span className="text-flame">.</span></>}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-2">
                 {activePanel === 'klant' && renderInlinePanelContent('klant')}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── CONTACTPERSOON MODAL ── */}
+        <Dialog open={activePanel === 'contact'} onOpenChange={(open) => !open && setActivePanel('none')} modal={false}>
+          <DialogContent className="max-w-md bg-white dark:bg-card rounded-2xl p-0">
+            <div className="px-6 pt-6 pb-5">
+              <DialogHeader className="mb-4">
+                <DialogTitle className="text-[20px] font-bold tracking-tight text-foreground">
+                  Contactpersoon toevoegen<span className="text-flame">.</span>
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2">
+                {linkedKlant && (
+                  <div className="flex items-center gap-2 p-2 bg-petrol/[0.04] rounded-lg">
+                    <Building2 className="h-3.5 w-3.5 text-petrol flex-shrink-0" />
+                    <span className="text-[12px] font-medium text-petrol truncate">
+                      {linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}
+                    </span>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={contactForm.voornaam} onChange={e => setContactForm(f => ({ ...f, voornaam: e.target.value }))}
+                    className={PANEL_INPUT_CLS} placeholder="Voornaam" autoFocus />
+                  <input value={contactForm.achternaam} onChange={e => setContactForm(f => ({ ...f, achternaam: e.target.value }))}
+                    className={PANEL_INPUT_CLS} placeholder="Achternaam" />
+                </div>
+                <input value={contactForm.email} onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))}
+                  className={PANEL_INPUT_CLS} placeholder="E-mailadres *" />
+                <input value={contactForm.telefoon} onChange={e => setContactForm(f => ({ ...f, telefoon: e.target.value }))}
+                  className={PANEL_INPUT_CLS} placeholder="Telefoon" />
+                <input value={contactForm.functie} onChange={e => setContactForm(f => ({ ...f, functie: e.target.value }))}
+                  className={PANEL_INPUT_CLS} placeholder="Functie" />
+                <button onClick={handleSaveContactpersoon} disabled={saving}
+                  className="w-full py-2.5 rounded-lg bg-petrol text-white text-[13px] font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity mt-2">
+                  {saving ? 'Toevoegen...' : 'Toevoegen aan klant'}
+                </button>
               </div>
             </div>
           </DialogContent>
