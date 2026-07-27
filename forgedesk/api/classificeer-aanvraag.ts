@@ -616,6 +616,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let aanvragen = 0
     const voorbeelden: string[] = []
 
+    // Mail-leerpad (fase 3): per beoordeelde mail van een bekende klant een
+    // kern-spoor voor de nachtploeg. Org-toggle uit Instellingen > Daan;
+    // fail-closed: bestaat de kolom nog niet (migratie 166 niet gedraaid)
+    // of staat hij uit, dan wordt er niets geschreven. Alleen afzenders die
+    // exact matchen op een klant-adres gaan mee; dat is tegelijk de ruis-
+    // en de privacygrens.
+    let mailLeertMee = false
+    const klantAdressen = new Map<string, string>()
+    if (orgIdVoorBudget) {
+      const { data: leerInstelling, error: leerFout } = await supabaseAdmin
+        .from('app_settings')
+        .select('daan_leert_uit_email')
+        .eq('organisatie_id', orgIdVoorBudget)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      mailLeertMee = !leerFout && ((leerInstelling?.daan_leert_uit_email as boolean | null) ?? true)
+      if (mailLeertMee) {
+        const { data: klanten } = await supabaseAdmin
+          .from('klanten')
+          .select('id, email')
+          .eq('organisatie_id', orgIdVoorBudget)
+        for (const k of klanten ?? []) {
+          const adres = String(k.email || '').trim().toLowerCase()
+          if (adres) klantAdressen.set(adres, k.id as string)
+        }
+      }
+    }
+
     for (const mail of kandidaten) {
       const tekst = opgehaald.get(mail.id) || mail.body_text || ''
       if (tekst.trim().length < 20) continue
@@ -647,6 +676,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           aanvraag_beoordeeld_op: new Date().toISOString(),
         })
         .eq('id', mail.id)
+
+      if (mailLeertMee) {
+        const klantId = klantAdressen.get((mail.from_address || '').trim().toLowerCase()) ?? null
+        if (klantId) {
+          await schrijfSpoor(orgIdVoorBudget, userId, 'email-inzicht', {
+            van: (mail.from_address || '').slice(0, 200),
+            onderwerp: (mail.onderwerp || '').slice(0, 200),
+            kern: tekst.replace(/\s+/g, ' ').slice(0, 600),
+          }, klantId)
+        }
+      }
     }
 
     await boekUsage(userId, inputTokens, outputTokens, calls)
