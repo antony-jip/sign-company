@@ -453,7 +453,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     await schrijfSpoor(orgId, userId, ROUTE_NAME, {
-      leverancier: parsed.leverancier_naam ?? null,
+      leverancier: String(parsed.leverancier_naam ?? '').slice(0, 200) || null,
       resultaat_kern: {
         totaal: parsed.totaal ?? null,
         factuur_datum: parsed.factuur_datum ?? null,

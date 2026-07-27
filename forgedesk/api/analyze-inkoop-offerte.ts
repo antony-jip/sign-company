@@ -389,7 +389,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await schrijfSpoor(orgId, userId, ROUTE_NAME, {
       resultaat_kern: {
         aantal_regels: regels.length,
-        leverancier: leverancier || null,
+        leverancier: (leverancier || '').slice(0, 200) || null,
       },
     })
 

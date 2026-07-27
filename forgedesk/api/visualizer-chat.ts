@@ -140,17 +140,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const textBlock = response.content.find((b) => b.type === 'text')
     const tekst = (textBlock && 'text' in textBlock ? textBlock.text : '').trim()
-    if (userId !== 'local') {
-      const { data: profiel } = await supabase!
-        .from('profiles')
-        .select('organisatie_id')
-        .eq('id', userId)
-        .maybeSingle()
-      const laatsteVraag = [...berichten].reverse().find(b => b.rol === 'user')
-      await schrijfSpoor((profiel?.organisatie_id as string | null) ?? null, userId, 'visualizer-chat', {
-        vraag: (laatsteVraag?.tekst || '').slice(0, 600),
-        antwoord: tekst.slice(0, 600),
-      })
+    // Spoor is niet-kritiek: ook de org-lookup mag een geslaagd antwoord
+    // nooit in een 502 veranderen.
+    if (userId !== 'local' && supabase) {
+      try {
+        const { data: profiel } = await supabase
+          .from('profiles')
+          .select('organisatie_id')
+          .eq('id', userId)
+          .maybeSingle()
+        const laatsteVraag = [...berichten].reverse().find(b => b.rol === 'user')
+        await schrijfSpoor((profiel?.organisatie_id as string | null) ?? null, userId, 'visualizer-chat', {
+          vraag: (laatsteVraag?.tekst || '').slice(0, 600),
+          antwoord: tekst.slice(0, 600),
+        })
+      } catch {
+        // Zie boven.
+      }
     }
 
     return res.status(200).json({ tekst: tekst || 'Sorry, ik kon even geen antwoord formuleren. Probeer het opnieuw.' })

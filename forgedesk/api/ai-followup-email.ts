@@ -480,8 +480,8 @@ Afzender naam: ${context.afzender_naam}`
     }
 
     await schrijfSpoor(orgIdForBudget, userId, 'ai-followup-email', {
-      klantnaam: context.klantnaam,
-      offerte: context.offerte_nummer,
+      klantnaam: String(context.klantnaam ?? '').slice(0, 200),
+      offerte: String(context.offerte_nummer ?? '').slice(0, 60),
       dagen_open: context.dagen_open,
       resultaat: `${onderwerp}\n${body}`.slice(0, 600),
     })
