@@ -60,6 +60,8 @@ import {
   History,
   ArrowRightLeft,
   AlertTriangle,
+  Sparkles,
+  Edit2,
 } from 'lucide-react'
 import { Folder, Mail as MailLg } from 'lucide-react'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -86,7 +88,12 @@ import {
   updateKlant,
   getContactpersonenByKlant,
   deleteContactpersoonDB,
+  getDaanGeheugenByKlant,
+  bevestigDaanGeheugen,
+  wijsDaanGeheugenAf,
+  updateDaanGeheugenInhoud,
 } from '@/services/supabaseService'
+import type { DaanGeheugenRegel } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
 import { KlantHistorieTab } from './KlantHistorieTab'
 import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, ContactpersoonRecord, Vestiging, Factuur, Deal, Tijdregistratie } from '@/types'
@@ -156,6 +163,9 @@ export function ClientProfile() {
   }
   const [notitie, setNotitie] = useState('')
   const [savingNotitie, setSavingNotitie] = useState(false)
+  // Wat Daan weet (ai_geheugen, alleen zichtbaar als er regels zijn)
+  const [daanGeheugen, setDaanGeheugen] = useState<DaanGeheugenRegel[]>([])
+  const [editGeheugen, setEditGeheugen] = useState<{ id: string; inhoud: string } | null>(null)
   // Contact person form
   const [editingContact, setEditingContact] = useState<Contactpersoon | null>(null)
   const [contactForm, setContactForm] = useState({ naam: '', functie: '', email: '', telefoon: '' })
@@ -173,6 +183,39 @@ export function ClientProfile() {
   const [moveKlanten, setMoveKlanten] = useState<Klant[]>([])
   const [selectedMoveKlant, setSelectedMoveKlant] = useState<Klant | null>(null)
   const [moveLoading, setMoveLoading] = useState(false)
+
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+    getDaanGeheugenByKlant(id)
+      .then((regels) => { if (!cancelled) setDaanGeheugen(regels) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [id])
+
+  const handleGeheugenHouden = async (regel: DaanGeheugenRegel) => {
+    const ok = await bevestigDaanGeheugen(regel.id)
+    if (!ok) { toast.error('Opslaan mislukt'); return }
+    setDaanGeheugen(prev => prev.map(r => r.id === regel.id ? { ...r, status: 'actief' } : r))
+    toast.success(<>Daan onthoudt dit voortaan<span style={{ color: '#F15025' }}>.</span></>)
+  }
+
+  const handleGeheugenWeggooien = async (regel: DaanGeheugenRegel) => {
+    const ok = await wijsDaanGeheugenAf(regel.id)
+    if (!ok) { toast.error('Weggooien mislukt'); return }
+    setDaanGeheugen(prev => prev.filter(r => r.id !== regel.id))
+    toast.success(<>Weggegooid<span style={{ color: '#F15025' }}>.</span></>)
+  }
+
+  const handleGeheugenBewerken = async () => {
+    if (!editGeheugen) return
+    const inhoud = editGeheugen.inhoud.trim()
+    if (!inhoud) { setEditGeheugen(null); return }
+    const ok = await updateDaanGeheugenInhoud(editGeheugen.id, inhoud)
+    if (!ok) { toast.error('Opslaan mislukt'); return }
+    setDaanGeheugen(prev => prev.map(r => r.id === editGeheugen.id ? { ...r, inhoud } : r))
+    setEditGeheugen(null)
+  }
 
   useEffect(() => {
     if (!id) return
@@ -874,6 +917,85 @@ export function ClientProfile() {
             </button>
           </CardContent>
         </Card>
+
+        {/* Wat Daan weet — alleen tonen als er iets is, anders is het ruis */}
+        {daanGeheugen.length > 0 && (
+          <Card className="border-border dark:border-border md:col-span-2 xl:col-span-4">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-petrol" />
+                Wat Daan weet
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {daanGeheugen.map((regel) => (
+                  <div
+                    key={regel.id}
+                    className="group flex items-start justify-between gap-3 py-1.5 border-b border-border/40 last:border-b-0"
+                  >
+                    {editGeheugen?.id === regel.id ? (
+                      <Input
+                        autoFocus
+                        value={editGeheugen.inhoud}
+                        maxLength={300}
+                        onChange={(e) => setEditGeheugen({ id: regel.id, inhoud: e.target.value })}
+                        onBlur={handleGeheugenBewerken}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleGeheugenBewerken() }}
+                        className="h-7 text-sm"
+                      />
+                    ) : (
+                      <p className="text-sm text-foreground min-w-0">
+                        {regel.inhoud}
+                        {regel.bevestigd_aantal > 1 && (
+                          <span className="ml-2 text-2xs text-muted-foreground">{regel.bevestigd_aantal}× bevestigd</span>
+                        )}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {regel.status !== 'actief' ? (
+                        <>
+                          <button
+                            onClick={() => handleGeheugenHouden(regel)}
+                            className="text-xs font-semibold text-white bg-flame hover:bg-[#E04520] px-2.5 py-1 rounded"
+                          >
+                            Houden
+                          </button>
+                          <button
+                            onClick={() => handleGeheugenWeggooien(regel)}
+                            className="text-xs text-muted-foreground hover:text-red-500 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30"
+                          >
+                            Weggooien
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setEditGeheugen({ id: regel.id, inhoud: regel.inhoud })}
+                            className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-muted transition-opacity"
+                            title="Bewerken"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                          </button>
+                          <button
+                            onClick={() => handleGeheugenWeggooien(regel)}
+                            className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-950/30 transition-opacity"
+                            title="Weggooien"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-red-500" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-2xs text-muted-foreground mt-2">
+                Vastgelegd door Daan uit gesprekken. Wat je houdt, gebruikt hij voortaan overal.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* ── Main Content Area ── */}

@@ -78,6 +78,11 @@ export {
 } from './klantService'
 
 export {
+  getDaanGeheugenByKlant, bevestigDaanGeheugen, wijsDaanGeheugenAf, updateDaanGeheugenInhoud,
+} from './daanGeheugenService'
+export type { DaanGeheugenRegel } from './daanGeheugenService'
+
+export {
   getFacturen, getFactuur, createFactuur, updateFactuur, deleteFactuur,
   getFactuurItems, createFactuurItem, replaceFactuurItems,
   getFacturenByKlant, getFacturenByProject,
