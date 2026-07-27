@@ -24,6 +24,28 @@ const supabase = createClient(
 // als de Visualizer gebruikt (utils/visualizerDefaults.ts).
 const USD_NAAR_EUR = 0.92
 
+// ── Daan spoor (inline; grondstof voor de nachtelijke consolidatie) ──
+async function schrijfSpoor(
+  orgId: string | null,
+  userId: string | null,
+  agent: string,
+  inhoud: Record<string, unknown>,
+  klantId: string | null = null
+): Promise<void> {
+  if (!orgId) return
+  try {
+    await supabase.from('ai_sporen').insert({
+      organisatie_id: orgId,
+      user_id: userId,
+      agent,
+      klant_id: klantId,
+      inhoud,
+    })
+  } catch {
+    // Sporen zijn niet-kritiek; het antwoord gaat gewoon door.
+  }
+}
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
@@ -363,6 +385,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch {
       return res.status(500).json({ error: 'Kon de response niet als JSON verwerken', raw: textContent })
     }
+
+    await schrijfSpoor(orgId, userId, ROUTE_NAME, {
+      resultaat_kern: {
+        aantal_regels: regels.length,
+        leverancier: leverancier || null,
+      },
+    })
 
     return res.status(200).json({
       regels,

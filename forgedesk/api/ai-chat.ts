@@ -189,6 +189,28 @@ function daanKennisBlok(context: DaanContext): string {
   return delen.join('\n\n')
 }
 
+// ── Daan spoor (inline; grondstof voor de nachtelijke consolidatie) ──
+async function schrijfSpoor(
+  orgId: string | null,
+  userId: string | null,
+  agent: string,
+  inhoud: Record<string, unknown>,
+  klantId: string | null = null
+): Promise<void> {
+  if (!orgId) return
+  try {
+    await supabase.from('ai_sporen').insert({
+      organisatie_id: orgId,
+      user_id: userId,
+      agent,
+      klant_id: klantId,
+      inhoud,
+    })
+  } catch {
+    // Sporen zijn niet-kritiek; het antwoord gaat gewoon door.
+  }
+}
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 // Anthropic factureert in dollars; doen. rekent en toont in euro's. Alles wat
 // in geschatte_kosten belandt is dus EUR, zodat de maandlimiet, de meter in
@@ -1045,6 +1067,12 @@ ${JSON.stringify(dataContext, null, 2)}`
     } catch {
       // Niet-kritiek
     }
+
+    await schrijfSpoor(orgIdForBudget, userId, 'ai-chat', {
+      vraag: question.slice(0, 600),
+      antwoord: resultText.slice(0, 600),
+      genoteerd,
+    })
 
     const currentUsage = await getUsage(userId).catch(() => ({ geschatte_kosten: 0 }))
 

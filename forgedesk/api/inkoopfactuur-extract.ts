@@ -24,6 +24,28 @@ const supabase = createClient(
 // als de Visualizer gebruikt (utils/visualizerDefaults.ts).
 const USD_NAAR_EUR = 0.92
 
+// ── Daan spoor (inline; grondstof voor de nachtelijke consolidatie) ──
+async function schrijfSpoor(
+  orgId: string | null,
+  userId: string | null,
+  agent: string,
+  inhoud: Record<string, unknown>,
+  klantId: string | null = null
+): Promise<void> {
+  if (!orgId) return
+  try {
+    await supabase.from('ai_sporen').insert({
+      organisatie_id: orgId,
+      user_id: userId,
+      agent,
+      klant_id: klantId,
+      inhoud,
+    })
+  } catch {
+    // Sporen zijn niet-kritiek; het antwoord gaat gewoon door.
+  }
+}
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 
 const ROUTE_NAME = 'inkoopfactuur-extract'
@@ -429,6 +451,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }))
       )
     }
+
+    await schrijfSpoor(orgId, userId, ROUTE_NAME, {
+      leverancier: parsed.leverancier_naam ?? null,
+      resultaat_kern: {
+        totaal: parsed.totaal ?? null,
+        factuur_datum: parsed.factuur_datum ?? null,
+        factuur_nummer: parsed.factuur_nummer ?? null,
+      },
+    })
 
     return res.status(200).json({ success: true, vertrouwen: parsed.vertrouwen })
   } catch (error: unknown) {

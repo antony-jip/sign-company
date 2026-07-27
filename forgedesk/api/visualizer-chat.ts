@@ -69,6 +69,28 @@ async function loadBedrijfscontext(userId: string): Promise<{ bedrijfscontext: s
   return { bedrijfscontext, schrijfstijl }
 }
 
+// ── Daan spoor (inline; grondstof voor de nachtelijke consolidatie) ──
+async function schrijfSpoor(
+  orgId: string | null,
+  userId: string | null,
+  agent: string,
+  inhoud: Record<string, unknown>,
+  klantId: string | null = null
+): Promise<void> {
+  if (!orgId) return
+  try {
+    await supabase.from('ai_sporen').insert({
+      organisatie_id: orgId,
+      user_id: userId,
+      agent,
+      klant_id: klantId,
+      inhoud,
+    })
+  } catch {
+    // Sporen zijn niet-kritiek; het antwoord gaat gewoon door.
+  }
+}
+
 const BASIS_SYSTEM = `Je bent de visualisatie-assistent binnen doen., de bedrijfssoftware van een professioneel signing/reclamebedrijf (sinds 1983). Je helpt de gebruiker meedenken over signing- en reclame-ideeën: gevelletters, lichtreclame (LED doosletters, neon, lichtbakken), freesletters, voertuigbestickering, banners en interieur-signing.
 
 Stijl: Nederlands, vlot en to-the-point, geen onnodige opsommingen. Geen emoji. Denk mee als een ervaren vakman: stel waar nuttig één gerichte verduidelijkende vraag.
@@ -118,6 +140,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const textBlock = response.content.find((b) => b.type === 'text')
     const tekst = (textBlock && 'text' in textBlock ? textBlock.text : '').trim()
+    if (userId !== 'local') {
+      const { data: profiel } = await supabase!
+        .from('profiles')
+        .select('organisatie_id')
+        .eq('id', userId)
+        .maybeSingle()
+      const laatsteVraag = [...berichten].reverse().find(b => b.rol === 'user')
+      await schrijfSpoor((profiel?.organisatie_id as string | null) ?? null, userId, 'visualizer-chat', {
+        vraag: (laatsteVraag?.tekst || '').slice(0, 600),
+        antwoord: tekst.slice(0, 600),
+      })
+    }
+
     return res.status(200).json({ tekst: tekst || 'Sorry, ik kon even geen antwoord formuleren. Probeer het opnieuw.' })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'

@@ -19,6 +19,30 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
+const supabase = supabaseAdmin
+
+// ── Daan spoor (inline; grondstof voor de nachtelijke consolidatie) ──
+async function schrijfSpoor(
+  orgId: string | null,
+  userId: string | null,
+  agent: string,
+  inhoud: Record<string, unknown>,
+  klantId: string | null = null
+): Promise<void> {
+  if (!orgId) return
+  try {
+    await supabase.from('ai_sporen').insert({
+      organisatie_id: orgId,
+      user_id: userId,
+      agent,
+      klant_id: klantId,
+      inhoud,
+    })
+  } catch {
+    // Sporen zijn niet-kritiek; het antwoord gaat gewoon door.
+  }
+}
+
 const MODEL = 'claude-haiku-4-5-20251001'
 const MAX_KANDIDATEN_PER_RUN = 25
 const MAX_TEKST_TEKENS = 4000
@@ -590,6 +614,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let outputTokens = 0
     let calls = 0
     let aanvragen = 0
+    const voorbeelden: string[] = []
 
     for (const mail of kandidaten) {
       const tekst = opgehaald.get(mail.id) || mail.body_text || ''
@@ -603,6 +628,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           inputTokens += uitkomst.inputTokens
           outputTokens += uitkomst.outputTokens
           calls++
+          if (voorbeelden.length < 3) voorbeelden.push(mail.onderwerp || '')
         }
       } catch (err) {
         console.warn('[classificeer-aanvraag] beoordeling mislukt voor', mail.id, err)
@@ -624,6 +650,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     await boekUsage(userId, inputTokens, outputTokens, calls)
+
+    await schrijfSpoor(orgIdVoorBudget, userId, 'classificeer-aanvraag', {
+      verwerkt: calls,
+      aanvragen,
+      voorbeelden: voorbeelden.map(s => s.slice(0, 120)),
+    })
 
     return res.status(200).json({
       beoordeeld: calls,

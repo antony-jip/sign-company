@@ -41,6 +41,28 @@ async function loadDaanContext(client: SupabaseClient, userId: string): Promise<
   return { bedrijfscontext, schrijfstijl }
 }
 
+// ── Daan spoor (inline; grondstof voor de nachtelijke consolidatie) ──
+async function schrijfSpoor(
+  orgId: string | null,
+  userId: string | null,
+  agent: string,
+  inhoud: Record<string, unknown>,
+  klantId: string | null = null
+): Promise<void> {
+  if (!orgId) return
+  try {
+    await supabase.from('ai_sporen').insert({
+      organisatie_id: orgId,
+      user_id: userId,
+      agent,
+      klant_id: klantId,
+      inhoud,
+    })
+  } catch {
+    // Sporen zijn niet-kritiek; het antwoord gaat gewoon door.
+  }
+}
+
 const isHttpUrl = (u: string) => /^https?:\/\/\S+$/i.test(u.trim())
 
 function buildSystemPrompt(bedrijfscontext: string, schrijfstijl: string): string {
@@ -116,6 +138,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Vangnet: strip eventuele markdown-codefences.
     html = html.replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim()
     if (!html) return res.status(502).json({ error: 'Daan gaf geen bruikbare HTML terug' })
+
+    const { data: profiel } = await supabase
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', OWNER_USER_ID)
+      .maybeSingle()
+    await schrijfSpoor((profiel?.organisatie_id as string | null) ?? null, OWNER_USER_ID, 'nieuwsbrief-ai', {
+      opdracht: brief.trim().slice(0, 600),
+      resultaat: html.slice(0, 600),
+    })
 
     return res.status(200).json({ html })
   } catch (err) {
