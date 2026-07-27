@@ -1164,3 +1164,17 @@ Bewust doorgeschoven naar fase 2:
   from_address-gelijkheid.
 - Legacy-rijen met organisatie_id NULL vallen sinds de org-scoping-fix buiten
   Daans blikveld; eenmalige check in productie aanbevolen.
+
+## feat/daan-nachtploeg · fase 2 herkeuring (28 jul 2026)
+
+Senior-herkeuring: AKKOORD-MET-OPMERKINGEN (na eerdere BLOKKADE, beide
+blokkades + M1-M4 + QAA-punten bevestigd gefixt). Gelogde opmerkingen:
+- Pre-dedup-tiebreak in migratie 165 is status- en telling-blind: in een
+  omgeving mét fase 1-twins kan een geprommoveerde nieuwere twin sneuvelen
+  en gaat bevestigd_aantal van de verliezer verloren (productie draaide
+  schoon, dus daar een no-op). Evt. later: status-precedentie in de
+  tiebreak of GREATEST(bevestigd_aantal) naar de overlever.
+- Lezer-batches in daan-nachtploeg.ts hebben geen stop_reason-warning
+  (synthese wel); afgekapte batch parseert stil naar []. Laag risico.
+- De 2-uurs stale-lock-grens is alleen veilig zolang maxDuration <= 7200s;
+  afhankelijkheid niet in het comment benoemd.
