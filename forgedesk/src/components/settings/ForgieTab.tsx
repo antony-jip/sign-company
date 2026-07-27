@@ -36,7 +36,17 @@ import {
   handmatigCreditsToewijzen,
   getCreditTransacties,
   voegCreditsToe,
+  getConventies,
+  createConventie,
+  updateConventie,
+  deleteConventie,
+  MAX_ACTIEVE_CONVENTIES,
+  getDaanGeheugenAlgemeen,
+  bevestigDaanGeheugen,
+  wijsDaanGeheugenAf,
+  getDaanRondes,
 } from '@/services/supabaseService'
+import type { Conventie, DaanGeheugenRegel, DaanRonde } from '@/services/supabaseService'
 import { getForgieUsage, STANDAARD_AI_MAANDLIMIET, type ForgieUsage } from '@/services/forgieService'
 import type { VisualizerInstellingen, CreditTransactie, CreditsPakket } from '@/types'
 import { logger } from '../../utils/logger'
@@ -642,6 +652,8 @@ export function ForgieTab() {
         </CardContent>
       </Card>
 
+      <DaanKennisSectie />
+
       {/* Bedrijfscontext */}
       <Card>
         <CardHeader>
@@ -900,5 +912,211 @@ export function ForgieTab() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+/**
+ * Vaste regels (conventies), bedrijfsbreed geheugen en het nachtploeg-
+ * logboek. Conventies gaan woordelijk mee in elke prompt; vandaar de cap
+ * op actieve regels.
+ */
+function DaanKennisSectie() {
+  const [conventies, setConventies] = useState<Conventie[]>([])
+  const [algemeen, setAlgemeen] = useState<DaanGeheugenRegel[]>([])
+  const [rondes, setRondes] = useState<DaanRonde[]>([])
+  const [nieuweRegel, setNieuweRegel] = useState('')
+  const [toevoegen, setToevoegen] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([getConventies(), getDaanGeheugenAlgemeen(), getDaanRondes(8)])
+      .then(([c, a, r]) => {
+        if (cancelled) return
+        setConventies(c)
+        setAlgemeen(a)
+        setRondes(r)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const actieveConventies = conventies.filter(c => c.actief).length
+
+  const handleConventieToevoegen = async () => {
+    const inhoud = nieuweRegel.trim()
+    if (!inhoud) return
+    if (actieveConventies >= MAX_ACTIEVE_CONVENTIES) {
+      toast.error(`Maximaal ${MAX_ACTIEVE_CONVENTIES} actieve regels; zet er eerst een uit`)
+      return
+    }
+    setToevoegen(true)
+    const nieuw = await createConventie(inhoud)
+    setToevoegen(false)
+    if (!nieuw) { toast.error('Toevoegen mislukt'); return }
+    setConventies(prev => [...prev, nieuw])
+    setNieuweRegel('')
+    toast.success(<>Regel toegevoegd<span style={{ color: '#F15025' }}>.</span></>)
+  }
+
+  const handleConventieToggle = async (c: Conventie) => {
+    if (!c.actief && actieveConventies >= MAX_ACTIEVE_CONVENTIES) {
+      toast.error(`Maximaal ${MAX_ACTIEVE_CONVENTIES} actieve regels`)
+      return
+    }
+    const ok = await updateConventie(c.id, { actief: !c.actief })
+    if (!ok) { toast.error('Opslaan mislukt'); return }
+    setConventies(prev => prev.map(r => r.id === c.id ? { ...r, actief: !c.actief } : r))
+  }
+
+  const handleConventieVerwijderen = async (c: Conventie) => {
+    const ok = await deleteConventie(c.id)
+    if (!ok) { toast.error('Verwijderen mislukt'); return }
+    setConventies(prev => prev.filter(r => r.id !== c.id))
+    toast.success(<>Verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+  }
+
+  const handleAlgemeenHouden = async (r: DaanGeheugenRegel) => {
+    const ok = await bevestigDaanGeheugen(r.id)
+    if (!ok) { toast.error('Opslaan mislukt'); return }
+    setAlgemeen(prev => prev.map(x => x.id === r.id ? { ...x, status: 'actief' } : x))
+    toast.success(<>Daan onthoudt dit voortaan<span style={{ color: '#F15025' }}>.</span></>)
+  }
+
+  const handleAlgemeenWeggooien = async (r: DaanGeheugenRegel) => {
+    const ok = await wijsDaanGeheugenAf(r.id)
+    if (!ok) { toast.error('Weggooien mislukt'); return }
+    setAlgemeen(prev => prev.filter(x => x.id !== r.id))
+    toast.success(<>Weggegooid<span style={{ color: '#F15025' }}>.</span></>)
+  }
+
+  return (
+    <>
+      {/* Vaste regels */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Vaste regels</CardTitle>
+          <CardDescription>
+            Hoe jouw bedrijf werkt. Actieve regels gaan mee in elke Daan-aanroep; bij tegenspraak wint de bovenste.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {conventies.length > 0 && (
+            <div className="space-y-1.5">
+              {conventies.map(c => (
+                <div key={c.id} className="group flex items-center justify-between gap-3 py-1.5 border-b border-border/40 last:border-b-0">
+                  <p className={cn('text-sm min-w-0', c.actief ? 'text-foreground' : 'text-muted-foreground line-through')}>
+                    {c.inhoud}
+                  </p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Switch checked={c.actief} onCheckedChange={() => handleConventieToggle(c)} />
+                    <button
+                      onClick={() => handleConventieVerwijderen(c)}
+                      className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-950/30 transition-opacity"
+                      title="Verwijderen"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-red-500" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Input
+              value={nieuweRegel}
+              maxLength={300}
+              onChange={e => setNieuweRegel(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleConventieToevoegen() }}
+              placeholder='Bijv: "Naar aannemers schrijven we met je, naar particulieren met u"'
+              className="h-9"
+            />
+            <Button size="sm" onClick={handleConventieToevoegen} disabled={toevoegen || !nieuweRegel.trim()}>
+              Toevoegen
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            <span className="font-mono">{actieveConventies}/{MAX_ACTIEVE_CONVENTIES}</span> actief · kort en stellend werkt het best
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Bedrijfsbreed geheugen */}
+      {algemeen.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Bedrijfsbreed geheugen</CardTitle>
+            <CardDescription>
+              Feiten die Daan vastlegde zonder ze aan één klant te kunnen hangen. Klant-feiten beheer je op de klantkaart.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            {algemeen.map(r => (
+              <div key={r.id} className="group flex items-center justify-between gap-3 py-1.5 border-b border-border/40 last:border-b-0">
+                <p className="text-sm text-foreground min-w-0">
+                  {r.inhoud}
+                  {r.status === 'actief' && <span className="ml-2 text-2xs text-muted-foreground">actief</span>}
+                </p>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {r.status !== 'actief' && (
+                    <button
+                      onClick={() => handleAlgemeenHouden(r)}
+                      className="text-xs font-semibold text-white bg-flame hover:bg-[#E04520] px-2.5 py-1 rounded"
+                    >
+                      Houden
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleAlgemeenWeggooien(r)}
+                    className="text-xs text-muted-foreground hover:text-red-500 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30"
+                  >
+                    Weggooien
+                  </button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Nachtploeg-logboek */}
+      {rondes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Nachtploeg</CardTitle>
+            <CardDescription>
+              Daan leest &apos;s nachts de dag terug en zet voorstellen klaar op je dashboard. Deze rondes kosten jou niets van je AI-tegoed.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-muted-foreground">
+                    <th className="py-1.5 pr-4 font-medium">Nacht</th>
+                    <th className="py-1.5 pr-4 font-medium text-right">Sporen</th>
+                    <th className="py-1.5 pr-4 font-medium text-right">Voorstellen</th>
+                    <th className="py-1.5 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rondes.map(r => (
+                    <tr key={r.id} className="border-t border-border/40">
+                      <td className="py-1.5 pr-4 font-mono text-xs">
+                        {new Date(r.gestart_op).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      </td>
+                      <td className="py-1.5 pr-4 text-right font-mono text-xs">{r.sporen_gelezen}</td>
+                      <td className="py-1.5 pr-4 text-right font-mono text-xs">{r.voorstellen}</td>
+                      <td className="py-1.5 text-xs">
+                        {r.status === 'klaar' ? 'klaar' : r.status}<span className="text-flame">.</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </>
   )
 }

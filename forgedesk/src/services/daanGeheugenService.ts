@@ -21,6 +21,20 @@ export interface DaanGeheugenRegel {
 
 const ZICHTBARE_STATUSSEN: DaanGeheugenStatus[] = ['waargenomen', 'voorgesteld', 'actief']
 
+/** Org-brede regels (onderwerp 'algemeen') voor beheer in Instellingen > Daan. */
+export async function getDaanGeheugenAlgemeen(): Promise<DaanGeheugenRegel[]> {
+  if (!isSupabaseConfigured() || !supabase) return []
+  const { data, error } = await supabase
+    .from('ai_geheugen')
+    .select('id, onderwerp_type, onderwerp_id, inhoud, status, agent, bevestigd_aantal, laatst_bevestigd_op, created_at')
+    .eq('onderwerp_type', 'algemeen')
+    .in('status', ZICHTBARE_STATUSSEN)
+    .order('laatst_bevestigd_op', { ascending: false })
+    .limit(50)
+  if (error) return []
+  return (data ?? []) as DaanGeheugenRegel[]
+}
+
 export async function getDaanGeheugenByKlant(klantId: string): Promise<DaanGeheugenRegel[]> {
   if (!klantId || !isSupabaseConfigured() || !supabase) return []
   const { data, error } = await supabase
