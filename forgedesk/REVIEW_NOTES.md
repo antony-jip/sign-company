@@ -1178,3 +1178,18 @@ blokkades + M1-M4 + QAA-punten bevestigd gefixt). Gelogde opmerkingen:
   (synthese wel); afgekapte batch parseert stil naar []. Laag risico.
 - De 2-uurs stale-lock-grens is alleen veilig zolang maxDuration <= 7200s;
   afhankelijkheid niet in het comment benoemd.
+
+## Fase 3-lijst · Daan-geheugen (besluit Antony, 28 jul 2026)
+
+- **Mail leert mee via de classifier.** classificeer-aanvraag leest nieuwe
+  mail al (max 25/run, 14 dagen terug, 4000 tekens); laat hem per mail een
+  compacte kern (afzender + onderwerp + kern, ≤600 tekens) als ai_spoor
+  achterlaten zodat de nachtploeg ook leert uit klantmail waar niemand een
+  AI-knop op gebruikt. VOORWAARDE van Antony: uitzetbaar in Instellingen >
+  Daan (org-brede toggle op app_settings, default aan, check in de
+  classifier vóór het schrijven van sporen). Ontwerpvragen voor dan:
+  alleen mail herleidbaar naar een bekende klant meenemen, en de
+  user-scoped mailboxgrens respecteren in wat er in het spoor belandt.
+- Eerder gelogde restpunten fase 1/2 (zie secties hierboven): tiebreak
+  status-precedentie, stop_reason-warning op lezer-batches, beheer-UI
+  volgorde conventies, p_klant_id-plumbing in ai-email/followup.
