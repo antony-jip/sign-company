@@ -794,7 +794,12 @@ VRAAG OF OPDRACHT (belangrijk):
 - Een VRAAG over data ("hoeveel offertes had ik?", "wat staat er open?") beantwoord je gewoon in tekst. Roep dan GEEN tool aan.
 - Een duidelijke OPDRACHT om iets aan te maken ("maak een project/klant/taak voor…") handel je af met de tool 'stel_actie_voor': geef het type en de velden die de gebruiker noemt. Verzin GEEN waarden die je niet hebt en reken NIETS uit. Zet bij een tool-aanroep ook altijd een korte, leesbare bevestigingszin in je tekst, bv. "Ik zou nu een project aanmaken voor KWS Vegetables — klopt dat?". Vraagt de gebruiker om een offerte, stel dan een PROJECT voor; de app biedt daarna zelf aan om er een offerte bij te maken.
 - TWIJFEL je of een bericht een vraag of een opdracht is (bv. alleen een losse naam zonder werkwoord)? Roep dan GEEN tool aan, maar stel een korte verhelderende wedervraag in tekst, bv. "Bedoel je dat ik die offerte moet aanmaken?".
-- Je voert zelf niets uit en slaat niets op; je stelt alleen een actie voor die de gebruiker daarna zelf bevestigt.`
+- Je voert zelf niets uit en slaat niets op; je stelt alleen een actie voor die de gebruiker daarna zelf bevestigt.
+
+ONTHOUDEN (tool 'leg_vast'):
+- Vertelt de gebruiker een BLIJVEND feit over een klant of het eigen bedrijf (vaste voorkeur, werkwijze, bijzonderheid op locatie, bv. "De Vries wil altijd een PO-nummer op de factuur" of "bij dat pand is een hoogwerker nodig"), leg het dan vast met de tool 'leg_vast'. Formuleer het feit kort en feitelijk, zonder oordeel.
+- NIET vastleggen: eenmalige gebeurtenissen ("de levering was gisteren te laat"), tijdelijke zaken, meningen, of dingen die je zelf afleidt zonder dat de gebruiker ze zegt. Bij twijfel: niet vastleggen.
+- Een vastgelegd feit is een notitie die de gebruiker later op de klantkaart beheert; het wordt pas actief gebruikt nadat hij hem daar houdt. Noem in je tekstantwoord kort wat je genoteerd hebt.`
 
     // Dynamisch deel (per gebruiker en per vraag): bedrijfscontext en de actuele
     // bedrijfsdata. Niet cache-baar, dus als los systemblok na het statische deel.
@@ -841,6 +846,28 @@ ${JSON.stringify(dataContext, null, 2)}`
       },
     }
 
+    // Tool waarmee Daan een blijvend feit vastlegt in ai_geheugen. Landt als
+    // status 'waargenomen': zichtbaar en beheerbaar op de klantkaart, maar
+    // pas meegenomen in prompts nadat de gebruiker hem daar actief maakt.
+    const legVastTool = {
+      name: 'leg_vast',
+      description:
+        'Leg een blijvend feit over een klant of het eigen bedrijf vast wanneer de gebruiker het vertelt. ' +
+        'Eén feit per aanroep, kort en feitelijk geformuleerd (max 300 tekens). ' +
+        'Alleen voor duurzame kennis (voorkeuren, vaste werkwijzen, bijzonderheden op locatie), ' +
+        'nooit voor eenmalige gebeurtenissen of eigen aannames. ' +
+        'Gaat het over een klant, geef dan klant_naam precies zoals de gebruiker hem noemt.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          onderwerp_type: { type: 'string', enum: ['klant', 'algemeen'] },
+          klant_naam: { type: 'string', description: 'Alleen bij onderwerp_type "klant".' },
+          inhoud: { type: 'string', description: 'Het feit, één zin, feitelijk.' },
+        },
+        required: ['onderwerp_type', 'inhoud'],
+      },
+    }
+
     // Call Anthropic API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -863,7 +890,7 @@ ${JSON.stringify(dataContext, null, 2)}`
           { type: 'text', text: systemDynamic },
         ],
         messages,
-        tools: [actieTool],
+        tools: [actieTool, legVastTool],
         tool_choice: { type: 'auto' },
       }),
     })
@@ -895,9 +922,81 @@ ${JSON.stringify(dataContext, null, 2)}`
       .filter((input) => input && typeof input.type === 'string' && input.data && typeof input.data === 'object')
       .map((input) => ({ type: input.type as string, data: input.data as Record<string, unknown> }))
 
+    // Verwerk leg_vast-aanroepen: schrijf als 'waargenomen' naar ai_geheugen.
+    // Bewust géén status 'actief': de gebruiker beheert dit op de klantkaart
+    // en maakt het daar zelf actief (geen silent data mutations).
+    const genoteerd: string[] = []
+    if (orgIdForBudget) {
+      const vastleggingen = blocks
+        .filter((b) => b.type === 'tool_use' && b.name === 'leg_vast')
+        .map((b) => b.input as { onderwerp_type?: string; klant_naam?: string; inhoud?: string })
+        .filter((input) => input && typeof input.inhoud === 'string' && input.inhoud.trim())
+
+      for (const v of vastleggingen.slice(0, 3)) {
+        try {
+          const inhoud = (v.inhoud as string).trim().slice(0, 300)
+          let onderwerpType: 'klant' | 'algemeen' = v.onderwerp_type === 'klant' ? 'klant' : 'algemeen'
+          let onderwerpId: string | null = null
+
+          if (onderwerpType === 'klant' && v.klant_naam) {
+            const { data: matches } = await supabase
+              .from('klanten')
+              .select('id')
+              .eq('organisatie_id', orgIdForBudget)
+              .ilike('bedrijfsnaam', `%${v.klant_naam.trim()}%`)
+              .limit(2)
+            if (matches?.length === 1) {
+              onderwerpId = matches[0].id
+            } else {
+              // Geen of meerdere matches: org-breed opslaan met de naam in het
+              // bewijs, dan is het feit niet kwijt en niet aan de verkeerde
+              // klant gehangen.
+              onderwerpType = 'algemeen'
+            }
+          }
+
+          // Zelfde feit nogmaals gehoord = bevestiging, geen duplicaat.
+          const { data: bestaand } = await supabase
+            .from('ai_geheugen')
+            .select('id, bevestigd_aantal')
+            .eq('organisatie_id', orgIdForBudget)
+            .eq('onderwerp_type', onderwerpType)
+            .eq('inhoud', inhoud)
+            .limit(1)
+            .maybeSingle()
+
+          if (bestaand) {
+            await supabase
+              .from('ai_geheugen')
+              .update({
+                bevestigd_aantal: (bestaand.bevestigd_aantal ?? 1) + 1,
+                laatst_bevestigd_op: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', bestaand.id)
+          } else {
+            await supabase.from('ai_geheugen').insert({
+              organisatie_id: orgIdForBudget,
+              user_id: null,
+              onderwerp_type: onderwerpType,
+              onderwerp_id: onderwerpId,
+              inhoud,
+              status: 'waargenomen',
+              agent: 'ai-chat',
+              bewijs: { klant_naam: v.klant_naam ?? null, vraag: question.slice(0, 200) },
+            })
+          }
+          genoteerd.push(inhoud)
+        } catch {
+          // Vastleggen is niet-kritiek; het antwoord gaat gewoon door.
+        }
+      }
+    }
+
     const resultText =
       textParts.join('\n').trim() ||
-      (acties.length > 0 ? 'Ik heb een actie voor je klaargezet.' : '')
+      (acties.length > 0 ? 'Ik heb een actie voor je klaargezet.' : '') ||
+      (genoteerd.length > 0 ? 'Genoteerd.' : '')
 
     // Update usage tracking
     try {
@@ -931,6 +1030,7 @@ ${JSON.stringify(dataContext, null, 2)}`
       usage: currentUsage.geschatte_kosten,
       limiet: MONTHLY_LIMIT,
       ...(acties.length > 0 ? { acties } : {}),
+      ...(genoteerd.length > 0 ? { genoteerd } : {}),
     })
   } catch (error: unknown) {
     console.error('AI Chat API fout:', error)

@@ -17,6 +17,8 @@ export interface ForgieChatResult {
   usage: number
   limiet: number
   acties?: ForgieActie[]
+  /** Feiten die Daan dit gesprek als 'waargenomen' heeft vastgelegd. */
+  genoteerd?: string[]
 }
 
 export interface ForgieImport {

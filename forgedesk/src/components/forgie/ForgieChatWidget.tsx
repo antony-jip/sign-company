@@ -28,7 +28,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { renderForgieMarkdown } from '@/utils/forgieMarkdown'
 import { DaanActiePlan } from './DaanActiePlan'
 
-type WidgetMessage = ForgieChatMessage & { acties?: ForgieActie[] }
+type WidgetMessage = ForgieChatMessage & { acties?: ForgieActie[]; genoteerd?: string[] }
 type WidgetView = 'daan' | 'support'
 
 function DaanAvatar() {
@@ -448,7 +448,7 @@ export function ForgieChatWidget() {
 
     try {
       const result = await sendForgieChat(question, messages)
-      const forgieMsg: WidgetMessage = { role: 'forgie', content: result.answer, acties: result.acties }
+      const forgieMsg: WidgetMessage = { role: 'forgie', content: result.answer, acties: result.acties, genoteerd: result.genoteerd }
       setMessages(prev => [...prev, forgieMsg])
       if (!isOpen) setHasUnread(true)
     } catch (err) {
@@ -808,6 +808,19 @@ export function ForgieChatWidget() {
                           <DaanAvatar />
                           <div className="min-w-0 flex-1">
                             <DaanActiePlan acties={msg.acties!} />
+                          </div>
+                        </div>
+                      )}
+                      {!!msg.genoteerd?.length && (
+                        <div className="flex gap-2.5 justify-start">
+                          <div className="w-7 shrink-0" />
+                          <div className="text-2xs text-muted-foreground px-1">
+                            {msg.genoteerd.map((g) => (
+                              <p key={g}>
+                                Genoteerd: {g} · beheer dit op de klantkaart
+                                <span className="text-flame">.</span>
+                              </p>
+                            ))}
                           </div>
                         </div>
                       )}
