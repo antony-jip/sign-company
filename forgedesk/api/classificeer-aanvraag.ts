@@ -640,7 +640,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq('organisatie_id', orgIdVoorBudget)
         for (const k of klanten ?? []) {
           const adres = String(k.email || '').trim().toLowerCase()
-          if (adres) klantAdressen.set(adres, k.id as string)
+          if (!adres) continue
+          // Delen twee klanten één adres, dan is de afzender niet eenduidig
+          // herleidbaar: niet gokken, dus geen attributie en geen spoor.
+          if (klantAdressen.has(adres) && klantAdressen.get(adres) !== (k.id as string)) {
+            klantAdressen.set(adres, '')
+          } else {
+            klantAdressen.set(adres, k.id as string)
+          }
         }
       }
     }

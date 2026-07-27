@@ -1193,3 +1193,18 @@ blokkades + M1-M4 + QAA-punten bevestigd gefixt). Gelogde opmerkingen:
 - Eerder gelogde restpunten fase 1/2 (zie secties hierboven): tiebreak
   status-precedentie, stop_reason-warning op lezer-batches, beheer-UI
   volgorde conventies, p_klant_id-plumbing in ai-email/followup.
+
+## feat/daan-mail-leert-mee · fase 3 (28 jul 2026)
+
+Senior: AKKOORD-MET-OPMERKINGEN, geen blokkades. Fail-closed, privacygrens
+en toggle-conventie expliciet goedgekeurd. Dubbele-adres-attributie direct
+gefixt (ambigu adres = geen attributie, geen spoor). Gelogde restpunten:
+- from_address kan via read-email-fallback "Naam <adres>" bevatten; exacte
+  match faalt dan stil (veilig, maar mist leerkansen). Contactpersoon-
+  adressen (klanten.contactpersonen JSONB) matchen bewust niet, alleen
+  klanten.email; smal beginnen is de keuze, verbreden kan later.
+- Legacy app_settings-rij zonder organisatie_id: server negeert die, dus
+  privacy-toggle valt daar terug op default áán terwijl de UI "uit" kan
+  tonen. Verify in prod: select id from app_settings where organisatie_id
+  is null;  — hoort leeg te zijn.
+- Klantenquery kan .not('email','is',null) krijgen (kleinigheid).
