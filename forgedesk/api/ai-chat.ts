@@ -955,15 +955,22 @@ ${JSON.stringify(dataContext, null, 2)}`
             }
           }
 
-          // Zelfde feit nogmaals gehoord = bevestiging, geen duplicaat.
-          const { data: bestaand } = await supabase
+          // Zelfde feit nogmaals gehoord = bevestiging, geen duplicaat. De
+          // match moet op hetzelfde onderwerp slaan (anders hangt identieke
+          // tekst voor klant B aan de rij van klant A) en alleen zichtbare
+          // statussen raken: een ooit afgewezen regel mag de herhaling niet
+          // absorberen, want dan komt het feit nooit meer terug.
+          let dedupQuery = supabase
             .from('ai_geheugen')
             .select('id, bevestigd_aantal')
             .eq('organisatie_id', orgIdForBudget)
             .eq('onderwerp_type', onderwerpType)
             .eq('inhoud', inhoud)
-            .limit(1)
-            .maybeSingle()
+            .in('status', ['waargenomen', 'voorgesteld', 'actief'])
+          dedupQuery = onderwerpId
+            ? dedupQuery.eq('onderwerp_id', onderwerpId)
+            : dedupQuery.is('onderwerp_id', null)
+          const { data: bestaand } = await dedupQuery.limit(1).maybeSingle()
 
           if (bestaand) {
             await supabase
