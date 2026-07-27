@@ -404,7 +404,7 @@ async function getRelevantContext(userId: string, orgId: string | null, question
   // Zoek specifieke klantnaam in de vraag
   const { data: alleKlanten } = await supabase
     .from('klanten')
-    .select('id, bedrijfsnaam')
+    .select('id, bedrijfsnaam, email')
     .eq(scopeKolom, scopeWaarde)
 
   const gevondenKlant = alleKlanten?.find(k =>
@@ -412,10 +412,10 @@ async function getRelevantContext(userId: string, orgId: string | null, question
   )
 
   if (gevondenKlant) {
-    const [projecten, offertes, facturen] = await Promise.all([
+    const [projecten, offertes, facturen, geheugen, werkbonnen] = await Promise.all([
       supabase
         .from('projecten')
-        .select('naam, status, budget, start_datum, eind_datum')
+        .select('id, naam, status, budget, start_datum, eind_datum')
         .eq('klant_id', gevondenKlant.id),
       supabase
         .from('offertes')
@@ -425,7 +425,93 @@ async function getRelevantContext(userId: string, orgId: string | null, question
         .from('facturen')
         .select('nummer, titel, totaal, status, factuurdatum')
         .eq('klant_id', gevondenKlant.id),
+      // Actief klant-geheugen: org-breed plus persoonlijke regels van de vrager.
+      orgId
+        ? supabase
+            .from('ai_geheugen')
+            .select('inhoud, user_id')
+            .eq('organisatie_id', orgId)
+            .eq('status', 'actief')
+            .eq('onderwerp_type', 'klant')
+            .eq('onderwerp_id', gevondenKlant.id)
+            .order('laatst_bevestigd_op', { ascending: false })
+            .limit(15)
+        : Promise.resolve({ data: null }),
+      // Werkbon-notities: hier staat de praktijkkennis van de monteur
+      // (hoogwerker nodig, laden achterom) die nergens anders is vastgelegd.
+      supabase
+        .from('werkbonnen')
+        .select('werkbon_nummer, titel, datum, omschrijving, monteur_opmerkingen')
+        .eq('klant_id', gevondenKlant.id)
+        .order('created_at', { ascending: false })
+        .limit(5),
     ])
+
+    const geheugenRegels = (geheugen.data ?? [])
+      .filter(g => !g.user_id || g.user_id === userId)
+      .map(g => g.inhoud)
+
+    const werkbonNotities = (werkbonnen.data ?? [])
+      .filter(w => w.omschrijving || w.monteur_opmerkingen)
+      .map(w => ({
+        werkbon: w.werkbon_nummer,
+        titel: w.titel,
+        datum: w.datum,
+        omschrijving: w.omschrijving,
+        monteur_opmerkingen: w.monteur_opmerkingen,
+      }))
+
+    // Recente mails van/naar deze klant. E-mail is bewust persoonlijk per
+    // mailbox (RLS op user_id, migratie 048), dus we tonen alleen de eigen
+    // mailbox van de vrager plus threads die via een projectkoppeling al
+    // teamzichtbaar zijn (zelfde grens als policy 109). De service-role
+    // omzeilt RLS, dus die grens handhaven we hier zelf.
+    const mails: Array<{ onderwerp: string; van: string; datum: string; kern: string }> = []
+    const klantEmail = (gevondenKlant.email || '').trim().toLowerCase()
+    if (klantEmail && !klantEmail.includes(',')) {
+      const { data: eigenMails } = await supabase
+        .from('emails')
+        .select('onderwerp, van, aan, datum, body_text, thread_id')
+        .eq('user_id', userId)
+        .or(`van.ilike.%${klantEmail}%,aan.ilike.%${klantEmail}%,from_address.ilike.%${klantEmail}%`)
+        .order('datum', { ascending: false })
+        .limit(8)
+
+      const threadIds = new Set((eigenMails ?? []).map(m => m.thread_id).filter(Boolean))
+      let projectMails: typeof eigenMails = []
+      const projectIds = (projecten.data ?? []).map(p => p.id).filter(Boolean)
+      if (orgId && projectIds.length) {
+        const { data: koppelingen } = await supabase
+          .from('email_project_koppelingen')
+          .select('thread_id')
+          .eq('organisatie_id', orgId)
+          .in('project_id', projectIds)
+          .limit(10)
+        const nieuweThreads = (koppelingen ?? [])
+          .map(k => k.thread_id)
+          .filter(t => t && !threadIds.has(t))
+        if (nieuweThreads.length) {
+          const { data } = await supabase
+            .from('emails')
+            .select('onderwerp, van, aan, datum, body_text, thread_id')
+            .in('thread_id', nieuweThreads)
+            .order('datum', { ascending: false })
+            .limit(8)
+          projectMails = data ?? []
+        }
+      }
+
+      for (const m of [...(eigenMails ?? []), ...(projectMails ?? [])].slice(0, 10)) {
+        mails.push({
+          onderwerp: m.onderwerp || '(geen onderwerp)',
+          van: m.van || '',
+          datum: m.datum || '',
+          // Body is lazy gevuld (alleen na openen); een snippet is genoeg
+          // voor context en houdt de prompt klein.
+          kern: (m.body_text || '').replace(/\s+/g, ' ').slice(0, 300),
+        })
+      }
+    }
 
     context.push({
       type: 'klant_detail',
@@ -433,6 +519,9 @@ async function getRelevantContext(userId: string, orgId: string | null, question
       projecten: projecten.data,
       offertes: offertes.data,
       facturen: facturen.data,
+      ...(geheugenRegels.length ? { wat_we_weten_over_deze_klant: geheugenRegels } : {}),
+      ...(werkbonNotities.length ? { werkbon_notities: werkbonNotities } : {}),
+      ...(mails.length ? { recente_mails: mails } : {}),
     })
   }
 
