@@ -51,10 +51,22 @@ async function loadDaanContext(client: SupabaseClient, userId: string, klantId: 
         conventies?: Array<{ categorie: string; inhoud: string }>
         geheugen?: Array<{ onderwerp_type: string; onderwerp_id: string | null; inhoud: string }>
       }
-      const bedrijfscontext = ctx.bedrijfscontext || ''
-      const schrijfstijl = ctx.schrijfstijl || ''
+      let bedrijfscontext = ctx.bedrijfscontext || ''
+      let schrijfstijl = ctx.schrijfstijl || ''
       const conventies = Array.isArray(ctx.conventies) ? ctx.conventies : []
       const geheugen = Array.isArray(ctx.geheugen) ? ctx.geheugen : []
+      // De RPC kent alleen de org-rij van app_settings. Legacy-accounts met
+      // hun context op een user-rij hielden die via het oude pad; dezelfde
+      // fallback hier, anders verliezen ze context zodra de RPC bestaat.
+      if (!bedrijfscontext || !schrijfstijl) {
+        const { data: legacy } = await client
+          .from('app_settings')
+          .select('forgie_bedrijfscontext, ai_tone_of_voice')
+          .eq('user_id', userId)
+          .maybeSingle()
+        if (!bedrijfscontext) bedrijfscontext = (legacy?.forgie_bedrijfscontext as string | null) || ''
+        if (!schrijfstijl) schrijfstijl = (legacy?.ai_tone_of_voice as string | null) || ''
+      }
       return {
         bedrijfscontext,
         schrijfstijl,

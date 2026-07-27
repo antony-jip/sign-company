@@ -1139,3 +1139,28 @@ Niet-blocking opmerkingen uit de review:
 - **Dashboard-flicker bij koude cache:** KpiStrip/OpvolgenBlok tonen kort de
   doel-kaarten/eerste-offerte-CTA tot de data binnen is; isLoading-gate zou
   dit oplossen. Cosmetisch.
+
+## feat/daan-geheugen · fase 1 (28 jul 2026)
+
+Senior-verdict: AKKOORD-MET-OPMERKINGEN. QAA: 7/8 ✅, crit. 5 ⚠️ (gefixt).
+Gefixt in fase: dedup op onderwerp_id + zichtbare status, write-check vóór
+"Genoteerd", legacy user-fallback in het RPC-pad, persoonlijk-filter vóór
+limit, widget-copy zonder klantkaart-verwijzing.
+
+Bewust doorgeschoven naar fase 2:
+- Race in read-then-write dedup van leg_vast: dubbele insert bij gelijktijdige
+  identieke calls. Fix te zijner tijd: partial unique index op
+  (organisatie_id, onderwerp_type, COALESCE(onderwerp_id, nil-uuid),
+  md5(inhoud)) WHERE status <> 'afgewezen', plus upsert.
+- ai_geheugen.user_id staat op ON DELETE SET NULL; NULL betekent org-gedeeld,
+  dus persoonlijke regels worden bij user-verwijdering gedeeld. Latent (fase 1
+  schrijft alleen NULL); in de fase 2-migratie omzetten naar ON DELETE CASCADE.
+- Org-brede 'algemeen'-geheugenregels hebben geen beheer-UI; beheerlijst hoort
+  in Instellingen > Daan (ForgieTab) bij fase 2.
+- p_klant_id van daan_context() wordt door geen call-site gevuld (ai-chat dekt
+  klantgeheugen apart); bewuste fase 2-plumbing.
+- Mail-match is substring-ilike op klant-email (kan bij korte adressen te
+  breed matchen, alleen binnen eigen mailbox); scherper matchen kan later op
+  from_address-gelijkheid.
+- Legacy-rijen met organisatie_id NULL vallen sinds de org-scoping-fix buiten
+  Daans blikveld; eenmalige check in productie aanbevolen.

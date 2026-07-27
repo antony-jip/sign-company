@@ -123,10 +123,22 @@ async function loadDaanContext(client: SupabaseClient, userId: string, klantId: 
         conventies?: Array<{ categorie: string; inhoud: string }>
         geheugen?: Array<{ onderwerp_type: string; onderwerp_id: string | null; inhoud: string }>
       }
-      const bedrijfscontext = ctx.bedrijfscontext || ''
-      const schrijfstijl = ctx.schrijfstijl || ''
+      let bedrijfscontext = ctx.bedrijfscontext || ''
+      let schrijfstijl = ctx.schrijfstijl || ''
       const conventies = Array.isArray(ctx.conventies) ? ctx.conventies : []
       const geheugen = Array.isArray(ctx.geheugen) ? ctx.geheugen : []
+      // De RPC kent alleen de org-rij van app_settings. Legacy-accounts met
+      // hun context op een user-rij hielden die via het oude pad; dezelfde
+      // fallback hier, anders verliezen ze context zodra de RPC bestaat.
+      if (!bedrijfscontext || !schrijfstijl) {
+        const { data: legacy } = await client
+          .from('app_settings')
+          .select('forgie_bedrijfscontext, ai_tone_of_voice')
+          .eq('user_id', userId)
+          .maybeSingle()
+        if (!bedrijfscontext) bedrijfscontext = (legacy?.forgie_bedrijfscontext as string | null) || ''
+        if (!schrijfstijl) schrijfstijl = (legacy?.ai_tone_of_voice as string | null) || ''
+      }
       return {
         bedrijfscontext,
         schrijfstijl,
@@ -425,15 +437,18 @@ async function getRelevantContext(userId: string, orgId: string | null, question
         .from('facturen')
         .select('nummer, titel, totaal, status, factuurdatum')
         .eq('klant_id', gevondenKlant.id),
-      // Actief klant-geheugen: org-breed plus persoonlijke regels van de vrager.
+      // Actief klant-geheugen: org-breed plus persoonlijke regels van de
+      // vrager. Het persoonlijk-filter zit ín de query, vóór de limit,
+      // anders eten regels van collega's slots op die daarna wegvallen.
       orgId
         ? supabase
             .from('ai_geheugen')
-            .select('inhoud, user_id')
+            .select('inhoud')
             .eq('organisatie_id', orgId)
             .eq('status', 'actief')
             .eq('onderwerp_type', 'klant')
             .eq('onderwerp_id', gevondenKlant.id)
+            .or(`user_id.is.null,user_id.eq.${userId}`)
             .order('laatst_bevestigd_op', { ascending: false })
             .limit(15)
         : Promise.resolve({ data: null }),
@@ -447,9 +462,7 @@ async function getRelevantContext(userId: string, orgId: string | null, question
         .limit(5),
     ])
 
-    const geheugenRegels = (geheugen.data ?? [])
-      .filter(g => !g.user_id || g.user_id === userId)
-      .map(g => g.inhoud)
+    const geheugenRegels = (geheugen.data ?? []).map(g => g.inhoud)
 
     const werkbonNotities = (werkbonnen.data ?? [])
       .filter(w => w.omschrijving || w.monteur_opmerkingen)
@@ -973,7 +986,7 @@ ${JSON.stringify(dataContext, null, 2)}`
           const { data: bestaand } = await dedupQuery.limit(1).maybeSingle()
 
           if (bestaand) {
-            await supabase
+            const { error: schrijfFout } = await supabase
               .from('ai_geheugen')
               .update({
                 bevestigd_aantal: (bestaand.bevestigd_aantal ?? 1) + 1,
@@ -981,8 +994,11 @@ ${JSON.stringify(dataContext, null, 2)}`
                 updated_at: new Date().toISOString(),
               })
               .eq('id', bestaand.id)
+            // Alleen melden wat er echt staat: faalt de write (bijv. migratie
+            // 164 nog niet gedraaid), dan geen "Genoteerd" tegen de gebruiker.
+            if (!schrijfFout) genoteerd.push(inhoud)
           } else {
-            await supabase.from('ai_geheugen').insert({
+            const { error: schrijfFout } = await supabase.from('ai_geheugen').insert({
               organisatie_id: orgIdForBudget,
               user_id: null,
               onderwerp_type: onderwerpType,
@@ -992,8 +1008,8 @@ ${JSON.stringify(dataContext, null, 2)}`
               agent: 'ai-chat',
               bewijs: { klant_naam: v.klant_naam ?? null, vraag: question.slice(0, 200) },
             })
+            if (!schrijfFout) genoteerd.push(inhoud)
           }
-          genoteerd.push(inhoud)
         } catch {
           // Vastleggen is niet-kritiek; het antwoord gaat gewoon door.
         }

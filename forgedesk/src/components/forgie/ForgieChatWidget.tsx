@@ -815,9 +815,11 @@ export function ForgieChatWidget() {
                         <div className="flex gap-2.5 justify-start">
                           <div className="w-7 shrink-0" />
                           <div className="text-2xs text-muted-foreground px-1">
+                            {/* Geen klantkaart-verwijzing: org-brede regels
+                                hebben daar (nog) geen beheerplek. */}
                             {msg.genoteerd.map((g) => (
                               <p key={g}>
-                                Genoteerd: {g} · beheer dit op de klantkaart
+                                Genoteerd: {g}
                                 <span className="text-flame">.</span>
                               </p>
                             ))}
