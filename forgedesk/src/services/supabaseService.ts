@@ -79,8 +79,9 @@ export {
 
 export {
   getDaanGeheugenByKlant, bevestigDaanGeheugen, wijsDaanGeheugenAf, updateDaanGeheugenInhoud,
+  getDaanVoorstellen, getDaanRondes,
 } from './daanGeheugenService'
-export type { DaanGeheugenRegel } from './daanGeheugenService'
+export type { DaanGeheugenRegel, DaanVoorstel, DaanRonde } from './daanGeheugenService'
 
 export {
   getFacturen, getFactuur, createFactuur, updateFactuur, deleteFactuur,

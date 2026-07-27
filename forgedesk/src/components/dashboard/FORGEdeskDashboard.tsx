@@ -18,6 +18,7 @@ import { PortaalAlerts } from './PortaalAlerts'
 import { AanDeSlagSectie } from './AanDeSlagSectie'
 import { VandaagBlok } from './VandaagBlok'
 import { OpvolgenBlok } from './OpvolgenBlok'
+import { VannachtGeleerdBlok } from './VannachtGeleerdBlok'
 import { KpiStrip } from './KpiStrip'
 import { RightRail } from './RightRail'
 import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
@@ -343,6 +344,9 @@ function FORGEdeskDashboardInner() {
 
           {/* ── KPI-strip ── */}
           <KpiStrip />
+
+          {/* ── Ochtendlijst van de nachtploeg (verdwijnt als er niets ligt) ── */}
+          <VannachtGeleerdBlok />
 
           {/* ── Vandaag (links) | Opvolgen (rechts) ── */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
