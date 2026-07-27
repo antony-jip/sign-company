@@ -14,15 +14,15 @@ if (process.env.SENTRY_DSN && !Sentry.getClient()) {
 }
 
 const supabase = createClient(
+  process.env.VITE_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+)
 
 // Anthropic factureert in dollars; doen. rekent en toont in euro's. Alles wat
 // in geschatte_kosten belandt is dus EUR, zodat de maandlimiet, de meter in
 // Instellingen en de blokkade-melding dezelfde eenheid hebben. Zelfde koers
 // als de Visualizer gebruikt (utils/visualizerDefaults.ts).
 const USD_NAAR_EUR = 0.92
-  process.env.VITE_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
