@@ -10,24 +10,23 @@ const supabase = createClient(
 interface DaanContext {
   bedrijfscontext: string
   schrijfstijl: string
+  conventies: Array<{ categorie: string; inhoud: string }>
+  geheugen: Array<{ onderwerp_type: string; onderwerp_id: string | null; inhoud: string }>
   hasContext: boolean
 }
 
 const DAAN_CONTEXT_TIMEOUT_MS = 3000
-const LEGE_DAAN_CONTEXT: DaanContext = { bedrijfscontext: '', schrijfstijl: '', hasContext: false }
+const LEGE_DAAN_CONTEXT: DaanContext = { bedrijfscontext: '', schrijfstijl: '', conventies: [], geheugen: [], hasContext: false }
 
-async function buildDaanContext(client: SupabaseClient, userId: string): Promise<DaanContext> {
+async function buildDaanContext(client: SupabaseClient, userId: string, klantId: string | null = null): Promise<DaanContext> {
   if (!userId) return LEGE_DAAN_CONTEXT
   return Promise.race([
-    loadDaanContext(client, userId),
+    loadDaanContext(client, userId, klantId),
     new Promise<DaanContext>(resolve => setTimeout(() => resolve(LEGE_DAAN_CONTEXT), DAAN_CONTEXT_TIMEOUT_MS)),
   ])
 }
 
-async function loadDaanContext(client: SupabaseClient, userId: string): Promise<DaanContext> {
-  let bedrijfscontext = ''
-  let schrijfstijl = ''
-
+async function loadDaanContext(client: SupabaseClient, userId: string, klantId: string | null): Promise<DaanContext> {
   const { data: profile } = await client
     .from('profiles')
     .select('organisatie_id')
@@ -35,6 +34,39 @@ async function loadDaanContext(client: SupabaseClient, userId: string): Promise<
     .maybeSingle()
 
   const orgId = (profile?.organisatie_id as string | null) ?? null
+
+  if (orgId) {
+    // Eén RPC als contextbron voor alle AI-endpoints (migratie 164). Faalt
+    // hij (bijv. migratie nog niet gedraaid), dan pakt het pad hieronder
+    // de directe app_settings-queries van vóór de RPC.
+    const { data, error } = await client.rpc('daan_context', {
+      p_organisatie_id: orgId,
+      p_klant_id: klantId,
+      p_user_id: userId,
+    })
+    if (!error && data) {
+      const ctx = data as {
+        bedrijfscontext?: string
+        schrijfstijl?: string
+        conventies?: Array<{ categorie: string; inhoud: string }>
+        geheugen?: Array<{ onderwerp_type: string; onderwerp_id: string | null; inhoud: string }>
+      }
+      const bedrijfscontext = ctx.bedrijfscontext || ''
+      const schrijfstijl = ctx.schrijfstijl || ''
+      const conventies = Array.isArray(ctx.conventies) ? ctx.conventies : []
+      const geheugen = Array.isArray(ctx.geheugen) ? ctx.geheugen : []
+      return {
+        bedrijfscontext,
+        schrijfstijl,
+        conventies,
+        geheugen,
+        hasContext: !!(bedrijfscontext || schrijfstijl || conventies.length || geheugen.length),
+      }
+    }
+  }
+
+  let bedrijfscontext = ''
+  let schrijfstijl = ''
 
   if (orgId) {
     const { data } = await client
@@ -58,7 +90,19 @@ async function loadDaanContext(client: SupabaseClient, userId: string): Promise<
     if (!schrijfstijl) schrijfstijl = (data?.ai_tone_of_voice as string | null) || ''
   }
 
-  return { bedrijfscontext, schrijfstijl, hasContext: !!(bedrijfscontext || schrijfstijl) }
+  return { bedrijfscontext, schrijfstijl, conventies: [], geheugen: [], hasContext: !!(bedrijfscontext || schrijfstijl) }
+}
+
+/** Conventies + actief geheugen als promptblok; lege string als er niets is. */
+function daanKennisBlok(context: DaanContext): string {
+  const delen: string[] = []
+  if (context.conventies.length) {
+    delen.push(`Zo werkt dit bedrijf (vaste regels; bij tegenspraak wint de bovenste):\n${context.conventies.map(c => `- ${c.inhoud}`).join('\n')}`)
+  }
+  if (context.geheugen.length) {
+    delen.push(`Eerder geleerd over dit bedrijf en zijn klanten:\n${context.geheugen.map(g => `- ${g.inhoud}`).join('\n')}`)
+  }
+  return delen.join('\n\n')
 }
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
@@ -324,10 +368,13 @@ Status: ${context.status}
 Afzender bedrijf: ${context.bedrijfsnaam_afzender}
 Afzender naam: ${context.afzender_naam}`
 
-    const { bedrijfscontext, schrijfstijl } = await buildDaanContext(supabase, userId)
+    const daanContext = await buildDaanContext(supabase, userId)
+    const { bedrijfscontext, schrijfstijl } = daanContext
     const contextBlokken: string[] = []
     if (bedrijfscontext) contextBlokken.push(`Over het bedrijf: ${bedrijfscontext}`)
     if (schrijfstijl) contextBlokken.push(`Schrijfstijl van de afzender (overneem):\n${schrijfstijl}`)
+    const kennisBlok = daanKennisBlok(daanContext)
+    if (kennisBlok) contextBlokken.push(kennisBlok)
     const systemPrompt = contextBlokken.length > 0
       ? `${contextBlokken.join('\n\n')}\n\n${SYSTEM_PROMPT}`
       : SYSTEM_PROMPT
