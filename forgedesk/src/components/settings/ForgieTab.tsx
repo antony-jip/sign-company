@@ -943,6 +943,8 @@ function DaanKennisSectie() {
   const actieveConventies = conventies.filter(c => c.actief).length
 
   const handleConventieToevoegen = async () => {
+    // Enter in het invoerveld omzeilt de disabled-knop; guard tegen dubbel.
+    if (toevoegen) return
     const inhoud = nieuweRegel.trim()
     if (!inhoud) return
     if (actieveConventies >= MAX_ACTIEVE_CONVENTIES) {

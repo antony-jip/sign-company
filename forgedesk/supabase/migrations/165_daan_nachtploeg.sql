@@ -90,6 +90,21 @@ CREATE INDEX IF NOT EXISTS idx_ai_rondes_org
 -- inserteren. De index dekt precies wat de code-dedup checkt: zelfde feit,
 -- zelfde onderwerp, zichtbare status. Afgewezen/verlopen blokkeren bewust
 -- niet: een herverteld feit hoort dan een verse waargenomen-rij te krijgen.
+--
+-- Eerst eventuele bestaande duplicaten opruimen; de race die deze index
+-- dicht kan ze al veroorzaakt hebben, en dan faalt CREATE UNIQUE INDEX
+-- halverwege de migratie. De oudste rij blijft staan (id als tiebreak).
+DELETE FROM ai_geheugen a
+USING ai_geheugen b
+WHERE a.organisatie_id = b.organisatie_id
+  AND a.onderwerp_type = b.onderwerp_type
+  AND COALESCE(a.onderwerp_id, '00000000-0000-0000-0000-000000000000'::uuid)
+    = COALESCE(b.onderwerp_id, '00000000-0000-0000-0000-000000000000'::uuid)
+  AND md5(a.inhoud) = md5(b.inhoud)
+  AND a.status IN ('waargenomen', 'voorgesteld', 'actief')
+  AND b.status IN ('waargenomen', 'voorgesteld', 'actief')
+  AND (a.created_at > b.created_at OR (a.created_at = b.created_at AND a.id > b.id));
+
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_ai_geheugen_feit
   ON ai_geheugen(
     organisatie_id,
