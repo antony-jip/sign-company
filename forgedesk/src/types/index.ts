@@ -798,6 +798,8 @@ export interface AppSettings {
   // Daan
   forgie_enabled: boolean;
   forgie_bedrijfscontext: string;
+  // Mail-leerpad: classifier laat kern-sporen achter voor de nachtploeg
+  daan_leert_uit_email: boolean;
   // Quick Actions
   email_edge_button: boolean;
   quick_actions_enabled: boolean;

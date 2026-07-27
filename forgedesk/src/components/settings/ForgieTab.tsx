@@ -921,6 +921,7 @@ export function ForgieTab() {
  * op actieve regels.
  */
 function DaanKennisSectie() {
+  const { settings, updateSettings } = useAppSettings()
   const [conventies, setConventies] = useState<Conventie[]>([])
   const [algemeen, setAlgemeen] = useState<DaanGeheugenRegel[]>([])
   const [rondes, setRondes] = useState<DaanRonde[]>([])
@@ -975,6 +976,19 @@ function DaanKennisSectie() {
     if (!ok) { toast.error('Verwijderen mislukt'); return }
     setConventies(prev => prev.filter(r => r.id !== c.id))
     toast.success(<>Verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+  }
+
+  const handleLeertUitEmailToggle = async (aan: boolean) => {
+    try {
+      await updateSettings({ daan_leert_uit_email: aan })
+      toast.success(
+        aan
+          ? <>Daan leert weer uit e-mail<span style={{ color: '#F15025' }}>.</span></>
+          : <>Uitgezet. Mail blijft buiten het geheugen<span style={{ color: '#F15025' }}>.</span></>
+      )
+    } catch {
+      toast.error('Opslaan mislukt')
+    }
   }
 
   const handleAlgemeenHouden = async (r: DaanGeheugenRegel) => {
@@ -1040,6 +1054,27 @@ function DaanKennisSectie() {
             <span className="font-mono">{actieveConventies}/{MAX_ACTIEVE_CONVENTIES}</span> actief · kort en stellend werkt het best
           </p>
         </CardContent>
+      </Card>
+
+      {/* Leren uit e-mail */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-base">Leren uit e-mail</CardTitle>
+              <CardDescription className="mt-1.5">
+                Daan haalt blijvende feiten uit mail van bekende klanten (bijv. een PO-nummer-eis) en
+                zet ze als voorstel op je ochtendlijst. Alleen mail van adressen die als klant in je
+                bestand staan; kernen worden na 30 dagen gewist. Zet je dit uit, dan blijft mail
+                volledig buiten het geheugen.
+              </CardDescription>
+            </div>
+            <Switch
+              checked={settings.daan_leert_uit_email ?? true}
+              onCheckedChange={handleLeertUitEmailToggle}
+            />
+          </div>
+        </CardHeader>
       </Card>
 
       {/* Bedrijfsbreed geheugen */}

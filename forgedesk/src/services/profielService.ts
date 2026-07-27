@@ -228,6 +228,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     doen_communicatie_tab_enabled: false,
     forgie_enabled: true,
     forgie_bedrijfscontext: '',
+    daan_leert_uit_email: true,
     quick_action_items: ['project', 'mail', 'offerte', 'klant'],
     ai_tone_of_voice: '',
     mollie_api_key: '',
