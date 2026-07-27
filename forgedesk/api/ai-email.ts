@@ -81,12 +81,13 @@ const PROMPTS: Record<string, string> = {
   'translate-nl': 'Vertaal deze email naar het Nederlands. Behoud de toon. Antwoord alleen met de vertaling.\n\nEmail:\n{text}',
   'generate-reply': 'Schrijf een kort en professioneel antwoord op deze email in het Nederlands. Antwoord alleen met de reply-tekst.\n\nEmail:\n{text}',
   'write-email': 'Schrijf een volledige, professionele e-mail in het Nederlands op basis van de opdracht van de gebruiker. Gebruik een passende aanhef en afsluiting en schrijf zo uitgebreid en informatief als de opdracht vraagt. Antwoord alleen met de e-mailtekst, zonder onderwerp-regel.\n\nContext (onderwerp en ontvanger):\n{context}\n\nOpdracht van de gebruiker:\n{text}',
-  // Koude outreach naar de SIBON-ledenlijst. Vaste opbouw probleem →
-  // tussensituatie → oplossing → filmpje in de bijlage. Van de lead is alleen
-  // naam, plaats en bron bekend, dus het verbod op aannames staat er
-  // nadrukkelijk in: zonder dat verzint het model wat het bedrijf maakt of
-  // welke software het gebruikt, en wordt het probleem een bewering over hen.
-  'write-lead-email': 'Je schrijft een eerste, koude e-mail aan een collega-signbedrijf uit de ledenlijst van SIBON. Doel: doen. introduceren, de software die we zelf gebruiken voor offertes, projecten, werkbonnen en facturatie.\n\nEr is nog nooit contact geweest met dit bedrijf. Suggereer dus NOOIT een ontmoeting, kennismaking of eerder contact: schrijf niet \"we kwamen elkaar tegen\", \"we spraken elkaar\" of \"naar aanleiding van\". Noem de ledenlijst ook niet als aanleiding.\n\nBouw de mail zo op, als korte lopende alinea\'s:\n1. DE HAAKVRAAG. Open met één herkenbaar pijnpunt uit het dagelijkse signwerk, gesteld als directe vraag aan de lezer. Kies er één en wissel per mail: offertes die openstaan zonder dat iemand het overzicht heeft, werkbonnen die pas achteraf terugkomen, een factuur die erbij inschiet, niet weten welke klus waar staat. Een vraag stelt niets vast over hun bedrijf; formuleer het dus als vraag, nooit als bewering over hoe het bij hen gaat.\n2. ONS VERHAAL IN TWEE OF DRIE ZINNEN. Wij werkten zelf jaren met James Pro, maar liepen daarin vast. Daarom hebben we naast ons signbedrijf zelf iets gebouwd: doen. Eén plek waar offerte, project, werkbon en factuur aan elkaar hangen. Blijf feitelijk over James Pro: niet afkraken, en neem niet aan dat de ontvanger het ook gebruikt.\n3. PERSOONLIJK. Zeg dat we er binnenkort breed mee de branche in gaan, maar dat je dit bedrijf nu even persoonlijk benadert. Verwijs naar de demofilm als de makkelijkste manier om in twee minuten te zien wat het is, en gebruik daarbij letterlijk het woord demofilm. Schrijf nooit een URL of link uit; het woord demofilm wordt na het schrijven automatisch klikbaar gemaakt. Verwijs verder nergens naar.\n4. LAGE DREMPEL. Sluit af met de boodschap dat reageren niet hoeft; is het herkenbaar, dan hoor je het graag. Geen harde call-to-action.\n\nSchrijf als ondernemer tegen ondernemer, in de je-vorm. Maximaal 110 woorden voor de mailtekst, korte alinea\'s, geen tussenkopjes, geen opsommingstekens, geen superlatieven en geen gedachtestreepjes. Geen ondertekening; de handtekening staat er al onder.\n\nJe weet weinig over dit bedrijf. Doe GEEN aannames over wat ze maken, hoe groot ze zijn, welke software ze nu gebruiken of hoe hun werk loopt. Gebruik verder uitsluitend de gegevens hieronder; ontbreekt een gegeven, laat het dan weg in plaats van het in te vullen.\n\nAntwoord in precies dit formaat: eerst drie regels die elk beginnen met \"Onderwerp: \" gevolgd door een korte onderwerpregel (maximaal 45 tekens, nuchter, geen uitroeptekens en geen hoofdletters-geschreeuw), dan een lege regel, dan de e-mailtekst. Niets anders.\n\nGegevens van de lead:\n{context}\n\nExtra aanwijzing van de gebruiker (leeg = geen):\n{text}',
+  // Koude outreach naar de SIBON-ledenlijst. Van de lead zelf is alleen naam,
+  // plaats en bron bekend; daarom zoekt het model eerst op wat het bedrijf
+  // maakt (web_search staat aan voor deze actie), zodat de openingszin ergens
+  // over gaat in plaats van een algemeenheid te zijn. Alles buiten de
+  // zoekresultaten en {context} blijft verboden terrein: zonder die grens
+  // verzint het model wat ze maken en welke software ze gebruiken.
+  'write-lead-email': 'Je schrijft een eerste, koude e-mail aan een collega-signbedrijf uit de ledenlijst van SIBON. Doel: doen. introduceren, de software die we zelf gebruiken voor offertes, projecten, werkbonnen en facturatie.\n\nEr is nog nooit contact geweest met dit bedrijf. Suggereer dus NOOIT een ontmoeting, kennismaking of eerder contact: schrijf niet \"we kwamen elkaar tegen\", \"we spraken elkaar\" of \"naar aanleiding van\". Noem de ledenlijst ook niet als aanleiding.\n\nZOEK EERST OP. Gebruik de webzoektool om dit bedrijf op te zoeken (bedrijfsnaam plus plaats) voordat je begint te schrijven. Je wilt één ding weten: wat voor werk doen ze? Gevelreclame, autobelettering, lichtreclame, interieurbouw, textiel, grootformaat print, bewegwijzering, wagenparken, evenementen, of iets anders. Maximaal twee zoekopdrachten. Weet je het daarna nog niet zeker, dan schrijf je de mail zonder die kennis en verzin je niets.\n\nBouw de mail zo op, als korte lopende alinea\'s:\n1. DE OPENING. Benoem in een halve zin wat voor werk zij doen, op basis van wat je gevonden hebt, en stel daar meteen een herkenbare vraag over uit het dagelijkse signwerk: offertes die openstaan zonder dat iemand het overzicht heeft, werkbonnen die pas achteraf terugkomen, een factuur die erbij inschiet, niet weten welke klus waar staat. Terloops en feitelijk, geen complimenten en geen samenvatting van hun website. Een vraag stelt niets vast over hun bedrijf; formuleer het dus als vraag, nooit als bewering over hoe het bij hen gaat. Heb je niets gevonden, open dan met de vraag alleen.\n2. ONS VERHAAL IN TWEE OF DRIE ZINNEN. Wij werkten zelf jaren met James Pro, maar liepen daarin vast. Daarom hebben we naast ons signbedrijf zelf iets gebouwd: doen. Eén plek waar offerte, project, werkbon en factuur aan elkaar hangen. Blijf feitelijk over James Pro: niet afkraken, en neem niet aan dat de ontvanger het ook gebruikt.\n3. DE AI, IN ÉÉN ZIN. Er zit een assistent in die Daan heet. Kies precies één ding dat Daan doet en noem dat concreet: hij leest de mailbox mee en geeft aan welke binnengekomen mail een aanvraag is, hij vat een lange mailwisseling met een klant samen, of hij schrijft mee aan een offerte of een mail. Eén zin, geen tweede. Geen beloftes over wat het ooit gaat kunnen, en nooit de woorden \"AI-gedreven\", \"slim\" of \"intelligent\".\n4. PERSOONLIJK EN LAGE DREMPEL. Zeg dat we er binnenkort breed mee de branche in gaan, maar dat je dit bedrijf nu even persoonlijk benadert. Verwijs naar de demofilm als de makkelijkste manier om in twee minuten te zien wat het is, en gebruik daarbij letterlijk het woord demofilm. Schrijf nooit een URL of link uit; het woord demofilm wordt na het schrijven automatisch klikbaar gemaakt. Verwijs verder nergens naar. Sluit af met de boodschap dat reageren niet hoeft; is het herkenbaar, dan hoor je het graag. Geen harde call-to-action.\n\nSchrijf als ondernemer tegen ondernemer, in de je-vorm. Maximaal 120 woorden voor de mailtekst, korte alinea\'s, geen tussenkopjes, geen opsommingstekens, geen superlatieven en geen gedachtestreepjes. Geen ondertekening; de handtekening staat er al onder.\n\nWat je over dit bedrijf zegt komt uit de zoekresultaten of uit de gegevens hieronder, en verder nergens vandaan. Doe GEEN aannames over hoe groot ze zijn, welke software ze nu gebruiken of hoe hun werk loopt. Ontbreekt een gegeven, laat het dan weg in plaats van het in te vullen.\n\nAntwoord in precies dit formaat: eerst drie regels die elk beginnen met \"Onderwerp: \" gevolgd door een korte onderwerpregel (maximaal 45 tekens, nuchter, geen uitroeptekens en geen hoofdletters-geschreeuw), dan een lege regel, dan de e-mailtekst. Begin je antwoord direct met de eerste Onderwerp-regel en schrijf niets over wat je gezocht of gevonden hebt.\n\nGegevens van de lead:\n{context}\n\nExtra aanwijzing van de gebruiker (leeg = geen):\n{text}',
 }
 
 // Outreach is kwaliteitsgevoelig en gaat naar echte bedrijven; de overige
@@ -95,6 +96,12 @@ const MODEL_PER_ACTIE: Record<string, string> = {
   'write-lead-email': 'claude-opus-4-8',
 }
 const STANDAARD_MODEL = 'claude-sonnet-5'
+
+// Opus slaat de zoektool bij lage effort vaak over; dan valt de opening terug
+// op een algemeenheid en is de web-search voor niets aangezet.
+const LEAD_EFFORT: Record<string, string> = {
+  'write-lead-email': 'medium',
+}
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -136,10 +143,14 @@ const TARIEVEN: Record<string, { in: number; uit: number }> = {
   'claude-haiku-4-5-20251001': { in: 1, uit: 5 },
 }
 
-async function updateUsage(userId: string, inputTokens: number, outputTokens: number, model: string): Promise<void> {
+// Web-search wordt per zoekopdracht afgerekend ($10 per 1000), niet per token.
+// Zonder deze post telt een lead-opzetje structureel te laag mee in de meter.
+const WEB_SEARCH_TARIEF_USD = 0.01
+
+async function updateUsage(userId: string, inputTokens: number, outputTokens: number, model: string, zoekopdrachten = 0): Promise<void> {
   const maand = getCurrentMonth()
   const tarief = TARIEVEN[model] || TARIEVEN['claude-sonnet-5']
-  const kosten = ((inputTokens / 1_000_000 * tarief.in) + (outputTokens / 1_000_000 * tarief.uit)) * USD_NAAR_EUR
+  const kosten = ((inputTokens / 1_000_000 * tarief.in) + (outputTokens / 1_000_000 * tarief.uit) + (zoekopdrachten * WEB_SEARCH_TARIEF_USD)) * USD_NAAR_EUR
 
   const { data: existing } = await supabase
     .from('ai_usage')
@@ -283,10 +294,11 @@ async function logOrgUsage(
   inputTokens: number,
   outputTokens: number,
   inputPrice: number,
-  outputPrice: number
+  outputPrice: number,
+  zoekopdrachten = 0
 ): Promise<void> {
   const maand = getCurrentMonth()
-  const kostenDelta = ((inputTokens / 1_000_000) * inputPrice + (outputTokens / 1_000_000) * outputPrice) * USD_NAAR_EUR
+  const kostenDelta = ((inputTokens / 1_000_000) * inputPrice + (outputTokens / 1_000_000) * outputPrice + (zoekopdrachten * WEB_SEARCH_TARIEF_USD)) * USD_NAAR_EUR
   const { data: existing } = await supabase
     .from('ai_usage_org')
     .select('id, aantal_calls, geschatte_kosten')
@@ -409,8 +421,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // antwoord samen in 1024 tokens en kapt het antwoord midden in een
         // zin af. Weglaten van dit veld is dus geen optie meer.
         ...(MODEL_PER_ACTIE[action]
-          ? { max_tokens: 4000, thinking: { type: 'adaptive' }, output_config: { effort: 'low' } }
+          ? { max_tokens: 4000, thinking: { type: 'adaptive' }, output_config: { effort: LEAD_EFFORT[action] || 'low' } }
           : { max_tokens: 1024, thinking: { type: 'disabled' } }),
+        // Zonder web-search kent het model alleen naam en plaats van de lead en
+        // blijft de openingszin een algemeenheid over signwerk.
+        ...(action === 'write-lead-email'
+          ? { tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 3 }] }
+          : {}),
         ...(systemPrompt ? { system: systemPrompt } : {}),
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -428,15 +445,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const data = await response.json() as {
-      content: Array<{ type: string; text: string }>
-      usage: { input_tokens: number; output_tokens: number }
+      content: Array<{ type: string; text?: string }>
+      usage: {
+        input_tokens: number
+        output_tokens: number
+        server_tool_use?: { web_search_requests?: number }
+      }
     }
-    // Niet content[0]: met adaptive thinking staat er een thinking-blok voor.
-    const resultText = (data.content || []).find(blok => blok.type === 'text')?.text || ''
+    // Niet content[0]: met adaptive thinking staat er een thinking-blok voor, en
+    // bij een lead-opzetje zoekt het model eerst, met tussentijdse tekst erbij.
+    // Alleen wat ná het laatste tool-blok komt is het antwoord zelf; anders
+    // begint het niet met "Onderwerp:" en loopt parseOpzet mis.
+    const blokken = data.content || []
+    let eersteAntwoordBlok = 0
+    blokken.forEach((blok, i) => {
+      if (blok.type !== 'text' && blok.type !== 'thinking') eersteAntwoordBlok = i + 1
+    })
+    const resultText = blokken
+      .slice(eersteAntwoordBlok)
+      .filter(blok => blok.type === 'text')
+      .map(blok => blok.text || '')
+      .join('\n\n')
+      .trim()
+
+    const zoekopdrachten = data.usage.server_tool_use?.web_search_requests ?? 0
 
     // Update usage tracking
     try {
-      await updateUsage(userId, data.usage.input_tokens, data.usage.output_tokens, model)
+      await updateUsage(userId, data.usage.input_tokens, data.usage.output_tokens, model, zoekopdrachten)
     } catch {
       // Usage tracking is niet-kritiek
     }
@@ -446,7 +482,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Tarief van het model dat écht draaide. Vast op 3/15 boekte een
         // lead-mail (Opus) 40% te laag, waardoor de org-rem te laat ingreep.
         const orgTarief = TARIEVEN[model] || TARIEVEN[STANDAARD_MODEL]
-        await logOrgUsage(orgIdForBudget, 'ai-email', data.usage.input_tokens, data.usage.output_tokens, orgTarief.in, orgTarief.uit)
+        await logOrgUsage(orgIdForBudget, 'ai-email', data.usage.input_tokens, data.usage.output_tokens, orgTarief.in, orgTarief.uit, zoekopdrachten)
       } catch {
         // Org-usage tracking is niet-kritiek
       }
