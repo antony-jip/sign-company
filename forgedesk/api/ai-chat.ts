@@ -346,15 +346,22 @@ interface ContextBlock {
   [key: string]: unknown
 }
 
-async function getRelevantContext(userId: string, question: string): Promise<ContextBlock[]> {
+async function getRelevantContext(userId: string, orgId: string | null, question: string): Promise<ContextBlock[]> {
   const q = question.toLowerCase()
   const context: ContextBlock[] = []
+
+  // Bedrijfsdata is org-breed (doen. is radicaal transparant binnen één
+  // organisatie); filteren op user_id gaf teamleden elk een ander antwoord
+  // op dezelfde vraag. Alleen legacy-accounts zonder organisatie vallen
+  // terug op user_id. ai_imported_data blijft bewust user-scoped (RLS 074).
+  const scopeKolom = orgId ? 'organisatie_id' : 'user_id'
+  const scopeWaarde = orgId ?? userId
 
   // Zoek specifieke klantnaam in de vraag
   const { data: alleKlanten } = await supabase
     .from('klanten')
     .select('id, bedrijfsnaam')
-    .eq('user_id', userId)
+    .eq(scopeKolom, scopeWaarde)
 
   const gevondenKlant = alleKlanten?.find(k =>
     q.includes(k.bedrijfsnaam.toLowerCase())
@@ -390,7 +397,7 @@ async function getRelevantContext(userId: string, question: string): Promise<Con
     const { data: klanten } = await supabase
       .from('klanten')
       .select('bedrijfsnaam, contactpersoon, email, telefoon, stad')
-      .eq('user_id', userId)
+      .eq(scopeKolom, scopeWaarde)
       .limit(20)
     if (klanten?.length) context.push({ type: 'klanten', data: klanten })
   }
@@ -400,7 +407,7 @@ async function getRelevantContext(userId: string, question: string): Promise<Con
     const { data: facturen } = await supabase
       .from('facturen')
       .select('nummer, klant_naam, totaal, status, factuurdatum')
-      .eq('user_id', userId)
+      .eq(scopeKolom, scopeWaarde)
       .order('factuurdatum', { ascending: false })
       .limit(30)
     if (facturen?.length) context.push({ type: 'facturen', data: facturen })
@@ -411,7 +418,7 @@ async function getRelevantContext(userId: string, question: string): Promise<Con
     const { data: offertes } = await supabase
       .from('offertes')
       .select('nummer, klant_naam, totaal, status, geldig_tot')
-      .eq('user_id', userId)
+      .eq(scopeKolom, scopeWaarde)
       .order('created_at', { ascending: false })
       .limit(30)
     if (offertes?.length) context.push({ type: 'offertes', data: offertes })
@@ -422,7 +429,7 @@ async function getRelevantContext(userId: string, question: string): Promise<Con
     const { data: projecten } = await supabase
       .from('projecten')
       .select('naam, klant_naam, status, eind_datum, budget')
-      .eq('user_id', userId)
+      .eq(scopeKolom, scopeWaarde)
       .order('created_at', { ascending: false })
       .limit(20)
     if (projecten?.length) context.push({ type: 'projecten', data: projecten })
@@ -434,13 +441,13 @@ async function getRelevantContext(userId: string, question: string): Promise<Con
       supabase
         .from('facturen')
         .select('nummer, klant_naam, totaal, status')
-        .eq('user_id', userId)
+        .eq(scopeKolom, scopeWaarde)
         .order('factuurdatum', { ascending: false })
         .limit(10),
       supabase
         .from('offertes')
         .select('nummer, klant_naam, totaal, status')
-        .eq('user_id', userId)
+        .eq(scopeKolom, scopeWaarde)
         .order('created_at', { ascending: false })
         .limit(10),
     ])
@@ -627,7 +634,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { bedrijfscontext, schrijfstijl } = await buildDaanContext(supabase, userId)
 
     // Get relevant data context
-    const dataContext = await getRelevantContext(userId, question)
+    const dataContext = await getRelevantContext(userId, orgIdForBudget, question)
 
     // Build system prompt.
     // Statisch deel (persona + productkennis + regels): identiek voor elke
