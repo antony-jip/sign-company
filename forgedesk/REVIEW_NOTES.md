@@ -1226,3 +1226,17 @@ telling) direct meegenomen. Gelogde restpunten:
   rate-limit. Volgende iteratie.
 - Query-errors in de signaal-lanes worden niet gecheckt; een 400 maakt
   een lane stil leeg. Laag risico na de quoting-hardening.
+
+## feat/daan-briefing-onbeantwoord (28 jul 2026)
+
+Senior: AKKOORD-MET-OPMERKINGEN (2x). Verify V1 bleek raak: alle recente
+emails-rijen hadden organisatie_id NULL; ingest gefixt op vijf paden
+(fetch/send/backfill/cron-gepland/read-email) + backfill-migratie 168 +
+job-queries op user_id∈leden. Reply-detectie via klant-adres, thread-dedup,
+inbound-only fetch. Gelogde restpunten:
+- Substring-match klant-adres kan een punt onterecht onderdrukken bij
+  adressen die elkaars suffix zijn (jan@x.nl in notjan@x.nl); adres-extractie
+  zou scherper zijn. Faalt stil, lage prio.
+- Onbeantwoord-punt herhaalt max 9 nachten (dag 5-14) zonder escalatie en
+  valt op dag 14 geruisloos weg; bewust ontwerp, consistent met de andere
+  lanen.

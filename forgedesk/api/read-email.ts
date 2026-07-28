@@ -455,10 +455,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Insert new row + select id terug voor de cache-FK
         const from = result.from
         const fromMatch = from.match(/^([^<]*)<([^>]+)>/)
+        // Org-stempel bij ingest, gelijk aan fetch-emails: org-brede lezers
+        // filteren op organisatie_id en de 168-backfill is eenmalig.
+        const { data: orgProfiel } = await supabaseAdmin
+          .from('profiles')
+          .select('organisatie_id')
+          .eq('id', user_id)
+          .maybeSingle()
         const { data: upserted } = await supabaseAdmin
           .from('emails')
           .upsert({
             user_id,
+            organisatie_id: (orgProfiel?.organisatie_id as string | null) ?? null,
             uid: Number(uid),
             message_id: result.messageId || null,
             imap_folder: result.imapFolder,

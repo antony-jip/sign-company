@@ -247,8 +247,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try {
           const effectiveThreadId = bericht.thread_id || crypto.randomUUID()
           const wachtOpReactie = bericht.wacht_op_reactie ?? false
+          // Org-stempel bij ingest, gelijk aan send-email: org-brede lezers
+          // filteren op organisatie_id en de 168-backfill is eenmalig.
+          const { data: orgProfiel } = await supabaseAdmin
+            .from('profiles')
+            .select('organisatie_id')
+            .eq('id', bericht.user_id)
+            .maybeSingle()
           const { data: insertedMail } = await supabaseAdmin.from('emails').insert({
             user_id: bericht.user_id,
+            organisatie_id: (orgProfiel?.organisatie_id as string | null) ?? null,
             message_id: sentMessageId,
             in_reply_to: bericht.in_reply_to || null,
             thread_id: effectiveThreadId,
