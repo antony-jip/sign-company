@@ -96,8 +96,8 @@ export function DaanBriefingBlok() {
           </span>
         </header>
         <div>
-          {punten.map((p) => (
-            <PuntRij key={p.titel} punt={p} onGa={ga} />
+          {punten.map((p, i) => (
+            <PuntRij key={`${i}-${p.titel}`} punt={p} onGa={ga} />
           ))}
         </div>
       </section>
@@ -111,8 +111,8 @@ export function DaanBriefingBlok() {
             {briefing.inhoud.intro || 'Dit verdient vandaag je aandacht.'}
           </DialogDescription>
           <div className="mt-1">
-            {punten.map((p) => (
-              <PuntRij key={p.titel} punt={p} onGa={ga} />
+            {punten.map((p, i) => (
+              <PuntRij key={`${i}-${p.titel}`} punt={p} onGa={ga} />
             ))}
           </div>
           <div className="flex items-center justify-between mt-3">

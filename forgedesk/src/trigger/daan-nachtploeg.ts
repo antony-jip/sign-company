@@ -328,7 +328,7 @@ export const daanNachtploegCron = schedules.task({
     // verdient een briefing als er signalen in de live data staan. De
     // signalen komen deterministisch uit queries; het model weegt alleen.
     const vandaag = amsterdamDatum();
-    const overDrieDagen = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    const overZevenDagen = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
     const drieDagenTerug = new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString();
     const zestigDagenTerug = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString();
 
@@ -338,6 +338,52 @@ export const daanNachtploegCron = schedules.task({
     for (const org of alleOrgs ?? []) {
       const orgId = org.id as string;
       try {
+        // Herdraai-guard: bestaat de briefing van vandaag al (retry na een
+        // timeout of deploy-kill), dan geen tweede Sonnet-call en geen
+        // dubbele statistiek-sporen.
+        const { data: bestaandeBriefing } = await supabase
+          .from("ai_briefings")
+          .select("id")
+          .eq("organisatie_id", orgId)
+          .eq("datum", vandaag)
+          .limit(1)
+          .maybeSingle();
+        if (bestaandeBriefing) continue;
+
+        // Mail-grens (besluit Antony, 28 jul): e-mail is persoonlijk per
+        // mailbox. Bij één teamlid is er niemand om voor af te schermen en
+        // gaat alles mee; bij teams alleen de gedeelde inbox en mail in
+        // project-gekoppelde threads (dezelfde grens als RLS-policy 109).
+        const { count: aantalLeden } = await supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("organisatie_id", orgId);
+        const eenpitter = (aantalLeden ?? 0) <= 1;
+        let teamThreads: string[] = [];
+        if (!eenpitter) {
+          const { data: koppelingen } = await supabase
+            .from("email_project_koppelingen")
+            .select("thread_id")
+            .eq("organisatie_id", orgId)
+            .limit(200);
+          teamThreads = (koppelingen ?? []).map((r) => r.thread_id as string).filter(Boolean);
+        }
+
+        let wachtMailQuery = supabase
+          .from("emails")
+          .select("onderwerp, aan, datum, inbox_type, thread_id")
+          .eq("organisatie_id", orgId)
+          .eq("wacht_op_reactie", true)
+          .not("beantwoord", "is", true)
+          .lt("datum", drieDagenTerug)
+          .order("datum", { ascending: true })
+          .limit(8);
+        if (!eenpitter) {
+          wachtMailQuery = teamThreads.length
+            ? wachtMailQuery.or(`inbox_type.eq.gedeeld,thread_id.in.(${teamThreads.map((t) => `"${t.replace(/"/g, '')}"`).join(",")})`)
+            : wachtMailQuery.eq("inbox_type", "gedeeld");
+        }
+
         const [offertes, wachtMails, facturen, projecten, klanten] = await Promise.all([
           supabase
             .from("offertes")
@@ -347,20 +393,14 @@ export const daanNachtploegCron = schedules.task({
             .not("verstuurd_op", "is", null)
             .order("verstuurd_op", { ascending: true })
             .limit(8),
-          supabase
-            .from("emails")
-            .select("onderwerp, aan, datum")
-            .eq("organisatie_id", orgId)
-            .eq("wacht_op_reactie", true)
-            .not("beantwoord", "is", true)
-            .lt("datum", drieDagenTerug)
-            .order("datum", { ascending: true })
-            .limit(8),
+          wachtMailQuery,
           supabase
             .from("facturen")
             .select("nummer, klant_naam, totaal, vervaldatum")
             .eq("organisatie_id", orgId)
-            .eq("status", "verstuurd")
+            // Het Factuur-enum kent 'verzonden', niet 'verstuurd'; 'vervallen'
+            // telt ook mee want dat is precies waar dit signaal over gaat.
+            .in("status", ["verzonden", "vervallen"])
             .neq("vervaldatum", "")
             .lt("vervaldatum", vandaag)
             .limit(8),
@@ -368,9 +408,9 @@ export const daanNachtploegCron = schedules.task({
             .from("projecten")
             .select("naam, klant_naam, eind_datum, status")
             .eq("organisatie_id", orgId)
-            .in("status", ["gepland", "actief", "in-review", "te-factureren"])
+            .in("status", ["te-plannen", "gepland", "ingepland", "akkoord-klant", "actief", "in-review", "te-factureren"])
             .not("eind_datum", "is", null)
-            .lt("eind_datum", overDrieDagen)
+            .lt("eind_datum", overZevenDagen)
             .limit(8),
           supabase.from("klanten").select("id, bedrijfsnaam, email").eq("organisatie_id", orgId),
         ]);
@@ -391,13 +431,21 @@ export const daanNachtploegCron = schedules.task({
         // Reactie-statistiek als spoor: leren uit wat klanten NIET doen.
         // Deterministisch berekend; de consolidatie van morgen weegt het.
         try {
-          const { data: wachtHistorie } = await supabase
+          // Zelfde mail-grens als de briefing zelf: het afgeleide feit wordt
+          // org-breed geheugen, dus bij teams telt persoonlijke mail niet mee.
+          let historieQuery = supabase
             .from("emails")
             .select("aan, beantwoord, vervangen_door_email_id")
             .eq("organisatie_id", orgId)
             .gte("datum", zestigDagenTerug)
             .or("wacht_op_reactie.eq.true,beantwoord.eq.true,vervangen_door_email_id.not.is.null")
             .limit(500);
+          if (!eenpitter) {
+            historieQuery = teamThreads.length
+              ? historieQuery.or(`inbox_type.eq.gedeeld,thread_id.in.(${teamThreads.map((t) => `"${t.replace(/"/g, '')}"`).join(",")})`)
+              : historieQuery.eq("inbox_type", "gedeeld");
+          }
+          const { data: wachtHistorie } = await historieQuery;
           const adresNaarKlant = new Map<string, string>();
           for (const k of klanten.data ?? []) {
             const adres = String(k.email || "").trim().toLowerCase();
@@ -416,6 +464,30 @@ export const daanNachtploegCron = schedules.task({
           for (const [adres, stat] of perAdres) {
             if (stat.totaal >= 3 && stat.herinnerd / stat.totaal >= 0.5) {
               const klantId = adresNaarKlant.get(adres) || null;
+              if (!klantId) continue;
+              // Nag-guard: ligt er voor deze klant al een traag-reageren-feit
+              // (ook een afgewezen: nee is nee) of een onverwerkt spoor, dan
+              // niet elke nacht opnieuw aandringen met verschoven getallen.
+              const [{ data: alFeit }, { data: alSpoor }] = await Promise.all([
+                supabase
+                  .from("ai_geheugen")
+                  .select("id")
+                  .eq("organisatie_id", orgId)
+                  .eq("onderwerp_id", klantId)
+                  .ilike("inhoud", "%herinnering%")
+                  .limit(1)
+                  .maybeSingle(),
+                supabase
+                  .from("ai_sporen")
+                  .select("id")
+                  .eq("organisatie_id", orgId)
+                  .eq("klant_id", klantId)
+                  .eq("agent", "reactie-statistiek")
+                  .is("verwerkt_in_ronde", null)
+                  .limit(1)
+                  .maybeSingle(),
+              ]);
+              if (alFeit || alSpoor) continue;
               const naam = (klanten.data ?? []).find((k) => (k.id as string) === klantId)?.bedrijfsnaam ?? adres;
               await supabase.from("ai_sporen").insert({
                 organisatie_id: orgId,
@@ -474,6 +546,7 @@ export const daanNachtploegCron = schedules.task({
           kosten_eur: Number(k.toFixed(4)),
         });
         if (!briefingFout) briefings++;
+        else if (briefingFout.code !== "23505") logger.warn("Briefing-insert mislukt", { orgId, fout: briefingFout.message });
       } catch (e) {
         logger.warn("Briefing mislukt voor org", { orgId, fout: String(e) });
       }
