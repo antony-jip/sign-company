@@ -20,6 +20,8 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
 import { downloadEmailAttachment, downloadAllEmailAttachments } from '@/services/gmailService'
 import { bijlageNaarProject } from '@/services/documentenService'
+import { createProjectFoto } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import { BijlageProjectDialog, type BijlageProjectKeuze } from './BijlageProjectDialog'
 import { valideerBijlagen, uploadBijlagenMetLinkFallback } from '@/utils/groteBijlagen'
 import { toast } from 'sonner'
@@ -125,6 +127,7 @@ export function EmailReader({
   onOpenContextPanel,
 }: EmailReaderProps) {
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam } = useAppSettings()
+  const { user } = useAuth()
 
   const [replyMode, setReplyMode] = useState<'reply' | 'reply-all' | 'forward' | null>(null)
   const [replyTo, setReplyTo] = useState('')
@@ -464,25 +467,42 @@ export function EmailReader({
       } else {
         throw new Error('Geen content of storage_url ontvangen')
       }
-      await bijlageNaarProject({
-        projectId: keuze.project.id,
-        klantId: keuze.project.klant_id,
-        bestandsnaam: result.filename || filename,
-        contentType: result.contentType || contentType,
-        map: keuze.map,
-        data: blob,
-      })
-      setBijlageVoorDialog(null)
-      toast.success('Toegevoegd aan project', {
-        description: `${filename} staat nu bij ${keuze.project.naam} onder Bestanden · ${keuze.map}.`,
-      })
+      // Afbeeldingen (jpg/png/webp/…) horen bij de situatiefoto's van het
+      // project, niet tussen de documenten; PDF's en andere bestanden volgen
+      // het bestaande documenten-pad.
+      if (isImageAttachment(filename, result.contentType || contentType)) {
+        if (!user?.id) throw new Error('Niet ingelogd')
+        const echteNaam = result.filename || filename
+        const file = new File([blob], echteNaam, { type: result.contentType || contentType })
+        await createProjectFoto(
+          { user_id: user.id, project_id: keuze.project.id, omschrijving: echteNaam, type: 'situatie' },
+          file,
+        )
+        setBijlageVoorDialog(null)
+        toast.success('Toegevoegd aan project', {
+          description: `${filename} staat nu bij ${keuze.project.naam} onder Situatiefoto's.`,
+        })
+      } else {
+        await bijlageNaarProject({
+          projectId: keuze.project.id,
+          klantId: keuze.project.klant_id,
+          bestandsnaam: result.filename || filename,
+          contentType: result.contentType || contentType,
+          map: keuze.map,
+          data: blob,
+        })
+        setBijlageVoorDialog(null)
+        toast.success('Toegevoegd aan project', {
+          description: `${filename} staat nu bij ${keuze.project.naam} onder Bestanden · ${keuze.map}.`,
+        })
+      }
     } catch (err) {
       logger.error('Bijlage aan project koppelen mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Toevoegen aan project mislukt')
     } finally {
       setKoppelendeBijlage(null)
     }
-  }, [email, imapFolder, bijlageVoorDialog])
+  }, [email, imapFolder, bijlageVoorDialog, user?.id])
 
   const handleDownloadAttachment = useCallback(async (filename: string) => {
     if (!email) return
@@ -1864,18 +1884,32 @@ export function EmailReader({
                                 </div>
                               )}
                               {!isPreviewing && !isDownloading && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleDownloadAttachment(att.filename)
-                                  }}
-                                  className="absolute top-1.5 right-1.5 p-1.5 rounded-lg bg-card/85 hover:bg-white dark:hover:bg-white/20 opacity-0 group-hover/att:opacity-100 transition-opacity duration-150 shadow-sm"
-                                  title={`Download ${att.filename}`}
-                                  aria-label={`Download ${att.filename}`}
-                                >
-                                  <Download className="h-3.5 w-3.5 text-foreground/70" />
-                                </button>
+                                <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover/att:opacity-100 transition-opacity duration-150">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleBijlageNaarProject(att.filename, att.contentType)
+                                    }}
+                                    className="p-1.5 rounded-lg bg-card/85 hover:bg-white dark:hover:bg-white/20 shadow-sm"
+                                    title={`${att.filename} bij situatiefoto's van een project`}
+                                    aria-label={`${att.filename} aan project koppelen`}
+                                  >
+                                    <FolderPlus className="h-3.5 w-3.5 text-foreground/70" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleDownloadAttachment(att.filename)
+                                    }}
+                                    className="p-1.5 rounded-lg bg-card/85 hover:bg-white dark:hover:bg-white/20 shadow-sm"
+                                    title={`Download ${att.filename}`}
+                                    aria-label={`Download ${att.filename}`}
+                                  >
+                                    <Download className="h-3.5 w-3.5 text-foreground/70" />
+                                  </button>
+                                </div>
                               )}
                             </div>
                             <div className="px-2.5 py-2 min-w-0">

@@ -55,6 +55,13 @@ export function BijlageProjectDialog({
   const [kiesZelf, setKiesZelf] = useState(false)
   const [map, setMap] = useState(MAP_BIJLAGEN)
 
+  // Afbeeldingen landen bij de situatiefoto's van het project, niet in een
+  // documentenmap; de map-keuze is daar dus niet van toepassing.
+  const extensie = bestandsnaam.split('.').pop()?.toLowerCase() || ''
+  const isAfbeelding =
+    (contentType || '').toLowerCase().startsWith('image/') ||
+    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(extensie)
+
   // Voorstel opbouwen zodra de dialog opengaat: eerst de thread-koppeling,
   // anders de projecten van de klant achter de afzender.
   useEffect(() => {
@@ -250,17 +257,25 @@ export function BijlageProjectDialog({
           </div>
 
           <div className="px-7 pb-6 space-y-2">
-            <label htmlFor="bijlage-map" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground block">Map</label>
-            <select
-              id="bijlage-map"
-              value={map}
-              onChange={(e) => setMap(e.target.value)}
-              className="w-full h-9 px-3 text-[13px] border border-border bg-background rounded-lg outline-none focus:border-petrol focus:ring-1 focus:ring-petrol/20 transition-colors"
-            >
-              {MAP_KEUZES.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+            {isAfbeelding ? (
+              <p className="text-[12px] text-muted-foreground">
+                Komt bij de <span className="font-medium text-foreground">situatiefoto's</span> van het project.
+              </p>
+            ) : (
+              <>
+                <label htmlFor="bijlage-map" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground block">Map</label>
+                <select
+                  id="bijlage-map"
+                  value={map}
+                  onChange={(e) => setMap(e.target.value)}
+                  className="w-full h-9 px-3 text-[13px] border border-border bg-background rounded-lg outline-none focus:border-petrol focus:ring-1 focus:ring-petrol/20 transition-colors"
+                >
+                  {MAP_KEUZES.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </>
+            )}
           </div>
         </div>
 
