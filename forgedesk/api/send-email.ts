@@ -426,10 +426,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // heen-en-weer historie zichtbaar.
     const effectiveThreadId = thread_id || crypto.randomUUID()
     try {
+      // Org-stempel bij ingest: org-brede lezers (o.a. de nachtploeg-briefing)
+      // filteren op organisatie_id en de backfills van 047/083 dekken nieuwe
+      // rijen niet.
+      const { data: orgProfiel } = await supabaseAdmin
+        .from('profiles')
+        .select('organisatie_id')
+        .eq('id', user_id)
+        .maybeSingle()
+      const mailOrgId = (orgProfiel?.organisatie_id as string | null) ?? null
+
       const { data: inserted, error: insertErr } = await supabaseAdmin
         .from('emails')
         .insert({
           user_id,
+          organisatie_id: mailOrgId,
           message_id: sentMessageId,
           in_reply_to: in_reply_to || null,
           thread_id: effectiveThreadId,

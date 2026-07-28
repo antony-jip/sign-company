@@ -359,11 +359,16 @@ export const daanNachtploegCron = schedules.task({
         // Gedeactiveerde/uitgenodigde profielen tellen bewust mee als
         // teamlid: hun mailbox staat nog in emails, en de eenpitter-tak zou
         // die anders in de briefing trekken terwijl RLS hem niet toont.
-        const { count: aantalLeden } = await supabase
+        // Mailqueries filteren op user_id ∈ org-leden i.p.v. organisatie_id:
+        // de ingest stempelde die kolom historisch niet (fix 28 jul + backfill
+        // 168), en zo werkt de mail-lens ook op rijen van vóór de backfill.
+        const { data: leden } = await supabase
           .from("profiles")
-          .select("id", { count: "exact", head: true })
+          .select("id")
           .eq("organisatie_id", orgId);
-        const eenpitter = (aantalLeden ?? 0) <= 1;
+        const ledenIds = (leden ?? []).map((l) => l.id as string);
+        if (ledenIds.length === 0) continue;
+        const eenpitter = ledenIds.length <= 1;
         let teamThreads: string[] = [];
         if (!eenpitter) {
           const { data: koppelingen } = await supabase
@@ -377,7 +382,7 @@ export const daanNachtploegCron = schedules.task({
         let wachtMailQuery = supabase
           .from("emails")
           .select("onderwerp, aan, datum, inbox_type, thread_id")
-          .eq("organisatie_id", orgId)
+          .in("user_id", ledenIds)
           .eq("wacht_op_reactie", true)
           .not("beantwoord", "is", true)
           .lt("datum", drieDagenTerug)
@@ -442,7 +447,7 @@ export const daanNachtploegCron = schedules.task({
           let verzondenQuery = supabase
             .from("emails")
             .select("onderwerp, aan, datum, thread_id")
-            .eq("organisatie_id", orgId)
+            .in("user_id", ledenIds)
             .eq("map", "verzonden")
             .not("beantwoord", "is", true)
             .not("wacht_op_reactie", "is", true)
@@ -465,14 +470,24 @@ export const daanNachtploegCron = schedules.task({
             const threadIds = [...new Set(kandidatenMail.map((m) => m.thread_id as string))];
             const { data: threadMails } = await supabase
               .from("emails")
-              .select("thread_id, datum, map")
-              .eq("organisatie_id", orgId)
+              .select("thread_id, datum, from_address, van")
+              .in("user_id", ledenIds)
               .in("thread_id", threadIds)
+              .neq("map", "verzonden")
               .gte("datum", veertienDagenTerug)
+              .order("datum", { ascending: false })
               .limit(400);
-            for (const m of kandidatenMail.slice(0, 8)) {
+            const gezieneThreads = new Set<string>();
+            for (const m of kandidatenMail) {
+              if (onbeantwoord.length >= 8) break;
+              if (gezieneThreads.has(m.thread_id as string)) continue;
+              gezieneThreads.add(m.thread_id as string);
+              const klantAdres = String(m.aan || "").trim().toLowerCase();
               const antwoordGehad = (threadMails ?? []).some(
-                (t) => t.thread_id === m.thread_id && t.map !== "verzonden" && String(t.datum) > String(m.datum)
+                (t) =>
+                  t.thread_id === m.thread_id &&
+                  String(t.datum) > String(m.datum) &&
+                  `${t.from_address || ""} ${t.van || ""}`.toLowerCase().includes(klantAdres)
               );
               if (!antwoordGehad) {
                 onbeantwoord.push({
@@ -509,7 +524,7 @@ export const daanNachtploegCron = schedules.task({
           let historieQuery = supabase
             .from("emails")
             .select("aan, beantwoord, vervangen_door_email_id")
-            .eq("organisatie_id", orgId)
+            .in("user_id", ledenIds)
             .gte("datum", zestigDagenTerug)
             .or("wacht_op_reactie.eq.true,beantwoord.eq.true,vervangen_door_email_id.not.is.null")
             .limit(500);

@@ -199,6 +199,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const user_id = await verifyUser(req)
 
+    // E-mails horen org-gestempeld de tabel in: de nachtploeg-briefing en
+    // andere org-brede lezers filteren op organisatie_id, en RLS-backfills
+    // (047/083) draaien niet voor nieuwe rijen.
+    const { data: orgProfiel } = await supabaseAdmin
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', user_id)
+      .maybeSingle()
+    const mailOrgId = (orgProfiel?.organisatie_id as string | null) ?? null
+
     // IMAP-verbindingen zijn duur — begrens per gebruiker
     if (await isRateLimited(`fetch-emails:${user_id}`, 30, 60)) {
       return res.status(429).json({ error: 'Te veel synchronisatieverzoeken. Probeer het zo opnieuw.' })
@@ -352,6 +362,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ouderIds.push(ouderId)
       newEmails.push({
         user_id,
+        organisatie_id: mailOrgId,
         uid: message.uid,
         message_id: messageId || null,
         in_reply_to: inReplyTo,

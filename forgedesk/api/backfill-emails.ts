@@ -125,6 +125,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { folder = 'inbox' } = req.body
     const user_id = await verifyUser(req)
 
+    // E-mails horen org-gestempeld de tabel in: de nachtploeg-briefing en
+    // andere org-brede lezers filteren op organisatie_id, en RLS-backfills
+    // (047/083) draaien niet voor nieuwe rijen.
+    const { data: orgProfiel } = await supabaseAdmin
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', user_id)
+      .maybeSingle()
+    const mailOrgId = (orgProfiel?.organisatie_id as string | null) ?? null
+
     // Backfill loopt in batches vanuit de frontend — ruim genoeg voor een
     // volledige mailbox, maar begrensd tegen runaway loops.
     if (await isRateLimited(`backfill-emails:${user_id}`, 100, 600)) {
@@ -210,6 +220,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       newEmails.push({
         user_id,
+        organisatie_id: mailOrgId,
         uid: message.uid,
         message_id: message.envelope.messageId || null,
         in_reply_to: message.envelope.inReplyTo || null,
