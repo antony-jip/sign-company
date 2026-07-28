@@ -9,6 +9,7 @@ import {
   createTaak,
   createOfferte,
   generateOfferteNummer,
+  getMedewerkers,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
@@ -232,13 +233,25 @@ export function ForgieActieKaart({
         const deadline = /^\d{4}-\d{2}-\d{2}/.test(ruweDeadline)
           ? ruweDeadline
           : new Date().toISOString().split('T')[0]
+
+        // Toewijzen aan wie erom vraagt: /taken filtert op medewerkersnaam,
+        // dus zonder naam valt de taak buiten de Mijn taken-weergave.
+        let toegewezenAan = ''
+        try {
+          const medewerkers = await getMedewerkers()
+          const eigenEmail = user?.email?.toLowerCase()
+          const eigen = medewerkers.find((m) => m.user_id === user?.id)
+            || (eigenEmail ? medewerkers.find((m) => m.email?.toLowerCase() === eigenEmail) : undefined)
+          toegewezenAan = eigen?.naam || ''
+        } catch (err) { /* toewijzing mag het aanmaken niet blokkeren */ }
+
         const result = await createTaak({
           titel: String(editedData.titel || 'Nieuwe taak'),
           beschrijving: String(editedData.beschrijving || ''),
           project_id: String(editedData.project_id || pendingProjectId || '') || undefined,
           status: 'todo',
           prioriteit: (editedData.prioriteit as 'laag' | 'medium' | 'hoog') || 'medium',
-          toegewezen_aan: '',
+          toegewezen_aan: toegewezenAan,
           deadline,
           geschatte_tijd: 0,
           bestede_tijd: 0,
@@ -263,7 +276,7 @@ export function ForgieActieKaart({
       onError?.(msg)
       toast.error(`Daan kon ${actie.type} niet aanmaken: ${msg}`)
     }
-  }, [actie.type, editedData, pendingKlantId, pendingProjectId, onCreated, onError])
+  }, [actie.type, editedData, pendingKlantId, pendingProjectId, onCreated, onError, user])
 
   const handleCancel = useCallback(() => {
     setStatus('cancelled')
