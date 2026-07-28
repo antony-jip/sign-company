@@ -79,9 +79,9 @@ export {
 
 export {
   getDaanGeheugenByKlant, bevestigDaanGeheugen, wijsDaanGeheugenAf, updateDaanGeheugenInhoud,
-  getDaanVoorstellen, getDaanRondes, getDaanGeheugenAlgemeen,
+  getDaanVoorstellen, getDaanRondes, getDaanGeheugenAlgemeen, getDaanBriefingVanVandaag,
 } from './daanGeheugenService'
-export type { DaanGeheugenRegel, DaanVoorstel, DaanRonde } from './daanGeheugenService'
+export type { DaanGeheugenRegel, DaanVoorstel, DaanRonde, DaanBriefing, DaanBriefingPunt } from './daanGeheugenService'
 export {
   getConventies, createConventie, updateConventie, deleteConventie, MAX_ACTIEVE_CONVENTIES,
 } from './conventieService'

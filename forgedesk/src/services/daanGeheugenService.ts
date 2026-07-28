@@ -119,6 +119,35 @@ export async function getDaanRondes(limit = 10): Promise<DaanRonde[]> {
   return (data ?? []) as DaanRonde[]
 }
 
+export interface DaanBriefingPunt {
+  titel: string
+  toelichting: string
+  href: string
+  soort: 'offerte' | 'mail' | 'factuur' | 'project'
+}
+
+export interface DaanBriefing {
+  id: string
+  datum: string
+  inhoud: { intro?: string; punten?: DaanBriefingPunt[] }
+  signalen: number
+}
+
+/** De briefing van vandaag (Europe/Amsterdam), of null als er geen ligt. */
+export async function getDaanBriefingVanVandaag(): Promise<DaanBriefing | null> {
+  if (!isSupabaseConfigured() || !supabase) return null
+  const vandaag = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' })
+  const { data, error } = await supabase
+    .from('ai_briefings')
+    .select('id, datum, inhoud, signalen')
+    .eq('datum', vandaag)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error || !data) return null
+  return data as DaanBriefing
+}
+
 export async function updateDaanGeheugenInhoud(id: string, inhoud: string): Promise<boolean> {
   const schoon = inhoud.trim().slice(0, 300)
   if (!id || !schoon || !isSupabaseConfigured() || !supabase) return false
