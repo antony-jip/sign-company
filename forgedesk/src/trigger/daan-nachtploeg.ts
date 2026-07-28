@@ -354,6 +354,9 @@ export const daanNachtploegCron = schedules.task({
         // mailbox. Bij één teamlid is er niemand om voor af te schermen en
         // gaat alles mee; bij teams alleen de gedeelde inbox en mail in
         // project-gekoppelde threads (dezelfde grens als RLS-policy 109).
+        // Gedeactiveerde/uitgenodigde profielen tellen bewust mee als
+        // teamlid: hun mailbox staat nog in emails, en de eenpitter-tak zou
+        // die anders in de briefing trekken terwijl RLS hem niet toont.
         const { count: aantalLeden } = await supabase
           .from("profiles")
           .select("id", { count: "exact", head: true })
@@ -380,7 +383,7 @@ export const daanNachtploegCron = schedules.task({
           .limit(8);
         if (!eenpitter) {
           wachtMailQuery = teamThreads.length
-            ? wachtMailQuery.or(`inbox_type.eq.gedeeld,thread_id.in.(${teamThreads.map((t) => `"${t.replace(/"/g, '')}"`).join(",")})`)
+            ? wachtMailQuery.or(`inbox_type.eq.gedeeld,thread_id.in.(${teamThreads.map((t) => `"${t.replace(/["\\\\]/g, "")}"`).join(",")})`)
             : wachtMailQuery.eq("inbox_type", "gedeeld");
         }
 
@@ -442,7 +445,7 @@ export const daanNachtploegCron = schedules.task({
             .limit(500);
           if (!eenpitter) {
             historieQuery = teamThreads.length
-              ? historieQuery.or(`inbox_type.eq.gedeeld,thread_id.in.(${teamThreads.map((t) => `"${t.replace(/"/g, '')}"`).join(",")})`)
+              ? historieQuery.or(`inbox_type.eq.gedeeld,thread_id.in.(${teamThreads.map((t) => `"${t.replace(/["\\\\]/g, "")}"`).join(",")})`)
               : historieQuery.eq("inbox_type", "gedeeld");
           }
           const { data: wachtHistorie } = await historieQuery;

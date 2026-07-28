@@ -1208,3 +1208,21 @@ gefixt (ambigu adres = geen attributie, geen spoor). Gelogde restpunten:
   tonen. Verify in prod: select id from app_settings where organisatie_id
   is null;  — hoort leeg te zijn.
 - Klantenquery kan .not('email','is',null) krijgen (kleinigheid).
+
+## feat/daan-briefing · fase 4 herkeuring (28 jul 2026)
+
+Senior-herkeuring: AKKOORD-MET-OPMERKINGEN (na BLOKKADE; B1 factuur-enum,
+B2 hybride mail-grens, B3 herdraai-guard alle bevestigd gefixt). O1
+(backslash-strip in thread-id-quoting) en O4 (comment gedeactiveerden-
+telling) direct meegenomen. Gelogde restpunten:
+- teamThreads limit(200) zonder order: bij >200 projectkoppelingen valt
+  een willekeurige rest buiten de mail-lens, en de or-URL wordt lang
+  (~10-15kB). Acceptabel v1; bij grote orgs herzien (bv. subquery of
+  thread-filter in twee stappen).
+- Nag-guard op ilike '%herinnering%' is fragiel (te breed bij feiten met
+  dat woord, te smal na herformulering door de synthese). Sturdier:
+  guard op ai_sporen agent='reactie-statistiek' + klant_id ongeacht
+  verwerkt_in_ronde; de 30d-retentie maakt dat vanzelf een maandelijkse
+  rate-limit. Volgende iteratie.
+- Query-errors in de signaal-lanes worden niet gecheckt; een 400 maakt
+  een lane stil leeg. Laag risico na de quoting-hardening.
