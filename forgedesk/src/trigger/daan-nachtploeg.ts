@@ -330,6 +330,8 @@ export const daanNachtploegCron = schedules.task({
     const vandaag = amsterdamDatum();
     const overZevenDagen = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
     const drieDagenTerug = new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString();
+    const vijfDagenTerug = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString();
+    const veertienDagenTerug = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
     const zestigDagenTerug = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString();
 
     const { data: alleOrgs } = await supabase.from("organisaties").select("id");
@@ -421,7 +423,75 @@ export const daanNachtploegCron = schedules.task({
         const dagen = (d: string | null) =>
           d ? Math.max(0, Math.floor((Date.now() - new Date(d).getTime()) / 86400000)) : 0;
 
+        // Adres → klant, eenduidig of niets (zelfde regel als fase 3):
+        // gedeeld door de onbeantwoord-laan en de reactie-statistiek.
+        const adresNaarKlant = new Map<string, string>();
+        for (const k of klanten.data ?? []) {
+          const adres = String(k.email || "").trim().toLowerCase();
+          if (!adres) continue;
+          adresNaarKlant.set(adres, adresNaarKlant.has(adres) && adresNaarKlant.get(adres) !== (k.id as string) ? "" : (k.id as string));
+        }
+
+        // Onbeantwoorde verstuurde mail aan bekende klanten, óók zonder
+        // Opvolgen-vinkje (besluit Antony, 28 jul): het vinkje vergeten mag
+        // niet betekenen dat de mail onzichtbaar is. De klant-grens houdt de
+        // ruis buiten (bevestigingen en facturen hoeven geen antwoord); de
+        // weging kiest toch maar de sterkste punten.
+        const onbeantwoord: Array<Record<string, unknown>> = [];
+        try {
+          let verzondenQuery = supabase
+            .from("emails")
+            .select("onderwerp, aan, datum, thread_id")
+            .eq("organisatie_id", orgId)
+            .eq("map", "verzonden")
+            .not("beantwoord", "is", true)
+            .not("wacht_op_reactie", "is", true)
+            .gte("datum", veertienDagenTerug)
+            .lt("datum", vijfDagenTerug)
+            .order("datum", { ascending: true })
+            .limit(25);
+          if (!eenpitter) {
+            verzondenQuery = teamThreads.length
+              ? verzondenQuery.or(`inbox_type.eq.gedeeld,thread_id.in.(${teamThreads.map((t) => `"${t.replace(/["\\]/g, "")}"`).join(",")})`)
+              : verzondenQuery.eq("inbox_type", "gedeeld");
+          }
+          const { data: verzonden } = await verzondenQuery;
+          // Alleen mail aan een eenduidig herleidbare klant, mét thread-id:
+          // zonder thread kunnen we een antwoord niet uitsluiten en zwijgen we.
+          const kandidatenMail = (verzonden ?? []).filter(
+            (m) => m.thread_id && adresNaarKlant.get(String(m.aan || "").trim().toLowerCase())
+          );
+          if (kandidatenMail.length) {
+            const threadIds = [...new Set(kandidatenMail.map((m) => m.thread_id as string))];
+            const { data: threadMails } = await supabase
+              .from("emails")
+              .select("thread_id, datum, map")
+              .eq("organisatie_id", orgId)
+              .in("thread_id", threadIds)
+              .gte("datum", veertienDagenTerug)
+              .limit(400);
+            for (const m of kandidatenMail.slice(0, 8)) {
+              const antwoordGehad = (threadMails ?? []).some(
+                (t) => t.thread_id === m.thread_id && t.map !== "verzonden" && String(t.datum) > String(m.datum)
+              );
+              if (!antwoordGehad) {
+                onbeantwoord.push({
+                  soort: "mail",
+                  href: "/email",
+                  onderwerp: String(m.onderwerp || "").slice(0, 120),
+                  aan: m.aan,
+                  dagen_stil: dagen(m.datum as string),
+                  opvolg_vlag: false,
+                });
+              }
+            }
+          }
+        } catch (e) {
+          logger.warn("Onbeantwoord-laan mislukt", { orgId, fout: String(e) });
+        }
+
         const signalen: Array<Record<string, unknown>> = [
+          ...onbeantwoord,
           ...(offertes.data ?? [])
             .map((o) => ({ soort: "offerte", href: "/offertes", nummer: o.nummer, klant: o.klant_naam, bedrag: o.totaal, dagen_open: dagen(o.verstuurd_op as string) }))
             .filter((o) => (o.dagen_open as number) >= 7),
@@ -449,12 +519,6 @@ export const daanNachtploegCron = schedules.task({
               : historieQuery.eq("inbox_type", "gedeeld");
           }
           const { data: wachtHistorie } = await historieQuery;
-          const adresNaarKlant = new Map<string, string>();
-          for (const k of klanten.data ?? []) {
-            const adres = String(k.email || "").trim().toLowerCase();
-            if (!adres) continue;
-            adresNaarKlant.set(adres, adresNaarKlant.has(adres) && adresNaarKlant.get(adres) !== (k.id as string) ? "" : (k.id as string));
-          }
           const perAdres = new Map<string, { totaal: number; herinnerd: number }>();
           for (const m of wachtHistorie ?? []) {
             const adres = String(m.aan || "").trim().toLowerCase();
