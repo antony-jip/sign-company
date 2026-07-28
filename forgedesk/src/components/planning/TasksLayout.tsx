@@ -1420,7 +1420,39 @@ export function TasksLayout() {
         )}
 
         {viewMode === 'week' && (<>
-        {/* Ongepland verborgen · taken zonder deadline worden niet getoond */}
+        {/* === ONGEPLAND · taken zonder deadline, anders onvindbaar === */}
+        {unscheduledTaken.length > 0 && (
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-muted/30 flex-shrink-0">
+            <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground flex-shrink-0">Ongepland</span>
+            <span className="text-[10px] font-mono text-muted-foreground/70">{unscheduledTaken.length}</span>
+            <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+              {unscheduledTaken.map((t) => {
+                const isDone = t.status === 'klaar'
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => openEditDialog(t)}
+                    title="Geen deadline · klik om te plannen"
+                    className={cn(
+                      'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] whitespace-nowrap flex-shrink-0 transition-colors',
+                      'border border-border hover:border-petrol/30 hover:bg-petrol/[0.04]',
+                      isDone && 'opacity-40 line-through',
+                    )}
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: PRIORITEIT_COLORS[t.prioriteit]?.dot || 'hsl(var(--muted-foreground))' }}
+                    />
+                    <span className={cn('text-foreground', isDone && 'text-muted-foreground')}>{t.titel}</span>
+                    {t.project_id && projectMap[t.project_id] && (
+                      <span className="text-[10px] text-muted-foreground">{projectMap[t.project_id]}</span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* === DAY HEADERS === */}
         <div className="sticky top-[52px] z-10 flex border-b border-border bg-card flex-shrink-0">

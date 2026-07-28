@@ -224,6 +224,14 @@ export function ForgieActieKaart({
         logCreate({ user, entityType: 'offerte', entityId: result.id, omschrijving: 'Aangemaakt via Daan' })
         createdId = result.id
       } else if (actie.type === 'taak') {
+        // Taken zonder deadline vallen buiten week-, maand- en teamweergave van
+        // /taken en zijn daar dus onvindbaar. Daan noemt lang niet altijd een
+        // datum, dus vallen we terug op vandaag; een onbruikbare datum uit het
+        // model gaat dezelfde weg in plaats van de insert te laten klappen.
+        const ruweDeadline = String(editedData.deadline || '').trim()
+        const deadline = /^\d{4}-\d{2}-\d{2}/.test(ruweDeadline)
+          ? ruweDeadline
+          : new Date().toISOString().split('T')[0]
         const result = await createTaak({
           titel: String(editedData.titel || 'Nieuwe taak'),
           beschrijving: String(editedData.beschrijving || ''),
@@ -231,7 +239,7 @@ export function ForgieActieKaart({
           status: 'todo',
           prioriteit: (editedData.prioriteit as 'laag' | 'medium' | 'hoog') || 'medium',
           toegewezen_aan: '',
-          deadline: editedData.deadline ? String(editedData.deadline) : undefined,
+          deadline,
           geschatte_tijd: 0,
           bestede_tijd: 0,
         })
