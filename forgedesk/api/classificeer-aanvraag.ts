@@ -429,14 +429,18 @@ async function orgBudgetOp(organisatieId: string): Promise<boolean> {
 
 /**
  * Eén IMAP-sessie voor alle kandidaten zonder body_text. Dit is hetzelfde werk
- * dat read-email later bij het openen zou doen, dus de tekst wordt meteen
+ * dat read-email later bij het openen zou doen, dus de body wordt meteen
  * gecacht: die mails openen daarna sneller.
+ *
+ * De HTML gaat bewust mee terug. Alleen de tekst wegschrijven maakte de rij
+ * voor read-email "al gecacht", waarna de reader eeuwig de kale tekstversie
+ * toonde — bij nieuwsbrieven is dat het "bekijk deze mail online"-regeltje.
  */
 async function haalBodies(
   creds: EmailCredentials,
   kandidaten: KandidaatRij[]
-): Promise<Map<string, string>> {
-  const resultaat = new Map<string, string>()
+): Promise<Map<string, { tekst: string; html: string | null }>> {
+  const resultaat = new Map<string, { tekst: string; html: string | null }>()
   const perMap = new Map<string, KandidaatRij[]>()
   for (const mail of kandidaten) {
     if (!mail.uid) continue
@@ -481,7 +485,24 @@ async function haalBodies(
             skipTextToHtml: true,
           })
           const tekst = (parsed.text || '').trim()
-          if (tekst) resultaat.set(mail.id, tekst)
+          let html = typeof parsed.html === 'string' ? parsed.html : ''
+          // Inline beeld zit in de HTML als cid:-verwijzing naar een deel van
+          // de mail. Zelfde vervanging als read-email doet, anders staat de
+          // reader straks naar gebroken logo's te kijken. Wordt het daarmee
+          // te zwaar voor een DB-rij, dan slaan we de HTML over: read-email
+          // haalt hem bij het openen alsnog compleet op.
+          if (html && parsed.attachments?.length) {
+            for (const att of parsed.attachments) {
+              if (!att.contentId || !att.content) continue
+              const cid = att.contentId.replace(/^<|>$/g, '')
+              const dataUri = `data:${att.contentType || 'application/octet-stream'};base64,${att.content.toString('base64')}`
+              html = html.split(`cid:${cid}`).join(dataUri)
+            }
+          }
+          // null = niet wegschrijven; een lege string zou de rij markeren als
+          // "geparsed, geen HTML" en de reader op de tekstversie vastzetten.
+          const teZwaar = html.length > 2_000_000
+          if (tekst || html) resultaat.set(mail.id, { tekst, html: teZwaar ? null : html })
         } catch (err) {
           console.warn('[classificeer-aanvraag] body ophalen mislukt voor', mail.id, err)
         }
@@ -600,12 +621,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // ── Bodies ophalen waar nodig ──
     const zonderTekst = kandidaten.filter((m) => !m.body_text || m.body_text.trim().length < 20)
-    const opgehaald = zonderTekst.length ? await haalBodies(creds, zonderTekst) : new Map<string, string>()
+    const opgehaald = zonderTekst.length
+      ? await haalBodies(creds, zonderTekst)
+      : new Map<string, { tekst: string; html: string | null }>()
 
-    for (const [emailId, tekst] of opgehaald) {
+    for (const [emailId, body] of opgehaald) {
       await supabaseAdmin
         .from('emails')
-        .update({ body_text: tekst, cached_at: new Date().toISOString() })
+        .update({
+          body_text: body.tekst || null,
+          // Lege string, geen null: dat is voor read-email het teken dat de
+          // mail geparsed is en simpelweg geen HTML-deel heeft. Bij null laten
+          // we de kolom met rust, zodat read-email hem alsnog ophaalt.
+          ...(body.html === null ? {} : { body_html: body.html }),
+          cached_at: new Date().toISOString(),
+        })
         .eq('id', emailId)
     }
 
@@ -653,7 +683,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     for (const mail of kandidaten) {
-      const tekst = opgehaald.get(mail.id) || mail.body_text || ''
+      const tekst = opgehaald.get(mail.id)?.tekst || mail.body_text || ''
       if (tekst.trim().length < 20) continue
 
       let oordeel: Oordeel | null = null

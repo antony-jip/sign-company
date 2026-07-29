@@ -360,7 +360,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .limit(1)
         .maybeSingle()
 
-      if (cached && (cached.body_html || cached.body_text)) {
+      // body_html NULL betekent: nog nooit volledig geparsed. Een lege string
+      // betekent wél geparsed, maar de mail heeft geen HTML-deel. Alleen op
+      // body_text afgaan was fout: de aanvraag-classifier vult die kolom ook,
+      // en dan bleef de reader de kale tekstversie van een HTML-mail tonen.
+      if (cached && cached.body_html !== null) {
         // Lookup gecachde bijlagen voor signed URLs (instant previews/downloads).
         const cachedSigned = await readCachedSignedUrls(user_id, cached.id)
         let meta = (cached.attachment_meta as Array<{ filename: string; contentType: string; size: number; isInlineCid?: boolean }> | null) || []
@@ -442,7 +446,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await supabaseAdmin
           .from('emails')
           .update({
-            body_html: result.bodyHtml || null,
+            body_html: result.bodyHtml,
             body_text: result.bodyText || null,
             attachment_meta: attachmentMetaForDb.length > 0 ? attachmentMetaForDb : null,
             bijlagen: echteBijlagen,
@@ -483,7 +487,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             bijlagen: echteBijlagen,
             has_attachments: echteBijlagen > 0,
             attachment_meta: attachmentMetaForDb.length > 0 ? attachmentMetaForDb : null,
-            body_html: result.bodyHtml || null,
+            body_html: result.bodyHtml,
             body_text: result.bodyText || null,
             inhoud: result.bodyHtml || result.bodyText || '',
             gmail_id: String(uid),
