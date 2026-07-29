@@ -1167,10 +1167,16 @@ export function EmailLayout() {
     if (existing) return existing
 
     const promise = (async () => {
+      let tekstUitDb = ''
       try {
-        // Step 1: Supabase eerst (snel)
+        // Step 1: Supabase eerst (snel). body_html NULL = de rij is nooit
+        // volledig geparsed; alleen tekst is dan de kale fallback van een
+        // HTML-mail, dus die slaan we over en halen we hem via IMAP op.
         const dbBody = await getEmailBody(email.id).catch(() => null)
-        const body = dbBody?.body_html || dbBody?.body_text || dbBody?.inhoud || ''
+        const volledigGeparsed = dbBody?.body_html !== null && dbBody?.body_html !== undefined
+        const body = volledigGeparsed
+          ? (dbBody?.body_html || dbBody?.body_text || dbBody?.inhoud || '')
+          : ''
         if (body) {
           bodyCacheRef.current.set(email.id, body)
           if (dbBody?.attachment_meta && Array.isArray(dbBody.attachment_meta) && dbBody.attachment_meta.length > 0) {
@@ -1179,11 +1185,13 @@ export function EmailLayout() {
           return body
         }
 
-        // Step 2: IMAP fallback
+        // Step 2: IMAP fallback. Levert die niets op, dan is de tekst uit de
+        // database nog altijd beter dan een leeg scherm.
+        tekstUitDb = dbBody?.body_text || dbBody?.inhoud || ''
         const uid = Number(email.gmail_id || email.id)
-        if (isNaN(uid)) return ''
+        if (isNaN(uid)) return tekstUitDb
         const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
-        const imapBody = detail.bodyHtml || detail.bodyText || ''
+        const imapBody = detail.bodyHtml || detail.bodyText || tekstUitDb
         bodyCacheRef.current.set(email.id, imapBody)
         if (detail.attachments?.length) {
           const inlineBytes: Record<string, string> = {}
@@ -1204,7 +1212,7 @@ export function EmailLayout() {
         return imapBody
       } catch (err: unknown) {
         logger.error('Email body ophalen mislukt:', err)
-        return ''
+        return tekstUitDb
       } finally {
         inFlightFetches.current.delete(email.id)
       }
