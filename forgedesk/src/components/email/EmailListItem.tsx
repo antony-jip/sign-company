@@ -115,11 +115,14 @@ export const EmailListItem = memo(function EmailListItem({
   // zodat een swipe die archive/delete trigger niet ook nog de mail opent.
   const suppressNextClick = useRef(false)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Vinger neer is ~100ms vóór de click: die voorsprong gebruiken we om de
+    // body al op te halen, want mobiel heeft geen hover om op te prefetchen.
+    onPrefetch?.(email)
     if (isChecked) return
     touchStartX.current = e.touches[0].clientX
     setIsDragging(true)
     hapticFired.current = null
-  }, [isChecked])
+  }, [isChecked, email, onPrefetch])
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (isChecked) return
     const delta = e.touches[0].clientX - touchStartX.current

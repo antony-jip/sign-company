@@ -340,9 +340,13 @@ export function EmailLayout() {
   // Max 8 batches (±2400 mails) per map per sessie, met pauze tussen batches
   // zodat de IMAP-server en de UI er geen last van hebben. Stopt vanzelf op
   // backfill_done (cutoff bereikt of UID 1) of als de state nog niet klaar is.
+  // Op de telefoon slaan we hem over: zestien IMAP-calls op de achtergrond
+  // vechten daar om dezelfde verbinding als de mail die je nú wil lezen, en
+  // dezelfde mailbox wordt vanaf de desktop toch bijgewerkt.
   const backfillStartedRef = useRef(false)
   const runBackfillAchtergrond = useCallback(async () => {
     if (backfillStartedRef.current) return
+    if (typeof window !== 'undefined' && !window.matchMedia('(min-width: 768px)').matches) return
     backfillStartedRef.current = true
     let opgehaald = 0
     try {
@@ -1310,8 +1314,37 @@ export function EmailLayout() {
     next()
   }, [threadedEmails, fetchBodyToCache, selectedFolder])
 
+  // ─── Mobiel: prefetch wat er in beeld staat ───
+  // Zonder hover is het zichtbare venster de enige voorspeller van wat je zo
+  // opent. Wacht tot het scrollen stilvalt en haalt er hoogstens vijf op, zo
+  // blijft een lange lijst doorscrollen zonder een golf aan requests.
+  const zichtbareRijen = rowVirtualizer.getVirtualItems()
+  const zichtbaarBereik = zichtbareRijen.length > 0
+    ? `${zichtbareRijen[0].index}-${zichtbareRijen[zichtbareRijen.length - 1].index}`
+    : ''
+  useEffect(() => {
+    if (isDesktop || !zichtbaarBereik) return
+    const [van, tot] = zichtbaarBereik.split('-').map(Number)
+    let afgebroken = false
+    const timer = setTimeout(() => {
+      const kandidaten: Email[] = []
+      for (let i = van; i <= tot && kandidaten.length < 5; i++) {
+        const rij = flatItems[i]
+        if (!rij || rij.type !== 'email') continue
+        if (rij.email.inhoud || bodyCacheRef.current.has(rij.email.id)) continue
+        kandidaten.push(rij.email)
+      }
+      kandidaten.forEach((mail, i) => {
+        setTimeout(() => {
+          if (afgebroken) return
+          void fetchBodyToCache(mail, selectedFolder)
+        }, i * 120)
+      })
+    }, 300)
+    return () => { afgebroken = true; clearTimeout(timer) }
+  }, [zichtbaarBereik, isDesktop, flatItems, fetchBodyToCache, selectedFolder])
+
   // ─── Polling: silent background sync every 3min ───
-  // No window focus sync · too aggressive (full IMAP connection each time)
   useEffect(() => {
     pollingRef.current = setInterval(() => {
       handleRefresh(selectedFolder, true)
@@ -1319,6 +1352,27 @@ export function EmailLayout() {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
+  }, [selectedFolder, handleRefresh])
+
+  // ─── Terug in beeld: stille sync ───
+  // De poll-timer hierboven staat stil zodra de telefoon de tab bevriest, dus
+  // wie na een uur terugkomt kijkt naar oude mail tot de eerste tick. Syncen
+  // bij elke focus was te agressief (elke keer een volle IMAP-verbinding),
+  // vandaar de ondergrens van een minuut weg.
+  const laatstVerborgenRef = useRef<number | null>(null)
+  useEffect(() => {
+    const onZichtbaarheid = () => {
+      if (document.visibilityState === 'hidden') {
+        laatstVerborgenRef.current = Date.now()
+        return
+      }
+      const verborgenSinds = laatstVerborgenRef.current
+      laatstVerborgenRef.current = null
+      if (!verborgenSinds || Date.now() - verborgenSinds < 60000) return
+      handleRefresh(selectedFolder, true)
+    }
+    document.addEventListener('visibilitychange', onZichtbaarheid)
+    return () => document.removeEventListener('visibilitychange', onZichtbaarheid)
   }, [selectedFolder, handleRefresh])
 
   // ─── Keyboard shortcuts (inline from useEmailKeyboard) ───
