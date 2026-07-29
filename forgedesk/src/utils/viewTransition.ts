@@ -30,7 +30,12 @@ export function viewTransition(updater: () => void, direction: Direction = 'forw
   const transition = doc.startViewTransition!(() => {
     flushSync(() => updater())
   })
-  transition.finished.finally(() => {
-    delete document.documentElement.dataset.vtDirection
-  })
+  // Tikt de gebruiker snel achter elkaar, dan breekt de browser de lopende
+  // transitie af en rejecteert finished met een AbortError. Onschuldig, maar
+  // zonder catch is het een unhandled rejection (en dus een Sentry-melding).
+  transition.finished
+    .catch(() => { /* afgebroken door een nieuwe transitie */ })
+    .finally(() => {
+      delete document.documentElement.dataset.vtDirection
+    })
 }
