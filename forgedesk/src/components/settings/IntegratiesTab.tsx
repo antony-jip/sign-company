@@ -88,16 +88,26 @@ export function IntegratiesTab() {
   const [docTypesLoading, setDocTypesLoading] = useState(false)
   const [docTypesError, setDocTypesError] = useState<string | null>(null)
 
-  // Per-user koppeling-status. exact_owner_user_id is de eerste user die
-  // OAuth deed; de UI verbergt de "Verbinden"-knop voor andere admins zodat
-  // ze niet per ongeluk de actieve Exact-sessie van de eigenaar invalideren
-  // (Exact Online staat geen twee gelijktijdige sessies per bedrijfsaccount
-  // toe). De feitelijke connected-status voor de huidige user komt uit
-  // /api/exact-token-status · niet uit de org-brede `exact_online_connected`
-  // boolean, die alleen "iemand in de org heeft ooit gekoppeld" zegt.
+  // Koppeling-status van de ORGANISATIE. De koppeling is org-breed: de eigenaar
+  // houdt de OAuth-sessie en iedereen synct met dát token. /api/exact-token-status
+  // is de bron van waarheid, niet de org-brede `exact_online_connected` boolean,
+  // die alleen zegt "iemand heeft ooit gekoppeld" en nooit meer omlaag gaat.
+  // Opnieuw verbinden blijft aan de eigenaar: een tweede OAuth op hetzelfde
+  // Exact-bedrijfsaccount verbreekt diens sessie.
   const [exactOwnerUserId, setExactOwnerUserId] = useState<string | null>(null)
-  const [exactEigenTokens, setExactEigenTokens] = useState<boolean | null>(null)
+  const [exactHeeftTokens, setExactHeeftTokens] = useState<boolean | null>(null)
   const [exactTokensVerlopen, setExactTokensVerlopen] = useState(false)
+  const [exactStatusIsEigenaar, setExactStatusIsEigenaar] = useState<boolean | null>(null)
+  const [exactEigenaarNaam, setExactEigenaarNaam] = useState<string | null>(null)
+  const [exactMagOntkoppelen, setExactMagOntkoppelen] = useState(false)
+  const [exactStatusGeladen, setExactStatusGeladen] = useState(false)
+  const [exactOntkoppelen, setExactOntkoppelen] = useState(false)
+  const [exactBevestigOntkoppel, setExactBevestigOntkoppel] = useState(false)
+  // Onthoudt dat er een secret ín de database staat. Het invoerveld wordt bij
+  // het laden leeggemaakt (de opgeslagen waarde is versleuteld en niet te
+  // tonen), en zonder deze vlag blijft de Verbinden-knop daardoor permanent
+  // disabled na een refresh.
+  const [exactSecretOpgeslagen, setExactSecretOpgeslagen] = useState(false)
 
   // KvK API state
   const [kvkApiKey, setKvkApiKey] = useState('')
@@ -164,6 +174,7 @@ export function IntegratiesTab() {
       setMollieLoaded(true)
       setExactClientId(s.exact_online_client_id ?? '')
       setExactClientSecret(isEncrypted(s.exact_online_client_secret ?? '') ? '' : (s.exact_online_client_secret ?? ''))
+      setExactSecretOpgeslagen(!!s.exact_online_client_secret)
       setExactConnected(s.exact_online_connected ?? false)
       setExactOwnerUserId(s.exact_owner_user_id ?? null)
       setExactAdministratieId(s.exact_administratie_id ?? '')
@@ -217,9 +228,21 @@ export function IntegratiesTab() {
       }).catch(() => {})
       refreshSettings?.()
     } else if (exactStatus === 'error') {
+      // De ruwe reason-slug ("token exchange") zei de gebruiker niets en gaf
+      // geen vervolgstap. Per code een concrete oorzaak plus wat te doen.
       const reason = params.get('reason')
-      const reasonText = reason ? ` (${reason.replace(/_/g, ' ')})` : ''
-      toast.error(`Exact Online verbinden mislukt${reasonText}`)
+      const uitleg: Record<string, string> = {
+        missing_params: 'Exact stuurde een onvolledig antwoord terug. Probeer opnieuw te verbinden.',
+        invalid_state: 'De koppelpoging is verlopen. Start hem opnieuw en rond het inloggen bij Exact binnen een uur af.',
+        no_credentials: 'Client ID of Client Secret ontbreekt. Vul beide in en sla ze op voordat je verbindt.',
+        token_exchange: 'Exact weigerde de Client ID of Client Secret. Controleer beide in het Exact App Center en let op meegekopieerde spaties.',
+        token_parse: 'Exact gaf een onleesbaar antwoord. Probeer het over een paar minuten opnieuw.',
+        save_tokens: 'De koppeling is gelukt maar kon niet opgeslagen worden. Probeer opnieuw te verbinden.',
+        not_owner: 'Alleen de eigenaar van de koppeling kan opnieuw verbinden.',
+        sessie: 'Je sessie was verlopen. Log opnieuw in en verbind daarna nog een keer.',
+        unknown: 'Onbekende fout bij het verbinden. Probeer het opnieuw.',
+      }
+      toast.error(uitleg[reason ?? ''] ?? 'Exact Online verbinden mislukt. Probeer het opnieuw.')
     }
 
     // Schoon de query params op zodat een refresh van de pagina niet
@@ -230,9 +253,9 @@ export function IntegratiesTab() {
     window.history.replaceState({}, '', url.toString())
   }, [user?.id, refreshSettings])
 
-  // Per-user token-status ophalen. Re-run wanneer `exactConnected` flipt
-  // (b.v. na een succesvolle OAuth-callback) zodat de badge en knop direct
-  // het nieuwe beeld tonen.
+  // Koppeling-status ophalen. Re-run wanneer `exactConnected` flipt (b.v. na
+  // een succesvolle OAuth-callback) zodat badge en knoppen direct kloppen.
+  const [exactStatusTrigger, setExactStatusTrigger] = useState(0)
   useEffect(() => {
     if (!user?.id) return
     let cancelled = false
@@ -241,39 +264,54 @@ export function IntegratiesTab() {
         const { data: sess } = await supabase.auth.getSession()
         const token = sess?.session?.access_token
         if (!token) {
-          if (!cancelled) setExactEigenTokens(false)
+          if (!cancelled) setExactHeeftTokens(false)
           return
         }
         const res = await fetch('/api/exact-token-status', {
           headers: { Authorization: `Bearer ${token}` },
         })
-        if (!res.ok) {
-          if (!cancelled) setExactEigenTokens(false)
-          return
+        if (!res.ok) return
+        const data = await res.json() as {
+          heeftTokens: boolean
+          verlopen: boolean
+          isEigenaar: boolean
+          eigenaarNaam: string | null
+          magOntkoppelen: boolean
         }
-        const data = await res.json() as { heeftTokens: boolean; verlopen: boolean }
         if (!cancelled) {
-          setExactEigenTokens(data.heeftTokens)
+          setExactHeeftTokens(data.heeftTokens)
           setExactTokensVerlopen(data.verlopen)
+          setExactStatusIsEigenaar(data.isEigenaar)
+          setExactEigenaarNaam(data.eigenaarNaam)
+          setExactMagOntkoppelen(data.magOntkoppelen)
+          setExactStatusGeladen(true)
         }
       } catch {
-        if (!cancelled) setExactEigenTokens(false)
+        // Bij een netwerkfout de status NIET op "geen tokens" zetten. Dat las
+        // als "de koppeling is niet meer actief" en dat is een onwaar en
+        // alarmerend bericht na één hik. Zonder status vallen we terug op de
+        // org-vlag en tonen we geen conclusies.
       }
     }
     fetchStatus()
     return () => { cancelled = true }
-  }, [user?.id, exactConnected])
+  }, [user?.id, exactConnected, exactStatusTrigger])
 
-  const isExactEigenaar = !exactOwnerUserId || exactOwnerUserId === user?.id
-  // Badge-status. Voor de eigenaar: leidend is per-user `exactEigenTokens`
-  // (de waarheid uit /api/exact-token-status). Voor niet-eigenaren bestaat
-  // er geen eigen tokens-rij waaraan we kunnen aflezen of "iemand anders"
-  // gekoppeld is · daarom valt de badge bij hen terug op de org-brede
-  // `exact_online_connected` boolean (informatief). Tijdens de loading
-  // van de status-fetch tonen we de org-flag als best-effort fallback.
-  const exactBadgeVerbonden = isExactEigenaar
-    ? (exactEigenTokens ?? exactConnected)
-    : exactConnected
+  // Server is leidend voor het eigenaarschap; de uit app_settings afgeleide
+  // waarde dient als beeld zolang de status-fetch nog loopt.
+  const isExactEigenaar = exactStatusIsEigenaar ?? (!exactOwnerUserId || exactOwnerUserId === user?.id)
+  // Drie toestanden. `verlopen` betekent hier "de refresh-keten staat te lang
+  // stil", niet "het access_token van tien minuten is verlopen" · dat laatste is
+  // de normale toestand tussen twee syncs en hoort geen waarschuwing te zijn.
+  // Zolang de status niet geladen is (eerste paint of een gefaalde fetch) volgen
+  // we de org-vlag, zodat een verbonden koppeling niet even "Niet verbonden"
+  // flitst.
+  const exactKoppelStatus: 'verbonden' | 'verlopen' | 'niet_verbonden' =
+    !exactStatusGeladen
+      ? (exactConnected ? 'verbonden' : 'niet_verbonden')
+      : exactHeeftTokens
+        ? (exactTokensVerlopen ? 'verlopen' : 'verbonden')
+        : 'niet_verbonden'
 
   const loadDocumentTypes = useCallback(async () => {
     if (!exactConnected) return
@@ -301,13 +339,48 @@ export function IntegratiesTab() {
     }
   }, [exactConnected])
 
-  // Alleen DocumentTypes ophalen als deze user zelf geldige tokens heeft.
-  // Bij niet-eigenaars zonder eigen exact_tokens-rij zou de call een 401
-  // van Exact triggeren en (na commit 2) hun token-rij verwijderen · voor
-  // niets, want ze koppelen niet zelf.
+  // Alleen ophalen als de organisatie tokens heeft. De endpoint gebruikt het
+  // token van de eigenaar, dus dit werkt nu ook voor collega's zonder eigen
+  // OAuth-sessie. Zonder tokens zou de call niets doen behalve een foutmelding
+  // opleveren.
   useEffect(() => {
-    if (exactConnected && exactEigenTokens) loadDocumentTypes()
-  }, [exactConnected, exactEigenTokens, loadDocumentTypes])
+    if (exactConnected && exactHeeftTokens) loadDocumentTypes()
+  }, [exactConnected, exactHeeftTokens, loadDocumentTypes])
+
+  const handleExactDisconnect = async () => {
+    if (!supabase) return
+    setExactOntkoppelen(true)
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data?.session?.access_token
+      if (!token) {
+        toast.error('Niet ingelogd')
+        return
+      }
+      const res = await fetch('/api/exact-disconnect', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Ontkoppelen mislukt')
+
+      setExactConnected(false)
+      setExactOwnerUserId(null)
+      setExactHeeftTokens(false)
+      setExactTokensVerlopen(false)
+      setExactStatusIsEigenaar(true)
+      setExactEigenaarNaam(null)
+      setExactBevestigOntkoppel(false)
+      setExactStatusTrigger((t) => t + 1)
+      refreshSettings?.()
+      toast.success(<>Exact Online ontkoppeld<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('Exact Online ontkoppelen mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Ontkoppelen mislukt')
+    } finally {
+      setExactOntkoppelen(false)
+    }
+  }
 
   const handleExactConnect = async () => {
     if (!user?.id) return
@@ -715,6 +788,7 @@ export function IntegratiesTab() {
         exact_btw_laag: exactBtwLaag,
         exact_btw_nul: exactBtwNul,
       })
+      if (exactClientSecret) setExactSecretOpgeslagen(true)
       toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan Exact Online instellingen:', err)
@@ -803,15 +877,22 @@ export function IntegratiesTab() {
                 <h3 className="text-base font-semibold text-foreground">Exact Online</h3>
                 <Badge
                   className={
-                    exactBadgeVerbonden
+                    exactKoppelStatus === 'verbonden'
                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                      : 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground/60'
+                      : exactKoppelStatus === 'verlopen'
+                        ? 'bg-[#F5F2E8] text-[#8A7A4A] dark:bg-[#8A7A4A]/20 dark:text-[#C9B884]'
+                        : 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground/60'
                   }
                 >
-                  {exactBadgeVerbonden ? (
+                  {exactKoppelStatus === 'verbonden' ? (
                     <span className="flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
                       Verbonden
+                    </span>
+                  ) : exactKoppelStatus === 'verlopen' ? (
+                    <span className="flex items-center gap-1">
+                      <RefreshCw className="w-3 h-3" />
+                      Sessie verlopen
                     </span>
                   ) : (
                     <span className="flex items-center gap-1">
@@ -1001,27 +1082,83 @@ export function IntegratiesTab() {
                 )}
               </div>
 
-              {!isExactEigenaar && exactConnected && (
+              {/* Alleen conclusies tonen als de status echt geladen is. Anders
+                  vertelt één netwerkhik een collega dat de koppeling stuk is. */}
+              {exactStatusGeladen && !isExactEigenaar && exactKoppelStatus !== 'niet_verbonden' && (
                 <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                  Exact Online is gekoppeld door een collega. Je kunt facturen
-                  syncen met je eigen tokens, maar opnieuw verbinden zou de
-                  actieve sessie verbreken · alleen de eigenaar kan dat doen.
+                  {exactEigenaarNaam ? `${exactEigenaarNaam} beheert` : 'Een collega beheert'} de
+                  Exact-koppeling. Jouw facturen gaan mee via die koppeling, dus
+                  syncen werkt gewoon. Opnieuw verbinden verbreekt de sessie, dus
+                  dat doet {exactEigenaarNaam ?? 'de eigenaar'}.
                 </div>
               )}
 
-              <div className="flex justify-end gap-2">
+              {exactStatusGeladen && !isExactEigenaar && exactKoppelStatus === 'niet_verbonden' && (
+                <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                  De Exact-koppeling staat op naam van {exactEigenaarNaam ?? 'een collega'} maar
+                  is niet meer actief, dus syncen lukt nu niet.
+                  {exactMagOntkoppelen
+                    ? ' Laat de koppeling opnieuw verbinden, of maak hem los zodat jij hem kunt overnemen.'
+                    : ` Vraag ${exactEigenaarNaam ?? 'de eigenaar'} om opnieuw te verbinden.`}
+                </div>
+              )}
+
+              {exactStatusGeladen && exactKoppelStatus === 'verlopen' && (
+                <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                  De koppeling staat al een maand stil, dus Exact heeft hem
+                  waarschijnlijk verlopen verklaard.
+                  {isExactEigenaar
+                    ? ' Verbind opnieuw om hem weer op te halen.'
+                    : ` Vraag ${exactEigenaarNaam ?? 'de eigenaar'} om opnieuw te verbinden.`}
+                </div>
+              )}
+
+              <div className="flex flex-wrap justify-end gap-2">
+                {/* Gate op "er staat een koppeling geregistreerd", niet op "er
+                    zijn tokens". De invalid_grant-tak verwijdert de tokenrij en
+                    laat eigenaar plus org-vlag staan, en juist dán moet iemand
+                    de koppeling kunnen losmaken om hem over te nemen. */}
+                {exactMagOntkoppelen && (exactOwnerUserId !== null || exactConnected || exactKoppelStatus !== 'niet_verbonden') && (
+                  <>
+                    {exactBevestigOntkoppel && (
+                      <span className="mr-auto self-center text-xs text-muted-foreground">
+                        Hierna moet de koppeling opnieuw verbonden worden. Je instellingen blijven staan.
+                      </span>
+                    )}
+                    {exactBevestigOntkoppel && !exactOntkoppelen && (
+                      <Button size="sm" variant="ghost" onClick={() => setExactBevestigOntkoppel(false)}>
+                        Annuleren
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant={exactBevestigOntkoppel ? 'destructive' : 'outline'}
+                      disabled={exactOntkoppelen}
+                      onClick={() => (exactBevestigOntkoppel ? handleExactDisconnect() : setExactBevestigOntkoppel(true))}
+                    >
+                      {exactOntkoppelen
+                        ? 'Ontkoppelen...'
+                        : exactBevestigOntkoppel
+                          ? 'Bevestig ontkoppelen'
+                          : 'Ontkoppelen'}
+                    </Button>
+                  </>
+                )}
                 <Button onClick={handleExactSave} disabled={exactSaving} size="sm" variant="outline">
                   {exactSaving ? 'Opslaan...' : 'Opslaan'}
                 </Button>
-                {isExactEigenaar && (
+                {/* Pas tonen als het eigenaarschap bekend is, anders ziet een
+                    niet-eigenaar bij de eerste paint kort een knop die hij niet
+                    mag gebruiken. */}
+                {exactStatusGeladen && isExactEigenaar && (
                   <Button
                     size="sm"
-                    disabled={!exactClientId || !exactClientSecret || exactSaving}
+                    disabled={!exactClientId || (!exactClientSecret && !exactSecretOpgeslagen) || exactSaving}
                     onClick={handleExactConnect}
                     className="gap-1.5"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    {exactEigenTokens ? 'Opnieuw verbinden' : 'Verbinden'}
+                    {exactKoppelStatus === 'niet_verbonden' ? 'Verbinden' : 'Opnieuw verbinden'}
                   </Button>
                 )}
               </div>
