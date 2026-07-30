@@ -153,17 +153,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Filter alleen toegestane velden
     // Lege secret velden worden overgeslagen (behoud bestaande encrypted waarde)
+    // Credentials worden uit een portal gekopieerd en slepen dan vaak een
+    // spatie of newline mee. Die komt ongemerkt in de OAuth-body terecht en
+    // levert een generieke weigering op, dus trimmen bij de bron.
+    const TRIM_FIELDS = new Set([
+      ...SECRET_FIELDS,
+      'exact_online_client_id',
+      'exact_administratie_id',
+      'snelstart_koppelsleutel',
+      'moneybird_api_token',
+      'moneybird_administration_id',
+      'eboekhouden_api_token',
+    ])
+
     const updates: Record<string, unknown> = {}
     for (const field of ALLOWED_FIELDS) {
       if (field in body) {
         const value = body[field]
+        const schoon = typeof value === 'string' && TRIM_FIELDS.has(field) ? value.trim() : value
         if (SECRET_FIELDS.includes(field)) {
-          if (typeof value === 'string' && value.length > 0) {
-            updates[field] = encryptSecret(value)
+          if (typeof schoon === 'string' && schoon.length > 0) {
+            updates[field] = encryptSecret(schoon)
           }
           // Skip empty strings for secrets — don't overwrite encrypted value
         } else {
-          updates[field] = value
+          updates[field] = schoon
         }
       }
     }
