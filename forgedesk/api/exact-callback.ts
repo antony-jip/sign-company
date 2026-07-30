@@ -84,7 +84,8 @@ const APP_URL = 'https://app.doen.team'
 // kunnen geen lokale modules importeren — elke route moet standalone zijn.
 // Moet in sync blijven met signState/verifyState in exact-auth.ts:
 // formaat `${userId}:${ts}:${sig}`, sig = HMAC(userId:ts), met TTL-check.
-const STATE_TTL_MS = 15 * 60 * 1000
+// Moet gelijk blijven aan STATE_TTL_MS in exact-auth.ts.
+const STATE_TTL_MS = 60 * 60 * 1000
 function verifyState(state: string): string | null {
   if (!SUPABASE_SERVICE_KEY) return null // fail-closed: geen fallback-secret
   const parts = state.split(':')
@@ -249,9 +250,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const responseText = await tokenResponse.text()
 
     if (!tokenResponse.ok) {
-      // Body niet loggen: een 200-response bevat access/refresh-tokens, en ook
-      // error-responses kunnen gevoelige velden bevatten. Alleen status.
-      console.error('Exact token exchange error:', tokenResponse.status)
+      // Dit is de meest voorkomende manier waarop verbinden mislukt (verkeerde
+      // client_secret, niet-matchende redirect_uri, verlopen code) en er ging
+      // hiervoor geen enkel signaal naar Sentry: alleen een status in de Vercel
+      // logs. Zonder oorzaak is dit niet te diagnosticeren.
+      //
+      // De volledige body niet loggen (kan gevoelige velden bevatten), maar wél
+      // de twee OAuth-foutvelden. Die zijn per RFC 6749 juist bedoeld om de
+      // oorzaak te benoemen en bevatten geen credentials.
+      let oauthError: string | null = null
+      let oauthDescription: string | null = null
+      try {
+        const foutBody = JSON.parse(responseText) as { error?: string; error_description?: string }
+        oauthError = foutBody?.error ?? null
+        oauthDescription = foutBody?.error_description ?? null
+      } catch {
+        // Exact antwoordt bij sommige fouten met HTML of platte tekst.
+      }
+      console.error('Exact token exchange error:', tokenResponse.status, oauthError, oauthDescription)
+      Sentry.captureException(new Error('Exact token exchange failed'), {
+        level: 'error',
+        tags: { exact_endpoint: 'exact-callback', oauth_error: oauthError ?? 'onbekend' },
+        extra: {
+          status: tokenResponse.status,
+          oauth_error: oauthError,
+          oauth_error_description: oauthDescription,
+          body_lengte: responseText.length,
+          user_id,
+        },
+      })
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=token_exchange`)
     }
 
@@ -336,11 +363,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       settingsUpdate.exact_document_type_naam = defaultDocumentType.description
     }
 
-    // First-OAuth-wins voor exact_owner_user_id. Andere admins in dezelfde
-    // org kunnen niet zelf opnieuw verbinden zonder de eigenaar zijn
-    // sessie te invalideren (Exact's single-session-policy per
-    // bedrijfsaccount). De eigenaar blijft staan tot iemand met DB-rechten
-    // hem expliciet leegmaakt.
+    // First-OAuth-wins voor exact_owner_user_id. Andere medewerkers in dezelfde
+    // org kunnen niet zelf opnieuw verbinden zonder de sessie van de eigenaar te
+    // invalideren (Exact's single-session-policy per bedrijfsaccount); syncen
+    // doen ze met het token van de eigenaar. Het eigenaarschap komt vrij via
+    // /api/exact-disconnect, dat de eigenaar of een admin kan aanroepen.
     const orgIdForOwner = await getOrgIdForUser(supabase, user_id)
     if (orgIdForOwner) {
       const { data: existing } = await supabase
