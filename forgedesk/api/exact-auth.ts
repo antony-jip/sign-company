@@ -7,9 +7,15 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const EXACT_AUTH_URL = 'https://start.exactonline.nl/api/oauth2/auth'
 const REDIRECT_URI = 'https://app.doen.team/api/exact-callback'
+const APP_URL = 'https://app.doen.team'
 
-// OAuth-state TTL: de round-trip naar Exact + terug duurt normaal seconden.
-const STATE_TTL_MS = 15 * 60 * 1000
+// OAuth-state TTL. De round-trip duurt normaal seconden, maar bij een eerste
+// koppeling moet de gebruiker ondertussen soms nog de app in het Exact App
+// Center aanmaken en met 2FA inloggen. 15 minuten was daarvoor te kort en
+// leverde een `invalid_state` zonder duidelijke oorzaak. De state is
+// HMAC-ondertekend en de bijbehorende code is eenmalig, dus een ruimer venster
+// kost geen veiligheid.
+const STATE_TTL_MS = 60 * 60 * 1000
 
 function stateSecret(): string {
   // Geen 'fallback-secret': zonder echte sleutel is de state te vervalsen, dus
@@ -122,13 +128,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-    const settings = await loadAppSettingsOrgFirst(supabase, user_id, 'exact_online_client_id')
+    const settings = await loadAppSettingsOrgFirst(
+      supabase,
+      user_id,
+      'exact_online_client_id, exact_owner_user_id',
+    )
     const clientId = settings?.exact_online_client_id as string | undefined
 
+    // Deze route wordt via een volledige paginanavigatie betreden, dus een JSON
+    // body belandt letterlijk als tekst in het browservenster, buiten de app.
+    // Altijd terugsturen naar Instellingen met een reason-code die daar naar een
+    // leesbare melding wordt omgezet.
     if (!clientId) {
-      return res.status(400).json({
-        error: 'Exact Online Client ID niet gevonden. Vul deze in bij Instellingen > Integraties.',
-      })
+      return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=no_credentials`)
+    }
+
+    // Alleen de eigenaar mag opnieuw verbinden: een tweede OAuth op hetzelfde
+    // Exact-bedrijfsaccount verbreekt diens sessie en daarmee de koppeling voor
+    // de hele organisatie. De UI verbergt de knop al, maar deze route is direct
+    // aanroepbaar met een token in de query, dus de check hoort ook hier.
+    // Ontkoppelen (waarmee het eigenaarschap vrijkomt) loopt via
+    // /api/exact-disconnect.
+    const eigenaarId = settings?.exact_owner_user_id as string | null | undefined
+    if (eigenaarId && eigenaarId !== user_id) {
+      return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=not_owner`)
     }
 
     const params = new URLSearchParams({
@@ -143,6 +166,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
     console.error('Exact auth error:', message)
-    return res.status(500).json({ error: message })
+    // Ook hier geen JSON: deze catch vangt óók een verlopen sessie, en dan stond
+    // de gebruiker met {"error":"Ongeldige sessie"} op een blanke pagina.
+    const reason = message === 'Niet geautoriseerd' || message === 'Ongeldige sessie' ? 'sessie' : 'unknown'
+    return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=${reason}`)
   }
 }
