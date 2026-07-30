@@ -125,11 +125,29 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   return user.id
 }
 
-async function getValidToken(userId: string): Promise<{ token: string; division: number }> {
+// De Exact-koppeling is org-breed: `exact_owner_user_id` houdt de OAuth-sessie
+// en is de enige met een `exact_tokens`-rij. Zonder deze omweg kan een collega
+// zonder eigen sessie de Document-types niet ophalen en blijft dat veld in
+// Instellingen leeg. Zelfde keuze als in exact-sync-factuur.ts.
+async function bepaalTokenHouder(callerUserId: string): Promise<string> {
+  const settings = await loadAppSettingsOrgFirst(supabaseAdmin, callerUserId, 'exact_owner_user_id')
+  const eigenaar = (settings?.exact_owner_user_id as string | null) || null
+  if (!eigenaar || eigenaar === callerUserId) return callerUserId
+
+  // `exact_tokens` heeft geen organisatie_id, dus controleren dat de eigenaar
+  // nog bij deze organisatie hoort moet hier. Zelfde check als in
+  // exact-sync-factuur.ts.
+  const callerOrg = await getOrgIdForUser(supabaseAdmin, callerUserId)
+  const eigenaarOrg = await getOrgIdForUser(supabaseAdmin, eigenaar)
+  if (!callerOrg || callerOrg !== eigenaarOrg) return callerUserId
+  return eigenaar
+}
+
+async function getValidToken(tokenUserId: string, settingsUserId: string): Promise<{ token: string; division: number }> {
   const { data, error } = await supabaseAdmin
     .from('exact_tokens')
     .select('access_token, refresh_token, expires_at, division')
-    .eq('user_id', userId)
+    .eq('user_id', tokenUserId)
     .single()
 
   if (error || !data?.access_token) throw new Error('Geen Exact Online tokens gevonden')
@@ -142,7 +160,7 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
 
   const settings = await loadAppSettingsOrgFirst(
     supabaseAdmin,
-    userId,
+    settingsUserId,
     'exact_online_client_id, exact_online_client_secret',
   )
   const exactClientId = settings?.exact_online_client_id as string | undefined
@@ -176,26 +194,34 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
       const { data: herlezen } = await supabaseAdmin
         .from('exact_tokens')
         .select('access_token, refresh_token, expires_at, division')
-        .eq('user_id', userId)
+        .eq('user_id', tokenUserId)
         .maybeSingle()
       if (herlezen?.refresh_token && herlezen.refresh_token !== data.refresh_token) {
         return { token: decryptSecret(herlezen.access_token), division: herlezen.division }
       }
 
       if (errorBody.includes('invalid_grant')) {
-        // Bij invalid_grant heeft Exact DEZE user echt uitgegooid — vaak
-        // doordat een collega zojuist opnieuw OAuth'de op hetzelfde
-        // Exact-bedrijfsaccount (Exact staat geen twee gelijktijdige
-        // sessies toe). Verwijder alleen DEZE user's tokens; raak de
-        // org-brede `exact_online_connected` niet aan.
-        await supabaseAdmin.from('exact_tokens').delete().eq('user_id', userId)
+        // Bij invalid_grant heeft Exact de keten van de tokenhouder afgewezen.
+        // Verwijder alleen diens tokens; raak de org-brede
+        // `exact_online_connected` niet aan. Tokenhouder en caller apart
+        // loggen: bij een org-brede koppeling zijn dat verschillende mensen.
+        //
+        // Voorwaarde op refresh_token: alleen wissen als er nog de keten staat
+        // die wij gelezen hebben, zodat een verliezende parallelle refresh niet
+        // de verse rij van de winnaar weggooit.
+        await supabaseAdmin
+          .from('exact_tokens')
+          .delete()
+          .eq('user_id', tokenUserId)
+          .eq('refresh_token', data.refresh_token)
         console.error('[Exact] invalid_grant — token rejected', {
-          userId, endpoint: 'exact-document-types.ts', status: refreshRes.status,
+          token_user_id: tokenUserId, caller_user_id: settingsUserId,
+          endpoint: 'exact-document-types.ts', status: refreshRes.status,
         })
         Sentry.captureException(new Error('Exact invalid_grant'), {
           level: 'warning',
           tags: { exact_endpoint: 'exact-document-types', oauth_error: 'invalid_grant' },
-          extra: { user_id: userId, status: refreshRes.status },
+          extra: { token_user_id: tokenUserId, caller_user_id: settingsUserId, status: refreshRes.status },
         })
         throw new Error('Token refresh mislukt. Verbind Exact Online opnieuw via Instellingen.')
       }
@@ -206,17 +232,55 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     throw new Error('Exact Online token vernieuwen mislukt. Probeer het opnieuw.')
   }
   const tokens = await refreshRes.json()
+  if (!tokens?.access_token) {
+    console.error('[Exact] refresh gaf 200 zonder access_token', { endpoint: 'exact-document-types.ts' })
+    throw new Error('Exact Online gaf een onverwacht antwoord bij token vernieuwen. Probeer het opnieuw.')
+  }
 
-  // Upsert i.p.v. update: herstelt de rij als een parallel verliezend
-  // request hem net verwijderde — dit is de nieuwste geldige keten.
-  await supabaseAdmin.from('exact_tokens').upsert({
-    user_id: userId,
+  const nieuweRij = {
+    user_id: tokenUserId,
     access_token: encryptSecret(tokens.access_token),
     refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
     expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
     division: data.division,
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'user_id' })
+  }
+
+  // Compare-and-swap op de refresh_token die we gelezen hebben. Het ciphertext
+  // is een betrouwbaar versiemerk (elke write gebruikt een nieuwe random salt),
+  // dus nul geraakte rijen betekent dat iemand anders de keten al vervangen of
+  // de koppeling ontkoppeld heeft. Een blinde upsert overschreef in dat geval de
+  // verse keten van een net afgeronde OAuth of wekte een ontkoppelde rij weer op.
+  const { data: bijgewerkt, error: updateFout } = await supabaseAdmin
+    .from('exact_tokens')
+    .update(nieuweRij)
+    .eq('user_id', tokenUserId)
+    .eq('refresh_token', data.refresh_token)
+    .select('user_id')
+
+  if (updateFout) {
+    console.error('[Exact] geroteerde token NIET opgeslagen — keten is hierna dood', {
+      token_user_id: tokenUserId, caller_user_id: settingsUserId,
+      endpoint: 'exact-document-types.ts', fout: updateFout.message,
+    })
+    Sentry.captureException(new Error('Exact token rotation not persisted'), {
+      level: 'error',
+      tags: { exact_endpoint: 'exact-document-types', oauth_error: 'rotation_not_persisted' },
+      extra: { token_user_id: tokenUserId, caller_user_id: settingsUserId, fout: updateFout.message },
+    })
+  } else if (!bijgewerkt?.length) {
+    // Deze route leest alleen Document-types op. Bij een verloren race is de
+    // nieuwste keten van iemand anders leidend en hoeven we niets te herstellen.
+    const { data: huidig } = await supabaseAdmin
+      .from('exact_tokens')
+      .select('access_token, division')
+      .eq('user_id', tokenUserId)
+      .maybeSingle()
+    const rij = huidig as { access_token?: string | null; division?: number | null } | null
+    if (rij?.access_token) {
+      return { token: decryptSecret(rij.access_token), division: rij.division as number }
+    }
+  }
 
   return { token: tokens.access_token, division: data.division }
 }
@@ -241,10 +305,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const userId = await verifyUser(req)
-    const { token, division } = await getValidToken(userId)
+    const tokenUserId = await bepaalTokenHouder(userId)
+    const { token, division } = await getValidToken(tokenUserId, userId)
+
+    // De ingestelde administratie is leidend, net als in exact-sync-factuur.ts.
+    // Op de division uit de tokenrij vertrouwen leverde Document-types uit een
+    // andere administratie dan waarin geboekt wordt, en die kolom kan NULL zijn
+    // als /current/Me faalde tijdens de callback (dan werd de URL `/null/...`).
+    const adminSettings = await loadAppSettingsOrgFirst(supabaseAdmin, userId, 'exact_administratie_id')
+    const administratie = (adminSettings?.exact_administratie_id as string | null) || (division != null ? String(division) : null)
+    if (!administratie) {
+      return res.status(400).json({
+        error: 'Exact Online administratie niet geconfigureerd. Vul deze in bij Instellingen > Integraties.',
+      })
+    }
 
     const typesRes = await exactFetchMetRetry(
-      `${EXACT_API_BASE}/${division}/documents/DocumentTypes?$filter=DocumentIsCreatable eq true&$select=ID,Description,TypeCategory&$orderby=Description`,
+      `${EXACT_API_BASE}/${administratie}/documents/DocumentTypes?$filter=DocumentIsCreatable eq true&$select=ID,Description,TypeCategory&$orderby=Description`,
       { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } }
     )
 

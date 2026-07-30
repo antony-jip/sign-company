@@ -138,15 +138,54 @@ interface ExactSettings {
   exact_document_type_id: number | null
 }
 
-async function getValidToken(user_id: string): Promise<string> {
+// De Exact-koppeling hoort aan de organisatie, niet aan de individuele
+// medewerker: Exact is één administratie van één bedrijf. `exact_owner_user_id`
+// is de medewerker die de OAuth-sessie houdt en dus als enige een
+// `exact_tokens`-rij heeft. Iedereen in de org synct met dát token, zodat
+// boekingen consistent onder de eigenaar in Exact landen en collega's zonder
+// eigen OAuth-sessie niet op een 401 stuiten die ze niet kunnen oplossen.
+// Valt terug op de caller zolang er nog geen eigenaar is vastgelegd.
+async function bepaalTokenHouder(callerUserId: string): Promise<string> {
+  const settings = await loadAppSettingsOrgFirst(supabaseAdmin, callerUserId, 'exact_owner_user_id')
+  const eigenaar = (settings?.exact_owner_user_id as string | null) || null
+  if (!eigenaar || eigenaar === callerUserId) return callerUserId
+
+  // `exact_tokens` heeft geen organisatie_id (migratie 018), dus dat de eigenaar
+  // nog bij deze organisatie hoort moet hier gecontroleerd worden. Zonder deze
+  // check zou een verhuisde eigenaar het token meenemen naar zijn nieuwe org en
+  // zou de oude org daar nog steeds mee boeken.
+  const callerOrg = await getOrgIdForUser(supabaseAdmin, callerUserId)
+  const eigenaarOrg = await getOrgIdForUser(supabaseAdmin, eigenaar)
+  if (!callerOrg || callerOrg !== eigenaarOrg) return callerUserId
+  return eigenaar
+}
+
+// Eén sync roept getValidToken tot acht keer aan (elke retry-tak doet dat). Zo
+// werd de rij zeven keer overbodig herlezen, en erger: lukte het wegschrijven
+// van een rotatie niet, dan las een volgende aanroep de stale rij en refreshte
+// met de inmiddels dode keten. Dat eindigde in invalid_grant en het wissen van
+// de tokenrij van de eigenaar, dus een transiënte DB-fout werd een org-brede
+// ontkoppeling. Deze cache leeft per request; op module-niveau zou hij tussen
+// invocations en dus tussen organisaties blijven hangen.
+type TokenCache = { accessToken: string | null; expiresAt: number }
+
+// `tokenUserId` bepaalt WELKE tokenrij geroteerd wordt, `settingsUserId` uit
+// welke organisatie de client-credentials komen. Die twee zijn gescheiden zodat
+// een sync altijd de credentials van de caller-org gebruikt, ook als de
+// eigenaar ooit naar een andere organisatie verhuist.
+async function getValidToken(tokenUserId: string, settingsUserId: string, cache: TokenCache): Promise<string> {
+  if (cache.accessToken && cache.expiresAt - Date.now() > 5 * 60 * 1000) {
+    return cache.accessToken
+  }
+
   const { data: tokenData } = await supabaseAdmin
     .from('exact_tokens')
     .select('access_token, refresh_token, expires_at, division')
-    .eq('user_id', user_id)
+    .eq('user_id', tokenUserId)
     .single() as { data: { access_token: string; refresh_token: string; expires_at: string; division: number | null } | null }
 
   if (!tokenData) {
-    throw new Error('Geen Exact Online tokens gevonden. Verbind opnieuw via Instellingen.')
+    throw new Error('GEEN_TOKENS')
   }
 
   // Token verloopt binnen 5 minuten? Ververs direct.
@@ -154,7 +193,7 @@ async function getValidToken(user_id: string): Promise<string> {
   if (expiresAt < Date.now() + 5 * 60 * 1000) {
     const settings = await loadAppSettingsOrgFirst(
       supabaseAdmin,
-      user_id,
+      settingsUserId,
       'exact_online_client_id, exact_online_client_secret',
     )
     const exactClientId = settings?.exact_online_client_id as string | undefined
@@ -190,26 +229,37 @@ async function getValidToken(user_id: string): Promise<string> {
         const { data: herlezen } = await supabaseAdmin
           .from('exact_tokens')
           .select('access_token, refresh_token')
-          .eq('user_id', user_id)
+          .eq('user_id', tokenUserId)
           .maybeSingle()
         if (herlezen?.refresh_token && herlezen.refresh_token !== tokenData.refresh_token) {
           return decryptSecret(herlezen.access_token)
         }
 
         if (errorBody.includes('invalid_grant')) {
-          // Bij invalid_grant heeft Exact DEZE user echt uitgegooid — vaak
-          // doordat een collega zojuist opnieuw OAuth'de op hetzelfde
-          // Exact-bedrijfsaccount (Exact staat geen twee gelijktijdige
-          // sessies toe). Verwijder alleen DEZE user's tokens; raak de
-          // org-brede `exact_online_connected` niet aan.
-          await supabaseAdmin.from('exact_tokens').delete().eq('user_id', user_id)
+          // Bij invalid_grant heeft Exact de keten van de tokenhouder echt
+          // afgewezen. Verwijder alleen diens tokens; raak de org-brede
+          // `exact_online_connected` niet aan. Log tokenhouder én caller
+          // apart: bij een org-brede koppeling zijn dat verschillende mensen
+          // en anders is niet te zien wie er opnieuw moet verbinden.
+          //
+          // Voorwaarde op refresh_token: verwijder alleen als er nog steeds de
+          // keten staat die wij gelezen hebben. Draaien er twee refreshes
+          // tegelijk, dan krijgt de verliezer invalid_grant terwijl de winnaar
+          // net een geldige keten wegschreef. Zonder deze voorwaarde gooit de
+          // verliezer die verse rij weg en is de koppeling org-breed dood.
+          await supabaseAdmin
+            .from('exact_tokens')
+            .delete()
+            .eq('user_id', tokenUserId)
+            .eq('refresh_token', tokenData.refresh_token)
           console.error('[Exact] invalid_grant — token rejected', {
-            user_id, endpoint: 'exact-sync-factuur.ts', status: refreshRes.status,
+            token_user_id: tokenUserId, caller_user_id: settingsUserId,
+            endpoint: 'exact-sync-factuur.ts', status: refreshRes.status,
           })
           Sentry.captureException(new Error('Exact invalid_grant'), {
             level: 'warning',
             tags: { exact_endpoint: 'exact-sync-factuur', oauth_error: 'invalid_grant' },
-            extra: { user_id, status: refreshRes.status },
+            extra: { token_user_id: tokenUserId, caller_user_id: settingsUserId, status: refreshRes.status },
           })
           throw new Error('Token vernieuwen mislukt. Verbind Exact Online opnieuw.')
         }
@@ -221,21 +271,130 @@ async function getValidToken(user_id: string): Promise<string> {
     }
 
     const tokens = await refreshRes.json()
-    // Upsert i.p.v. update: herstelt de rij als een parallel verliezend
-    // request hem net verwijderde — dit is de nieuwste geldige keten.
-    await supabaseAdmin.from('exact_tokens').upsert({
-      user_id,
+    if (!tokens?.access_token) {
+      console.error('[Exact] refresh gaf 200 zonder access_token', { endpoint: 'exact-sync-factuur.ts' })
+      throw new Error('Exact Online gaf een onverwacht antwoord bij token vernieuwen. Probeer het opnieuw.')
+    }
+
+    const nieuweRij = {
+      user_id: tokenUserId,
       access_token: encryptSecret(tokens.access_token),
       refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(tokenData.refresh_token)),
       expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
       division: tokenData.division,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
+    }
 
-    return tokens.access_token
+    const uitkomst = await schrijfGeroteerdeKeten({
+      tokenUserId,
+      settingsUserId,
+      gelezenRefreshToken: tokenData.refresh_token,
+      nieuweRij,
+      versAccessToken: tokens.access_token,
+      endpoint: 'exact-sync-factuur.ts',
+    })
+    // De echte expiry van het verse token, niet de refresh-drempel: die laatste
+    // zou de cache-check nooit laten slagen en de rest van deze sync alsnog de
+    // stale rij laten herlezen.
+    cache.accessToken = uitkomst
+    cache.expiresAt = new Date(nieuweRij.expires_at).getTime()
+    return uitkomst
   }
 
-  return decryptSecret(tokenData.access_token)
+  const bestaand = decryptSecret(tokenData.access_token)
+  cache.accessToken = bestaand
+  cache.expiresAt = new Date(tokenData.expires_at).getTime()
+  return bestaand
+}
+
+// Schrijft de geroteerde keten weg als compare-and-swap op de refresh_token die
+// we zelf gelezen hebben. Het ciphertext is een betrouwbaar versiemerk: elke
+// write versleutelt met een nieuwe random salt en IV, dus een gewijzigde rij
+// heeft gegarandeerd een andere waarde.
+//
+// Een blinde upsert kostte drie manieren om de koppeling org-breed te slopen:
+// een parallelle sync die de verse keten van een net afgeronde OAuth-callback
+// overschreef, een sync die de rij weer tot leven wekte ná een ontkoppeling, en
+// een verliezende refresh die de rij van de winnaar overschreef.
+async function schrijfGeroteerdeKeten(params: {
+  tokenUserId: string
+  settingsUserId: string
+  gelezenRefreshToken: string
+  nieuweRij: Record<string, unknown>
+  versAccessToken: string
+  endpoint: string
+}): Promise<string> {
+  const { tokenUserId, settingsUserId, gelezenRefreshToken, nieuweRij, versAccessToken, endpoint } = params
+
+  const { data: bijgewerkt, error: updateFout } = await supabaseAdmin
+    .from('exact_tokens')
+    .update(nieuweRij)
+    .eq('user_id', tokenUserId)
+    .eq('refresh_token', gelezenRefreshToken)
+    .select('user_id')
+
+  if (!updateFout && bijgewerkt?.length) return versAccessToken
+
+  if (updateFout) {
+    // Exact heeft de vorige refresh_token al ongeldig gemaakt, dus een mislukte
+    // write laat een dode keten achter. De sync zelf gaat door (dit
+    // access_token is 10 minuten geldig, de factuur kan geboekt worden), maar
+    // dit is de enige plek waar het nog te zien is.
+    console.error('[Exact] geroteerde token NIET opgeslagen — keten is hierna dood', {
+      token_user_id: tokenUserId, caller_user_id: settingsUserId, endpoint, fout: updateFout.message,
+    })
+    Sentry.captureException(new Error('Exact token rotation not persisted'), {
+      level: 'error',
+      tags: { exact_endpoint: endpoint.replace('.ts', ''), oauth_error: 'rotation_not_persisted' },
+      extra: { token_user_id: tokenUserId, caller_user_id: settingsUserId, fout: updateFout.message },
+    })
+    return versAccessToken
+  }
+
+  // Nul rijen geraakt: de rij is inmiddels vervangen of verwijderd.
+  const { data: huidig } = await supabaseAdmin
+    .from('exact_tokens')
+    .select('access_token')
+    .eq('user_id', tokenUserId)
+    .maybeSingle()
+
+  const huidigToken = (huidig as { access_token?: string | null } | null)?.access_token
+  if (huidigToken) {
+    // Iemand schreef een nieuwere keten (parallelle refresh of een verse
+    // OAuth-callback). Die is leidend; onze eigen rotatie laten we vallen.
+    return decryptSecret(huidigToken)
+  }
+
+  // Rij is weg. Alleen opnieuw aanmaken als de koppeling nog hoort te bestaan,
+  // anders wekken we een net ontkoppelde koppeling weer tot leven en blijven er
+  // facturen naar Exact gaan na een expliciete ontkoppeling.
+  const settings = await loadAppSettingsOrgFirst(
+    supabaseAdmin,
+    settingsUserId,
+    'exact_owner_user_id, exact_online_connected',
+  )
+  const eigenaar = (settings?.exact_owner_user_id as string | null) ?? null
+  const nogGekoppeld = eigenaar === tokenUserId || (eigenaar === null && settings?.exact_online_connected === true)
+
+  if (!nogGekoppeld) {
+    console.warn('[Exact] rotatie niet bewaard: koppeling is inmiddels ontkoppeld', { token_user_id: tokenUserId, endpoint })
+    return versAccessToken
+  }
+
+  const { error: insertFout } = await supabaseAdmin.from('exact_tokens').insert(nieuweRij)
+  // 23505 = een parallel request maakte de rij net aan; die keten is dan
+  // nieuwer dan de onze en mag blijven staan.
+  if (insertFout && insertFout.code !== '23505') {
+    console.error('[Exact] geroteerde token NIET opgeslagen (insert)', {
+      token_user_id: tokenUserId, caller_user_id: settingsUserId, endpoint, fout: insertFout.message,
+    })
+    Sentry.captureException(new Error('Exact token rotation not persisted'), {
+      level: 'error',
+      tags: { exact_endpoint: endpoint.replace('.ts', ''), oauth_error: 'rotation_not_persisted' },
+      extra: { token_user_id: tokenUserId, caller_user_id: settingsUserId, fout: insertFout.message },
+    })
+  }
+  return versAccessToken
 }
 
 // Exact hanteert per-minuut rate-limits; bij 429 wachten (Retry-After, gecapt
@@ -293,12 +452,18 @@ function bepaalBtwCode(btwPercentage: number, settings: ExactSettings): string |
   return settings.exact_btw_nul || null
 }
 
-// ── Grootboek GUID cache per request ──
-
+// ── Grootboek GUID cache ──
+// Staat op module-niveau en overleeft dus invocations op een warme lambda, die
+// alle organisaties bedient. De key MOET daarom de division bevatten: een GUID
+// geldt per administratie, terwijl grootboekcodes als 8000 en 8020 uit het
+// standaardschema bij vrijwel iedereen voorkomen. Zonder division in de key
+// krijgt de ene organisatie de GUID van de andere en weigert Exact de boeking
+// met een onnavolgbare 400.
 const grootboekCache = new Map<string, string>()
 
 async function getGrootboekGuid(token: string, division: string, rekeningNummer: string): Promise<string> {
-  const cached = grootboekCache.get(rekeningNummer)
+  const cacheKey = `${division}:${rekeningNummer}`
+  const cached = grootboekCache.get(cacheKey)
   if (cached) return cached
 
   const data = await exactGet(
@@ -312,7 +477,7 @@ async function getGrootboekGuid(token: string, division: string, rekeningNummer:
     throw new Error(`Grootboekrekening ${rekeningNummer} niet gevonden in Exact Online.`)
   }
 
-  grootboekCache.set(rekeningNummer, guid)
+  grootboekCache.set(cacheKey, guid)
   return guid
 }
 
@@ -365,9 +530,11 @@ async function syncFactuurBijlagenToExact(params: {
   documentId: string
   tokenRef: { current: string }
   division: string
+  tokenUserId: string
   user_id: string
+  tokenCache: TokenCache
 }): Promise<{ synced: number; failed: number; geprobeerd: number }> {
-  const { factuurId, documentId, tokenRef, division, user_id } = params
+  const { factuurId, documentId, tokenRef, division, tokenUserId, user_id, tokenCache } = params
 
   const { data: bijlagen, error: bijErr } = await supabaseAdmin
     .from('factuur_bijlagen')
@@ -408,7 +575,7 @@ async function syncFactuurBijlagenToExact(params: {
         await exactPost(tokenRef.current, division, 'documents/DocumentAttachments', payload)
       } catch (firstErr) {
         try {
-          tokenRef.current = await getValidToken(user_id)
+          tokenRef.current = await getValidToken(tokenUserId, user_id, tokenCache)
           await exactPost(tokenRef.current, division, 'documents/DocumentAttachments', payload)
         } catch (retryErr) {
           console.error(`Bijlage DocumentAttachment POST mislukt voor ${bij.bestandsnaam}:`, firstErr, retryErr)
@@ -475,13 +642,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Factuurregels ophalen mislukt.' })
     }
 
-    // 2. Haal geldige access_token op
+    // 2. Haal geldige access_token op. De koppeling is org-breed: het token van
+    // de eigenaar wordt gebruikt, ongeacht wie de sync start.
+    const tokenUserId = await bepaalTokenHouder(user_id)
+    const callerIsEigenaar = tokenUserId === user_id
+    const tokenCache: TokenCache = { accessToken: null, expiresAt: 0 }
+
     let token: string
     try {
-      token = await getValidToken(user_id)
-    } catch {
+      token = await getValidToken(tokenUserId, user_id, tokenCache)
+    } catch (tokenErr) {
+      // Wie de koppeling niet zelf kan herstellen moet horen wie dat wel kan,
+      // anders verwijst de melding naar een knop die hij niet heeft.
+      const ontbreekt = tokenErr instanceof Error && tokenErr.message === 'GEEN_TOKENS'
       return res.status(401).json({
-        error: 'Exact Online sessie verlopen. Verbind opnieuw via Instellingen > Integraties.',
+        error: callerIsEigenaar
+          ? (ontbreekt
+              ? 'Exact Online is niet verbonden. Verbind opnieuw via Instellingen > Integraties.'
+              : 'Exact Online sessie verlopen. Verbind opnieuw via Instellingen > Integraties.')
+          : 'De Exact Online-koppeling moet opnieuw verbonden worden door de eigenaar van de koppeling (zie Instellingen > Integraties).',
       })
     }
 
@@ -523,7 +702,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         documentId: factuur.exact_document_id as string,
         tokenRef,
         division,
+        tokenUserId,
         user_id,
+        tokenCache,
       })
       return res.status(200).json({
         success: true,
@@ -617,7 +798,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           documentId = docResult?.d?.ID ?? null
         } catch (docErr) {
           try {
-            token = await getValidToken(user_id)
+            token = await getValidToken(tokenUserId, user_id, tokenCache)
             const docResult = await exactPost(
               token,
               division,
@@ -651,7 +832,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bijlageSynced = true
       } catch (attErr) {
         try {
-          token = await getValidToken(user_id)
+          token = await getValidToken(tokenUserId, user_id, tokenCache)
           await exactPost(token, division, 'documents/DocumentAttachments', attPayload)
           bijlageSynced = true
         } catch (retryErr) {
@@ -678,7 +859,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             documentId,
             tokenRef: retryTokenRef,
             division,
+            tokenUserId,
             user_id,
+            tokenCache,
           })
         : { synced: 0, failed: 0, geprobeerd: 0 }
       token = retryTokenRef.current
@@ -739,7 +922,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (klantError: unknown) {
       // Token verlopen tijdens klant zoeken? Refresh en retry 1x
       try {
-        token = await getValidToken(user_id)
+        token = await getValidToken(tokenUserId, user_id, tokenCache)
 
         customerGuid = await findOrCreateKlant(
           token,
@@ -798,7 +981,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         documentId = docResult?.d?.ID ?? null
       } catch (docErr) {
         try {
-          token = await getValidToken(user_id)
+          token = await getValidToken(tokenUserId, user_id, tokenCache)
 
           const docResult = await exactPost(
             token,
@@ -830,7 +1013,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           bijlageSynced = true
         } catch (attErr) {
           try {
-            token = await getValidToken(user_id)
+            token = await getValidToken(tokenUserId, user_id, tokenCache)
 
             await exactPost(token, division, 'documents/DocumentAttachments', attachmentPayload)
             bijlageSynced = true
@@ -855,7 +1038,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           documentId,
           tokenRef: mainTokenRef,
           division,
+          tokenUserId,
           user_id,
+          tokenCache,
         })
         token = mainTokenRef.current
         mainBijlagenSyncResult = bijlagenResult
@@ -924,7 +1109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (syncError: unknown) {
       // Retry 1x na token refresh
       try {
-        token = await getValidToken(user_id)
+        token = await getValidToken(tokenUserId, user_id, tokenCache)
 
         entryResult = await exactPost(
           token,
