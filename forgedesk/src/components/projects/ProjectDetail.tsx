@@ -45,6 +45,8 @@ import {
   Package,
   User2,
   CalendarDays,
+  ArrowLeftRight,
+  Search,
 } from 'lucide-react'
 import { List as TabList, Wrench as TabWrench, Euro as TabEuro, PenLine as TabPenLine, Mail as TabMail, Ruler as TabRuler } from 'lucide-react'
 import { getEmailsVoorProject, type ProjectMail } from '@/services/emailProjectService'
@@ -165,7 +167,7 @@ import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto, AuditLogEntry, Contactpersoon, ContactpersoonRecord, Maatje } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
-import { logWijziging, logCreate } from '@/utils/auditLogger'
+import { logWijziging, logCreate, resolveMedewerkerNaam } from '@/utils/auditLogger'
 import { getAuditLogForProject } from '@/services/supabaseService'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { useTabs } from '@/contexts/TabsContext'
@@ -673,6 +675,12 @@ export function ProjectDetail() {
   const [alleKlanten, setAlleKlanten] = useState<Klant[]>([])
   const [kopieBezig, setKopieBezig] = useState(false)
 
+  // Project overzetten naar andere klant
+  const [wisselKlantOpen, setWisselKlantOpen] = useState(false)
+  const [wisselKlantId, setWisselKlantId] = useState('')
+  const [wisselZoek, setWisselZoek] = useState('')
+  const [wisselBezig, setWisselBezig] = useState(false)
+
   // Email offerte state (simple offerte mail)
   const [emailOfferteOpen, setEmailOfferteOpen] = useState(false)
   const [emailOnderwerp, setEmailOnderwerp] = useState('')
@@ -902,6 +910,59 @@ export function ProjectDetail() {
       setAlleKlanten([])
     }
     setKopieDialogOpen(true)
+  }
+
+  const openWisselKlantDialog = async () => {
+    if (!project) return
+    setWisselKlantId('')
+    setWisselZoek('')
+    try {
+      const klanten = await getKlanten()
+      setAlleKlanten(klanten)
+    } catch (err) {
+      logger.error('Kon klanten niet ophalen:', err)
+      toast.error('Kon klanten niet ophalen')
+      setAlleKlanten([])
+    }
+    setWisselKlantOpen(true)
+  }
+
+  const handleWisselKlant = async () => {
+    if (!project || !id || !wisselKlantId || wisselKlantId === project.klant_id) return
+    const nieuweKlant = alleKlanten.find((k) => k.id === wisselKlantId)
+    const oudeKlantNaam = klant?.bedrijfsnaam || klant?.contactpersoon || ''
+    setWisselBezig(true)
+    try {
+      // contactpersoon_id expliciet op null: undefined wordt door supabase-js
+      // uit de payload gegooid en zou de oude contactpersoon laten staan.
+      const updated = await updateProject(id, {
+        klant_id: wisselKlantId,
+        contactpersoon_id: null,
+      } as unknown as Partial<Project>)
+      setProject(updated)
+      const nieuweKlantData = await getKlant(wisselKlantId)
+      setKlant(nieuweKlantData)
+      if (user) {
+        logWijziging({
+          userId: user.id,
+          entityType: 'project',
+          entityId: id,
+          actie: 'gewijzigd',
+          medewerkerNaam: resolveMedewerkerNaam(user, alleMedewerkers),
+          veld: 'klant_id',
+          oudeWaarde: oudeKlantNaam || project.klant_id,
+          nieuweWaarde: nieuweKlant?.bedrijfsnaam || wisselKlantId,
+          omschrijving: 'Project overgezet naar andere klant',
+        })
+      }
+      setWisselKlantOpen(false)
+      toast.success(`Project staat nu op ${nieuweKlant?.bedrijfsnaam || 'de nieuwe klant'}`)
+    } catch (err) {
+      logger.error('Klant wisselen mislukt:', err)
+      toast.error('Overzetten mislukt')
+    } finally {
+      setWisselBezig(false)
+    }
   }
 
   const handleKopieerProject = async () => {
@@ -1816,6 +1877,7 @@ export function ProjectDetail() {
                 }
               }}
               onEditKlant={() => setEditKlantOpen(true)}
+              onWisselKlant={openWisselKlantDialog}
               onMail={() => {
                 setMailComposerOpen(true)
                 setTimeout(() => mailComposerRef.current?.scrollIntoView(), 80)
@@ -3027,6 +3089,90 @@ export function ProjectDetail() {
             >
               <Send className="mr-1.5 h-4 w-4" />
               {isVersturen ? 'Versturen...' : `Verstuur (${selectedDocIds.length} bestanden)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Project overzetten naar andere klant ── */}
+      <Dialog open={wisselKlantOpen} onOpenChange={(open) => {
+        setWisselKlantOpen(open)
+        if (!open) { setWisselKlantId(''); setWisselZoek('') }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowLeftRight className="h-5 w-5 text-accent" />
+              Overzetten naar andere klant
+            </DialogTitle>
+            <DialogDescription>
+              Het project, de briefing en de gekoppelde mail gaan mee. De contactpersoon wordt leeggemaakt,
+              die kies je daarna opnieuw.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={wisselZoek}
+                onChange={(e) => setWisselZoek(e.target.value)}
+                placeholder="Zoek klant..."
+                className="pl-9"
+                autoFocus
+              />
+            </div>
+
+            <div className="max-h-[260px] overflow-y-auto rounded-lg border border-border divide-y divide-border">
+              {alleKlanten
+                .filter((k) => k.id !== project.klant_id)
+                .filter((k) => {
+                  const q = wisselZoek.trim().toLowerCase()
+                  if (!q) return true
+                  return `${k.bedrijfsnaam || ''} ${k.contactpersoon || ''} ${k.stad || ''}`.toLowerCase().includes(q)
+                })
+                .slice(0, 60)
+                .map((k) => (
+                  <button
+                    key={k.id}
+                    type="button"
+                    onClick={() => setWisselKlantId(k.id)}
+                    className={`w-full text-left px-3 py-2.5 transition-colors ${
+                      wisselKlantId === k.id ? 'bg-[rgba(26,83,92,0.08)]' : 'hover:bg-[rgba(26,83,92,0.04)]'
+                    }`}
+                  >
+                    <span className="block text-sm font-medium text-foreground truncate">
+                      {k.bedrijfsnaam || k.contactpersoon}
+                    </span>
+                    {(k.stad || k.debiteurennummer) && (
+                      <span className="block text-xs text-muted-foreground truncate">
+                        {[k.stad, k.debiteurennummer && `Deb. ${k.debiteurennummer}`].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              {alleKlanten.length === 0 && (
+                <p className="px-3 py-4 text-sm text-muted-foreground">Geen klanten gevonden</p>
+              )}
+            </div>
+
+            {(projectOffertes.length > 0 || projectWerkbonnen.length > 0 || projectFacturen.length > 0) && (
+              <div className="rounded-lg bg-background dark:bg-muted/50 p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground mb-1">Blijft op {klant?.bedrijfsnaam || 'de huidige klant'} staan:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  {projectOffertes.length > 0 && <li>{projectOffertes.length} offerte(s)</li>}
+                  {projectWerkbonnen.length > 0 && <li>{projectWerkbonnen.length} werkbon(nen)</li>}
+                  {projectFacturen.length > 0 && <li>{projectFacturen.length} factu(u)r(en)</li>}
+                </ul>
+                <p className="mt-1.5">Die zet je apart over vanaf de offerte, werkbon of factuur zelf.</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWisselKlantOpen(false)}>Annuleren</Button>
+            <Button onClick={handleWisselKlant} disabled={!wisselKlantId || wisselBezig}>
+              {wisselBezig ? 'Bezig...' : 'Overzetten'}
             </Button>
           </DialogFooter>
         </DialogContent>

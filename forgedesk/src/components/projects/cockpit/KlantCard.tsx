@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MoreHorizontal, ExternalLink, MapPin, Phone, Mail, Pencil, Plus, type LucideIcon } from 'lucide-react'
+import { MoreHorizontal, ExternalLink, MapPin, Phone, Mail, Pencil, Plus, ArrowLeftRight, type LucideIcon } from 'lucide-react'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -17,6 +17,7 @@ interface KlantCardProps {
   onContactpersoonAdd: (cp: Contactpersoon) => Promise<void>
   onContactpersoonEdit?: (cp: Contactpersoon) => Promise<void>
   onEditKlant?: () => void
+  onWisselKlant?: () => void
   onMail?: () => void
 }
 
@@ -24,7 +25,7 @@ function getInitial(name?: string | null): string {
   return (name || '?').trim().charAt(0).toUpperCase() || '?'
 }
 
-export function KlantCard({ klant, project, contactpersonen, onContactpersoonChange, onContactpersoonAdd, onContactpersoonEdit, onEditKlant, onMail }: KlantCardProps) {
+export function KlantCard({ klant, project, contactpersonen, onContactpersoonChange, onContactpersoonAdd, onContactpersoonEdit, onEditKlant, onWisselKlant, onMail }: KlantCardProps) {
   const { navigateWithTab } = useNavigateWithTab()
   const [showNieuwCp, setShowNieuwCp] = useState(false)
   const [nieuwCpNaam, setNieuwCpNaam] = useState('')
@@ -165,6 +166,12 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               <DropdownMenuItem onClick={onEditKlant}>
                 <Pencil className="mr-2 h-3.5 w-3.5" />
                 Klant bewerken
+              </DropdownMenuItem>
+            )}
+            {onWisselKlant && (
+              <DropdownMenuItem onClick={onWisselKlant}>
+                <ArrowLeftRight className="mr-2 h-3.5 w-3.5" />
+                Overzetten naar andere klant
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>
