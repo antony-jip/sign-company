@@ -140,6 +140,14 @@ export const daanNachtploegCron = schedules.task({
   cron: { pattern: "0 5 * * *", timezone: "Europe/Amsterdam" },
   maxDuration: 900,
   run: async () => {
+    // Trigger.dev heeft zijn eigen environment variables, los van Vercel. Zonder
+    // sleutel kan geen lezer, synthese of briefing draaien; dan is stil per
+    // organisatie doorgaan het slechtste dat er is (28 jul t/m 31 jul 2026 zijn
+    // zo drie nachten sporen verbrand). Meteen falen zet de run rood.
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error("ANTHROPIC_API_KEY niet geconfigureerd in deze Trigger.dev-omgeving");
+    }
+
     const supabase = getSupabaseAdmin();
 
     // Retentie: sporen zijn wegwerpmateriaal na de bewaartermijn.
@@ -211,6 +219,8 @@ export const daanNachtploegCron = schedules.task({
 
         // Lezers: elke batch sporen apart, klein blikveld, goedkoop model.
         const kandidaten: Kandidaat[] = [];
+        let lezersGelukt = 0;
+        let laatsteLezerFout = "";
         for (let i = 0; i < (sporen as Spoor[]).length; i += LEZER_BATCH) {
           const batch = (sporen as Spoor[]).slice(i, i + LEZER_BATCH);
           const batchTekst = batch
@@ -224,6 +234,7 @@ export const daanNachtploegCron = schedules.task({
               1024
             );
             kostenEur += k;
+            lezersGelukt++;
             // Modellen houden zich niet altijd aan het schema; alleen
             // kandidaten met een echte inhoud-string tellen mee.
             kandidaten.push(
@@ -232,8 +243,18 @@ export const daanNachtploegCron = schedules.task({
               )
             );
           } catch (e) {
-            logger.warn("Lezer-batch mislukt, overgeslagen", { orgId, batch: i, fout: String(e) });
+            laatsteLezerFout = String(e);
+            logger.warn("Lezer-batch mislukt, overgeslagen", { orgId, batch: i, fout: laatsteLezerFout });
           }
+        }
+
+        // Eén mislukte batch mag de nacht niet ophouden, maar als geen enkele
+        // lezer slaagde is er niets gelezen. Dan is doorgaan schadelijk: de
+        // ronde zou zich 'klaar' melden en de sporen afvinken, waarmee het
+        // leermateriaal verbrand is zonder dat er een feit uit komt. Falen
+        // laat de sporen staan voor de volgende nacht.
+        if (lezersGelukt === 0) {
+          throw new Error(`Geen enkele lezer-batch gelukt · ${laatsteLezerFout || "onbekende fout"}`);
         }
 
         // Synthese: alle kandidaten naast het bestaande geheugen.
@@ -336,6 +357,8 @@ export const daanNachtploegCron = schedules.task({
 
     const { data: alleOrgs } = await supabase.from("organisaties").select("id");
     let briefings = 0;
+    let briefingFouten = 0;
+    let laatsteBriefingFout = "";
 
     for (const org of alleOrgs ?? []) {
       const orgId = org.id as string;
@@ -630,10 +653,22 @@ export const daanNachtploegCron = schedules.task({
         if (!briefingFout) briefings++;
         else if (briefingFout.code !== "23505") logger.warn("Briefing-insert mislukt", { orgId, fout: briefingFout.message });
       } catch (e) {
-        logger.warn("Briefing mislukt voor org", { orgId, fout: String(e) });
+        briefingFouten++;
+        laatsteBriefingFout = String(e);
+        logger.error("Briefing mislukt voor org", { orgId, fout: laatsteBriefingFout });
       }
     }
 
-    return { rondes, overgeslagen, organisaties: orgIds.length, briefings };
+    // Een organisatie zonder signalen hoort geen briefing te krijgen, dus nul
+    // briefings is niet per se fout. Nul briefings terwijl er wél fouten
+    // vielen is dat wel, en dat mag niet als een geslaagde run eindigen: in de
+    // app is 'geen briefing' niet te onderscheiden van 'briefing mislukt'.
+    if (briefings === 0 && briefingFouten > 0) {
+      throw new Error(
+        `Geen briefing gemaakt · ${briefingFouten} organisatie(s) mislukt · ${laatsteBriefingFout}`
+      );
+    }
+
+    return { rondes, overgeslagen, organisaties: orgIds.length, briefings, briefingFouten };
   },
 });
