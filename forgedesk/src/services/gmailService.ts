@@ -371,6 +371,33 @@ export async function classificeerAanvragen(): Promise<{ beoordeeld: number; aan
   }
 }
 
+/**
+ * Haalt de bodies van de nieuwste mails zonder body op — allemaal over één
+ * IMAP-verbinding (zie api/prefetch-email-bodies). Zonder deze ronde kost
+ * elke eerste opening van een mail een eigen IMAP-login.
+ * Faalt stil: de mail blijft leesbaar via het losse read-email-pad.
+ */
+export async function prefetchEmailBodies(
+  folder = 'INBOX',
+  limit = 25
+): Promise<{ verwerkt: number; mislukt: number; resterend: boolean } | null> {
+  try {
+    const token = await getAuthToken()
+    const response = await fetch('/api/prefetch-email-bodies', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ folder, limit }),
+    })
+    if (!response.ok) return null
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
 /** Eén backfill-batch oudere mail (zie api/backfill-emails). */
 export async function backfillEmailsFromIMAP(
   folder?: string

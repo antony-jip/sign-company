@@ -2386,7 +2386,10 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 @media (max-width: 767px) {
   ::view-transition-old(root),
   ::view-transition-new(root) {
-    animation-duration: 260ms;
+    /* De pagina is niet aanraakbaar zolang de transitie loopt, dus dit getal
+       is directe wachttijd bij elke tik. 180ms leest nog als een push zonder
+       dat je erop staat te wachten. */
+    animation-duration: 180ms;
     animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
     animation-fill-mode: both;
     mix-blend-mode: normal;

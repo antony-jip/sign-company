@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
@@ -8,20 +8,16 @@ import {
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
   Rows3, StretchHorizontal, Clock, Moon, Menu, Edit3, ChevronLeft, Target,
 } from 'lucide-react'
-import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
-import { LeadsPaneel } from './LeadsPaneel'
-import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, markeerEmailGelezenOpServer, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail, emailImapActie } from '@/services/gmailService'
+import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, markeerEmailGelezenOpServer, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail, emailImapActie, prefetchEmailBodies } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
-import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers } from '@/services/emailService'
+import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers, getEmailBodies } from '@/services/emailService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { leesConcept, opschonen as ruimConceptenOp, type EmailConcept } from '@/utils/emailConceptDraft'
 import { EmailReader } from './EmailReader'
-import { EmailContextSidebar } from './EmailContextSidebar'
 import { koppelEmailAanProject } from '@/services/emailProjectService'
 import { updateLeadStatus } from '@/services/leadsService'
-import { EmailCompose } from './EmailCompose'
 import type { ComposeActions } from './EmailCompose'
 import { EmailListItem } from './EmailListItem'
 import { EmailMobileTopBar } from './EmailMobileTopBar'
@@ -36,6 +32,14 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Skeleton } from '@/components/ui/skeleton'
 import { hapticLight } from '@/utils/haptic'
 import { viewTransition } from '@/utils/viewTransition'
+
+// Opstellen, de context-sidebar, leads en geplande berichten liggen niet op het
+// lees-pad. Statisch geïmporteerd reisden ze mee in dezelfde chunk, die je op
+// de telefoon binnenhaalt vóórdat je één mail kunt openen.
+const EmailCompose = lazy(() => import('./EmailCompose').then(m => ({ default: m.EmailCompose })))
+const EmailContextSidebar = lazy(() => import('./EmailContextSidebar').then(m => ({ default: m.EmailContextSidebar })))
+const LeadsPaneel = lazy(() => import('./LeadsPaneel').then(m => ({ default: m.LeadsPaneel })))
+const IngeplandeBerichtenLijst = lazy(() => import('./IngeplandeBerichtenLijst').then(m => ({ default: m.IngeplandeBerichtenLijst })))
 
 // Folder config
 const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] = [
@@ -244,6 +248,9 @@ export function EmailLayout() {
   // Mobile always uses the spacious two-line row layout regardless of the
   // user's persisted listStyle preference (which only governs desktop).
   const isDesktop = useMediaQuery('(min-width: 768px)')
+  // Ref-mirror zodat de sync-helpers (lege deps) de actuele waarde lezen
+  const isDesktopRef = useRef(isDesktop)
+  isDesktopRef.current = isDesktop
   useEffect(() => {
     if (location.pathname.endsWith('/email/compose')) {
       const params = new URLSearchParams(location.search)
@@ -306,14 +313,67 @@ export function EmailLayout() {
     return normalized
   }
 
+  // ─── Body-cache vullen uit de database, in één query ───
+  // De sync schrijft alleen kopregels weg; de bodies komen van
+  // api/prefetch-email-bodies. Zodra ze in de DB staan halen we ze hier in
+  // één keer op, zodat het openen van een mail nul netwerk kost. Vult alleen
+  // wat nog niet gecached is, dus herhaald aanroepen is goedkoop.
+  const vulBodyCacheUitDb = useCallback(async (mails: Email[], maximum = 60) => {
+    const ontbreekt: string[] = []
+    for (const mail of mails) {
+      if (ontbreekt.length >= maximum) break
+      if (mail.inhoud) continue
+      if (bodyCacheRef.current.has(mail.id)) continue
+      ontbreekt.push(mail.id)
+    }
+    if (ontbreekt.length === 0) return 0
+
+    const rijen = await getEmailBodies(ontbreekt).catch(() => [])
+    for (const rij of rijen) {
+      const body = rij.body_html || rij.body_text || ''
+      if (!body) continue
+      bodyCacheRef.current.set(rij.id, body)
+      if (Array.isArray(rij.attachment_meta) && rij.attachment_meta.length > 0) {
+        attachmentCacheRef.current.set(rij.id, rij.attachment_meta as EmailAttachment[])
+      }
+    }
+    return rijen.length
+  }, [])
+
+  // ─── Bodies laten voorladen door de server ───
+  // Eén IMAP-verbinding voor tientallen mails, in plaats van één verbinding per
+  // mail op het moment dat je 'm aantikt. Draait op de achtergrond; mislukt hij,
+  // dan blijft het oude pad-per-mail gewoon werken.
+  const bodyPrefetchBezigRef = useRef(false)
+  const laadBodiesVoor = useCallback(async (folder: string, rondes = 2) => {
+    if (bodyPrefetchBezigRef.current) return false
+    bodyPrefetchBezigRef.current = true
+    let ietsGedaan = false
+    try {
+      for (let i = 0; i < rondes; i++) {
+        const uitkomst = await prefetchEmailBodies(folder, 25)
+        if (!uitkomst) break
+        if (uitkomst.verwerkt > 0) ietsGedaan = true
+        if (!uitkomst.resterend) break
+      }
+    } finally {
+      bodyPrefetchBezigRef.current = false
+    }
+    return ietsGedaan
+  }, [])
+
   // ─── Trigger IMAP sync (background, writes to Supabase) ───
   // Incrementele sync levert max ~600 nieuwe mails per call (oudste eerst);
   // bij een grote achterstand geeft de API `remaining` terug en halen we
   // door tot alles binnen is (met een ruime veiligheidsgrens).
+  // Op de telefoon blijft het bij één ronde: tien IMAP-calls achter elkaar
+  // vechten daar om dezelfde verbinding als de mail die je nú wil lezen. Een
+  // achterstand wordt vanzelf ingelopen bij de volgende poll of vanaf desktop.
   async function triggerImapSync(folder: string): Promise<{ total: number; synced: number }> {
     let total = 0
     let synced = 0
-    for (let i = 0; i < 10; i++) {
+    const maxRondes = isDesktopRef.current ? 10 : 1
+    for (let i = 0; i < maxRondes; i++) {
       const result = await fetchEmailsFromIMAP(folder, fetchLimitRef.current, 0)
       if (result.errors) {
         logger.warn('[Email] Sync errors:', result.errors)
@@ -381,6 +441,9 @@ export function EmailLayout() {
         if (dbEmails.length > 0) {
           setEmails(dbEmails)
           setIsLoading(false)
+          // Bodies die al in de DB staan meteen in de cache — dit is de reden
+          // dat een tik op een mail direct opent in plaats van te wachten.
+          void vulBodyCacheUitDb(dbEmails)
           // Step 2: Background IMAP sync for fresh data
           triggerImapSync('INBOX')
             .then(async ({ total, synced }) => {
@@ -390,6 +453,17 @@ export function EmailLayout() {
               // Re-read from Supabase after sync
               const fresh = await readFromSupabase()
               if (fresh.length > 0) setEmails(fresh)
+              await vulBodyCacheUitDb(fresh.length > 0 ? fresh : dbEmails)
+              // Nieuw binnengekomen mail heeft nog geen body; die halen we in
+              // één ronde op. Daarna opnieuw lezen, want dat vult ook de
+              // preview-regels in de lijst.
+              if (await laadBodiesVoor('INBOX')) {
+                const metBodies = await readFromSupabase()
+                if (metBodies.length > 0) {
+                  setEmails(metBodies)
+                  await vulBodyCacheUitDb(metBodies)
+                }
+              }
               void herkenAanvragen()
               void runBackfillAchtergrond()
             })
@@ -407,6 +481,12 @@ export function EmailLayout() {
           // Read synced emails from Supabase
           const synced = await readFromSupabase()
           setEmails(synced)
+          setIsLoading(false)
+          if (await laadBodiesVoor('INBOX')) {
+            const metBodies = await readFromSupabase()
+            if (metBodies.length > 0) setEmails(metBodies)
+            await vulBodyCacheUitDb(metBodies.length > 0 ? metBodies : synced)
+          }
           void herkenAanvragen()
           void runBackfillAchtergrond()
         } catch (err) {
@@ -1085,6 +1165,20 @@ export function EmailLayout() {
         if (fresh.length > 0) setEmails(fresh)
         setLastSyncAt(Date.now())
         if (!silent) toast.success('Inbox vernieuwd')
+        // Nieuwe mail komt zonder body binnen; die halen we meteen op zodat
+        // openen ook voor de verse berichten geen wachttijd geeft. Bewust
+        // niet awaited: de ververs-knop is klaar zodra de lijst klopt, anders
+        // blijft de spinner draaien tot de laatste body binnen is.
+        void (async () => {
+          await vulBodyCacheUitDb(fresh)
+          if (await laadBodiesVoor(imapFolder, 1)) {
+            const metBodies = await readFromSupabase()
+            if (metBodies.length > 0) {
+              setEmails(metBodies)
+              await vulBodyCacheUitDb(metBodies)
+            }
+          }
+        })()
       })
       .catch(() => {
         if (!silent) toast.error('Kon emails niet vernieuwen')
@@ -1092,7 +1186,7 @@ export function EmailLayout() {
       .finally(() => {
         if (!silent) setIsRefreshing(false)
       })
-  }, [])
+  }, [vulBodyCacheUitDb, laadBodiesVoor])
 
   const handleFolderLoad = useCallback(async (folder: EmailFolder) => {
     // Leads leven in een eigen tabel; geen e-mails ophalen voor die tab.
@@ -1101,9 +1195,10 @@ export function EmailLayout() {
     try {
       const cached = await readFromSupabase()
       setEmails(cached)
+      void vulBodyCacheUitDb(cached)
     } catch (err) { logger.error('Folder load failed:', err) }
     finally { setIsLoading(false) }
-  }, [])
+  }, [vulBodyCacheUitDb])
 
   // ─── Load more (infinite scroll) ───
   // Bladeren gaat uit de eigen DB met keyset-paginatie (datum, id) · geen
@@ -1307,20 +1402,26 @@ export function EmailLayout() {
   useEffect(() => {
     if (!threadedEmails.length || prefetchedRef.current) return
     prefetchedRef.current = true
-    const toPrefetch = threadedEmails
-      .filter(e => !e.inhoud && !bodyCacheRef.current.has(e.id))
-      .slice(0, 8)
-    if (!toPrefetch.length) return
-    let i = 0
-    const next = () => {
-      if (i >= toPrefetch.length) return
-      void fetchBodyToCache(toPrefetch[i], selectedFolder).finally(() => {
-        i++
-        setTimeout(next, 150)
-      })
-    }
-    next()
-  }, [threadedEmails, fetchBodyToCache, selectedFolder])
+    let afgebroken = false
+    // Eerst alles wat de database al heeft, in één query. Pas daarna nog een
+    // paar losse IMAP-fetches voor mail die nog nooit een body kreeg.
+    void vulBodyCacheUitDb(threadedEmails, 60).then(() => {
+      if (afgebroken) return
+      const rest = threadedEmails
+        .filter((e) => !e.inhoud && !bodyCacheRef.current.has(e.id))
+        .slice(0, 3)
+      let i = 0
+      const volgende = () => {
+        if (afgebroken || i >= rest.length) return
+        void fetchBodyToCache(rest[i], selectedFolder).finally(() => {
+          i++
+          setTimeout(volgende, 150)
+        })
+      }
+      volgende()
+    })
+    return () => { afgebroken = true }
+  }, [threadedEmails, fetchBodyToCache, selectedFolder, vulBodyCacheUitDb])
 
   // ─── Mobiel: prefetch wat er in beeld staat ───
   // Zonder hover is het zichtbare venster de enige voorspeller van wat je zo
@@ -1335,26 +1436,43 @@ export function EmailLayout() {
     const [van, tot] = zichtbaarBereik.split('-').map(Number)
     let afgebroken = false
     const timer = setTimeout(() => {
+      // Iets ruimer dan het venster: wie hier stilstaat scrollt zo verder.
       const kandidaten: Email[] = []
-      for (let i = van; i <= tot && kandidaten.length < 5; i++) {
+      for (let i = Math.max(0, van - 2); i <= tot + 6 && kandidaten.length < 20; i++) {
         const rij = flatItems[i]
         if (!rij || rij.type !== 'email') continue
         if (rij.email.inhoud || bodyCacheRef.current.has(rij.email.id)) continue
         kandidaten.push(rij.email)
       }
-      kandidaten.forEach((mail, i) => {
-        setTimeout(() => {
-          if (afgebroken) return
-          void fetchBodyToCache(mail, selectedFolder)
-        }, i * 120)
+      if (kandidaten.length === 0) return
+
+      // Eerst de goedkope weg: alles wat al in de database staat in één query.
+      void vulBodyCacheUitDb(kandidaten, 20).then(() => {
+        if (afgebroken) return
+        // Wat dan nog ontbreekt heeft nog nooit een body gehad. Hoogstens twee
+        // los ophalen — meer IMAP-verbindingen tegelijk vertragen juist de mail
+        // die je nú wil openen.
+        const rest = kandidaten.filter((m) => !bodyCacheRef.current.has(m.id)).slice(0, 2)
+        rest.forEach((mail, i) => {
+          setTimeout(() => {
+            if (afgebroken) return
+            void fetchBodyToCache(mail, selectedFolder)
+          }, i * 150)
+        })
       })
-    }, 300)
+    }, 250)
     return () => { afgebroken = true; clearTimeout(timer) }
-  }, [zichtbaarBereik, isDesktop, flatItems, fetchBodyToCache, selectedFolder])
+  }, [zichtbaarBereik, isDesktop, flatItems, fetchBodyToCache, selectedFolder, vulBodyCacheUitDb])
 
   // ─── Polling: silent background sync every 3min ───
+  // Niet tijdens lezen of opstellen: een sync opent een IMAP-verbinding en
+  // haalt daarna bodies op, en dat gaat precies ten koste van de mail die op
+  // dat moment onder je duim staat. De tik erna haalt het alsnog op.
+  const viewModeRef = useRef(viewMode)
+  viewModeRef.current = viewMode
   useEffect(() => {
     pollingRef.current = setInterval(() => {
+      if (viewModeRef.current !== 'idle') return
       handleRefresh(selectedFolder, true)
     }, 180000)
     return () => {
@@ -1503,11 +1621,24 @@ export function EmailLayout() {
     }
     // Normale klik: open de mail
     if (markeerAlsGelezen) markeerGelezen(email, selectedFolder)
+
+    // Staat de body al in de cache, dan gaat hij mee in dezelfde update als de
+    // mode-wissel. Zonder dit rendert de reader eerst leeg en pas een tick
+    // later de tekst — precies de flits die "traag" aanvoelt.
+    const gecachedeBody = bodyCacheRef.current.get(email.id)
+    const gecachedeBijlagen = attachmentCacheRef.current.get(email.id)
+    const teTonen: Email = {
+      ...email,
+      gelezen: markeerAlsGelezen ? true : email.gelezen,
+      inhoud: email.inhoud || gecachedeBody || '',
+      attachment_meta: email.attachment_meta || gecachedeBijlagen || undefined,
+    }
+
     viewTransition(() => {
       if (markeerAlsGelezen) {
         setEmails(prev => prev.map(em => em.id === email.id ? { ...em, gelezen: true } : em))
       }
-      setSelectedEmail(markeerAlsGelezen ? { ...email, gelezen: true } : email)
+      setSelectedEmail(teTonen)
       setViewMode('reading')
     }, 'forward')
 
@@ -1679,14 +1810,16 @@ export function EmailLayout() {
         thread_id: replyThreadId,
       })
 
-      // Na verzenden: re-fetch de email lijst zodat de verzonden mail
-      // meteen zichtbaar is in de conversatie/thread.
-      handleRefresh(selectedFolder, true)
+      // Na verzenden: alleen opnieuw uit de database lezen. api/send-email
+      // schrijft de verzonden mail zelf al weg, dus een volle IMAP-sync
+      // leverde niets nieuws op en hield de verbinding onnodig bezet.
+      const fresh = await readFromSupabase()
+      if (fresh.length > 0) setEmails(fresh)
     } catch (err) {
       logger.error('Reply verzenden mislukt:', err)
       throw err
     }
-  }, [selectedEmail, selectedFolder, handleRefresh])
+  }, [selectedEmail])
 
   const handleFolderChange = useCallback((folder: EmailFolder) => {
     // Backfill kan intussen oudere mail hebben toegevoegd · geef bladeren
@@ -2103,6 +2236,7 @@ export function EmailLayout() {
 
       {/* ─── LEADS · eigen tabel, dus eigen paneel in plaats van de e-mailkolommen ─── */}
       {selectedFolder === 'leads' && (
+        <Suspense fallback={<div className="flex-1 flex items-center justify-center"><Loader2 className="h-4 w-4 animate-spin text-petrol/40" /></div>}>
         <LeadsPaneel
           onMailLead={(email, body, leadId, onderwerp) => {
             handleCompose({ to: email, subject: onderwerp, body, bodyIsBericht: true })
@@ -2117,6 +2251,7 @@ export function EmailLayout() {
               .catch(() => handleReply(mail))
           }}
         />
+        </Suspense>
       )}
 
       {/* ─── LIST COLUMN · altijd zichtbaar op desktop (resizable), op mobile alleen wanneer idle ─── */}
@@ -2132,7 +2267,9 @@ export function EmailLayout() {
 
       {/* Ingeplande berichten lijst (gepland folder) */}
       {selectedFolder === 'gepland' && (
-        <IngeplandeBerichtenLijst />
+        <Suspense fallback={<div className="flex-1 flex items-center justify-center py-8"><Loader2 className="h-4 w-4 animate-spin text-petrol/40" /></div>}>
+          <IngeplandeBerichtenLijst />
+        </Suspense>
       )}
 
       {/* Email list (idle view) */}
@@ -2521,6 +2658,7 @@ export function EmailLayout() {
 
         {/* Compose view */}
         {viewMode === 'composing' && (
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-petrol/40" /></div>}>
           <EmailCompose
             open={true}
             onOpenChange={(open) => { if (!open) handleBack() }}
@@ -2541,6 +2679,7 @@ export function EmailLayout() {
             titel={selectedFolder === 'leads' ? 'Mail deze lead' : 'Nieuw bericht'}
             sluitLabel={selectedFolder === 'leads' ? 'Terug naar leads' : 'Terug naar inbox'}
           />
+          </Suspense>
         )}
 
         {/* Reader view */}
@@ -2673,6 +2812,7 @@ export function EmailLayout() {
           de sidebar zelf hoeft niet zichtbaar te zijn. */}
       {contextOpen && (viewMode === 'reading' || viewMode === 'composing') && (
         <div className="hidden" aria-hidden>
+          <Suspense fallback={null}>
           <EmailContextSidebar
             key={panelKey}
             initialActivePanel={requestedPanel}
@@ -2691,6 +2831,7 @@ export function EmailLayout() {
             unreadCount={serverTellers?.inboxOngelezen ?? emails.filter(e => !e.gelezen).length}
             onClose={() => setContextOpen(false)}
           />
+          </Suspense>
         </div>
       )}
       </div>

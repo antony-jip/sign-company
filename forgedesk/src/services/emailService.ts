@@ -203,6 +203,38 @@ export async function getEmailBody(id: string): Promise<{ body_html: string | nu
   return found ? { body_html: (found as any).body_html || null, body_text: (found as any).body_text || null, inhoud: found.inhoud || '', attachment_meta: found.attachment_meta } : null
 }
 
+/**
+ * Bodies van meerdere mails in één query. Vult de lees-cache vóórdat de
+ * gebruiker iets aantikt, zodat openen geen netwerk meer kost. Alleen rijen
+ * met een echte body komen terug: body_html NULL betekent "nog nooit
+ * geparsed" en hoort via het IMAP-pad te lopen, niet als lege body in de cache.
+ */
+export async function getEmailBodies(
+  ids: string[]
+): Promise<Array<{ id: string; body_html: string | null; body_text: string | null; attachment_meta?: unknown[] | null }>> {
+  if (!ids.length) return []
+  if (!isSupabaseConfigured() || !supabase) return []
+
+  const client = supabase
+  // PostgREST zet de `in`-lijst in de URL; te veel ids in één keer geeft een
+  // 414. Vandaar blokken van 100.
+  const blokken: string[][] = []
+  for (let i = 0; i < ids.length; i += 100) blokken.push(ids.slice(i, i + 100))
+
+  const resultaten = await Promise.all(
+    blokken.map(async (blok) => {
+      const { data, error } = await client
+        .from('emails')
+        .select('id, body_html, body_text, attachment_meta')
+        .in('id', blok)
+        .not('body_html', 'is', null)
+      if (error) return []
+      return data || []
+    })
+  )
+  return resultaten.flat()
+}
+
 /** Haal alle emails op die tot dezelfde thread behoren, chronologisch gesorteerd */
 export async function getThread(threadId: string): Promise<Email[]> {
   if (!threadId) return []

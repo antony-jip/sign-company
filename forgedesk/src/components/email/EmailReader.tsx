@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { flushSync } from 'react-dom'
 import { sanitizeEmailHTML } from '@/lib/sanitize'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -8,7 +9,7 @@ import {
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Sparkles, Loader2, Download, FolderPlus,
-  Undo2, Redo2, X, Clock, Tag,
+  Undo2, Redo2, X, Clock, Tag, MoreHorizontal,
 } from 'lucide-react'
 import { EmailActionsPopover } from './EmailActionsPopover'
 import { cn } from '@/lib/utils'
@@ -205,6 +206,19 @@ export function EmailReader({
   const labelMenuRef = useRef<HTMLDivElement | null>(null)
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false)
   const actionsMenuRef = useRef<HTMLDivElement | null>(null)
+  // Mobiel houdt de balk bij lezen en antwoorden; snooze, labels, leesstatus
+  // en de AI-knoppen zitten hierachter. Op desktop staan ze gewoon uitgeklapt.
+  const [mobielMenuOpen, setMobielMenuOpen] = useState(false)
+  const mobielMenuRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!mobielMenuOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      if (!mobielMenuRef.current?.contains(e.target as Node)) setMobielMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [mobielMenuOpen])
 
   // Sluit het snooze-menu bij klik buiten het popover-bereik
   useEffect(() => {
@@ -699,7 +713,6 @@ export function EmailReader({
     const draft = loadDraft(email.id)
     const hasDraft = draft && draft.mode === mode
 
-    setReplyMode(mode)
     setReplyAttachments([])
     setShowCcBcc(false)
 
@@ -732,19 +745,23 @@ export function EmailReader({
       setForwardOriginalAttachments([])
     }
 
-    setTimeout(() => {
-      if (editorRef.current) {
-        editorRef.current.innerHTML = hasDraft ? draft.html : `<br>${signatureHtml}`
-        const range = document.createRange()
-        const sel = window.getSelection()
-        range.setStart(editorRef.current, 0)
-        range.collapse(true)
-        sel?.removeAllRanges()
-        sel?.addRange(range)
-        editorRef.current.focus()
-      }
-      if (hasDraft) toast.info('Concept hersteld')
-    }, 50)
+    // flushSync zet het formulier in de DOM binnen dezelfde taak als de tik.
+    // Met een setTimeout hierheen valt de focus() buiten het gebruikersgebaar
+    // en weigert iOS het toetsenbord te openen — dan tik je Beantwoorden en
+    // gebeurt er ogenschijnlijk niets.
+    flushSync(() => setReplyMode(mode))
+
+    if (editorRef.current) {
+      editorRef.current.innerHTML = hasDraft ? draft.html : `<br>${signatureHtml}`
+      const range = document.createRange()
+      const sel = window.getSelection()
+      range.setStart(editorRef.current, 0)
+      range.collapse(true)
+      sel?.removeAllRanges()
+      sel?.addRange(range)
+      editorRef.current.focus()
+    }
+    if (hasDraft) toast.info('Concept hersteld')
   }, [email, signatureHtml, loadDraft, bouwAllenCc])
 
   const buildReplyPayload = useCallback(async () => {
@@ -1453,6 +1470,7 @@ export function EmailReader({
                 <Trash2 className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Verwijderen</TooltipContent></Tooltip>
+            <div className="hidden md:flex items-center gap-0.5">
             <Tooltip><TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-foreground hover:bg-petrol/[0.06] rounded-button transition-colors duration-150" onClick={() => { hapticLight(); if (email) onToggleRead?.(email) }}>
                 <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
@@ -1537,10 +1555,12 @@ export function EmailReader({
                 </div>
               )}
             </div>
+            </div>
           </div>
 
           {/* Right: AI-helpers + navigatie */}
           <div className="flex items-center gap-0.5">
+            <div className="hidden md:flex items-center gap-0.5">
             <Button
               variant="ghost"
               size="sm"
@@ -1575,6 +1595,90 @@ export function EmailReader({
                 </Button>
               </span>
             )}
+            </div>
+
+            {/* Mobiel: alles wat niet lezen of antwoorden is, zit hierachter. */}
+            <div ref={mobielMenuRef} className="relative md:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="tap-press h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-petrol/[0.06] rounded-button"
+                onClick={() => { hapticLight(); setMobielMenuOpen((v) => !v) }}
+                aria-label="Meer acties"
+              >
+                <MoreHorizontal className="h-[18px] w-[18px]" />
+              </Button>
+              {mobielMenuOpen && email && (
+                <div className="absolute top-full right-0 mt-1 w-[230px] max-h-[70vh] overflow-y-auto bg-white dark:bg-popover rounded-lg shadow-[0_8px_30px_rgba(0,0,0,0.14)] border border-border py-1 z-50">
+                  <button
+                    type="button"
+                    onClick={() => { setMobielMenuOpen(false); onToggleRead?.(email) }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[14px] text-foreground/80 active:bg-petrol/[0.06]"
+                  >
+                    <MailOpen className="h-4 w-4 flex-shrink-0" />
+                    Markeer als ongelezen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setMobielMenuOpen(false); handleSummarize() }}
+                    disabled={summaryLoading}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[14px] text-foreground/80 active:bg-petrol/[0.06] disabled:opacity-50"
+                  >
+                    {summaryLoading ? <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin" /> : <Sparkles className="h-4 w-4 flex-shrink-0" />}
+                    Samenvatten
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setMobielMenuOpen(false); handleGenerateReplyFromReader() }}
+                    disabled={forgieLoading}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[14px] text-foreground/80 active:bg-petrol/[0.06] disabled:opacity-50"
+                  >
+                    {forgieLoading ? <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin" /> : <Sparkles className="h-4 w-4 flex-shrink-0" />}
+                    Beantwoord met AI
+                  </button>
+
+                  <div className="border-t border-border my-1" />
+                  {email.snoozed_until && (
+                    <button
+                      type="button"
+                      onClick={() => { setMobielMenuOpen(false); onUnsnooze?.(email) }}
+                      className="w-full text-left px-3 py-2.5 text-[14px] text-[#C0451A] active:bg-petrol/[0.06]"
+                    >
+                      Niet meer snoozen
+                    </button>
+                  )}
+                  <div className="px-3 pt-2 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground/80">Snooze</div>
+                  {SNOOZE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.hours}
+                      type="button"
+                      onClick={() => { setMobielMenuOpen(false); onSnooze?.(email, opt.hours) }}
+                      className="w-full text-left px-3 py-2.5 text-[14px] text-foreground/80 active:bg-petrol/[0.06]"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+
+                  <div className="border-t border-border my-1" />
+                  <div className="px-3 pt-2 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground/80">Labels</div>
+                  {Object.entries(labelColors).map(([label, color]) => {
+                    const active = email.labels?.includes(label) ?? false
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => onToggleLabel?.(email, label)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[14px] text-foreground/80 active:bg-petrol/[0.06]"
+                      >
+                        <span className={cn('w-2.5 h-2.5 rounded-full flex-shrink-0', color)} />
+                        <span className="flex-1 text-left capitalize">{label}</span>
+                        {active && <span className="text-[11px] text-petrol">●</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
         </TooltipProvider>
@@ -1657,9 +1761,11 @@ export function EmailReader({
                     <span className="hidden md:inline">Doorsturen</span>
                   </button>
 
-                  {/* Aanmaken vanuit deze mail · subtiele icon-buttons, rechts */}
+                  {/* Aanmaken vanuit deze mail · subtiele icon-buttons, rechts.
+                      Mobiel is een lees- en antwoordscherm; koppelen aan een
+                      project of klant doe je vanaf de desktop. */}
                   {onOpenContextPanel && (
-                    <div className="ml-auto">
+                    <div className="ml-auto hidden md:block">
                       <EmailActionsPopover
                         email={email}
                         onOpenProjectDialog={() => onOpenContextPanel('project')}
