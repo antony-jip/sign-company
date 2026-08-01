@@ -545,6 +545,47 @@ export function FactuurEditor() {
           // pas bij "Verwerken" toegekend (zie handleSave), zodat afgebroken
           // concepten geen gat in de factuurnummer-reeks veroorzaken.
 
+          // "Dupliceer factuur" vanuit een geopende factuur navigeert van
+          // /facturen/:id naar /facturen/nieuw. React Router hergebruikt dan
+          // dezelfde editor-instantie, dus zonder deze reset houdt de kopie het
+          // nummer, de status en het id van het origineel · opslaan schreef dan
+          // over de bronfactuur heen in plaats van een nieuw concept te maken.
+          setIsEditMode(false)
+          setExistingFactuur(null)
+          setNummer('')
+          setKlantId('')
+          setContactpersoonId('')
+          setShowKlantSelector(true)
+          setOfferteId('')
+          setProjectId('')
+          setTitel('')
+          setFactuurdatum(getTodayString())
+          setVervaldatum(getDefaultVervaldatum(getTodayString(), factuurBetaaltermijnDagen))
+          setVoorwaarden(factuurVoorwaarden)
+          setNotities('')
+          setIntroTekst(factuurIntroTekst)
+          setOutroTekst(factuurOutroTekst)
+          setItems([createEmptyLineItem(standaardBtw)])
+          setKostenplaatsId('')
+          setWerkbonId('')
+          setIsCreditFactuur(false)
+          setCreditVoorFactuurId('')
+          setCreditVoorNummer('')
+          setFactureerPercentage(100)
+          setOrigineleItems([])
+          setHasOfferteItems(false)
+          setAdresOverrideOpen(false)
+          setAdresBedrijfsnaam('')
+          setAdresTav('')
+          setAdresRegel('')
+          setAdresPostcode('')
+          setAdresPlaats('')
+          setAdresOokOpKlant(false)
+          // De reset zelf is geen gebruikerswijziging: wapen de dirty-tracker
+          // opnieuw, net als bij een verse mount vanuit het facturenoverzicht.
+          initialLoadDone.current = false
+          setIsDirty(false)
+
           // Pre-fill from query params
           if (paramKlantId) {
             setKlantId(paramKlantId)
