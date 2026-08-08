@@ -32,11 +32,14 @@ import {
   Image,
   Upload,
   Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
@@ -190,6 +193,23 @@ const settingsGroups: SettingsGroup[] = [
 
 const settingsSections: SettingsSection[] = settingsGroups.flatMap((g) => g.sections)
 
+// Wat je op een telefoon daadwerkelijk komt doen. De rest — huisstijl,
+// boekhouding, importeren, briefpapier — vraagt een groot scherm en een muis;
+// die staan achter "Alle instellingen" in plaats van in de weg.
+interface MobieleIngang {
+  sectie: string
+  subTab?: string
+  label: string
+  hint: string
+}
+const MOBIELE_INGANGEN: MobieleIngang[] = [
+  { sectie: 'algemeen', subTab: 'profiel', label: 'Profiel', hint: 'Je naam, foto en handtekening' },
+  { sectie: 'algemeen', subTab: 'weergave', label: 'Voorkeuren', hint: 'Mobiel menu, thema, navigatie' },
+  { sectie: 'email-settings', label: 'E-mail', hint: 'Verbinding en afzender' },
+  { sectie: 'apparaten', label: 'Beveiliging', hint: 'Wachtwoord en sessies' },
+  { sectie: 'financieel', label: 'Abonnement', hint: 'Je pakket en betaling' },
+]
+
 const tabToSectionMap: Record<string, string> = {}
 settingsSections.forEach(section => {
   section.tabs.forEach(tab => {
@@ -250,6 +270,20 @@ export function SettingsLayout({ variant = 'pagina' }: { variant?: 'pagina' | 'm
   const [zoek, setZoek] = useState('')
   const navigate = useNavigate()
 
+  // ─── Mobiel: eerst kiezen, dan instellen ───
+  // Op een telefoon is de horizontale sectie-scroller onbruikbaar: je scrolt
+  // blind langs veertien categorieën. Daarom een lijst die je opent, met een
+  // weg terug. Een deeplink (?tab=) opent meteen de juiste sectie.
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  const [mobielGeopend, setMobielGeopend] = useState(() => !!searchParams.get('tab'))
+  const [mobielToonAlles, setMobielToonAlles] = useState(false)
+
+  const openMobieleIngang = useCallback((ingang: MobieleIngang) => {
+    setActiveSection(ingang.sectie)
+    if (ingang.subTab) setActiveSubTabs((prev) => ({ ...prev, [ingang.sectie]: ingang.subTab! }))
+    setMobielGeopend(true)
+  }, [])
+
   // Zoeken kijkt ook naar de subtabs: wie "btw" typt zoekt de BTW-codes, niet
   // de categorie waar ze toevallig onder hangen.
   const zichtbareGroepen = useMemo(() => {
@@ -278,6 +312,7 @@ export function SettingsLayout({ variant = 'pagina' }: { variant?: 'pagina' | 'm
     const sectie = tabToSectionMap[gevraagdeTab] || gevraagdeTab
     if (!visibleSections.some((s) => s.id === sectie)) return
     setActiveSection(sectie)
+    setMobielGeopend(true)
     if (tabToSectionMap[gevraagdeTab]) {
       setActiveSubTabs(prev => ({ ...prev, [sectie]: gevraagdeTab }))
     }
@@ -312,26 +347,102 @@ export function SettingsLayout({ variant = 'pagina' }: { variant?: 'pagina' | 'm
       )}>
         <nav className={cn('w-full md:w-52 flex-shrink-0', isModal && 'md:overflow-y-auto')}>
           <div className={cn(!isModal && 'md:sticky md:top-6')}>
-            <div className="md:hidden flex overflow-x-auto gap-0.5 p-1 doen-slate-surface rounded-xl">
-              {visibleSections.map((section) => {
-                const Icon = section.icon
-                const isActive = activeSection === section.id
-                return (
+            <div className="md:hidden">
+              {mobielGeopend ? (
+                <button
+                  type="button"
+                  onClick={() => setMobielGeopend(false)}
+                  className="tap-press flex items-center gap-1.5 -ml-1 px-2 py-2 rounded-lg text-[14px] font-semibold text-petrol dark:text-foreground"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  {currentSection?.label || 'Instellingen'}
+                </button>
+              ) : (
+                <>
+                  <div className="doen-slate-surface rounded-2xl p-1.5">
+                    {MOBIELE_INGANGEN
+                      .filter((ingang) => visibleSections.some((s) => s.id === ingang.sectie))
+                      .map((ingang) => {
+                        const sectie = visibleSections.find((s) => s.id === ingang.sectie)!
+                        const Icon = sectie.icon
+                        return (
+                          <button
+                            key={ingang.label}
+                            type="button"
+                            onClick={() => openMobieleIngang(ingang)}
+                            className="tap-press w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left active:bg-card/60 transition-colors"
+                          >
+                            <Icon className="w-[18px] h-[18px] text-muted-foreground flex-shrink-0" />
+                            <span className="flex-1 min-w-0">
+                              <span className="block text-[14px] font-semibold text-foreground leading-tight">
+                                {ingang.label}
+                              </span>
+                              <span className="block text-[12px] text-muted-foreground truncate mt-0.5">
+                                {ingang.hint}
+                              </span>
+                            </span>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground/60 flex-shrink-0" />
+                          </button>
+                        )
+                      })}
+                  </div>
+
                   <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={cn(
-                      'flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-semibold transition-all whitespace-nowrap',
-                      isActive
-                        ? 'bg-card text-foreground shadow-[0_1px_3px_rgba(20,62,71,0.08)]'
-                        : 'text-foreground/70 hover:text-foreground'
-                    )}
+                    type="button"
+                    onClick={() => setMobielToonAlles((v) => !v)}
+                    aria-expanded={mobielToonAlles}
+                    className="tap-press w-full flex items-center gap-3 px-3 py-3 mt-3 rounded-xl text-left active:bg-card/60 transition-colors"
                   >
-                    <Icon className="w-3.5 h-3.5" />
-                    {section.label}
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[14px] font-semibold text-foreground leading-tight">
+                        Alle instellingen
+                      </span>
+                      <span className="block text-[12px] text-muted-foreground mt-0.5">
+                        Makkelijker op desktop
+                      </span>
+                    </span>
+                    <ChevronRight
+                      className={cn(
+                        'w-4 h-4 text-muted-foreground/60 flex-shrink-0 transition-transform duration-200',
+                        mobielToonAlles && 'rotate-90',
+                      )}
+                    />
                   </button>
-                )
-              })}
+
+                  {mobielToonAlles && (
+                    <div className="doen-slate-surface rounded-2xl p-1.5 mt-1">
+                      {settingsGroups.map((groep) => {
+                        const secties = groep.sections.filter((s) => visibleSections.some((v) => v.id === s.id))
+                        if (secties.length === 0) return null
+                        return (
+                          <div key={groep.id} className="pb-1">
+                            <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                              {groep.label}
+                            </p>
+                            {secties.map((section) => {
+                              const Icon = section.icon
+                              return (
+                                <button
+                                  key={section.id}
+                                  type="button"
+                                  onClick={() => openMobieleIngang({ sectie: section.id, label: section.label, hint: '' })}
+                                  className="tap-press w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left active:bg-card/60 transition-colors"
+                                >
+                                  <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                  <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground truncate">
+                                    {section.label}
+                                  </span>
+                                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 flex-shrink-0" />
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="hidden md:block doen-slate-surface rounded-2xl p-1.5">
@@ -390,17 +501,21 @@ export function SettingsLayout({ variant = 'pagina' }: { variant?: 'pagina' | 'm
           </div>
         </nav>
 
-        <div className={cn('flex-1 min-w-0', isModal && 'overflow-y-auto pr-1')}>
-          {currentSection && currentSection.tabs.length > 1 && (
-            <SubTabNav
-              tabs={currentSection.tabs}
-              active={currentSubTab || ''}
-              onChange={setSubTab}
-            />
-          )}
+        {/* Op mobiel bestaat de inhoud pas nadat je iets gekozen hebt: anders
+            staat de lijst en de inhoud van de eerste sectie tegelijk in beeld. */}
+        {(isDesktop || mobielGeopend) && (
+          <div className={cn('flex-1 min-w-0', isModal && 'overflow-y-auto pr-1')}>
+            {currentSection && currentSection.tabs.length > 1 && (
+              <SubTabNav
+                tabs={currentSection.tabs}
+                active={currentSubTab || ''}
+                onChange={setSubTab}
+              />
+            )}
 
-          {currentSubTab ? renderTabContent(currentSubTab) : null}
-        </div>
+            {currentSubTab ? renderTabContent(currentSubTab) : null}
+          </div>
+        )}
       </div>
     </div>
   )
