@@ -1,10 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
-import { MoreHorizontal, X, LogOut, CreditCard, BookOpen, SlidersHorizontal } from 'lucide-react'
+import { MoreHorizontal, X, LogOut, CreditCard, BookOpen, SlidersHorizontal, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { prefetchRoute } from '@/lib/routePrefetch'
 import { hapticLight } from '@/utils/haptic'
+import { openDaan, DAAN_ONGELEZEN_EVENT } from '@/lib/daanWidget'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSupportAttentie } from '@/hooks/useSupportInbox'
@@ -28,7 +29,7 @@ export function MobileTabBar() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const { settings } = useAppSettings()
+  const { settings, forgieEnabled } = useAppSettings()
   const isSupportAdmin = user?.id === ADMIN_USER_ID
   const supportAttentie = useSupportAttentie('support-mobile-nav', isSupportAdmin)
   const [meerOpen, setMeerOpen] = useState(false)
@@ -38,20 +39,30 @@ export function MobileTabBar() {
     [settings.mobiel_menu_items],
   )
 
-  // Wat in de balk past, en wat naar "Meer" doorschuift. Het Meer-vakje kost
-  // zelf ook een plek en is er altijd: ook wie álle modules kiest bereikt zijn
-  // instellingen, abonnement en uitloggen daar. Dus vier modules, nooit vijf.
+  // Daan en Meer zijn er altijd en kosten samen twee vakjes: Daan omdat hij
+  // op mobiel nergens anders meer woont, Meer omdat instellingen, abonnement
+  // en uitloggen daar zitten. Wat overblijft zijn MOBIELE_NAV_MAX modules.
   const { balkItems, meerItems } = useMemo(() => {
+    // Staat Daan uit, dan valt zijn vakje vrij voor een module.
+    const plekken = forgieEnabled ? MOBIELE_NAV_MAX : MOBIELE_NAV_MAX + 1
     const gekozenLabels = new Set(gekozen.map((i) => i.label))
     const rest: NavItem[] = [
-      ...gekozen.slice(MOBIELE_NAV_MAX),
+      ...gekozen.slice(plekken),
       ...MOBIELE_MENU_KANDIDATEN.filter((i) => !gekozenLabels.has(i.label)),
     ]
     if (isSupportAdmin) rest.push(SUPPORT_ITEM)
-    return { balkItems: gekozen.slice(0, MOBIELE_NAV_MAX), meerItems: rest }
-  }, [gekozen, isSupportAdmin])
+    return { balkItems: gekozen.slice(0, plekken), meerItems: rest }
+  }, [gekozen, isSupportAdmin, forgieEnabled])
 
   useEffect(() => { setMeerOpen(false) }, [location.pathname])
+
+  // De widget bezit zijn eigen bulletje; hij roept het om zodra het verandert.
+  const [daanOngelezen, setDaanOngelezen] = useState(false)
+  useEffect(() => {
+    const luister = (e: Event) => setDaanOngelezen(!!(e as CustomEvent).detail)
+    window.addEventListener(DAAN_ONGELEZEN_EVENT, luister)
+    return () => window.removeEventListener(DAAN_ONGELEZEN_EVENT, luister)
+  }, [])
 
   // Zolang het paneel openstaat mag de pagina eronder niet meescrollen.
   useEffect(() => {
@@ -101,6 +112,26 @@ export function MobileTabBar() {
             </NavLink>
           )
         })}
+
+        {forgieEnabled && (
+          <button
+            type="button"
+            onClick={() => { hapticLight(); openDaan() }}
+            aria-label="Daan openen"
+            className="tap-press relative flex-1 min-w-0 flex flex-col items-center justify-center gap-1 h-[56px] px-1 text-petrol/50 dark:text-foreground/50 transition-colors duration-150"
+          >
+            <span
+              className="w-[26px] h-[26px] rounded-[9px] flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #1A535C 0%, #2A6B75 100%)' }}
+            >
+              <MessageSquare className="w-[15px] h-[15px] text-white" />
+            </span>
+            {daanOngelezen && (
+              <span className="absolute top-1.5 right-[28%] w-[7px] h-[7px] rounded-full bg-flame ring-2 ring-card" />
+            )}
+            <span className="text-[10px] font-semibold tracking-[-0.01em] leading-none">Daan</span>
+          </button>
+        )}
 
         <button
           type="button"

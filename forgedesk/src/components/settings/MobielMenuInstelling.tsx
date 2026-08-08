@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Smartphone, ChevronUp, ChevronDown, X, Plus, MoreHorizontal, RotateCcw } from 'lucide-react'
+import { Smartphone, ChevronUp, ChevronDown, X, Plus, MoreHorizontal, MessageSquare, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '@/utils/logger'
@@ -15,7 +15,7 @@ import {
  * en een tik die niet meteen telt voelt daar kapot.
  */
 export function MobielMenuInstelling() {
-  const { settings, updateSettings } = useAppSettings()
+  const { settings, updateSettings, forgieEnabled } = useAppSettings()
   const opgeslagen = settings.mobiel_menu_items
   const [labels, setLabels] = useState<string[]>(() => mobieleMenuItems(opgeslagen).map((i) => i.label))
   const [bezig, setBezig] = useState(false)
@@ -30,9 +30,9 @@ export function MobielMenuInstelling() {
     [labels],
   )
 
-  // Dezelfde verdeling als MobileTabBar: het Meer-vakje is er altijd, dus er
-  // is plek voor MOBIELE_NAV_MAX modules.
-  const inBalk = MOBIELE_NAV_MAX
+  // Dezelfde verdeling als MobileTabBar: Daan en Meer nemen elk een vakje,
+  // en Daan alleen als hij aanstaat.
+  const inBalk = forgieEnabled ? MOBIELE_NAV_MAX : MOBIELE_NAV_MAX + 1
 
   const bewaar = async (next: string[]) => {
     const vorige = labels
@@ -66,7 +66,8 @@ export function MobielMenuInstelling() {
         </CardTitle>
         <CardDescription>
           De balk onderaan je telefoon. De eerste {inBalk} staan er los in, de rest komt
-          onder Meer. Los van je zijbalk-keuze.
+          onder Meer{forgieEnabled ? '; Daan heeft een vast vakje' : ''}. Los van je
+          zijbalk-keuze.
         </CardDescription>
       </CardHeader>
 
@@ -85,6 +86,17 @@ export function MobielMenuInstelling() {
                 </div>
               )
             })}
+            {forgieEnabled && (
+              <div className="flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-2 px-0.5">
+                <span
+                  className="w-[22px] h-[22px] rounded-lg flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, #1A535C 0%, #2A6B75 100%)' }}
+                >
+                  <MessageSquare className="w-[13px] h-[13px] text-white" />
+                </span>
+                <span className="text-[9px] font-semibold text-foreground/70 leading-none">Daan</span>
+              </div>
+            )}
             <div className="flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-2 px-0.5">
               <MoreHorizontal className="w-[19px] h-[19px] text-muted-foreground" />
               <span className="text-[9px] font-semibold text-foreground/70 leading-none">Meer</span>

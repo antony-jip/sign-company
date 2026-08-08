@@ -27,6 +27,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { renderForgieMarkdown } from '@/utils/forgieMarkdown'
 import { DaanActiePlan } from './DaanActiePlan'
+import { DAAN_OPEN_EVENT, meldDaanOngelezen } from '@/lib/daanWidget'
 
 type WidgetMessage = ForgieChatMessage & { acties?: ForgieActie[]; genoteerd?: string[] }
 type WidgetView = 'daan' | 'support'
@@ -283,10 +284,15 @@ export function ForgieChatWidget() {
   useEffect(() => { activeGesprekIdRef.current = activeGesprek?.id ?? null }, [activeGesprek])
   useEffect(() => { viewRef.current = view }, [view])
 
-  // Op mobiel is alleen de Support-inbox beschikbaar (Daan blijft desktop-only).
+  // De mobiele bottom-nav heeft een eigen Daan-vakje en opent het paneel van
+  // daaruit; de zwevende knop bestaat daar niet meer. Het bulletje reist de
+  // andere kant op, zodat de nav hetzelfde signaal kan tonen.
   useEffect(() => {
-    if (isMobile && isAdminOrg) setView('support')
-  }, [isMobile, isAdminOrg])
+    const open = () => setIsOpen(true)
+    window.addEventListener(DAAN_OPEN_EVENT, open)
+    return () => window.removeEventListener(DAAN_OPEN_EVENT, open)
+  }, [])
+  useEffect(() => { meldDaanOngelezen(showUnread) }, [showUnread])
 
   // Klant: bulletje bij Daan zodra support een bericht stuurt · ook bij gesloten paneel
   // of nieuw gesprek. RLS scopet de stream op de eigen organisatie.
@@ -490,13 +496,13 @@ export function ForgieChatWidget() {
   return (
     <>
       {/* ── Chat Panel ── */}
+      {/* Stond op hidden onder md omdat de knop daar toch niet bestond. Nu
+          opent de bottom-nav het paneel op elke telefoon, dus het mag niet
+          meer verstopt zijn achter een breakpoint. */}
       {isOpen && (
         <div
           ref={panelRef}
-          className={cn(
-            'fixed z-[9999] flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-200',
-            isAdminOrg ? 'flex' : 'hidden md:flex',
-          )}
+          className="fixed z-[9999] flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-200"
           style={isMobile ? {
             inset: 0,
             borderRadius: 0,
@@ -579,9 +585,10 @@ export function ForgieChatWidget() {
             </div>
           </div>
 
-          {/* Admin tab-strip · verborgen op mobiel (Daan is desktop-only) */}
+          {/* Admin tab-strip · ook op mobiel, want daar opent de bottom-nav het
+              paneel op Daan en moet de Support-inbox bereikbaar blijven. */}
           {isAdminOrg && (
-            <div className="hidden md:flex items-stretch flex-shrink-0 border-b border-border/60 bg-card">
+            <div className="flex items-stretch flex-shrink-0 border-b border-border/60 bg-card">
               <button
                 onClick={() => setView('daan')}
                 className={cn(
@@ -887,8 +894,9 @@ export function ForgieChatWidget() {
           }
         }}
         className={cn(
-          'fixed z-[9999] flex items-center justify-center gap-2 transition-all duration-200',
-          isAdminOrg ? 'flex' : 'hidden md:flex',
+          // Op mobiel woont Daan in de bottom-nav; een zwevende knop zou daar
+          // alleen over de content hangen.
+          'fixed z-[9999] items-center justify-center gap-2 transition-all duration-200 hidden md:flex',
         )}
         style={{
           right: 16,

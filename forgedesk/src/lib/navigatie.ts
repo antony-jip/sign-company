@@ -75,9 +75,10 @@ export const PRIMAIRE_LABELS = ['Dashboard', 'Projecten', 'Taken', 'Offertes', '
 // (migratie 169) en is los van de desktop-keuze in sidebar_items.
 export const MOBIELE_NAV_LABELS = ['Dashboard', 'Projecten', 'Email', 'Maatjes']
 
-// Aantal modules dat naast "Meer" in de bottom-nav past. Vijf vakjes op de
-// smalste telefoon (320px) geeft nog een tikdoel van 64px; meer wordt frunniken.
-export const MOBIELE_NAV_MAX = 4
+// Aantal modules in de bottom-nav. Er staan altijd twee vaste vakjes naast:
+// Daan en Meer. Vijf vakjes op de smalste telefoon (320px) geeft nog een
+// tikdoel van 64px; meer wordt frunniken.
+export const MOBIELE_NAV_MAX = 3
 
 // Alles wat je op mobiel in je menu kunt zetten. Dashboard hoort erbij: op
 // mobiel is er geen logo-knop die je terugbrengt naar de start.
