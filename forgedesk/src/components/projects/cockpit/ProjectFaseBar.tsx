@@ -52,19 +52,118 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
   const isCompleted = currentIdx === FASES.length - 1
 
   return (
-    <div className="doen-slate-surface rounded-2xl p-5">
-      <div className="flex items-baseline justify-between mb-6">
+    <div className="doen-slate-surface rounded-2xl p-4 md:p-5">
+      <div className="flex items-baseline justify-between gap-3 mb-5 md:mb-6">
         <h3 className="font-heading text-[15px] font-bold text-foreground">
           Voortgang<span className="text-flame">.</span>
         </h3>
-        <span
-          className="doen-subtitel"
-        >
-          fase {currentIdx + 1} van {FASES.length} · {currentFase.caption}
+        {/* De caption hoort op mobiel bij de fasenaam eronder, niet in een
+            kopregel die dan over twee regels breekt. */}
+        <span className="doen-subtitel whitespace-nowrap">
+          fase {currentIdx + 1} van {FASES.length}
+          <span className="hidden md:inline"> · {currentFase.caption}</span>
         </span>
       </div>
 
-      <div className="flex flex-col lg:flex-row lg:items-end gap-8">
+      {/* ── Mobiel: alleen iconen op een rij, de actieve fase krijgt zijn naam
+          eronder. Zes cirkels van 48px mét labels passen niet op een telefoon;
+          de connectors knepen dicht en de labels liepen in elkaar. ── */}
+      <div className="md:hidden">
+        <div className="flex items-center">
+          {FASES.map((fase, i) => {
+            const isActive = i === currentIdx
+            const isPast = i < currentIdx
+            const isLast = i === FASES.length - 1
+            const isFinalCompleted = isLast && (isPast || isActive)
+            const FaseIcon = fase.Icon
+
+            return (
+              <div key={fase.key} className="flex items-center flex-1 last:flex-initial min-w-0">
+                <button
+                  type="button"
+                  onClick={() => onStatusChange(fase.key as Project['status'])}
+                  aria-label={`Naar fase: ${fase.label}`}
+                  aria-current={isActive ? 'step' : undefined}
+                  // py-2 maakt van een cirkel van 30px een tikdoel van 46px,
+                  // zonder dat de rij hoger oogt.
+                  className="tap-press relative flex-shrink-0 py-2 outline-none focus-visible:ring-2 focus-visible:ring-petrol/30 rounded-full"
+                >
+                  <span
+                    className="relative flex items-center justify-center w-[30px] h-[30px] rounded-full transition-[background-color,border-color,box-shadow] duration-300"
+                    style={{
+                      backgroundColor: isFinalCompleted ? '#0F3C44' : isPast ? PETROL : 'hsl(var(--card))',
+                      borderWidth: 2,
+                      borderStyle: 'solid',
+                      borderColor: isFinalCompleted ? '#0F3C44' : isPast || isActive ? PETROL : 'var(--fase-ring)',
+                      boxShadow: isActive ? `0 0 0 3px ${FLAME}1F` : undefined,
+                    }}
+                  >
+                    <FaseIcon
+                      className="h-[15px] w-[15px]"
+                      style={{ color: isPast || isFinalCompleted ? '#FFFFFF' : isActive ? PETROL : 'var(--fase-icon)' }}
+                      strokeWidth={isActive ? 2.2 : 1.8}
+                    />
+                  </span>
+                </button>
+
+                {!isLast && (
+                  <div className="flex-1 h-px mx-1 relative">
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        backgroundImage: 'linear-gradient(90deg, var(--fase-line) 50%, transparent 50%)',
+                        backgroundSize: '6px 1px',
+                        backgroundRepeat: 'repeat-x',
+                      }}
+                    />
+                    {i < currentIdx && <div className="absolute inset-0" style={{ background: PETROL }} />}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="mt-3 flex items-baseline gap-2 min-w-0">
+          <span className="font-heading text-[17px] font-bold tracking-[-0.01em] text-foreground whitespace-nowrap">
+            {currentFase.label}<span className="text-flame">.</span>
+          </span>
+          <span className="doen-subtitel truncate">{currentFase.caption}</span>
+        </div>
+
+        {hasMeta && (
+          <div className="mt-4 pt-3 flex items-center gap-6 border-t border-[rgba(26,83,92,0.08)]">
+            {totaalBedrag !== undefined && totaalBedrag > 0 && (
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Bedrag</span>
+                <span className="font-mono text-[15px] tabular-nums font-bold text-foreground truncate">
+                  €{formatAmount(totaalBedrag)}
+                </span>
+              </div>
+            )}
+            {deadlineInfo && (
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Deadline</span>
+                <span className="flex items-center gap-1.5 font-mono text-[13px] font-semibold">
+                  <Calendar
+                    className="h-3.5 w-3.5 flex-shrink-0"
+                    strokeWidth={1.75}
+                    style={{ color: deadlineInfo.overdue ? '#C03A18' : PETROL }}
+                  />
+                  <span className="text-foreground">{deadlineInfo.label}</span>
+                  {deadlineInfo.daysLeft !== null && (
+                    <span className={deadlineInfo.overdue ? 'text-[#C03A18] font-bold' : 'text-muted-foreground font-normal'}>
+                      {deadlineInfo.overdue ? `${Math.abs(deadlineInfo.daysLeft)}d over` : `${deadlineInfo.daysLeft}d`}
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="hidden md:flex flex-col lg:flex-row lg:items-end gap-8">
         {/* Stepper in doen.team-stijl: outlined cirkels + connector-lijnen + Flame-dot labels */}
         <div className="flex items-start flex-1 min-w-0 pt-1 pb-2">
           {FASES.map((fase, i) => {
@@ -150,7 +249,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
                     {isActive && (
                       <motion.span
                         aria-hidden
-                        className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-white"
+                        className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-card"
                         style={{ background: FLAME }}
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
