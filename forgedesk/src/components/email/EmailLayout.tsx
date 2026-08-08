@@ -11,6 +11,7 @@ import {
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, markeerEmailGelezenOpServer, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail, emailImapActie, prefetchEmailBodies } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
+import supabase from '@/services/supabaseClient'
 import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers, getEmailBodies } from '@/services/emailService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -31,6 +32,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Skeleton } from '@/components/ui/skeleton'
 import { hapticLight } from '@/utils/haptic'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { viewTransition } from '@/utils/viewTransition'
 
 // Opstellen, de context-sidebar, leads en geplande berichten liggen niet op het
@@ -374,7 +376,10 @@ export function EmailLayout() {
     let synced = 0
     const maxRondes = isDesktopRef.current ? 10 : 1
     for (let i = 0; i < maxRondes; i++) {
-      const result = await fetchEmailsFromIMAP(folder, fetchLimitRef.current, 0)
+      // Mobiel vraagt de snelle variant: de sales- en lead-sweeps kosten daar
+      // tot 18 seconden aan het eind van elke sync, terwijl je zit te wachten
+      // op mail die allang binnen is. De cron werkt ze bij.
+      const result = await fetchEmailsFromIMAP(folder, fetchLimitRef.current, 0, undefined, !isDesktopRef.current)
       if (result.errors) {
         logger.warn('[Email] Sync errors:', result.errors)
       }
@@ -450,6 +455,7 @@ export function EmailLayout() {
               logger.log(`[Email] Sync klaar: ${synced} gesynct, ${total} totaal`)
               setImapTotal(total)
               setUseIMAP(true)
+              setLastSyncAt(Date.now())
               // Re-read from Supabase after sync
               const fresh = await readFromSupabase()
               if (fresh.length > 0) setEmails(fresh)
@@ -1157,7 +1163,9 @@ export function EmailLayout() {
   const handleRefresh = useCallback(async (folder: EmailFolder, silent = false) => {
     if (!silent) setIsRefreshing(true)
     const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
-    triggerImapSync(imapFolder)
+    // Retourneert de keten zodat wie wél wil wachten (trek-om-te-verversen)
+    // weet wanneer de lijst klopt. De poll en de knop negeren de promise.
+    return triggerImapSync(imapFolder)
       .then(async ({ total }) => {
         setImapTotal(total)
         hasMoreDbRef.current = {}
@@ -1464,27 +1472,63 @@ export function EmailLayout() {
     return () => { afgebroken = true; clearTimeout(timer) }
   }, [zichtbaarBereik, isDesktop, flatItems, fetchBodyToCache, selectedFolder, vulBodyCacheUitDb])
 
-  // ─── Polling: silent background sync every 3min ───
+  // ─── Realtime: nieuwe mail schuift binnen zodra de rij landt ───
+  // Wie de sync deed doet er niet toe — eigen poll, tweede apparaat of de
+  // cron. Alleen INSERT: een verse mail komt zonder body binnen, dus de
+  // payload is een kopregel. De UPDATE die later body_html vult zou zwaar
+  // zijn en heeft hier niets toe te voegen.
+  useEffect(() => {
+    if (!supabase || !user?.id) return
+    const userId = user.id
+    const kanaal = supabase
+      .channel(`emails-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'emails', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const binnen = normalizeEmails([payload.new as Email])[0]
+          if (!binnen) return
+          setEmails((prev) => {
+            if (prev.some((e) => e.id === binnen.id)) return prev
+            // Op datum invoegen in plaats van vooraan plakken: een sync die
+            // een achterstand inloopt levert ook oudere mail, en die hoort
+            // niet bovenaan de inbox te verschijnen.
+            const next = [...prev, binnen]
+            next.sort((a, b) => (b.datum || '').localeCompare(a.datum || ''))
+            return next
+          })
+          setLastSyncAt(Date.now())
+        },
+      )
+      .subscribe()
+    return () => { void supabase?.removeChannel(kanaal) }
+  }, [user?.id])
+
+  // ─── Polling: stille achtergrond-sync ───
   // Niet tijdens lezen of opstellen: een sync opent een IMAP-verbinding en
   // haalt daarna bodies op, en dat gaat precies ten koste van de mail die op
   // dat moment onder je duim staat. De tik erna haalt het alsnog op.
+  // Mobiel tikt vaker: daar is dit vaak de enige sync die draait, en de
+  // snelle variant kost de server nu ook veel minder.
   const viewModeRef = useRef(viewMode)
   viewModeRef.current = viewMode
   useEffect(() => {
+    const tempo = isDesktop ? 180_000 : 90_000
     pollingRef.current = setInterval(() => {
       if (viewModeRef.current !== 'idle') return
       handleRefresh(selectedFolder, true)
-    }, 180000)
+    }, tempo)
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
-  }, [selectedFolder, handleRefresh])
+  }, [selectedFolder, handleRefresh, isDesktop])
 
   // ─── Terug in beeld: stille sync ───
   // De poll-timer hierboven staat stil zodra de telefoon de tab bevriest, dus
-  // wie na een uur terugkomt kijkt naar oude mail tot de eerste tick. Syncen
-  // bij elke focus was te agressief (elke keer een volle IMAP-verbinding),
-  // vandaar de ondergrens van een minuut weg.
+  // wie terugkomt kijkt naar oude mail tot de eerste tick. De ondergrens stond
+  // op een minuut omdat elke sync een volle IMAP-ronde mét nabewerking was;
+  // met de snelle variant is terugkomen-en-syncen goedkoop genoeg om vrijwel
+  // meteen te doen — precies het moment waarop je nieuwe mail verwacht.
   const laatstVerborgenRef = useRef<number | null>(null)
   useEffect(() => {
     const onZichtbaarheid = () => {
@@ -1494,12 +1538,13 @@ export function EmailLayout() {
       }
       const verborgenSinds = laatstVerborgenRef.current
       laatstVerborgenRef.current = null
-      if (!verborgenSinds || Date.now() - verborgenSinds < 60000) return
+      const drempel = isDesktop ? 60_000 : 15_000
+      if (!verborgenSinds || Date.now() - verborgenSinds < drempel) return
       handleRefresh(selectedFolder, true)
     }
     document.addEventListener('visibilitychange', onZichtbaarheid)
     return () => document.removeEventListener('visibilitychange', onZichtbaarheid)
-  }, [selectedFolder, handleRefresh])
+  }, [selectedFolder, handleRefresh, isDesktop])
 
   // ─── Keyboard shortcuts (inline from useEmailKeyboard) ───
   // callbacksRef wordt aan onder via useEffect na declaratie van alle
@@ -1884,6 +1929,22 @@ export function EmailLayout() {
     }
   }, [isLoadingMore, loadMoreEmails, selectedFolder, searchResults, loadMoreSearchResults])
 
+  // Trek-om-te-verversen · alleen in de lijst, niet tijdens lezen of opstellen
+  // (dan is de lijst op mobiel toch uit beeld) en niet tijdens zoeken, waar
+  // een sync de resultaten onder je duim vandaan zou trekken.
+  const {
+    afstand: trekAfstand,
+    bezig: trekBezig,
+    gereed: trekGereed,
+  } = usePullToRefresh({
+    doel: emailListRef,
+    actief: !isDesktop && viewMode === 'idle' && searchResults === null,
+    onRefresh: async () => {
+      hapticLight()
+      await handleRefresh(selectedFolder)
+    },
+  })
+
   const emailIndex = useMemo(
     () => selectedEmail ? threadedEmails.findIndex(e => e.id === selectedEmail.id) : -1,
     [selectedEmail, threadedEmails],
@@ -2114,6 +2175,10 @@ export function EmailLayout() {
           todayUnreadCount={todayUnreadCount}
           userInitial={userInitial}
           onOpenAI={() => navigate('/forgie')}
+          onRefresh={() => { hapticLight(); void handleRefresh(selectedFolder) }}
+          isRefreshing={isRefreshing || trekBezig}
+          lastSyncAt={lastSyncAt}
+          nowTick={nowTick}
         />
       )}
       <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -2445,6 +2510,21 @@ export function EmailLayout() {
           className="flex-1 overflow-y-auto scroll-smooth relative"
           onScroll={handleScroll}
         >
+          {/* Trek-om-te-verversen · alleen mobiel, alleen bovenaan de lijst */}
+          {(trekAfstand > 0 || trekBezig) && (
+            <div
+              className="md:hidden absolute inset-x-0 top-0 z-20 flex items-center justify-center pointer-events-none"
+              style={{ height: trekAfstand }}
+            >
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-[0_2px_8px_rgba(0,0,0,0.08)] text-[11px] font-medium text-muted-foreground">
+                <RefreshCw
+                  className={cn('h-3.5 w-3.5', trekBezig && 'animate-spin')}
+                  style={trekBezig ? undefined : { transform: `rotate(${trekAfstand * 4}deg)` }}
+                />
+                {trekBezig ? 'Ophalen' : trekGereed ? 'Loslaten om te verversen' : 'Trek om te verversen'}
+              </span>
+            </div>
+          )}
           {/* Sticky date-group overlay · toont actieve groep bovenaan tijdens
               scroll. Virtualizer rendert echte headers absolute, dus deze
               overlay vult de gap. */}

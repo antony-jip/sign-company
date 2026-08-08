@@ -1,5 +1,7 @@
-import { Menu, Search, Sparkles } from 'lucide-react'
+import { Menu, Search, Sparkles, RefreshCw } from 'lucide-react'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
+import { cn } from '@/lib/utils'
+import { formatRelativeSync } from './emailHelpers'
 import type { EmailFolder } from './emailTypes'
 
 interface EmailMobileTopBarProps {
@@ -11,6 +13,10 @@ interface EmailMobileTopBarProps {
   todayUnreadCount: number
   userInitial: string
   onOpenAI: () => void
+  onRefresh: () => void
+  isRefreshing: boolean
+  lastSyncAt: number | null
+  nowTick: number
 }
 
 export function EmailMobileTopBar({
@@ -22,6 +28,10 @@ export function EmailMobileTopBar({
   todayUnreadCount,
   userInitial,
   onOpenAI,
+  onRefresh,
+  isRefreshing,
+  lastSyncAt,
+  nowTick,
 }: EmailMobileTopBarProps) {
   return (
     <div className="md:hidden px-3 pb-1 bg-background pt-[calc(env(safe-area-inset-top)+0.75rem)]">
@@ -59,15 +69,32 @@ export function EmailMobileTopBar({
         </button>
       </div>
 
-      <div className="px-2 pt-3 pb-1 flex items-center justify-between">
+      <div className="px-2 pt-3 pb-1 flex items-center justify-between gap-2">
         <span className="text-[11px] uppercase tracking-wider text-[#888780] dark:text-muted-foreground font-medium">
           {selectedFolderLabel}
         </span>
-        {selectedFolder === 'inbox' && todayUnreadCount > 0 && (
-          <span className="text-[11px] text-[#888780] dark:text-muted-foreground">
-            vandaag · <span className="text-foreground font-medium">{todayUnreadCount}</span> nieuwe
-          </span>
-        )}
+        <div className="flex items-center gap-2 min-w-0">
+          {selectedFolder === 'inbox' && todayUnreadCount > 0 && (
+            <span className="text-[11px] text-[#888780] dark:text-muted-foreground whitespace-nowrap">
+              vandaag · <span className="text-foreground font-medium">{todayUnreadCount}</span> nieuwe
+            </span>
+          )}
+          {/* Naast het trek-gebaar ook een knop: wie net een mail verwacht wil
+              niet gokken of de app al gesynct heeft. De tijdstempel maakt
+              zichtbaar hoe vers de lijst is. */}
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            aria-label="Mail ophalen"
+            className="tap-press flex items-center gap-1 text-[11px] text-[#888780] dark:text-muted-foreground disabled:opacity-60"
+          >
+            {lastSyncAt && !isRefreshing && (
+              <span className="tabular-nums">{formatRelativeSync(lastSyncAt, nowTick)}</span>
+            )}
+            <RefreshCw className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')} />
+          </button>
+        </div>
       </div>
     </div>
   )

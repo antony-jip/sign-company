@@ -17,6 +17,19 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
   const token = authHeader.split(' ')[1]
+
+  // Service-modus voor cron-email-sync: die draait zonder sessie en zegt zelf
+  // voor welke gebruiker hij synct. Alleen geldig met het cron-secret, en het
+  // secret moet gezet zijn — een lege env-var mag nooit als sleutel dienen.
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && token === cronSecret) {
+    const serviceUser = req.body?.service_user_id
+    if (typeof serviceUser !== 'string' || !serviceUser) {
+      throw new Error('Niet geautoriseerd')
+    }
+    return serviceUser
+  }
+
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
@@ -195,7 +208,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let client: ImapFlow | null = null
 
   try {
-    const { folder = 'INBOX', limit = 100 } = req.body
+    // `snel`: alleen mail ophalen en wegschrijven, zonder de nabewerking
+    // (sales-match, lead-match). Die twee sweeps kosten samen tot 18 seconden
+    // en de client wacht op deze respons voordat hij de lijst opnieuw leest —
+    // op een telefoon is dat het verschil tussen "mail is er" en een halve
+    // minuut naar een lege inbox kijken. De cron draait ze wel, dus het werk
+    // gebeurt nog steeds, alleen niet in het pad van de gebruiker.
+    const { folder = 'INBOX', limit = 100, snel = false } = req.body
 
     const user_id = await verifyUser(req)
 
@@ -598,12 +617,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     //
     // Out of scope v2: thread-match via in_reply_to/references — natuurlijke
     // upgrade die false-positives reduceert, eigen feature later.
+    //
+    // Bij `snel` slaan we beide sweeps over: de cron draait ze even later
+    // alsnog voor dezelfde mailbox, en de sweeps zijn retroactief (72u-venster)
+    // dus overslaan verliest niets — het stelt alleen uit.
     const matchStartedAt = Date.now()
     const MATCH_DEADLINE_MS = 10_000
     const INBOX_WINDOW_HOURS = 72
     const OUTBOUND_WINDOW_DAYS = 60
 
-    try {
+    if (!snel) try {
       const inkomendeWindow = new Date(Date.now() - INBOX_WINDOW_HOURS * 60 * 60 * 1000).toISOString()
       const outboundWindow = new Date(Date.now() - OUTBOUND_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
@@ -681,7 +704,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 'gereageerd' en 'geen_interesse' blijven altijd staan.
     const leadStartedAt = Date.now()
     const LEAD_DEADLINE_MS = 8_000
-    try {
+    if (!snel) try {
       const { data: openLeads } = await supabaseAdmin
         .from('leads')
         .select('id, email, status_sinds')
@@ -748,6 +771,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       total,
       fetched: newEmails.length,
       incremental,
+      snel: snel || undefined,
       remaining: remaining > 0 ? remaining : undefined,
       errors: errors.length > 0 ? errors : undefined,
     })

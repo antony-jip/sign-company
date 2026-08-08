@@ -319,11 +319,17 @@ export async function syncEmailSettingsFromServer(): Promise<boolean> {
   return false
 }
 
+/**
+ * @param snel Sla de nabewerking (sales-match, lead-match) over zodat de
+ *   respons komt zodra de mail in de database staat. Scheelt tot 18 seconden
+ *   wachten; de cron doet die sweeps even later alsnog.
+ */
 export async function fetchEmailsFromIMAP(
   folder?: string,
   limit?: number,
   offset?: number,
-  userId?: string
+  userId?: string,
+  snel?: boolean
 ): Promise<{ emails: IMAPEmailSummary[]; total: number; synced?: number; incremental?: boolean; remaining?: number; errors?: string[] }> {
   const token = await getAuthToken()
 
@@ -337,6 +343,7 @@ export async function fetchEmailsFromIMAP(
       folder: folder || 'INBOX',
       limit: limit || 50,
       offset: offset || 0,
+      snel: snel === true,
     }),
   })
 
