@@ -1486,7 +1486,11 @@ export function EmailLayout() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'emails', filter: `user_id=eq.${userId}` },
         (payload) => {
-          const binnen = normalizeEmails([payload.new as Email])[0]
+          // Zelfde vorm als getEmails() teruggeeft (emails_list_view): body
+          // en html blijven eruit, die haalt de body-cache apart op. Zonder
+          // dit zou een realtime-rij anders zijn dan een gelezen rij.
+          const rij = { ...(payload.new as Email), inhoud: '', body_html: null }
+          const binnen = normalizeEmails([rij])[0]
           if (!binnen) return
           setEmails((prev) => {
             if (prev.some((e) => e.id === binnen.id)) return prev

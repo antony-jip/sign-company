@@ -38,18 +38,17 @@ export function MobileTabBar() {
     [settings.mobiel_menu_items],
   )
 
-  // Wat in de balk past, en wat naar "Meer" doorschuift. Zodra er meer
-  // gekozen is dan er vakjes zijn, kost het laatste vakje zelf ook ruimte —
-  // dan past er dus één module minder dan het maximum.
+  // Wat in de balk past, en wat naar "Meer" doorschuift. Het Meer-vakje kost
+  // zelf ook een plek en is er altijd: ook wie álle modules kiest bereikt zijn
+  // instellingen, abonnement en uitloggen daar. Dus vier modules, nooit vijf.
   const { balkItems, meerItems } = useMemo(() => {
-    const past = gekozen.length <= MOBIELE_NAV_MAX + 1 ? MOBIELE_NAV_MAX + 1 : MOBIELE_NAV_MAX
     const gekozenLabels = new Set(gekozen.map((i) => i.label))
     const rest: NavItem[] = [
-      ...gekozen.slice(past),
+      ...gekozen.slice(MOBIELE_NAV_MAX),
       ...MOBIELE_MENU_KANDIDATEN.filter((i) => !gekozenLabels.has(i.label)),
     ]
     if (isSupportAdmin) rest.push(SUPPORT_ITEM)
-    return { balkItems: gekozen.slice(0, past), meerItems: rest }
+    return { balkItems: gekozen.slice(0, MOBIELE_NAV_MAX), meerItems: rest }
   }, [gekozen, isSupportAdmin])
 
   useEffect(() => { setMeerOpen(false) }, [location.pathname])
@@ -103,27 +102,25 @@ export function MobileTabBar() {
           )
         })}
 
-        {meerItems.length > 0 && (
-          <button
-            type="button"
-            onClick={() => { hapticLight(); setMeerOpen(true) }}
-            aria-expanded={meerOpen}
-            aria-label="Meer modules"
-            className={cn(
-              'tap-press relative flex-1 min-w-0 flex flex-col items-center justify-center gap-1 h-[56px] px-1 transition-colors duration-150',
-              meerActief ? 'text-petrol dark:text-foreground' : 'text-petrol/50 dark:text-foreground/50',
-            )}
-          >
-            {meerActief && (
-              <span className="absolute top-0 left-1/2 -translate-x-1/2 h-[2px] w-8 rounded-b-[2px] bg-flame" />
-            )}
-            <MoreHorizontal className="w-[21px] h-[21px]" />
-            {supportAttentie > 0 && (
-              <span className="absolute top-2 right-[26%] w-[7px] h-[7px] rounded-full bg-flame" />
-            )}
-            <span className="text-[10px] font-semibold tracking-[-0.01em] leading-none">Meer</span>
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => { hapticLight(); setMeerOpen(true) }}
+          aria-expanded={meerOpen}
+          aria-label="Meer modules"
+          className={cn(
+            'tap-press relative flex-1 min-w-0 flex flex-col items-center justify-center gap-1 h-[56px] px-1 transition-colors duration-150',
+            meerActief ? 'text-petrol dark:text-foreground' : 'text-petrol/50 dark:text-foreground/50',
+          )}
+        >
+          {meerActief && (
+            <span className="absolute top-0 left-1/2 -translate-x-1/2 h-[2px] w-8 rounded-b-[2px] bg-flame" />
+          )}
+          <MoreHorizontal className="w-[21px] h-[21px]" />
+          {supportAttentie > 0 && (
+            <span className="absolute top-2 right-[26%] w-[7px] h-[7px] rounded-full bg-flame" />
+          )}
+          <span className="text-[10px] font-semibold tracking-[-0.01em] leading-none">Meer</span>
+        </button>
       </nav>
 
       {meerOpen && createPortal(

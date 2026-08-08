@@ -30,9 +30,9 @@ export function MobielMenuInstelling() {
     [labels],
   )
 
-  // Dezelfde verdeling als MobileTabBar: past alles in de balk, dan is er geen
-  // "Meer"-vakje nodig en is er dus ruimte voor één module extra.
-  const inBalk = labels.length <= MOBIELE_NAV_MAX + 1 ? MOBIELE_NAV_MAX + 1 : MOBIELE_NAV_MAX
+  // Dezelfde verdeling als MobileTabBar: het Meer-vakje is er altijd, dus er
+  // is plek voor MOBIELE_NAV_MAX modules.
+  const inBalk = MOBIELE_NAV_MAX
 
   const bewaar = async (next: string[]) => {
     const vorige = labels
@@ -85,17 +85,10 @@ export function MobielMenuInstelling() {
                 </div>
               )
             })}
-            {(gekozen.length > inBalk || beschikbaar.length > 0) && (
-              <div className="flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-2 px-0.5">
-                <MoreHorizontal className="w-[19px] h-[19px] text-muted-foreground" />
-                <span className="text-[9px] font-semibold text-foreground/70 leading-none">Meer</span>
-              </div>
-            )}
-            {gekozen.length === 0 && (
-              <div className="flex-1 py-3 text-center text-[11px] text-muted-foreground">
-                Alles staat onder Meer
-              </div>
-            )}
+            <div className="flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-2 px-0.5">
+              <MoreHorizontal className="w-[19px] h-[19px] text-muted-foreground" />
+              <span className="text-[9px] font-semibold text-foreground/70 leading-none">Meer</span>
+            </div>
           </div>
         </div>
 
