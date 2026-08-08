@@ -12,9 +12,11 @@ export function FloatingEmailButton() {
   if (!(settings.email_edge_button ?? true)) return null
   if (location.pathname.startsWith('/email')) return null
 
+  // Op mobiel zit Mail in de bottom-nav; deze randknop zou daar alleen maar
+  // over de content hangen. Hij leunt bovendien op hover.
   return (
     <div
-      className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center"
+      className="fixed right-0 top-1/2 -translate-y-1/2 z-40 hidden md:flex items-center"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >

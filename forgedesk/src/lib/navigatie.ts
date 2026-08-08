@@ -69,13 +69,34 @@ export const ALLE_MODULES: NavItem[] = NAV_GROEPEN.flatMap(g => g.items)
 // Modules die los in de topbalk staan; de rest valt onder "Overig".
 export const PRIMAIRE_LABELS = ['Dashboard', 'Projecten', 'Taken', 'Offertes', 'Planning', 'Werkbonnen', 'Email']
 
-// Mobiel is bewust lean: alleen het hoogstnodige voor de buitendienst
-// (projecten, mail, maatje) plus Instellingen. De rest doe je op desktop.
-// Geldt altijd op mobiel, los van de desktop-menukeuze.
-export const MOBIELE_NAV_LABELS = ['Projecten', 'Email', 'Maatjes']
+// Mobiel is bewust lean: alleen het hoogstnodige voor de buitendienst.
+// Dit is de startset voor wie zijn mobiele menu nog nooit heeft ingesteld —
+// géén plafond meer. De eigen keuze staat op profiles.mobiel_menu_items
+// (migratie 169) en is los van de desktop-keuze in sidebar_items.
+export const MOBIELE_NAV_LABELS = ['Dashboard', 'Projecten', 'Email', 'Maatjes']
+
+// Aantal modules dat naast "Meer" in de bottom-nav past. Vijf vakjes op de
+// smalste telefoon (320px) geeft nog een tikdoel van 64px; meer wordt frunniken.
+export const MOBIELE_NAV_MAX = 4
+
+// Alles wat je op mobiel in je menu kunt zetten. Dashboard hoort erbij: op
+// mobiel is er geen logo-knop die je terugbrengt naar de start.
+export const MOBIELE_MENU_KANDIDATEN: NavItem[] = [DASHBOARD_ITEM, ...ALLE_MODULES]
 
 // Oude opgeslagen voorkeuren gebruiken nog 'Kalender' voor '/planning'.
 export function normaliseerMenuVoorkeur(items: unknown): string[] {
   if (!Array.isArray(items) || items.length === 0) return []
   return items.map((s: string) => (s === 'Kalender' ? 'Planning' : s))
+}
+
+// De mobiele menukeuze, opgeschoond en op volgorde. Onbekende labels (module
+// hernoemd of verwijderd) vallen weg; een lege array betekent "bewust alles
+// uitgezet" en blijft leeg, alleen NULL/undefined valt terug op de default.
+export function mobieleMenuItems(voorkeur: string[] | null | undefined): NavItem[] {
+  const labels = voorkeur == null
+    ? MOBIELE_NAV_LABELS
+    : normaliseerMenuVoorkeur(voorkeur)
+  return labels
+    .map((label) => MOBIELE_MENU_KANDIDATEN.find((i) => i.label === label))
+    .filter((i): i is NavItem => !!i)
 }

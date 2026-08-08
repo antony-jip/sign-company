@@ -425,16 +425,17 @@ export function TopNav() {
             )}
           </div>
 
-          {/* Mobile hamburger */}
-          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06] lg:hidden order-2 md:order-none"
+          {/* Tussen tablet en desktop is er geen bottom-nav en past de
+              module-rij nog niet: daar blijft de hamburger de uitweg. */}
+          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hidden md:flex lg:hidden order-2 md:order-none"
             onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>
         </div>
       </div>
 
-      {/* ── Mobiele module-nav: lean items als duidelijke, zichtbare tabs ── */}
-      <nav className="lg:hidden flex items-center gap-1.5 overflow-x-auto bg-card border-b border-border px-3 py-2">
+      {/* ── Module-rij voor tablet: op telefoon doet de bottom-nav dit werk ── */}
+      <nav className="hidden md:flex lg:hidden items-center gap-1.5 overflow-x-auto bg-card border-b border-border px-3 py-2">
         {visibleItems.map((item) => {
           const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
           const Icon = item.icon
@@ -457,9 +458,9 @@ export function TopNav() {
         })}
       </nav>
 
-      {/* ── Mobile nav dropdown ── */}
+      {/* ── Nav-dropdown achter de hamburger · tablet ── */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-border/40 bg-card/98 backdrop-blur-md max-h-[75vh] overflow-y-auto">
+        <div className="hidden md:block lg:hidden border-t border-border/40 bg-card/98 backdrop-blur-md max-h-[75vh] overflow-y-auto">
           <nav className="py-3 px-4 space-y-1">
             {visibleItems.map((item) => {
               const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)

@@ -23,6 +23,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { QUICK_ACTIONS, type QuickActionsPosition } from '@/components/dashboard/FloatingQuickActions'
 import { SubTabNav } from './SubTabNav'
+import { MobielMenuInstelling } from './MobielMenuInstelling'
 import type { SubTab } from './settingsShared'
 import { logger } from '@/utils/logger'
 import {
@@ -592,6 +593,9 @@ export function WeergaveTab() {
     )}
 
     {subTab === 'navigatie' && (
+    <div className="space-y-6">
+    <MobielMenuInstelling />
+
     <Card className="doen-slate-surface border-0 shadow-none rounded-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -710,6 +714,7 @@ export function WeergaveTab() {
         </div>
       </CardContent>
     </Card>
+    </div>
     )}
 
     </>

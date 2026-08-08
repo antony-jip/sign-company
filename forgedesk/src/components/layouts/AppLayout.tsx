@@ -10,6 +10,7 @@ import { FloatingEmailButton } from '@/components/shared/FloatingEmailButton'
 import { TrialBanner } from '@/components/shared/TrialBanner'
 import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import { TabBar } from '@/components/layouts/TabBar'
+import { MobileTabBar } from '@/components/layouts/MobileTabBar'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
 import { prefetchCore } from '@/lib/coreData'
@@ -120,6 +121,9 @@ export function AppLayout() {
               </div>
             )}
           </main>
+          {/* Buiten <main>, dus de balk hoort bij de flex-kolom en overlapt de
+              content niet — geen fixed-positie die om extra bodempadding vraagt. */}
+          <MobileTabBar />
         </div>
         <FloatingQuickActions />
         <FloatingEmailButton />
@@ -156,6 +160,7 @@ export function AppLayout() {
               </div>
             </main>
           </div>
+          <MobileTabBar />
         </div>
       </div>
       <FloatingQuickActions />

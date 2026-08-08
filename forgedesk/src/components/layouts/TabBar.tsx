@@ -151,8 +151,11 @@ export function TabBar() {
 
   return (
     <>
+      {/* Browsertabs zijn een desktop-idioom: op een telefoon navigeer je via
+          de bottom-nav, en 38px hoogte is daar te duur voor een balk die je
+          met je duim toch niet bedient. */}
       <div
-        className="tab-bar flex items-center gap-[3px] h-[38px] px-5 bg-[#F8F7F5] dark:bg-background border-b border-border"
+        className="tab-bar hidden md:flex items-center gap-[3px] h-[38px] px-5 bg-[#F8F7F5] dark:bg-background border-b border-border"
       >
         {/* Scroll left */}
         {showScrollButtons && (

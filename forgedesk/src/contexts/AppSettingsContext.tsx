@@ -112,7 +112,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       // Per-user velden (handtekening, sidebar_items, afzender_naam) worden
       // door updateAppSettings doorgesluisd naar profiles. Vernieuw profile
       // ook in state als zo'n veld in de update zit.
-      const perUserKeys = ['email_handtekening', 'handtekening_afbeelding', 'handtekening_afbeelding_grootte', 'handtekening_afbeelding_link', 'afzender_naam', 'sidebar_items']
+      const perUserKeys = ['email_handtekening', 'handtekening_afbeelding', 'handtekening_afbeelding_grootte', 'handtekening_afbeelding_link', 'afzender_naam', 'sidebar_items', 'mobiel_menu_items']
       const heeftPerUserUpdate = perUserKeys.some(k => k in updates)
       const updated = await updateAppSettings(user.id, updates)
       setSettings(updated)
@@ -152,12 +152,18 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   // Anthropic key is server-side only (ANTHROPIC_API_KEY in env, not exposed to frontend)
   const anthropicApiKey = ''
 
-  // Sinds migratie 091 staan sidebar_items per-user op profiles. Merge ze
-  // hier in het settings-object zodat consumers (Sidebar, TopNav) hun
-  // bestaande settings.sidebar_items lezen kunnen blijven gebruiken.
-  const mergedSettings: AppSettings = profile?.sidebar_items != null
-    ? { ...settings, sidebar_items: profile.sidebar_items }
-    : settings
+  // Sinds migratie 091 staan sidebar_items per-user op profiles, sinds 169
+  // ook mobiel_menu_items. Merge ze hier in het settings-object zodat
+  // consumers (Sidebar, TopNav, MobileTabBar) uit één plek kunnen lezen.
+  // mobiel_menu_items mag bewust leeg zijn, dus alleen undefined (kolom
+  // ontbreekt nog) valt terug op de default; null en [] gaan door.
+  // useMemo omdat consumers `settings` als effect-dependency gebruiken: een
+  // vers object bij elke render zou die effects elke keer opnieuw aftrappen.
+  const mergedSettings: AppSettings = React.useMemo(() => ({
+    ...settings,
+    ...(profile?.sidebar_items != null ? { sidebar_items: profile.sidebar_items } : {}),
+    ...(profile && 'mobiel_menu_items' in profile ? { mobiel_menu_items: profile.mobiel_menu_items } : {}),
+  }), [settings, profile])
 
   const value: AppSettingsContextType = {
     settings: mergedSettings,
