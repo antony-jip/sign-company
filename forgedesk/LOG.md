@@ -21,8 +21,24 @@ Tot 10 gebruikers EUR 129 met EUR 15 AI, tot 20 EUR 199 met EUR 30, tot 35 EUR 2
 ### De les die het meest waard is
 **De migraties in deze repo beschrijven de database niet.** Vier keer bleek een aanname uit de migratiebestanden onjuist: de werkbon-kindtabellen zijn in productie al org-scoped (die taak verviel), `expires_at` en `invited_by` bestaan niet (het zijn `verloopt_op` en `uitgenodigd_door`), er ontbreken geen org-indexen maar er zijn er dubbele, en de unique index op `ai_usage` bestond niet. Eén migratie draaide bovendien met "Success" terwijl de functie bij aanroep stukging. Verifieer hier altijd ná het draaien tegen productie, niet tegen de migratie.
 
+### Rollen: BESLOTEN, geen rol-gate
+Monteurs mogen marge en omzet zien. Er komt dus géén afscherming van de
+financiële schermen; de radicale transparantie uit CLAUDE.md paragraaf 5 blijft
+gelden, ook bij 20 gebruikers. Rapportages, Nacalculatie, de marge per
+offerteregel en de uurtarieven in /team blijven voor iedereen zichtbaar.
+
+Wat dat betekent voor de code:
+- De rollen sturen alleen teambeheer aan (alleen admin mag uitnodigen en rollen
+  wijzigen). Ze beperken niet wat iemand ziet, en de UI belooft dat ook niet
+  meer: de tekst "Monteur · Alleen werkbonnen" is uit het uitnodigingsscherm
+  gehaald omdat die belofte nergens werd waargemaakt.
+- De admincheck heeft nu één bron (`profiles.rol`), zodat de twee checks in de
+  app niet meer verschillende antwoorden kunnen geven. Dat blijft nuttig, ook
+  zonder gate.
+- Roldata opschonen (8 van de 9 profielen staan op admin) is hierdoor geen
+  blokkade meer, alleen nog hygiëne.
+
 ### Openstaand, vraagt een besluit
-- **Rollen:** mogen monteurs marge, omzet en elkaars uurtarief zien? Nu staat alles open en is er geen rol-gate. Randvoorwaarde als het antwoord ja is: eerst roldata opschonen, 8 van de 9 profielen staan op admin.
 - **Eigenaarschap:** offertes, facturen en werkbonnen hebben geen toegewezene, dus een van-mij-filter heeft daar niets om naar te wijzen.
 - **Dubbele indexen:** bij `emails` en `facturen` bewezen identiek (beide op alleen `organisatie_id`); bij klanten, taken en werkbonnen dezelfde naamgeving maar niet nagekeken. Droppen is destructief.
 
