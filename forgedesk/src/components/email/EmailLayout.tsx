@@ -2522,7 +2522,11 @@ export function EmailLayout() {
         {/* Email list */}
         <div
           ref={emailListRef}
-          className="flex-1 overflow-y-auto scroll-smooth relative"
+          // overflow-x expliciet dicht: met alleen overflow-y rekent CSS de
+          // andere as om naar auto, en dan schuift de lijst tijdens het
+          // scrollen zijwaarts mee zodra één rij te breed uitvalt — een lang
+          // onderwerp zonder spaties is al genoeg.
+          className="flex-1 overflow-y-auto overflow-x-hidden overscroll-x-none scroll-smooth relative"
           onScroll={handleScroll}
         >
           {/* Trek-om-te-verversen · alleen mobiel, alleen bovenaan de lijst */}

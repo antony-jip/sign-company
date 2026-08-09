@@ -189,7 +189,10 @@ export const EmailListItem = memo(function EmailListItem({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          'group relative flex items-center gap-2.5 pl-3 pr-3 h-[46px] cursor-pointer select-none',
+          // min-w-0 en overflow-hidden op de rij zelf: een kolom met een vaste
+          // breedte plus een lang onderwerp duwt de rij anders breder dan de
+          // lijst, en dat is wat het scrollen zijwaarts liet schuiven.
+          'group relative flex items-center gap-2.5 pl-3 pr-3 h-[46px] cursor-pointer select-none min-w-0 max-w-full overflow-hidden',
           'border-b border-[rgba(26,83,92,0.06)] dark:border-white/[0.06]',
           'transition-all duration-150 ease-out',
           isActive
