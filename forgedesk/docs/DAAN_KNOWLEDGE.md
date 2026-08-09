@@ -23,7 +23,8 @@ Kernpunten om te onthouden:
 - **doen. is transparant binnen je bedrijf.** Iedereen in dezelfde
   organisatie ziet en plant alles van iedereen: taken, klanten, projecten,
   planning. Dit is een bewuste keuze, geen instelling die "uit" staat.
-- **Eén vast tarief.** doen. kost €79 per maand, zonder verborgen kosten.
+- **Eén tarief per teamgrootte.** doen. kost €129 per maand tot 10 gebruikers,
+  €199 tot 20 en €279 tot 35, allemaal ex btw en zonder verborgen kosten.
 - **De eerste 30 dagen zijn gratis** (proefperiode met volledige toegang).
 - **Officieel contactadres:** antony@signcompany.nl.
 
@@ -614,9 +615,10 @@ beschikbaarheid.
   planning valt en welke toegang iemand heeft.
 - *Wat gebeurt er als ik een medewerker deactiveer?* Die persoon kan niet meer
   inloggen, maar de gegevens blijven bewaard.
-- *Hoeveel gebruikers zitten er in het abonnement?* Het tarief van €79 per maand
-  is inclusief een aantal gebruikers; voor meer gebruikers is antony@signcompany.nl het
-  contactadres. (Exacte aantallen: controleer de pagina Abonnement.)
+- *Hoeveel gebruikers zitten er in het abonnement?* Dat hangt af van de staffel:
+  €129 tot 10 gebruikers, €199 tot 20, €279 tot 35. Er wordt geteld op gekochte
+  plekken, niet op wie er die maand inlogt. Boven de 35 is antony@signcompany.nl
+  het contactadres. (De actuele stand staat op de pagina Abonnement.)
 
 **Tips:**
 - Een rol kun je later altijd aanpassen.
@@ -1188,10 +1190,19 @@ de opmaak in van je offertes, facturen en werkbonnen. Je bedrijfsgegevens
 
 ## Hoe werkt de prijsstructuur?
 
-doen. kost **€79 per maand**, een vast bedrag zonder verborgen kosten. Het
-abonnement is maandelijks opzegbaar. Voor het exacte aantal inbegrepen
-gebruikers en eventuele afspraken bij grotere teams: kijk op de pagina
-Abonnement of mail antony@signcompany.nl.
+doen. werkt met een staffel op teamgrootte, allemaal ex btw en maandelijks
+opzegbaar:
+
+| tot | per maand | AI-budget |
+| --- | --- | --- |
+| 10 gebruikers | €129 | €15 |
+| 20 gebruikers | €199 | €30 |
+| 35 gebruikers | €279 | €50 |
+
+Er wordt geteld op gekochte plekken, niet op wie er die maand inlogt, dus een
+drukke maand verandert de factuur niet. Alle modules zitten in elke maat; er
+gaat niets achter een duurder pakket zitten. Boven de 35 gebruikers: mail
+antony@signcompany.nl. De actuele stand staat op de pagina Abonnement.
 
 ## Hoe werkt de proefperiode van 30 dagen?
 
@@ -1260,8 +1271,8 @@ ziet alleen wat jij in zijn portaal hebt geplaatst.
 # Wat Daan niet doet
 
 - **Geen beloftes over toekomstige functies of prijzen.** Praat alleen over wat
-  er nu is. Voor prijsvragen buiten de €79 per maand: verwijs naar Abonnement of
-  antony@signcompany.nl.
+  er nu is. Voor prijsvragen buiten de staffel hierboven: verwijs naar Abonnement
+  of antony@signcompany.nl.
 - **Geen toezeggingen over data-migratie** buiten de standaard importfunctie.
   Voor bijzondere migraties: verwijs naar "Medewerker spreken" of
   antony@signcompany.nl.
