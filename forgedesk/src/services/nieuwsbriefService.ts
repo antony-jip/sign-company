@@ -89,9 +89,11 @@ export async function getAfmeldingen(): Promise<NieuwsbriefAfmelding[]> {
   return (data ?? []) as NieuwsbriefAfmelding[]
 }
 
-// Upload een afbeelding naar de publieke documenten-bucket en geef een blijvende
+const NIEUWSBRIEF_BUCKET = 'nieuwsbrief-media'
+
+// Upload een afbeelding naar de publieke nieuwsbrief-bucket en geef een blijvende
 // publieke URL terug (bruikbaar in de nieuwsbrief-HTML). Pad begint met de user-id
-// zodat het binnen de bestaande storage-RLS (migratie 027) valt.
+// zodat het binnen de storage-RLS van migratie 181 valt.
 export async function uploadAfbeelding(file: File): Promise<string> {
   if (!file.type.startsWith('image/')) throw new Error('Alleen afbeeldingen toegestaan')
   if (file.size > 10 * 1024 * 1024) throw new Error('Afbeelding is groter dan 10MB')
@@ -99,14 +101,17 @@ export async function uploadAfbeelding(file: File): Promise<string> {
   const { data: { user } } = await client.auth.getUser()
   if (!user) throw new Error('Niet ingelogd')
   const safeName = file.name.replace(/[^\w.\-]+/g, '_')
-  const path = `${user.id}/nieuwsbrief-media/${crypto.randomUUID()}-${safeName}`
-  const { error } = await client.storage.from('documenten').upload(path, file, {
+  // Eigen bucket (migratie 181), niet documenten. Deze afbeeldingen moeten
+  // permanent publiek blijven omdat een mailclient geen vervallende link kan
+  // openen, en dat verdroeg zich niet met een bucket vol klantdocumenten.
+  const path = `${user.id}/${crypto.randomUUID()}-${safeName}`
+  const { error } = await client.storage.from(NIEUWSBRIEF_BUCKET).upload(path, file, {
     cacheControl: '31536000',
     upsert: false,
     contentType: file.type,
   })
   if (error) throw error
-  const { data } = client.storage.from('documenten').getPublicUrl(path)
+  const { data } = client.storage.from(NIEUWSBRIEF_BUCKET).getPublicUrl(path)
   return data.publicUrl
 }
 
