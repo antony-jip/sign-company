@@ -92,7 +92,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) return loader
   if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />
-  if (!organisatieId) return <Navigate to="/welkom" replace />
+  // Sta je al op /welkom, dan niet opnieuw daarheen sturen. Zonder deze
+  // uitzondering rendert Navigate null en staart een gebruiker zonder
+  // organisatie naar een permanent wit scherm, terwijl WelkomPagina precies
+  // voor dat geval een herstelpoging en een uitweg heeft.
+  if (!organisatieId) {
+    return isOnboardingPath ? <>{children}</> : <Navigate to="/welkom" replace />
+  }
   if (organisatieId && !organisatie) return loader
   if (organisatie && !organisatie.onboarding_compleet && !isOnboardingPath) return <Navigate to="/onboarding" replace />
   return <>{children}</>

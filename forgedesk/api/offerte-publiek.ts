@@ -49,7 +49,6 @@ const OFFERTE_VELDEN = [
   'klant_naam', 'klant_id', 'created_at', 'updated_at',
   'geaccepteerd_door', 'geaccepteerd_op',
   'wijziging_opmerking', 'wijziging_ingediend_op',
-  'publieke_link_geopend_op', 'publieke_link_views',
   'afrondingskorting_excl_btw', 'aangepast_totaal',
   'gekozen_items', 'gekozen_varianten',
 ] as const
@@ -62,6 +61,29 @@ const ITEM_VELDEN = [
   'foto_url', 'foto_op_offerte', 'bijlage_url', 'bijlage_type', 'bijlage_naam',
   'prijs_varianten', 'actieve_variant_id',
 ] as const
+
+/**
+ * Haalt de calculatie uit de prijsvarianten. Die JSONB draagt per regel
+ * inkoop_prijs, marge_percentage, korting_percentage en een notitie waar de app
+ * "Inkoop via <leverancier>" in schrijft. De klantpagina rendert dat niet, maar
+ * het zat wel in de JSON-respons van een endpoint zonder login: devtools open en
+ * je klant kent je inkoopprijs, je marge en je leverancier.
+ *
+ * De varianten zelf moeten mee, want de klant kiest daaruit. Alleen de
+ * onderbouwing gaat eruit.
+ */
+function zonderCalculatie(item: Record<string, unknown>): Record<string, unknown> {
+  const varianten = item.prijs_varianten
+  if (!Array.isArray(varianten)) return item
+  return {
+    ...item,
+    prijs_varianten: varianten.map((v) => {
+      if (!v || typeof v !== 'object') return v
+      const { calculatie_regels: _weg, heeft_calculatie: _ook, ...rest } = v as Record<string, unknown>
+      return rest
+    }),
+  }
+}
 
 function pick<T extends Record<string, unknown>>(obj: T, keys: readonly string[]): Partial<T> {
   const result: Record<string, unknown> = {}
@@ -210,7 +232,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('offerte_id', offerte.id)
       .order('volgorde', { ascending: true })
 
-    const items = (rawItems || []).map((item: Record<string, unknown>) => pick(item, ITEM_VELDEN))
+    const items = (rawItems || []).map((item: Record<string, unknown>) =>
+      zonderCalculatie(pick(item, ITEM_VELDEN) as Record<string, unknown>))
 
     // Bedrijfsgegevens zijn org-breed: lees het profiel van de organisatie-
     // eigenaar i.p.v. de maker, zodat elk teamlid dezelfde gegevens toont.

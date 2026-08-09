@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
@@ -13,7 +13,25 @@ const framerMotionStub = `
   export const useTransform = () => ({ get: () => 0 });
 `
 
-export default defineConfig({
+export default defineConfig(({ mode, command }) => {
+  // Zonder VITE_SUPABASE_URL en VITE_SUPABASE_ANON_KEY valt de app terug op de
+  // demo-modus: authService maakt dan zelf een gebruiker aan en ProtectedRoute
+  // laat alles door. In productie is dat een app zonder inlogscherm. Eén
+  // verkeerd gescopete variabele op Vercel is genoeg, en je merkt het niet
+  // omdat de build gewoon slaagt. Daarom hier stoppen in plaats van daar.
+  if (command === 'build') {
+    const env = loadEnv(mode, process.cwd(), 'VITE_')
+    const ontbreekt = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'].filter((k) => !env[k])
+    if (ontbreekt.length) {
+      throw new Error(
+        `Build gestopt: ${ontbreekt.join(' en ')} ontbreekt. Zonder die waarden ` +
+        'draait de app in demo-modus en is er geen inlogscherm. Zet ze in de ' +
+        'omgeving van deze deploy en bouw opnieuw.'
+      )
+    }
+  }
+
+  return {
   plugins: [
     react(),
     // Virtual module plugin to stub framer-motion
@@ -92,4 +110,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })
