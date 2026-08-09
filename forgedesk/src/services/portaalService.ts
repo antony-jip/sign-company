@@ -370,17 +370,20 @@ export async function deactiveerPortaal(portaalId: string): Promise<void> {
 export async function getPortaalItems(portaalId: string, alleenZichtbaar = false): Promise<PortaalItem[]> {
   assertId(portaalId, 'portaal_id')
 
-  const resolveBestand = (b: PortaalBestand): PortaalBestand => ({
+  const resolveBestand = async (b: PortaalBestand): Promise<PortaalBestand> => ({
     ...b,
-    url: resolvePortaalBestandUrl(b.url) ?? b.url,
-    thumbnail_url: resolvePortaalBestandUrl(b.thumbnail_url) ?? b.thumbnail_url,
+    url: (await resolvePortaalBestandUrl(b.url)) ?? b.url,
+    thumbnail_url: (await resolvePortaalBestandUrl(b.thumbnail_url)) ?? b.thumbnail_url,
   })
 
-  const resolveItem = (item: PortaalItem): PortaalItem => ({
+  const resolveItem = async (item: PortaalItem): Promise<PortaalItem> => ({
     ...item,
-    foto_url: resolvePortaalBestandUrl(item.foto_url) ?? item.foto_url,
-    bestanden: (item.bestanden || []).map(resolveBestand),
+    foto_url: (await resolvePortaalBestandUrl(item.foto_url)) ?? item.foto_url,
+    bestanden: await Promise.all((item.bestanden || []).map(resolveBestand)),
   })
+
+  const resolveItems = (items: PortaalItem[]): Promise<PortaalItem[]> =>
+    Promise.all(items.map(resolveItem))
 
   if (isSupabaseConfigured() && supabase) {
     // RPC functie (SECURITY DEFINER) omzeilt RLS op portaal_reacties/bestanden
@@ -395,7 +398,7 @@ export async function getPortaalItems(portaalId: string, alleenZichtbaar = false
           reacties: (item.reacties || []) as PortaalReactie[],
         })) as PortaalItem[]
         if (alleenZichtbaar) result = result.filter(i => i.zichtbaar_voor_klant)
-        return result.map(resolveItem)
+        return resolveItems(result)
       }
     } catch (rpcErr) {
       // RPC failed, fall back to direct query
@@ -409,11 +412,12 @@ export async function getPortaalItems(portaalId: string, alleenZichtbaar = false
     if (alleenZichtbaar) query = query.eq('zichtbaar_voor_klant', true)
     const { data, error } = await query
     if (error) throw error
-    return (data || []).map((item: Record<string, unknown>) => ({
+    const gemapt = (data || []).map((item: Record<string, unknown>) => ({
       ...item,
       bestanden: (item.portaal_bestanden || []) as PortaalBestand[],
       reacties: (item.portaal_reacties || []) as PortaalReactie[],
-    } as PortaalItem)).map(resolveItem)
+    } as PortaalItem))
+    return resolveItems(gemapt)
   }
   const items = getLocalData<PortaalItem>('portaal_items')
   let filtered = items.filter((i) => i.portaal_id === portaalId)

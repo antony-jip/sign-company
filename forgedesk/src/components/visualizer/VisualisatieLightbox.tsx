@@ -35,8 +35,28 @@ export function VisualisatieLightbox({
     return () => window.removeEventListener('keydown', handleKey)
   }, [onClose, goTo])
 
-  const mockupUrl = resolvePortaalBestandUrl(current?.resultaat_url) || current?.resultaat_url || ''
-  const origineelUrl = resolvePortaalBestandUrl(current?.gebouw_foto_url) || current?.gebouw_foto_url || ''
+  // Het oplossen van een pad naar een ondertekende link is een netwerkaanroep,
+  // dus dat kan niet meer in de render. Bij een lege waarde valt de weergave
+  // terug op de ruwe kolom, net als voorheen.
+  const [mockupUrl, setMockupUrl] = useState('')
+  const [origineelUrl, setOrigineelUrl] = useState('')
+
+  useEffect(() => {
+    let geannuleerd = false
+    const resultaat = current?.resultaat_url
+    const gebouw = current?.gebouw_foto_url
+    setMockupUrl(resultaat || '')
+    setOrigineelUrl(gebouw || '')
+    Promise.all([
+      resolvePortaalBestandUrl(resultaat),
+      resolvePortaalBestandUrl(gebouw),
+    ]).then(([m, o]) => {
+      if (geannuleerd) return
+      setMockupUrl(m || resultaat || '')
+      setOrigineelUrl(o || gebouw || '')
+    }).catch(() => { /* val terug op de ruwe waarde die er al staat */ })
+    return () => { geannuleerd = true }
+  }, [current?.resultaat_url, current?.gebouw_foto_url])
 
   const handleDownload = useCallback(() => {
     if (!mockupUrl) return

@@ -138,14 +138,21 @@ export async function downloadFile(path: string): Promise<string> {
  * publieke route al opbouwt voor klanten. Storage paths leveren we niet in de
  * DB resolved op (zie REVIEW_NOTES); deze helper vangt dat read-side af.
  */
-export function resolvePortaalBestandUrl(pathOrUrl: string | null | undefined): string | null {
+export async function resolvePortaalBestandUrl(
+  pathOrUrl: string | null | undefined,
+): Promise<string | null> {
   if (!pathOrUrl) return null
   if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://') || pathOrUrl.startsWith('data:')) {
     return pathOrUrl
   }
   if (!isSupabaseConfigured() || !supabase) return pathOrUrl
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(pathOrUrl)
-  return data.publicUrl
+  // Ondertekend in plaats van publiek: dit zijn klantdocumenten en
+  // projectfoto's. Een dag is ruim voor een sessie en kort genoeg dat een
+  // doorgestuurde link niet eeuwig meegaat. Werkt ook zolang de bucket nog
+  // publiek is, dus dit kan vooruit op het splitsen van de bucket.
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(pathOrUrl, 60 * 60 * 24)
+  if (error || !data) return null
+  return data.signedUrl
 }
 
 export async function getSignedUrl(path: string, ttlSeconden: number = 3600): Promise<string> {

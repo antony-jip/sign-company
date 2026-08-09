@@ -28,7 +28,7 @@ import {
   deleteVisualizerChat,
 } from '@/services/supabaseService'
 import supabase from '@/services/supabaseClient'
-import { uploadFile, downloadFile } from '@/services/storageService'
+import { uploadFile } from '@/services/storageService'
 import type { SigningVisualisatie, Project, Offerte, VisualizerChat } from '@/types'
 import { VisualisatieLightbox } from './VisualisatieLightbox'
 import { CreditsPakketDialog } from './CreditsPakketDialog'
@@ -577,7 +577,7 @@ export function VisualizerLayout() {
             const resultFile = new File([blob], `resultaat-${ts}.${ext}`, { type: mime })
             const path = `${user.id}/visualizer/${ts}-resultaat.${ext}`
             await uploadFile(resultFile, path)
-            resultaatUrl = await downloadFile(path)
+            resultaatUrl = path
           }
         }
       } catch (err) {
@@ -640,7 +640,7 @@ export function VisualizerLayout() {
             const f = new File([blob], `resultaat-${ts}.${ext}`, { type: mime })
             const path = `${user.id}/visualizer/${ts}-resultaat.${ext}`
             await uploadFile(f, path)
-            resultaatUrl = await downloadFile(path)
+            resultaatUrl = path
           }
         } catch { /* val terug op originele url */ }
       }
@@ -684,7 +684,7 @@ export function VisualizerLayout() {
       const compressed = base64ToFile(resized, `upload-${ts}.jpg`)
       const path = `${user.id}/visualizer/${ts}-upload.jpg`
       await uploadFile(compressed, path)
-      const url = await downloadFile(path)
+      const url = path
       await createSigningVisualisatie({
         user_id: user.id,
         gebouw_foto_url: url,
