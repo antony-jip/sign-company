@@ -242,7 +242,7 @@ function MontageCard({
 }
 
 export function MontagePlanningLayoutMobile() {
-  const { user } = useAuth()
+  const { user, userRol } = useAuth()
   const [afspraken, setAfspraken] = useState<MontageAfspraak[]>(() => getCached<MontageAfspraak[]>('montageAfspraken') ?? [])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? [])
   const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
@@ -295,7 +295,7 @@ export function MontagePlanningLayoutMobile() {
     if (filterInitialized) return
     if (!currentMedewerker) return
     if (currentMedewerker.rol !== 'monteur') return
-    if (isAdminUser(currentMedewerker, user)) return
+    if (isAdminUser(currentMedewerker, user, userRol)) return
     setScopeState('mijn')
     setFilterInitialized(true)
     try {
