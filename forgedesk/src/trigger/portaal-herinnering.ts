@@ -126,11 +126,17 @@ async function processUserHerinneringen(params: {
 
   // Get portaal tokens
   const portaalIds = [...new Set(toSend.map((i) => i.portaal_id))];
+  // actief=true is niet genoeg: een portaal verloopt op datum en api/portaal-get
+  // geeft daarna 410. Zonder deze filter mailen we de klant een herinnering
+  // naar een link die hem een foutpagina toont, uit naam van de signmaker.
+  // verloopt_op mag NULL zijn (portaal zonder einddatum), die blijven meedoen.
+  const nu = new Date().toISOString();
   const { data: portalen } = await supabase
     .from("project_portalen")
     .select("id, token, project_id")
     .in("id", portaalIds)
-    .eq("actief", true);
+    .eq("actief", true)
+    .or(`verloopt_op.is.null,verloopt_op.gt.${nu}`);
 
   if (!portalen || portalen.length === 0) return result;
 
