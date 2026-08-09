@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
-import { MoreHorizontal, X, LogOut, CreditCard, BookOpen, SlidersHorizontal, MessageSquare } from 'lucide-react'
+import { MoreHorizontal, X, LogOut, CreditCard, BookOpen, SlidersHorizontal, MessageSquare, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { prefetchRoute } from '@/lib/routePrefetch'
 import { hapticLight } from '@/utils/haptic'
@@ -157,104 +157,126 @@ export function MobileTabBar() {
       {meerOpen && createPortal(
         <div className="md:hidden fixed inset-0 z-[60] flex flex-col justify-end">
           <div
-            className="absolute inset-0 bg-black/40 animate-in fade-in-0 duration-150"
+            className="absolute inset-0 bg-black/25 backdrop-blur-[2px] animate-in fade-in-0 duration-150"
             onClick={() => setMeerOpen(false)}
             aria-hidden="true"
           />
-          <div className="relative bg-card rounded-t-[20px] border-t border-border max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-4 duration-200 pb-[env(safe-area-inset-bottom)]">
-            <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
-              <span className="text-[15px] font-bold text-foreground">Meer<span className="text-flame">.</span></span>
-              <button
-                type="button"
-                onClick={() => setMeerOpen(false)}
-                aria-label="Sluiten"
-                className="tap-press w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            <div className="overflow-y-auto px-3 pb-3">
-              <div className="grid grid-cols-4 gap-1">
-                {meerItems.map((item) => {
-                  const isActive = isPadActief(location.pathname, item.path)
-                  const Icon = item.icon
-                  return (
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      end={item.path === '/'}
-                      onClick={() => hapticLight()}
-                      className={cn(
-                        'tap-press flex flex-col items-center gap-1.5 py-3 px-1 rounded-[14px] transition-colors',
-                        isActive ? 'bg-flame/[0.08]' : 'active:bg-muted/60',
-                      )}
-                    >
-                      <span
-                        className="w-11 h-11 rounded-[13px] flex items-center justify-center flex-shrink-0"
-                        style={{ background: `${item.color}14` }}
-                      >
-                        <Icon className="w-[19px] h-[19px]" style={{ color: item.color }} />
-                      </span>
-                      <span className="text-[11px] font-medium text-foreground/80 leading-tight text-center truncate max-w-full">
-                        {item.label}
-                      </span>
-                      {item.path === SUPPORT_ITEM.path && supportAttentie > 0 && (
-                        <span className="sr-only">{supportAttentie} openstaand</span>
-                      )}
-                    </NavLink>
-                  )
-                })}
+          <div
+            role="dialog"
+            aria-label="Meer"
+            className="relative bg-card rounded-t-[22px] max-h-[86vh] flex flex-col animate-in slide-in-from-bottom-4 duration-200 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_40px_rgba(26,83,92,0.14)]"
+          >
+            {/* Greep · zegt zonder woorden dat dit paneel weg kan */}
+            <button
+              type="button"
+              onClick={() => setMeerOpen(false)}
+              aria-label="Sluiten"
+              className="flex-shrink-0 w-full pt-2.5 pb-1 flex justify-center"
+            >
+              <span className="h-1 w-9 rounded-full bg-foreground/15" />
+            </button>
+
+            {/* Wie ben je · identiteit bovenaan, zoals in Instellingen */}
+            {user && (
+              <div className="flex-shrink-0 flex items-center gap-3 px-5 pt-2 pb-4">
+                <span className="w-11 h-11 rounded-[13px] flex items-center justify-center bg-petrol text-white font-bold text-[15px] flex-shrink-0">
+                  {userInitial}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-bold tracking-[-0.01em] text-foreground truncate leading-tight">
+                    {userName}
+                  </p>
+                  <p className="text-[12px] text-muted-foreground truncate mt-0.5">{user.email}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMeerOpen(false)}
+                  aria-label="Sluiten"
+                  className="tap-press w-9 h-9 -mr-1.5 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/60"
+                >
+                  <X className="w-[18px] h-[18px]" />
+                </button>
               </div>
+            )}
 
-              <div className="h-px bg-border/60 my-3" />
-
-              <button
-                type="button"
-                onClick={() => { setMeerOpen(false); navigate(SETTINGS_ITEM.path) }}
-                className="tap-press flex items-center gap-3 w-full px-3 py-3 rounded-[12px] text-[14px] font-medium text-foreground active:bg-muted/60"
-              >
-                <SlidersHorizontal className="w-[18px] h-[18px] text-muted-foreground" />
-                Instellingen
-              </button>
-              <button
-                type="button"
-                onClick={() => { setMeerOpen(false); navigate('/instellingen?tab=abonnement') }}
-                className="tap-press flex items-center gap-3 w-full px-3 py-3 rounded-[12px] text-[14px] font-medium text-foreground active:bg-muted/60"
-              >
-                <CreditCard className="w-[18px] h-[18px] text-muted-foreground" />
-                Abonnement
-              </button>
-              <button
-                type="button"
-                onClick={() => { setMeerOpen(false); navigate('/kennisbank') }}
-                className="tap-press flex items-center gap-3 w-full px-3 py-3 rounded-[12px] text-[14px] font-medium text-foreground active:bg-muted/60"
-              >
-                <BookOpen className="w-[18px] h-[18px] text-muted-foreground" />
-                Kennisbank
-              </button>
-
-              {user && (
+            <div className="overflow-y-auto px-3 pb-4">
+              {meerItems.length > 0 && (
                 <>
-                  <div className="h-px bg-border/60 my-3" />
-                  <div className="flex items-center gap-3 px-3 py-2">
-                    <span className="w-10 h-10 rounded-[11px] flex items-center justify-center bg-petrol text-white font-bold text-[14px] flex-shrink-0">
-                      {userInitial}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-semibold text-foreground truncate leading-tight">{userName}</p>
-                      <p className="text-[12px] text-muted-foreground truncate mt-0.5">{user.email}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => { setMeerOpen(false); logout() }}
-                      aria-label="Uitloggen"
-                      className="tap-press w-10 h-10 rounded-[11px] flex items-center justify-center text-flame active:bg-flame/[0.08]"
-                    >
-                      <LogOut className="w-[18px] h-[18px]" />
-                    </button>
+                  <p className="px-2 pb-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                    Modules
+                  </p>
+                  <div className="grid grid-cols-4 gap-x-1 gap-y-3">
+                    {meerItems.map((item) => {
+                      const isActive = isPadActief(location.pathname, item.path)
+                      const Icon = item.icon
+                      const telling = item.path === SUPPORT_ITEM.path ? supportAttentie : 0
+                      return (
+                        <NavLink
+                          key={item.path}
+                          to={item.path}
+                          end={item.path === '/'}
+                          onClick={() => hapticLight()}
+                          className="tap-press flex flex-col items-center gap-1.5 py-1 px-0.5 rounded-[14px]"
+                        >
+                          <span
+                            className="relative w-[52px] h-[52px] rounded-[16px] flex items-center justify-center flex-shrink-0 transition-shadow"
+                            style={{
+                              background: `${item.color}14`,
+                              boxShadow: isActive ? `inset 0 0 0 1.5px ${item.color}` : undefined,
+                            }}
+                          >
+                            <Icon className="w-[21px] h-[21px]" style={{ color: item.color }} />
+                            {telling > 0 && (
+                              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-flame text-white text-[10px] font-bold font-mono tabular-nums flex items-center justify-center ring-2 ring-card">
+                                {telling}
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-[11px] font-medium text-foreground/75 leading-tight text-center truncate max-w-full">
+                            {item.label}
+                            <span className={isActive ? 'text-flame' : 'text-transparent'}>.</span>
+                          </span>
+                        </NavLink>
+                      )
+                    })}
                   </div>
                 </>
+              )}
+
+              <p className="px-2 pt-6 pb-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                Account
+              </p>
+
+              {([
+                { label: 'Instellingen', icon: SlidersHorizontal, naar: SETTINGS_ITEM.path },
+                { label: 'Abonnement', icon: CreditCard, naar: '/instellingen?tab=abonnement' },
+                { label: 'Kennisbank', icon: BookOpen, naar: '/kennisbank' },
+              ]).map((rij) => {
+                const RijIcon = rij.icon
+                return (
+                  <button
+                    key={rij.label}
+                    type="button"
+                    onClick={() => { setMeerOpen(false); navigate(rij.naar) }}
+                    className="tap-press flex items-center gap-3.5 w-full px-2 py-3 rounded-[12px] text-[15px] text-foreground active:bg-muted/50 transition-colors"
+                  >
+                    <RijIcon className="w-[19px] h-[19px] text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+                    <span className="flex-1 text-left">{rij.label}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                  </button>
+                )
+              })}
+
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => { setMeerOpen(false); logout() }}
+                  className="tap-press flex items-center gap-3.5 w-full px-2 py-3 mt-1 rounded-[12px] text-[15px] font-medium text-flame active:bg-flame/[0.07] transition-colors"
+                >
+                  <LogOut className="w-[19px] h-[19px] flex-shrink-0" strokeWidth={1.8} />
+                  <span className="flex-1 text-left">Uitloggen</span>
+                </button>
               )}
             </div>
           </div>
