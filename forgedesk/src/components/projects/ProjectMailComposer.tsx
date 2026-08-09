@@ -581,9 +581,14 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     setBezigItemId(f.id)
     try {
       if (f.pdf_storage_path) {
+        // Buiten de callback vastleggen: de narrowing van de if-check geldt niet
+        // meer binnen de setState-functie, want TypeScript kan daar niet zien
+        // dat het veld ongewijzigd is. Zonder deze const is het type nog
+        // string | null en past het niet in Bijlage.storagePath.
+        const storagePath = f.pdf_storage_path
         setBijlagen((prev) => [
           ...prev,
-          { id: crypto.randomUUID(), filename: `Factuur-${f.nummer}.pdf`, size: 0, mimeType: 'application/pdf', storagePath: f.pdf_storage_path, bucket: 'facturen', bron: 'factuur', bronId: f.id },
+          { id: crypto.randomUUID(), filename: `Factuur-${f.nummer}.pdf`, size: 0, mimeType: 'application/pdf', storagePath, bucket: 'facturen', bron: 'factuur', bronId: f.id },
         ])
       } else {
         const items = await getFactuurItems(f.id)
