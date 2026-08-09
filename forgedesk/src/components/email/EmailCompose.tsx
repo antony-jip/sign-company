@@ -991,9 +991,10 @@ export function EmailCompose({
           </button>
         </div>
 
-        {/* Compose form */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-6">
+        {/* Compose form · overflow-x expliciet dicht, anders rekent CSS die as
+            om naar auto en trekt een brede handtekening het hele venster scheef */}
+        <div className="flex-1 overflow-y-auto max-md:overflow-x-hidden">
+          <div className="px-4 md:px-6 min-w-0 max-w-full">
             {/* Aan field */}
             <div className="relative">
               <div className="flex items-center border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">

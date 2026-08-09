@@ -233,13 +233,37 @@ export function TabsProvider({ children }: { children: ReactNode }) {
       const existing = prev.find((t: AppTab) => t.id === id)
 
       if (existing) {
+        // Het opgeslagen pad is een herinnering aan waar dit tabblad stond, en
+        // die is waardevol zolang het om dezelfde pagina gaat: de querystring
+        // draagt sub-tab, filter en zoekterm.
+        //
+        // Maar dat pad drift. Zolang een tabblad actief is schrijft de
+        // location-sync hierboven élke navigatie erin — ook een sprong naar een
+        // andere module via de nav, die niet via openTab loopt. Het tabblad van
+        // project X kon zo pad '/projecten' krijgen. Tikte je daarna project X
+        // aan vanuit de lijst, dan stond je al op dat pad en gebeurde er
+        // helemaal niets: het project ging niet open, zonder enige melding.
+        // Precies de projecten die je eerder had geopend waren stuk.
+        //
+        // Wijst het opgeslagen pad naar een andere pagina dan gevraagd, dan is
+        // de vraag leidend en de herinnering verouderd.
+        const doelPad = pathnameVan(existing.path) === pathnameVan(tab.path)
+          ? existing.path
+          : tab.path
+
+        if (doelPad !== existing.path) {
+          const hersteld = prev.map((t: AppTab) => (t.id === id ? { ...t, path: doelPad } : t))
+          saveTabs(hersteld)
+          setTabs(hersteld)
+        }
+
         setActiveTabId(id)
-        if (existing.path !== huidigPadRef.current) {
+        if (doelPad !== huidigPadRef.current) {
           isSwitchingTabRef.current = true
           // Wisselen van tabblad is geen navigatie: met een push zou elke
           // tabklik in de browsergeschiedenis komen en zou "terug" je naar de
           // pagina van een ánder tabblad sturen.
-          navigateRef.current(existing.path, { replace: true })
+          navigateRef.current(doelPad, { replace: true })
         }
         return
       }

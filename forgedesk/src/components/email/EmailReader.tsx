@@ -1684,8 +1684,12 @@ export function EmailReader({
         </TooltipProvider>
 
         {/* Scrollable email content */}
-        <div className="flex-1 overflow-y-auto bg-white dark:bg-card">
-          <div className="w-full">
+        {/* overflow-x expliciet dicht: met alleen overflow-y-auto rekent CSS de
+            andere as om naar auto, dus een brede handtekening sleepte de hele
+            lezer zijwaarts mee — kop, knoppen en antwoordvenster incl. Het
+            bericht zelf houdt hieronder zijn eigen scrollbare kader. */}
+        <div className="flex-1 overflow-y-auto max-md:overflow-x-hidden bg-white dark:bg-card">
+          <div className="w-full min-w-0 max-w-full">
             {/* Header: subject + sender + reply actions */}
             {/* In reply-mode collapsen we naar één compacte regel · sender + onderwerp
                 staan toch al in de Aan/Ond-velden van het formulier eronder. */}
