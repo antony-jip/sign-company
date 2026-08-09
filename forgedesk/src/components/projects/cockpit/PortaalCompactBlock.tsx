@@ -390,14 +390,13 @@ function InputBar({
     await send(async () => {
       const storagePath = await uploadFile(file, `${userId}/portaal/${portaal.id}/${Date.now()}_${sanitizeStorageFilename(file.name)}`)
       // Resolve to public URL if it's a storage path
-      let url = storagePath
-      if (!storagePath.startsWith('http') && !storagePath.startsWith('data:')) {
-        const { default: supabase } = await import('@/services/supabaseClient')
-        if (supabase) {
-          const { data } = supabase.storage.from('documenten').getPublicUrl(storagePath)
-          url = data.publicUrl
-        }
-      }
+      // Bewust het storage-pad opslaan, geen opgeloste URL. api/portaal-get
+      // ondertekent paden bij het uitserveren, en die link vervalt met het
+      // portaal. Sloegen we hier een publieke URL op, dan stond die permanent
+      // in de database en bleef de foto bereikbaar nadat het portaal verlopen
+      // of ingetrokken was. Dit volgt de conventie die storageService al
+      // beschrijft: paden in de database, resolven aan de leeskant.
+      const url = storagePath
       await createPortaalItem({ user_id: userId, project_id: projectId, portaal_id: portaal.id, type: 'bericht', titel: file.name, bericht_type: 'foto', foto_url: url, afzender: 'bedrijf', status: 'verstuurd', zichtbaar_voor_klant: true, volgorde: 0 })
       toast.success('Afbeelding gedeeld'); await fetchItems()
       if (notificeerKlant) sendEmailNotification('Nieuwe foto gedeeld', 'Foto')
