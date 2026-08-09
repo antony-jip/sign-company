@@ -16,8 +16,8 @@ const GANGBAAR_PER_MAAND = 208
 const BESPARING_PER_JAAR = (GANGBAAR_PER_MAAND - PRICE_PER_MONTH) * 12
 
 const INBEGREPEN = [
-  'Alle tien modules',
-  'Tot 10 gebruikers',
+  'Alle modules, in elke maat',
+  'Tot 10 gebruikers, uit te breiden tot 35',
   'Onbeperkt projecten, offertes en facturen',
   'Klantportaal zonder inlog',
   'AI-assistent Daan',
@@ -54,7 +54,8 @@ function PriceHero() {
           </h1>
           <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
             Alles wat je bedrijf nodig hebt voor €{PRICE_PER_MONTH} per maand, ex btw.
-            Geen pakketten, geen prijs per gebruiker, geen opzetkosten.
+            Geen pakketten, geen prijs per kop, geen opzetkosten. Groeit je team,
+            dan schuif je een maat op: € 199 tot 20 gebruikers, € 279 tot 35.
           </p>
         </div>
 

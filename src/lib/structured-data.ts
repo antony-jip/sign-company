@@ -1,4 +1,4 @@
-import { PRICE_PER_MONTH } from '@/data/pricing'
+import { STAFFEL } from '@/data/pricing'
 import { faqs, prijzenFaqs } from '@/data/faq'
 
 const BASE_URL = 'https://doen.team'
@@ -20,9 +20,14 @@ export const softwareApplicationSchema = {
   operatingSystem: 'Web',
   description:
     'Alles-in-één bedrijfssoftware voor signmakers en reclamebedrijven. Van offerte tot factuur: projecten, planning, werkbonnen, klantportaal en facturatie in één systeem.',
+  // AggregateOffer in plaats van Offer: sinds de staffel is er een vanaf-prijs
+  // en een bovengrens, en één vast bedrag zou een rich result opleveren dat
+  // grotere teams een te lage prijs voorspiegelt.
   offers: {
-    '@type': 'Offer',
-    price: String(PRICE_PER_MONTH),
+    '@type': 'AggregateOffer',
+    lowPrice: String(STAFFEL[0].prijs),
+    highPrice: String(STAFFEL[STAFFEL.length - 1].prijs),
+    offerCount: String(STAFFEL.length),
     priceCurrency: 'EUR',
   },
 }

@@ -3,8 +3,8 @@ import { ArrowRight, Check } from 'lucide-react'
 import { PRICE_PER_MONTH } from '@/data/pricing'
 
 const INCLUDED = [
-  'Alle tien modules',
-  'Tot 10 gebruikers',
+  'Alle modules, in elke maat',
+  'Tot 10 gebruikers, uit te breiden tot 35',
   'Klantportaal zonder inlog',
   'AI-assistent Daan',
   'Koppeling Exact Online en Mollie',
@@ -45,10 +45,13 @@ export default function PricingSection() {
               </span>
             </div>
             <p className="text-[15px] mb-2" style={{ color: 'rgba(226,240,241,0.7)' }}>
-              Geen pakketten, geen prijs per gebruiker, geen verrassingen.
+              Geen pakketten, geen prijs per kop, geen verrassingen.
+            </p>
+            <p className="text-[13px] mb-3" style={{ color: 'rgba(226,240,241,0.55)' }}>
+              Tot 10 gebruikers. Groter team? € 199 tot 20 gebruikers, € 279 tot 35. Alle modules zitten in elke maat.
             </p>
             <p className="text-[13px] mb-10" style={{ color: 'rgba(226,240,241,0.55)' }}>
-              AI zit erbij: € 15 aan gebruik per maand, voor je organisatie samen. Genoeg voor normaal werk. Alleen wie veel beelden maakt in Studio komt eraan, en die koopt bij.
+              AI zit erbij: € 15 aan gebruik per maand, voor je organisatie samen, en dat groeit mee met je team. Genoeg voor normaal werk. Alleen wie veel beelden maakt in Studio komt eraan, en die koopt bij.
             </p>
             <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
               <a

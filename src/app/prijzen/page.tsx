@@ -8,7 +8,7 @@ import { softwareApplicationSchema } from '@/lib/structured-data'
 
 export const metadata: Metadata = paginaMeta({
   title: 'Prijzen · één plan voor je signbedrijf | doen.',
-  description: 'Een plan, een prijs. €129 per maand ex. btw voor je hele signbedrijf, tot 10 gebruikers. Meer gebruikers? Neem contact op.',
+  description: 'Een plan, drie maten. €129 per maand ex. btw voor je hele signbedrijf tot 10 gebruikers, €199 tot 20 en €279 tot 35.',
   pad: '/prijzen',
 })
 

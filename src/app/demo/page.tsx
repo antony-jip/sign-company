@@ -202,7 +202,7 @@ export default function DemoPage() {
             </div>
 
             <p className="mt-10 md:mt-14 text-[16px] md:text-[18px] text-petrol font-semibold">
-              € 129 per maand ex btw · per organisatie, niet per gebruiker ·{' '}
+              vanaf € 129 per maand ex btw · per organisatie, niet per kop ·{' '}
               <a href="/prijzen" className="underline decoration-flame decoration-2 underline-offset-4 hover:text-flame transition-colors">
                 bekijk wat je krijgt
               </a>

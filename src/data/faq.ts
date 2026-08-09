@@ -20,7 +20,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'prijs',
     q: 'Hoeveel kost doen. na de proefperiode?',
-    a: '**€129 per maand ex. btw**, tot **10 gebruikers**. Dat is alles. Geen opzetkosten, geen add-ons, geen aparte prijs per gebruiker die later omhoog duikt. Heb je een groter team? Stuur ons een bericht.',
+    a: '**€129 per maand ex. btw**, tot **10 gebruikers**. Dat is alles. Geen opzetkosten, geen add-ons, geen aparte prijs per kop die later omhoog duikt. Groter team? Dan schuif je een maat op: **€199 tot 20 gebruikers**, **€279 tot 35**. Alle modules zitten in elke maat, er gaat niets achter een duurder pakket zitten.',
   },
   {
     category: 'prijs',
@@ -35,7 +35,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'prijs',
     q: 'Wat als ik meer dan 10 gebruikers heb?',
-    a: 'Stuur ons een mail, dan maken we een **prijs op maat**. Alles uit het abonnement blijft hetzelfde, we passen alleen de schaal aan.',
+    a: 'Dan schuif je een maat op. **€199 tot 20 gebruikers**, **€279 tot 35**, allebei ex. btw. Je betaalt naar gekochte plekken, niet naar wie er die week inlogt, dus je factuur schommelt niet mee met een drukke maand. Zit je boven de 35? Stuur ons een mail, dan kijken we samen.',
   },
 
   {

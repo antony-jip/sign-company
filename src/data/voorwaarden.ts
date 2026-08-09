@@ -156,8 +156,9 @@ export const hoofdstukken: Hoofdstuk[] = [
         nr: '11',
         titel: 'Prijs',
         leden: [
-          'Het abonnement kost € 129 per maand, exclusief btw, voor maximaal tien gebruikers. Alle onderdelen zitten erbij. Er zijn geen opstartkosten en geen prijs per gebruiker.',
-          'Het AI-budget van € 15 per maand zit bij de prijs in. Extra budget koop je los bij tegen het tarief dat op dat moment in de app staat. Bijgekocht budget is niet inwisselbaar voor geld.',
+          'Het abonnement kost € 129 per maand, exclusief btw, voor maximaal tien gebruikers. Alle onderdelen zitten erbij. Er zijn geen opstartkosten.',
+          'Heb je meer gebruikers nodig, dan geldt een staffel: € 199 per maand tot twintig gebruikers en € 279 per maand tot vijfendertig, allebei exclusief btw. De staffel telt het aantal gebruikersplekken dat je afneemt, niet het aantal mensen dat in een bepaalde maand inlogt. Wij rekenen niet per gebruiker af en alle onderdelen zitten in elke staffel.',
+          'Het AI-budget zit bij de prijs in en schaalt mee met de staffel: € 15 per maand tot tien gebruikers, € 30 tot twintig en € 50 tot vijfendertig. Het budget geldt voor je organisatie samen. Extra budget koop je los bij tegen het tarief dat op dat moment in de app staat. Bijgekocht budget is niet inwisselbaar voor geld.',
           'Wij mogen de prijs aanpassen. Een verhoging kondigen wij minimaal 30 dagen van tevoren per e-mail aan. Ben je het er niet mee eens, dan mag je opzeggen tegen de datum waarop de nieuwe prijs ingaat.',
         ],
       },

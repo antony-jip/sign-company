@@ -1271,7 +1271,9 @@ export const articles: Article[] = [
               </a>
               . Wie doen. naast een pakket als James PRO wil leggen: bij ons is
               het één flat bedrag tot 10 gebruikers in plaats van een tarief per
-              gebruiker, en zonder opzetkosten.
+              kop, en zonder opzetkosten. Groeit je team, dan schuif je een maat
+              op (€199 tot 20, €279 tot 35) in plaats van per account bij te
+              betalen.
             </P>
           </>
         ),
@@ -1527,7 +1529,8 @@ export const articles: Article[] = [
             <P>
               Onder <B>Instellingen → Financieel → Abonnement</B> zie je je huidige status en activeer of beheer
               je het abonnement. doen. kost <B>€129 per maand</B> (excl. btw), tot 10 gebruikers inbegrepen. Heb
-              je meer mensen nodig, dan werkt dat met een staffel op maat, geen losse rekensom per extra account.
+              je meer mensen nodig, dan schuif je een maat op: €199 tot 20 gebruikers en €279 tot 35, allebei
+              excl. btw. Geen losse rekensom per extra account.
             </P>
             <P>
               Opzeggen doe je met één klik, met een bevestigingsstap erna. Je houdt volledige toegang tot het
