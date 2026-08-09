@@ -35,6 +35,43 @@ export async function getProjecten(limit = 50000): Promise<Project[]> {
   }))
 }
 
+/**
+ * Server-side zoeken voor de globale zoekbalk. Matcht op dezelfde velden als de
+ * oude client-side filter: naam, beschrijving en de bedrijfsnaam van de klant.
+ */
+export async function zoekProjecten(term: string, limit = 20): Promise<Project[]> {
+  const gezocht = term.trim()
+  if (!gezocht) return []
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+  // Komma en haakjes zijn structuur in de or-syntax van PostgREST; % en _ zijn
+  // jokers in ilike. Allebei eruit, zodat een zoekterm een zoekterm blijft.
+  const veilig = gezocht.replace(/[,%_()"*\\]/g, '')
+  if (!veilig) return []
+    const { data, error } = await sb
+      .from('projecten')
+      .select('*, klanten(bedrijfsnaam)')
+      .or(`naam.ilike.%${veilig}%,beschrijving.ilike.%${veilig}%`)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    return (data || []).map((p: Project & { klanten?: { bedrijfsnaam?: string } }) => ({
+      ...p,
+      klant_naam: p.klanten?.bedrijfsnaam || '',
+    }))
+  }
+  const q = gezocht.toLowerCase()
+  const klanten = getLocalData<Klant>('klanten')
+  return getLocalData<Project>('projecten')
+    .map((p) => ({ ...p, klant_naam: klanten.find((k) => k.id === p.klant_id)?.bedrijfsnaam || '' }))
+    .filter((p) =>
+      p.naam.toLowerCase().includes(q) ||
+      (p.beschrijving || '').toLowerCase().includes(q) ||
+      (p.klant_naam || '').toLowerCase().includes(q)
+    )
+    .slice(0, limit)
+}
+
 // Lichtgewicht: alleen klant_id ophalen om projecten per klant te tellen.
 // Vermijdt de zware getProjecten()-query (select('*') + join) die anders
 // puur voor tellingen alle projectvelden over de lijn haalt.

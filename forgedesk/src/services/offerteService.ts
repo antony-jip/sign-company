@@ -69,6 +69,43 @@ export async function getOfferte(id: string): Promise<Offerte | null> {
   return { ...offerte, klant_naam: klanten.find((k) => k.id === offerte.klant_id)?.bedrijfsnaam || '' }
 }
 
+/**
+ * Server-side zoeken voor de globale zoekbalk. Matcht op nummer en titel; de
+ * klantnaam zit in de join en is niet in dezelfde or-filter te vangen, dus daar
+ * zoekt de zoekbalk voortaan via de klanten-categorie op.
+ */
+export async function zoekOffertes(term: string, limit = 20): Promise<Offerte[]> {
+  const gezocht = term.trim()
+  if (!gezocht) return []
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    const orgId = await getOrgId()
+  // Komma en haakjes zijn structuur in de or-syntax van PostgREST; % en _ zijn
+  // jokers in ilike. Allebei eruit, zodat een zoekterm een zoekterm blijft.
+  const veilig = gezocht.replace(/[,%_()"*\\]/g, '')
+  if (!veilig) return []
+    let query = sb
+      .from('offertes')
+      .select('*, klanten(bedrijfsnaam)')
+      .or(`nummer.ilike.%${veilig}%,titel.ilike.%${veilig}%`)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    if (orgId) query = query.eq('organisatie_id', orgId)
+    const { data, error } = await query
+    if (error) throw error
+    return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
+      ...o,
+      klant_naam: o.klanten?.bedrijfsnaam || '',
+    }))
+  }
+  const q = gezocht.toLowerCase()
+  const klanten = getLocalData<Klant>('klanten')
+  return getLocalData<Offerte>('offertes')
+    .map((o) => ({ ...o, klant_naam: klanten.find((k) => k.id === o.klant_id)?.bedrijfsnaam || '' }))
+    .filter((o) => (o.nummer || '').toLowerCase().includes(q) || o.titel.toLowerCase().includes(q))
+    .slice(0, limit)
+}
+
 export async function getOffertesByProject(projectId: string): Promise<Offerte[]> {
   assertId(projectId, 'project_id')
   if (isSupabaseConfigured() && supabase) {

@@ -1,5 +1,5 @@
 export {
-  getOffertes, getOfferte, getOffertesByProject, getOffertesByKlant,
+  getOffertes, zoekOffertes, getOfferte, getOffertesByProject, getOffertesByKlant,
   getKlantOfferteContext, getMateriaalSuggesties,
   createOfferte, updateOfferte, deleteOfferte, OfferteConflictError,
   getOfferteItems, getOfferteItemsVoorOffertes, createOfferteItem, updateOfferteItem, deleteOfferteItem,
@@ -99,7 +99,7 @@ export {
 } from './factuurService'
 
 export {
-  getProjecten, getProject, getProjectenByKlant, getProjectCountsByKlant, createProject, updateProject, deleteProject,
+  getProjecten, zoekProjecten, getProject, getProjectenByKlant, getProjectCountsByKlant, createProject, updateProject, deleteProject,
   getProjectKoppelingen, deleteProjectMetKoppelingen, ProjectHeeftFacturenError,
   getTaken, getTaak, getTakenByProject, createTaak, uploadTaakBijlage, updateTaak, deleteTaak,
   getTijdregistratiesByProject,

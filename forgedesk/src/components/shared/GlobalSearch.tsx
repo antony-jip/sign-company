@@ -7,8 +7,8 @@ import {
 import { cn } from '@/lib/utils'
 import {
   zoekKlanten,
-  getProjecten,
-  getOffertes,
+  zoekProjecten,
+  zoekOffertes,
   getFacturen,
   getTaken,
   getDocumenten,
@@ -58,10 +58,8 @@ async function loadAllData() {
     return dataCache
   }
 
-  const [projecten, offertes, facturen, taken, documenten, werkbonnen] =
+  const [facturen, taken, documenten, werkbonnen] =
     await Promise.all([
-      getProjecten(),
-      getOffertes(),
       getFacturen(),
       getTaken(),
       getDocumenten(),
@@ -74,6 +72,8 @@ async function loadAllData() {
   // zoekopdracht opgehaald, niet per app-start.
   const emails: Email[] = []
   const klanten: Klant[] = []
+  const projecten: Project[] = []
+  const offertes: Offerte[] = []
 
   dataCache = { klanten, projecten, offertes, facturen, taken, documenten, emails, werkbonnen, loadedAt: Date.now() }
   return dataCache
@@ -107,11 +107,6 @@ function searchData(
 
   // 2. Projecten
   const projectResults = data.projecten
-    .filter((p) =>
-      p.naam.toLowerCase().includes(q) ||
-      (p.klant_naam || '').toLowerCase().includes(q) ||
-      (p.beschrijving || '').toLowerCase().includes(q)
-    )
   if (projectResults.length > 0) {
     categories.push({
       key: 'projecten',
@@ -132,11 +127,7 @@ function searchData(
 
   // 3. Offertes
   const offerteResults = data.offertes
-    .filter((o) =>
-      (o.nummer || '').toLowerCase().includes(q) ||
-      o.titel.toLowerCase().includes(q) ||
-      (o.klant_naam || '').toLowerCase().includes(q)
-    )
+
   if (offerteResults.length > 0) {
     categories.push({
       key: 'offertes',
@@ -343,7 +334,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
     async function doSearch() {
       setIsLoading(true)
       try {
-        const [data, emails, klanten] = await Promise.all([
+        const [data, emails, klanten, projecten, offertes] = await Promise.all([
           loadAllData(),
           // Faalt de FTS, dan blijft de rest van het zoekresultaat gewoon staan.
           searchEmailsFTS(debouncedQuery, MAX_PER_CATEGORY).catch((err) => {
@@ -354,9 +345,17 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
             logger.error('Zoeken in klanten mislukt:', err)
             return [] as Klant[]
           }),
+          zoekProjecten(debouncedQuery, MAX_PER_CATEGORY).catch((err) => {
+            logger.error('Zoeken in projecten mislukt:', err)
+            return [] as Project[]
+          }),
+          zoekOffertes(debouncedQuery, MAX_PER_CATEGORY).catch((err) => {
+            logger.error('Zoeken in offertes mislukt:', err)
+            return [] as Offerte[]
+          }),
         ])
         if (cancelled) return
-        const results = searchData({ ...data, emails, klanten }, debouncedQuery)
+        const results = searchData({ ...data, emails, klanten, projecten, offertes }, debouncedQuery)
         setCategories(results)
         setActiveIndex(-1)
       } catch (err) {
