@@ -77,6 +77,7 @@ export async function sendSystemEmail(params: SystemEmailParams): Promise<{ succ
       to: params.to,
       subject: params.subject,
       html: buildSystemEmailHtml(params),
+      text: buildSystemEmailText(params),
     })
     return { success: true }
   } catch (err) {
@@ -84,6 +85,20 @@ export async function sendSystemEmail(params: SystemEmailParams): Promise<{ succ
     console.error('[resend] system email failed:', msg)
     return { success: false, error: msg }
   }
+}
+
+// ─── Plain-text alternative voor system emails (deliverability) ───
+// Zonder tekstvariant is een mail alleen-HTML, en dat telt mee in de
+// spamscore. Juist de trial-herinnering gaat naar iemand die doen. net kent.
+function buildSystemEmailText(p: SystemEmailParams): string {
+  const lines: string[] = [p.heading, '']
+  if (p.itemTitel) lines.push(p.itemTitel)
+  if (p.projectNaam) lines.push(`Project: ${p.projectNaam}`)
+  if (p.quote) lines.push(`"${p.quote}"`)
+  if (p.itemTitel || p.projectNaam || p.quote) lines.push('')
+  if (p.ctaUrl) lines.push(`${p.ctaLabel || 'Bekijk in doen.'}: ${p.ctaUrl}`, '')
+  lines.push('doen.', 'https://doen.team')
+  return lines.join('\n').trim()
 }
 
 // ─── Plain-text alternative voor client emails (deliverability) ───
