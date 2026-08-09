@@ -573,7 +573,7 @@ export function WerkbonnenLayout() {
                         <span className="text-[13px] text-muted-foreground truncate block">{ref}</span>
                       </td>
                       <td className="py-3.5 pr-4 text-right">
-                        <span className="text-[12px] font-mono tabular-nums text-muted-foreground/80">
+                        <span className="text-[11px] font-mono tabular-nums text-muted-foreground/70">
                           {new Date(wb.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                         </span>
                       </td>

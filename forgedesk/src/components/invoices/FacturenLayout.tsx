@@ -1875,8 +1875,8 @@ export function FacturenLayout() {
                     <span className="text-[10px] text-muted-foreground/70">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
                   )}
                   <span className={cn(
-                    'font-mono tabular-nums',
-                    factuur.totaal >= 10000 ? 'text-[15px] font-bold text-[#1A4A52] dark:text-foreground' : 'text-sm text-foreground/80'
+                    'font-mono tabular-nums text-[13px]',
+                    factuur.totaal >= 10000 ? 'font-semibold text-[#1A4A52] dark:text-foreground' : 'text-foreground/70'
                   )}>{formatCurrency(factuur.totaal)}</span>
                 </div>
               </div>
@@ -2053,7 +2053,7 @@ export function FacturenLayout() {
                       </span>
                     </td>
                     <td className="py-3.5 pr-4 text-right hidden sm:table-cell">
-                      <span className="text-[12px] font-mono tabular-nums text-muted-foreground/80">
+                      <span className="text-[11px] font-mono tabular-nums text-muted-foreground/70">
                         {new Date(factuur.factuurdatum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                       </span>
                     </td>
@@ -2098,10 +2098,10 @@ export function FacturenLayout() {
                         if (factuur.totaal <= 0) return <span className="text-xs text-muted-foreground/70">&mdash;</span>
                         return (
                           <span className={cn(
-                            'font-mono tabular-nums',
+                            'font-mono tabular-nums text-[13px]',
                             factuur.totaal >= 10000
-                              ? 'text-[15px] font-bold text-[#1A4A52] dark:text-foreground'
-                              : 'text-sm text-foreground/80'
+                              ? 'font-semibold text-[#1A4A52] dark:text-foreground'
+                              : 'text-foreground/70'
                           )}>
                             {formatCurrency(factuur.totaal)}
                           </span>

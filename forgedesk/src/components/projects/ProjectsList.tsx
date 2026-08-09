@@ -58,6 +58,7 @@ import { createTaak } from '@/services/projectService'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useOptimisticState } from '@/hooks/useOptimistic'
 
 const statusOpties = [
@@ -1415,11 +1416,6 @@ export function ProjectsList() {
                             <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Klant</span>
                           </th>
                         )
-                        if (idx === 0) {
-                          return [cell, (
-                            <th key="actions" className="w-[52px] py-3.5 px-0" />
-                          )]
-                        }
                         return [cell]
                       })}
                       <th className="text-left py-3.5 pr-4 w-[150px]">
@@ -1454,7 +1450,7 @@ export function ProjectsList() {
                       <th className="text-left py-3.5 pr-4 w-[120px] hidden xl:table-cell">
                         <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Team</span>
                       </th>
-                      <th className="py-3.5 pr-5 w-[44px]"></th>
+                      <th className="py-3.5 pr-5 w-[76px]"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1472,7 +1468,7 @@ export function ProjectsList() {
                         <React.Fragment key={project.id}>
                           {showGroupHeader && (
                             <tr>
-                              <td colSpan={9} className="py-2.5 pl-5 pr-5 bg-[#F0F3F4]/60 dark:bg-white/[0.04] border-b border-[#E5EAEC] dark:border-white/10">
+                              <td colSpan={8} className="py-2.5 pl-5 pr-5 bg-[#F0F3F4]/60 dark:bg-white/[0.04] border-b border-[#E5EAEC] dark:border-white/10">
                                 <span className="inline-flex items-baseline gap-2">
                                   <span className="font-heading text-[12px] font-bold text-[#3A6770] dark:text-muted-foreground uppercase tracking-wider">
                                     {projectGroupLabel(currentGroupKey)}
@@ -1518,11 +1514,14 @@ export function ProjectsList() {
                                       {project.naam}
                                     </Link>
                                     {project.project_nummer && (
-                                      <span className="text-[11px] text-[#1A4A52]/45 dark:text-muted-foreground/70 font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
+                                      <span className="text-[11px] text-[#1A4A52]/50 dark:text-muted-foreground/70 font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
                                     )}
                                   </div>
+                                  {/* max-width is hier geen sierlimiet: zonder rem rekt
+                                      een lange beschrijving de kolom op en duwt de rest
+                                      van de tabel buiten beeld. */}
                                   {project.beschrijving && (
-                                    <p className="text-[11px] text-[#1A4A52]/55 dark:text-muted-foreground/70 truncate max-w-[320px] mt-0.5">
+                                    <p className="text-[11px] text-[#1A4A52]/50 dark:text-muted-foreground/70 truncate max-w-[320px] xl:max-w-[440px] mt-0.5">
                                       {project.beschrijving}
                                     </p>
                                   )}
@@ -1553,95 +1552,6 @@ export function ProjectsList() {
                                 </div>
                               </td>
                             )
-                            if (idx === 0) return [cell, (
-                              <td key="actions" className="py-3.5 px-0 align-middle" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-center gap-0.5">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setPhotoUploadProjectId(project.id)
-                                      setPhotoUploadKlantId(project.klant_id)
-                                      photoInputRef.current?.click()
-                                    }}
-                                    className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
-                                    title="Foto's toevoegen"
-                                  >
-                                    <Camera className="w-3.5 h-3.5 text-muted-foreground" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setQuickTaakProjectId(project.id)
-                                      setTimeout(() => quickTaakInputRef.current?.focus(), 100)
-                                    }}
-                                    className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
-                                    title="Taak toevoegen"
-                                  >
-                                    <ListPlus className="w-3.5 h-3.5 text-muted-foreground" />
-                                  </button>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <button
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="p-1.5 rounded-lg hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
-                                      >
-                                        <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-                                      </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start" className="w-48">
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })
-                                        }}
-                                      >
-                                        <Eye className="w-3.5 h-3.5 mr-2" />
-                                        Bekijken
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          navigateWithTab({ path: `/projecten/nieuw?kopie=${project.id}`, label: `${project.naam} kopie`, id: `/projecten/nieuw?kopie=${project.id}` })
-                                        }}
-                                      >
-                                        <Copy className="w-3.5 h-3.5 mr-2" />
-                                        Dupliceren
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          setPhotoUploadProjectId(project.id)
-                                          setPhotoUploadKlantId(project.klant_id)
-                                          photoInputRef.current?.click()
-                                        }}
-                                      >
-                                        <Camera className="w-3.5 h-3.5 mr-2" />
-                                        Foto's toevoegen
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          setQuickTaakProjectId(project.id)
-                                          setTimeout(() => quickTaakInputRef.current?.focus(), 100)
-                                        }}
-                                      >
-                                        <ListPlus className="w-3.5 h-3.5 mr-2" />
-                                        Taak toevoegen
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          handleStatusChange(project.id, 'afgerond')
-                                        }}
-                                      >
-                                        <Archive className="w-3.5 h-3.5 mr-2" />
-                                        Archiveren
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </div>
-                              </td>
-                            )]
                             return [cell]
                           })}
 
@@ -1649,8 +1559,20 @@ export function ProjectsList() {
                           <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <button className="text-left group/status inline-flex flex-col items-start gap-1.5 hover:bg-muted/60 rounded-md px-1.5 py-1 -mx-1.5 -my-1 transition-colors">
-                                  {/* Reis · 6-punts fase-indicator: waar staat dit project? */}
+                                {/* Woord eerst, fase-spoor eronder: de status is
+                                    wat je leest, de fase is de bijzin. Zo staan
+                                    de statuswoorden ook op één lijn met de rest
+                                    van de rij. */}
+                                <button className="text-left group/status inline-flex flex-col items-start gap-1 hover:bg-muted/60 rounded-md px-1.5 py-1 -mx-1.5 -my-1 transition-colors">
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <span
+                                      className="text-[13px] font-medium"
+                                      style={{ color: getStatusTextColor(project.status) }}
+                                    >
+                                      {statusLabels[project.status] || project.status}<span className="text-flame">.</span>
+                                    </span>
+                                    <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity" />
+                                  </span>
                                   {(() => {
                                     const cur = projectFaseIndex(project.status)
                                     const kleur = statusHex(project.status)
@@ -1661,25 +1583,15 @@ export function ProjectsList() {
                                             key={i}
                                             className="rounded-full transition-colors"
                                             style={{
-                                              width: i === cur ? 6 : 5,
-                                              height: i === cur ? 6 : 5,
+                                              width: 4,
+                                              height: 4,
                                               backgroundColor: i <= cur ? kleur : 'rgba(26,83,92,0.14)',
-                                              boxShadow: i === cur ? `0 0 0 2px ${kleur}22` : undefined,
                                             }}
                                           />
                                         ))}
                                       </span>
                                     )
                                   })()}
-                                  <span className="inline-flex items-center gap-1.5">
-                                    <span
-                                      className="text-[13px] font-medium"
-                                      style={{ color: getStatusTextColor(project.status) }}
-                                    >
-                                      {statusLabels[project.status] || project.status}<span className="text-flame">.</span>
-                                    </span>
-                                    <ChevronDown className="w-3 h-3 text-muted-foreground/70 opacity-0 group-hover/status:opacity-100 transition-opacity" />
-                                  </span>
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" className="w-44">
@@ -1761,12 +1673,15 @@ export function ProjectsList() {
                                 )
                               }
                               if (bedrag <= 0) {
+                                // Alleen bij hover: anders vult een halve kolom
+                                // zich met "+ prijs" en gaan de echte bedragen
+                                // in de ruis op.
                                 return (
                                   <button
                                     type="button"
                                     onClick={() => startEditBedrag(project)}
                                     title="Prijs toevoegen (ex btw)"
-                                    className="text-xs font-medium text-muted-foreground/50 hover:text-flame transition-colors px-1.5 py-0.5 rounded"
+                                    className="text-xs font-medium text-muted-foreground/60 hover:text-flame transition-all px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                                   >
                                     + prijs
                                   </button>
@@ -1778,10 +1693,13 @@ export function ProjectsList() {
                                   onClick={() => startEditBedrag(project)}
                                   title="Prijs aanpassen (ex btw)"
                                   className={cn(
-                                    'font-mono tabular-nums rounded px-1 -mr-1 hover:bg-[rgba(241,80,37,0.08)] transition-colors',
+                                    // Eén maat voor de hele kolom: wisselende
+                                    // lettergroottes lieten de cijferkolom
+                                    // golven. Nadruk komt van gewicht en tint.
+                                    'font-mono tabular-nums text-[13px] rounded px-1 -mr-1 hover:bg-[rgba(241,80,37,0.08)] transition-colors',
                                     bedrag >= 10000
-                                      ? 'text-[15px] font-bold text-[#1A4A52] dark:text-foreground'
-                                      : 'text-sm text-muted-foreground'
+                                      ? 'font-semibold text-[#1A4A52] dark:text-foreground'
+                                      : 'text-[#1A4A52]/70 dark:text-muted-foreground'
                                   )}
                                 >
                                   {formatCurrency(bedrag)}
@@ -1797,7 +1715,7 @@ export function ProjectsList() {
                               onChange={(d) => handleDatumChange(project.id, d)}
                               align="end"
                               trigger={
-                                <button className="text-[12px] font-mono tabular-nums text-[#1A4A52]/55 dark:text-muted-foreground/80 hover:text-[#1A4A52] dark:hover:text-foreground/70 transition-colors">
+                                <button className="text-[11px] font-mono tabular-nums text-[#1A4A52]/50 dark:text-muted-foreground/70 hover:text-[#1A4A52] dark:hover:text-foreground/70 transition-colors">
                                   {new Date(project.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                                 </button>
                               }
@@ -1809,6 +1727,7 @@ export function ProjectsList() {
                             <MedewerkerSelector
                               mode="multi"
                               medewerkers={medewerkers}
+                              valueKind="id"
                               value={project.team_leden || []}
                               onChange={(next) => setTeamLeden(project.id, next)}
                               trigger="avatar-stack"
@@ -1817,16 +1736,86 @@ export function ProjectsList() {
                             />
                           </td>
 
-                          {/* Delete · hover-only */}
+                          {/* Rij-acties · één cluster aan het eind i.p.v. losse
+                              iconen midden in de rij die het menu dubbelden */}
                           <td className="py-3.5 pr-5 align-middle" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => handleDeleteProject(project)}
-                              className="h-7 w-7 rounded-md flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground/70 hover:bg-[hsl(var(--status-flame-bg))] hover:text-[#C03A18]"
-                              title="Project verwijderen"
-                              aria-label={`Verwijder ${project.naam || 'project'}`}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    onClick={(e) => e.stopPropagation()}
+                                    aria-label={`Meer acties voor ${project.naam || 'project'}`}
+                                    className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
+                                  >
+                                    <MoreHorizontal className="w-3.5 h-3.5" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })
+                                    }}
+                                  >
+                                    <Eye className="w-3.5 h-3.5 mr-2" />
+                                    Bekijken
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      navigateWithTab({ path: `/projecten/nieuw?kopie=${project.id}`, label: `${project.naam} kopie`, id: `/projecten/nieuw?kopie=${project.id}` })
+                                    }}
+                                  >
+                                    <Copy className="w-3.5 h-3.5 mr-2" />
+                                    Dupliceren
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setPhotoUploadProjectId(project.id)
+                                      setPhotoUploadKlantId(project.klant_id)
+                                      photoInputRef.current?.click()
+                                    }}
+                                  >
+                                    <Camera className="w-3.5 h-3.5 mr-2" />
+                                    Foto's toevoegen
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setQuickTaakProjectId(project.id)
+                                      setTimeout(() => quickTaakInputRef.current?.focus(), 100)
+                                    }}
+                                  >
+                                    <ListPlus className="w-3.5 h-3.5 mr-2" />
+                                    Taak toevoegen
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleStatusChange(project.id, 'afgerond')
+                                    }}
+                                  >
+                                    <Archive className="w-3.5 h-3.5 mr-2" />
+                                    Archiveren
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={() => handleDeleteProject(project)}
+                                      className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground/70 hover:bg-[hsl(var(--status-flame-bg))] hover:text-[#C03A18] transition-colors"
+                                      aria-label={`Verwijder ${project.naam || 'project'}`}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">Project verwijderen</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                           </td>
 
                         </tr>

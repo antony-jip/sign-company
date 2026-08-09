@@ -845,7 +845,7 @@ export function ClientsLayout() {
                       {klant.bedrijfsnaam}
                     </p>
                     {klant.stad && (
-                      <p className="text-[12px] text-muted-foreground truncate mt-0.5">{klant.stad}</p>
+                      <p className="text-[13px] text-muted-foreground truncate mt-0.5">{klant.stad}</p>
                     )}
                   </div>
                   {(projectCounts[klant.id] || 0) > 0 && (
@@ -856,7 +856,7 @@ export function ClientsLayout() {
                 </div>
 
                 {(klant.email || klant.telefoon) && (
-                  <div className="mt-2.5 pt-2.5 border-t border-border/50 flex items-center gap-3 text-[12px] text-muted-foreground">
+                  <div className="mt-2.5 pt-2.5 border-t border-border/50 flex items-center gap-3 text-[13px] text-muted-foreground">
                     {klant.email && <span className="truncate min-w-0 flex-1">{klant.email}</span>}
                     {klant.telefoon && <span className="font-mono flex-shrink-0">{klant.telefoon}</span>}
                   </div>
