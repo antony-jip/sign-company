@@ -2,7 +2,14 @@ import supabase, { isSupabaseConfigured } from './supabaseClient'
 import { getOrgId } from './supabaseHelpers'
 import { safeSetItem } from '@/utils/localStorageUtils'
 
-const BUCKET = 'documenten'
+// De private bucket. Alles wat gevoelig is staat hier; lezen loopt via
+// api/bestand, dat de organisatie controleert (migraties 182-185).
+const BUCKET = 'documenten-prive'
+
+// De oude, publieke bucket. Nog precies één ding hoort hier: beeld dat in
+// uitgaande mail komt en dus permanent bereikbaar moet blijven. Zie
+// getPubliekeMailUrl.
+const PUBLIEKE_MAIL_BUCKET = 'documenten'
 
 /** Allowed MIME types for file uploads */
 const ALLOWED_MIME_TYPES = new Set([
@@ -135,9 +142,29 @@ export async function downloadFile(path: string): Promise<string> {
     const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')
     return stored[path]?.dataUrl || ''
   }
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60 * 24)
-  if (error || !data) return ''
-  return data.signedUrl
+  return vraagOndertekendeUrl(path)
+}
+
+// Eenmaal opgehaalde links hergebruiken binnen hun geldigheid. Zonder dit doet
+// een lijst met twintig bijlagen twintig serverrondjes bij elke render.
+const urlCache = new Map<string, { url: string; geldigTot: number }>()
+
+async function vraagOndertekendeUrl(path: string): Promise<string> {
+  const uitCache = urlCache.get(path)
+  if (uitCache && uitCache.geldigTot > Date.now() + 60_000) return uitCache.url
+
+  const { data: { session } } = await supabase!.auth.getSession()
+  if (!session) return ''
+
+  const res = await fetch('/api/bestand', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pad: path }),
+  })
+  if (!res.ok) return ''
+  const { url, geldigTot } = await res.json()
+  if (url) urlCache.set(path, { url, geldigTot: geldigTot ?? Date.now() + 3600_000 })
+  return url || ''
 }
 
 /**
@@ -156,8 +183,20 @@ export async function getPubliekeMailUrl(path: string): Promise<string> {
     const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')
     return stored[path]?.dataUrl || ''
   }
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
+  const { data } = supabase.storage.from(PUBLIEKE_MAIL_BUCKET).getPublicUrl(path)
   return data.publicUrl
+}
+
+/** Uploadt naar de publieke bucket. Alleen voor beeld dat in mail terechtkomt. */
+export async function uploadPubliekeMailAfbeelding(file: File, path: string): Promise<string> {
+  validateFile(file)
+  if (!isSupabaseConfigured() || !supabase) return uploadFileToLocalStorage(file, path)
+  const { data, error } = await supabase.storage.from(PUBLIEKE_MAIL_BUCKET).upload(path, file, {
+    cacheControl: '3600',
+    upsert: false,
+  })
+  if (error) throw error
+  return data.path
 }
 
 /**
@@ -180,9 +219,7 @@ export async function resolvePortaalBestandUrl(
   // projectfoto's. Een dag is ruim voor een sessie en kort genoeg dat een
   // doorgestuurde link niet eeuwig meegaat. Werkt ook zolang de bucket nog
   // publiek is, dus dit kan vooruit op het splitsen van de bucket.
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(pathOrUrl, 60 * 60 * 24)
-  if (error || !data) return null
-  return data.signedUrl
+  return (await vraagOndertekendeUrl(pathOrUrl)) || null
 }
 
 export async function getSignedUrl(path: string, ttlSeconden: number = 3600): Promise<string> {
@@ -190,9 +227,10 @@ export async function getSignedUrl(path: string, ttlSeconden: number = 3600): Pr
     const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')
     return stored[path]?.dataUrl || ''
   }
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, ttlSeconden)
-  if (error) throw error
-  return data.signedUrl
+  // ttlSeconden wordt door de server bepaald (24 uur); de parameter blijft
+  // staan zodat aanroepers niet hoeven te wijzigen.
+  void ttlSeconden
+  return vraagOndertekendeUrl(path)
 }
 
 /**

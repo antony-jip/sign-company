@@ -217,13 +217,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const built: Array<{ filename: string; content: Buffer; cid?: string; contentType?: string; contentDisposition?: 'inline' }> = [...inlineAttachments]
         for (const a of bijlagen) {
           if (a.storagePath) {
-            const bucket = a.bucket ?? 'documenten'
+            const bucket = a.bucket ?? 'documenten-prive'
             const { data, error: dlError } = await supabaseAdmin.storage.from(bucket).download(a.storagePath)
             if (dlError || !data) {
               throw new Error(`Bijlage "${a.filename}" kon niet worden opgehaald`)
             }
             built.push({ filename: a.filename, content: Buffer.from(await data.arrayBuffer()) })
-            const shouldCleanup = a.cleanupAfter ?? (bucket === 'documenten')
+            const shouldCleanup = a.cleanupAfter ?? (bucket === 'documenten-prive')
             if (shouldCleanup) cleanupTargets.push({ bucket, path: a.storagePath })
           } else if (a.content) {
             built.push({ filename: a.filename, content: Buffer.from(a.content, 'base64') })

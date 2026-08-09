@@ -87,13 +87,13 @@ async function attachmentToegestaan(
   // Path-traversal / absolute paden altijd weigeren.
   if (!path || path.includes('..') || path.startsWith('/') || path.includes('\\')) return false
 
-  if (bucket === 'documenten') {
+  if (bucket === 'documenten-prive') {
     const seg = path.split('/')
     // Tijdelijke mail-/offerte-uploads: email-bijlagen[-groot]/{user_id}/...
     if (seg[0] === 'email-bijlagen' || seg[0] === 'email-bijlagen-groot') return seg[1] === userId
     if (!orgId) return false
     const { data } = await supabaseAdmin
-      .from('documenten')
+      .from('documenten-prive')
       .select('id')
       .eq('storage_path', path)
       .eq('organisatie_id', orgId)
@@ -370,7 +370,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (bcc) mailOptions.bcc = bcc
 
     // Verwerk bijlagen: download van Supabase Storage of gebruik base64.
-    // Per attachment kan een bucket meegegeven worden (default 'documenten' voor
+    // Per attachment kan een bucket meegegeven worden (default 'documenten-prive' voor
     // backwards compat met portaal-upload flow). cleanupAfter regelt of het
     // storage-object na verzending verwijderd wordt — standaard alleen voor
     // documenten-bucket (tijdelijke portaal-uploads). Persistente bijlagen
@@ -391,7 +391,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       for (const a of attachments) {
         if (a.storagePath) {
-          const bucket = a.bucket ?? 'documenten'
+          const bucket = a.bucket ?? 'documenten-prive'
           if (!(await attachmentToegestaan(bucket, a.storagePath, callerOrgId, user_id))) {
             console.warn(`[send-email] Bijlage geweigerd: geen toegang tot ${bucket}/${a.storagePath}`)
             return res.status(403).json({ error: `Geen toegang tot bijlage "${a.filename}"` })
@@ -405,7 +405,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
           const buffer = Buffer.from(await data.arrayBuffer())
           fileAttachments.push({ filename: a.filename, content: buffer })
-          const shouldCleanup = a.cleanupAfter ?? (bucket === 'documenten')
+          const shouldCleanup = a.cleanupAfter ?? (bucket === 'documenten-prive')
           if (shouldCleanup) cleanupTargets.push({ bucket, path: a.storagePath })
         } else if (a.content) {
           fileAttachments.push({ filename: a.filename, content: Buffer.from(a.content, 'base64') })

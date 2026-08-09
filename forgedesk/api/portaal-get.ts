@@ -328,7 +328,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch { /* montage_afspraken table may not exist */ }
 
     // Genereer publieke URLs voor bestanden die als storage-pad zijn opgeslagen
-    const DOCUMENTEN_BUCKET = 'documenten'
+    const DOCUMENTEN_BUCKET = 'documenten-prive'
     const PORTAAL_BUCKET = 'portaal-bestanden'
 
     // Zolang de portaallink geldig is, en geen dag langer.
