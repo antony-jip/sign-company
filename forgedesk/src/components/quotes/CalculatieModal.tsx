@@ -557,7 +557,113 @@ export function CalculatieModal({
 
         {/* ======== CALCULATIE TABEL ======== */}
         <div className="flex-1 overflow-auto min-h-0">
-          <div className="overflow-x-auto">
+          {/* ── Mobiel: kaart per regel ──
+              Acht kolommen met invoervelden zijn samen ruim 600px breed; op een
+              telefoon liep de helft daarvan buiten beeld en waren de acties
+              onbereikbaar omdat ze op hover stonden. Zelfde velden, gestapeld. */}
+          <div className="md:hidden space-y-2">
+            {zichtbareRegels.map((regel, index) => {
+              const regelTotaal = berekenRegeltotaal(regel)
+              const isWinst = regelTotaal > round2(regel.aantal * regel.inkoop_prijs)
+              const isLaatste = index === zichtbareRegels.length - 1
+              return (
+                <div
+                  key={regel.id}
+                  onKeyDown={(e) => handleRegelEnter(e, regel, isLaatste)}
+                  className="rounded-xl border border-border/60 bg-card p-3 space-y-2.5"
+                >
+                  <ProductCatalogusCombobox
+                    value={regel.product_naam}
+                    producten={producten}
+                    onSelectProduct={(p) => vulRegelMetProduct(regel.id, p)}
+                    onVrijeNaam={(naam) => updateRegel(regel.id, { product_naam: naam, product_id: undefined })}
+                    placeholder="Zoek of typ product..."
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="flex flex-col gap-1 min-w-0">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Aantal</span>
+                      <div className="rounded-lg border border-border/60 bg-background">
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          value={regel.aantal || ''}
+                          onChange={(e) => updateRegel(regel.id, { aantal: Math.max(0, parseFloat(e.target.value) || 0) })}
+                          min={0}
+                          step={1}
+                          className={NUM_INPUT_CLS}
+                        />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 min-w-0">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Eenheid</span>
+                      <Select value={regel.eenheid} onValueChange={(v) => updateRegel(regel.id, { eenheid: v })}>
+                        <SelectTrigger className="h-9 text-sm rounded-lg border-border/60 bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {eenheden.map((e) => (<SelectItem key={e} value={e}>{e}</SelectItem>))}
+                        </SelectContent>
+                      </Select>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="flex flex-col gap-1 min-w-0">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Inkoop</span>
+                      <div className="rounded-lg border border-border/60 bg-background">
+                        <CurrencyCell value={regel.inkoop_prijs} onChange={(v) => updateRegel(regel.id, { inkoop_prijs: v })} />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 min-w-0">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Verkoop</span>
+                      <div className="rounded-lg border border-petrol/25 bg-background">
+                        <CurrencyCell value={regel.verkoop_prijs} onChange={(v) => updateRegel(regel.id, { verkoop_prijs: v })} />
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-end justify-between gap-2 pt-1 border-t border-border/40">
+                    <label className="flex flex-col gap-1 w-24">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Marge</span>
+                      <div className="rounded-lg border border-border/60 bg-background">
+                        <PercentCell value={regel.marge_percentage} onChange={(v) => updateRegel(regel.id, { marge_percentage: v })} colored />
+                      </div>
+                    </label>
+
+                    <div className="flex items-center gap-1 pb-0.5">
+                      {regelTotaal !== 0 && (
+                        <span className={`mr-1 font-semibold font-mono tabular-nums text-[15px] ${isWinst ? 'text-foreground' : 'text-red-600 dark:text-red-400'}`}>
+                          {formatCurrency(regelTotaal)}
+                        </span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => duplicateRegel(regel.id)}
+                        className="h-9 w-9 text-muted-foreground/70"
+                        aria-label="Regel dupliceren"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeRegel(regel.id)}
+                        className="h-9 w-9 text-muted-foreground/70"
+                        disabled={zichtbareRegels.length <= 1}
+                        aria-label="Regel verwijderen"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-background dark:bg-muted/50">
@@ -773,7 +879,7 @@ export function CalculatieModal({
               />
               <label
                 htmlFor="calc-opstartkosten"
-                className="flex flex-1 cursor-pointer select-none items-baseline gap-2"
+                className="flex flex-1 min-w-0 cursor-pointer select-none flex-col items-start gap-0 sm:flex-row sm:items-baseline sm:gap-2"
               >
                 <span className="text-sm font-medium text-foreground">Opstartkosten meerekenen</span>
                 <span className="text-xs text-muted-foreground">kosten die je snel vergeet</span>
@@ -797,7 +903,9 @@ export function CalculatieModal({
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3">
-            <div className="flex items-center gap-6">
+            {/* flex-wrap ook hier: als één blok kon deze groep niet krimpen en
+                liep de marge buiten de kaart op een telefoon. */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="text-sm text-muted-foreground">Inkoop</span>
                 <span className="font-mono tabular-nums text-base text-foreground/70">{formatCurrency(totalen.totaalInkoop)}</span>

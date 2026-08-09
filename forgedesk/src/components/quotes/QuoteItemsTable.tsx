@@ -1029,8 +1029,12 @@ export function QuoteItemsTable({
             className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm"
           >
             {/* ──── HEADER: nummer + item naam + optioneel badge + totaal + acties ──── */}
+            {/* flex-wrap: op een telefoon werd de naam-input tussen bedrag en
+                vier icoonknoppen tot één letter geknepen. Met een minimum­breedte
+                wipt de rest naar een tweede regel in plaats van de naam op te
+                eten; op desktop past alles nog steeds op één regel. */}
             <div className={cn(
-              "flex items-center gap-3 px-4 py-2 border-b border-border dark:border-border",
+              "flex flex-wrap items-center gap-x-2 gap-y-1 md:gap-3 px-3 md:px-4 py-2 border-b border-border dark:border-border",
               item.is_optioneel
                 ? "bg-amber-50/60 dark:bg-amber-900/10 border-dashed"
                 : "bg-background/80 dark:bg-muted/50"
@@ -1049,7 +1053,7 @@ export function QuoteItemsTable({
                 onChange={(val) => onUpdateItem(item.id, 'beschrijving', val)}
                 suggesties={suggesties}
                 placeholder="Item naam..."
-                className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9 text-sm font-semibold flex-1 placeholder:font-normal"
+                className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9 text-sm font-semibold flex-1 min-w-[150px] placeholder:font-normal"
               />
 
               {/* FIX 13: Optioneel badge */}
