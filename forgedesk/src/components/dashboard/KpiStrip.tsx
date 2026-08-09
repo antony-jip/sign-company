@@ -117,6 +117,10 @@ function DoenVibeCard() {
   const fact = DOEN_FACTS[idx]
   const meta = CAT_META[fact.cat]
   const Icon = meta.icon
+  // Slotpunt in Flame, zelfde signatuur als "verstuurd." en "betaald."
+  const endsOnPunt = fact.text.endsWith('.')
+  const factLead = endsOnPunt ? fact.text.slice(0, -1) : fact.text
+  const factSlot = endsOnPunt ? '.' : ''
 
   return (
     <button
@@ -126,16 +130,14 @@ function DoenVibeCard() {
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="doen-panel doen-wash group relative rounded-xl p-5 flex flex-col gap-3 text-left transition-all overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame/30 focus-visible:ring-offset-2"
-      style={{ minHeight: 168 }}
+      className="doen-panel doen-wash group relative rounded-xl p-5 flex flex-col text-left transition-all overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame/30 focus-visible:ring-offset-2"
+      style={{ minHeight: 190 }}
       aria-label={`${meta.label} · klik voor volgende doen-fact`}
     >
-      {/* Decoratief Sparkles drift-bg, héél subtiel */}
-      <span aria-hidden className="absolute -top-3 -right-3 opacity-[0.07] pointer-events-none">
-        <Icon className="w-24 h-24" style={{ color: meta.color }} strokeWidth={1.2} />
-      </span>
-
-      <div className="relative flex items-start justify-between">
+      {/* Zelfde kopregel als de KPI-kaarten ernaast: chip links, label rechts.
+          Watermerk, wordmark en teller zijn eruit — die vochten met elkaar om
+          aandacht die naar de zin hoort. */}
+      <div className="flex items-start justify-between gap-3">
         <span
           key={`chip-${idx}`}
           className="inline-flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 doen-fact-chip"
@@ -147,26 +149,27 @@ function DoenVibeCard() {
           <Icon className="w-4 h-4" style={{ color: meta.color }} />
         </span>
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-          doen<span className="text-flame">.</span>
+          {meta.label}
         </span>
       </div>
 
+      {/* Vaste hoogte i.p.v. flex-1: de facts verschillen in lengte en zonder
+          vaste maat springt de hele KPI-rij elke negen seconden mee. */}
       <p
         key={`text-${idx}`}
-        className="relative flex-1 text-[16px] leading-[1.3] text-foreground doen-fact-text"
+        className="h-[96px] flex items-center text-[20px] font-medium leading-[1.25] tracking-[-0.45px] text-foreground doen-fact-text"
+        style={{ textWrap: 'balance' } as React.CSSProperties}
       >
-        {fact.text}
+        <span>
+          {factLead}
+          {factSlot && <span className="text-flame">{factSlot}</span>}
+        </span>
       </p>
 
-      <div className="relative flex items-end justify-between gap-3 mt-auto">
-        <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-          {meta.label}
-          <ArrowRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-        </span>
-        <span className="text-[10px] font-mono text-muted-foreground">
-          {String(idx + 1).padStart(2, '0')}/{String(DOEN_FACTS.length).padStart(2, '0')}
-        </span>
-      </div>
+      <span className="mt-auto flex items-center justify-end gap-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+        Volgende
+        <ArrowRight className="w-3 h-3" />
+      </span>
 
       {/* Auto-cycle progress bar */}
       <span
@@ -201,6 +204,9 @@ function endOfWeek(d: Date): Date {
 // Echte week-data (laatste 7 weken), geschaald naar 3-12px staafjes.
 function Sparkline({ color, values }: { color: string; values: number[] }) {
   const max = Math.max(...values, 1)
+  // Zonder omzet in de hele reeks tekenen we niets: een rij stompjes naast
+  // een € 0 suggereert beweging die er niet is.
+  if (!values.some(v => v > 0)) return null
   return (
     <div className="flex items-end gap-[2px] h-3" aria-hidden>
       {values.map((v, i) => (
@@ -227,10 +233,6 @@ export function KpiStrip() {
     const pijplijn = offertes.filter(o => openStatussen.has(o.status) && o.verstuurd_op)
     const pijplijnBedrag = pijplijn.reduce((s, o) => s + (o.subtotaal || 0), 0)
 
-    const montagesWeek = montages.filter(m => {
-      const d = new Date(m.datum)
-      return d >= weekStart && d < weekEnd
-    })
     const facturenWeek = facturen.filter(f => {
       const d = new Date(f.factuurdatum || f.created_at)
       return d >= weekStart && d < weekEnd
@@ -280,14 +282,14 @@ export function KpiStrip() {
       {
         label: 'Deze week',
         bedrag: weekBedrag,
-        sub: `${montagesWeek.length} ${montagesWeek.length === 1 ? 'montage' : 'montages'}`,
+        sub: 'gefactureerd',
         icon: CheckCircle2,
         accent: '#3A7D52',
         bg: '#E8F2EC',
         subColor: 'hsl(var(--muted-foreground))',
         trend: weekTrend,
         doel: facturen.length === 0 && montages.length === 0
-          ? { tekst: 'Wat je deze week factureert en monteert, zie je hier.', cta: 'Start je eerste project', route: '/projecten/nieuw' }
+          ? { tekst: 'Wat je deze week factureert, zie je hier.', cta: 'Start je eerste project', route: '/projecten/nieuw' }
           : undefined,
       },
     ]
@@ -347,7 +349,7 @@ export function KpiStrip() {
             </div>
 
             <div>
-              <p className="font-heading font-bold text-[28px] leading-[1.1] text-foreground">
+              <p className="font-heading font-bold text-[30px] leading-[1.1] text-foreground">
                 <span className="text-[18px] text-muted-foreground mr-1">€</span>
                 <span className="font-mono">{euros}</span>
                 {cents !== undefined && (
@@ -356,7 +358,7 @@ export function KpiStrip() {
               </p>
             </div>
 
-            <div className="flex items-end justify-between gap-3">
+            <div className="mt-auto flex items-end justify-between gap-3">
               <span className="text-[12px]" style={{ color: kpi.subColor }}>
                 {kpi.sub}
               </span>

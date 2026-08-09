@@ -205,140 +205,122 @@ function FORGEdeskDashboardInner() {
         {/* ── Main column ── */}
         <main className="flex-1 min-w-0 space-y-5">
           {/* ── Hero · petrol card met omzet-overlay rechts ── */}
-          <section
-            className="doen-hero relative rounded-2xl overflow-hidden"
-          >
-            <div className="relative flex flex-col md:flex-row">
-              <div className="flex-1 px-7 py-7 sm:px-9 sm:py-9">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-flame" aria-hidden />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-white/70 font-mono">
-                    {dateCaps}
-                  </span>
-                </div>
-                <h1
-                  className="font-heading font-bold leading-[1.05] text-[28px] sm:text-[38px] text-white"
-                  style={{ letterSpacing: '-1.5px' }}
-                >
-                  Klaar om te{' '}
-                  <span
-                    style={{
-                      fontFamily: '"Instrument Serif", serif',
-                      fontStyle: 'italic',
-                      fontWeight: 400,
-                    }}
-                  >
-                    {verb}
-                  </span>
-                  {userName ? `, ${userName}` : ''}
-                  <span style={{ color: '#F15025' }}>.</span>
-                </h1>
+          {/* Hero: één compositie in plaats van twee kolommen met elk een gat.
+              De kop krijgt de volle breedte (past op één regel), de weer-regel
+              staat als strook onderlangs. */}
+          <section className="doen-hero relative rounded-2xl overflow-hidden">
+            <div className="px-7 pt-7 pb-6 sm:px-9 sm:pt-8">
+              <div className="flex items-center gap-2 mb-3.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-flame" aria-hidden />
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-white/70 font-mono">
+                  {dateCaps}
+                </span>
               </div>
-
-              {weather && WeatherIcon && (
-                <div
-                  className="hidden md:flex flex-col justify-center px-7 py-6 sm:px-8 w-[280px] lg:w-[420px] xl:w-[480px] relative overflow-hidden"
+              <h1
+                className="font-heading font-bold leading-[1.05] text-[28px] sm:text-[40px] text-white"
+                style={{ letterSpacing: '-1.5px', textWrap: 'balance' } as React.CSSProperties}
+              >
+                Klaar om te{' '}
+                <span
                   style={{
-                    borderLeft: '1px solid rgba(255,255,255,0.10)',
+                    fontFamily: '"Instrument Serif", serif',
+                    fontStyle: 'italic',
+                    fontWeight: 400,
                   }}
                 >
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-1">
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <WeatherIcon
-                          className="w-8 h-8 flex-shrink-0"
-                          strokeWidth={1.4}
-                          style={{ color: weather.isRaining ? '#9DD3DA' : '#F5C460' }}
-                        />
-                        <p className="font-heading font-bold text-white text-[36px] leading-none">
-                          <span className="font-mono">{weather.temperature}</span>
-                          <span className="text-white/60 text-[22px] font-normal">°</span>
-                        </p>
-                      </div>
-                      <p
-                        aria-hidden={!greetingVisible}
-                        className="text-[14px] sm:text-[15px] text-white/80 leading-snug min-w-0"
-                        style={{
-                          fontFamily: '"Instrument Serif", serif',
-                          fontStyle: 'italic',
-                          opacity: greetingVisible ? 1 : 0,
-                          transition: 'opacity 800ms ease-out',
-                        }}
-                      >
-                        {playfulGreeting}
-                      </p>
-                    </div>
-                    <p
-                      className="text-[13px] text-white/60"
-                    >
-                      {weather.label}
-                    </p>
-
-                    {(weather.forecast?.length ?? 0) >= 2 && (() => {
-                      const hasOverflow = !(forecastScroll.atStart && forecastScroll.atEnd)
-                      return (
-                      <div className="mt-4 pt-3 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                        {hasOverflow && (
-                          <button
-                            type="button"
-                            onClick={() => scrollForecast(-1)}
-                            disabled={forecastScroll.atStart}
-                            aria-label="Eerdere dagen"
-                            className="h-7 w-7 flex-shrink-0 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-default disabled:hover:bg-white/10"
-                          >
-                            <ChevronLeft className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <div
-                          ref={forecastScrollerRef}
-                          className="flex-1 min-w-0 flex gap-4 overflow-x-auto scroll-smooth"
-                          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                        >
-                          {weather.forecast!.slice(1).map((day, idx) => {
-                            // Defensive: cached/legacy snapshots kunnen iconKey buiten enum hebben.
-                            // Fallback op Cloud zodat we niet crashen op undefined.
-                            const Icon = WEATHER_ICONS[day.iconKey] ?? Cloud
-                            const tint = day.isRaining ? '#9DD3DA' : '#F5C460'
-                            const dateObj = new Date(day.date + 'T00:00:00')
-                            const dagNaam = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'][dateObj.getDay()]
-                            const dagLabel = idx === 0
-                              ? 'Morgen'
-                              : idx === 1
-                                ? 'Overmorgen'
-                                : `${dagNaam} ${dateObj.getDate()}`
-                            return (
-                              <div key={day.date} className="min-w-[64px] flex-shrink-0">
-                                <p className="text-[10px] uppercase tracking-wider text-white/55 font-mono whitespace-nowrap">
-                                  {dagLabel}
-                                </p>
-                                <div className="flex items-center gap-1.5 mt-1">
-                                  <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.6} style={{ color: tint }} />
-                                  <span className="text-[15px] text-white font-mono">
-                                    {day.tempMax}<span className="text-white/55 text-[11px]">°</span>
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                        {hasOverflow && (
-                          <button
-                            type="button"
-                            onClick={() => scrollForecast(1)}
-                            disabled={forecastScroll.atEnd}
-                            aria-label="Latere dagen"
-                            className="h-7 w-7 flex-shrink-0 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-default disabled:hover:bg-white/10"
-                          >
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      )
-                    })()}
-                  </div>
-                </div>
-              )}
+                  {verb}
+                </span>
+                {userName ? `, ${userName}` : ''}
+                <span style={{ color: '#F15025' }}>.</span>
+              </h1>
+              {/* Blijft staan in plaats van na vijf tellen te verdwijnen: als
+                  subregel onder de kop hoort deze zin er gewoon bij. */}
+              <p className="mt-2.5 text-[14px] sm:text-[15px] text-white/60 leading-snug">
+                {playfulGreeting}
+              </p>
             </div>
+
+            {weather && WeatherIcon && (
+              <div
+                className="hidden md:flex items-center gap-6 px-7 sm:px-9 py-4"
+                style={{ borderTop: '1px solid rgba(255,255,255,0.10)' }}
+              >
+                <div className="flex items-baseline gap-3 flex-shrink-0">
+                  <WeatherIcon
+                    className="w-6 h-6 flex-shrink-0 self-center"
+                    strokeWidth={1.4}
+                    style={{ color: weather.isRaining ? '#9DD3DA' : '#F5C460' }}
+                  />
+                  <p className="font-heading font-bold text-white text-[26px] leading-none">
+                    <span className="font-mono">{weather.temperature}</span>
+                    <span className="text-white/60 text-[16px] font-normal">°</span>
+                  </p>
+                  <span className="text-[13px] text-white/55 whitespace-nowrap">
+                    {weather.label}
+                  </span>
+                </div>
+
+                {(weather.forecast?.length ?? 0) >= 2 && (() => {
+                  const hasOverflow = !(forecastScroll.atStart && forecastScroll.atEnd)
+                  return (
+                    <div className="ml-auto flex items-center gap-2 min-w-0">
+                      {hasOverflow && (
+                        <button
+                          type="button"
+                          onClick={() => scrollForecast(-1)}
+                          disabled={forecastScroll.atStart}
+                          aria-label="Eerdere dagen"
+                          className="h-7 w-7 flex-shrink-0 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-default disabled:hover:bg-white/10"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <div
+                        ref={forecastScrollerRef}
+                        className="min-w-0 flex gap-5 overflow-x-auto scroll-smooth"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                      >
+                        {weather.forecast!.slice(1).map((day, idx) => {
+                          // Defensive: cached/legacy snapshots kunnen iconKey buiten enum hebben.
+                          // Fallback op Cloud zodat we niet crashen op undefined.
+                          const Icon = WEATHER_ICONS[day.iconKey] ?? Cloud
+                          const tint = day.isRaining ? '#9DD3DA' : '#F5C460'
+                          const dateObj = new Date(day.date + 'T00:00:00')
+                          const dagNaam = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'][dateObj.getDay()]
+                          const dagLabel = idx === 0
+                            ? 'Morgen'
+                            : idx === 1
+                              ? 'Overmorgen'
+                              : `${dagNaam} ${dateObj.getDate()}`
+                          return (
+                            <div key={day.date} className="flex items-center gap-2 flex-shrink-0">
+                              <span className="text-[10px] uppercase tracking-wider text-white/55 font-mono whitespace-nowrap">
+                                {dagLabel}
+                              </span>
+                              <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.6} style={{ color: tint }} />
+                              <span className="text-[14px] text-white font-mono">
+                                {day.tempMax}<span className="text-white/55 text-[11px]">°</span>
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      {hasOverflow && (
+                        <button
+                          type="button"
+                          onClick={() => scrollForecast(1)}
+                          disabled={forecastScroll.atEnd}
+                          aria-label="Latere dagen"
+                          className="h-7 w-7 flex-shrink-0 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-default disabled:hover:bg-white/10"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
           </section>
 
           <PortaalAlerts />

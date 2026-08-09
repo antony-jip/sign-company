@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Send, Eye, CheckCircle2, AlertCircle, Receipt } from 'lucide-react'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
+import { useScrollFade } from '@/hooks/useScrollFade'
 import { formatCurrency, formatTijdKort } from '@/lib/utils'
 
 type EventType = 'offerte_verstuurd' | 'offerte_bekeken' | 'akkoord' | 'wijziging' | 'factuur_betaald'
@@ -26,6 +27,7 @@ const STYLES: Record<EventType, { label: string; icon: typeof Send; color: strin
 export function ActiviteitLog() {
   const navigate = useNavigate()
   const { offertes, facturen } = useDashboardData()
+  const scroll = useScrollFade<HTMLUListElement>()
 
   const events = useMemo<PortaalEvent[]>(() => {
     const out: PortaalEvent[] = []
@@ -94,17 +96,13 @@ export function ActiviteitLog() {
 
   return (
     <section className="doen-panel doen-wash rounded-xl p-5">
-      <header className="flex items-baseline justify-between gap-4 mb-3">
-        <div className="flex items-baseline gap-3 min-w-0">
-          <h2 className="font-heading text-[14px] font-bold text-foreground">
-            Activiteit<span className="text-flame">.</span>
-          </h2>
-          <span
-            className="doen-subtitel"
-          >
-            van verstuurd tot betaald<span className="text-flame">.</span>
-          </span>
-        </div>
+      <header className="flex items-baseline gap-3 min-w-0 mb-4">
+        <h2 className="font-heading text-[14px] font-bold text-foreground whitespace-nowrap">
+          Activiteit<span className="text-flame">.</span>
+        </h2>
+        <span className="doen-subtitel truncate">
+          van verstuurd tot betaald<span className="text-flame">.</span>
+        </span>
       </header>
 
       {events.length === 0 ? (
@@ -114,7 +112,11 @@ export function ActiviteitLog() {
           Nog geen activiteit. Je eerste verstuurde offerte verschijnt hier vanzelf<span className="text-flame">.</span>
         </p>
       ) : (
-        <ul className="space-y-1 max-h-[220px] overflow-y-auto pr-1 -mr-2">
+        <ul
+          ref={scroll.ref}
+          data-at-end={scroll.atEnd}
+          className="doen-scroll-fade space-y-1 max-h-[220px] overflow-y-auto pr-1 -mr-2"
+        >
           {events.map(e => {
             const style = STYLES[e.type]
             const Icon = style.icon

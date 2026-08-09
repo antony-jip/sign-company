@@ -399,10 +399,10 @@ export function VandaagBlok() {
   }, [items])
 
   return (
-    <section className="doen-panel doen-wash rounded-xl p-6 sm:p-7">
+    <section className="doen-panel doen-wash rounded-xl p-6 sm:p-7 h-full flex flex-col">
       <header className="flex items-baseline justify-between gap-4 mb-3">
         <div className="flex items-baseline gap-3 min-w-0">
-          <h2 className="font-heading text-[14px] font-bold text-foreground">
+          <h2 className="font-heading text-[14px] font-bold text-foreground whitespace-nowrap">
             {selectedDayIndex === todayIndex ? 'Vandaag' : WEEKDAY_LABELS_FULL[selectedDayIndex]}
             <span className="text-flame">.</span>
           </h2>
@@ -590,10 +590,12 @@ export function VandaagBlok() {
         </ul>
       )}
 
-      {/* ── Snelle taak toevoegen voor de geselecteerde dag ── */}
+      {/* ── Snelle taak toevoegen voor de geselecteerde dag ──
+          mt-auto: op een lege dag zakt het invoerveld naar de onderrand in
+          plaats van dat er een gat tussen veld en voettekst valt. ── */}
       <form
         onSubmit={(e) => { e.preventDefault(); void handleQuickAdd() }}
-        className="mt-4"
+        className="mt-auto pt-4"
       >
         <div className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-card/50 hover:border-petrol/35 focus-within:border-petrol focus-within:bg-card focus-within:shadow-[0_0_0_3px_rgba(26,83,92,0.08)] transition-all">
           <Plus className="h-3.5 w-3.5 text-muted-foreground group-focus-within:text-petrol transition-colors flex-shrink-0" />

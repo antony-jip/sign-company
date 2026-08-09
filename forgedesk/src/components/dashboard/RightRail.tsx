@@ -9,6 +9,7 @@ import { formatCurrency, formatTijdKort, cn } from '@/lib/utils'
 import { getISOWeek } from 'date-fns'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ActiviteitLog } from './ActiviteitLog'
+import { useScrollFade } from '@/hooks/useScrollFade'
 import type { Medewerker, Klant } from '@/types'
 
 const DAG_HEADERS = ['M', 'D', 'W', 'D', 'V', 'Z', 'Z']
@@ -183,6 +184,7 @@ function DezeWeekCard() {
 
   const [filterNaam, setFilterNaam] = useState<string>('')
   const [weekOffset, setWeekOffset] = useState(0)
+  const weekScroll = useScrollFade<HTMLUListElement>()
 
   // Default to the current user's medewerker zodra die bekend is
   useEffect(() => {
@@ -261,20 +263,17 @@ function DezeWeekCard() {
   }, [montages, events, klanten, medewerkers, weekStart, filterNaam])
 
   return (
-    <section className="doen-panel doen-wash rounded-xl p-6">
-      <header className="flex items-center justify-between gap-3 mb-3">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <h2 className="font-heading text-[14px] font-bold text-foreground">
-            {weekOffset === 0 ? 'Deze week' : weekOffset === -1 ? 'Vorige week' : weekOffset === 1 ? 'Volgende week' : `Week ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
-            <span className="text-flame">.</span>
-          </h2>
-          <span
-            className="doen-subtitel truncate"
-          >
-            week {getISOWeek(weekStart)}
-          </span>
-        </div>
-        <div className="flex items-center gap-0.5">
+    <section className="doen-panel doen-wash rounded-xl p-5">
+      {/* Kop, weeknummer én maand-jaar pasten samen niet in de rail: de titel
+          brak over twee regels en de bijzin werd "week …". Het weeknummer is
+          de eenheid waarin montage gepland wordt, dus dat staat in de nav;
+          de volledige maand zit in de tooltip. */}
+      <header className="flex items-center justify-between gap-2 mb-3">
+        <h2 className="font-heading text-[14px] font-bold text-foreground whitespace-nowrap min-w-0 truncate">
+          {weekOffset === 0 ? 'Deze week' : weekOffset === -1 ? 'Vorige week' : weekOffset === 1 ? 'Volgende week' : `Week ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
+          <span className="text-flame">.</span>
+        </h2>
+        <div className="flex items-center gap-0.5 flex-shrink-0">
           <button
             type="button"
             onClick={() => setWeekOffset(o => o - 1)}
@@ -287,12 +286,12 @@ function DezeWeekCard() {
             type="button"
             onClick={() => setWeekOffset(0)}
             className={cn(
-              'text-[11px] font-mono uppercase tracking-wider px-1.5 transition-colors',
+              'text-[11px] font-mono uppercase tracking-wider px-1.5 whitespace-nowrap transition-colors',
               weekOffset === 0 ? 'text-muted-foreground cursor-default' : 'text-petrol hover:underline',
             )}
-            title="Naar deze week"
+            title={`${monthLabel} · naar deze week`}
           >
-            {monthLabel}
+            wk {getISOWeek(weekStart)}
           </button>
           <button
             type="button"
@@ -352,7 +351,11 @@ function DezeWeekCard() {
           <span className="text-flame">.</span>
         </p>
       ) : (
-        <ul className="space-y-3 max-h-[280px] overflow-y-auto pr-1 -mr-2">
+        <ul
+          ref={weekScroll.ref}
+          data-at-end={weekScroll.atEnd}
+          className="doen-scroll-fade space-y-3 max-h-[280px] overflow-y-auto pr-1 -mr-2"
+        >
           {items.map(item => {
             const dayIdx = (item.date.getDay() + 6) % 7
             return (
@@ -415,6 +418,7 @@ function TeamCard() {
     [medewerkers, user?.id],
   )
   const admin = isAdminUser(userRol)
+  const gedaanScroll = useScrollFade<HTMLUListElement>()
 
   const stats = useMemo(() => {
     const now = new Date()
@@ -504,17 +508,17 @@ function TeamCard() {
   if (!admin) return null
 
   return (
-    <section className="doen-panel doen-wash rounded-xl p-6">
-      <header className="flex items-baseline justify-between mb-4">
-        <h2 className="font-heading text-[14px] font-bold text-foreground">
-          Gedaan<span className="doen-subtitel text-flame">.</span>
-          <span
-            className="text-muted-foreground ml-2 font-normal"
-          >
+    <section className="doen-panel doen-wash rounded-xl p-5">
+      <header className="flex items-baseline justify-between gap-3 mb-4">
+        <div className="flex items-baseline gap-3 min-w-0">
+          <h2 className="font-heading text-[14px] font-bold text-foreground whitespace-nowrap">
+            Gedaan<span className="text-flame">.</span>
+          </h2>
+          <span className="doen-subtitel truncate">
             wie wat deed<span className="text-flame">.</span>
           </span>
-        </h2>
-        <span className="text-[11px] font-mono text-muted-foreground">
+        </div>
+        <span className="text-[11px] font-mono text-muted-foreground flex-shrink-0">
           {stats.actief} actief
         </span>
       </header>
@@ -526,7 +530,11 @@ function TeamCard() {
           Wat je team afrondt, zie je hier terug<span className="text-flame">.</span>
         </p>
       ) : (
-        <ul className="space-y-3 max-h-[200px] overflow-y-auto pr-1 -mr-2">
+        <ul
+          ref={gedaanScroll.ref}
+          data-at-end={gedaanScroll.atEnd}
+          className="doen-scroll-fade space-y-3 max-h-[200px] overflow-y-auto pr-1 -mr-2"
+        >
           {activiteit.map(item => (
             <li key={item.id}>
               <button
