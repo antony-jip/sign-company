@@ -2,6 +2,7 @@ import supabase, { isSupabaseConfigured } from './supabaseClient'
 import {
   assertId, getLocalData, setLocalData, generateId, now,
   getOrgId,
+  fetchAllPages,
 } from './supabaseHelpers'
 import type { Klant, Contactpersoon, ContactpersoonRecord, KlantHistorie, ImportLog, Project } from '@/types'
 
@@ -118,28 +119,57 @@ export async function getAllKlantLabels(userId: string): Promise<string[]> {
 }
 
 export async function getKlanten(limit = 50000): Promise<Klant[]> {
-  if (isSupabaseConfigured() && supabase) {
-    // Supabase returns max 1000 rows per request — paginate to get all
-    const pageSize = 1000
-    const allData: Klant[] = []
-    let offset = 0
-
-    while (offset < limit) {
-      const { data, error } = await supabase
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    // Deze tabel liep als eerste over de 1000-rijengrens van PostgREST en had
+    // daarom een eigen pagineerlus. Nu via de gedeelde helper, en met id als
+    // tiebreaker: sorteren op alleen bedrijfsnaam is niet stabiel over
+    // paginagrenzen, en bij 1905 klanten zijn dat er twee.
+    const rijen = await fetchAllPages<Klant>((van, tot) =>
+      sb
         .from('klanten')
         .select('*')
         .order('bedrijfsnaam')
-        .range(offset, offset + pageSize - 1)
-      if (error) throw error
-      if (!data || data.length === 0) break
-      allData.push(...data.map(normalizeKlant))
-      if (data.length < pageSize) break
-      offset += pageSize
-    }
-
-    return allData
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
+    return rijen.map(normalizeKlant)
   }
   return getLocalData<Klant>('klanten').map(normalizeKlant)
+}
+
+/**
+ * Server-side zoeken. De globale zoekbalk trok hiervoor de hele klantentabel
+ * binnen (bij Sign makers 1905 rijen, in meerdere pagina's) om er in JS op te
+ * filteren, bij elke zoekopdracht van elke gebruiker.
+ *
+ * Matcht op dezelfde velden als de oude client-side filter: bedrijfsnaam,
+ * contactpersoon en e-mail.
+ */
+export async function zoekKlanten(term: string, limit = 20): Promise<Klant[]> {
+  const gezocht = term.trim()
+  if (!gezocht) return []
+  if (isSupabaseConfigured() && supabase) {
+    // Komma's en haakjes zijn structuur in de or-syntax van PostgREST.
+    const veilig = gezocht.replace(/[,%()"*]/g, '')
+    if (!veilig) return []
+    const { data, error } = await supabase
+      .from('klanten')
+      .select('*')
+      .or(`bedrijfsnaam.ilike.%${veilig}%,contactpersoon.ilike.%${veilig}%,email.ilike.%${veilig}%`)
+      .order('bedrijfsnaam')
+      .limit(limit)
+    if (error) throw error
+    return (data || []).map(normalizeKlant)
+  }
+  const q = gezocht.toLowerCase()
+  return getLocalData<Klant>('klanten')
+    .map(normalizeKlant)
+    .filter((k) =>
+      k.bedrijfsnaam.toLowerCase().includes(q) ||
+      (k.contactpersoon || '').toLowerCase().includes(q) ||
+      (k.email || '').toLowerCase().includes(q)
+    )
+    .slice(0, limit)
 }
 
 export async function getKlant(id: string): Promise<Klant | null> {

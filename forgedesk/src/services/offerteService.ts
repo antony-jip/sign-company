@@ -1,7 +1,7 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, sanitizeDates, getMaxNummer,
+  withUserId, getOrgId, sanitizeDates, fetchAllPages, getMaxNummer,
 } from './supabaseHelpers'
 import type {
   Klant,
@@ -21,22 +21,22 @@ export { partitionOfferteItemSync }
 
 // ============ OFFERTES ============
 
-export async function getOffertes(limit = 5000): Promise<Offerte[]> {
-  if (isSupabaseConfigured() && supabase) {
+export async function getOffertes(limit = 50000): Promise<Offerte[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
     try {
       const orgId = await getOrgId()
-      let query = supabase
-        .from('offertes')
-        .select('*, klanten(bedrijfsnaam)')
-        .order('created_at', { ascending: false })
-        .limit(limit)
-      if (orgId) query = query.eq('organisatie_id', orgId)
-      const { data, error } = await query
-      if (error) throw error
-      return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
-        ...o,
-        klant_naam: o.klanten?.bedrijfsnaam || '',
-      }))
+      const rijen = await fetchAllPages<Offerte & { klanten?: { bedrijfsnaam?: string } }>((van, tot) => {
+        let query = sb
+          .from('offertes')
+          .select('*, klanten(bedrijfsnaam)')
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: true })
+          .range(van, tot)
+        if (orgId) query = query.eq('organisatie_id', orgId)
+        return query
+      }, limit)
+      return rijen.map((o) => ({ ...o, klant_naam: o.klanten?.bedrijfsnaam || '' }))
     } catch (err) {
       console.warn('Supabase getOffertes failed, falling back to localStorage:', err)
     }
@@ -288,6 +288,53 @@ function herberekenItemMarkup(item: OfferteItem): OfferteItem {
       calculatie_regels: herberekenRegelMarkup(v.calculatie_regels),
     })),
   }
+}
+
+/**
+ * Items van meerdere offertes in één keer, gegroepeerd per offerte_id.
+ * Nacalculatie deed hier één query per goedgekeurde offerte, allemaal tegelijk;
+ * bij duizend offertes vuurt dat duizend requests af en loopt het scherm vast.
+ * In blokken van 100 offerte-ids, zodat de URL niet te lang wordt.
+ */
+export async function getOfferteItemsVoorOffertes(
+  offerteIds: string[]
+): Promise<Record<string, OfferteItem[]>> {
+  const perOfferte: Record<string, OfferteItem[]> = {}
+  for (const id of offerteIds) perOfferte[id] = []
+  if (offerteIds.length === 0) return perOfferte
+
+  if (isSupabaseConfigured() && supabase) {
+    const orgId = await getOrgId()
+    const blokGrootte = 100
+    for (let i = 0; i < offerteIds.length; i += blokGrootte) {
+      const blok = offerteIds.slice(i, i + blokGrootte)
+      const sb = supabase
+      const rijen = await fetchAllPages<OfferteItem>((van, tot) => {
+        let query = sb
+          .from('offerte_items')
+          .select('*')
+          .in('offerte_id', blok)
+          .order('offerte_id', { ascending: true })
+          .order('volgorde', { ascending: true })
+          .order('id', { ascending: true })
+          .range(van, tot)
+        if (orgId) query = query.eq('organisatie_id', orgId)
+        return query
+      })
+      for (const rij of rijen) {
+        const lijst = perOfferte[rij.offerte_id]
+        if (lijst) lijst.push(herberekenItemMarkup(rij))
+      }
+    }
+    return perOfferte
+  }
+
+  for (const item of getLocalData<OfferteItem>('offerte_items')) {
+    const lijst = perOfferte[item.offerte_id]
+    if (lijst) lijst.push(herberekenItemMarkup(item))
+  }
+  for (const id of offerteIds) perOfferte[id].sort((a, b) => a.volgorde - b.volgorde)
+  return perOfferte
 }
 
 export async function getOfferteItems(offerteId: string): Promise<OfferteItem[]> {

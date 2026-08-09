@@ -2,7 +2,7 @@ export {
   getOffertes, getOfferte, getOffertesByProject, getOffertesByKlant,
   getKlantOfferteContext, getMateriaalSuggesties,
   createOfferte, updateOfferte, deleteOfferte, OfferteConflictError,
-  getOfferteItems, createOfferteItem, updateOfferteItem, deleteOfferteItem,
+  getOfferteItems, getOfferteItemsVoorOffertes, createOfferteItem, updateOfferteItem, deleteOfferteItem,
   syncOfferteItems, getRecentOfferteItemSuggesties,
   getNextOfferteNummer, generateOfferteNummer,
   getOfferteVersies, createOfferteVersie,
@@ -66,7 +66,7 @@ export {
 } from './documentenService'
 
 export {
-  getKlanten, getKlant, createKlant, updateKlant, deleteKlant,
+  getKlanten, zoekKlanten, getKlant, createKlant, updateKlant, deleteKlant,
   getAllKlantLabels,
   getContactpersonenDB, getContactpersonenByKlant, getContactpersonenByLeverancier,
   createContactpersoonDB, updateContactpersoonDB, deleteContactpersoonDB,

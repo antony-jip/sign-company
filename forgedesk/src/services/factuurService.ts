@@ -1,17 +1,22 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, sanitizeDates, round2, getMaxNummer,
+  withUserId, getOrgId, sanitizeDates, round2, getMaxNummer, fetchAllPages,
 } from './supabaseHelpers'
 import type { Factuur, FactuurItem, HerinneringTemplate } from '@/types'
 
 // ============ FACTUREN CRUD ============
 
-export async function getFacturen(limit = 5000): Promise<Factuur[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('facturen').select('*').order('factuurdatum', { ascending: false }).limit(limit)
-    if (error) throw error
-    return data || []
+export async function getFacturen(limit = 50000): Promise<Factuur[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<Factuur>((van, tot) =>
+      sb
+        .from('facturen')
+        .select('*')
+        .order('factuurdatum', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
   }
   return getLocalData<Factuur>('facturen')
 }

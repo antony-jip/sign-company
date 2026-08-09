@@ -6,13 +6,13 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  getKlanten,
+  zoekKlanten,
   getProjecten,
   getOffertes,
   getFacturen,
   getTaken,
   getDocumenten,
-  getEmails,
+  searchEmailsFTS,
   getWerkbonnen,
 } from '@/services/supabaseService'
 import type { Klant, Project, Offerte, Factuur, Taak, Document, Email, Werkbon } from '@/types'
@@ -58,17 +58,22 @@ async function loadAllData() {
     return dataCache
   }
 
-  const [klanten, projecten, offertes, facturen, taken, documenten, emails, werkbonnen] =
+  const [projecten, offertes, facturen, taken, documenten, werkbonnen] =
     await Promise.all([
-      getKlanten(),
       getProjecten(),
       getOffertes(),
       getFacturen(),
       getTaken(),
       getDocumenten(),
-      getEmails(),
       getWerkbonnen(),
     ])
+  // Mail en klanten zitten hier bewust niet bij. Dat zijn de twee grootste
+  // tabellen (18.515 en 1905 rijen bij de grootste organisatie) en ze werden
+  // volledig ingeladen om er in JS op te filteren. Mail gaat via de full-text
+  // search van de database, klanten via een ilike-query. Beide worden per
+  // zoekopdracht opgehaald, niet per app-start.
+  const emails: Email[] = []
+  const klanten: Klant[] = []
 
   dataCache = { klanten, projecten, offertes, facturen, taken, documenten, emails, werkbonnen, loadedAt: Date.now() }
   return dataCache
@@ -81,13 +86,8 @@ function searchData(
   const q = query.toLowerCase().trim()
   const categories: SearchCategory[] = []
 
-  // 1. Klanten
+  // 1. Klanten — komt uit een server-side ilike-query, niet uit de cache
   const klantResults = data.klanten
-    .filter((k) =>
-      k.bedrijfsnaam.toLowerCase().includes(q) ||
-      (k.contactpersoon || '').toLowerCase().includes(q) ||
-      (k.email || '').toLowerCase().includes(q)
-    )
   if (klantResults.length > 0) {
     categories.push({
       key: 'klanten',
@@ -252,13 +252,8 @@ function searchData(
     })
   }
 
-  // 8. Emails
+  // 8. Emails — komt uit de full-text search van de database, niet uit de cache
   const emailResults = data.emails
-    .filter((e) =>
-      (e.onderwerp || '').toLowerCase().includes(q) ||
-      (e.van || '').toLowerCase().includes(q) ||
-      (e.aan || '').toLowerCase().includes(q)
-    )
   if (emailResults.length > 0) {
     categories.push({
       key: 'emails',
@@ -348,9 +343,20 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
     async function doSearch() {
       setIsLoading(true)
       try {
-        const data = await loadAllData()
+        const [data, emails, klanten] = await Promise.all([
+          loadAllData(),
+          // Faalt de FTS, dan blijft de rest van het zoekresultaat gewoon staan.
+          searchEmailsFTS(debouncedQuery, MAX_PER_CATEGORY).catch((err) => {
+            logger.error('Zoeken in mail mislukt:', err)
+            return [] as Email[]
+          }),
+          zoekKlanten(debouncedQuery, MAX_PER_CATEGORY).catch((err) => {
+            logger.error('Zoeken in klanten mislukt:', err)
+            return [] as Klant[]
+          }),
+        ])
         if (cancelled) return
-        const results = searchData(data, debouncedQuery)
+        const results = searchData({ ...data, emails, klanten }, debouncedQuery)
         setCategories(results)
         setActiveIndex(-1)
       } catch (err) {
