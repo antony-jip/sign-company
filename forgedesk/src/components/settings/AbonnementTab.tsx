@@ -41,6 +41,13 @@ export function AbonnementTab() {
   const [bevestigOpzeggen, setBevestigOpzeggen] = useState(false)
   const [opgezegdTot, setOpgezegdTot] = useState<string | null>(organisatie?.abonnement_actief_tot ?? null)
   const [volgendeIncasso, setVolgendeIncasso] = useState<string | null>(null)
+  // Staffel uit de organisatie (migratie 172). Leeg betekent de eerste trede,
+  // en die waarden staan gelijk aan de constanten in de api.
+  const bedragExcl = Number(organisatie?.abonnement_bedrag_excl ?? 129)
+  const bedragIncl = bedragExcl * 1.21
+  const maxGebruikers = Number(organisatie?.max_gebruikers ?? 10)
+  const euro = (bedrag: number) => bedrag.toFixed(2).replace('.', ',')
+
   // De poll-lus na terugkomst van Mollie mag maar één keer starten, en mag niet
   // opgeruimd worden door een re-render: het wegstrepen van de query-parameter
   // veroorzaakt er zelf een.
@@ -214,8 +221,8 @@ export function AbonnementTab() {
             {[
               {
                 label: 'Per maand',
-                waarde: <span className="font-mono">€156,09</span>,
-                sub: 'incl. btw · €129,00 excl. btw, 21% btw',
+                waarde: <span className="font-mono">€{euro(bedragIncl)}</span>,
+                sub: `incl. btw · €${euro(bedragExcl)} excl. btw, 21% btw`,
               },
               {
                 label: 'Volgende incasso',
@@ -329,15 +336,15 @@ export function AbonnementTab() {
               </h3>
 
               <div className="flex items-baseline gap-1.5 mt-3">
-                <span className="text-[42px] font-bold font-mono tracking-tight text-foreground">€129</span>
+                <span className="text-[42px] font-bold font-mono tracking-tight text-foreground">€{euro(bedragExcl)}</span>
                 <span className="text-[15px] text-muted-foreground">/ maand</span>
               </div>
-              <p className="text-[12px] text-muted-foreground mt-1">excl. btw · €156,09 incl. btw per maand</p>
+              <p className="text-[12px] text-muted-foreground mt-1">excl. btw · €{euro(bedragIncl)} incl. btw per maand</p>
 
               <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: 'hsl(var(--background))' }}>
                 <Users className="h-4 w-4" style={{ color: '#1A535C' }} />
                 <span className="text-[13px] font-medium text-foreground">
-                  Tot <strong>10 gebruikers</strong> inbegrepen
+                  Tot <strong>{maxGebruikers} gebruikers</strong> inbegrepen
                 </span>
               </div>
 
@@ -368,7 +375,7 @@ export function AbonnementTab() {
               {!isActive && (
                 <p className="text-[12px] mt-3 max-w-[380px] leading-[1.5] text-muted-foreground">
                   Je rekent nu de eerste maand af en geeft toestemming voor automatische
-                  incasso. Daarna schrijven we elke maand €156,09 incl. btw af tot je opzegt.
+                  incasso. Daarna schrijven we elke maand €{euro(bedragIncl)} incl. btw af tot je opzegt.
                 </p>
               )}
             </div>

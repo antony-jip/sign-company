@@ -114,35 +114,18 @@ async function checkOrgCap(orgId: string): Promise<{ allowed: boolean; current: 
 async function incrementOrgUsage(orgId: string, inputTokens: number, outputTokens: number): Promise<void> {
   const maand = getCurrentMonth()
   const kosten = ((inputTokens / 1_000_000) * SONNET_46_INPUT_PRICE + (outputTokens / 1_000_000) * SONNET_46_OUTPUT_PRICE) * USD_NAAR_EUR
-
-  const { data: existing } = await supabase
-    .from('ai_usage_org')
-    .select('id, aantal_calls, geschatte_kosten')
-    .eq('organisatie_id', orgId)
-    .eq('route', ROUTE_NAME)
-    .eq('maand', maand)
-    .maybeSingle()
-
-  if (existing) {
-    await supabase
-      .from('ai_usage_org')
-      .update({
-        aantal_calls: (existing.aantal_calls || 0) + 1,
-        geschatte_kosten: Number((Number(existing.geschatte_kosten || 0) + kosten).toFixed(4)),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existing.id)
-  } else {
-    await supabase
-      .from('ai_usage_org')
-      .insert({
-        organisatie_id: orgId,
-        route: ROUTE_NAME,
-        maand,
-        aantal_calls: 1,
-        geschatte_kosten: Number(kosten.toFixed(4)),
-      })
-  }
+  // Atomair bijschrijven via de RPC (migratie 174). Een read-modify-write laat
+  // twee gelijktijdige calls over elkaar heen schrijven, en dat verlies is
+  // altijd in het nadeel van doen.: de teller loopt achter en de rem grijpt
+  // te laat in.
+  const { error } = await supabase.rpc('ai_usage_org_bijschrijf', {
+    p_organisatie_id: orgId,
+    p_route: ROUTE_NAME,
+    p_maand: maand,
+    p_kosten: Number(kosten.toFixed(4)),
+    p_calls: 1,
+  })
+  if (error) console.error('incrementOrgUsage: bijschrijven mislukt', orgId, ROUTE_NAME, error)
 }
 
 const MAANDEN_NL = ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
@@ -160,22 +143,84 @@ function resetTekst(): string {
 // heeft. Houd gelijk aan de DEFAULT van ai_usage_org.maandlimiet (migratie 161).
 const STANDAARD_MAANDLIMIET_EUR = 15.0
 
-// Inline budget-check — niet verplaatsen naar helper (Vercel constraint)
+// Inline helpers — niet verplaatsen naar helper-bestand (Vercel constraint)
+
+/**
+ * De maandlimiet hoort bij het abonnement, niet bij een verbruiksrij. Volgorde:
+ * de staffel op de organisatie (migratie 172), anders de oude waarde op
+ * ai_usage_org, anders de constante.
+ *
+ * betrouwbaar=false betekent: we konden de limiet niet vaststellen. De aanroeper
+ * blokkeert dan niet. Eén call doorlaten kost centen, een organisatie die 30
+ * betaalt ten onrechte op 15 vastzetten kost een klant. Een ontbrekende kolom
+ * (migratie 172 nog niet gedraaid) telt niet als storing: dat is de oude
+ * situatie en daar hoort de oude terugval bij.
+ */
+async function haalMaandlimiet(
+  organisatieId: string,
+  maand: string
+): Promise<{ limiet: number; betrouwbaar: boolean }> {
+  const { data: org, error: orgFout } = await supabase
+    .from('organisaties')
+    .select('ai_maandlimiet')
+    .eq('id', organisatieId)
+    .maybeSingle()
+  if (orgFout && !kolomOntbreekt(orgFout)) {
+    console.error('haalMaandlimiet: organisatie onleesbaar', organisatieId, orgFout)
+    return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: false }
+  }
+  const uitStaffel = Number(org?.ai_maandlimiet ?? NaN)
+  if (Number.isFinite(uitStaffel) && uitStaffel >= 0) {
+    return { limiet: uitStaffel, betrouwbaar: true }
+  }
+
+  const { data: rijen, error: rijenFout } = await supabase
+    .from('ai_usage_org')
+    .select('maandlimiet')
+    .eq('organisatie_id', organisatieId)
+    .eq('maand', maand)
+  if (rijenFout) {
+    console.error('haalMaandlimiet: ai_usage_org onleesbaar', organisatieId, rijenFout)
+    return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: false }
+  }
+  if (rijen && rijen.length > 0) {
+    return {
+      limiet: Math.max(...rijen.map(r => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR))),
+      betrouwbaar: true,
+    }
+  }
+  return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: true }
+}
+
+/**
+ * 42703 is undefined_column; PGRST204 is dezelfde situatie via de schema-cache.
+ * Bewust alleen op foutcode en niet op de tekst van de melding: een RLS- of
+ * permissiefout die de kolomnaam echoot zou anders als "niet gemigreerd" gelezen
+ * worden, en dan valt een organisatie stilletjes terug naar de standaardlimiet.
+ */
+function kolomOntbreekt(fout: { code?: string }): boolean {
+  return fout.code === '42703' || fout.code === 'PGRST204'
+}
+
 async function checkAIBudget(
   organisatieId: string,
   geschatteKosten: number
 ): Promise<{ geblokkeerd: boolean; reden?: string }> {
   const maand = getCurrentMonth()
-  const { data: rows } = await supabase
+  const { data: rows, error: verbruikFout } = await supabase
     .from('ai_usage_org')
-    .select('geschatte_kosten, maandlimiet')
+    .select('geschatte_kosten')
     .eq('organisatie_id', organisatieId)
     .eq('maand', maand)
+  if (verbruikFout) {
+    console.error('checkAIBudget: verbruik onleesbaar', organisatieId, verbruikFout)
+  }
   const huidig = (rows ?? []).reduce((s, r) => s + Number(r.geschatte_kosten ?? 0), 0)
-  const limiet = rows && rows.length > 0
-    ? Math.max(...rows.map(r => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR)))
-    : STANDAARD_MAANDLIMIET_EUR
-  if (huidig + geschatteKosten > limiet) {
+  const { limiet, betrouwbaar } = await haalMaandlimiet(organisatieId, maand)
+  // Een onleesbaar verbruik geeft huidig = 0. Daar niet op blokkeren is juist,
+  // maar er ook niet op doorlaten alsof het klopt: beide kanten van de
+  // vergelijking moeten kloppen voordat we iemand tegenhouden.
+  if (!verbruikFout && betrouwbaar && huidig + geschatteKosten > limiet) {
     await supabase
       .from('ai_usage_org')
       .update({ geblokkeerd_op: new Date().toISOString() })

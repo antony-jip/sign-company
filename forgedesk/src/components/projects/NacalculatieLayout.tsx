@@ -36,7 +36,7 @@ import {
 import {
   getProjecten,
   getOffertes,
-  getOfferteItems,
+  getOfferteItemsVoorOffertes,
   getTijdregistraties,
   getFacturen,
   getUitgaven,
@@ -96,16 +96,8 @@ export function NacalculatieLayout() {
           (o) => o.status === 'goedgekeurd' && o.project_id
         )
 
-        const itemsMap: Record<string, OfferteItem[]> = {}
-        await Promise.all(
-          goedgekeurdeOffertes.map(async (offerte) => {
-            try {
-              const items = await getOfferteItems(offerte.id)
-              itemsMap[offerte.id] = items
-            } catch (err) {
-              itemsMap[offerte.id] = []
-            }
-          })
+        const itemsMap = await getOfferteItemsVoorOffertes(
+          goedgekeurdeOffertes.map((offerte) => offerte.id)
         )
 
         setProjecten(afgerondeProjecten)

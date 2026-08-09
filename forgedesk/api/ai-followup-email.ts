@@ -211,51 +211,51 @@ function getCurrentMonth(): string {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
-async function checkUsageLimit(userId: string): Promise<boolean> {
+/**
+ * Vangnet per gebruiker. Dit is bedoeld voor mensen zonder organisatie: die
+ * kunnen niet door de org-check heen, want die heeft een organisatie nodig.
+ *
+ * De limiet moet daarom meebewegen met de staffel. Stond hier de vaste 15 terwijl
+ * de organisatie op 30 zit, dan loopt één zware gebruiker vast op 15 terwijl het
+ * bedrijf nog de helft van zijn budget over heeft, en de org-check die dat had
+ * moeten toestaan wordt niet eens bereikt. Dat was het geval sinds migratie 172
+ * de staffel invoerde.
+ */
+async function checkUsageLimit(userId: string, organisatieId: string | null): Promise<boolean> {
   const maand = getCurrentMonth()
-  const { data } = await supabase
+  const limiet = organisatieId
+    ? (await haalMaandlimiet(organisatieId, maand)).limiet
+    : STANDAARD_MAANDLIMIET_EUR
+  const { data, error } = await supabase
     .from('ai_usage')
     .select('geschatte_kosten')
     .eq('user_id', userId)
     .eq('maand', maand)
-    .single()
-  return !data || (data.geschatte_kosten ?? 0) < MONTHLY_LIMIT
+    .maybeSingle()
+  // Onleesbaar eigen verbruik: niet blokkeren op een getal dat we niet kennen.
+  // De org-check hierna is de echte rem.
+  if (error) {
+    console.error('checkUsageLimit: eigen verbruik onleesbaar', userId, error)
+    return true
+  }
+  return !data || (data.geschatte_kosten ?? 0) < limiet
 }
 
 async function updateUsage(userId: string, inputTokens: number, outputTokens: number): Promise<void> {
   const maand = getCurrentMonth()
   const kosten = ((inputTokens / 1_000_000 * 3) + (outputTokens / 1_000_000 * 15)) * USD_NAAR_EUR
-
-  const { data: existing } = await supabase
-    .from('ai_usage')
-    .select('id, aantal_calls, input_tokens, output_tokens, geschatte_kosten')
-    .eq('user_id', userId)
-    .eq('maand', maand)
-    .single()
-
-  if (existing) {
-    await supabase
-      .from('ai_usage')
-      .update({
-        aantal_calls: (existing.aantal_calls || 0) + 1,
-        input_tokens: (existing.input_tokens || 0) + inputTokens,
-        output_tokens: (existing.output_tokens || 0) + outputTokens,
-        geschatte_kosten: Number(((existing.geschatte_kosten || 0) + kosten).toFixed(4)),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existing.id)
-  } else {
-    await supabase
-      .from('ai_usage')
-      .insert({
-        user_id: userId,
-        maand,
-        aantal_calls: 1,
-        input_tokens: inputTokens,
-        output_tokens: outputTokens,
-        geschatte_kosten: Number(kosten.toFixed(4)),
-      })
-  }
+  // Atomair bijschrijven via de RPC (migratie 178), zelfde reden als bij de
+  // org-teller: een read-modify-write laat twee gelijktijdige calls over elkaar
+  // heen schrijven en de teller loopt structureel achter.
+  const { error } = await supabase.rpc('ai_usage_bijschrijf', {
+    p_user_id: userId,
+    p_maand: maand,
+    p_input_tokens: inputTokens,
+    p_output_tokens: outputTokens,
+    p_kosten: Number(kosten.toFixed(4)),
+    p_calls: 1,
+  })
+  if (error) console.error('updateUsage: bijschrijven mislukt', userId, error)
 }
 
 const MAANDEN_NL = ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
@@ -273,22 +273,84 @@ function resetTekst(): string {
 // heeft. Houd gelijk aan de DEFAULT van ai_usage_org.maandlimiet (migratie 161).
 const STANDAARD_MAANDLIMIET_EUR = 15.0
 
-// Inline budget-check — niet verplaatsen naar helper (Vercel constraint)
+// Inline helpers — niet verplaatsen naar helper-bestand (Vercel constraint)
+
+/**
+ * De maandlimiet hoort bij het abonnement, niet bij een verbruiksrij. Volgorde:
+ * de staffel op de organisatie (migratie 172), anders de oude waarde op
+ * ai_usage_org, anders de constante.
+ *
+ * betrouwbaar=false betekent: we konden de limiet niet vaststellen. De aanroeper
+ * blokkeert dan niet. Eén call doorlaten kost centen, een organisatie die 30
+ * betaalt ten onrechte op 15 vastzetten kost een klant. Een ontbrekende kolom
+ * (migratie 172 nog niet gedraaid) telt niet als storing: dat is de oude
+ * situatie en daar hoort de oude terugval bij.
+ */
+async function haalMaandlimiet(
+  organisatieId: string,
+  maand: string
+): Promise<{ limiet: number; betrouwbaar: boolean }> {
+  const { data: org, error: orgFout } = await supabase
+    .from('organisaties')
+    .select('ai_maandlimiet')
+    .eq('id', organisatieId)
+    .maybeSingle()
+  if (orgFout && !kolomOntbreekt(orgFout)) {
+    console.error('haalMaandlimiet: organisatie onleesbaar', organisatieId, orgFout)
+    return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: false }
+  }
+  const uitStaffel = Number(org?.ai_maandlimiet ?? NaN)
+  if (Number.isFinite(uitStaffel) && uitStaffel >= 0) {
+    return { limiet: uitStaffel, betrouwbaar: true }
+  }
+
+  const { data: rijen, error: rijenFout } = await supabase
+    .from('ai_usage_org')
+    .select('maandlimiet')
+    .eq('organisatie_id', organisatieId)
+    .eq('maand', maand)
+  if (rijenFout) {
+    console.error('haalMaandlimiet: ai_usage_org onleesbaar', organisatieId, rijenFout)
+    return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: false }
+  }
+  if (rijen && rijen.length > 0) {
+    return {
+      limiet: Math.max(...rijen.map(r => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR))),
+      betrouwbaar: true,
+    }
+  }
+  return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: true }
+}
+
+/**
+ * 42703 is undefined_column; PGRST204 is dezelfde situatie via de schema-cache.
+ * Bewust alleen op foutcode en niet op de tekst van de melding: een RLS- of
+ * permissiefout die de kolomnaam echoot zou anders als "niet gemigreerd" gelezen
+ * worden, en dan valt een organisatie stilletjes terug naar de standaardlimiet.
+ */
+function kolomOntbreekt(fout: { code?: string }): boolean {
+  return fout.code === '42703' || fout.code === 'PGRST204'
+}
+
 async function checkAIBudget(
   organisatieId: string,
   geschatteKosten: number
 ): Promise<{ geblokkeerd: boolean; reden?: string }> {
   const maand = getCurrentMonth()
-  const { data: rows } = await supabase
+  const { data: rows, error: verbruikFout } = await supabase
     .from('ai_usage_org')
-    .select('geschatte_kosten, maandlimiet')
+    .select('geschatte_kosten')
     .eq('organisatie_id', organisatieId)
     .eq('maand', maand)
+  if (verbruikFout) {
+    console.error('checkAIBudget: verbruik onleesbaar', organisatieId, verbruikFout)
+  }
   const huidig = (rows ?? []).reduce((s, r) => s + Number(r.geschatte_kosten ?? 0), 0)
-  const limiet = rows && rows.length > 0
-    ? Math.max(...rows.map(r => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR)))
-    : STANDAARD_MAANDLIMIET_EUR
-  if (huidig + geschatteKosten > limiet) {
+  const { limiet, betrouwbaar } = await haalMaandlimiet(organisatieId, maand)
+  // Een onleesbaar verbruik geeft huidig = 0. Daar niet op blokkeren is juist,
+  // maar er ook niet op doorlaten alsof het klopt: beide kanten van de
+  // vergelijking moeten kloppen voordat we iemand tegenhouden.
+  if (!verbruikFout && betrouwbaar && huidig + geschatteKosten > limiet) {
     await supabase
       .from('ai_usage_org')
       .update({ geblokkeerd_op: new Date().toISOString() })
@@ -319,33 +381,18 @@ async function logOrgUsage(
 ): Promise<void> {
   const maand = getCurrentMonth()
   const kostenDelta = ((inputTokens / 1_000_000) * inputPrice + (outputTokens / 1_000_000) * outputPrice) * USD_NAAR_EUR
-  const { data: existing } = await supabase
-    .from('ai_usage_org')
-    .select('id, aantal_calls, geschatte_kosten')
-    .eq('organisatie_id', organisatieId)
-    .eq('route', route)
-    .eq('maand', maand)
-    .maybeSingle()
-  if (existing) {
-    await supabase
-      .from('ai_usage_org')
-      .update({
-        aantal_calls: (existing.aantal_calls ?? 0) + 1,
-        geschatte_kosten: Number((Number(existing.geschatte_kosten ?? 0) + kostenDelta).toFixed(4)),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existing.id)
-  } else {
-    await supabase
-      .from('ai_usage_org')
-      .insert({
-        organisatie_id: organisatieId,
-        route,
-        maand,
-        aantal_calls: 1,
-        geschatte_kosten: Number(kostenDelta.toFixed(4)),
-      })
-  }
+  // Atomair bijschrijven via de RPC (migratie 174). Een read-modify-write laat
+  // twee gelijktijdige calls over elkaar heen schrijven, en dat verlies is
+  // altijd in het nadeel van doen.: de teller loopt achter en de rem grijpt
+  // te laat in.
+  const { error } = await supabase.rpc('ai_usage_org_bijschrijf', {
+    p_organisatie_id: organisatieId,
+    p_route: route,
+    p_maand: maand,
+    p_kosten: Number(kostenDelta.toFixed(4)),
+    p_calls: 1,
+  })
+  if (error) console.error('logOrgUsage: bijschrijven mislukt', organisatieId, route, error)
 }
 
 export const config = { maxDuration: 30 }
@@ -366,15 +413,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Context met offerte gegevens is verplicht' })
     }
 
-    const withinLimit = await checkUsageLimit(userId)
+    const orgIdForBudget = await resolveOrgId(userId)
+    const withinLimit = await checkUsageLimit(userId, orgIdForBudget)
     if (!withinLimit) {
       return res.status(429).json({
         error: 'AI limiet bereikt',
         message: `Je hebt deze maand voor \u20ac${MONTHLY_LIMIT} aan Daan-gebruik bereikt.`,
       })
     }
-
-    const orgIdForBudget = await resolveOrgId(userId)
     if (orgIdForBudget) {
       const budget = await checkAIBudget(orgIdForBudget, 0.01)
       if (budget.geblokkeerd) {

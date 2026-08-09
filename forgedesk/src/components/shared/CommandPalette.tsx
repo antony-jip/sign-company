@@ -96,8 +96,14 @@ export function CommandPalette() {
   const listRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map())
 
-  // Load data on mount
+  // Pas laden als het palet echt opengaat. Dit hing aan mount, dus elke
+  // gebruiker haalde bij elke app-start drie volledige tabellen op (bij de
+  // grootste organisatie 1905 klanten in meerdere pagina's, plus alle offertes
+  // en projecten) voor een venster dat de meesten nooit openen.
+  const [dataGeladen, setDataGeladen] = useState(false)
+
   useEffect(() => {
+    if (!isOpen || dataGeladen) return
     let cancelled = false
 
     async function loadData() {
@@ -112,6 +118,7 @@ export function CommandPalette() {
           setOfferteItems(mapOffertesToItems(offertes))
           setKlantItems(mapKlantenToItems(klanten))
           setProjectItems(mapProjectenToItems(projecten))
+          setDataGeladen(true)
         }
       } catch (error) {
         logger.error('CommandPalette: failed to load data', error)
@@ -126,7 +133,7 @@ export function CommandPalette() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isOpen, dataGeladen])
 
   // Build filtered results
   const filteredResults = useMemo(() => {

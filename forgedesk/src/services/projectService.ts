@@ -15,11 +15,47 @@ import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 
 // ============ PROJECTEN ============
 
-export async function getProjecten(limit = 5000): Promise<Project[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
+export async function getProjecten(limit = 50000): Promise<Project[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    const rijen = await fetchAllPages<Project & { klanten?: { bedrijfsnaam?: string } }>((van, tot) =>
+      sb
+        .from('projecten')
+        .select('*, klanten(bedrijfsnaam)')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
+    return rijen.map((p) => ({ ...p, klant_naam: p.klanten?.bedrijfsnaam || '' }))
+  }
+  const projecten = getLocalData<Project>('projecten')
+  const klanten = getLocalData<Klant>('klanten')
+  return projecten.map((p) => ({
+    ...p,
+    klant_naam: klanten.find((k) => k.id === p.klant_id)?.bedrijfsnaam || '',
+  }))
+}
+
+/**
+ * Server-side zoeken voor de globale zoekbalk. Matcht op naam en beschrijving.
+ *
+ * De bedrijfsnaam van de klant zit in een gejoinde tabel en past niet in
+ * dezelfde or-filter, dus daarop zoeken loopt via de klanten-categorie die er in
+ * de zoekbalk direct boven staat. Dat is een versmalling tegenover de oude
+ * client-side filter, geen omissie.
+ */
+export async function zoekProjecten(term: string, limit = 20): Promise<Project[]> {
+  const gezocht = term.trim()
+  if (!gezocht) return []
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+  // Komma en haakjes zijn structuur in de or-syntax van PostgREST; % en _ zijn
+  // jokers in ilike. Allebei eruit, zodat een zoekterm een zoekterm blijft.
+  const veilig = gezocht.replace(/[,%_()"*\\]/g, '')
+  if (!veilig) return []
+    const { data, error } = await sb
       .from('projecten')
       .select('*, klanten(bedrijfsnaam)')
+      .or(`naam.ilike.%${veilig}%,beschrijving.ilike.%${veilig}%`)
       .order('created_at', { ascending: false })
       .limit(limit)
     if (error) throw error
@@ -28,12 +64,16 @@ export async function getProjecten(limit = 5000): Promise<Project[]> {
       klant_naam: p.klanten?.bedrijfsnaam || '',
     }))
   }
-  const projecten = getLocalData<Project>('projecten')
+  const q = gezocht.toLowerCase()
   const klanten = getLocalData<Klant>('klanten')
-  return projecten.map((p) => ({
-    ...p,
-    klant_naam: klanten.find((k) => k.id === p.klant_id)?.bedrijfsnaam || '',
-  }))
+  return getLocalData<Project>('projecten')
+    .map((p) => ({ ...p, klant_naam: klanten.find((k) => k.id === p.klant_id)?.bedrijfsnaam || '' }))
+    .filter((p) =>
+      p.naam.toLowerCase().includes(q) ||
+      (p.beschrijving || '').toLowerCase().includes(q) ||
+      (p.klant_naam || '').toLowerCase().includes(q)
+    )
+    .slice(0, limit)
 }
 
 // Lichtgewicht: alleen klant_id ophalen om projecten per klant te tellen.
@@ -305,12 +345,70 @@ export async function getTakenByProject(projectId: string): Promise<Taak[]> {
   return taken.filter((t) => t.project_id === projectId)
 }
 
+/**
+ * toegewezen_aan houdt historisch een naam, soms een medewerker-id (in productie
+ * 159 namen tegen 12 ids). Migratie 176 voegde toegewezen_aan_id toe; deze
+ * functie vult die mee zodat een naamswijziging de koppeling niet meer breekt en
+ * de trigger uit 177 weet naar wie de melding moet.
+ *
+ * De oude kolom blijft geschreven worden: de UI leest er nog op.
+ */
+async function metToegewezenId<T extends { toegewezen_aan?: string }>(
+  velden: T,
+  orgId: string | undefined,
+  taakId?: string
+): Promise<T & { toegewezen_aan_id?: string | null }> {
+  if (!('toegewezen_aan' in velden)) return velden
+  const waarde = (velden.toegewezen_aan ?? '').trim()
+  const sb = supabase
+  // Nooit alleen de naam schrijven en de id laten staan: dan wijst de naam naar
+  // Piet terwijl de id nog naar Jan wijst, en spreken de twee kolommen elkaar
+  // stil tegen. Liever geen id (en dus geen melding) dan een verkeerde.
+  if (!sb) return { ...velden, toegewezen_aan_id: null }
+  if (!waarde) return { ...velden, toegewezen_aan_id: null }
+
+  // Bij een bewerking die de toewijzing niet verandert de id met rust laten.
+  // Zonder deze stap loste elke opslag de naam opnieuw op, en dan kan een
+  // prioriteitswijziging een melding afvuren naar een naamgenoot van een
+  // vertrokken collega, of een koppeling wissen bij een naam met een spatie
+  // erachter. De trigger uit migratie 177 vuurt alleen op een gewijzigde id,
+  // dus door de kolom niet aan te raken blijft het stil.
+  if (taakId) {
+    const { data: huidig } = await sb
+      .from('taken')
+      .select('toegewezen_aan, toegewezen_aan_id')
+      .eq('id', taakId)
+      .maybeSingle()
+    if (huidig && (huidig.toegewezen_aan ?? '').trim().toLowerCase() === waarde.toLowerCase()) {
+      return velden
+    }
+  }
+
+  // Zelfde matchregel als de backfill in migratie 176: hoofdletter- en
+  // spatie-ongevoelig binnen de organisatie, oudste wint bij gelijke namen.
+  // Vergelijken in JS in plaats van met ilike, want dan bestaan er geen jokers
+  // om te ontsnappen en trimt hij aan beide kanten, net als btrim in de migratie.
+  let query = sb.from('medewerkers').select('id, naam, created_at')
+  if (orgId) query = query.eq('organisatie_id', orgId)
+  const { data, error } = await query
+  if (error) {
+    console.warn('metToegewezenId: medewerkers niet op te halen', error)
+    return { ...velden, toegewezen_aan_id: null }
+  }
+
+  const gezocht = waarde.toLowerCase()
+  const kandidaten = (data ?? [])
+    .filter((m) => m.id === waarde || (m.naam ?? '').trim().toLowerCase() === gezocht)
+    .sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')) || a.id.localeCompare(b.id))
+  return { ...velden, toegewezen_aan_id: kandidaten[0]?.id ?? null }
+}
+
 export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated_at'>): Promise<Taak> {
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('taken')
-      .insert({ ...await withUserId(sanitizeDates(taak)), organisatie_id: _orgId })
+      .insert({ ...await metToegewezenId(await withUserId(sanitizeDates(taak)), _orgId), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -363,9 +461,10 @@ export async function uploadTaakBijlage(taakId: string, file: File): Promise<str
 export async function updateTaak(id: string, updates: Partial<Taak>): Promise<Taak> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('taken')
-      .update(sanitizeDates({ ...updates, updated_at: now() }))
+      .update(await metToegewezenId(sanitizeDates({ ...updates, updated_at: now() }), _orgId, id))
       .eq('id', id)
       .select()
       .single()

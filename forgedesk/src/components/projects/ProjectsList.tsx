@@ -242,6 +242,12 @@ export function ProjectsList() {
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [dagenOpenFilter, setDagenOpenFilter] = useState<string>('alle')
+  // "Van mij" betekent hier: ik sta in het team van het project. Dat is het
+  // enige eigenaarschap dat projecten kennen (team_leden); een aparte
+  // eigenaar-kolom bestaat niet. Bewust niet onthouden in localStorage: een
+  // filter dat na een herstart nog aanstaat verbergt werk zonder dat je het
+  // doorhebt.
+  const [alleenVanMij, setAlleenVanMij] = useState(false)
   const [groupBy, setGroupBy] = useState<'none' | 'status' | 'klant'>(() => {
     if (typeof window === 'undefined') return 'none'
     const stored = window.localStorage.getItem('doen_projecten_groupby')
@@ -635,6 +641,13 @@ export function ProjectsList() {
       )
     }
 
+    if (alleenVanMij) {
+      const eigenMedewerkerId = medewerkers.find((m) => m.user_id === user?.id)?.id
+      result = eigenMedewerkerId
+        ? result.filter((p) => (p.team_leden || []).includes(eigenMedewerkerId))
+        : []
+    }
+
     if (dagenOpenFilter !== 'alle') {
       result = result.filter((p) => {
         const dagen = getDagenOpen(p)
@@ -691,7 +704,7 @@ export function ProjectsList() {
     })
 
     return result
-  }, [projecten, klanten, offertes, zoekterm, statusFilters, dagenOpenFilter, sortField, sortDir, groupBy])
+  }, [projecten, klanten, offertes, zoekterm, statusFilters, dagenOpenFilter, alleenVanMij, medewerkers, user?.id, sortField, sortDir, groupBy])
 
   // Reset paginanummer als de gebruiker filtert. Skip de allereerste render
   // zodat een via de URL hersteld pagina-nummer (?page=N) niet meteen
@@ -704,7 +717,7 @@ export function ProjectsList() {
     }
     setCurrentPage(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoekterm, statusFilters, dagenOpenFilter, sortField, sortDir, groupBy])
+  }, [zoekterm, statusFilters, dagenOpenFilter, alleenVanMij, sortField, sortDir, groupBy])
 
   function projectGroupKey(p: Project): string {
     if (groupBy === 'status') return p.status
@@ -1147,6 +1160,18 @@ export function ProjectsList() {
               {/* Sub-filters · open sinds + groep */}
               <div className="hidden lg:flex items-center gap-5">
                 <div className="doen-subtitel flex items-center gap-1.5">
+                  <button
+                    onClick={() => setAlleenVanMij((v) => !v)}
+                    title="Alleen projecten waar jij in het team staat"
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors mr-2',
+                      alleenVanMij
+                        ? 'text-petrol dark:text-foreground font-bold'
+                        : 'text-muted-foreground/80 hover:text-foreground/70'
+                    )}
+                  >
+                    van mij
+                  </button>
                   <span
                     className="text-[12px] text-muted-foreground mr-1"
                   >

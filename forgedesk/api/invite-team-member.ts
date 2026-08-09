@@ -37,6 +37,10 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false }
 })
 
+// Terugval als organisaties.max_gebruikers nog niet gevuld is. Gelijk houden
+// aan de DEFAULT van die kolom (migratie 172).
+const STANDAARD_MAX_GEBRUIKERS = 10
+
 const GELDIGE_ROLLEN = ['admin', 'medewerker', 'monteur'] as const
 
 async function verifyUser(req: VercelRequest): Promise<string> {
@@ -153,27 +157,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('email', email.toLowerCase())
       .eq('organisatie_id', organisatie_id)
       .eq('status', 'verstuurd')
+      // Alleen een GELDIGE uitnodiging blokkeert een nieuwe. Zonder deze regel
+      // hield een verlopen uitnodiging het adres bezet terwijl de plekkentelling
+      // hem juist niet meetelde: precies andersom dan bedoeld, en de admin kon
+      // niemand meer uitnodigen zonder de oude eerst met de hand in te trekken.
+      .gt('verloopt_op', new Date().toISOString())
       .maybeSingle()
 
     if (bestaandeUitnodiging) {
       return res.status(409).json({ error: 'Er staat al een uitnodiging open voor dit e-mailadres' })
     }
 
-    // Check max 10 leden per organisatie (profielen + openstaande uitnodigingen)
-    const { count: profielCount } = await supabaseAdmin
+    // Plekken tellen tegen de staffel van deze organisatie (migratie 172).
+    // Gedeactiveerde profielen tellen niet mee: die bezetten geen plek meer, en
+    // een bedrijf dat door personeel roteert liep anders vast op oud-medewerkers.
+    // Uitnodigingen tellen alleen zolang ze geldig zijn; een verlopen uitnodiging
+    // wordt door handle_new_user niet meer gehonoreerd, dus die hoort ook niet
+    // meer als bezette plek te gelden.
+    const { data: organisatie } = await supabaseAdmin
+      .from('organisaties')
+      .select('max_gebruikers')
+      .eq('id', organisatie_id)
+      .maybeSingle()
+
+    const maxGebruikers = Number(organisatie?.max_gebruikers ?? STANDAARD_MAX_GEBRUIKERS)
+
+    const { count: profielCount, error: profielFout } = await supabaseAdmin
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('organisatie_id', organisatie_id)
+      .or('status.is.null,status.neq.gedeactiveerd')
 
-    const { count: uitnodigingCount } = await supabaseAdmin
+    const { count: uitnodigingCount, error: uitnodigingFout } = await supabaseAdmin
       .from('uitnodigingen')
       .select('id', { count: 'exact', head: true })
       .eq('organisatie_id', organisatie_id)
       .eq('status', 'verstuurd')
+      .gt('verloopt_op', new Date().toISOString())
+
+    // Fail-closed: een mislukte telling geeft count null, en dat zou als 0
+    // doorgaan en meer leden toelaten dan de staffel. Liever geen uitnodiging
+    // dan een plek te veel.
+    if (profielFout || uitnodigingFout) {
+      console.error('invite-team-member: plekken tellen mislukt', organisatie_id, profielFout, uitnodigingFout)
+      return res.status(503).json({ error: 'Kon het aantal plekken niet vaststellen, probeer het zo opnieuw' })
+    }
 
     const totaalLeden = (profielCount || 0) + (uitnodigingCount || 0)
-    if (totaalLeden >= 10) {
-      return res.status(403).json({ error: 'Maximum aantal teamleden (10) bereikt voor deze organisatie' })
+    if (totaalLeden >= maxGebruikers) {
+      return res.status(403).json({
+        error: `Je abonnement heeft ${maxGebruikers} plekken en die zijn allemaal bezet. Zet een teamlid op inactief of neem contact op om je abonnement te verhogen.`,
+        code: 'max_gebruikers_bereikt',
+        max_gebruikers: maxGebruikers,
+        in_gebruik: totaalLeden,
+      })
     }
 
     // Sla uitnodiging EERST op zodat handle_new_user hem kan vinden

@@ -1,7 +1,7 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, sanitizeDates, getMaxNummer,
+  withUserId, getOrgId, sanitizeDates, fetchAllPages, getMaxNummer,
 } from './supabaseHelpers'
 import type {
   Klant,
@@ -21,22 +21,22 @@ export { partitionOfferteItemSync }
 
 // ============ OFFERTES ============
 
-export async function getOffertes(limit = 5000): Promise<Offerte[]> {
-  if (isSupabaseConfigured() && supabase) {
+export async function getOffertes(limit = 50000): Promise<Offerte[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
     try {
       const orgId = await getOrgId()
-      let query = supabase
-        .from('offertes')
-        .select('*, klanten(bedrijfsnaam)')
-        .order('created_at', { ascending: false })
-        .limit(limit)
-      if (orgId) query = query.eq('organisatie_id', orgId)
-      const { data, error } = await query
-      if (error) throw error
-      return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
-        ...o,
-        klant_naam: o.klanten?.bedrijfsnaam || '',
-      }))
+      const rijen = await fetchAllPages<Offerte & { klanten?: { bedrijfsnaam?: string } }>((van, tot) => {
+        let query = sb
+          .from('offertes')
+          .select('*, klanten(bedrijfsnaam)')
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: true })
+          .range(van, tot)
+        if (orgId) query = query.eq('organisatie_id', orgId)
+        return query
+      }, limit)
+      return rijen.map((o) => ({ ...o, klant_naam: o.klanten?.bedrijfsnaam || '' }))
     } catch (err) {
       console.warn('Supabase getOffertes failed, falling back to localStorage:', err)
     }
@@ -67,6 +67,43 @@ export async function getOfferte(id: string): Promise<Offerte | null> {
   const offerte = offertes.find((o) => o.id === id)
   if (!offerte) return null
   return { ...offerte, klant_naam: klanten.find((k) => k.id === offerte.klant_id)?.bedrijfsnaam || '' }
+}
+
+/**
+ * Server-side zoeken voor de globale zoekbalk. Matcht op nummer en titel; de
+ * klantnaam zit in de join en is niet in dezelfde or-filter te vangen, dus daar
+ * zoekt de zoekbalk voortaan via de klanten-categorie op.
+ */
+export async function zoekOffertes(term: string, limit = 20): Promise<Offerte[]> {
+  const gezocht = term.trim()
+  if (!gezocht) return []
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    const orgId = await getOrgId()
+  // Komma en haakjes zijn structuur in de or-syntax van PostgREST; % en _ zijn
+  // jokers in ilike. Allebei eruit, zodat een zoekterm een zoekterm blijft.
+  const veilig = gezocht.replace(/[,%_()"*\\]/g, '')
+  if (!veilig) return []
+    let query = sb
+      .from('offertes')
+      .select('*, klanten(bedrijfsnaam)')
+      .or(`nummer.ilike.%${veilig}%,titel.ilike.%${veilig}%`)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    if (orgId) query = query.eq('organisatie_id', orgId)
+    const { data, error } = await query
+    if (error) throw error
+    return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
+      ...o,
+      klant_naam: o.klanten?.bedrijfsnaam || '',
+    }))
+  }
+  const q = gezocht.toLowerCase()
+  const klanten = getLocalData<Klant>('klanten')
+  return getLocalData<Offerte>('offertes')
+    .map((o) => ({ ...o, klant_naam: klanten.find((k) => k.id === o.klant_id)?.bedrijfsnaam || '' }))
+    .filter((o) => (o.nummer || '').toLowerCase().includes(q) || o.titel.toLowerCase().includes(q))
+    .slice(0, limit)
 }
 
 export async function getOffertesByProject(projectId: string): Promise<Offerte[]> {
@@ -211,29 +248,34 @@ export class OfferteConflictError extends Error {
 export async function updateOfferte(id: string, updates: Partial<Offerte>, expectedUpdatedAt?: string): Promise<Offerte> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    // Optimistic locking: check of de offerte niet tussentijds is gewijzigd
+    // Optimistic locking in één statement. De vorige opzet las eerst
+    // updated_at en schreef daarna, met 2000 ms speling. Dat had twee gaten:
+    // tussen lezen en schrijven konden twee opslagacties allebei door de check
+    // komen, en een wijziging van een collega binnen die twee seconden werd
+    // zonder waarschuwing overschreven. Door de voorwaarde in de UPDATE zelf te
+    // zetten kan er niets meer tussen vallen: het is de database die beslist.
     if (expectedUpdatedAt) {
-      const { data: current, error: fetchErr } = await supabase
+      const { data: bijgewerkt, error } = await supabase
         .from('offertes')
-        .select('updated_at')
+        .update(sanitizeDates({ ...updates, updated_at: now() }))
+        .eq('id', id)
+        .eq('updated_at', expectedUpdatedAt)
+        .select()
+        .maybeSingle()
+      if (error) throw error
+      if (bijgewerkt) return bijgewerkt
+
+      // Nul rijen geraakt: of iemand was ons voor, of de offerte bestaat niet.
+      const { data: huidig } = await supabase
+        .from('offertes')
+        .select('*')
         .eq('id', id)
         .maybeSingle()
-      if (fetchErr) throw fetchErr
-      if (!current) throw new Error('Offerte niet gevonden')
-
-      const serverTime = new Date(current.updated_at).getTime()
-      const expectedTime = new Date(expectedUpdatedAt).getTime()
-      if (Math.abs(serverTime - expectedTime) > 2000) {
-        const { data: fullCurrent } = await supabase
-          .from('offertes')
-          .select('*')
-          .eq('id', id)
-          .maybeSingle()
-        throw new OfferteConflictError(
-          'Deze offerte is ondertussen door iemand anders gewijzigd. Herlaad de pagina om de laatste versie te zien.',
-          fullCurrent
-        )
-      }
+      if (!huidig) throw new Error('Offerte niet gevonden')
+      throw new OfferteConflictError(
+        'Deze offerte is ondertussen door iemand anders gewijzigd. Herlaad de pagina om de laatste versie te zien.',
+        huidig
+      )
     }
 
     const { data, error } = await supabase
@@ -288,6 +330,53 @@ function herberekenItemMarkup(item: OfferteItem): OfferteItem {
       calculatie_regels: herberekenRegelMarkup(v.calculatie_regels),
     })),
   }
+}
+
+/**
+ * Items van meerdere offertes in één keer, gegroepeerd per offerte_id.
+ * Nacalculatie deed hier één query per goedgekeurde offerte, allemaal tegelijk;
+ * bij duizend offertes vuurt dat duizend requests af en loopt het scherm vast.
+ * In blokken van 100 offerte-ids, zodat de URL niet te lang wordt.
+ */
+export async function getOfferteItemsVoorOffertes(
+  offerteIds: string[]
+): Promise<Record<string, OfferteItem[]>> {
+  const perOfferte: Record<string, OfferteItem[]> = {}
+  for (const id of offerteIds) perOfferte[id] = []
+  if (offerteIds.length === 0) return perOfferte
+
+  if (isSupabaseConfigured() && supabase) {
+    const orgId = await getOrgId()
+    const blokGrootte = 100
+    for (let i = 0; i < offerteIds.length; i += blokGrootte) {
+      const blok = offerteIds.slice(i, i + blokGrootte)
+      const sb = supabase
+      const rijen = await fetchAllPages<OfferteItem>((van, tot) => {
+        let query = sb
+          .from('offerte_items')
+          .select('*')
+          .in('offerte_id', blok)
+          .order('offerte_id', { ascending: true })
+          .order('volgorde', { ascending: true })
+          .order('id', { ascending: true })
+          .range(van, tot)
+        if (orgId) query = query.eq('organisatie_id', orgId)
+        return query
+      })
+      for (const rij of rijen) {
+        const lijst = perOfferte[rij.offerte_id]
+        if (lijst) lijst.push(herberekenItemMarkup(rij))
+      }
+    }
+    return perOfferte
+  }
+
+  for (const item of getLocalData<OfferteItem>('offerte_items')) {
+    const lijst = perOfferte[item.offerte_id]
+    if (lijst) lijst.push(herberekenItemMarkup(item))
+  }
+  for (const id of offerteIds) perOfferte[id].sort((a, b) => a.volgorde - b.volgorde)
+  return perOfferte
 }
 
 export async function getOfferteItems(offerteId: string): Promise<OfferteItem[]> {

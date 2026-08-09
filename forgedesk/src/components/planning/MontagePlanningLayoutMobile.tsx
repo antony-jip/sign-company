@@ -242,7 +242,7 @@ function MontageCard({
 }
 
 export function MontagePlanningLayoutMobile() {
-  const { user } = useAuth()
+  const { user, userRol } = useAuth()
   const [afspraken, setAfspraken] = useState<MontageAfspraak[]>(() => getCached<MontageAfspraak[]>('montageAfspraken') ?? [])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? [])
   const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
@@ -295,13 +295,13 @@ export function MontagePlanningLayoutMobile() {
     if (filterInitialized) return
     if (!currentMedewerker) return
     if (currentMedewerker.rol !== 'monteur') return
-    if (isAdminUser(currentMedewerker, user)) return
+    if (isAdminUser(userRol)) return
     setScopeState('mijn')
     setFilterInitialized(true)
     try {
       localStorage.setItem(PLANNING_FILTER_KEY, currentMedewerker.id)
     } catch (err) { /* ignore */ }
-  }, [filterInitialized, currentMedewerker, user])
+  }, [filterInitialized, currentMedewerker, user, userRol])
 
   const klantById = useMemo(() => new Map(klanten.map((k) => [k.id, k])), [klanten])
   const medewerkerById = useMemo(() => new Map(medewerkers.map((m) => [m.id, m])), [medewerkers])

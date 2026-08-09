@@ -1,5 +1,91 @@
 # doen. — Development Log
 
+## Augustus 2026 — Ronde "20 gebruikers" (branch, migraties wél live)
+
+**Branch:** `claude/20-gebruikers`, niet gemerged en niet gepusht. `main` onaangeroerd.
+**Migraties 172 t/m 178 draaien WEL op productie.** Dat is bewust: ze zijn additief en de code valt terug op het oude gedrag zolang de kolommen leeg zijn. De code op de branch is dus nog niet live, de database wel.
+
+### Aanleiding
+Kan een signbedrijf van 20 man hierin werken? Kort antwoord vooraf was: afgedwongen 10, comfortabel 8, na deze ronde 20 tot 25, boven de 30 een ander project.
+
+### Wat er live staat (database)
+- **172** staffel op `organisaties`: `max_gebruikers`, `abonnement_bedrag_excl`, `ai_maandlimiet`. Trigger beschermt die drie én de bestaande abonnementskolommen, want migratie 085 gaf elk lid UPDATE en INSERT op zijn eigen organisatie. `abonnement_status` op 'actief' zetten liep daarvoor langs de paywall.
+- **173** `profiles.rol` en `organisatie_id` vastgezet. `profiles_update` had USING zonder WITH CHECK, dus iedereen kon zichzelf admin maken of zijn `organisatie_id` naar een ander bedrijf verleggen en daarmee alle data van dat bedrijf zien.
+- **174** atomaire org-teller voor AI-verbruik. **178** idem per gebruiker, inclusief de unique index die migratie 006 aanmaakt maar die in productie niet bestond.
+- **175** guard aangevuld. **176** `taken.toegewezen_aan_id` met backfill (169 van 171). **177** melding bij toewijzing, via een trigger omdat RLS op `notificaties` per gebruiker is.
+
+### Ook op de branch, buiten de staffel om
+- **Truncatie.** Alle lijstqueries pagineren nu, met id als tiebreaker; sorteren
+  op één kolom is niet stabiel over paginagrenzen. Nacalculatie vuurde één query
+  per goedgekeurde offerte tegelijk af, dat is nu één batch per 100 ids.
+- **Zoeken.** De globale zoekbalk trok acht hele tabellen in een client-cache.
+  Mail (18.515 rijen, doorzocht daarvoor er 200), klanten, projecten en offertes
+  gaan nu per zoekopdracht naar de server. Facturen, taken, documenten en
+  werkbonnen zitten er nog in. Bewuste versmalling: offertes matchen op nummer en
+  titel, niet meer op klantnaam; die zit in een join en past niet in dezelfde
+  or-filter.
+- **CommandPalette** laadde drie volledige tabellen bij élke app-start voor een
+  venster dat de meesten nooit openen. Laadt nu pas bij openen. De dubbele Cmd+K
+  is weg: GlobalSearch luisterde ook, maar CommandPalette wint via capture.
+- **Conflictdetectie op offertes herschreven.** Was een read-then-write met 2000
+  ms speling, waardoor twee opslagacties allebei door de check konden komen en
+  een wijziging van een collega binnen die twee seconden stil werd overschreven.
+  De voorwaarde zit nu in de UPDATE zelf. Gedragswijziging: schrijfacties die de
+  lock niet meesturen leveren nu een echt conflict op waar ze eerder stil
+  overschreven.
+- **Admincheck.** Er waren vier bronnen, waarvan drie door de gebruiker zelf te
+  schrijven (user_metadata.app_rol, medewerkers.rol, medewerkers.app_rol). Nu
+  alleen profiles.rol, de kolom die de backend al vertrouwt en die 173 vastzet.
+- **Van-mij-filter op projecten**, op basis van team_leden. Offertes, facturen en
+  werkbonnen kunnen dit niet: die hebben geen toegewezene.
+
+### Wat er misging en hersteld is
+- **173 brak elke profielopslag.** De guard gooide in de UPDATE-tak, en een
+  PostgREST-upsert draait als INSERT ON CONFLICT DO UPDATE: de INSERT-tak maakt
+  NEW leeg en precies die waarden gaan als EXCLUDED de UPDATE-tak in. Naam,
+  telefoon, handtekening en bedrijfsgegevens konden daardoor niet meer opgeslagen
+  worden, voor iedereen. **179** zet in de UPDATE-tak terug in plaats van te
+  gooien. De les: redeneren over triggergedrag is geen test.
+- **177 controleerde de verkeerde kant.** Wel of de medewerkersrij bij de
+  organisatie hoort, niet of de persoon erachter dat doet. Een vertrokken collega
+  wiens rij nog zijn user_id draagt kreeg taaktitels en omschrijvingen. **180**
+  joint op profiles.
+- **De per-gebruiker AI-limiet schaalde niet mee** en draait vóór de org-check,
+  dus op trede 2 liep één zware gebruiker vast op 15 terwijl het bedrijf nog de
+  helft over had. Beide checks lezen nu dezelfde bron.
+
+### Staffel, besloten
+Tot 10 gebruikers EUR 129 met EUR 15 AI, tot 20 EUR 199 met EUR 30, tot 35 EUR 279 met EUR 50. Rekenen op gekochte plekken, niet gebruikte.
+**Werkafspraak:** een staffelwijziging in de database altijd direct gevolgd door `api/update-subscription-bedrag`, anders toont de app een ander bedrag dan Mollie incasseert.
+
+### De les die het meest waard is
+**De migraties in deze repo beschrijven de database niet.** Vier keer bleek een aanname uit de migratiebestanden onjuist: de werkbon-kindtabellen zijn in productie al org-scoped (die taak verviel), `expires_at` en `invited_by` bestaan niet (het zijn `verloopt_op` en `uitgenodigd_door`), er ontbreken geen org-indexen maar er zijn er dubbele, en de unique index op `ai_usage` bestond niet. Eén migratie draaide bovendien met "Success" terwijl de functie bij aanroep stukging. Verifieer hier altijd ná het draaien tegen productie, niet tegen de migratie.
+
+### Rollen: BESLOTEN, geen rol-gate
+Monteurs mogen marge en omzet zien. Er komt dus géén afscherming van de
+financiële schermen; de radicale transparantie uit CLAUDE.md paragraaf 5 blijft
+gelden, ook bij 20 gebruikers. Rapportages, Nacalculatie, de marge per
+offerteregel en de uurtarieven in /team blijven voor iedereen zichtbaar.
+
+Wat dat betekent voor de code:
+- De rollen sturen alleen teambeheer aan (alleen admin mag uitnodigen en rollen
+  wijzigen). Ze beperken niet wat iemand ziet, en de UI belooft dat ook niet
+  meer: de tekst "Monteur · Alleen werkbonnen" is uit het uitnodigingsscherm
+  gehaald omdat die belofte nergens werd waargemaakt.
+- De admincheck heeft nu één bron (`profiles.rol`), zodat de twee checks in de
+  app niet meer verschillende antwoorden kunnen geven. Dat blijft nuttig, ook
+  zonder gate.
+- Roldata opschonen (8 van de 9 profielen staan op admin) is hierdoor geen
+  blokkade meer, alleen nog hygiëne.
+
+### Openstaand, vraagt een besluit
+- **Eigenaarschap:** offertes, facturen en werkbonnen hebben geen toegewezene, dus een van-mij-filter heeft daar niets om naar te wijzen.
+- **Dubbele indexen:** bij `emails` en `facturen` bewezen identiek (beide op alleen `organisatie_id`); bij klanten, taken en werkbonnen dezelfde naamgeving maar niet nagekeken. Droppen is destructief.
+
+### Nog te testen door Antony
+Wijs in de app een taak toe aan een collega en daarna een aan jezelf. Beide takken zijn via SQL bewezen, niet door de app zelf.
+
+
 ## Mei 2026 — Werkbon canvas fase 2 (lokaal afgerond, geen productie-rollout)
 
 **Branch:** `feat/werkbon-canvas-fase2` (15 commits vanaf parent `c462ad38` op fase 1 branch)

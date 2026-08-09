@@ -6,13 +6,13 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  getKlanten,
-  getProjecten,
-  getOffertes,
+  zoekKlanten,
+  zoekProjecten,
+  zoekOffertes,
   getFacturen,
   getTaken,
   getDocumenten,
-  getEmails,
+  searchEmailsFTS,
   getWerkbonnen,
 } from '@/services/supabaseService'
 import type { Klant, Project, Offerte, Factuur, Taak, Document, Email, Werkbon } from '@/types'
@@ -58,17 +58,22 @@ async function loadAllData() {
     return dataCache
   }
 
-  const [klanten, projecten, offertes, facturen, taken, documenten, emails, werkbonnen] =
+  const [facturen, taken, documenten, werkbonnen] =
     await Promise.all([
-      getKlanten(),
-      getProjecten(),
-      getOffertes(),
       getFacturen(),
       getTaken(),
       getDocumenten(),
-      getEmails(),
       getWerkbonnen(),
     ])
+  // Mail en klanten zitten hier bewust niet bij. Dat zijn de twee grootste
+  // tabellen (18.515 en 1905 rijen bij de grootste organisatie) en ze werden
+  // volledig ingeladen om er in JS op te filteren. Mail gaat via de full-text
+  // search van de database, klanten via een ilike-query. Beide worden per
+  // zoekopdracht opgehaald, niet per app-start.
+  const emails: Email[] = []
+  const klanten: Klant[] = []
+  const projecten: Project[] = []
+  const offertes: Offerte[] = []
 
   dataCache = { klanten, projecten, offertes, facturen, taken, documenten, emails, werkbonnen, loadedAt: Date.now() }
   return dataCache
@@ -81,13 +86,8 @@ function searchData(
   const q = query.toLowerCase().trim()
   const categories: SearchCategory[] = []
 
-  // 1. Klanten
+  // 1. Klanten — komt uit een server-side ilike-query, niet uit de cache
   const klantResults = data.klanten
-    .filter((k) =>
-      k.bedrijfsnaam.toLowerCase().includes(q) ||
-      (k.contactpersoon || '').toLowerCase().includes(q) ||
-      (k.email || '').toLowerCase().includes(q)
-    )
   if (klantResults.length > 0) {
     categories.push({
       key: 'klanten',
@@ -107,11 +107,6 @@ function searchData(
 
   // 2. Projecten
   const projectResults = data.projecten
-    .filter((p) =>
-      p.naam.toLowerCase().includes(q) ||
-      (p.klant_naam || '').toLowerCase().includes(q) ||
-      (p.beschrijving || '').toLowerCase().includes(q)
-    )
   if (projectResults.length > 0) {
     categories.push({
       key: 'projecten',
@@ -132,11 +127,7 @@ function searchData(
 
   // 3. Offertes
   const offerteResults = data.offertes
-    .filter((o) =>
-      (o.nummer || '').toLowerCase().includes(q) ||
-      o.titel.toLowerCase().includes(q) ||
-      (o.klant_naam || '').toLowerCase().includes(q)
-    )
+
   if (offerteResults.length > 0) {
     categories.push({
       key: 'offertes',
@@ -252,13 +243,8 @@ function searchData(
     })
   }
 
-  // 8. Emails
+  // 8. Emails — komt uit de full-text search van de database, niet uit de cache
   const emailResults = data.emails
-    .filter((e) =>
-      (e.onderwerp || '').toLowerCase().includes(q) ||
-      (e.van || '').toLowerCase().includes(q) ||
-      (e.aan || '').toLowerCase().includes(q)
-    )
   if (emailResults.length > 0) {
     categories.push({
       key: 'emails',
@@ -348,9 +334,28 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
     async function doSearch() {
       setIsLoading(true)
       try {
-        const data = await loadAllData()
+        const [data, emails, klanten, projecten, offertes] = await Promise.all([
+          loadAllData(),
+          // Faalt de FTS, dan blijft de rest van het zoekresultaat gewoon staan.
+          searchEmailsFTS(debouncedQuery, MAX_PER_CATEGORY).catch((err) => {
+            logger.error('Zoeken in mail mislukt:', err)
+            return [] as Email[]
+          }),
+          zoekKlanten(debouncedQuery, MAX_PER_CATEGORY).catch((err) => {
+            logger.error('Zoeken in klanten mislukt:', err)
+            return [] as Klant[]
+          }),
+          zoekProjecten(debouncedQuery, MAX_PER_CATEGORY).catch((err) => {
+            logger.error('Zoeken in projecten mislukt:', err)
+            return [] as Project[]
+          }),
+          zoekOffertes(debouncedQuery, MAX_PER_CATEGORY).catch((err) => {
+            logger.error('Zoeken in offertes mislukt:', err)
+            return [] as Offerte[]
+          }),
+        ])
         if (cancelled) return
-        const results = searchData(data, debouncedQuery)
+        const results = searchData({ ...data, emails, klanten, projecten, offertes }, debouncedQuery)
         setCategories(results)
         setActiveIndex(-1)
       } catch (err) {
@@ -363,18 +368,11 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
     return () => { cancelled = true }
   }, [debouncedQuery])
 
-  // Cmd/Ctrl+K shortcut
-  useEffect(() => {
-    function handleKeydown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        inputRef.current?.focus()
-        setIsOpen(true)
-      }
-    }
-    document.addEventListener('keydown', handleKeydown)
-    return () => document.removeEventListener('keydown', handleKeydown)
-  }, [])
+  // Bewust GEEN Cmd+K hier. CommandPalette luistert op dezelfde toets met
+  // capture en wint altijd, dus deze handler vuurde nooit; hij deed alleen een
+  // preventDefault op een toetsaanslag die een ander component afhandelt. Eén
+  // eigenaar per sneltoets, anders is niet te zien welk venster opengaat.
+  // Deze zoekbalk open je door in het veld te klikken.
 
   // Close on click outside
   useEffect(() => {

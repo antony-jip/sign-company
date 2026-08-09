@@ -422,7 +422,7 @@ function DagNotitiePopover({
 }
 
 export function MontagePlanningLayout() {
-  const { user } = useAuth();
+  const { user, userRol } = useAuth();
   const { navigateWithTab } = useNavigateWithTab();
   const [currentMonday, setCurrentMonday] = useState<Date>(() =>
     getMondayOfWeek(new Date())
@@ -643,10 +643,10 @@ export function MontagePlanningLayout() {
     if (filterInitialized) return;
     if (!eigenMedewerker) return;
     if (eigenMedewerker.rol !== 'monteur') return;
-    if (isAdminUser(eigenMedewerker, user)) return;
+    if (isAdminUser(userRol)) return;
     setSelectedMonteurState(eigenMedewerker.id);
     setFilterInitialized(true);
-  }, [filterInitialized, user, eigenMedewerker]);
+  }, [filterInitialized, user, eigenMedewerker, userRol]);
 
   // Sync: scope=mijn met geladen eigenMedewerker → selectedMonteur op id zetten
   useEffect(() => {

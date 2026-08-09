@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ArrowRight } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface TrialGuardDialogProps {
   open: boolean
@@ -17,6 +18,10 @@ interface TrialGuardDialogProps {
 
 export function TrialGuardDialog({ open, onOpenChange }: TrialGuardDialogProps) {
   const navigate = useNavigate()
+  const { organisatie } = useAuth()
+  // Uit de staffel (migratie 172). Leeg is de eerste trede, en die waarde staat
+  // gelijk aan de constante in api/create-subscription.
+  const bedragExcl = Number(organisatie?.abonnement_bedrag_excl ?? 129)
 
   const handleActivate = () => {
     onOpenChange(false)
@@ -47,7 +52,7 @@ export function TrialGuardDialog({ open, onOpenChange }: TrialGuardDialogProps) 
             className="text-white font-bold sm:order-2 inline-flex items-center gap-2"
             style={{ backgroundColor: '#F15025' }}
           >
-            Activeer abonnement · €129/maand
+            Activeer abonnement · €{bedragExcl}/maand
             <ArrowRight className="h-4 w-4" />
           </Button>
         </DialogFooter>

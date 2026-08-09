@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import {
   Bell, Eye, AlertTriangle, AlertCircle, Clock, Mail, CheckCircle2, Truck,
   Banknote, Wallet, CalendarCheck, RotateCcw, MessageSquare, BellRing,
-  Search, Check, Trash2, Filter, X,
+  Search, Check, Trash2, Filter, X, Inbox,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -35,6 +35,7 @@ const typeConfig: Record<
   deadline_nadert:     { icon: Clock, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Deadline nadert', categorie: 'systeem' },
   nieuwe_email:        { icon: Mail, colorClass: 'text-blue-600', bgClass: 'bg-blue-100', label: 'Nieuwe email', categorie: 'systeem' },
   taak_voltooid:       { icon: CheckCircle2, colorClass: 'text-green-600', bgClass: 'bg-green-100', label: 'Taak voltooid', categorie: 'systeem' },
+  taak_toegewezen:     { icon: CheckCircle2, colorClass: 'text-petrol', bgClass: 'bg-petrol/10', label: 'Taak toegewezen', categorie: 'systeem' },
   montage_gepland:     { icon: Truck, colorClass: 'text-accent', bgClass: 'bg-wm-pale/30', label: 'Montage gepland', categorie: 'systeem' },
   betaling_ontvangen:  { icon: Banknote, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-100', label: 'Betaling ontvangen', categorie: 'systeem' },
   budget_waarschuwing: { icon: Wallet, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Budget waarschuwing', categorie: 'systeem' },
@@ -47,6 +48,8 @@ const typeConfig: Record<
   portaal_bericht:     { icon: MessageSquare, colorClass: 'text-blue-600', bgClass: 'bg-blue-100', label: 'Portaal bericht', categorie: 'portaal' },
   portaal_bekeken:     { icon: Eye, colorClass: 'text-muted-foreground', bgClass: 'bg-muted', label: 'Portaal bekeken', categorie: 'portaal' },
   portaal_herinnering: { icon: BellRing, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Portaal herinnering', categorie: 'portaal' },
+  website_chat:        { icon: MessageSquare, colorClass: 'text-blue-600', bgClass: 'bg-blue-100', label: 'Websitechat', categorie: 'systeem' },
+  website_aanvraag:    { icon: Inbox, colorClass: 'text-petrol', bgClass: 'bg-petrol/10', label: 'Website-aanvraag', categorie: 'systeem' },
 }
 
 type FilterType = 'alle' | 'ongelezen' | 'portaal' | 'offertes' | 'systeem'

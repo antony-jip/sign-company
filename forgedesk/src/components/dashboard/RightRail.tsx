@@ -407,14 +407,14 @@ interface ActivityItem {
 
 function TeamCard() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, userRol } = useAuth()
   const { montages, offertes, facturen, medewerkers } = useDashboardData()
 
   const currentMedewerker = useMemo(
     () => medewerkers.find(m => m.user_id === user?.id) ?? null,
     [medewerkers, user?.id],
   )
-  const admin = isAdminUser(currentMedewerker, user)
+  const admin = isAdminUser(userRol)
 
   const stats = useMemo(() => {
     const now = new Date()
