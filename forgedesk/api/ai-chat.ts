@@ -269,15 +269,34 @@ function getCurrentMonth(): string {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
-async function checkUsageLimit(userId: string): Promise<boolean> {
+/**
+ * Vangnet per gebruiker. Dit is bedoeld voor mensen zonder organisatie: die
+ * kunnen niet door de org-check heen, want die heeft een organisatie nodig.
+ *
+ * De limiet moet daarom meebewegen met de staffel. Stond hier de vaste 15 terwijl
+ * de organisatie op 30 zit, dan loopt één zware gebruiker vast op 15 terwijl het
+ * bedrijf nog de helft van zijn budget over heeft, en de org-check die dat had
+ * moeten toestaan wordt niet eens bereikt. Dat was het geval sinds migratie 172
+ * de staffel invoerde.
+ */
+async function checkUsageLimit(userId: string, organisatieId: string | null): Promise<boolean> {
   const maand = getCurrentMonth()
-  const { data } = await supabase
+  const limiet = organisatieId
+    ? (await haalMaandlimiet(organisatieId, maand)).limiet
+    : STANDAARD_MAANDLIMIET_EUR
+  const { data, error } = await supabase
     .from('ai_usage')
     .select('geschatte_kosten')
     .eq('user_id', userId)
     .eq('maand', maand)
-    .single()
-  return !data || (data.geschatte_kosten ?? 0) < MONTHLY_LIMIT
+    .maybeSingle()
+  // Onleesbaar eigen verbruik: niet blokkeren op een getal dat we niet kennen.
+  // De org-check hierna is de echte rem.
+  if (error) {
+    console.error('checkUsageLimit: eigen verbruik onleesbaar', userId, error)
+    return true
+  }
+  return !data || (data.geschatte_kosten ?? 0) < limiet
 }
 
 async function updateUsage(userId: string, inputTokens: number, outputTokens: number): Promise<void> {
@@ -805,8 +824,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Action "chat" en question zijn verplicht' })
     }
 
-    // Check usage limit
-    const withinLimit = await checkUsageLimit(userId)
+    // Eén keer de organisatie bepalen: zowel de eigen limiet als de org-limiet
+    // komen uit de staffel, dus die moeten dezelfde bron gebruiken.
+    const orgIdForBudget = await resolveOrgId(userId)
+
+    const withinLimit = await checkUsageLimit(userId, orgIdForBudget)
     if (!withinLimit) {
       return res.status(429).json({
         error: 'Daan limiet bereikt',
@@ -815,7 +837,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Org-level AI budget check (\u20AC10/maand cap)
-    const orgIdForBudget = await resolveOrgId(userId)
     if (orgIdForBudget) {
       const budget = await checkAIBudget(orgIdForBudget, 0.01)
       if (budget.geblokkeerd) {

@@ -36,8 +36,12 @@ export async function getProjecten(limit = 50000): Promise<Project[]> {
 }
 
 /**
- * Server-side zoeken voor de globale zoekbalk. Matcht op dezelfde velden als de
- * oude client-side filter: naam, beschrijving en de bedrijfsnaam van de klant.
+ * Server-side zoeken voor de globale zoekbalk. Matcht op naam en beschrijving.
+ *
+ * De bedrijfsnaam van de klant zit in een gejoinde tabel en past niet in
+ * dezelfde or-filter, dus daarop zoeken loopt via de klanten-categorie die er in
+ * de zoekbalk direct boven staat. Dat is een versmalling tegenover de oude
+ * client-side filter, geen omissie.
  */
 export async function zoekProjecten(term: string, limit = 20): Promise<Project[]> {
   const gezocht = term.trim()
@@ -367,10 +371,13 @@ async function metToegewezenId<T extends { toegewezen_aan?: string }>(
   if (isId) {
     query = query.eq('id', waarde)
   } else {
-    // % en _ zijn jokers in ilike. Een toegewezen_aan van '%' zou anders de
-    // eerste de beste medewerker matchen, hem de taak toewijzen en hem een
-    // melding sturen. Backslash-escape houdt de naam een naam.
-    const letterlijk = waarde.replace(/[\\%_]/g, (teken) => '\\' + teken)
+    // % en _ zijn jokers in ilike, en PostgREST vertaalt een * naar % vóórdat
+    // het patroon Postgres bereikt. Een toegewezen_aan van '%' of '*' zou anders
+    // de eerste de beste medewerker matchen, hem de taak toewijzen en hem een
+    // melding sturen. % en _ zijn te escapen, * niet: die gaat eruit.
+    const letterlijk = waarde
+      .replace(/\*/g, '')
+      .replace(/[\\%_]/g, (teken) => '\\' + teken)
     query = query.ilike('naam', letterlijk)
   }
   if (orgId) query = query.eq('organisatie_id', orgId)

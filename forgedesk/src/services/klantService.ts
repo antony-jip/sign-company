@@ -150,7 +150,7 @@ export async function zoekKlanten(term: string, limit = 20): Promise<Klant[]> {
   if (!gezocht) return []
   if (isSupabaseConfigured() && supabase) {
     // Komma's en haakjes zijn structuur in de or-syntax van PostgREST.
-    const veilig = gezocht.replace(/[,%()"*]/g, '')
+    const veilig = gezocht.replace(/[,%_()"*\\]/g, '')
     if (!veilig) return []
     const { data, error } = await supabase
       .from('klanten')
