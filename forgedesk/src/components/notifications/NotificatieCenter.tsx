@@ -89,6 +89,11 @@ const typeConfig: Record<
     colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
+  taak_toegewezen: {
+    icon: CheckCircle2,
+    colorClass: "text-petrol",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
+  },
   montage_gepland: {
     icon: Truck,
     colorClass: "text-[#2A5580]",

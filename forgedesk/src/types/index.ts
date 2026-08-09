@@ -64,6 +64,12 @@ export interface Organisatie {
   mollie_subscription_id?: string;
   abonnement_actief_tot?: string | null;
   abonnement_status?: 'trial' | 'actief' | 'verlopen' | 'opgezegd';
+  /** Staffel (migratie 172). Alleen via de backend te wijzigen. */
+  max_gebruikers?: number;
+  /** Maandbedrag ex btw. Leeg betekent het standaardbedrag uit de api. */
+  abonnement_bedrag_excl?: number | null;
+  /** AI-budget per maand in euro. Leeg betekent de standaardlimiet uit de api. */
+  ai_maandlimiet?: number | null;
   onboarding_compleet?: boolean;
   onboarding_stap?: number;
   onboarding_getriggerd_op?: string | null;
@@ -75,10 +81,12 @@ export interface Uitnodiging {
   organisatie_id: string;
   email: string;
   rol: TeamRol;
-  invited_by: string;
+  /** Kolomnaam in de database is uitgenodigd_door (migratie 030). */
+  uitgenodigd_door: string;
   status: string;
   created_at: string;
-  expires_at: string;
+  /** Kolomnaam in de database is verloopt_op (migratie 030). */
+  verloopt_op: string | null;
 }
 
 export interface Contactpersoon {
@@ -310,6 +318,8 @@ export interface Taak {
   status: 'todo' | 'bezig' | 'review' | 'klaar';
   prioriteit: 'laag' | 'medium' | 'hoog' | 'kritiek';
   toegewezen_aan: string;
+  /** Medewerker-id (migratie 176). toegewezen_aan blijft de naam voor de UI. */
+  toegewezen_aan_id?: string | null;
   deadline?: string;
   geschatte_tijd: number;
   bestede_tijd: number;
@@ -1196,7 +1206,7 @@ export interface Notificatie {
   id: string;
   user_id?: string;
   organisatie_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen';
   titel: string;
   bericht: string;
   link?: string;

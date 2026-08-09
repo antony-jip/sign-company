@@ -35,6 +35,7 @@ const typeConfig: Record<
   deadline_nadert:     { icon: Clock, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Deadline nadert', categorie: 'systeem' },
   nieuwe_email:        { icon: Mail, colorClass: 'text-blue-600', bgClass: 'bg-blue-100', label: 'Nieuwe email', categorie: 'systeem' },
   taak_voltooid:       { icon: CheckCircle2, colorClass: 'text-green-600', bgClass: 'bg-green-100', label: 'Taak voltooid', categorie: 'systeem' },
+  taak_toegewezen:     { icon: CheckCircle2, colorClass: 'text-petrol', bgClass: 'bg-petrol/10', label: 'Taak toegewezen', categorie: 'systeem' },
   montage_gepland:     { icon: Truck, colorClass: 'text-accent', bgClass: 'bg-wm-pale/30', label: 'Montage gepland', categorie: 'systeem' },
   betaling_ontvangen:  { icon: Banknote, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-100', label: 'Betaling ontvangen', categorie: 'systeem' },
   budget_waarschuwing: { icon: Wallet, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Budget waarschuwing', categorie: 'systeem' },

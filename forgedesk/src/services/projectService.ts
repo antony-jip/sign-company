@@ -15,18 +15,17 @@ import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 
 // ============ PROJECTEN ============
 
-export async function getProjecten(limit = 5000): Promise<Project[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('projecten')
-      .select('*, klanten(bedrijfsnaam)')
-      .order('created_at', { ascending: false })
-      .limit(limit)
-    if (error) throw error
-    return (data || []).map((p: Project & { klanten?: { bedrijfsnaam?: string } }) => ({
-      ...p,
-      klant_naam: p.klanten?.bedrijfsnaam || '',
-    }))
+export async function getProjecten(limit = 50000): Promise<Project[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    const rijen = await fetchAllPages<Project & { klanten?: { bedrijfsnaam?: string } }>((van, tot) =>
+      sb
+        .from('projecten')
+        .select('*, klanten(bedrijfsnaam)')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
+    return rijen.map((p) => ({ ...p, klant_naam: p.klanten?.bedrijfsnaam || '' }))
   }
   const projecten = getLocalData<Project>('projecten')
   const klanten = getLocalData<Klant>('klanten')
@@ -305,12 +304,58 @@ export async function getTakenByProject(projectId: string): Promise<Taak[]> {
   return taken.filter((t) => t.project_id === projectId)
 }
 
+/**
+ * toegewezen_aan houdt historisch een naam, soms een medewerker-id (in productie
+ * 159 namen tegen 12 ids). Migratie 176 voegde toegewezen_aan_id toe; deze
+ * functie vult die mee zodat een naamswijziging de koppeling niet meer breekt en
+ * de trigger uit 177 weet naar wie de melding moet.
+ *
+ * De oude kolom blijft geschreven worden: de UI leest er nog op.
+ */
+async function metToegewezenId<T extends { toegewezen_aan?: string }>(
+  velden: T,
+  orgId: string | undefined
+): Promise<T & { toegewezen_aan_id?: string | null }> {
+  if (!('toegewezen_aan' in velden)) return velden
+  const waarde = (velden.toegewezen_aan ?? '').trim()
+  if (!waarde) return { ...velden, toegewezen_aan_id: null }
+  const sb = supabase
+  // Nooit alleen de naam schrijven en de id laten staan: dan wijst de naam naar
+  // Piet terwijl de id nog naar Jan wijst, en spreken de twee kolommen elkaar
+  // stil tegen. Liever geen id (en dus geen melding) dan een verkeerde.
+  if (!sb) return { ...velden, toegewezen_aan_id: null }
+
+  const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(waarde)
+  let query = sb.from('medewerkers').select('id')
+  if (isId) {
+    query = query.eq('id', waarde)
+  } else {
+    // % en _ zijn jokers in ilike. Een toegewezen_aan van '%' zou anders de
+    // eerste de beste medewerker matchen, hem de taak toewijzen en hem een
+    // melding sturen. Backslash-escape houdt de naam een naam.
+    const letterlijk = waarde.replace(/[\\%_]/g, (teken) => '\\' + teken)
+    query = query.ilike('naam', letterlijk)
+  }
+  if (orgId) query = query.eq('organisatie_id', orgId)
+  // Dezelfde volgorde als de backfill in migratie 176, zodat app en migratie bij
+  // twee gelijke namen dezelfde medewerker kiezen.
+  const { data, error } = await query
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true })
+    .limit(1)
+  if (error) {
+    console.warn('metToegewezenId: medewerker niet op te zoeken', error)
+    return { ...velden, toegewezen_aan_id: null }
+  }
+  return { ...velden, toegewezen_aan_id: data?.[0]?.id ?? null }
+}
+
 export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated_at'>): Promise<Taak> {
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('taken')
-      .insert({ ...await withUserId(sanitizeDates(taak)), organisatie_id: _orgId })
+      .insert({ ...await metToegewezenId(await withUserId(sanitizeDates(taak)), _orgId), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -363,9 +408,10 @@ export async function uploadTaakBijlage(taakId: string, file: File): Promise<str
 export async function updateTaak(id: string, updates: Partial<Taak>): Promise<Taak> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('taken')
-      .update(sanitizeDates({ ...updates, updated_at: now() }))
+      .update(await metToegewezenId(sanitizeDates({ ...updates, updated_at: now() }), _orgId))
       .eq('id', id)
       .select()
       .single()
