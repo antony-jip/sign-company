@@ -539,7 +539,7 @@ function ConversionCard({
 
 export function DoenAuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen flex flex-col bg-background overflow-hidden">
+    <div className="doen-auth relative min-h-screen flex flex-col overflow-hidden">
       <style>{`
         @keyframes doen-dot-pulse {
           0%, 100% { transform: scale(1); opacity: 1; }
@@ -551,27 +551,19 @@ export function DoenAuthShell({ children }: { children: React.ReactNode }) {
         }
       `}</style>
 
-      {/* Soft gradient layers · light */}
+      {/* Eén petrol-deep merkvlak, in licht én dark hetzelfde: de deur naar de
+          app is een merkmoment, geen app-chrome. Diepte komt uit gelaagde
+          gradients in de petrol-familie — zelfde recept als de dashboard-hero,
+          zodat inloggen en het product op elkaar rijmen. */}
       <div
-        className="absolute inset-0 pointer-events-none dark:hidden"
+        className="absolute inset-0 pointer-events-none"
         style={{
+          backgroundColor: '#0E3138',
           backgroundImage: `
-            radial-gradient(ellipse 80% 60% at 100% 0%, rgba(241,80,37,0.06), transparent 60%),
-            radial-gradient(ellipse 70% 50% at 0% 100%, rgba(26,83,92,0.07), transparent 60%),
-            linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 30%)
-          `,
-        }}
-        aria-hidden
-      />
-      {/* Gradient layers · dark: diepe petrol-nacht met flame-glow */}
-      <div
-        className="absolute inset-0 pointer-events-none hidden dark:block"
-        style={{
-          backgroundImage: `
-            radial-gradient(ellipse 80% 60% at 100% 0%, rgba(241,80,37,0.14), transparent 60%),
-            radial-gradient(ellipse 70% 50% at 0% 100%, rgba(58,162,178,0.12), transparent 60%),
-            radial-gradient(ellipse 60% 45% at 50% 115%, rgba(241,80,37,0.07), transparent 70%),
-            linear-gradient(180deg, rgba(6,18,22,0.6) 0%, transparent 35%)
+            radial-gradient(ellipse 90% 70% at 12% 0%, #1C5A64 0%, transparent 62%),
+            radial-gradient(ellipse 70% 55% at 100% 8%, rgba(241,80,37,0.16), transparent 60%),
+            radial-gradient(ellipse 80% 60% at 62% 108%, rgba(241,80,37,0.10), transparent 65%),
+            linear-gradient(135deg, #14424A 0%, #0A2429 100%)
           `,
         }}
         aria-hidden
@@ -579,9 +571,6 @@ export function DoenAuthShell({ children }: { children: React.ReactNode }) {
 
       {/* Cursor-following flame glow · Stripe-grade detail */}
       <CursorFlameSpot />
-
-      {/* Animated particle field */}
-      <ParticleField />
 
       {children}
     </div>
@@ -685,7 +674,9 @@ export function DoenAuthHeader({ rightSlot }: { rightSlot?: React.ReactNode }) {
   return (
     <header className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-10 pt-7 sm:pt-9 flex items-center justify-between">
       <Link to="/" aria-label="doen." className="inline-flex items-center">
-        <img src="/logos/doen-logo.svg" alt="doen." className="h-8 sm:h-9 w-auto" />
+        {/* Witte variant i.p.v. een invert-filter: dat maakte ook de
+            flame-punt wit en die is de merksignatuur. */}
+        <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-8 sm:h-9 w-auto" />
       </Link>
       {rightSlot}
     </header>
@@ -700,7 +691,7 @@ export function DoenFormCard({
   accentColor?: string
 }) {
   return (
-    <div className="relative bg-card/95 backdrop-blur-sm rounded-2xl p-6 sm:p-7 shadow-[0_4px_40px_-12px_rgba(26,83,92,0.18)] dark:shadow-[0_4px_50px_-12px_rgba(241,80,37,0.18),0_2px_24px_-8px_rgba(0,0,0,0.5)] border border-white/60 dark:border-white/15 max-w-[440px] lg:ml-auto">
+    <div className="doen-auth-card relative rounded-2xl p-7 sm:p-8 max-w-[440px] lg:ml-auto">
       <div
         className="absolute top-0 left-6 right-6 h-px"
         style={{
@@ -717,10 +708,10 @@ export function DoenAuthFooter() {
   return (
     <footer className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-10 pb-7 pt-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-[11px] text-white/45">
           © {new Date().getFullYear()} doen<span style={{ color: '#F15025' }}>.</span> Gemaakt voor doeners.
         </p>
-        <p className="text-[11px] text-muted-foreground tracking-[0.12em] uppercase">
+        <p className="text-[11px] text-white/45 tracking-[0.12em] uppercase">
           Slim gedaan<span style={{ color: '#F15025' }}>.</span>
         </p>
       </div>

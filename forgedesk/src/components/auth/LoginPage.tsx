@@ -52,7 +52,7 @@ export function LoginPage() {
   return (
     <DoenAuthShell>
       <DoenAuthHeader rightSlot={
-        <p className="text-[13px] text-foreground/70 hidden sm:block">
+        <p className="text-[13px] text-white/60 hidden sm:block">
           Nog geen account?{' '}
           <Link to="/registreren" className="text-flame font-semibold hover:underline underline-offset-4">
             Gratis uitproberen
@@ -60,51 +60,50 @@ export function LoginPage() {
         </p>
       } />
 
-      <main className="relative z-10 flex-1 max-w-[1200px] w-full mx-auto px-6 sm:px-10 pt-8 sm:pt-12 pb-12 grid lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+      {/* items-center i.p.v. items-start: de inhoud zat in de bovenste 45% en
+          liet de halve pagina leeg hangen. */}
+      <main className="relative z-10 flex-1 max-w-[1200px] w-full mx-auto px-6 sm:px-10 py-12 grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
         <motion.section
           variants={container}
           initial="hidden"
           animate="show"
-          className="lg:col-span-7 lg:pt-6"
+          className="lg:col-span-7"
         >
-          <motion.p variants={item} className="text-[11px] uppercase tracking-[0.22em] font-semibold text-petrol/70 dark:text-[#8FC3CC]/80 mb-5">
-            <span className="inline-block w-6 h-px bg-petrol/40 dark:bg-[#8FC3CC]/40 align-middle mr-3" />
-            Inloggen
-          </motion.p>
-
+          {/* Serif-cursief op één woord: zelfde handschrift als de
+              dashboard-hero ("Klaar om te afronden"), zodat de deur en het
+              product op elkaar rijmen. */}
           <motion.h1
             variants={item}
-            className="font-heading font-extrabold tracking-[-0.025em] text-foreground dark:text-foreground"
-            style={{ lineHeight: 1.02 }}
+            className="font-heading font-extrabold tracking-[-0.03em] text-white"
+            style={{ lineHeight: 0.98 }}
           >
-            <span className="block text-[40px] sm:text-[52px] lg:text-[60px] xl:text-[68px]">
+            <span className="block text-[44px] sm:text-[60px] lg:text-[72px] xl:text-[84px]">
               Welkom
             </span>
-            <span className="block text-[40px] sm:text-[52px] lg:text-[60px] xl:text-[68px]">
-              terug
+            <span className="block text-[44px] sm:text-[60px] lg:text-[72px] xl:text-[84px]">
+              <span
+                style={{
+                  fontFamily: '"Instrument Serif", serif',
+                  fontStyle: 'italic',
+                  fontWeight: 400,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                terug
+              </span>
               <DropInDot delay={0.5} />
             </span>
           </motion.h1>
 
           <motion.p
             variants={item}
-            className="mt-6 text-[16px] sm:text-[17px] text-foreground/70 leading-[1.6] max-w-[460px]"
+            className="mt-7 text-[17px] sm:text-[18px] text-white/65 leading-[1.6] max-w-[440px]"
           >
+            Offertes, werkbonnen, planning en facturen op één plek.
             Inloggen en weer aan het{' '}
-            <span className="text-foreground dark:text-foreground font-semibold">
+            <span className="text-white font-semibold">
               doen<span style={{ color: '#F15025' }}>.</span>
-            </span>{' '}
-            Geen tijd te verspillen.
-          </motion.p>
-
-          <motion.p
-            variants={item}
-            className="mt-8 text-[12px] uppercase tracking-[0.18em] font-semibold text-muted-foreground"
-          >
-            Offertes <span className="mx-2 text-flame">·</span>
-            Werkbonnen <span className="mx-2 text-flame">·</span>
-            Planning <span className="mx-2 text-flame">·</span>
-            Facturen
+            </span>
           </motion.p>
         </motion.section>
 
@@ -112,7 +111,7 @@ export function LoginPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, type: 'spring', stiffness: 180, damping: 22, mass: 0.9 }}
-          className="lg:col-span-5 lg:pt-2 w-full"
+          className="lg:col-span-5 w-full"
         >
           <DoenFormCard accentColor="#1A535C">
             <h2 className="font-heading text-[22px] font-extrabold text-foreground dark:text-foreground tracking-[-0.02em] mb-1">
@@ -178,7 +177,9 @@ export function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-11 rounded-xl font-semibold text-[14px] transition-all group bg-petrol hover:bg-[#164A52] dark:bg-[#23646E] dark:hover:bg-[#2A7480] text-white mt-2 shadow-[0_6px_20px_-8px_rgba(26,83,92,0.55)] dark:shadow-[0_6px_24px_-8px_rgba(78,150,163,0.45)]"
+                // Arbitrary background i.p.v. bg-flame: de Button-default zet
+                // een linear-gradient op de shorthand, die wint anders.
+                className="w-full h-12 rounded-xl font-semibold text-[15px] transition-all group text-white mt-3 [background:linear-gradient(135deg,#F1602F_0%,#D8431C_100%)] hover:[background:linear-gradient(135deg,#F15025_0%,#C63B16_100%)] [box-shadow:0_8px_24px_-8px_rgba(241,80,37,0.55)] hover:[box-shadow:0_10px_28px_-8px_rgba(241,80,37,0.7)]"
                 disabled={isLoading}
               >
                 {isLoading ? (
