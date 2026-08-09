@@ -482,7 +482,7 @@ Dependency-volgorde: Auth → AppSettings → DashboardData.
 
 **Integraties**
 - Exact-sync is **one-way**: doen. → Exact, niet andersom. Betaald-status zelf afvinken.
-- Officieel contact-adres: `hello@doen.team`.
+- Officieel contact-adres: `antony@signcompany.nl`.
 - Portaal-branding: white-label beperkt tot header-bg + logo; rest blijft doen.-stijl ("powered by doen."-feel).
 
 ---

@@ -65,7 +65,7 @@ async function getAdminEmail(): Promise<string> {
     .select('email')
     .eq('id', ADMIN_USER_ID)
     .maybeSingle()
-  return (data?.email as string | null) || 'hello@doen.team'
+  return (data?.email as string | null) || 'antony@signcompany.nl'
 }
 
 function escapeHtml(str: string): string {

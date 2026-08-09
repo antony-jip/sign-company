@@ -49,7 +49,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
 const FACTUUR_AFZENDER = process.env.DOEN_FACTUUR_AFZENDER || 'doen. <noreply@doen.team>'
 // Antwoorden op een noreply-adres verdwijnen. Wie op zijn factuur reageert
 // komt zo alsnog bij een gelezen postbus terecht.
-const FACTUUR_ANTWOORD = process.env.DOEN_FACTUUR_ANTWOORD || 'hello@doen.team'
+const FACTUUR_ANTWOORD = process.env.DOEN_FACTUUR_ANTWOORD || 'antony@signcompany.nl'
 
 const PETROL: [number, number, number] = [26, 83, 92]
 const FLAME: [number, number, number] = [241, 80, 37]

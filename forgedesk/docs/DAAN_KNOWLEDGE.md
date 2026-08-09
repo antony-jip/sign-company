@@ -25,7 +25,7 @@ Kernpunten om te onthouden:
   planning. Dit is een bewuste keuze, geen instelling die "uit" staat.
 - **Eén vast tarief.** doen. kost €79 per maand, zonder verborgen kosten.
 - **De eerste 30 dagen zijn gratis** (proefperiode met volledige toegang).
-- **Officieel contactadres:** hello@doen.team.
+- **Officieel contactadres:** antony@signcompany.nl.
 
 ### Hoe je door de app navigeert
 
@@ -357,7 +357,7 @@ af, en de factuur wordt gekoppeld aan je uitgaven.
 - Loop de te beoordelen inkoopfacturen geregeld na, zodat je uitgaven actueel
   blijven.
 - Het uitlezen met AI kent een maandlimiet; bij vragen daarover is
-  hello@doen.team het contactadres.
+  antony@signcompany.nl het contactadres.
 
 **Gerelateerde modules:** Facturen, Leveranciers, Uitgaven (Financieel),
 Voorraad.
@@ -615,7 +615,7 @@ beschikbaarheid.
 - *Wat gebeurt er als ik een medewerker deactiveer?* Die persoon kan niet meer
   inloggen, maar de gegevens blijven bewaard.
 - *Hoeveel gebruikers zitten er in het abonnement?* Het tarief van €79 per maand
-  is inclusief een aantal gebruikers; voor meer gebruikers is hello@doen.team het
+  is inclusief een aantal gebruikers; voor meer gebruikers is antony@signcompany.nl het
   contactadres. (Exacte aantallen: controleer de pagina Abonnement.)
 
 **Tips:**
@@ -860,7 +860,7 @@ bericht komt binnen bij het supportteam, dat je in een chat antwoordt.
 
 **Veelvoorkomende vragen:**
 - *Hoe bereik ik een mens?* Via de knop "Medewerker spreken".
-- *Wat is het e-mailadres van doen.?* hello@doen.team.
+- *Wat is het e-mailadres van doen.?* antony@signcompany.nl.
 
 **Tips:**
 - Gebruik "Medewerker spreken" bij bugs, foutmeldingen of vragen die Daan niet
@@ -1191,7 +1191,7 @@ de opmaak in van je offertes, facturen en werkbonnen. Je bedrijfsgegevens
 doen. kost **€79 per maand**, een vast bedrag zonder verborgen kosten. Het
 abonnement is maandelijks opzegbaar. Voor het exacte aantal inbegrepen
 gebruikers en eventuele afspraken bij grotere teams: kijk op de pagina
-Abonnement of mail hello@doen.team.
+Abonnement of mail antony@signcompany.nl.
 
 ## Hoe werkt de proefperiode van 30 dagen?
 
@@ -1206,7 +1206,7 @@ Veel modules hebben een exportknop. Klanten exporteer je vanuit de
 Klantenmodule (Excel/CSV), rapporten en nacalculatie exporteer je vanuit
 Rapportages en Nacalculatie, en facturen kun je downloaden als pdf of als UBL
 (e-factuur). Voor een volledige uitvoer van al je data buiten deze exports om is
-hello@doen.team het juiste adres.
+antony@signcompany.nl het juiste adres.
 
 ## Veelvoorkomende foutmeldingen en wat te doen
 
@@ -1261,10 +1261,10 @@ ziet alleen wat jij in zijn portaal hebt geplaatst.
 
 - **Geen beloftes over toekomstige functies of prijzen.** Praat alleen over wat
   er nu is. Voor prijsvragen buiten de €79 per maand: verwijs naar Abonnement of
-  hello@doen.team.
+  antony@signcompany.nl.
 - **Geen toezeggingen over data-migratie** buiten de standaard importfunctie.
   Voor bijzondere migraties: verwijs naar "Medewerker spreken" of
-  hello@doen.team.
+  antony@signcompany.nl.
 - **Geen juridisch advies** (over bijvoorbeeld AVG, privacy of algemene
   voorwaarden). Verwijs naar de betreffende documenten of naar een medewerker.
 - **Raad geen wijzigingen aan account- of bedrijfsinstellingen aan zonder

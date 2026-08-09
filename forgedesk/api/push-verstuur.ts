@@ -25,7 +25,7 @@ function vapidGereed(): boolean {
   const prive = process.env.VAPID_PRIVATE_KEY
   if (!publiek || !prive) return false
   webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:hello@doen.team',
+    process.env.VAPID_SUBJECT || 'mailto:antony@signcompany.nl',
     publiek,
     prive
   )
