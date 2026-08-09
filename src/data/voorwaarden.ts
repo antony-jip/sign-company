@@ -15,8 +15,8 @@
    de aansprakelijkheidsbeperking in artikel 18 extra belangrijk om door een
    jurist te laten toetsen. Zie JURIDISCH.md. */
 
-export const VOORWAARDEN_VERSIE = '1.0'
-export const VOORWAARDEN_DATUM = '25 juli 2026'
+export const VOORWAARDEN_VERSIE = '1.1'
+export const VOORWAARDEN_DATUM = '9 augustus 2026'
 
 export type Artikel = {
   nr: string
@@ -73,8 +73,8 @@ export const hoofdstukken: Hoofdstuk[] = [
         nr: '4',
         titel: 'Gebruikers en teamleden',
         leden: [
-          'Het abonnement geeft toegang aan maximaal tien gebruikers binnen jouw onderneming. Elke gebruiker heeft een eigen inlog. Eén inlog delen met meerdere personen is niet toegestaan.',
-          'Heb je meer dan tien gebruikers nodig, neem dan contact op. We maken dan een prijs op maat. De rest van deze voorwaarden verandert daardoor niet.',
+          'Het abonnement geeft toegang aan het aantal gebruikers dat bij jouw staffel hoort: tien, twintig of vijfendertig. Elke gebruiker heeft een eigen inlog. Eén inlog delen met meerdere personen is niet toegestaan.',
+          'Heb je meer gebruikers nodig, dan schuif je een staffel op. De tarieven staan in artikel 11. Boven vijfendertig gebruikers maken we een aparte afspraak. De rest van deze voorwaarden verandert daardoor niet.',
           'Je kunt teamleden zelf uitnodigen en verwijderen. Wat een teamlid in doen. doet, gebeurt onder jouw verantwoordelijkheid.',
         ],
       },
@@ -123,7 +123,7 @@ export const hoofdstukken: Hoofdstuk[] = [
           'Om dat te kunnen doen, sturen wij de betreffende inhoud naar de AI-leveranciers in Bijlage B. Dat kan de tekst van een e-mail zijn, een inkoopfactuur als document, of een foto die je uploadt. Wij sturen niet meer mee dan voor de gevraagde bewerking nodig is.',
           'De uitkomst van een AI-functie is een voorstel, geen vaststaand feit. AI kan zich vergissen, ook bij bedragen, data en namen. Je controleert de uitkomst voordat je die naar een klant stuurt, in je administratie verwerkt of erop besluit. Wij zijn niet aansprakelijk voor schade die ontstaat doordat een AI-uitkomst ongecontroleerd is overgenomen.',
           'Onze AI-leveranciers gebruiken jouw invoer niet om hun modellen te trainen. Dat is contractueel met hen vastgelegd.',
-          'Bij het abonnement hoort een AI-budget van € 15 per maand, per organisatie en niet per gebruiker. Dat is ruim voldoende voor het normale werk. Beeldgeneratie in Studio kost aanmerkelijk meer dan tekst, dus wie daar veel gebruik van maakt kan het budget opmaken. Is het op, dan koop je bij of wacht je tot de volgende maand. Het budget telt per kalendermaand en ongebruikt budget schuift niet door.',
+          'Bij het abonnement hoort een AI-budget dat meeschaalt met je staffel: € 15, € 30 of € 50 per maand, per organisatie en niet per gebruiker. Dat is ruim voldoende voor het normale werk. Beeldgeneratie in Studio kost aanmerkelijk meer dan tekst, dus wie daar veel gebruik van maakt kan het budget opmaken. Is het op, dan koop je bij of wacht je tot de volgende maand. Het budget telt per kalendermaand en ongebruikt budget schuift niet door.',
           'Upload in Studio geen foto\'s waarop personen herkenbaar in beeld zijn, tenzij je daarvoor een grondslag hebt. Let ook op kentekens en andere gegevens die op een foto van een bedrijfspand of voertuig kunnen staan.',
         ],
       },

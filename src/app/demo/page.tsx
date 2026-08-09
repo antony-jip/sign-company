@@ -267,7 +267,7 @@ export default function DemoPage() {
                 Gezien hoe het werkt. Nu jouw bedrijf<span className="text-white/60">.</span>
               </h2>
               <p className="text-[17px] md:text-[19px] leading-[1.55] mb-8" style={{ color: 'rgba(255,255,255,0.88)' }}>
-                Dertig dagen gratis, alle tien de modules, geen creditcard. Je zet je eigen
+                Dertig dagen gratis, alle modules, geen creditcard. Je zet je eigen
                 producten en templates erin en verstuurt vandaag nog je eerste offerte.
               </p>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-4">

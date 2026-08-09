@@ -697,7 +697,7 @@ function FeaturesOverview() {
           >
             <span className="block overflow-hidden pb-[0.08em] -mb-[0.08em]">
               <span className="hero-line" style={{ animationDelay: '0.05s' }}>
-                Tien modules, één systeem<FlameDot />
+                Alle modules, één systeem<FlameDot />
               </span>
             </span>
           </h1>
@@ -943,7 +943,7 @@ function ModuleDemo({ slug }: { slug: string }) {
   )
 }
 
-/* Moduleschakelaar bovenaan de modulepagina. Tien modules is te veel om
+/* Moduleschakelaar bovenaan de modulepagina. Elf modules is te veel om
    pas onderaan te kunnen wisselen: wie op Offertes staat en naar Planning
    wil, moest eerst de hele pagina door. De actieve module blijft staan als
    plaatsbepaling, en op smalle schermen scrollt de rij horizontaal mee met

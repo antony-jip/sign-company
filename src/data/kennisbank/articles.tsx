@@ -1261,7 +1261,7 @@ export const articles: Article[] = [
           <>
             <P>
               Wij geloven in één simpele som: <B>€129 per maand ex. btw</B>, flat, tot 10
-              gebruikers. Geen opzetkosten, geen add-ons, alle 10 modules en de AI-assistent
+              gebruikers. Geen opzetkosten, geen add-ons, alle modules en de AI-assistent
               inbegrepen. Maandelijks opzegbaar.
             </P>
             <P>

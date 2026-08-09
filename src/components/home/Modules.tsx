@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import { modules } from '@/data/modules'
+import { modules, moduleAantalWoord } from '@/data/modules'
 
-/* Tien modules als strakke index: hairlines, geen icon-kaarten.
+/* Alle modules als strakke index: hairlines, geen icon-kaarten.
    Geen entree-animatie: de lijst moet er staan, ook als er niets afspeelt. */
 export default function Modules() {
   return (
@@ -12,7 +12,7 @@ export default function Modules() {
             className="font-heading font-bold text-petrol leading-[1.0]"
             style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em' }}
           >
-            Tien modules<span className="text-flame">.</span>
+            {moduleAantalWoord.charAt(0).toUpperCase() + moduleAantalWoord.slice(1)} modules<span className="text-flame">.</span>
             <br />
             Eén systeem<span className="text-flame">.</span>
           </h2>

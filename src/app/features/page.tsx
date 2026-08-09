@@ -7,7 +7,7 @@ import FeaturesContent from '@/components/pages/FeaturesContent'
 
 export const metadata: Metadata = paginaMeta({
   title: `Software voor signbedrijven: ${moduleAantalWoord} modules | doen.`,
-  description: 'Tien modules voor je signbedrijf: projecten, offertes, facturen, planning, klantportaal, werkbonnen, studio, email, taken en Daan AI.',
+  description: `${moduleAantalWoord.charAt(0).toUpperCase() + moduleAantalWoord.slice(1)} modules voor je signbedrijf: projecten, offertes, facturen, planning, klantportaal, werkbonnen, studio, email, taken, geheugen en Daan AI.`,
   pad: '/features',
 })
 
