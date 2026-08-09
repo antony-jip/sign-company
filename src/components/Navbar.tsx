@@ -88,7 +88,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
               />
             </Link>
 
-            {/* Desktop nav. Product klapt de tien modules uit, zodat je
+            {/* Desktop nav. Product klapt alle modules uit, zodat je
                 vanaf elke pagina direct naar een module kunt. */}
             <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => {

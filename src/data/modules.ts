@@ -38,3 +38,10 @@ export const modules: Module[] = [
   { label: 'AI-assistent', sub: 'Je slimste collega', href: '/features/ai', color: '#1A535C', icon: IconAIAssistent, seoTitle: 'AI-assistent voor signbedrijven | doen.', seoDescription: 'Daan kent je bedrijf: vat mails samen, leest inkoopfacturen uit en beantwoordt klantvragen in jouw toon.' },
   { label: 'Geheugen', sub: 'Daan onthoudt je klanten', href: '/features/geheugen', color: '#1A535C', icon: IconAIAssistent, seoTitle: 'Geheugen: Daan onthoudt je klanten | doen.', seoDescription: 'Het PO-nummer van de aannemer, de hoogwerker bij dat ene pand. Daan onthoudt het en heel doen. handelt ernaar. Elke week een beetje slimmer.' },
 ]
+
+// De copy noemde jarenlang "tien modules" en bleef staan toen Geheugen erbij
+// kwam. Tel het voortaan, dan verjaart het niet opnieuw.
+const TELWOORDEN = ['nul', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven', 'acht', 'negen', 'tien', 'elf', 'twaalf']
+
+export const moduleAantal = modules.length
+export const moduleAantalWoord = TELWOORDEN[modules.length] ?? String(modules.length)
