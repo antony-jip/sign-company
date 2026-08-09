@@ -3409,9 +3409,36 @@ button.doen-panel:hover {
    variant, altijd het merkvlak. Het formulier is daarop het enige
    lichte object, wat het meteen tot focuspunt maakt.
    ================================================================ */
+/* De tokens omzetten in plaats van per element een tekstkleur overschrijven:
+   registreren draagt een halve landingspagina aan koppen, prijs en uitleg,
+   en die staan allemaal op text-foreground / text-muted-foreground. */
 .doen-auth {
   color: #fff;
+  --foreground: 0 0% 100%;
+  --auth-kop: #fff;
+  --muted-foreground: 190 16% 76%;
+  --border: 190 20% 40%;
 }
+/* De globale h1..h4-regel zet koppen in donker-petrol; op het vlak zijn die
+   wit, binnen een licht paneel weer petrol. */
+.doen-auth :is(h1, h2, h3, h4) {
+  color: var(--auth-kop);
+}
+
+/* Elk licht oppervlak binnen het vlak draait de tokens én de tekstkleur terug,
+   anders krijgt een witte kaart witte tekst. */
+.doen-auth-card,
+.doen-auth-licht {
+  color: #1A2E32;
+  --auth-kop: #1A4A52;
+  --foreground: 25 15% 12%;
+  --muted-foreground: 25 10% 45%;
+  --border: 35 15% 87%;
+  --background: 40 18% 97%;
+  --card: 40 60% 99%;
+  --card-foreground: 0 0% 10%;
+}
+
 .doen-auth-card {
   background: rgba(252, 252, 251, 0.97);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -3419,10 +3446,6 @@ button.doen-panel:hover {
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
     0 2px 8px -2px rgba(0, 0, 0, 0.3),
     0 24px 60px -20px rgba(0, 0, 0, 0.55);
-}
-/* De kaart houdt zijn lichte tekstkleuren, ook al is de shell wit-op-donker. */
-.doen-auth-card {
-  color: #1A2E32;
 }
 
 /* ================================================================

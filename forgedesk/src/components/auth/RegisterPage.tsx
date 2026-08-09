@@ -98,7 +98,7 @@ export function RegisterPage() {
       <DoenAuthHeader rightSlot={
         <p className="text-[13px] text-foreground/70 hidden sm:block">
           Al een account?{' '}
-          <Link to="/login" className="text-petrol dark:text-[#8FC3CC] font-semibold hover:underline underline-offset-4">
+          <Link to="/login" className="text-flame font-semibold hover:underline underline-offset-4">
             Inloggen
           </Link>
         </p>
@@ -111,8 +111,8 @@ export function RegisterPage() {
           animate="show"
           className="lg:col-span-7 lg:pt-6"
         >
-          <motion.p variants={item} className="text-[11px] uppercase tracking-[0.22em] font-semibold text-petrol/70 dark:text-[#8FC3CC]/80 mb-5">
-            <span className="inline-block w-6 h-px bg-petrol/40 dark:bg-[#8FC3CC]/40 align-middle mr-3" />
+          <motion.p variants={item} className="text-[11px] uppercase tracking-[0.22em] font-semibold text-white/55 mb-5">
+            <span className="inline-block w-6 h-px bg-white/35 align-middle mr-3" />
             Aanmelden
           </motion.p>
 
@@ -140,7 +140,7 @@ export function RegisterPage() {
 
           <motion.div variants={item} className="mt-8 max-w-[460px]">
             <div className="flex items-baseline gap-3">
-              <span className="font-heading text-[26px] sm:text-[28px] font-extrabold tracking-tight text-petrol dark:text-[#8FC3CC] leading-none tabular-nums">
+              <span className="font-heading text-[26px] sm:text-[28px] font-extrabold tracking-tight text-white leading-none tabular-nums">
                 €<CountUp target={129} duration={900} delay={400} />
               </span>
               <span className="text-[13px] text-foreground/70 font-medium">/maand</span>
@@ -254,7 +254,7 @@ export function RegisterPage() {
 
               <Button
                 type="submit"
-                className="w-full h-11 rounded-xl font-semibold text-[14px] transition-all group bg-flame hover:bg-[#D94520] text-white mt-2 shadow-[0_6px_20px_-8px_rgba(241,80,37,0.55)]"
+                className="w-full h-12 rounded-xl font-semibold text-[15px] transition-all group text-white mt-3 [background:linear-gradient(135deg,#F1602F_0%,#D8431C_100%)] hover:[background:linear-gradient(135deg,#F15025_0%,#C63B16_100%)] [box-shadow:0_8px_24px_-8px_rgba(241,80,37,0.55)] hover:[box-shadow:0_10px_28px_-8px_rgba(241,80,37,0.7)]"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -404,7 +404,7 @@ export function RegisterPage() {
             href={CONTACT_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-petrol dark:text-[#8FC3CC] font-semibold hover:underline underline-offset-4"
+            className="text-flame font-semibold hover:underline underline-offset-4"
           >
             Laat het ons weten
           </a>
@@ -453,7 +453,7 @@ function MigrationOption({
 }) {
   return (
     <div
-      className={`relative bg-white dark:bg-card rounded-2xl p-7 sm:p-8 border ${
+      className={`doen-auth-licht relative bg-white dark:bg-card rounded-2xl p-7 sm:p-8 border ${
         highlight ? 'border-petrol/30 dark:border-[#4E96A3]/35' : 'border-border dark:border-white/10'
       } shadow-[0_2px_24px_-8px_rgba(26,83,92,0.08)] flex flex-col`}
     >
@@ -509,7 +509,7 @@ function ConversionCard({
 }) {
   return (
     <div
-      className={`relative bg-white dark:bg-card rounded-2xl p-6 sm:p-7 border ${
+      className={`doen-auth-licht relative bg-white dark:bg-card rounded-2xl p-6 sm:p-7 border ${
         highlight ? 'border-flame/30 dark:border-flame/40' : 'border-border dark:border-white/10'
       } shadow-[0_2px_24px_-8px_rgba(26,83,92,0.08)]`}
     >
