@@ -155,22 +155,31 @@ export function wisBestandsCache(): void {
   urlCache.clear()
 }
 
+// Werpt NOOIT. Een bestand dat niet opgehaald kan worden hoort een lege plek
+// te geven, geen kapotte pagina. Deze functie zit in Promise.all-lijsten
+// (portaalitems, visualisaties), en daar zou een enkele afwijzing de hele lijst
+// meeslepen. `fetch` gooit bij elk netwerkprobleem: offline, afgebroken request,
+// wegnavigeren tijdens het laden. In Safari heet dat "Load failed".
 async function vraagOndertekendeUrl(path: string): Promise<string> {
   const uitCache = urlCache.get(path)
   if (uitCache && uitCache.geldigTot > Date.now() + 60_000) return uitCache.url
 
-  const { data: { session } } = await supabase!.auth.getSession()
-  if (!session) return ''
+  try {
+    const { data: { session } } = await supabase!.auth.getSession()
+    if (!session) return ''
 
-  const res = await fetch('/api/bestand', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pad: path }),
-  })
-  if (!res.ok) return ''
-  const { url, geldigTot } = await res.json()
-  if (url) urlCache.set(path, { url, geldigTot: geldigTot ?? Date.now() + 3600_000 })
-  return url || ''
+    const res = await fetch('/api/bestand', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pad: path }),
+    })
+    if (!res.ok) return ''
+    const { url, geldigTot } = await res.json()
+    if (url) urlCache.set(path, { url, geldigTot: geldigTot ?? Date.now() + 3600_000 })
+    return url || ''
+  } catch {
+    return ''
+  }
 }
 
 /**

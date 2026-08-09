@@ -22,13 +22,16 @@ import type {
 // in de database belandt. Alles wat ze rechtstreeks als <img src> rendert zou
 // daarop stukgaan, dus we lossen ze hier op, één keer, bij het laden.
 async function metOpgelosteUrls(rijen: SigningVisualisatie[]): Promise<SigningVisualisatie[]> {
-  return Promise.all(
+  // allSettled, niet all: een enkele visualisatie die niet op te lossen is mag
+  // de rest van de bibliotheek niet meenemen in zijn val.
+  const uitkomsten = await Promise.allSettled(
     rijen.map(async (r) => ({
       ...r,
       resultaat_url: (await resolvePortaalBestandUrl(r.resultaat_url)) ?? r.resultaat_url,
       gebouw_foto_url: (await resolvePortaalBestandUrl(r.gebouw_foto_url)) ?? r.gebouw_foto_url,
     })),
   )
+  return uitkomsten.map((u, i) => (u.status === 'fulfilled' ? u.value : rijen[i]))
 }
 
 // --- Visualisaties CRUD ---

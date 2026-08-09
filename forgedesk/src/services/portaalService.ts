@@ -382,8 +382,12 @@ export async function getPortaalItems(portaalId: string, alleenZichtbaar = false
     bestanden: await Promise.all((item.bestanden || []).map(resolveBestand)),
   })
 
-  const resolveItems = (items: PortaalItem[]): Promise<PortaalItem[]> =>
-    Promise.all(items.map(resolveItem))
+  // allSettled: een bestand dat niet opgelost kan worden hoort een lege plek te
+  // geven, niet een portaal dat helemaal niet laadt.
+  const resolveItems = async (items: PortaalItem[]): Promise<PortaalItem[]> => {
+    const uitkomsten = await Promise.allSettled(items.map(resolveItem))
+    return uitkomsten.map((u, i) => (u.status === 'fulfilled' ? u.value : items[i]))
+  }
 
   if (isSupabaseConfigured() && supabase) {
     // RPC functie (SECURITY DEFINER) omzeilt RLS op portaal_reacties/bestanden
