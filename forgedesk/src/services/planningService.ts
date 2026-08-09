@@ -1,20 +1,22 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, sanitizeDates,
+  withUserId, getOrgId, sanitizeDates, fetchAllPages,
 } from './supabaseHelpers'
 import type { CalendarEvent, MontageAfspraak, Verlof, Bedrijfssluitingsdag, DagNotitie, VrijPatroon, Afwezigheid } from '@/types'
 
 // ============ EVENTS (CALENDAR) ============
 
 export async function getEvents(): Promise<CalendarEvent[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('start_datum', { ascending: true })
-    if (error) throw error
-    return data || []
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<CalendarEvent>((van, tot) =>
+      sb
+        .from('events')
+        .select('*')
+        .order('start_datum', { ascending: true })
+        .order('id', { ascending: true })
+        .range(van, tot))
   }
   return getLocalData<CalendarEvent>('events')
 }
@@ -91,10 +93,15 @@ export async function deleteEvent(id: string): Promise<void> {
 // ============ MONTAGE AFSPRAKEN ============
 
 export async function getMontageAfspraken(): Promise<MontageAfspraak[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('montage_afspraken').select('*').order('datum', { ascending: true })
-    if (error) throw error
-    return data || []
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<MontageAfspraak>((van, tot) =>
+      sb
+        .from('montage_afspraken')
+        .select('*')
+        .order('datum', { ascending: true })
+        .order('id', { ascending: true })
+        .range(van, tot))
   }
   return getLocalData<MontageAfspraak>('montage_afspraken')
 }

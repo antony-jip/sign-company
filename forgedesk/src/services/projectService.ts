@@ -1,7 +1,7 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, sanitizeDates, getMaxNummer,
+  withUserId, getOrgId, sanitizeDates, getMaxNummer, fetchAllPages,
 } from './supabaseHelpers'
 import type {
   Klant,
@@ -261,15 +261,16 @@ export async function deleteProjectMetKoppelingen(
 
 // ============ TAKEN ============
 
-export async function getTaken(limit = 500): Promise<Taak[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('taken')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit)
-    if (error) throw error
-    return data || []
+export async function getTaken(limit = 50000): Promise<Taak[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<Taak>((van, tot) =>
+      sb
+        .from('taken')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
   }
   return getLocalData<Taak>('taken')
 }

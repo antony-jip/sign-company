@@ -101,6 +101,28 @@ export function sanitizeDates<T extends object>(data: T): T {
   return result as T
 }
 
+const PAGINA_GROOTTE = 1000
+
+// PostgREST levert nooit meer dan 1000 rijen per request, ook niet met een hogere
+// .limit(). Zonder deze loop kappen lijsten stilzwijgend af zodra een organisatie
+// over die grens groeit. Sorteer altijd met id als tiebreaker, anders kan een rij
+// tussen twee pagina's dubbel of niet terugkomen.
+export async function fetchAllPages<T>(
+  haalPagina: (van: number, tot: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+  max = 50000,
+): Promise<T[]> {
+  const alles: T[] = []
+  for (let van = 0; van < max; van += PAGINA_GROOTTE) {
+    const tot = Math.min(van + PAGINA_GROOTTE, max) - 1
+    const { data, error } = await haalPagina(van, tot)
+    if (error) throw error
+    if (!data || data.length === 0) break
+    alles.push(...data)
+    if (data.length < PAGINA_GROOTTE) break
+  }
+  return alles
+}
+
 const TYPED_PREFIXES = ['CN', 'CR', 'VS', 'EA']
 
 export async function getMaxNummer(table: string, field: string, prefix: string): Promise<number> {

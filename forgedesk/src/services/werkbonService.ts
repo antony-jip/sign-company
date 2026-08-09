@@ -1,7 +1,7 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, sanitizeDates, getMaxNummer,
+  withUserId, getOrgId, sanitizeDates, getMaxNummer, fetchAllPages,
 } from './supabaseHelpers'
 import { deleteFile } from './storageService'
 import type { Werkbon, WerkbonItem, WerkbonAfbeelding, WerkbonRegel, WerkbonFoto } from '@/types'
@@ -56,11 +56,16 @@ async function loadWerkbonInstellingen(): Promise<{ prefix: string; startNummer:
   }
 }
 
-export async function getWerkbonnen(limit = 500): Promise<Werkbon[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbonnen').select('*').order('created_at', { ascending: false }).limit(limit)
-    if (error) throw error
-    return data || []
+export async function getWerkbonnen(limit = 50000): Promise<Werkbon[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<Werkbon>((van, tot) =>
+      sb
+        .from('werkbonnen')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
   }
   return getLocalData<Werkbon>('werkbonnen')
 }
