@@ -1,5 +1,35 @@
 # doen. — Development Log
 
+## Augustus 2026 — Ronde "20 gebruikers" (branch, migraties wél live)
+
+**Branch:** `claude/20-gebruikers`, 11 commits, niet gemerged en niet gepusht. `main` onaangeroerd.
+**Migraties 172 t/m 178 draaien WEL op productie.** Dat is bewust: ze zijn additief en de code valt terug op het oude gedrag zolang de kolommen leeg zijn. De code op de branch is dus nog niet live, de database wel.
+
+### Aanleiding
+Kan een signbedrijf van 20 man hierin werken? Kort antwoord vooraf was: afgedwongen 10, comfortabel 8, na deze ronde 20 tot 25, boven de 30 een ander project.
+
+### Wat er live staat (database)
+- **172** staffel op `organisaties`: `max_gebruikers`, `abonnement_bedrag_excl`, `ai_maandlimiet`. Trigger beschermt die drie én de bestaande abonnementskolommen, want migratie 085 gaf elk lid UPDATE en INSERT op zijn eigen organisatie. `abonnement_status` op 'actief' zetten liep daarvoor langs de paywall.
+- **173** `profiles.rol` en `organisatie_id` vastgezet. `profiles_update` had USING zonder WITH CHECK, dus iedereen kon zichzelf admin maken of zijn `organisatie_id` naar een ander bedrijf verleggen en daarmee alle data van dat bedrijf zien.
+- **174** atomaire org-teller voor AI-verbruik. **178** idem per gebruiker, inclusief de unique index die migratie 006 aanmaakt maar die in productie niet bestond.
+- **175** guard aangevuld. **176** `taken.toegewezen_aan_id` met backfill (169 van 171). **177** melding bij toewijzing, via een trigger omdat RLS op `notificaties` per gebruiker is.
+
+### Staffel, besloten
+Tot 10 gebruikers EUR 129 met EUR 15 AI, tot 20 EUR 199 met EUR 30, tot 35 EUR 279 met EUR 50. Rekenen op gekochte plekken, niet gebruikte.
+**Werkafspraak:** een staffelwijziging in de database altijd direct gevolgd door `api/update-subscription-bedrag`, anders toont de app een ander bedrag dan Mollie incasseert.
+
+### De les die het meest waard is
+**De migraties in deze repo beschrijven de database niet.** Vier keer bleek een aanname uit de migratiebestanden onjuist: de werkbon-kindtabellen zijn in productie al org-scoped (die taak verviel), `expires_at` en `invited_by` bestaan niet (het zijn `verloopt_op` en `uitgenodigd_door`), er ontbreken geen org-indexen maar er zijn er dubbele, en de unique index op `ai_usage` bestond niet. Eén migratie draaide bovendien met "Success" terwijl de functie bij aanroep stukging. Verifieer hier altijd ná het draaien tegen productie, niet tegen de migratie.
+
+### Openstaand, vraagt een besluit
+- **Rollen:** mogen monteurs marge, omzet en elkaars uurtarief zien? Nu staat alles open en is er geen rol-gate. Randvoorwaarde als het antwoord ja is: eerst roldata opschonen, 8 van de 9 profielen staan op admin.
+- **Eigenaarschap:** offertes, facturen en werkbonnen hebben geen toegewezene, dus een van-mij-filter heeft daar niets om naar te wijzen.
+- **Dubbele indexen:** bij `emails` en `facturen` bewezen identiek (beide op alleen `organisatie_id`); bij klanten, taken en werkbonnen dezelfde naamgeving maar niet nagekeken. Droppen is destructief.
+
+### Nog te testen door Antony
+Wijs in de app een taak toe aan een collega en daarna een aan jezelf. Beide takken zijn via SQL bewezen, niet door de app zelf.
+
+
 ## Mei 2026 — Werkbon canvas fase 2 (lokaal afgerond, geen productie-rollout)
 
 **Branch:** `feat/werkbon-canvas-fase2` (15 commits vanaf parent `c462ad38` op fase 1 branch)
