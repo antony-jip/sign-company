@@ -814,8 +814,60 @@ export function ClientsLayout() {
           </div>
         )}
 
+        {/* ── Mobiel: kaart per klant ──
+            Deze tabel is table-fixed met zes kolommen; op een telefoon werden
+            bedrijfsnaam, e-mail en plaats daardoor allemaal tot een paar
+            tekens geknepen. Zelfde gegevens, gestapeld — hetzelfde patroon als
+            de projectenlijst. */}
+        <div className="md:hidden space-y-2">
+          {paginatedKlanten.map((klant, i) => {
+            const stripeHex = klantNeedsAttention(klant) ? '#F15025' : klantStatusHex(klant.status)
+            const tint = avatarTint(klant.bedrijfsnaam)
+            return (
+              <div
+                key={`mobiel-${klant.id}`}
+                onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || 'Klant', id: `/klanten/${klant.id}` })}
+                className="doen-panel doen-wash doen-row rounded-xl p-4 cursor-pointer active:scale-[0.99] transition-transform"
+                style={{
+                  animationDelay: `${i * 25}ms`,
+                  boxShadow: `var(--shadow-sm), inset 3px 0 0 0 ${stripeHex}`,
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <span
+                    className="flex-shrink-0 w-9 h-9 rounded-[10px] flex items-center justify-center text-[13px] font-bold uppercase select-none"
+                    style={{ backgroundColor: tint.bg, color: tint.fg }}
+                  >
+                    {klant.bedrijfsnaam.charAt(0)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold text-petrol dark:text-foreground truncate">
+                      {klant.bedrijfsnaam}
+                    </p>
+                    {klant.stad && (
+                      <p className="text-[12px] text-muted-foreground truncate mt-0.5">{klant.stad}</p>
+                    )}
+                  </div>
+                  {(projectCounts[klant.id] || 0) > 0 && (
+                    <span className="flex-shrink-0 text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-background text-foreground/70">
+                      {projectCounts[klant.id]}
+                    </span>
+                  )}
+                </div>
+
+                {(klant.email || klant.telefoon) && (
+                  <div className="mt-2.5 pt-2.5 border-t border-border/50 flex items-center gap-3 text-[12px] text-muted-foreground">
+                    {klant.email && <span className="truncate min-w-0 flex-1">{klant.email}</span>}
+                    {klant.telefoon && <span className="font-mono flex-shrink-0">{klant.telefoon}</span>}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
         <div
-          className="doen-slate-surface rounded-2xl"
+          className="hidden md:block doen-slate-surface rounded-2xl"
           style={{ clipPath: 'inset(0 round 16px)' }}
         >
             <table className="w-full table-fixed">

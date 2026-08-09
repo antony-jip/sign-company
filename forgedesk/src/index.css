@@ -3470,3 +3470,28 @@ button.doen-panel:hover {
 .inkoop-wissel-uit {
   animation: inkoop-wissel-uit 200ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
+
+/* ================================================================
+   TOUCH — geen hover, dus niets achter hover verstoppen
+   ----------------------------------------------------------------
+   Door de app heen staan rij-acties (dupliceren, verwijderen, naar
+   detail) op `opacity-0 group-hover:opacity-100`. Op een muis is dat
+   rust; op een telefoon bestaat hover niet en zijn die knoppen dus
+   permanent onzichtbaar én onbereikbaar — ruim tachtig plekken.
+
+   `hover: none` treft aanraakschermen, niet een smal browservenster op
+   een desktop, dus de rustige hover-variant blijft daar intact. Ook
+   decoratieve hover-hints (pijltje, accentrandje) worden hierdoor
+   zichtbaar; een pijltje dat altijd staat is een schoonheidsfoutje,
+   een verwijderknop die je niet kunt bereiken is een doodlopende weg.
+   ================================================================ */
+@media (hover: none) {
+  .group:hover .group-hover\:opacity-100,
+  .group-hover\:opacity-100 {
+    opacity: 1;
+  }
+  /* Bijbehorende verschuiving hoort dan ook op zijn eindstand te staan. */
+  .group-hover\:translate-x-0 {
+    transform: translateX(0);
+  }
+}
