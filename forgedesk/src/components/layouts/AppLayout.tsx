@@ -19,6 +19,7 @@ import { chatHeartbeat } from '@/services/websiteChatService'
 import { WebsiteMeldingPopup } from '@/components/notifications/WebsiteMeldingPopup'
 import { cn } from '@/lib/utils'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { useScrollHerstel } from '@/hooks/useScrollHerstel'
 import { WifiOff } from 'lucide-react'
 
 function OfflineBanner() {
@@ -35,6 +36,10 @@ function OfflineBanner() {
 export function AppLayout() {
   const { layoutMode } = useSidebar()
   const location = useLocation()
+  // De paginascroller van de gewone (niet full-bleed) routes: daar leven de
+  // lijsten waar je uit wegklikt en weer in terugkomt.
+  const paginaScroller = useRef<HTMLDivElement>(null)
+  useScrollHerstel(paginaScroller)
   const isDesktop = useMediaQuery('(min-width: 768px)')
   // /email renders its own pill topbar on mobile · skip the global TopNav there.
   const hideTopNav = !isDesktop && location.pathname.startsWith('/email')
@@ -110,7 +115,7 @@ export function AppLayout() {
                 </div>
               </>
             ) : (
-              <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden">
+              <div ref={paginaScroller} className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden">
                 <div className={cn('bg-background', stickyHeader && 'sticky top-0 z-30')}>
                   {!hideTopNav && <TopNav />}
                   <TabBar />
@@ -152,10 +157,13 @@ export function AppLayout() {
             </div>
 
             <main className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <div className={cn(
-                'flex-1 min-h-0 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter',
-                isFullBleed ? 'p-0' : 'p-4 md:p-8',
-              )}>
+              <div
+                ref={isFullBleed ? undefined : paginaScroller}
+                className={cn(
+                  'flex-1 min-h-0 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter',
+                  isFullBleed ? 'p-0' : 'p-4 md:p-8',
+                )}
+              >
                 <Outlet />
               </div>
             </main>

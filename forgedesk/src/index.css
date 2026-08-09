@@ -3495,3 +3495,25 @@ button.doen-panel:hover {
     transform: translateX(0);
   }
 }
+
+/* ================================================================
+   TOUCH — invoervelden minstens 16px
+   ----------------------------------------------------------------
+   iOS zoomt automatisch in zodra je een veld met tekst kleiner dan
+   16px aantikt, en zoomt daarna niet terug. Dat is de reden dat de
+   viewport-meta ooit `maximum-scale=1, user-scalable=no` kreeg — maar
+   dat blokkeert óók pinch-zoom, wat je niet wil bij mensen die buiten
+   een adres of offerteregel proberen te lezen (WCAG 1.4.4).
+
+   De juiste oplossing is de andere kant op: zoom vrijgeven en het
+   auto-inzoomen wegnemen door de velden zelf groot genoeg te maken.
+   max() houdt velden die al groter zijn ongemoeid.
+   ================================================================ */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea,
+  [contenteditable='true'] {
+    font-size: max(16px, 1em);
+  }
+}

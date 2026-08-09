@@ -9,7 +9,11 @@
     <meta property="og:description" content="CRM en projectmanagement voor vakmensen" />
     <meta property="og:image" content="/logos/doen-app-icon.svg" />
     <meta property="og:type" content="website" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- Zoom bewust vrijgegeven. maximum-scale en user-scalable=no blokkeerden
+         pinch-zoom; dat is precies wat je niet wil bij iemand die buiten in fel
+         licht een offerteregel of een adres probeert te lezen, en het botst met
+         WCAG 1.4.4. iOS 10+ negeert die vlaggen in Safari toch al. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#F8F7F5" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#08161A" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
