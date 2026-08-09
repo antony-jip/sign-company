@@ -296,6 +296,12 @@ export function EmailLayout() {
   userIdRef.current = user?.id
   const fetchLimitRef = useRef(fetchLimit)
   fetchLimitRef.current = fetchLimit
+  // Hoeveel kopregels de lijst uit de database trekt. Los van fetchLimit, die
+  // over de IMAP-sync gaat. Op een telefoon is 200 rijen ophalen vóór het
+  // eerste beeld puur wachten: het scherm toont er hooguit acht en de
+  // infinite scroll vult de rest bij terwijl je leest.
+  const lijstLimietRef = useRef(fetchLimit)
+  lijstLimietRef.current = isDesktop ? fetchLimit : Math.min(fetchLimit, 60)
 
   // ─── Ensure emails from Supabase have required fields ───
   function normalizeEmails(raw: Email[]): Email[] {
@@ -309,7 +315,7 @@ export function EmailLayout() {
 
   // ─── Read emails from Supabase (fast, no IMAP needed) ───
   async function readFromSupabase(): Promise<Email[]> {
-    const raw = await getEmails(fetchLimitRef.current).catch(() => [])
+    const raw = await getEmails(lijstLimietRef.current).catch(() => [])
     const normalized = normalizeEmails(raw)
     setCached('emails', normalized)
     return normalized
@@ -320,10 +326,15 @@ export function EmailLayout() {
   // api/prefetch-email-bodies. Zodra ze in de DB staan halen we ze hier in
   // één keer op, zodat het openen van een mail nul netwerk kost. Vult alleen
   // wat nog niet gecached is, dus herhaald aanroepen is goedkoop.
-  const vulBodyCacheUitDb = useCallback(async (mails: Email[], maximum = 60) => {
+  // Standaard 60 bodies vooruit ophalen is op een desktop gratis en op een
+  // telefoon het verschil tussen een lijst die er staat en een halve minuut
+  // wachten: het zijn volledige HTML-berichten. Mobiel houdt het bij een
+  // handvol; het venster-prefetch-effect hieronder vult bij wat je nadert.
+  const vulBodyCacheUitDb = useCallback(async (mails: Email[], maximum?: number) => {
+    const plafond = maximum ?? (isDesktopRef.current ? 60 : 8)
     const ontbreekt: string[] = []
     for (const mail of mails) {
-      if (ontbreekt.length >= maximum) break
+      if (ontbreekt.length >= plafond) break
       if (mail.inhoud) continue
       if (bodyCacheRef.current.has(mail.id)) continue
       ontbreekt.push(mail.id)
@@ -1230,7 +1241,7 @@ export function EmailLayout() {
       const page = await getEmailsPage(
         map,
         oudste ? { datum: oudste.datum, id: oudste.id } : null,
-        fetchLimitRef.current
+        lijstLimietRef.current
       )
       if (page.length > 0) {
         const meer = normalizeEmails(page)
@@ -1239,7 +1250,7 @@ export function EmailLayout() {
           return [...prev, ...meer.filter((p) => !bekend.has(p.id))]
         })
       }
-      if (page.length < fetchLimitRef.current) {
+      if (page.length < lijstLimietRef.current) {
         hasMoreDbRef.current[map] = false
       }
     } catch (err) {
