@@ -997,8 +997,8 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         )}
 
         <div className="rounded-xl border border-border/70 divide-y divide-border/50 overflow-hidden bg-muted/20">
-          <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[88px] flex-shrink-0 whitespace-nowrap">Aan</label>
+          <div className="flex items-center gap-2 md:gap-3 px-3 py-2 min-h-[40px] min-w-0">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[52px] md:w-[88px] flex-shrink-0 whitespace-nowrap">Aan</label>
             <EmailChipsInput value={toEmails} onChange={setToEmails} placeholder="naam@bedrijf.nl" />
             {!showCcBcc && (
               <button
@@ -1013,19 +1013,19 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
 
           {showCcBcc && (
             <>
-              <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
-                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[88px] flex-shrink-0 whitespace-nowrap">Cc</label>
+              <div className="flex items-center gap-2 md:gap-3 px-3 py-2 min-h-[40px] min-w-0">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[52px] md:w-[88px] flex-shrink-0 whitespace-nowrap">Cc</label>
                 <EmailChipsInput value={ccEmails} onChange={setCcEmails} placeholder="cc@bedrijf.nl" />
               </div>
-              <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
-                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[88px] flex-shrink-0 whitespace-nowrap">Bcc</label>
+              <div className="flex items-center gap-2 md:gap-3 px-3 py-2 min-h-[40px] min-w-0">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[52px] md:w-[88px] flex-shrink-0 whitespace-nowrap">Bcc</label>
                 <EmailChipsInput value={bccEmails} onChange={setBccEmails} placeholder="bcc@bedrijf.nl" />
               </div>
             </>
           )}
 
-          <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[88px] flex-shrink-0 whitespace-nowrap">Onderwerp</label>
+          <div className="flex items-center gap-2 md:gap-3 px-3 py-2 min-h-[40px] min-w-0">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[52px] md:w-[88px] flex-shrink-0 whitespace-nowrap">Onderwerp</label>
             <input
               type="text"
               value={subject}
@@ -1052,8 +1052,8 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             <img
               src={handtekeningAfbeelding}
               alt="Handtekening"
-              style={{ maxHeight: Math.min(140, handtekeningAfbeeldingGrootte || 96), maxWidth: 360 }}
-              className="object-contain"
+              style={{ maxHeight: Math.min(140, handtekeningAfbeeldingGrootte || 96) }}
+              className="object-contain max-w-full md:max-w-[360px]"
             />
           )}
         </div>
@@ -1105,7 +1105,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       </div>
 
       {/* Actiebalk: opmaak + toevoegen links · opvolgen + inplannen + versturen rechts */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-t border-border bg-gradient-to-b from-transparent to-petrol/[0.02]">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-2 px-3 py-2.5 border-t border-border bg-gradient-to-b from-transparent to-petrol/[0.02]">
         <div className="flex items-center gap-2">
         <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 border border-border/60 p-0.5">
           <button type="button" onClick={() => wrapSelection('**', '**')} title="Bold" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
@@ -1155,12 +1155,12 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
               )}
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>Toevoegen vanuit project</span>
+              <span className="whitespace-nowrap">Toevoegen<span className="hidden sm:inline"> vanuit project</span></span>
               <ChevronDown className={cn("h-3 w-3 transition-transform", pickerOpen && "rotate-180")} />
             </button>
 
             {pickerOpen && (
-              <div className="absolute bottom-full mb-2 left-0 z-50 w-[320px] rounded-2xl border border-border bg-white shadow-[0_12px_40px_rgba(0,0,0,0.16)] overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-150">
+              <div className="absolute bottom-full mb-2 left-0 z-50 w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-border bg-white shadow-[0_12px_40px_rgba(0,0,0,0.16)] overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-150">
                 <div className="px-3 py-2 border-b border-border/60 bg-gradient-to-b from-petrol/[0.05] to-transparent">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-petrol">Toevoegen vanuit project</span>
                 </div>
