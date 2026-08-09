@@ -368,18 +368,11 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
     return () => { cancelled = true }
   }, [debouncedQuery])
 
-  // Cmd/Ctrl+K shortcut
-  useEffect(() => {
-    function handleKeydown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        inputRef.current?.focus()
-        setIsOpen(true)
-      }
-    }
-    document.addEventListener('keydown', handleKeydown)
-    return () => document.removeEventListener('keydown', handleKeydown)
-  }, [])
+  // Bewust GEEN Cmd+K hier. CommandPalette luistert op dezelfde toets met
+  // capture en wint altijd, dus deze handler vuurde nooit; hij deed alleen een
+  // preventDefault op een toetsaanslag die een ander component afhandelt. Eén
+  // eigenaar per sneltoets, anders is niet te zien welk venster opengaat.
+  // Deze zoekbalk open je door in het veld te klikken.
 
   // Close on click outside
   useEffect(() => {
