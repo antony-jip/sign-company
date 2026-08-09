@@ -331,28 +331,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const DOCUMENTEN_BUCKET = 'documenten'
     const PORTAAL_BUCKET = 'portaal-bestanden'
 
-    function resolveStorageUrl(url: string | null | undefined): string | null {
+    // Zolang de portaallink geldig is, en geen dag langer.
+    const ONDERTEKEND_GELDIG_SECONDEN = 60 * 60 * 24
+
+    /**
+     * Een ondertekende URL in plaats van een publieke. Twee redenen.
+     *
+     * De bucket `documenten` staat vandaag op publiek, dus een bestandspad dat
+     * ooit uit dit endpoint komt blijft eeuwig opvraagbaar, ook nadat het
+     * portaal is verlopen of ingetrokken. Een ondertekende URL vervalt vanzelf.
+     *
+     * En het maakt het dichtzetten van die bucket mogelijk: createSignedUrl
+     * werkt op een publieke bucket net zo goed, dus dit kan vooruit, en de
+     * omzetting naar privaat wordt daarna een schakelaar in plaats van een
+     * ingreep.
+     */
+    async function resolveStorageUrl(url: string | null | undefined): Promise<string | null> {
       if (!url) return null
       if (typeof url !== 'string') return null
       if (url.startsWith('http') || url.startsWith('data:')) return url
-      // Storage path → generate public URL
       const bucket = url.startsWith('portaal-bestanden/') ? PORTAAL_BUCKET : DOCUMENTEN_BUCKET
       const storagePath = url.startsWith('portaal-bestanden/') ? url.replace('portaal-bestanden/', '') : url
-      const { data: publicUrl } = supabaseAdmin.storage.from(bucket).getPublicUrl(storagePath)
-      return publicUrl.publicUrl
+      const { data, error } = await supabaseAdmin.storage
+        .from(bucket)
+        .createSignedUrl(storagePath, ONDERTEKEND_GELDIG_SECONDEN)
+      if (error || !data?.signedUrl) {
+        console.error('portaal-get: ondertekende URL mislukt', bucket, storagePath, error)
+        return null
+      }
+      return data.signedUrl
     }
 
-    function resolveFileUrl(bestand: Record<string, unknown>): Record<string, unknown> {
+    async function resolveFileUrl(bestand: Record<string, unknown>): Promise<Record<string, unknown>> {
       const url = bestand.url as string | null
       if (!url) return bestand
 
       // Al een volledige URL (http/https of data:) → niet aanpassen
       if (url.startsWith('http') || url.startsWith('data:')) return bestand
 
-      const resolvedUrl = resolveStorageUrl(url)
+      const resolvedUrl = await resolveStorageUrl(url)
       const resolvedThumbnail = bestand.thumbnail_url === url
         ? resolvedUrl
-        : resolveStorageUrl(bestand.thumbnail_url as string | null) ?? bestand.thumbnail_url
+        : (await resolveStorageUrl(bestand.thumbnail_url as string | null)) ?? bestand.thumbnail_url
 
       return {
         ...bestand,
@@ -361,8 +381,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const safeItems = (items || []).map((item: Record<string, unknown>) => {
-      const bestanden = ((item.portaal_bestanden || []) as Record<string, unknown>[]).map(resolveFileUrl)
+    const safeItems = await Promise.all((items || []).map(async (item: Record<string, unknown>) => {
+      const bestanden = await Promise.all(
+        ((item.portaal_bestanden || []) as Record<string, unknown>[]).map(resolveFileUrl)
+      )
       return {
         id: item.id,
         type: item.type,
@@ -380,13 +402,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         created_at: item.created_at,
         bericht_type: item.bericht_type || 'item',
         bericht_tekst: item.bericht_tekst,
-        foto_url: resolveStorageUrl(item.foto_url as string | null),
+        foto_url: await resolveStorageUrl(item.foto_url as string | null),
         afzender: item.afzender || 'bedrijf',
         offerte_publiek_token: item.offerte_id ? offerteTokenMap[item.offerte_id as string] || null : null,
         bestanden,
         reacties: item.portaal_reacties || [],
       }
-    })
+    }))
 
     return res.status(200).json({
       status: 'actief',
