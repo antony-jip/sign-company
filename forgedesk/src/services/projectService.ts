@@ -355,43 +355,52 @@ export async function getTakenByProject(projectId: string): Promise<Taak[]> {
  */
 async function metToegewezenId<T extends { toegewezen_aan?: string }>(
   velden: T,
-  orgId: string | undefined
+  orgId: string | undefined,
+  taakId?: string
 ): Promise<T & { toegewezen_aan_id?: string | null }> {
   if (!('toegewezen_aan' in velden)) return velden
   const waarde = (velden.toegewezen_aan ?? '').trim()
-  if (!waarde) return { ...velden, toegewezen_aan_id: null }
   const sb = supabase
   // Nooit alleen de naam schrijven en de id laten staan: dan wijst de naam naar
   // Piet terwijl de id nog naar Jan wijst, en spreken de twee kolommen elkaar
   // stil tegen. Liever geen id (en dus geen melding) dan een verkeerde.
   if (!sb) return { ...velden, toegewezen_aan_id: null }
+  if (!waarde) return { ...velden, toegewezen_aan_id: null }
 
-  const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(waarde)
-  let query = sb.from('medewerkers').select('id')
-  if (isId) {
-    query = query.eq('id', waarde)
-  } else {
-    // % en _ zijn jokers in ilike, en PostgREST vertaalt een * naar % vóórdat
-    // het patroon Postgres bereikt. Een toegewezen_aan van '%' of '*' zou anders
-    // de eerste de beste medewerker matchen, hem de taak toewijzen en hem een
-    // melding sturen. % en _ zijn te escapen, * niet: die gaat eruit.
-    const letterlijk = waarde
-      .replace(/\*/g, '')
-      .replace(/[\\%_]/g, (teken) => '\\' + teken)
-    query = query.ilike('naam', letterlijk)
+  // Bij een bewerking die de toewijzing niet verandert de id met rust laten.
+  // Zonder deze stap loste elke opslag de naam opnieuw op, en dan kan een
+  // prioriteitswijziging een melding afvuren naar een naamgenoot van een
+  // vertrokken collega, of een koppeling wissen bij een naam met een spatie
+  // erachter. De trigger uit migratie 177 vuurt alleen op een gewijzigde id,
+  // dus door de kolom niet aan te raken blijft het stil.
+  if (taakId) {
+    const { data: huidig } = await sb
+      .from('taken')
+      .select('toegewezen_aan, toegewezen_aan_id')
+      .eq('id', taakId)
+      .maybeSingle()
+    if (huidig && (huidig.toegewezen_aan ?? '').trim().toLowerCase() === waarde.toLowerCase()) {
+      return velden
+    }
   }
+
+  // Zelfde matchregel als de backfill in migratie 176: hoofdletter- en
+  // spatie-ongevoelig binnen de organisatie, oudste wint bij gelijke namen.
+  // Vergelijken in JS in plaats van met ilike, want dan bestaan er geen jokers
+  // om te ontsnappen en trimt hij aan beide kanten, net als btrim in de migratie.
+  let query = sb.from('medewerkers').select('id, naam, created_at')
   if (orgId) query = query.eq('organisatie_id', orgId)
-  // Dezelfde volgorde als de backfill in migratie 176, zodat app en migratie bij
-  // twee gelijke namen dezelfde medewerker kiezen.
   const { data, error } = await query
-    .order('created_at', { ascending: true })
-    .order('id', { ascending: true })
-    .limit(1)
   if (error) {
-    console.warn('metToegewezenId: medewerker niet op te zoeken', error)
+    console.warn('metToegewezenId: medewerkers niet op te halen', error)
     return { ...velden, toegewezen_aan_id: null }
   }
-  return { ...velden, toegewezen_aan_id: data?.[0]?.id ?? null }
+
+  const gezocht = waarde.toLowerCase()
+  const kandidaten = (data ?? [])
+    .filter((m) => m.id === waarde || (m.naam ?? '').trim().toLowerCase() === gezocht)
+    .sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')) || a.id.localeCompare(b.id))
+  return { ...velden, toegewezen_aan_id: kandidaten[0]?.id ?? null }
 }
 
 export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated_at'>): Promise<Taak> {
@@ -455,7 +464,7 @@ export async function updateTaak(id: string, updates: Partial<Taak>): Promise<Ta
     const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('taken')
-      .update(await metToegewezenId(sanitizeDates({ ...updates, updated_at: now() }), _orgId))
+      .update(await metToegewezenId(sanitizeDates({ ...updates, updated_at: now() }), _orgId, id))
       .eq('id', id)
       .select()
       .single()
