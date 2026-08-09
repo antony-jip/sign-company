@@ -1,5 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import * as Sentry from '@sentry/node'
+
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0,
+    sendDefaultPii: false,
+  })
+}
 
 // Zet het bedrag van een lopend abonnement gelijk aan de staffel van de
 // organisatie (migratie 172). Nodig omdat een Mollie-subscription anders elke
@@ -148,6 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const bericht = err instanceof Error ? err.message : 'Onbekende fout'
     const status = bericht === 'Niet geautoriseerd' || bericht === 'Ongeldige sessie' ? 401 : 500
     console.error('update-subscription-bedrag:', err)
+    Sentry.captureException(err, { tags: { route: 'update-subscription-bedrag' } })
     return res.status(status).json({ error: bericht })
   }
 }

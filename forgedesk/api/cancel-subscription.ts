@@ -1,5 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import * as Sentry from '@sentry/node'
+
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0,
+    sendDefaultPii: false,
+  })
+}
 
 const MOLLIE_API_KEY = process.env.MOLLIE_API_KEY_LIVE || process.env.MOLLIE_API_KEY_TEST || ''
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
@@ -117,6 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: message })
     }
     console.error('Cancel subscription error:', message)
+    Sentry.captureException(error, { tags: { route: 'cancel-subscription' } })
     return res.status(500).json({ error: `Mollie fout: ${message}` })
   }
 }

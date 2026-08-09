@@ -2,6 +2,16 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import * as Sentry from '@sentry/node'
+
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0,
+    sendDefaultPii: false,
+  })
+}
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -221,6 +231,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvangt u een nieuwe link.' })
   } catch (error) {
     console.error('portaal-link-aanvragen error:', error)
+    Sentry.captureException(error, { tags: { route: 'portaal-link-aanvragen' } })
     return res.status(500).json({ error: 'Er ging iets mis. Probeer het later opnieuw.' })
   }
 }

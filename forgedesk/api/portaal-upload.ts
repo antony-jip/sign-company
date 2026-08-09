@@ -2,6 +2,16 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import { tasks } from '@trigger.dev/sdk'
 import type { logPortaalActiviteit } from '../src/trigger/portaal-activiteit-log'
+import * as Sentry from '@sentry/node'
+
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0,
+    sendDefaultPii: false,
+  })
+}
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -215,6 +225,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   } catch (error) {
     console.error('portaal-upload error:', error)
+    Sentry.captureException(error, { tags: { route: 'portaal-upload' } })
     return res.status(500).json({ error: 'Er ging iets mis bij het uploaden' })
   }
 }

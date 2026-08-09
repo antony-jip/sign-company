@@ -12,6 +12,16 @@ async function isRateLimited(ip: string, endpoint: string, maxCount: number, win
   return data === true
 }
 import { createTransport } from 'nodemailer'
+import * as Sentry from '@sentry/node'
+
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0,
+    sendDefaultPii: false,
+  })
+}
 
 
 // Spiegel van DEFAULT_INSTELLINGEN in api/portaal-get.ts voor de velden die
@@ -450,6 +460,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(201).json({ reactie })
   } catch (error) {
     console.error('portaal-reactie error:', error)
+    // Een klant die goedkeurt en een foutmelding krijgt, probeert het meestal
+    // niet opnieuw. Dan blijft de offerte 'wacht op reactie' en weet niemand
+    // dat het aan ons lag.
+    Sentry.captureException(error, { tags: { route: 'portaal-reactie' } })
     return res.status(500).json({ error: 'Er ging iets mis bij het opslaan van de reactie' })
   }
 }
