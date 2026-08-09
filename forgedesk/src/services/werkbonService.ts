@@ -8,14 +8,38 @@ import type { Werkbon, WerkbonItem, WerkbonAfbeelding, WerkbonRegel, WerkbonFoto
 
 // Best-effort: verwijder een storage-object aan de hand van het opgeslagen pad.
 // De DB bewaart het storage-pad in `url`; signed/http/data-urls slaan we over.
+//
+// LET OP: een werkbonafbeelding die uit een offerte is overgenomen wijst naar
+// HETZELFDE object als het offerte-item; er wordt niet gekopieerd. Zonder de
+// controle hieronder wist het weggooien van een werkbonfoto de foto van de
+// offerte, en die van elke andere werkbon die van dat item is gemaakt.
 async function verwijderStorageBestand(pathOrUrl: string | null | undefined): Promise<void> {
   if (!pathOrUrl) return
   if (pathOrUrl.startsWith('http') || pathOrUrl.startsWith('data:') || pathOrUrl.startsWith('blob:')) return
+  if (await padWordtNogGebruikt(pathOrUrl)) return
   try {
     await deleteFile(pathOrUrl)
   } catch {
     // Storage-cleanup mag nooit de DB-actie blokkeren.
   }
+}
+
+// Verwijst er nog een rij naar dit pad? Bij twijfel: ja, want een achtergebleven
+// bestand kost opslag en een te vroeg verwijderd bestand kost werk van iemand.
+async function padWordtNogGebruikt(pad: string): Promise<boolean> {
+  if (!supabase) return true
+  const controles: Array<[string, string]> = [
+    ['offerte_items', 'foto_url'],
+    ['offerte_items', 'bijlage_url'],
+    ['werkbon_afbeeldingen', 'url'],
+    ['documenten', 'storage_path'],
+  ]
+  for (const [tabel, kolom] of controles) {
+    const { data, error } = await supabase.from(tabel).select('id').eq(kolom, pad).limit(1)
+    if (error) return true
+    if (data && data.length > 0) return true
+  }
+  return false
 }
 
 export async function generateWerkbonNummer(prefix: string = 'WB', startNummer = 1): Promise<string> {

@@ -93,7 +93,10 @@ async function attachmentToegestaan(
     if (seg[0] === 'email-bijlagen' || seg[0] === 'email-bijlagen-groot') return seg[1] === userId
     if (!orgId) return false
     const { data } = await supabaseAdmin
-      .from('documenten-prive')
+      // De TABEL documenten, niet de bucket. Die twee heten bijna hetzelfde en
+      // een eerdere hernoeming haalde ze door elkaar, waardoor elke persistente
+      // bijlage 403 kreeg.
+      .from('documenten')
       .select('id')
       .eq('storage_path', path)
       .eq('organisatie_id', orgId)

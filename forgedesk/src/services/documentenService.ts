@@ -309,7 +309,7 @@ export async function bijlageNaarProject(params: {
   const storagePath = `projects/${orgId}/${params.projectId}/${generateId()}.${ext}`
 
   const { error: uploadError } = await supabase.storage
-    .from('documenten')
+    .from('documenten-prive')
     .upload(storagePath, params.data, {
       cacheControl: '3600',
       upsert: false,
@@ -333,7 +333,7 @@ export async function bijlageNaarProject(params: {
   } catch (err) {
     // Rij mislukt: het geüploade object opruimen, anders blijft er een
     // bestand in de bucket staan waar niets meer naar wijst.
-    await supabase.storage.from('documenten').remove([storagePath]).catch(() => {})
+    await supabase.storage.from('documenten-prive').remove([storagePath]).catch(() => {})
     throw err
   }
 }

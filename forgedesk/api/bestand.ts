@@ -47,6 +47,24 @@ async function verifieerGebruiker(req: VercelRequest): Promise<string> {
   return user.id
 }
 
+// Sommige paden dragen hun eigenaar zelf en staan in geen enkele tabel.
+// Montagebijlagen hangen onder de organisatie, tijdelijke mailuploads onder de
+// gebruiker. Zonder deze takken zouden ze nooit te openen zijn.
+function padEigenaarKlopt(pad: string, organisatieId: string, gebruikerId: string): boolean {
+  const seg = pad.split('/')
+  if (seg[0] === 'montage-bijlagen') return seg[1] === organisatieId
+  if (seg[0] === 'email-bijlagen' || seg[0] === 'email-bijlagen-groot') return seg[1] === gebruikerId
+  return false
+}
+
+// Een downloadlink in een verstuurde mail moet langer mee dan een sessie: de
+// ontvanger opent hem misschien pas volgende week.
+function geldigheidVoor(pad: string): number {
+  // 30 dagen, gelijk aan GROTE_BIJLAGE_TTL_SECONDEN in storageService en aan
+  // het venster waarin de opruimjob deze bestanden laat staan.
+  return pad.startsWith('email-bijlagen-groot/') ? 60 * 60 * 24 * 30 : GELDIGHEID_SECONDEN
+}
+
 async function hoortBijOrganisatie(pad: string, organisatieId: string): Promise<boolean> {
   for (const { tabel, kolommen } of VERWIJZINGEN) {
     for (const kolom of kolommen) {
@@ -96,17 +114,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const organisatieId = profiel?.organisatie_id
   if (!organisatieId) return res.status(403).json({ fout: 'Geen organisatie' })
 
-  if (!(await hoortBijOrganisatie(pad, organisatieId))) {
+  const toegestaan =
+    padEigenaarKlopt(pad, organisatieId, gebruikerId) ||
+    (await hoortBijOrganisatie(pad, organisatieId))
+
+  if (!toegestaan) {
     // Bewust hetzelfde antwoord als "bestaat niet": of een pad bestaat is zelf
     // informatie die buiten de organisatie niets te zoeken heeft.
     return res.status(404).json({ fout: 'Bestand niet gevonden' })
   }
 
+  const geldigheid = geldigheidVoor(pad)
   const { data, error } = await supabaseAdmin.storage
     .from(BUCKET)
-    .createSignedUrl(pad, GELDIGHEID_SECONDEN)
+    .createSignedUrl(pad, geldigheid)
 
   if (error || !data) return res.status(404).json({ fout: 'Bestand niet gevonden' })
 
-  return res.status(200).json({ url: data.signedUrl, geldigTot: Date.now() + GELDIGHEID_SECONDEN * 1000 })
+  return res.status(200).json({ url: data.signedUrl, geldigTot: Date.now() + geldigheid * 1000 })
 }

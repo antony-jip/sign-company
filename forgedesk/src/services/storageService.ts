@@ -149,6 +149,12 @@ export async function downloadFile(path: string): Promise<string> {
 // een lijst met twintig bijlagen twintig serverrondjes bij elke render.
 const urlCache = new Map<string, { url: string; geldigTot: number }>()
 
+/** Legen bij uitloggen of een orgwissel: anders blijven links van de vorige
+ *  sessie in hetzelfde tabblad bruikbaar tot ze vervallen. */
+export function wisBestandsCache(): void {
+  urlCache.clear()
+}
+
 async function vraagOndertekendeUrl(path: string): Promise<string> {
   const uitCache = urlCache.get(path)
   if (uitCache && uitCache.geldigTot > Date.now() + 60_000) return uitCache.url
@@ -255,19 +261,14 @@ export async function uploadMontageBijlage(file: File): Promise<{
   const storagePath = `montage-bijlagen/${orgId}/${fileId}.${ext || 'bin'}`
   const url = await uploadFile(file, storagePath)
 
-  // Get a public/downloadable URL
-  let displayUrl = url
-  try {
-    displayUrl = await downloadFile(url)
-  } catch (err) {
-    // fallback to path
-  }
-
+  // Bewust het PAD, niet een opgeloste link. Dit object wordt opgeslagen in
+  // montage_afspraken.bijlagen, en een ondertekende URL zou daar na een dag
+  // dood in staan zonder dat het pad nog te achterhalen was.
   return {
     id: fileId,
     naam: file.name,
     type,
-    url: displayUrl,
+    url,
     grootte: file.size,
     uploaded_at: new Date().toISOString(),
   }
@@ -323,13 +324,12 @@ export async function uploadGroteBijlage(file: File): Promise<{ filename: string
     contentType: file.type || 'application/octet-stream',
   })
   if (error) throw new Error(`Upload mislukt: ${error.message}`)
-  const { data: signed, error: signErr } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(storagePath, GROTE_BIJLAGE_TTL_SECONDEN)
-  if (signErr || !signed?.signedUrl) {
-    throw new Error(`Downloadlink aanmaken mislukt: ${signErr?.message ?? 'onbekende fout'}`)
-  }
-  return { filename: file.name, size: file.size, url: signed.signedUrl }
+  // Ondertekenen kan niet meer vanaf de client: de private bucket geeft
+  // authenticated geen leesrecht. De server doet het, met een ruimere
+  // geldigheid omdat de ontvanger de link pas dagen later kan openen.
+  const url = await vraagOndertekendeUrl(storagePath)
+  if (!url) throw new Error('Downloadlink aanmaken mislukt')
+  return { filename: file.name, size: file.size, url }
 }
 
 export async function deleteFile(path: string): Promise<void> {

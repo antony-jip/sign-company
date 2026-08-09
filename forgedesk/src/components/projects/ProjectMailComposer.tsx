@@ -530,7 +530,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         size: d.grootte,
         mimeType: d.type || 'application/octet-stream',
         storagePath: d.storage_path,
-        bucket: 'documenten',
+        bucket: 'documenten-prive',
         bron: 'bestand',
         bronId: d.id,
       },
@@ -835,7 +835,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             if (isSupabaseConfigured()) {
               const path = await uploadEmailAttachment(base64ToBlob(base64, b.mimeType), b.filename, userId || 'onbekend')
               tempPaths.push(path)
-              return { filename: b.filename, storagePath: path, bucket: 'documenten', cleanupAfter: true }
+              return { filename: b.filename, storagePath: path, bucket: 'documenten-prive', cleanupAfter: true }
             }
             return { filename: b.filename, content: base64, encoding: 'base64' as const }
           }),

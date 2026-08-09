@@ -1822,7 +1822,7 @@ export function QuoteCreation() {
           const pdfBlob = doc.output('blob') as Blob
           const pdfPath = `${uploadDir}/${crypto.randomUUID()}-offerte.pdf`
           const { error: pdfUploadErr } = await supabase.storage
-            .from('documenten')
+            .from('documenten-prive')
             .upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: false })
           if (pdfUploadErr) throw pdfUploadErr
           attachments.push({ filename: pdfFilename, storagePath: pdfPath })
@@ -1839,7 +1839,7 @@ export function QuoteCreation() {
           try {
             const path = `${uploadDir}/${crypto.randomUUID()}-${sanitizeStorageFilename(bijlage.naam)}`
             const { error: upErr } = await supabase.storage
-              .from('documenten')
+              .from('documenten-prive')
               .upload(path, bijlage.file, { contentType: bijlage.file.type || 'application/octet-stream', upsert: false })
             if (upErr) throw upErr
             attachments.push({ filename: bijlage.naam, storagePath: path })

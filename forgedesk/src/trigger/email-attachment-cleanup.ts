@@ -7,7 +7,7 @@ const BATCH_SIZE = 100;
 
 // Grote bijlagen die als downloadlink zijn verstuurd (zie uploadGroteBijlage):
 // link is 30 dagen geldig, bestand leeft 35 dagen.
-const GROTE_BIJLAGEN_BUCKET = "documenten";
+const GROTE_BIJLAGEN_BUCKET = "documenten-prive";
 const GROTE_BIJLAGEN_PREFIX = "email-bijlagen-groot";
 const GROTE_BIJLAGEN_TTL_DAYS = 35;
 

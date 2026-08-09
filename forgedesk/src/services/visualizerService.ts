@@ -4,6 +4,7 @@ import {
   withUserId, round2, getOrgId,
 } from './supabaseHelpers'
 import { safeSetItem } from '@/utils/localStorageUtils'
+import { resolvePortaalBestandUrl } from './storageService'
 import { DEFAULT_VISUALIZER_INSTELLINGEN } from '@/utils/visualizerDefaults'
 import type {
   SigningVisualisatie,
@@ -16,6 +17,20 @@ import type {
   VisualizerChatInput,
 } from '@/types'
 
+// De kolommen resultaat_url en gebouw_foto_url bevatten sinds augustus 2026 een
+// storage-PAD in plaats van een opgeloste URL, zodat er geen vervallende link
+// in de database belandt. Alles wat ze rechtstreeks als <img src> rendert zou
+// daarop stukgaan, dus we lossen ze hier op, één keer, bij het laden.
+async function metOpgelosteUrls(rijen: SigningVisualisatie[]): Promise<SigningVisualisatie[]> {
+  return Promise.all(
+    rijen.map(async (r) => ({
+      ...r,
+      resultaat_url: (await resolvePortaalBestandUrl(r.resultaat_url)) ?? r.resultaat_url,
+      gebouw_foto_url: (await resolvePortaalBestandUrl(r.gebouw_foto_url)) ?? r.gebouw_foto_url,
+    })),
+  )
+}
+
 // --- Visualisaties CRUD ---
 
 export async function getSigningVisualisaties(user_id: string): Promise<SigningVisualisatie[]> {
@@ -27,7 +42,7 @@ export async function getSigningVisualisaties(user_id: string): Promise<SigningV
       .eq('user_id', user_id)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return data || []
+    return metOpgelosteUrls(data || [])
   }
   const all = getLocalData<SigningVisualisatie>(`signing_visualisaties_${user_id}`)
   return all.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
@@ -42,7 +57,7 @@ export async function getSigningVisualisatiesByOfferte(offerte_id: string): Prom
       .eq('offerte_id', offerte_id)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return data || []
+    return metOpgelosteUrls(data || [])
   }
   // localStorage fallback: search across all user data
   const keys = Object.keys(localStorage).filter(k => k.startsWith('doen_signing_visualisaties_'))
@@ -63,7 +78,7 @@ export async function getSigningVisualisatiesByProject(project_id: string): Prom
       .eq('project_id', project_id)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return data || []
+    return metOpgelosteUrls(data || [])
   }
   const keys = Object.keys(localStorage).filter(k => k.startsWith('doen_signing_visualisaties_'))
   const results: SigningVisualisatie[] = []
@@ -83,7 +98,7 @@ export async function getSigningVisualisatiesByKlant(klant_id: string): Promise<
       .eq('klant_id', klant_id)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return data || []
+    return metOpgelosteUrls(data || [])
   }
   const keys = Object.keys(localStorage).filter(k => k.startsWith('doen_signing_visualisaties_'))
   const results: SigningVisualisatie[] = []

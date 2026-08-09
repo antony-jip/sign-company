@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { signIn, signUp, signOut, getSession, onAuthStateChange, type AuthSession } from '@/services/authService'
+import { wisBestandsCache } from '@/services/storageService'
 import { getProfile, getOrganisatie, createMedewerker } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import { clearQueryCache } from '@/lib/queryCache'
@@ -273,6 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // organisatie nooit blijft hangen. Op de eerste mount is de cache
     // toch leeg, dus dit is onschadelijk.
     clearQueryCache()
+      wisBestandsCache()
   }, [organisatieId])
 
   const logout = async () => {
@@ -280,6 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signOut()
     } finally {
       clearQueryCache()
+      wisBestandsCache()
       setUser(null)
       setSession(null)
       setOrganisatieId(null)
