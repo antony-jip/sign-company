@@ -3197,12 +3197,26 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
   .doen-pulse, .doen-row { animation: none; }
 }
 /* Per-status colour accent on the left edge — strengthens on hover */
+/* Statusaccent als ingezet, afgerond streepje in plaats van een balk van
+   rijrand tot rijrand: die kruiste de rijscheiding en las als een naad. */
 .doen-row > td:first-child {
-  box-shadow: inset 2px 0 0 0 var(--row-accent, transparent);
-  transition: box-shadow .2s ease;
+  position: relative;
 }
-.doen-row:hover > td:first-child {
-  box-shadow: inset 3px 0 0 0 var(--row-accent, transparent);
+.doen-row > td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--row-accent, transparent);
+  transition: width .2s ease, top .2s ease, bottom .2s ease;
+}
+.doen-row:hover > td:first-child::before {
+  width: 4px;
+  top: 5px;
+  bottom: 5px;
 }
 
 /* doen-duo-icon CSS retired — Phosphor migrated out to Lucide stroke icons. */
@@ -3386,6 +3400,67 @@ button.doen-panel:hover {
 .dark .doen-subtitel {
   color: hsl(var(--muted-foreground));
   opacity: 0.9;
+}
+
+/* ================================================================
+   AUTH — inloggen/registreren op één petrol-deep merkvlak
+   ----------------------------------------------------------------
+   Login en registratie staan buiten de app-chrome: geen light/dark
+   variant, altijd het merkvlak. Het formulier is daarop het enige
+   lichte object, wat het meteen tot focuspunt maakt.
+   ================================================================ */
+.doen-auth {
+  color: #fff;
+}
+.doen-auth-card {
+  background: rgba(252, 252, 251, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 8px -2px rgba(0, 0, 0, 0.3),
+    0 24px 60px -20px rgba(0, 0, 0, 0.55);
+}
+/* De kaart houdt zijn lichte tekstkleuren, ook al is de shell wit-op-donker. */
+.doen-auth-card {
+  color: #1A2E32;
+}
+
+/* ================================================================
+   NAV-ICONEN — modulekleur in rust, niet pas bij hover
+   ----------------------------------------------------------------
+   De modulekleur (--mc) zat al in navigatie.ts maar werd alleen op
+   hover gebruikt. In rust was alles hetzelfde grijs, waardoor Projecten,
+   Werkbonnen en Maatjes in de rail niet van elkaar te onderscheiden
+   waren. De kleur wordt met grijs gemengd zodat de balk rustig blijft:
+   herkenbaar per module, geen snoeppot.
+   ================================================================ */
+.doen-nav-icon {
+  color: color-mix(in srgb, var(--mc) 68%, #8B9DA1);
+}
+.group\/rail:hover .doen-nav-icon,
+.group\/nav:hover .doen-nav-icon {
+  color: var(--mc);
+}
+/* Dark: de configkleuren zijn op wit afgestemd, dus optillen naar licht
+   in plaats van pure --mc gebruiken (petrol op petrol verdwijnt). */
+.dark .doen-nav-icon {
+  color: color-mix(in srgb, var(--mc) 40%, #A9C1C5);
+}
+.dark .group\/rail:hover .doen-nav-icon,
+.dark .group\/nav:hover .doen-nav-icon {
+  color: color-mix(in srgb, var(--mc) 45%, #FFFFFF);
+}
+
+/* Scroll-lijst binnen een paneel: de onderste regel loopt zacht uit i.p.v.
+   halverwege afgekapt te worden. Mask i.p.v. een gradient-overlay omdat het
+   paneel-oppervlak zelf een gradient is — een overlay zou de wash breken. */
+.doen-scroll-fade {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent 100%);
+}
+.doen-scroll-fade[data-at-end='true'] {
+  mask-image: none;
+  -webkit-mask-image: none;
 }
 
 /* Hero: dimensionale gradient i.p.v. vlak vlak. Licht = petrol met
