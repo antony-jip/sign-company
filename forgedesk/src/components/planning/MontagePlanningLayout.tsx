@@ -643,10 +643,10 @@ export function MontagePlanningLayout() {
     if (filterInitialized) return;
     if (!eigenMedewerker) return;
     if (eigenMedewerker.rol !== 'monteur') return;
-    if (isAdminUser(eigenMedewerker, user, userRol)) return;
+    if (isAdminUser(userRol)) return;
     setSelectedMonteurState(eigenMedewerker.id);
     setFilterInitialized(true);
-  }, [filterInitialized, user, eigenMedewerker]);
+  }, [filterInitialized, user, eigenMedewerker, userRol]);
 
   // Sync: scope=mijn met geladen eigenMedewerker → selectedMonteur op id zetten
   useEffect(() => {

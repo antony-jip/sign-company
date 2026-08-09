@@ -2,7 +2,7 @@
 
 ## Augustus 2026 — Ronde "20 gebruikers" (branch, migraties wél live)
 
-**Branch:** `claude/20-gebruikers`, 11 commits, niet gemerged en niet gepusht. `main` onaangeroerd.
+**Branch:** `claude/20-gebruikers`, niet gemerged en niet gepusht. `main` onaangeroerd.
 **Migraties 172 t/m 178 draaien WEL op productie.** Dat is bewust: ze zijn additief en de code valt terug op het oude gedrag zolang de kolommen leeg zijn. De code op de branch is dus nog niet live, de database wel.
 
 ### Aanleiding
@@ -13,6 +13,46 @@ Kan een signbedrijf van 20 man hierin werken? Kort antwoord vooraf was: afgedwon
 - **173** `profiles.rol` en `organisatie_id` vastgezet. `profiles_update` had USING zonder WITH CHECK, dus iedereen kon zichzelf admin maken of zijn `organisatie_id` naar een ander bedrijf verleggen en daarmee alle data van dat bedrijf zien.
 - **174** atomaire org-teller voor AI-verbruik. **178** idem per gebruiker, inclusief de unique index die migratie 006 aanmaakt maar die in productie niet bestond.
 - **175** guard aangevuld. **176** `taken.toegewezen_aan_id` met backfill (169 van 171). **177** melding bij toewijzing, via een trigger omdat RLS op `notificaties` per gebruiker is.
+
+### Ook op de branch, buiten de staffel om
+- **Truncatie.** Alle lijstqueries pagineren nu, met id als tiebreaker; sorteren
+  op één kolom is niet stabiel over paginagrenzen. Nacalculatie vuurde één query
+  per goedgekeurde offerte tegelijk af, dat is nu één batch per 100 ids.
+- **Zoeken.** De globale zoekbalk trok acht hele tabellen in een client-cache.
+  Mail (18.515 rijen, doorzocht daarvoor er 200), klanten, projecten en offertes
+  gaan nu per zoekopdracht naar de server. Facturen, taken, documenten en
+  werkbonnen zitten er nog in. Bewuste versmalling: offertes matchen op nummer en
+  titel, niet meer op klantnaam; die zit in een join en past niet in dezelfde
+  or-filter.
+- **CommandPalette** laadde drie volledige tabellen bij élke app-start voor een
+  venster dat de meesten nooit openen. Laadt nu pas bij openen. De dubbele Cmd+K
+  is weg: GlobalSearch luisterde ook, maar CommandPalette wint via capture.
+- **Conflictdetectie op offertes herschreven.** Was een read-then-write met 2000
+  ms speling, waardoor twee opslagacties allebei door de check konden komen en
+  een wijziging van een collega binnen die twee seconden stil werd overschreven.
+  De voorwaarde zit nu in de UPDATE zelf. Gedragswijziging: schrijfacties die de
+  lock niet meesturen leveren nu een echt conflict op waar ze eerder stil
+  overschreven.
+- **Admincheck.** Er waren vier bronnen, waarvan drie door de gebruiker zelf te
+  schrijven (user_metadata.app_rol, medewerkers.rol, medewerkers.app_rol). Nu
+  alleen profiles.rol, de kolom die de backend al vertrouwt en die 173 vastzet.
+- **Van-mij-filter op projecten**, op basis van team_leden. Offertes, facturen en
+  werkbonnen kunnen dit niet: die hebben geen toegewezene.
+
+### Wat er misging en hersteld is
+- **173 brak elke profielopslag.** De guard gooide in de UPDATE-tak, en een
+  PostgREST-upsert draait als INSERT ON CONFLICT DO UPDATE: de INSERT-tak maakt
+  NEW leeg en precies die waarden gaan als EXCLUDED de UPDATE-tak in. Naam,
+  telefoon, handtekening en bedrijfsgegevens konden daardoor niet meer opgeslagen
+  worden, voor iedereen. **179** zet in de UPDATE-tak terug in plaats van te
+  gooien. De les: redeneren over triggergedrag is geen test.
+- **177 controleerde de verkeerde kant.** Wel of de medewerkersrij bij de
+  organisatie hoort, niet of de persoon erachter dat doet. Een vertrokken collega
+  wiens rij nog zijn user_id draagt kreeg taaktitels en omschrijvingen. **180**
+  joint op profiles.
+- **De per-gebruiker AI-limiet schaalde niet mee** en draait vóór de org-check,
+  dus op trede 2 liep één zware gebruiker vast op 15 terwijl het bedrijf nog de
+  helft over had. Beide checks lezen nu dezelfde bron.
 
 ### Staffel, besloten
 Tot 10 gebruikers EUR 129 met EUR 15 AI, tot 20 EUR 199 met EUR 30, tot 35 EUR 279 met EUR 50. Rekenen op gekochte plekken, niet gebruikte.

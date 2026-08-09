@@ -414,7 +414,7 @@ function TeamCard() {
     () => medewerkers.find(m => m.user_id === user?.id) ?? null,
     [medewerkers, user?.id],
   )
-  const admin = isAdminUser(currentMedewerker, user, userRol)
+  const admin = isAdminUser(userRol)
 
   const stats = useMemo(() => {
     const now = new Date()
