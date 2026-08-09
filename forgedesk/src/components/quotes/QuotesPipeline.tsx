@@ -512,6 +512,20 @@ export function QuotesPipeline() {
     }
   }, [user?.id])
 
+  // Deep-link vanaf het dashboard (Opvolgen → herinnering): opent hier de
+  // bestaande portaal-dialoog i.p.v. die flow te dupliceren.
+  const herinnerIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get('herinner')
+    if (!id || herinnerIdRef.current === id) return
+    const offerte = offertes.find(o => o.id === id)
+    if (!offerte) return
+    herinnerIdRef.current = id
+    navigate('/offertes', { replace: true })
+    void handleOpenPortaal(offerte)
+  }, [offertes, handleOpenPortaal, navigate])
+
   const handleSendPortaal = useCallback(async () => {
     if (!portaalOfferte || !portaalKlant || !portaalLink) return
     const email = portaalOfferte.verstuurd_naar || portaalKlant.email || ''
@@ -1518,10 +1532,10 @@ export function QuotesPipeline() {
                                     if (offerte.totaal <= 0) return <span className="text-xs text-muted-foreground/70">&mdash;</span>
                                     return (
                                       <span className={cn(
-                                        'font-mono tabular-nums',
+                                        'font-mono tabular-nums text-[13px]',
                                         offerte.totaal >= 10000
-                                          ? 'text-[15px] font-bold text-foreground'
-                                          : 'text-sm text-foreground/80'
+                                          ? 'font-semibold text-foreground'
+                                          : 'text-foreground/70'
                                       )}>
                                         {formatEur(offerte.totaal)}
                                       </span>
@@ -1530,7 +1544,7 @@ export function QuotesPipeline() {
                                 </td>
                                 {/* Datum */}
                                 <td className="py-3.5 pr-4 text-right hidden md:table-cell">
-                                  <span className="text-[12px] font-mono tabular-nums text-muted-foreground/80">
+                                  <span className="text-[11px] font-mono tabular-nums text-muted-foreground/70">
                                     {new Date(offerte.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                                   </span>
                                 </td>
@@ -1557,7 +1571,7 @@ export function QuotesPipeline() {
                                 {/* Geldig tot */}
                                 <td className="py-3.5 pr-4 text-right hidden md:table-cell">
                                   <div className="flex items-center gap-1.5 justify-end">
-                                    <span className="whitespace-nowrap text-[12px] font-mono tabular-nums text-muted-foreground/80">
+                                    <span className="whitespace-nowrap text-[11px] font-mono tabular-nums text-muted-foreground/70">
                                       {new Date(offerte.geldig_tot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                                     </span>
                                     {expiryStatus === 'expired' && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18]" />}
