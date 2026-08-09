@@ -157,6 +157,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('email', email.toLowerCase())
       .eq('organisatie_id', organisatie_id)
       .eq('status', 'verstuurd')
+      // Alleen een GELDIGE uitnodiging blokkeert een nieuwe. Zonder deze regel
+      // hield een verlopen uitnodiging het adres bezet terwijl de plekkentelling
+      // hem juist niet meetelde: precies andersom dan bedoeld, en de admin kon
+      // niemand meer uitnodigen zonder de oude eerst met de hand in te trekken.
+      .gt('verloopt_op', new Date().toISOString())
       .maybeSingle()
 
     if (bestaandeUitnodiging) {
