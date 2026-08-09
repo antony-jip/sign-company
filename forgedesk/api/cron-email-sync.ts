@@ -56,6 +56,49 @@ async function actieveUserIds(): Promise<Set<string>> {
   return actief
 }
 
+/**
+ * Meldt binnengekomen mail op het toestel. Faalt stil: de sync is geslaagd en
+ * dat is wat telt — een mislukte melding mag de ronde niet omver halen.
+ *
+ * Bewust geen berichttekst in de melding: die staat op een vergrendelscherm dat
+ * anderen kunnen zien. Afzender en onderwerp is genoeg om te weten of het kan
+ * wachten. Bij meerdere mails één melding met een telling; één melding per mail
+ * maakt je scherm na een ochtend onbruikbaar.
+ */
+async function meldNieuweMail(userId: string, aantal: number, cronSecret: string, url: string) {
+  try {
+    const { data: profiel } = await supabaseAdmin
+      .from('profiles')
+      .select('push_nieuwe_mail')
+      .eq('id', userId)
+      .maybeSingle()
+    if (!profiel?.push_nieuwe_mail) return
+
+    const { data: laatste } = await supabaseAdmin
+      .from('emails')
+      .select('van, from_name, onderwerp')
+      .eq('user_id', userId)
+      .eq('map', 'inbox')
+      .order('datum', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const afzender = (laatste?.from_name as string) || (laatste?.van as string) || 'Nieuwe mail'
+    const onderwerp = (laatste?.onderwerp as string) || ''
+    const titel = aantal > 1 ? `${aantal} nieuwe berichten` : afzender
+    const tekst = aantal > 1 ? `Laatste: ${afzender} · ${onderwerp}` : onderwerp
+
+    await fetch(`${url}/api/push-verstuur`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cronSecret}` },
+      body: JSON.stringify({ service_user_id: userId, titel, tekst, url: '/email', tag: 'doen-mail' }),
+      signal: AbortSignal.timeout(8_000),
+    })
+  } catch (err) {
+    console.warn('[cron-email-sync] melding niet verstuurd', { userId, err: err instanceof Error ? err.message : err })
+  }
+}
+
 export const config = { maxDuration: 60 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -123,7 +166,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { userId, ok: false, reden: `http_${respons.status}` }
         }
         const uitkomst = await respons.json().catch(() => ({}))
-        return { userId, ok: true, synced: uitkomst?.synced ?? 0 }
+        const nieuw = Number(uitkomst?.synced) || 0
+        if (nieuw > 0) await meldNieuweMail(userId, nieuw, cronSecret, basisUrl())
+        return { userId, ok: true, synced: nieuw }
       } catch (err) {
         console.warn('[cron-email-sync] sync gooide', { userId, err: err instanceof Error ? err.message : err })
         return { userId, ok: false, reden: 'exception' }

@@ -37,6 +37,9 @@ export interface Profile {
   sidebar_items?: string[] | null;
   // Mobiele bottom-nav, los van de desktop-keuze (migratie 169)
   mobiel_menu_items?: string[] | null;
+  // Meldingen bij nieuwe mail (migratie 171). Los van het bestaan van een
+  // pushabonnement: uitzetten mag de toestemming niet weggooien.
+  push_nieuwe_mail?: boolean;
   created_at: string;
   updated_at: string;
 }
