@@ -39,7 +39,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getBackfillTarget, setBackfillTarget, type BackfillTarget } from '@/services/emailService'
 import { getProfile, getProfielenVoorTeam, getAppSettings, updateAppSettings, getMedewerkers, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
-import { uploadFile, downloadFile } from '@/services/storageService'
+import { uploadFile, getPubliekeMailUrl } from '@/services/storageService'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
@@ -315,7 +315,9 @@ function SignatureImageUpload({
       const userId = user?.id || 'local'
       const path = `${userId}/handtekeningen/${Date.now()}_${sanitizeStorageFilename(file.name)}`
       await uploadFile(file, path)
-      const url = await downloadFile(path)
+      // Bewust een blijvende publieke URL: deze afbeelding komt in de
+      // e-mailhandtekening en moet laden bij de ontvanger, ook maanden later.
+      const url = await getPubliekeMailUrl(path)
       onImageChange(url)
       toast.success('Afbeelding geüpload')
     } catch (err) {

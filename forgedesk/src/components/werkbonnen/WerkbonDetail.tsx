@@ -33,7 +33,7 @@ import {
   getMontageAfspraak, updateMontageAfspraak,
 } from '@/services/supabaseService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
-import { uploadFile, downloadFile } from '@/services/storageService'
+import { uploadFile } from '@/services/storageService'
 import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder } from '@/utils/werkbonMedia'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { pdfEerstePaginaNaarImage } from '@/utils/pdfToImage'

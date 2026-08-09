@@ -121,7 +121,37 @@ async function uploadFileToLocalStorage(file: File, path: string): Promise<strin
   return path
 }
 
+/**
+ * Levert een bruikbare URL om een bestand te TONEN of op te halen. De link is
+ * ondertekend en vervalt na een dag: lang genoeg voor een sessie of een PDF,
+ * kort genoeg dat een doorgestuurde link geen blijvende sleutel is.
+ *
+ * Bewaar het resultaat NIET in de database. Wie een pad wil opslaan, slaat het
+ * pad op; de leeskant lost het hier weer op. Zie getPubliekeMailUrl voor het
+ * ene geval waarin dat niet kan.
+ */
 export async function downloadFile(path: string): Promise<string> {
+  if (!isSupabaseConfigured() || !supabase) {
+    const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')
+    return stored[path]?.dataUrl || ''
+  }
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60 * 24)
+  if (error || !data) return ''
+  return data.signedUrl
+}
+
+/**
+ * Blijvende publieke URL, alleen voor beeld dat in UITGAANDE MAIL komt.
+ *
+ * Een mailclient kan geen vervallende link openen, en een verstuurde mail is
+ * niet meer te wijzigen: de URL die erin staat moet blijven werken zolang de
+ * ontvanger hem kan terugzoeken. Dat is de reden dat deze functie bestaat en
+ * de reden dat de documenten-bucket publiek is.
+ *
+ * Gebruik dit nergens anders voor. Alles wat alleen in de app getoond wordt,
+ * hoort via downloadFile te gaan.
+ */
+export async function getPubliekeMailUrl(path: string): Promise<string> {
   if (!isSupabaseConfigured() || !supabase) {
     const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')
     return stored[path]?.dataUrl || ''
