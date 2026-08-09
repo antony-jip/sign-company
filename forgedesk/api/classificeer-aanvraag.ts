@@ -382,47 +382,88 @@ async function resolveOrgId(userId: string): Promise<string | null> {
 
 async function boekOrgUsage(organisatieId: string, kosten: number, calls: number): Promise<void> {
   const maand = getCurrentMonth()
-  const { data: bestaand } = await supabaseAdmin
-    .from('ai_usage_org')
-    .select('id, aantal_calls, geschatte_kosten')
-    .eq('organisatie_id', organisatieId)
-    .eq('route', 'classificeer-aanvraag')
-    .eq('maand', maand)
-    .maybeSingle()
+  // Atomair bijschrijven via de RPC (migratie 174). Een read-modify-write laat
+  // twee gelijktijdige calls over elkaar heen schrijven, en dat verlies is
+  // altijd in het nadeel van doen.: de teller loopt achter en de rem grijpt
+  // te laat in.
+  const { error } = await supabaseAdmin.rpc('ai_usage_org_bijschrijf', {
+    p_organisatie_id: organisatieId,
+    p_route: 'classificeer-aanvraag',
+    p_maand: maand,
+    p_kosten: Number(kosten.toFixed(4)),
+    p_calls: calls,
+  })
+  if (error) console.error('boekOrgUsage: bijschrijven mislukt', organisatieId, error)
+}
 
-  if (bestaand) {
-    await supabaseAdmin
-      .from('ai_usage_org')
-      .update({
-        aantal_calls: (bestaand.aantal_calls ?? 0) + calls,
-        geschatte_kosten: Number((Number(bestaand.geschatte_kosten ?? 0) + kosten).toFixed(4)),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', bestaand.id)
-  } else {
-    await supabaseAdmin.from('ai_usage_org').insert({
-      organisatie_id: organisatieId,
-      route: 'classificeer-aanvraag',
-      maand,
-      aantal_calls: calls,
-      geschatte_kosten: Number(kosten.toFixed(4)),
-    })
+/**
+ * De maandlimiet hoort bij het abonnement, niet bij een verbruiksrij. Volgorde:
+ * de staffel op de organisatie (migratie 172), anders de oude waarde op
+ * ai_usage_org, anders de constante. Zolang migratie 172 niet gedraaid is faalt
+ * de eerste select stil en blijft het oude gedrag intact. Gelijk houden aan de
+ * zes ai-routes: als deze route op 15 blijft hangen terwijl de rest 30 doorlaat,
+ * valt de aanvraagherkenning stil zonder dat iemand het merkt.
+ */
+async function haalMaandlimiet(
+  organisatieId: string,
+  maand: string
+): Promise<{ limiet: number; betrouwbaar: boolean }> {
+  const { data: org, error: orgFout } = await supabaseAdmin
+    .from('organisaties')
+    .select('ai_maandlimiet')
+    .eq('id', organisatieId)
+    .maybeSingle()
+  if (orgFout && !kolomOntbreekt(orgFout)) {
+    console.error('haalMaandlimiet: organisatie onleesbaar', organisatieId, orgFout)
+    return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: false }
   }
+  const uitStaffel = Number(org?.ai_maandlimiet ?? NaN)
+  if (Number.isFinite(uitStaffel) && uitStaffel >= 0) {
+    return { limiet: uitStaffel, betrouwbaar: true }
+  }
+
+  const { data: rijen, error: rijenFout } = await supabaseAdmin
+    .from('ai_usage_org')
+    .select('maandlimiet')
+    .eq('organisatie_id', organisatieId)
+    .eq('maand', maand)
+  if (rijenFout) {
+    console.error('haalMaandlimiet: ai_usage_org onleesbaar', organisatieId, rijenFout)
+    return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: false }
+  }
+  if (rijen && rijen.length > 0) {
+    return {
+      limiet: Math.max(...rijen.map(r => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR))),
+      betrouwbaar: true,
+    }
+  }
+  return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: true }
+}
+
+/**
+ * 42703 is undefined_column; PGRST204 is dezelfde situatie via de schema-cache.
+ * Bewust alleen op foutcode en niet op de tekst van de melding: een RLS- of
+ * permissiefout die de kolomnaam echoot zou anders als "niet gemigreerd" gelezen
+ * worden, en dan valt een organisatie stilletjes terug naar de standaardlimiet.
+ */
+function kolomOntbreekt(fout: { code?: string }): boolean {
+  return fout.code === '42703' || fout.code === 'PGRST204'
 }
 
 /** Blokkeert de hele run zodra de organisatie door haar maandbudget heen is. */
 async function orgBudgetOp(organisatieId: string): Promise<boolean> {
   const maand = getCurrentMonth()
-  const { data: rows } = await supabaseAdmin
+  const { data: rows, error: verbruikFout } = await supabaseAdmin
     .from('ai_usage_org')
-    .select('geschatte_kosten, maandlimiet')
+    .select('geschatte_kosten')
     .eq('organisatie_id', organisatieId)
     .eq('maand', maand)
+  if (verbruikFout) {
+    console.error('orgBudgetOp: verbruik onleesbaar', organisatieId, verbruikFout)
+  }
   const huidig = (rows ?? []).reduce((s, r) => s + Number(r.geschatte_kosten ?? 0), 0)
-  const limiet = rows && rows.length > 0
-    ? Math.max(...rows.map(r => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR)))
-    : STANDAARD_MAANDLIMIET_EUR
-  return huidig >= limiet
+  const { limiet, betrouwbaar } = await haalMaandlimiet(organisatieId, maand)
+  return !verbruikFout && betrouwbaar && huidig >= limiet
 }
 
 // ───── Bodies ophalen voor kandidaten die nog geen tekst hebben ─────
