@@ -952,13 +952,37 @@ export function EmailCompose({
         )}
 
         {/* Panel header · title + back affordance, matches list-header pattern */}
-        <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-border/60 flex-shrink-0">
-          <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
-            {titel}<span className="text-flame">.</span>
-          </h1>
+        <div className="flex items-center justify-between gap-3 px-4 md:px-6 pt-4 pb-3 border-b border-border/60 flex-shrink-0">
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 text-[13px] text-foreground/70 hover:text-foreground transition-colors duration-150"
+            className="inline-flex items-center gap-1.5 text-[13px] text-foreground/70 hover:text-foreground transition-colors duration-150 md:hidden"
+            onClick={() => onOpenChange(false)}
+            title={`Sluiten en ${sluitLabel.toLowerCase()}`}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {sluitLabel}
+          </button>
+
+          <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none hidden md:block">
+            {titel}<span className="text-flame">.</span>
+          </h1>
+
+          {/* Verzenden staat op mobiel hierboven, niet in de bodembalk. Die
+              balk zakt achter het toetsenbord zodra je begint te typen, en de
+              knop stond daar bovendien achter een toggle en een klok. */}
+          <button
+            type="button"
+            className="tap-press md:hidden h-9 pl-3.5 pr-4 rounded-full text-[14px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] active:scale-[0.96] transition-transform duration-100 flex items-center gap-1.5 disabled:opacity-50"
+            onClick={handleSend}
+            disabled={isSending}
+          >
+            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {isSending ? 'Verzenden' : 'Verstuur'}
+          </button>
+
+          <button
+            type="button"
+            className="hidden md:inline-flex items-center gap-1.5 text-[13px] text-foreground/70 hover:text-foreground transition-colors duration-150"
             onClick={() => onOpenChange(false)}
             title={`Sluiten en ${sluitLabel.toLowerCase()}`}
           >
@@ -1300,7 +1324,11 @@ export function EmailCompose({
               ref={editorRef}
               contentEditable
               suppressContentEditableWarning
-              className="min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 [&_img]:max-w-[200px] [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2"
+              // max-w-full op alles: een handtekening is meestal een tabel met
+              // een vaste pixelbreedte, en die duwde het hele opstelvenster
+              // breder dan het scherm. Met een max-width krimpt zo'n tabel mee
+              // in plaats van eruit te steken.
+              className="min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 break-words min-w-0 max-w-full [&_*]:max-w-full [&_table]:!w-auto [&_td]:whitespace-normal [&_img]:max-w-[200px] [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2 [&_a]:break-words"
               data-placeholder="Schrijf je bericht..."
               style={{ caretColor: '#1A535C', boxShadow: 'none', outline: 'none' }}
               onInput={() => {
@@ -1520,13 +1548,15 @@ export function EmailCompose({
                 </>
               )}
             </div>
-            {/* Send button · matcht inline reply (flame, terminal action) */}
+            {/* Send button · matcht inline reply (flame, terminal action).
+                Op mobiel staat hij in de kop; twee verzendknoppen in beeld
+                laten je twijfelen welke de echte is. */}
             <button
-              className="tap-press h-10 md:h-9 px-5 md:px-6 rounded-[10px] text-[14px] md:text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
+              className="tap-press hidden md:flex h-9 px-6 rounded-[10px] text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 items-center gap-2 disabled:opacity-50"
               onClick={handleSend}
               disabled={isSending}
             >
-              <Send className="h-4 w-4 md:h-3.5 md:w-3.5" />
+              <Send className="h-3.5 w-3.5" />
               {isSending ? 'Verzenden...' : 'Verzenden'}
             </button>
           </div>

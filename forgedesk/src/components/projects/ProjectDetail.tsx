@@ -1577,6 +1577,103 @@ export function ProjectDetail() {
           />
         </div>
 
+      {/* ══════════ PROJECT-ACTIES ══════════
+          Op mobiel loopt dit blok gewoon mee in de kop, onder de titel. Als
+          absolute hoek landde het daar bovenop de terugknop en de projectnaam.
+          Op desktop blijft het de zwevende hoek rechtsboven — die positie
+          verandert niet door de verhuizing, want de kop-div is zelf niet
+          positioned. */}
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-2 rounded-xl transition-all mb-3 md:mb-0",
+          "md:absolute md:top-4 md:right-6 md:z-20 md:flex-nowrap",
+          // Het glaseffect hoort bij de zwevende hoek; in de flow op mobiel
+          // zou het een doosje om twee knoppen tekenen.
+          scrolled && "md:bg-card/70 md:backdrop-blur-md md:border md:border-border/60 md:shadow-[0_2px_8px_rgba(0,0,0,0.06)] md:px-2 md:py-1.5"
+        )}
+      >
+        {(() => {
+          const activeOfferte = projectOffertes.find(o => !['afgewezen', 'verlopen', 'gefactureerd'].includes(o.status)) || projectOffertes[0]
+          if (!activeOfferte) {
+            // In de factureer-fase (Gedaan / te-factureren) is de logische
+            // volgende stap een factuur, niet nog een offerte.
+            const factureerFase = ['afgerond', 'te-factureren', 'gefactureerd'].includes(project.status)
+            if (factureerFase) {
+              return (
+                <button
+                  onClick={() => {
+                    const params = new URLSearchParams({ klant_id: project.klant_id || '', project_id: id || '', titel: project.naam || '' })
+                    navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
+                  }}
+                  className="btn-primary-flame text-[12px] md:text-[13px] !py-2 md:!py-[9px] !px-3 md:!px-4"
+                >
+                  <Receipt className="h-3.5 w-3.5" />
+                  Factuur maken
+                </button>
+              )
+            }
+            return (
+              <button onClick={openNieuweOfferte} className="btn-primary-flame text-[12px] md:text-[13px] !py-2 md:!py-[9px] !px-3 md:!px-4">
+                <Pencil className="h-3.5 w-3.5" />
+                Offerte maken
+              </button>
+            )
+          }
+          const isGefactureerd = !!activeOfferte.geconverteerd_naar_factuur_id
+          return (
+            <>
+              <button
+                onClick={() => navigate(`/offertes/${activeOfferte.id}/bewerken`, { state: { from: location.pathname } })}
+                className="btn-primary-flame text-[12px] md:text-[13px] !py-2 md:!py-[9px] !px-3 md:!px-4"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Offerte bewerken
+              </button>
+              <button
+                onClick={() => handleCreateFactuurFromOfferte(activeOfferte)}
+                className="inline-flex items-center gap-1.5 h-8 md:h-9 px-2.5 md:px-3 rounded-lg border border-petrol/30 bg-card text-petrol hover:bg-petrol hover:text-white transition-colors text-[12px] md:text-[13px] font-medium"
+                title={isGefactureerd ? `Factuur openen` : 'Factuur maken van deze offerte'}
+              >
+                <Receipt className="h-3.5 w-3.5" />
+                {isGefactureerd ? 'Factuur' : 'Maak factuur'}
+              </button>
+            </>
+          )
+        })()}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="h-8 w-8 md:h-9 md:w-9 rounded-lg border border-border bg-card flex items-center justify-center text-foreground/70 hover:bg-[var(--cream-bg)] hover:text-foreground transition-colors">
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={openKopieDialog}>
+              <Copy className="mr-2 h-3.5 w-3.5" />
+              Kopiëren
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleAiAnalysis}>
+              <Sparkles className="mr-2 h-3.5 w-3.5" />
+              AI Analyse
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={async () => {
+              try {
+                const oudeStatus = project.status
+                const updated = await updateProject(id!, { status: 'afgerond' })
+                setProject(updated)
+                if (user?.id) {
+                  const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+                  logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: 'afgerond' })
+                }
+                toast.success('Project gearchiveerd')
+              } catch (err) { logger.error('Kon project niet archiveren:', err); toast.error('Kon project niet archiveren') }
+            }}>
+              <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
+              Archiveren
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
         {/* TAB BAR · flame underline, duotone icoon per tab */}
         <div className="flex items-center gap-1 border-b border-border mt-4 sticky top-0 z-10 bg-background">
           {([
@@ -2497,94 +2594,6 @@ export function ProjectDetail() {
       </div>
       {/* ══════════ /SCROLL AREA ══════════ */}
 
-      {/* ══════════ FLOATING ACTIONS (top-right, glass on scroll) ══════════ */}
-      <div
-        className={cn(
-          "absolute top-4 right-6 z-20 flex items-center gap-2 rounded-xl transition-all",
-          scrolled && "bg-card/70 backdrop-blur-md border border-border/60 shadow-[0_2px_8px_rgba(0,0,0,0.06)] px-2 py-1.5"
-        )}
-      >
-        {(() => {
-          const activeOfferte = projectOffertes.find(o => !['afgewezen', 'verlopen', 'gefactureerd'].includes(o.status)) || projectOffertes[0]
-          if (!activeOfferte) {
-            // In de factureer-fase (Gedaan / te-factureren) is de logische
-            // volgende stap een factuur, niet nog een offerte.
-            const factureerFase = ['afgerond', 'te-factureren', 'gefactureerd'].includes(project.status)
-            if (factureerFase) {
-              return (
-                <button
-                  onClick={() => {
-                    const params = new URLSearchParams({ klant_id: project.klant_id || '', project_id: id || '', titel: project.naam || '' })
-                    navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
-                  }}
-                  className="btn-primary-flame"
-                >
-                  <Receipt className="h-3.5 w-3.5" />
-                  Factuur maken
-                </button>
-              )
-            }
-            return (
-              <button onClick={openNieuweOfferte} className="btn-primary-flame">
-                <Pencil className="h-3.5 w-3.5" />
-                Offerte maken
-              </button>
-            )
-          }
-          const isGefactureerd = !!activeOfferte.geconverteerd_naar_factuur_id
-          return (
-            <>
-              <button
-                onClick={() => navigate(`/offertes/${activeOfferte.id}/bewerken`, { state: { from: location.pathname } })}
-                className="btn-primary-flame"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Offerte bewerken
-              </button>
-              <button
-                onClick={() => handleCreateFactuurFromOfferte(activeOfferte)}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-petrol/30 bg-card text-petrol hover:bg-petrol hover:text-white transition-colors text-[13px] font-medium"
-                title={isGefactureerd ? `Factuur openen` : 'Factuur maken van deze offerte'}
-              >
-                <Receipt className="h-3.5 w-3.5" />
-                {isGefactureerd ? 'Factuur' : 'Maak factuur'}
-              </button>
-            </>
-          )
-        })()}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="h-9 w-9 rounded-lg border border-border bg-card flex items-center justify-center text-foreground/70 hover:bg-[var(--cream-bg)] hover:text-foreground transition-colors">
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={openKopieDialog}>
-              <Copy className="mr-2 h-3.5 w-3.5" />
-              Kopiëren
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleAiAnalysis}>
-              <Sparkles className="mr-2 h-3.5 w-3.5" />
-              AI Analyse
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={async () => {
-              try {
-                const oudeStatus = project.status
-                const updated = await updateProject(id!, { status: 'afgerond' })
-                setProject(updated)
-                if (user?.id) {
-                  const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
-                  logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: 'afgerond' })
-                }
-                toast.success('Project gearchiveerd')
-              } catch (err) { logger.error('Kon project niet archiveren:', err); toast.error('Kon project niet archiveren') }
-            }}>
-              <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
-              Archiveren
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
 
       {/* ══════════ DIALOGS (shared across all tabs) ══════════ */}
 

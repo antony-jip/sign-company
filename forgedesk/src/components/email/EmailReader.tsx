@@ -1881,12 +1881,18 @@ export function EmailReader({
                 </div>
               ) : (
                 <div ref={emailBodyRef} className="min-w-0 max-w-full">
-                  <div className="max-md:overflow-x-auto max-md:max-w-full">
+                  {/* Op mobiel niets laten uitsteken: een handtekening is
+                      meestal een tabel met een vaste pixelbreedte, en die duwde
+                      het bericht breder dan het scherm. max-w-full op álle
+                      afstammelingen laat zo'n tabel krimpen in plaats van de
+                      lezer horizontaal te laten scrollen. */}
+                  <div className="max-md:overflow-x-auto max-md:max-w-full max-md:[&_*]:!max-w-full">
                     <div
                       className="text-left text-[14px] leading-[1.75] text-foreground/80 break-words
                         [&>*:first-child]:!mt-0
                         [&_body]:!m-0 [&_body]:!p-0
                         [&_table]:!ml-0 [&_table]:max-w-full max-md:[&_table]:!w-full
+                        max-md:[&_td]:!whitespace-normal max-md:[&_pre]:!whitespace-pre-wrap
                         [&_td]:break-words [&_th]:break-words
                         [&_div]:!ml-0 [&_div]:max-w-full
                         [&_p]:!ml-0 [&_p]:mb-2
