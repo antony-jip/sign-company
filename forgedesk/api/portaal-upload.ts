@@ -149,10 +149,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // bestandsnaam blijft origineel in DB-display (zie insert hieronder).
     const safeName = sanitizeStorageFilename(bestandsnaam)
 
-    // Upload naar Supabase Storage
+    // Naar de private bucket, net als al het andere projectmateriaal. Dit zijn
+    // bestanden die een KLANT uploadt: foto's van een gevel, een aanleverbestand,
+    // soms een getekend akkoord. Die stonden tot nu toe in een publieke bucket
+    // met een permanente URL in de database, en waren dus voor iedereen met de
+    // link te openen, voorgoed.
     const filePath = `portaal-bestanden/${portaal.id}/${Date.now()}_${safeName}`
     const { error: uploadError } = await supabaseAdmin.storage
-      .from('portaal-bestanden')
+      .from('documenten-prive')
       .upload(filePath, buffer, {
         contentType: mime_type,
         upsert: false,
@@ -163,10 +167,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Bestand opslaan mislukt. Probeer het opnieuw.' })
     }
 
-    const { data: publicUrl } = supabaseAdmin.storage
-      .from('portaal-bestanden')
-      .getPublicUrl(filePath)
-    const url = publicUrl.publicUrl
+    // Het PAD in de database, geen opgeloste URL. portaal-get ondertekent hem
+    // voor de klant, api/bestand voor de cockpit. Bestaande rijen met een
+    // http-URL blijven ongemoeid werken; die worden aan beide kanten
+    // doorgelaten zoals ze zijn.
+    const url = filePath
 
     const thumbnail_url = mime_type.startsWith('image/') ? url : null
 
