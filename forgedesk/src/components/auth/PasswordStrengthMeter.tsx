@@ -12,26 +12,35 @@ export function PasswordStrengthMeter({ check, hasInput }: Props) {
 
   const filledBars = Math.max(1, check.strength.score)
 
+  // Kon de sterktemeting niet geladen worden, laat dan geen rode balk met
+  // "Heel zwak" staan boven een formulier dat het wachtwoord wel accepteert.
+  // De eisenlijst eronder is dan het hele verhaal.
+  const toonMeter = !check.strength.unavailable
+
   return (
     <div className="space-y-2 pt-1">
-      <div className="flex gap-1">
-        {[1, 2, 3, 4].map((level) => (
-          <div
-            key={level}
-            className={`h-1 flex-1 rounded-full transition-all ${
-              level <= filledBars ? check.strength.barColor : 'bg-muted'
-            }`}
-          />
-        ))}
-      </div>
-      <div className="flex items-center justify-between">
-        <p className={`text-[11px] font-medium ${check.strength.color}`}>
-          {check.strength.loading ? 'Beoordelen…' : check.strength.label}
-        </p>
-        {!check.strength.loading && check.strength.score < PASSWORD_MIN_ZXCVBN_SCORE && (
-          <p className="text-[11px] text-muted-foreground">Minimaal "Sterk" vereist</p>
-        )}
-      </div>
+      {toonMeter && (
+        <>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4].map((level) => (
+              <div
+                key={level}
+                className={`h-1 flex-1 rounded-full transition-all ${
+                  level <= filledBars ? check.strength.barColor : 'bg-muted'
+                }`}
+              />
+            ))}
+          </div>
+          <div className="flex items-center justify-between">
+            <p className={`text-[11px] font-medium ${check.strength.color}`}>
+              {check.strength.loading ? 'Beoordelen…' : check.strength.label}
+            </p>
+            {!check.strength.loading && check.strength.score < PASSWORD_MIN_ZXCVBN_SCORE && (
+              <p className="text-[11px] text-muted-foreground">Minimaal "Sterk" vereist</p>
+            )}
+          </div>
+        </>
+      )}
 
       <ul className="space-y-1 pt-1">
         {check.requirements.map((req) => (
@@ -48,10 +57,10 @@ export function PasswordStrengthMeter({ check, hasInput }: Props) {
         ))}
       </ul>
 
-      {check.strength.warning && check.strength.score < PASSWORD_MIN_ZXCVBN_SCORE && (
+      {toonMeter && check.strength.warning && check.strength.score < PASSWORD_MIN_ZXCVBN_SCORE && (
         <p className="text-[11px] text-[#C03A18] pt-1">{check.strength.warning}</p>
       )}
-      {check.strength.suggestions.length > 0 && check.strength.score < PASSWORD_MIN_ZXCVBN_SCORE && (
+      {toonMeter && check.strength.suggestions.length > 0 && check.strength.score < PASSWORD_MIN_ZXCVBN_SCORE && (
         <p className="text-[11px] text-muted-foreground">
           Tip: {check.strength.suggestions[0]}
         </p>

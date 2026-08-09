@@ -19,6 +19,7 @@ export function usePasswordCheck(password: string, userInputs: string[] = []): P
   const [warning, setWarning] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [unavailable, setUnavailable] = useState(false)
 
   useEffect(() => {
     if (!password) {
@@ -37,13 +38,18 @@ export function usePasswordCheck(password: string, userInputs: string[] = []): P
       setWarning(result.feedback.warning || '')
       setSuggestions(result.feedback.suggestions || [])
       setLoading(false)
+      setUnavailable(false)
     }).catch(() => {
       if (cancelled) return
+      // De chunk kwam niet binnen. Onthoud dat, anders blijft de score op 0
+      // hangen en komt niemand meer door de registratie heen.
+      zxcvbnPromise = null
+      setUnavailable(true)
       setLoading(false)
     })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [password, userInputs.join('|')])
 
-  return buildPasswordCheck(password, score, warning, suggestions, loading)
+  return buildPasswordCheck(password, score, warning, suggestions, loading, unavailable)
 }

@@ -15,6 +15,8 @@ export interface PasswordStrength {
   warning: string
   suggestions: string[]
   loading: boolean
+  /** De zxcvbn-chunk kon niet geladen worden. De vier eisen gelden dan nog wel. */
+  unavailable: boolean
 }
 
 export interface PasswordCheck {
@@ -47,6 +49,7 @@ export function buildPasswordCheck(
   zxcvbnWarning: string,
   zxcvbnSuggestions: string[],
   loading: boolean,
+  unavailable = false,
 ): PasswordCheck {
   const requirements = getRequirements(password)
   const allRequirementsMet = requirements.every((r) => r.satisfied)
@@ -62,9 +65,15 @@ export function buildPasswordCheck(
     warning: zxcvbnWarning,
     suggestions: zxcvbnSuggestions,
     loading,
+    unavailable,
   }
 
-  const isAcceptable = allRequirementsMet && !loading && effectiveScore >= PASSWORD_MIN_ZXCVBN_SCORE
+  // Laadt de zxcvbn-chunk niet, dan blijft de score op 0 staan en zou niemand
+  // zich meer kunnen registreren, hoe sterk zijn wachtwoord ook is. Een
+  // netwerkhikje mag geen aanmelding blokkeren, dus dan gelden de vier eisen.
+  const isAcceptable = unavailable
+    ? allRequirementsMet
+    : allRequirementsMet && !loading && effectiveScore >= PASSWORD_MIN_ZXCVBN_SCORE
 
   return { requirements, allRequirementsMet, strength, isAcceptable }
 }
@@ -72,11 +81,12 @@ export function buildPasswordCheck(
 export function firstBlockingError(check: PasswordCheck): string | null {
   const missing = check.requirements.find((r) => !r.satisfied)
   if (missing) return `Wachtwoord vereist: ${missing.label.toLowerCase()}`
+  if (check.strength.unavailable) return null
   if (check.strength.loading) return 'Wachtwoord wordt beoordeeld, probeer opnieuw'
   if (check.strength.score < PASSWORD_MIN_ZXCVBN_SCORE) {
     return check.strength.warning
       ? `Wachtwoord te zwak: ${check.strength.warning.toLowerCase()}`
-      : 'Wachtwoord te zwak — kies een minder voorspelbare combinatie'
+      : 'Wachtwoord te zwak. Kies een minder voorspelbare combinatie.'
   }
   return null
 }
