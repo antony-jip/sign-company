@@ -52,6 +52,13 @@ function getInitials(naam: string): string {
     .slice(0, 2)
 }
 
+const UUID_PATROON = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Een id levert geen zinnige initialen op — dan liever een vraagteken. */
+function isUuid(waarde: string): boolean {
+  return UUID_PATROON.test(waarde.trim())
+}
+
 function matchesKey(m: Medewerker, key: string, kind: ValueKind): boolean {
   return kind === 'id' ? m.id === key : m.naam === key
 }
@@ -263,7 +270,12 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
         return <UserPlus className="w-3.5 h-3.5 text-muted-foreground/70 group-hover:text-muted-foreground transition-colors" />
       }
       const avatarSlice = selectedMulti.slice(0, 3)
-      const overflow = totalSelected - avatarSlice.length
+      // Onbekende leden (verwijderd, inactief, of een waarde die niet met
+      // valueKind matcht) krijgen hun eigen grijze avatar. Ze bij de
+      // overflow-teller optellen gaf "+1" zonder ook maar één avatar ernaast,
+      // en dat is niet te lezen. Zelfde gedrag als de single-variant.
+      const orphanSlice = orphanMultiValues.slice(0, Math.max(0, 3 - avatarSlice.length))
+      const overflow = totalSelected - avatarSlice.length - orphanSlice.length
       return (
         <div className="flex items-center -space-x-1.5">
           {avatarSlice.map((m) => (
@@ -274,6 +286,15 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
               style={getAvatarStyleForMedewerker(m, pool)}
             >
               {getInitials(m.naam)}
+            </span>
+          ))}
+          {orphanSlice.map((v) => (
+            <span
+              key={v}
+              title={`${v} · niet meer actief`}
+              className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase bg-muted text-muted-foreground ring-2 ring-white select-none"
+            >
+              {isUuid(v) ? '?' : getInitials(v)}
             </span>
           ))}
           {overflow > 0 && (
