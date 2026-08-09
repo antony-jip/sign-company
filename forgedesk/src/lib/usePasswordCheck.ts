@@ -43,6 +43,12 @@ export function usePasswordCheck(password: string, userInputs: string[] = []): P
       if (cancelled) return
       // De chunk kwam niet binnen. Onthoud dat, anders blijft de score op 0
       // hangen en komt niemand meer door de registratie heen.
+      //
+      // De promise wordt vrijgegeven zodat een volgende poging het opnieuw
+      // probeert, maar reken daar niet op: de browser cachet een mislukte
+      // module-fetch per document, dus in de praktijk lukt het pas na een
+      // herlaadactie. Daarom is de terugval op de vier eisen geen noodgreep
+      // maar de route die deze sessie neemt.
       zxcvbnPromise = null
       setUnavailable(true)
       setLoading(false)

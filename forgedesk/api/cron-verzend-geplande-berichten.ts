@@ -101,6 +101,53 @@ async function getUserCreds(userId: string): Promise<UserCreds | null> {
 
 export const config = { maxDuration: 60 }
 
+// Spiegel van attachmentToegestaan in api/send-email.ts. api/-bestanden mogen
+// niets delen (Vercel serverless), dus dit staat er bewust dubbel in.
+//
+// Zonder deze controle downloadde de cron elk pad dat in de rij stond. Die rij
+// wordt door de client geschreven, dus je kon een bericht aan jezelf inplannen
+// met het pad van een ander bedrijf erin en kreeg het bestand gemaild. Erger:
+// cleanupAfter stond standaard aan, dus daarna werd het ook nog verwijderd.
+async function bijlageToegestaan(
+  bucket: string,
+  path: string,
+  orgId: string | null,
+  userId: string,
+): Promise<boolean> {
+  if (!path || path.includes('..') || path.startsWith('/') || path.includes('\\')) return false
+
+  if (bucket === 'documenten-prive') {
+    const seg = path.split('/')
+    if (seg[0] === 'email-bijlagen' || seg[0] === 'email-bijlagen-groot') return seg[1] === userId
+    if (!orgId) return false
+    const { data } = await supabaseAdmin
+      .from('documenten')
+      .select('id')
+      .eq('storage_path', path)
+      .eq('organisatie_id', orgId)
+      .maybeSingle()
+    return !!data
+  }
+
+  if (bucket === 'facturen') {
+    if (!orgId) return false
+    const { data } = await supabaseAdmin
+      .from('facturen').select('id')
+      .eq('pdf_storage_path', path).eq('organisatie_id', orgId).maybeSingle()
+    return !!data
+  }
+
+  if (bucket === 'factuur-bijlagen') {
+    if (!orgId) return false
+    const { data } = await supabaseAdmin
+      .from('factuur_bijlagen').select('id')
+      .eq('storage_path', path).eq('organisatie_id', orgId).maybeSingle()
+    return !!data
+  }
+
+  return false
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -215,9 +262,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }>
         const cleanupTargets: Array<{ bucket: string; path: string }> = []
         const built: Array<{ filename: string; content: Buffer; cid?: string; contentType?: string; contentDisposition?: 'inline' }> = [...inlineAttachments]
+        const { data: afzenderProfiel } = await supabaseAdmin
+          .from('profiles').select('organisatie_id').eq('id', bericht.user_id).maybeSingle()
+        const afzenderOrg = (afzenderProfiel?.organisatie_id as string | null) ?? null
+
         for (const a of bijlagen) {
           if (a.storagePath) {
             const bucket = a.bucket ?? 'documenten-prive'
+            if (!(await bijlageToegestaan(bucket, a.storagePath, afzenderOrg, bericht.user_id))) {
+              throw new Error(`Geen toegang tot bijlage "${a.filename}"`)
+            }
             const { data, error: dlError } = await supabaseAdmin.storage.from(bucket).download(a.storagePath)
             if (dlError || !data) {
               throw new Error(`Bijlage "${a.filename}" kon niet worden opgehaald`)
