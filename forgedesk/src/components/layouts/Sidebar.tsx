@@ -262,12 +262,10 @@ export function Sidebar() {
                 <Icon
                   className={cn(
                     'h-[19px] w-[19px] transition-colors duration-200',
-                    active
-                      ? 'text-white'
-                      : 'text-[#8FA0A4] dark:text-[#6A8085] group-hover/rail:text-[var(--mc)]',
+                    active ? 'text-white' : 'doen-nav-icon',
                   )}
                   style={active ? undefined : ({ ['--mc']: item.color } as React.CSSProperties)}
-                  strokeWidth={active ? 2.2 : 1.6}
+                  strokeWidth={active ? 2.2 : 1.8}
                 />
               </div>
             </NavLink>
@@ -319,14 +317,14 @@ export function Sidebar() {
           <span className="doen-sidebar-flame-accent z-10" />
         )}
 
-        {/* Icon · bare glyph; idle muted, active + hover in the module colour */}
+        {/* Icon · draagt de modulekleur, actief vol, in rust met grijs gemengd */}
         <Icon
           className={cn(
             'relative z-10 h-[18px] w-[18px] flex-shrink-0 transition-colors duration-200',
-            !active && 'text-petrol/50 dark:text-[#7FB5BF]/55 group-hover/nav:text-[var(--mc)]',
+            !active && 'doen-nav-icon',
           )}
           style={active ? { color: item.color } : ({ ['--mc']: item.color } as React.CSSProperties)}
-          strokeWidth={1.6}
+          strokeWidth={active ? 2 : 1.8}
         />
 
         {/* Label */}
@@ -503,7 +501,7 @@ export function Sidebar() {
                         aria-pressed={overigOpen}
                         className={cn(
                           'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
-                          overigOpen ? 'text-petrol bg-petrol/[0.08]' : 'text-muted-foreground/45 hover:text-petrol hover:bg-black/[0.03]',
+                          overigOpen ? 'text-petrol bg-petrol/[0.08]' : 'text-muted-foreground/70 hover:text-petrol hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
                         )}
                       >
                         <ChevronRight className="w-4 h-4" />
@@ -522,7 +520,7 @@ export function Sidebar() {
                       aria-pressed={isPinned}
                       className={cn(
                         'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
-                        isPinned ? 'text-petrol/70 hover:text-petrol' : 'text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-black/[0.03]',
+                        isPinned ? 'text-petrol/70 hover:text-petrol' : 'text-muted-foreground/70 hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
                       )}
                     >
                       {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
@@ -533,43 +531,52 @@ export function Sidebar() {
               </TooltipProvider>
             </div>
           ) : (
-            <div className="flex items-center gap-0.5 mx-4 mb-1">
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => setEditMode(v => !v)}
-                      aria-pressed={editMode}
-                      className={cn(
-                        'flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-                        editMode ? 'text-petrol bg-petrol/[0.08]' : 'text-muted-foreground/45 hover:text-foreground/80 hover:bg-black/[0.03]',
-                      )}
-                    >
-                      {editMode ? <Check className="w-4 h-4" /> : <Pencil className="w-[15px] h-[15px]" />}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">{editMode ? 'Klaar met aanpassen' : 'Menu aanpassen'}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={togglePinned}
-                      aria-pressed={isPinned}
-                      className={cn(
-                        'flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-                        isPinned ? 'text-petrol/80 hover:text-petrol bg-petrol/[0.05]' : 'text-muted-foreground/45 hover:text-foreground/80 hover:bg-black/[0.03]',
-                      )}
-                    >
-                      {isPinned ? <PinOff className="w-[15px] h-[15px]" /> : <Pin className="w-[15px] h-[15px]" />}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">{isPinned ? 'Menu uitklappen' : 'Inklappen tot iconen'}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            /* Micro-label erbij: twee losse iconen zonder tekst lazen als
+               onafgemaakt. Nu is het één herkenbare controlgroep. */
+            <div className="flex items-center gap-1 mx-5 mb-1">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.09em] text-muted-foreground/60 select-none">
+                Menu
+              </span>
+              <div className="ml-auto flex items-center gap-0.5">
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setEditMode(v => !v)}
+                        aria-pressed={editMode}
+                        aria-label={editMode ? 'Klaar met aanpassen' : 'Menu aanpassen'}
+                        className={cn(
+                          'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
+                          editMode ? 'text-petrol bg-petrol/[0.08]' : 'text-muted-foreground/70 hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
+                        )}
+                      >
+                        {editMode ? <Check className="w-4 h-4" /> : <Pencil className="w-[15px] h-[15px]" />}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">{editMode ? 'Klaar met aanpassen' : 'Menu aanpassen'}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={togglePinned}
+                        aria-pressed={isPinned}
+                        aria-label={isPinned ? 'Menu uitklappen' : 'Inklappen tot iconen'}
+                        className={cn(
+                          'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
+                          isPinned ? 'text-petrol/80 hover:text-petrol bg-petrol/[0.05]' : 'text-muted-foreground/70 hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
+                        )}
+                      >
+                        {isPinned ? <PinOff className="w-[15px] h-[15px]" /> : <Pin className="w-[15px] h-[15px]" />}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">{isPinned ? 'Menu uitklappen' : 'Inklappen tot iconen'}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           ))}
 

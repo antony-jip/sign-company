@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Hammer, FileText, Building2, Truck, Wrench, Ruler, Wand2,
+  LayoutDashboard, Hammer, FileText, Building2, Truck, ClipboardCheck, Ruler, Wand2,
   Banknote, Inbox, TrendingUp, Calendar, ListChecks, Mail, MessageSquare, Globe,
   SlidersHorizontal, LifeBuoy, Newspaper,
   type LucideIcon,
@@ -27,7 +27,7 @@ const WERK_ITEMS: NavItem[] = [
   { label: 'Offertes', icon: FileText, path: '/offertes', color: '#F15025' },
   { label: 'Klanten', icon: Building2, path: '/klanten', color: '#3A6B8C' },
   { label: 'Leveranciers', icon: Truck, path: '/leveranciers', color: '#3A6B8C' },
-  { label: 'Werkbonnen', icon: Wrench, path: '/werkbonnen', color: '#C44830' },
+  { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen', color: '#C44830' },
   { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#F15025' },
   { label: 'Studio', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
 ]
