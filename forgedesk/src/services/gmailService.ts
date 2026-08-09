@@ -20,6 +20,30 @@ async function getAuthToken(): Promise<string> {
 
 // ============ AUTHENTICATION ============
 
+/**
+ * Of deze gebruiker een mailbox gekoppeld heeft. Versturen loopt volledig via
+ * de eigen SMTP-gegevens (api/send-email leest user_email_settings), er is geen
+ * systeem-afzender als vangnet. Zonder koppeling faalt versturen dus, en dat
+ * merkte je pas nadat de offerte af was en de PDF al gegenereerd.
+ */
+export async function heeftMailkoppeling(): Promise<boolean> {
+  if (!supabase) return false
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return false
+  const { data, error } = await supabase
+    .from('user_email_settings')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .maybeSingle()
+  if (error) {
+    // Bij twijfel niet blokkeren: de verzendpoging geeft alsnog een duidelijke
+    // melding, en een valse waarschuwing is erger dan een late.
+    console.warn('heeftMailkoppeling: kon niet vaststellen', error)
+    return true
+  }
+  return !!data
+}
+
 export async function authenticateGmail(): Promise<boolean> {
   // Authentication is now handled via Supabase auth + user_email_settings
   if (!supabase) return false

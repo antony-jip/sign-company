@@ -64,7 +64,7 @@ import {
   FolderOpen,
   AlertTriangle,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject, syncOfferteItems, getRecentOfferteItemSuggesties, getNextOfferteNummer, OfferteConflictError, createContactpersoonDB, getContactpersonenByKlant } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject, syncOfferteItems, getRecentOfferteItemSuggesties, getNextOfferteNummer, OfferteConflictError, createContactpersoonDB, getContactpersonenByKlant, heeftMailkoppeling } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -1606,6 +1606,19 @@ export function QuoteCreation() {
     setTimeout(() => email.emailSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
   }
 
+  // Versturen loopt via de eigen mailkoppeling; zonder die koppeling faalt het.
+  // Dat merkte je pas nadat de offerte af was, de PDF gegenereerd en de bijlage
+  // geupload. Daarom vooraf checken, zodra het verzendpaneel opengaat.
+  const [mailNietGekoppeld, setMailNietGekoppeld] = useState(false)
+  useEffect(() => {
+    if (!email.showEmailCompose) return
+    let afgebroken = false
+    heeftMailkoppeling().then((gekoppeld) => {
+      if (!afgebroken) setMailNietGekoppeld(!gekoppeld)
+    })
+    return () => { afgebroken = true }
+  }, [email.showEmailCompose])
+
   const handleVerstuurOfferte = async () => {
     if (!user?.id || !selectedKlant) {
       toast.error('Selecteer eerst een klant')
@@ -2396,6 +2409,14 @@ export function QuoteCreation() {
                 {/* Footer */}
                 <div className="flex items-center justify-between px-5 py-3 border-t border-border/60 bg-background/50">
                   <button onClick={() => email.setShowEmailCompose(false)} className="text-sm text-muted-foreground hover:text-foreground/70 transition-colors">Annuleren</button>
+                  {mailNietGekoppeld && (
+                    <a
+                      href="/instellingen?tab=email"
+                      className="text-sm font-medium text-flame hover:underline"
+                    >
+                      Koppel eerst je mailbox om te kunnen versturen
+                    </a>
+                  )}
                   <button
                     onClick={handleSendEmailInline}
                     disabled={!email.emailTo.trim() || !email.emailSubject.trim() || email.isSendingEmail || email.emailExtraBijlagen.reduce((s, b) => s + b.grootte, 0) > MAX_BIJLAGEN_BYTES}

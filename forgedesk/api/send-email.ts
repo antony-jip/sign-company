@@ -185,7 +185,7 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
     .single()
 
   if (error || !data?.gmail_address || !data?.encrypted_app_password) {
-    throw new Error('Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.')
+    throw new Error('Geen email instellingen gevonden. Koppel je mailbox onder Instellingen > Koppelingen > E-mail.')
   }
 
   return {
@@ -228,7 +228,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       smtp_host = req.body.smtp_host || 'smtp.gmail.com'
       smtp_port = req.body.smtp_port || 587
       if (!gmail_address || !app_password) {
-        return res.status(400).json({ error: 'Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.' })
+        return res.status(400).json({ error: 'Geen email instellingen gevonden. Koppel je mailbox onder Instellingen > Koppelingen > E-mail.' })
       }
     }
 

@@ -48,6 +48,8 @@ export {
   getBedrijfssluitingsdagen, createBedrijfssluitingsdag, deleteBedrijfssluitingsdag,
 } from './planningService'
 
+export { heeftMailkoppeling } from './gmailService'
+
 export {
   getEmails, getEmail, getEmailBody, searchEmailsFTS, createEmail, updateEmail, deleteEmail,
   cacheEmailsToSupabase, getCachedEmails,
