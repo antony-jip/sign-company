@@ -31,7 +31,19 @@ export default defineConfig(({ mode, command }) => {
     }
   }
 
+  // Vercel zet het commit-sha in de build-omgeving, maar niet met een
+  // VITE_-prefix, dus de client ziet hem niet. Zonder deze injectie staat er in
+  // Sentry alleen een bundelhash en moet je gokken uit welke deploy een fout
+  // komt. Dat kostte vandaag echte tijd.
+  const release =
+    process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ||
+    process.env.VITE_RELEASE ||
+    'lokaal'
+
   return {
+  define: {
+    __APP_RELEASE__: JSON.stringify(release),
+  },
   plugins: [
     react(),
     // Virtual module plugin to stub framer-motion

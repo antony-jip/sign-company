@@ -10,6 +10,9 @@ if (SENTRY_DSN) {
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: import.meta.env.MODE,
+    // Zonder release staat er in Sentry alleen een bundelhash en is "komt dit
+    // uit de nieuwe deploy?" niet te beantwoorden. Zie de define in vite.config.
+    release: __APP_RELEASE__,
     tracesSampleRate: 0.1,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,

@@ -11,3 +11,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/** Ingevuld door de define in vite.config.ts: het commit-sha van deze deploy. */
+declare const __APP_RELEASE__: string

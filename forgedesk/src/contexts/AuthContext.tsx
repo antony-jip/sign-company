@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useNavigate, useLocation } from 'react-router-dom'
 import { signIn, signUp, signOut, getSession, onAuthStateChange, type AuthSession } from '@/services/authService'
 import { wisBestandsCache } from '@/services/storageService'
+import * as Sentry from '@sentry/react'
 import { getProfile, getOrganisatie, createMedewerker } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import { clearQueryCache } from '@/lib/queryCache'
@@ -274,8 +275,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // organisatie nooit blijft hangen. Op de eerste mount is de cache
     // toch leeg, dus dit is onschadelijk.
     clearQueryCache()
-      wisBestandsCache()
-  }, [organisatieId])
+    wisBestandsCache()
+
+    // De organisatie als tag in Sentry. Geen persoonsgegeven (het is een
+    // bedrijfs-uuid) en het beantwoordt de vraag die je bij elke melding hebt:
+    // treft dit iedereen of één klant? Bij een team van twintig is dat het
+    // verschil tussen een bug en een schaalprobleem.
+    Sentry.setTag('organisatie', organisatieId ?? 'geen')
+    Sentry.setTag('rol', userRol ?? 'onbekend')
+  }, [organisatieId, userRol])
 
   const logout = async () => {
     try {
@@ -287,6 +295,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null)
       setOrganisatieId(null)
       setUserRol(null)
+      Sentry.setTag('organisatie', 'geen')
       setOrganisatie(null)
     }
   }

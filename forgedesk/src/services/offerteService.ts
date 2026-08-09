@@ -16,6 +16,7 @@ import type {
 } from '@/types'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { partitionOfferteItemSync } from '@/utils/offerteItemSync'
+import * as Sentry from '@sentry/react'
 
 export { partitionOfferteItemSync }
 
@@ -272,6 +273,17 @@ export async function updateOfferte(id: string, updates: Partial<Offerte>, expec
         .eq('id', id)
         .maybeSingle()
       if (!huidig) throw new Error('Offerte niet gevonden')
+
+      // Dit is het enige punt in de app waar gelijktijdig bewerken zichtbaar
+      // wordt. Meld het, want anders is de vraag "leveren twintig gebruikers
+      // botsingen op?" alleen met een gevoel te beantwoorden. Vuurt dit nooit,
+      // dan is optimistic locking op de andere modules geen haast. Vuurt het
+      // wel, dan weet je op welke offerte en bij welke organisatie.
+      Sentry.captureMessage('Offerte gelijktijdig bewerkt', {
+        level: 'info',
+        tags: { bron: 'optimistic-locking', entiteit: 'offerte' },
+      })
+
       throw new OfferteConflictError(
         'Deze offerte is ondertussen door iemand anders gewijzigd. Herlaad de pagina om de laatste versie te zien.',
         huidig

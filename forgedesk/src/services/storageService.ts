@@ -1,4 +1,5 @@
 import supabase, { isSupabaseConfigured } from './supabaseClient'
+import * as Sentry from '@sentry/react'
 import { getOrgId } from './supabaseHelpers'
 import { safeSetItem } from '@/utils/localStorageUtils'
 
@@ -173,11 +174,26 @@ async function vraagOndertekendeUrl(path: string): Promise<string> {
       headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ pad: path }),
     })
-    if (!res.ok) return ''
+    if (!res.ok) {
+      // 404 is een normale uitkomst: het bestand hoort niet bij jouw
+      // organisatie of bestaat niet meer. Alles daarboven is een storing en
+      // hoort zichtbaar te zijn, ook al ziet de gebruiker alleen een lege plek.
+      if (res.status !== 404) {
+        Sentry.captureMessage('Bestand ophalen mislukt', {
+          level: 'warning',
+          tags: { bron: 'api/bestand', status: String(res.status) },
+        })
+      }
+      return ''
+    }
     const { url, geldigTot } = await res.json()
     if (url) urlCache.set(path, { url, geldigTot: geldigTot ?? Date.now() + 3600_000 })
     return url || ''
-  } catch {
+  } catch (err) {
+    // Stil voor de gebruiker, zichtbaar voor ons. Zonder deze melding is een
+    // kapot bestand onzichtbaar: de lege plek valt niemand op tot een klant
+    // erover belt.
+    Sentry.captureException(err, { tags: { bron: 'api/bestand' } })
     return ''
   }
 }
