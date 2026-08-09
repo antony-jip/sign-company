@@ -36,9 +36,12 @@ const MOLLIE_API_KEY = process.env.MOLLIE_API_KEY_LIVE || process.env.MOLLIE_API
 // Prijs staat als ex-btw-bedrag; wat Mollie afschrijft is incl btw. Alleen het
 // ex-bedrag aanpassen, het incl-bedrag volgt daaruit — anders lopen de twee
 // uiteen en incasseren we iets anders dan we factureren.
-const ABONNEMENT_BEDRAG_EXCL = 129
+// Terugval als organisaties.abonnement_bedrag_excl leeg is (migratie 172).
+const STANDAARD_BEDRAG_EXCL = 129
 const BTW_PERCENTAGE = 21
-const ABONNEMENT_BEDRAG = (ABONNEMENT_BEDRAG_EXCL * (1 + BTW_PERCENTAGE / 100)).toFixed(2)
+const ABONNEMENT_BEDRAG = (STANDAARD_BEDRAG_EXCL * (1 + BTW_PERCENTAGE / 100)).toFixed(2)
+
+
 
 // Profiel waar de factuurgegevens van doen. zelf op staan (bedrijfsnaam, adres,
 // KVK, btw-nummer, IBAN, logo). Overschrijfbaar zonder deploy via de env-var.
@@ -106,6 +109,23 @@ function getSupabase() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
+}
+
+/** Het maandbedrag incl btw voor deze organisatie, uit de staffel (migratie 172). */
+async function bedragVoorOrganisatie(organisatieId: string): Promise<string> {
+  const { data, error } = await getSupabase()
+    .from('organisaties')
+    .select('abonnement_bedrag_excl')
+    .eq('id', organisatieId)
+    .maybeSingle()
+  if (error) {
+    // Niet doorgaan op een gok: een verkeerd bedrag in een recurring
+    // subscription incasseert elke maand opnieuw het verkeerde bedrag.
+    console.error('bedragVoorOrganisatie: organisatie onleesbaar', organisatieId, error)
+    throw new Error('Kon het abonnementsbedrag niet vaststellen')
+  }
+  const excl = Number(data?.abonnement_bedrag_excl ?? STANDAARD_BEDRAG_EXCL)
+  return (excl * (1 + BTW_PERCENTAGE / 100)).toFixed(2)
 }
 
 // Eén maand vooruit, geklemd op de laatste dag van de doelmaand
@@ -629,6 +649,12 @@ async function handleAbonnementStart(payment: MolliePayment, webhookUrl: string,
     return res.status(200).json({ received: true })
   }
 
+  // Bewust vóór de claim hieronder: gooit deze lezing, dan is er nog niets
+  // gemuteerd en levert Mollie de webhook gewoon opnieuw. Zou hij ná de claim
+  // staan, dan bleef mollie_subscription_id op pending_ hangen en zag de klant
+  // tussentijds een organisatie zonder geldig abonnement.
+  const maandBedrag = await bedragVoorOrganisatie(organisatieId)
+
   if (!payment.customerId) {
     console.error(`[billing-webhook] eerste betaling ${payment.id} zonder customerId`)
     Sentry.captureException(new Error('Mollie first payment zonder customerId'), { extra: { paymentId: payment.id } })
@@ -722,7 +748,7 @@ async function handleAbonnementStart(payment: MolliePayment, webhookUrl: string,
         // dezelfde payment
         headers: { ...mollieHeaders, 'Idempotency-Key': `sub_${payment.id}` },
         body: JSON.stringify({
-          amount: { currency: 'EUR', value: ABONNEMENT_BEDRAG },
+          amount: { currency: 'EUR', value: maandBedrag },
           interval: '1 month',
           startDate: startDatum,
           description: 'doen. abonnement',

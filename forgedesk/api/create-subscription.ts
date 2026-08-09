@@ -9,9 +9,13 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 // Prijs staat als ex-btw-bedrag; wat Mollie afschrijft is incl btw. Alleen het
 // ex-bedrag aanpassen, het incl-bedrag volgt daaruit — anders lopen de twee
 // uiteen en incasseren we iets anders dan we factureren.
-const ABONNEMENT_BEDRAG_EXCL = 129
+// Terugval als organisaties.abonnement_bedrag_excl leeg is (migratie 172).
+const STANDAARD_BEDRAG_EXCL = 129
 const BTW_PERCENTAGE = 21
-const ABONNEMENT_BEDRAG = (ABONNEMENT_BEDRAG_EXCL * (1 + BTW_PERCENTAGE / 100)).toFixed(2)
+
+function bedragIncl(exclusief: number): string {
+  return (exclusief * (1 + BTW_PERCENTAGE / 100)).toFixed(2)
+}
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -54,13 +58,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: org, error: orgError } = await supabaseAdmin
       .from('organisaties')
-      .select('naam, mollie_customer_id, mollie_subscription_id, abonnement_status')
+      .select('naam, mollie_customer_id, mollie_subscription_id, abonnement_status, abonnement_bedrag_excl')
       .eq('id', organisatie_id)
       .single()
 
     if (orgError || !org) {
       return res.status(404).json({ error: 'Organisatie niet gevonden' })
     }
+
+    const bedragExcl = Number(org.abonnement_bedrag_excl ?? STANDAARD_BEDRAG_EXCL)
+    const ABONNEMENT_BEDRAG = bedragIncl(bedragExcl)
 
     const mollieHeaders = {
       'Authorization': `Bearer ${MOLLIE_API_KEY}`,

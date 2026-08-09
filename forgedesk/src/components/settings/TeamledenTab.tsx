@@ -110,7 +110,7 @@ function resizeImage(file: File, maxSize = 200): Promise<Blob> {
 }
 
 export function TeamledenTab() {
-  const { user, organisatieId } = useAuth()
+  const { user, organisatieId, organisatie } = useAuth()
   const [activeTab, setActiveTab] = useState<TeamTab>('actief')
   const [teamleden, setTeamleden] = useState<Profile[]>([])
   const [uitnodigingen, setUitnodigingen] = useState<Uitnodiging[]>([])
@@ -183,6 +183,15 @@ export function TeamledenTab() {
 
   const actieveleden = teamleden.filter(m => m.status !== 'gedeactiveerd')
   const gedeactiveerd = teamleden.filter(m => m.status === 'gedeactiveerd')
+
+  // Zelfde telling als api/invite-team-member: actieve profielen plus geldige
+  // uitnodigingen. Gedeactiveerde leden bezetten geen plek.
+  const maxGebruikers = Number(organisatie?.max_gebruikers ?? 10)
+  const geldigeUitnodigingen = uitnodigingen.filter(
+    (u) => !u.verloopt_op || new Date(u.verloopt_op) > new Date()
+  )
+  const bezetteePlekken = actieveleden.length + geldigeUitnodigingen.length
+  const plekkenVol = bezetteePlekken >= maxGebruikers
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) { toast.error('Vul een e-mailadres in'); return }
@@ -281,11 +290,21 @@ export function TeamledenTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-[20px] font-bold tracking-[-0.03em] text-foreground font-display">Teamleden</h2>
-          <p className="text-[13px] text-muted-foreground">Beheer wie toegang heeft tot Doen.</p>
+          <p className="text-[13px] text-muted-foreground">
+            Beheer wie toegang heeft tot Doen. ·{' '}
+            <span className={plekkenVol ? 'text-flame font-medium' : undefined}>
+              {bezetteePlekken} van {maxGebruikers} plekken in gebruik
+            </span>
+          </p>
         </div>
         <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5 bg-petrol hover:bg-petrol/90 text-white">
+            <Button
+              size="sm"
+              disabled={plekkenVol}
+              title={plekkenVol ? `Je abonnement heeft ${maxGebruikers} plekken en die zijn allemaal bezet.` : undefined}
+              className="gap-1.5 bg-petrol hover:bg-petrol/90 text-white"
+            >
               <UserPlus className="w-4 h-4" />
               Teamlid uitnodigen
             </Button>
@@ -316,9 +335,13 @@ export function TeamledenTab() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin · Volledige toegang</SelectItem>
-                    <SelectItem value="medewerker">Medewerker · Standaard toegang</SelectItem>
-                    <SelectItem value="monteur">Monteur · Alleen werkbonnen</SelectItem>
+                    {/* De rollen sturen wel het beheer van teamleden aan (alleen
+                        admin mag uitnodigen), maar beperken nog niet wat iemand
+                        in de app ziet. Geen toegangsbelofte doen die niet
+                        waargemaakt wordt. */}
+                    <SelectItem value="admin">Admin · Beheert het team</SelectItem>
+                    <SelectItem value="medewerker">Medewerker</SelectItem>
+                    <SelectItem value="monteur">Monteur</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -598,7 +621,7 @@ interface UitnodigingRowProps {
 function UitnodigingRow({ uitnodiging, onCancel }: UitnodigingRowProps) {
   const rol = uitnodiging.rol || 'medewerker'
   const emailInitials = uitnodiging.email.substring(0, 2).toUpperCase()
-  const expiresAt = uitnodiging.expires_at ? new Date(uitnodiging.expires_at) : null
+  const expiresAt = uitnodiging.verloopt_op ? new Date(uitnodiging.verloopt_op) : null
   const isExpired = expiresAt ? expiresAt < new Date() : false
 
   return (
