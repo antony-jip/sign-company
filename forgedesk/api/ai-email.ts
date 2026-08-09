@@ -229,37 +229,18 @@ async function updateUsage(userId: string, inputTokens: number, outputTokens: nu
   const maand = getCurrentMonth()
   const tarief = TARIEVEN[model] || TARIEVEN['claude-sonnet-5']
   const kosten = ((inputTokens / 1_000_000 * tarief.in) + (outputTokens / 1_000_000 * tarief.uit) + (zoekopdrachten * WEB_SEARCH_TARIEF_USD)) * USD_NAAR_EUR
-
-  const { data: existing } = await supabase
-    .from('ai_usage')
-    .select('id, aantal_calls, input_tokens, output_tokens, geschatte_kosten')
-    .eq('user_id', userId)
-    .eq('maand', maand)
-    .single()
-
-  if (existing) {
-    await supabase
-      .from('ai_usage')
-      .update({
-        aantal_calls: (existing.aantal_calls || 0) + 1,
-        input_tokens: (existing.input_tokens || 0) + inputTokens,
-        output_tokens: (existing.output_tokens || 0) + outputTokens,
-        geschatte_kosten: Number(((existing.geschatte_kosten || 0) + kosten).toFixed(4)),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existing.id)
-  } else {
-    await supabase
-      .from('ai_usage')
-      .insert({
-        user_id: userId,
-        maand,
-        aantal_calls: 1,
-        input_tokens: inputTokens,
-        output_tokens: outputTokens,
-        geschatte_kosten: Number(kosten.toFixed(4)),
-      })
-  }
+  // Atomair bijschrijven via de RPC (migratie 178), zelfde reden als bij de
+  // org-teller: een read-modify-write laat twee gelijktijdige calls over elkaar
+  // heen schrijven en de teller loopt structureel achter.
+  const { error } = await supabase.rpc('ai_usage_bijschrijf', {
+    p_user_id: userId,
+    p_maand: maand,
+    p_input_tokens: inputTokens,
+    p_output_tokens: outputTokens,
+    p_kosten: Number(kosten.toFixed(4)),
+    p_calls: 1,
+  })
+  if (error) console.error('updateUsage: bijschrijven mislukt', userId, error)
 }
 
 function buildSystemPrompt(action: string, context: DaanContext): string {
