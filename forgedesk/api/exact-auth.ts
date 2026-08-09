@@ -1,6 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createHmac } from 'crypto'
+import * as Sentry from '@sentry/node'
+
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0,
+    sendDefaultPii: false,
+  })
+}
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -166,6 +176,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
     console.error('Exact auth error:', message)
+    Sentry.captureException(error, { tags: { route: 'exact-auth' } })
     // Ook hier geen JSON: deze catch vangt óók een verlopen sessie, en dan stond
     // de gebruiker met {"error":"Ongeldige sessie"} op een blanke pagina.
     const reason = message === 'Niet geautoriseerd' || message === 'Ongeldige sessie' ? 'sessie' : 'unknown'
