@@ -248,29 +248,34 @@ export class OfferteConflictError extends Error {
 export async function updateOfferte(id: string, updates: Partial<Offerte>, expectedUpdatedAt?: string): Promise<Offerte> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    // Optimistic locking: check of de offerte niet tussentijds is gewijzigd
+    // Optimistic locking in één statement. De vorige opzet las eerst
+    // updated_at en schreef daarna, met 2000 ms speling. Dat had twee gaten:
+    // tussen lezen en schrijven konden twee opslagacties allebei door de check
+    // komen, en een wijziging van een collega binnen die twee seconden werd
+    // zonder waarschuwing overschreven. Door de voorwaarde in de UPDATE zelf te
+    // zetten kan er niets meer tussen vallen: het is de database die beslist.
     if (expectedUpdatedAt) {
-      const { data: current, error: fetchErr } = await supabase
+      const { data: bijgewerkt, error } = await supabase
         .from('offertes')
-        .select('updated_at')
+        .update(sanitizeDates({ ...updates, updated_at: now() }))
+        .eq('id', id)
+        .eq('updated_at', expectedUpdatedAt)
+        .select()
+        .maybeSingle()
+      if (error) throw error
+      if (bijgewerkt) return bijgewerkt
+
+      // Nul rijen geraakt: of iemand was ons voor, of de offerte bestaat niet.
+      const { data: huidig } = await supabase
+        .from('offertes')
+        .select('*')
         .eq('id', id)
         .maybeSingle()
-      if (fetchErr) throw fetchErr
-      if (!current) throw new Error('Offerte niet gevonden')
-
-      const serverTime = new Date(current.updated_at).getTime()
-      const expectedTime = new Date(expectedUpdatedAt).getTime()
-      if (Math.abs(serverTime - expectedTime) > 2000) {
-        const { data: fullCurrent } = await supabase
-          .from('offertes')
-          .select('*')
-          .eq('id', id)
-          .maybeSingle()
-        throw new OfferteConflictError(
-          'Deze offerte is ondertussen door iemand anders gewijzigd. Herlaad de pagina om de laatste versie te zien.',
-          fullCurrent
-        )
-      }
+      if (!huidig) throw new Error('Offerte niet gevonden')
+      throw new OfferteConflictError(
+        'Deze offerte is ondertussen door iemand anders gewijzigd. Herlaad de pagina om de laatste versie te zien.',
+        huidig
+      )
     }
 
     const { data, error } = await supabase
