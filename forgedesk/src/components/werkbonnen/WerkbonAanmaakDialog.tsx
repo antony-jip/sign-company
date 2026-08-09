@@ -16,7 +16,6 @@ import type { Offerte, OfferteItem, Klant } from '@/types'
 import {
   createWerkbon, createWerkbonItem, createWerkbonAfbeelding,
 } from '@/services/supabaseService'
-import { downloadFile } from '@/services/storageService'
 import { logCreate } from '@/utils/auditLogger'
 
 interface Props {
@@ -100,10 +99,10 @@ export function WerkbonAanmaakDialog({ open, onOpenChange, offerte, items, klant
 
         // Kopieer afbeeldingen van het offerte-item (resolve storage paths naar display URLs)
         if (offerteItem.foto_url) {
-          let resolvedUrl = offerteItem.foto_url
-          if (!resolvedUrl.startsWith('data:') && !resolvedUrl.startsWith('http')) {
-            try { resolvedUrl = await downloadFile(resolvedUrl) } catch (err) { /* skip */ }
-          }
+          // Neem het storage-pad over zoals het is. resolveWerkbonUrl ondertekent
+          // het bij het tonen; hier oplossen zette een permanente publieke URL
+          // in de database (2 van de 70 rijen zijn zo ontstaan).
+          const resolvedUrl = offerteItem.foto_url
           if (resolvedUrl) {
             await createWerkbonAfbeelding({
               werkbon_item_id: werkbonItem.id,
@@ -114,10 +113,7 @@ export function WerkbonAanmaakDialog({ open, onOpenChange, offerte, items, klant
           }
         }
         if (offerteItem.bijlage_url && offerteItem.bijlage_type?.startsWith('image/')) {
-          let resolvedUrl = offerteItem.bijlage_url
-          if (!resolvedUrl.startsWith('data:') && !resolvedUrl.startsWith('http')) {
-            try { resolvedUrl = await downloadFile(resolvedUrl) } catch (err) { /* skip */ }
-          }
+          const resolvedUrl = offerteItem.bijlage_url
           if (resolvedUrl) {
             await createWerkbonAfbeelding({
               werkbon_item_id: werkbonItem.id,
