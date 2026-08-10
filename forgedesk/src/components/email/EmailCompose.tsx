@@ -226,7 +226,6 @@ export function EmailCompose({
 
   // Build signature HTML
   const signatureHtml = useMemo(() => {
-    const imgHeight = handtekeningAfbeeldingGrootte ?? 64
     const parts: string[] = []
     if (emailHandtekening) {
       parts.push(handtekeningNaarHtml(emailHandtekening))
@@ -234,8 +233,7 @@ export function EmailCompose({
     const imgHtml = handtekeningAfbeeldingHtml({
       url: handtekeningAfbeelding,
       link: handtekeningAfbeeldingLink,
-      hoogte: imgHeight,
-      maxBreedte: Math.round(imgHeight * 2.5),
+      breedte: handtekeningAfbeeldingGrootte,
     })
     if (imgHtml) {
       parts.push(imgHtml)
@@ -1329,7 +1327,7 @@ export function EmailCompose({
               // een vaste pixelbreedte, en die duwde het hele opstelvenster
               // breder dan het scherm. Met een max-width krimpt zo'n tabel mee
               // in plaats van eruit te steken.
-              className="min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 break-words min-w-0 max-w-full [&_*]:max-w-full [&_table]:!w-auto [&_td]:whitespace-normal [&_img]:max-w-[200px] [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2 [&_a]:break-words"
+              className="min-h-[400px] px-0 py-4 text-[15px] leading-[1.75] text-foreground border-none outline-none ring-0 break-words min-w-0 max-w-full [&_*]:max-w-full [&_table]:!w-auto [&_td]:whitespace-normal [&_img]:max-w-[200px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-0.5 [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2 [&_a]:break-words"
               data-placeholder="Schrijf je bericht..."
               style={{ caretColor: '#1A535C', boxShadow: 'none', outline: 'none' }}
               onInput={() => {

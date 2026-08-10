@@ -177,7 +177,6 @@ export function EmailReader({
 
   // Build signature HTML
   const signatureHtml = useMemo(() => {
-    const imgHeight = handtekeningAfbeeldingGrootte ?? 64
     const parts: string[] = []
     if (emailHandtekening) {
       parts.push(handtekeningNaarHtml(emailHandtekening))
@@ -185,8 +184,7 @@ export function EmailReader({
     const imgHtml = handtekeningAfbeeldingHtml({
       url: handtekeningAfbeelding,
       link: handtekeningAfbeeldingLink,
-      hoogte: imgHeight,
-      maxBreedte: Math.round(imgHeight * 2.5),
+      breedte: handtekeningAfbeeldingGrootte,
     })
     if (imgHtml) {
       parts.push(imgHtml)
@@ -1231,7 +1229,7 @@ export function EmailReader({
               ref={editorRef}
               contentEditable
               suppressContentEditableWarning
-              className="min-h-[360px] md:min-h-[calc(100dvh-380px)] py-5 px-4 md:px-6 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[400px] [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2 empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/80 empty:before:pointer-events-none"
+              className="min-h-[360px] md:min-h-[calc(100dvh-380px)] py-5 px-4 md:px-6 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[400px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-0.5 [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2 empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/80 empty:before:pointer-events-none"
               data-placeholder="Schrijf je antwoord..."
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {

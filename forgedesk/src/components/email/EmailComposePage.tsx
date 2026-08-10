@@ -117,12 +117,10 @@ export function EmailComposePage() {
             const totaalExcl = fmtBedrag(fetchedOfferte.subtotaal ?? fetchedOfferte.totaal ?? 0)
             const totaalIncl = fmtBedrag(fetchedOfferte.totaal || 0)
             const sigText = emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`
-            const sigImgHeight = handtekeningAfbeeldingGrootte ?? 64
             const sigImg = handtekeningAfbeeldingHtml({
               url: handtekeningAfbeelding,
               link: handtekeningAfbeeldingLink,
-              hoogte: sigImgHeight,
-              maxBreedte: Math.round(sigImgHeight * 2.5),
+              breedte: handtekeningAfbeeldingGrootte,
             })
             const sigImgHtml = sigImg ? `${sigImg}<br>` : ''
             const bodyHtml = `Beste ${klantNaam},<br><br>Hierbij ontvangt u onze offerte ${fetchedOfferte.nummer} voor &ldquo;${fetchedOfferte.titel}&rdquo;.<br><br>Het totaalbedrag van deze offerte is ${totaalExcl} excl. btw${totaalExcl !== totaalIncl ? ` (${totaalIncl} incl. btw)` : ''}.<br><br>De offerte is geldig tot ${fetchedOfferte.geldig_tot ? new Date(fetchedOfferte.geldig_tot).toLocaleDateString('nl-NL') : '-'}. Bijgevoegd vindt u de offerte als PDF.<br><br>Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.<br><br>${sigImgHtml}${handtekeningNaarHtml(sigText)}`
@@ -349,7 +347,7 @@ export function EmailComposePage() {
                 onDrop={handleEditorDrop}
                 onMouseUp={updateFormatState}
                 onKeyUp={updateFormatState}
-                className="min-h-[300px] max-h-[600px] overflow-y-auto px-4 py-3 text-sm leading-relaxed focus:outline-none whitespace-pre-wrap [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2"
+                className="min-h-[300px] max-h-[600px] overflow-y-auto px-4 py-3 text-sm leading-relaxed focus:outline-none whitespace-pre-wrap [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-0.5 [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2"
                 suppressContentEditableWarning
               />
               <AIContentEditableToolbar
