@@ -3,7 +3,7 @@ import { Sparkles, Send, RotateCcw, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
-  sendForgieChat,
+  sendForgieChatStream,
   getForgieHistory,
   clearForgieHistory,
   type ForgieChatMessage,
@@ -24,6 +24,8 @@ export function ForgieChatPage() {
   const [messages, setMessages] = useState<ForgieChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  // Zodra de tekst loopt is de denk-indicator niet meer waar.
+  const [streamt, setStreamt] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [usage, setUsage] = useState<ForgieUsage | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -61,9 +63,29 @@ export function ForgieChatPage() {
     setLoading(true)
 
     try {
-      const result = await sendForgieChat(question, messages)
-      const forgieMsg: ForgieChatMessage = { role: 'forgie', content: result.answer }
-      setMessages(prev => [...prev, forgieMsg])
+      // De eerste letter is het teken dat het denken voorbij is: dan pas
+      // verschijnt de bel, en die loopt vanaf daar mee met de tekst.
+      let eersteDeel = true
+      const result = await sendForgieChatStream(question, messages, (deel) => {
+        setMessages(prev => {
+          if (eersteDeel) {
+            eersteDeel = false
+            return [...prev, { role: 'forgie', content: deel }]
+          }
+          const laatste = prev[prev.length - 1]
+          if (!laatste || laatste.role !== 'forgie') return prev
+          return [...prev.slice(0, -1), { ...laatste, content: laatste.content + deel }]
+        })
+        setStreamt(true)
+      })
+      // Het slotbericht draagt de volledige tekst; die zet de bel recht als er
+      // onderweg iets gemist is.
+      setMessages(prev => {
+        if (eersteDeel) return [...prev, { role: 'forgie', content: result.answer }]
+        const laatste = prev[prev.length - 1]
+        if (!laatste || laatste.role !== 'forgie') return prev
+        return [...prev.slice(0, -1), { ...laatste, content: result.answer || laatste.content }]
+      })
       // result.usage is het EIGEN verbruik van deze gebruiker; de meter
       // toont het org-totaal. Die door elkaar halen liet de teller na één
       // vraag terugspringen van 14,20 naar 0,45. Opnieuw ophalen dus.
@@ -76,6 +98,7 @@ export function ForgieChatPage() {
       setMessages(prev => [...prev, errorMsg])
     } finally {
       setLoading(false)
+      setStreamt(false)
       inputRef.current?.focus()
     }
   }, [input, loading, messages])
@@ -178,8 +201,8 @@ export function ForgieChatPage() {
           </div>
         ))}
 
-        {/* Loading indicator */}
-        {loading && (
+        {/* Loading indicator · verdwijnt zodra de eerste letter binnen is */}
+        {loading && !streamt && (
           <div className="flex gap-3 justify-start">
             <div className="flex-shrink-0 mt-1">
               <Sparkles className="w-4 h-4 text-petrol" />

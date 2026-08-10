@@ -712,6 +712,113 @@ async function getRelevantContext(userId: string, orgId: string | null, question
 
 // ============ HANDLER ============
 
+
+// ───── Streamen naar de browser ─────
+//
+// Daan gaf zijn antwoord in één klap: de gebruiker keek naar "Daan is aan het
+// denken" tot het laatste woord geschreven was. Hieronder lezen we de
+// Anthropic-stream en sturen de tekst door zodra hij er is, terwijl we
+// tegelijk dezelfde vorm opbouwen als het niet-streamende pad teruggaf
+// (content-blokken plus usage). Alles wat daarna gebeurt — acties uitlezen,
+// feiten vastleggen, verbruik boeken, historie opslaan — blijft ongewijzigd.
+
+interface AnthropicBlok {
+  type: string
+  text?: string
+  name?: string
+  input?: unknown
+}
+
+interface AnthropicAntwoord {
+  content: AnthropicBlok[]
+  usage: { input_tokens: number; output_tokens: number }
+}
+
+function stuurEvent(res: VercelResponse, payload: Record<string, unknown>): void {
+  res.write(`data: ${JSON.stringify(payload)}\n\n`)
+}
+
+async function leesAnthropicStream(
+  response: Response,
+  opTekst: (deel: string) => void
+): Promise<AnthropicAntwoord> {
+  const blokken: AnthropicBlok[] = []
+  // Tool-input komt in stukjes JSON binnen; per blok apart verzamelen.
+  const toolJson = new Map<number, string>()
+  const usage = { input_tokens: 0, output_tokens: 0 }
+
+  const body = response.body
+  if (!body) throw new Error('Lege stream van Anthropic')
+  const reader = (body as ReadableStream<Uint8Array>).getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  const verwerk = (regel: string) => {
+    if (!regel.startsWith('data:')) return
+    const ruw = regel.slice(5).trim()
+    if (!ruw || ruw === '[DONE]') return
+    let gebeurtenis: Record<string, any>
+    try {
+      gebeurtenis = JSON.parse(ruw)
+    } catch {
+      return
+    }
+    switch (gebeurtenis.type) {
+      case 'message_start':
+        usage.input_tokens = gebeurtenis.message?.usage?.input_tokens ?? 0
+        break
+      case 'content_block_start': {
+        const blok = gebeurtenis.content_block || {}
+        blokken[gebeurtenis.index] = { type: blok.type, name: blok.name, text: '' }
+        if (blok.type === 'tool_use') toolJson.set(gebeurtenis.index, '')
+        break
+      }
+      case 'content_block_delta': {
+        const delta = gebeurtenis.delta || {}
+        if (delta.type === 'text_delta' && delta.text) {
+          const huidig = blokken[gebeurtenis.index]
+          if (huidig) huidig.text = (huidig.text || '') + delta.text
+          opTekst(delta.text)
+        } else if (delta.type === 'input_json_delta') {
+          toolJson.set(gebeurtenis.index, (toolJson.get(gebeurtenis.index) || '') + (delta.partial_json || ''))
+        }
+        // thinking_delta laten we vallen: dat is Daans kladblok, niet zijn antwoord.
+        break
+      }
+      case 'content_block_stop': {
+        const ruweInput = toolJson.get(gebeurtenis.index)
+        if (ruweInput !== undefined && blokken[gebeurtenis.index]) {
+          try {
+            blokken[gebeurtenis.index].input = JSON.parse(ruweInput || '{}')
+          } catch {
+            // Half binnengekomen tool-aanroep: liever geen actie dan een kapotte.
+            blokken[gebeurtenis.index].input = undefined
+          }
+        }
+        break
+      }
+      case 'message_delta':
+        usage.output_tokens = gebeurtenis.usage?.output_tokens ?? usage.output_tokens
+        break
+    }
+  }
+
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    let grens = buffer.indexOf('\n')
+    while (grens !== -1) {
+      verwerk(buffer.slice(0, grens).trim())
+      buffer = buffer.slice(grens + 1)
+      grens = buffer.indexOf('\n')
+    }
+  }
+  if (buffer.trim()) verwerk(buffer.trim())
+
+  return { content: blokken.filter(Boolean), usage }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -725,10 +832,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(503).json({ error: 'AI niet geconfigureerd', configured: false })
     }
 
-    const { action, question, history } = req.body as {
+    const { action, question, history, stream: wilStream } = req.body as {
       action: 'chat' | 'get-history' | 'clear-history' | 'import-csv' | 'get-imports' | 'delete-import'
       question?: string
       history?: Array<{ role: string; content: string }>
+      /** Client vraagt om server-sent events. Zonder dit blijft het oude
+       *  JSON-antwoord staan, zodat een tabblad met oude code niets merkt. */
+      stream?: boolean
       // import-csv fields
       bestandsnaam?: string
       rows?: Array<Record<string, unknown>>
@@ -961,6 +1071,7 @@ ${JSON.stringify(dataContext, null, 2)}`
         'content-type': 'application/json',
       },
       body: JSON.stringify({
+        ...(wilStream ? { stream: true } : {}),
         model: 'claude-sonnet-5',
         // Als enige route hier tools aan (stel_actie_voor). Thinking uitzetten
         // verlaagt op Sonnet 5 meetbaar de neiging om een tool aan te roepen,
@@ -990,9 +1101,22 @@ ${JSON.stringify(dataContext, null, 2)}`
       })
     }
 
-    const data = await response.json() as {
-      content: Array<{ type: string; text?: string; name?: string; input?: unknown }>
-      usage: { input_tokens: number; output_tokens: number }
+    // Bij een stream gaat de tekst al naar de browser terwijl we hem lezen; wat
+    // eruit komt heeft dezelfde vorm als het gewone antwoord, dus alles hierna
+    // blijft ongewijzigd. Vanaf de eerste byte kunnen we geen nette foutstatus
+    // meer sturen — de budgetcontroles zitten dan ook al achter ons.
+    let data: AnthropicAntwoord
+    if (wilStream) {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        // Proxies die bufferen maken streamen zinloos; dit zet dat uit.
+        'X-Accel-Buffering': 'no',
+      })
+      data = await leesAnthropicStream(response, (deel) => stuurEvent(res, { type: 'tekst', deel }))
+    } else {
+      data = await response.json() as AnthropicAntwoord
     }
     const blocks = data.content || []
 
@@ -1125,15 +1249,34 @@ ${JSON.stringify(dataContext, null, 2)}`
 
     const currentUsage = await getUsage(userId).catch(() => ({ geschatte_kosten: 0 }))
 
-    return res.status(200).json({
+    const resultaat = {
       answer: resultText,
       usage: currentUsage.geschatte_kosten,
       limiet: MONTHLY_LIMIT,
       ...(acties.length > 0 ? { acties } : {}),
       ...(genoteerd.length > 0 ? { genoteerd } : {}),
-    })
+    }
+
+    if (wilStream) {
+      // De tekst staat al op het scherm; dit slotbericht draagt wat pas na
+      // afloop bekend is: voorgestelde acties, vastgelegde feiten, de meter.
+      stuurEvent(res, { type: 'klaar', ...resultaat })
+      return res.end()
+    }
+
+    return res.status(200).json(resultaat)
   } catch (error: unknown) {
     console.error('AI Chat API fout:', error)
+    // Ging het mis nadat de kop verstuurd is, dan kan er geen status meer bij
+    // en meldt de fout zich als laatste event in de stream.
+    if (res.headersSent) {
+      try {
+        stuurEvent(res, { type: 'fout', melding: error instanceof Error ? error.message : 'AI verzoek mislukt' })
+      } catch {
+        // Verbinding al dicht; niets meer te melden.
+      }
+      return res.end()
+    }
     return res.status(500).json({ error: error instanceof Error ? error.message : 'AI verzoek mislukt' })
   }
 }

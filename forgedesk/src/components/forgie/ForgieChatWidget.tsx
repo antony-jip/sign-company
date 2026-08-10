@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { MessageSquare, Send, X, RotateCcw, Loader2, LifeBuoy, ChevronLeft, Check, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  sendForgieChat,
+  sendForgieChatStream,
   getForgieHistory,
   clearForgieHistory,
   type ForgieChatMessage,
@@ -259,6 +259,8 @@ export function ForgieChatWidget() {
   const [messages, setMessages] = useState<WidgetMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  // Loopt de tekst al, dan is "denkt na" niet meer waar.
+  const [streamt, setStreamt] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [hasUnread, setHasUnread] = useState(false)
 
@@ -453,9 +455,33 @@ export function ForgieChatWidget() {
     setLoading(true)
 
     try {
-      const result = await sendForgieChat(question, messages)
-      const forgieMsg: WidgetMessage = { role: 'forgie', content: result.answer, acties: result.acties, genoteerd: result.genoteerd }
-      setMessages(prev => [...prev, forgieMsg])
+      // Tekst loopt mee terwijl Daan schrijft; de actiekaarten hangen aan het
+      // slotbericht, want die kent hij pas als hij klaar is.
+      let eersteDeel = true
+      const result = await sendForgieChatStream(question, messages, (deel) => {
+        setMessages(prev => {
+          if (eersteDeel) {
+            eersteDeel = false
+            return [...prev, { role: 'forgie', content: deel } as WidgetMessage]
+          }
+          const laatste = prev[prev.length - 1]
+          if (!laatste || laatste.role !== 'forgie') return prev
+          return [...prev.slice(0, -1), { ...laatste, content: laatste.content + deel }]
+        })
+        setStreamt(true)
+      })
+      const compleet: WidgetMessage = {
+        role: 'forgie',
+        content: result.answer,
+        acties: result.acties,
+        genoteerd: result.genoteerd,
+      }
+      setMessages(prev => {
+        if (eersteDeel) return [...prev, compleet]
+        const laatste = prev[prev.length - 1]
+        if (!laatste || laatste.role !== 'forgie') return [...prev, compleet]
+        return [...prev.slice(0, -1), { ...compleet, content: result.answer || laatste.content }]
+      })
       if (!isOpen) setHasUnread(true)
     } catch (err) {
       const errorMsg: ForgieChatMessage = {
@@ -465,6 +491,7 @@ export function ForgieChatWidget() {
       setMessages(prev => [...prev, errorMsg])
     } finally {
       setLoading(false)
+      setStreamt(false)
       inputRef.current?.focus()
     }
   }, [input, loading, messages, isOpen])
@@ -837,8 +864,8 @@ export function ForgieChatWidget() {
                   )
                 })}
 
-                {/* Loading indicator */}
-                {loading && (
+                {/* Loading indicator · weg zodra de eerste letter er is */}
+                {loading && !streamt && (
                   <div className="flex gap-2.5 justify-start">
                     <DaanAvatar />
                     <div className="px-3.5 py-2.5 bg-white dark:bg-card border border-border/60 shadow-sm rounded-2xl rounded-bl-md">
