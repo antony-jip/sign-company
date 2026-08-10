@@ -15,16 +15,23 @@ import {
   stelMapVoor,
 } from '@/utils/bijlageVoorstel'
 
+/** Een project kent maar twee bestemmingen: de situatiefoto's of de bestanden. */
+export type BijlageBestemming = 'foto' | 'bestand'
+
 export interface BijlageKandidaat {
   filename: string
   contentType: string
 }
 
+export interface BijlageMetBestemming extends BijlageKandidaat {
+  bestemming: BijlageBestemming
+}
+
 export interface BijlageProjectKeuze {
   project: Project
   map: string
-  /** De bijlagen die aangevinkt bleven staan. */
-  bestanden: BijlageKandidaat[]
+  /** De bijlagen die aangevinkt bleven staan, elk met hun bestemming. */
+  bestanden: BijlageMetBestemming[]
 }
 
 interface Props {
@@ -66,6 +73,10 @@ export function BijlageProjectDialog({
   // Alles staat aangevinkt bij openen; afvinken is bedoeld als correctie op een
   // volledige selectie, niet als lijstje dat je zelf moet samenstellen.
   const [aangevinkt, setAangevinkt] = useState<Set<string>>(new Set())
+  // De bestemming per bestand. Het bestandstype geeft alleen de eerste gok: een
+  // foto van de gevel hoort bij de situatiefoto's, maar een JPG met kleurcodes
+  // is een document. Dat verschil ziet alleen de gebruiker.
+  const [bestemmingen, setBestemmingen] = useState<Record<string, BijlageBestemming>>({})
 
   const meervoud = bijlagen.length > 1
   const eerste = bijlagen[0]
@@ -84,12 +95,11 @@ export function BijlageProjectDialog({
       ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(extensie)
   }, [])
 
-  // De mapkeuze geldt alleen voor de niet-afbeeldingen: foto's gaan altijd naar
-  // de situatiefoto's van het project. Bij een gemengde selectie tonen we dus
-  // zowel de mapkeuze als de uitleg over de foto's.
-  const aantalAfbeeldingen = selectie.filter(isAfbeeldingBestand).length
-  const alleenAfbeeldingen = selectie.length > 0 && aantalAfbeeldingen === selectie.length
-  const bevatDocumenten = selectie.length > aantalAfbeeldingen
+  // De mapkeuze geldt alleen voor wat naar de bestanden gaat; foto's landen bij
+  // de situatiefoto's en hebben geen map.
+  const aantalFotos = selectie.filter((b) => bestemmingen[b.filename] === 'foto').length
+  const alleenFotos = selectie.length > 0 && aantalFotos === selectie.length
+  const bevatBestanden = selectie.length > aantalFotos
 
   // Voorstel opbouwen zodra de dialog opengaat: eerst de thread-koppeling,
   // anders de projecten van de klant achter de afzender.
@@ -101,6 +111,9 @@ export function BijlageProjectDialog({
     setQuery('')
     setMap(stelMapVoor(bestandsnaam, contentType))
     setAangevinkt(new Set(bijlagen.map((b) => b.filename)))
+    setBestemmingen(Object.fromEntries(
+      bijlagen.map((b) => [b.filename, isAfbeeldingBestand(b) ? 'foto' : 'bestand'] as const),
+    ))
 
     const bepaalVoorstel = async () => {
       if (threadId) {
@@ -127,7 +140,7 @@ export function BijlageProjectDialog({
       if (!afgebroken) setLaden(false)
     })
     return () => { afgebroken = true }
-  }, [open, threadId, senderEmail, bestandsnaam, contentType, bijlagen])
+  }, [open, threadId, senderEmail, bestandsnaam, contentType, bijlagen, isAfbeeldingBestand])
 
   // Zoeken pas laden als er ook echt een lijst getoond wordt.
   const lijstZichtbaar = !laden && (kiesZelf || !gekozenProject)
@@ -294,70 +307,99 @@ export function BijlageProjectDialog({
             )}
           </div>
 
-          {meervoud && (
-            <div className="px-7 pb-4 space-y-2">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground block">
-                Bijlagen
-              </label>
-              <div className="rounded-lg border border-border divide-y divide-border/60 max-h-[180px] overflow-y-auto">
-                {bijlagen.map((b) => {
-                  const aan = aangevinkt.has(b.filename)
-                  return (
-                    <button
-                      key={b.filename}
-                      type="button"
-                      onClick={() => setAangevinkt((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(b.filename)) next.delete(b.filename)
-                        else next.add(b.filename)
-                        return next
-                      })}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-muted/60 transition-colors duration-150"
-                    >
-                      <span
+          <div className="px-7 pb-4 space-y-2">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground block">
+              {meervoud ? 'Bijlagen' : 'Bijlage'}
+            </label>
+            <div className="rounded-lg border border-border divide-y divide-border/60 max-h-[240px] overflow-y-auto">
+              {bijlagen.map((b) => {
+                const aan = aangevinkt.has(b.filename)
+                const bestemming = bestemmingen[b.filename] ?? 'bestand'
+                return (
+                  <div key={b.filename} className="flex items-center gap-2.5 px-3 py-2">
+                    {/* De vinkjes staan alleen bij meerdere bijlagen: bij één
+                        bijlage is wegvinken hetzelfde als annuleren. */}
+                    {meervoud && (
+                      <button
+                        type="button"
+                        onClick={() => setAangevinkt((prev) => {
+                          const next = new Set(prev)
+                          if (next.has(b.filename)) next.delete(b.filename)
+                          else next.add(b.filename)
+                          return next
+                        })}
+                        aria-pressed={aan}
+                        title={aan ? 'Niet toevoegen' : 'Wel toevoegen'}
                         className={cn(
                           'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors',
-                          aan ? 'border-petrol bg-petrol text-white' : 'border-border bg-background text-transparent',
+                          aan ? 'border-petrol bg-petrol text-white' : 'border-border bg-background text-transparent hover:border-petrol/40',
                         )}
                       >
                         <Check className="h-3 w-3" strokeWidth={3} />
-                      </span>
-                      <span className={cn('min-w-0 flex-1 truncate text-[13px]', aan ? 'text-foreground' : 'text-muted-foreground line-through')}>
-                        {b.filename}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
+                      </button>
+                    )}
+                    <span
+                      className={cn(
+                        'min-w-0 flex-1 truncate text-[13px]',
+                        aan ? 'text-foreground' : 'text-muted-foreground line-through',
+                      )}
+                      title={b.filename}
+                    >
+                      {b.filename}
+                    </span>
+                    {/* Twee bestemmingen, want meer heeft een project niet. Het
+                        bestandstype kiest de eerste stand; een JPG met kleurcodes
+                        is immers geen situatiefoto. */}
+                    <div className={cn('flex flex-shrink-0 rounded-md border border-border overflow-hidden', !aan && 'opacity-40')}>
+                      {([['foto', 'Foto'], ['bestand', 'Bestand']] as const).map(([waarde, label]) => (
+                        <button
+                          key={waarde}
+                          type="button"
+                          disabled={!aan}
+                          onClick={() => setBestemmingen((prev) => ({ ...prev, [b.filename]: waarde }))}
+                          className={cn(
+                            'px-2 py-1 text-[11px] font-medium transition-colors',
+                            bestemming === waarde
+                              ? 'bg-petrol text-white'
+                              : 'bg-background text-muted-foreground hover:bg-muted',
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Foto’s komen bij de situatiefoto’s van het project, bestanden in de map hieronder.
+            </p>
+          </div>
+
+          {bevatBestanden && (
+            <div className="px-7 pb-6 space-y-2">
+              <label htmlFor="bijlage-map" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground block">Map</label>
+              <select
+                id="bijlage-map"
+                value={map}
+                onChange={(e) => setMap(e.target.value)}
+                className="w-full h-9 px-3 text-[13px] border border-border bg-background rounded-lg outline-none focus:border-petrol focus:ring-1 focus:ring-petrol/20 transition-colors"
+              >
+                {MAP_KEUZES.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
             </div>
           )}
 
-          <div className="px-7 pb-6 space-y-2">
-            {alleenAfbeeldingen ? (
+          {alleenFotos && (
+            <div className="px-7 pb-6">
               <p className="text-[12px] text-muted-foreground">
-                {meervoud ? 'Deze foto\u2019s komen' : 'Komt'} bij de <span className="font-medium text-foreground">situatiefoto\u2019s</span> van het project.
+                Alles gaat naar de situatiefoto’s, dus er is geen map nodig.
               </p>
-            ) : (
-              <>
-                <label htmlFor="bijlage-map" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground block">Map</label>
-                <select
-                  id="bijlage-map"
-                  value={map}
-                  onChange={(e) => setMap(e.target.value)}
-                  className="w-full h-9 px-3 text-[13px] border border-border bg-background rounded-lg outline-none focus:border-petrol focus:ring-1 focus:ring-petrol/20 transition-colors"
-                >
-                  {MAP_KEUZES.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-                {aantalAfbeeldingen > 0 && (
-                  <p className="text-[12px] text-muted-foreground">
-                    De {aantalAfbeeldingen} foto{aantalAfbeeldingen > 1 ? '\u2019s' : ''} hierin {aantalAfbeeldingen > 1 ? 'gaan' : 'gaat'} naar de situatiefoto\u2019s en niet naar deze map.
-                  </p>
-                )}
-              </>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="px-7 py-4 border-t border-border bg-background/60 flex items-center sm:justify-end gap-2">
@@ -370,7 +412,7 @@ export function BijlageProjectDialog({
           </button>
           <button
             type="button"
-            onClick={() => gekozenProject && selectie.length > 0 && onBevestig({ project: gekozenProject, map, bestanden: selectie })}
+            onClick={() => gekozenProject && selectie.length > 0 && onBevestig({ project: gekozenProject, map, bestanden: selectie.map((b) => ({ ...b, bestemming: bestemmingen[b.filename] ?? 'bestand' })) })}
             disabled={!gekozenProject || bezig || selectie.length === 0}
             className="inline-flex items-center gap-1.5 h-9 px-5 rounded-md text-[13px] font-semibold text-white bg-petrol hover:bg-[#0F3A40] shadow-sm disabled:opacity-50 transition-colors"
           >

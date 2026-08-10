@@ -23,7 +23,7 @@ import { downloadEmailAttachment, downloadAllEmailAttachments } from '@/services
 import { bijlageNaarProject } from '@/services/documentenService'
 import { createProjectFoto } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
-import { BijlageProjectDialog, type BijlageProjectKeuze, type BijlageKandidaat } from './BijlageProjectDialog'
+import { BijlageProjectDialog, type BijlageProjectKeuze, type BijlageKandidaat, type BijlageMetBestemming } from './BijlageProjectDialog'
 import { valideerBijlagen, uploadBijlagenMetLinkFallback } from '@/utils/groteBijlagen'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -520,10 +520,10 @@ export function EmailReader({
     setBijlagenVoorDialog(bijlagen)
   }, [email])
 
-  // Eén bijlage ophalen en onder het project zetten. Afbeeldingen horen bij de
-  // situatiefoto's, de rest bij de documenten in de gekozen map.
+  // Eén bijlage ophalen en onder het project zetten. Waar hij landt bepaalt de
+  // gebruiker in de dialog; het bestandstype gaf daar alleen de eerste gok voor.
   const voegBijlageToe = useCallback(async (
-    bijlage: BijlageKandidaat,
+    bijlage: BijlageMetBestemming,
     keuze: BijlageProjectKeuze,
     uid: number,
   ) => {
@@ -543,7 +543,7 @@ export function EmailReader({
       throw new Error('Geen content of storage_url ontvangen')
     }
 
-    if (isImageAttachment(filename, result.contentType || contentType)) {
+    if (bijlage.bestemming === 'foto') {
       if (!user?.id) throw new Error('Niet ingelogd')
       const echteNaam = result.filename || filename
       const file = new File([blob], echteNaam, { type: result.contentType || contentType })
