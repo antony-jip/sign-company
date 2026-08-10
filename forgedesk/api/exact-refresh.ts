@@ -216,7 +216,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           // Exact-bedrijfsaccount (Exact staat geen twee gelijktijdige
           // sessies toe). Verwijder alleen DEZE user's tokens; raak de
           // org-brede `exact_online_connected` niet aan.
-          await supabase.from('exact_tokens').delete().eq('user_id', user_id)
+          // Voorwaarde op refresh_token: alleen wissen als er nog de keten
+          // staat die wij gelezen hebben, zodat een verliezende parallelle
+          // refresh niet de verse rij van de winnaar weggooit.
+          await supabase
+            .from('exact_tokens')
+            .delete()
+            .eq('user_id', user_id)
+            .eq('refresh_token', tokenData.refresh_token)
           console.error('[Exact] invalid_grant — token rejected', {
             user_id, endpoint: 'exact-refresh.ts', status: tokenResponse.status,
           })
@@ -242,20 +249,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       expires_in: number
     }
 
-    // 4. Upsert exact_tokens i.p.v. update: herstelt de rij als een parallel
-    // verliezend request hem net verwijderde — dit is de nieuwste geldige keten.
+    // 4. Compare-and-swap op de refresh_token die we gelezen hebben. Het
+    // ciphertext is een betrouwbaar versiemerk (elke write gebruikt een nieuwe
+    // random salt), dus nul geraakte rijen betekent dat iemand anders de keten
+    // al vervangen of de koppeling ontkoppeld heeft. Een blinde upsert
+    // overschreef in dat geval de verse keten van een net afgeronde OAuth of
+    // wekte een ontkoppelde rij weer op.
     const expires_at = new Date(Date.now() + tokens.expires_in * 1000).toISOString()
 
-    await supabase
+    const { data: bijgewerkt, error: updateFout } = await supabase
       .from('exact_tokens')
-      .upsert({
-        user_id,
+      .update({
         access_token: encryptSecret(tokens.access_token),
         refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(tokenData.refresh_token)),
         expires_at,
         division: tokenData.division,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
+      })
+      .eq('user_id', user_id)
+      .eq('refresh_token', tokenData.refresh_token)
+      .select('user_id')
+
+    if (updateFout) {
+      console.error('[Exact] geroteerde token NIET opgeslagen — keten is hierna dood', {
+        user_id, endpoint: 'exact-refresh.ts', fout: updateFout.message,
+      })
+      Sentry.captureException(new Error('Exact token rotation not persisted'), {
+        level: 'error',
+        tags: { exact_endpoint: 'exact-refresh', oauth_error: 'rotation_not_persisted' },
+        extra: { user_id, fout: updateFout.message },
+      })
+    } else if (!bijgewerkt?.length) {
+      // Verloren race of ontkoppeling: staat er een nieuwere keten, geef die
+      // terug. Is de rij weg, dan is de koppeling bewust verbroken en wekken we
+      // hem niet opnieuw tot leven.
+      const { data: huidig } = await supabase
+        .from('exact_tokens')
+        .select('access_token, expires_at')
+        .eq('user_id', user_id)
+        .maybeSingle()
+      const rij = huidig as { access_token?: string | null; expires_at?: string | null } | null
+      if (rij?.access_token) {
+        return res.status(200).json({
+          access_token: decryptSecret(rij.access_token),
+          expires_at: rij.expires_at,
+        })
+      }
+      return res.status(400).json({
+        error: 'Exact Online is ontkoppeld. Verbind opnieuw via Instellingen > Integraties.',
+      })
+    }
 
     return res.status(200).json({
       access_token: tokens.access_token,

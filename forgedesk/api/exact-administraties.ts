@@ -184,13 +184,23 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
       }
 
       if (errorBody.includes('invalid_grant')) {
-        // Bij invalid_grant heeft Exact DEZE user echt uitgegooid — vaak
+        // Bij invalid_grant heeft Exact deze user uitgegooid, vaak
         // doordat een collega zojuist opnieuw OAuth'de op hetzelfde
         // Exact-bedrijfsaccount (Exact staat geen twee gelijktijdige
-        // sessies toe). Verwijder alleen DEZE user's tokens; raak de
+        // sessies toe). Verwijder alleen diens tokens; raak de
         // org-brede `exact_online_connected` niet aan, zodat andere users
         // in dezelfde org niet hun UI zien wisselen.
-        await supabaseAdmin.from('exact_tokens').delete().eq('user_id', userId)
+        //
+        // De voorwaarde op refresh_token wist alleen de keten die wij gelezen
+        // hebben. Draaien er twee refreshes tegelijk, dan krijgt de verliezer
+        // invalid_grant terwijl de winnaar net een geldige keten wegschreef;
+        // zonder die voorwaarde gooit de verliezer die verse rij weg en is de
+        // koppeling org-breed dood.
+        await supabaseAdmin
+          .from('exact_tokens')
+          .delete()
+          .eq('user_id', userId)
+          .eq('refresh_token', data.refresh_token)
         console.error('[Exact] invalid_grant — token rejected', {
           userId, endpoint: 'exact-administraties.ts', status: refreshRes.status,
         })
@@ -209,16 +219,46 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
   }
   const tokens = await refreshRes.json()
 
-  // Upsert i.p.v. update: herstelt de rij als een parallel verliezend
-  // request hem net verwijderde — dit is de nieuwste geldige keten.
-  await supabaseAdmin.from('exact_tokens').upsert({
-    user_id: userId,
-    access_token: encryptSecret(tokens.access_token),
-    refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
-    expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-    division: data.division,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'user_id' })
+  // Compare-and-swap op de refresh_token die we gelezen hebben. Het ciphertext
+  // is een betrouwbaar versiemerk (elke write gebruikt een nieuwe random salt),
+  // dus nul geraakte rijen betekent dat iemand anders de keten al vervangen of
+  // de koppeling ontkoppeld heeft. Een blinde upsert overschreef in dat geval de
+  // verse keten van een net afgeronde OAuth of wekte een ontkoppelde rij weer op.
+  const { data: bijgewerkt, error: updateFout } = await supabaseAdmin
+    .from('exact_tokens')
+    .update({
+      access_token: encryptSecret(tokens.access_token),
+      refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
+      expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+      division: data.division,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId)
+    .eq('refresh_token', data.refresh_token)
+    .select('user_id')
+
+  if (updateFout) {
+    console.error('[Exact] geroteerde token NIET opgeslagen — keten is hierna dood', {
+      user_id: userId, endpoint: 'exact-administraties.ts', fout: updateFout.message,
+    })
+    Sentry.captureException(new Error('Exact token rotation not persisted'), {
+      level: 'error',
+      tags: { exact_endpoint: 'exact-administraties', oauth_error: 'rotation_not_persisted' },
+      extra: { user_id: userId, fout: updateFout.message },
+    })
+  } else if (!bijgewerkt?.length) {
+    // Deze route leest alleen gegevens op. Bij een verloren race is de nieuwste
+    // keten van iemand anders leidend en hoeven we niets te herstellen.
+    const { data: huidig } = await supabaseAdmin
+      .from('exact_tokens')
+      .select('access_token, division')
+      .eq('user_id', userId)
+      .maybeSingle()
+    const rij = huidig as { access_token?: string | null; division?: number | null } | null
+    if (rij?.access_token) {
+      return { token: decryptSecret(rij.access_token), division: rij.division as number }
+    }
+  }
 
   return { token: tokens.access_token, division: data.division }
 }
