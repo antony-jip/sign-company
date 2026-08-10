@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileText, Mail, Receipt, Folder, ArrowRight, type LucideIcon } from 'lucide-react'
+import { FileText, Mail, Receipt, Folder, ArrowRight, X, type LucideIcon } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { getDaanBriefingVanVandaag } from '@/services/supabaseService'
 import type { DaanBriefing, DaanBriefingPunt } from '@/services/supabaseService'
@@ -8,6 +8,9 @@ import type { DaanBriefing, DaanBriefingPunt } from '@/services/supabaseService'
 // localStorage-keys volgen de doen-conventie: doen_<module>_<feature>.
 const KEY_LAATST_GETOOND = 'doen_briefing_laatst_getoond'
 const KEY_VOORKEUR = 'doen_briefing_voorkeur' // 'nooit' = popup nooit tonen
+// Waarde = id van de weggeklikte briefing. Morgen ligt er een nieuwe briefing
+// met een nieuw id, dus het blok komt vanzelf terug.
+const KEY_BLOK_WEG = 'doen_briefing_blok_weggeklikt'
 
 const SOORT_ICON: Record<DaanBriefingPunt['soort'], LucideIcon> = {
   offerte: FileText,
@@ -53,6 +56,7 @@ export function DaanBriefingBlok() {
   const navigate = useNavigate()
   const [briefing, setBriefing] = useState<DaanBriefing | null>(null)
   const [popupOpen, setPopupOpen] = useState(false)
+  const [blokWeg, setBlokWeg] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -60,6 +64,7 @@ export function DaanBriefingBlok() {
       .then((b) => {
         if (cancelled || !b?.inhoud?.punten?.length) return
         setBriefing(b)
+        setBlokWeg(localStorage.getItem(KEY_BLOK_WEG) === b.id)
         const voorkeur = localStorage.getItem(KEY_VOORKEUR)
         const laatst = localStorage.getItem(KEY_LAATST_GETOOND)
         if (voorkeur !== 'nooit' && laatst !== vandaagSleutel()) {
@@ -79,28 +84,45 @@ export function DaanBriefingBlok() {
     navigate(href)
   }
 
+  const verbergBlok = () => {
+    localStorage.setItem(KEY_BLOK_WEG, briefing.id)
+    setBlokWeg(true)
+  }
+
   return (
     <>
-      <section className="doen-panel doen-wash rounded-xl p-6 sm:p-7">
-        <header className="flex items-baseline justify-between gap-4 mb-4">
-          <div className="flex items-baseline gap-3 min-w-0">
-            <h2 className="font-heading text-[14px] font-bold text-foreground">
-              Verdient vandaag aandacht<span className="text-flame">.</span>
-            </h2>
-            {briefing.inhoud.intro && (
-              <span className="doen-subtitel truncate">{briefing.inhoud.intro}</span>
-            )}
+      {!blokWeg && (
+        <section className="doen-panel doen-wash rounded-xl p-6 sm:p-7">
+          <header className="flex items-baseline justify-between gap-4 mb-4">
+            <div className="flex items-baseline gap-3 min-w-0">
+              <h2 className="font-heading text-[14px] font-bold text-foreground">
+                Verdient vandaag aandacht<span className="text-flame">.</span>
+              </h2>
+              {briefing.inhoud.intro && (
+                <span className="doen-subtitel truncate">{briefing.inhoud.intro}</span>
+              )}
+            </div>
+            <div className="flex items-baseline gap-3 flex-shrink-0">
+              <span className="font-mono text-[12px] text-muted-foreground">
+                {punten.length} {punten.length === 1 ? 'punt' : 'punten'} · uit {briefing.signalen} signalen
+              </span>
+              <button
+                onClick={verbergBlok}
+                aria-label="Briefing tot morgen verbergen"
+                title="Tot morgen verbergen"
+                className="text-muted-foreground/60 hover:text-foreground transition-colors self-center"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </header>
+          <div>
+            {punten.map((p, i) => (
+              <PuntRij key={`${i}-${p.titel}`} punt={p} onGa={ga} />
+            ))}
           </div>
-          <span className="font-mono text-[12px] text-muted-foreground flex-shrink-0">
-            {punten.length} {punten.length === 1 ? 'punt' : 'punten'} · uit {briefing.signalen} signalen
-          </span>
-        </header>
-        <div>
-          {punten.map((p, i) => (
-            <PuntRij key={`${i}-${p.titel}`} punt={p} onGa={ga} />
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
 
       <Dialog open={popupOpen} onOpenChange={setPopupOpen}>
         <DialogContent className="max-w-lg">
