@@ -296,12 +296,16 @@ export function MaatjeKladblok() {
 
   return (
     <div className={cn('mx-auto w-full max-w-4xl px-4 py-6 md:px-8', selectieModus && 'pb-24')}>
-      <div className="mb-6 flex items-start justify-between gap-4">
+      {/* Op een telefoon paste de knoppenrij niet naast de titel: hij mocht niet
+          krimpen en niet afbreken, dus schoof Foto maken buiten beeld — precies
+          de knop waarvoor je de module opent. Onder md staan de knoppen daarom
+          onder de titel, en ze breken af als ze samen te breed worden. */}
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h1 className="text-[26px] font-extrabold tracking-[-0.3px] text-foreground">Maatjes<span className="text-flame">.</span></h1>
           <p className="mt-1 text-[13px] text-muted-foreground">Kladblok met losse maatjes, nog niet gekoppeld.</p>
         </div>
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:gap-3">
           {maatjes.length > 0 && !selectieModus && (
             <button
               type="button"
