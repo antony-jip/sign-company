@@ -112,7 +112,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       // Per-user velden (handtekening, sidebar_items, afzender_naam) worden
       // door updateAppSettings doorgesluisd naar profiles. Vernieuw profile
       // ook in state als zo'n veld in de update zit.
-      const perUserKeys = ['email_handtekening', 'handtekening_afbeelding', 'handtekening_afbeelding_grootte', 'handtekening_afbeelding_link', 'afzender_naam', 'sidebar_items', 'mobiel_menu_items']
+      const perUserKeys = ['email_handtekening', 'handtekening_afbeelding', 'handtekening_afbeelding_grootte', 'handtekening_afbeelding_link', 'afzender_naam', 'sidebar_items', 'mobiel_menu_items', 'dashboard_blokken']
       const heeftPerUserUpdate = perUserKeys.some(k => k in updates)
       const updated = await updateAppSettings(user.id, updates)
       setSettings(updated)
@@ -163,6 +163,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     ...settings,
     ...(profile?.sidebar_items != null ? { sidebar_items: profile.sidebar_items } : {}),
     ...(profile && 'mobiel_menu_items' in profile ? { mobiel_menu_items: profile.mobiel_menu_items } : {}),
+    ...(profile && 'dashboard_blokken' in profile ? { dashboard_blokken: profile.dashboard_blokken } : {}),
   }), [settings, profile])
 
   const value: AppSettingsContextType = {

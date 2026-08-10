@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ActiviteitLog } from './ActiviteitLog'
 import { useScrollFade } from '@/hooks/useScrollFade'
 import type { Medewerker, Klant } from '@/types'
+import type { DashboardBlokId } from './dashboardBlokken'
 
 const DAG_HEADERS = ['M', 'D', 'W', 'D', 'V', 'Z', 'Z']
 
@@ -575,12 +576,18 @@ function TeamCard() {
 // ─────────────────────────────────────────────────────────
 // Public export
 
-export function RightRail() {
+interface RightRailProps {
+  /** Blokken die deze gebruiker wil zien; leeg = alles. */
+  zichtbaar?: Set<DashboardBlokId>
+}
+
+export function RightRail({ zichtbaar }: RightRailProps) {
+  const toon = (id: DashboardBlokId) => !zichtbaar || zichtbaar.has(id)
   return (
     <aside className="space-y-5 w-full xl:w-[320px] xl:flex-shrink-0">
-      <DezeWeekCard />
-      <ActiviteitLog />
-      <TeamCard />
+      {toon('deze-week') && <DezeWeekCard />}
+      {toon('activiteit') && <ActiviteitLog />}
+      {toon('team') && <TeamCard />}
     </aside>
   )
 }

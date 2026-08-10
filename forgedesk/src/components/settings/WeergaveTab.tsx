@@ -15,7 +15,9 @@ import {
   Plus,
   Mail,
   PanelLeft,
+  LayoutDashboard,
 } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { usePalette, APP_THEMES, ACCENT_PALETTES } from '@/contexts/PaletteContext'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -26,6 +28,13 @@ import { SubTabNav } from './SubTabNav'
 import { MobielMenuInstelling } from './MobielMenuInstelling'
 import type { SubTab } from './settingsShared'
 import { logger } from '@/utils/logger'
+import {
+  DASHBOARD_BLOKKEN,
+  DASHBOARD_PRESETS,
+  herkenPreset,
+  zichtbareBlokken,
+  type DashboardBlokId,
+} from '@/components/dashboard/dashboardBlokken'
 import {
   FontSize,
   BESCHIKBARE_FONT_SIZES,
@@ -52,6 +61,7 @@ const ALL_SIDEBAR_ITEMS = [
 
 const WEERGAVE_TABS: SubTab[] = [
   { id: 'layout', label: 'Layout', icon: Monitor },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'voorkeuren', label: 'Voorkeuren', icon: Sliders },
   { id: 'navigatie', label: 'Navigatie', icon: Settings },
 ]
@@ -111,7 +121,46 @@ export function WeergaveTab() {
     return sidebarItems.some(item => !a.has(item))
   }, [sidebarItems, settings.sidebar_items, mergeSidebarItems])
 
-  const [subTab, setSubTab] = useState('layout')
+  const [zoekParams] = useSearchParams()
+  const [subTab, setSubTab] = useState(() => {
+    const gevraagd = zoekParams.get('sub')
+    return WEERGAVE_TABS.some((t) => t.id === gevraagd) ? (gevraagd as string) : 'layout'
+  })
+
+  // ── Dashboardblokken (per gebruiker, migratie 188) ──
+  const [dashboardBlokken, setDashboardBlokken] = useState<DashboardBlokId[]>(
+    () => [...zichtbareBlokken(settings.dashboard_blokken)]
+  )
+  const [isSavingDashboard, setIsSavingDashboard] = useState(false)
+
+  useEffect(() => {
+    setDashboardBlokken([...zichtbareBlokken(settings.dashboard_blokken)])
+  }, [settings.dashboard_blokken])
+
+  const toggleDashboardBlok = (id: DashboardBlokId) => {
+    setDashboardBlokken((prev) => (prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]))
+  }
+
+  const actievePreset = useMemo(() => herkenPreset(dashboardBlokken), [dashboardBlokken])
+
+  const hasUnsavedDashboardChanges = useMemo(() => {
+    const opgeslagen = zichtbareBlokken(settings.dashboard_blokken)
+    if (opgeslagen.size !== dashboardBlokken.length) return true
+    return dashboardBlokken.some((id) => !opgeslagen.has(id))
+  }, [dashboardBlokken, settings.dashboard_blokken])
+
+  const handleSaveDashboard = async () => {
+    try {
+      setIsSavingDashboard(true)
+      await updateSettings({ dashboard_blokken: dashboardBlokken })
+      toast.success('Dashboard bijgewerkt')
+    } catch (err) {
+      logger.error(err)
+      toast.error('Kon dashboard niet opslaan')
+    } finally {
+      setIsSavingDashboard(false)
+    }
+  }
   // Font size state (font family is fixed to Inter)
   const [fontSize, setFontSize] = useState<FontSize>(() => getFontSettings().font_size)
   const { layoutMode, setLayoutMode } = useSidebar()
@@ -590,6 +639,139 @@ export function WeergaveTab() {
     </Card>
     )}
     </>
+    )}
+
+    {subTab === 'dashboard' && (
+    <Card className="doen-slate-surface border-0 shadow-none rounded-2xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <LayoutDashboard className="w-5 h-5" />
+          Dashboard samenstellen
+        </CardTitle>
+        <CardDescription>
+          Kies wat je op je startscherm ziet. Dit geldt alleen voor jou; je collega's houden hun eigen indeling.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {/* Snelkeuze · zet in één klik een set die bij je werk past */}
+        <div>
+          <h4 className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70 mb-2.5">
+            Snel instellen
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {DASHBOARD_PRESETS.map((preset) => {
+              const isActief = actievePreset === preset.id
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => setDashboardBlokken([...preset.blokken])}
+                  className={cn(
+                    'text-left px-3.5 py-2.5 rounded-xl border transition-all duration-150 min-w-[160px]',
+                    isActief
+                      ? 'bg-card border-petrol/40 shadow-[0_1px_2px_rgba(20,62,71,0.06)]'
+                      : 'bg-transparent border-[rgba(26,83,92,0.12)] hover:bg-card/50 hover:border-[rgba(26,83,92,0.25)]',
+                  )}
+                  aria-pressed={isActief}
+                >
+                  <span className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground">
+                    {isActief && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] flex-shrink-0" />}
+                    {preset.label}
+                  </span>
+                  <span className="block text-[11px] text-muted-foreground mt-0.5">{preset.uitleg}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-baseline justify-between pt-1 pb-3 border-b border-[rgba(26,83,92,0.1)]">
+          <span className="text-[13px] text-foreground/70">
+            <span className="font-mono font-bold text-petrol tabular-nums">{dashboardBlokken.length}</span>
+            <span className="text-muted-foreground/70"> / </span>
+            <span className="font-mono tabular-nums text-muted-foreground">{DASHBOARD_BLOKKEN.length}</span>
+            <span className="ml-1.5">blokken zichtbaar</span>
+          </span>
+        </div>
+
+        {(['hoofd', 'zijkolom'] as const).map((kolom) => {
+          const blokken = DASHBOARD_BLOKKEN.filter((b) => b.kolom === kolom)
+          const aan = blokken.filter((b) => dashboardBlokken.includes(b.id)).length
+          return (
+            <div key={kolom}>
+              <div className="flex items-baseline gap-2 mb-2.5">
+                <h4 className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70">
+                  {kolom === 'hoofd' ? 'Hoofdkolom' : 'Zijkolom'}
+                </h4>
+                <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
+                  · {aan}/{blokken.length}
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {blokken.map((blok) => {
+                  const isOn = dashboardBlokken.includes(blok.id)
+                  return (
+                    <button
+                      key={blok.id}
+                      type="button"
+                      onClick={() => toggleDashboardBlok(blok.id)}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-left transition-all duration-150',
+                        isOn
+                          ? 'bg-card border-[rgba(26,83,92,0.18)] shadow-[0_1px_2px_rgba(20,62,71,0.06)] hover:border-[rgba(26,83,92,0.3)]'
+                          : 'bg-transparent border-dashed border-[rgba(26,83,92,0.12)] hover:bg-card/50 hover:border-[rgba(26,83,92,0.2)]',
+                      )}
+                      aria-pressed={isOn}
+                    >
+                      <span
+                        aria-hidden
+                        className={cn(
+                          'w-1.5 h-1.5 rounded-full flex-shrink-0',
+                          isOn ? 'bg-[#2D6B48]' : 'bg-muted-foreground/40',
+                        )}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className={cn('block text-[13px] font-medium', isOn ? 'text-foreground' : 'text-muted-foreground')}>
+                          {blok.label}
+                        </span>
+                        <span className="block text-[11px] text-muted-foreground truncate">{blok.uitleg}</span>
+                      </span>
+                      <span className="text-[11px] font-mono text-muted-foreground flex-shrink-0">
+                        {isOn ? 'aan' : 'uit'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+
+        <p className="doen-subtitel">
+          uitzetten verbergt alleen het blok. de module zelf blijft gewoon bereikbaar<span className="text-flame">.</span>
+        </p>
+
+        <div className="flex items-center justify-between pt-2 border-t border-[rgba(26,83,92,0.08)]">
+          <span className="text-[12px] text-muted-foreground">
+            {hasUnsavedDashboardChanges
+              ? <span className="text-flame font-semibold">Onopgeslagen wijzigingen</span>
+              : 'Alle wijzigingen opgeslagen'}
+          </span>
+          <button
+            type="button"
+            onClick={handleSaveDashboard}
+            disabled={isSavingDashboard || !hasUnsavedDashboardChanges}
+            className="inline-flex items-center gap-2 bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:bg-[#9B9B95] disabled:shadow-none"
+          >
+            {isSavingDashboard
+              ? <>Opslaan...</>
+              : hasUnsavedDashboardChanges
+                ? <><Save className="h-4 w-4" />Dashboard opslaan</>
+                : <><CheckCircle2 className="h-4 w-4" />Opgeslagen</>}
+          </button>
+        </div>
+      </CardContent>
+    </Card>
     )}
 
     {subTab === 'navigatie' && (

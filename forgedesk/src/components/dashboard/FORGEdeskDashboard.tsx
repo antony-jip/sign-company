@@ -12,8 +12,10 @@ import {
   CloudLightning,
   ChevronLeft,
   ChevronRight,
+  SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { PortaalAlerts } from './PortaalAlerts'
 import { AanDeSlagSectie } from './AanDeSlagSectie'
 import { VandaagBlok } from './VandaagBlok'
@@ -25,6 +27,7 @@ import { RightRail } from './RightRail'
 import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
 import { useWeather, type WeatherIconKey } from '@/hooks/useWeather'
 import { DashboardDataProvider } from '@/contexts/DashboardDataContext'
+import { zichtbareBlokken } from './dashboardBlokken'
 
 const WEATHER_ICONS: Record<WeatherIconKey, LucideIcon> = {
   sun: Sun,
@@ -148,7 +151,9 @@ export function FORGEdeskDashboard() {
 
 function FORGEdeskDashboardInner() {
   const { user } = useAuth()
-  const { profile } = useAppSettings()
+  const { profile, settings } = useAppSettings()
+  const zichtbaar = useMemo(() => zichtbareBlokken(settings.dashboard_blokken), [settings.dashboard_blokken])
+  const railZichtbaar = zichtbaar.has('deze-week') || zichtbaar.has('activiteit') || zichtbaar.has('team')
   const userName = profile?.voornaam || user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
 
   usePortaalHerinnering()
@@ -215,6 +220,15 @@ function FORGEdeskDashboardInner() {
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-white/70 font-mono">
                   {dateCaps}
                 </span>
+                {/* Staat hier omdat de ergernis hier ontstaat: wie een blok niet
+                    gebruikt, wil het wegzetten zonder eerst Instellingen te zoeken. */}
+                <Link
+                  to="/instellingen?tab=weergave&sub=dashboard"
+                  className="ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <SlidersHorizontal className="w-3 h-3" />
+                  Weergave
+                </Link>
               </div>
               <h1
                 className="font-heading font-bold leading-[1.05] text-[28px] sm:text-[40px] text-white"
@@ -240,7 +254,7 @@ function FORGEdeskDashboardInner() {
               </p>
             </div>
 
-            {weather && WeatherIcon && (
+            {zichtbaar.has('weer') && weather && WeatherIcon && (
               <div
                 className="hidden md:flex items-center gap-6 px-7 sm:px-9 py-4"
                 style={{ borderTop: '1px solid rgba(255,255,255,0.10)' }}
@@ -323,33 +337,40 @@ function FORGEdeskDashboardInner() {
             )}
           </section>
 
-          <PortaalAlerts />
+          {zichtbaar.has('portaal') && <PortaalAlerts />}
 
           {/* ── KPI-strip ── */}
-          <KpiStrip />
+          {zichtbaar.has('kpi') && <KpiStrip />}
 
           {/* ── Dagelijkse briefing: gewogen signalen (verdwijnt als er niets ligt) ── */}
-          <DaanBriefingBlok />
+          {zichtbaar.has('briefing') && <DaanBriefingBlok />}
 
           {/* ── Ochtendlijst van de nachtploeg (verdwijnt als er niets ligt) ── */}
-          <VannachtGeleerdBlok />
+          {zichtbaar.has('vannacht') && <VannachtGeleerdBlok />}
 
-          {/* ── Vandaag (links) | Opvolgen (rechts) ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <div className="lg:col-span-7">
-              <VandaagBlok />
+          {/* ── Vandaag (links) | Opvolgen (rechts). Staat er maar één aan, dan
+                 pakt die de volle breedte in plaats van een halve lege rij. ── */}
+          {(zichtbaar.has('vandaag') || zichtbaar.has('opvolgen')) && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              {zichtbaar.has('vandaag') && (
+                <div className={zichtbaar.has('opvolgen') ? 'lg:col-span-7' : 'lg:col-span-12'}>
+                  <VandaagBlok />
+                </div>
+              )}
+              {zichtbaar.has('opvolgen') && (
+                <div className={zichtbaar.has('vandaag') ? 'lg:col-span-5' : 'lg:col-span-12'}>
+                  <OpvolgenBlok />
+                </div>
+              )}
             </div>
-            <div className="lg:col-span-5">
-              <OpvolgenBlok />
-            </div>
-          </div>
+          )}
 
           {/* ── Onboarding (alleen tijdens setup) ── */}
           <AanDeSlagSectie />
         </main>
 
         {/* ── Right rail ── */}
-        <RightRail />
+        {railZichtbaar && <RightRail zichtbaar={zichtbaar} />}
       </div>
     </div>
   )

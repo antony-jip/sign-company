@@ -320,6 +320,7 @@ const PER_USER_VELDEN_IN_PROFILE = [
   'afzender_naam',
   'sidebar_items',
   'mobiel_menu_items',
+  'dashboard_blokken',
 ] as const
 
 export async function updateAppSettings(userId: string, updates: Partial<AppSettings>): Promise<AppSettings> {

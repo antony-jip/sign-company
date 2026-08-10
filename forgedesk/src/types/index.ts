@@ -37,6 +37,8 @@ export interface Profile {
   sidebar_items?: string[] | null;
   // Mobiele bottom-nav, los van de desktop-keuze (migratie 169)
   mobiel_menu_items?: string[] | null;
+  // Zichtbare dashboardblokken (migratie 188). null = alles tonen.
+  dashboard_blokken?: string[] | null;
   // Meldingen bij nieuwe mail (migratie 171). Los van het bestaan van een
   // pushabonnement: uitzetten mag de toestemming niet weggooien.
   push_nieuwe_mail?: boolean;
@@ -753,6 +755,8 @@ export interface AppSettings {
   sidebar_items: string[];
   /** Per-user, staat op profiles (migratie 169). null = nooit ingesteld, UI-default geldt. */
   mobiel_menu_items?: string[] | null;
+  /** Per-user, staat op profiles (migratie 188). null = nooit ingesteld, alles zichtbaar. */
+  dashboard_blokken?: string[] | null;
   // Calculatie instellingen
   calculatie_categorieen: string[];            // Product categorieën (bijv. "Materiaal", "Arbeid")
   calculatie_eenheden: string[];               // Eenheden (bijv. "m²", "stuks", "uur")
