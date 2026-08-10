@@ -6,26 +6,54 @@ import { useLocation, useNavigationType } from 'react-router-dom'
 // pagina vaak nog te kort om er heen te scrollen.
 const HERSTEL_VENSTER_MS = 1200
 
+/** Pad plus querystring: ?page=2 is een andere lijst dan ?page=1. */
+function sleutelVan(pathname: string, search: string): string {
+  return pathname + search
+}
+
 /**
- * Bewaart de scrollpositie per route en zet hem terug bij een terugnavigatie.
+ * Kwam je hier terug vanaf een detailpagina van dezelfde lijst? Dan is dit een
+ * terugkeer, ook als de knop technisch vooruit navigeerde.
+ */
+function isTerugkeerVanDetail(vorigPad: string | null, nieuwPad: string): boolean {
+  if (!vorigPad) return false
+  return vorigPad.startsWith(nieuwPad === '/' ? '/' : nieuwPad + '/')
+}
+
+/**
+ * Bewaart de scrollpositie per pagina en zet hem terug zodra je erop terugkomt.
  *
  * Zonder dit sta je na "terug" uit een project weer bovenaan de lijst. Op een
  * telefoon, waar een lijst tientallen schermen lang is, is dat de irritatie die
  * je het vaakst voelt zonder hem te benoemen.
  *
- * Alleen bij POP (terug/vooruit). Een nieuwe navigatie hoort bovenaan te
- * beginnen — dat is wat je verwacht als je ergens naartoe gaat.
+ * Twee dingen maakten dat de eerdere opzet, die op `location.key` bewaarde en
+ * alleen bij POP herstelde, in de praktijk zelden aansloeg:
+ *
+ * 1. Het tabbladsysteem navigeert op meerdere plekken met `{ replace: true }`.
+ *    Een replace maakt een nieuwe `location.key`, dus de positie die onder de
+ *    oude key stond werd nooit meer gevonden. Vandaar dat we nu op pad plus
+ *    querystring bewaren: dat overleeft een replace.
+ * 2. De terugknoppen in de detailschermen doen `navigate(herkomstpad)` zodra ze
+ *    weten waar je vandaan kwam. Dat is technisch een vooruitnavigatie, dus de
+ *    hook zette je netjes bovenaan terwijl jij "terug" bedoelde. Vandaar dat we
+ *    ook herstellen wanneer het vorige pad een detailpagina van deze lijst was.
+ *
+ * Een echte nieuwe navigatie begint nog steeds bovenaan; dat is wat je verwacht
+ * als je ergens naartoe gaat.
  */
 export function useScrollHerstel(container: React.RefObject<HTMLElement | null>) {
   const location = useLocation()
   const navigatieType = useNavigationType()
   const posities = useRef(new Map<string, number>())
+  const vorigPad = useRef<string | null>(null)
 
-  // Positie van de huidige route bijhouden zolang je erop staat.
+  const sleutel = sleutelVan(location.pathname, location.search)
+
+  // Positie van de huidige pagina bijhouden zolang je erop staat.
   useEffect(() => {
     const el = container.current
     if (!el) return
-    const sleutel = location.key
     const onScroll = () => posities.current.set(sleutel, el.scrollTop)
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => {
@@ -34,18 +62,18 @@ export function useScrollHerstel(container: React.RefObject<HTMLElement | null>)
       posities.current.set(sleutel, el.scrollTop)
       el.removeEventListener('scroll', onScroll)
     }
-  }, [container, location.key])
+  }, [container, sleutel])
 
   useLayoutEffect(() => {
     const el = container.current
+    const vorige = vorigPad.current
+    vorigPad.current = location.pathname
     if (!el) return
 
-    const doel = navigatieType === 'POP' ? posities.current.get(location.key) : 0
-    if (doel == null) {
-      el.scrollTop = 0
-      return
-    }
-    if (doel === 0) {
+    const herstelt = navigatieType === 'POP' || isTerugkeerVanDetail(vorige, location.pathname)
+    const doel = herstelt ? posities.current.get(sleutel) : 0
+
+    if (!doel) {
       el.scrollTop = 0
       return
     }
@@ -78,5 +106,5 @@ export function useScrollHerstel(container: React.RefObject<HTMLElement | null>)
       el.removeEventListener('wheel', stop)
       el.removeEventListener('touchstart', stop)
     }
-  }, [container, location.key, navigatieType])
+  }, [container, sleutel, location.pathname, navigatieType])
 }
