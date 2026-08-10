@@ -23,7 +23,7 @@ import { downloadEmailAttachment, downloadAllEmailAttachments } from '@/services
 import { bijlageNaarProject } from '@/services/documentenService'
 import { createProjectFoto } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
-import { BijlageProjectDialog, type BijlageProjectKeuze } from './BijlageProjectDialog'
+import { BijlageProjectDialog, type BijlageProjectKeuze, type BijlageKandidaat } from './BijlageProjectDialog'
 import { valideerBijlagen, uploadBijlagenMetLinkFallback } from '@/utils/groteBijlagen'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -496,7 +496,8 @@ export function EmailReader({
   // wegschrijven. Zelfde ophaalroute als downloaden (signed URL bij cache-hit,
   // anders base64), maar de blob gaat naar de documenten-bucket.
   const [koppelendeBijlage, setKoppelendeBijlage] = useState<string | null>(null)
-  const [bijlageVoorDialog, setBijlageVoorDialog] = useState<{ filename: string; contentType: string } | null>(null)
+  const [bijlagenVoorDialog, setBijlagenVoorDialog] = useState<BijlageKandidaat[]>([])
+  const [koppelVoortgang, setKoppelVoortgang] = useState<string | null>(null)
   const handleBijlageNaarProject = useCallback((filename: string, contentType: string) => {
     if (!email) return
     const uid = Number(email.gmail_id || email.id)
@@ -504,69 +505,114 @@ export function EmailReader({
       toast.error('Kan deze bijlage niet ophalen · geen geldig email-id')
       return
     }
-    setBijlageVoorDialog({ filename, contentType })
+    setBijlagenVoorDialog([{ filename, contentType }])
   }, [email])
 
+  // Alle bijlagen in één keer. De dialog toont ze als aangevinkte lijst, zodat
+  // je er nog iets uit kunt halen voordat het naar het project gaat.
+  const handleAlleBijlagenNaarProject = useCallback((bijlagen: BijlageKandidaat[]) => {
+    if (!email || bijlagen.length === 0) return
+    const uid = Number(email.gmail_id || email.id)
+    if (Number.isNaN(uid)) {
+      toast.error('Kan deze bijlagen niet ophalen · geen geldig email-id')
+      return
+    }
+    setBijlagenVoorDialog(bijlagen)
+  }, [email])
+
+  // Eén bijlage ophalen en onder het project zetten. Afbeeldingen horen bij de
+  // situatiefoto's, de rest bij de documenten in de gekozen map.
+  const voegBijlageToe = useCallback(async (
+    bijlage: BijlageKandidaat,
+    keuze: BijlageProjectKeuze,
+    uid: number,
+  ) => {
+    const { filename, contentType } = bijlage
+    const result = await downloadEmailAttachment(uid, imapFolder, filename)
+    let blob: Blob
+    if (result.storage_url) {
+      const resp = await fetch(result.storage_url)
+      if (!resp.ok) throw new Error(`Bijlage ophalen mislukt (${resp.status})`)
+      blob = await resp.blob()
+    } else if (result.content) {
+      const binary = atob(result.content)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      blob = new Blob([bytes], { type: result.contentType || contentType })
+    } else {
+      throw new Error('Geen content of storage_url ontvangen')
+    }
+
+    if (isImageAttachment(filename, result.contentType || contentType)) {
+      if (!user?.id) throw new Error('Niet ingelogd')
+      const echteNaam = result.filename || filename
+      const file = new File([blob], echteNaam, { type: result.contentType || contentType })
+      await createProjectFoto(
+        { user_id: user.id, project_id: keuze.project.id, omschrijving: echteNaam, type: 'situatie' },
+        file,
+      )
+      return 'foto' as const
+    }
+
+    await bijlageNaarProject({
+      projectId: keuze.project.id,
+      klantId: keuze.project.klant_id,
+      bestandsnaam: result.filename || filename,
+      contentType: result.contentType || contentType,
+      map: keuze.map,
+      data: blob,
+    })
+    return 'document' as const
+  }, [imapFolder, user?.id])
+
   const handleBijlageBevestig = useCallback(async (keuze: BijlageProjectKeuze) => {
-    if (!email || !bijlageVoorDialog) return
-    const { filename, contentType } = bijlageVoorDialog
+    if (!email || keuze.bestanden.length === 0) return
     const uid = Number(email.gmail_id || email.id)
     if (Number.isNaN(uid)) {
       toast.error('Kan deze bijlage niet ophalen · geen geldig email-id')
       return
     }
-    setKoppelendeBijlage(filename)
-    try {
-      const result = await downloadEmailAttachment(uid, imapFolder, filename)
-      let blob: Blob
-      if (result.storage_url) {
-        const resp = await fetch(result.storage_url)
-        if (!resp.ok) throw new Error(`Bijlage ophalen mislukt (${resp.status})`)
-        blob = await resp.blob()
-      } else if (result.content) {
-        const binary = atob(result.content)
-        const bytes = new Uint8Array(binary.length)
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-        blob = new Blob([bytes], { type: result.contentType || contentType })
-      } else {
-        throw new Error('Geen content of storage_url ontvangen')
+
+    const totaal = keuze.bestanden.length
+    // Eén voor één: de bijlagen komen van een IMAP-server en parallel ophalen
+    // levert daar in de praktijk vaker een time-out op dan tijdwinst.
+    const gelukt: string[] = []
+    const mislukt: string[] = []
+    for (const [index, bijlage] of keuze.bestanden.entries()) {
+      setKoppelendeBijlage(bijlage.filename)
+      setKoppelVoortgang(totaal > 1 ? `${index + 1} van ${totaal}` : null)
+      try {
+        await voegBijlageToe(bijlage, keuze, uid)
+        gelukt.push(bijlage.filename)
+      } catch (err) {
+        logger.error('Bijlage aan project koppelen mislukt:', err)
+        mislukt.push(bijlage.filename)
       }
-      // Afbeeldingen (jpg/png/webp/…) horen bij de situatiefoto's van het
-      // project, niet tussen de documenten; PDF's en andere bestanden volgen
-      // het bestaande documenten-pad.
-      if (isImageAttachment(filename, result.contentType || contentType)) {
-        if (!user?.id) throw new Error('Niet ingelogd')
-        const echteNaam = result.filename || filename
-        const file = new File([blob], echteNaam, { type: result.contentType || contentType })
-        await createProjectFoto(
-          { user_id: user.id, project_id: keuze.project.id, omschrijving: echteNaam, type: 'situatie' },
-          file,
-        )
-        setBijlageVoorDialog(null)
-        toast.success('Toegevoegd aan project', {
-          description: `${filename} staat nu bij ${keuze.project.naam} onder Situatiefoto's.`,
-        })
-      } else {
-        await bijlageNaarProject({
-          projectId: keuze.project.id,
-          klantId: keuze.project.klant_id,
-          bestandsnaam: result.filename || filename,
-          contentType: result.contentType || contentType,
-          map: keuze.map,
-          data: blob,
-        })
-        setBijlageVoorDialog(null)
-        toast.success('Toegevoegd aan project', {
-          description: `${filename} staat nu bij ${keuze.project.naam} onder Bestanden · ${keuze.map}.`,
-        })
-      }
-    } catch (err) {
-      logger.error('Bijlage aan project koppelen mislukt:', err)
-      toast.error(err instanceof Error ? err.message : 'Toevoegen aan project mislukt')
-    } finally {
-      setKoppelendeBijlage(null)
     }
-  }, [email, imapFolder, bijlageVoorDialog, user?.id])
+    setKoppelendeBijlage(null)
+    setKoppelVoortgang(null)
+
+    // Alleen sluiten als alles gelukt is: bij een gedeeltelijke mislukking blijft
+    // de dialog staan met de selectie erin, zodat je het opnieuw kunt proberen
+    // zonder alles opnieuw aan te vinken.
+    if (mislukt.length === 0) {
+      setBijlagenVoorDialog([])
+      toast.success('Toegevoegd aan project', {
+        description: totaal === 1
+          ? `${gelukt[0]} staat nu bij ${keuze.project.naam}.`
+          : `${totaal} bijlagen staan nu bij ${keuze.project.naam}.`,
+      })
+      return
+    }
+
+    if (gelukt.length === 0) {
+      toast.error(totaal === 1 ? 'Toevoegen aan project mislukt' : 'Geen van de bijlagen kon worden toegevoegd')
+      return
+    }
+    toast.warning(`${gelukt.length} van ${totaal} toegevoegd`, {
+      description: `Niet gelukt: ${mislukt.join(', ')}`,
+    })
+  }, [email, voegBijlageToe])
 
   const handleDownloadAttachment = useCallback(async (filename: string) => {
     if (!email) return
@@ -1988,20 +2034,38 @@ export function EmailReader({
                       {echteBijlagen.length} bijlage{echteBijlagen.length > 1 ? 'n' : ''}
                     </span>
                     {echteBijlagen.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={handleDownloadAllAttachments}
-                        disabled={downloadingAll}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-foreground/70 hover:text-foreground/80 hover:bg-petrol/[0.06] disabled:opacity-60 disabled:cursor-wait transition-colors duration-150"
-                        title="Alle bijlagen downloaden"
-                      >
-                        {downloadingAll ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Download className="h-3.5 w-3.5" />
-                        )}
-                        Alles downloaden
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleAlleBijlagenNaarProject(
+                            echteBijlagen.map((a) => ({ filename: a.filename, contentType: a.contentType })),
+                          )}
+                          disabled={koppelendeBijlage !== null}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-foreground/70 hover:text-foreground/80 hover:bg-petrol/[0.06] disabled:opacity-60 disabled:cursor-wait transition-colors duration-150"
+                          title="Alle bijlagen aan een project toevoegen"
+                        >
+                          {koppelendeBijlage !== null ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <FolderPlus className="h-3.5 w-3.5" />
+                          )}
+                          Alles naar project
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDownloadAllAttachments}
+                          disabled={downloadingAll}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-foreground/70 hover:text-foreground/80 hover:bg-petrol/[0.06] disabled:opacity-60 disabled:cursor-wait transition-colors duration-150"
+                          title="Alle bijlagen downloaden"
+                        >
+                          {downloadingAll ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Download className="h-3.5 w-3.5" />
+                          )}
+                          Alles downloaden
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -2261,13 +2325,13 @@ export function EmailReader({
         )}
 
         <BijlageProjectDialog
-          open={!!bijlageVoorDialog}
-          onOpenChange={(v) => { if (!v) setBijlageVoorDialog(null) }}
-          bestandsnaam={bijlageVoorDialog?.filename || ''}
-          contentType={bijlageVoorDialog?.contentType || ''}
+          open={bijlagenVoorDialog.length > 0}
+          onOpenChange={(v) => { if (!v) setBijlagenVoorDialog([]) }}
+          bijlagen={bijlagenVoorDialog}
           threadId={email.thread_id}
           senderEmail={senderEmail}
           bezig={koppelendeBijlage !== null}
+          voortgang={koppelVoortgang}
           onBevestig={handleBijlageBevestig}
         />
     </div>

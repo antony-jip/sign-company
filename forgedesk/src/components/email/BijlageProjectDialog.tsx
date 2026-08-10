@@ -15,19 +15,28 @@ import {
   stelMapVoor,
 } from '@/utils/bijlageVoorstel'
 
+export interface BijlageKandidaat {
+  filename: string
+  contentType: string
+}
+
 export interface BijlageProjectKeuze {
   project: Project
   map: string
+  /** De bijlagen die aangevinkt bleven staan. */
+  bestanden: BijlageKandidaat[]
 }
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  bestandsnaam: string
-  contentType: string
+  /** Eén bijlage of de hele lijst; bij meer dan één verschijnt de voorselectie. */
+  bijlagen: BijlageKandidaat[]
   threadId?: string | null
   senderEmail?: string
   bezig?: boolean
+  /** Voortgang tijdens het toevoegen, bijvoorbeeld "2 van 3". */
+  voortgang?: string | null
   onBevestig: (keuze: BijlageProjectKeuze) => void
 }
 
@@ -38,11 +47,11 @@ const MAP_KEUZES = [...DOCUMENT_MAPPEN, MAP_BIJLAGEN]
 export function BijlageProjectDialog({
   open,
   onOpenChange,
-  bestandsnaam,
-  contentType,
+  bijlagen,
   threadId,
   senderEmail,
   bezig = false,
+  voortgang = null,
   onBevestig,
 }: Props) {
   const [laden, setLaden] = useState(false)
@@ -54,13 +63,33 @@ export function BijlageProjectDialog({
   const [zoekt, setZoekt] = useState(false)
   const [kiesZelf, setKiesZelf] = useState(false)
   const [map, setMap] = useState(MAP_BIJLAGEN)
+  // Alles staat aangevinkt bij openen; afvinken is bedoeld als correctie op een
+  // volledige selectie, niet als lijstje dat je zelf moet samenstellen.
+  const [aangevinkt, setAangevinkt] = useState<Set<string>>(new Set())
+
+  const meervoud = bijlagen.length > 1
+  const eerste = bijlagen[0]
+  const bestandsnaam = eerste?.filename ?? ''
+  const contentType = eerste?.contentType ?? ''
+  const selectie = useMemo(
+    () => bijlagen.filter((b) => aangevinkt.has(b.filename)),
+    [bijlagen, aangevinkt],
+  )
 
   // Afbeeldingen landen bij de situatiefoto's van het project, niet in een
   // documentenmap; de map-keuze is daar dus niet van toepassing.
-  const extensie = bestandsnaam.split('.').pop()?.toLowerCase() || ''
-  const isAfbeelding =
-    (contentType || '').toLowerCase().startsWith('image/') ||
-    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(extensie)
+  const isAfbeeldingBestand = useCallback((b: BijlageKandidaat) => {
+    const extensie = b.filename.split('.').pop()?.toLowerCase() || ''
+    return (b.contentType || '').toLowerCase().startsWith('image/') ||
+      ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(extensie)
+  }, [])
+
+  // De mapkeuze geldt alleen voor de niet-afbeeldingen: foto's gaan altijd naar
+  // de situatiefoto's van het project. Bij een gemengde selectie tonen we dus
+  // zowel de mapkeuze als de uitleg over de foto's.
+  const aantalAfbeeldingen = selectie.filter(isAfbeeldingBestand).length
+  const alleenAfbeeldingen = selectie.length > 0 && aantalAfbeeldingen === selectie.length
+  const bevatDocumenten = selectie.length > aantalAfbeeldingen
 
   // Voorstel opbouwen zodra de dialog opengaat: eerst de thread-koppeling,
   // anders de projecten van de klant achter de afzender.
@@ -71,6 +100,7 @@ export function BijlageProjectDialog({
     setKiesZelf(false)
     setQuery('')
     setMap(stelMapVoor(bestandsnaam, contentType))
+    setAangevinkt(new Set(bijlagen.map((b) => b.filename)))
 
     const bepaalVoorstel = async () => {
       if (threadId) {
@@ -97,7 +127,7 @@ export function BijlageProjectDialog({
       if (!afgebroken) setLaden(false)
     })
     return () => { afgebroken = true }
-  }, [open, threadId, senderEmail, bestandsnaam, contentType])
+  }, [open, threadId, senderEmail, bestandsnaam, contentType, bijlagen])
 
   // Zoeken pas laden als er ook echt een lijst getoond wordt.
   const lijstZichtbaar = !laden && (kiesZelf || !gekozenProject)
@@ -166,8 +196,16 @@ export function BijlageProjectDialog({
 
         <div className="flex-1 overflow-y-auto">
           <div className="px-7 pt-7 pb-1">
-            <p className="text-[20px] font-bold text-foreground tracking-[-0.3px]">Bijlage toevoegen</p>
-            <p className="text-[12px] text-muted-foreground truncate mt-1" title={bestandsnaam}>{bestandsnaam}</p>
+            <p className="text-[20px] font-bold text-foreground tracking-[-0.3px]">
+              {meervoud ? 'Bijlagen toevoegen' : 'Bijlage toevoegen'}
+            </p>
+            {meervoud ? (
+              <p className="text-[12px] text-muted-foreground mt-1">
+                {selectie.length} van {bijlagen.length} geselecteerd
+              </p>
+            ) : (
+              <p className="text-[12px] text-muted-foreground truncate mt-1" title={bestandsnaam}>{bestandsnaam}</p>
+            )}
           </div>
 
           <div className="px-7 pt-5 pb-4 space-y-2">
@@ -256,10 +294,48 @@ export function BijlageProjectDialog({
             )}
           </div>
 
+          {meervoud && (
+            <div className="px-7 pb-4 space-y-2">
+              <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground block">
+                Bijlagen
+              </label>
+              <div className="rounded-lg border border-border divide-y divide-border/60 max-h-[180px] overflow-y-auto">
+                {bijlagen.map((b) => {
+                  const aan = aangevinkt.has(b.filename)
+                  return (
+                    <button
+                      key={b.filename}
+                      type="button"
+                      onClick={() => setAangevinkt((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(b.filename)) next.delete(b.filename)
+                        else next.add(b.filename)
+                        return next
+                      })}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-muted/60 transition-colors duration-150"
+                    >
+                      <span
+                        className={cn(
+                          'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors',
+                          aan ? 'border-petrol bg-petrol text-white' : 'border-border bg-background text-transparent',
+                        )}
+                      >
+                        <Check className="h-3 w-3" strokeWidth={3} />
+                      </span>
+                      <span className={cn('min-w-0 flex-1 truncate text-[13px]', aan ? 'text-foreground' : 'text-muted-foreground line-through')}>
+                        {b.filename}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="px-7 pb-6 space-y-2">
-            {isAfbeelding ? (
+            {alleenAfbeeldingen ? (
               <p className="text-[12px] text-muted-foreground">
-                Komt bij de <span className="font-medium text-foreground">situatiefoto's</span> van het project.
+                {meervoud ? 'Deze foto\u2019s komen' : 'Komt'} bij de <span className="font-medium text-foreground">situatiefoto\u2019s</span> van het project.
               </p>
             ) : (
               <>
@@ -274,6 +350,11 @@ export function BijlageProjectDialog({
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
+                {aantalAfbeeldingen > 0 && (
+                  <p className="text-[12px] text-muted-foreground">
+                    De {aantalAfbeeldingen} foto{aantalAfbeeldingen > 1 ? '\u2019s' : ''} hierin {aantalAfbeeldingen > 1 ? 'gaan' : 'gaat'} naar de situatiefoto\u2019s en niet naar deze map.
+                  </p>
+                )}
               </>
             )}
           </div>
@@ -289,12 +370,12 @@ export function BijlageProjectDialog({
           </button>
           <button
             type="button"
-            onClick={() => gekozenProject && onBevestig({ project: gekozenProject, map })}
-            disabled={!gekozenProject || bezig}
+            onClick={() => gekozenProject && selectie.length > 0 && onBevestig({ project: gekozenProject, map, bestanden: selectie })}
+            disabled={!gekozenProject || bezig || selectie.length === 0}
             className="inline-flex items-center gap-1.5 h-9 px-5 rounded-md text-[13px] font-semibold text-white bg-petrol hover:bg-[#0F3A40] shadow-sm disabled:opacity-50 transition-colors"
           >
             {bezig && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            Toevoegen
+            {bezig && voortgang ? voortgang : 'Toevoegen'}
           </button>
         </DialogFooter>
       </DialogContent>
