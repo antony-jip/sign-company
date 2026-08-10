@@ -109,12 +109,6 @@ export function IntegratiesTab() {
   // disabled na een refresh.
   const [exactSecretOpgeslagen, setExactSecretOpgeslagen] = useState(false)
 
-  // KvK API state
-  const [kvkApiKey, setKvkApiKey] = useState('')
-  // Er staat al een sleutel, maar die tonen we niet: het invoerveld is dan leeg
-  // terwijl de koppeling wel actief hoort te blijven.
-  const [kvkSleutelOpgeslagen, setKvkSleutelOpgeslagen] = useState(false)
-  const [kvkSaving, setKvkSaving] = useState(false)
 
   // Boekhoudkoppeling state
   const [boekhoudPakket, setBoekhoudPakket] = useState<BoekhoudPakket | ''>('')
@@ -185,8 +179,6 @@ export function IntegratiesTab() {
       setExactBtwNul(s.exact_btw_nul ?? '')
       setExactDocumentTypeId(s.exact_document_type_id ?? null)
       setExactDocumentTypeNaam(s.exact_document_type_naam ?? '')
-      setKvkApiKey(isEncrypted(s.kvk_api_key ?? '') ? '' : (s.kvk_api_key ?? ''))
-      setKvkSleutelOpgeslagen(!!s.kvk_api_key)
       const pakket = s.boekhoud_pakket ?? ''
       setBoekhoudPakket(pakket)
       const tokenPerPakket: Record<BoekhoudPakket, string | undefined> = {
@@ -1615,82 +1607,6 @@ export function IntegratiesTab() {
                   één voor Exact en één voor {BOEKHOUD_PAKKET_NAAM[boekhoudPakket]}.
                 </div>
               )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── KvK API Instellingen ── */}
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-petrol/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-petrol dark:text-[#2A7A86] font-bold text-sm">KvK</span>
-            </div>
-            <div className="flex-1 space-y-4">
-              <div>
-                <h3 className="text-base font-semibold text-foreground">KvK API</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Zoek bedrijfsgegevens op via de Kamer van Koophandel. Zonder API key wordt de testomgeving gebruikt.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="kvk-api-key" className="text-sm font-medium">
-                  KvK API key (optioneel)
-                </Label>
-                <Input
-                  id="kvk-api-key"
-                  type="password"
-                  value={kvkApiKey}
-                  onChange={(e) => setKvkApiKey(e.target.value)}
-                  placeholder={kvkSleutelOpgeslagen && !kvkApiKey
-                    ? 'Sleutel opgeslagen. Vul alleen in om te vervangen.'
-                    : 'l7xx...'}
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Vraag een API key aan via{' '}
-                  <a
-                    href="https://developers.kvk.nl"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline inline-flex items-center gap-0.5"
-                  >
-                    developers.kvk.nl <ExternalLink className="w-3 h-3" />
-                  </a>
-                  . Zonder key worden testgegevens gebruikt.
-                </p>
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  onClick={async () => {
-                    if (!user?.id) return
-                    setKvkSaving(true)
-                    try {
-                      // Via het encryptie-endpoint: de key is een secret en
-                      // hoort niet onversleuteld in app_settings te staan.
-                      await saveIntegrationSettings({
-                        kvk_api_key: kvkApiKey,
-                        // Een leeg veld betekent "sleutel ongewijzigd", niet
-                        // "geen sleutel": het endpoint slaat lege secrets over.
-                        kvk_api_enabled: !!kvkApiKey || kvkSleutelOpgeslagen,
-                      })
-                      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
-                    } catch (err) {
-                      logger.error('Fout bij opslaan KvK instellingen:', err)
-                      toast.error('Kon KvK instellingen niet opslaan')
-                    } finally {
-                      setKvkSaving(false)
-                    }
-                  }}
-                  disabled={kvkSaving}
-                  size="sm"
-                >
-                  {kvkSaving ? 'Opslaan...' : 'Opslaan'}
-                </Button>
-              </div>
             </div>
           </div>
         </CardContent>

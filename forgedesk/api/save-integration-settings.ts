@@ -76,8 +76,6 @@ const ALLOWED_FIELDS = [
   'eboekhouden_api_token',
   'eboekhouden_debiteuren_ledger_id',
   'eboekhouden_omzet_ledger_id',
-  'kvk_api_key',
-  'kvk_api_enabled',
 ] as const
 
 const SECRET_FIELDS = [
@@ -86,7 +84,6 @@ const SECRET_FIELDS = [
   'snelstart_koppelsleutel',
   'moneybird_api_token',
   'eboekhouden_api_token',
-  'kvk_api_key',
 ]
 
 function getClientIp(req: VercelRequest): string | null {

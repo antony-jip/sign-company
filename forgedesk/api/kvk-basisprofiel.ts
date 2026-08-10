@@ -1,36 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import crypto from 'crypto'
-
-const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
-
-// Spiegelt encryptSecret in api/save-integration-settings.ts: leest zowel het
-// nieuwe g1:-GCM-formaat als het oude CBC-formaat. Valt terug op de ruwe waarde,
-// zodat sleutels die nog van vóór de encryptie stammen blijven werken zonder
-// migratie.
-function decryptSecret(text: string): string {
-  if (text && text.startsWith('g1:')) {
-    if (!INT_KEY) throw new Error('Server-encryptie is niet geconfigureerd (INTEGRATION_ENCRYPTION_KEY). Neem contact op met support.')
-    try {
-      const raw = Buffer.from(text.slice(3), 'base64')
-      const key = crypto.scryptSync(INT_KEY, raw.subarray(0, 16), 32)
-      const decipher = crypto.createDecipheriv('aes-256-gcm', key, raw.subarray(16, 28))
-      decipher.setAuthTag(raw.subarray(28, 44))
-      return Buffer.concat([decipher.update(raw.subarray(44)), decipher.final()]).toString('utf8')
-    } catch {
-      throw new Error('Integratie-token kan niet ontsleuteld worden (encryptie-key gewijzigd?). Verbind opnieuw via Instellingen > Integraties.')
-    }
-  }
-  if (!text || !text.includes(':') || text.length < 34) return text
-  if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
-  try {
-    const key = crypto.scryptSync(INT_KEY, 'integration', 32)
-    const [ivHex, enc] = text.split(':')
-    if (!ivHex || ivHex.length !== 32 || !enc) return text
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
-    return decipher.update(enc, 'hex', 'utf8') + decipher.final('utf8')
-  } catch { console.warn('[encryption] decrypt failed, treating as plaintext'); return text }
-}
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -108,38 +77,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let apiKey = process.env.KVK_API_KEY || ''
     const isTestMode = process.env.KVK_TEST_MODE === 'true' || !apiKey
 
-    if (!apiKey) {
-      // Org-first via profiles, user_id-fallback
-      const { data: callerProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('organisatie_id')
-        .eq('id', userId)
-        .maybeSingle()
-      const callerOrgId = (callerProfile?.organisatie_id as string | null) ?? null
-      let settings: { kvk_api_key: string | null } | null = null
-      if (callerOrgId) {
-        const { data } = await supabaseAdmin
-          .from('app_settings')
-          .select('kvk_api_key')
-          .eq('organisatie_id', callerOrgId)
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-        settings = data
-      }
-      if (!settings) {
-        const { data } = await supabaseAdmin
-          .from('app_settings')
-          .select('kvk_api_key')
-          .eq('user_id', userId)
-          .maybeSingle()
-        settings = data
-      }
-
-      if (settings?.kvk_api_key) {
-        apiKey = decryptSecret(settings.kvk_api_key)
-      }
-    }
+    // De KvK-sleutel is een servergeheim: één centrale sleutel in KVK_API_KEY,
+    // niet iets wat elke klant zelf aanvraagt en in zijn instellingen zet. Die
+    // per-klant-sleutel stond in app_settings en reisde dus mee naar de browser.
+    // Ontbreekt de omgevingsvariabele, dan valt de route terug op de publieke
+    // testsleutel van de KvK en krijg je testgegevens.
 
     if (!apiKey) {
       apiKey = KVK_TEST_KEY

@@ -7,7 +7,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { useAppSettings } from '@/contexts/AppSettingsContext'
 import supabase from '@/services/supabaseClient'
 import type { KvkResultaat } from '@/types'
 
@@ -52,7 +51,6 @@ interface KvkZoekVeldProps {
 }
 
 export function KvkZoekVeld({ kvkNummer, onKvkChange, onResultSelect }: KvkZoekVeldProps) {
-  const { settings } = useAppSettings()
   const [zoekDialogOpen, setZoekDialogOpen] = useState(false)
   const [zoekQuery, setZoekQuery] = useState('')
   const [resultaten, setResultaten] = useState<KvkApiZoekResultaat[]>([])
@@ -61,7 +59,9 @@ export function KvkZoekVeld({ kvkNummer, onKvkChange, onResultSelect }: KvkZoekV
   const [isLoadingProfiel, setIsLoadingProfiel] = useState(false)
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isApiAvailable = !!(settings.kvk_api_enabled || settings.kvk_api_key)
+  // De KvK-sleutel staat centraal op de server (KVK_API_KEY), dus zoeken is
+  // altijd beschikbaar. Ontbreekt die sleutel, dan antwoordt de API met
+  // testgegevens; dat is een serverkeuze en niet iets wat de klant instelt.
 
   const searchApi = useCallback(async (query: string) => {
     if (query.length < 3) {
@@ -208,13 +208,6 @@ export function KvkZoekVeld({ kvkNummer, onKvkChange, onResultSelect }: KvkZoekV
           </DialogHeader>
 
           <div className="space-y-4">
-            {!isApiAvailable && (
-              <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 px-3 py-2 rounded-lg">
-                KvK API niet geconfigureerd. Demogegevens worden gebruikt.
-                Configureer in Instellingen &rarr; Integraties.
-              </p>
-            )}
-
             <div className="flex gap-2">
               <Input
                 value={zoekQuery}

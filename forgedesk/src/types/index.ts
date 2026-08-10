@@ -771,8 +771,9 @@ export interface AppSettings {
   // Offerte layout instellingen
   offerte_toon_m2?: boolean;  // Toon m² berekening achter afmetingen (default: true)
   // KvK integratie
-  kvk_api_key?: string;
-  kvk_api_enabled?: boolean;
+  // De KvK-sleutel staat bewust niet in dit type: hij is een servergeheim en
+  // hoort niet in de app-settings die naar de browser gaan. api/kvk-zoeken.ts
+  // en api/kvk-basisprofiel.ts lezen hem uit de KVK_API_KEY-omgevingsvariabele.
   // Factuur instellingen
   factuur_prefix: string;
   factuur_volgnummer: number;
