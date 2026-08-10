@@ -7,7 +7,7 @@ import type { Email, Klant } from '@/types'
 import { getKlanten, createKlant, createProject, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
 import { koppelEmailAanProject } from '@/services/emailProjectService'
 import { verbergAanvraag } from '@/services/emailService'
-import { extractSenderEmail, zoekKlantVoorAfzender } from './emailHelpers'
+import { extractSenderEmail, zoekKlantVoorAfzender, bepaalAanvraagContact, bodyAlsTekst, GENERIEKE_MAILDOMEINEN } from './emailHelpers'
 import { extractCompanyName } from './EmailCRMSidebar'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '@/utils/logger'
@@ -29,7 +29,18 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
   const [aangemaakt, setAangemaakt] = useState<{ id: string; naam: string } | null>(null)
 
   const afzenderEmail = extractSenderEmail(email.van)
-  const bedrijfsgok = extractCompanyName(senderName, afzenderEmail)
+
+  // Meestal is de afzender de klant. Komt de aanvraag via ons eigen
+  // contactformulier binnen, dan mailt aanvraag@signcompany.nl namens iemand
+  // anders en staat de echte klant in de body.
+  const contact = bepaalAanvraagContact(
+    afzenderEmail,
+    senderName,
+    bodyAlsTekst(email.inhoud || ''),
+    user?.email || ''
+  )
+  const contactNaam = contact.naam || senderName
+  const bedrijfsgok = contact.bedrijf || extractCompanyName(contactNaam, contact.email)
 
   // Zelfde match als de CRM-sidebar: eerst op adres, dan op domein.
   useEffect(() => {
@@ -37,7 +48,7 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
     async function zoekKlant() {
       try {
         const klanten = await getKlanten()
-        const match = zoekKlantVoorAfzender(klanten, afzenderEmail)
+        const match = zoekKlantVoorAfzender(klanten, contact.email)
         if (!gestopt) setKlant(match)
       } catch (err) {
         logger.warn('Klant zoeken mislukt:', err)
@@ -47,7 +58,7 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
     }
     zoekKlant()
     return () => { gestopt = true }
-  }, [afzenderEmail])
+  }, [contact.email])
 
   async function handleProjectAanmaken() {
     if (!user) { toast.error('Niet ingelogd'); return }
@@ -55,22 +66,23 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
     try {
       let doelKlant = klant
       if (!doelKlant) {
-        const domein = afzenderEmail.split('@')[1]?.toLowerCase()
+        const domein = contact.email.split('@')[1]?.toLowerCase()
+        const generiekDomein = GENERIEKE_MAILDOMEINEN.includes(domein || '')
         doelKlant = await createKlant({
-          bedrijfsnaam: bedrijfsgok || senderName,
-          contactpersoon: senderName,
-          email: afzenderEmail,
-          telefoon: '',
+          bedrijfsnaam: bedrijfsgok || contactNaam,
+          contactpersoon: contactNaam,
+          email: contact.email,
+          telefoon: contact.telefoon,
           adres: '', postcode: '', stad: '', land: 'Nederland',
-          website: domein ? `www.${domein}` : '',
+          website: domein && !generiekDomein ? `www.${domein}` : '',
           debiteurennummer: '', kvk_nummer: '', btw_nummer: '',
           status: 'actief', tags: [], notities: '',
           contactpersonen: [{
             id: crypto.randomUUID(),
-            naam: senderName,
+            naam: contactNaam,
             functie: '',
-            email: afzenderEmail,
-            telefoon: '',
+            email: contact.email,
+            telefoon: contact.telefoon,
             is_primair: true,
           }],
         })
@@ -79,7 +91,7 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
 
       const settings = await getAppSettings(user.id)
       const projectNummer = await generateProjectNummer(settings?.project_prefix || 'P')
-      const klantNaam = doelKlant.bedrijfsnaam || doelKlant.contactpersoon || senderName
+      const klantNaam = doelKlant.bedrijfsnaam || doelKlant.contactpersoon || contactNaam
 
       const project = await createProject({
         user_id: user.id,
@@ -198,10 +210,17 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
             <span className="inline-flex items-center gap-1.5 text-[13px] text-text-sec">
               <UserPlus className="h-3.5 w-3.5 text-muted-hex shrink-0" />
               Nieuwe klant:
-              <span className="font-semibold text-foreground">{bedrijfsgok || senderName}</span>
+              <span className="font-semibold text-foreground">{bedrijfsgok || contactNaam}</span>
             </span>
           )}
         </div>
+
+        {contact.uitBody && (
+          <p className="mt-2.5 text-[12px] text-muted-hex">
+            Aanvrager uit de mailtekst · {contactNaam} · {contact.email}
+            {contact.telefoon ? ` · ${contact.telefoon}` : ''}
+          </p>
+        )}
       </div>
     </div>
   )

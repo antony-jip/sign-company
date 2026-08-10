@@ -101,6 +101,138 @@ export function platteTekstNaarHtml(tekst: string): string {
   return `<div style="white-space:pre-wrap">${metLinks}</div>`
 }
 
+/**
+ * Body terug naar leesbare regels, of hij nu HTML of platte tekst is. Anders
+ * dan stripHtml blijven de regelovergangen staan — die zijn nodig om
+ * "Label: waarde"-velden uit een formuliermail te kunnen lezen.
+ */
+export function bodyAlsTekst(inhoud: string): string {
+  if (!inhoud) return ''
+  if (!lijktOpHtml(inhoud)) return inhoud
+  return inhoud
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|tr|li|h[1-6]|table)>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+// ─── Aanvraag: wie is hier eigenlijk de klant? ───
+
+const DOORGEEFLUIK_LOCALPARTS = [
+  'no-reply', 'noreply', 'no_reply', 'donotreply', 'do-not-reply',
+  'aanvraag', 'aanvragen', 'formulier', 'form', 'forms', 'webform',
+  'website', 'site', 'wordpress', 'mailer', 'notificatie', 'notification',
+]
+
+/**
+ * Een doorgeefluik is een adres dat namens iemand anders mailt: het eigen
+ * contactformulier, een no-reply-notifier. De afzender is dan niet de klant,
+ * de body wel. Alles wat hier niet doorheen komt behandelen we als een echte
+ * afzender — dat is verreweg het vaakste geval.
+ */
+export function isDoorgeefluikAfzender(afzenderEmail: string, eigenEmail: string): boolean {
+  const adres = (afzenderEmail || '').trim().toLowerCase()
+  if (!adres.includes('@')) return false
+
+  const [localpart, domein] = adres.split('@')
+  const eigenDomein = (eigenEmail || '').trim().toLowerCase().split('@')[1]
+  if (eigenDomein && domein === eigenDomein) return true
+
+  return DOORGEEFLUIK_LOCALPARTS.some((l) => localpart === l || localpart.startsWith(l + '-') || localpart.startsWith(l + '.'))
+}
+
+export interface BodyContact {
+  naam: string
+  email: string
+  telefoon: string
+  bedrijf: string
+}
+
+const VELD_LABELS: Record<keyof BodyContact, string[]> = {
+  naam: ['naam', 'contactpersoon', 'name', 'voor- en achternaam'],
+  email: ['e-mail', 'email', 'e-mailadres', 'emailadres', 'mail'],
+  telefoon: ['telefoon', 'telefoonnummer', 'tel', 'mobiel', 'phone'],
+  bedrijf: ['bedrijf', 'bedrijfsnaam', 'organisatie', 'company'],
+}
+
+const EMAIL_IN_TEKST = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i
+
+/**
+ * Leest de contactgegevens uit een formulier-notificatie. Zo goed als elk
+ * formulier (ons eigen, Contact Form 7, Gravity Forms, Formspree) mailt zijn
+ * velden als "Label: waarde" op een eigen regel; daar gaan we op af. Vindt hij
+ * geen labels, dan pakt hij het eerste losse e-mailadres uit de tekst.
+ */
+export function haalContactUitBody(bodyTekst: string): BodyContact {
+  const contact: BodyContact = { naam: '', email: '', telefoon: '', bedrijf: '' }
+  if (!bodyTekst) return contact
+
+  for (const regel of bodyTekst.split(/\r?\n/)) {
+    const match = regel.match(/^\s*\**\s*([\wÀ-ÿ'’\- .]{2,30}?)\s*\**\s*[:：]\s*(.+?)\s*$/)
+    if (!match) continue
+    const label = match[1].toLowerCase().trim()
+    const waarde = match[2].trim()
+    if (!waarde) continue
+    for (const [veld, labels] of Object.entries(VELD_LABELS) as [keyof BodyContact, string[]][]) {
+      if (!contact[veld] && labels.includes(label)) contact[veld] = waarde.slice(0, 120)
+    }
+  }
+
+  if (contact.email && !EMAIL_IN_TEKST.test(contact.email)) contact.email = ''
+  if (!contact.email) {
+    const los = bodyTekst.match(EMAIL_IN_TEKST)
+    if (los) contact.email = los[0]
+  }
+  return contact
+}
+
+export interface AanvraagContact {
+  email: string
+  naam: string
+  telefoon: string
+  bedrijf: string
+  uitBody: boolean
+}
+
+/**
+ * Bepaalt wie de aanvraag gedaan heeft. De afzender is de bron, tenzij die
+ * aantoonbaar een doorgeefluik is: dan pas kijken we in de body. Zonder die
+ * volgorde zou een klant die zijn leverancier citeert opeens als die
+ * leverancier geboekt worden.
+ */
+export function bepaalAanvraagContact(
+  afzenderEmail: string,
+  afzenderNaam: string,
+  bodyTekst: string,
+  eigenEmail: string
+): AanvraagContact {
+  const afzender = { email: afzenderEmail, naam: afzenderNaam, telefoon: '', bedrijf: '', uitBody: false }
+  if (!isDoorgeefluikAfzender(afzenderEmail, eigenEmail)) return afzender
+
+  const uitBody = haalContactUitBody(bodyTekst)
+  // Zonder bruikbaar adres in de body valt hij terug op de afzender: liever de
+  // bekende — zij het minder precieze — afzender dan een klant zonder e-mail.
+  if (!uitBody.email || uitBody.email.toLowerCase() === afzenderEmail.trim().toLowerCase()) return afzender
+
+  return {
+    email: uitBody.email,
+    naam: uitBody.naam || afzenderNaam,
+    telefoon: uitBody.telefoon,
+    bedrijf: uitBody.bedrijf,
+    uitBody: true,
+  }
+}
+
 export function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 }
