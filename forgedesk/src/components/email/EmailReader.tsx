@@ -505,8 +505,8 @@ export function EmailReader({
       toast.error('Kan deze bijlage niet ophalen · geen geldig email-id')
       return
     }
-    setBijlagenVoorDialog([{ filename, contentType }])
-  }, [email])
+    setBijlagenVoorDialog([{ filename, contentType, previewUrl: attachmentThumbnails[filename] }])
+  }, [email, attachmentThumbnails])
 
   // Alle bijlagen in één keer. De dialog toont ze als aangevinkte lijst, zodat
   // je er nog iets uit kunt halen voordat het naar het project gaat.
@@ -517,8 +517,8 @@ export function EmailReader({
       toast.error('Kan deze bijlagen niet ophalen · geen geldig email-id')
       return
     }
-    setBijlagenVoorDialog(bijlagen)
-  }, [email])
+    setBijlagenVoorDialog(bijlagen.map((b) => ({ ...b, previewUrl: attachmentThumbnails[b.filename] })))
+  }, [email, attachmentThumbnails])
 
   // Eén bijlage ophalen en onder het project zetten. Waar hij landt bepaalt de
   // gebruiker in de dialog; het bestandstype gaf daar alleen de eerste gok voor.
