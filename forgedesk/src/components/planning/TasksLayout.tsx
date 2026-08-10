@@ -70,6 +70,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { updateProject, getProject } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
+import { ProjectCombobox } from '@/components/shared/ProjectCombobox'
 import { Checkbox } from '@/components/ui/checkbox'
 import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
 import { getAvatarStyle as getLaneAvatarStyle } from '@/utils/medewerkerAvatar'
@@ -1999,20 +2000,14 @@ export function TasksLayout() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Select value={fabProjectId || 'geen'} onValueChange={(v) => setFabProjectId(v === 'geen' ? '' : v)}>
-                <SelectTrigger className="w-auto h-7 text-xs min-w-0 max-w-[120px] rounded-lg">
-                  <SelectValue placeholder="Project" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="geen">Geen project</SelectItem>
-                  {projecten.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.naam}
-                      {p.klant_naam ? <span className="text-muted-foreground ml-2">· {p.klant_naam}</span> : null}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ProjectCombobox
+                projecten={projecten}
+                value={fabProjectId}
+                onChange={setFabProjectId}
+                compact
+                placeholder="Project"
+                className="max-w-[120px]"
+              />
             </div>
             <button
               className="w-full h-9 text-sm font-semibold text-white rounded-xl bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-40 disabled:shadow-none disabled:translate-y-0"
@@ -2938,18 +2933,11 @@ function EditTaskDialog({
         {/* Project · altijd zichtbaar, geen type-toggle meer */}
         <div className="px-7 pb-4 space-y-1.5">
           <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</Label>
-          <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
-            <SelectTrigger className="h-9 text-sm border-border bg-background"><SelectValue placeholder="Geen project" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="geen">Geen project</SelectItem>
-              {projecten.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.naam}
-                  {p.klant_naam ? <span className="text-muted-foreground ml-2">· {p.klant_naam}</span> : null}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ProjectCombobox
+            projecten={projecten}
+            value={formData.project_id || ''}
+            onChange={(id) => updateField('project_id', id)}
+          />
         </div>
 
         {/* Briefing · dominant field, auto-grow tot 400px, daarna scroll */}
