@@ -299,7 +299,8 @@ export function MaatjeKladblok() {
       {/* Op een telefoon paste de knoppenrij niet naast de titel: hij mocht niet
           krimpen en niet afbreken, dus schoof Foto maken buiten beeld — precies
           de knop waarvoor je de module opent. Onder md staan de knoppen daarom
-          onder de titel, en ze breken af als ze samen te breed worden. */}
+          onder de titel, breken ze af als ze samen te breed worden, en staat
+          Foto maken vooraan in plaats van achter de twee bijrolknoppen. */}
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h1 className="text-[26px] font-extrabold tracking-[-0.3px] text-foreground">Maatjes<span className="text-flame">.</span></h1>
@@ -327,7 +328,7 @@ export function MaatjeKladblok() {
           <button
             type="button"
             onClick={() => { laatsteBronRef.current = 'camera'; cameraInputRef.current?.click() }}
-            className="inline-flex items-center gap-2 rounded-lg bg-flame px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)] transition-transform active:scale-[0.97]"
+            className="order-first inline-flex items-center gap-2 rounded-lg bg-flame px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)] transition-transform active:scale-[0.97] md:order-none"
           >
             <Camera className="h-4 w-4" strokeWidth={2} />
             Foto maken
