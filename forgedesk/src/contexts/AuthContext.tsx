@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/react'
 import { getProfile, getOrganisatie, createMedewerker } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import { clearQueryCache } from '@/lib/queryCache'
+import { wisMailCache } from '@/lib/mailCache'
 import type { TeamRol, Organisatie } from '@/types'
 import { logger } from '@/utils/logger'
 
@@ -276,6 +277,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // toch leeg, dus dit is onschadelijk.
     clearQueryCache()
     wisBestandsCache()
+    void wisMailCache()
 
     // De organisatie als tag in Sentry. Geen persoonsgegeven (het is een
     // bedrijfs-uuid) en het beantwoordt de vraag die je bij elke melding hebt:
@@ -291,6 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       clearQueryCache()
       wisBestandsCache()
+      void wisMailCache()
       setUser(null)
       setSession(null)
       setOrganisatieId(null)

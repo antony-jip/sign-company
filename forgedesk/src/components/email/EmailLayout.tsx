@@ -11,6 +11,7 @@ import {
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, markeerEmailGelezenOpServer, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail, emailImapActie, prefetchEmailBodies } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
+import { leesMailCache, schrijfMailCache, maakEigenaarSleutel } from '@/lib/mailCache'
 import supabase from '@/services/supabaseClient'
 import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers, getEmailBodies } from '@/services/emailService'
 import { cn } from '@/lib/utils'
@@ -80,11 +81,15 @@ const DB_MAP_FOLDERS: Partial<Record<EmailFolder, string>> = {
 }
 
 export function EmailLayout() {
-  const { user } = useAuth()
+  const { user, organisatieId } = useAuth()
   const { emailFetchLimit } = useAppSettings()
 
   // ─── Core state ───
   const [emails, setEmails] = useState<Email[]>(() => getCached<Email[]>('emails') ?? [])
+  // Sleutel waaronder de lijst op het toestel staat. Wisselt de gebruiker of
+  // de organisatie, dan matcht hij niet meer en lezen we niets.
+  const eigenaarRef = useRef(maakEigenaarSleutel(user?.id, organisatieId))
+  eigenaarRef.current = maakEigenaarSleutel(user?.id, organisatieId)
   // null = nog niet bekend; false stuurt de lege inbox naar de koppel-uitleg.
   const [mailboxGekoppeld, setMailboxGekoppeld] = useState<boolean | null>(null)
   useEffect(() => {
@@ -318,6 +323,9 @@ export function EmailLayout() {
     const raw = await getEmails(lijstLimietRef.current).catch(() => [])
     const normalized = normalizeEmails(raw)
     setCached('emails', normalized)
+    // Ook naar het toestel, zodat de volgende opening geen skeleton toont.
+    // Zestig rijen is ruim een scherm of tien; de rest komt toch van de server.
+    void schrijfMailCache('emails', eigenaarRef.current, normalized.slice(0, 60))
     return normalized
   }
 
@@ -446,6 +454,23 @@ export function EmailLayout() {
 
   // ─── Initial load: Supabase first, then IMAP sync in background ───
   const initialLoadDone = useRef(false)
+  // ─── Eerst het toestel, dan het netwerk ───
+  // De lijst uit IndexedDB staat er binnen een paar milliseconden; de query
+  // erachter kost koud vier tot zes seconden. Zonder dit kijk je al die tijd
+  // naar een skeleton — op een telefoon elke keer opnieuw, want die gooit het
+  // tabblad weg. Verse data die eerder binnen is wint: dan laten we hem staan.
+  useEffect(() => {
+    if (!user?.id) return
+    let gestopt = false
+    void (async () => {
+      const bewaard = await leesMailCache<Email[]>('emails', eigenaarRef.current)
+      if (gestopt || !bewaard?.length) return
+      setEmails((vorige) => (vorige.length > 0 ? vorige : normalizeEmails(bewaard)))
+      setIsLoading(false)
+    })()
+    return () => { gestopt = true }
+  }, [user?.id])
+
   useEffect(() => {
     if (initialLoadDone.current) return
     initialLoadDone.current = true
