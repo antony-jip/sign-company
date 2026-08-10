@@ -14,7 +14,7 @@ import { logCreate } from '@/utils/auditLogger'
 import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DatePicker } from '@/components/ui/date-picker'
-import { getAvatarStyle, extractSenderName, splitAfzenderNaam } from './emailHelpers'
+import { getAvatarStyle, extractSenderName, splitAfzenderNaam, zoekKlantVoorAfzender } from './emailHelpers'
 import { EmailProjectKoppelingPanel } from './EmailProjectKoppelingPanel'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -76,7 +76,9 @@ const GENERIC_EMAIL_DOMAINS = [
 const PANEL_INPUT_CLS = "w-full px-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-lg outline-none border border-border focus:border-petrol transition-colors duration-150 placeholder:text-muted-foreground"
 
 function extractCompanyName(senderName: string, email: string): string {
-  const pipeMatch = senderName.match(/[|–—-]\s*(.+)$/)
+  // Witruimte vóór het scheidingsteken, anders breekt de gok op een streepje
+  // binnen een woord ("Kunis, John (KWV-NL, NLAN)" gaf "NL, NLAN)").
+  const pipeMatch = senderName.match(/\s[|–—-]\s*(.+)$/)
   if (pipeMatch) return pipeMatch[1].trim()
   const domainMatch = email.match(/@([^>]+)/)
   if (domainMatch) {
@@ -114,7 +116,7 @@ export function EmailContextSidebar({
   // ── Contact info ──
   const contactEmail = mode === 'reading' ? (propSenderEmail || '') : (composeToAddress || '')
   const contactName = mode === 'reading' ? (propSenderName || '') : ''
-  const personName = (contactName || '').replace(/\s*[|–—-]\s*.+$/, '').trim()
+  const personName = (contactName || '').replace(/\s[|–—-]\s+.+$/, '').trim()
   const companyGuess = useMemo(() => contactEmail ? extractCompanyName(contactName, contactEmail) : '', [contactName, contactEmail])
 
   // ── Klant lookup ──
@@ -166,7 +168,8 @@ export function EmailContextSidebar({
       try {
         const klanten = await getKlanten()
         const addr = contactEmail.toLowerCase()
-        const domain = contactEmail.match(/@(.+)/)?.[1]?.toLowerCase()
+        // De contactpersonen-tabel gaat vóór de domeinstap: een exacte treffer
+        // daar is harder dan een gok op het domein.
         let match = klanten.find(k =>
           k.email?.toLowerCase() === addr ||
           k.contactpersonen?.some(c => c.email?.toLowerCase() === addr)
@@ -175,9 +178,7 @@ export function EmailContextSidebar({
           const klantId = await getKlantIdByContactEmail(addr).catch(() => null)
           if (klantId) match = klanten.find(k => k.id === klantId)
         }
-        if (!match && domain && !GENERIC_EMAIL_DOMAINS.includes(domain)) {
-          match = klanten.find(k => k.email?.toLowerCase().endsWith('@' + domain))
-        }
+        if (!match) match = zoekKlantVoorAfzender(klanten, addr) || undefined
         if (!cancelled) setLinkedKlant(match || null)
       } catch (err) { /* silent */ }
       finally { if (!cancelled) setKlantLoading(false) }

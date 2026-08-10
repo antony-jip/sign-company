@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import type { Email, Klant } from '@/types'
 import { getKlanten, createKlant, createOfferte, createProject, createTaak } from '@/services/supabaseService'
-import { extractSenderEmail, formatShortDate } from './emailHelpers'
+import { extractSenderEmail, formatShortDate, zoekKlantVoorAfzender } from './emailHelpers'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { useAuth } from '@/contexts/AuthContext'
@@ -16,8 +16,10 @@ import { logCreate } from '@/utils/auditLogger'
 
 // ─── Helper: extract company name from sender ───
 export function extractCompanyName(senderName: string, email: string): string {
-  // Try "Name | Company" or "Name - Company" format
-  const pipeMatch = senderName.match(/[|–—-]\s*(.+)$/)
+  // Try "Name | Company" or "Name - Company" format. Het scheidingsteken moet
+  // door witruimte voorafgegaan worden: anders breekt de gok op het streepje
+  // binnen een woord ("Kunis, John (KWV-NL, NLAN)" gaf "NL, NLAN)").
+  const pipeMatch = senderName.match(/\s[|–—-]\s*(.+)$/)
   if (pipeMatch) return pipeMatch[1].trim()
 
   // Try email domain (skip generic providers)
@@ -94,18 +96,8 @@ export const CRMSidebar = memo(function CRMSidebar({
     async function findKlant() {
       try {
         const klanten = await getKlanten()
-        const emailDomain = senderEmail.match(/@(.+)/)?.[1]?.toLowerCase()
-        let match = klanten.find(k =>
-          k.email?.toLowerCase() === senderEmail.toLowerCase() ||
-          k.contactpersonen?.some(c => c.email?.toLowerCase() === senderEmail.toLowerCase())
-        )
-        if (!match && emailDomain) {
-          const generic = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl', 'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl', 'home.nl', 'upcmail.nl']
-          if (!generic.includes(emailDomain)) {
-            match = klanten.find(k => k.email?.toLowerCase().endsWith('@' + emailDomain))
-          }
-        }
-        if (!cancelled) setLinkedKlant(match || null)
+        const match = zoekKlantVoorAfzender(klanten, senderEmail)
+        if (!cancelled) setLinkedKlant(match)
       } catch (err) { /* silent */ }
       finally { if (!cancelled) setKlantLoading(false) }
     }

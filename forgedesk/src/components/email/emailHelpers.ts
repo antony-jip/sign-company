@@ -1,4 +1,43 @@
 import type { FontSize } from './emailTypes'
+import type { Klant } from '@/types'
+
+export const GENERIEKE_MAILDOMEINEN = [
+  'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl',
+  'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl', 'home.nl', 'upcmail.nl',
+  'casema.nl', 'quicknet.nl', 'tele2.nl', 'solcon.nl',
+]
+
+/**
+ * Zoekt de klant achter een afzenderadres: eerst op het exacte adres, daarna
+ * op domein.
+ *
+ * Beide stappen kijken óók naar de contactpersonen. Een derde van de klanten
+ * heeft een leeg `email`-veld — bij grotere klanten staan alle adressen alleen
+ * bij de contactpersonen. Matchen op `klant.email` alleen laat die klanten dus
+ * ongezien, waarna de mail als nieuwe klant wordt aangeboden en er een
+ * duplicaat ontstaat.
+ *
+ * Generieke providerdomeinen doen niet mee aan de domeinstap: anders koppelt
+ * elke gmail-afzender aan de eerste klant met een gmail-adres.
+ */
+export function zoekKlantVoorAfzender(klanten: Klant[], afzenderEmail: string): Klant | null {
+  const adres = (afzenderEmail || '').trim().toLowerCase()
+  if (!adres.includes('@')) return null
+
+  const exact = klanten.find((k) =>
+    k.email?.toLowerCase() === adres ||
+    k.contactpersonen?.some((c) => c.email?.toLowerCase() === adres)
+  )
+  if (exact) return exact
+
+  const domein = adres.split('@')[1]
+  if (!domein || GENERIEKE_MAILDOMEINEN.includes(domein)) return null
+
+  return klanten.find((k) =>
+    k.email?.toLowerCase().endsWith('@' + domein) ||
+    k.contactpersonen?.some((c) => c.email?.toLowerCase().endsWith('@' + domein))
+  ) || null
+}
 
 export function extractSenderName(from: string): string {
   const match = from.match(/^([^<]+)/)
