@@ -71,6 +71,36 @@ export function splitAfzenderNaam(naam: string): { voornaam: string; achternaam:
   return { voornaam: delen[0], achternaam: delen.slice(1).join(' ') }
 }
 
+// ─── Platte tekst leesbaar tonen ───
+
+const HTML_SPOOR = /<(br|p|div|table|tr|td|span|a|ul|ol|li|h[1-6]|img|body|html|blockquote)\b/i
+
+/** Tekstmails hebben geen HTML-deel; zonder deze check zijn het losse tags. */
+export function lijktOpHtml(inhoud: string): boolean {
+  return HTML_SPOOR.test(inhoud || '')
+}
+
+/**
+ * Zet een platte-tekstmail om naar HTML met behoud van de regelindeling.
+ * Formulier-notificaties en veel zakelijke mail komen als text/plain binnen;
+ * die kwamen als één doorlopende lap tekst in beeld omdat de reader de body
+ * als HTML rendert en newlines daar niets betekenen.
+ */
+export function platteTekstNaarHtml(tekst: string): string {
+  if (!tekst) return ''
+  const esc = tekst
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  const metLinks = esc.replace(
+    /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]}'"])/gi,
+    (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+  )
+  // pre-wrap: behoudt enters en uitlijning van "Label:   waarde"-kolommen,
+  // maar breekt lange regels wel netjes af op smalle schermen.
+  return `<div style="white-space:pre-wrap">${metLinks}</div>`
+}
+
 export function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 }

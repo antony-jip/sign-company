@@ -14,7 +14,7 @@ import {
 import { EmailActionsPopover } from './EmailActionsPopover'
 import { cn } from '@/lib/utils'
 import type { Email, EmailAttachment } from '@/types'
-import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, SNOOZE_OPTIONS, labelColors } from './emailHelpers'
+import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, lijktOpHtml, platteTekstNaarHtml, SNOOZE_OPTIONS, labelColors } from './emailHelpers'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -1104,7 +1104,8 @@ export function EmailReader({
 
   const sanitizedBody = useMemo(() => {
     if (!email?.inhoud) return ''
-    let processed = sanitizeEmailHTML(email.inhoud)
+    const ruw = lijktOpHtml(email.inhoud) ? email.inhoud : platteTekstNaarHtml(email.inhoud)
+    let processed = sanitizeEmailHTML(ruw)
     const sigMarkers = ['Met vriendelijke groet', 'Kind regards', 'Best regards', 'Regards,', 'Groeten,', 'Mvg,', 'Met hartelijke groet']
     for (const marker of sigMarkers) {
       const idx = processed.indexOf(marker)
