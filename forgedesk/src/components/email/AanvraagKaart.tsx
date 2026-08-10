@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { X, ArrowRight, Loader2 } from 'lucide-react'
+import { X, ArrowRight, Loader2, Building2, UserPlus, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import type { Email, Klant } from '@/types'
 import { getKlanten, createKlant, createProject, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
 import { koppelEmailAanProject } from '@/services/emailProjectService'
 import { verbergAanvraag } from '@/services/emailService'
-import { extractSenderEmail } from './emailHelpers'
+import { extractSenderEmail, zoekKlantVoorAfzender } from './emailHelpers'
 import { extractCompanyName } from './EmailCRMSidebar'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '@/utils/logger'
@@ -37,13 +37,8 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
     async function zoekKlant() {
       try {
         const klanten = await getKlanten()
-        const adres = afzenderEmail.toLowerCase()
-        let match = klanten.find((k) => k.email?.toLowerCase() === adres)
-        if (!match) {
-          const domein = adres.split('@')[1]
-          if (domein) match = klanten.find((k) => k.email?.toLowerCase().endsWith('@' + domein))
-        }
-        if (!gestopt) setKlant(match || null)
+        const match = zoekKlantVoorAfzender(klanten, afzenderEmail)
+        if (!gestopt) setKlant(match)
       } catch (err) {
         logger.warn('Klant zoeken mislukt:', err)
       } finally {
@@ -131,52 +126,82 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
 
   if (aangemaakt) {
     return (
-      <div className="mt-6 border-l-2 border-flame bg-muted/40 rounded-r-lg px-5 py-4">
-        <button
-          onClick={() => navigate(`/projecten/${aangemaakt.id}`)}
-          className="inline-flex items-center gap-2 text-[14px] font-medium text-petrol hover:underline"
-        >
-          {aangemaakt.naam}
-          <ArrowRight className="h-3.5 w-3.5" />
-        </button>
+      <div className="relative mt-6 overflow-hidden rounded-xl doen-panel doen-wash px-5 py-4 pl-6">
+        <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-petrol" />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <CheckCircle2 className="h-4 w-4 text-petrol shrink-0" />
+          <span className="text-[13px] text-text-sec">Project aangemaakt</span>
+          <button
+            onClick={() => navigate(`/projecten/${aangemaakt.id}`)}
+            className="group inline-flex items-center gap-1.5 text-[14px] font-semibold text-petrol hover:underline"
+          >
+            {aangemaakt.naam}
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
       </div>
     )
   }
 
+  const klantNaam = klant?.bedrijfsnaam || klant?.contactpersoon || ''
+
   return (
-    <div className="relative mt-6 border-l-2 border-flame bg-muted/40 rounded-r-lg px-5 py-4">
+    <div className="relative mt-6 overflow-hidden rounded-xl doen-panel doen-wash">
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-flame to-flame/30"
+      />
+
       <button
         onClick={handleVerbergen}
         aria-label="Suggestie verbergen"
-        className="absolute top-3 right-3 text-muted-hex hover:text-ink transition-colors"
+        className="absolute top-3.5 right-3.5 text-muted-hex hover:text-ink transition-colors"
       >
         <X className="h-3.5 w-3.5" />
       </button>
 
-      <span
-        className="block text-[11px] uppercase tracking-wider text-muted-hex mb-3"
-        style={MONO}
-      >
-        herkend als aanvraag
-      </span>
+      <div className="pl-6 pr-10 py-5">
+        <div className="flex items-center gap-2.5 mb-3">
+          <span className="badge-flame">Aanvraag</span>
+          {typeof email.aanvraag_zekerheid === 'number' && email.aanvraag_zekerheid > 0 && (
+            <span className="text-[11px] text-muted-hex" style={MONO}>
+              {email.aanvraag_zekerheid}% zeker
+            </span>
+          )}
+        </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Button
-          onClick={handleProjectAanmaken}
-          disabled={bezig || !klantGeladen}
-          className="h-10 px-5 rounded-lg bg-flame hover:bg-flame/90 text-white font-semibold text-[14px]"
-        >
-          {bezig && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Project aanmaken
-        </Button>
+        {email.aanvraag_samenvatting && (
+          <p className="text-[14px] leading-relaxed text-foreground mb-4 max-w-[64ch]">
+            {email.aanvraag_samenvatting}
+          </p>
+        )}
 
-        <span className="text-[14px] text-text-sec">
-          {!klantGeladen
-            ? 'Klant zoeken...'
-            : klant
-              ? `Koppel aan ${klant.bedrijfsnaam || klant.contactpersoon}`
-              : `Nieuwe klant: ${bedrijfsgok || senderName}`}
-        </span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+          <Button
+            onClick={handleProjectAanmaken}
+            disabled={bezig || !klantGeladen}
+            className="h-10 px-5 rounded-lg bg-flame hover:bg-flame/90 text-white font-semibold text-[14px]"
+          >
+            {bezig && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Project aanmaken
+          </Button>
+
+          {!klantGeladen ? (
+            <span className="text-[13px] text-muted-hex">Klant zoeken...</span>
+          ) : klant ? (
+            <span className="inline-flex items-center gap-1.5 text-[13px] text-text-sec">
+              <Building2 className="h-3.5 w-3.5 text-petrol shrink-0" />
+              Onder
+              <span className="font-semibold text-foreground">{klantNaam}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-[13px] text-text-sec">
+              <UserPlus className="h-3.5 w-3.5 text-muted-hex shrink-0" />
+              Nieuwe klant:
+              <span className="font-semibold text-foreground">{bedrijfsgok || senderName}</span>
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )
