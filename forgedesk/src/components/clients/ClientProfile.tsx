@@ -68,7 +68,6 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { toast } from 'sonner'
 import {
   cn,
-  getStatusColor,
   getPriorityColor,
   formatDate,
   formatCurrency,
@@ -92,34 +91,13 @@ import {
   bevestigDaanGeheugen,
   wijsDaanGeheugenAf,
   updateDaanGeheugenInhoud,
+  getMedewerkers,
 } from '@/services/supabaseService'
 import type { DaanGeheugenRegel } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
 import { KlantHistorieTab } from './KlantHistorieTab'
-import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, ContactpersoonRecord, Vestiging, Factuur, Deal, Tijdregistratie } from '@/types'
+import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, ContactpersoonRecord, Vestiging, Factuur, Deal, Tijdregistratie, Medewerker } from '@/types'
 import { confirm } from '@/components/shared/ConfirmDialog'
-
-function getStatusBarColor(status: string): string {
-  switch (status) {
-    case 'actief': return 'bg-green-500'
-    case 'gepland': return 'bg-primary'
-    case 'in-review': return 'bg-amber-500'
-    case 'afgerond': return 'bg-emerald-500'
-    case 'on-hold': return 'bg-red-500'
-    default: return 'bg-muted-foreground/40'
-  }
-}
-
-function getStatusBorderColor(status: string): string {
-  switch (status) {
-    case 'actief': return 'border-l-green-500'
-    case 'gepland': return 'border-l-primary'
-    case 'in-review': return 'border-l-amber-500'
-    case 'afgerond': return 'border-l-emerald-500'
-    case 'on-hold': return 'border-l-red-500'
-    default: return 'border-l-muted-foreground/40'
-  }
-}
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -152,6 +130,7 @@ export function ClientProfile() {
   const [clientDeals, setClientDeals] = useState<Deal[]>([])
   const [clientTijdregistraties, setClientTijdregistraties] = useState<Tijdregistratie[]>([])
   const [clientOffertes, setClientOffertes] = useState<Offerte[]>([])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [isLoading, setIsLoading] = useState(true)
   // Sub-tab in de URL zodat hij een refresh en een tabblad-wissel overleeft.
   const [searchParams, setSearchParams] = useSearchParams()
@@ -183,6 +162,16 @@ export function ClientProfile() {
   const [moveKlanten, setMoveKlanten] = useState<Klant[]>([])
   const [selectedMoveKlant, setSelectedMoveKlant] = useState<Klant | null>(null)
   const [moveLoading, setMoveLoading] = useState(false)
+
+  // team_leden bevat medewerker-id's; zonder deze lijst stond er een rauwe
+  // UUID in de PM-kolom.
+  useEffect(() => {
+    let cancelled = false
+    getMedewerkers()
+      .then((lijst) => { if (!cancelled) setMedewerkers(lijst) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     if (!id) return
@@ -588,6 +577,14 @@ export function ClientProfile() {
 
   const contactpersonen = klant.contactpersonen || []
   const vestigingen = klant.vestigingen || []
+
+  /** team_leden bewaart id's; oudere projecten hebben er nog namen in staan. */
+  const naamVanMedewerker = (waarde?: string): string => {
+    if (!waarde) return ''
+    const match = medewerkers.find((m) => m.id === waarde || m.user_id === waarde)
+    if (match) return match.naam
+    return waarde.includes('-') && waarde.length > 20 ? '' : waarde
+  }
   const tabs = [
     { key: 'projecten', label: 'Projecten', count: clientProjecten.length, icon: FolderKanban },
     { key: 'deals', label: 'Deals', count: clientDeals.length, icon: CreditCard },
@@ -605,13 +602,11 @@ export function ClientProfile() {
       {/* ── Header ── */}
       <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-accent dark:text-primary font-display">
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <h1 className="text-[28px] sm:text-[32px] font-extrabold tracking-[-0.5px] leading-none text-foreground font-display">
               {klant.bedrijfsnaam}
             </h1>
-            <Badge className={cn('capitalize', getStatusColor(klant.status))}>
-              {klant.status}
-            </Badge>
+            <StatusBadge status={klant.status} label={statusLabels[klant.status] || klant.status} className="capitalize" />
             <button
               onClick={() => setEditDialogOpen(true)}
               className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors duration-150"
@@ -743,10 +738,10 @@ export function ClientProfile() {
       {/* ── Info Cards Row ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Contactpersonen */}
-        <Card className="border-border dark:border-border">
+        <Card className="doen-panel border-0 shadow-none rounded-xl">
           <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Users className="w-4 h-4 text-petrol" />
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Users className="w-4 h-4 text-petrol/70" />
               Contactpersonen ({contactpersonen.length + importedContacts.length})
             </CardTitle>
             <button
@@ -816,10 +811,10 @@ export function ClientProfile() {
         </Card>
 
         {/* Contact info + Vestigingen */}
-        <Card className="border-border dark:border-border">
+        <Card className="doen-panel border-0 shadow-none rounded-xl">
           <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-green-500" />
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-petrol/70" />
               {vestigingen.length > 0 ? `Vestigingen (${vestigingen.length})` : 'Adresgegevens'}
             </CardTitle>
             <button
@@ -827,7 +822,7 @@ export function ClientProfile() {
               className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors duration-150"
               title="Vestiging toevoegen"
             >
-              <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-green-500" />
+              <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-petrol" />
             </button>
           </CardHeader>
           <CardContent className="pt-0 space-y-2">
@@ -859,29 +854,29 @@ export function ClientProfile() {
         </Card>
 
         {/* Financieel */}
-        <Card className="border-border dark:border-border">
+        <Card className="doen-panel border-0 shadow-none rounded-xl">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-primary" />
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-petrol/70" />
               Financieel
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-2">
             {klant.btw_nummer && (
               <div>
-                <p className="text-xs text-muted-foreground">BTW</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">BTW</p>
                 <p className="text-sm font-medium font-mono text-foreground">{klant.btw_nummer}</p>
               </div>
             )}
             {klant.debiteurennummer && (
               <div>
-                <p className="text-xs text-muted-foreground">Debiteurennummer</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Debiteurennummer</p>
                 <p className="text-sm font-medium font-mono text-foreground">{klant.debiteurennummer}</p>
               </div>
             )}
             {klant.kvk_nummer && (
               <div>
-                <p className="text-xs text-muted-foreground">KvK</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">KvK</p>
                 <p className="text-sm font-medium font-mono text-foreground">{klant.kvk_nummer}</p>
               </div>
             )}
@@ -898,10 +893,10 @@ export function ClientProfile() {
         </Card>
 
         {/* Opmerking / Quick note */}
-        <Card className="border-border dark:border-border">
+        <Card className="doen-panel border-0 shadow-none rounded-xl">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-amber-500" />
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-petrol/70" />
               Opmerking
             </CardTitle>
           </CardHeader>
@@ -922,7 +917,7 @@ export function ClientProfile() {
         {daanGeheugen.length > 0 && (
           <Card className="border-border dark:border-border md:col-span-2 xl:col-span-4">
             <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-petrol" />
                 Wat Daan weet
               </CardTitle>
@@ -1003,31 +998,35 @@ export function ClientProfile() {
         {/* Left: Tabs + Content */}
         <div className="flex-1 min-w-0 space-y-4">
           {/* Tab bar */}
-          <div className="flex items-center gap-1 flex-wrap">
+          <div className="flex items-center gap-1 flex-wrap border-b border-border">
             {tabs.map((tab) => {
               const Icon = tab.icon
+              const isActive = activeTab === tab.key
               return (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
-                    activeTab === tab.key
-                      ? 'bg-primary text-white shadow-md shadow-primary/25'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    'relative inline-flex items-center gap-2 px-3.5 py-2.5 text-[14px] rounded-t-lg transition-all duration-200 -mb-px',
+                    isActive
+                      ? 'text-petrol dark:text-foreground font-bold bg-petrol/[0.05] dark:bg-white/[0.05]'
+                      : 'text-foreground/55 font-medium hover:text-foreground hover:bg-foreground/[0.035]'
                   )}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={isActive ? 2.1 : 1.75} />
                   {tab.label}
                   {tab.count > 0 && (
                     <span className={cn(
-                      'text-xs px-1.5 py-0.5 rounded-full',
-                      activeTab === tab.key
-                        ? 'bg-white/20 text-white'
-                        : 'bg-background text-muted-foreground'
+                      'font-mono text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums transition-colors',
+                      isActive
+                        ? 'bg-petrol text-white'
+                        : 'bg-[rgba(26,83,92,0.08)] dark:bg-white/[0.06] text-foreground/70'
                     )}>
                       {tab.count}
                     </span>
+                  )}
+                  {isActive && (
+                    <span aria-hidden className="absolute bottom-0 left-2.5 right-2.5 h-[2.5px] rounded-t-full bg-flame" />
                   )}
                 </button>
               )
@@ -1063,23 +1062,25 @@ export function ClientProfile() {
                       {clientProjecten
                         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                         .map((project) => {
-                          const isOverdue = new Date(project.eind_datum ?? "") < new Date() && project.status !== 'afgerond'
-                          const daysLeft = Math.ceil((new Date(project.eind_datum ?? "").getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                          // Zonder einddatum valt er niets af te tellen; anders stond
+                          // er "NaNd resterend" onder een streepje.
+                          const eind = project.eind_datum ? new Date(project.eind_datum) : null
+                          const heeftDeadline = !!eind && !Number.isNaN(eind.getTime())
+                          const isOverdue = heeftDeadline && eind! < new Date() && project.status !== 'afgerond'
+                          const daysLeft = heeftDeadline
+                            ? Math.ceil((eind!.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                            : 0
+                          const pmNaam = naamVanMedewerker(project.team_leden?.[0])
 
                           return (
                             <tr
                               key={project.id}
-                              className={cn(
-                                'hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors duration-150 border-l-4',
-                                getStatusBorderColor(project.status)
-                              )}
+                              className="hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors duration-150"
                               onClick={() => navigate(`/projecten/${project.id}`)}
                             >
                               {/* Status */}
                               <td className="py-3 px-4">
-                                <Badge className={cn('text-xs', getStatusColor(project.status))}>
-                                  {statusLabels[project.status] || project.status}
-                                </Badge>
+                                <StatusBadge status={project.status} label={statusLabels[project.status] || project.status} />
                               </td>
 
                               {/* Omschrijving */}
@@ -1097,20 +1098,18 @@ export function ClientProfile() {
                               </td>
 
                               {/* PM */}
-                              <td className="py-3 px-4 hidden md:table-cell">
-                                {project.team_leden?.length > 0 ? (
+                              <td className="py-4 px-4 hidden md:table-cell">
+                                {pmNaam ? (
                                   <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-wm-pale/30 dark:bg-accent/30 flex items-center justify-center flex-shrink-0">
-                                      <span className="text-[10px] font-semibold text-accent dark:text-primary">
-                                        {project.team_leden[0]?.charAt(0)?.toUpperCase()}
-                                      </span>
-                                    </div>
-                                    <span className="text-sm text-foreground truncate max-w-[120px]">
-                                      {project.team_leden[0]}
+                                    <span className="w-6 h-6 rounded-full bg-[rgba(26,83,92,0.08)] dark:bg-white/[0.06] flex items-center justify-center flex-shrink-0 text-[10px] font-semibold text-petrol dark:text-petrol-light">
+                                      {pmNaam.charAt(0).toUpperCase()}
+                                    </span>
+                                    <span className="text-[13px] text-foreground truncate max-w-[140px]">
+                                      {pmNaam}
                                     </span>
                                   </div>
                                 ) : (
-                                  <span className="text-sm text-muted-foreground">–</span>
+                                  <span className="text-[13px] text-muted-foreground">–</span>
                                 )}
                               </td>
 
@@ -1122,7 +1121,7 @@ export function ClientProfile() {
                                 )}>
                                   {formatDate(project.eind_datum ?? "")}
                                 </span>
-                                {project.status !== 'afgerond' && (
+                                {heeftDeadline && project.status !== 'afgerond' && (
                                   <p className={cn(
                                     'text-[10px] mt-0.5',
                                     isOverdue ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-500' : 'text-muted-foreground'
@@ -1215,9 +1214,7 @@ export function ClientProfile() {
                             <span className="text-sm text-foreground">{offerte.titel}</span>
                           </td>
                           <td className="py-3 px-4">
-                            <Badge className={cn('text-xs capitalize', getStatusColor(offerte.status))}>
-                              {offerte.status}
-                            </Badge>
+                            <StatusBadge status={offerte.status} className="capitalize" />
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span className="text-sm font-semibold font-mono text-foreground">
@@ -1268,9 +1265,7 @@ export function ClientProfile() {
                           <td className="py-3 px-4 text-sm font-medium">{deal.titel}</td>
                           <td className="py-3 px-4 text-sm capitalize text-muted-foreground">{deal.fase}</td>
                           <td className="py-3 px-4">
-                            <Badge className={cn('text-xs capitalize', getStatusColor(deal.status))}>
-                              {deal.status}
-                            </Badge>
+                            <StatusBadge status={deal.status} className="capitalize" />
                           </td>
                           <td className="py-3 px-4 text-right text-sm font-semibold font-mono">{formatCurrency(deal.verwachte_waarde)}</td>
                           <td className="py-3 px-4 text-right text-sm text-muted-foreground hidden md:table-cell">{deal.kans_percentage || 50}%</td>
@@ -1317,9 +1312,7 @@ export function ClientProfile() {
                           </td>
                           <td className="py-3 px-4 text-sm">{factuur.titel}</td>
                           <td className="py-3 px-4">
-                            <Badge className={cn('text-xs capitalize', getStatusColor(factuur.status))}>
-                              {factuur.status}
-                            </Badge>
+                            <StatusBadge status={factuur.status} className="capitalize" />
                           </td>
                           <td className="py-3 px-4 text-right text-sm font-semibold font-mono">{formatCurrency(factuur.totaal)}</td>
                           <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground font-mono">{formatDate(factuur.factuurdatum)}</td>
@@ -1467,9 +1460,7 @@ export function ClientProfile() {
                           </div>
                         </div>
                         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border dark:border-border">
-                          <Badge className={cn('text-xs capitalize', getStatusColor(doc.status))}>
-                            {doc.status}
-                          </Badge>
+                          <StatusBadge status={doc.status} className="capitalize" />
                           {doc.tags.length > 0 && (
                             <div className="flex gap-1">
                               {doc.tags.slice(0, 2).map((tag) => (
@@ -1683,10 +1674,10 @@ export function ClientProfile() {
         {/* Right Sidebar */}
         <div className="w-full xl:w-80 flex-shrink-0 space-y-4">
           {/* Notities */}
-          <Card className="border-border dark:border-border">
+          <Card className="doen-panel border-0 shadow-none rounded-xl">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <StickyNote className="w-4 h-4 text-amber-500" />
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <StickyNote className="w-4 h-4 text-petrol/70" />
                 Notities
               </CardTitle>
             </CardHeader>
@@ -1698,17 +1689,19 @@ export function ClientProfile() {
                 rows={5}
                 className="text-sm"
               />
-              <Button onClick={handleSaveNotitie} disabled={savingNotitie} size="sm" className="w-full">
-                {savingNotitie ? 'Opslaan...' : 'Opslaan'}
-              </Button>
+              <div className="flex justify-end">
+                <Button onClick={handleSaveNotitie} disabled={savingNotitie} size="sm" variant="outline">
+                  {savingNotitie ? 'Opslaan...' : 'Notitie opslaan'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
           {/* Tags */}
-          <Card className="border-border dark:border-border">
+          <Card className="doen-panel border-0 shadow-none rounded-xl">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Tag className="w-4 h-4 text-green-500" />
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Tag className="w-4 h-4 text-petrol/70" />
                 Tags
               </CardTitle>
             </CardHeader>
@@ -1728,10 +1721,10 @@ export function ClientProfile() {
           </Card>
 
           {/* Export */}
-          <Card className="border-border dark:border-border">
+          <Card className="doen-panel border-0 shadow-none rounded-xl">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Download className="w-4 h-4 text-petrol" />
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Download className="w-4 h-4 text-petrol/70" />
                 Exporteren
               </CardTitle>
             </CardHeader>
@@ -2070,7 +2063,7 @@ function ClientProfileSkeleton() {
           </div>
 
           {/* Tab-content: tabel-look met header-row + data-rijen */}
-          <Card className="border-border dark:border-border">
+          <Card className="doen-panel border-0 shadow-none rounded-xl">
             <div className="overflow-hidden">
               {/* Header-row */}
               <div className="flex items-center gap-4 px-4 py-3 border-b border-border">
@@ -2102,7 +2095,7 @@ function ClientProfileSkeleton() {
         {/* Right sidebar · w-80 op xl */}
         <div className="w-full xl:w-80 flex-shrink-0 space-y-4">
           {/* Notities */}
-          <Card className="border-border dark:border-border">
+          <Card className="doen-panel border-0 shadow-none rounded-xl">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Skeleton className="h-4 w-4 rounded-sm" />
@@ -2116,7 +2109,7 @@ function ClientProfileSkeleton() {
           </Card>
 
           {/* Tags */}
-          <Card className="border-border dark:border-border">
+          <Card className="doen-panel border-0 shadow-none rounded-xl">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Skeleton className="h-4 w-4 rounded-sm" />
@@ -2134,7 +2127,7 @@ function ClientProfileSkeleton() {
           </Card>
 
           {/* Exporteren */}
-          <Card className="border-border dark:border-border">
+          <Card className="doen-panel border-0 shadow-none rounded-xl">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Skeleton className="h-4 w-4 rounded-sm" />
