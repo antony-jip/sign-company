@@ -103,6 +103,58 @@ interface EmailReaderProps {
   onOpenContextPanel?: (panel: 'klant' | 'project' | 'taak' | 'koppel') => void
 }
 
+// De context die Daan krijgt om een antwoord te schrijven.
+//
+// Hier stond `.slice(0, 500)`. Een aanvraag van een paar alinea's werd daardoor
+// halverwege afgekapt, en juist het staartje bevat meestal wat er is
+// meegestuurd en waar de klant advies over vraagt. Daan vroeg vervolgens om het
+// vectorbestand en de foto die al in de mail zaten. Een mailtekst is klein
+// vergeleken met wat het model aankan, dus de grens ligt nu ruim genoeg om een
+// normale zakelijke mail heel te laten.
+const MAX_CONTEXT_TEKENS = 12000
+
+function alsPlatteTekst(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h[1-6])>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '- ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function bouwAntwoordContext(email: Email): string {
+  // body_text is de platte versie die de mailserver zelf meestuurt; die is
+  // betrouwbaarder dan tags uit de HTML slopen.
+  const ruw = email.body_text?.trim() || alsPlatteTekst(email.inhoud || '')
+  const tekst = ruw.length > MAX_CONTEXT_TEKENS
+    ? ruw.slice(0, MAX_CONTEXT_TEKENS) + '\n\n[hier is de mail afgekapt]'
+    : ruw
+
+  // Inline beeld uit handtekeningen overslaan: dat zijn logo's, geen bijlagen
+  // waar de klant iets mee bedoelt.
+  const bijlagen = (email.attachment_meta ?? [])
+    .filter((b) => !b.isInlineCid)
+    .map((b) => b.filename)
+
+  const regels = [
+    `Afzender: ${extractSenderName(email.van)}`,
+    `Onderwerp: ${email.onderwerp}`,
+    bijlagen.length > 0
+      ? `Meegestuurde bijlagen: ${bijlagen.join(', ')}`
+      : 'Meegestuurde bijlagen: geen',
+    '',
+    tekst,
+  ]
+  return regels.join('\n')
+}
+
 export function EmailReader({
   email,
   threadEmails,
@@ -913,7 +965,7 @@ export function EmailReader({
     if (!email || !editorRef.current) return
     setForgieLoading(true)
     try {
-      const context = `Oorspronkelijk bericht van ${extractSenderName(email.van)}: ${email.onderwerp}\n\n${email.inhoud?.replace(/<[^>]*>/g, '').slice(0, 500)}`
+      const context = bouwAntwoordContext(email)
       const response = await callForgie('generate-reply', context)
       if (response?.result && editorRef.current) {
         editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
@@ -955,7 +1007,7 @@ export function EmailReader({
     // Wait for editor to mount, then generate
     setForgieLoading(true)
     try {
-      const context = `Oorspronkelijk bericht van ${extractSenderName(email.van)}: ${email.onderwerp}\n\n${email.inhoud?.replace(/<[^>]*>/g, '').slice(0, 500)}`
+      const context = bouwAntwoordContext(email)
       const response = await callForgie('generate-reply', context)
       if (response?.result) {
         // Editor should be mounted by now

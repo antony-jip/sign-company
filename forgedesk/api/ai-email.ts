@@ -157,7 +157,8 @@ const PROMPTS: Record<string, string> = {
   'summarize': 'Vat deze email samen in 2-3 korte zinnen in het Nederlands. Antwoord alleen met de samenvatting.\n\nEmail:\n{text}',
   'summarize-thread': 'Je vat een e-mailconversatie samen voor het projectteam van een signing-bedrijf. Focus op: (1) wat de klant heeft gevraagd of bevestigd, (2) welke afspraken zijn gemaakt — data, prijzen, leveringen, materialen, (3) welke openstaande vragen er nog zijn, (4) huidige status. Schrijf maximaal 5 korte bullets, in het Nederlands. Begin elke bullet met een gedachtenstreepje. Antwoord alleen met de bullets, geen aanhef of slotzin.\n\nConversatie (chronologisch, oudste eerst):\n{text}',
   'translate-nl': 'Vertaal deze email naar het Nederlands. Behoud de toon. Antwoord alleen met de vertaling.\n\nEmail:\n{text}',
-  'generate-reply': 'Schrijf een kort en professioneel antwoord op deze email in het Nederlands. Antwoord alleen met de reply-tekst.\n\nEmail:\n{text}',
+  // Deze actie ging structureel mis op één punt: Daan vroeg om gegevens die al in de mail stonden. Een aanvraag met specificaties, bijlagen en een leverdatum kreeg een antwoord terug dat om het vectorbestand, het materiaal en een foto vroeg, terwijl alle drie waren meegestuurd. Vandaar dat de instructie begint met inventariseren en pas daarna met schrijven.
+  'generate-reply': 'Je schrijft namens een signbedrijf een antwoord op een binnengekomen e-mail.\n\nWERK IN DEZE VOLGORDE.\n1. Lees de hele mail, inclusief de lijst met bijlagen onderaan de context. Ga na welke gegevens de afzender al heeft gegeven: afmetingen, kleuren, materiaal, aantallen, montagesituatie, leverdatum, bestemming, en welke bestanden zijn meegestuurd.\n2. Bepaal wat er dan nog ECHT ontbreekt om een offerte te kunnen maken.\n3. Schrijf pas daarna je antwoord.\n\nVRAAG NOOIT OM IETS DAT AL IN DE MAIL OF IN DE BIJLAGEN STAAT. Dat is de belangrijkste regel: een klant die alles netjes heeft aangeleverd en dan dezelfde vragen terugkrijgt, voelt zich niet gelezen. Twijfel je of iets gegeven is, ga er dan van uit dat het gegeven is en vraag er niet naar. Ontbreekt er niets, stel dan geen enkele vraag en bevestig gewoon dat de offerte eraan komt.\n\nVraag ook niet naar zaken waarover de klant juist ONS advies vraagt. Vraagt hij om advies over materiaal of dikte, dan geef je advies of je zegt dat je erop terugkomt in de offerte; je stelt die vraag niet aan hem terug.\n\nBevestig kort en concreet wat je begrepen hebt, in je eigen woorden en met de gegevens uit de mail, zodat de klant ziet dat het gelezen is. Herhaal niet de hele specificatielijst.\n\nVerzin niets. Noem geen prijzen, levertijden, materialen of maten die niet in de mail staan, tenzij je ze expliciet als advies of voorbehoud formuleert. Beloof geen datum die je niet kent; zeg dan dat je in de offerte laat weten of de gevraagde datum haalbaar is.\n\nAntwoord in de taal van de binnengekomen mail. Hou het compact, hooguit een korte alinea plus eventueel een paar punten, en gebruik geen gedachtestreepjes. Antwoord alleen met de tekst van het antwoord, zonder onderwerpregel en zonder ondertekening; de handtekening staat er al onder.\n\nDe binnengekomen mail:\n{text}',
   'write-email': 'Schrijf een volledige, professionele e-mail in het Nederlands op basis van de opdracht van de gebruiker. Gebruik een passende aanhef en afsluiting en schrijf zo uitgebreid en informatief als de opdracht vraagt. Antwoord alleen met de e-mailtekst, zonder onderwerp-regel.\n\nContext (onderwerp en ontvanger):\n{context}\n\nOpdracht van de gebruiker:\n{text}',
   // Koude outreach naar de SIBON-ledenlijst. Van de lead zelf is alleen naam,
   // plaats en bron bekend; daarom zoekt het model eerst op wat het bedrijf
@@ -174,6 +175,11 @@ const MODEL_PER_ACTIE: Record<string, string> = {
   'write-lead-email': 'claude-opus-4-8',
 }
 const STANDAARD_MODEL = 'claude-sonnet-5'
+
+// Acties waarbij het model eerst moet begrijpen wat er al gezegd is voordat
+// het schrijft. De overige acties (samenvatten, vertalen) zijn mechanisch
+// genoeg om zonder denkstap te draaien.
+const DENKENDE_ACTIES = new Set(['generate-reply'])
 
 // Opus slaat de zoektool bij lage effort vaak over; dan valt de opening terug
 // op een algemeenheid en is de web-search voor niets aangezet.
@@ -553,7 +559,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // zin af. Weglaten van dit veld is dus geen optie meer.
         ...(MODEL_PER_ACTIE[action]
           ? { max_tokens: 4000, thinking: { type: 'adaptive' }, output_config: { effort: LEAD_EFFORT[action] || 'low' } }
-          : { max_tokens: 1024, thinking: { type: 'disabled' } }),
+          : DENKENDE_ACTIES.has(action)
+            // Een antwoord schrijven begint met uitpluizen wat de afzender al
+            // heeft verteld. Met thinking uit leest het model de mail vluchtig
+            // en vraagt het om gegevens die er al staan. Ruimer token-budget,
+            // want denken en antwoord moeten er samen in passen.
+            ? { max_tokens: 3000, thinking: { type: 'adaptive' }, output_config: { effort: 'low' } }
+            : { max_tokens: 1024, thinking: { type: 'disabled' } }),
         // Zonder web-search kent het model alleen naam en plaats van de lead en
         // blijft de openingszin een algemeenheid over signwerk.
         ...(action === 'write-lead-email'
