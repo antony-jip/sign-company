@@ -7,9 +7,11 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import type { Email, Medewerker, Klant } from '@/types'
+import type { Email, Medewerker, Klant, Project } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
-import { createKlant, createTaak, getMedewerkers, getKlanten, updateKlant } from '@/services/supabaseService'
+import { createKlant, createTaak, getMedewerkers, getKlanten, updateKlant, getProjecten } from '@/services/supabaseService'
+import { getProjectVoorThread } from '@/services/emailProjectService'
+import { ProjectCombobox } from '@/components/shared/ProjectCombobox'
 import { logCreate } from '@/utils/auditLogger'
 import { logger } from '@/utils/logger'
 import { extractSenderName, extractSenderEmail, getAvatarStyle } from './emailHelpers'
@@ -47,6 +49,8 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
   const [addToKlant, setAddToKlant] = useState<Klant | null>(null)
   const [allKlanten, setAllKlanten] = useState<Klant[]>([])
   const [taakForm, setTaakForm] = useState({ titel: '', deadline: '', toegewezen_aan: '' })
+  const [taakProjectId, setTaakProjectId] = useState('')
+  const [projecten, setProjecten] = useState<Project[]>([])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
 
   useEffect(() => {
@@ -82,6 +86,22 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
       setTimeout(() => klantInputRef.current?.focus(), 50)
     } else if (view === 'taak') {
       setTaakForm({ titel: email?.onderwerp || '', deadline: '', toegewezen_aan: '' })
+      setTaakProjectId('')
+      // Hangt deze thread al aan een project, dan is dat het antwoord. Verder
+      // niet gokken: een verkeerde koppeling is lastiger terug te draaien dan
+      // er zelf één kiezen.
+      void (async () => {
+        try {
+          const [alle, gekoppeld] = await Promise.all([
+            getProjecten(),
+            email?.thread_id ? getProjectVoorThread(email.thread_id).catch(() => null) : Promise.resolve(null),
+          ])
+          setProjecten(alle)
+          if (gekoppeld?.project) setTaakProjectId(gekoppeld.project.id)
+        } catch (err) {
+          logger.warn('Projecten laden mislukt:', err)
+        }
+      })()
       setTimeout(() => titelInputRef.current?.focus(), 50)
     }
   }, [view, senderName, senderEmail, guessedBedrijf, email?.onderwerp])
@@ -180,6 +200,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
         geschatte_tijd: 0,
         bestede_tijd: 0,
         klant_id: '',
+        ...(taakProjectId ? { project_id: taakProjectId } : {}),
         deadline: taakForm.deadline || undefined,
       })
       logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
@@ -191,7 +212,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
     } finally {
       setSaving(false)
     }
-  }, [taakForm, user, medewerkers])
+  }, [taakForm, taakProjectId, user, medewerkers])
 
   const inputCls = "w-full px-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-[8px] outline-none border border-border focus:border-petrol transition-colors duration-150 placeholder:text-muted-foreground/80"
   const labelCls = "text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground block mb-1"
@@ -397,6 +418,16 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                   <label className={labelCls}>Titel *</label>
                   <input ref={titelInputRef} value={taakForm.titel} onChange={e => setTaakForm(f => ({ ...f, titel: e.target.value }))}
                     className={inputCls} placeholder="Wat moet er gebeuren?" />
+                </div>
+                <div>
+                  <label className={labelCls}>Bij project</label>
+                  <ProjectCombobox
+                    projecten={projecten}
+                    value={taakProjectId}
+                    onChange={setTaakProjectId}
+                    leegLabel="Geen project"
+                    placeholder="Kies een project"
+                  />
                 </div>
                 <div>
                   <label className={labelCls}>Inplannen op</label>

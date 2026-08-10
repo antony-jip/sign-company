@@ -6,8 +6,10 @@ import {
   FileText, Users, ReceiptText, MailQuestion,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import type { Email, Klant, Medewerker, ContactpersoonRecord } from '@/types'
-import { getKlanten, getProjectenByKlant, getOffertesByKlant, createKlant, createProject, createTaak, getMedewerkers, generateProjectNummer, getAppSettings, getContactpersonenByKlant, createContactpersoonDB, getKlantIdByContactEmail } from '@/services/supabaseService'
+import type { Email, Klant, Medewerker, ContactpersoonRecord, Project } from '@/types'
+import { getKlanten, getProjectenByKlant, getOffertesByKlant, createKlant, createProject, createTaak, getMedewerkers, generateProjectNummer, getAppSettings, getContactpersonenByKlant, createContactpersoonDB, getKlantIdByContactEmail, getProjecten } from '@/services/supabaseService'
+import { getProjectVoorThread } from '@/services/emailProjectService'
+import { ProjectCombobox } from '@/components/shared/ProjectCombobox'
 import { chatCompletion } from '@/services/aiService'
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
@@ -149,6 +151,8 @@ export function EmailContextSidebar({
     eind_datum: '',
   })
   const [taakForm, setTaakForm] = useState({ titel: '', beschrijving: '', deadline: '', toegewezen_aan: '' })
+  const [taakProjectId, setTaakProjectId] = useState('')
+  const [projecten, setProjecten] = useState<Project[]>([])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
 
   useEffect(() => {
@@ -249,6 +253,26 @@ export function EmailContextSidebar({
       })
     } else if (panel === 'taak') {
       setTaakForm({ titel: email?.onderwerp || 'Opvolging email', beschrijving: `Van: ${contactName} <${contactEmail}>`, deadline: '', toegewezen_aan: '' })
+      setTaakProjectId('')
+      // Hangt deze thread al aan een project, dan is dat het antwoord en vullen
+      // we het voor. Anders blijft de keuze leeg — gokken op klantnaam levert
+      // stille foutkoppelingen op — maar staan de projecten van deze klant wel
+      // bovenaan in de lijst.
+      void (async () => {
+        try {
+          const [alle, gekoppeld] = await Promise.all([
+            getProjecten(),
+            email?.thread_id ? getProjectVoorThread(email.thread_id).catch(() => null) : Promise.resolve(null),
+          ])
+          const klantId = linkedKlant?.id
+          setProjecten(klantId
+            ? [...alle].sort((a, b) => Number(b.klant_id === klantId) - Number(a.klant_id === klantId))
+            : alle)
+          if (gekoppeld?.project) setTaakProjectId(gekoppeld.project.id)
+        } catch (err) {
+          logger.warn('Projecten laden mislukt:', err)
+        }
+      })()
     }
     setActivePanel(panel)
   }
@@ -326,6 +350,7 @@ export function EmailContextSidebar({
         titel: taakForm.titel, beschrijving: taakForm.beschrijving,
         status: 'todo', prioriteit: 'medium', toegewezen_aan: taakForm.toegewezen_aan, geschatte_tijd: 0, bestede_tijd: 0,
         klant_id: linkedKlant?.id || '',
+        ...(taakProjectId ? { project_id: taakProjectId } : {}),
         deadline: taakForm.deadline || undefined,
       })
       logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
@@ -704,6 +729,16 @@ export function EmailContextSidebar({
                 className={inputCls} placeholder="Taak titel *" autoFocus />
               <textarea value={taakForm.beschrijving} onChange={e => setTaakForm(f => ({ ...f, beschrijving: e.target.value }))}
                 className={`${inputCls} resize-none h-16`} placeholder="Beschrijving" />
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-1">Bij project</label>
+                <ProjectCombobox
+                  projecten={projecten}
+                  value={taakProjectId}
+                  onChange={setTaakProjectId}
+                  leegLabel="Geen project"
+                  placeholder="Kies een project"
+                />
+              </div>
               <div>
                 <label className="text-[10px] text-muted-foreground block mb-1">Inplannen op</label>
                 <DatePicker value={taakForm.deadline} onChange={v => setTaakForm(f => ({ ...f, deadline: v }))}
