@@ -12,6 +12,7 @@ import { MedewerkersProvider } from '@/contexts/MedewerkersContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppLayout } from '@/components/layouts/AppLayout'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
+import { importMetHerkansing } from '@/utils/chunkErrorHandler'
 import { CommandPalette } from '@/components/shared/CommandPalette'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { MijlpaalOverlay } from '@/components/shared/MijlpaalOverlay'
@@ -24,7 +25,7 @@ import { useParams } from 'react-router-dom'
 // bundles caused by 70+ eager imports with complex initialisation order.
 // ---------------------------------------------------------------------------
 const lazy = (importFn: () => Promise<Record<string, unknown>>, name: string) =>
-  React.lazy(() => importFn().then(m => ({ default: (m as Record<string, unknown>)[name] as React.ComponentType<any> })))
+  React.lazy(() => importMetHerkansing(importFn).then(m => ({ default: (m as Record<string, unknown>)[name] as React.ComponentType<any> })))
 
 // Auth pages
 const LoginPage = lazy(() => import('@/components/auth/LoginPage'), 'LoginPage')
