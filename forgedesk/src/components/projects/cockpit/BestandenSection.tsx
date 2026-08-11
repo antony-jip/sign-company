@@ -1,9 +1,10 @@
 import { useState, useCallback, lazy } from 'react'
 import {
-  Trash2, Eye, FileText, FileSpreadsheet, FileArchive,
+  Trash2, Eye, Download, Loader2, FileText, FileSpreadsheet, FileArchive,
   Image as ImageIcon, File, Files, Upload,
   type LucideIcon,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { getSignedUrl } from '@/services/storageService'
 import type { PillTone } from '@/utils/statusColors'
 const PdfPreviewDialog = lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
@@ -70,6 +71,7 @@ function isPdf(type: string, naam: string): boolean {
 export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSectionProps) {
   const [showAll, setShowAll] = useState(false)
   const [pdfPreview, setPdfPreview] = useState<{ naam: string; storagePath: string } | null>(null)
+  const [bezigMetDownload, setBezigMetDownload] = useState<string | null>(null)
   const displayDocs = showAll ? documenten : documenten.slice(0, 5)
 
   const handleFileClick = async (doc: BestandenSectionProps['documenten'][0]) => {
@@ -80,6 +82,32 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
       if (url) window.open(url, '_blank')
     }
   }
+
+  // Klikken op een rij opent het bestand; downloaden is iets anders en had geen
+  // eigen knop. Via een blob in plaats van de signed URL rechtstreeks, want dan
+  // houdt het bestand zijn eigen naam in plaats van de opslagsleutel.
+  const handleDownload = useCallback(async (doc: BestandenSectionProps['documenten'][0]) => {
+    setBezigMetDownload(doc.id)
+    try {
+      const url = await getSignedUrl(doc.storage_path)
+      if (!url) throw new Error('Kon bestand niet ophalen')
+      const response = await fetch(url)
+      if (!response.ok) throw new Error('Kon bestand niet ophalen')
+      const blob = await response.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = doc.naam
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(objectUrl)
+    } catch {
+      toast.error('Downloaden mislukt')
+    } finally {
+      setBezigMetDownload(null)
+    }
+  }, [])
 
   const generatePdf = useCallback(async () => {
     if (!pdfPreview) throw new Error('Geen bestand geselecteerd')
@@ -157,6 +185,16 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
                   </p>
                 </div>
                 <Eye className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 text-muted-foreground transition-all flex-shrink-0" />
+                <button
+                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-petrol transition-all p-1 rounded disabled:opacity-60"
+                  onClick={(e) => { e.stopPropagation(); handleDownload(doc) }}
+                  disabled={bezigMetDownload === doc.id}
+                  title="Downloaden"
+                >
+                  {bezigMetDownload === doc.id
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <Download className="h-3.5 w-3.5" />}
+                </button>
                 <button
                   className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-[#C03A18] transition-all p-1 rounded"
                   onClick={(e) => { e.stopPropagation(); onDelete(doc.id, doc.naam) }}
