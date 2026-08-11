@@ -189,7 +189,12 @@ export function BijlageProjectDialog({
     >
       <Briefcase className={cn('h-3.5 w-3.5 flex-shrink-0', gekozenProject?.id === p.id ? 'text-petrol' : 'text-muted-foreground')} />
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-medium text-foreground truncate">{p.naam}</div>
+        <div className="text-[13px] font-medium text-foreground truncate">
+          {p.naam}
+          {p.klant_naam && (
+            <span className="font-normal text-muted-foreground"> · {p.klant_naam}</span>
+          )}
+        </div>
         {p.project_nummer && (
           <div className="text-[10px] text-muted-foreground font-mono">{p.project_nummer}</div>
         )}
@@ -237,7 +242,15 @@ export function BijlageProjectDialog({
                   <Briefcase className="h-4 w-4 text-petrol" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-foreground truncate">{gekozenProject.naam}</p>
+                  <p className="text-[13px] font-medium text-foreground truncate">
+                    {gekozenProject.naam}
+                    {/* Projectnamen als "Gevelreclame" komen vaker voor dan je
+                        denkt; zonder klantnaam weet je niet of je bij de goede
+                        zit. */}
+                    {gekozenProject.klant_naam && (
+                      <span className="font-normal text-muted-foreground"> · {gekozenProject.klant_naam}</span>
+                    )}
+                  </p>
                   <p className="text-[11px] text-muted-foreground truncate">
                     {gekozenProject.project_nummer && (
                       <span className="font-mono">{gekozenProject.project_nummer}</span>
