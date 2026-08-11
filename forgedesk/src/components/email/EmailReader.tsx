@@ -559,7 +559,8 @@ export function EmailReader({
       klantId: keuze.project.klant_id,
       bestandsnaam: result.filename || filename,
       contentType: result.contentType || contentType,
-      map: keuze.map,
+      // Geen mapkeuze meer: het projectscherm toont die map nergens, dus de
+      // service houdt het bij zijn standaard 'Bijlagen'.
       data: blob,
     })
     return 'document' as const
