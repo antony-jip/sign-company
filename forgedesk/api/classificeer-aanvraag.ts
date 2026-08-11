@@ -480,8 +480,9 @@ async function orgBudgetOp(organisatieId: string): Promise<boolean> {
 async function haalBodies(
   creds: EmailCredentials,
   kandidaten: KandidaatRij[]
-): Promise<Map<string, { tekst: string; html: string | null }>> {
+): Promise<{ bodies: Map<string, { tekst: string; html: string | null }>; sessieOk: boolean }> {
   const resultaat = new Map<string, { tekst: string; html: string | null }>()
+  let sessieOk = false
   const perMap = new Map<string, KandidaatRij[]>()
   for (const mail of kandidaten) {
     if (!mail.uid) continue
@@ -490,7 +491,7 @@ async function haalBodies(
     lijst.push(mail)
     perMap.set(folder, lijst)
   }
-  if (!perMap.size) return resultaat
+  if (!perMap.size) return { bodies: resultaat, sessieOk: true }
 
   const client = new ImapFlow({
     host: creds.imap_host,
@@ -505,6 +506,7 @@ async function haalBodies(
 
   try {
     await client.connect()
+    sessieOk = true
     for (const [folder, mails] of perMap) {
       try {
         await client.mailboxOpen(folder, { readOnly: true })
@@ -551,11 +553,12 @@ async function haalBodies(
     }
   } catch (err) {
     console.error('[classificeer-aanvraag] IMAP-sessie mislukt:', err)
+    sessieOk = false
   } finally {
     try { await client.logout() } catch { /* verbinding al dicht */ }
   }
 
-  return resultaat
+  return { bodies: resultaat, sessieOk }
 }
 
 // ───── Handler ─────
@@ -662,9 +665,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // ── Bodies ophalen waar nodig ──
     const zonderTekst = kandidaten.filter((m) => !m.body_text || m.body_text.trim().length < 20)
-    const opgehaald = zonderTekst.length
+    const { bodies: opgehaald, sessieOk } = zonderTekst.length
       ? await haalBodies(creds, zonderTekst)
-      : new Map<string, { tekst: string; html: string | null }>()
+      : { bodies: new Map<string, { tekst: string; html: string | null }>(), sessieOk: true }
 
     for (const [emailId, body] of opgehaald) {
       await supabaseAdmin
@@ -723,9 +726,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // Mail waar ook na het ophalen geen leesbare tekst in zit (losse HTML-
+    // mailings, alleen een plaatje) valt niet te beoordelen. Die vinken we af,
+    // anders blijft hij tot in lengte van dagen kandidaat en haalt elke run
+    // opnieuw dezelfde bodies over IMAP op. Alleen als de IMAP-sessie het deed:
+    // na een mislukte verbinding weten we niets en mag er niets afgeschreven.
+    const onbruikbaar: string[] = []
+
     for (const mail of kandidaten) {
       const tekst = opgehaald.get(mail.id)?.tekst || mail.body_text || ''
-      if (tekst.trim().length < 20) continue
+      if (tekst.trim().length < 20) {
+        if (sessieOk) onbruikbaar.push(mail.id)
+        continue
+      }
 
       let oordeel: Oordeel | null = null
       try {
@@ -765,6 +778,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }, klantId)
         }
       }
+    }
+
+    if (onbruikbaar.length) {
+      await supabaseAdmin
+        .from('emails')
+        .update({
+          is_aanvraag: false,
+          aanvraag_zekerheid: 0,
+          aanvraag_beoordeeld_op: new Date().toISOString(),
+        })
+        .in('id', onbruikbaar)
     }
 
     await boekUsage(userId, inputTokens, outputTokens, calls)

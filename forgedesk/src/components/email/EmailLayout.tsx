@@ -412,8 +412,18 @@ export function EmailLayout() {
   // ─── Aanvraagherkenning: draait na de sync, mail is dan al zichtbaar ───
   // Levert de beoordeling op waar AanvraagKaart in de reader op afgaat. De
   // lijst wordt alleen opnieuw gelezen als er daadwerkelijk iets herkend is.
+  // De ronde loopt na het openen én na elke poll; twee tegelijk zouden dezelfde
+  // mail dubbel langs Claude sturen.
+  const aanvraagBezigRef = useRef(false)
   const herkenAanvragen = useCallback(async () => {
-    const uitkomst = await classificeerAanvragen()
+    if (aanvraagBezigRef.current) return
+    aanvraagBezigRef.current = true
+    let uitkomst: Awaited<ReturnType<typeof classificeerAanvragen>> = null
+    try {
+      uitkomst = await classificeerAanvragen()
+    } finally {
+      aanvraagBezigRef.current = false
+    }
     if (!uitkomst?.aanvragen) return
     const fresh = await readFromSupabase()
     if (fresh.length > 0) setEmails(fresh)
@@ -1222,6 +1232,11 @@ export function EmailLayout() {
               await vulBodyCacheUitDb(metBodies)
             }
           }
+          // Ook na een poll beoordelen, niet alleen bij het openen van de
+          // module. Anders krijgt mail die binnenkomt terwijl je de inbox al
+          // open hebt staan nooit een oordeel, en blijft de aanvraagkaart weg
+          // tot je toevallig opnieuw binnenkomt.
+          if (imapFolder === 'INBOX') void herkenAanvragen()
         })()
       })
       .catch(() => {
@@ -1230,7 +1245,7 @@ export function EmailLayout() {
       .finally(() => {
         if (!silent) setIsRefreshing(false)
       })
-  }, [vulBodyCacheUitDb, laadBodiesVoor])
+  }, [vulBodyCacheUitDb, laadBodiesVoor, herkenAanvragen])
 
   const handleFolderLoad = useCallback(async (folder: EmailFolder) => {
     // Leads leven in een eigen tabel; geen e-mails ophalen voor die tab.
