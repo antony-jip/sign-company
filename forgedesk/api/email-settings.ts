@@ -90,7 +90,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const userId = await verifyUser(req)
       const { data, error } = await supabaseAdmin
         .from('user_email_settings')
-        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port, is_verified')
+        // is_verified stond hier ooit bij, maar die kolom bestaat niet in de
+        // database (migratie 004 is nooit gedraaid) en niets schreef hem ooit.
+        // De select faalde daardoor volledig, waarna deze GET een 401 gaf en de
+        // instellingenpagina terugviel op localStorage.
+        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port')
         .eq('user_id', userId)
         .single()
 
@@ -105,7 +109,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         smtp_port: data.smtp_port || 587,
         imap_host: data.imap_host || 'imap.gmail.com',
         imap_port: data.imap_port || 993,
-        is_verified: data.is_verified || false,
       })
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Fout bij ophalen'

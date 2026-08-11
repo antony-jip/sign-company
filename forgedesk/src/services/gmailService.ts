@@ -569,7 +569,6 @@ export interface EmailSettingsData {
   smtp_port: number
   imap_host: string
   imap_port: number
-  is_verified?: boolean
   // Server geeft het wachtwoord niet meer terug; enkel of er één is opgeslagen.
   has_password?: boolean
 }
@@ -600,7 +599,6 @@ export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | nul
       smtp_port: data.smtp_port || 587,
       imap_host: data.imap_host || 'imap.gmail.com',
       imap_port: data.imap_port || 993,
-      is_verified: data.is_verified,
     }
   } catch (err) {
     console.error('loadEmailSettingsFromDb:', err)
@@ -663,7 +661,6 @@ export async function getEmailSettings(): Promise<{
   smtp_port: number
   imap_host: string
   imap_port: number
-  is_verified: boolean
 } | null> {
   const settings = await loadEmailSettingsFromDb()
   if (!settings) return null
@@ -673,7 +670,6 @@ export async function getEmailSettings(): Promise<{
     smtp_port: settings.smtp_port,
     imap_host: settings.imap_host,
     imap_port: settings.imap_port,
-    is_verified: settings.is_verified || false,
   }
 }
 
