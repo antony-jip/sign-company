@@ -10,6 +10,7 @@ import { getOffertesByProject } from './offerteService'
 import { getWerkbonnenByProject } from './werkbonService'
 import { getFacturenByProject } from './factuurService'
 import { getTakenByProject } from './projectService'
+import { HANDTEKENING_BREEDTE_STANDAARD } from '@/utils/handtekening'
 import type {
   Profile,
   AppSettings,
@@ -181,7 +182,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     melding_status_wijziging: true,
     email_handtekening: '',
     handtekening_afbeelding: '',
-    handtekening_afbeelding_grootte: 64,
+    handtekening_afbeelding_grootte: HANDTEKENING_BREEDTE_STANDAARD,
     handtekening_afbeelding_link: '',
     primaire_kleur: '#1A535C',
     secundaire_kleur: '#7c3aed',

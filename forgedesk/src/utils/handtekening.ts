@@ -152,6 +152,22 @@ export function veiligeAfbeeldingLink(link?: string | null): string {
   }
 }
 
+// De instelling is een breedte, geen hoogte: een handtekening-banner is breed
+// (1200x331 is typisch) en dan bepaalt de breedte wat de ontvanger ziet. Een
+// hoogte-instelling deed bij zo'n verhouding niets voorspelbaars.
+// De ondergrens staat bewust op 400: profielen hebben nog oude hoogte-waarden
+// (64, 200, 208) opgeslagen die nu als breedte gelezen worden. Klemmen op 400
+// maakt die handtekeningen meteen leesbaar zonder database-migratie.
+export const HANDTEKENING_BREEDTE_STANDAARD = 480
+export const HANDTEKENING_BREEDTE_MIN = 400
+export const HANDTEKENING_BREEDTE_MAX = 700
+
+export function handtekeningBreedte(waarde?: number | null): number {
+  const getal = Number(waarde)
+  if (!Number.isFinite(getal) || getal <= 0) return HANDTEKENING_BREEDTE_STANDAARD
+  return Math.min(HANDTEKENING_BREEDTE_MAX, Math.max(HANDTEKENING_BREEDTE_MIN, Math.round(getal)))
+}
+
 /**
  * De <img> voor de handtekening-afbeelding, met een link eromheen als de
  * gebruiker die heeft ingesteld. Eén plek, zodat elke mail (offerte, project,
@@ -160,20 +176,20 @@ export function veiligeAfbeeldingLink(link?: string | null): string {
 export function handtekeningAfbeeldingHtml({
   url,
   link,
-  hoogte = 64,
-  maxBreedte,
+  breedte,
   extraStyle = '',
 }: {
   url?: string | null
   link?: string | null
-  hoogte?: number
-  maxBreedte?: number
+  breedte?: number | null
   extraStyle?: string
 }): string {
   const bron = veiligeSrc((url || '').trim())
   if (!bron) return ''
-  const breedte = maxBreedte ?? Math.round(hoogte * 3.5)
-  const img = `<img src="${escapeHtml(bron)}" alt="" style="max-height:${hoogte}px;max-width:${breedte}px;object-fit:contain;border:0;${extraStyle}" />`
+  const maat = handtekeningBreedte(breedte)
+  // max-height even groot als de breedte: vangt een staande foto op zonder de
+  // banner te raken, die is altijd breder dan hoog.
+  const img = `<img src="${escapeHtml(bron)}" alt="" style="max-width:${maat}px;max-height:${maat}px;height:auto;object-fit:contain;border:0;${extraStyle}" />`
   const href = veiligeAfbeeldingLink(link)
   return href
     ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;border:0;">${img}</a>`

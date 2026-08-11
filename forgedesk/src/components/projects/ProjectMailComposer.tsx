@@ -19,7 +19,7 @@ import { getEmailsVoorProject, koppelEmailAanProject, type ProjectMail } from '@
 import { uploadEmailAttachment, deleteFile } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem, SigningVisualisatie } from '@/types'
-import { handtekeningAfbeeldingHtml } from '@/utils/handtekening'
+import { handtekeningAfbeeldingHtml, handtekeningBreedte } from '@/utils/handtekening'
 
 const MAX_BIJLAGE_BYTES = 20 * 1024 * 1024
 const MAX_BIJLAGEN_TOTAAL_BYTES = 25 * 1024 * 1024
@@ -851,7 +851,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       const sigImg = handtekeningAfbeeldingHtml({
         url: handtekeningAfbeelding,
         link: handtekeningAfbeeldingLink,
-        hoogte: handtekeningAfbeeldingGrootte || 64,
+        breedte: handtekeningAfbeeldingGrootte,
         extraStyle: 'display:block;',
       })
       const signaturImg = sigImg ? `<br/><br/>${sigImg}` : ''
@@ -1057,8 +1057,8 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             <img
               src={handtekeningAfbeelding}
               alt="Handtekening"
-              style={{ maxHeight: Math.min(140, handtekeningAfbeeldingGrootte || 96) }}
-              className="object-contain max-w-full md:max-w-[360px]"
+              style={{ maxWidth: handtekeningBreedte(handtekeningAfbeeldingGrootte) }}
+              className="object-contain max-w-full"
             />
           )}
         </div>

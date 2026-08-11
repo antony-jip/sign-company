@@ -139,12 +139,10 @@ export function getBaseTemplate(data: EmailTemplateData): {
       ? `<img src="${escapeHtml(data.logoUrl!)}" alt="${escapeHtml(bedrijf)}" style="max-height: 44px; max-width: 220px; display: inline-block;" />`
       : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">${escapeHtml(bedrijf)}</span>`
 
-    const sigImgHeight = data.handtekeningAfbeeldingGrootte ?? 64
     const sigImg = handtekeningAfbeeldingHtml({
       url: data.handtekeningAfbeelding,
       link: data.handtekeningAfbeeldingLink,
-      hoogte: sigImgHeight,
-      maxBreedte: 240,
+      breedte: data.handtekeningAfbeeldingGrootte,
       extraStyle: 'margin-top:8px;display:block;',
     })
     const sigImgHtml = sigImg ? `<br />${sigImg}` : ''
@@ -265,9 +263,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     ? `<div style="margin-top: 16px;">${handtekeningAfbeeldingHtml({
         url: data.handtekeningAfbeelding,
         link: data.handtekeningAfbeeldingLink,
-        hoogte: data.handtekeningAfbeeldingGrootte || 200,
-        maxBreedte: data.handtekeningAfbeeldingGrootte || 200,
-        extraStyle: 'height:auto;',
+        breedte: data.handtekeningAfbeeldingGrootte,
       })}</div>`
     : data.handtekening
       ? `<div style="margin-top: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555; white-space: pre-line;">${escapeHtml(data.handtekening)}</div>`

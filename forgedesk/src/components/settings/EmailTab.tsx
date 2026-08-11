@@ -47,7 +47,13 @@ import type { Medewerker } from '@/types'
 import { SubTabNav } from './SubTabNav'
 import { PushMeldingenKaart } from './PushMeldingenKaart'
 import { HandtekeningEditor } from './HandtekeningEditor'
-import { handtekeningNaarHtml } from '@/utils/handtekening'
+import {
+  handtekeningNaarHtml,
+  handtekeningBreedte,
+  HANDTEKENING_BREEDTE_STANDAARD,
+  HANDTEKENING_BREEDTE_MIN,
+  HANDTEKENING_BREEDTE_MAX,
+} from '@/utils/handtekening'
 import type { SubTab } from './settingsShared'
 import { EmailSettings, DEFAULT_EMAIL_SETTINGS, EMAIL_PROVIDER_DEFAULTS } from './settingsShared'
 import type { EmailProvider } from './settingsShared'
@@ -296,7 +302,7 @@ function SignatureImageUpload({
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
-  const currentSize = imageSize ?? 64
+  const currentSize = handtekeningBreedte(imageSize)
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -344,7 +350,7 @@ function SignatureImageUpload({
               <img
                 src={imageUrl}
                 alt="Handtekening afbeelding"
-                style={{ maxHeight: `${currentSize}px`, maxWidth: `${Math.round(currentSize * 2.5)}px` }}
+                style={{ maxWidth: `${currentSize}px`, maxHeight: `${currentSize}px` }}
                 className="object-contain"
               />
             </div>
@@ -378,16 +384,16 @@ function SignatureImageUpload({
           {onImageSizeChange && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-xs">Afbeelding grootte</Label>
-                <span className="text-xs text-muted-foreground">{currentSize}px</span>
+                <Label className="text-xs">Breedte in de mail</Label>
+                <span className="text-xs text-muted-foreground">{currentSize}px breed</span>
               </div>
               <div className="flex items-center gap-2">
                 <Minus className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                 <input
                   type="range"
-                  min={24}
-                  max={700}
-                  step={4}
+                  min={HANDTEKENING_BREEDTE_MIN}
+                  max={HANDTEKENING_BREEDTE_MAX}
+                  step={10}
                   value={currentSize}
                   onChange={(e) => onImageSizeChange(Number(e.target.value))}
                   className="w-full accent-primary"
@@ -430,7 +436,7 @@ function SignaturePreview({
   afbeeldingGrootte?: number
 }) {
   if (!handtekening && !afbeelding) return null
-  const imgSize = afbeeldingGrootte ?? 64
+  const imgSize = handtekeningBreedte(afbeeldingGrootte)
   return (
     <div className="space-y-2">
       <Label className="text-xs uppercase tracking-label text-muted-foreground">Voorbeeld</Label>
@@ -440,7 +446,7 @@ function SignaturePreview({
             <img
               src={afbeelding}
               alt="Logo"
-              style={{ maxHeight: `${imgSize}px`, maxWidth: `${Math.round(imgSize * 2.5)}px` }}
+              style={{ maxWidth: `${imgSize}px`, maxHeight: `${imgSize}px` }}
               className="object-contain mb-2"
             />
           )}
@@ -467,7 +473,7 @@ export function EmailTab() {
   const [emailHandtekening, setEmailHandtekening] = useState('')
   const [afzenderNaam, setAfzenderNaam] = useState('')
   const [handtekeningAfbeelding, setHandtekeningAfbeelding] = useState('')
-  const [afbeeldingGrootte, setAfbeeldingGrootte] = useState(64)
+  const [afbeeldingGrootte, setAfbeeldingGrootte] = useState(HANDTEKENING_BREEDTE_STANDAARD)
   const [afbeeldingLink, setAfbeeldingLink] = useState('')
   const [emailFetchLimit, setEmailFetchLimit] = useState(currentFetchLimit || 200)
   const [backfillTarget, setBackfillTargetState] = useState<BackfillTarget>('1jaar')
@@ -492,7 +498,7 @@ export function EmailTab() {
       setEmailHandtekening((userProfile?.email_handtekening?.trim() ? userProfile.email_handtekening : null) || data.email_handtekening || '')
       setAfzenderNaam((userProfile?.afzender_naam?.trim() ? userProfile.afzender_naam : null) || data.afzender_naam || '')
       setHandtekeningAfbeelding(userProfile?.handtekening_afbeelding || data.handtekening_afbeelding || '')
-      setAfbeeldingGrootte(userProfile?.handtekening_afbeelding_grootte || data.handtekening_afbeelding_grootte || 64)
+      setAfbeeldingGrootte(userProfile?.handtekening_afbeelding_grootte || data.handtekening_afbeelding_grootte || HANDTEKENING_BREEDTE_STANDAARD)
       setAfbeeldingLink(userProfile?.handtekening_afbeelding_link || data.handtekening_afbeelding_link || '')
     } catch (err) {
       logger.error('Fout bij laden e-mailinstellingen:', err)

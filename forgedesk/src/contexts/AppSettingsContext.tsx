@@ -4,6 +4,7 @@ import { getAppSettings, updateAppSettings, getProfile, updateProfile } from '@/
 import type { AppSettings, Profile, PipelineStap } from '@/types'
 import { getDefaultAppSettings } from '@/services/supabaseService'
 import { logger } from '../utils/logger'
+import { HANDTEKENING_BREEDTE_STANDAARD } from '@/utils/handtekening'
 
 interface AppSettingsContextType {
   settings: AppSettings
@@ -190,7 +191,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     // doorvalt naar de oude org-brede waarde in app_settings.
     emailHandtekening: (profile?.email_handtekening?.trim() ? profile.email_handtekening : null) || settings.email_handtekening || '',
     handtekeningAfbeelding: profile?.handtekening_afbeelding || settings.handtekening_afbeelding || '',
-    handtekeningAfbeeldingGrootte: profile?.handtekening_afbeelding_grootte || settings.handtekening_afbeelding_grootte || 64,
+    handtekeningAfbeeldingGrootte: profile?.handtekening_afbeelding_grootte || settings.handtekening_afbeelding_grootte || HANDTEKENING_BREEDTE_STANDAARD,
     handtekeningAfbeeldingLink: profile?.handtekening_afbeelding_link || settings.handtekening_afbeelding_link || '',
     primaireKleur: settings.primaire_kleur || '#1A535C',
     secundaireKleur: settings.secundaire_kleur || '#7c3aed',

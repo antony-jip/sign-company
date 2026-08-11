@@ -100,6 +100,7 @@ import { useContactManagement } from '@/hooks/useContactManagement'
 import { useTrialGuard } from '@/hooks/useTrialGuard'
 import { useTabs } from '@/contexts/TabsContext'
 import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
+import { handtekeningBreedte } from '@/utils/handtekening'
 
 // Cumulatieve cap voor user-uploads in de offerte-email-dialog. Onder Gmail's
 // 25 MB SMTP-limiet incl. base64-overhead, met ruimte voor de offerte-PDF.
@@ -2336,7 +2337,7 @@ export function QuoteCreation() {
                     />
                     {handtekeningAfbeelding && (
                       <div className="px-3 pb-3">
-                        <img src={handtekeningAfbeelding} alt="" style={{ maxHeight: handtekeningAfbeeldingGrootte || 64, maxWidth: 200, objectFit: 'contain' }} />
+                        <img src={handtekeningAfbeelding} alt="" style={{ maxWidth: handtekeningBreedte(handtekeningAfbeeldingGrootte), maxHeight: handtekeningBreedte(handtekeningAfbeeldingGrootte), objectFit: 'contain' }} />
                       </div>
                     )}
                   </div>

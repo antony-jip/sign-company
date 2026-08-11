@@ -30,6 +30,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { logWijziging } from '@/utils/auditLogger'
 import { logger } from '@/utils/logger'
+import { handtekeningBreedte } from '@/utils/handtekening'
 import type { Offerte, OfferteItem, Klant, Project, OfferteActiviteit } from '@/types'
 
 export type SendMode = 'eerste' | 'follow-up'
@@ -409,7 +410,7 @@ export function SendOfferteDialog({
                 <img
                   src={handtekeningAfbeelding}
                   alt=""
-                  style={{ maxHeight: handtekeningAfbeeldingGrootte || 64, maxWidth: 200, objectFit: 'contain' }}
+                  style={{ maxWidth: handtekeningBreedte(handtekeningAfbeeldingGrootte), maxHeight: handtekeningBreedte(handtekeningAfbeeldingGrootte), objectFit: 'contain' }}
                 />
               </div>
             )}
