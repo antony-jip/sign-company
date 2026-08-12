@@ -161,3 +161,37 @@ describe('migratiemap · RLS-invarianten', () => {
     }
   })
 })
+
+/**
+ * De api-poort moet blijven bestaan.
+ *
+ * `api/*` viel buiten tsconfig.json én buiten de vite-build, en dat gat liet in
+ * één nacht twee fouten door. Er is nu `tsconfig.api.json` plus het script
+ * `typecheck:api`. Deze test bewaakt niet de fouten (die telt het script), maar
+ * dat de poort zelf niet stilletjes verdwijnt of ondermijnd wordt.
+ */
+describe('api-typecheck blijft bestaan', () => {
+  it('heeft een tsconfig voor api met strict aan', () => {
+    const ruw = readFileSync(fileURLToPath(new URL('../../tsconfig.api.json', import.meta.url)), 'utf8')
+    // JSON met comments: strip ze voor het parsen.
+    const config = JSON.parse(ruw.replace(/^\s*\/\/.*$/gm, ''))
+    expect(config.include).toContain('api')
+    expect(config.compilerOptions.strict).toBe(true)
+  })
+
+  /**
+   * Geen `paths` voor `@/*`. Een api-bestand dat uit src/ importeert hoort te
+   * falen op de typecheck: Vercel bundelt die import niet mee en de functie
+   * klapt pas in productie. Zie CLAUDE.md sectie 2.
+   */
+  it('laat api/ niet uit src/ importeren', () => {
+    const ruw = readFileSync(fileURLToPath(new URL('../../tsconfig.api.json', import.meta.url)), 'utf8')
+    const config = JSON.parse(ruw.replace(/^\s*\/\/.*$/gm, ''))
+    expect(config.compilerOptions.paths).toBeUndefined()
+  })
+
+  it('is als script aanroepbaar', () => {
+    const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('../../package.json', import.meta.url)), 'utf8'))
+    expect(pkg.scripts['typecheck:api']).toContain('tsconfig.api.json')
+  })
+})

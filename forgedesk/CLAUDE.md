@@ -27,6 +27,13 @@ visuele wijziging.
 - De meeste openstaande fouten zitten in een handvol grote componenten, met
   `FactuurEditor.tsx` als uitschieter. Reken erop dat je die tegenkomt zodra je
   daar iets wijzigt.
+- **`api/` heeft een EIGEN poort: `npm run typecheck:api`.** `tsconfig.json`
+  dekt alleen `src`, en `vite build` bundelt alleen de client, dus de 93
+  serverless functions vielen daarbuiten. Dat gat liet in één nacht twee fouten
+  door, waaronder een ontbrekende accolade waar build én tsc groen op bleven.
+  Raak je iets in `api/` aan, draai dan **beide** commando's. Baseline daar is
+  **72 fouten** (gemeten 13 aug 2026); twintig daarvan zijn dezelfde
+  `GenericStringError`-cast, die je oplost met `as unknown as`.
 - Tests: `npm run test` (vitest watch) of `npm run test:run` (one-shot).
 - Geen nieuwe npm packages zonder expliciete toestemming.
 
