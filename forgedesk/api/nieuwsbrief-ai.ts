@@ -124,6 +124,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         system: systemPrompt,
         messages: [{ role: 'user', content }],
       }),
+      // Onder de maxDuration van 60s van dit endpoint, zodat de fout als nette
+      // JSON terugkomt in plaats van als een gekilde functie.
+      signal: AbortSignal.timeout(50_000),
     })
 
     if (!response.ok) {

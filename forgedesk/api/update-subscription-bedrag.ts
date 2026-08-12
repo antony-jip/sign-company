@@ -101,6 +101,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Mollie niet aan te raken. Een geannuleerd abonnement kun je niet wijzigen.
     const huidigResponse = await fetch(subscriptionUrl, {
       headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` },
+      // Read-only voorcheck; bij een fout wordt de PATCH toch niet gedaan.
+      signal: AbortSignal.timeout(15_000),
     })
     if (!huidigResponse.ok) {
       const body = await huidigResponse.text()
@@ -122,6 +124,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       method: 'PATCH',
       headers: mollieHeaders,
       body: JSON.stringify({ amount: { currency: 'EUR', value: bedragIncl } }),
+      // Schrijvende call op wat de klant betaalt: ruimer dan de read hierboven,
+      // want een abort laat in het ongewisse of het bedrag toch is gewijzigd.
+      signal: AbortSignal.timeout(20_000),
     })
 
     if (!patchResponse.ok) {

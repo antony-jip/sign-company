@@ -76,7 +76,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // houdt de organisatie toegang (cron zet daarna de status om).
     let actiefTot: string | null = null
     let subscriptionBestaat = true
-    const getResponse = await fetch(subscriptionUrl, { headers: mollieHeaders })
+    // Read-only: bij een Mollie-storing wordt het opzeggen hieronder toch niet
+    // doorgezet, dus 15s afkappen is veilig.
+    const getResponse = await fetch(subscriptionUrl, { headers: mollieHeaders, signal: AbortSignal.timeout(15_000) })
     if (getResponse.ok) {
       const subscription = await getResponse.json() as { status?: string; nextPaymentDate?: string }
       if (['canceled', 'completed', 'suspended'].includes(subscription.status || '')) {
@@ -96,7 +98,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (subscriptionBestaat) {
-      const deleteResponse = await fetch(subscriptionUrl, { method: 'DELETE', headers: mollieHeaders })
+      // Schrijvende call: ruimer, want een abort laat in het ongewisse of het
+      // abonnement bij Mollie toch is opgezegd.
+      const deleteResponse = await fetch(subscriptionUrl, { method: 'DELETE', headers: mollieHeaders, signal: AbortSignal.timeout(20_000) })
       if (!deleteResponse.ok && deleteResponse.status !== 404 && deleteResponse.status !== 410) {
         const errorBody = await deleteResponse.text()
         console.error('Mollie subscription opzeggen mislukt:', deleteResponse.status, errorBody)

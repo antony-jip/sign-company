@@ -222,6 +222,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         const existingResp = await fetch(`${MOLLIE_API_URL}/${existingPaymentId}`, {
           headers: { 'Authorization': `Bearer ${mollieApiKey}` },
+          // Read-only hergebruik-check met graceful degradation eronder: een
+          // abort valt in de bestaande catch en gaat door naar payment-create.
+          signal: AbortSignal.timeout(15_000),
         })
         if (existingResp.ok) {
           const existing = await existingResp.json()
@@ -274,6 +277,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           user_id,
         },
       }),
+      // Payment-create: ruimer dan de read-only calls, want een abort laat in
+      // het ongewisse of er toch een payment is aangemaakt.
+      signal: AbortSignal.timeout(20_000),
     })
 
     if (!mollieResponse.ok) {

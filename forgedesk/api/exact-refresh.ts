@@ -187,6 +187,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         client_id: exactClientId,
         client_secret: exactClientSecret,
       }).toString(),
+      // Token-endpoint is een kleine POST die normaal in een seconde klaar is;
+      // hangt Exact, dan mag dat niet de hele functieduur opeten.
+      signal: AbortSignal.timeout(10_000),
     })
 
     if (!tokenResponse.ok) {

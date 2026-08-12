@@ -93,6 +93,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ...(systemPrompt ? { system: systemPrompt } : {}),
         messages: nonSystemMessages.map((m: ChatMessage) => ({ role: m.role, content: m.content })),
       }),
+      // AI-calls duren echt lang, dus ruim genomen: het doel is een hangende
+      // verbinding afkappen, niet een langzaam-maar-werkend antwoord afbreken.
+      signal: AbortSignal.timeout(90_000),
     })
 
     if (!response.ok) {

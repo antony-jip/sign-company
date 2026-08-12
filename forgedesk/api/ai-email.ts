@@ -574,6 +574,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ...(systemPrompt ? { system: systemPrompt } : {}),
         messages: [{ role: 'user', content: prompt }],
       }),
+      // Ruim genomen: write-lead-email doet server-side web_search (max 3
+      // rondjes) bovenop adaptive thinking, en dat mag niet halverwege
+      // afgekapt worden. Dit vangt alleen een echt hangende verbinding.
+      signal: AbortSignal.timeout(120_000),
     })
 
     if (!response.ok) {

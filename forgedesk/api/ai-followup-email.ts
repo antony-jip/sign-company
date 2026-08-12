@@ -475,6 +475,9 @@ Afzender naam: ${context.afzender_naam}`
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       }),
+      // Dit endpoint heeft maxDuration 30; ruim eronder blijven zodat de fout
+      // als nette JSON terugkomt in plaats van als een gekilde functie.
+      signal: AbortSignal.timeout(25_000),
     })
 
     if (!response.ok) {

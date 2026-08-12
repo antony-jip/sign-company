@@ -393,6 +393,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
         ],
       }),
+      // Documentanalyse duurt echt lang, dus ruim genomen: het doel is een
+      // hangende verbinding afkappen, niet een traag antwoord afbreken.
+      signal: AbortSignal.timeout(90_000),
     })
 
     if (!response.ok) {

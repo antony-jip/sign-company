@@ -164,6 +164,9 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
       client_id: exactClientId,
       client_secret: exactClientSecret,
     }),
+    // Token-endpoint is een kleine POST die normaal in een seconde klaar is;
+    // hangt Exact, dan mag dat niet de hele functieduur opeten.
+    signal: AbortSignal.timeout(10_000),
   })
 
   if (!refreshRes.ok) {
@@ -266,13 +269,16 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
 
 // Exact hanteert per-minuut rate-limits; bij 429 kort wachten (Retry-After,
 // gecapt op 10s) en één keer opnieuw proberen.
+// Elke poging krijgt een eigen signal: één AbortSignal.timeout hergebruiken zou
+// na de eerste poging al afgevuurd zijn en de retry meteen laten falen.
 async function exactFetchMetRetry(url: string, init: RequestInit): Promise<Response> {
-  let res = await fetch(url, init)
+  const metTimeout = (): RequestInit => ({ ...init, signal: AbortSignal.timeout(20_000) })
+  let res = await fetch(url, metTimeout())
   if (res.status === 429) {
     const retryAfter = Number(res.headers.get('Retry-After'))
     const wachtMs = Math.min((retryAfter > 0 ? retryAfter : 5) * 1000, 10_000)
     await new Promise((r) => setTimeout(r, wachtMs))
-    res = await fetch(url, init)
+    res = await fetch(url, metTimeout())
   }
   return res
 }

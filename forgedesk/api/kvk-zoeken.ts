@@ -93,6 +93,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers: {
         'apikey': apiKey,
       },
+      // Type-ahead-lookup waar de gebruiker in het formulier op wacht; een
+      // trage KvK is dan al onbruikbaar, dus kort afkappen.
+      signal: AbortSignal.timeout(8_000),
     })
 
     if (response.status === 404) {

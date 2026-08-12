@@ -319,6 +319,9 @@ async function beoordeelMail(
       tool_choice: { type: 'tool', name: 'beoordeel' },
       messages: [{ role: 'user', content: inhoud }],
     }),
+    // Kleine classificatie (512 tokens), dus 60s is ruim en kapt alleen een
+    // echt hangende verbinding af.
+    signal: AbortSignal.timeout(60_000),
   })
 
   if (!response.ok) {

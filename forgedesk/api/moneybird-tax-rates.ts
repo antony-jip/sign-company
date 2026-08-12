@@ -110,7 +110,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const mbRes = await fetch(
       `${MONEYBIRD_API_BASE}/${administratieId}/tax_rates.json?filter=${encodeURIComponent('tax_rate_type:sales_invoice')}&per_page=100`,
-      { headers: { Authorization: `Bearer ${token}` } },
+      // Read-only lijst uit een boekhoudpakket; 20s is ruim.
+      { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20_000) },
     )
 
     if (mbRes.status === 401) {

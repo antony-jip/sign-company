@@ -463,6 +463,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       }),
+      // Haiku met 1024 tokens is snel; 60s is ruim en kapt alleen een echt
+      // hangende verbinding af.
+      signal: AbortSignal.timeout(60_000),
     })
 
     if (!response.ok) {

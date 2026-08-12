@@ -96,7 +96,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (heeftEchteSubscription && org.mollie_customer_id) {
       const deleteResponse = await fetch(
         `https://api.mollie.com/v2/customers/${org.mollie_customer_id}/subscriptions/${org.mollie_subscription_id}`,
-        { method: 'DELETE', headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` } }
+        // Schrijvende call: ruimer, want een abort laat in het ongewisse of het
+        // oude abonnement toch is opgeruimd.
+        { method: 'DELETE', headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` }, signal: AbortSignal.timeout(20_000) }
       )
       if (!deleteResponse.ok && deleteResponse.status !== 404 && deleteResponse.status !== 410) {
         const errorBody = await deleteResponse.text()
@@ -127,6 +129,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (customerId) {
       const checkResponse = await fetch(`https://api.mollie.com/v2/customers/${customerId}`, {
         headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` },
+        // Read-only bestaanscheck; afbreken is veilig.
+        signal: AbortSignal.timeout(15_000),
       })
       if (checkResponse.status === 404 || checkResponse.status === 410) {
         console.warn(`Mollie kent klant ${customerId} niet meer voor org ${organisatie_id}; nieuwe wordt aangemaakt`)
@@ -151,6 +155,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           email: user.email || undefined,
           metadata: { organisatie_id, user_id: user.id },
         }),
+        // Schrijvende call: ruimer, want een abort laat in het ongewisse of de
+        // klant bij Mollie toch is aangemaakt.
+        signal: AbortSignal.timeout(20_000),
       })
 
       if (!customerResponse.ok) {
@@ -186,6 +193,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         webhookUrl,
         metadata: { type: 'abonnement', organisatie_id },
       }),
+      // Eerste betaling incl. mandaat: ruimste marge van de calls hier, want
+      // een abort laat in het ongewisse of de payment toch is aangemaakt.
+      signal: AbortSignal.timeout(20_000),
     })
 
     if (!paymentResponse.ok) {

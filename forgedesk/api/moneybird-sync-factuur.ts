@@ -141,6 +141,10 @@ async function moneybirdFetch(
       ...(init?.body && !(init.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
       ...(init?.headers ?? {}),
     },
+    // Elke aanroep krijgt een verse timeout (deze functie wordt per call
+    // uitgevoerd). 25s: deze helper doet ook de schrijvende invoice-POST, en
+    // daar laat een te vroege abort in het ongewisse of de factuur toch staat.
+    signal: AbortSignal.timeout(25_000),
   })
 }
 

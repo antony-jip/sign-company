@@ -110,6 +110,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const mbRes = await fetch(`${MONEYBIRD_API_BASE}/${administratieId}/ledger_accounts.json`, {
       headers: { Authorization: `Bearer ${token}` },
+      // Read-only lijst uit een boekhoudpakket; 20s is ruim.
+      signal: AbortSignal.timeout(20_000),
     })
 
     if (mbRes.status === 401) {

@@ -167,6 +167,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accessToken: token, source: EBOEKHOUDEN_SOURCE }),
+      // Sessie openen is de auth-stap: klein en snel, dus kort afkappen.
+      signal: AbortSignal.timeout(10_000),
     })
 
     if (sessieRes.status === 401 || sessieRes.status === 400) {
@@ -187,6 +189,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     fetch(`${EBOEKHOUDEN_API_BASE}/session`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${sessie.token}` },
+      // Opruim-call waar niemand op wacht; kort, de .catch slikt de abort.
+      signal: AbortSignal.timeout(5_000),
     }).catch(() => {})
 
     if (isNieuwToken) {

@@ -216,6 +216,9 @@ async function getValidToken(tokenUserId: string, settingsUserId: string, cache:
         client_id: exactClientId,
         client_secret: exactClientSecret,
       }),
+      // Token-endpoint is een kleine POST die normaal in een seconde klaar is;
+      // hangt Exact, dan is er geen budget meer voor de zes sync-calls erna.
+      signal: AbortSignal.timeout(10_000),
     })
 
     if (!refreshRes.ok) {
@@ -399,9 +402,11 @@ async function schrijfGeroteerdeKeten(params: {
 
 // Exact hanteert per-minuut rate-limits; bij 429 wachten (Retry-After, gecapt
 // op 15s) en maximaal twee keer opnieuw proberen.
+// Elke poging krijgt een eigen signal: één AbortSignal.timeout hergebruiken zou
+// na de eerste poging al afgevuurd zijn en de retries meteen laten falen.
 async function exactFetchMetRetry(url: string, init: RequestInit): Promise<Response> {
   for (let poging = 0; ; poging++) {
-    const response = await fetch(url, init)
+    const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) })
     if (response.status !== 429 || poging >= 2) return response
     const retryAfter = Number(response.headers.get('Retry-After'))
     const wachtMs = Math.min((retryAfter > 0 ? retryAfter : 5) * 1000, 15_000)
@@ -879,6 +884,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             Accept: 'application/json',
           },
           body: JSON.stringify({ Document: documentId }),
+          // Best-effort call aan het eind van de sync; korter dan de andere
+          // Exact-calls omdat de sync hier al geslaagd is en niemand erop wacht.
+          signal: AbortSignal.timeout(15_000),
         })
         if (!putRes.ok) {
           const putBody = await putRes.text()
