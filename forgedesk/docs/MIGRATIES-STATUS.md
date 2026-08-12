@@ -32,11 +32,37 @@ nergens werden aangemaakt.
 **Volgorde maakt hier uit.** Draai ze in deze volgorde en plak de
 verificatie-output terug.
 
-| # | Migratie | Waar | Waarom |
+Alles staat op branch **`audit/integratie`** (77 commits). `main` is onaangeroerd.
+
+| # | Migratie | Waarom | Breekt er iets als je hem NIET draait? |
 |---|---|---|---|
-| 1 | `196_organisatie_id_default.sql` | `audit/gate4-opruimen` | `organisatie_id` krijgt `DEFAULT auth_organisatie_id()` op 24 tabellen. Dicht het lek waardoor `getOrgId()` een rij met `NULL` kon wegschrijven, die daarna voor niemand zichtbaar is. Geen `NOT NULL`, dus geen enkel insert-pad breekt. |
-| 2 | `197_inkoopfacturen_referentie_kenmerk.sql` | worktree-branch | twee kolommen voor het projectvoorstel op inkoopfacturen. **Tot dit gedraaid is** valt de extractie terug op een update zonder die velden; de ruwe waarden staan wel in `raw_extractie_json`. |
-| 3 | `198_doen_migraties_administratie.sql` | worktree-branch | maakt de tabel die dit document overbodig maakt. |
+| 1 | `196_organisatie_id_default.sql` | `organisatie_id` krijgt `DEFAULT auth_organisatie_id()` op 24 tabellen. Dicht het lek waardoor `getOrgId()` een rij met `NULL` kon wegschrijven, die daarna voor niemand zichtbaar is. Geen `NOT NULL`, dus geen enkel insert-pad breekt. | Nee. Het lek blijft dan open. |
+| 2 | `197_inkoopfacturen_referentie_kenmerk.sql` | Twee kolommen voor het projectvoorstel op inkoopfacturen. | Nee. De extractie valt terug op een update zonder die velden; de ruwe waarden staan in `raw_extractie_json`. |
+| 3 | `198_doen_migraties_administratie.sql` | Maakt de tabel die dit document overbodig maakt. **Draai deze vóór 199 t/m 202**: die eindigen op een INSERT hierin. | Nee, maar dan faalt de laatste regel van elke volgende migratie. Onschadelijk, wel rommelig. |
+| 4 | `199_rapportage_aggregatie_views.sql` | Zeven aggregatie-views voor de rapportages, elk met `security_invoker = on`. | Nee. De pagina's rekenen nu via paginatie en zijn correct zonder deze views; ze staan klaar als volgende stap. |
+| 5 | `200_feature_flags.sql` | De uitzetknop. **Nodig voor 6 en 7**, want die twee hangen eraan. | Nee. Zonder rijen is elke vlag `onbekend`, en dat is precies het gedrag van vandaag. |
+| 6 | `201_support_toewijzing.sql` | Toewijzing van supportgesprekken, met een trigger die de klant belet zichzelf een medewerker toe te wijzen. | Nee. Het endpoint probet de kolom en het schrijfpad geeft 503 met een eerlijke melding. |
+| 7 | `202_mailsync_taken.sql` | De mailsync-wachtrij. | Nee. Zonder tabel én zonder vlagrij verandert er niets aan de mailsync. |
+
+## De twee vlaggen staan UIT, en dat is opzet
+
+`mailsync_queue` en `offline_queue` komen slapend mee. Zolang er geen rij in
+`feature_flags` staat gedraagt de app zich exact zoals vandaag; dat is per pad
+nagelopen en in tests vastgelegd. Zet ze pas aan als je dit hebt gedaan:
+
+**Vóór `offline_queue`:** test met de hand op een iPhone of "Opslaan op telefoon"
+echt een bestand oplevert. Dat is de ontsnappingsroute voor een vastgelopen foto,
+en met `capture="environment"` is die foto de enige kopie. Werkt die knop niet,
+dan is de uitweg er niet.
+
+**Vóór `mailsync_queue`:** controleer of migratie **038** en **131** echt in de
+database staan. Daar hangt de hele analyse aan. Staat 131 er niet, dan lopen
+mailboxen permanent in bootstrap-modus, en dat is het verschil tussen "uitzetten
+doet niets" en "dupliceert elke drie minuten". Weet ook dat aanzetten omkeerbaar
+is voor het gedrag maar niet volledig voor de data: mails zonder Message-ID
+krijgen een gesynthetiseerd id dat blijft staan. En er is nog geen zichtbaarheid:
+een mailbox die vastloopt geeft een regel in de Vercel-logs en verder niets.
+Houd de pilot daarom op één organisatie.
 
 ## Waarom 193 mist
 
@@ -47,10 +73,11 @@ Er is geen 193. Dat nummer was gereserveerd voor een `NOT NULL` op
 constraint had het klantportaal- en betalingsmeldingspad omgelegd. Migratie 196
 lost hetzelfde probleem op met een default in plaats van een verplichting.
 
-## Vanaf 199
+## Vanaf 203
 
-Houd `doen_migraties` bij zodra 198 gedraaid is: één regel onderaan elke nieuwe
-migratie. Dan is dit bestand geschiedenis en hoef je nooit meer te gokken.
+Houd `doen_migraties` bij: één INSERT-regel onderaan elke nieuwe migratie. 199
+t/m 202 doen dat al. Dan is dit bestand geschiedenis en hoef je nooit meer te
+gokken.
 
 Verder blijft gelden wat in `CLAUDE.md` staat: neem het eerstvolgende vrije
 nummer op basis van de bestandsnamen, gebruik alleen het `NNN_`-schema, en
