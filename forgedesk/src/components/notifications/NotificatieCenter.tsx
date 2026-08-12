@@ -302,10 +302,14 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
 
     const userId = user.id;
 
-    const setupChannel = async () => {
-      const channel = supabase!
-        .channel(`notificaties-${userId}`)
-        .on(
+    // Bewust synchroon. Stond dit in een async functie met .then(), dan liep de
+    // cleanup (die synchroon draait) vóór het toekennen van de referentie: het
+    // kanaal werd dan niet opgeruimd, en supabase.channel() geeft bij dezelfde
+    // topic hetzelfde object terug. De volgende mount viel daardoor over
+    // "cannot add postgres_changes callbacks after subscribe()".
+    const channel = supabase!
+      .channel(`notificaties-${userId}`)
+      .on(
           'postgres_changes',
           {
             event: 'INSERT',
@@ -332,17 +336,11 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
               // Negeer audio fouten
             }
           }
-        )
-        .subscribe();
-
-      return channel;
-    };
-
-    let channelRef: ReturnType<typeof supabase.channel> | undefined;
-    setupChannel().then((ch) => { channelRef = ch; });
+      )
+      .subscribe();
 
     return () => {
-      if (channelRef) supabase!.removeChannel(channelRef);
+      supabase!.removeChannel(channel);
     };
   }, [user?.id]);
 
