@@ -360,18 +360,49 @@ export function ForgieChatWidget() {
     }
   }, [isOpen])
 
-  // Heartbeat: markeer de support-beheerder als 'online' zolang de app open is.
+  // Heartbeat: markeer de support-beheerder als 'online'.
+  //
+  // "Online" moet betekenen dat er IEMAND is, niet dat er een tabblad openstaat.
+  // Dat onderscheid is hier het hele punt: zolang deze stempel vers is gaat er
+  // geen mail naar buiten, dus een blind doorpingend interval maakt de app
+  // permanent stil terwijl de klant wacht. En stilte was precies het probleem.
+  //
+  // Daarom twee voorwaarden: het tabblad moet zichtbaar zijn, en er moet in de
+  // laatste vijf minuten echt iets aangeraakt zijn. Loopt iemand weg, dan stopt
+  // de heartbeat, verloopt de stempel binnen de drempel van drie minuten, en
+  // gaat de mail alsnog.
   useEffect(() => {
     if (!isAdminOrg || !supabase || !user?.id) return
+
+    const INTERACTIE_VENSTER_MS = 5 * 60 * 1000
+    let laatsteInteractie = Date.now()
+    const registreer = () => { laatsteInteractie = Date.now() }
+    const events = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const
+    events.forEach(e => window.addEventListener(e, registreer, { passive: true }))
+
     const ping = () => {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - laatsteInteractie > INTERACTIE_VENSTER_MS) return
       supabase!
         .from('support_presence')
         .upsert({ gebruiker_id: user.id, laatste_actief: new Date().toISOString() })
         .then(() => {}, () => {})
     }
+
+    // Terugkomen op het tabblad is zelf een teken van aanwezigheid, anders moet
+    // je eerst iets aanklikken voordat je weer als online telt.
+    const bijZichtbaar = () => {
+      if (document.visibilityState === 'visible') { registreer(); ping() }
+    }
+    document.addEventListener('visibilitychange', bijZichtbaar)
+
     ping()
     const iv = setInterval(ping, 60000)
-    return () => clearInterval(iv)
+    return () => {
+      clearInterval(iv)
+      document.removeEventListener('visibilitychange', bijZichtbaar)
+      events.forEach(e => window.removeEventListener(e, registreer))
+    }
   }, [isAdminOrg, user?.id])
 
   // ── Admin: inbox laden + realtime ──

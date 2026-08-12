@@ -194,12 +194,17 @@ async function mailSupportBerichtNaarBeheerder(orgNaam: string, tekst: string): 
     <blockquote style="margin:12px 0; padding:10px 14px; border-left:3px solid #F15025; background:#FAFAF8; white-space:pre-wrap;">${escapeHtml(preview)}</blockquote>
     <p style="color:#6B6B66;">Open de Support-inbox in doen. om te reageren.</p>
   </div>`
-  await resend.emails.send({
+  // Resend GOOIT NIET bij een API-fout, hij geeft { data, error } terug. De
+  // returnwaarde negeren betekent dus: ongeldige key, rate limit of domeinfout
+  // gaat geruisloos langs, én de idempotency-claim blijft staan, dus dat gesprek
+  // is een kwartier stil. Zie api/nieuwsbrief-test.ts voor hetzelfde patroon.
+  const { error } = await resend.emails.send({
     from: 'doen. <noreply@doen.team>',
     to,
     subject: `Support: nieuw bericht van ${orgNaam}`,
     html,
   })
+  if (error) throw new Error(`Resend weigerde de supportmelding: ${error.message}`)
 }
 
 /**

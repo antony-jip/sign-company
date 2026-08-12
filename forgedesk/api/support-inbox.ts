@@ -345,6 +345,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('support_gesprekken')
         .select('*', { count: 'exact' })
         .order('laatste_bericht_op', { ascending: false })
+        // Tweede, unieke sleutel. Zonder tiebreaker zijn OFFSET-vensters alleen
+        // stabiel als laatste_bericht_op uniek is; twee gesprekken met dezelfde
+        // stempel kunnen dan van venster wisselen en zo net buiten beide vallen.
+        // Een dubbele rij vangt voegGesprekkenSamen op, een gemiste rij niet.
+        .order('id', { ascending: false })
         .range(offset, offset + limiet - 1)
       if (lijstError) throw new Error('Inbox ophalen mislukt')
 
