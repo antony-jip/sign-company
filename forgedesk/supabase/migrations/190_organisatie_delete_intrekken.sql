@@ -12,16 +12,30 @@ BEGIN;
 --
 --   Geen rolcheck. Een monteur, een verkoper, iedereen met een profiles-rij
 --   die naar de organisatie wijst. Migratie 111 laat DELETE bewust ongemoeid
---   (zie de toelichting daar, regel 19-20) en 173 zette alleen profiles.rol
---   vast, dus deze policy is nooit ingetrokken of versmald.
+--   (zie de toelichting daar, regel 18) en 173 zette alleen profiles.rol vast,
+--   dus deze policy is nooit ingetrokken of versmald.
 --
 -- Waarom dit in de praktijk zelden losliep:
---   Van de 77 foreign keys naar organisaties(id) hebben er 21 ON DELETE
---   CASCADE en 56 geen ON DELETE-clausule (dus NO ACTION), waaronder klanten,
---   projecten, offertes, facturen en werkbonnen. Postgres blokkeert de DELETE
---   daarop en de statement is atomair. Een organisatie met echte data was dus
---   niet te verwijderen. Een lege of nieuwe organisatie wél, en die heeft geen
+--   Een deel van de foreign keys naar organisaties(id) heeft ON DELETE CASCADE,
+--   maar de kerntabellen niet: klanten, projecten, offertes, facturen en
+--   werkbonnen krijgen hun kolom via 047:14-20 als
+--   `organisatie_id UUID REFERENCES organisaties(id)`, zonder ON DELETE. Dat is
+--   NO ACTION, dus Postgres blokkeert de DELETE zodra er ook maar één rij aan
+--   hangt, en de statement is atomair. Een organisatie met echte data was dus
+--   niet te verwijderen. Een lege of nieuwe organisatie wél, want die heeft geen
 --   FK-rijen die hem beschermen.
+--
+--   Exacte verdeling niet uit de migratiemap te tellen: tabellen worden er
+--   meermaals gedefinieerd en de map loopt uit de pas met de database. Wil je
+--   het getal, vraag het de database:
+--
+--     SELECT confdeltype, count(*)
+--     FROM pg_constraint
+--     WHERE contype = 'f'
+--       AND confrelid = 'public.organisaties'::regclass
+--     GROUP BY confdeltype;
+--
+--   confdeltype 'c' = CASCADE, 'a' = NO ACTION.
 --
 -- Waarom intrekken en niet versmallen naar de eigenaar:
 --   Geen enkele regel in src/ of api/ doet een DELETE op organisaties
@@ -50,32 +64,37 @@ BEGIN;
 -- Veilig om opnieuw te draaien (idempotent).
 -- ============================================================
 
+-- Op naam, want dit is de enige DELETE-policy die ooit op organisaties is
+-- aangemaakt. De volledige historische set is vijf: "Eigenaar ziet eigen
+-- organisatie" (030, gedropt in 048), "Leden zien eigen organisatie" (048/085),
+-- "Leden updaten eigen organisatie" (085/172), "Leden verwijderen eigen
+-- organisatie" (085) en "Nieuwe gebruiker maakt eerste organisatie" (085/172).
+-- De verificatie hieronder is het vangnet: die controleert op cmd = 'DELETE' en
+-- niet op een naam, dus een policy die onder een andere naam is aangemaakt valt
+-- daar alsnog op.
 DROP POLICY IF EXISTS "Leden verwijderen eigen organisatie" ON public.organisaties;
-
--- Ook de historische naamvarianten, mocht er in de database iets anders staan
--- dan in de migratiemap. Er is geen schema_migrations, dus de bestanden en de
--- database lopen aantoonbaar uit de pas.
-DROP POLICY IF EXISTS "Eigenaar verwijdert eigen organisatie" ON public.organisaties;
-DROP POLICY IF EXISTS "Leden verwijderen organisatie" ON public.organisaties;
 
 COMMIT;
 
 -- ============================================================
 -- VERIFICATIE — plak de output hiervan terug.
 --
--- Verwacht: drie rijen (SELECT, UPDATE, INSERT), GEEN enkele met cmd = 'DELETE'.
+-- De SQL Editor toont maar één resultatengrid, namelijk dat van het laatste
+-- statement dat rijen teruggeeft. Daarom staat de policy-lijst hier als
+-- LAATSTE: dat is de output die je ziet.
+--
+-- Verwacht: drie rijen (SELECT, UPDATE, INSERT) en geen enkele met cmd =
+-- 'DELETE'. Staat er wel een DELETE-rij, dan is de policy onder een andere naam
+-- aangemaakt; drop die dan op de naam die je hier ziet.
 -- ============================================================
 
-SELECT policyname, cmd, qual AS using_expressie, with_check
+SELECT
+  policyname,
+  cmd,
+  qual       AS using_expressie,
+  with_check,
+  (cmd = 'DELETE') AS dit_mag_niet_meer_bestaan
 FROM pg_policies
 WHERE schemaname = 'public'
   AND tablename = 'organisaties'
 ORDER BY cmd, policyname;
-
--- Tweede controle: staat er ergens nog een DELETE-policy op organisaties?
--- Verwacht: 0.
-SELECT count(*) AS delete_policies_op_organisaties
-FROM pg_policies
-WHERE schemaname = 'public'
-  AND tablename = 'organisaties'
-  AND cmd = 'DELETE';
