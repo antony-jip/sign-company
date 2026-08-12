@@ -2341,7 +2341,9 @@ export interface IngeplandBericht {
   html?: string
   bijlagen: IngeplandBerichtBijlage[]
   scheduled_at: string
-  status: 'wachtend' | 'verzonden' | 'geannuleerd' | 'mislukt'
+  // 'verwerken' = door de cron geclaimd (migratie 120). Blijft die stand
+  // staan, dan is het proces gestorven tussen claim en afronding.
+  status: 'wachtend' | 'verwerken' | 'verzonden' | 'geannuleerd' | 'mislukt'
   foutmelding?: string
   verzonden_op?: string
   created_at: string

@@ -80,6 +80,9 @@ export function WerkbonMonteurView() {
   const [klantNaamGetekend, setKlantNaamGetekend] = useState('')
   const [handtekeningData, setHandtekeningData] = useState<string | undefined>()
 
+  // Foto's waarvan de upload faalde. De telefoon heeft de enige kopie, dus die
+  // bestanden blijven hier staan tot ze gelukt zijn of de monteur ze weggooit.
+  const [mislukteFotos, setMislukteFotos] = useState<{ file: File; type: WerkbonFoto['type'] }[]>([])
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [showPdfPreview, setShowPdfPreview] = useState(false)
   const [previewNonce, setPreviewNonce] = useState(0)
@@ -224,13 +227,15 @@ export function WerkbonMonteurView() {
       .catch(() => bufferWerkbonFeedback(f.werkbon!.id, payload, Date.now()))
   }, [])
 
-  const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
+  // Losgetrokken zodat "opnieuw proberen" exact hetzelfde pad gebruikt als de
+  // eerste poging, in plaats van een tweede, half gelijke kopie. Moet vóór
+  // handleFotoToevoegen staan: een const is in de dependency-array van een
+  // eerdere useCallback nog niet geinitialiseerd.
+  const uploadFotos = useCallback(async (files: File[], type: WerkbonFoto['type']) => {
     if (!werkbon) return
-    const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'))
-    if (files.length === 0) return
-
     let uploaded = 0
     let lastError: string | null = null
+    const mislukt: File[] = []
     // Parallel met een kleine concurrency-limiet: veel sneller dan serieel
     // wanneer de monteur meerdere foto's tegelijk kiest, zonder een zwakke
     // mobiele verbinding te verzadigen. Elke foto verschijnt zodra hij klaar is.
@@ -256,14 +261,50 @@ export function WerkbonMonteurView() {
       } catch (err) {
         logger.error('Fout bij uploaden foto:', err)
         lastError = err instanceof Error ? err.message : 'Onbekende fout'
+        mislukt.push(file)
       }
     }
     const worker = async () => { let f; while ((f = queue.shift())) await uploadFoto(f) }
     await Promise.all(Array.from({ length: Math.min(3, files.length) }, worker))
-    if (uploaded > 0) { toast.success(`${uploaded} foto${uploaded > 1 ? "'s" : ''} toegevoegd`); bumpPreview() }
-    else toast.error(`Upload mislukt: ${lastError ?? 'Onbekende fout'}`)
-    e.target.value = ''
+
+    // De foto op de telefoon is de enige kopie, dus een mislukte upload mag niet
+    // stil verdwijnen. Twee dingen gingen hier eerder mis: bij drie van vijf
+    // gelukt meldde de app "3 foto's toegevoegd" als succes en zei niets over de
+    // twee die weg waren, en de bestanden zelf werden weggegooid zodat er geen
+    // herkansing was. Nu blijven ze staan tot ze gelukt zijn of de monteur ze
+    // zelf weggooit.
+    setMislukteFotos((prev) => [
+      ...prev.filter((m) => !files.includes(m.file)),
+      ...mislukt.map((file) => ({ file, type })),
+    ])
+
+    if (uploaded > 0) bumpPreview()
+    if (uploaded > 0 && mislukt.length === 0) {
+      toast.success(`${uploaded} foto${uploaded > 1 ? "'s" : ''} toegevoegd`)
+    } else if (uploaded > 0) {
+      toast.warning(`${uploaded} toegevoegd, ${mislukt.length} mislukt. Probeer die opnieuw.`)
+    } else {
+      toast.error(`Upload mislukt: ${lastError ?? 'Onbekende fout'}. Probeer opnieuw.`)
+    }
   }, [werkbon, userId, bumpPreview])
+
+  const probeerFotosOpnieuw = useCallback(async () => {
+    const perType = new Map<WerkbonFoto['type'], File[]>()
+    for (const { file, type } of mislukteFotos) {
+      perType.set(type, [...(perType.get(type) || []), file])
+    }
+    for (const [type, files] of perType) await uploadFotos(files, type)
+  }, [mislukteFotos, uploadFotos])
+
+  const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
+    const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'))
+    // De input altijd leegmaken, ook bij een fout: de bestanden zelf zijn nu
+    // bewaard in mislukteFotos, dus dezelfde foto opnieuw kiezen moet weer een
+    // change-event geven.
+    e.target.value = ''
+    if (files.length === 0) return
+    await uploadFotos(files, type)
+  }, [uploadFotos])
 
   const handleFotoVerwijderen = useCallback(async (fotoId: string) => {
     await deleteWerkbonFoto(fotoId)
@@ -559,6 +600,39 @@ export function WerkbonMonteurView() {
                 )
               })}
             </div>
+          </section>
+        )}
+
+        {/* Mislukte foto's. Boven het formulier, want op een dak is dit het
+            enige wat de monteur nog kan doen om ze niet te verliezen. */}
+        {mislukteFotos.length > 0 && (
+          <section
+            className="rounded-xl border p-3 flex flex-wrap items-center gap-3"
+            style={{ borderColor: '#F15025', backgroundColor: '#FDF1ED' }}
+          >
+            <div className="flex-1 min-w-[12rem]">
+              <p className="text-sm font-semibold">
+                {mislukteFotos.length} foto{mislukteFotos.length > 1 ? "'s" : ''} nog niet verstuurd
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Ze staan nog op je telefoon. Verlaat deze pagina niet voordat ze verstuurd zijn.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={probeerFotosOpnieuw}
+              className="h-10 px-4 rounded-lg text-sm font-bold text-white"
+              style={{ backgroundColor: '#F15025' }}
+            >
+              Opnieuw versturen
+            </button>
+            <button
+              type="button"
+              onClick={() => setMislukteFotos([])}
+              className="h-10 px-3 rounded-lg text-sm font-medium text-muted-foreground"
+            >
+              Weggooien
+            </button>
           </section>
         )}
 

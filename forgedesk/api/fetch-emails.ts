@@ -594,6 +594,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (stateErr) {
         console.warn('[fetch-emails] sync-state opslaan mislukt (migratie 131 gedraaid?):', stateErr.message)
       }
+    } else if (errors.length === 0 && stateBruikbaar) {
+      // Foutloze ronde zonder nieuwe mail. De waterlijn mag hier NIET opschuiven
+      // (dat is de voorwaarde hierboven), maar "we hebben gekeken" moet wel
+      // vastgelegd worden, en dat stond op dezelfde kolom.
+      //
+      // Zonder dit verhongert de cron precies de actieve mailboxen:
+      // cron-email-sync.ts:139 sorteert op updated_at, oudste eerst, en pakt er
+      // acht. Schrijft een stille mailbox die kolom nooit, dan blijft hij
+      // permanent vooraan staan en komen de mailboxen waar wél mail binnenkomt
+      // achteraan. De sortering betekende dus "langst geen mail ontvangen
+      // eerst" in plaats van "langst niet gesynct eerst", wat de comment daar
+      // belooft.
+      //
+      // Alleen updated_at, met last_seen_uid expliciet op de bestaande waarde,
+      // zodat een gelijktijdige run de waterlijn niet kan terugzetten.
+      const { error: tikErr } = await supabaseAdmin
+        .from('email_sync_state')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('user_id', user_id)
+        .eq('folder', mapValue)
+      if (tikErr) {
+        console.warn('[fetch-emails] sync-tijdstip bijwerken mislukt:', tikErr.message)
+      }
     }
 
     // ─── Sales Inbox auto-match v2 ───

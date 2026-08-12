@@ -21,6 +21,10 @@ function formatScheduledAt(iso: string): string {
 
 const STATUS_LABEL: Record<IngeplandBericht['status'], string> = {
   wachtend: 'Wachtend',
+  // De database kent deze stand sinds migratie 120, de UI niet. Een bericht dat
+  // erin blijft hangen (proces gestorven tussen claim en afronding) rendde
+  // daardoor zonder label en zonder annuleerknop: onzichtbaar vastgelopen.
+  verwerken: 'Bezig met versturen',
   verzonden: 'Verzonden',
   geannuleerd: 'Geannuleerd',
   mislukt: 'Mislukt',
