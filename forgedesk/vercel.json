@@ -31,6 +31,7 @@
   ],
   "functions": {
     "api/cron-email-sync.ts": { "maxDuration": 60 },
+    "api/cron-mailsync-werker.ts": { "maxDuration": 60 },
     "api/inkoopfactuur-extract.ts": { "maxDuration": 300 },
     "api/offerte-uitschrijven.ts": { "maxDuration": 300 },
     "api/inkoopfactuur-sync.ts": { "maxDuration": 120 },
@@ -51,6 +52,10 @@
     {
       "path": "/api/cron-email-sync",
       "schedule": "*/3 * * * *"
+    },
+    {
+      "path": "/api/cron-mailsync-werker",
+      "schedule": "* * * * *"
     }
   ]
 }
