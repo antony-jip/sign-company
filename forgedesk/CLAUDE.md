@@ -32,8 +32,9 @@ visuele wijziging.
   serverless functions vielen daarbuiten. Dat gat liet in één nacht twee fouten
   door, waaronder een ontbrekende accolade waar build én tsc groen op bleven.
   Raak je iets in `api/` aan, draai dan **beide** commando's. Baseline daar is
-  **72 fouten** (gemeten 13 aug 2026); twintig daarvan zijn dezelfde
-  `GenericStringError`-cast, die je oplost met `as unknown as`.
+  **52 fouten** (gemeten 13 aug 2026). Wat er nog staat is grotendeels
+  `unknown` uit een niet-getypeerde fetch-respons; dat vraagt per geval een
+  oordeel over de vorm van het antwoord, dus dat is echt werk en geen zoekvervang.
 - Tests: `npm run test` (vitest watch) of `npm run test:run` (one-shot).
 - Geen nieuwe npm packages zonder expliciete toestemming.
 

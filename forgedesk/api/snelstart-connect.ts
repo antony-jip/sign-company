@@ -89,7 +89,7 @@ async function loadAppSettingsOrgFirst(
       .select(columns)
       .eq('organisatie_id', orgId)
       .maybeSingle()
-    if (data) return data as Record<string, unknown>
+    if (data) return data as unknown as Record<string, unknown>
   }
   const { data } = await supabase
     .from('app_settings')
