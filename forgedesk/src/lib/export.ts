@@ -79,7 +79,7 @@ export function exportExcel(filename: string, headers: string[], rows: ExportRow
   downloadBlob(blob, `${filename}.xls`)
 }
 
-function downloadBlob(blob: Blob, filename: string) {
+export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
