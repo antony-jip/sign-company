@@ -151,7 +151,7 @@ Per masterplan §8.4: minimaal 2 productie-weken na fase 2. Lokaal: gebruik fase
 
 ### Stop-gate vóór fase 2
 Per masterplan §8.1: minimaal 1 productie-week monitoring na rollout. Bij lokale test:
-- Test-checklist in `WERKBON_CANVAS_FASE1_TESTPLAN.md`.
+- Test-checklist in `docs/archief/WERKBON_CANVAS_FASE1_TESTPLAN.md`.
 - Akkoord per email/bericht: "Fase 2 mag starten".
 
 ## April 2026 — Taken-module refactor (afgerond)

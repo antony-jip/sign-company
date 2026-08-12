@@ -2,7 +2,7 @@
  * doen. service worker — uitsluitend meldingen.
  *
  * Bewust géén precaching en géén runtime-cache: offline werken is een eigen
- * project (zie PLAN_PWA_PUSH.md) en een service worker die bestanden vasthoudt
+ * project (zie docs/archief/PLAN_PWA_PUSH.md) en een service worker die bestanden vasthoudt
  * is berucht om vastzittende versies. Deze worker raakt geen enkel verzoek aan
  * en heeft dus ook geen cache-invalidatie nodig.
  */

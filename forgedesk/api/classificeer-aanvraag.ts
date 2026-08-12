@@ -167,6 +167,22 @@ const ONDERWERP_UITSLUITINGEN = [
   'contract', 'abonnement', 'verlenging', 'opzegging',
 ]
 
+// Woorden die een mail ondanks een Re:/Fwd:-onderwerp alsnog een vraag om werk
+// maken. Een nabestelling of vervanging komt vaak binnen als antwoord in een
+// oude draad; die viel voorheen stil weg voordat Claude hem zag.
+const VRAAGSIGNALEN = [
+  'offerte', 'prijsopgave', 'prijs', 'wat kost', 'kosten', 'tarief',
+  'levertijd', 'aanvraag', 'opdracht', 'laten maken', 'opnieuw maken',
+  'bestellen', 'nabestellen', 'bijbestellen', 'vervangen', 'vervanging',
+]
+
+// Op zo'n domein zegt de afzender niets over wélke klant het is.
+const GENERIEKE_MAILDOMEINEN = new Set([
+  'gmail.com', 'hotmail.com', 'hotmail.nl', 'outlook.com', 'live.nl', 'live.com',
+  'icloud.com', 'me.com', 'yahoo.com', 'ziggo.nl', 'kpnmail.nl', 'planet.nl',
+  'home.nl', 'xs4all.nl', 'upcmail.nl', 'casema.nl', 'chello.nl', 'telfort.nl',
+])
+
 function bevat(haystack: string, naalden: string[]): boolean {
   const h = haystack.toLowerCase()
   return naalden.some((n) => h.includes(n))
@@ -193,9 +209,13 @@ function komtDoorVoorfilter(mail: KandidaatRij, eigenAdres: string): boolean {
   if (mail.from_address.toLowerCase() === eigenAdres.toLowerCase()) return false
   if (bevat(afzender, AFZENDER_UITSLUITINGEN)) return false
   if (bevat(onderwerp, ONDERWERP_UITSLUITINGEN)) return false
-  // Re: en Fwd: duiden op lopende correspondentie. De eerste mail van een
-  // thread is de aanvraag, niet het antwoord erop.
-  if (/^\s*(re|antw|aw|fwd?|doorst)\s*:/i.test(mail.onderwerp || '')) return false
+  // Re: en Fwd: duiden meestal op lopende correspondentie. Meestal, niet
+  // altijd: een klant die vraagt om een nieuwe prijs of om vervanging van
+  // eerder werk antwoordt vaak gewoon in de oude draad. Staat er een duidelijk
+  // vraagsignaal in de tekst, dan gaat hij alsnog door naar de beoordeling.
+  if (/^\s*(re|antw|aw|fwd?|doorst)\s*:/i.test(mail.onderwerp || '')) {
+    if (!bevat(mail.body_text || '', VRAAGSIGNALEN)) return false
+  }
 
   return true
 }
@@ -206,20 +226,34 @@ const SYSTEM_PROMPT = `Je beoordeelt e-mail voor een signbedrijf (lichtbakken, g
 
 Eén vraag: legt de afzender hier werk bij ons neer of vraagt hij om een prijs of mogelijkheid?
 
+Lees de hele mail voordat je oordeelt. Vaste klanten schrijven kort en informeel;
+de vraag staat vaak midden in de tekst, achter een stuk voorgeschiedenis.
+
 WEL een aanvraag:
 - een klant of prospect vraagt om een offerte, prijsopgave of levertijd
 - iemand beschrijft een klus die hij uitgevoerd wil hebben
 - iemand vraagt of iets kan, met de duidelijke bedoeling het te laten maken
+- een nabestelling of herhaling: eerder geleverd werk dat opnieuw, extra of in
+  meervoud nodig is ("jullie hebben vorig jaar X gemaakt, ik heb er 2 nieuw nodig")
+- vervanging of herstel van iets dat kapot, beschadigd of verouderd is
+- de vraag komt van een bekende klant en gaat over nieuw werk, ook als hij
+  verwijst naar eerdere opdrachten of naar een oude mailwisseling
+- de prijs of factuur moet naar een derde (verzekeraar, veroorzaker, hoofdaannemer);
+  dat gaat over wie betaalt, niet over of er werk gevraagd wordt
 
 GEEN aanvraag:
 - facturen, betalingsherinneringen, aanmaningen
 - nieuwsbrieven, reclame, uitnodigingen, webinars
 - leveranciers die iets aanbieden of verkopen
 - sollicitaties, stageverzoeken, wervingsmail
-- lopende correspondentie over werk dat al loopt: planningsvragen, akkoord op een offerte, vragen over een lopende opdracht
+- correspondentie over precies díé opdracht die al loopt: planning, akkoord op
+  een offerte, een statusvraag, aanleveren van bestanden. Vraagt de afzender in
+  dezelfde mail om iets nieuws of om een nieuwe prijs, dan is het wél een aanvraag.
 - algemene vragen zonder opdracht erachter
 
-Wees streng. Twijfel je, dan is het geen aanvraag. Een gemiste aanvraag is minder erg dan een kaart die er onterecht staat.`
+Beslis op wat er gevraagd wordt, niet op de toon of de lengte. Twijfel je tussen
+"nieuw werk" en "loopt al", kijk dan of er iets gemaakt, geleverd of geprijsd moet
+worden dat er nog niet is. Is dat zo, dan is het een aanvraag.`
 
 const TOOL_SCHEMA = {
   name: 'beoordeel',
@@ -227,6 +261,11 @@ const TOOL_SCHEMA = {
   input_schema: {
     type: 'object' as const,
     properties: {
+      gevraagd: {
+        type: 'string',
+        description:
+          'Wat de afzender concreet van ons wil, in maximaal 15 woorden. "niets" als hij niets vraagt.',
+      },
       is_aanvraag: {
         type: 'boolean',
         description: 'True als de afzender werk of een prijs vraagt.',
@@ -241,7 +280,7 @@ const TOOL_SCHEMA = {
           'Wat er gevraagd wordt, in één zin, bruikbaar als projectomschrijving. Leeg als het geen aanvraag is.',
       },
     },
-    required: ['is_aanvraag', 'zekerheid', 'samenvatting'],
+    required: ['gevraagd', 'is_aanvraag', 'zekerheid', 'samenvatting'],
   },
 }
 
@@ -254,10 +293,12 @@ interface Oordeel {
 async function beoordeelMail(
   mail: KandidaatRij,
   tekst: string,
+  klantContext: string,
   apiKey: string
 ): Promise<{ oordeel: Oordeel; inputTokens: number; outputTokens: number } | null> {
   const inhoud = [
     `Afzender: ${mail.from_name || ''} <${mail.from_address || ''}>`,
+    `Relatie: ${klantContext}`,
     `Onderwerp: ${mail.onderwerp || '(geen onderwerp)'}`,
     '',
     tekst.slice(0, MAX_TEKST_TEKENS),
@@ -698,6 +739,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // en de privacygrens.
     let mailLeertMee = false
     const klantAdressen = new Map<string, string>()
+    // Naam van de klant achter een afzender · gaat als context mee naar Claude:
+    // "kun jij een prijs mailen" van een bekende klant is een aanvraag, van een
+    // onbekende partij hooguit een vraag.
+    const klantNaamPerAdres = new Map<string, string>()
+    const klantNaamPerDomein = new Map<string, string>()
     if (orgIdVoorBudget) {
       const { data: leerInstelling, error: leerFout } = await supabaseAdmin
         .from('app_settings')
@@ -707,21 +753,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .limit(1)
         .maybeSingle()
       mailLeertMee = !leerFout && ((leerInstelling?.daan_leert_uit_email as boolean | null) ?? true)
-      if (mailLeertMee) {
-        const { data: klanten } = await supabaseAdmin
-          .from('klanten')
-          .select('id, email')
-          .eq('organisatie_id', orgIdVoorBudget)
-        for (const k of klanten ?? []) {
-          const adres = String(k.email || '').trim().toLowerCase()
-          if (!adres) continue
-          // Delen twee klanten één adres, dan is de afzender niet eenduidig
-          // herleidbaar: niet gokken, dus geen attributie en geen spoor.
-          if (klantAdressen.has(adres) && klantAdressen.get(adres) !== (k.id as string)) {
-            klantAdressen.set(adres, '')
-          } else {
-            klantAdressen.set(adres, k.id as string)
-          }
+
+      const { data: klanten } = await supabaseAdmin
+        .from('klanten')
+        .select('id, email, bedrijfsnaam, contactpersoon')
+        .eq('organisatie_id', orgIdVoorBudget)
+      for (const k of klanten ?? []) {
+        const adres = String(k.email || '').trim().toLowerCase()
+        if (!adres.includes('@')) continue
+        const naam = String(k.bedrijfsnaam || k.contactpersoon || '').trim()
+        if (naam) {
+          klantNaamPerAdres.set(adres, naam)
+          const domein = adres.split('@')[1]
+          if (domein && !GENERIEKE_MAILDOMEINEN.has(domein)) klantNaamPerDomein.set(domein, naam)
+        }
+        if (!mailLeertMee) continue
+        // Delen twee klanten één adres, dan is de afzender niet eenduidig
+        // herleidbaar: niet gokken, dus geen attributie en geen spoor.
+        if (klantAdressen.has(adres) && klantAdressen.get(adres) !== (k.id as string)) {
+          klantAdressen.set(adres, '')
+        } else {
+          klantAdressen.set(adres, k.id as string)
         }
       }
     }
@@ -742,7 +794,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       let oordeel: Oordeel | null = null
       try {
-        const uitkomst = await beoordeelMail(mail, tekst, apiKey)
+        const afzenderAdres = (mail.from_address || '').trim().toLowerCase()
+        const afzenderDomein = afzenderAdres.split('@')[1] || ''
+        const bekendeKlant = klantNaamPerAdres.get(afzenderAdres) || klantNaamPerDomein.get(afzenderDomein) || ''
+        const klantContext = bekendeKlant
+          ? `bekende klant (${bekendeKlant})`
+          : 'staat niet in de klantenlijst'
+        const uitkomst = await beoordeelMail(mail, tekst, klantContext, apiKey)
         if (uitkomst) {
           oordeel = uitkomst.oordeel
           inputTokens += uitkomst.inputTokens

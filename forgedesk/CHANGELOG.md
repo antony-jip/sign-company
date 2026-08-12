@@ -16,7 +16,7 @@
 
 ### Added
 - `supabase/rls_policies.sql` — Complete Row Level Security voor alle 49 tabellen + storage buckets
-- `AUDIT_REPORT.md` — Volledige audit rapportage met bevindingen en fixes
+- `docs/archief/AUDIT_REPORT.md` — Volledige audit rapportage met bevindingen en fixes
 
 ## [2026-02-26] Ronde 2: Twee-koloms layout
 
