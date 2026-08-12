@@ -1240,3 +1240,24 @@ inbound-only fetch. Gelogde restpunten:
 - Onbeantwoord-punt herhaalt max 9 nachten (dag 5-14) zonder escalatie en
   valt op dag 14 geruisloos weg; bewust ontwerp, consistent met de andere
   lanen.
+
+## Inkoopfactuur-projectvoorstel + migratie-administratie (12 aug 2026)
+
+Gate-review verdict AKKOORD-MET-OPMERKINGEN. Vier punten zijn gefixt in
+`6c697331`. Wat bewust blijft staan:
+
+- **`api/*` wordt door geen enkele geautomatiseerde poort gedekt.**
+  `tsconfig.json` heeft `include: ["src", "trigger.config.ts"]`, dus noch
+  `tsc --noEmit` noch de vite-build kijkt naar de 92 endpoints. Het zwaarste
+  bestand van deze ronde (`api/inkoopfactuur-extract.ts`) is daarom los
+  getypechecked met `--strict` (schoon). Dit is een echt gat in de toolketen en
+  geen eigenschap van deze wijziging: de laag waar geld en tenant-isolatie zitten
+  is de laag zonder compiler. Een tweede tsconfig voor `api/` zou het dichten.
+- **Projectnummer `P-2026-001` matcht een referentie `P-2026-0019`.** Vergt
+  inconsistente padding aan leverancierszijde, en als dat langere nummer óók een
+  bestaand project is worden het twee treffers en dus geen voorstel. Degradeert
+  dus naar de veilige kant.
+- **`parsed.vertrouwen || 'laag'`** (`api/inkoopfactuur-extract.ts:481`): laat het
+  model het veld weg, dan land je in Nakijken. Ruim aan de goede kant, bewust.
+- **Geen accent-normalisatie**: project `Nieuwbouw Café de Zwaan` matcht niet op
+  `cafe`. Een misser in plaats van een verkeerd voorstel, dus de goede richting.
