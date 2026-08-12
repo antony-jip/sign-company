@@ -1261,3 +1261,43 @@ Gate-review verdict AKKOORD-MET-OPMERKINGEN. Vier punten zijn gefixt in
   model het veld weg, dan land je in Nakijken. Ruim aan de goede kant, bewust.
 - **Geen accent-normalisatie**: project `Nieuwbouw Café de Zwaan` matcht niet op
   `cafe`. Een misser in plaats van een verkeerd voorstel, dus de goede richting.
+## AVG-export (12 aug 2026)
+
+Gate-review verdict BLOKKADE, gefixt. De blokkade: `facturen.betaal_link` bevat
+letterlijk `/betalen/<betaal_token>` (`FactuurEditor.tsx:1247`), en het filter
+haalde `betaal_token` weg maar liet `betaal_link` staan. De uitvoer bevatte dus
+per factuur een levende sleutel naar een publieke pagina zonder inlog. Opgelost
+met een tweede filterlaag op de WAARDE, want een naamfilter mist per definitie de
+volgende kolom die een URL blijkt te zijn. Vastgelegd in
+`tests/api/orgExportFilter.test.ts`.
+
+Ook gefixt: het filter faalde open voorbij nestdiepte 8 (gaf de ruwe subtree
+terug), de auditregel werd vóór de groottecheck geschreven zodat een 413 als
+geslaagde uitvoer in het logboek stond, en de toast meldde alleen het rijtotaal
+zodat een mislukte tabel als succes las.
+
+Wat blijft staan:
+
+- **`inkoopfactuur_inbox_config` exporteert `imap_host`/`imap_port`/`imap_user`.**
+  Het wachtwoord gaat eruit op `encrypted`, maar dit is dezelfde mailkoppeling
+  waarvoor `user_email_settings` juist wordt uitgesloten, alleen op org-niveau.
+  Kies bij de volgende ronde: tabel uitsluiten, of ook de gebruikersnamen
+  strippen.
+- **`profiles.iban` en `leveranciers.iban` gaan mee.** Geen credential en
+  terecht een gegeven, maar het zijn betaalgegevens van collega's in een bestand
+  dat bedoeld is om door te sturen. Bewuste keuze, hoort expliciet in
+  `docs/AVG.md`.
+- **Zonder Upstash-env-vars is er geen rate limit** (alleen een `console.warn`),
+  en een Redis-fout faalt open. `docs/AVG.md` noemt "twee per uur" als feit;
+  dat geldt alleen als Upstash geconfigureerd is.
+- **De definitieve secret-sweep vraagt de database.** `eboekhouden_api_token` en
+  `moneybird_api_token` staan in `docs/AVG.md` maar in geen enkele migratie, en
+  van `organisaties` bestaat geen `CREATE TABLE` in de map. Een sluitende
+  controle is `information_schema.columns` tegen de regex; dat is een
+  terugkerende check, niet een eenmalige.
+- **`verwijderde_kolommen` vult alleen aan uit tabellen die rijen teruggaven.**
+  De belofte "je ziet wat er ontbreekt" geldt dus niet voor lege tabellen.
+- **Ongetest tot deploy**: de gzip-route en de 413-tak. Beide falen zichtbaar.
+  Controleer bij de eerste echte download of het bestand JSON is en geen
+  gzip-bytes, want of Vercel's proxy `Content-Encoding` ongemoeid doorlaat is
+  statisch niet vast te stellen.
