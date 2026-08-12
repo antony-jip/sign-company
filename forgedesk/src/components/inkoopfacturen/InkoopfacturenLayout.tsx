@@ -58,6 +58,15 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'nakijken', label: 'Nakijken' },
 ]
 
+// Nakijken is een werklijst, geen archief: zodra je de factuur hebt goedgekeurd
+// of afgewezen heb je hem nageteld, en hoort hij eruit. Zonder deze grens kon de
+// teller alleen stijgen en werd hij na een paar maanden meubilair.
+function moetNagekekenWorden(f: InkoopFactuur): boolean {
+  return f.extractie_vertrouwen === 'laag'
+    && f.status !== 'goedgekeurd'
+    && f.status !== 'afgewezen'
+}
+
 function voorstelUitleg(voorstel: InkoopProjectVoorstel): string {
   const bron = voorstel.bron === 'referentie_kenmerk'
     ? 'referentie op de factuur'
@@ -278,7 +287,7 @@ export function InkoopfacturenLayout() {
     const counts: Record<string, number> = { alle: facturen.length, nakijken: 0 }
     for (const f of facturen) {
       counts[f.status] = (counts[f.status] || 0) + 1
-      if (f.extractie_vertrouwen === 'laag') counts.nakijken++
+      if (moetNagekekenWorden(f)) counts.nakijken++
     }
     return counts
   }, [facturen])
@@ -286,7 +295,7 @@ export function InkoopfacturenLayout() {
   const filtered = useMemo(() => {
     let result = [...facturen]
     if (filterStatus === 'nakijken') {
-      result = result.filter(f => f.extractie_vertrouwen === 'laag')
+      result = result.filter(moetNagekekenWorden)
     } else if (filterStatus !== 'alle') {
       result = result.filter(f => f.status === filterStatus)
     }

@@ -123,6 +123,30 @@ describe('stelProjectVoor · op projectnaam', () => {
     expect(stelProjectVoor({ vermoedelijk_project: 'Vlag met mast en toebehoren' }, kort)).toBeNull()
   })
 
+  /**
+   * De drie gevallen hieronder kwamen uit de review en waren allemaal ECHTE
+   * valse positieven voordat naamKomtVoor op woordgrenzen ging matchen. Ze staan
+   * hier omdat dit precies het stille soort fout is: een inkoopfactuur op het
+   * verkeerde project vervuilt de nacalculatie zonder foutmelding.
+   */
+  it('matcht een projectnaam niet binnen een langer woord', () => {
+    const bakker = [project({ id: 'b', naam: 'Bakker', project_nummer: undefined })]
+    expect(stelProjectVoor({ vermoedelijk_project: 'Levering Bakkerstraat 12, Almere' }, bakker)).toBeNull()
+    expect(stelProjectVoor({ vermoedelijk_project: 'Onderhoud bakkerij centrum' }, bakker)).toBeNull()
+  })
+
+  it('matcht de naam nog steeds als hij los in de tekst staat', () => {
+    const bakker = [project({ id: 'b', naam: 'Bakker', project_nummer: undefined })]
+    expect(stelProjectVoor({ vermoedelijk_project: 'Project Bakker, fase 2' }, bakker)?.project.id).toBe('b')
+    expect(stelProjectVoor({ vermoedelijk_project: 'bakker' }, bakker)?.project.id).toBe('b')
+  })
+
+  it('matcht een naam van meerdere woorden alleen op grenzen', () => {
+    const meer = [project({ id: 'm', naam: 'nieuwbouw kantoor', project_nummer: undefined })]
+    expect(stelProjectVoor({ vermoedelijk_project: 'Kozijnen nieuwbouw kantoor Almere' }, meer)?.project.id).toBe('m')
+    expect(stelProjectVoor({ vermoedelijk_project: 'nieuwbouw kantoorpand' }, meer)).toBeNull()
+  })
+
   it('doet niets als twee projectnamen in dezelfde tekst zitten', () => {
     expect(
       stelProjectVoor({ vermoedelijk_project: 'Gevelreclame Jansen en Vlaggenmasten Bakker' }, projecten)

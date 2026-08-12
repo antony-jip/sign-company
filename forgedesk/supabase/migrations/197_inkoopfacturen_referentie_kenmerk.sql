@@ -45,8 +45,7 @@ SELECT column_name, data_type, is_nullable
    AND column_name IN ('referentie_kenmerk', 'vermoedelijk_project')
  ORDER BY column_name;
 
--- Migratie-administratie: de tabel komt pas in 198, dus deze regel kan hier nog
--- niet draaien. Voer hem uit NADAT 198 gedraaid is.
--- INSERT INTO doen_migraties (bestand)
---   VALUES ('197_inkoopfacturen_referentie_kenmerk.sql')
---   ON CONFLICT DO NOTHING;
+-- Migratie-administratie: geen INSERT hier, want `doen_migraties` bestaat pas na
+-- 198. Je hoeft niets te onthouden: 198 detecteert zelf of deze migratie
+-- gedraaid is door naar de twee kolommen hierboven te kijken, en schrijft 197
+-- dan in. Vanaf 199 hoort de INSERT-regel gewoon onderaan elke migratie.

@@ -67,10 +67,36 @@ function nummerKomtVoor(projectNummer: string, tekst: string): boolean {
   )
 }
 
+/**
+ * De naam moet op woordgrenzen vallen, niet als kale substring. Zonder die eis
+ * matcht project "Bakker" op "Levering Bakkerstraat 12" en project "Jansen" op
+ * "Jansen Bouw B.V.", ook als dat een heel ander Jansen is. Klantachternamen van
+ * vijf tot acht tekens zijn precies hoe projecten in de praktijk heten, en
+ * `vermoedelijk_project` mag ook uit een leveradres komen, dus straatnamen
+ * komen echt langs.
+ *
+ * Meerdere woorden blijven werken: "nieuwbouw kantoor" matcht binnen een langere
+ * regel, zolang begin en eind op een grens liggen.
+ */
 function naamKomtVoor(projectNaam: string, tekst: string): boolean {
   const naam = genormaliseerdeNaam(projectNaam)
   if (naam.length < MIN_NAAM_LENGTE) return false
-  return genormaliseerdeNaam(tekst).includes(naam)
+
+  const hooiberg = genormaliseerdeNaam(tekst)
+  let vanaf = 0
+  for (;;) {
+    const index = hooiberg.indexOf(naam, vanaf)
+    if (index === -1) return false
+    const ervoor = hooiberg[index - 1]
+    const erna = hooiberg[index + naam.length]
+    if (!isWoordteken(ervoor) && !isWoordteken(erna)) return true
+    vanaf = index + 1
+  }
+}
+
+/** Undefined (begin of eind van de tekst) telt als grens, niet als teken. */
+function isWoordteken(teken: string | undefined): boolean {
+  return teken !== undefined && /[a-z0-9]/.test(teken)
 }
 
 /** Projecten die nog kosten kunnen ontvangen; templates doen niet mee. */

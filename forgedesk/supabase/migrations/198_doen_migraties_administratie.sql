@@ -89,13 +89,28 @@ INSERT INTO doen_migraties (bestand) VALUES
   ('195_legacy_user_policies_droppen.sql')
 ON CONFLICT DO NOTHING;
 
+-- 197 kan hier niet blind bij: die migratie draait vóór deze, maar zijn eigen
+-- INSERT kan pas bestaan zodra deze tabel bestaat. Onvoorwaardelijk inschrijven
+-- zou een claim zijn die fout is als iemand 198 los draait. Dus vraag het de
+-- database, precies zoals de conventie zegt: staan de twee kolommen er, dan is
+-- 197 gedraaid.
+INSERT INTO doen_migraties (bestand)
+SELECT '197_inkoopfacturen_referentie_kenmerk.sql'
+WHERE (
+  SELECT count(*) FROM information_schema.columns
+  WHERE table_schema = 'public'
+    AND table_name = 'inkoopfacturen'
+    AND column_name IN ('referentie_kenmerk', 'vermoedelijk_project')
+) = 2
+ON CONFLICT DO NOTHING;
+
 INSERT INTO doen_migraties (bestand)
   VALUES ('198_doen_migraties_administratie.sql')
   ON CONFLICT DO NOTHING;
 
 -- ============================================================
--- Verificatie: hoort 4 rijen te geven, en de tabel hoort onbereikbaar te zijn
--- voor de app.
+-- Verificatie: hoort 5 rijen te geven (4 als je 197 nog niet gedraaid hebt),
+-- en de tabel hoort onbereikbaar te zijn voor de app.
 -- ============================================================
 SELECT bestand, gedraaid_op, gedraaid_door FROM doen_migraties ORDER BY bestand;
 
