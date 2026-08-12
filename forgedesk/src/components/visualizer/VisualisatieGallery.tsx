@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { useFeatureUitgezet } from '@/contexts/FeatureFlagsContext'
 import { round2 } from '@/utils/budgetUtils'
 import { SIGNING_TYPE_LABELS } from '@/utils/visualizerDefaults'
 import {
@@ -37,6 +38,15 @@ export function VisualisatieGallery({
   compact = false,
 }: VisualisatieGalleryProps) {
   const { user } = useAuth()
+  // De galerij zit ook in projectdetail, offerteregels en de mailcomposer, dus
+  // de poort hoort hier en niet bij de aanroepers: anders sluit module_studio de
+  // Studio-pagina wel maar blijft de generator via een project bereikbaar, en
+  // dan is de uitzetknop een halve knop.
+  //
+  // Bestaande visualisaties blijven wel staan. Die zijn data, en data verstoppen
+  // is geen module uitzetten; wat stopt is het maken van nieuwe.
+  const studioUit = useFeatureUitgezet('module_studio')
+  const magToevoegen = toon_toevoegen_knop && !studioUit
   const [visualisaties, setVisualisaties] = useState<SigningVisualisatie[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -113,9 +123,11 @@ export function VisualisatieGallery({
               <Badge variant="secondary" className="text-xs">{visualisaties.length}</Badge>
             )}
           </h3>
-          <Button size="sm" variant="outline" onClick={() => setDialogOpen(true)} className="gap-1.5">
-            <Plus className="h-3.5 w-3.5" /> Nieuwe visualisatie
-          </Button>
+          {magToevoegen && (
+            <Button size="sm" variant="outline" onClick={() => setDialogOpen(true)} className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> Nieuwe visualisatie
+            </Button>
+          )}
         </div>
       )}
 
@@ -126,9 +138,11 @@ export function VisualisatieGallery({
             <ImageIcon className="h-6 w-6 text-muted-foreground" />
           </div>
           <p className="text-sm text-muted-foreground mb-3">
-            Nog geen visualisaties. Genereer de eerste mockup
+            {studioUit
+              ? 'Studio staat tijdelijk uit'
+              : 'Nog geen visualisaties. Genereer de eerste mockup'}
           </p>
-          {toon_toevoegen_knop && (
+          {magToevoegen && (
             <Button size="sm" onClick={() => setDialogOpen(true)} className="gap-1.5">
               <Palette className="h-3.5 w-3.5" /> Nieuwe visualisatie
             </Button>
@@ -215,7 +229,9 @@ export function VisualisatieGallery({
         </div>
       )}
 
-      {/* Dialog */}
+      {/* Dialog. Niet renderen zodra de module uit staat: de generator doet
+          betaalde AI-calls, dus een gemonteerde dialog is hier het risico. */}
+      {magToevoegen && (
       <SigningVisualizerDialog
         isOpen={dialogOpen}
         onClose={() => setDialogOpen(false)}
@@ -227,6 +243,7 @@ export function VisualisatieGallery({
           laden()
         }}
       />
+      )}
 
       {/* Lightbox */}
       {lightboxIndex !== null && (

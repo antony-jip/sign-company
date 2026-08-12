@@ -88,8 +88,12 @@ DO $$ BEGIN
     SELECT 1 FROM pg_policies
     WHERE tablename = 'feature_flags' AND policyname = 'Org members read feature_flags'
   ) THEN
+    -- TO authenticated, niet aan iedereen. De IS NULL-tak is bedoeld voor
+    -- globale rijen, maar zonder rolbeperking kan een niet-ingelogde bezoeker
+    -- met de anon-key ze uitlezen: alle flagnamen en hun stand. Geen
+    -- cross-org-lek, wel het hele schakelbord publiek.
     CREATE POLICY "Org members read feature_flags" ON public.feature_flags
-      FOR SELECT USING (
+      FOR SELECT TO authenticated USING (
         organisatie_id IS NULL OR organisatie_id = auth_organisatie_id()
       );
   END IF;
@@ -97,6 +101,14 @@ END $$;
 
 -- Bewust GEEN INSERT/UPDATE/DELETE-policy: dat sluit anon en
 -- authenticated volledig uit van schrijven. Niet weghalen.
+--
+-- Tweede laag op GRANT-niveau, want RLS is anders het enige slot: Supabase
+-- geeft anon en authenticated standaard rechten op nieuwe tabellen in public.
+-- Zelfde hardening als migratie 160.
+REVOKE INSERT, UPDATE, DELETE ON public.feature_flags FROM anon, authenticated;
+REVOKE ALL ON public.feature_flags FROM anon;
+GRANT SELECT ON public.feature_flags TO authenticated;
+GRANT ALL ON public.feature_flags TO service_role;
 
 -- De eerste consument. Staat op true zodat de app zich vandaag precies
 -- zo gedraagt als gisteren; de rij bestaat om de deur te kunnen sluiten,

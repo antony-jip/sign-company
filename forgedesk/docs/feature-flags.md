@@ -43,8 +43,44 @@ UPDATE public.feature_flags
 SET aan = false,
     reden = 'Studio dicht: <waarom, met datum>',
     aangepast_op = now()
-WHERE naam = 'module_studio' AND organisatie_id IS NULL;
+WHERE naam = 'module_studio' AND organisatie_id IS NULL
+RETURNING naam, aan, reden;
 ```
+
+De `RETURNING` staat er niet voor niets. Ontbreekt de globale rij, bijvoorbeeld
+na een terugdraai of bij een nieuwe flag, dan is het resultaat "UPDATE 0" en
+denk je dat je hebt uitgezet terwijl er niets is gebeurd. Zie je geen rij
+terugkomen, gebruik dan de upsert-vorm uit de pilot-paragraaf.
+
+### Twee grenzen die je moet kennen
+
+**Een tabblad dat al open staat volgt niet.** De flags worden één keer per
+sessie geladen, zonder TTL en zonder herhaalpoging. Zet je iets uit terwijl
+iemand de app open heeft, dan ziet die persoon het pas na een echte
+paginalading. Voor een noodstop op korte termijn is dat niet genoeg: vraag er
+dan bij om te verversen.
+
+**De flag werkt alleen client-side.** Er is geen lezer in `api/`, dus met
+`module_studio` uit blijft `/api/visualizer-chat` bereikbaar voor wie het pad
+kent. De knop haalt de module uit de app, hij sluit het endpoint niet af. Voor
+de rewrites die hierachter komen, waarvan mailsync en de Trigger.dev-kant
+server-side zijn, moet er eerst een serverkant bij.
+
+### Wat `module_studio` precies sluit
+
+Zodat je weet wat je koopt als je hem omzet:
+
+- **Weg**: het menu-item in zijbalk, topbalk, mobiele balk en Meer, de route
+  `/visualizer` (die stuurt naar de startpagina), de knop "Bekijk in de app" in
+  het kennisbank-artikel, en élke knop "Nieuwe visualisatie" — ook die in
+  projectdetail, in offerteregels en in de mailcomposer. Er kan dus geen enkele
+  nieuwe AI-generatie meer starten en er lopen geen credits weg.
+- **Blijft**: visualisaties die er al zijn. Die blijven zichtbaar en te
+  downloaden. Dat is opzet: dat is data van de klant, en data verstoppen is geen
+  module uitzetten.
+- **Blijft ook**: `/api/visualizer-chat`, zie de grens hierboven, en de
+  vermelding van Studio in Daans systeemprompt. Daan kan er dus nog naar
+  verwijzen.
 
 ## Weer aanzetten
 

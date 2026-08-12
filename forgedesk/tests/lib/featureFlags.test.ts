@@ -7,8 +7,8 @@ import {
   moduleUitgezet,
   zonderUitgezetteModules,
   MODULE_FLAGS,
-  type FeatureFlagRij,
 } from '@/lib/featureFlags'
+import { ALLE_MODULES, NAV_GROEPEN, MOBIELE_MENU_KANDIDATEN } from '@/lib/navigatie'
 
 const ORG_A = '11111111-1111-1111-1111-111111111111'
 const ORG_B = '22222222-2222-2222-2222-222222222222'
@@ -123,5 +123,46 @@ describe('moduleUitgezet en zonderUitgezetteModules', () => {
     const voorB = (f: string) => staatUit(f, rijen, ORG_B)
     expect(zonderUitgezetteModules(modules, voorA)).toHaveLength(2)
     expect(zonderUitgezetteModules(modules, voorB)).toHaveLength(3)
+  })
+})
+
+/**
+ * De eigenschap waar de hele veiligheid van dit mechanisme op rust: zolang de
+ * tabel leeg is, en dat is de toestand tussen deze commit en het moment dat de
+ * migratie gedraaid wordt, mag er in de menu's letterlijk niets veranderen.
+ *
+ * Dit is met opzet getest tegen de ECHTE navigatielijst en niet tegen een
+ * verzonnen lijstje. Een test op drie neptegels zou blijven slagen terwijl een
+ * nieuwe module met een verkeerd pad stil uit het menu valt.
+ */
+describe('nul rijen laat de echte navigatie ongemoeid', () => {
+  const geenRijen: FeatureFlagRij[] = []
+  const isUit = (flag: string) => staatUit(flag, geenRijen, ORG_A)
+
+  it('houdt elke module in ALLE_MODULES', () => {
+    expect(zonderUitgezetteModules(ALLE_MODULES, isUit)).toHaveLength(ALLE_MODULES.length)
+  })
+
+  it('houdt elke groep in NAV_GROEPEN op volle sterkte', () => {
+    for (const groep of NAV_GROEPEN) {
+      expect(zonderUitgezetteModules(groep.items, isUit), groep.section).toHaveLength(groep.items.length)
+    }
+  })
+
+  it('houdt het mobiele menu intact', () => {
+    expect(zonderUitgezetteModules(MOBIELE_MENU_KANDIDATEN, isUit))
+      .toHaveLength(MOBIELE_MENU_KANDIDATEN.length)
+  })
+
+  /**
+   * Elk pad in MODULE_FLAGS moet een bestaande module zijn. Een typefout hier
+   * levert een flag op die nooit iets uitzet, en dat merk je pas op het moment
+   * dat je hem nodig hebt.
+   */
+  it('verwijst elk pad in MODULE_FLAGS naar een bestaande module', () => {
+    const paden = new Set(MOBIELE_MENU_KANDIDATEN.map((m) => m.path))
+    for (const pad of Object.keys(MODULE_FLAGS)) {
+      expect(paden.has(pad), `${pad} staat niet in de navigatie`).toBe(true)
+    }
   })
 })
