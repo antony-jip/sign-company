@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import type { Email, Klant } from '@/types'
 import { getKlanten, createKlant, updateKlant, createProject, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
-import { koppelEmailAanProject } from '@/services/emailProjectService'
+import { koppelEmailAanProject, getProjectVoorThread } from '@/services/emailProjectService'
 import { verbergAanvraag } from '@/services/emailService'
 import { extractSenderEmail, zoekKlantVoorAfzender, bepaalAanvraagContact, bodyAlsTekst, haalHandtekeningUitBody, GENERIEKE_MAILDOMEINEN } from './emailHelpers'
 import type { HandtekeningGegevens } from './emailHelpers'
@@ -46,7 +46,7 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
   const [klantGeladen, setKlantGeladen] = useState(false)
   const [bezig, setBezig] = useState(false)
   const [verborgen, setVerborgen] = useState(false)
-  const [aangemaakt, setAangemaakt] = useState<{ id: string; naam: string } | null>(null)
+  const [aangemaakt, setAangemaakt] = useState<{ id: string; naam: string; bestaand?: boolean } | null>(null)
   const [aanvullenBezig, setAanvullenBezig] = useState(false)
   const [aangevuld, setAangevuld] = useState(false)
 
@@ -83,6 +83,21 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
     zoekKlant()
     return () => { gestopt = true }
   }, [contact.email])
+
+  // Hangt er al een project aan deze thread, dan is de aanvraag belegd — ook
+  // na een herlaad of vanaf een ander apparaat.
+  useEffect(() => {
+    if (!email.thread_id) return
+    let gestopt = false
+    getProjectVoorThread(email.thread_id)
+      .then((koppeling) => {
+        if (!gestopt && koppeling) {
+          setAangemaakt({ id: koppeling.project.id, naam: koppeling.project.naam, bestaand: true })
+        }
+      })
+      .catch((err) => logger.warn('Projectkoppeling ophalen mislukt:', err))
+    return () => { gestopt = true }
+  }, [email.thread_id])
 
   async function handleProjectAanmaken() {
     if (!user) { toast.error('Niet ingelogd'); return }
@@ -217,16 +232,21 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
 
   if (aangemaakt) {
     return (
-      <div className="relative mt-6 overflow-hidden rounded-xl doen-panel doen-wash px-5 py-4 pl-6">
-        <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-petrol" />
-        <div className="flex flex-wrap items-center gap-2.5">
-          <CheckCircle2 className="h-4 w-4 text-petrol shrink-0" />
-          <span className="text-[13px] text-text-sec">Project aangemaakt</span>
+      <div className="relative mt-6 overflow-hidden rounded-xl border border-[#4A9960]/25 dark:border-[#7AAF85]/25 bg-[#E8F5EC] dark:bg-[rgba(74,153,96,0.14)] px-5 py-4 pl-6">
+        <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-[#4A9960] dark:bg-[#7AAF85]" />
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-[#4A9960] dark:text-[#7AAF85]" />
+            <span className="text-[13px] text-[#3D7A50] dark:text-[#9BC7A5] shrink-0">
+              {aangemaakt.bestaand ? 'Al gekoppeld aan' : 'Project aangemaakt'}
+            </span>
+            <span className="truncate text-[14px] font-semibold text-foreground">{aangemaakt.naam}</span>
+          </div>
           <button
             onClick={() => navigate(`/projecten/${aangemaakt.id}`)}
-            className="group inline-flex items-center gap-1.5 text-[14px] font-semibold text-petrol hover:underline"
+            className="group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#4A9960] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#418754]"
           >
-            {aangemaakt.naam}
+            Ga naar project
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </button>
         </div>
