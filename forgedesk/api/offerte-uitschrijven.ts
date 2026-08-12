@@ -131,7 +131,8 @@ Regels:
 - Reken nooit aantallen bij elkaar op. Vul aantal alleen als de hele post uit identieke stuks bestaat, bijvoorbeeld een oplage of één maat met een aantal erbij. Bestaat de post uit verschillende maten of versies, zet aantal dan op 1 en laat de stuksaantallen staan waar ze staan, in de specs.
 - Vul breedte_cm en hoogte_cm alleen als de post één maat heeft. Bij meerdere maten laat je ze weg.
 - "PM", "pm", "nader te bepalen", een leeg veld of een keuze zonder besluit ("3 mm / 5 mm") horen in open_punten, niet in de specs als aanname.
-- Labels kort houden: Afmeting, Materiaal, Afwerking, Omvang, Oplage, Bedrukking, Montage, Levering, Bestanden.
+- De aanroeper geeft de labels mee die op de offerte staan. Gebruik die labels waar de spec erop past, in dezelfde schrijfwijze. Past een spec op geen enkel label, geef hem dan een eigen kort label; hij komt er als extra regel onder.
+- Eén regel per label. Staan er meerdere waarden onder hetzelfde label, voeg ze samen in één waarde.
 - Regels die over de hele opdracht gaan (bijvoorbeeld "montage extern tenzij anders vermeld") zijn geen post; zet die in algemene_opmerkingen.
 
 Beschrijf niets in eigen woorden. Dit is overtypen met structuur, niet formuleren.`
@@ -181,6 +182,16 @@ const SPLITS_TOOL = {
     },
     required: ['posten', 'algemene_opmerkingen'],
   },
+}
+
+/** De labels van de offerte meegeven, zodat de specs meteen op de goede rij landen. */
+function labelRegel(labels: unknown): string {
+  if (!Array.isArray(labels)) return ''
+  const schoon = labels
+    .filter((l): l is string => typeof l === 'string' && l.trim().length > 0)
+    .map((l) => l.trim())
+    .slice(0, 12)
+  return schoon.length ? `\n\nDe offerte gebruikt deze labels: ${schoon.join(', ')}.` : ''
 }
 
 // ───── Fase 2: formuleren ─────
@@ -396,7 +407,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { fase } = req.body as { fase?: string }
 
     if (fase === 'splitsen') {
-      const { bestand_base64 } = req.body as { bestand_base64?: string }
+      const { bestand_base64, labels } = req.body as { bestand_base64?: string; labels?: unknown }
       if (!bestand_base64) return res.status(400).json({ error: 'bestand_base64 is verplicht' })
 
       const base64Data = bestand_base64.includes(',') ? bestand_base64.split(',')[1] : bestand_base64
@@ -415,7 +426,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           role: 'user',
           content: [
             { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64Data } },
-            { type: 'text', text: 'Knip dit document op in posten.' },
+            { type: 'text', text: `Knip dit document op in posten.${labelRegel(labels)}` },
           ],
         }],
       }, 240000)

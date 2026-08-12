@@ -87,6 +87,7 @@ import { RegelTemplateEditor } from './RegelTemplateEditor'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import { OfferteUitschrijvenDialog, type UitgeschrevenPost } from './OfferteUitschrijvenDialog'
+import { vulDetailRegels } from '@/utils/offerteSpecs'
 import { useSidebarLayout, type SidebarSectionId } from '@/hooks/useSidebarLayout'
 import type { CalculatieRegel, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
@@ -907,10 +908,10 @@ export function QuoteCreation() {
       if (post.breedte_cm) item.breedte_mm = Math.round(post.breedte_cm * 10)
       if (post.hoogte_cm) item.hoogte_mm = Math.round(post.hoogte_cm * 10)
       if (post.specs.length) {
-        item.detail_regels = post.specs.map((spec, i) => ({
+        item.detail_regels = vulDetailRegels(regelTemplateLabels, post.specs).map((regel, i) => ({
           id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
-          label: spec.label,
-          waarde: spec.waarde,
+          label: regel.label,
+          waarde: regel.waarde,
         }))
       }
       if (post.open_punten.length) {
@@ -920,7 +921,7 @@ export function QuoteCreation() {
     })
     setItems((prev) => [...prev, ...nieuw])
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [standaardBtw, settings.offerte_regel_velden])
+  }, [standaardBtw, settings.offerte_regel_velden, regelTemplateLabels])
 
   // ── Inkoop regel → calculatie item ──
   const handleInkoopRegelToevoegen = useCallback((regel: InkoopRegel) => {
@@ -2335,6 +2336,7 @@ export function QuoteCreation() {
             open={uitschrijvenOpen}
             onOpenChange={setUitschrijvenOpen}
             klantId={selectedKlantId || undefined}
+            labels={regelTemplateLabels}
             onPostenToevoegen={handleUitgeschrevenPosten}
           />
 

@@ -24,6 +24,8 @@ interface OfferteUitschrijvenDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   klantId?: string
+  /** De vaste labelrijen van de offerte; Daan probeert daar op te schrijven. */
+  labels: string[]
   onPostenToevoegen: (posten: UitgeschrevenPost[]) => void
 }
 
@@ -34,7 +36,7 @@ const MAX_MB = 10
  * Twee ronden achter elkaar: eerst splitsen (letterlijk overnemen), daarna
  * formuleren (in de eigen schrijfstijl). Prijzen blijven leeg; die reken je zelf.
  */
-export function OfferteUitschrijvenDialog({ open, onOpenChange, klantId, onPostenToevoegen }: OfferteUitschrijvenDialogProps) {
+export function OfferteUitschrijvenDialog({ open, onOpenChange, klantId, labels, onPostenToevoegen }: OfferteUitschrijvenDialogProps) {
   const { session } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [bestandNaam, setBestandNaam] = useState('')
@@ -90,7 +92,7 @@ export function OfferteUitschrijvenDialog({ open, onOpenChange, klantId, onPoste
     if (!bestandBase64) { toast.error('Kies eerst een PDF'); return }
     setBezig('splitsen')
     try {
-      const gesplitst = await roep({ fase: 'splitsen', bestand_base64: bestandBase64 }) as {
+      const gesplitst = await roep({ fase: 'splitsen', bestand_base64: bestandBase64, labels }) as {
         posten?: Omit<UitgeschrevenPost, 'beschrijving'>[]
         algemene_opmerkingen?: string[]
       }
@@ -119,7 +121,7 @@ export function OfferteUitschrijvenDialog({ open, onOpenChange, klantId, onPoste
     } finally {
       setBezig('')
     }
-  }, [bestandBase64, klantId, roep])
+  }, [bestandBase64, klantId, labels, roep])
 
   const gekozen = posten.filter((_, i) => !uitgevinkt.has(i))
 
