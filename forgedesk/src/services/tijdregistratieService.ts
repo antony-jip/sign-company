@@ -1,15 +1,20 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, sanitizeDates,
+  withUserId, getOrgId, sanitizeDates, fetchAllPages,
 } from './supabaseHelpers'
 import type { Tijdregistratie } from '@/types'
 
-export async function getTijdregistraties(): Promise<Tijdregistratie[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('tijdregistraties').select('*').order('datum', { ascending: false })
-    if (error) throw error
-    return data || []
+export async function getTijdregistraties(limit = 50000): Promise<Tijdregistratie[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<Tijdregistratie>((van, tot) =>
+      sb
+        .from('tijdregistraties')
+        .select('*')
+        .order('datum', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
   }
   return getLocalData<Tijdregistratie>('tijdregistraties')
 }

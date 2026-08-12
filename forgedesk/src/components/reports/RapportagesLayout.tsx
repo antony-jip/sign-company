@@ -313,9 +313,10 @@ export function RapportagesLayout() {
     return medewerkers
       .filter((m) => m.status === 'actief')
       .map((m) => {
-        const uren = tijdregistraties
+        const minuten = tijdregistraties
           .filter((t) => t.medewerker_id === m.id)
           .reduce((s, t) => s + (t.duur_minuten || 0), 0);
+        const uren = minuten / 60;
         const projectIds = new Set(
           tijdregistraties.filter((t) => t.medewerker_id === m.id).map((t) => t.project_id)
         );
@@ -481,7 +482,7 @@ export function RapportagesLayout() {
         {
           titel: `Omzet per maand - ${new Date().getFullYear()}`,
           datum: new Date().toISOString(),
-          samenvatting: `Totale omzet: ${formatCurrency(totaleOmzet)} | Totale winst: ${formatCurrency(totaleWinst)} | Conversieratio: ${conversieRatio}%`,
+          samenvatting: `Totale omzet: ${formatCurrency(totaleOmzet)} | Indicatieve winst (aanname 35% kosten): ${formatCurrency(totaleWinst)} | Conversieratio: ${conversieRatio}%`,
           secties: [
             {
               kop: 'Maandelijks overzicht',
@@ -722,16 +723,16 @@ export function RapportagesLayout() {
           </CardContent>
         </Card>
 
-        {/* Totale winst */}
+        {/* Indicatieve winst · vaste kostenaanname, geen gemeten kosten */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totale winst</CardTitle>
+            <CardTitle className="text-sm font-medium">Indicatieve winst</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totaleWinst)}</div>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-              <span className="text-green-500 font-medium">65%</span> marge
+              Aanname · 35% kosten
             </p>
           </CardContent>
         </Card>

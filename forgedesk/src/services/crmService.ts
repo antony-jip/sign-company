@@ -1,17 +1,24 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, sanitizeDates, round2,
+  withUserId, getOrgId, sanitizeDates, round2, fetchAllPages,
 } from './supabaseHelpers'
 import type { Deal, DealActiviteit, LeadFormulier, LeadInzending, InkoopOfferte, InkoopRegel } from '@/types'
 
 // ============ DEALS / SALES PIPELINE (Tier 3 Feature 1) ============
 
-export async function getDeals(limit = 500): Promise<Deal[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('deals').select('*').order('updated_at', { ascending: false }).limit(limit)
-    if (error) throw error
-    return data || []
+// De forecast telt pipeline-waarde over álle open deals op. Met een vaste
+// .limit(500) rekende die som stil over de eerste 500 rijen.
+export async function getDeals(limit = 50000): Promise<Deal[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<Deal>((van, tot) =>
+      sb
+        .from('deals')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
   }
   return getLocalData<Deal>('deals')
 }
@@ -217,16 +224,18 @@ export async function updateLeadInzending(id: string, updates: Partial<LeadInzen
 
 // ============ INKOOP OFFERTES ============
 
-export async function getInkoopOffertes(user_id: string): Promise<InkoopOfferte[]> {
+export async function getInkoopOffertes(user_id: string, limit = 50000): Promise<InkoopOfferte[]> {
   assertId(user_id, 'user_id')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('inkoop_offertes')
-      .select('*, regels:inkoop_regels(*)')
-      .eq('user_id', user_id)
-      .order('created_at', { ascending: false })
-    if (error) throw error
-    return data || []
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<InkoopOfferte>((van, tot) =>
+      sb
+        .from('inkoop_offertes')
+        .select('*, regels:inkoop_regels(*)')
+        .eq('user_id', user_id)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
   }
   const offertes = getLocalData<InkoopOfferte>('inkoop_offertes')
   const regels = getLocalData<InkoopRegel>('inkoop_regels')
