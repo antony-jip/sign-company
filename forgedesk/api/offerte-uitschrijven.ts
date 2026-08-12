@@ -128,9 +128,10 @@ Zo'n document beschrijft per onderdeel wat er gemaakt moet worden. Jouw werk: he
 Regels:
 - Eén post per te leveren onderdeel. Staan er meerdere onderdelen op een pagina, dan worden het meerdere posten.
 - Neem maten, materialen, oplages en afwerking LETTERLIJK over. Reken niets om, vul niets aan, verzin niets.
-- Staat er een aantal bij een maat (bijvoorbeeld "50 x 320 cm 6x"), zet dat aantal in de spec-waarde en tel alle stuks van de post op in aantal.
+- Reken nooit aantallen bij elkaar op. Vul aantal alleen als de hele post uit identieke stuks bestaat, bijvoorbeeld een oplage of één maat met een aantal erbij. Bestaat de post uit verschillende maten of versies, zet aantal dan op 1 en laat de stuksaantallen staan waar ze staan, in de specs.
+- Vul breedte_cm en hoogte_cm alleen als de post één maat heeft. Bij meerdere maten laat je ze weg.
 - "PM", "pm", "nader te bepalen", een leeg veld of een keuze zonder besluit ("3 mm / 5 mm") horen in open_punten, niet in de specs als aanname.
-- Labels kort houden: Afmeting, Materiaal, Afwerking, Oplage, Bedrukking, Montage, Levering, Bestanden.
+- Labels kort houden: Afmeting, Materiaal, Afwerking, Omvang, Oplage, Bedrukking, Montage, Levering, Bestanden.
 - Regels die over de hele opdracht gaan (bijvoorbeeld "montage extern tenzij anders vermeld") zijn geen post; zet die in algemene_opmerkingen.
 
 Beschrijf niets in eigen woorden. Dit is overtypen met structuur, niet formuleren.`
@@ -159,10 +160,10 @@ const SPLITS_TOOL = {
                 required: ['label', 'waarde'],
               },
             },
-            aantal: { type: 'number', description: 'Totaal aantal stuks van deze post. 1 als er geen aantal staat.' },
+            aantal: { type: 'number', description: 'Alleen bij identieke stuks: de oplage of het aantal. In alle andere gevallen 1. Nooit zelf optellen.' },
             eenheid: { type: 'string', description: 'stuks, m2, set. Leeg als onduidelijk.' },
-            breedte_cm: { type: 'number', description: 'Breedte in cm als er één maat is. 0 bij meerdere maten.' },
-            hoogte_cm: { type: 'number', description: 'Hoogte in cm als er één maat is. 0 bij meerdere maten.' },
+            breedte_cm: { type: 'number', description: 'Breedte in cm. Alleen invullen als de post precies één maat heeft; anders weglaten.' },
+            hoogte_cm: { type: 'number', description: 'Hoogte in cm. Alleen invullen als de post precies één maat heeft; anders weglaten.' },
             open_punten: {
               type: 'array',
               items: { type: 'string' },
@@ -218,6 +219,67 @@ const FORMULEER_TOOL = {
   },
 }
 
+/**
+ * Het model levert het tool-antwoord soms als JSON-tekst in plaats van als
+ * object: `{ posten: "{\"posten\": [...], \"algemene_opmerkingen\": [...]}" }`.
+ * De inhoud klopt dan gewoon. Eerst het hele antwoord uitpakken en pas daarna
+ * per veld lezen, anders vind je wel de posten maar verdwijnen de velden die
+ * in dezelfde tekst zaten zonder dat iemand het merkt.
+ */
+export function pakAntwoordUit(ruw: unknown): Record<string, unknown> {
+  let waarde: unknown = ruw
+  for (let poging = 0; poging < 3; poging++) {
+    if (typeof waarde === 'string') {
+      try {
+        waarde = JSON.parse(waarde)
+      } catch {
+        return {}
+      }
+      continue
+    }
+    if (!waarde || typeof waarde !== 'object' || Array.isArray(waarde)) return {}
+    const obj = waarde as Record<string, unknown>
+    const sleutels = Object.keys(obj)
+    if (sleutels.length === 1 && typeof obj[sleutels[0]] === 'string') {
+      waarde = obj[sleutels[0]]
+      continue
+    }
+    return obj
+  }
+  return {}
+}
+
+/**
+ * Zelfde verhaal een niveau lager: één veld dat als JSON-tekst binnenkomt.
+ */
+export function pakLijstUit(ruw: unknown, sleutel: string): unknown[] {
+  let waarde = ruw
+  for (let poging = 0; poging < 3; poging++) {
+    if (Array.isArray(waarde)) return waarde
+    if (typeof waarde === 'string') {
+      try {
+        waarde = JSON.parse(waarde)
+      } catch {
+        return []
+      }
+      continue
+    }
+    if (waarde && typeof waarde === 'object') {
+      waarde = (waarde as Record<string, unknown>)[sleutel]
+      continue
+    }
+    return []
+  }
+  return Array.isArray(waarde) ? waarde : []
+}
+
+export function normaliseerRegels(ruw: unknown): Array<{ index: number; beschrijving: string }> {
+  return pakLijstUit(ruw, 'regels')
+    .filter((r): r is { index: number; beschrijving: string } =>
+      !!r && typeof r === 'object' && typeof (r as { beschrijving?: unknown }).beschrijving === 'string')
+    .map((r) => ({ index: Number(r.index) || 0, beschrijving: String(r.beschrijving) }))
+}
+
 interface AnthropicAntwoord {
   content?: Array<{ type: string; name?: string; input?: unknown }>
   usage?: { input_tokens?: number; output_tokens?: number }
@@ -249,7 +311,9 @@ async function roepClaude(body: Record<string, unknown>, timeoutMs: number): Pro
 
 function toolResultaat(data: AnthropicAntwoord): Record<string, unknown> | null {
   const blok = (data.content || []).find((c) => c.type === 'tool_use')
-  return (blok?.input as Record<string, unknown>) || null
+  if (!blok?.input) return null
+  const uitgepakt = pakAntwoordUit(blok.input)
+  return Object.keys(uitgepakt).length ? uitgepakt : null
 }
 
 /** Eerdere offerteregels als stijlvoorbeeld. Van deze klant als die er zijn. */
@@ -363,10 +427,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const resultaat = toolResultaat(data)
       if (!resultaat) return res.status(502).json({ error: 'Geen bruikbaar antwoord van Claude' })
 
-      const posten = Array.isArray(resultaat.posten) ? resultaat.posten.slice(0, MAX_POSTEN) : []
+      const posten = pakLijstUit(resultaat.posten, 'posten').slice(0, MAX_POSTEN)
+      if (!posten.length) return res.status(502).json({ error: 'Geen posten uit dit document gekregen' })
       return res.status(200).json({
         posten,
-        algemene_opmerkingen: Array.isArray(resultaat.algemene_opmerkingen) ? resultaat.algemene_opmerkingen : [],
+        algemene_opmerkingen: pakLijstUit(resultaat.algemene_opmerkingen, 'algemene_opmerkingen')
+          .filter((o): o is string => typeof o === 'string'),
       })
     }
 
@@ -403,7 +469,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const resultaat = toolResultaat(data)
       if (!resultaat) return res.status(502).json({ error: 'Geen bruikbaar antwoord van Claude' })
 
-      return res.status(200).json({ regels: Array.isArray(resultaat.regels) ? resultaat.regels : [] })
+      return res.status(200).json({ regels: normaliseerRegels(resultaat.regels) })
     }
 
     return res.status(400).json({ error: 'fase moet splitsen of formuleren zijn' })
