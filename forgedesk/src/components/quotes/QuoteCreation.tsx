@@ -86,6 +86,7 @@ import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVarian
 import { RegelTemplateEditor } from './RegelTemplateEditor'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
+import { OfferteUitschrijvenDialog, type UitgeschrevenPost } from './OfferteUitschrijvenDialog'
 import { useSidebarLayout, type SidebarSectionId } from '@/hooks/useSidebarLayout'
 import type { CalculatieRegel, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
@@ -360,6 +361,7 @@ export function QuoteCreation() {
 
   // ── Step 1: Items ──
   const [items, setItems] = useState<QuoteLineItem[]>([])
+  const [uitschrijvenOpen, setUitschrijvenOpen] = useState(false)
   const [notities, setNotities] = useState('')
   const [voorwaarden, setVoorwaarden] = useState(settings.offerte_voorwaarden)
   const [introTekst, setIntroTekst] = useState('')
@@ -893,6 +895,32 @@ export function QuoteCreation() {
       totaal: 0,
     }
   }
+
+  // ── Specificatiedocument → offerteregels ──
+  // De prijs blijft nul: Daan schrijft uit, de calculatie blijft handwerk.
+  const handleUitgeschrevenPosten = useCallback((posten: UitgeschrevenPost[]) => {
+    const nieuw = posten.map((post) => {
+      const item = createEmptyItem(post.beschrijving || post.titel)
+      item.aantal = post.aantal > 0 ? post.aantal : 1
+      item.eenheidsprijs = 0
+      item.totaal = 0
+      if (post.breedte_cm) item.breedte_mm = Math.round(post.breedte_cm * 10)
+      if (post.hoogte_cm) item.hoogte_mm = Math.round(post.hoogte_cm * 10)
+      if (post.specs.length) {
+        item.detail_regels = post.specs.map((spec, i) => ({
+          id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+          label: spec.label,
+          waarde: spec.waarde,
+        }))
+      }
+      if (post.open_punten.length) {
+        item.interne_notitie = `Nog te bepalen: ${post.open_punten.join(' · ')}`
+      }
+      return item
+    })
+    setItems((prev) => [...prev, ...nieuw])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [standaardBtw, settings.offerte_regel_velden])
 
   // ── Inkoop regel → calculatie item ──
   const handleInkoopRegelToevoegen = useCallback((regel: InkoopRegel) => {
@@ -2198,6 +2226,15 @@ export function QuoteCreation() {
                   onApplyTemplate={handleApplyTemplate}
                 />
               </h3>
+              <button
+                type="button"
+                onClick={() => setUitschrijvenOpen(true)}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-petrol/30 bg-white dark:bg-white/[0.05] text-[12px] font-semibold text-petrol hover:bg-petrol/[0.05] transition-colors"
+                title="Offerteregels uitschrijven vanuit een specificatiedocument van de klant"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Uitschrijven vanuit document
+              </button>
             </div>
             <div>
               <QuoteItemsTable
@@ -2294,6 +2331,13 @@ export function QuoteCreation() {
           {/* ════════════════════════════════════════════════════════════════ */}
           {/* INLINE EMAIL COMPOSE · bottom of left column                   */}
           {/* ════════════════════════════════════════════════════════════════ */}
+          <OfferteUitschrijvenDialog
+            open={uitschrijvenOpen}
+            onOpenChange={setUitschrijvenOpen}
+            klantId={selectedKlantId || undefined}
+            onPostenToevoegen={handleUitgeschrevenPosten}
+          />
+
           <div ref={email.emailSectionRef}>
             {email.showEmailCompose && (
               <div className="doen-slate-surface rounded-2xl overflow-hidden">
