@@ -9,7 +9,7 @@ const nepCreate = vi.fn()
 const nepUpload = vi.fn()
 
 vi.mock('@/services/werkbonService', () => ({
-  getWerkbon: (...args: unknown[]) => nepWerkbon(...args),
+  leesWerkbonStatus: (...args: unknown[]) => nepWerkbon(...args),
   getWerkbonFotos: (...args: unknown[]) => nepFotos(...args),
   createWerkbonFoto: (...args: unknown[]) => nepCreate(...args),
 }))
@@ -54,7 +54,7 @@ async function zetFotoInWachtrij() {
 
 beforeEach(() => {
   resetFakeIndexedDB()
-  nepWerkbon.mockReset().mockResolvedValue({ id: 'wb-1', status: 'definitief' })
+  nepWerkbon.mockReset().mockResolvedValue('definitief')
   nepFotos.mockReset().mockResolvedValue([])
   nepCreate.mockReset().mockResolvedValue({ id: 'foto-1' })
   nepUpload.mockReset().mockImplementation(async (_bestand: unknown, pad: string) => pad)
@@ -115,9 +115,23 @@ describe('werkbonFotoWachtrij · permanent falen', () => {
     expect(mutatie.foutSoort).toBe('netwerk')
   })
 
-  it('loopt na het maximum aantal pogingen vast, met de foto nog op het toestel', async () => {
+  it('laat een netwerkfout NOOIT vastlopen, ook niet voorbij het maximum', async () => {
+    // De cap gaat over "de server antwoordde en het lukte niet", niet over "we
+    // hebben het geprobeerd". Triggers zijn gratis: elke keer dat de monteur van
+    // de camera terugswitcht vuurt visibilitychange. Zonder deze regel stond de
+    // eerste foto na vijf keer wisselen op vast, zonder dat er ooit antwoord was.
     await zetFotoInWachtrij()
     nepUpload.mockRejectedValue(postgrestNetwerkfout())
+    for (let i = 0; i < MAX_POGINGEN + 3; i++) await flushFotoWachtrij(eigenaar, 'gebruiker-1')
+    const [nogSteeds] = await fotoMutaties(eigenaar)
+    expect(nogSteeds.status).toBe('wachtend')
+    expect(nogSteeds.foutSoort).toBe('netwerk')
+  })
+
+  it('loopt na het maximum aantal pogingen vast, met de foto nog op het toestel', async () => {
+    await zetFotoInWachtrij()
+    // 503: de server ANTWOORDDE en vroeg om later. Dat telt wel mee.
+    nepUpload.mockRejectedValue(storageFout(503))
     for (let i = 0; i < MAX_POGINGEN; i++) await flushFotoWachtrij(eigenaar, 'gebruiker-1')
     const [mutatie] = await fotoMutaties(eigenaar)
     expect(mutatie.status).toBe('vast')
@@ -198,13 +212,13 @@ describe('werkbonFotoWachtrij · permanent falen', () => {
 describe('werkbonFotoWachtrij · conflict', () => {
   it('laat een foto op een afgeronde werkbon door', async () => {
     await zetFotoInWachtrij()
-    nepWerkbon.mockResolvedValue({ id: 'wb-1', status: 'afgerond' })
+    nepWerkbon.mockResolvedValue('afgerond')
     expect((await flushFotoWachtrij(eigenaar, 'gebruiker-1')).verstuurd).toBe(1)
   })
 
   it('houdt een foto tegen zodra de werkbon gefactureerd is, en bewaart hem', async () => {
     await zetFotoInWachtrij()
-    nepWerkbon.mockResolvedValue({ id: 'wb-1', status: 'gefactureerd' })
+    nepWerkbon.mockResolvedValue('gefactureerd')
     const resultaat = await flushFotoWachtrij(eigenaar, 'gebruiker-1')
     expect(resultaat.vast).toBe(1)
     expect(nepUpload).not.toHaveBeenCalled()

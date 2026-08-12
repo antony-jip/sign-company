@@ -1,5 +1,5 @@
 import type { WerkbonFoto } from '@/types'
-import { getWerkbon, getWerkbonFotos, createWerkbonFoto } from '@/services/werkbonService'
+import { getWerkbonFotos, createWerkbonFoto, leesWerkbonStatus } from '@/services/werkbonService'
 import { uploadFile } from '@/services/storageService'
 import { resizeWerkbonImage } from './werkbonMedia'
 import { sanitizeStorageFilename } from './storageHelpers'
@@ -117,8 +117,17 @@ async function verstuurEen(mutatie: Mutatie, userId: string): Promise<VerstuurUi
   const payload = mutatie.payload
   if (!isFotoPayload(payload)) throw new Error('Onbruikbare foto-mutatie')
 
-  const werkbon = await getWerkbon(mutatie.entiteitId)
-  const oordeel = beoordeelWerkbonMutatie('werkbon_foto', werkbon?.status ?? null)
+  // NIET via getWerkbon: die geeft null bij élke fout, ook bij een netwerkfout,
+  // een verlopen JWT en een RLS-weigering. Dat null als bewijs van verwijdering
+  // lezen zette in de review de hele wachtrij in één flush op 'vast', met de
+  // reden "werkbon bestaat niet meer", buiten de classificatie en buiten de
+  // pogingencap om. Precies in het scenario waarvoor deze wachtrij bestaat.
+  //
+  // Hier moet het verschil tussen "geen antwoord" en "geen rij" bewaard blijven:
+  // geen antwoord is een netwerkfout en gaat gewoon opnieuw, geen rij is het
+  // enige dat 'weg' rechtvaardigt.
+  const werkbonStatus = await leesWerkbonStatus(mutatie.entiteitId)
+  const oordeel = beoordeelWerkbonMutatie('werkbon_foto', werkbonStatus)
   if (!oordeel.toegestaan) {
     await mutatieBijwerken(mutatie.id, {
       status: 'vast',

@@ -52,13 +52,21 @@ export function useOfflineWachtrij(): WachtrijStand {
     // monteur stopt hem met een volle wachtrij in zijn zak, rijdt naar huis en
     // haalt hem er weer uit. Dan is er bereik maar geen 'online'-event, want de
     // verbinding is nooit zichtbaar weggevallen.
-    flush()
-    const opZichtbaar = () => { if (!document.hidden) flush() }
-    window.addEventListener('online', flush)
+    // Niet flushen zonder verbinding. Zonder deze poort loopt elke poging dood
+    // op een netwerkfout, en dat kostte in de review de hele wachtrij: de
+    // monteur haalt de app naar de voorgrond, de flush vuurt, en elk item raakt
+    // een foutpad. navigator.onLine is geen bewijs van bereik (true betekent
+    // alleen "er is een interface"), maar false is wél bewijs van het
+    // tegendeel, en dat is precies de kant die hier telt.
+    const flushAlsVerbonden = () => { if (navigator.onLine !== false) flush() }
+
+    flushAlsVerbonden()
+    const opZichtbaar = () => { if (!document.hidden) flushAlsVerbonden() }
+    window.addEventListener('online', flushAlsVerbonden)
     document.addEventListener('visibilitychange', opZichtbaar)
     window.addEventListener(WACHTRIJ_GEWIJZIGD, tel)
     return () => {
-      window.removeEventListener('online', flush)
+      window.removeEventListener('online', flushAlsVerbonden)
       document.removeEventListener('visibilitychange', opZichtbaar)
       window.removeEventListener(WACHTRIJ_GEWIJZIGD, tel)
     }

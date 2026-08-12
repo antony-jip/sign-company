@@ -19,6 +19,16 @@ export const MAX_POGINGEN = 5
  */
 export function volgendeMutatieStatus(pogingen: number, soort: FoutSoort): MutatieStatus {
   if (!magOpnieuwProberen(soort)) return 'vast'
+  // Een netwerkfout telt NIET mee voor de cap. De teller wordt opgehoogd per
+  // flush-trigger, en triggers zijn gratis: elke keer dat de monteur terugswitcht
+  // van de camera naar de app vuurt visibilitychange. Vijf keer wisselen zou de
+  // eerste foto dan op 'vast' zetten terwijl er nooit een antwoord is geweest en
+  // er dus geen enkele aanwijzing is dat er iets mis is met het item.
+  //
+  // De cap hoort te gaan over "de server antwoordde en het lukte niet", niet over
+  // "we hebben het geprobeerd". Bij 'netwerk' blijft hij dus wachten, hoe vaak
+  // dan ook: een monteur zonder bereik moet een halve dag kunnen overbruggen.
+  if (soort === 'netwerk') return 'wachtend'
   return pogingen >= MAX_POGINGEN ? 'vast' : 'wachtend'
 }
 

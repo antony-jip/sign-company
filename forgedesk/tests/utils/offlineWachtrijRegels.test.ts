@@ -10,9 +10,23 @@ describe('volgendeMutatieStatus · het pad van een permanent falende mutatie', (
     expect(volgendeMutatieStatus(MAX_POGINGEN - 1, 'netwerk')).toBe('wachtend')
   })
 
-  it('loopt vast bij het maximum aantal pogingen', () => {
-    expect(volgendeMutatieStatus(MAX_POGINGEN, 'netwerk')).toBe('vast')
+  it('loopt vast bij het maximum aantal pogingen, maar alleen als de server antwoordde', () => {
+    expect(volgendeMutatieStatus(MAX_POGINGEN, 'tijdelijk')).toBe('vast')
     expect(volgendeMutatieStatus(MAX_POGINGEN + 3, 'tijdelijk')).toBe('vast')
+  })
+
+  /**
+   * De cap gaat over "de server antwoordde en het lukte niet", niet over "we
+   * hebben het geprobeerd". De teller wordt opgehoogd per flush-trigger, en
+   * triggers zijn gratis: elke keer dat de monteur van de camera terugswitcht
+   * naar de app vuurt visibilitychange. Zonder deze uitzondering stond de eerste
+   * foto na vijf keer wisselen op 'vast', terwijl er nooit een antwoord is
+   * geweest en er dus geen enkele aanwijzing is dat het item niet deugt. Een
+   * monteur moet een halve dag zonder bereik kunnen overbruggen.
+   */
+  it('laat een netwerkfout nooit vastlopen, hoe vaak ook geprobeerd', () => {
+    expect(volgendeMutatieStatus(MAX_POGINGEN, 'netwerk')).toBe('wachtend')
+    expect(volgendeMutatieStatus(MAX_POGINGEN * 20, 'netwerk')).toBe('wachtend')
   })
 
   it('loopt bij een weigering meteen vast · wachten verandert de oorzaak niet', () => {
