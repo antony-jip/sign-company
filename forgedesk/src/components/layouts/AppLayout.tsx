@@ -20,15 +20,44 @@ import { WebsiteMeldingPopup } from '@/components/notifications/WebsiteMeldingPo
 import { cn } from '@/lib/utils'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useScrollHerstel } from '@/hooks/useScrollHerstel'
-import { WifiOff } from 'lucide-react'
+import { useOfflineWachtrij } from '@/hooks/useOfflineWachtrij'
+import { useFeatureAan } from '@/contexts/FeatureFlagsContext'
+import { bannerTekst } from '@/utils/offlineWachtrijRegels'
+import { WifiOff, UploadCloud } from 'lucide-react'
 
 function OfflineBanner() {
   const isOnline = useOnlineStatus()
-  if (isOnline) return null
+  // De wachtrij is leeg en de hook doet niets zolang de vlag niet aanstaat.
+  const stand = useOfflineWachtrij()
+  const wachtrijAan = useFeatureAan('offline_queue')
+
+  if (!wachtrijAan) {
+    // Ongewijzigd gedrag zonder vlag. De tekst is voor werkbon-feedback en
+    // maatjes al te somber (die wórden bewaard), maar dat corrigeren zonder
+    // vlag zou een wijziging zijn die niet terug te draaien is met SQL.
+    if (isOnline) return null
+    return (
+      <div className="bg-destructive text-destructive-foreground px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 flex-shrink-0">
+        <WifiOff className="h-4 w-4" />
+        Je bent offline. Wijzigingen worden niet opgeslagen
+      </div>
+    )
+  }
+
+  const tekst = bannerTekst(isOnline, stand)
+  if (!tekst) return null
+  // Een wachtrij die loopt is geen storing: alleen een vastgelopen item of
+  // geen verbinding verdient de rode balk.
+  const alarm = stand.vast > 0 || !isOnline
   return (
-    <div className="bg-destructive text-destructive-foreground px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 flex-shrink-0">
-      <WifiOff className="h-4 w-4" />
-      Je bent offline. Wijzigingen worden niet opgeslagen
+    <div
+      className={cn(
+        'px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 flex-shrink-0',
+        alarm ? 'bg-destructive text-destructive-foreground' : 'bg-[#1A535C] text-white',
+      )}
+    >
+      {isOnline ? <UploadCloud className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+      {tekst}
     </div>
   )
 }

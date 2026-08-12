@@ -19,6 +19,8 @@ import {
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { comprimeerFoto, FotoVerwerkingsFout } from '@/utils/beeldCompressie'
 import { wachtrijToevoegen, wachtrijAlles, wachtrijVerwijderen } from '@/utils/maatjeOfflineQueue'
+import { useFeatureAan } from '@/contexts/FeatureFlagsContext'
+import { classificeerFout, hoortInWachtrij, magOpnieuwProberen } from '@/utils/offlineFoutClassificatie'
 import { MaatjeEditor } from './MaatjeEditor'
 import { MaatjeKoppelSheet } from './MaatjeKoppelSheet'
 
@@ -91,6 +93,9 @@ export function MaatjeKladblok() {
   const [selectie, setSelectie] = useState<Set<string>>(new Set())
   const [koppelOpen, setKoppelOpen] = useState(false)
   const [wachtAantal, setWachtAantal] = useState(0)
+  // Zonder rij in feature_flags is dit false en geldt de oude voorwaarde:
+  // alleen bewaren als navigator.onLine expliciet false is.
+  const wachtrijAan = useFeatureAan('offline_queue')
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galerijInputRef = useRef<HTMLInputElement>(null)
   // Onthoudt of de laatste foto van de camera of uit de bibliotheek kwam, zodat
@@ -123,12 +128,19 @@ export function MaatjeKladblok() {
         geslaagd++
       } catch (err) {
         logger.error('Upload uit wachtrij mislukt:', err)
-        break // waarschijnlijk weer offline · stoppen
+        if (!wachtrijAan) break // waarschijnlijk weer offline · stoppen
+        // Met de vlag aan houdt één rot item de rest niet meer vast: alleen bij
+        // een echte netwerkfout is doorgaan zinloos. Een item dat de server
+        // weigert blijft staan (nooit stil weggooien) en wordt gemeld.
+        if (magOpnieuwProberen(classificeerFout(err))) break
+        toast.error('Eén maatje wordt geweigerd door de server. Neem contact op als dit blijft staan.', {
+          id: 'maatje-wachtrij-geweigerd',
+        })
       }
     }
     await verversWachtrij()
     if (geslaagd > 0) { tik(12); await laadMaatjes() }
-  }, [laadMaatjes, verversWachtrij])
+  }, [laadMaatjes, verversWachtrij, wachtrijAan])
 
   useEffect(() => { laadMaatjes() }, [laadMaatjes])
 
@@ -250,8 +262,14 @@ export function MaatjeKladblok() {
         await createMaatje({ titel: data.titel, annotaties: data.annotaties }, origineel, data.render)
         meldOpgeslagen()
       } catch (err) {
-        // Offline? Bewaar lokaal en upload zodra er weer verbinding is.
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        // Wel of niet bewaren? Alleen `navigator.onLine === false` was te
+        // streng: op een dak met één streepje staat dat vlaggetje op true
+        // terwijl de upload sneuvelt, en dan werd het maatje weggegooid. Met de
+        // vlag aan bewaren we bij elke fout die aantoonbaar geen antwoord kreeg,
+        // en juist níet bij een serverweigering (RLS, 400, 413): die blijft
+        // gooien, want opnieuw proberen levert hetzelfde antwoord.
+        const offline = typeof navigator !== 'undefined' && navigator.onLine === false
+        if (wachtrijAan ? hoortInWachtrij(err, offline) : offline) {
           await wachtrijToevoegen({
             id: crypto.randomUUID(),
             titel: data.titel,
@@ -261,7 +279,12 @@ export function MaatjeKladblok() {
             aangemaakt: Date.now(),
           })
           tik(12)
-          toast.success(<span>Opgeslagen · upload zodra je online bent<span className="text-flame">.</span></span>)
+          toast.success(
+            <span>
+              Opgeslagen · {wachtrijAan ? 'verstuurd zodra er verbinding is' : 'upload zodra je online bent'}
+              <span className="text-flame">.</span>
+            </span>,
+          )
           await verversWachtrij()
         } else {
           throw err
@@ -275,7 +298,7 @@ export function MaatjeKladblok() {
       }
     }
     await laadMaatjes()
-  }, [editor, laadMaatjes, verversWachtrij])
+  }, [editor, laadMaatjes, verversWachtrij, wachtrijAan])
 
   const koppelVanuitEditor = useCallback(async (data: { annotaties: MaatjeAnnotatie[]; titel: string | null; render: Blob }) => {
     const huidig = editor

@@ -82,6 +82,38 @@ Zodat je weet wat je koopt als je hem omzet:
   vermelding van Studio in Daans systeemprompt. Daan kan er dus nog naar
   verwijzen.
 
+### Wat `offline_queue` precies aanzet
+
+Nieuwe code, dus `useFeatureAan`: zonder rij gebeurt er niets en gedraagt de
+app zich exact zoals vandaag.
+
+- **Werkbonfoto's** die niet geüpload konden worden verhuizen van de lijst in
+  het geheugen naar IndexedDB (`doen_offline`), zodat ze een herlaad of een
+  crash overleven. "Opnieuw versturen" loopt dan via de gedeelde flush, een
+  vastgelopen foto toont waaróm, en er komt een knop "Opslaan op telefoon"
+  bij zodat de enige kopie te redden is voor je hem weggooit.
+- **Maatjes** gaan de bestaande wachtrij in bij elke fout die aantoonbaar
+  geen antwoord kreeg, in plaats van alleen bij `navigator.onLine === false`.
+  Een serverweigering (RLS, 400, 413) blijft gooien.
+- **De offline-banner** vertelt hoeveel er wacht, ook als je online bent, en
+  belooft niet langer dat wijzigingen verloren gaan.
+- De flush draait app-breed (bij openen, op `online` en op
+  `visibilitychange`) in plaats van alleen zolang één scherm openstaat.
+
+Aanzetten voor één organisatie, en dat is de aangeraden eerste stap:
+
+```sql
+INSERT INTO public.feature_flags (naam, organisatie_id, aan, reden)
+VALUES ('offline_queue', '<organisatie-uuid>', true, 'Pilot buitendienst')
+ON CONFLICT (naam, organisatie_id) WHERE organisatie_id IS NOT NULL DO UPDATE
+  SET aan = true, reden = EXCLUDED.reden, aangepast_op = now()
+RETURNING naam, aan, reden;
+```
+
+Terugdraaien is de rij weghalen. Wat er op dat moment in `doen_offline`
+staat blijft staan (weggooien zou dataverlies zijn) en komt weer in beeld
+zodra de vlag terug aan gaat.
+
 ## Weer aanzetten
 
 ```sql

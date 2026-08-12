@@ -94,6 +94,27 @@ export async function getWerkbonnen(limit = 50000): Promise<Werkbon[]> {
   return getLocalData<Werkbon>('werkbonnen')
 }
 
+/**
+ * De status van een werkbon, of een throw als er geen antwoord kwam.
+ *
+ * Bestaat naast getWerkbon omdat die bij ELKE fout `null` teruggeeft: netwerk,
+ * verlopen JWT, RLS-weigering. Voor de offline-wachtrij is dat verschil
+ * essentieel — `null` als bewijs van verwijdering lezen zette daar in één flush
+ * de hele wachtrij op 'vast'. `maybeSingle()` geeft `data: null, error: null`
+ * als de rij er niet is, en een gevulde `error` als er iets te zeggen viel.
+ */
+export async function leesWerkbonStatus(id: string): Promise<Werkbon['status'] | null> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Geen verbinding met de database')
+  assertId(id)
+  const { data, error } = await supabase
+    .from('werkbonnen')
+    .select('status')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw error
+  return (data?.status as Werkbon['status'] | undefined) ?? null
+}
+
 export async function getWerkbon(id: string): Promise<Werkbon | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
