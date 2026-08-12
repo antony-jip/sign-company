@@ -60,11 +60,11 @@ iemand de app open heeft, dan ziet die persoon het pas na een echte
 paginalading. Voor een noodstop op korte termijn is dat niet genoeg: vraag er
 dan bij om te verversen.
 
-**De flag werkt alleen client-side.** Er is geen lezer in `api/`, dus met
-`module_studio` uit blijft `/api/visualizer-chat` bereikbaar voor wie het pad
-kent. De knop haalt de module uit de app, hij sluit het endpoint niet af. Voor
-de rewrites die hierachter komen, waarvan mailsync en de Trigger.dev-kant
-server-side zijn, moet er eerst een serverkant bij.
+**Niet elke flag heeft een serverkant.** Sinds de mailsync-wachtrij is er wél
+een lezer in `api/` (zie hieronder), maar die zit alleen in de bestanden die
+hem nodig hebben. `module_studio` heeft er geen: met die flag uit blijft
+`/api/visualizer-chat` bereikbaar voor wie het pad kent. De knop haalt de
+module uit de app, hij sluit het endpoint niet af.
 
 ### Wat `module_studio` precies sluit
 
@@ -168,6 +168,41 @@ op het moment dat de flag-query faalt, of zodra iemand de rij weghaalt.
 De rijen worden één keer per sessie geladen (`FeatureFlagsProvider`, via
 `lib/queryCache.ts`), dus een extra `useFeature...` in een component kost
 geen extra request.
+
+## De serverkant
+
+Sinds de mailsync-wachtrij (migratie 202) is er ook een lezer in `api/`. Die
+was er niet, en dat was precies het gat: mailsync draait onbeheerd op de
+server, dus een clientvlag zou daar niets tegenhouden.
+
+Hij zit in `api/cron-mailsync-werker.ts` en `api/fetch-emails.ts`, in beide
+gevallen ingeplakt tussen de markers `GEDEELD-MET-API BEGIN` en `EINDE`.
+Geen import, want `api/*` mag niets uit `src/` halen (CLAUDE.md §2). De
+getypte tweeling van dat blok staat in `src/lib/mailsyncQueue.ts`, en
+`tests/lib/mailsyncQueue.test.ts` faalt zodra een van de kopieën uit de pas
+loopt of andere uitkomsten geeft dan `src/lib/featureFlags.ts`.
+
+Wat je moet weten als je hem ergens anders ook wilt gebruiken:
+
+- **Dezelfde drie standen, dezelfde voorrangsregels.** Globale `false` wint
+  altijd, een org-rij gaat vóór een globale `true`, geen rij is `onbekend`.
+- **Hij faalt dicht, altijd.** Een queryfout, een ontbrekende tabel, een
+  ontbrekende rij: allemaal UIT. Anders dan op de client is er hier geen
+  variant die open faalt. Wil je iets bestaands kunnen doven, bouw dan een
+  eigen lezer met de omgekeerde standaard en zet dat er expliciet bij — de
+  serverkant heeft geen bestaand gedrag te beschermen, dus stil niets doen is
+  hier de veilige uitkomst.
+- **Hij leest met de service-role**, dus zonder RLS. De organisatie waarop
+  hij resolveert komt uit `profiles.organisatie_id` van de gebruiker om wie
+  het gaat, niet uit een sessie.
+- **Kort in cache per invocatie, niet per request.** Een module-variabele met
+  30 seconden TTL: een warme functie hergebruikt de rijen, een koude haalt ze
+  opnieuw op. Ook een mislukking gaat de cache in, anders loopt elke ronde
+  opnieuw tegen dezelfde ontbrekende tabel aan.
+
+Praktisch gevolg voor het omzetten van een serverflag: waar de client pas na
+een echte paginalading volgt, volgt de server binnen ongeveer een halve
+minuut. Geen deploy nodig.
 
 ## Een nieuwe flag toevoegen
 

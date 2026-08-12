@@ -10,6 +10,40 @@ een blinde herschrijving is hier het grootste risico van de hele roadmap.
 
 ---
 
+## 0. Stand van de bouw
+
+Inmiddels deels gebouwd, slapend. Wat er staat en wat er nog niet staat:
+
+| Stap | Stand |
+| --- | --- |
+| 0 (de SQL-vragen uit §6) | niet gedaan, de productiedatabase is niet bevraagd |
+| 1 (tabel plus RLS) | **gebouwd** · `supabase/migrations/202_mailsync_taken.sql`, nog niet gedraaid |
+| 2 (producent) | **gebouwd, maar niet in `cron-email-sync`** · zie de afwijking hieronder |
+| 3 (werker) | **gebouwd** · `api/cron-mailsync-werker.ts`, achter `mailsync_queue` |
+| 4 t/m 7 (oude lus doven, verbreden, opruimen) | niet gebouwd |
+
+Drie afwijkingen van het ontwerp, elk bewust:
+
+1. **Migratienummer 202, niet 201.** 200 en 201 waren al bezet toen deze
+   worktree van `audit/integratie` kwam.
+2. **De producent zit in de werker, niet in `api/cron-email-sync.ts`.** Dat
+   bestand is niet aangeraakt en daarmee is de belofte "zonder vlagrij verandert
+   er niets" op het live pad triviaal waar in plaats van iets dat je moet
+   nalezen. Prijs: de schaduwfase uit stap 2 bestaat niet meer als aparte stap
+   — de vlag omzetten start producent en werker tegelijk. Dat is opgevangen door
+   te piloten op één organisatie, wat stap 3 toch al voorschreef.
+3. **Geen allowlist van user-id's.** De org-rij in `feature_flags` ís de
+   allowlist; `docs/feature-flags.md` schrijft die pilotvorm al voor. Een tweede
+   mechanisme ernaast zou alleen een tweede plek zijn om te vergeten.
+
+Nog open, en dus nog steeds het risico van deze rewrite: de zichtbaarheidslagen
+uit §3.5 zijn niet gebouwd. `mailsync_taken` is service-role-only, dus laag 1
+en 2 vragen eerst een endpoint. Een taak op `mislukt` schrijft nu een
+`console.error` in de Vercel-logs en verder niets, en er is geen weg terug uit
+de dodebrievenbus behalve een `UPDATE` in de SQL Editor.
+
+---
+
 ## 1. Wat er nu staat, gemeten
 
 ### 1.1 Hoe sync wordt getriggerd
