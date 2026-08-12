@@ -4,7 +4,6 @@ import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { PaletteProvider } from '@/contexts/PaletteContext'
-import { LanguageProvider } from '@/contexts/LanguageContext'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import { TabsProvider } from '@/contexts/TabsContext'
 import { AppSettingsProvider, useAppSettings } from '@/contexts/AppSettingsContext'
@@ -357,45 +356,43 @@ function App() {
     <BrowserRouter>
       <ThemeProvider>
         <PaletteProvider>
-          <LanguageProvider>
-            <AuthProvider>
-              <MedewerkersProvider>
-                <AppSettingsProvider>
-                  <SidebarProvider>
-                    <TabsProvider>
-                    <ErrorBoundary>
-                      <Toaster
-                        position="top-right"
-                        visibleToasts={2}
-                        duration={4000}
-                        toastOptions={{
-                          style: {
-                            background: 'rgba(253, 252, 250, 0.86)',
-                            backdropFilter: 'blur(24px) saturate(180%)',
-                            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                            border: '0.5px solid rgba(26, 83, 92, 0.14)',
-                            borderRadius: '14px',
-                            boxShadow: '0 12px 36px -8px rgba(100, 80, 40, 0.20), 0 0 24px -6px rgba(241, 80, 37, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.70)',
-                            color: '#191919',
-                            fontSize: '12px',
-                            animation: 'toast-in 300ms ease-out',
-                          },
-                          classNames: {
-                            success: 'toast-success',
-                            error: 'toast-error',
-                          },
-                        }}
-                      />
-                      <ConfirmDialog />
-                      <MijlpaalOverlay />
-                      <AppContent />
-                    </ErrorBoundary>
-                    </TabsProvider>
-                  </SidebarProvider>
-                </AppSettingsProvider>
-              </MedewerkersProvider>
-            </AuthProvider>
-          </LanguageProvider>
+          <AuthProvider>
+            <MedewerkersProvider>
+              <AppSettingsProvider>
+                <SidebarProvider>
+                  <TabsProvider>
+                  <ErrorBoundary>
+                    <Toaster
+                      position="top-right"
+                      visibleToasts={2}
+                      duration={4000}
+                      toastOptions={{
+                        style: {
+                          background: 'rgba(253, 252, 250, 0.86)',
+                          backdropFilter: 'blur(24px) saturate(180%)',
+                          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                          border: '0.5px solid rgba(26, 83, 92, 0.14)',
+                          borderRadius: '14px',
+                          boxShadow: '0 12px 36px -8px rgba(100, 80, 40, 0.20), 0 0 24px -6px rgba(241, 80, 37, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.70)',
+                          color: '#191919',
+                          fontSize: '12px',
+                          animation: 'toast-in 300ms ease-out',
+                        },
+                        classNames: {
+                          success: 'toast-success',
+                          error: 'toast-error',
+                        },
+                      }}
+                    />
+                    <ConfirmDialog />
+                    <MijlpaalOverlay />
+                    <AppContent />
+                  </ErrorBoundary>
+                  </TabsProvider>
+                </SidebarProvider>
+              </AppSettingsProvider>
+            </MedewerkersProvider>
+          </AuthProvider>
         </PaletteProvider>
       </ThemeProvider>
     </BrowserRouter>
