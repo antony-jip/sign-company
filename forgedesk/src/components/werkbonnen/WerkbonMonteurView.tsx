@@ -32,7 +32,7 @@ import { maakEigenaarSleutel, WachtrijVolFout } from '@/utils/offlineMutatieStor
 import { foutOmschrijving, type FoutSoort } from '@/utils/offlineFoutClassificatie'
 import {
   fotoInWachtrij, fotoUitWachtrij, fotoMutaties, fotoBestand, flushFotoWachtrij,
-  WACHTRIJ_GEWIJZIGD, isFotoPayload,
+  fotoOpnieuwProberen, WACHTRIJ_GEWIJZIGD, isFotoPayload,
 } from '@/utils/werkbonFotoWachtrij'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
@@ -416,6 +416,12 @@ export function WerkbonMonteurView() {
     setIsRetrying(true)
     try {
       if (wachtrijAan) {
+        // Een vastgelopen item slaat de flush over; op deze knop drukken is de
+        // expliciete gebruikersactie die hem weer aanbiedt. Zonder dit is 'vast'
+        // een doodlopende weg met alleen weggooien als uitgang.
+        for (const { wachtrijId, vast } of mislukteFotos) {
+          if (vast && wachtrijId) await fotoOpnieuwProberen(wachtrijId)
+        }
         // Eén verzendpad. Zou dit scherm de bestanden zelf uploaden terwijl de
         // app-brede flush hetzelfde item pakt, dan staat de foto dubbel op de
         // werkbon.
