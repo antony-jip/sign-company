@@ -2432,6 +2432,10 @@ export interface InkoopFactuur {
   status: InkoopFactuurStatus
   extractie_vertrouwen: ExtractieVertrouwen | null
   extractie_opmerkingen: string | null
+  // Ruwe tekst uit de extractie (migratie 197), geen koppeling. Optioneel omdat
+  // de kolommen pas bestaan nadat die migratie gedraaid is.
+  referentie_kenmerk?: string | null
+  vermoedelijk_project?: string | null
   afgewezen_reden: string | null
   goedgekeurd_door_id: string | null
   goedgekeurd_op: string | null

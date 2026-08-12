@@ -92,10 +92,17 @@ visuele wijziging.
 - Nieuwe tabellen/kolommen krijgen altijd org-scoped RLS-policy
   (SELECT/INSERT/UPDATE/DELETE elk afgedekt).
 - **Migratie-nummering:** neem het eerstvolgende vrije nummer op basis van de
-  bestandsnamen in `supabase/migrations/`. Hoogste nummer nu: **195**, bij 222
-  bestanden. Vertrouw NIET op `schema_migrations`: geen enkele migratie schrijft
-  daarin, dus er is geen administratie van wat gedraaid is. Wil je weten of iets
-  live staat, vraag het de database (`pg_policies`, `information_schema`).
+  bestandsnamen in `supabase/migrations/`. Hoogste nummer nu: **201**. Vertrouw
+  hiervoor NIET op `doen_migraties`: die tabel is administratie en bewust
+  incompleet, dus de map is voor nummering de betrouwbaarder bron.
+- **`doen_migraties` is de administratie** van wat gedraaid is (migratie 198;
+  `schema_migrations` is bezet door Supabase zelf). Alleen `service_role` komt
+  erbij; de app leest deze tabel niet. Wil je weten of iets écht live staat, vraag
+  het de database (`pg_policies`, `information_schema`) en niet deze tabel.
+- **Elke nieuwe migratie eindigt op één INSERT-regel** buiten de COMMIT:
+  `INSERT INTO doen_migraties (bestand) VALUES ('<bestandsnaam>.sql') ON CONFLICT DO NOTHING;`
+  De tabel is administratie, geen bron van waarheid: spreekt hij de database
+  tegen, dan heeft de database gelijk.
 - **Twee nummerschema's, wees voorzichtig.** Naast `NNN_*.sql` bestaat er een
   oudere reeks `migration_NNN_*.sql` (034 t/m 052). Zeven nummers komen in beide
   voor, en lexicografisch sorteert `migration_*` ná `189`. Gebruik alleen het

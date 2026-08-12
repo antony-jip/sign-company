@@ -25,8 +25,10 @@ en reclame-branche. Stack-details staan in CLAUDE.md.
   voordat productie de nieuwe versie draait
 - Nederlandse variabelen/UI/comments, Engelse commit messages
 - npm run build na elke wijziging — moet groen
-- Migratie-conflict 093/094 op main; nieuwe migraties vanaf 095+ (eerst 
-  schema_migrations checken)
+- Migratie-conflict 093/094 op main; neem het eerstvolgende vrije nummer op basis
+  van de bestandsnamen in supabase/migrations/. `schema_migrations` is bezet door
+  Supabase zelf; de eigen administratie is `doen_migraties` (migratie 198) en die
+  is bewust incompleet, dus de map is voor nummering de betrouwbaarder bron.
 - Geen unsolicited refactoring buiten scope
 
 # Wat je altijd checkt bij een review
