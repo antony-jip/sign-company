@@ -14,6 +14,8 @@ import {
   MOBIELE_NAV_MAX, MOBIELE_MENU_KANDIDATEN, SETTINGS_ITEM, SUPPORT_ITEM,
   mobieleMenuItems, type NavItem,
 } from '@/lib/navigatie'
+import { useFeatureFlags } from '@/contexts/FeatureFlagsContext'
+import { zonderUitgezetteModules } from '@/lib/featureFlags'
 
 function isPadActief(pathname: string, pad: string) {
   return pad === '/' ? pathname === '/' : pathname.startsWith(pad)
@@ -34,10 +36,14 @@ export function MobileTabBar() {
   const supportAttentie = useSupportAttentie('support-mobile-nav', isSupportAdmin)
   const [meerOpen, setMeerOpen] = useState(false)
 
+  // Een module achter een uitgezette feature-flag valt uit de balk én uit
+  // "Meer", ook als de gebruiker hem zelf in zijn mobiele menu had gezet.
+  const { staatUit } = useFeatureFlags()
   const gekozen = useMemo(
-    () => mobieleMenuItems(settings.mobiel_menu_items),
-    [settings.mobiel_menu_items],
+    () => zonderUitgezetteModules(mobieleMenuItems(settings.mobiel_menu_items), staatUit),
+    [settings.mobiel_menu_items, staatUit],
   )
+  const kandidaten = useMemo(() => zonderUitgezetteModules(MOBIELE_MENU_KANDIDATEN, staatUit), [staatUit])
 
   // Daan en Meer zijn er altijd en kosten samen twee vakjes: Daan omdat hij
   // op mobiel nergens anders meer woont, Meer omdat instellingen, abonnement
@@ -48,11 +54,11 @@ export function MobileTabBar() {
     const gekozenLabels = new Set(gekozen.map((i) => i.label))
     const rest: NavItem[] = [
       ...gekozen.slice(plekken),
-      ...MOBIELE_MENU_KANDIDATEN.filter((i) => !gekozenLabels.has(i.label)),
+      ...kandidaten.filter((i) => !gekozenLabels.has(i.label)),
     ]
     if (isSupportAdmin) rest.push(SUPPORT_ITEM)
     return { balkItems: gekozen.slice(0, plekken), meerItems: rest }
-  }, [gekozen, isSupportAdmin, forgieEnabled])
+  }, [gekozen, kandidaten, isSupportAdmin, forgieEnabled])
 
   useEffect(() => { setMeerOpen(false) }, [location.pathname])
 

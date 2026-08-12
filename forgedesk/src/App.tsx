@@ -8,6 +8,7 @@ import { SidebarProvider } from '@/contexts/SidebarContext'
 import { TabsProvider } from '@/contexts/TabsContext'
 import { AppSettingsProvider, useAppSettings } from '@/contexts/AppSettingsContext'
 import { MedewerkersProvider } from '@/contexts/MedewerkersContext'
+import { FeatureFlagsProvider, useFeatureUitgezet } from '@/contexts/FeatureFlagsContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppLayout } from '@/components/layouts/AppLayout'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
@@ -212,6 +213,17 @@ function OfferteDetailRedirect() {
   return <Navigate to={`/offertes/${id}/bewerken`} replace />
 }
 
+/**
+ * Studio zit achter feature-flag `module_studio` (migratie 200). Alleen een
+ * expliciete 'uit' sluit de deur; onbekend of een mislukte flag-query laat de
+ * module gewoon staan. Het menu-item verdwijnt tegelijk, dus wie hier komt
+ * heeft het adres ingetypt of een oude tab open.
+ */
+function StudioRoute() {
+  if (useFeatureUitgezet('module_studio')) return <Navigate to="/" replace />
+  return <VisualizerLayout />
+}
+
 function AppContent() {
   const { isReady } = useDataInit()
   const location = useLocation()
@@ -335,7 +347,7 @@ function AppContent() {
         <Route path="aanvragen" element={<WebsiteAanvragenLayout />} />
         <Route path="forecast" element={<ForecastLayout />} />
         <Route path="booking" element={<BookingBeheer />} />
-        <Route path="visualizer" element={<VisualizerLayout />} />
+        <Route path="visualizer" element={<StudioRoute />} />
         <Route path="portalen" element={<PortalenOverzicht />} />
         <Route path="meldingen" element={<MeldingenPage />} />
         <Route path="instellingen" element={<SettingsLayout />} />
@@ -359,6 +371,7 @@ function App() {
           <AuthProvider>
             <MedewerkersProvider>
               <AppSettingsProvider>
+                <FeatureFlagsProvider>
                 <SidebarProvider>
                   <TabsProvider>
                   <ErrorBoundary>
@@ -390,6 +403,7 @@ function App() {
                   </ErrorBoundary>
                   </TabsProvider>
                 </SidebarProvider>
+                </FeatureFlagsProvider>
               </AppSettingsProvider>
             </MedewerkersProvider>
           </AuthProvider>

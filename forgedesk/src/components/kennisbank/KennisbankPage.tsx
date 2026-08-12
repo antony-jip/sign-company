@@ -6,6 +6,8 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { moduleUitgezet } from '@/lib/featureFlags'
+import { useFeatureFlags } from '@/contexts/FeatureFlagsContext'
 
 // ── Article data ──
 
@@ -338,6 +340,7 @@ const FLOW_STEPS = [
 
 export function KennisbankPage() {
   const navigate = useNavigate()
+  const { staatUit } = useFeatureFlags()
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [activeArticle, setActiveArticle] = useState<KbArticle | null>(null)
@@ -403,7 +406,9 @@ export function KennisbankPage() {
           </div>
         )}
 
-        {activeArticle.link && (
+        {/* Wijst het artikel naar een module die uitgezet is, dan geen knop. De
+            route stuurt je dan naar de startpagina en dat leest als een bug. */}
+        {activeArticle.link && !moduleUitgezet(activeArticle.link, staatUit) && (
           <button
             onClick={() => navigate(activeArticle.link!)}
             className="mt-8 inline-flex items-center gap-2 h-11 px-6 text-[14px] font-bold text-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
