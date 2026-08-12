@@ -44,7 +44,10 @@ function inkoopStatusHex(s: string): string {
   return INKOOP_STATUS_HEX[s] ?? '#5A5A55'
 }
 
-type FilterStatus = 'alle' | InkoopFactuurStatus
+// 'nakijken' is geen status maar een tweede as: de extractie zet
+// extractie_vertrouwen op 'laag' als totaal niet klopt met subtotaal + btw, en
+// dat is precies de rij die een mens moet natellen.
+type FilterStatus = 'alle' | InkoopFactuurStatus | 'nakijken'
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'alle', label: 'Alle' },
@@ -52,6 +55,7 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'verwerkt', label: 'Te reviewen' },
   { value: 'goedgekeurd', label: 'Goedgekeurd' },
   { value: 'afgewezen', label: 'Afgewezen' },
+  { value: 'nakijken', label: 'Nakijken' },
 ]
 
 function voorstelUitleg(voorstel: InkoopProjectVoorstel): string {
@@ -271,16 +275,19 @@ export function InkoopfacturenLayout() {
   }, [])
 
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { alle: facturen.length }
+    const counts: Record<string, number> = { alle: facturen.length, nakijken: 0 }
     for (const f of facturen) {
       counts[f.status] = (counts[f.status] || 0) + 1
+      if (f.extractie_vertrouwen === 'laag') counts.nakijken++
     }
     return counts
   }, [facturen])
 
   const filtered = useMemo(() => {
     let result = [...facturen]
-    if (filterStatus !== 'alle') {
+    if (filterStatus === 'nakijken') {
+      result = result.filter(f => f.extractie_vertrouwen === 'laag')
+    } else if (filterStatus !== 'alle') {
       result = result.filter(f => f.status === filterStatus)
     }
     if (filterMaand !== 'alle') {
