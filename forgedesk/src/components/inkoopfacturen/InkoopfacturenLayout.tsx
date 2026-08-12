@@ -22,6 +22,7 @@ import {
 import { getProjecten, getKlanten } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
+import { stelProjectVoor, type InkoopProjectVoorstel } from '@/utils/inkoopProjectVoorstel'
 import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus, Project, Klant } from '@/types'
 
 const STATUS_CONFIG: Record<InkoopFactuurStatus, { label: string; bg: string; text: string; dot: boolean }> = {
@@ -52,6 +53,13 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'goedgekeurd', label: 'Goedgekeurd' },
   { value: 'afgewezen', label: 'Afgewezen' },
 ]
+
+function voorstelUitleg(voorstel: InkoopProjectVoorstel): string {
+  const bron = voorstel.bron === 'referentie_kenmerk'
+    ? 'referentie op de factuur'
+    : 'projectaanduiding op de factuur'
+  return `Gevonden via de ${bron}: "${voorstel.gevonden_tekst}"`
+}
 
 function formatCurrency(n: number): string {
   return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(n)
@@ -313,6 +321,13 @@ export function InkoopfacturenLayout() {
     [klanten],
   )
 
+  // Wat de extractie op de factuur vond, tegen de eigen projectlijst gelegd.
+  // Blijft een voorstel: koppelen doet de gebruiker.
+  const projectVoorstel = useMemo(
+    () => (lightbox && !lightbox.factuur.project_id ? stelProjectVoor(lightbox.factuur, projecten) : null),
+    [lightbox, projecten],
+  )
+
   // Picker zoekt in bestaande projecten, op projectnaam, nummer én klantnaam.
   const projectResultaten = useMemo(() => {
     const q = projectQuery.trim().toLowerCase()
@@ -322,8 +337,15 @@ export function InkoopfacturenLayout() {
           (p.project_nummer || '').toLowerCase().includes(q) ||
           (klantNamen.get(p.klant_id) || '').toLowerCase().includes(q))
       : projecten
-    return lijst.slice(0, 8)
-  }, [projecten, klantNamen, projectQuery])
+    const eerste = lijst.slice(0, 8)
+    // Zonder zoekterm staat het voorstel bovenaan. Typt de gebruiker zelf, dan
+    // is dat een eigen keuze en dringen wij ons voorstel niet meer voor.
+    if (!q && projectVoorstel) {
+      const voorgesteld = projectVoorstel.project
+      return [voorgesteld, ...eerste.filter(p => p.id !== voorgesteld.id)].slice(0, 8)
+    }
+    return eerste
+  }, [projecten, klantNamen, projectQuery, projectVoorstel])
 
   async function openLightbox(factuur: InkoopFactuur) {
     try {
@@ -905,6 +927,12 @@ export function InkoopfacturenLayout() {
                     <span className="text-foreground/80">{formatDatum(lightbox.factuur.vervaldatum)}</span>
                   </div>
                 )}
+                {lightbox.factuur.referentie_kenmerk && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-muted-foreground">Referentie</span>
+                    <span className="text-foreground/80 truncate ml-4">{lightbox.factuur.referentie_kenmerk}</span>
+                  </div>
+                )}
                 {lightbox.factuur.email_van && (
                   <div className="flex justify-between text-[13px]">
                     <span className="text-muted-foreground">Van</span>
@@ -939,7 +967,14 @@ export function InkoopfacturenLayout() {
                             onClick={() => koppelProject(p.id)}
                             className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-muted transition-colors"
                           >
-                            <span className="block text-[13px] font-medium text-foreground truncate">{p.naam}</span>
+                            <span className="flex items-center gap-2 min-w-0">
+                              <span className="text-[13px] font-medium text-foreground truncate">{p.naam}</span>
+                              {projectVoorstel?.project.id === p.id && (
+                                <span className="flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded text-[#C03A18] bg-[hsl(var(--status-flame-bg))]">
+                                  Voorstel
+                                </span>
+                              )}
+                            </span>
                             <span className="block text-[11px] text-muted-foreground truncate">
                               {[p.project_nummer, klantNamen.get(p.klant_id)].filter(Boolean).join(' · ')}
                             </span>
@@ -978,6 +1013,35 @@ export function InkoopfacturenLayout() {
                         className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : projectVoorstel ? (
+                  <div className="rounded-xl border border-dashed border-[#C03A18]/35 bg-[hsl(var(--status-flame-bg))] px-3 py-2.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-[#C03A18]">
+                      Voorstel · nog niet gekoppeld
+                    </span>
+                    <p className="text-[13px] font-semibold text-foreground truncate mt-1">
+                      {projectVoorstel.project.naam}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {[projectVoorstel.project.project_nummer, klantNamen.get(projectVoorstel.project.klant_id)].filter(Boolean).join(' · ')}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1.5 break-words">
+                      {voorstelUitleg(projectVoorstel)}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2.5">
+                      <button
+                        onClick={() => koppelProject(projectVoorstel.project.id)}
+                        className="text-[12px] font-semibold text-white bg-[#2D6B48] hover:bg-[#245A3B] px-2.5 py-1.5 rounded-lg transition-colors"
+                      >
+                        Klopt, koppel
+                      </button>
+                      <button
+                        onClick={() => { setProjectPickerOpen(true); setProjectQuery('') }}
+                        className="text-[12px] font-medium text-muted-foreground hover:text-foreground px-2 py-1.5 rounded-lg transition-colors"
+                      >
+                        Ander project
                       </button>
                     </div>
                   </div>
