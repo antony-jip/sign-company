@@ -6,18 +6,15 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { getKlanten, getContactpersonenDB, getMedewerkers, getEmailTemplates, createEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
+import { getEmailTemplates, createEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { splitsBijlagen, valideerBijlagen, uploadBijlagenMetLinkFallback, type BijlagenPayload } from '@/utils/groteBijlagen'
 import { toast } from 'sonner'
-import { cn, getInitials } from '@/lib/utils'
-import type { Klant, Contactpersoon, ContactpersoonRecord, Email, Medewerker } from '@/types'
+import { cn } from '@/lib/utils'
+import type { Email } from '@/types'
 
-type ToSuggestion =
-  | { kind: 'klant'; klant: Klant }
-  | { kind: 'contactpersoon'; cp: Contactpersoon; klantNaam: string; klantId: string }
-  | { kind: 'medewerker'; medewerker: Medewerker }
 import { callForgie, type ForgieAction } from '@/services/forgieService'
+import { OntvangerInput } from '@/components/shared/OntvangerVeld'
 import { logger } from '../../utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
@@ -168,12 +165,6 @@ export function EmailCompose({
   const [showSaveTemplate, setShowSaveTemplate] = useState(false)
   const [newTemplateName, setNewTemplateName] = useState('')
 
-  // Contacts autocomplete
-  const [contacts, setContacts] = useState<Klant[]>([])
-  const [dbContacten, setDbContacten] = useState<ContactpersoonRecord[]>([])
-  const [collegas, setCollegas] = useState<Medewerker[]>([])
-  const [suggestions, setSuggestions] = useState<ToSuggestion[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
   const toInputRef = useRef<HTMLInputElement>(null)
 
   // Sales Inbox v1: toggle + compose-hint (skipt bij meer-dan-1 ontvanger)
@@ -437,99 +428,10 @@ export function EmailCompose({
     }
   }, [])
 
-  // Load contacts + templates
+  // Adressen laadt OntvangerInput zelf, bij focus op een adresveld.
   useEffect(() => {
-    if (open) {
-      getKlanten().then(setContacts).catch(() => {})
-      getMedewerkers().then(setCollegas).catch(() => {})
-      getEmailTemplates().then(setDbTemplates).catch(() => {})
-      if (organisatieId) {
-        getContactpersonenDB(organisatieId).then(setDbContacten).catch(() => {})
-      }
-    }
-  }, [open, organisatieId])
-
-  const handleToChange = useCallback((value: string) => {
-    setTo(value)
-    if (value.length >= 2 && (contacts.length > 0 || dbContacten.length > 0 || collegas.length > 0)) {
-      const q = value.toLowerCase()
-      const matches: ToSuggestion[] = []
-      const seenEmails = new Set<string>()
-
-      // Collega's eerst: intern mailen gebeurt vaak en die adressen ken je
-      // niet uit je hoofd zoals klantadressen uit lopende correspondentie.
-      for (const mw of collegas) {
-        if (!mw.email || mw.status !== 'actief') continue
-        const key = mw.email.toLowerCase()
-        if (seenEmails.has(key)) continue
-        if (mw.naam?.toLowerCase().includes(q) || key.includes(q)) {
-          matches.push({ kind: 'medewerker', medewerker: mw })
-          seenEmails.add(key)
-        }
-      }
-
-      for (const k of contacts) {
-        const klantMatches =
-          k.bedrijfsnaam?.toLowerCase().includes(q) ||
-          k.contactpersoon?.toLowerCase().includes(q) ||
-          k.email?.toLowerCase().includes(q)
-        if (klantMatches && k.email && !seenEmails.has(k.email.toLowerCase())) {
-          matches.push({ kind: 'klant', klant: k })
-          seenEmails.add(k.email.toLowerCase())
-        }
-        for (const cp of k.contactpersonen || []) {
-          if (!cp.email) continue
-          const cpKey = cp.email.toLowerCase()
-          if (seenEmails.has(cpKey)) continue
-          const cpMatches =
-            cp.naam?.toLowerCase().includes(q) ||
-            cp.email.toLowerCase().includes(q) ||
-            k.bedrijfsnaam?.toLowerCase().includes(q)
-          if (cpMatches) {
-            matches.push({ kind: 'contactpersoon', cp, klantNaam: k.bedrijfsnaam, klantId: k.id })
-            seenEmails.add(cpKey)
-          }
-        }
-        if (matches.length >= 12) break
-      }
-
-      // DB-contactpersonen (los van JSONB) · bv. losse cps die alleen via
-      // de contactpersonen-tabel zijn aangemaakt vinden we hier
-      for (const c of dbContacten) {
-        if (matches.length >= 12) break
-        if (!c.email) continue
-        const cpKey = c.email.toLowerCase()
-        if (seenEmails.has(cpKey)) continue
-        const naam = [c.voornaam, c.achternaam].filter(Boolean).join(' ').trim() || c.email
-        const klant = c.klant_id ? contacts.find((k) => k.id === c.klant_id) : undefined
-        const klantNaam = klant?.bedrijfsnaam || c.klant?.bedrijfsnaam || ''
-        const cpMatches =
-          naam.toLowerCase().includes(q) ||
-          c.email.toLowerCase().includes(q) ||
-          klantNaam.toLowerCase().includes(q)
-        if (cpMatches) {
-          matches.push({
-            kind: 'contactpersoon',
-            cp: { id: c.id, naam, functie: c.functie || '', email: c.email, telefoon: c.telefoon || '', is_primair: false },
-            klantNaam,
-            klantId: c.klant_id || '',
-          })
-          seenEmails.add(cpKey)
-        }
-      }
-
-      setSuggestions(matches.slice(0, 8))
-      setShowSuggestions(matches.length > 0)
-    } else {
-      setShowSuggestions(false)
-    }
-  }, [contacts, dbContacten, collegas])
-
-  const handleSelectSuggestion = useCallback((item: ToSuggestion) => {
-    const email = item.kind === 'klant' ? item.klant.email : item.kind === 'medewerker' ? item.medewerker.email : item.cp.email
-    setTo(email || '')
-    setShowSuggestions(false)
-  }, [])
+    if (open) getEmailTemplates().then(setDbTemplates).catch(() => {})
+  }, [open])
 
   const handleTemplateSelect = useCallback((key: string) => {
     const tmpl = dbTemplates.find(t => t.id === key)
@@ -996,22 +898,19 @@ export function EmailCompose({
             {/* Aan field */}
             <div className="relative">
               <div className="flex items-center border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
-                <input
-                  ref={toInputRef}
-                  type="email"
+                <OntvangerInput
+                  inputRef={toInputRef}
                   value={to}
-                  onChange={(e) => handleToChange(e.target.value)}
-                  onFocus={() => to.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
+                  onChange={setTo}
+                  placeholder="Aan..."
+                  inputClassName="w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
                   onBlur={() => {
-                    setTimeout(() => setShowSuggestions(false), 200)
                     // Sales Inbox compose-hint: skip bij multi-recipient (cold-acquisitie is 1-op-1).
                     if (to.includes(',') || !to.trim()) { setHintMail(null); return }
                     getWachtendeEmailNaarAdres(to)
                       .then((mail) => setHintMail(mail ? { id: mail.id, datum: mail.datum } : null))
                       .catch(() => setHintMail(null))
                   }}
-                  className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
-                  placeholder="Aan..."
                 />
                 {!showCcBcc && (
                   <button
@@ -1022,91 +921,25 @@ export function EmailCompose({
                   </button>
                 )}
               </div>
-              {/* Autocomplete dropdown */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute left-0 top-full mt-1 w-80 bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1 overflow-hidden">
-                  {suggestions.map((item, idx) => {
-                    if (item.kind === 'medewerker') {
-                      const mw = item.medewerker
-                      return (
-                        <button
-                          key={`mw-${mw.id}`}
-                          onClick={() => handleSelectSuggestion(item)}
-                          className="w-full text-left px-3.5 py-2.5 hover:bg-background flex items-center gap-2.5 transition-colors"
-                        >
-                          <div className="w-7 h-7 rounded-full bg-petrol/12 flex items-center justify-center flex-shrink-0">
-                            <span className="text-[10px] font-semibold text-petrol">{getInitials(mw.naam || '')}</span>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-[13px] font-medium text-foreground truncate">
-                              {mw.naam}
-                              <span className="ml-1.5 text-[11px] font-normal text-muted-foreground">collega</span>
-                            </div>
-                            <div className="text-[11px] text-muted-foreground truncate">{mw.email}</div>
-                          </div>
-                        </button>
-                      )
-                    }
-                    if (item.kind === 'klant') {
-                      const k = item.klant
-                      return (
-                        <button
-                          key={`k-${k.id}`}
-                          onClick={() => handleSelectSuggestion(item)}
-                          className="w-full text-left px-3.5 py-2.5 hover:bg-background flex items-center gap-2.5 transition-colors"
-                        >
-                          <div className="w-7 h-7 rounded-lg bg-petrol/8 flex items-center justify-center flex-shrink-0">
-                            <span className="text-[10px] font-semibold text-petrol">{getInitials(k.bedrijfsnaam || k.contactpersoon || '')}</span>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-[13px] font-medium text-foreground truncate">{k.bedrijfsnaam || k.contactpersoon}</div>
-                            <div className="text-[11px] text-muted-foreground truncate">{k.email}</div>
-                          </div>
-                        </button>
-                      )
-                    }
-                    return (
-                      <button
-                        key={`cp-${item.klantId}-${item.cp.id}-${idx}`}
-                        onClick={() => handleSelectSuggestion(item)}
-                        className="w-full text-left px-3.5 py-2.5 hover:bg-background flex items-center gap-2.5 transition-colors"
-                      >
-                        <div className="w-7 h-7 rounded-full bg-flame/8 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-semibold text-flame">{getInitials(item.cp.naam || '')}</span>
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-[13px] font-medium text-foreground truncate">
-                            {item.cp.naam}
-                            <span className="ml-1.5 text-[11px] font-normal text-muted-foreground">bij {item.klantNaam}</span>
-                          </div>
-                          <div className="text-[11px] text-muted-foreground truncate">{item.cp.email}</div>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
             </div>
 
             {/* CC/BCC */}
             {showCcBcc && (
               <>
                 <div className="flex items-center border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
-                  <input
-                    type="email"
+                  <OntvangerInput
                     value={cc}
-                    onChange={(e) => setCc(e.target.value)}
-                    className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
+                    onChange={setCc}
                     placeholder="CC..."
+                    inputClassName="w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
                   />
                 </div>
                 <div className="flex items-center border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
-                  <input
-                    type="email"
+                  <OntvangerInput
                     value={bcc}
-                    onChange={(e) => setBcc(e.target.value)}
-                    className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
+                    onChange={setBcc}
                     placeholder="BCC..."
+                    inputClassName="w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
                   />
                 </div>
               </>

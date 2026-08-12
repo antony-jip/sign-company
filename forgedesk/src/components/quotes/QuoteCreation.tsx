@@ -81,6 +81,7 @@ import { supabase } from '@/services/supabaseClient'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
 import { initAutofillDefaults, saveAutofillValue, labelToAutofillField } from '@/utils/autofillUtils'
+import { OntvangerInput } from '@/components/shared/OntvangerVeld'
 import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS, sanitizeDetailLabels, calculateLineTotaal } from './QuoteItemsTable'
 import { RegelTemplateEditor } from './RegelTemplateEditor'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
@@ -104,6 +105,8 @@ import { handtekeningBreedte } from '@/utils/handtekening'
 
 // Cumulatieve cap voor user-uploads in de offerte-email-dialog. Onder Gmail's
 // 25 MB SMTP-limiet incl. base64-overhead, met ruimte voor de offerte-PDF.
+const ONTVANGER_INPUT_CLS = 'w-full text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-petrol dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors'
+
 const MAX_BIJLAGEN_BYTES = 15 * 1024 * 1024
 
 function formatBytes(bytes: number): string {
@@ -2309,15 +2312,15 @@ export function QuoteCreation() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">Aan</span>
-                      <input value={email.emailTo} onChange={(e) => email.setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-petrol dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
+                      <OntvangerInput value={email.emailTo} onChange={email.setEmailTo} placeholder="email@voorbeeld.nl" inputClassName={ONTVANGER_INPUT_CLS} />
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">CC</span>
-                      <input value={email.emailCc} onChange={(e) => email.setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-petrol dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
+                      <OntvangerInput value={email.emailCc} onChange={email.setEmailCc} placeholder="Optioneel" inputClassName={ONTVANGER_INPUT_CLS} />
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 w-12 flex-shrink-0">BCC</span>
-                      <input value={email.emailBcc} onChange={(e) => email.setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] dark:border-white/10 rounded-lg bg-white dark:bg-white/[0.05] focus:outline-none focus:border-petrol dark:focus:border-white/30 focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] dark:focus:ring-white/10 transition-colors" />
+                      <OntvangerInput value={email.emailBcc} onChange={email.setEmailBcc} placeholder="Optioneel" inputClassName={ONTVANGER_INPUT_CLS} />
                     </div>
                   </div>
 

@@ -19,6 +19,7 @@ import { getEmailsVoorProject, koppelEmailAanProject, type ProjectMail } from '@
 import { uploadEmailAttachment, deleteFile } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem, SigningVisualisatie } from '@/types'
+import { useOntvangerZoeker, OntvangerLijst, type Ontvanger } from '@/components/shared/OntvangerVeld'
 import { handtekeningAfbeeldingHtml, handtekeningBreedte } from '@/utils/handtekening'
 
 const MAX_BIJLAGE_BYTES = 20 * 1024 * 1024
@@ -221,52 +222,69 @@ interface EmailChipsInputProps {
 }
 
 function EmailChipsInput({ value, onChange, placeholder }: EmailChipsInputProps) {
+  const { zoek, laad } = useOntvangerZoeker()
   const [draft, setDraft] = useState('')
+  const [suggesties, setSuggesties] = useState<Ontvanger[]>([])
+  const [actief, setActief] = useState(0)
 
   const commit = (text: string) => {
     const trimmed = text.trim().replace(/[,;]\s*$/, '')
-    if (!trimmed) return
-    if (value.includes(trimmed)) {
-      setDraft('')
-      return
-    }
-    onChange([...value, trimmed])
     setDraft('')
+    setSuggesties([])
+    if (!trimmed || value.includes(trimmed)) return
+    onChange([...value, trimmed])
   }
 
+  const kies = (ontvanger: Ontvanger) => commit(ontvanger.email)
+
+  // De adressen laden pas bij focus; ververs zodra ze binnen zijn.
+  useEffect(() => {
+    setSuggesties(draft ? zoek(draft) : [])
+  }, [draft, zoek])
+
   return (
-    <div className="flex-1 flex flex-wrap items-center gap-1.5 min-w-0">
+    <div className="relative flex-1 flex flex-wrap items-center gap-1.5 min-w-0">
       {value.map((email, i) => (
-        <span key={`${email}-${i}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-[12px] text-foreground">
+        <span key={`${email}-${i}`} className="inline-flex items-center gap-1.5 pl-2 pr-1 py-0.5 rounded-full border border-petrol/15 bg-petrol/[0.06] text-[12px] leading-5 text-petrol">
           {email}
           <button
             type="button"
             onClick={() => onChange(value.filter((_, idx) => idx !== i))}
-            className="text-muted-foreground hover:text-[#C03A18] transition-colors"
+            className="text-petrol/50 hover:text-[#C03A18] transition-colors"
             aria-label={`${email} verwijderen`}
           >
-            <X className="h-2.5 w-2.5" />
+            <X className="h-3 w-3" />
           </button>
         </span>
       ))}
       <input
         type="email"
         value={draft}
+        onFocus={laad}
         onChange={(e) => {
           const val = e.target.value
           if (val.endsWith(',') || val.endsWith(';')) {
             commit(val)
-          } else {
-            setDraft(val)
+            return
           }
+          setDraft(val)
+          setActief(0)
         }}
-        onBlur={() => commit(draft)}
+        onBlur={() => { commit(draft); setSuggesties([]) }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === 'Tab') {
-            if (draft.trim()) {
+          if (suggesties.length > 0 && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            e.preventDefault()
+            setActief((i) => (e.key === 'ArrowDown' ? i + 1 : i - 1 + suggesties.length) % suggesties.length)
+          } else if (e.key === 'Enter' || e.key === 'Tab') {
+            if (suggesties.length > 0) {
+              e.preventDefault()
+              kies(suggesties[actief])
+            } else if (draft.trim()) {
               e.preventDefault()
               commit(draft)
             }
+          } else if (e.key === 'Escape') {
+            setSuggesties([])
           } else if (e.key === 'Backspace' && !draft && value.length > 0) {
             onChange(value.slice(0, -1))
           }
@@ -274,6 +292,7 @@ function EmailChipsInput({ value, onChange, placeholder }: EmailChipsInputProps)
         placeholder={value.length === 0 ? placeholder : ''}
         className="flex-1 min-w-[100px] bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground"
       />
+      <OntvangerLijst suggesties={suggesties} actief={actief} onKies={kies} />
     </div>
   )
 }
@@ -931,12 +950,12 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   return (
     <div
       ref={containerRef}
-      className="bg-white rounded-2xl border border-border shadow-[0_8px_30px_rgba(0,0,0,0.08)] overflow-hidden"
+      className="bg-white rounded-2xl border border-border/70 shadow-[0_2px_16px_rgba(26,83,92,0.07)] overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-to-b from-petrol/[0.05] to-transparent">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/70">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="h-9 w-9 rounded-full bg-petrol text-white text-[13px] font-semibold flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(26,83,92,0.3)]">
+          <span className="h-8 w-8 rounded-full bg-petrol text-white text-[12px] font-semibold flex items-center justify-center flex-shrink-0">
             {initiaal}
           </span>
           <div className="min-w-0">
@@ -956,7 +975,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       </div>
 
       {/* Body */}
-      <div className="px-5 py-4 space-y-3">
+      <div className="px-4 py-3.5 space-y-2.5">
         {threadMails.length > 0 && (
           <div>
             <button
@@ -1001,9 +1020,9 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
           </div>
         )}
 
-        <div className="rounded-xl border border-border/70 divide-y divide-border/50 overflow-hidden bg-muted/20">
-          <div className="flex items-center gap-2 md:gap-3 px-3 py-2 min-h-[40px] min-w-0">
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[52px] md:w-[88px] flex-shrink-0 whitespace-nowrap">Aan</label>
+        <div className="rounded-lg border border-border/70 divide-y divide-border/50 overflow-hidden">
+          <div className="flex items-center gap-2 md:gap-3 px-3 py-1.5 min-h-[36px] min-w-0">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[48px] md:w-[76px] flex-shrink-0 whitespace-nowrap">Aan</label>
             <EmailChipsInput value={toEmails} onChange={setToEmails} placeholder="naam@bedrijf.nl" />
             {!showCcBcc && (
               <button
@@ -1018,19 +1037,19 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
 
           {showCcBcc && (
             <>
-              <div className="flex items-center gap-2 md:gap-3 px-3 py-2 min-h-[40px] min-w-0">
-                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[52px] md:w-[88px] flex-shrink-0 whitespace-nowrap">Cc</label>
+              <div className="flex items-center gap-2 md:gap-3 px-3 py-1.5 min-h-[36px] min-w-0">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[48px] md:w-[76px] flex-shrink-0 whitespace-nowrap">Cc</label>
                 <EmailChipsInput value={ccEmails} onChange={setCcEmails} placeholder="cc@bedrijf.nl" />
               </div>
-              <div className="flex items-center gap-2 md:gap-3 px-3 py-2 min-h-[40px] min-w-0">
-                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[52px] md:w-[88px] flex-shrink-0 whitespace-nowrap">Bcc</label>
+              <div className="flex items-center gap-2 md:gap-3 px-3 py-1.5 min-h-[36px] min-w-0">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[48px] md:w-[76px] flex-shrink-0 whitespace-nowrap">Bcc</label>
                 <EmailChipsInput value={bccEmails} onChange={setBccEmails} placeholder="bcc@bedrijf.nl" />
               </div>
             </>
           )}
 
-          <div className="flex items-center gap-2 md:gap-3 px-3 py-2 min-h-[40px] min-w-0">
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[52px] md:w-[88px] flex-shrink-0 whitespace-nowrap">Onderwerp</label>
+          <div className="flex items-center gap-2 md:gap-3 px-3 py-1.5 min-h-[36px] min-w-0">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[48px] md:w-[76px] flex-shrink-0 whitespace-nowrap">Onderwerp</label>
             <input
               type="text"
               value={subject}
@@ -1041,7 +1060,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         </div>
 
         {/* Body-blok: textarea + handtekening visueel als één 'mailbox' */}
-        <div className="rounded-xl border border-border focus-within:border-flame/50 focus-within:ring-2 focus-within:ring-flame/15 transition-all p-3 space-y-2">
+        <div className="rounded-lg border border-border/70 focus-within:border-petrol/50 focus-within:ring-2 focus-within:ring-petrol/10 transition-all p-3 space-y-2">
           <textarea
             ref={textareaRef}
             value={body}
@@ -1110,7 +1129,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       </div>
 
       {/* Actiebalk: opmaak + toevoegen links · opvolgen + inplannen + versturen rechts */}
-      <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-2 px-3 py-2.5 border-t border-border bg-gradient-to-b from-transparent to-petrol/[0.02]">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-2 px-4 py-2.5 border-t border-border/70 bg-muted/20">
         <div className="flex items-center gap-2">
         <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 border border-border/60 p-0.5">
           <button type="button" onClick={() => wrapSelection('**', '**')} title="Bold" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">

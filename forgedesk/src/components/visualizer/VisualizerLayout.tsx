@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { OntvangerInput } from '@/components/shared/OntvangerVeld'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   getSigningVisualisaties,
@@ -1588,7 +1589,7 @@ export function VisualizerLayout() {
               <img src={shareEmailVis.resultaat_url} alt="" className="w-full max-h-48 object-cover rounded-lg" />
               <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-muted-foreground w-16 flex-shrink-0">Aan</span>
-                <input value={shareEmailTo} onChange={(e) => setShareEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:border-petrol/40 focus:bg-white transition-colors" />
+                <OntvangerInput value={shareEmailTo} onChange={setShareEmailTo} placeholder="email@voorbeeld.nl" inputClassName="w-full text-sm px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:border-petrol/40 focus:bg-white transition-colors" />
               </div>
               <input value={shareEmailSubject} onChange={(e) => setShareEmailSubject(e.target.value)} placeholder="Onderwerp..." className="w-full text-sm font-medium px-3 py-2 border border-border rounded-lg focus:outline-none focus:border-petrol/40 transition-colors" />
               <textarea

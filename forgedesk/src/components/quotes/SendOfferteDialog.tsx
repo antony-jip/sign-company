@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { OntvangerInput } from '@/components/shared/OntvangerVeld'
 import { Textarea } from '@/components/ui/textarea'
 import {
   updateOfferte,
@@ -363,10 +364,11 @@ export function SendOfferteDialog({
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Aan</label>
-            <Input
+            <OntvangerInput
               value={sendTo}
-              onChange={(e) => setSendTo(e.target.value)}
+              onChange={setSendTo}
               placeholder="email@bedrijf.nl"
+              inputClassName="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
           </div>
           <div className="space-y-2">
