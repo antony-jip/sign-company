@@ -122,6 +122,7 @@ import { genereerEnUploadFactuurPdf, downloadFactuurPdfFromStorage } from '@/ser
 import { generateUBLInvoice, downloadUBLXml } from '@/services/ublService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
+import { OntvangerInput } from '@/components/shared/OntvangerVeld'
 import { factuurVerzendTemplate, factuurHerinneringTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
@@ -311,6 +312,7 @@ function generateTypedNummer(existing: { nummer: string }[], prefix: string): st
   return `${fullPrefix}${String(maxNum + 1).padStart(3, '0')}`
 }
 
+const FACTUUR_AAN_CLS = 'flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
 const STANDAARD_VERZEND_BERICHT = 'Hartelijk dank voor de opdracht, hierbij ontvang je onze factuur.'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -455,6 +457,8 @@ export function FactuurEditor() {
   const [creditnotaDialogOpen, setCreditnotaDialogOpen] = useState(false)
   const [creditReden, setCreditReden] = useState('')
   const [herinneringDialogOpen, setHerinneringDialogOpen] = useState(false)
+  const [verzendAan, setVerzendAan] = useState('')
+  const [herinneringAan, setHerinneringAan] = useState('')
   const [herinneringTemplates, setHerinneringTemplates] = useState<HerinneringTemplate[]>([])
   const [herinneringType, setHerinneringType] = useState<HerinneringTemplate['type']>('herinnering_1')
   const [herinneringPreview, setHerinneringPreview] = useState('')
@@ -963,6 +967,16 @@ export function FactuurEditor() {
   // ============ COMPUTED ============
 
   const selectedKlant = useMemo(() => klanten.find((k) => k.id === klantId), [klanten, klantId])
+
+  // Het adres staat vast bij openen, maar blijft aanpasbaar: facturen gaan
+  // regelmatig naar een boekhoud- of crediteurenadres.
+  useEffect(() => {
+    if (sendDialogOpen) setVerzendAan(resolvedCp?.email || selectedKlant?.email || '')
+  }, [sendDialogOpen, resolvedCp?.email, selectedKlant?.email])
+
+  useEffect(() => {
+    if (herinneringDialogOpen) setHerinneringAan(resolvedCp?.email || selectedKlant?.email || '')
+  }, [herinneringDialogOpen, resolvedCp?.email, selectedKlant?.email])
 
   // Voorvullen adresblok: in edit-mode wint een opgeslagen override, anders het
   // klantadres. Open het blok automatisch als er al een override staat.
@@ -1582,7 +1596,7 @@ export function FactuurEditor() {
 
   const handleSendFactuur = useCallback(async () => {
     if (!existingFactuur || !selectedKlant) return
-    const ontvangerEmail = resolvedCp?.email || selectedKlant.email || ''
+    const ontvangerEmail = verzendAan.trim() || resolvedCp?.email || selectedKlant.email || ''
     if (!ontvangerEmail) {
       toast.error('Geen email-adres bekend voor deze klant · voeg een contactpersoon toe.')
       return
@@ -1790,7 +1804,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds, medewerkers, stuurOfferteMee, offerteId, allOffertes, persoonlijkBericht])
+  }, [existingFactuur, selectedKlant, resolvedCp, verzendAan, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds, medewerkers, stuurOfferteMee, offerteId, allOffertes, persoonlijkBericht])
 
   // Live e-mailvoorbeeld voor het verzendvenster: exact dezelfde template als
   // de daadwerkelijke verzending, zodat persoonlijk bericht én standaardtekst
@@ -1985,7 +1999,8 @@ export function FactuurEditor() {
   }, [existingFactuur, selectedKlant, getVolgendeHerinnering, herinneringTemplates, replaceHerinneringVars])
 
   const handleVerstuurHerinnering = useCallback(async () => {
-    if (!existingFactuur || !selectedKlant?.email) {
+    const herinneringOntvanger = herinneringAan.trim() || resolvedCp?.email || selectedKlant?.email || ''
+    if (!existingFactuur || !herinneringOntvanger) {
       toast.error('Geen emailadres gevonden voor deze klant')
       return
     }
@@ -2002,7 +2017,7 @@ export function FactuurEditor() {
 
       try {
         const { html } = factuurHerinneringTemplate({
-          klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
+          klantNaam: selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '',
           factuurNummer: existingFactuur.nummer,
           factuurTitel: existingFactuur.titel,
           totaalBedrag: formatCurrency(existingFactuur.totaal),
@@ -2013,7 +2028,7 @@ export function FactuurEditor() {
           logoUrl: profile?.logo_url || undefined,
           betaalUrl: existingFactuur.betaal_link || undefined,
         })
-        await sendEmail(selectedKlant.email, onderwerp, herinneringPreview, { html })
+        await sendEmail(herinneringOntvanger, onderwerp, herinneringPreview, { html })
       } catch (err) {
         logger.error('Verstuur herinnering email:', err)
         toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Herinnering is wel gemarkeerd.')
@@ -2039,7 +2054,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, herinneringTemplates, herinneringType, herinneringPreview, replaceHerinneringVars, dagenVervallen, bedrijfsnaam, primaireKleur, profile])
+  }, [existingFactuur, selectedKlant, resolvedCp, herinneringAan, herinneringTemplates, herinneringType, herinneringPreview, replaceHerinneringVars, dagenVervallen, bedrijfsnaam, primaireKleur, profile])
 
   // ============ EXACT SYNC ============
 
@@ -3288,14 +3303,17 @@ export function FactuurEditor() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2 text-sm">
-            <div className="flex items-baseline justify-between">
-              <span className="text-muted-foreground">Aan</span>
-              <span className="text-right">
-                {resolvedCp?.naam && <span className="font-medium">{resolvedCp.naam}</span>}
-                <span className="font-mono text-xs text-muted-foreground">
-                  {resolvedCp?.naam ? ` · ` : ''}{resolvedCp?.email || selectedKlant?.email}
-                </span>
-              </span>
+            <div className="space-y-1.5">
+              <div className="flex items-baseline justify-between">
+                <span className="text-muted-foreground">Aan</span>
+                {resolvedCp?.naam && <span className="text-xs text-muted-foreground">{resolvedCp.naam}</span>}
+              </div>
+              <OntvangerInput
+                value={verzendAan}
+                onChange={setVerzendAan}
+                placeholder="email@bedrijf.nl"
+                inputClassName={FACTUUR_AAN_CLS}
+              />
             </div>
             <div className="flex items-baseline justify-between">
               <span className="text-muted-foreground">Bedrag</span>
@@ -3496,6 +3514,17 @@ export function FactuurEditor() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-sm">Aan</Label>
+              <div className="mt-1">
+                <OntvangerInput
+                  value={herinneringAan}
+                  onChange={setHerinneringAan}
+                  placeholder="email@bedrijf.nl"
+                  inputClassName={FACTUUR_AAN_CLS}
+                />
+              </div>
+            </div>
             <div>
               <Label className="text-sm">Type</Label>
               <Select
