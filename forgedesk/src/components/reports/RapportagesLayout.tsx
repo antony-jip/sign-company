@@ -313,9 +313,10 @@ export function RapportagesLayout() {
     return medewerkers
       .filter((m) => m.status === 'actief')
       .map((m) => {
-        const uren = tijdregistraties
+        const minuten = tijdregistraties
           .filter((t) => t.medewerker_id === m.id)
           .reduce((s, t) => s + (t.duur_minuten || 0), 0);
+        const uren = minuten / 60;
         const projectIds = new Set(
           tijdregistraties.filter((t) => t.medewerker_id === m.id).map((t) => t.project_id)
         );
