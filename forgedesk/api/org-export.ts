@@ -46,36 +46,72 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
 // Alleen tabellen met een organisatie_id-kolom. Dat is geen willekeurige
 // grens maar de enige die veilig is: elke query hieronder filtert
 // verplicht op .eq('organisatie_id', <org van de beller>). Bestaat die
-// kolom niet, dan geeft PostgREST een 42703-fout in plaats van alle
-// rijen — de fout kant op waar niemand data van een andere organisatie
-// ziet.
+// kolom niet, dan geeft PostgREST fout 42703 in plaats van alle rijen.
+// Het faalt dus naar de kant waar niemand data van een andere
+// organisatie ziet.
 //
-// De lijst komt uit de migratiemap (047 voor de kerntabellen, plus
-// migration_034/041/042/044/045/049/050/052, 077, 088, 093, 095, 097,
-// 104, 105, 108, 121, 122, 124, 125, 134, 135, 154, 164, 165, 167) en is
-// daarna tegen de échte database gecontroleerd: alle 63 tabellen bestaan
-// en hebben de kolom. Dat is nodig omdat de migratiemap vooruitloopt op
-// de database (zie bedrijfsprofielen bij NIET_OPGENOMEN).
+// De lijst komt NIET uit de migratiemap. Die map liegt hier: hij zegt dat
+// offerte_items, factuur_items, werkbon_regels en 34 andere tabellen geen
+// organisatie_id hebben, terwijl ze die in de database wél hebben. Een
+// uitvoer op basis van de migratiemap had dus offertes zonder regels en
+// facturen zonder regels opgeleverd. De lijst hieronder komt uit het
+// live PostgREST-schema: 107 tabellen met de kolom, min de 8 die bij
+// NIET_OPGENOMEN staan, is 99. Elke tabel is gecontroleerd met exact de
+// query die hieronder gebruikt wordt (select *, order, range).
+//
+// Bij het toevoegen van een tabel: kijk in de database of de kolom er is,
+// niet in supabase/migrations.
 //
 // `sorteer` is de kolom waarop gepagineerd wordt. Zonder ORDER BY mag
-// Postgres per .range()-verzoek een andere rijvolgorde teruggeven, en
-// dan mist of dubbelt een uitvoer van meer dan 1000 rijen.
+// Postgres per .range()-verzoek een andere rijvolgorde teruggeven, en dan
+// mist of dubbelt een uitvoer van meer dan 1000 rijen.
 // ============================================================
 const TABELLEN: { tabel: string; sorteer: string }[] = [
-  // Kern: klant, werk, geld
+  // Klant en contact
   { tabel: 'klanten', sorteer: 'id' },
   { tabel: 'contactpersonen', sorteer: 'id' },
   { tabel: 'klant_historie', sorteer: 'id' },
-  { tabel: 'projecten', sorteer: 'id' },
-  { tabel: 'taken', sorteer: 'id' },
-  { tabel: 'offertes', sorteer: 'id' },
-  { tabel: 'facturen', sorteer: 'id' },
-  { tabel: 'factuur_bijlagen', sorteer: 'id' },
-  { tabel: 'documenten', sorteer: 'id' },
-  { tabel: 'werkbonnen', sorteer: 'id' },
+  { tabel: 'klant_activiteiten', sorteer: 'id' },
   { tabel: 'deals', sorteer: 'id' },
+  { tabel: 'deal_activiteiten', sorteer: 'id' },
+  { tabel: 'lead_formulieren', sorteer: 'id' },
+  { tabel: 'lead_inzendingen', sorteer: 'id' },
+
+  // Werk
+  { tabel: 'projecten', sorteer: 'id' },
+  { tabel: 'project_toewijzingen', sorteer: 'id' },
+  { tabel: 'project_fotos', sorteer: 'id' },
+  { tabel: 'taken', sorteer: 'id' },
+  { tabel: 'werkbonnen', sorteer: 'id' },
+  { tabel: 'werkbon_items', sorteer: 'id' },
+  { tabel: 'werkbon_regels', sorteer: 'id' },
+  { tabel: 'werkbon_fotos', sorteer: 'id' },
+  { tabel: 'werkbon_afbeeldingen', sorteer: 'id' },
+  { tabel: 'tekening_goedkeuringen', sorteer: 'id' },
+  { tabel: 'signing_visualisaties', sorteer: 'id' },
+  { tabel: 'visualizer_chats', sorteer: 'id' },
+  { tabel: 'visualizer_credits', sorteer: 'id' },
+  { tabel: 'credit_transacties', sorteer: 'id' },
+
+  // Offertes
+  { tabel: 'offertes', sorteer: 'id' },
+  { tabel: 'offerte_items', sorteer: 'id' },
+  { tabel: 'offerte_versies', sorteer: 'id' },
+  { tabel: 'offerte_templates', sorteer: 'id' },
+  { tabel: 'offerte_opvolg_schemas', sorteer: 'id' },
+  { tabel: 'calculatie_producten', sorteer: 'id' },
+  { tabel: 'calculatie_templates', sorteer: 'id' },
+  { tabel: 'kortingen', sorteer: 'id' },
+
+  // Geld
+  { tabel: 'facturen', sorteer: 'id' },
+  { tabel: 'factuur_items', sorteer: 'id' },
+  { tabel: 'factuur_bijlagen', sorteer: 'id' },
   { tabel: 'uitgaven', sorteer: 'id' },
   { tabel: 'kostenplaatsen', sorteer: 'id' },
+  { tabel: 'grootboek', sorteer: 'id' },
+  { tabel: 'btw_codes', sorteer: 'id' },
+  { tabel: 'abonnement_facturen', sorteer: 'id' },
 
   // Inkoop en voorraad
   { tabel: 'leveranciers', sorteer: 'id' },
@@ -84,13 +120,17 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'inkoopfacturen', sorteer: 'id' },
   { tabel: 'inkoopfactuur_inbox_config', sorteer: 'id' },
   { tabel: 'bestelbonnen', sorteer: 'id' },
+  { tabel: 'bestelbon_regels', sorteer: 'id' },
   { tabel: 'leveringsbonnen', sorteer: 'id' },
+  { tabel: 'leveringsbon_regels', sorteer: 'id' },
   { tabel: 'voorraad_artikelen', sorteer: 'id' },
+  { tabel: 'voorraad_mutaties', sorteer: 'id' },
 
   // Mensen en planning
-  { tabel: 'medewerkers', sorteer: 'id' },
   { tabel: 'profiles', sorteer: 'id' },
+  { tabel: 'medewerkers', sorteer: 'id' },
   { tabel: 'uitnodigingen', sorteer: 'id' },
+  { tabel: 'vestigingen', sorteer: 'id' },
   { tabel: 'montage_afspraken', sorteer: 'id' },
   { tabel: 'events', sorteer: 'id' },
   { tabel: 'tijdregistraties', sorteer: 'id' },
@@ -99,14 +139,26 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'planning_afwezigheid', sorteer: 'id' },
   { tabel: 'planning_vrij_patronen', sorteer: 'id' },
   { tabel: 'planning_dag_notities', sorteer: 'id' },
+  { tabel: 'booking_slots', sorteer: 'id' },
+  { tabel: 'booking_afspraken', sorteer: 'id' },
   { tabel: 'maatjes', sorteer: 'id' },
+
+  // Documenten en portaal
+  { tabel: 'documenten', sorteer: 'id' },
+  { tabel: 'document_styles', sorteer: 'id' },
+  { tabel: 'project_portalen', sorteer: 'id' },
+  { tabel: 'portaal_items', sorteer: 'id' },
+  { tabel: 'portaal_bestanden', sorteer: 'id' },
+  { tabel: 'portaal_reacties', sorteer: 'id' },
+  { tabel: 'app_notificaties', sorteer: 'id' },
 
   // Communicatie (los van `emails`, zie NIET_OPGENOMEN)
   { tabel: 'email_templates', sorteer: 'id' },
   { tabel: 'email_opvolgingen', sorteer: 'id' },
   { tabel: 'email_project_koppelingen', sorteer: 'id' },
+  { tabel: 'email_sequences', sorteer: 'id' },
+  { tabel: 'ingeplande_emails', sorteer: 'id' },
   { tabel: 'herinnering_templates', sorteer: 'id' },
-  { tabel: 'offerte_opvolg_schemas', sorteer: 'id' },
   { tabel: 'notificaties', sorteer: 'id' },
   { tabel: 'support_gesprekken', sorteer: 'id' },
   { tabel: 'website_aanvragen', sorteer: 'id' },
@@ -115,16 +167,11 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   // Geen id-kolom: organisatie_id is hier de primaire sleutel.
   { tabel: 'website_chat_aanwezigheid', sorteer: 'organisatie_id' },
 
-  // Instellingen, opmaak en calculatie
+  // Instellingen en kennisbank
   { tabel: 'app_settings', sorteer: 'id' },
-  { tabel: 'document_styles', sorteer: 'id' },
-  { tabel: 'calculatie_producten', sorteer: 'id' },
-  { tabel: 'calculatie_templates', sorteer: 'id' },
-  { tabel: 'project_portalen', sorteer: 'id' },
   { tabel: 'kb_categories', sorteer: 'id' },
   { tabel: 'kb_articles', sorteer: 'id' },
   { tabel: 'import_logs', sorteer: 'id' },
-  { tabel: 'visualizer_chats', sorteer: 'id' },
 
   // Daan (AI-geheugen over dit bedrijf)
   { tabel: 'ai_geheugen', sorteer: 'id' },
@@ -132,24 +179,29 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'ai_rondes', sorteer: 'id' },
   { tabel: 'ai_sporen', sorteer: 'id' },
   { tabel: 'ai_briefings', sorteer: 'id' },
+  { tabel: 'ai_chats', sorteer: 'id' },
+  { tabel: 'ai_chat_history', sorteer: 'id' },
+  { tabel: 'ai_imported_data', sorteer: 'id' },
+  { tabel: 'ai_usage', sorteer: 'id' },
   { tabel: 'ai_usage_org', sorteer: 'id' },
 
-  // Abonnement en logboek
-  { tabel: 'abonnement_facturen', sorteer: 'id' },
+  // Logboek
   { tabel: 'audit_log', sorteer: 'id' },
   { tabel: 'audit_log_feature', sorteer: 'id' },
 ]
 
 // Wat er bewust NIET in zit, en waarom. Deze uitleg gaat mee in de
-// uitvoer zodat de ontvanger ziet waar de grens ligt.
+// uitvoer zodat de ontvanger ziet waar de grens ligt. Zie docs/AVG.md
+// voor de volledige verantwoording.
 const NIET_OPGENOMEN: Record<string, string> = {
-  emails: 'De gesynchroniseerde mailbox (bij de grootste organisatie ~19.000 berichten, ruim 30 MB JSON) past niet in één antwoord van een serverless functie. Deze berichten staan bovendien onveranderd in je eigen mailbox bij je mailprovider; doen. houdt daar een kopie van. Opvragen kan via een verzoek per e-mail.',
-  'onderliggende regeltabellen': 'Tabellen zonder eigen organisatie_id — offerte_items, factuur_items, werkbon_items, werkbon_regels, werkbon_fotos, werkbon_afbeeldingen, bestelbon_regels, leveringsbon_regels, inkoopfactuur_regels, offerte_versies, project_fotos, portaal_items, portaal_bestanden, portaal_reacties, klant_activiteiten, deal_activiteiten, voorraad_mutaties, leads, lead_formulieren, lead_inzendingen, nieuwsbrieven, tekening_goedkeuringen, vestigingen, booking_slots, booking_afspraken. Ze hangen aan een bovenliggende rij (offerte, factuur, werkbon) en zijn alleen via die sleutel af te bakenen. Dat pad is er nog niet.',
-  bestanden: 'Bestanden in opslag (PDF\'s, foto\'s, logo\'s, bijlagen) zitten niet in de database en dus niet in dit bestand. De verwijzingen (paden en URL\'s) staan wel in de rijen hierboven.',
-  'user_email_settings, exact_tokens': 'Persoonlijke mailkoppelingen en boekhoud-tokens. Dit zijn inloggegevens, geen bedrijfsgegevens, en ze horen per persoon en niet per organisatie. Ze staan nooit in een uitvoer.',
-  email_send_idempotency: 'Technisch logboek dat dubbele verzending voorkomt (hashes van verstuurde berichten). Bevat geen informatie die niet al elders in de uitvoer staat.',
-  seo_kansen: 'Hoort bij de website signcompany.nl, niet bij de app. Wordt daar door een eigen cron gevuld.',
-  bedrijfsprofielen: 'Migratie 189 staat in de map maar is nog niet in de database gedraaid; de tabel bestaat niet. Zodra hij bestaat hoort hij hierboven bij te staan.',
+  emails: 'De gesynchroniseerde mailbox (bij de grootste organisatie ruim 19.000 berichten, meer dan 30 MB) past niet in één antwoord van een serverless functie. De berichten staan bovendien onveranderd in de mailbox bij je eigen mailprovider; doen. houdt daar een kopie van. Opvragen kan met een bericht aan de support.',
+  bestanden: 'Bestanden in de opslag (pdf\'s, foto\'s, logo\'s, bijlagen) zitten niet in de database en dus niet in dit bestand. De verwijzingen ernaar (paden en URL\'s) staan wel in de rijen hieronder.',
+  'user_email_settings, exact_tokens': 'Je mailkoppeling en je boekhoudkoppeling. Dit zijn inloggegevens, geen bedrijfsgegevens, en ze staan per persoon en niet per organisatie. Ze horen in geen enkele uitvoer.',
+  'tabellen zonder organisatie_id': 'Een handvol tabellen heeft die kolom niet en is daarom niet per organisatie af te bakenen: inkoopfactuur_regels (de regels onder een inkoopfactuur), leads, offerte_opvolg_log, offerte_opvolg_stappen, portaal_activiteiten, ingeplande_berichten, support_berichten, nieuwsbrieven, nieuwsbrief_afmeldingen, nieuwsbrief_events, email_attachment_cache, push_abonnementen. Ze hangen aan een bovenliggende rij en vragen een tweede ronde queries over die sleutel.',
+  email_send_idempotency: 'Technisch logboek dat dubbele verzending voorkomt (hashes van verstuurde berichten). Staat niets in dat niet al elders in de uitvoer staat.',
+  seo_kansen: 'Hoort bij de website signcompany.nl en niet bij de app. Wordt daar door een eigen cron gevuld.',
+  'rijen met een lege organisatie_id': 'De uitvoer selecteert op organisatie_id. Rijen waarin die kolom leeg is gebleven vallen daarmee buiten elke uitvoer, van welke organisatie ook. Dat raakt nu portaal_reacties, ai_chats, ai_chat_history, ai_usage, credit_transacties, werkbon_items, portaal_items en portaal_bestanden. Zie docs/AVG.md; dit vraagt een backfill, niet een ruimere selectie.',
+  'backup-tabellen': 'Momentopnames uit eerdere opschoonacties (klanten_merge_backup_20260722, credit_transacties_backup_20260726, visualizer_credits_backup_20260726, klanten_debiteurennummer_backup_20260722). Kopieën van een oudere toestand van rijen die hierboven al in hun huidige vorm staan.',
 }
 
 // Kolommen die er per definitie uit gaan. Het filter werkt op KOLOMNAAM
@@ -380,7 +432,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const uitvoer = {
       formaat: 'doen-org-export/1',
       gegenereerd_op: new Date().toISOString(),
-      grondslag: 'AVG artikel 15 en 20 — recht op inzage en op overdraagbaarheid van gegevens',
+      grondslag: 'AVG artikel 15 en 20: recht op inzage en op overdraagbaarheid van gegevens',
       organisatie: {
         id: organisatieId,
         naam: (organisatie as Rij | null)?.naam ?? null,
