@@ -177,30 +177,3 @@ export {
   getOpvolgSchemas, getDefaultOpvolgSchema, createOpvolgSchema, updateOpvolgSchema, deleteOpvolgSchema,
   upsertOpvolgStap, deleteOpvolgStap, ensureDefaultOpvolgSchema,
 } from './opvolgingService'
-
-// ============ CONVERSIE FUNCTIES ============
-// Deze blijven hier omdat ze cross-domain afhankelijkheden hebben
-
-import { assertId, round2, supabase, isSupabaseConfigured, withUserId, getOrgId, generateId, now } from './supabaseHelpers'
-import { createFactuur, createFactuurItem, generateFactuurNummer } from './factuurService'
-import { getOfferte, getOfferteItems, updateOfferte } from './offerteService'
-import { getWerkbon, getWerkbonRegels, updateWerkbon } from './werkbonService'
-import type { Factuur, FactuurItem, Werkbon } from '@/types'
-
-async function insertFactuurItems(items: Omit<FactuurItem, 'id' | 'created_at'>[]): Promise<void> {
-  if (items.length === 0) return
-  if (isSupabaseConfigured() && supabase) {
-    const _orgId = await getOrgId()
-    const rows = await Promise.all(
-      items.map(async (item) =>
-        ({ ...await withUserId({ ...item, id: generateId(), created_at: now() }), organisatie_id: _orgId })
-      )
-    )
-    const { error } = await supabase.from('factuur_items').insert(rows)
-    if (error) throw error
-    return
-  }
-  for (const item of items) {
-    await createFactuurItem(item)
-  }
-}
