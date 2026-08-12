@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Send, Loader2, Check, RotateCcw, Search, ChevronLeft, LifeBuoy, Megaphone, Building2 } from 'lucide-react'
+import { Send, Loader2, Check, RotateCcw, Search, ChevronLeft, LifeBuoy, Megaphone, Building2, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useSupportInbox } from '@/hooks/useSupportInbox'
-import { ADMIN_USER_ID } from '@/services/supportChatService'
+import { ADMIN_USER_ID, MigratieOntbreektError, type SupportMedewerker } from '@/services/supportChatService'
 
 type StatusFilter = 'alle' | 'open' | 'afgerond'
 type LeftTab = 'gesprekken' | 'accounts'
@@ -21,7 +22,9 @@ export function SupportInboxPage() {
   const { user } = useAuth()
   const isMobile = useMediaQuery('(max-width: 767px)')
   const {
-    inbox, accounts, activeGesprek, berichten, sending, attentie,
+    inbox, totaal, heeftMeer, laadtMeer, laadMeer,
+    accounts, medewerkers, toewijzingBeschikbaar, loadMedewerkers, wijsToe,
+    activeGesprek, berichten, sending, attentie,
     openGesprek, sluitGesprek, loadAccounts, reply, stuurUpdate, broadcast, zetStatus,
   } = useSupportInbox('support-page')
 
@@ -35,6 +38,12 @@ export function SupportInboxPage() {
   const threadEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { loadAccounts() }, [loadAccounts])
+
+  // Pas ophalen als de kolom er is: vóór migratie 201 valt de toewijzing weg en
+  // hoeft de lijst medewerkers niet geladen te worden.
+  useEffect(() => {
+    if (toewijzingBeschikbaar) loadMedewerkers()
+  }, [toewijzingBeschikbaar, loadMedewerkers])
 
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -57,6 +66,24 @@ export function SupportInboxPage() {
       return g.org_naam.toLowerCase().includes(term) || (g.laatste_bericht?.bericht.toLowerCase().includes(term) ?? false)
     })
   }, [inbox, zoek, statusFilter])
+
+  const medewerkerNaam = useMemo(() => {
+    const m = new Map<string, string>()
+    medewerkers.forEach(x => m.set(x.id, x.naam))
+    return m
+  }, [medewerkers])
+
+  const handleToewijzen = useCallback(async (medewerkerId: string | null) => {
+    try {
+      await wijsToe(medewerkerId)
+    } catch (e) {
+      if (e instanceof MigratieOntbreektError) {
+        toast.error('Toewijzen kan nog niet: migratie 201 moet eerst draaien.')
+      } else {
+        toast.error('Toewijzen mislukt')
+      }
+    }
+  }, [wijsToe])
 
   const gefilterdeAccounts = useMemo(() => {
     const term = zoek.trim().toLowerCase()
@@ -201,8 +228,9 @@ export function SupportInboxPage() {
 
         <div className="flex-1 overflow-y-auto min-h-0">
           {leftTab === 'gesprekken' ? (
-            gefilterdeGesprekken.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-[12px] text-muted-foreground/70 px-4 py-10 text-center">
+            <>
+            {gefilterdeGesprekken.length === 0 ? (
+              <div className="flex items-center justify-center text-[12px] text-muted-foreground/70 px-4 py-10 text-center">
                 {inbox.length === 0 ? 'Nog geen support-gesprekken.' : 'Geen gesprekken voor dit filter.'}
               </div>
             ) : (
@@ -227,15 +255,40 @@ export function SupportInboxPage() {
                           </span>
                           <span className="text-[10px] text-muted-foreground/70 flex-shrink-0">{formatTijd(g.laatste_bericht_op)}</span>
                         </div>
-                        <p className="text-[12px] text-muted-foreground truncate mt-0.5">
-                          {g.laatste_bericht ? `${g.laatste_bericht.afzender === 'admin' ? 'Jij: ' : ''}${g.laatste_bericht.bericht}` : 'Geen berichten'}
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p className="text-[12px] text-muted-foreground truncate flex-1 min-w-0">
+                            {g.laatste_bericht ? `${g.laatste_bericht.afzender === 'admin' ? 'Jij: ' : ''}${g.laatste_bericht.bericht}` : 'Geen berichten'}
+                          </p>
+                          {g.toegewezen_aan && (
+                            <span
+                              className="flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded text-petrol truncate max-w-[90px]"
+                              style={{ backgroundColor: '#1A535C12' }}
+                            >
+                              {medewerkerNaam.get(g.toegewezen_aan) || 'Toegewezen'}
+                            </span>
+                          )}
+                        </div>
                       </button>
                     </li>
                   )
                 })}
               </ul>
-            )
+            )}
+            {laadtMeer && (
+              <div className="flex items-center justify-center py-5">
+                <Loader2 className="h-4 w-4 animate-spin text-petrol/40 mr-2" />
+                <span className="text-[12px] text-muted-foreground/80">Meer laden...</span>
+              </div>
+            )}
+            {heeftMeer && !laadtMeer && (
+              <button
+                onClick={laadMeer}
+                className="w-full py-4 text-[12px] text-muted-foreground hover:text-petrol hover:bg-petrol/[0.03] transition-colors duration-150"
+              >
+                Meer laden ({inbox.length} van {totaal})
+              </button>
+            )}
+            </>
           ) : (
             gefilterdeAccounts.length === 0 ? (
               <div className="flex items-center justify-center h-full text-[12px] text-muted-foreground/70 px-4 py-10 text-center">
@@ -309,15 +362,24 @@ export function SupportInboxPage() {
                   </p>
                 </div>
               </div>
-              {activeGesprek.status === 'open' ? (
-                <button onClick={() => zetStatus('afgerond')} className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white rounded-md transition-opacity hover:opacity-90" style={{ backgroundColor: '#F15025' }}>
-                  <Check className="w-3.5 h-3.5" /> Gesprek afronden
-                </button>
-              ) : (
-                <button onClick={() => zetStatus('open')} className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-petrol rounded-md border border-border/60 transition-colors hover:bg-muted/50">
-                  <RotateCcw className="w-3.5 h-3.5" /> Heropenen
-                </button>
-              )}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {toewijzingBeschikbaar && (
+                  <ToewijzingKiezer
+                    medewerkers={medewerkers}
+                    waarde={activeGesprek.toegewezen_aan ?? null}
+                    onKies={handleToewijzen}
+                  />
+                )}
+                {activeGesprek.status === 'open' ? (
+                  <button onClick={() => zetStatus('afgerond')} className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white rounded-md transition-opacity hover:opacity-90" style={{ backgroundColor: '#F15025' }}>
+                    <Check className="w-3.5 h-3.5" /> Gesprek afronden
+                  </button>
+                ) : (
+                  <button onClick={() => zetStatus('open')} className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-petrol rounded-md border border-border/60 transition-colors hover:bg-muted/50">
+                    <RotateCcw className="w-3.5 h-3.5" /> Heropenen
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0 px-4 md:px-6 py-4 space-y-3">
@@ -361,6 +423,54 @@ export function SupportInboxPage() {
         )}
       </div>
     </div>
+  )
+}
+
+// Popover in plaats van een native select: die erft de kleuren niet in dark mode.
+function ToewijzingKiezer({ medewerkers, waarde, onKies }: {
+  medewerkers: SupportMedewerker[]
+  waarde: string | null
+  onKies: (id: string | null) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const huidige = medewerkers.find(m => m.id === waarde) || null
+
+  const kies = (id: string | null) => { setOpen(false); onKies(id) }
+
+  const regel = (actief: boolean) => cn(
+    'w-full flex items-center justify-between gap-2 px-2 py-1.5 text-[12px] rounded text-left transition-colors',
+    actief ? 'text-petrol font-semibold bg-muted/50' : 'text-foreground/80 hover:bg-muted/50'
+  )
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium rounded-md border border-border/60 text-foreground/80 transition-colors hover:bg-muted/50"
+          title="Wijs dit gesprek toe aan een medewerker"
+        >
+          <UserPlus className="w-3.5 h-3.5" />
+          <span className="truncate max-w-[110px]">{huidige ? huidige.naam : 'Toewijzen'}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-56 p-1">
+        <button onClick={() => kies(null)} className={regel(waarde === null)}>
+          <span className="truncate">Niemand</span>
+          {waarde === null && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+        </button>
+        {medewerkers.length === 0 ? (
+          <p className="px-2 py-2 text-[11px] text-muted-foreground/70">Geen medewerkers gevonden.</p>
+        ) : (
+          medewerkers.map(m => (
+            <button key={m.id} onClick={() => kies(m.id)} className={regel(waarde === m.id)}>
+              <span className="truncate">{m.naam}</span>
+              {waarde === m.id && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+            </button>
+          ))
+        )}
+      </PopoverContent>
+    </Popover>
   )
 }
 

@@ -19,6 +19,20 @@ const ADMIN_ORG_ID = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229'
 // Beheerder geldt als 'offline' als de laatste heartbeat ouder is dan dit.
 const ONLINE_DREMPEL_MS = 3 * 60 * 1000
 
+/**
+ * Venster waarin één gesprek maximaal één mail buiten de app oplevert.
+ *
+ * Dubbel sturen wordt hiermee op twee manieren voorkomen: dezelfde request die
+ * opnieuw wordt uitgevoerd (retry) valt in hetzelfde venster, en een klant die
+ * vijf regels achter elkaar typt levert één mail op in plaats van vijf.
+ *
+ * Bewuste onnauwkeurigheid: twee berichten die net een vensterrand overschrijden
+ * geven wel twee mails. Dat is de goede kant om op te falen -- het doel is dat
+ * een klant niet in stilte blijft wachten, dus liever een mail te veel dan een
+ * gemiste melding.
+ */
+const MELDING_VENSTER_MS = 15 * 60 * 1000
+
 // ── Auth helper (inline; Vercel bundelt geen api/_helpers/ imports) ──
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -119,6 +133,123 @@ async function enforceRateLimit(identifier: string, res: VercelResponse): Promis
   } catch (err) {
     console.warn(`[ratelimit-error] support-bericht id=${identifier} err=${(err as Error).message}`)
     return true
+
+/**
+ * Sleutel voor het idempotency-venster van één gesprek.
+ *
+ * Geëxporteerd zodat tests hem kunnen vastpinnen; Vercel gebruikt alleen de
+ * default export, extra named exports zijn onschuldig.
+ */
+export function meldingIdempotencySleutel(
+  gesprekId: string,
+  tijdstipMs: number,
+  vensterMs = MELDING_VENSTER_MS
+): string {
+  return `support-melding:${gesprekId}:${Math.floor(tijdstipMs / vensterMs)}`
+}
+
+/**
+ * Moet er een melding buiten de app uit?
+ *
+ * De beheerder die de app openstaan heeft ziet het belletje al; dan is mail
+ * ruis, en ruis leidt tot uitgezette meldingen. Staat de app dicht, dan is dit
+ * precies het geval uit de audit: de klant wacht tot iemand toevallig het
+ * tabblad opent.
+ *
+ * De laatste voorwaarde is de lus-beveiliging. Een melding over een
+ * supportbericht mag zelf nooit een supportbericht of een nieuwe melding
+ * veroorzaken; support die via het widget met zichzelf praat mailt zichzelf dus
+ * niet. De zwaardere helft van die beveiliging is structureel: dit pad zit
+ * alleen in het klant-endpoint, waar afzender per definitie 'klant' is. Een
+ * admin-antwoord loopt via api/support-inbox.ts en komt hier nooit langs.
+ */
+export function moetBuitenAppMelden(ctx: {
+  adminOnline: boolean
+  organisatieId: string
+  adminOrgId?: string
+}): boolean {
+  if (ctx.adminOnline) return false
+  return ctx.organisatieId !== (ctx.adminOrgId ?? ADMIN_ORG_ID)
+}
+
+/**
+ * Claimt het meldingsvenster voor dit gesprek.
+ *
+ * Claimen gebeurt vóór het versturen, want een claim ná een gelukte send laat
+ * een gelijktijdige tweede request alsnog mailen. Hergebruikt de tabel uit
+ * migratie 104 op naam van de supportorganisatie.
+ *
+ * Een andere fout dan een unique-violation (tabel ontbreekt, netwerk) houdt de
+ * mail niet tegen: stilte is hier het ergste dat kan gebeuren, dus bij twijfel
+ * gaat de melding eruit.
+ */
+async function claimMeldingVenster(sleutel: string): Promise<boolean> {
+  const { error } = await supabaseAdmin
+    .from('email_send_idempotency')
+    .insert({ organisatie_id: ADMIN_ORG_ID, idempotency_key: sleutel })
+
+  if (!error) return true
+  if (error.code === '23505') return false
+
+  console.error('[support-bericht] idempotency-claim onbruikbaar, melding gaat door', error.message)
+  return true
+}
+
+// Claim vrijgeven zodat een mislukte mail niet het hele venster stilzet.
+async function geefMeldingVensterVrij(sleutel: string): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('email_send_idempotency')
+    .delete()
+    .eq('organisatie_id', ADMIN_ORG_ID)
+    .eq('idempotency_key', sleutel)
+  if (error) console.error('[support-bericht] claim vrijgeven mislukt', error.message)
+}
+
+/**
+ * Mailt de beheerder dat er een supportbericht ligt.
+ *
+ * Bewust zonder replyTo: een antwoord hoort in de inbox thuis, en een replyTo
+ * naar een door de klant opgegeven adres is een pad waarlangs een melding
+ * alsnog nieuwe post kan veroorzaken.
+ */
+async function mailSupportBerichtNaarBeheerder(orgNaam: string, tekst: string): Promise<void> {
+  if (!resend) throw new Error('RESEND_API_KEY ontbreekt')
+  const to = await getAdminEmail()
+  const preview = tekst.length > 500 ? tekst.slice(0, 497) + '…' : tekst
+  const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; color: #1A1A1A; line-height: 1.6;">
+    <p><strong>${escapeHtml(orgNaam)}</strong> heeft een bericht gestuurd naar support.</p>
+    <blockquote style="margin:12px 0; padding:10px 14px; border-left:3px solid #F15025; background:#FAFAF8; white-space:pre-wrap;">${escapeHtml(preview)}</blockquote>
+    <p style="color:#6B6B66;">Open de Support-inbox in doen. om te reageren.</p>
+  </div>`
+  // Resend GOOIT NIET bij een API-fout, hij geeft { data, error } terug. De
+  // returnwaarde negeren betekent dus: ongeldige key, rate limit of domeinfout
+  // gaat geruisloos langs, én de idempotency-claim blijft staan, dus dat gesprek
+  // is een kwartier stil. Zie api/nieuwsbrief-test.ts voor hetzelfde patroon.
+  const { error } = await resend.emails.send({
+    from: 'doen. <noreply@doen.team>',
+    to,
+    subject: `Support: nieuw bericht van ${orgNaam}`,
+    html,
+  })
+  if (error) throw new Error(`Resend weigerde de supportmelding: ${error.message}`)
+}
+
+/**
+ * Melding buiten de app, volledig losgekoppeld van het opslaan van het bericht.
+ *
+ * Gooit nooit: het bericht staat op dit punt al in de database en die uitkomst
+ * mag niet meer omvallen door een mailfout.
+ */
+async function meldBuitenApp(gesprekId: string, orgNaam: string, tekst: string): Promise<void> {
+  const sleutel = meldingIdempotencySleutel(gesprekId, Date.now())
+  let geclaimd = false
+  try {
+    geclaimd = await claimMeldingVenster(sleutel)
+    if (!geclaimd) return
+    await mailSupportBerichtNaarBeheerder(orgNaam, tekst)
+  } catch (err) {
+    console.error('[support-bericht] melding buiten app mislukt', (err as Error).message)
+    if (geclaimd) await geefMeldingVensterVrij(sleutel).catch(() => {})
   }
 }
 
@@ -194,6 +325,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .update({ laatste_bericht_op: nu, status: 'open' })
       .eq('id', gesprekId)
 
+    // Vanaf hier is het bericht opgeslagen. Alles wat volgt is melden, en geen
+    // enkele melding mag die opslag nog ongedaan maken of de response laten falen.
+
     // Melding alleen naar de support-beheerder (belletje + bulletje), niet de hele org.
     try {
       await supabaseAdmin.from('notificaties').insert({
@@ -210,6 +344,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const online = await isAdminOnline()
+
+    if (moetBuitenAppMelden({ adminOnline: online, organisatieId })) {
+      await meldBuitenApp(gesprekId, orgNaam, tekst)
+    }
 
     return res.status(200).json({ gesprek_id: gesprekId, bericht: nieuwBericht, offline: !online })
   } catch (err) {

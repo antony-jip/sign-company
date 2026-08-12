@@ -2,35 +2,75 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import supabase from '@/services/supabaseClient'
 import {
   getSupportInbox,
+  getSupportAttentie,
   getSupportThread,
   verstuurSupportAntwoord,
   zetSupportStatus,
   getSupportAccounts,
+  getSupportMedewerkers,
+  zetSupportToewijzing,
   verstuurUpdateNaarAccount,
   verstuurBroadcast,
   type InboxGesprek,
   type SupportGesprek,
   type SupportBericht,
   type SupportAccount,
+  type SupportMedewerker,
 } from '@/services/supportChatService'
-
-function telAttentie(inbox: InboxGesprek[]): number {
-  return inbox.filter(g => g.status === 'open' && g.laatste_bericht?.afzender === 'klant').length
-}
+import {
+  SUPPORT_PAGINA_GROOTTE,
+  voegGesprekkenSamen,
+  heeftMeerGesprekken,
+  herlaadLimiet,
+} from '@/utils/supportInbox'
 
 // Volledige admin-inbox: lijst, actief gesprek, thread, realtime en acties.
 export function useSupportInbox(channelName: string) {
   const [inbox, setInbox] = useState<InboxGesprek[]>([])
+  const [totaal, setTotaal] = useState(0)
+  const [attentie, setAttentie] = useState(0)
+  const [laadtMeer, setLaadtMeer] = useState(false)
+  const [toewijzingBeschikbaar, setToewijzingBeschikbaar] = useState(false)
+  const [medewerkers, setMedewerkers] = useState<SupportMedewerker[]>([])
   const [accounts, setAccounts] = useState<SupportAccount[]>([])
   const [activeGesprek, setActiveGesprek] = useState<SupportGesprek | null>(null)
   const [berichten, setBerichten] = useState<SupportBericht[]>([])
   const [sending, setSending] = useState(false)
   const activeIdRef = useRef<string | null>(null)
+  const geladenRef = useRef(0)
+  const laadtMeerRef = useRef(false)
 
   useEffect(() => { activeIdRef.current = activeGesprek?.id ?? null }, [activeGesprek])
 
   const reload = useCallback(async () => {
-    setInbox(await getSupportInbox().catch(() => []))
+    const pagina = await getSupportInbox(herlaadLimiet(geladenRef.current), 0).catch(() => null)
+    if (!pagina) return
+    geladenRef.current = pagina.gesprekken.length
+    setInbox(pagina.gesprekken)
+    setTotaal(pagina.totaal)
+    setAttentie(pagina.attentie)
+    setToewijzingBeschikbaar(pagina.toewijzingBeschikbaar)
+  }, [])
+
+  const laadMeer = useCallback(async () => {
+    if (laadtMeerRef.current) return
+    laadtMeerRef.current = true
+    setLaadtMeer(true)
+    try {
+      const pagina = await getSupportInbox(SUPPORT_PAGINA_GROOTTE, geladenRef.current).catch(() => null)
+      if (!pagina) return
+      setInbox(prev => {
+        const samen = voegGesprekkenSamen(prev, pagina.gesprekken)
+        geladenRef.current = samen.length
+        return samen
+      })
+      setTotaal(pagina.totaal)
+      setAttentie(pagina.attentie)
+      setToewijzingBeschikbaar(pagina.toewijzingBeschikbaar)
+    } finally {
+      laadtMeerRef.current = false
+      setLaadtMeer(false)
+    }
   }, [])
 
   useEffect(() => { reload() }, [reload])
@@ -79,6 +119,19 @@ export function useSupportInbox(channelName: string) {
     setAccounts(await getSupportAccounts().catch(() => []))
   }, [])
 
+  const loadMedewerkers = useCallback(async () => {
+    setMedewerkers(await getSupportMedewerkers().catch(() => []))
+  }, [])
+
+  // Gooit door bij een fout: de pagina moet onderscheid kunnen maken tussen een
+  // mislukte toewijzing en een nog niet gedraaide migratie.
+  const wijsToe = useCallback(async (medewerkerId: string | null) => {
+    if (!activeGesprek) return
+    const res = await zetSupportToewijzing(activeGesprek.id, medewerkerId)
+    setActiveGesprek(res.gesprek)
+    setInbox(prev => prev.map(g => (g.id === res.gesprek.id ? { ...g, ...res.gesprek } : g)))
+  }, [activeGesprek])
+
   const stuurUpdate = useCallback(async (orgId: string, tekst: string) => {
     setSending(true)
     try {
@@ -124,11 +177,19 @@ export function useSupportInbox(channelName: string) {
 
   return {
     inbox,
+    totaal,
+    heeftMeer: heeftMeerGesprekken(inbox.length, totaal),
+    laadtMeer,
+    laadMeer,
     accounts,
+    medewerkers,
+    toewijzingBeschikbaar,
+    loadMedewerkers,
+    wijsToe,
     activeGesprek,
     berichten,
     sending,
-    attentie: telAttentie(inbox),
+    attentie,
     openGesprek,
     openGesprekById,
     sluitGesprek,
@@ -146,8 +207,7 @@ export function useSupportAttentie(channelName: string, enabled: boolean): numbe
   const [attentie, setAttentie] = useState(0)
 
   const load = useCallback(async () => {
-    const inbox = await getSupportInbox().catch(() => [])
-    setAttentie(telAttentie(inbox))
+    setAttentie(await getSupportAttentie().catch(() => 0))
   }, [])
 
   useEffect(() => {
