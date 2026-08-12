@@ -1240,3 +1240,41 @@ inbound-only fetch. Gelogde restpunten:
 - Onbeantwoord-punt herhaalt max 9 nachten (dag 5-14) zonder escalatie en
   valt op dag 14 geruisloos weg; bewust ontwerp, consistent met de andere
   lanen.
+
+## Support-inbox: paginatie, toewijzing, melding (13 aug 2026)
+
+Gate-review verdict BLOKKADE op twee punten, beide gefixt in `82aed6f7`: de
+Resend-fout werd niet gelezen (stil falen plus een kwartier stilte door een
+blijvende idempotency-claim), en de heartbeat pingde zolang er een tabblad
+openstond, waardoor er nooit een mail uitging. Plus de ontbrekende tiebreaker
+op de paginatie.
+
+Wat blijft staan:
+
+- **`berekenAttentie` is nog ongebonden** (`api/support-inbox.ts:180-189`):
+  selecteert álle open gesprekken en haalt daarna previews voor die volledige
+  set. Draait op elke lijst-GET én op elke realtime-INSERT. Bewust niet
+  begrensd: elke haastige cap maakt de badge stil te laag, en dat is de fout
+  die deze hele ronde wegwerkt. De goede oplossing is een aggregatie
+  server-side, zoals migratie 199 voor rapportages doet.
+- **De preview-limiet is globaal, niet per gesprek** (`:162-164`). Eén lange
+  thread binnen het tijdvenster kan de hele limiet opeten; andere gesprekken
+  krijgen dan geen preview en `telAttentie` telt ze niet mee. De badge kan dus
+  onderrapporteren.
+- **Zoeken en filteren gaat alleen over geladen rijen**
+  (`SupportInboxPage.tsx:57-67`). De lege staat zegt "Geen gesprekken voor dit
+  filter" zonder te melden dat er maar een deel geladen is. Paginatie maakt dit
+  zichtbaar waar het eerder verborgen was. Echte fix is server-side zoeken.
+- **`laadMeer` kan vastlopen** (`useSupportInbox.ts:56-66`): de offset is het
+  aantal geladen rijen, dus levert een pagina alleen al-geziene ids, dan schuift
+  de offset niet meer. Lage kans, echte dead-end.
+- **De trigger dekt INSERT en UPDATE, niet DELETE.** Een klant mag onder
+  `122:59-62` zijn eigen gesprek verwijderen, wat de berichten cascadeert en de
+  toewijzing wegpoetst. De toewijzing is dus niet volledig klant-proof. Het
+  terugschroeven van die `FOR ALL` is een besluit over wat klanten mogen.
+- **De melding wordt ge-`await`'d binnen het klantverzoek** (`:316`), dus de
+  klant wacht op de Resend-roundtrip. Op Vercel is dat de juiste keuze, maar het
+  staat in het kritieke pad.
+- **Ongetest tot de migratie draait**: de trigger heeft nul dekking, en de
+  idempotency-test bewijst alleen dat twee aanroepen dezelfde sleutel geven, niet
+  dat Postgres de tweede insert weigert.
