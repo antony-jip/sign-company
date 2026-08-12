@@ -139,9 +139,8 @@ function WerkbonDetailWrapper() {
   return <WerkbonDetail />
 }
 
-// Kennisbank + Changelog
+// Kennisbank
 const KennisbankPage = lazy(() => import('@/components/kennisbank/KennisbankPage'), 'KennisbankPage')
-const ChangelogPage = lazy(() => import('@/components/changelog/ChangelogPage'), 'ChangelogPage')
 
 // Bestelbonnen
 const BestelbonnenLayout = lazy(() => import('@/components/bestelbonnen/BestelbonnenLayout'), 'BestelbonnenLayout')
@@ -168,7 +167,6 @@ const PortalenOverzicht = lazy(() => import('@/components/portaal/PortalenOverzi
 const MeldingenPage = lazy(() => import('@/components/notifications/MeldingenPage'), 'MeldingenPage')
 
 // AI / Daan
-const FORGEdeskAIChat = lazy(() => import('@/components/forgie/FORGEdeskAIChat'), 'FORGEdeskAIChat')
 const ForgieChatPage = lazy(() => import('@/components/forgie/ForgieChatPage'), 'ForgieChatPage')
 const SupportInboxPage = lazy(() => import('@/components/support/SupportInboxPage'), 'SupportInboxPage')
 
@@ -320,11 +318,9 @@ function AppContent() {
         <Route path="team" element={<TeamLayout />} />
 
         <Route path="importeren" element={<DataImportPage />} />
-        <Route path="ai" element={<FORGEdeskAIChat />} />
         <Route path="forgie" element={<ForgieChatPage />} />
         <Route path="support" element={<SupportInboxPage />} />
         <Route path="kennisbank" element={<KennisbankPage />} />
-        <Route path="changelog" element={<ChangelogPage />} />
         <Route path="werkbonnen" element={<WerkbonnenRoute />} />
         <Route path="werkbonnen/:id" element={<WerkbonDetailWrapper />} />
         <Route path="bestelbonnen" element={<BestelbonnenLayout />} />
