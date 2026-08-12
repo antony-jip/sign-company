@@ -117,7 +117,7 @@ COMMIT;
 
 -- ── Verificatie (terugplakken in de SQL Editor) ──────────────
 --
--- Kolommen — hoort 18 rijen te geven:
+-- Kolommen — hoort 17 rijen te geven:
 --
 -- SELECT column_name, data_type, is_nullable, column_default
 --   FROM information_schema.columns

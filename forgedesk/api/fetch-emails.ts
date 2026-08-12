@@ -97,7 +97,14 @@ function leaseGrens(nu: number): string {
 // Alleen de mailbox zelf is 'auth'. Die krijgt géén backoff maar meteen de
 // dodebrievenbus: een verkeerd wachtwoord elke drie minuten opnieuw bij Gmail
 // aanbieden is de manier om het account door Gmail geblokkeerd te krijgen.
-const AUTH_PATROON = /authenticationfailed|invalid credentials|auth(?:enticatie)?\s*(?:mislukt|geweigerd|failed)|wachtwoord|password|encryption_key|geen email instellingen/i
+const AUTH_PATROON = /authenticationfailed|invalid credentials|auth(?:enticatie)?\s*(?:mislukt|geweigerd|failed)|wachtwoord|password/i
+
+// Serverconfiguratie, geen gebruikersfout. Deze twee kwamen eerst in
+// AUTH_PATROON terecht en gingen daarmee zonder backoff naar de dodebrievenbus.
+// Gevolg: een scheve EMAIL_ENCRYPTION_KEY na een deploy zette in één ronde ALLE
+// pilot-mailboxen permanent uit, en er is geen herstelpad in code. Ze horen bij
+// 'onbekend': backoff, en dus vanzelf herstel zodra de env-var goed staat.
+const CONFIG_PATROON = /encryption_key|geen email instellingen/i
 const NETWERK_PATROON = /timeout|timed out|etimedout|econnreset|econnrefused|enotfound|eai_again|socket|network|aborted|abort/i
 const DATABASE_PATROON = /\bupsert\b|postgrest|pgrst|does not exist|violates|constraint|database/i
 
@@ -115,6 +122,9 @@ function classificeerFout(bericht: string): FoutSoort {
 // uitstel, geen fout.
 function classificeerHttp(status: number, tekst: string): Aanleiding {
   if (status === 429) return 'uitstel'
+  // Vóór de 400-tak: fetch-emails geeft 400 bij een ontbrekende sleutel, en dat
+  // is een deployfout die vanzelf overgaat, geen verlopen app-password.
+  if (CONFIG_PATROON.test(tekst)) return 'onbekend'
   if (status === 400) return classificeerFout(tekst)
   if (status === 401 || status === 403) return 'onbekend'
   if (status >= 500) return 'netwerk'

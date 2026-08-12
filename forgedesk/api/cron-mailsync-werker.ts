@@ -126,7 +126,14 @@ function leaseGrens(nu: number): string {
 // Alleen de mailbox zelf is 'auth'. Die krijgt géén backoff maar meteen de
 // dodebrievenbus: een verkeerd wachtwoord elke drie minuten opnieuw bij Gmail
 // aanbieden is de manier om het account door Gmail geblokkeerd te krijgen.
-const AUTH_PATROON = /authenticationfailed|invalid credentials|auth(?:enticatie)?\s*(?:mislukt|geweigerd|failed)|wachtwoord|password|encryption_key|geen email instellingen/i
+const AUTH_PATROON = /authenticationfailed|invalid credentials|auth(?:enticatie)?\s*(?:mislukt|geweigerd|failed)|wachtwoord|password/i
+
+// Serverconfiguratie, geen gebruikersfout. Deze twee kwamen eerst in
+// AUTH_PATROON terecht en gingen daarmee zonder backoff naar de dodebrievenbus.
+// Gevolg: een scheve EMAIL_ENCRYPTION_KEY na een deploy zette in één ronde ALLE
+// pilot-mailboxen permanent uit, en er is geen herstelpad in code. Ze horen bij
+// 'onbekend': backoff, en dus vanzelf herstel zodra de env-var goed staat.
+const CONFIG_PATROON = /encryption_key|geen email instellingen/i
 const NETWERK_PATROON = /timeout|timed out|etimedout|econnreset|econnrefused|enotfound|eai_again|socket|network|aborted|abort/i
 const DATABASE_PATROON = /\bupsert\b|postgrest|pgrst|does not exist|violates|constraint|database/i
 
@@ -144,6 +151,9 @@ function classificeerFout(bericht: string): FoutSoort {
 // uitstel, geen fout.
 function classificeerHttp(status: number, tekst: string): Aanleiding {
   if (status === 429) return 'uitstel'
+  // Vóór de 400-tak: fetch-emails geeft 400 bij een ontbrekende sleutel, en dat
+  // is een deployfout die vanzelf overgaat, geen verlopen app-password.
+  if (CONFIG_PATROON.test(tekst)) return 'onbekend'
   if (status === 400) return classificeerFout(tekst)
   if (status === 401 || status === 403) return 'onbekend'
   if (status >= 500) return 'netwerk'
@@ -429,9 +439,22 @@ async function actieveUserIds(): Promise<Set<string>> {
  * een besparing, geen slot.
  *
  * Bewust geen taak voor een mailbox die op 'mislukt' staat. Dat is het verschil
- * met vandaag, waar een dood account voor altijd meedoet in de ronde van acht:
- * er komt pas weer werk zodra de gebruiker intentie bewijst door zijn
- * verbinding opnieuw op te slaan.
+ * met vandaag, waar een dood account voor altijd meedoet in de ronde van acht.
+ *
+ * LET OP, en dit is de reden om de pilot klein te houden: 'mislukt' is nu
+ * DEFINITIEF. Er is geen herstelpad in code. Er is geen UI die de stand toont,
+ * geen knop om opnieuw te proberen, en het opslaan van je verbinding zet de
+ * taak niet terug. De enige uitweg is met de hand in de SQL Editor:
+ *
+ *   UPDATE public.mailsync_taken
+ *      SET status = 'wachtend', retry_count = 0, uitstel_count = 0,
+ *          foutmelding = NULL, fout_soort = NULL, scheduled_at = now()
+ *    WHERE user_id = '<user-uuid>' AND status = 'mislukt';
+ *
+ * Bouw dat herstelpad vóór je verder uitrolt dan één organisatie. De goedkoopste
+ * weg loopt niet via deze tabel maar via email_sync_state: die heeft al
+ * user_id-policies, dus een nullable foutkolom daar is client-leesbaar zonder
+ * dat mailsync_taken open hoeft.
  */
 async function vulWachtrijAan(vlagRijen: FeatureFlagRij[], nu: number): Promise<number> {
   if (nu - laatsteAanvulling < AANVUL_INTERVAL_MS) return 0
@@ -466,13 +489,21 @@ async function vulWachtrijAanInternal(vlagRijen: FeatureFlagRij[]): Promise<numb
   const metVlag = kandidaten.filter((id) => vlagStaatAan(VLAG, vlagRijen, orgs.get(id) ?? null))
   if (metVlag.length === 0) return 0
 
-  const { data: bestaand } = await supabaseAdmin
+  const { data: bestaand, error: bestaandFout } = await supabaseAdmin
     .from('mailsync_taken')
     .select('user_id')
     .eq('folder', 'inbox')
     .eq('soort', 'incrementeel')
     .in('status', ['wachtend', 'verwerken', 'mislukt'])
     .in('user_id', metVlag)
+  // Zonder deze check zou een hik in de query een lege heeftAl geven en dus een
+  // insert voor élke mailbox. De partiële index vangt wachtend/verwerken af met
+  // 23505, maar 'mislukt' valt daarbuiten: daar zou per hik een extra rij bij
+  // komen, onbegrensd.
+  if (bestaandFout) {
+    console.error('[mailsync-werker] bestaande taken lezen mislukt, ronde overgeslagen:', bestaandFout.message)
+    return 0
+  }
   const heeftAl = new Set((bestaand ?? []).map((r) => r.user_id as string))
   const nieuw = metVlag.filter((id) => !heeftAl.has(id))
   if (nieuw.length === 0) return 0

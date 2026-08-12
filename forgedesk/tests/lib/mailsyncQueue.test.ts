@@ -318,8 +318,14 @@ describe('foutclassificatie', () => {
   it('herkent de mailbox-authenticatiefout', () => {
     expect(classificeerFout('Error: Invalid credentials (Failure)')).toBe('auth')
     expect(classificeerFout('AUTHENTICATIONFAILED')).toBe('auth')
-    expect(classificeerFout('EMAIL_ENCRYPTION_KEY niet geconfigureerd')).toBe('auth')
-    expect(classificeerFout('Geen email instellingen gevonden.')).toBe('auth')
+    // Deze twee zijn NIET 'auth'. Ze zeggen niets over het wachtwoord van de
+    // gebruiker maar over de configuratie van de server, en 'auth' gaat zonder
+    // backoff rechtstreeks naar de dodebrievenbus. Eén scheve env-var na een
+    // deploy zou dan in één ronde alle mailboxen permanent uitzetten, en er is
+    // geen herstelpad in code. Als 'onbekend' krijgen ze backoff en herstellen
+    // ze vanzelf zodra de variabele goed staat.
+    expect(classificeerFout('EMAIL_ENCRYPTION_KEY niet geconfigureerd')).toBe('onbekend')
+    expect(classificeerFout('Geen email instellingen gevonden.')).toBe('onbekend')
   })
 
   it('herkent netwerk en database', () => {
@@ -342,7 +348,12 @@ describe('foutclassificatie', () => {
     expect(classificeerHttp(401, 'Unauthorized')).toBe('onbekend')
     expect(classificeerHttp(403, 'Forbidden')).toBe('onbekend')
     expect(classificeerHttp(504, 'Gateway Timeout')).toBe('netwerk')
-    expect(classificeerHttp(400, 'Geen email instellingen gevonden.')).toBe('auth')
+    // Zie hierboven: serverconfiguratie, dus backoff in plaats van definitief.
+    expect(classificeerHttp(400, 'Geen email instellingen gevonden.')).toBe('onbekend')
+    expect(classificeerHttp(400, 'EMAIL_ENCRYPTION_KEY niet geconfigureerd')).toBe('onbekend')
+    // Een echt verlopen app-password blijft wél 'auth': dat lost zichzelf niet
+    // op en elke drie minuten opnieuw aanbieden laat Gmail het account blokkeren.
+    expect(classificeerHttp(400, 'AUTHENTICATIONFAILED')).toBe('auth')
   })
 })
 
