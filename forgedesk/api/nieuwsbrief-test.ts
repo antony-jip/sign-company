@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 const OWNER_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
 const FROM = 'Sign Company <antony@signcompany.nl>'
@@ -60,6 +62,33 @@ function buildNieuwsbriefHtml(bodyHtml: string, onderwerp: string, preheader?: s
 </html>`
 }
 
+// ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
+const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+if (!rlConfigured) {
+  console.warn('[ratelimit] UPSTASH env vars missing for nieuwsbrief-test, requests will not be rate limited')
+}
+const ratelimit = rlConfigured
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(20, '3600 s'), prefix: 'rl:nieuwsbrief-test', timeout: 2000 })
+  : null
+
+async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
+  if (!ratelimit) return true
+  try {
+    const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
+    if (success) return true
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+    console.warn(`[ratelimit-hit] nieuwsbrief-test id=${identifier} limit=${limit}`)
+    res.setHeader('Retry-After', String(retryAfter))
+    res.setHeader('X-RateLimit-Limit', String(limit))
+    res.setHeader('X-RateLimit-Remaining', String(remaining))
+    res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    return false
+  } catch (err) {
+    console.warn(`[ratelimit-error] nieuwsbrief-test id=${identifier} err=${(err as Error).message}`)
+    return true
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -68,6 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { ok, email } = await verifyOwner(req)
     if (!ok) return res.status(403).json({ error: 'Geen toegang' })
+    if (!(await enforceRateLimit(OWNER_USER_ID, res))) return
 
     const { onderwerp, html, preheader, naar } = (req.body ?? {}) as {
       onderwerp?: string; html?: string; preheader?: string; naar?: string

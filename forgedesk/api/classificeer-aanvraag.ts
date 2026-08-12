@@ -3,6 +3,8 @@ import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 // Aanvraagherkenning. Draait direct na een mailsync: beoordeelt binnengekomen
 // inbox-mail op de vraag "is dit iemand die werk bij ons wil neerleggen?".
@@ -319,6 +321,9 @@ async function beoordeelMail(
       tool_choice: { type: 'tool', name: 'beoordeel' },
       messages: [{ role: 'user', content: inhoud }],
     }),
+    // Kleine classificatie (512 tokens), dus 60s is ruim en kapt alleen een
+    // echt hangende verbinding af.
+    signal: AbortSignal.timeout(60_000),
   })
 
   if (!response.ok) {
@@ -604,6 +609,33 @@ async function haalBodies(
 
 // ───── Handler ─────
 
+// ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
+const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+if (!rlConfigured) {
+  console.warn('[ratelimit] UPSTASH env vars missing for classificeer-aanvraag, requests will not be rate limited')
+}
+const ratelimit = rlConfigured
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(20, '60 s'), prefix: 'rl:classificeer-aanvraag', timeout: 2000 })
+  : null
+
+async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
+  if (!ratelimit) return true
+  try {
+    const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
+    if (success) return true
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+    console.warn(`[ratelimit-hit] classificeer-aanvraag id=${identifier} limit=${limit}`)
+    res.setHeader('Retry-After', String(retryAfter))
+    res.setHeader('X-RateLimit-Limit', String(limit))
+    res.setHeader('X-RateLimit-Remaining', String(remaining))
+    res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    return false
+  } catch (err) {
+    console.warn(`[ratelimit-error] classificeer-aanvraag id=${identifier} err=${(err as Error).message}`)
+    return true
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -614,6 +646,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err) {
     return res.status(401).json({ error: err instanceof Error ? err.message : 'Niet geautoriseerd' })
   }
+
+  if (!(await enforceRateLimit(userId, res))) return
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return res.status(200).json({ beoordeeld: 0, reden: 'geen_api_key' })

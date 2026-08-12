@@ -88,6 +88,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           credits: pakket.credits.toString(),
         },
       }),
+      // Payment-create: ruimer dan een read, want een abort laat in het
+      // ongewisse of er toch een payment is aangemaakt.
+      signal: AbortSignal.timeout(20_000),
     })
 
     if (!mollieResponse.ok) {

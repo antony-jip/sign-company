@@ -154,6 +154,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const mbRes = await fetch(`${MONEYBIRD_API_BASE}/administrations.json`, {
       headers: { Authorization: `Bearer ${token}` },
+      // Token-validatie tijdens het koppelen; de gebruiker wacht erop.
+      signal: AbortSignal.timeout(10_000),
     })
 
     if (mbRes.status === 401) {

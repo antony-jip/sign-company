@@ -270,7 +270,9 @@ async function bouwFactuurPdf(
     // profiles.logo_url is in de praktijk vaak een storage-URL; ophalen en
     // omzetten zodat het logo ook dan op de factuur komt.
     try {
-      const resp = await fetch(logoData)
+      // Cosmetisch en al in een try/catch: bij een abort valt het logo weg
+      // (logoData = '') maar de factuur wordt gewoon opgemaakt.
+      const resp = await fetch(logoData, { signal: AbortSignal.timeout(8_000) })
       const type = resp.headers.get('content-type') || 'image/png'
       if (resp.ok && type.startsWith('image/')) {
         const buf = Buffer.from(await resp.arrayBuffer())
@@ -570,6 +572,9 @@ async function maakEnVerstuurFactuur(payment: MolliePayment, organisatieId: stri
         html,
         attachments: [{ filename: `${nummer}.pdf`, content: pdfBase64 }],
       }),
+      // PDF-bijlage erbij, dus ruimer dan een gewone API-call, maar wel binnen
+      // de maxDuration van 60s die deze webhook heeft.
+      signal: AbortSignal.timeout(15_000),
     })
     if (!mailResponse.ok) {
       const body = await mailResponse.text()
@@ -719,7 +724,9 @@ async function handleAbonnementStart(payment: MolliePayment, webhookUrl: string,
   let zelfAangemaakt = false
   const bestaandeResponse = await fetch(
     `https://api.mollie.com/v2/customers/${payment.customerId}/subscriptions?limit=250`,
-    { headers: mollieHeaders }
+    // Read-only. Kort gehouden omdat er in dit pad nog drie calls volgen die
+    // samen binnen de maxDuration van 60s moeten passen.
+    { headers: mollieHeaders, signal: AbortSignal.timeout(10_000) }
   )
   if (bestaandeResponse.ok) {
     const bestaande = await bestaandeResponse.json() as {
@@ -755,6 +762,9 @@ async function handleAbonnementStart(payment: MolliePayment, webhookUrl: string,
           webhookUrl,
           metadata: { type: 'abonnement_termijn', organisatie_id: organisatieId },
         }),
+        // Schrijvende call die een maandelijkse incasso opzet: ruimste marge
+        // hier. De Idempotency-Key hierboven dekt een Mollie-retry na abort.
+        signal: AbortSignal.timeout(20_000),
       }
     )
 
@@ -811,7 +821,8 @@ async function handleAbonnementStart(payment: MolliePayment, webhookUrl: string,
     if (zelfAangemaakt && payment.customerId) {
       await fetch(
         `https://api.mollie.com/v2/customers/${payment.customerId}/subscriptions/${subscriptionId}`,
-        { method: 'DELETE', headers: mollieHeaders }
+        // Opruimen van een overtollig abonnement; de .catch logt een abort.
+        { method: 'DELETE', headers: mollieHeaders, signal: AbortSignal.timeout(15_000) }
       ).catch(err => console.error('[billing-webhook] overtollige subscription opruimen mislukt:', err))
     }
     Sentry.captureMessage('Eerste abonnementsbetaling verloor de claim', {
@@ -930,6 +941,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // De payload is alleen een id; de payment zelf is de bron van waarheid
     const paymentResponse = await fetch(`https://api.mollie.com/v2/payments/${paymentId}`, {
       headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` },
+      // Read-only en de eerste van maximaal vier calls in dit pad; kort houden
+      // zodat de rest nog binnen de maxDuration van 60s past.
+      signal: AbortSignal.timeout(10_000),
     })
 
     if (paymentResponse.status === 404) {

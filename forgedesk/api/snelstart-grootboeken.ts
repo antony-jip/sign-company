@@ -112,6 +112,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ grant_type: 'clientkey', clientkey: sleutel }).toString(),
+      // Token-endpoint is een kleine POST die normaal in een seconde klaar is.
+      signal: AbortSignal.timeout(10_000),
     })
     if (!tokenRes.ok) {
       return res.status(401).json({ error: 'SnelStart koppelsleutel is niet meer geldig. Verbind opnieuw via Instellingen > Integraties.' })
@@ -133,7 +135,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (let skip = 0; skip <= 10000; skip += 500) {
       const gbRes = await fetch(
         `${SNELSTART_API_BASE}/grootboeken?$top=500&$skip=${skip}`,
-        { headers: apiHeaders },
+        // Read-only pagina van 500 rijen. Verse timeout per iteratie, omdat de
+        // expressie binnen de lus wordt geëvalueerd.
+        { headers: apiHeaders, signal: AbortSignal.timeout(20_000) },
       )
       if (!gbRes.ok) {
         const body = await gbRes.text()

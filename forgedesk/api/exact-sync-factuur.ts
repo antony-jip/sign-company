@@ -5,11 +5,28 @@ import * as Sentry from '@sentry/node'
 
 // ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
 if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
     tracesSampleRate: 0,
     sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
   })
 }
 
@@ -126,6 +143,28 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 
 const EXACT_API_BASE = 'https://start.exactonline.nl/api/v1'
 
+/**
+ * Mag deze fout opnieuw geprobeerd worden op een POST die iets AANMAAKT?
+ *
+ * Nee bij een afgebroken request. Exact heeft geen idempotency-key, dus als de
+ * eerste POST wél is aangekomen en alleen het antwoord wegbleef, boekt een retry
+ * dezelfde factuur een tweede keer in de administratie van de klant. Precies dat
+ * gat opende zich toen deze endpoints een AbortSignal.timeout kregen: vóórdien
+ * hing de fetch en kilde het platform de functie, dus er kwam geen tweede POST
+ * uit dezelfde invocatie.
+ *
+ * De guard vóór de sync (die weigert te syncen als exact_entry_id al gezet is)
+ * dekt dit niet: die staat vóór de POST, waar het id nog leeg is. Hij stopt een
+ * tweede invocatie, niet een tweede POST binnen één invocatie.
+ *
+ * Bij een 401 is er juist niets aangekomen en is retryen na een token-refresh
+ * wel het goede gedrag. Vandaar dat alleen abort en timeout worden uitgesloten.
+ */
+function magOpnieuwNaFout(err: unknown): boolean {
+  const naam = (err as { name?: string } | null)?.name
+  return naam !== 'TimeoutError' && naam !== 'AbortError'
+}
+
 // ── Helpers ──
 
 interface ExactSettings {
@@ -216,6 +255,9 @@ async function getValidToken(tokenUserId: string, settingsUserId: string, cache:
         client_id: exactClientId,
         client_secret: exactClientSecret,
       }),
+      // Token-endpoint is een kleine POST die normaal in een seconde klaar is;
+      // hangt Exact, dan is er geen budget meer voor de zes sync-calls erna.
+      signal: AbortSignal.timeout(10_000),
     })
 
     if (!refreshRes.ok) {
@@ -399,9 +441,11 @@ async function schrijfGeroteerdeKeten(params: {
 
 // Exact hanteert per-minuut rate-limits; bij 429 wachten (Retry-After, gecapt
 // op 15s) en maximaal twee keer opnieuw proberen.
+// Elke poging krijgt een eigen signal: één AbortSignal.timeout hergebruiken zou
+// na de eerste poging al afgevuurd zijn en de retries meteen laten falen.
 async function exactFetchMetRetry(url: string, init: RequestInit): Promise<Response> {
   for (let poging = 0; ; poging++) {
-    const response = await fetch(url, init)
+    const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) })
     if (response.status !== 429 || poging >= 2) return response
     const retryAfter = Number(response.headers.get('Retry-After'))
     const wachtMs = Math.min((retryAfter > 0 ? retryAfter : 5) * 1000, 15_000)
@@ -819,6 +863,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ) as { d?: { ID?: string } }
           documentId = docResult?.d?.ID ?? null
         } catch (docErr) {
+          // Afgebroken request: niet opnieuw posten, dat geeft een tweede
+          // Document in Exact. Zie magOpnieuwNaFout.
+          if (!magOpnieuwNaFout(docErr)) {
+            console.error('[Exact] Document POST afgebroken; niet opnieuw geprobeerd', {
+              factuur_id, naam: (docErr as { name?: string })?.name,
+            })
+            return res.status(504).json({
+              error: 'Exact reageerde niet binnen de tijd bij het aanmaken van het document. Controleer in Exact voordat je opnieuw probeert.',
+            })
+          }
           try {
             token = await getValidToken(tokenUserId, user_id, tokenCache)
             const docResult = await exactPost(
@@ -901,6 +955,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             Accept: 'application/json',
           },
           body: JSON.stringify({ Document: documentId }),
+          // Best-effort call aan het eind van de sync; korter dan de andere
+          // Exact-calls omdat de sync hier al geslaagd is en niemand erop wacht.
+          signal: AbortSignal.timeout(15_000),
         })
         if (!putRes.ok) {
           const putBody = await putRes.text()
@@ -1002,19 +1059,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ) as { d?: { ID?: string } }
         documentId = docResult?.d?.ID ?? null
       } catch (docErr) {
-        try {
-          token = await getValidToken(tokenUserId, user_id, tokenCache)
-
-          const docResult = await exactPost(
-            token,
-            division,
-            'documents/Documents',
-            documentPayload,
-          ) as { d?: { ID?: string } }
-          documentId = docResult?.d?.ID ?? null
-        } catch (retryErr) {
-          console.error('Document POST mislukt (na retry):', docErr, retryErr)
+        // Afgebroken request: niet opnieuw posten. Anders staat het document
+        // dubbel in Exact. Zie magOpnieuwNaFout. Hier niet-fataal: de SalesEntry
+        // is al geboekt, dus alleen de bijlage-koppeling ontbreekt en die is via
+        // attachment_only opnieuw te proberen.
+        if (!magOpnieuwNaFout(docErr)) {
+          console.error('[Exact] Document POST afgebroken; niet opnieuw geprobeerd', {
+            factuur_id, naam: (docErr as { name?: string })?.name,
+          })
           documentId = null
+        } else {
+          try {
+            token = await getValidToken(tokenUserId, user_id, tokenCache)
+
+            const docResult = await exactPost(
+              token,
+              division,
+              'documents/Documents',
+              documentPayload,
+            ) as { d?: { ID?: string } }
+            documentId = docResult?.d?.ID ?? null
+          } catch (retryErr) {
+            console.error('Document POST mislukt (na retry):', docErr, retryErr)
+            documentId = null
+          }
         }
       }
 
@@ -1129,6 +1197,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         salesEntry
       ) as { d?: { EntryID?: string } }
     } catch (syncError: unknown) {
+      // Bij een afgebroken request NIET opnieuw posten: de eerste POST kan zijn
+      // aangekomen en dan staat de factuur na een retry dubbel in Exact. Zie
+      // magOpnieuwNaFout. 504 zodat de client weet dat de uitkomst onbekend is;
+      // de guard bovenaan dit endpoint vangt een tweede poging op, want die ziet
+      // exact_entry_id dan wel of niet staan.
+      if (!magOpnieuwNaFout(syncError)) {
+        console.error('[Exact] SalesEntry POST afgebroken; niet opnieuw geprobeerd om dubbele boeking te voorkomen', {
+          factuur_id, naam: (syncError as { name?: string })?.name,
+        })
+        Sentry.captureException(syncError, { extra: { factuur_id, fase: 'salesentry-post-afgebroken' } })
+        return res.status(504).json({
+          success: false,
+          error: 'Exact reageerde niet binnen de tijd. De boeking is mogelijk wél aangekomen. Controleer in Exact of de factuur er staat voordat je opnieuw synchroniseert.',
+        })
+      }
       // Retry 1x na token refresh
       try {
         token = await getValidToken(tokenUserId, user_id, tokenCache)

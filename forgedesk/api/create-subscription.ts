@@ -3,11 +3,28 @@ import { createClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/node'
 
 if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
     tracesSampleRate: 0,
     sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
   })
 }
 
@@ -96,7 +113,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (heeftEchteSubscription && org.mollie_customer_id) {
       const deleteResponse = await fetch(
         `https://api.mollie.com/v2/customers/${org.mollie_customer_id}/subscriptions/${org.mollie_subscription_id}`,
-        { method: 'DELETE', headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` } }
+        // Schrijvende call: ruimer, want een abort laat in het ongewisse of het
+        // oude abonnement toch is opgeruimd.
+        { method: 'DELETE', headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` }, signal: AbortSignal.timeout(20_000) }
       )
       if (!deleteResponse.ok && deleteResponse.status !== 404 && deleteResponse.status !== 410) {
         const errorBody = await deleteResponse.text()
@@ -127,6 +146,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (customerId) {
       const checkResponse = await fetch(`https://api.mollie.com/v2/customers/${customerId}`, {
         headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` },
+        // Read-only bestaanscheck; afbreken is veilig.
+        signal: AbortSignal.timeout(15_000),
       })
       if (checkResponse.status === 404 || checkResponse.status === 410) {
         console.warn(`Mollie kent klant ${customerId} niet meer voor org ${organisatie_id}; nieuwe wordt aangemaakt`)
@@ -151,6 +172,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           email: user.email || undefined,
           metadata: { organisatie_id, user_id: user.id },
         }),
+        // Schrijvende call: ruimer, want een abort laat in het ongewisse of de
+        // klant bij Mollie toch is aangemaakt.
+        signal: AbortSignal.timeout(20_000),
       })
 
       if (!customerResponse.ok) {
@@ -186,6 +210,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         webhookUrl,
         metadata: { type: 'abonnement', organisatie_id },
       }),
+      // Eerste betaling incl. mandaat: ruimste marge van de calls hier, want
+      // een abort laat in het ongewisse of de payment toch is aangemaakt.
+      signal: AbortSignal.timeout(20_000),
     })
 
     if (!paymentResponse.ok) {

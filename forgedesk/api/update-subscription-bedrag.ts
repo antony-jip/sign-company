@@ -3,11 +3,28 @@ import { createClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/node'
 
 if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
     tracesSampleRate: 0,
     sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
   })
 }
 
@@ -101,6 +118,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Mollie niet aan te raken. Een geannuleerd abonnement kun je niet wijzigen.
     const huidigResponse = await fetch(subscriptionUrl, {
       headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` },
+      // Read-only voorcheck; bij een fout wordt de PATCH toch niet gedaan.
+      signal: AbortSignal.timeout(15_000),
     })
     if (!huidigResponse.ok) {
       const body = await huidigResponse.text()
@@ -122,6 +141,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       method: 'PATCH',
       headers: mollieHeaders,
       body: JSON.stringify({ amount: { currency: 'EUR', value: bedragIncl } }),
+      // Schrijvende call op wat de klant betaalt: ruimer dan de read hierboven,
+      // want een abort laat in het ongewisse of het bedrag toch is gewijzigd.
+      signal: AbortSignal.timeout(20_000),
     })
 
     if (!patchResponse.ok) {

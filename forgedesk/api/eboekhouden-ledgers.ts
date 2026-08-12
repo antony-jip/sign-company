@@ -107,6 +107,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accessToken: apiToken, source: EBOEKHOUDEN_SOURCE }),
+      // Sessie openen is de auth-stap: klein en snel, dus kort afkappen.
+      signal: AbortSignal.timeout(10_000),
     })
     if (!sessieRes.ok) {
       return res.status(401).json({ error: 'e-Boekhouden-token is niet meer geldig. Verbind opnieuw via Instellingen > Integraties.' })
@@ -119,6 +121,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const ledgerRes = await fetch(`${EBOEKHOUDEN_API_BASE}/ledger?limit=500`, {
         headers: { Authorization: `Bearer ${sessie.token}` },
+        // Grootboeklijst van maximaal 500 rijen; 20s is ruim voor een
+        // boekhoudpakket en laat de sessie-DELETE in de finally nog lopen.
+        signal: AbortSignal.timeout(20_000),
       })
 
       if (!ledgerRes.ok) {
@@ -144,6 +149,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fetch(`${EBOEKHOUDEN_API_BASE}/session`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${sessie.token}` },
+        // Opruim-call waar niemand op wacht; kort, de .catch slikt de abort.
+        signal: AbortSignal.timeout(5_000),
       }).catch(() => {})
     }
   } catch (err) {

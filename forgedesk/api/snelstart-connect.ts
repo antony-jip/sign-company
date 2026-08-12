@@ -161,6 +161,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ grant_type: 'clientkey', clientkey: sleutel }).toString(),
+      // Token-endpoint is een kleine POST; de gebruiker wacht op het koppelen.
+      signal: AbortSignal.timeout(10_000),
     })
 
     if (tokenRes.status === 400 || tokenRes.status === 401) {
