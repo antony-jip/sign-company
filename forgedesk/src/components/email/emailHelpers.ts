@@ -233,6 +233,103 @@ export function bepaalAanvraagContact(
   }
 }
 
+// ─── Handtekening: adres en telefoon onderaan de mail ───
+
+export interface HandtekeningGegevens {
+  telefoon: string
+  adres: string
+  postcode: string
+  stad: string
+}
+
+const CITAAT_START = [
+  /^-{2,}\s*(oorspronkelijk bericht|original message|forwarded message)\s*-{2,}/i,
+  /^\s*begin doorgestuurd bericht/i,
+  /^\s*(op|on)\b.{4,90}\b(schreef|wrote)\b.{0,60}:?\s*$/i,
+  /^\s*(van|from)\s*:\s*.*@/i,
+  /^\s*>/,
+  /^_{5,}\s*$/,
+]
+
+const HANDTEKENING_REGELS = 12
+const HANDTEKENING_REGEL_MAX = 60
+const POSTCODE_RE = /\b([1-9][0-9]{3})\s?([A-Za-z]{2})\b/
+const STRAAT_RE = /^[A-Za-zÀ-ÿ.'’-]+(?:\s+[A-Za-zÀ-ÿ.'’-]+)*\s+\d{1,5}\s*[A-Za-z]?(?:\s*[-/]\s*\d{1,4}\s*[A-Za-z]?)?$/
+const STAD_RE = /^[A-Za-zÀ-ÿ' -]{2,40}$/
+const TELEFOON_RE = /(?:\+\s?31|0)[\s\-.()]*\d(?:[\s\-.()]*\d){7,10}/
+const GEEN_TELEFOON_REGEL = /\b(kvk|k\.v\.k|btw|vat|iban|bic|rsin|factuur|ordernummer|postbus)\b/i
+const GEEN_STAD = /^(nederland|the netherlands|holland|nl|belgië|belgie|belgium)$/i
+
+/**
+ * Knipt het citaat eraf en houdt het blok onderaan over: alles na een
+ * `--`-scheiding, anders de laatste regels. Prozaregels vallen op lengte af,
+ * zodat alleen handtekening-achtige regels overblijven.
+ */
+function handtekeningBlok(bodyTekst: string): string[] {
+  const alle = bodyTekst.split(/\r?\n/)
+  let eind = alle.length
+  for (let i = 0; i < alle.length; i++) {
+    if (CITAAT_START.some((re) => re.test(alle[i]))) { eind = i; break }
+  }
+
+  const regels = alle.slice(0, eind).map((r) => r.replace(/[ \t]+/g, ' ').trim())
+  while (regels.length && !regels[regels.length - 1]) regels.pop()
+
+  const scheiding = regels.map((r) => /^--+$/.test(r)).lastIndexOf(true)
+  const blok = scheiding >= 0 ? regels.slice(scheiding + 1) : regels.slice(-HANDTEKENING_REGELS)
+  return blok.filter((r) => r && r.length <= HANDTEKENING_REGEL_MAX)
+}
+
+function isNederlandsNummer(ruw: string): boolean {
+  const cijfers = ruw.replace(/\D/g, '')
+  if (cijfers.startsWith('31')) return cijfers.length >= 11 && cijfers.length <= 12
+  return cijfers.startsWith('0') && cijfers.length === 10
+}
+
+/**
+ * Leest adres en telefoon uit de handtekening onderaan een mail — bewust
+ * alleen daar. In de lopende tekst staan net zo goed nummers en adressen van
+ * de klus of van een derde; die zijn geen klantgegevens.
+ */
+export function haalHandtekeningUitBody(bodyTekst: string): HandtekeningGegevens {
+  const leeg: HandtekeningGegevens = { telefoon: '', adres: '', postcode: '', stad: '' }
+  if (!bodyTekst) return leeg
+
+  const blok = handtekeningBlok(bodyTekst)
+  const gevonden = { ...leeg }
+
+  for (const regel of blok) {
+    if (gevonden.telefoon || GEEN_TELEFOON_REGEL.test(regel)) continue
+    const match = regel.match(TELEFOON_RE)
+    if (match && isNederlandsNummer(match[0])) gevonden.telefoon = match[0].trim().replace(/[\s.\-]+$/, '')
+  }
+
+  const postcodeIndex = blok.findIndex((r) => POSTCODE_RE.test(r))
+  if (postcodeIndex === -1) return gevonden
+
+  const regel = blok[postcodeIndex]
+  const match = regel.match(POSTCODE_RE)!
+  gevonden.postcode = `${match[1]} ${match[2].toUpperCase()}`
+
+  const voor = regel.slice(0, match.index).replace(/[,;]\s*$/, '').trim()
+  const na = regel.slice((match.index || 0) + match[0].length).replace(/^[,;]\s*/, '').trim()
+
+  if (STAD_RE.test(na) && !GEEN_STAD.test(na)) gevonden.stad = na
+  else {
+    const volgende = blok[postcodeIndex + 1] || ''
+    if (STAD_RE.test(volgende) && !GEEN_STAD.test(volgende)) gevonden.stad = volgende
+  }
+
+  if (STRAAT_RE.test(voor)) gevonden.adres = voor
+  else {
+    for (let i = postcodeIndex - 1; i >= 0 && i >= postcodeIndex - 3; i--) {
+      if (STRAAT_RE.test(blok[i])) { gevonden.adres = blok[i]; break }
+    }
+  }
+
+  return gevonden
+}
+
 export function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 }

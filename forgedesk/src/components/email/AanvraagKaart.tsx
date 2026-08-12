@@ -1,18 +1,38 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { X, ArrowRight, Loader2, Building2, UserPlus, CheckCircle2 } from 'lucide-react'
+import { X, ArrowRight, Loader2, Building2, UserPlus, CheckCircle2, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import type { Email, Klant } from '@/types'
-import { getKlanten, createKlant, createProject, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
+import { getKlanten, createKlant, updateKlant, createProject, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
 import { koppelEmailAanProject } from '@/services/emailProjectService'
 import { verbergAanvraag } from '@/services/emailService'
-import { extractSenderEmail, zoekKlantVoorAfzender, bepaalAanvraagContact, bodyAlsTekst, GENERIEKE_MAILDOMEINEN } from './emailHelpers'
+import { extractSenderEmail, zoekKlantVoorAfzender, bepaalAanvraagContact, bodyAlsTekst, haalHandtekeningUitBody, GENERIEKE_MAILDOMEINEN } from './emailHelpers'
+import type { HandtekeningGegevens } from './emailHelpers'
 import { extractCompanyName } from './EmailCRMSidebar'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '@/utils/logger'
 
 const MONO = { fontFamily: '"DM Mono", ui-monospace, monospace' } as const
+
+const LEGE_HANDTEKENING: HandtekeningGegevens = { telefoon: '', adres: '', postcode: '', stad: '' }
+
+/** Alleen wat de klant nog mist; wat al ingevuld staat blijft ongemoeid. */
+function ontbrekendeGegevens(klant: Klant | null, ht: HandtekeningGegevens): Partial<Klant> {
+  const patch: Partial<Klant> = {}
+  if (ht.telefoon && !klant?.telefoon?.trim()) patch.telefoon = ht.telefoon
+  if (ht.adres && !klant?.adres?.trim()) patch.adres = ht.adres
+  if (ht.postcode && !klant?.postcode?.trim()) patch.postcode = ht.postcode
+  if (ht.stad && !klant?.stad?.trim()) patch.stad = ht.stad
+  return patch
+}
+
+function omschrijfGegevens(patch: Partial<Klant>): string {
+  const adresregel = [patch.adres, [patch.postcode, patch.stad].filter(Boolean).join(' ')]
+    .filter(Boolean)
+    .join(', ')
+  return [patch.telefoon, adresregel].filter(Boolean).join(' · ')
+}
 
 interface AanvraagKaartProps {
   email: Email
@@ -27,20 +47,24 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
   const [bezig, setBezig] = useState(false)
   const [verborgen, setVerborgen] = useState(false)
   const [aangemaakt, setAangemaakt] = useState<{ id: string; naam: string } | null>(null)
+  const [aanvullenBezig, setAanvullenBezig] = useState(false)
+  const [aangevuld, setAangevuld] = useState(false)
 
   const afzenderEmail = extractSenderEmail(email.van)
 
   // Meestal is de afzender de klant. Komt de aanvraag via ons eigen
   // contactformulier binnen, dan mailt aanvraag@signcompany.nl namens iemand
   // anders en staat de echte klant in de body.
-  const contact = bepaalAanvraagContact(
-    afzenderEmail,
-    senderName,
-    bodyAlsTekst(email.inhoud || ''),
-    user?.email || ''
-  )
+  const bodyTekst = bodyAlsTekst(email.inhoud || '')
+  const contact = bepaalAanvraagContact(afzenderEmail, senderName, bodyTekst, user?.email || '')
   const contactNaam = contact.naam || senderName
   const bedrijfsgok = contact.bedrijf || extractCompanyName(contactNaam, contact.email)
+
+  // De handtekening is van de afzender. Mailt een doorgeefluik namens iemand
+  // anders, dan hoort die handtekening niet bij deze klant.
+  const handtekening = contact.uitBody ? LEGE_HANDTEKENING : haalHandtekeningUitBody(bodyTekst)
+  const aanvulling = ontbrekendeGegevens(klant, handtekening)
+  const aanvullingTekst = omschrijfGegevens(aanvulling)
 
   // Zelfde match als de CRM-sidebar: eerst op adres, dan op domein.
   useEffect(() => {
@@ -68,12 +92,16 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
       if (!doelKlant) {
         const domein = contact.email.split('@')[1]?.toLowerCase()
         const generiekDomein = GENERIEKE_MAILDOMEINEN.includes(domein || '')
+        const telefoon = contact.telefoon || handtekening.telefoon
         doelKlant = await createKlant({
           bedrijfsnaam: bedrijfsgok || contactNaam,
           contactpersoon: contactNaam,
           email: contact.email,
-          telefoon: contact.telefoon,
-          adres: '', postcode: '', stad: '', land: 'Nederland',
+          telefoon,
+          adres: handtekening.adres,
+          postcode: handtekening.postcode,
+          stad: handtekening.stad,
+          land: 'Nederland',
           website: domein && !generiekDomein ? `www.${domein}` : '',
           debiteurennummer: '', kvk_nummer: '', btw_nummer: '',
           status: 'actief', tags: [], notities: '',
@@ -82,11 +110,12 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
             naam: contactNaam,
             functie: '',
             email: contact.email,
-            telefoon: contact.telefoon,
+            telefoon,
             is_primair: true,
           }],
         })
         setKlant(doelKlant)
+        setAangevuld(true)
       }
 
       const settings = await getAppSettings(user.id)
@@ -125,6 +154,34 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
     }
   }
 
+  async function handleAanvullen() {
+    if (!klant) return
+    setAanvullenBezig(true)
+    try {
+      const patch: Partial<Klant> = { ...aanvulling }
+      if (patch.telefoon) {
+        const contactpersonen = klant.contactpersonen || []
+        const index = contactpersonen.findIndex(
+          (c) => c.email?.trim().toLowerCase() === contact.email.trim().toLowerCase() && !c.telefoon?.trim()
+        )
+        if (index >= 0) {
+          patch.contactpersonen = contactpersonen.map((c, i) =>
+            i === index ? { ...c, telefoon: patch.telefoon as string } : c
+          )
+        }
+      }
+      const bijgewerkt = await updateKlant(klant.id, patch)
+      setKlant(bijgewerkt)
+      setAangevuld(true)
+      toast.success('Klantgegevens aangevuld')
+    } catch (err) {
+      logger.error('Klant aanvullen mislukt:', err)
+      toast.error('Aanvullen mislukt')
+    } finally {
+      setAanvullenBezig(false)
+    }
+  }
+
   async function handleVerbergen() {
     setVerborgen(true)
     try {
@@ -135,6 +192,28 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
   }
 
   if (verborgen) return null
+
+  const aanvullingBlok = klantGeladen && !aangevuld && aanvullingTekst ? (
+    <div className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+      <span className="inline-flex items-center gap-1.5 text-[13px] text-text-sec">
+        <MapPin className="h-3.5 w-3.5 text-muted-hex shrink-0" />
+        Uit de handtekening:
+        <span className="font-medium text-foreground">{aanvullingTekst}</span>
+      </span>
+      {klant ? (
+        <button
+          onClick={handleAanvullen}
+          disabled={aanvullenBezig}
+          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border text-[13px] font-semibold text-petrol hover:bg-petrol/[0.06] disabled:opacity-60 transition-colors"
+        >
+          {aanvullenBezig && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          Toevoegen aan klant
+        </button>
+      ) : (
+        <span className="text-[12px] text-muted-hex">nemen we mee bij de nieuwe klant</span>
+      )}
+    </div>
+  ) : null
 
   if (aangemaakt) {
     return (
@@ -151,6 +230,7 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </button>
         </div>
+        {aanvullingBlok}
       </div>
     )
   }
@@ -214,6 +294,8 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
             </span>
           )}
         </div>
+
+        {aanvullingBlok}
 
         {contact.uitBody && (
           <p className="mt-2.5 text-[12px] text-muted-hex">
