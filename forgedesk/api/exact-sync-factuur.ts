@@ -632,6 +632,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Factuur niet gevonden.' })
     }
 
+    // Idempotency. Exact heeft geen idempotency-key, dus een tweede POST maakt
+    // een tweede SalesEntry: de factuur staat dan dubbel in de administratie van
+    // de klant. Dat kon op twee manieren gebeuren. Twee keer op synchroniseren
+    // drukken (de knop was alleen tijdens de call uitgeschakeld, niet daarna), en
+    // de 401-retry hieronder, die opnieuw POST als de eerste POST wél is
+    // aangekomen maar het antwoord verloren ging.
+    //
+    // De beide retry-modi mogen er langs: attachment_only en bijlagen_only
+    // hebben een bestaande SalesEntry juist nodig en maken er zelf geen.
+    if (!attachment_only && !bijlagen_only && factuur.exact_entry_id) {
+      return res.status(200).json({
+        success: true,
+        al_gesynct: true,
+        exact_entry_id: factuur.exact_entry_id,
+        document_id: (factuur.exact_document_id as string | null) ?? null,
+        bijlage_synced: !!factuur.exact_bijlage_gesynced_op,
+        bijlagen_synced: 0,
+        bijlagen_failed: 0,
+        bijlagen_geprobeerd: 0,
+      })
+    }
+
     const { data: factuurItems, error: itemsError } = await supabaseAdmin
       .from('factuur_items')
       .select('*')

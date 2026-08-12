@@ -451,6 +451,8 @@ export function FactuurEditor() {
   const [persoonlijkBericht, setPersoonlijkBericht] = useState(STANDAARD_VERZEND_BERICHT)
   const [isSending, setIsSending] = useState(false)
   const [boekhoudSyncing, setBoekhoudSyncing] = useState(false)
+  // Ref en geen state: dit hoort de sync tegen te houden, niet te hertekenen.
+  const exactSyncBezigRef = useRef(false)
   const [dialogBijlagen, setDialogBijlagen] = useState<FactuurBijlage[]>([])
   const [selectedBijlageIds, setSelectedBijlageIds] = useState<Set<string>>(new Set())
   const [stuurOfferteMee, setStuurOfferteMee] = useState(false)
@@ -2061,6 +2063,14 @@ export function FactuurEditor() {
   const handleSyncExact = useCallback(async (attachmentOnly: boolean) => {
     if (!existingFactuur) return
 
+    // De knop verdwijnt pas als exact_synced_at terug is, dus tijdens de call
+    // blijft hij aanklikbaar. Exact heeft geen idempotency-key, dus een tweede
+    // klik betekent een tweede SalesEntry en dus een dubbele factuur in de
+    // administratie van de klant. De server weigert dat sinds de guard daar,
+    // maar dan is de POST al onderweg; dit houdt hem hier tegen.
+    if (exactSyncBezigRef.current) return
+    exactSyncBezigRef.current = true
+
     const loadingMsg = attachmentOnly ? 'Bijlage opnieuw versturen...' : 'Synchroniseren met Exact...'
     const toastId = toast.loading(loadingMsg)
 
@@ -2129,6 +2139,7 @@ export function FactuurEditor() {
         exact_entry_id: string
         document_id: string | null
         bijlage_synced: boolean
+        al_gesynct?: boolean
       }
 
       setExistingFactuur({
@@ -2141,13 +2152,19 @@ export function FactuurEditor() {
           : existingFactuur.exact_bijlage_gesynced_op,
       })
 
-      const successMsg = attachmentOnly
+      // De server weigert een tweede SalesEntry voor dezelfde factuur. Dan is er
+      // niets verstuurd, dus zeg dat ook in plaats van "gesynchroniseerd".
+      const successMsg = data.al_gesynct
+        ? 'Deze factuur staat al in Exact Online'
+        : attachmentOnly
         ? 'Bijlage opnieuw verstuurd naar Exact Online'
         : 'Factuur gesynchroniseerd met Exact Online'
       toast.success(successMsg, { id: toastId })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Sync mislukt'
       toast.error(msg, { id: toastId })
+    } finally {
+      exactSyncBezigRef.current = false
     }
   }, [existingFactuur, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCreditFactuur, selectedKlant, documentStyle])
 
