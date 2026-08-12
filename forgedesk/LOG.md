@@ -1,5 +1,52 @@
 # doen. — Development Log
 
+## Augustus 2026 — Auditronde (branch `audit/integratie`, 3 migraties live)
+
+**Branch:** `audit/integratie`, 78 commits, niet gemerged en niet gepusht. `main` onaangeroerd.
+**Migraties 190, 192 en 195 draaien WEL op productie**, door Antony gedraaid met verificatie-output teruggelezen. 196 t/m 202 staan klaar; `docs/MIGRATIES-STATUS.md` is de volgorde. Elke wijziging valt terug op het huidige gedrag zolang zijn migratie niet gedraaid is, dus er is geen haast.
+
+### Aanleiding
+Een eerlijke doorlichting: hoe ver komt doen. van één klant naar vijftig. Eindcijfer was 4,5, met als kern dat de ernstigste bevindingen allemaal **stil** waren en er nul tests stonden op de laag waar ze zaten.
+
+### Het patroon dat alles verbond
+Bijna elke bevinding had dezelfde vorm: **iets faalt en het rapport zegt dat het goed ging.** Een paywall die een jaar omzeilbaar was omdat `DROP POLICY IF EXISTS` op een verkeerde naam stil slaagt. Een rapportage die 60x te veel uren toonde. Een "Totale winst" die omzet x 0,65 was met groen "65% marge" eronder. Een upload die "3 foto's toegevoegd" meldde terwijl er twee verdwenen. Een teller die alleen omhoog kon. Dat patroon is de rode draad van deze ronde, en het kwam op het eind terug in het werk van deze ronde zelf.
+
+### Live gezet (database)
+- **190** DELETE-recht op `organisaties` ingetrokken. Geen rolcheck, en een lege org was verwijderbaar. Niet versmald naar de eigenaar maar geheel gedropt: geen enkele codepad verwijdert een organisatie.
+- **192** `organisatie_id` gebackfild via `profiles`. 25 van 27 tabellen stonden al op nul; wat overbleef hoorde bij een demo-account.
+- **195** **49 legacy user_id-policies gedropt** over 23 tabellen. Dit is de belangrijkste van de drie: migratie 048 dropte policynamen die nergens werden aangemaakt, dus de oude policies bleven staan en de abonnementsvergrendeling uit 111 werkte ruim een jaar niet. 195 leest `pg_policies` in plaats van namen te vertrouwen, en dropt alleen als de tabel minstens één org-policy overhoudt.
+
+### Klaar om te draaien
+**196** default op `organisatie_id` (geen `NOT NULL`: 9 van 12 inserters in `notificaties` zetten die kolom niet). **197** projectvoorstel-kolommen. **198** `doen_migraties`, de administratie die er nooit was. **199** zeven rapportage-views, alle met `security_invoker = on`. **200** feature flags. **201** support-toewijzing. **202** mailsync-wachtrij.
+
+### Wat er verder is gebeurd
+- **Geld.** Idempotency op de Exact-sync, plus de fix die de review daar vond: `AbortSignal.timeout` met catch-en-retry kon een factuur dubbel boeken.
+- **Rapportages** aangesloten in de navigatie nadat de getallen klopten, niet ervoor.
+- **AVG-export**, admin-only, 99 tabellen. De review vond dat `facturen.betaal_link` letterlijk de betaaltoken bevat: de export droeg een levende sleutel naar productie. Nu een tweede filterlaag op de WAARDE, want een naamfilter mist per definitie de volgende kolom die een URL blijkt.
+- **Feature flags** met drie standen. `useFeatureAan` faalt dicht voor nieuwe code, `useFeatureUitgezet` faalt open om iets bestaands te doven. Globaal `false` is niet door een org-rij te overrulen: piloten doe je door de globale rij weg te laten.
+- **Mailsync-wachtrij** en **offline mutatiewachtrij**, allebei achter een vlag die uit staat. Ze komen slapend mee.
+- **Opruiming**: 4.806 regels dode code, de dode opvolgketen, `LanguageContext` (980 regels, nul consumenten).
+- Tests van 195 naar 421, typecheck van 64 naar 63.
+
+### Besluiten die vastliggen
+- **Een naamfilter voor secrets is nooit genoeg.** Filter ook op waarde. `docs/AVG.md`.
+- **`doen_migraties` is administratie, geen bron van waarheid.** Spreekt hij de database tegen, dan heeft de database gelijk. Voor nummering is de map betrouwbaarder, want de tabel is bewust incompleet.
+- **Een retry-cap gaat over "de server antwoordde en het lukte niet"**, niet over "we hebben het geprobeerd". Een netwerkfout telt niet mee: triggers zijn gratis.
+- **`null` van een service is nooit bewijs van verwijdering.** `getWerkbon` geeft `null` bij elke fout; dat als "weg" lezen zette de hele fotowachtrij in één flush op vast.
+- **Bestaande data verstoppen is geen module uitzetten.** `module_studio` sluit elke ingang naar de generator maar laat bestaande visualisaties staan.
+- **Serverconfiguratie is geen gebruikersfout.** Een ontbrekende `EMAIL_ENCRYPTION_KEY` mag niet als verlopen wachtwoord tellen, anders zet één scheve env-var alle mailboxen permanent uit.
+
+### Wat bewust is blijven liggen
+- **`api/*` valt buiten tsc EN buiten de vite-build.** De laag met geld en tenant-isolatie heeft geen compiler. Vannacht liet dat twee keer een fout passeren, waaronder een ontbrekende accolade die alleen door een test werd gevangen. Een tweede tsconfig voor `api/` dicht het.
+- De maatjes-wachtrij vult alleen bij `navigator.onLine === false`; op een dak met één streepje wordt werk nog steeds weggegooid. Uitgewerkt in `docs/plan-pwa-offline.md`.
+- Mailsync heeft geen zichtbaarheid: een vastgelopen mailbox geeft een regel in de Vercel-logs. Goedkoopste weg loopt via `email_sync_state`, die heeft al user_id-policies.
+- De rest staat in `REVIEW_NOTES.md`.
+
+### Werkwijze die werkte
+Tien reviews, waarvan er **acht iets echts vonden**, inclusief drie blokkades die niet uit eigen controle kwamen. Twee daarvan zaten in code die in deze ronde zelf was geschreven. Stil fout vind je niet door zorgvuldig te zijn; die vind je door iemand anders te laten kijken.
+
+Waarschuwing voor de volgende sessie: **zes van de acht worktrees werden geseed van `774d6267`**, een commit waarin `forgedesk/` niet bestaat. Controleer `ls forgedesk/api | wc -l` (hoort ~92 te zijn) vóór je begint.
+
 ## Augustus 2026 — Ronde "20 gebruikers" (branch, migraties wél live)
 
 **Branch:** `claude/20-gebruikers`, niet gemerged en niet gepusht. `main` onaangeroerd.
