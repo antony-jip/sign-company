@@ -27,6 +27,53 @@ interface BerichtPreview {
 }
 
 /**
+ * 42703 is undefined_column; PGRST204 is dezelfde situatie via de schema-cache.
+ * Bewust alleen op foutcode en niet op de tekst van de melding: een RLS- of
+ * permissiefout die de kolomnaam echoot zou anders als "niet gemigreerd" gelezen
+ * worden, en dan zou de inbox de toewijzing stil verstoppen terwijl hij bestaat.
+ */
+export function kolomOntbreekt(fout: { code?: string } | null): boolean {
+  return fout?.code === '42703' || fout?.code === 'PGRST204'
+}
+
+// Cache voor de kolomprobe. Zodra de kolom bestaat verdwijnt hij niet meer, dus
+// een positief antwoord mag blijven staan; een negatief antwoord verloopt, zodat
+// de UI de toewijzing binnen een minuut na de migratie ziet opduiken.
+const PROBE_TTL_MS = 60_000
+let toewijzingKolomAanwezig: boolean | null = null
+let toewijzingProbeTijd = 0
+
+/**
+ * Bestaat support_gesprekken.toegewezen_aan al?
+ *
+ * Tussen de deploy van deze code en het draaien van migratie 201 zit tijd, en in
+ * die tijd moet de inbox blijven werken. De lees- en schrijfpaden vallen terug in
+ * plaats van te klappen; dit vertelt de UI of de toewijzingsknop zin heeft.
+ */
+async function toewijzingBeschikbaar(): Promise<boolean> {
+  if (toewijzingKolomAanwezig === true) return true
+  if (toewijzingKolomAanwezig === false && Date.now() - toewijzingProbeTijd < PROBE_TTL_MS) return false
+
+  const { error } = await supabaseAdmin.from('support_gesprekken').select('toegewezen_aan').limit(1)
+  toewijzingProbeTijd = Date.now()
+
+  if (kolomOntbreekt(error)) {
+    toewijzingKolomAanwezig = false
+    return false
+  }
+  if (error) {
+    // Een andere fout (RLS, netwerk) zegt niets over de kolom en wordt daarom
+    // niet gecached: de volgende request probeert opnieuw. Een reeds vastgesteld
+    // 'true' is hierboven al teruggegeven, dus hier resteert alleen 'nog niet
+    // aangetoond' en dat leest als niet beschikbaar.
+    console.error('[support-inbox] probe toewijzing', error.message)
+    return false
+  }
+  toewijzingKolomAanwezig = true
+  return true
+}
+
+/**
  * Pure paginatie-parser. Onbruikbare of negatieve waarden vallen terug op de
  * standaardpagina in plaats van een fout te geven: een kapotte querystring mag
  * de inbox niet onbruikbaar maken.
@@ -250,6 +297,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ attentie: await berekenAttentie() })
       }
 
+      // Toewijsbare medewerkers: uitsluitend de supportorganisatie. Deze tabel is
+      // cross-tenant, dus zonder die filter zou elk profiel van elke klant-org
+      // in de lijst belanden.
+      if (req.query.medewerkers) {
+        const { data, error } = await supabaseAdmin
+          .from('profiles')
+          .select('id, voornaam, achternaam, email')
+          .eq('organisatie_id', ADMIN_ORG_ID)
+          .order('voornaam', { ascending: true })
+        if (error) throw new Error('Medewerkers ophalen mislukt')
+        const medewerkers = (data || []).map(p => ({
+          id: p.id as string,
+          naam:
+            [p.voornaam, p.achternaam].filter(Boolean).join(' ').trim() ||
+            (p.email as string | null) ||
+            'Naamloos',
+        }))
+        return res.status(200).json({ medewerkers })
+      }
+
       const gesprekId = (req.query.gesprek_id as string | undefined)?.trim()
 
       // Eén gesprek → volledige thread.
@@ -293,13 +360,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         gesprekken: resultaat,
         totaal: count ?? resultaat.length,
         attentie: await berekenAttentie(),
+        toewijzing_beschikbaar: await toewijzingBeschikbaar(),
       })
     }
 
     // ── POST: antwoord, update naar één account, broadcast, of status ──
     if (req.method === 'POST') {
-      const { gesprek_id, organisatie_id, bericht, status, broadcast } = req.body as {
-        gesprek_id?: string; organisatie_id?: string; bericht?: string; status?: string; broadcast?: boolean
+      const { gesprek_id, organisatie_id, bericht, status, broadcast, toegewezen_aan } = req.body as {
+        gesprek_id?: string; organisatie_id?: string; bericht?: string; status?: string
+        broadcast?: boolean; toegewezen_aan?: string | null
+      }
+
+      // Toewijzen, of vrijgeven met null — geen bericht vereist.
+      if (toegewezen_aan !== undefined) {
+        if (!gesprek_id) return res.status(400).json({ error: 'gesprek_id ontbreekt' })
+
+        const doelId = toegewezen_aan === null ? null : String(toegewezen_aan).trim()
+        if (doelId) {
+          const { data: profiel } = await supabaseAdmin
+            .from('profiles')
+            .select('id')
+            .eq('id', doelId)
+            .eq('organisatie_id', ADMIN_ORG_ID)
+            .maybeSingle()
+          if (!profiel) return res.status(400).json({ error: 'Onbekende medewerker' })
+        }
+
+        const { data: bijgewerkt, error: toewijsError } = await supabaseAdmin
+          .from('support_gesprekken')
+          .update({
+            toegewezen_aan: doelId || null,
+            toegewezen_op: doelId ? new Date().toISOString() : null,
+          })
+          .eq('id', gesprek_id)
+          .select('*')
+          .single()
+
+        // Migratie 201 nog niet gedraaid: expliciet melden in plaats van een
+        // generieke 500, zodat de UI kan zeggen wat eraan schort.
+        if (kolomOntbreekt(toewijsError)) {
+          toewijzingKolomAanwezig = false
+          toewijzingProbeTijd = Date.now()
+          return res.status(503).json({
+            error: 'Toewijzen kan nog niet: migratie 201 moet eerst draaien.',
+            migratie_ontbreekt: true,
+          })
+        }
+        if (toewijsError || !bijgewerkt) throw new Error('Toewijzen mislukt')
+        return res.status(200).json({ gesprek: bijgewerkt })
       }
 
       // Status-update (afronden / heropenen) — geen bericht vereist.

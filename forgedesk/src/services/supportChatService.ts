@@ -22,6 +22,15 @@ export interface SupportGesprek {
   aangemaakt_op: string
   laatste_bericht_op: string
   klant_email?: string | null
+  // Optioneel: deze kolommen bestaan pas na migratie 201. Vóór die tijd komen ze
+  // niet mee in de response en blijft de rest van de inbox gewoon werken.
+  toegewezen_aan?: string | null
+  toegewezen_op?: string | null
+}
+
+export interface SupportMedewerker {
+  id: string
+  naam: string
 }
 
 export interface InboxGesprek extends SupportGesprek {
@@ -92,6 +101,7 @@ export interface InboxPagina {
   gesprekken: InboxGesprek[]
   totaal: number
   attentie: number
+  toewijzingBeschikbaar: boolean
 }
 
 export async function getSupportInbox(limiet: number, offset = 0): Promise<InboxPagina> {
@@ -99,13 +109,49 @@ export async function getSupportInbox(limiet: number, offset = 0): Promise<Inbox
   const params = new URLSearchParams({ limit: String(limiet), offset: String(offset) })
   const res = await fetch(`/api/support-inbox?${params}`, { headers: { Authorization: `Bearer ${token}` } })
   if (!res.ok) throw new Error('Inbox laden mislukt')
-  const data = await res.json() as Partial<InboxPagina>
+  const data = await res.json() as { gesprekken?: InboxGesprek[]; totaal?: number; attentie?: number; toewijzing_beschikbaar?: boolean }
   const gesprekken = data.gesprekken || []
   return {
     gesprekken,
     totaal: data.totaal ?? gesprekken.length,
     attentie: data.attentie ?? 0,
+    // Ontbreekt het veld, dan is dit een oudere server: geen toewijzing tonen.
+    toewijzingBeschikbaar: data.toewijzing_beschikbaar === true,
   }
+}
+
+export async function getSupportMedewerkers(): Promise<SupportMedewerker[]> {
+  const token = await getAuthToken()
+  const res = await fetch('/api/support-inbox?medewerkers=1', { headers: { Authorization: `Bearer ${token}` } })
+  if (!res.ok) throw new Error('Medewerkers laden mislukt')
+  const data = await res.json() as { medewerkers?: SupportMedewerker[] }
+  return data.medewerkers || []
+}
+
+/**
+ * Wijst een gesprek toe, of geeft het vrij met null.
+ *
+ * Gooit een MigratieOntbreektError zolang migratie 201 niet gedraaid is, zodat de
+ * UI daar een eigen melding aan kan hangen in plaats van 'Interne fout'.
+ */
+export class MigratieOntbreektError extends Error {}
+
+export async function zetSupportToewijzing(
+  gesprekId: string,
+  medewerkerId: string | null
+): Promise<{ gesprek: SupportGesprek }> {
+  const token = await getAuthToken()
+  const res = await fetch('/api/support-inbox', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ gesprek_id: gesprekId, toegewezen_aan: medewerkerId }),
+  })
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({})) as { error?: string; migratie_ontbreekt?: boolean }
+    if (e?.migratie_ontbreekt) throw new MigratieOntbreektError(e.error || 'Toewijzen kan nog niet')
+    throw new Error(e?.error || 'Toewijzen mislukt')
+  }
+  return res.json()
 }
 
 // Alleen de badge-teller: de sidebar hoeft de gesprekslijst niet te laden.

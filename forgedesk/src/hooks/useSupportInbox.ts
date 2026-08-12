@@ -7,12 +7,15 @@ import {
   verstuurSupportAntwoord,
   zetSupportStatus,
   getSupportAccounts,
+  getSupportMedewerkers,
+  zetSupportToewijzing,
   verstuurUpdateNaarAccount,
   verstuurBroadcast,
   type InboxGesprek,
   type SupportGesprek,
   type SupportBericht,
   type SupportAccount,
+  type SupportMedewerker,
 } from '@/services/supportChatService'
 import {
   SUPPORT_PAGINA_GROOTTE,
@@ -27,6 +30,8 @@ export function useSupportInbox(channelName: string) {
   const [totaal, setTotaal] = useState(0)
   const [attentie, setAttentie] = useState(0)
   const [laadtMeer, setLaadtMeer] = useState(false)
+  const [toewijzingBeschikbaar, setToewijzingBeschikbaar] = useState(false)
+  const [medewerkers, setMedewerkers] = useState<SupportMedewerker[]>([])
   const [accounts, setAccounts] = useState<SupportAccount[]>([])
   const [activeGesprek, setActiveGesprek] = useState<SupportGesprek | null>(null)
   const [berichten, setBerichten] = useState<SupportBericht[]>([])
@@ -44,6 +49,7 @@ export function useSupportInbox(channelName: string) {
     setInbox(pagina.gesprekken)
     setTotaal(pagina.totaal)
     setAttentie(pagina.attentie)
+    setToewijzingBeschikbaar(pagina.toewijzingBeschikbaar)
   }, [])
 
   const laadMeer = useCallback(async () => {
@@ -60,6 +66,7 @@ export function useSupportInbox(channelName: string) {
       })
       setTotaal(pagina.totaal)
       setAttentie(pagina.attentie)
+      setToewijzingBeschikbaar(pagina.toewijzingBeschikbaar)
     } finally {
       laadtMeerRef.current = false
       setLaadtMeer(false)
@@ -112,6 +119,19 @@ export function useSupportInbox(channelName: string) {
     setAccounts(await getSupportAccounts().catch(() => []))
   }, [])
 
+  const loadMedewerkers = useCallback(async () => {
+    setMedewerkers(await getSupportMedewerkers().catch(() => []))
+  }, [])
+
+  // Gooit door bij een fout: de pagina moet onderscheid kunnen maken tussen een
+  // mislukte toewijzing en een nog niet gedraaide migratie.
+  const wijsToe = useCallback(async (medewerkerId: string | null) => {
+    if (!activeGesprek) return
+    const res = await zetSupportToewijzing(activeGesprek.id, medewerkerId)
+    setActiveGesprek(res.gesprek)
+    setInbox(prev => prev.map(g => (g.id === res.gesprek.id ? { ...g, ...res.gesprek } : g)))
+  }, [activeGesprek])
+
   const stuurUpdate = useCallback(async (orgId: string, tekst: string) => {
     setSending(true)
     try {
@@ -162,6 +182,10 @@ export function useSupportInbox(channelName: string) {
     laadtMeer,
     laadMeer,
     accounts,
+    medewerkers,
+    toewijzingBeschikbaar,
+    loadMedewerkers,
+    wijsToe,
     activeGesprek,
     berichten,
     sending,
