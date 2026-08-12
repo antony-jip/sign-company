@@ -133,6 +133,8 @@ async function enforceRateLimit(identifier: string, res: VercelResponse): Promis
   } catch (err) {
     console.warn(`[ratelimit-error] support-bericht id=${identifier} err=${(err as Error).message}`)
     return true
+  }
+}
 
 /**
  * Sleutel voor het idempotency-venster van één gesprek.

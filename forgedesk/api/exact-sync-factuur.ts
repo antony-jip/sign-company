@@ -99,7 +99,10 @@ async function loadAppSettingsOrgFirst(
       .select(columns)
       .eq('organisatie_id', orgId)
       .maybeSingle()
-    if (data) return data as Record<string, unknown>
+    // Via unknown: `select()` met een variabele kolomlijst kan PostgREST niet
+    // typen, dus het statische type is hier GenericStringError en die overlapt
+    // niet met Record. Zelfde reden als in de tweede return hieronder.
+    if (data) return data as unknown as Record<string, unknown>
   }
   const { data } = await supabase
     .from('app_settings')
