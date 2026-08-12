@@ -197,10 +197,6 @@ export function getRowAccentClass(status: string): string {
   return map[status.toLowerCase()] ?? 'border-l-transparent'
 }
 
-export function getStatusColor(status: string): string {
-  return getStatusBadgeClass(status)
-}
-
 export type PillTone = 'cream' | 'mist' | 'blush' | 'lavender' | 'sage' | 'coral'
 
 export function getStatusPillTone(status: string): PillTone {

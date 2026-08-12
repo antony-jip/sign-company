@@ -118,8 +118,3 @@ export function labelToAutofillField(label: string): AutofillField | undefined {
   if (lower === 'montage') return 'montage'
   return undefined
 }
-
-/** Returns true if a label corresponds to an autofill-enabled field. */
-export function isAutofillField(label: string): boolean {
-  return labelToAutofillField(label) !== undefined
-}

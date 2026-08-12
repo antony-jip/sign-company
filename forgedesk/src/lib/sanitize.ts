@@ -74,15 +74,3 @@ export function sanitizeEmailHTML(html: string): string {
     ADD_ATTR: ['target'],
   })
 }
-
-export function sanitizeAIResponse(html: string): string {
-  if (!html) return ''
-  ensureLinkHook()
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: AI_TAGS,
-    ALLOWED_ATTR: AI_ATTR,
-    FORBID_TAGS: AI_FORBID_TAGS,
-    FORBID_ATTR: AI_FORBID_ATTR,
-    ALLOWED_URI_REGEXP: AI_URI_REGEXP,
-  })
-}

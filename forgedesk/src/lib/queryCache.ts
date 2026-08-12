@@ -24,10 +24,6 @@ export function setCached<T>(key: string, value: T): void {
   cache.set(key, value)
 }
 
-export function hasCached(key: string): boolean {
-  return cache.has(key)
-}
-
 export function clearQueryCache(): void {
   cache.clear()
   inflight.clear()

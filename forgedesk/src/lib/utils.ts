@@ -50,11 +50,6 @@ export function getInitials(name: string): string {
   return name.split(' ').filter(n => n.length > 0).map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export function truncate(str: string, length: number): string {
-  if (length <= 3) return str.length > length ? '...' : str
-  return str.length > length ? str.slice(0, length - 3) + '...' : str
-}
-
 export { getStatusBadgeClass as getStatusColor, getStatusLabel, getRowAccentClass } from '@/utils/statusColors'
 
 export function getPriorityColor(priority: string): string {

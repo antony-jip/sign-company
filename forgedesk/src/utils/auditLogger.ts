@@ -86,34 +86,6 @@ export async function logWijziging(params: {
   }
 }
 
-// Diff helper: vergelijk twee objecten en log per gewijzigd veld
-export async function logObjectWijziging<T extends Record<string, unknown>>(params: {
-  userId: string
-  entityType: AuditLogEntry['entity_type']
-  entityId: string
-  medewerkerNaam: string
-  oudeData: Partial<T>
-  nieuweData: Partial<T>
-  veldenOmTeLoggen: (keyof T)[]
-}): Promise<void> {
-  for (const veld of params.veldenOmTeLoggen) {
-    const oud = params.oudeData[veld]
-    const nieuw = params.nieuweData[veld]
-    if (JSON.stringify(oud) !== JSON.stringify(nieuw)) {
-      await logWijziging({
-        userId: params.userId,
-        entityType: params.entityType,
-        entityId: params.entityId,
-        actie: 'gewijzigd',
-        medewerkerNaam: params.medewerkerNaam,
-        veld: String(veld),
-        oudeWaarde: oud != null ? String(oud) : undefined,
-        nieuweWaarde: nieuw != null ? String(nieuw) : undefined,
-      })
-    }
-  }
-}
-
 export async function logCreate(params: {
   user: ActorUser | null | undefined
   medewerkers?: Medewerker[]
