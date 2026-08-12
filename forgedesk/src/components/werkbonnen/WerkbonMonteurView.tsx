@@ -27,6 +27,13 @@ import { uploadFile } from '@/services/storageService'
 import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder } from '@/utils/werkbonMedia'
 import { bufferWerkbonFeedback, clearWerkbonFeedback, flushWerkbonFeedbackQueue } from '@/utils/werkbonOfflineQueue'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
+import { useFeatureAan } from '@/contexts/FeatureFlagsContext'
+import { maakEigenaarSleutel, WachtrijVolFout } from '@/utils/offlineMutatieStore'
+import { foutOmschrijving, type FoutSoort } from '@/utils/offlineFoutClassificatie'
+import {
+  fotoInWachtrij, fotoUitWachtrij, fotoMutaties, fotoBestand, flushFotoWachtrij,
+  WACHTRIJ_GEWIJZIGD, isFotoPayload,
+} from '@/utils/werkbonFotoWachtrij'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
 
@@ -51,11 +58,22 @@ function formatDateNL(s: string | undefined): string {
   return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+// Een mislukte foto zoals het scherm hem kent. `wachtrijId` is gevuld zodra
+// hij ook in IndexedDB staat; zonder vlag blijft dat veld leeg en is dit
+// precies de in-memory lijst van vandaag.
+interface MislukteFoto {
+  file: File
+  type: WerkbonFoto['type']
+  wachtrijId?: string
+  vast?: boolean
+  reden?: string | null
+}
+
 export function WerkbonMonteurView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { setDirty } = useTabDirtyState()
-  const { user } = useAuth()
+  const { user, organisatieId } = useAuth()
   const { medewerkers } = useMedewerkers()
   const {
     profile, primaireKleur,
@@ -82,7 +100,12 @@ export function WerkbonMonteurView() {
 
   // Foto's waarvan de upload faalde. De telefoon heeft de enige kopie, dus die
   // bestanden blijven hier staan tot ze gelukt zijn of de monteur ze weggooit.
-  const [mislukteFotos, setMislukteFotos] = useState<{ file: File; type: WerkbonFoto['type'] }[]>([])
+  const [mislukteFotos, setMislukteFotos] = useState<MislukteFoto[]>([])
+
+  // Zonder rij in feature_flags is dit false en blijft alles hieronder dood:
+  // de wachtrij leeft dan alleen in het geheugen, precies zoals vandaag.
+  const wachtrijAan = useFeatureAan('offline_queue')
+  const eigenaar = maakEigenaarSleutel(userId || null, organisatieId ?? null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [showPdfPreview, setShowPdfPreview] = useState(false)
   const [previewNonce, setPreviewNonce] = useState(0)
@@ -235,14 +258,18 @@ export function WerkbonMonteurView() {
     if (!werkbon) return
     let uploaded = 0
     let lastError: string | null = null
-    const mislukt: File[] = []
+    const mislukt: { file: File; verkleind: Blob | null }[] = []
     // Parallel met een kleine concurrency-limiet: veel sneller dan serieel
     // wanneer de monteur meerdere foto's tegelijk kiest, zonder een zwakke
     // mobiele verbinding te verzadigen. Elke foto verschijnt zodra hij klaar is.
     const queue = [...files]
     const uploadFoto = async (file: File) => {
+      // Buiten de try, zodat een mislukte upload de al verkleinde versie kan
+      // bewaren in plaats van het volle camerabestand.
+      let verkleind: Blob | null = null
       try {
         const resized = await resizeImage(file, 1200)
+        verkleind = resized
         const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
         const safeName = sanitizeStorageFilename(file.name)
         const storagePath = `werkbon-fotos/${werkbon.id}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safeName}`
@@ -261,7 +288,7 @@ export function WerkbonMonteurView() {
       } catch (err) {
         logger.error('Fout bij uploaden foto:', err)
         lastError = err instanceof Error ? err.message : 'Onbekende fout'
-        mislukt.push(file)
+        mislukt.push({ file, verkleind })
       }
     }
     const worker = async () => { let f; while ((f = queue.shift())) await uploadFoto(f) }
@@ -273,10 +300,40 @@ export function WerkbonMonteurView() {
     // twee die weg waren, en de bestanden zelf werden weggegooid zodat er geen
     // herkansing was. Nu blijven ze staan tot ze gelukt zijn of de monteur ze
     // zelf weggooit.
+    // Met de vlag aan verhuizen de mislukte bestanden naar IndexedDB, zodat ze
+    // een herlaad of een crash overleven. Zonder vlag blijft het bij de lijst
+    // in het geheugen.
+    const bewaard: MislukteFoto[] = []
+    for (const { file, verkleind } of mislukt) {
+      let wachtrijId: string | undefined
+      if (wachtrijAan) {
+        try {
+          const mutatie = await fotoInWachtrij({
+            werkbonId: werkbon.id,
+            eigenaar,
+            type,
+            bestandsnaam: file.name,
+            bestand: verkleind ?? file,
+            verkleind: verkleind !== null,
+          })
+          wachtrijId = mutatie.id
+        } catch (err) {
+          // Een volle telefoon mag niet stil mislukken: dan denkt de monteur
+          // dat de foto bewaard is terwijl er niets staat.
+          if (err instanceof WachtrijVolFout) {
+            toast.error('Opslag van je telefoon is vol · deze foto is niet bewaard. Maak ruimte vrij.', { id: 'wachtrij-vol' })
+          } else {
+            logger.error('Foto niet in de offline-wachtrij gekregen:', err)
+          }
+        }
+      }
+      bewaard.push({ file, type, wachtrijId })
+    }
+
     setMislukteFotos((prev) => {
       const volgende = [
         ...prev.filter((m) => !files.includes(m.file)),
-        ...mislukt.map((file) => ({ file, type })),
+        ...bewaard,
       ]
       // Als 'gewijzigd' melden zodat de wegnavigeer-prompt uit useTabDirtyState
       // afgaat. Zonder dit hield alleen de bannertekst de monteur tegen, en die
@@ -293,7 +350,58 @@ export function WerkbonMonteurView() {
     } else {
       toast.error(`Upload mislukt: ${lastError ?? 'Onbekende fout'}. Probeer opnieuw.`)
     }
-  }, [werkbon, userId, bumpPreview, setDirty])
+  }, [werkbon, userId, bumpPreview, setDirty, wachtrijAan, eigenaar])
+
+  // De serverlijst opnieuw ophalen na een flush: foto's die alsnog zijn
+  // aangekomen horen meteen in het overzicht en in de PDF te staan.
+  const herlaadFotos = useCallback(async () => {
+    if (!werkbon) return
+    try {
+      const wbFotos = await getWerkbonFotos(werkbon.id)
+      for (const foto of wbFotos) foto.url = await resolveUrl(foto.url)
+      setFotos(wbFotos)
+    } catch (err) {
+      logger.warn('Kon fotolijst niet verversen:', err)
+    }
+  }, [werkbon])
+
+  // De wachtrij uit IndexedDB terug in beeld brengen. Dit is wat een herstart
+  // overleeft: zonder dit is een gesloten tab hetzelfde als een weggegooide foto.
+  const laadWachtrijUitOpslag = useCallback(async () => {
+    if (!wachtrijAan || !werkbon) return
+    const mutaties = await fotoMutaties(eigenaar, werkbon.id)
+    const uitOpslag: MislukteFoto[] = []
+    for (const mutatie of mutaties) {
+      const blob = await fotoBestand(mutatie.id)
+      if (!blob) continue
+      const payload = isFotoPayload(mutatie.payload) ? mutatie.payload : null
+      const naam = payload?.bestandsnaam || 'werkbonfoto.jpg'
+      uitOpslag.push({
+        file: new File([blob], naam, { type: blob.type || 'image/jpeg' }),
+        type: payload?.type || 'overig',
+        wachtrijId: mutatie.id,
+        vast: mutatie.status === 'vast',
+        reden: mutatie.laatsteFout || (mutatie.foutSoort ? foutOmschrijving(mutatie.foutSoort as FoutSoort) : null),
+      })
+    }
+    // Wat niet in de opslag kwam (volle telefoon) mag niet uit beeld verdwijnen.
+    setMislukteFotos((prev) => {
+      const volgende = [...prev.filter((m) => !m.wachtrijId), ...uitOpslag]
+      if (volgende.length > 0) setDirty(true)
+      return volgende
+    })
+  }, [wachtrijAan, werkbon, eigenaar, setDirty])
+
+  useEffect(() => { laadWachtrijUitOpslag() }, [laadWachtrijUitOpslag])
+
+  // De app-brede flush (AppLayout) kan deze werkbon leegmaken terwijl dit
+  // scherm openstaat; dan hoort het scherm mee te bewegen.
+  useEffect(() => {
+    if (!wachtrijAan) return
+    const opWijziging = () => { laadWachtrijUitOpslag(); herlaadFotos() }
+    window.addEventListener(WACHTRIJ_GEWIJZIGD, opWijziging)
+    return () => window.removeEventListener(WACHTRIJ_GEWIJZIGD, opWijziging)
+  }, [wachtrijAan, laadWachtrijUitOpslag, herlaadFotos])
 
   // Zonder deze vlag zien twee snelle kliks dezelfde mislukteFotos-snapshot,
   // want de state schuift pas na de eerste ronde. Dezelfde foto gaat dan twee
@@ -307,16 +415,55 @@ export function WerkbonMonteurView() {
     retryBezig.current = true
     setIsRetrying(true)
     try {
-    const perType = new Map<WerkbonFoto['type'], File[]>()
-    for (const { file, type } of mislukteFotos) {
-      perType.set(type, [...(perType.get(type) || []), file])
-    }
+      if (wachtrijAan) {
+        // Eén verzendpad. Zou dit scherm de bestanden zelf uploaden terwijl de
+        // app-brede flush hetzelfde item pakt, dan staat de foto dubbel op de
+        // werkbon.
+        const resultaat = await flushFotoWachtrij(eigenaar, userId)
+        await laadWachtrijUitOpslag()
+        await herlaadFotos()
+        if (resultaat.verstuurd > 0) {
+          bumpPreview()
+          toast.success(`${resultaat.verstuurd} foto${resultaat.verstuurd > 1 ? "'s" : ''} verstuurd`)
+        }
+        if (resultaat.vast > 0) toast.error('Niet alles kon verstuurd worden. Zie de melding bij de foto.')
+        else if (resultaat.wachtend > 0) toast.warning('Nog geen verbinding · de foto\'s blijven bewaard.')
+        return
+      }
+      const perType = new Map<WerkbonFoto['type'], File[]>()
+      for (const { file, type } of mislukteFotos) {
+        perType.set(type, [...(perType.get(type) || []), file])
+      }
       for (const [type, files] of perType) await uploadFotos(files, type)
     } finally {
       retryBezig.current = false
       setIsRetrying(false)
     }
-  }, [mislukteFotos, uploadFotos])
+  }, [
+    mislukteFotos, uploadFotos, wachtrijAan, eigenaar, userId,
+    laadWachtrijUitOpslag, herlaadFotos, bumpPreview,
+  ])
+
+  // De uitweg bij een foto die definitief niet verstuurd kan worden: terug naar
+  // het toestel. Met capture="environment" staat de opname niet in de
+  // camerarol, dus dit is de enige manier om hem te bewaren vóór weggooien.
+  const bewaarOpToestel = useCallback(() => {
+    for (const { file } of mislukteFotos) {
+      const url = URL.createObjectURL(file)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = file.name || 'werkbonfoto.jpg'
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    }
+  }, [mislukteFotos])
+
+  const gooiWachtrijWeg = useCallback(async () => {
+    for (const { wachtrijId } of mislukteFotos) {
+      if (wachtrijId) await fotoUitWachtrij(wachtrijId)
+    }
+    setMislukteFotos([])
+  }, [mislukteFotos])
 
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
     const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'))
@@ -647,8 +794,20 @@ export function WerkbonMonteurView() {
                 {mislukteFotos.length} foto{mislukteFotos.length > 1 ? "'s" : ''} nog niet verstuurd
               </p>
               <p className="text-xs text-muted-foreground">
-                Ze staan nog op je telefoon. Verlaat deze pagina niet voordat ze verstuurd zijn.
+                {wachtrijAan
+                  ? 'Ze staan bewaard op je telefoon en gaan mee zodra er verbinding is.'
+                  : 'Ze staan nog op je telefoon. Verlaat deze pagina niet voordat ze verstuurd zijn.'}
               </p>
+              {wachtrijAan && mislukteFotos.some((m) => m.vast) && (
+                <ul className="mt-2 space-y-1">
+                  {mislukteFotos.filter((m) => m.vast).map((m) => (
+                    <li key={m.wachtrijId} className="text-xs">
+                      <span className="font-medium">{m.file.name}</span>
+                      <span className="text-muted-foreground"> · {m.reden || 'Kon niet verstuurd worden'}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <button
               type="button"
@@ -659,6 +818,16 @@ export function WerkbonMonteurView() {
             >
               {isRetrying ? 'Versturen...' : 'Opnieuw versturen'}
             </button>
+            {wachtrijAan && (
+              <button
+                type="button"
+                onClick={bewaarOpToestel}
+                className="h-10 px-3 rounded-lg text-sm font-medium"
+                style={{ color: '#1A535C' }}
+              >
+                Opslaan op telefoon
+              </button>
+            )}
             <button
               type="button"
               disabled={isRetrying}
@@ -666,7 +835,7 @@ export function WerkbonMonteurView() {
                 // Eén tik naast de retry-knop mag niet de enige kopie wissen.
                 if (window.confirm(
                   `${mislukteFotos.length} foto${mislukteFotos.length > 1 ? "'s" : ''} definitief weggooien? Ze zijn dan niet meer terug te halen.`
-                )) setMislukteFotos([])
+                )) gooiWachtrijWeg()
               }}
               className="h-10 px-3 rounded-lg text-sm font-medium text-muted-foreground disabled:opacity-60"
             >

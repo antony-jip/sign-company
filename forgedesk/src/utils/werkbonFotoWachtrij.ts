@@ -101,6 +101,11 @@ export async function fotoOpnieuwProberen(id: string): Promise<void> {
   meldWijziging()
 }
 
+/** Het bewaarde bestand van een mutatie, om te tonen of op het toestel terug te zetten. */
+export async function fotoBestand(id: string): Promise<Blob | null> {
+  return blobVan(id)
+}
+
 async function bestaatAl(werkbonId: string, storagePad: string): Promise<boolean> {
   const bestaande = await getWerkbonFotos(werkbonId)
   return bestaande.some((f) => f.url === storagePad)
