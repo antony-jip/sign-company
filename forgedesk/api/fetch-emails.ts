@@ -201,11 +201,40 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
 
 export const config = { maxDuration: 60 }
 
+/**
+ * "We hebben gekeken" vastleggen, zonder de waterlijn aan te raken.
+ *
+ * De cron sorteert op deze kolom en pakt de acht oudste. Tikt een pad hem niet
+ * aan, dan blijft dat account permanent vooraan en verdringt het de mailboxen
+ * die wel post krijgen. Dat gold aanvankelijk voor de stille mailbox, en het
+ * geldt net zo voor de kapotte: een fout app-password of een onbereikbare
+ * server bezet anders eeuwig een plek.
+ *
+ * Bewust een partiele update en geen upsert: bestaat de rij niet, dan is dit een
+ * no-op en dat is juist. Een nieuwe rij aanmaken zou een waterlijn van 0
+ * suggereren op een mailbox die nooit gelezen is.
+ */
+async function tikSyncTijdstip(user_id: string, mapValue: string): Promise<void> {
+  try {
+    await supabaseAdmin
+      .from('email_sync_state')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('user_id', user_id)
+      .eq('folder', mapValue)
+  } catch {
+    // Mag de sync nooit laten falen: dit is administratie, geen mail.
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   let client: ImapFlow | null = null
+  // Buiten de try, zodat de catch nog weet welke folder we probeerden. mapValue
+  // zelf staat binnen de try en is daar niet in scope.
+  let mapValueVoorTik: string | null = null
+  let userIdVoorTik: string | null = null
 
   try {
     // `snel`: alleen mail ophalen en wegschrijven, zonder de nabewerking
@@ -217,6 +246,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { folder = 'INBOX', limit = 100, snel = false } = req.body
 
     const user_id = await verifyUser(req)
+    userIdVoorTik = user_id
 
     // E-mails horen org-gestempeld de tabel in: de nachtploeg-briefing en
     // andere org-brede lezers filteren op organisatie_id, en RLS-backfills
@@ -252,6 +282,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const mapValue = folder.toUpperCase() === 'INBOX' ? 'inbox' : folder.toLowerCase()
+    mapValueVoorTik = mapValue
 
     // ─── Connect to IMAP ───
     client = new ImapFlow({
@@ -273,6 +304,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const total = mailbox.exists
 
     if (total === 0) {
+      // Een lege mailbox is wel bekeken, dus hij hoort achteraan in de wachtrij.
+      await tikSyncTijdstip(user_id, mapValue)
       await client.logout()
       return res.status(200).json({ synced: 0, total: 0, fetched: 0 })
     }
@@ -607,8 +640,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // eerst" in plaats van "langst niet gesynct eerst", wat de comment daar
       // belooft.
       //
-      // Alleen updated_at, met last_seen_uid expliciet op de bestaande waarde,
-      // zodat een gelijktijdige run de waterlijn niet kan terugzetten.
+      // Een partiële update, dus PostgREST schrijft uitsluitend updated_at. Niet
+      // een upsert met last_seen_uid erbij: die waarde komt uit een read van
+      // eerder in deze functie, en terugschrijven zou precies de reset-race
+      // introduceren die dit blok moet vermijden.
       const { error: tikErr } = await supabaseAdmin
         .from('email_sync_state')
         .update({ updated_at: new Date().toISOString() })
@@ -804,6 +839,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ synced: 0, total: 0, error: msg })
     }
     console.error('[fetch-emails] Fatal error:', error)
+    // Ook een mislukte poging is een poging. Zonder deze tik bezet een account
+    // met een verlopen app-password of een onbereikbare server voor altijd een
+    // van de acht plekken per cron-ronde.
+    if (userIdVoorTik && mapValueVoorTik) await tikSyncTijdstip(userIdVoorTik, mapValueVoorTik)
     return res.status(500).json({ synced: 0, total: 0, error: msg })
   } finally {
     // Ensure IMAP connection is always closed

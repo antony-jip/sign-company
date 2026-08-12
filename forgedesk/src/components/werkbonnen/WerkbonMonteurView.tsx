@@ -273,10 +273,17 @@ export function WerkbonMonteurView() {
     // twee die weg waren, en de bestanden zelf werden weggegooid zodat er geen
     // herkansing was. Nu blijven ze staan tot ze gelukt zijn of de monteur ze
     // zelf weggooit.
-    setMislukteFotos((prev) => [
-      ...prev.filter((m) => !files.includes(m.file)),
-      ...mislukt.map((file) => ({ file, type })),
-    ])
+    setMislukteFotos((prev) => {
+      const volgende = [
+        ...prev.filter((m) => !files.includes(m.file)),
+        ...mislukt.map((file) => ({ file, type })),
+      ]
+      // Als 'gewijzigd' melden zodat de wegnavigeer-prompt uit useTabDirtyState
+      // afgaat. Zonder dit hield alleen de bannertekst de monteur tegen, en die
+      // hield niets tegen.
+      if (volgende.length > 0) setDirty(true)
+      return volgende
+    })
 
     if (uploaded > 0) bumpPreview()
     if (uploaded > 0 && mislukt.length === 0) {
@@ -286,14 +293,29 @@ export function WerkbonMonteurView() {
     } else {
       toast.error(`Upload mislukt: ${lastError ?? 'Onbekende fout'}. Probeer opnieuw.`)
     }
-  }, [werkbon, userId, bumpPreview])
+  }, [werkbon, userId, bumpPreview, setDirty])
+
+  // Zonder deze vlag zien twee snelle kliks dezelfde mislukteFotos-snapshot,
+  // want de state schuift pas na de eerste ronde. Dezelfde foto gaat dan twee
+  // keer omhoog en staat dubbel op de werkbon en in de PDF. Op een slechte
+  // verbinding is dubbeltikken precies wat een monteur doet.
+  const retryBezig = useRef(false)
+  const [isRetrying, setIsRetrying] = useState(false)
 
   const probeerFotosOpnieuw = useCallback(async () => {
+    if (retryBezig.current) return
+    retryBezig.current = true
+    setIsRetrying(true)
+    try {
     const perType = new Map<WerkbonFoto['type'], File[]>()
     for (const { file, type } of mislukteFotos) {
       perType.set(type, [...(perType.get(type) || []), file])
     }
-    for (const [type, files] of perType) await uploadFotos(files, type)
+      for (const [type, files] of perType) await uploadFotos(files, type)
+    } finally {
+      retryBezig.current = false
+      setIsRetrying(false)
+    }
   }, [mislukteFotos, uploadFotos])
 
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
@@ -315,6 +337,16 @@ export function WerkbonMonteurView() {
 
   const handleAfronden = useCallback(async () => {
     if (!werkbon) return
+    // Afronden met foto's in de wachtrij zou ze definitief kwijtmaken: met
+    // capture="environment" staat een opname op iOS niet in de camerarol, dus de
+    // telefoon heeft geen tweede kopie. De banner zei dit al, maar hield niets
+    // tegen.
+    if (mislukteFotos.length > 0) {
+      toast.error(
+        `Er ${mislukteFotos.length === 1 ? 'staat nog 1 foto' : `staan nog ${mislukteFotos.length} foto's`} in de wachtrij. Verstuur die eerst of gooi ze weg.`
+      )
+      return
+    }
     // Voorkom dat een lopende debounced autosave met de afronden-call racet, en
     // dat een oudere buffer-entry later een afgeronde werkbon terugzet.
     if (autosaveTimer.current) { clearTimeout(autosaveTimer.current); autosaveTimer.current = null }
@@ -353,7 +385,7 @@ export function WerkbonMonteurView() {
       setIsSaving(false)
     }
     bumpPreview()
-  }, [werkbon, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty, bumpPreview])
+  }, [werkbon, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty, bumpPreview, mislukteFotos])
 
   const generatePreviewPdf = useCallback(async (): Promise<Blob> => {
     if (!werkbon) throw new Error('Werkbon niet geladen')
@@ -621,15 +653,22 @@ export function WerkbonMonteurView() {
             <button
               type="button"
               onClick={probeerFotosOpnieuw}
-              className="h-10 px-4 rounded-lg text-sm font-bold text-white"
+              disabled={isRetrying}
+              className="h-10 px-4 rounded-lg text-sm font-bold text-white disabled:opacity-60"
               style={{ backgroundColor: '#F15025' }}
             >
-              Opnieuw versturen
+              {isRetrying ? 'Versturen...' : 'Opnieuw versturen'}
             </button>
             <button
               type="button"
-              onClick={() => setMislukteFotos([])}
-              className="h-10 px-3 rounded-lg text-sm font-medium text-muted-foreground"
+              disabled={isRetrying}
+              onClick={() => {
+                // Eén tik naast de retry-knop mag niet de enige kopie wissen.
+                if (window.confirm(
+                  `${mislukteFotos.length} foto${mislukteFotos.length > 1 ? "'s" : ''} definitief weggooien? Ze zijn dan niet meer terug te halen.`
+                )) setMislukteFotos([])
+              }}
+              className="h-10 px-3 rounded-lg text-sm font-medium text-muted-foreground disabled:opacity-60"
             >
               Weggooien
             </button>
