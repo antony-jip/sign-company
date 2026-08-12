@@ -57,7 +57,6 @@ export {
   type EmailTemplate,
   getGedeeldeEmails, getGedeeldeEmailsByToewijzing, updateEmailToewijzing,
   updateEmailTicketStatus, addInterneNotitie,
-  createEmailOpvolging,
 } from './emailService'
 
 export {
