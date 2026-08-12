@@ -21,7 +21,8 @@ export function SupportInboxPage() {
   const { user } = useAuth()
   const isMobile = useMediaQuery('(max-width: 767px)')
   const {
-    inbox, accounts, activeGesprek, berichten, sending, attentie,
+    inbox, totaal, heeftMeer, laadtMeer, laadMeer,
+    accounts, activeGesprek, berichten, sending, attentie,
     openGesprek, sluitGesprek, loadAccounts, reply, stuurUpdate, broadcast, zetStatus,
   } = useSupportInbox('support-page')
 
@@ -201,8 +202,9 @@ export function SupportInboxPage() {
 
         <div className="flex-1 overflow-y-auto min-h-0">
           {leftTab === 'gesprekken' ? (
-            gefilterdeGesprekken.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-[12px] text-muted-foreground/70 px-4 py-10 text-center">
+            <>
+            {gefilterdeGesprekken.length === 0 ? (
+              <div className="flex items-center justify-center text-[12px] text-muted-foreground/70 px-4 py-10 text-center">
                 {inbox.length === 0 ? 'Nog geen support-gesprekken.' : 'Geen gesprekken voor dit filter.'}
               </div>
             ) : (
@@ -235,7 +237,22 @@ export function SupportInboxPage() {
                   )
                 })}
               </ul>
-            )
+            )}
+            {laadtMeer && (
+              <div className="flex items-center justify-center py-5">
+                <Loader2 className="h-4 w-4 animate-spin text-petrol/40 mr-2" />
+                <span className="text-[12px] text-muted-foreground/80">Meer laden...</span>
+              </div>
+            )}
+            {heeftMeer && !laadtMeer && (
+              <button
+                onClick={laadMeer}
+                className="w-full py-4 text-[12px] text-muted-foreground hover:text-petrol hover:bg-petrol/[0.03] transition-colors duration-150"
+              >
+                Meer laden ({inbox.length} van {totaal})
+              </button>
+            )}
+            </>
           ) : (
             gefilterdeAccounts.length === 0 ? (
               <div className="flex items-center justify-center h-full text-[12px] text-muted-foreground/70 px-4 py-10 text-center">

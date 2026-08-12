@@ -12,6 +12,135 @@ const ADMIN_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
 // Org van de support-beheerder — alleen om de eigen org uit de klant-lijst te filteren.
 const ADMIN_ORG_ID = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229'
 
+const STANDAARD_PAGINA = 25
+// Ruim boven het aantal klant-organisaties: een reload na een realtime-INSERT
+// vraagt alle al geladen pagina's in één keer terug, en die mag de cap niet raken.
+const MAX_PAGINA = 200
+// Backstop op de preview-query. Zonder deze grens kan één gesprek met een zeer
+// lange thread de hele pagina-response opblazen.
+const MAX_PREVIEW_BERICHTEN_PER_GESPREK = 50
+
+interface BerichtPreview {
+  bericht: string
+  afzender: string
+  aangemaakt_op: string
+}
+
+/**
+ * Pure paginatie-parser. Onbruikbare of negatieve waarden vallen terug op de
+ * standaardpagina in plaats van een fout te geven: een kapotte querystring mag
+ * de inbox niet onbruikbaar maken.
+ */
+export function leesPaginatie(query: Record<string, unknown>): { limiet: number; offset: number } {
+  const ruweLimiet = Number.parseInt(String(query.limit ?? ''), 10)
+  const ruweOffset = Number.parseInt(String(query.offset ?? ''), 10)
+  return {
+    limiet: Number.isFinite(ruweLimiet) && ruweLimiet > 0 ? Math.min(ruweLimiet, MAX_PAGINA) : STANDAARD_PAGINA,
+    offset: Number.isFinite(ruweOffset) && ruweOffset > 0 ? ruweOffset : 0,
+  }
+}
+
+/**
+ * Ondergrens voor de preview-query.
+ *
+ * Het laatste bericht van een gesprek heeft altijd een aangemaakt_op >=
+ * laatste_bericht_op van dat gesprek (de schrijvers zetten die stempel vóór de
+ * insert). De oudste laatste_bericht_op van de pagina is dus een veilige
+ * ondergrens, waardoor we niet de volledige berichthistorie hoeven te lezen om
+ * één regel preview per gesprek te krijgen.
+ *
+ * De marge dekt klok-scheefstand en legacy-rijen af; een te lage ondergrens
+ * kost wat extra rijen, een te hoge zou previews laten verdwijnen.
+ */
+export function ondergrensVoorPreviews(
+  gesprekken: { laatste_bericht_op?: string | null }[],
+  margeMs = 60_000
+): string | null {
+  let oudste: number | null = null
+  for (const g of gesprekken) {
+    if (!g.laatste_bericht_op) return null
+    const t = new Date(g.laatste_bericht_op).getTime()
+    if (!Number.isFinite(t)) return null
+    if (oudste === null || t < oudste) oudste = t
+  }
+  if (oudste === null) return null
+  return new Date(oudste - margeMs).toISOString()
+}
+
+/**
+ * Laatste bericht per gesprek. Vergelijkt op tijdstempel in plaats van te
+ * vertrouwen op de sorteerrichting van de query, zodat een gewijzigde
+ * order-clausule de preview niet stil omdraait.
+ */
+export function laatsteBerichtPerGesprek(
+  berichten: { gesprek_id: string; bericht: string; afzender: string; aangemaakt_op: string }[]
+): Record<string, BerichtPreview> {
+  const perGesprek: Record<string, BerichtPreview> = {}
+  for (const b of berichten) {
+    const huidig = perGesprek[b.gesprek_id]
+    if (!huidig || b.aangemaakt_op > huidig.aangemaakt_op) {
+      perGesprek[b.gesprek_id] = {
+        bericht: b.bericht,
+        afzender: b.afzender,
+        aangemaakt_op: b.aangemaakt_op,
+      }
+    }
+  }
+  return perGesprek
+}
+
+/** Een gesprek vraagt aandacht zolang het open staat en de klant het laatst sprak. */
+export function telAttentie(
+  gesprekIds: string[],
+  laatste: Record<string, BerichtPreview>
+): number {
+  return gesprekIds.filter(id => laatste[id]?.afzender === 'klant').length
+}
+
+// Previews voor een set gesprekken, begrensd op tijd én aantal.
+async function haalPreviews(
+  gesprekken: { id: string; laatste_bericht_op?: string | null }[]
+): Promise<Record<string, BerichtPreview>> {
+  const ids = gesprekken.map(g => g.id)
+  if (ids.length === 0) return {}
+
+  let query = supabaseAdmin
+    .from('support_berichten')
+    .select('gesprek_id, bericht, afzender, aangemaakt_op')
+    .in('gesprek_id', ids)
+
+  const ondergrens = ondergrensVoorPreviews(gesprekken)
+  if (ondergrens) query = query.gte('aangemaakt_op', ondergrens)
+
+  const { data, error } = await query
+    .order('aangemaakt_op', { ascending: false })
+    .limit(ids.length * MAX_PREVIEW_BERICHTEN_PER_GESPREK)
+
+  if (error) {
+    console.error('[support-inbox] previews', error.message)
+    return {}
+  }
+  return laatsteBerichtPerGesprek(data || [])
+}
+
+/**
+ * Attentie-teller voor de sidebar-badge.
+ *
+ * Bewust alleen over openstaande gesprekken: dat is een van nature kleine set
+ * (een supportwachtrij), dus deze telling blijft begrensd terwijl de inbox
+ * zelf gepagineerd is. De badge mag niet met de paginagrootte meebewegen.
+ */
+async function berekenAttentie(): Promise<number> {
+  const { data: open, error } = await supabaseAdmin
+    .from('support_gesprekken')
+    .select('id, laatste_bericht_op')
+    .eq('status', 'open')
+  if (error || !open?.length) return 0
+
+  const previews = await haalPreviews(open as { id: string; laatste_bericht_op: string | null }[])
+  return telAttentie(open.map(g => g.id as string), previews)
+}
+
 // ── Auth helper (inline; Vercel bundelt geen api/_helpers/ imports) ──
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -116,6 +245,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ accounts: orgs || [] })
       }
 
+      // Alleen de badge-teller — de sidebar hoeft de lijst niet te laden.
+      if (req.query.attentie) {
+        return res.status(200).json({ attentie: await berekenAttentie() })
+      }
+
       const gesprekId = (req.query.gesprek_id as string | undefined)?.trim()
 
       // Eén gesprek → volledige thread.
@@ -138,41 +272,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ gesprek, berichten: berichten || [] })
       }
 
-      // Lijst → alle gesprekken, nieuwste activiteit eerst, met laatste-bericht-preview.
-      const { data: gesprekken, error: lijstError } = await supabaseAdmin
+      // Lijst → één pagina, nieuwste activiteit eerst, met laatste-bericht-preview.
+      const { limiet, offset } = leesPaginatie(req.query as Record<string, unknown>)
+      const { data: gesprekken, count, error: lijstError } = await supabaseAdmin
         .from('support_gesprekken')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('laatste_bericht_op', { ascending: false })
+        .range(offset, offset + limiet - 1)
       if (lijstError) throw new Error('Inbox ophalen mislukt')
 
-      const ids = (gesprekken || []).map(g => g.id)
-      let laatstePerGesprek: Record<string, { bericht: string; afzender: string; aangemaakt_op: string }> = {}
+      const pagina = (gesprekken || []) as { id: string; laatste_bericht_op: string | null }[]
+      const laatstePerGesprek = await haalPreviews(pagina)
 
-      if (ids.length > 0) {
-        const { data: berichten } = await supabaseAdmin
-          .from('support_berichten')
-          .select('gesprek_id, bericht, afzender, aangemaakt_op')
-          .in('gesprek_id', ids)
-          .order('aangemaakt_op', { ascending: false })
-
-        // Eerste hit per gesprek = laatste bericht (gesorteerd desc).
-        for (const b of berichten || []) {
-          if (!laatstePerGesprek[b.gesprek_id]) {
-            laatstePerGesprek[b.gesprek_id] = {
-              bericht: b.bericht,
-              afzender: b.afzender,
-              aangemaakt_op: b.aangemaakt_op,
-            }
-          }
-        }
-      }
-
-      const resultaat = (gesprekken || []).map(g => ({
+      const resultaat = pagina.map(g => ({
         ...g,
         laatste_bericht: laatstePerGesprek[g.id] || null,
       }))
 
-      return res.status(200).json({ gesprekken: resultaat })
+      return res.status(200).json({
+        gesprekken: resultaat,
+        totaal: count ?? resultaat.length,
+        attentie: await berekenAttentie(),
+      })
     }
 
     // ── POST: antwoord, update naar één account, broadcast, of status ──

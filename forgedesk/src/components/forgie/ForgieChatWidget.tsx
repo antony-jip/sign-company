@@ -22,6 +22,7 @@ import {
   type InboxGesprek,
 } from '@/services/supportChatService'
 import supabase from '@/services/supabaseClient'
+import { SUPPORT_PAGINA_GROOTTE } from '@/utils/supportInbox'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -374,9 +375,11 @@ export function ForgieChatWidget() {
   }, [isAdminOrg, user?.id])
 
   // ── Admin: inbox laden + realtime ──
+  // Het widget toont een korte lijst, geen volledige inbox: één pagina volstaat.
+  // Wie verder moet bladeren gaat naar /support.
   const loadInbox = useCallback(async () => {
-    const lijst = await getSupportInbox().catch(() => [])
-    setInbox(lijst)
+    const pagina = await getSupportInbox(SUPPORT_PAGINA_GROOTTE).catch(() => null)
+    if (pagina) setInbox(pagina.gesprekken)
   }, [])
 
   useEffect(() => {

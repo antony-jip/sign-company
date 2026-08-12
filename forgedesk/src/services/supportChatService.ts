@@ -88,12 +88,33 @@ export async function verstuurKlantEmail(gesprekId: string, email: string): Prom
 
 // ── Admin ──
 
-export async function getSupportInbox(): Promise<InboxGesprek[]> {
+export interface InboxPagina {
+  gesprekken: InboxGesprek[]
+  totaal: number
+  attentie: number
+}
+
+export async function getSupportInbox(limiet: number, offset = 0): Promise<InboxPagina> {
   const token = await getAuthToken()
-  const res = await fetch('/api/support-inbox', { headers: { Authorization: `Bearer ${token}` } })
+  const params = new URLSearchParams({ limit: String(limiet), offset: String(offset) })
+  const res = await fetch(`/api/support-inbox?${params}`, { headers: { Authorization: `Bearer ${token}` } })
   if (!res.ok) throw new Error('Inbox laden mislukt')
-  const data = await res.json() as { gesprekken: InboxGesprek[] }
-  return data.gesprekken || []
+  const data = await res.json() as Partial<InboxPagina>
+  const gesprekken = data.gesprekken || []
+  return {
+    gesprekken,
+    totaal: data.totaal ?? gesprekken.length,
+    attentie: data.attentie ?? 0,
+  }
+}
+
+// Alleen de badge-teller: de sidebar hoeft de gesprekslijst niet te laden.
+export async function getSupportAttentie(): Promise<number> {
+  const token = await getAuthToken()
+  const res = await fetch('/api/support-inbox?attentie=1', { headers: { Authorization: `Bearer ${token}` } })
+  if (!res.ok) throw new Error('Attentie laden mislukt')
+  const data = await res.json() as { attentie?: number }
+  return data.attentie ?? 0
 }
 
 export interface SupportAccount {
