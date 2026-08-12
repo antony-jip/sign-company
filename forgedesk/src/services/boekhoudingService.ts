@@ -1,7 +1,7 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, sanitizeDates, round2,
+  withUserId, getOrgId, sanitizeDates, round2, fetchAllPages,
 } from './supabaseHelpers'
 import type {
   Grootboek,
@@ -357,11 +357,16 @@ async function generateUitgaveNummer(): Promise<string> {
   return `UIT-${jaar}-${String(maxNr + 1).padStart(3, '0')}`
 }
 
-export async function getUitgaven(): Promise<Uitgave[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('uitgaven').select('*').order('datum', { ascending: false })
-    if (error) throw error
-    return data || []
+export async function getUitgaven(limit = 50000): Promise<Uitgave[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<Uitgave>((van, tot) =>
+      sb
+        .from('uitgaven')
+        .select('*')
+        .order('datum', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
   }
   return getLocalData<Uitgave>('uitgaven')
 }

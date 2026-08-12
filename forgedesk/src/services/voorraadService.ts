@@ -1,15 +1,22 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, round2,
+  withUserId, getOrgId, round2, fetchAllPages,
 } from './supabaseHelpers'
 import type { VoorraadArtikel, VoorraadMutatie } from '@/types'
 
-export async function getVoorraadArtikelen(limit = 500): Promise<VoorraadArtikel[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('voorraad_artikelen').select('*').order('naam').limit(limit)
-    if (error) throw error
-    return data || []
+// De voorraadwaarde in de rapportage is een som over alle artikelen. Met een
+// vaste .limit(500) telde die som stil alleen de eerste 500 artikelen mee.
+export async function getVoorraadArtikelen(limit = 50000): Promise<VoorraadArtikel[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<VoorraadArtikel>((van, tot) =>
+      sb
+        .from('voorraad_artikelen')
+        .select('*')
+        .order('naam', { ascending: true })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
   }
   return getLocalData<VoorraadArtikel>('voorraad_artikelen')
 }
