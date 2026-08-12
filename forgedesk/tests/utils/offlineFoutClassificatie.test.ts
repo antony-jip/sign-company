@@ -144,6 +144,24 @@ describe('hoortInWachtrij', () => {
     expect(hoortInWachtrij(storageFout(413), false)).toBe(false)
   })
 
+  it('is een strikte uitbreiding van de oude regel', () => {
+    // Zonder vlag geldt `navigator.onLine === false`. Alles wat die regel
+    // bewaarde, bewaart de nieuwe ook: de vlag omzetten kan dus nooit iets
+    // wegnemen dat vandaag wél bewaard wordt.
+    const oudeRegel = (offline: boolean) => offline
+    const gevallen: unknown[] = [
+      postgrestNetwerkfout(),
+      postgrestFout('42501'),
+      storageFout(413),
+      new Error('iets onverwachts'),
+    ]
+    for (const fout of gevallen) {
+      for (const offline of [true, false]) {
+        if (oudeRegel(offline)) expect(hoortInWachtrij(fout, offline)).toBe(true)
+      }
+    }
+  })
+
   it('bewaart altijd als het toestel aantoonbaar offline is', () => {
     // Offline is op zichzelf bewijs dat er geen antwoord kan zijn geweest,
     // wat de fout ook beweert. Zo blijft het oude gedrag een deelverzameling
