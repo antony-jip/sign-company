@@ -78,9 +78,16 @@ visuele wijziging.
 - RLS-policies op `organisatie_id` (zie migrations/048 als referentie-pattern).
 - Nieuwe tabellen/kolommen krijgen altijd org-scoped RLS-policy
   (SELECT/INSERT/UPDATE/DELETE elk afgedekt).
-- **Migratie-nummering:** check `schema_migrations` voor het eerstvolgende
+- **Migratie-nummering:** check `doen_migraties` voor het eerstvolgende
   vrije nummer voordat je een nieuwe migratie aanmaakt. Het historische
   conflict op 093/094 niet opnieuw gebruiken.
+- **`doen_migraties` is de administratie** van wat gedraaid is (migratie 198;
+  `schema_migrations` is bezet door Supabase zelf). Alleen `service_role`
+  komt erbij; de app leest deze tabel niet.
+- **Elke nieuwe migratie eindigt op één INSERT-regel** buiten de COMMIT:
+  `INSERT INTO doen_migraties (bestand) VALUES ('<bestandsnaam>.sql') ON CONFLICT DO NOTHING;`
+  De tabel is administratie, geen bron van waarheid: spreekt hij de database
+  tegen, dan heeft de database gelijk.
 - Migraties idempotent maken: `CREATE TABLE IF NOT EXISTS`,
   `ON CONFLICT DO NOTHING`, etc.
 - Migraties worden door Antony zelf in de Supabase SQL Editor gedraaid.
