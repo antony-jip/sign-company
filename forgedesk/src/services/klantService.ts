@@ -382,16 +382,6 @@ export async function koppelContactAanKlant(contactId: string, klantId: string):
   if (error) throw error
 }
 
-export async function ontkoppelContact(contactId: string): Promise<void> {
-  assertId(contactId)
-  if (!isSupabaseConfigured() || !supabase) return
-  const { error } = await supabase
-    .from('contactpersonen')
-    .update({ klant_id: null, updated_at: new Date().toISOString() })
-    .eq('id', contactId)
-  if (error) throw error
-}
-
 // ============ KLANT HISTORIE ============
 
 export async function getKlantHistorie(klantId: string): Promise<KlantHistorie[]> {

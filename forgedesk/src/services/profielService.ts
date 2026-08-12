@@ -601,20 +601,6 @@ export async function getNotificaties(limit = 100): Promise<Notificatie[]> {
   return getLocalData<Notificatie>('notificaties')
 }
 
-export async function createNotificatie(notif: Omit<Notificatie, 'id' | 'created_at'>): Promise<Notificatie> {
-  const newNotif: Notificatie = { ...notif, id: generateId(), created_at: now() } as Notificatie
-  if (isSupabaseConfigured() && supabase) {
-    const _orgId = await getOrgId()
-    const { data, error } = await supabase.from('notificaties').insert({ ...await withUserId(newNotif), organisatie_id: _orgId }).select().single()
-    if (error) throw error
-    return data
-  }
-  const items = getLocalData<Notificatie>('notificaties')
-  items.unshift(newNotif)
-  setLocalData('notificaties', items)
-  return newNotif
-}
-
 export async function markNotificatieGelezen(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {

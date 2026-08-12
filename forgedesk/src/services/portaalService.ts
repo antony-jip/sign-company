@@ -23,95 +23,7 @@ export function generateBetaalToken(): string {
   return generateId()
 }
 
-export async function getFactuurByBetaalToken(token: string): Promise<Factuur | null> {
-  assertId(token, 'betaal_token')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('facturen').select('*').eq('betaal_token', token).maybeSingle()
-    if (error) return null
-    return data
-  }
-  return getLocalData<Factuur>('facturen').find((f) => f.betaal_token === token) || null
-}
-
-export async function markFactuurBekeken(token: string): Promise<void> {
-  assertId(token, 'betaal_token')
-  const factuur = await getFactuurByBetaalToken(token)
-  if (!factuur) return
-  const updates: Partial<Factuur> = {
-    online_bekeken: true,
-    online_bekeken_op: factuur.online_bekeken_op || now(),
-  }
-  if (isSupabaseConfigured() && supabase) {
-    await supabase.from('facturen').update({ ...updates, updated_at: now() }).eq('id', factuur.id)
-    return
-  }
-  const items = getLocalData<Factuur>('facturen')
-  const index = items.findIndex((f) => f.id === factuur.id)
-  if (index !== -1) {
-    items[index] = { ...items[index], ...updates, updated_at: now() }
-    setLocalData('facturen', items)
-  }
-}
-
 // ============ OFFERTE TRACKING (Tier 2 Feature 2) ============
-
-export async function getOfferteByPubliekToken(token: string): Promise<Offerte | null> {
-  assertId(token, 'publiek_token')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('offertes').select('*').eq('publiek_token', token).maybeSingle()
-    if (error) return null
-    return data
-  }
-  return getLocalData<Offerte>('offertes').find((o) => o.publiek_token === token) || null
-}
-
-export async function updateOfferteTracking(token: string): Promise<void> {
-  assertId(token, 'publiek_token')
-  const offerte = await getOfferteByPubliekToken(token)
-  if (!offerte) return
-  const updates: Partial<Offerte> = {
-    bekeken_door_klant: true,
-    eerste_bekeken_op: offerte.eerste_bekeken_op || now(),
-    laatst_bekeken_op: now(),
-    aantal_keer_bekeken: (offerte.aantal_keer_bekeken || 0) + 1,
-    status: offerte.status === 'verzonden' ? 'bekeken' : offerte.status,
-  }
-  if (isSupabaseConfigured() && supabase) {
-    await supabase.from('offertes').update({ ...updates, updated_at: now() }).eq('id', offerte.id)
-    return
-  }
-  const items = getLocalData<Offerte>('offertes')
-  const index = items.findIndex((o) => o.id === offerte.id)
-  if (index !== -1) {
-    items[index] = { ...items[index], ...updates, updated_at: now() }
-    setLocalData('offertes', items)
-  }
-}
-
-export async function respondOpOfferte(token: string, reactie: { type: 'goedgekeurd' | 'afgewezen' | 'vraag'; bericht?: string; naam?: string }): Promise<void> {
-  assertId(token, 'publiek_token')
-  const offerte = await getOfferteByPubliekToken(token)
-  if (!offerte) throw new Error('Offerte niet gevonden')
-  const statusMap: Record<string, Offerte['status']> = {
-    goedgekeurd: 'goedgekeurd',
-    afgewezen: 'afgewezen',
-    vraag: offerte.status,
-  }
-  const updates: Partial<Offerte> = {
-    status: statusMap[reactie.type],
-    follow_up_notitie: reactie.type === 'vraag' ? reactie.bericht : offerte.follow_up_notitie,
-  }
-  if (isSupabaseConfigured() && supabase) {
-    await supabase.from('offertes').update({ ...updates, updated_at: now() }).eq('id', offerte.id)
-  } else {
-    const items = getLocalData<Offerte>('offertes')
-    const index = items.findIndex((o) => o.id === offerte.id)
-    if (index !== -1) {
-      items[index] = { ...items[index], ...updates, updated_at: now() }
-      setLocalData('offertes', items)
-    }
-  }
-}
 
 // ============ KLANTPORTAAL ============
 
@@ -276,21 +188,6 @@ export async function getPortaalByProject(projectId: string): Promise<ProjectPor
   return portalen.find((p) => p.project_id === projectId && p.actief) || null
 }
 
-export async function getPortaalByToken(token: string): Promise<ProjectPortaal | null> {
-  assertId(token, 'token')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('project_portalen')
-      .select('*')
-      .eq('token', token)
-      .maybeSingle()
-    if (error) return null
-    return data
-  }
-  const portalen = getLocalData<ProjectPortaal>('project_portalen')
-  return portalen.find((p) => p.token === token) || null
-}
-
 export async function createPortaal(projectId: string, userId: string): Promise<ProjectPortaal> {
   assertId(projectId, 'project_id')
   assertId(userId, 'user_id')
@@ -324,47 +221,6 @@ export async function createPortaal(projectId: string, userId: string): Promise<
   portalen.push(nieuw)
   setLocalData('project_portalen', portalen)
   return nieuw
-}
-
-export async function verlengPortaal(portaalId: string): Promise<ProjectPortaal> {
-  assertId(portaalId, 'portaal_id')
-  const verlooptOp = new Date()
-  verlooptOp.setDate(verlooptOp.getDate() + 30)
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('project_portalen')
-      .update({ verloopt_op: verlooptOp.toISOString(), updated_at: new Date().toISOString() })
-      .eq('id', portaalId)
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
-  const portalen = getLocalData<ProjectPortaal>('project_portalen')
-  const idx = portalen.findIndex((p) => p.id === portaalId)
-  if (idx === -1) throw new Error('Portaal niet gevonden')
-  portalen[idx].verloopt_op = verlooptOp.toISOString()
-  portalen[idx].updated_at = new Date().toISOString()
-  setLocalData('project_portalen', portalen)
-  return portalen[idx]
-}
-
-export async function deactiveerPortaal(portaalId: string): Promise<void> {
-  assertId(portaalId, 'portaal_id')
-  if (isSupabaseConfigured() && supabase) {
-    const { error } = await supabase
-      .from('project_portalen')
-      .update({ actief: false, updated_at: new Date().toISOString() })
-      .eq('id', portaalId)
-    if (error) throw error
-    return
-  }
-  const portalen = getLocalData<ProjectPortaal>('project_portalen')
-  const idx = portalen.findIndex((p) => p.id === portaalId)
-  if (idx >= 0) {
-    portalen[idx].actief = false
-    setLocalData('project_portalen', portalen)
-  }
 }
 
 export async function getPortaalItems(portaalId: string, alleenZichtbaar = false): Promise<PortaalItem[]> {
@@ -457,30 +313,6 @@ export async function createPortaalItem(
   return nieuw
 }
 
-export async function updatePortaalItem(itemId: string, updates: Partial<PortaalItem>): Promise<void> {
-  assertId(itemId, 'item_id')
-  const { bestanden: _b, reacties: _r, ...cleanUpdates } = updates
-  if (isSupabaseConfigured() && supabase) {
-    const { error } = await supabase
-      .from('portaal_items')
-      .update({ ...cleanUpdates, updated_at: new Date().toISOString() })
-      .eq('id', itemId)
-    if (error) throw error
-    return
-  }
-  const items = getLocalData<PortaalItem>('portaal_items')
-  const idx = items.findIndex((i) => i.id === itemId)
-  if (idx >= 0) {
-    items[idx] = { ...items[idx], ...cleanUpdates, updated_at: new Date().toISOString() }
-    setLocalData('portaal_items', items)
-  }
-}
-
-export async function deletePortaalItem(itemId: string): Promise<void> {
-  assertId(itemId, 'item_id')
-  await updatePortaalItem(itemId, { zichtbaar_voor_klant: false })
-}
-
 export async function createPortaalBestand(bestand: Omit<PortaalBestand, 'id' | 'created_at'>): Promise<PortaalBestand> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
@@ -498,116 +330,4 @@ export async function createPortaalBestand(bestand: Omit<PortaalBestand, 'id' | 
   return nieuw
 }
 
-export async function createPortaalReactie(reactie: Omit<PortaalReactie, 'id' | 'created_at'>): Promise<PortaalReactie> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('portaal_reacties')
-      .insert(await withUserId(reactie))
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
-  const nieuw: PortaalReactie = { ...reactie, id: crypto.randomUUID(), created_at: new Date().toISOString() }
-  const reacties = getLocalData<PortaalReactie>('portaal_reacties')
-  reacties.push(nieuw)
-  setLocalData('portaal_reacties', reacties)
-  return nieuw
-}
-
 // ============ APP NOTIFICATIES ============
-
-export async function getAppNotificaties(userId: string, onlyUnread = false): Promise<AppNotificatie[]> {
-  assertId(userId, 'user_id')
-  if (isSupabaseConfigured() && supabase) {
-    let query = supabase
-      .from('app_notificaties')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(50)
-    if (onlyUnread) query = query.eq('gelezen', false)
-    const { data, error } = await query
-    if (error) throw error
-    return data || []
-  }
-  const items = getLocalData<AppNotificatie>('app_notificaties')
-  let filtered = items.filter((n) => n.user_id === userId)
-  if (onlyUnread) filtered = filtered.filter((n) => !n.gelezen)
-  return filtered.sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 50)
-}
-
-export async function createAppNotificatie(notificatie: Omit<AppNotificatie, 'id' | 'gelezen' | 'actie_genomen' | 'created_at'>): Promise<AppNotificatie> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('app_notificaties')
-      .insert(await withUserId(notificatie))
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
-  const nieuw: AppNotificatie = { ...notificatie, id: crypto.randomUUID(), gelezen: false, actie_genomen: false, created_at: new Date().toISOString() }
-  const items = getLocalData<AppNotificatie>('app_notificaties')
-  items.push(nieuw)
-  setLocalData('app_notificaties', items)
-  return nieuw
-}
-
-export async function markeerNotificatieGelezen(notificatieId: string): Promise<void> {
-  assertId(notificatieId, 'notificatie_id')
-  if (isSupabaseConfigured() && supabase) {
-    await supabase.from('app_notificaties').update({ gelezen: true }).eq('id', notificatieId)
-    return
-  }
-  const items = getLocalData<AppNotificatie>('app_notificaties')
-  const idx = items.findIndex((n) => n.id === notificatieId)
-  if (idx >= 0) {
-    items[idx].gelezen = true
-    setLocalData('app_notificaties', items)
-  }
-}
-
-export async function markeerAlleNotificatiesGelezen(userId: string): Promise<void> {
-  assertId(userId, 'user_id')
-  if (isSupabaseConfigured() && supabase) {
-    await supabase.from('app_notificaties').update({ gelezen: true }).eq('user_id', userId).eq('gelezen', false)
-    return
-  }
-  const items = getLocalData<AppNotificatie>('app_notificaties')
-  items.forEach((n) => { if (n.user_id === userId) n.gelezen = true })
-  setLocalData('app_notificaties', items)
-}
-
-export async function updateNotificatieActie(notificatieId: string): Promise<void> {
-  assertId(notificatieId, 'notificatie_id')
-  if (isSupabaseConfigured() && supabase) {
-    await supabase.from('app_notificaties').update({ actie_genomen: true, gelezen: true }).eq('id', notificatieId)
-    return
-  }
-  const items = getLocalData<AppNotificatie>('app_notificaties')
-  const idx = items.findIndex((n) => n.id === notificatieId)
-  if (idx >= 0) {
-    items[idx].actie_genomen = true
-    items[idx].gelezen = true
-    setLocalData('app_notificaties', items)
-  }
-}
-
-export async function getAllePortalen(userId: string): Promise<(ProjectPortaal & { project?: Project; items_count?: number })[]> {
-  assertId(userId, 'user_id')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('project_portalen')
-      .select('*, projecten(id, naam, klant_id, status)')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-    if (error) throw error
-    return (data || []).map((p: Record<string, unknown>) => ({
-      ...p,
-      project: p.projecten as Project | undefined,
-    })) as (ProjectPortaal & { project?: Project })[]
-  }
-  const portalen = getLocalData<ProjectPortaal>('project_portalen')
-  return portalen.filter((p) => p.user_id === userId).sort((a, b) => b.created_at.localeCompare(a.created_at))
-}

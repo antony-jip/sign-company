@@ -114,16 +114,6 @@ export async function getWerkbonnenByProject(projectId: string): Promise<Werkbon
   return getLocalData<Werkbon>('werkbonnen').filter((w) => w.project_id === projectId)
 }
 
-export async function getWerkbonnenByOfferte(offerteId: string): Promise<Werkbon[]> {
-  assertId(offerteId, 'offerte_id')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbonnen').select('*').eq('offerte_id', offerteId).order('datum', { ascending: false })
-    if (error) throw error
-    return data || []
-  }
-  return getLocalData<Werkbon>('werkbonnen').filter((w) => w.offerte_id === offerteId)
-}
-
 export async function getWerkbonnenByKlant(klantId: string): Promise<Werkbon[]> {
   assertId(klantId, 'klant_id')
   if (isSupabaseConfigured() && supabase) {
@@ -198,55 +188,6 @@ export async function deleteWerkbon(id: string): Promise<void> {
   }
   const items = getLocalData<Werkbon>('werkbonnen')
   setLocalData('werkbonnen', items.filter((w) => w.id !== id))
-}
-
-export async function getWerkbonRegels(werkbonId: string): Promise<WerkbonRegel[]> {
-  assertId(werkbonId, 'werkbon_id')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbon_regels').select('*').eq('werkbon_id', werkbonId).order('created_at')
-    if (error) throw error
-    return data || []
-  }
-  return getLocalData<WerkbonRegel>('werkbon_regels').filter((r) => r.werkbon_id === werkbonId)
-}
-
-export async function createWerkbonRegel(regel: Omit<WerkbonRegel, 'id' | 'created_at'>): Promise<WerkbonRegel> {
-  const newRegel: WerkbonRegel = { ...regel, id: generateId(), created_at: now() } as WerkbonRegel
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbon_regels').insert(await withUserId(newRegel)).select().single()
-    if (error) throw error
-    return data
-  }
-  const items = getLocalData<WerkbonRegel>('werkbon_regels')
-  items.push(newRegel)
-  setLocalData('werkbon_regels', items)
-  return newRegel
-}
-
-export async function updateWerkbonRegel(id: string, updates: Partial<WerkbonRegel>): Promise<WerkbonRegel> {
-  assertId(id)
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbon_regels').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
-    if (error) throw error
-    return data
-  }
-  const items = getLocalData<WerkbonRegel>('werkbon_regels')
-  const index = items.findIndex((r) => r.id === id)
-  if (index === -1) throw new Error('Werkbon regel niet gevonden')
-  items[index] = { ...items[index], ...updates, updated_at: now() }
-  setLocalData('werkbon_regels', items)
-  return items[index]
-}
-
-export async function deleteWerkbonRegel(id: string): Promise<void> {
-  assertId(id)
-  if (isSupabaseConfigured() && supabase) {
-    const { error } = await supabase.from('werkbon_regels').delete().eq('id', id)
-    if (error) throw error
-    return
-  }
-  const items = getLocalData<WerkbonRegel>('werkbon_regels')
-  setLocalData('werkbon_regels', items.filter((r) => r.id !== id))
 }
 
 export async function getWerkbonFotos(werkbonId: string): Promise<WerkbonFoto[]> {

@@ -65,13 +65,6 @@ export async function getKbArticles(): Promise<import('@/types').KbArticle[]> {
   })) as import('@/types').KbArticle[]
 }
 
-export async function getKbArticle(id: string): Promise<import('@/types').KbArticle | null> {
-  if (!isSupabaseConfigured() || !supabase) return getLocalData<import('@/types').KbArticle>('kb_articles').find(a => a.id === id) || null
-  const { data, error } = await supabase.from('kb_articles').select('*, kb_categories(naam)').eq('id', id).maybeSingle()
-  if (error || !data) return null
-  return { ...data, bijlagen: data.bijlagen || [], zoek_tags: data.zoek_tags || [], category_naam: (data.kb_categories as Record<string, unknown> | null)?.naam as string | undefined } as import('@/types').KbArticle
-}
-
 export async function createKbArticle(article: Omit<import('@/types').KbArticle, 'id' | 'created_at' | 'updated_at' | 'category_naam'>): Promise<import('@/types').KbArticle> {
   if (!isSupabaseConfigured() || !supabase) return createLocalItem('kb_articles', article)
   const { data, error } = await supabase.from('kb_articles').insert(withUserId(article)).select().single()

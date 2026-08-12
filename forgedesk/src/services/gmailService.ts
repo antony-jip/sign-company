@@ -1,11 +1,4 @@
-import supabase, { isSupabaseConfigured } from './supabaseClient'
-import type { Email } from '@/types'
-
-// ============ CONFIGURATION CHECK ============
-
-export function isGmailConfigured(): boolean {
-  return isSupabaseConfigured()
-}
+import supabase from './supabaseClient'
 
 // ============ AUTH HELPER ============
 
@@ -64,52 +57,7 @@ export async function authenticateGmail(): Promise<boolean> {
   return !!data
 }
 
-export function isAuthenticated(): boolean {
-  if (!supabase) return false
-  return isSupabaseConfigured()
-}
-
-export function signOutGmail(): void {
-  // No-op: email settings persist. User can remove them in settings.
-}
-
 // ============ EMAIL OPERATIONS ============
-
-export async function fetchEmails(
-  query?: string,
-  maxResults: number = 20
-): Promise<Email[]> {
-  if (!supabase) return []
-
-  let q = supabase
-    .from('emails')
-    .select('*')
-    .order('datum', { ascending: false })
-    .limit(maxResults)
-
-  if (query) {
-    // Escape special PostgREST filter characters to prevent filter injection
-    const sanitized = query.replace(/[\\%_]/g, c => `\\${c}`)
-    q = q.or(`onderwerp.ilike.%${sanitized}%,van.ilike.%${sanitized}%,inhoud.ilike.%${sanitized}%`)
-  }
-
-  const { data, error } = await q
-  if (error) throw new Error(`Fout bij ophalen van emails: ${error.message}`)
-  return data || []
-}
-
-export async function getEmailDetail(messageId: string): Promise<Email | null> {
-  if (!supabase) return null
-
-  const { data, error } = await supabase
-    .from('emails')
-    .select('*')
-    .eq('id', messageId)
-    .single()
-
-  if (error) throw new Error(`Fout bij ophalen van email: ${error.message}`)
-  return data
-}
 
 interface SendEmailOptions {
   cc?: string
@@ -236,28 +184,6 @@ export async function sendEmail(
   }
 
   return response.json()
-}
-
-export async function markAsRead(messageId: string): Promise<void> {
-  if (!supabase) return
-
-  await supabase
-    .from('emails')
-    .update({ gelezen: true })
-    .eq('id', messageId)
-}
-
-export async function deleteEmail(messageId: string): Promise<void> {
-  if (!supabase) return
-
-  await supabase
-    .from('emails')
-    .update({ map: 'prullenbak' })
-    .eq('id', messageId)
-}
-
-export async function searchEmails(query: string): Promise<Email[]> {
-  return fetchEmails(query, 50)
 }
 
 // ============ IMAP EMAIL OPERATIONS ============
@@ -652,44 +578,6 @@ export async function clearEmailCache(): Promise<void> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) return
   await supabase.from('emails').delete().eq('user_id', session.user.id)
-}
-
-// Legacy — keep for backward compat
-export async function getEmailSettings(): Promise<{
-  gmail_address: string
-  smtp_host: string
-  smtp_port: number
-  imap_host: string
-  imap_port: number
-} | null> {
-  const settings = await loadEmailSettingsFromDb()
-  if (!settings) return null
-  return {
-    gmail_address: settings.gmail_address,
-    smtp_host: settings.smtp_host,
-    smtp_port: settings.smtp_port,
-    imap_host: settings.imap_host,
-    imap_port: settings.imap_port,
-  }
-}
-
-// Legacy — keep for backward compat, now routes to direct Supabase
-export async function saveEmailSettings(settings: {
-  gmail_address: string
-  app_password: string
-  smtp_host?: string
-  smtp_port?: number
-  imap_host?: string
-  imap_port?: number
-}): Promise<void> {
-  await saveEmailSettingsToDb({
-    gmail_address: settings.gmail_address,
-    app_password: settings.app_password,
-    smtp_host: settings.smtp_host || 'smtp.gmail.com',
-    smtp_port: settings.smtp_port || 587,
-    imap_host: settings.imap_host || 'imap.gmail.com',
-    imap_port: settings.imap_port || 993,
-  })
 }
 
 // ── IMAP-actie (verwijderen / archiveren) ─────────────────────────────────

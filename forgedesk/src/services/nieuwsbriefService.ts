@@ -39,16 +39,6 @@ export async function getNieuwsbrieven(): Promise<Nieuwsbrief[]> {
   return (data ?? []) as Nieuwsbrief[]
 }
 
-export async function getNieuwsbrief(id: string): Promise<Nieuwsbrief | null> {
-  const { data, error } = await db()
-    .from('nieuwsbrieven')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle()
-  if (error) throw error
-  return (data as Nieuwsbrief) ?? null
-}
-
 export async function maakConcept(onderwerp: string, html: string): Promise<Nieuwsbrief> {
   const { data: { user } } = await db().auth.getUser()
   if (!user) throw new Error('Niet ingelogd')
@@ -78,15 +68,6 @@ export async function updateConcept(
 export async function verwijderNieuwsbrief(id: string): Promise<void> {
   const { error } = await db().from('nieuwsbrieven').delete().eq('id', id)
   if (error) throw error
-}
-
-export async function getAfmeldingen(): Promise<NieuwsbriefAfmelding[]> {
-  const { data, error } = await db()
-    .from('nieuwsbrief_afmeldingen')
-    .select('*')
-    .order('afgemeld_op', { ascending: false })
-  if (error) throw error
-  return (data ?? []) as NieuwsbriefAfmelding[]
 }
 
 const NIEUWSBRIEF_BUCKET = 'nieuwsbrief-media'

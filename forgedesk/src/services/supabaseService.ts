@@ -1,6 +1,6 @@
 export {
   getOffertes, zoekOffertes, getOfferte, getOffertesByProject, getOffertesByKlant,
-  getKlantOfferteContext, getMateriaalSuggesties,
+  getMateriaalSuggesties,
   createOfferte, updateOfferte, deleteOfferte, OfferteConflictError,
   getOfferteItems, getOfferteItemsVoorOffertes, createOfferteItem, updateOfferteItem, deleteOfferteItem,
   syncOfferteItems, getRecentOfferteItemSuggesties,
@@ -9,8 +9,8 @@ export {
   getOfferteTemplates, createOfferteTemplate, updateOfferteTemplate, deleteOfferteTemplate,
   getCalculatieProducten, createCalculatieProduct, updateCalculatieProduct, deleteCalculatieProduct,
   getCalculatieTemplates, createCalculatieTemplate, updateCalculatieTemplate, deleteCalculatieTemplate,
-  getTekeningGoedkeuringen, getTekeningGoedkeuringByToken,
-  createTekeningGoedkeuring, updateTekeningGoedkeuring, updateTekeningGoedkeuringByToken,
+  getTekeningGoedkeuringen,
+  createTekeningGoedkeuring,
 } from './offerteService'
 
 export {
@@ -21,46 +21,37 @@ export {
 } from './voorraadService'
 
 export {
-  getWerkbonnen, getWerkbon, getWerkbonnenByProject, getWerkbonnenByOfferte, getWerkbonnenByKlant,
+  getWerkbonnen, getWerkbon, getWerkbonnenByProject, getWerkbonnenByKlant,
   createWerkbon, updateWerkbon, deleteWerkbon,
-  getWerkbonRegels, createWerkbonRegel, updateWerkbonRegel, deleteWerkbonRegel,
   getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
   getWerkbonItems, createWerkbonItem, updateWerkbonItem, deleteWerkbonItem,
   getWerkbonAfbeeldingen, createWerkbonAfbeelding, updateWerkbonAfbeelding, deleteWerkbonAfbeelding,
 } from './werkbonService'
 
 export {
-  generateBetaalToken, getFactuurByBetaalToken, markFactuurBekeken,
-  getOfferteByPubliekToken, updateOfferteTracking, respondOpOfferte,
+  generateBetaalToken,
   getDefaultPortaalInstellingen, getPortaalInstellingen, updatePortaalInstellingen,
-  getAllPortalen, getPortaalByProject, getPortaalByToken, createPortaal,
-  verlengPortaal, deactiveerPortaal, getPortaalItems, createPortaalItem,
-  updatePortaalItem, deletePortaalItem, createPortaalBestand, createPortaalReactie,
-  getAppNotificaties, createAppNotificatie, markeerNotificatieGelezen,
-  markeerAlleNotificatiesGelezen, updateNotificatieActie, getAllePortalen,
+  getAllPortalen, getPortaalByProject, createPortaal,
+  getPortaalItems, createPortaalItem, createPortaalBestand,
 } from './portaalService'
 
 export {
-  getEvents, getEvent, createEvent, updateEvent, deleteEvent,
+  getEvents,
   getMontageAfspraken, getMontageAfspraak, createMontageAfspraak, updateMontageAfspraak, deleteMontageAfspraak,
-  getMontageAfsprakenByProject, getMontageAfsprakenByKlant,
-  getVerlof, getVerlofByMedewerker, createVerlof, updateVerlof, deleteVerlof,
-  getBedrijfssluitingsdagen, createBedrijfssluitingsdag, deleteBedrijfssluitingsdag,
+  getMontageAfsprakenByProject,
+  getVerlof, createVerlof, updateVerlof, deleteVerlof,
 } from './planningService'
 
 export { heeftMailkoppeling } from './gmailService'
 
 export {
-  getEmails, getEmail, getEmailBody, searchEmailsFTS, createEmail, updateEmail, deleteEmail,
-  cacheEmailsToSupabase, getCachedEmails,
+  getEmails, getEmail, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail,
   getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate,
   type EmailTemplate,
-  getGedeeldeEmails, getGedeeldeEmailsByToewijzing, updateEmailToewijzing,
-  updateEmailTicketStatus, addInterneNotitie,
 } from './emailService'
 
 export {
-  getDocumenten, getDocument, createDocument, updateDocument, deleteDocument,
+  getDocumenten, createDocument, deleteDocument,
   getDocumentenByProject, getDocumentenByKlant,
   getDocumentStyle, upsertDocumentStyle, uploadBriefpapier,
   uploadVervolgpapier,
@@ -72,7 +63,7 @@ export {
   getContactpersonenDB, getContactpersonenByKlant, getContactpersonenByLeverancier,
   createContactpersoonDB, updateContactpersoonDB, deleteContactpersoonDB,
   getKlantIdByContactEmail,
-  koppelContactAanKlant, ontkoppelContact,
+  koppelContactAanKlant,
   getKlantHistorie,
   getImportLogs, createImportLog, deleteImportLog, deleteAllImportLogs, opschonenAlleImportData,
   markeerAlsLosContact, bulkDeleteContactpersonen,
@@ -102,9 +93,9 @@ export {
 export {
   getProjecten, zoekProjecten, getProject, getProjectenByKlant, getProjectCountsByKlant, createProject, updateProject, deleteProject,
   getProjectKoppelingen, deleteProjectMetKoppelingen, ProjectHeeftFacturenError,
-  getTaken, getTaak, getTakenByProject, createTaak, uploadTaakBijlage, updateTaak, deleteTaak,
+  getTaken, getTakenByProject, createTaak, uploadTaakBijlage, updateTaak, deleteTaak,
   getTijdregistratiesByProject,
-  getProjectToewijzingen, getProjectToewijzingenVoorMedewerker, createProjectToewijzing, deleteProjectToewijzing,
+  getProjectToewijzingen, createProjectToewijzing, deleteProjectToewijzing,
   getProjectFotos, createProjectFoto, deleteProjectFoto,
   generateProjectNummer,
 } from './projectService'
@@ -114,7 +105,7 @@ export {
   getDefaultAppSettings, getAppSettings, updateAppSettings,
   createOrganisatie, getOrganisatie, updateOrganisatie,
   getMedewerkers, createMedewerker, updateMedewerker, deleteMedewerker,
-  getNotificaties, createNotificatie, markNotificatieGelezen, markAlleNotificatiesGelezen,
+  getNotificaties, markNotificatieGelezen, markAlleNotificatiesGelezen,
   deleteNotificatie,
   getAuditLog, createAuditLogEntry, getAuditLogForProject,
 } from './profielService'
@@ -147,17 +138,17 @@ export {
 
 export {
   getKbCategories, createKbCategory, updateKbCategory, deleteKbCategory,
-  getKbArticles, getKbArticle, createKbArticle, updateKbArticle, deleteKbArticle,
+  getKbArticles, createKbArticle, updateKbArticle, deleteKbArticle,
 } from './kbService'
 
 export {
-  getDeals, getDeal, getDealsByKlant, getDealsByFase, getDealsByMedewerker,
+  getDeals, getDeal, getDealsByKlant,
   createDeal, updateDeal, deleteDeal,
-  getDealActiviteiten, createDealActiviteit, deleteDealActiviteit,
+  getDealActiviteiten, createDealActiviteit,
   generateLeadToken,
   getLeadFormulieren, getLeadFormulier, getLeadFormulierByToken,
   createLeadFormulier, updateLeadFormulier, deleteLeadFormulier,
-  getLeadInzendingen, getAllLeadInzendingen, getLeadInzendingenNieuw,
+  getAllLeadInzendingen,
   createLeadInzending, updateLeadInzending,
   getInkoopOffertes, getInkoopOffertesByProject, getInkoopOffertesByOfferte,
   createInkoopOfferte, createInkoopRegel, updateInkoopRegel, deleteInkoopOfferte,
@@ -183,12 +174,8 @@ export {
 } from './tijdregistratieService'
 
 export {
-  getAIChats, createAIChat, deleteAIChats,
-} from './aiChatService'
-
-export {
   getOpvolgSchemas, getDefaultOpvolgSchema, createOpvolgSchema, updateOpvolgSchema, deleteOpvolgSchema,
-  upsertOpvolgStap, deleteOpvolgStap, ensureDefaultOpvolgSchema, getOpvolgLog,
+  upsertOpvolgStap, deleteOpvolgStap, ensureDefaultOpvolgSchema,
 } from './opvolgingService'
 
 // ============ CONVERSIE FUNCTIES ============
@@ -217,119 +204,3 @@ async function insertFactuurItems(items: Omit<FactuurItem, 'id' | 'created_at'>[
     await createFactuurItem(item)
   }
 }
-
-export async function convertOfferteToFactuur(
-  offerteId: string,
-  userId: string,
-  factuurPrefix: string = 'FAC'
-): Promise<Factuur> {
-  assertId(offerteId, 'offerte_id')
-  const offerte = await getOfferte(offerteId)
-  if (!offerte) throw new Error('Offerte niet gevonden')
-  const nummer = await generateFactuurNummer(factuurPrefix)
-  const items = await getOfferteItems(offerteId)
-  const factuur = await createFactuur({
-    user_id: userId,
-    klant_id: offerte.klant_id,
-    klant_naam: offerte.klant_naam,
-    offerte_id: offerteId,
-    project_id: offerte.project_id || '',
-    nummer,
-    titel: offerte.titel,
-    status: 'concept',
-    subtotaal: round2(offerte.subtotaal),
-    btw_bedrag: round2(offerte.btw_bedrag),
-    totaal: round2(offerte.totaal),
-    betaald_bedrag: 0,
-    factuurdatum: new Date().toISOString().split('T')[0],
-    vervaldatum: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
-    notities: offerte.notities || '',
-    voorwaarden: offerte.voorwaarden || '',
-    bron_type: 'offerte',
-    bron_offerte_id: offerteId,
-    factuur_type: 'standaard',
-    contactpersoon_id: offerte.contactpersoon_id,
-  } as Omit<Factuur, 'id' | 'created_at' | 'updated_at'>)
-  const factuurItems = items.map((item) => ({
-    user_id: userId,
-    factuur_id: factuur.id,
-    beschrijving: item.beschrijving,
-    aantal: item.aantal,
-    eenheidsprijs: round2(item.eenheidsprijs),
-    btw_percentage: item.btw_percentage,
-    korting_percentage: item.korting_percentage,
-    totaal: round2(item.totaal),
-    volgorde: item.volgorde,
-  } as Omit<FactuurItem, 'id' | 'created_at'>))
-  await insertFactuurItems(factuurItems)
-  await updateOfferte(offerteId, { status: 'gefactureerd', geconverteerd_naar_factuur_id: factuur.id })
-  return factuur
-}
-
-export async function convertWerkbonToFactuur(
-  werkbonId: string,
-  userId: string,
-  factuurPrefix: string = 'FAC'
-): Promise<Factuur> {
-  assertId(werkbonId, 'werkbon_id')
-  const werkbon = await getWerkbon(werkbonId)
-  if (!werkbon) throw new Error('Werkbon niet gevonden')
-  const regels = await getWerkbonRegels(werkbonId)
-  const nummer = await generateFactuurNummer(factuurPrefix)
-  const factureerbaar = regels.filter((r) => r.factureerbaar)
-  const subtotaal = round2(factureerbaar.reduce((sum, r) => sum + r.totaal, 0))
-  const kmTotaal = round2((werkbon.kilometers || 0) * (werkbon.km_tarief || 0))
-  const totaalSubtotaal = round2(subtotaal + kmTotaal)
-  const btw_bedrag = round2(totaalSubtotaal * 0.21)
-  const totaal = round2(totaalSubtotaal + btw_bedrag)
-  const factuur = await createFactuur({
-    user_id: userId,
-    klant_id: werkbon.klant_id,
-    project_id: werkbon.project_id,
-    nummer,
-    titel: `Factuur werkbon ${werkbon.werkbon_nummer}`,
-    status: 'concept',
-    subtotaal: totaalSubtotaal,
-    btw_bedrag,
-    totaal,
-    betaald_bedrag: 0,
-    factuurdatum: new Date().toISOString().split('T')[0],
-    vervaldatum: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
-    notities: werkbon.omschrijving || '',
-    voorwaarden: '',
-    bron_type: 'project',
-    bron_project_id: werkbon.project_id,
-    werkbon_id: werkbonId,
-    factuur_type: 'standaard',
-    contactpersoon_id: werkbon.contactpersoon_id,
-  } as Omit<Factuur, 'id' | 'created_at' | 'updated_at'>)
-  let volgorde = 0
-  const factuurItems = factureerbaar.map((regel) => ({
-    user_id: userId,
-    factuur_id: factuur.id,
-    beschrijving: regel.omschrijving,
-    aantal: regel.aantal || 1,
-    eenheidsprijs: round2(regel.type === 'arbeid' ? (regel.uurtarief || 0) : (regel.prijs_per_eenheid || 0)),
-    btw_percentage: 21,
-    korting_percentage: 0,
-    totaal: round2(regel.totaal),
-    volgorde: volgorde++,
-  } as Omit<FactuurItem, 'id' | 'created_at'>))
-  if (kmTotaal > 0) {
-    factuurItems.push({
-      user_id: userId,
-      factuur_id: factuur.id,
-      beschrijving: `Kilometervergoeding (${werkbon.kilometers} km x €${werkbon.km_tarief})`,
-      aantal: werkbon.kilometers || 0,
-      eenheidsprijs: werkbon.km_tarief || 0,
-      btw_percentage: 21,
-      korting_percentage: 0,
-      totaal: round2(kmTotaal),
-      volgorde: volgorde++,
-    } as Omit<FactuurItem, 'id' | 'created_at'>)
-  }
-  await insertFactuurItems(factuurItems)
-  await updateWerkbon(werkbonId, { status: 'gefactureerd' } as Partial<Werkbon>)
-  return factuur
-}
-

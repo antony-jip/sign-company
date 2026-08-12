@@ -334,97 +334,9 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
 // 2. Offerte goedgekeurd
 // ---------------------------------------------------------------------------
 
-export function offerteGoedgekeurdTemplate(data: OfferteEmailData): EmailResult {
-  const subject = `Bevestiging offerte ${data.offerteNummer}`
-
-  const bodyHtml = `
-    <p style="margin: 0 0 16px 0;">Beste ${escapeHtml(data.klantNaam)},</p>
-    <p style="margin: 0 0 16px 0;">
-      Hartelijk dank voor het goedkeuren van offerte <strong>${escapeHtml(data.offerteNummer)}</strong>
-      voor <strong>${escapeHtml(data.offerteTitel)}</strong>.
-    </p>
-    <p style="margin: 0 0 16px 0;">
-      Wij hebben uw goedkeuring in goede orde ontvangen. Ons team neemt spoedig contact met u op
-      om de volgende stappen te bespreken en het verdere verloop van het project af te stemmen.
-    </p>
-    <p style="margin: 16px 0 0 0;">
-      Mocht u in de tussentijd nog vragen hebben, aarzel dan niet om contact met ons op te nemen.
-    </p>
-    <p style="margin: 16px 0 0 0;">Met vriendelijke groet,</p>`
-
-  const { wrap } = getBaseTemplate(data)
-  const html = wrap(bodyHtml)
-
-  const text = [
-    `Beste ${data.klantNaam},`,
-    '',
-    `Hartelijk dank voor het goedkeuren van offerte ${data.offerteNummer} voor ${data.offerteTitel}.`,
-    '',
-    'Wij hebben uw goedkeuring in goede orde ontvangen. Ons team neemt spoedig contact met u op om de volgende stappen te bespreken en het verdere verloop van het project af te stemmen.',
-    '',
-    'Mocht u in de tussentijd nog vragen hebben, aarzel dan niet om contact met ons op te nemen.',
-    '',
-    'Met vriendelijke groet,',
-    data.handtekening || '',
-  ]
-    .join('\n')
-    .trim()
-
-  return { subject, html, text }
-}
-
 // ---------------------------------------------------------------------------
 // 3. Offerte follow-up
 // ---------------------------------------------------------------------------
-
-export function offerteFollowUpTemplate(data: OfferteEmailData): EmailResult {
-  const kleur = data.primaireKleur || DEFAULT_KLEUR
-  const subject = `Opvolging offerte ${data.offerteNummer}`
-
-  const buttonHtml = data.bekijkUrl
-    ? renderButton('Offerte bekijken', data.bekijkUrl, kleur)
-    : ''
-
-  const bodyHtml = `
-    <p style="margin: 0 0 16px 0;">Beste ${escapeHtml(data.klantNaam)},</p>
-    <p style="margin: 0 0 16px 0;">
-      Graag willen wij even bij u terugkomen op offerte <strong>${escapeHtml(data.offerteNummer)}</strong>
-      voor <strong>${escapeHtml(data.offerteTitel)}</strong>.
-    </p>
-    <p style="margin: 0 0 16px 0;">
-      Wij willen u er vriendelijk op wijzen dat deze offerte geldig is tot
-      <strong>${escapeHtml(data.geldigTot)}</strong>. Mocht u nog vragen of opmerkingen hebben,
-      dan horen wij dat uiteraard graag.
-    </p>
-    ${buttonHtml}
-    <p style="margin: 16px 0 0 0;">
-      Wij kijken ernaar uit om van u te horen.
-    </p>
-    <p style="margin: 16px 0 0 0;">Met vriendelijke groet,</p>`
-
-  const { wrap } = getBaseTemplate(data)
-  const html = wrap(bodyHtml)
-
-  const text = [
-    `Beste ${data.klantNaam},`,
-    '',
-    `Graag willen wij even bij u terugkomen op offerte ${data.offerteNummer} voor ${data.offerteTitel}.`,
-    '',
-    `Wij willen u er vriendelijk op wijzen dat deze offerte geldig is tot ${data.geldigTot}. Mocht u nog vragen of opmerkingen hebben, dan horen wij dat uiteraard graag.`,
-    '',
-    data.bekijkUrl ? `Bekijk de offerte: ${data.bekijkUrl}` : '',
-    '',
-    'Wij kijken ernaar uit om van u te horen.',
-    '',
-    'Met vriendelijke groet,',
-    data.handtekening || '',
-  ]
-    .filter((line) => line !== undefined)
-    .join('\n')
-    .trim()
-
-  return { subject, html, text }
-}
 
 // ---------------------------------------------------------------------------
 // 4. Factuur verzenden

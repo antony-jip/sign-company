@@ -373,15 +373,3 @@ interface StorageFile {
   id: string
   metadata?: { size?: number; mimetype?: string }
 }
-
-export async function listFiles(folder: string): Promise<StorageFile[]> {
-  if (!isSupabaseConfigured() || !supabase) {
-    const stored = JSON.parse(localStorage.getItem('doen_files') || '{}') as Record<string, { name: string; size: number; type: string }>
-    return Object.entries(stored)
-      .filter(([key]) => key.startsWith(folder))
-      .map(([key, val]) => ({ name: val.name, id: key, metadata: { size: val.size, mimetype: val.type } }))
-  }
-  const { data, error } = await supabase.storage.from(BUCKET).list(folder)
-  if (error) throw error
-  return data || []
-}

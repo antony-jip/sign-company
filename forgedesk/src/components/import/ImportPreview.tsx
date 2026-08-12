@@ -1,12 +1,29 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
 
+interface PreviewKlant {
+  naam: string
+  projecten: number
+  offertes: number
+  facturen: number
+  omzet: number
+}
+
+interface ImportSamenvatting {
+  klanten: number
+  projecten: { total: number; linkedKlanten: number }
+  offertes: { total: number; akkoord: number; inAfwachting: number; afgewezen: number }
+  facturen: { total: number; totaalBedrag: number }
+  warnings: string[]
+  previewKlanten: PreviewKlant[]
+}
+
 interface ImportPreviewProps {
   headers?: string[]
   rows?: Record<string, string>[]
   type?: 'bedrijfsdata' | 'contactpersonen'
   maxRows?: number
-  samenvatting?: import('@/services/universalImportService').ImportSamenvatting
+  samenvatting?: ImportSamenvatting
 }
 
 const TYPE_COLORS: Record<string, string> = {

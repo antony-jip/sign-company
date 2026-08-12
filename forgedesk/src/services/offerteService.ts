@@ -152,23 +152,6 @@ export async function getOffertesByKlant(klantId: string): Promise<Offerte[]> {
   return offertes.filter((o) => o.klant_id === klantId)
 }
 
-// ── Klant offerte context (Feature 5: klant context bij selectie) ──
-export async function getKlantOfferteContext(klantId: string): Promise<{ count: number; laatsteOfferte: string | null; totaal: number } | null> {
-  if (!isSupabaseConfigured() || !supabase) {
-    const offertes = getLocalData<Offerte>('offertes').filter((o) => o.klant_id === klantId)
-    if (offertes.length === 0) return null
-    const sorted = offertes.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    return { count: offertes.length, laatsteOfferte: sorted[0].created_at, totaal: offertes.reduce((s, o) => s + (o.totaal || 0), 0) }
-  }
-  const { data, error } = await supabase
-    .from('offertes')
-    .select('totaal, created_at')
-    .eq('klant_id', klantId)
-  if (error || !data || data.length === 0) return null
-  const sorted = data.sort((a: { created_at: string }, b: { created_at: string }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-  return { count: data.length, laatsteOfferte: sorted[0].created_at, totaal: data.reduce((s: number, o: { totaal: number }) => s + (o.totaal || 0), 0) }
-}
-
 // ── Materiaal suggesties (Feature 4: database autocomplete) ──
 export async function getMateriaalSuggesties(query: string): Promise<Array<{ materiaal: string; laatst_gebruikt: string; project_naam: string }>> {
   if (!isSupabaseConfigured() || !supabase || !query || query.length < 2) return []
@@ -987,21 +970,6 @@ export async function getTekeningGoedkeuringen(projectId: string): Promise<Teken
   return items.filter((g) => g.project_id === projectId).sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
 
-export async function getTekeningGoedkeuringByToken(token: string): Promise<TekeningGoedkeuring | null> {
-  assertId(token, 'token')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('tekening_goedkeuringen')
-      .select('*')
-      .eq('token', token)
-      .maybeSingle()
-    if (error) return null
-    return data
-  }
-  const items = getLocalData<TekeningGoedkeuring>('tekening_goedkeuringen')
-  return items.find((g) => g.token === token) || null
-}
-
 export async function createTekeningGoedkeuring(
   goedkeuring: Omit<TekeningGoedkeuring, 'id' | 'token' | 'created_at' | 'updated_at'>
 ): Promise<TekeningGoedkeuring> {
@@ -1027,53 +995,6 @@ export async function createTekeningGoedkeuring(
   items.push(newItem)
   setLocalData('tekening_goedkeuringen', items)
   return newItem
-}
-
-export async function updateTekeningGoedkeuring(
-  id: string,
-  updates: Partial<TekeningGoedkeuring>
-): Promise<TekeningGoedkeuring> {
-  assertId(id)
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('tekening_goedkeuringen')
-      .update({ ...updates, updated_at: now() })
-      .eq('id', id)
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
-  const items = getLocalData<TekeningGoedkeuring>('tekening_goedkeuringen')
-  const index = items.findIndex((g) => g.id === id)
-  if (index === -1) throw new Error('Tekening goedkeuring niet gevonden')
-  items[index] = { ...items[index], ...updates, updated_at: now() }
-  setLocalData('tekening_goedkeuringen', items)
-  return items[index]
-}
-
-export async function updateTekeningGoedkeuringByToken(
-  token: string,
-  updates: Partial<TekeningGoedkeuring>
-): Promise<TekeningGoedkeuring> {
-  assertId(token, 'token')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('tekening_goedkeuringen')
-      .update({ ...updates, updated_at: now() })
-      .eq('token', token)
-      .select()
-      .maybeSingle()
-    if (error) throw error
-    if (!data) throw new Error('Tekening goedkeuring niet gevonden')
-    return data
-  }
-  const items = getLocalData<TekeningGoedkeuring>('tekening_goedkeuringen')
-  const index = items.findIndex((g) => g.token === token)
-  if (index === -1) throw new Error('Tekening goedkeuring niet gevonden')
-  items[index] = { ...items[index], ...updates, updated_at: now() }
-  setLocalData('tekening_goedkeuringen', items)
-  return items[index]
 }
 
 // ============ NUMMER GENERATIE ============
