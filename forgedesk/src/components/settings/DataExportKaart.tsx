@@ -58,16 +58,32 @@ export function DataExportKaart() {
       downloadBlob(new Blob([tekst], { type: 'application/json' }), `doen-gegevens-${datum}.json`)
 
       let aantal: number | null = null
+      let onvolledig = false
       try {
-        aantal = JSON.parse(tekst)?.totaal_rijen ?? null
+        const payload = JSON.parse(tekst)
+        aantal = payload?.totaal_rijen ?? null
+        // Een tabel die faalt komt als 0 rijen terug, dus het totaal alleen
+        // melden zou een halve uitvoer als geslaagd presenteren. Deze uitvoer is
+        // een wettelijk document; onvolledig moet je zien, niet vermoeden.
+        onvolledig = !!(payload?.fouten || payload?.afgekapt)
       } catch {
         // Het bestand is al gedownload; het aantal is alleen voor de melding.
       }
-      toast.success(
-        aantal === null
-          ? <>Gedownload<span className="text-flame">.</span></>
-          : <>{aantal.toLocaleString('nl-NL')} regels gedownload<span className="text-flame">.</span></>
-      )
+
+      if (onvolledig) {
+        toast.warning(
+          <>Gedownload, maar niet compleet<span className="text-flame">.</span> Kijk in het bestand
+          onder <span className="font-mono text-xs">fouten</span> en{' '}
+          <span className="font-mono text-xs">afgekapt</span> welke onderdelen ontbreken.</>,
+          { duration: 12000 }
+        )
+      } else {
+        toast.success(
+          aantal === null
+            ? <>Gedownload<span className="text-flame">.</span></>
+            : <>{aantal.toLocaleString('nl-NL')} regels gedownload<span className="text-flame">.</span></>
+        )
+      }
     } catch (err) {
       logger.error('Gegevensuitvoer mislukt:', err)
       toast.error('Er ging iets mis bij het maken van de uitvoer')

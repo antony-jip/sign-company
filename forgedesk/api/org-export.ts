@@ -220,7 +220,19 @@ const NIET_OPGENOMEN: Record<string, string> = {
 // tokens te veel gewist is hinderlijk; een geheim te veel meegestuurd is
 // een datalek. De weggelaten kolomnamen staan in de uitvoer onder
 // `verwijderde_kolommen`, zodat zichtbaar is wát er ontbreekt.
-const GEVOELIGE_KOLOM = /encrypted|token|password|api_key|secret|sleutel|credential|geheim/i
+const GEVOELIGE_KOLOM = /encrypted|token|password|api_key|secret|sleutel|credential|geheim|betaal_link|payment_url/i
+
+// Tweede laag, op de WAARDE. Een filter op kolomnaam mist per definitie de
+// volgende kolom die een URL blijkt te zijn, en dat is hier één keer gebeurd:
+// `facturen.betaal_link` is letterlijk `/betalen/<betaal_token>`, dus de token
+// werd links weggehaald en rechts alsnog meegestuurd (FactuurEditor.tsx:1247).
+//
+// Dit zijn de vijf publieke routes zonder inlog (App.tsx:249-261). Zo'n URL is
+// geen gegeven maar een sleutel: wie hem heeft kan de factuur of het portaal
+// openen en een betaling starten, ook maanden later, want verloop wordt alleen
+// gehandhaafd als er een vervaldatum gezet is. Een uitvoer is bedoeld om door te
+// sturen, dus daar hoort geen levende sleutel in.
+const CAPABILITY_URL = /\/(betalen|goedkeuring|offerte-bekijken|formulier|portaal)\/[A-Za-z0-9_-]{8,}/
 
 const PAGINA_GROOTTE = 1000
 
@@ -348,7 +360,14 @@ async function haalAlleRijen(
 // zitten. Houdt bij welke namen zijn weggehaald zodat de uitvoer daar
 // verantwoording over aflegt.
 function stripGevoelig(waarde: unknown, tabel: string, gevonden: Set<string>, diepte = 0): unknown {
-  if (diepte > 8 || waarde == null) return waarde
+  // Voorbij de maximale diepte de rúwe subtree teruggeven zou het filter open
+  // laten falen: precies de plek waar iets ongefilterd langs komt. Een filter
+  // faalt dicht, dus hier niets in plaats van alles.
+  if (diepte > 8) {
+    gevonden.add(`${tabel}.<te diep genest, weggelaten>`)
+    return null
+  }
+  if (waarde == null) return waarde
   if (Array.isArray(waarde)) return waarde.map(v => stripGevoelig(v, tabel, gevonden, diepte + 1))
   if (typeof waarde === 'object') {
     const uit: Record<string, unknown> = {}
@@ -360,6 +379,10 @@ function stripGevoelig(waarde: unknown, tabel: string, gevonden: Set<string>, di
       uit[k] = stripGevoelig(v, tabel, gevonden, diepte + 1)
     }
     return uit
+  }
+  if (typeof waarde === 'string' && CAPABILITY_URL.test(waarde)) {
+    gevonden.add(`${tabel}.<link naar een publieke pagina met token>`)
+    return null
   }
   return waarde
 }
@@ -443,54 +466,68 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       totaal_rijen: Object.values(rijenPerTabel).reduce((a, b) => a + b, 0),
       verwijderde_kolommen: [...verwijderdeKolommen].sort(),
       toelichting_verwijderde_kolommen:
-        'Kolomnamen met encrypted, token, password, api_key, secret, sleutel, credential of geheim erin zijn weggelaten. Dat zijn inloggegevens en toegangssleutels; die horen niet in een uitvoer, ook niet in je eigen uitvoer.',
+        'Kolomnamen met encrypted, token, password, api_key, secret, sleutel, credential, geheim, betaal_link of payment_url erin zijn weggelaten. Daarnaast is elke waarde weggelaten die een link is naar een publieke pagina met een token erin (betalen, goedkeuring, offerte-bekijken, formulier, portaal): zo\'n link is geen gegeven maar een sleutel waarmee iemand zonder inloggen bij de factuur of het portaal komt. Dit alles zijn inloggegevens en toegangssleutels; die horen niet in een uitvoer, ook niet in je eigen uitvoer.',
       niet_opgenomen: NIET_OPGENOMEN,
       ...(afgekapt.length ? { afgekapt, toelichting_afgekapt: `Deze tabellen zijn afgekapt op ${MAX_RIJEN_PER_TABEL} rijen.` } : {}),
       ...(Object.keys(fouten).length ? { fouten } : {}),
       tabellen,
     }
 
+    const json = JSON.stringify(uitvoer)
+    const platteBytes = Buffer.byteLength(json, 'utf8')
+    const bestandsnaam = `doen-export-${organisatieId}-${new Date().toISOString().slice(0, 10)}.json`
+
+    // Eerst bepalen wát er werkelijk uitgaat, dan pas het logboek schrijven. Een
+    // auditregel vóór de groottecheck zet een mislukte uitvoer weg als geslaagd,
+    // en dit logboek is juist het bewijs van wie wanneer welke gegevens heeft
+    // meegenomen.
+    const accepteertGzip = /gzip/i.test(String(req.headers['accept-encoding'] || ''))
+    const gz = platteBytes > MAX_ANTWOORD_BYTES && accepteertGzip
+      ? gzipSync(Buffer.from(json, 'utf8'))
+      : null
+    const aflevering: 'plat' | 'gzip' | 'te_groot' =
+      platteBytes <= MAX_ANTWOORD_BYTES ? 'plat'
+      : gz && gz.byteLength <= MAX_ANTWOORD_BYTES ? 'gzip'
+      : 'te_groot'
+
     await logAuditEvent(supabaseAdmin, {
       organisatie_id: organisatieId,
       actor_user_id: userId,
       actor_email: profiel.email ?? null,
-      action: 'org.data_exported',
+      action: aflevering === 'te_groot' ? 'org.data_export_mislukt' : 'org.data_exported',
       resource_type: 'organisatie',
       resource_id: organisatieId,
       metadata: {
         totaal_rijen: uitvoer.totaal_rijen,
         tabellen: TABELLEN.length,
         mislukte_tabellen: Object.keys(fouten),
+        afgekapte_tabellen: afgekapt,
+        aflevering,
+        bytes: platteBytes,
       },
       ip: getClientIp(req),
     })
-
-    const json = JSON.stringify(uitvoer)
-    const platteBytes = Buffer.byteLength(json, 'utf8')
-    const bestandsnaam = `doen-export-${organisatieId}-${new Date().toISOString().slice(0, 10)}.json`
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.setHeader('Content-Disposition', `attachment; filename="${bestandsnaam}"`)
     res.setHeader('Cache-Control', 'no-store')
 
-    if (platteBytes <= MAX_ANTWOORD_BYTES) {
+    if (aflevering === 'plat') {
       return res.status(200).send(json)
     }
 
-    const accepteertGzip = /gzip/i.test(String(req.headers['accept-encoding'] || ''))
-    if (accepteertGzip) {
-      const gz = gzipSync(Buffer.from(json, 'utf8'))
-      if (gz.byteLength <= MAX_ANTWOORD_BYTES) {
-        res.setHeader('Content-Encoding', 'gzip')
-        res.setHeader('Vary', 'Accept-Encoding')
-        return res.status(200).send(gz)
-      }
+    if (aflevering === 'gzip' && gz) {
+      res.setHeader('Content-Encoding', 'gzip')
+      res.setHeader('Vary', 'Accept-Encoding')
+      return res.status(200).send(gz)
     }
 
-    console.warn(`org-export: te groot org=${organisatieId} bytes=${platteBytes}`)
+    console.warn(`org-export: te groot org=${organisatieId} bytes=${platteBytes} gzip=${accepteertGzip}`)
     res.removeHeader('Content-Disposition')
     return res.status(413).json({
-      error: 'De uitvoer is te groot voor één antwoord. Vraag hem per e-mail aan; we leveren hem dan als bestand.',
+      error: accepteertGzip
+        ? 'De uitvoer is te groot voor één antwoord. Vraag hem per e-mail aan; we leveren hem dan als bestand.'
+        : 'De uitvoer is te groot voor één antwoord. Gecomprimeerd zou hij mogelijk wel passen, maar je client accepteert geen gzip: stuur "accept-encoding: gzip" mee (curl: --compressed) of vraag de uitvoer per e-mail aan.',
       bytes: platteBytes,
       rijen_per_tabel: rijenPerTabel,
     })
