@@ -48,10 +48,22 @@ Wat hieruit volgt en wat je moet weten voordat je nog eens policies dropt:
 - **Draai `docs/rls-dekking.sql` na elke migratie die policies dropt.** Dat is
   de enige sluitende controle. Hij toont per tabel welke van de vier opdrachten
   geen dekking meer heeft.
-- De blast radius van 195 is voor `SELECT` nagelopen: `emails` was het enige
-  slachtoffer, de tien andere treffers waren een fout in de meetquery zelf
-  (omgekeerde operanden, afwijkende kolomnamen, `service_role` niet herkend).
-  **Voor `UPDATE` en `DELETE` op de 23 andere tabellen staat dat nog open.**
+- **De blast radius is compleet nagelopen en `emails` was het enige slachtoffer.**
+  Niet alleen voor `SELECT`: migratie 048 maakt 25 policies en die zijn állemaal
+  `FOR ALL USING (organisatie_id = auth_organisatie_id())`, op precies de
+  tabellen die 195 raakte. Daar dekte de overlevende policy dus alle vier de
+  opdrachten en was droppen inderdaad veilig, zoals de guard aannam.
+
+  `emails` staat niet in die 048-lijst. Daar was de enige policy met
+  `organisatie_id` de project-koppeling: alleen `SELECT`, en met een `EXISTS`.
+  Eén tabel viel buiten het patroon, en dat was precies de tabel waar de guard
+  blind voor was.
+
+  Bij de eerste controle leek het om elf tabellen te gaan. Tien daarvan waren een
+  fout in de meetquery zelf: omgekeerde operanden (`auth.uid() = user_id`),
+  afwijkende kolomnamen (`gebruiker_id`, en bij `organisaties` gewoon `id`), en
+  `service_role` niet herkend als bewuste keuze. Die drie valkuilen staan in
+  `docs/rls-dekking.sql` verwerkt.
 
 ## Alleen lezen, veilig, mag altijd
 
