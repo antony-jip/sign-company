@@ -6,13 +6,21 @@ faalpad dat in de doorlichting van 13 aug is gevonden.
 
 ## A. Vooraf, eenmalig (Antony, SQL-editor)
 
-1. **Migraties draaien** (in deze volgorde, voor zover nog niet gedraaid):
+1. **Migraties draaien** (in deze volgorde, voor zover nog niet gedraaid;
+   stand 13 aug: 198, 205, 206 en 207 staan al live, geverifieerd via
+   `doen_migraties` en de backfill-tellingen):
+   - `198_doen_migraties_administratie.sql` — de administratie-tabel zelf.
    - `205_kindtabellen_org_rls.sql` — collega's zien elkaars
      werkbonregels/foto's/versies niet zolang deze niet draait.
-   - `206_facturen_offerte_uniek_en_items_rpc.sql` — dubbel-factureren en
-     dubbele factuurregels bij gelijktijdig opslaan.
+   - `206_vervang_factuur_items_rpc.sql` — dubbele factuurregels bij
+     gelijktijdig opslaan. (Dubbel-factureren van een offerte blijft een
+     client-side bevestigingsdialoog; bewust geen DB-constraint omdat er
+     legitieme deelfacturen bestaan.)
    - `207_uitnodigingen_org_admins.sql` — tweede admin ziet openstaande
      uitnodigingen.
+   - `208_uitnodigingen_policy_versmallen.sql` — versmalt de 207-policy tot
+     lezen en intrekken, zodat een admin niet via een directe insert om de
+     plekkentelling heen kan.
 
 2. **Verifieer het race-vangnet** (moet 5 rijen geven):
 
@@ -23,13 +31,14 @@ faalpad dat in de doorlichting van 13 aug is gevonden.
      'klanten_org_debiteurennummer_unique');
    ```
 
-3. **Verifieer de rol-bescherming** (beide moeten bestaan):
+3. **Verifieer de rol-bescherming** (er moet minimaal een rol_en_org- en een
+   staffel-trigger uitkomen; de namen uit de migraties zijn
+   `profiles_rol_en_org_beschermen` op profiles (173) en de staffel-guard op
+   organisaties (172/175)):
 
    ```sql
-   SELECT tgname FROM pg_trigger
-   WHERE tgname IN ('profiles_rol_en_org_vastzetten_trigger',
-                    'organisaties_staffel_beschermen_trigger')
-      OR tgname LIKE '%rol_en_org%' OR tgname LIKE '%staffel%';
+   SELECT tgname, tgrelid::regclass FROM pg_trigger
+   WHERE tgname LIKE '%rol_en_org%' OR tgname LIKE '%staffel%';
    ```
 
 4. **RLS-dekking**: draai `docs/rls-dekking.sql` en controleer dat de
@@ -69,7 +78,9 @@ faalpad dat in de doorlichting van 13 aug is gevonden.
    25 invites = spreiden over 3 uur, of met twee admins werken.
 
 10. **Instructie aan het team** (letterlijk meesturen):
-    - Klik de link in de mail binnen 24 uur.
+    - Klik de link in de mail zo snel mogelijk. (De precieze geldigheid is
+      een Supabase-dashboard-instelling, Authentication > Emails; check die
+      vooraf en noem dan een concreet aantal uren.)
     - Link verlopen? Ga naar de loginpagina en kies wachtwoord vergeten
       met hetzelfde e-mailadres. Er komt geen tweede uitnodiging.
     - Registreer jezelf nooit los via de registratiepagina.
@@ -93,11 +104,30 @@ faalpad dat in de doorlichting van 13 aug is gevonden.
     (telt dan niet meer mee voor de staffel). Zet de bijbehorende
     medewerker in Planning apart op inactief; dat gaat niet vanzelf mee.
 
+## D2. Mailboxen op schaal
+
+15. **Mailsync-capaciteit**: de sync verwerkt 8 mailboxen per ronde. Het
+    oude cron-pad draait elke 3 minuten (25+ mailboxen = ruime vertraging);
+    het nieuwere werker-pad draait elke minuut maar zit achter een
+    feature-vlag. Check en overweeg die aan te zetten voor deze org:
+
+    ```sql
+    SELECT * FROM feature_flags WHERE naam LIKE '%mailsync%';
+    ```
+
+16. **AI-aanvraagherkenning**: de classifier draait per binnenkomende mail
+    per mailbox. Mails die bij meerdere collega's binnenkomen (cc,
+    info@-lijsten) tellen per kopie mee in het gedeelde AI-budget. Is het
+    org-budget op, dan stopt aanvraagherkenning stil, zonder melding, tot
+    de volgende maand. Check het verbruik dus proactief in de eerste week.
+
 ## E. Monitoring tijdens de onboarding-dagen
 
-- Sentry: let op `Profile zonder organisatie_id na signup` — dat is het
-  signaal dat iemand buiten de invite om binnenkwam.
+- Sentry: let op de melding `Profile zonder organisatie_id na signup` — dat
+  is het signaal dat iemand buiten de invite om binnenkwam. (Deze gaat sinds
+  deze ronde expliciet naar Sentry; daarvoor was het alleen console-output.)
 - AI-budget: bij melding "gedeelde AI-budget is op" de maandlimiet
-  heroverwegen (staffel trede 3 = 50 euro per org per maand).
+  heroverwegen (staffel trede 3 = 50 euro per org per maand). Let op: ook
+  aanvraagherkenning valt dan stil (zie stap 16).
 - Teamleden-tab: controleer na elke invite-ronde het aantal
   geaccepteerde profielen tegen de verwachting.

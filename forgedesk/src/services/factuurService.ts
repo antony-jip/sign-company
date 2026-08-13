@@ -275,9 +275,12 @@ export async function updateFactuurStatus(
 ): Promise<Partial<Factuur>> {
   assertId(id, 'factuur_id')
   if (isSupabaseConfigured() && supabase) {
+    // updated_at expliciet mee, net als updateFactuur: het optimistic lock in
+    // de editor moet ook statuswijzigingen van collega's zien, en de
+    // updated_at-trigger uit de migratiemap is live niet gegarandeerd.
     const { data, error } = await supabase
       .from('facturen')
-      .update(updates)
+      .update({ ...updates, updated_at: now() })
       .eq('id', id)
       .select()
       .single()

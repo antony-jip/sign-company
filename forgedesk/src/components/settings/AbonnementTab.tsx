@@ -242,8 +242,10 @@ export function AbonnementTab() {
               },
               {
                 label: 'Opzeggen',
-                waarde: 'Kan altijd',
-                sub: 'Je houdt toegang tot het einde van de betaalde maand',
+                waarde: magOpzeggen ? 'Kan altijd' : 'Via een beheerder',
+                sub: magOpzeggen
+                  ? 'Je houdt toegang tot het einde van de betaalde maand'
+                  : 'Alleen een beheerder kan het abonnement opzeggen',
               },
             ].map(item => (
               <div key={item.label}>

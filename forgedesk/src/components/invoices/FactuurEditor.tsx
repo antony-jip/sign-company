@@ -1164,6 +1164,29 @@ export function FactuurEditor() {
         : nummer
       const doelStatus: Factuur['status'] = verwerken ? 'open' : 'concept'
 
+      // Verse DB-check vóór er ook maar iets geschreven wordt (ook niet de
+      // klantkaart hieronder): de geladen offerte-status kan uren oud zijn, dus
+      // een collega kan deze offerte intussen al gefactureerd hebben.
+      // Deelfacturen blijven mogelijk, maar alleen als bewuste keuze.
+      if (!isEditMode && offerteId && !isCreditFactuur) {
+        const alBestaand = await getStandaardFacturenVoorOfferte(offerteId).catch(() => [])
+        if (alBestaand.length > 0) {
+          const nummers = alBestaand.map((f) => f.nummer || 'een concept zonder nummer').join(', ')
+          const tochDoorgaan = await confirm({
+            title: 'Offerte is al gefactureerd',
+            message: alBestaand.length > 1
+              ? `Voor deze offerte bestaan al facturen: ${nummers}. Wil je er nog een factuur naast maken?`
+              : `Voor deze offerte bestaat al ${alBestaand[0].nummer ? `factuur ${nummers}` : nummers}. Wil je er nog een factuur naast maken?`,
+            confirmLabel: 'Extra factuur maken',
+            cancelLabel: 'Annuleren',
+          })
+          if (!tochDoorgaan) {
+            setIsSaving(false)
+            return
+          }
+        }
+      }
+
       // Adres-override: alleen opslaan wat afwijkt van de klantkaart, zodat een
       // ongewijzigd blok aan de klant gekoppeld blijft. '' = geen override.
       const overrideVal = (value: string, klantValue?: string): string =>
@@ -1224,55 +1247,53 @@ export function FactuurEditor() {
           kostenplaats_id: kostenplaatsId || undefined,
           werkbon_id: werkbonId || undefined,
           ...(pdfVerouderd ? { pdf_storage_path: null } : {}),
-          ...(verwerken ? { nummer: effectiefNummer, status: 'open' as const } : {}),
         }
 
-        // Eerst de header, met optimistic lock: botst een collega, dan is er
-        // nog niets aan de regels veranderd. Het verwerken-pad kan bovendien
-        // een nummer-race verliezen (23505); de retry hergenereert dan.
-        const updated = await updateFactuurWithNummerRetry(existingFactuur.id, updates, existingFactuur.updated_at)
-        // State direct verversen: faalt de regels-stap hieronder, dan zou een
-        // tweede opslaan anders op de eigen header-write stranden met een vals
-        // "door iemand anders gewijzigd"-conflict.
+        // Drie stappen, definitief-maken als laatste. (1) Header met optimistic
+        // lock: botst een collega, dan is er nog niets veranderd. (2) Regels.
+        // (3) Pas als die staan het nummer + status 'open'. Elk faalpad laat zo
+        // een consistent concept achter in plaats van een definitieve factuur
+        // met oude regels.
+        const updated = await updateFactuur(existingFactuur.id, updates, existingFactuur.updated_at)
+        // State direct verversen: anders zou een tweede opslaan na een fout
+        // hieronder op de eigen header-write stranden met een vals conflict.
         setExistingFactuur({ ...existingFactuur, ...updated })
-        setNummer(updated.nummer ?? nummer)
 
-        await replaceFactuurItems(existingFactuur.id, validItems.map((item, i) => ({
-          user_id: user?.id || '',
-          beschrijving: item.beschrijving,
-          aantal: item.aantal,
-          eenheidsprijs: item.eenheidsprijs,
-          btw_percentage: item.btw_percentage,
-          korting_percentage: item.korting_percentage,
-          totaal: calcLineTotal(item),
-          volgorde: i + 1,
-          grootboek_code: item.grootboek_code || '',
-          detail_regels: (item.detail_regels || []).filter((r) => r.label || r.waarde),
-        })))
-
-        setIsDirty(false)
-        toast.success(verwerken ? `Factuur ${updated.nummer ?? effectiefNummer} verwerkt` : 'Factuur bijgewerkt')
-      } else {
-        // Verse DB-check: de geladen offerte-status kan uren oud zijn, dus een
-        // collega kan deze offerte intussen al gefactureerd hebben. Deelfacturen
-        // blijven mogelijk, maar alleen als bewuste keuze.
-        if (offerteId && !isCreditFactuur) {
-          const alBestaand = await getStandaardFacturenVoorOfferte(offerteId).catch(() => [])
-          if (alBestaand.length > 0) {
-            const nummers = alBestaand.map((f) => f.nummer || 'concept').join(', ')
-            const tochDoorgaan = await confirm({
-              title: 'Offerte is al gefactureerd',
-              message: `Voor deze offerte bestaat al factuur ${nummers}. Wil je er nog een factuur naast maken?`,
-              confirmLabel: 'Extra factuur maken',
-              cancelLabel: 'Annuleren',
-            })
-            if (!tochDoorgaan) {
-              setIsSaving(false)
-              return
-            }
-          }
+        try {
+          await replaceFactuurItems(existingFactuur.id, validItems.map((item, i) => ({
+            user_id: user?.id || '',
+            beschrijving: item.beschrijving,
+            aantal: item.aantal,
+            eenheidsprijs: item.eenheidsprijs,
+            btw_percentage: item.btw_percentage,
+            korting_percentage: item.korting_percentage,
+            totaal: calcLineTotal(item),
+            volgorde: i + 1,
+            grootboek_code: item.grootboek_code || '',
+            detail_regels: (item.detail_regels || []).filter((r) => r.label || r.waarde),
+          })))
+        } catch (itemsErr) {
+          logger.error('Factuurregels opslaan mislukt na header-update:', itemsErr)
+          toast.error('De factuur is opgeslagen maar de regels niet. Sla opnieuw op om de regels bij te werken.')
+          return
         }
 
+        let definitiefNummer = updated.nummer ?? nummer
+        if (verwerken) {
+          // De nummer-race (23505) wordt hier door de retry opgevangen.
+          const verwerkt = await updateFactuurWithNummerRetry(
+            existingFactuur.id,
+            { nummer: effectiefNummer, status: 'open' as const },
+            updated.updated_at
+          )
+          setExistingFactuur({ ...existingFactuur, ...verwerkt })
+          definitiefNummer = verwerkt.nummer ?? effectiefNummer
+        }
+
+        setNummer(definitiefNummer)
+        setIsDirty(false)
+        toast.success(verwerken ? `Factuur ${definitiefNummer} verwerkt` : 'Factuur bijgewerkt')
+      } else {
         const betaalToken = generateBetaalToken()
         const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
 
