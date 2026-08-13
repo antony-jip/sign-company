@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Clock, X, AlertCircle, Check } from 'lucide-react'
+import { Clock, CalendarClock, X, AlertCircle, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { getIngeplandeBerichten, cancelIngeplandBericht } from '@/services/emailService'
 import type { IngeplandBericht } from '@/types'
@@ -70,8 +70,10 @@ export function IngeplandeBerichtenLijst() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center text-[13px] text-muted-foreground">
-        Laden...
+      <div className="flex-1 px-6 py-5 space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-[86px] rounded-[14px] bg-petrol/[0.04] dark:bg-white/[0.04] animate-pulse" />
+        ))}
       </div>
     )
   }
@@ -79,17 +81,29 @@ export function IngeplandeBerichtenLijst() {
   if (berichten.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-        <Clock className="h-10 w-10 text-muted-foreground/80 mb-3" />
-        <p className="text-[14px] text-foreground/70 font-medium">Geen ingeplande berichten</p>
-        <p className="text-[12px] text-muted-foreground mt-1">Plan een email in vanuit Nieuw bericht of een Reply</p>
+        <div className="w-14 h-14 rounded-[18px] bg-petrol/[0.06] dark:bg-white/[0.06] flex items-center justify-center mb-4">
+          <CalendarClock className="h-6 w-6 text-petrol/70 dark:text-[#7FB5BF]" strokeWidth={1.8} />
+        </div>
+        <p className="font-heading text-[15px] font-bold text-foreground">
+          Niets ingepland<span className="text-flame">.</span>
+        </p>
+        <p className="text-[12.5px] text-muted-foreground mt-1 max-w-[260px] leading-relaxed">
+          Plan een bericht in vanuit Nieuw bericht of een antwoord, dan wacht het hier op zijn moment.
+        </p>
       </div>
     )
   }
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="px-6 py-4">
-        <h2 className="font-heading text-[18px] font-bold text-foreground tracking-[-0.01em] mb-4">Ingeplande berichten</h2>
+      <div className="px-6 py-5">
+        <div className="flex items-center gap-2.5 mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/65 dark:text-foreground/60">
+          <span className="font-semibold whitespace-nowrap">
+            Ingepland<span className="text-flame tracking-normal">.</span>
+          </span>
+          <span className="flex-1 h-px bg-gradient-to-r from-petrol/[0.14] to-transparent dark:from-white/10" aria-hidden />
+          <span className="tabular-nums tracking-normal text-petrol/40 dark:text-foreground/40">{berichten.length}</span>
+        </div>
         <div className="space-y-2">
           {berichten.map(b => {
             const isWachtend = b.status === 'wachtend'
@@ -98,20 +112,31 @@ export function IngeplandeBerichtenLijst() {
               <div
                 key={b.id}
                 className={cn(
-                  'border border-border rounded-xl px-4 py-3 bg-white dark:bg-white/[0.04]',
-                  !isWachtend && b.status !== 'verwerken' && 'opacity-60',
+                  'relative overflow-hidden rounded-[14px] pl-5 pr-4 py-3 bg-white dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] shadow-[0_1px_3px_rgba(26,83,92,0.05)]',
+                  !isWachtend && b.status !== 'verwerken' && 'opacity-70',
                 )}
               >
+                <span
+                  className={cn(
+                    'absolute left-0 inset-y-0 w-[3px]',
+                    b.status === 'verzonden' && 'bg-emerald-500/70',
+                    b.status === 'mislukt' && 'bg-[#C0451A]/70',
+                    b.status === 'geannuleerd' && 'bg-muted-foreground/30',
+                    b.status === 'verwerken' && 'bg-amber-500/70',
+                    isWachtend && 'bg-petrol/60 dark:bg-[#2A7A86]',
+                  )}
+                  aria-hidden
+                />
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <Clock className="h-3.5 w-3.5 text-petrol flex-shrink-0" />
-                      <span className="text-[12px] font-mono text-petrol font-medium">
+                      <Clock className="h-3.5 w-3.5 text-petrol dark:text-[#7FB5BF] flex-shrink-0" />
+                      <span className="text-[12px] font-mono tabular-nums text-petrol dark:text-[#7FB5BF] font-semibold">
                         {formatScheduledAt(b.scheduled_at)}
                       </span>
                       {!isWachtend && (
                         <span className={cn(
-                          'text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded',
+                          'font-mono text-[9px] uppercase tracking-[0.12em] px-1.5 py-0.5 rounded-full leading-none',
                           b.status === 'verzonden' && 'bg-emerald-100 text-emerald-700',
                           b.status === 'geannuleerd' && 'bg-muted text-muted-foreground',
                           b.status === 'mislukt' && 'bg-red-100 text-red-700',
@@ -124,7 +149,7 @@ export function IngeplandeBerichtenLijst() {
                         </span>
                       )}
                       {b.bron === 'outbox' && (
-                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-petrol/10 text-petrol">
+                        <span className="font-mono text-[9px] uppercase tracking-[0.12em] px-1.5 py-0.5 rounded-full leading-none bg-petrol/[0.09] text-petrol dark:text-[#7FB5BF] dark:bg-[#2A7A86]/20">
                           Outbox
                         </span>
                       )}
@@ -134,10 +159,12 @@ export function IngeplandeBerichtenLijst() {
                         </span>
                       )}
                     </div>
-                    <p className="text-[13px] font-medium text-foreground truncate">
-                      Aan: {b.ontvanger}
+                    <p className="text-[13px] font-semibold text-foreground truncate">
+                      {b.onderwerp || '(geen onderwerp)'}
                     </p>
-                    <p className="text-[13px] text-foreground/70 truncate">{b.onderwerp}</p>
+                    <p className="text-[12.5px] text-muted-foreground truncate">
+                      Aan {b.ontvanger}
+                    </p>
                     {b.foutmelding && (
                       <div className="mt-2 flex items-start gap-1.5 text-[11px] text-red-700">
                         <AlertCircle className="h-3 w-3 flex-shrink-0 mt-0.5" />

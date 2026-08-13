@@ -30,6 +30,10 @@ export interface ComposeActions {
   forgieRewrite: (action: ForgieAction, label: string) => void
 }
 
+const veldLabelCls = 'w-[74px] flex-shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 select-none'
+const toolChipCls = 'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[9px] text-[12px] font-medium text-foreground/70 border border-border hover:text-petrol hover:border-petrol/30 hover:bg-petrol/[0.05] transition-colors duration-150'
+const aiChipCls = 'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[9px] text-[12px] font-semibold text-flame border border-flame/25 bg-flame/[0.06] hover:bg-flame/[0.12] transition-colors duration-150 disabled:opacity-40'
+
 interface EmailComposeProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -897,12 +901,13 @@ export function EmailCompose({
           <div className="px-4 md:px-6 min-w-0 max-w-full">
             {/* Aan field */}
             <div className="relative">
-              <div className="flex items-center border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
+              <div className="flex items-center gap-3 border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
+                <span className={veldLabelCls}>Aan</span>
                 <OntvangerInput
                   inputRef={toInputRef}
                   value={to}
                   onChange={setTo}
-                  placeholder="Aan..."
+                  placeholder="naam@bedrijf.nl"
                   inputClassName="w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
                   onBlur={() => {
                     // Sales Inbox compose-hint: skip bij multi-recipient (cold-acquisitie is 1-op-1).
@@ -926,19 +931,21 @@ export function EmailCompose({
             {/* CC/BCC */}
             {showCcBcc && (
               <>
-                <div className="flex items-center border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
+                <div className="flex items-center gap-3 border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
+                  <span className={veldLabelCls}>CC</span>
                   <OntvangerInput
                     value={cc}
                     onChange={setCc}
-                    placeholder="CC..."
+                    placeholder="kopie naar"
                     inputClassName="w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
                   />
                 </div>
-                <div className="flex items-center border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
+                <div className="flex items-center gap-3 border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
+                  <span className={veldLabelCls}>BCC</span>
                   <OntvangerInput
                     value={bcc}
                     onChange={setBcc}
-                    placeholder="BCC..."
+                    placeholder="blinde kopie naar"
                     inputClassName="w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground min-w-0"
                   />
                 </div>
@@ -965,23 +972,25 @@ export function EmailCompose({
             })()}
 
             {/* Onderwerp */}
-            <div className="border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
+            <div className="flex items-center gap-3 border-b border-border py-3 focus-within:border-petrol transition-colors duration-150">
+              <span className={veldLabelCls}>Onderwerp</span>
               <input
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
-                placeholder="Onderwerp..."
+                className="w-full bg-transparent text-[14px] font-medium text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground"
+                placeholder="Waar gaat het over?"
               />
             </div>
 
-            {/* Tools · subtle text links */}
-            <div className="flex items-center gap-4 py-3">
+            {/* Tools · chips zodat ze als knop leesbaar zijn */}
+            <div className="flex items-center gap-1.5 py-3">
               <div className="relative">
                 <button
                   onClick={() => setShowTemplateMenu(!showTemplateMenu)}
-                  className="text-[12px] text-muted-foreground hover:text-foreground/70 transition-colors"
+                  className={toolChipCls}
                 >
                   Template
+                  <ChevronDown className="h-3 w-3 opacity-60" />
                 </button>
                 {showTemplateMenu && (
                   <>
@@ -1047,9 +1056,10 @@ export function EmailCompose({
               <div className="relative">
                 <button
                   onClick={() => setShowMergeFields(!showMergeFields)}
-                  className="text-[12px] text-muted-foreground hover:text-foreground/70 transition-colors"
+                  className={toolChipCls}
                 >
                   Veld invoegen
+                  <ChevronDown className="h-3 w-3 opacity-60" />
                 </button>
                 {showMergeFields && (
                   <>
@@ -1074,17 +1084,17 @@ export function EmailCompose({
                   <button
                     onClick={() => setReplyAiOpen(v => !v)}
                     disabled={forgieLoading}
-                    className="flex items-center gap-1.5 text-[12px] text-flame hover:underline transition-colors duration-150 disabled:opacity-40"
+                    className={aiChipCls}
                   >
                     {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                     Beantwoord met AI
-                    <ChevronDown className="h-3 w-3" />
+                    <ChevronDown className="h-3 w-3 opacity-60" />
                   </button>
                 ) : (
                   <button
                     onClick={handleForgieWrite}
                     disabled={forgieLoading}
-                    className="flex items-center gap-1.5 text-[12px] text-flame hover:underline transition-colors duration-150 disabled:opacity-40"
+                    className={aiChipCls}
                   >
                     {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                     Schrijf mijn e-mail
@@ -1234,8 +1244,9 @@ export function EmailCompose({
           </div>
         </div>
 
-        {/* Bottom bar · formatting + send */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 px-3 md:px-6 py-2.5 border-t border-border flex-shrink-0">
+        {/* Bottom bar · formatting + send. Rechts net genoeg ruimte om de
+            zwevende Daan-knop te ontwijken; Verzenden staat er direct naast. */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 px-3 md:pl-6 md:pr-[76px] py-2.5 border-t border-border flex-shrink-0">
           <div className="flex items-center gap-0.5">
             {/* mousedown-preventDefault: anders verliest WebKit de tekstselectie
                 zodra de knop focus pakt en doet het commando niets. */}
