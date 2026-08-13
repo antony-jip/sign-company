@@ -75,9 +75,10 @@ interface AppSettingsContextType {
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined)
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
+  const { user, organisatie } = useAuth()
   const [settings, setSettings] = useState<AppSettings>(() => getDefaultAppSettings(''))
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [eigenaarBedrijf, setEigenaarBedrijf] = useState<Partial<Profile> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -106,6 +107,40 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     load()
     return () => { cancelled = true }
   }, [user?.id])
+
+  // Bedrijfsgegevens op documenten komen van de organisatie-eigenaar (net als
+  // de publieke endpoints doen), niet van de ingelogde gebruiker: een teamlid
+  // met leeg profiel mag geen factuur zonder KvK/btw/IBAN produceren.
+  const eigenaarId = organisatie?.eigenaar_id
+  useEffect(() => {
+    let cancelled = false
+    async function laadEigenaarBedrijf() {
+      if (!user?.id || !eigenaarId || eigenaarId === user.id) {
+        if (!cancelled) setEigenaarBedrijf(null)
+        return
+      }
+      try {
+        const eigenaar = await getProfile(eigenaarId)
+        if (!cancelled && eigenaar) {
+          setEigenaarBedrijf({
+            logo_url: eigenaar.logo_url,
+            bedrijfsnaam: eigenaar.bedrijfsnaam,
+            bedrijfs_adres: eigenaar.bedrijfs_adres,
+            bedrijfs_telefoon: eigenaar.bedrijfs_telefoon,
+            bedrijfs_email: eigenaar.bedrijfs_email,
+            bedrijfs_website: eigenaar.bedrijfs_website,
+            kvk_nummer: eigenaar.kvk_nummer,
+            btw_nummer: eigenaar.btw_nummer,
+            iban: eigenaar.iban,
+          })
+        }
+      } catch (err) {
+        logger.error('Kon bedrijfsgegevens van organisatie-eigenaar niet laden:', err)
+      }
+    }
+    laadEigenaarBedrijf()
+    return () => { cancelled = true }
+  }, [user?.id, eigenaarId])
 
   const handleUpdateSettings = useCallback(async (updates: Partial<AppSettings>) => {
     if (!user?.id) return
@@ -167,9 +202,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     ...(profile && 'dashboard_blokken' in profile ? { dashboard_blokken: profile.dashboard_blokken } : {}),
   }), [settings, profile])
 
+  const documentProfiel = profile && eigenaarBedrijf ? { ...profile, ...eigenaarBedrijf } : profile
+
   const value: AppSettingsContextType = {
     settings: mergedSettings,
-    profile,
+    profile: documentProfiel,
     isLoading,
     updateSettings: handleUpdateSettings,
     updateUserProfile: handleUpdateProfile,
@@ -198,11 +235,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     toonConversieRate: settings.toon_conversie_rate ?? true,
     toonDagenOpen: settings.toon_dagen_open ?? true,
     toonFollowUpIndicatoren: settings.toon_follow_up_indicatoren ?? true,
-    bedrijfsnaam: profile?.bedrijfsnaam || '',
-    bedrijfsAdres: profile?.bedrijfs_adres || '',
-    kvkNummer: profile?.kvk_nummer || '',
-    btwNummer: profile?.btw_nummer || '',
-    logoUrl: profile?.logo_url || '',
+    bedrijfsnaam: documentProfiel?.bedrijfsnaam || '',
+    bedrijfsAdres: documentProfiel?.bedrijfs_adres || '',
+    kvkNummer: documentProfiel?.kvk_nummer || '',
+    btwNummer: documentProfiel?.btw_nummer || '',
+    logoUrl: documentProfiel?.logo_url || '',
     anthropicApiKey,
     // Factuur instellingen
     factuurPrefix: settings.factuur_prefix ?? '',
