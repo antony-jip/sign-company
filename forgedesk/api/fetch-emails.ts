@@ -925,6 +925,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // ─── UID bijvullen voor mail die doen. zelf verstuurde ───
+    // send-email schrijft de verzonden mail direct in de DB, maar zonder
+    // IMAP-uid: die bestaat op dat moment nog niet. De upsert hierboven laat
+    // bestaande rijen met rust (ignoreDuplicates), dus zonder deze stap houdt
+    // zo'n rij voor altijd uid NULL — en dan kan de reader de bijlagen nooit
+    // ophalen ("bijlagen konden niet worden geladen"). Deze run is de enige
+    // kans: de waterlijn (last_seen_uid) schuift er hierna overheen.
+    if (newEmails.length > 0) {
+      const uidPerMessageId = new Map<string, number>()
+      for (const e of newEmails) {
+        if (e.message_id && e.uid) uidPerMessageId.set(e.message_id as string, e.uid as number)
+      }
+      if (uidPerMessageId.size > 0) {
+        try {
+          const { data: zonderUid } = await supabaseAdmin
+            .from('emails')
+            .select('id, message_id')
+            .eq('user_id', user_id)
+            .is('uid', null)
+            .in('message_id', [...uidPerMessageId.keys()])
+          for (const rij of zonderUid || []) {
+            const uid = uidPerMessageId.get(rij.message_id as string)
+            if (!uid) continue
+            await supabaseAdmin
+              .from('emails')
+              .update({ uid, gmail_id: String(uid), imap_folder: imapFolder })
+              .eq('id', rij.id)
+          }
+        } catch (uidErr) {
+          console.warn('[fetch-emails] uid-backfill mislukt:', uidErr instanceof Error ? uidErr.message : uidErr)
+        }
+      }
+    }
+
     // ─── Flags toepassen: elders-gelezen mails ook hier op gelezen ───
     if (seenByUid.size > 0) {
       try {

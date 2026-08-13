@@ -2252,24 +2252,32 @@ export function EmailReader({
                 )
               })()}
 
-              {/* Fallback: count > 0 maar geen metadata (auto-fetch faalde,
-                  bv. IMAP timeout of geen verbinding). EmailLayout doet bij
-                  het openen al een targeted fetchAttachmentMeta, dus dit pad
-                  is zeldzaam. */}
-              {(!email.attachment_meta || email.attachment_meta.length === 0) && email.bijlagen > 0 && (
-                <div className="mt-6 pt-5 border-t border-border">
-                  {isLoadingBody ? (
-                    <p className="text-[12px] text-muted-foreground inline-flex items-center gap-2">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Bijlagen worden geladen.
-                    </p>
-                  ) : (
-                    <p className="text-[12px] text-muted-foreground">
-                      {email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''} kon{email.bijlagen > 1 ? 'den' : ''} niet worden geladen. Probeer het zo opnieuw.
-                    </p>
-                  )}
-                </div>
-              )}
+              {/* Fallback: count > 0 maar geen metadata. Bij eigen verzonden
+                  mail is dat geen fout: die rij wordt geschreven op het moment
+                  van versturen, dus vóór de mail een IMAP-uid heeft en er iets
+                  op te halen valt. Pas na de volgende sync van Verzonden komen
+                  de bestandsnamen mee. */}
+              {(!email.attachment_meta || email.attachment_meta.length === 0) && email.bijlagen > 0 && (() => {
+                const meervoud = email.bijlagen > 1
+                const isEigenVerzonden = email.map === 'verzonden'
+                return (
+                  <div className="mt-6 pt-5 border-t border-border">
+                    {isLoadingBody ? (
+                      <p className="text-[12px] text-muted-foreground inline-flex items-center gap-2">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Bijlagen worden geladen.
+                      </p>
+                    ) : (
+                      <p className="text-[12px] text-muted-foreground inline-flex items-center gap-2">
+                        <Paperclip className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
+                        {isEigenVerzonden
+                          ? `${email.bijlagen} bijlage${meervoud ? 'n' : ''} meegestuurd.`
+                          : `${email.bijlagen} bijlage${meervoud ? 'n' : ''} kon${meervoud ? 'den' : ''} niet worden opgehaald. Open de mail zo nog eens.`}
+                      </p>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
 
           </div>
