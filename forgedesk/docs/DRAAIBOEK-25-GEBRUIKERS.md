@@ -21,6 +21,10 @@ faalpad dat in de doorlichting van 13 aug is gevonden.
    - `208_uitnodigingen_policy_versmallen.sql` — versmalt de 207-policy tot
      lezen en intrekken, zodat een admin niet via een directe insert om de
      plekkentelling heen kan.
+   - `209_app_settings_document_velden_gate.sql` — nummerreeksen, prefixen
+     en voorwaarden alleen door admins te wijzigen; de UI rekent hierop.
+   - `200_feature_flags.sql` + `202_mailsync_taken.sql` — nodig voor het
+     mailsync-werkerpad (zie stap 15).
 
 2. **Verifieer het race-vangnet** (moet 5 rijen geven):
 
