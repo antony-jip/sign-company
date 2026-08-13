@@ -1,17 +1,15 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
 // De route maakt bij het laden een supabase-client aan; die wil een sleutel zien.
 process.env.VITE_SUPABASE_URL ||= 'http://localhost'
 process.env.SUPABASE_SERVICE_ROLE_KEY ||= 'test'
 
-type Helpers = typeof import('../../api/offerte-uitschrijven')
-let pakAntwoordUit: Helpers['pakAntwoordUit']
-let pakLijstUit: Helpers['pakLijstUit']
-let normaliseerRegels: Helpers['normaliseerRegels']
-
-beforeAll(async () => {
-  ;({ pakAntwoordUit, pakLijstUit, normaliseerRegels } = await import('../../api/offerte-uitschrijven'))
-})
+// Import op TOPNIVEAU, niet in een beforeAll. Met een onbruikbare
+// VITE_SUPABASE_URL klapt deze import, en in een beforeAll markeert vitest de
+// suite dan als OVERGESLAGEN terwijl de run groen blijft: zeven tests
+// verdwenen dan stil uit de telling. Op topniveau faalt het bestand luid.
+const { pakAntwoordUit, pakLijstUit, normaliseerRegels } =
+  await import('../../api/offerte-uitschrijven')
 
 // Sonnet levert het tool-antwoord met enige regelmaat als JSON-tekst in plaats
 // van als object. Beide vormen zijn in de proef op het ZZM-document gezien.
