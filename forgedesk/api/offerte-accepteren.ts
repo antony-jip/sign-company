@@ -267,10 +267,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    await supabaseAdmin.from('notificaties').insert([
+    // Fan-out naar maker + alle org-admins: een klant-akkoord mag in een team
+    // van 25 niet onzichtbaar blijven als de maker afwezig is.
+    const ontvangers = new Set<string>([offerte.user_id])
+    {
+      const { data: makerProfiel } = await supabaseAdmin
+        .from('profiles')
+        .select('organisatie_id')
+        .eq('id', offerte.user_id)
+        .maybeSingle()
+      if (makerProfiel?.organisatie_id) {
+        const { data: admins } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('organisatie_id', makerProfiel.organisatie_id)
+          .eq('rol', 'admin')
+          .or('status.is.null,status.neq.gedeactiveerd')
+        for (const a of admins || []) ontvangers.add(a.id)
+      }
+    }
+    await supabaseAdmin.from('notificaties').insert([...ontvangers].flatMap((ontvangerId) => [
       {
         id: crypto.randomUUID(),
-        user_id: offerte.user_id,
+        user_id: ontvangerId,
         type: 'offerte_geaccepteerd',
         titel: 'Offerte geaccepteerd',
         bericht: `${naam.trim()} heeft offerte ${offerte.nummer} geaccepteerd`,
@@ -280,7 +299,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       ...(projectId ? [{
         id: crypto.randomUUID(),
-        user_id: offerte.user_id,
+        user_id: ontvangerId,
         type: 'portaal_goedkeuring' as const,
         titel: `${naam.trim()} heeft goedgekeurd`,
         bericht: `${offerte.titel || offerte.nummer}`,
@@ -290,7 +309,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         gelezen: false,
         created_at: nu,
       }] : []),
-    ])
+    ]))
 
     // Email via Resend — voor response zodat Vercel de function niet killt
     try {

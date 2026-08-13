@@ -139,8 +139,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const notifType = status === 'goedgekeurd' ? 'portaal_goedkeuring' : 'portaal_revisie'
       const actieLabel = status === 'goedgekeurd' ? 'goedgekeurd' : 'revisie gevraagd'
 
-      await supabaseAdmin.from('notificaties').insert({
-        user_id: gk.user_id,
+      // Fan-out naar maker + org-admins, zodat het team dit ook ziet als de
+      // maker afwezig is.
+      const ontvangers = new Set<string>([gk.user_id])
+      const { data: makerProfiel } = await supabaseAdmin
+        .from('profiles')
+        .select('organisatie_id')
+        .eq('id', gk.user_id)
+        .maybeSingle()
+      if (makerProfiel?.organisatie_id) {
+        const { data: admins } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('organisatie_id', makerProfiel.organisatie_id)
+          .eq('rol', 'admin')
+          .or('status.is.null,status.neq.gedeactiveerd')
+        for (const a of admins || []) ontvangers.add(a.id)
+      }
+      await supabaseAdmin.from('notificaties').insert([...ontvangers].map((ontvangerId) => ({
+        user_id: ontvangerId,
         type: notifType,
         titel: `Tekening ${actieLabel} door ${klantNaam}`,
         bericht: status === 'revisie'
@@ -151,7 +168,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         klant_id: project?.klant_id || null,
         actie_genomen: false,
         gelezen: false,
-      })
+      })))
 
       // Stuur email naar gebruiker via Resend
       const { data: userEmailSettings } = await supabaseAdmin

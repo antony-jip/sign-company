@@ -298,9 +298,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('id', portaal_item_id)
         .single()
 
-      // Maak in-app notificatie aan
-      await supabaseAdmin.from('notificaties').insert({
-        user_id: portaal.user_id,
+      // In-app notificatie voor maker, offerte-eigenaar en alle org-admins:
+      // in een team van 25 mag een klant-reactie niet onzichtbaar blijven
+      // omdat de maker toevallig afwezig is.
+      const ontvangers = new Set<string>([portaal.user_id])
+      if (offerteUserId) ontvangers.add(offerteUserId)
+      const { data: makerProfiel } = await supabaseAdmin
+        .from('profiles')
+        .select('organisatie_id')
+        .eq('id', portaal.user_id)
+        .maybeSingle()
+      if (makerProfiel?.organisatie_id) {
+        const { data: admins } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('organisatie_id', makerProfiel.organisatie_id)
+          .eq('rol', 'admin')
+          .or('status.is.null,status.neq.gedeactiveerd')
+        for (const a of admins || []) ontvangers.add(a.id)
+      }
+      await supabaseAdmin.from('notificaties').insert([...ontvangers].map((ontvangerId) => ({
+        user_id: ontvangerId,
         type: notifType,
         titel: `${displayNaam} heeft ${actieLabel}`,
         bericht: bericht?.trim()
@@ -311,7 +329,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         klant_id: project?.klant_id || null,
         actie_genomen: false,
         gelezen: false,
-      })
+      })))
 
       // Haal user email op voor notificatie
       const { data: emailSettings } = await supabaseAdmin
@@ -359,17 +377,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (ownerEmail?.gmail_address && ownerEmail.gmail_address !== userEmail) {
               recipients.push(ownerEmail.gmail_address)
             }
-            // In-app notificatie voor offerte-eigenaar
-            await supabaseAdmin.from('notificaties').insert({
-              user_id: offerteUserId,
-              type: notifType,
-              titel: `${displayNaam} heeft ${actieLabel}`,
-              bericht: `${notifItemTitel} — ${notifProjectNaam}`,
-              link: `/projecten/${portaal.project_id}`,
-              project_id: portaal.project_id,
-              actie_genomen: false,
-              gelezen: false,
-            })
+            // In-app notificatie voor de offerte-eigenaar gebeurt hierboven al
+            // in de fan-out; hier alleen nog de e-mail.
           }
 
           for (const recipient of recipients) {
