@@ -587,6 +587,10 @@ export function EmailLayout() {
       return
     }
     let cancelled = false
+    // Meteen terug naar de lokale terugval: dan staan de treffers uit de al
+    // geladen mail er binnen een frame, in plaats van dat de vorige zoekvraag
+    // blijft staan tot de server antwoordt.
+    setSearchResults(null)
     setIsSearching(true)
     searchEmailsFTS(searchQuery, SEARCH_PAGE_SIZE, 0).then(results => {
       if (!cancelled) {
@@ -718,7 +722,7 @@ export function EmailLayout() {
             e.onderwerp.toLowerCase().includes(q) ||
             e.van.toLowerCase().includes(q) ||
             e.aan.toLowerCase().includes(q) ||
-            e.inhoud.toLowerCase().includes(q)
+            (e.body_text || e.inhoud || '').toLowerCase().includes(q)
         )
       }
       if (operators.from) {

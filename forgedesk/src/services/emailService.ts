@@ -3,8 +3,9 @@ import {
   assertId, getLocalData, setLocalData, generateId, now,
   withUserId, getOrgId,
 } from './supabaseHelpers'
+import type { PostgrestFilterBuilder } from '@supabase/postgrest-js'
 import type { Email, InternEmailNotitie } from '@/types'
-import { parseZoekQuery } from '@/utils/emailZoek'
+import { parseZoekQuery, bouwTsQuery } from '@/utils/emailZoek'
 
 // ============ HISTORIE-BACKFILL ============
 
@@ -127,36 +128,86 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
   }))
 }
 
+/** PostgREST or-syntax gebruikt komma's en haakjes als structuur. */
+function veiligeZoekterm(w: string): string {
+  return w.replace(/[,%()"*]/g, '').trim()
+}
+
 export async function searchEmailsFTS(query: string, limit = 50, offset = 0): Promise<Email[]> {
   if (!query.trim() || !isSupabaseConfigured() || !supabase) return []
+  const client = supabase
   const filters = parseZoekQuery(query)
 
-  let q = supabase
+  // Alle filters buiten de vrije tekst gelden in beide rondes.
+  type Bouwer = PostgrestFilterBuilder<any, any, any, any>
+  const pasFiltersToe = (q: Bouwer): Bouwer => {
+    let uit = q
+    if (filters.van) {
+      const veilig = veiligeZoekterm(filters.van)
+      if (veilig) uit = uit.or(`van.ilike.%${veilig}%,from_address.ilike.%${veilig}%`)
+    }
+    if (filters.aan) {
+      const veilig = veiligeZoekterm(filters.aan)
+      if (veilig) uit = uit.ilike('aan', `%${veilig}%`)
+    }
+    if (filters.onderwerp) {
+      const veilig = veiligeZoekterm(filters.onderwerp)
+      if (veilig) uit = uit.ilike('onderwerp', `%${veilig}%`)
+    }
+    if (filters.map) uit = uit.eq('map', filters.map)
+    if (filters.gelezen !== undefined) uit = uit.eq('gelezen', filters.gelezen)
+    if (filters.voor) uit = uit.lt('datum', filters.voor)
+    if (filters.na) uit = uit.gte('datum', filters.na)
+    if (filters.bijlage !== undefined) uit = uit.eq('has_attachments', filters.bijlage)
+    return uit
+  }
+
+  // Twee stappen. Eerst alleen de id's uit de tabel: dat is een smalle query
+  // die de grote body-kolommen niet aanraakt. Pas daarna de lijstkolommen
+  // voor die vijftig rijen uit de view. In één keer via de view duurde
+  // hetzelfde zoekwoord seconden, omdat de view voor élke treffer eerst
+  // body_text moest uitpakken voordat er gesorteerd kon worden.
+  const idsQuery = () => pasFiltersToe(
+    client
+      .from('emails')
+      .select('id')
+      .order('datum', { ascending: false })
+      .range(offset, offset + limit - 1) as unknown as Bouwer,
+  )
+
+  const tsQuery = bouwTsQuery(filters.termen)
+  const eersteRonde = tsQuery ? idsQuery().textSearch('fts', tsQuery) : idsQuery()
+  const { data: treffers, error } = await eersteRonde
+  if (error) throw error
+  let ids = ((treffers || []) as Array<{ id: string }>).map(r => r.id)
+
+  // Vangnet: letterlijke deelstring op de korte kolommen. De Nederlandse
+  // stemmer knipt Engelse en Duitse mail anders, een naam in een adres is
+  // geen los woord, en wie "3021" zoekt bedoelt het midden van een
+  // ordernummer. body_text blijft er bewust buiten: die kolom zonder index
+  // doorzoeken loopt tegen de statement-timeout aan, en full-text dekt de
+  // inhoud al.
+  if (ids.length === 0 && tsQuery && offset === 0) {
+    const term = veiligeZoekterm(filters.termen.join(' '))
+    if (!term) return []
+    const { data: vangnet, error: vangnetErr } = await idsQuery()
+      .or(`onderwerp.ilike.%${term}%,van.ilike.%${term}%,aan.ilike.%${term}%`)
+    if (vangnetErr) throw vangnetErr
+    ids = ((vangnet || []) as Array<{ id: string }>).map(r => r.id)
+  }
+
+  if (ids.length === 0) return []
+
+  const { data: rijen, error: rijenErr } = await client
     .from('emails_list_view')
     .select(LIST_VIEW_COLUMNS)
-    .order('datum', { ascending: false })
-    .range(offset, offset + limit - 1)
+    .in('id', ids)
+  if (rijenErr) throw rijenErr
 
-  if (filters.tekst) {
-    const tsQuery = filters.tekst.split(/\s+/).map(w => `${w}:*`).join(' & ')
-    q = q.textSearch('fts', tsQuery)
-  }
-  if (filters.van) {
-    // Sanitize: PostgREST or-syntax gebruikt komma's en haakjes als structuur
-    const veilig = filters.van.replace(/[,%()"]/g, '')
-    if (veilig) q = q.or(`van.ilike.%${veilig}%,from_address.ilike.%${veilig}%`)
-  }
-  if (filters.voor) q = q.lt('datum', filters.voor)
-  if (filters.na) q = q.gte('datum', filters.na)
-  if (filters.bijlage !== undefined) q = q.eq('has_attachments', filters.bijlage)
-
-  const { data, error } = await q
-  if (error) throw error
-  return (data || []).map(e => ({
-    ...e,
-    inhoud: '',
-    body_html: null,
-  }))
+  const volgorde = new Map(ids.map((id, i) => [id, i]))
+  return ((rijen || []) as Array<Record<string, unknown>>)
+    .sort((a, b) => (volgorde.get(a.id as string) ?? 0) - (volgorde.get(b.id as string) ?? 0))
+    .map(e => ({ ...e, inhoud: '', body_html: null })) as unknown as Email[]
 }
 
 export async function getEmail(id: string): Promise<Email | null> {

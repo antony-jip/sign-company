@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { parseZoekQuery } from '../../src/utils/emailZoek'
+import { parseZoekQuery, bouwTsQuery } from '../../src/utils/emailZoek'
 
 describe('parseZoekQuery', () => {
   it('parseert kale tekst als full-text query', () => {
-    expect(parseZoekQuery('logo wognum')).toEqual({ tekst: 'logo wognum' })
+    expect(parseZoekQuery('logo wognum')).toEqual({
+      tekst: 'logo wognum',
+      termen: ['logo', 'wognum'],
+    })
   })
 
   it('haalt van: eruit en laat de rest als tekst', () => {
@@ -44,5 +47,46 @@ describe('parseZoekQuery', () => {
 
   it('laat dubbele punten in gewone woorden met rust', () => {
     expect(parseZoekQuery('re: offerte').tekst).toBe('re: offerte')
+  })
+
+  it('kent aan:, onderwerp:, map: en is:', () => {
+    const f = parseZoekQuery('aan:piet onderwerp:offerte map:verzonden is:ongelezen')
+    expect(f.aan).toBe('piet')
+    expect(f.onderwerp).toBe('offerte')
+    expect(f.map).toBe('verzonden')
+    expect(f.gelezen).toBe(false)
+    expect(f.tekst).toBe('')
+  })
+
+  it('houdt een citaat als één term bij elkaar', () => {
+    const f = parseZoekQuery('"proef offerte" wognum')
+    expect(f.termen).toEqual(['proef offerte', 'wognum'])
+  })
+
+  it('accepteert een geciteerde operatorwaarde', () => {
+    expect(parseZoekQuery('onderwerp:"proef offerte"').onderwerp).toBe('proef offerte')
+  })
+
+  it('negeert een onbekende map', () => {
+    expect(parseZoekQuery('map:zolder').map).toBeUndefined()
+  })
+})
+
+describe('bouwTsQuery', () => {
+  it('zoekt losse woorden op prefix', () => {
+    expect(bouwTsQuery(['offert', 'wognum'])).toBe('offert:* & wognum:*')
+  })
+
+  it('houdt een citaat als woordvolgorde', () => {
+    expect(bouwTsQuery(['proef offerte'])).toBe('proef <-> offerte')
+  })
+
+  it('stript tekens die tsquery zelf betekenis geeft', () => {
+    expect(bouwTsQuery(['off&er|te'])).toBe('offerte:*')
+  })
+
+  it('levert niets bij lege invoer', () => {
+    expect(bouwTsQuery([])).toBe('')
+    expect(bouwTsQuery(['   '])).toBe('')
   })
 })
