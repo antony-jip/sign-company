@@ -34,8 +34,7 @@ function findMedewerker(idOrName: string | undefined | null, medewerkers: Medewe
 }
 
 function Avatar({ medewerker, medewerkers, size = 24 }: { medewerker: Medewerker; medewerkers: Medewerker[]; size?: number }) {
-  const idx = medewerkers.findIndex(m => m.id === medewerker.id)
-  const style = getAvatarStyle(idx >= 0 ? idx : 0)
+  const style = getAvatarStyle(medewerker.id)
   return (
     <span
       className="inline-flex items-center justify-center rounded-full font-semibold flex-shrink-0"
@@ -97,8 +96,8 @@ function MedewerkerToggleRow({
       >
         Iedereen
       </button>
-      {visible.map((m, idx) => {
-        const style = getAvatarStyle(idx)
+      {visible.map((m) => {
+        const style = getAvatarStyle(m.id)
         const isActive = value === m.naam
         return (
           <button
@@ -138,8 +137,8 @@ function MedewerkerToggleRow({
           </PopoverTrigger>
           <PopoverContent align="end" className="w-44 p-1">
             <ul className="space-y-0.5">
-              {overflow.map((m, idx) => {
-                const style = getAvatarStyle((visible.length + idx) % 5)
+              {overflow.map((m) => {
+                const style = getAvatarStyle(m.id)
                 const isActive = value === m.naam
                 return (
                   <li key={m.id}>

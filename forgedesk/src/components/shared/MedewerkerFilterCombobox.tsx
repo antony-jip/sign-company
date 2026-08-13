@@ -58,7 +58,7 @@ export function MedewerkerFilterCombobox({
             <>
               <span
                 className="h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold"
-                style={getAvatarStyle(selectedIndex)}
+                style={getAvatarStyle(selected.id)}
               >
                 {getInitials(selected.naam)}
               </span>
@@ -115,7 +115,7 @@ export function MedewerkerFilterCombobox({
               >
                 <span
                   className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
-                  style={getAvatarStyle(idx)}
+                  style={getAvatarStyle(m.id)}
                 >
                   {getInitials(m.naam)}
                 </span>
