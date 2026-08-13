@@ -113,8 +113,7 @@ function initialen(naam: string): string {
 }
 
 function Avatar({ medewerker, medewerkers }: { medewerker: Medewerker; medewerkers: Medewerker[] }) {
-  const idx = medewerkers.findIndex(m => m.id === medewerker.id)
-  const style = getAvatarStyle(idx >= 0 ? idx : 0)
+  const style = getAvatarStyle(medewerker.id)
   return (
     <span
       className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full text-[10px] font-semibold flex-shrink-0"

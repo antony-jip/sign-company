@@ -166,6 +166,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const user_id = await verifyUser(req)
+
+    const { data: profiel } = await supabaseAdmin
+      .from('profiles')
+      .select('rol')
+      .eq('id', user_id)
+      .maybeSingle()
+    if ((profiel as { rol?: string } | null)?.rol !== 'admin') {
+      return res.status(403).json({ error: 'Alleen admins kunnen een boekhoudkoppeling instellen' })
+    }
+
     const { api_token } = req.body as { api_token?: string }
 
     let token = (api_token ?? '').trim()

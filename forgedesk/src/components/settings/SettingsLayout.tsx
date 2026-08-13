@@ -36,6 +36,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { isAdminUser } from '@/utils/authHelpers'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -530,7 +531,11 @@ const DOCUMENTEN_TABS: SubTab[] = [
 ]
 
 function DocumentenTab() {
-  const { user } = useAuth()
+  const { user, userRol } = useAuth()
+  // Nummerreeksen, prefixen en voorwaarden zijn een org-brede rij: een typfout
+  // van een van 25 medewerkers raakt ieders documenten. Bewerken is daarom
+  // admin-only in de UI.
+  const magBewerken = isAdminUser(userRol)
   const { refreshSettings } = useAppSettings()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -654,18 +659,23 @@ function DocumentenTab() {
     )
   }
 
-  const saveButton = (
+  const saveButton = magBewerken ? (
     <div className="flex justify-end mt-6">
       <Button onClick={handleSave} disabled={isSaving} className="gap-2">
         <Save className="w-4 h-4" />
         {isSaving ? 'Opslaan...' : 'Opslaan'}
       </Button>
     </div>
-  )
+  ) : null
 
   return (
     <>
       <SubTabNav tabs={DOCUMENTEN_TABS} active={subTab} onChange={setSubTab} variant="underline" />
+      {!magBewerken && (
+        <p className="mt-4 text-[13px] text-muted-foreground">
+          Deze instellingen gelden voor de hele organisatie. Alleen een beheerder kan ze wijzigen.
+        </p>
+      )}
 
       {subTab === 'offertes' && (
         <div className="space-y-6">

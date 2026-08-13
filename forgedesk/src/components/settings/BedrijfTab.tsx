@@ -24,7 +24,8 @@ const BEDRIJF_TABS: SubTab[] = [
 ]
 
 export function BedrijfTab() {
-  const { user } = useAuth()
+  const { user, organisatie } = useAuth()
+  const isNietEigenaar = Boolean(user?.id && organisatie?.eigenaar_id && organisatie.eigenaar_id !== user.id)
   const { refreshProfile, primaireKleur: currentKleur, refreshSettings } = useAppSettings()
   const [bedrijfsnaam, setBedrijfsnaam] = useState('')
   const [emailKleur, setEmailKleur] = useState('#1A535C')
@@ -196,6 +197,11 @@ export function BedrijfTab() {
             >
               logo, naam, adres en email-kleur
             </p>
+            {isNietEigenaar && (
+              <p className="text-[13px] text-muted-foreground">
+                Offertes en facturen gebruiken de bedrijfsgegevens van de organisatie-eigenaar. Wat je hier invult verandert die documenten niet.
+              </p>
+            )}
           </div>
           <div className="space-y-6">
             {bedrijfsnaam && (

@@ -200,6 +200,7 @@ interface KandidaatRij {
   body_text: string | null
   thread_id: string | null
   datum: string
+  message_id: string | null
 }
 
 /** Header-only uitsluitingen. Kost niets en haalt het gros eruit. */
@@ -668,7 +669,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const grens = new Date(Date.now() - MAX_LEEFTIJD_DAGEN * 24 * 60 * 60 * 1000).toISOString()
     const { data: rijen, error } = await supabaseAdmin
       .from('emails')
-      .select('id, uid, imap_folder, from_address, from_name, onderwerp, body_text, thread_id, datum')
+      .select('id, uid, imap_folder, from_address, from_name, onderwerp, body_text, thread_id, datum, message_id')
       .eq('user_id', userId)
       .eq('map', 'inbox')
       .is('is_aanvraag', null)
@@ -738,6 +739,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ beoordeeld: 0, aanvragen: 0, voorgefilterd: afgevallen.length })
     }
 
+    // ── Org-dedup: dezelfde mail (cc, info@-lijst) komt bij meerdere collega's
+    // binnen als aparte user-scoped rij. Eén AI-oordeel per message_id per
+    // organisatie is genoeg; bestaande oordelen worden gekopieerd in plaats
+    // van opnieuw betaald. ──
+    let hergebruikt = 0
+    let aanvragen = 0
+    if (orgIdVoorBudget) {
+      const metMessageId = kandidaten.filter((m) => m.message_id)
+      if (metMessageId.length) {
+        const { data: orgLeden } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('organisatie_id', orgIdVoorBudget)
+        const orgUserIds = (orgLeden || []).map((r) => r.id).filter((id) => id !== userId)
+        if (orgUserIds.length) {
+          // Alleen echte AI-oordelen hergebruiken (zekerheid > 0): de voorfilter
+          // en het onbruikbaar-pad schrijven zekerheid 0 en zijn user-specifiek
+          // (eigen adres, eigen leveranciers) — die false mag een collega geen
+          // echte aanvraag kosten. Bij meerdere collega-rijen wint een true.
+          const { data: alBeoordeeld } = await supabaseAdmin
+            .from('emails')
+            .select('message_id, is_aanvraag, aanvraag_zekerheid, aanvraag_samenvatting')
+            .in('message_id', metMessageId.map((m) => m.message_id as string))
+            .in('user_id', orgUserIds)
+            .not('is_aanvraag', 'is', null)
+            .gt('aanvraag_zekerheid', 0)
+          const oordeelPerMessageId = new Map<string, { is_aanvraag: boolean; aanvraag_zekerheid: number | null; aanvraag_samenvatting: string | null }>()
+          for (const rij of alBeoordeeld || []) {
+            if (!rij.message_id) continue
+            const bestaand = oordeelPerMessageId.get(rij.message_id)
+            if (!bestaand || (rij.is_aanvraag && !bestaand.is_aanvraag)) oordeelPerMessageId.set(rij.message_id, rij)
+          }
+          if (oordeelPerMessageId.size) {
+            const over: typeof kandidaten = []
+            for (const m of kandidaten) {
+              const bestaand = m.message_id ? oordeelPerMessageId.get(m.message_id) : undefined
+              if (!bestaand) { over.push(m); continue }
+              hergebruikt++
+              if (bestaand.is_aanvraag) aanvragen++
+              await supabaseAdmin
+                .from('emails')
+                .update({
+                  is_aanvraag: bestaand.is_aanvraag,
+                  aanvraag_zekerheid: bestaand.aanvraag_zekerheid ?? 0,
+                  aanvraag_samenvatting: bestaand.aanvraag_samenvatting,
+                  aanvraag_beoordeeld_op: new Date().toISOString(),
+                })
+                .eq('id', m.id)
+            }
+            kandidaten = over
+          }
+        }
+      }
+    }
+
+    if (!kandidaten.length) {
+      return res.status(200).json({ beoordeeld: 0, aanvragen, hergebruikt, voorgefilterd: afgevallen.length })
+    }
+
     // ── Bodies ophalen waar nodig ──
     const zonderTekst = kandidaten.filter((m) => !m.body_text || m.body_text.trim().length < 20)
     const { bodies: opgehaald, sessieOk } = zonderTekst.length
@@ -762,7 +822,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let inputTokens = 0
     let outputTokens = 0
     let calls = 0
-    let aanvragen = 0
     const voorbeelden: string[] = []
 
     // Mail-leerpad (fase 3): per beoordeelde mail van een bekende klant een
@@ -894,6 +953,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       beoordeeld: calls,
       aanvragen,
+      hergebruikt,
       voorgefilterd: afgevallen.length,
     })
   } catch (err) {

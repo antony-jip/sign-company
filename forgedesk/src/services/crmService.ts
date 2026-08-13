@@ -228,11 +228,13 @@ export async function getInkoopOffertes(user_id: string, limit = 50000): Promise
   assertId(user_id, 'user_id')
   const sb = supabase
   if (isSupabaseConfigured() && sb) {
+    // Geen user_id-filter: inkoop is sinds migratie 095 org-breed en de RLS
+    // scopet al op organisatie. Het oude filter verstopte inkoopoffertes van
+    // collega's voor elkaar.
     return fetchAllPages<InkoopOfferte>((van, tot) =>
       sb
         .from('inkoop_offertes')
         .select('*, regels:inkoop_regels(*)')
-        .eq('user_id', user_id)
         .order('created_at', { ascending: false })
         .order('id', { ascending: true })
         .range(van, tot), limit)

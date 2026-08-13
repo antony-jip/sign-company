@@ -96,13 +96,14 @@ export async function generateDebiteurennummer(): Promise<string> {
 
 // ============ KLANTEN ============
 
-export async function getAllKlantLabels(userId: string): Promise<string[]> {
+export async function getAllKlantLabels(_userId: string): Promise<string[]> {
   if (isSupabaseConfigured() && supabase) {
     const orgId = await getOrgId()
+    // Geen user_id-filter: klanten zijn org-breed, dus de labelsuggesties
+    // horen ook labels van collega-klanten te bevatten.
     let query = supabase
       .from('klanten')
       .select('labels')
-      .eq('user_id', userId)
     if (orgId) query = query.eq('organisatie_id', orgId)
     const { data } = await query
     if (data) {

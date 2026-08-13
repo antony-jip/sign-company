@@ -154,6 +154,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // (bestaande org bij invite, nieuwe org bij eigen signup). Als we
           // hier belanden is er iets mis op DB-niveau.
           logger.error('Profile zonder organisatie_id na signup', { userId })
+          // logger.error is alleen console; dit is het bewakingssignaal voor de
+          // onboarding-week, dus expliciet naar Sentry.
+          Sentry.captureMessage('Profile zonder organisatie_id na signup', {
+            level: 'error',
+            extra: { userId },
+          })
           if (!isOnboardingRoute(currentPath)) navigate?.('/welkom')
         } else if (org) {
           if (profile.uitgenodigd_door && !profile.voornaam) {

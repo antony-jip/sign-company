@@ -181,6 +181,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=not_owner`)
     }
 
+    // Eerste koppeling (nog geen eigenaar): alleen een admin mag die leggen,
+    // consistent met boekhoud-disconnect en eboekhouden-connect.
+    if (!eigenaarId) {
+      const { data: profiel } = await supabase
+        .from('profiles')
+        .select('rol')
+        .eq('id', user_id)
+        .maybeSingle()
+      if ((profiel as { rol?: string } | null)?.rol !== 'admin') {
+        return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=not_owner`)
+      }
+    }
+
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: REDIRECT_URI,

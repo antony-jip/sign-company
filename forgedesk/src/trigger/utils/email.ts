@@ -97,6 +97,35 @@ export async function getUserEmailCredentials(userId: string): Promise<UserEmail
  * sends (retries, parallel runs) te voorkomen. De pre-send mark wordt
  * teruggedraaid bij een send-fout zodat een latere retry alsnog werkt.
  */
+// Terugval voor automatiseringen: heeft de maker van het document geen eigen
+// mailbox, dan gaat de mail via de mailbox van de organisatie-eigenaar. Zonder
+// deze terugval vielen offerte-opvolging en factuurherinneringen stil voor
+// elke gebruiker zonder gekoppelde mailbox, zonder dat iemand het merkte.
+async function getCredentialsMetEigenaarFallback(
+  userId: string
+): Promise<{ creds: UserEmailCredentials | null; viaEigenaar: boolean }> {
+  const eigen = await getUserEmailCredentials(userId);
+  if (eigen) return { creds: eigen, viaEigenaar: false };
+
+  const supabase = getSupabaseAdmin();
+  const { data: profiel } = await supabase
+    .from("profiles")
+    .select("organisatie_id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!profiel?.organisatie_id) return { creds: null, viaEigenaar: false };
+
+  const { data: org } = await supabase
+    .from("organisaties")
+    .select("eigenaar_id")
+    .eq("id", profiel.organisatie_id)
+    .maybeSingle();
+  if (!org?.eigenaar_id || org.eigenaar_id === userId) return { creds: null, viaEigenaar: false };
+
+  const eigenaarCreds = await getUserEmailCredentials(org.eigenaar_id);
+  return { creds: eigenaarCreds, viaEigenaar: !!eigenaarCreds };
+}
+
 export async function sendEmailForUser(params: {
   userId: string;
   to: string;
@@ -108,9 +137,15 @@ export async function sendEmailForUser(params: {
 }): Promise<{ success: boolean; error?: string; skipped?: boolean }> {
   const useIdempotency = !!(params.idempotencyKey && params.organisatieId);
   try {
-    const creds = await getUserEmailCredentials(params.userId);
+    const { creds, viaEigenaar } = await getCredentialsMetEigenaarFallback(params.userId);
     if (!creds) {
       return { success: false, error: "Geen email instellingen gevonden" };
+    }
+    if (viaEigenaar) {
+      logger.warn("Maker heeft geen mailbox; mail gaat via de organisatie-eigenaar", {
+        userId: params.userId,
+        to: params.to,
+      });
     }
 
     if (useIdempotency) {

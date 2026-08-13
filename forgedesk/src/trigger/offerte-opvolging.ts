@@ -158,6 +158,15 @@ export const offerteOpvolgingCron = schedules.task({
         profiles.map((p: { id: string; bedrijfsnaam: string; logo_url: string }) => [p.id, p])
       );
 
+      // Branding komt van de organisatie-eigenaar (zoals factuur-herinnering),
+      // met de maker als terugval voor orgs zonder eigenaar_id.
+      const { data: orgRow } = await supabase
+        .from("organisaties")
+        .select("eigenaar_id")
+        .eq("id", schema.organisatie_id)
+        .maybeSingle();
+      const eigenaarId: string | undefined = orgRow?.eigenaar_id || undefined;
+
       const appUrl =
         process.env.VITE_APP_URL ||
         process.env.APP_URL ||
@@ -216,8 +225,8 @@ export const offerteOpvolgingCron = schedules.task({
           // Build merge vars
           const klant = klantMap.get(offerte.klant_id);
           const project = offerte.project_id ? projectMap.get(offerte.project_id) : null;
-          const profile = profileMap.get(offerte.user_id);
-          const docStyle = docStyleMap.get(offerte.user_id);
+          const profile = (eigenaarId && profileMap.get(eigenaarId)) || profileMap.get(offerte.user_id);
+          const docStyle = (eigenaarId && docStyleMap.get(eigenaarId)) || docStyleMap.get(offerte.user_id);
 
           const klantNaam = klant?.bedrijfsnaam || "klant";
           const contactpersoon = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || klantNaam;

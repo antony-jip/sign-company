@@ -76,6 +76,7 @@ import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
 import { getAvatarStyle as getLaneAvatarStyle } from '@/utils/medewerkerAvatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOptimisticState } from '@/hooks/useOptimistic'
+import { useStilleRefresh } from '@/hooks/useStilleRefresh'
 import { SelectionRectangle } from '@/components/planning/SelectionRectangle'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
@@ -228,6 +229,24 @@ export function TasksLayout() {
   const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
   const [montageAfspraken, setMontageAfspraken] = useState<MontageAfspraak[]>(() => getCached<MontageAfspraak[]>('montageAfspraken') ?? [])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? [])
+
+  // Id-eerst-matching: toegewezen_aan_id (migratie 176) is de waarheid, de
+  // naam-string blijft fallback voor oude rijen. Twee collega's met dezelfde
+  // roepnaam delen zo geen taken meer, en een naamswijziging ontkoppelt niets.
+  const naamNaarMedewerkerId = useMemo(() => {
+    const kaart = new Map<string, string>()
+    for (const m of medewerkers) {
+      const key = m.naam?.trim().toLowerCase()
+      if (key && !kaart.has(key)) kaart.set(key, m.id)
+    }
+    return kaart
+  }, [medewerkers])
+
+  const hoortBijMedewerker = useCallback((t: Taak, naam: string) => {
+    const doelId = naamNaarMedewerkerId.get(naam.trim().toLowerCase())
+    if (t.toegewezen_aan_id && doelId) return t.toegewezen_aan_id === doelId
+    return (t.toegewezen_aan ?? '').trim().toLowerCase() === naam.trim().toLowerCase()
+  }, [naamNaarMedewerkerId])
 
   const medewerkerNaam = (() => {
     if (!user) return ''
@@ -460,9 +479,13 @@ export function TasksLayout() {
 
   const handleBulkAssign = useCallback(
     (naam: string) => {
-      return runBulkUpdate(() => ({ toegewezen_aan: naam }), 'toegewezen', ['toegewezen_aan'])
+      // De id ook lokaal mee-patchen: de server resolvt hem zelf (metToegewezenId),
+      // maar de optimistische state zou anders een stale toegewezen_aan_id houden
+      // en de taak onder de oude persoon laten staan tot de volgende refresh.
+      const id = naamNaarMedewerkerId.get(naam.trim().toLowerCase()) ?? null
+      return runBulkUpdate(() => ({ toegewezen_aan: naam, toegewezen_aan_id: id }), 'toegewezen', ['toegewezen_aan', 'toegewezen_aan_id'])
     },
-    [runBulkUpdate]
+    [runBulkUpdate, naamNaarMedewerkerId]
   )
 
   const handleBulkStatus = useCallback(
@@ -642,6 +665,25 @@ export function TasksLayout() {
     return () => { cancelled = true }
   }, [])
 
+  // Stille verversing zodat het team elkaars taken en verplaatsingen ziet;
+  // nooit tijdens een drag of open dialoog.
+  const stilVerversen = useCallback(async () => {
+    const [takenData, projectenData, montageData, medewerkersData] = await Promise.all([
+      fetchQuery('taken', getTaken).catch(() => null),
+      fetchQuery('projecten', getProjecten).catch(() => null),
+      fetchQuery('montageAfspraken', getMontageAfspraken).catch(() => null),
+      fetchQuery('medewerkers', getMedewerkers).catch(() => null),
+    ])
+    if (takenData) setTaken(takenData)
+    if (projectenData) setProjecten(projectenData)
+    if (montageData) setMontageAfspraken(montageData)
+    if (medewerkersData) setMedewerkers(medewerkersData)
+  }, [])
+  useStilleRefresh({
+    verversen: stilVerversen,
+    magVerversen: () => !draggingTaakId && !editDialogOpen && !deleteDialogOpen && !fabOpen && !bulkBusy,
+  })
+
   // Update now-line every minute
   useEffect(() => {
     const interval = setInterval(() => {
@@ -708,6 +750,12 @@ export function TasksLayout() {
     try { stored = localStorage.getItem(TAKEN_FILTER_OVERRIDE_KEY) } catch (err) { /* ignore */ }
     if (stored !== null) {
       setMedewerkerFilter(stored)
+    } else if (currentMedewerker) {
+      // Default = eigen taken: met 25 medewerkers is "iedereen" als startpunt
+      // onbruikbaar. Bewust niet naar localStorage geschreven, zodat het een
+      // default blijft; kiest de gebruiker zelf Iedereen ('' via de combobox),
+      // dan wordt dát als override onthouden.
+      setMedewerkerFilter(currentMedewerker.naam)
     }
     setFilterInitialized(true)
   }, [currentMedewerker, medewerkers, user, filterInitialized])
@@ -759,9 +807,9 @@ export function TasksLayout() {
     let list = taken
     if (taskFilter === 'project') list = list.filter((t) => !!t.project_id)
     else if (taskFilter === 'los') list = list.filter((t) => !t.project_id)
-    if (medewerkerFilter) list = list.filter((t) => t.toegewezen_aan === medewerkerFilter)
+    if (medewerkerFilter) list = list.filter((t) => hoortBijMedewerker(t, medewerkerFilter))
     return list
-  }, [taken, taskFilter, medewerkerFilter])
+  }, [taken, taskFilter, medewerkerFilter, hoortBijMedewerker])
 
   // Tasks grouped by day key
   const tasksByDay = useMemo(() => {
@@ -835,16 +883,26 @@ export function TasksLayout() {
       return m
     }
 
+    // Lane-key = medewerker-id waar mogelijk (naam-fallback voor oude rijen
+    // zonder toegewezen_aan_id en namen zonder medewerker-record), zodat twee
+    // gelijknamige collega's elk een eigen lane hebben.
+    const laneKeyVoorTaak = (t: Taak): string => {
+      if (t.toegewezen_aan_id) return t.toegewezen_aan_id
+      const naam = t.toegewezen_aan?.trim()
+      if (!naam) return SWIMLANE_UNASSIGNED_KEY
+      return naamNaarMedewerkerId.get(naam.toLowerCase()) ?? naam
+    }
+
     const laneKeys: string[] = []
     if (medewerkerFilter) {
-      laneKeys.push(medewerkerFilter)
+      laneKeys.push(naamNaarMedewerkerId.get(medewerkerFilter.trim().toLowerCase()) ?? medewerkerFilter)
     } else {
       laneKeys.push(SWIMLANE_UNASSIGNED_KEY)
       medewerkers.filter((m) => m.status === 'actief').forEach((m) => {
-        if (!laneKeys.includes(m.naam)) laneKeys.push(m.naam)
+        if (!laneKeys.includes(m.id)) laneKeys.push(m.id)
       })
       filteredTaken.forEach((t) => {
-        const key = t.toegewezen_aan?.trim() || SWIMLANE_UNASSIGNED_KEY
+        const key = laneKeyVoorTaak(t)
         if (!laneKeys.includes(key)) laneKeys.push(key)
       })
     }
@@ -857,8 +915,7 @@ export function TasksLayout() {
       const d = new Date(t.deadline)
       d.setHours(0, 0, 0, 0)
       const dayKey = d.toDateString()
-      const laneKey = t.toegewezen_aan?.trim() || SWIMLANE_UNASSIGNED_KEY
-      const lane = laneMap.get(laneKey)
+      const lane = laneMap.get(laneKeyVoorTaak(t))
       if (lane && lane.has(dayKey)) lane.get(dayKey)!.push(t)
     })
 
@@ -875,12 +932,14 @@ export function TasksLayout() {
         })
       })
       const total = [...dayMap.values()].reduce((n, arr) => n + arr.length, 0)
-      const label = key === SWIMLANE_UNASSIGNED_KEY ? 'Ongetoewezen' : key
+      const label = key === SWIMLANE_UNASSIGNED_KEY
+        ? 'Ongetoewezen'
+        : (medewerkers.find((m) => m.id === key)?.naam ?? key)
       lanes.push({ key, label, tasksByDay: dayMap, total })
     })
 
     return lanes
-  }, [filteredTaken, weekDays, medewerkers, medewerkerFilter])
+  }, [filteredTaken, weekDays, medewerkers, medewerkerFilter, naamNaarMedewerkerId])
 
   // Montage afspraken grouped by day key
   const montageByDay = useMemo(() => {

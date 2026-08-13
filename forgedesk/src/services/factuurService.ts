@@ -1,9 +1,19 @@
+import * as Sentry from '@sentry/react'
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
   withUserId, getOrgId, sanitizeDates, round2, getMaxNummer, fetchAllPages,
 } from './supabaseHelpers'
 import type { Factuur, FactuurItem, HerinneringTemplate } from '@/types'
+
+export class FactuurConflictError extends Error {
+  public serverData: Factuur
+  constructor(message: string, serverData: Factuur) {
+    super(message)
+    this.name = 'FactuurConflictError'
+    this.serverData = serverData
+  }
+}
 
 // ============ FACTUREN CRUD ============
 
@@ -65,9 +75,40 @@ export async function createFactuur(factuur: Omit<Factuur, 'id' | 'created_at' |
   return newFactuur
 }
 
-export async function updateFactuur(id: string, updates: Partial<Factuur>): Promise<Factuur> {
+export async function updateFactuur(id: string, updates: Partial<Factuur>, expectedUpdatedAt?: string): Promise<Factuur> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Optimistic locking, zelfde constructie als updateOfferte: de voorwaarde
+    // zit in de UPDATE zelf, dus de database beslist wie wint.
+    if (expectedUpdatedAt) {
+      const { data: bijgewerkt, error } = await supabase
+        .from('facturen')
+        .update(sanitizeDates({ ...updates, updated_at: now() }))
+        .eq('id', id)
+        .eq('updated_at', expectedUpdatedAt)
+        .select()
+        .maybeSingle()
+      if (error) throw error
+      if (bijgewerkt) return bijgewerkt
+
+      const { data: huidig } = await supabase
+        .from('facturen')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle()
+      if (!huidig) throw new Error('Factuur niet gevonden')
+
+      Sentry.captureMessage('Factuur gelijktijdig bewerkt', {
+        level: 'info',
+        tags: { bron: 'optimistic-locking', entiteit: 'factuur' },
+      })
+
+      throw new FactuurConflictError(
+        'Deze factuur is ondertussen door iemand anders gewijzigd. Herlaad de pagina om de laatste versie te zien.',
+        huidig
+      )
+    }
+
     const { data, error } = await supabase.from('facturen').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
     if (error) throw error
     return data
@@ -78,6 +119,68 @@ export async function updateFactuur(id: string, updates: Partial<Factuur>): Prom
   items[index] = { ...items[index], ...updates, updated_at: now() }
   setLocalData('facturen', items)
   return items[index]
+}
+
+// Voor het verwerken-pad: daar krijgt een bestaand concept zijn volgnummer via
+// een UPDATE, en die had — anders dan createFactuur — geen 23505-afhandeling.
+// Twee gebruikers die tegelijk elk hun eigen concept verwerken berekenen
+// hetzelfde nummer; de verliezer krijgt hier een vers nummer en probeert opnieuw.
+export async function updateFactuurWithNummerRetry(
+  id: string,
+  updates: Partial<Factuur>,
+  expectedUpdatedAt?: string
+): Promise<Factuur> {
+  let huidige = { ...updates }
+  for (let poging = 0; poging < 5; poging++) {
+    try {
+      return await updateFactuur(id, huidige, expectedUpdatedAt)
+    } catch (err) {
+      const code = (err as { code?: string })?.code
+      if (code === '23505' && huidige.nummer && poging < 4) {
+        huidige = { ...huidige, nummer: await regenerateFactuurNummer(huidige.nummer) }
+        continue
+      }
+      throw err
+    }
+  }
+  throw new Error('Kon geen uniek factuurnummer genereren na meerdere pogingen')
+}
+
+// Verse DB-check bij offerte-naar-factuur: de client-state kan uren oud zijn,
+// dus vlak voor het aanmaken nog even kijken of een collega deze offerte al
+// gefactureerd heeft. Voorschotten en creditnota's tellen niet mee.
+export async function getStandaardFacturenVoorOfferte(offerteId: string): Promise<Array<Pick<Factuur, 'id' | 'nummer' | 'status'>>> {
+  assertId(offerteId, 'offerte_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('facturen')
+      .select('id, nummer, status')
+      .eq('offerte_id', offerteId)
+      .or('factuur_type.is.null,factuur_type.eq.standaard')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Factuur>('facturen').filter(
+    (f) => f.offerte_id === offerteId && (!f.factuur_type || f.factuur_type === 'standaard')
+  )
+}
+
+// Verse stand voor de voorschot-flows: de lijst in component-state kan
+// verouderd zijn terwijl een collega net verrekend of aangemaakt heeft.
+export async function getVoorschottenVoorOfferte(offerteId: string): Promise<Array<Pick<Factuur, 'id' | 'nummer' | 'status' | 'is_voorschot_verrekend' | 'subtotaal' | 'totaal'>>> {
+  assertId(offerteId, 'offerte_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('facturen')
+      .select('id, nummer, status, is_voorschot_verrekend, subtotaal, totaal')
+      .eq('offerte_id', offerteId)
+      .eq('factuur_type', 'voorschot')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Factuur>('facturen').filter(
+    (f) => f.offerte_id === offerteId && f.factuur_type === 'voorschot'
+  )
 }
 
 export async function deleteFactuur(id: string): Promise<void> {
@@ -116,15 +219,40 @@ export async function createFactuurItem(item: Omit<FactuurItem, 'id' | 'created_
   return newItem
 }
 
-// Vervangt alle regels van een factuur. Insert gaat bewust vóór de delete:
-// faalt de insert, dan staan de oude regels er nog. Andersom zou een mislukte
-// insert de factuur regelloos achterlaten.
+// Vervangt alle regels van een factuur, atomair via de RPC uit migratie 206:
+// twee gebruikers die tegelijk opslaan kunnen dan geen dubbele regelsets meer
+// achterlaten. Zolang de migratie nog niet gedraaid is valt dit terug op het
+// oude drie-stappen-pad (insert vóór delete, zodat een mislukte insert de
+// factuur niet regelloos achterlaat).
 export async function replaceFactuurItems(
   factuurId: string,
   items: Array<Omit<FactuurItem, 'id' | 'created_at' | 'factuur_id'>>
 ): Promise<FactuurItem[]> {
   assertId(factuurId, 'factuur_id')
   if (isSupabaseConfigured() && supabase) {
+    const { data: viaRpc, error: rpcError } = await supabase.rpc('vervang_factuur_items', {
+      p_factuur_id: factuurId,
+      p_items: items.map((item, i) => ({
+        beschrijving: item.beschrijving,
+        aantal: item.aantal,
+        eenheidsprijs: item.eenheidsprijs,
+        btw_percentage: item.btw_percentage,
+        korting_percentage: item.korting_percentage,
+        totaal: item.totaal,
+        volgorde: item.volgorde ?? i + 1,
+        grootboek_code: item.grootboek_code || '',
+        detail_regels: item.detail_regels || [],
+      })),
+    })
+    if (!rpcError) return (viaRpc as FactuurItem[]) || []
+    // Alleen terugvallen als de functie echt ontbreekt (migratie 206 nog niet
+    // gedraaid): PGRST202 = PostgREST kent hem niet, 42883 = Postgres kent hem
+    // niet. Andere fouten (bv. 42501 permission denied) mogen niet stil naar
+    // het race-gevoelige pad degraderen.
+    const functieOntbreekt = rpcError.code === 'PGRST202' || rpcError.code === '42883'
+    if (!functieOntbreekt) throw rpcError
+    Sentry.addBreadcrumb({ category: 'facturen', message: 'vervang_factuur_items ontbreekt; drie-stappen-fallback actief', level: 'warning' })
+
     const { data: bestaand, error: leesError } = await supabase
       .from('factuur_items').select('id').eq('factuur_id', factuurId)
     if (leesError) throw leesError
@@ -165,9 +293,12 @@ export async function updateFactuurStatus(
 ): Promise<Partial<Factuur>> {
   assertId(id, 'factuur_id')
   if (isSupabaseConfigured() && supabase) {
+    // updated_at expliciet mee, net als updateFactuur: het optimistic lock in
+    // de editor moet ook statuswijzigingen van collega's zien, en de
+    // updated_at-trigger uit de migratiemap is live niet gegarandeerd.
     const { data, error } = await supabase
       .from('facturen')
-      .update(updates)
+      .update({ ...updates, updated_at: now() })
       .eq('id', id)
       .select()
       .single()

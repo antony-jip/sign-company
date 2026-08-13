@@ -92,6 +92,7 @@ import { getAvatarStyle } from "@/utils/medewerkerAvatar";
 import { isAdminUser } from "@/utils/authHelpers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOptimisticState } from "@/hooks/useOptimistic";
+import { useStilleRefresh } from "@/hooks/useStilleRefresh";
 import { useNavigateWithTab } from "@/hooks/useNavigateWithTab";
 
 const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
@@ -630,6 +631,15 @@ export function MontagePlanningLayout() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Stille verversing zodat planners elkaars wijzigingen zien; nooit tijdens
+  // een sleep, resize of open dialoog (de D&D-logica zelf blijft ongemoeid).
+  useStilleRefresh({
+    verversen: loadData,
+    magVerversen: () =>
+      !draggingAfspraakId && !draggingTaakId && !draggingProjectId && !dragOverDate &&
+      !resizingId && !dialogOpen && !werkbonDialogOpen && !afrondenMenuOpen,
+  });
 
   const eigenMedewerker = useMemo(() => {
     if (!user?.id || medewerkers.length === 0) return null;
@@ -1635,7 +1645,7 @@ export function MontagePlanningLayout() {
             <div
               key={id}
               className={cn(sizeClasses, "rounded-lg flex items-center justify-center font-bold ring-2 ring-white")}
-              style={getAvatarStyle(idx)}
+              style={getAvatarStyle(id)}
               title={naam}
             >
               {getInitials(naam)}
@@ -2719,7 +2729,7 @@ export function MontagePlanningLayout() {
                       "rounded-lg flex items-center justify-center font-bold shrink-0",
                       isCollapsed ? "h-5 w-5 text-[9px]" : "h-7 w-7 text-[10px]"
                     )}
-                    style={getAvatarStyle(idx)}
+                    style={getAvatarStyle(monteur.id)}
                   >
                     {getInitials(monteur.naam)}
                   </div>
@@ -3036,7 +3046,7 @@ export function MontagePlanningLayout() {
                           ? "text-white ring-2 ring-offset-1 ring-petrol"
                           : "bg-muted text-muted-foreground hover:bg-[#E5E3DE]"
                       )}
-                      style={selected ? getAvatarStyle(idx) : undefined}
+                      style={selected ? getAvatarStyle(monteur.id) : undefined}
                       title={monteur.naam}
                       aria-pressed={selected}
                     >

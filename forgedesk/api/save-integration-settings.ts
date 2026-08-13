@@ -135,12 +135,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Haal organisatie_id uit profile
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('organisatie_id, email')
+      .select('organisatie_id, email, rol')
       .eq('id', userId)
       .single()
 
     if (!profile?.organisatie_id) {
       return res.status(403).json({ error: 'Geen organisatie gevonden' })
+    }
+
+    if (profile.rol !== 'admin') {
+      return res.status(403).json({ error: 'Alleen admins kunnen integratie-instellingen wijzigen' })
     }
 
     const body = req.body as Record<string, unknown>

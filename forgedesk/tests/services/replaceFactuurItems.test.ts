@@ -6,10 +6,22 @@ const staat = vi.hoisted(() => ({
   bestaandeIds: [] as Array<{ id: string }>,
   laatstIngevoegd: [] as unknown[],
   verwijderdeIds: [] as string[],
+  rpcBeschikbaar: false,
+  rpcArgs: null as null | { p_factuur_id: string; p_items: unknown[] },
 }))
 
 vi.mock('../../src/services/supabaseHelpers', () => ({
   supabase: {
+    rpc: (naam: string, args: { p_factuur_id: string; p_items: unknown[] }) => {
+      staat.calls.push(`rpc:${naam}`)
+      staat.rpcArgs = args
+      if (!staat.rpcBeschikbaar) {
+        // PostgREST-fout wanneer de migratie nog niet gedraaid is: dan moet
+        // het oude drie-stappen-pad het overnemen.
+        return Promise.resolve({ data: null, error: { code: 'PGRST202', message: 'Could not find the function public.vervang_factuur_items' } })
+      }
+      return Promise.resolve({ data: args.p_items.map((i) => ({ ...(i as object), factuur_id: args.p_factuur_id })), error: null })
+    },
     from: (tabel: string) => ({
       select: () => ({
         eq: () => {
@@ -73,12 +85,25 @@ describe('replaceFactuurItems', () => {
     staat.bestaandeIds = [{ id: 'oud-1' }, { id: 'oud-2' }]
     staat.laatstIngevoegd = []
     staat.verwijderdeIds = []
+    staat.rpcBeschikbaar = false
+    staat.rpcArgs = null
   })
 
-  it('voegt de nieuwe regels in vóór het verwijderen van de oude', async () => {
+  it('gebruikt de atomaire RPC zodra migratie 206 gedraaid is', async () => {
+    staat.rpcBeschikbaar = true
+
+    const resultaat = await replaceFactuurItems(FACTUUR_ID, [regel('Gevellogo zijkant', 4225)])
+
+    expect(staat.calls).toEqual(['rpc:vervang_factuur_items'])
+    expect(staat.rpcArgs?.p_factuur_id).toBe(FACTUUR_ID)
+    expect(staat.rpcArgs?.p_items[0]).toMatchObject({ beschrijving: 'Gevellogo zijkant', eenheidsprijs: 4225 })
+    expect(resultaat[0]).toMatchObject({ factuur_id: FACTUUR_ID })
+  })
+
+  it('voegt in het terugvalpad de nieuwe regels in vóór het verwijderen van de oude', async () => {
     await replaceFactuurItems(FACTUUR_ID, [regel('Gevellogo zijkant', 4225)])
 
-    expect(staat.calls).toEqual(['select:factuur_items', 'insert:factuur_items', 'delete:factuur_items'])
+    expect(staat.calls).toEqual(['rpc:vervang_factuur_items', 'select:factuur_items', 'insert:factuur_items', 'delete:factuur_items'])
     expect(staat.verwijderdeIds).toEqual(['oud-1', 'oud-2'])
   })
 
@@ -106,7 +131,7 @@ describe('replaceFactuurItems', () => {
   it('verwijdert alle regels als er geen enkele regel overblijft', async () => {
     await replaceFactuurItems(FACTUUR_ID, [])
 
-    expect(staat.calls).toEqual(['select:factuur_items', 'delete:factuur_items'])
+    expect(staat.calls).toEqual(['rpc:vervang_factuur_items', 'select:factuur_items', 'delete:factuur_items'])
     expect(staat.verwijderdeIds).toEqual(['oud-1', 'oud-2'])
   })
 
@@ -115,6 +140,6 @@ describe('replaceFactuurItems', () => {
 
     await replaceFactuurItems(FACTUUR_ID, [regel('Nieuwe regel', 100)])
 
-    expect(staat.calls).toEqual(['select:factuur_items', 'insert:factuur_items'])
+    expect(staat.calls).toEqual(['rpc:vervang_factuur_items', 'select:factuur_items', 'insert:factuur_items'])
   })
 })

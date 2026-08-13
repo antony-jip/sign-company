@@ -25,12 +25,13 @@ function deadlineDateKey(deadline: string | undefined): string | null {
 interface TasksMonthTabProps {
   taken: Taak[]
   myName: string
+  myId?: string | null
   selectedDate: Date
   setSelectedDate: (d: Date) => void
   setActiveTab: (tab: 'dag' | 'maand') => void
 }
 
-export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, setActiveTab }: TasksMonthTabProps) {
+export function TasksMonthTab({ taken, myName, myId, selectedDate, setSelectedDate, setActiveTab }: TasksMonthTabProps) {
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(selectedDate))
   const today = new Date()
 
@@ -42,23 +43,23 @@ export function TasksMonthTab({ taken, myName, selectedDate, setSelectedDate, se
   const perDayCounts = useMemo(() => {
     const map = new Map<string, number>()
     for (const t of taken) {
-      if (t.toegewezen_aan !== myName) continue
+      if (t.toegewezen_aan_id && myId ? t.toegewezen_aan_id !== myId : t.toegewezen_aan !== myName) continue
       const key = deadlineDateKey(t.deadline)
       if (!key) continue
       map.set(key, (map.get(key) ?? 0) + 1)
     }
     return map
-  }, [taken, myName])
+  }, [taken, myName, myId])
 
   const monthOpenCount = useMemo(() => {
     return taken.filter((t) => {
-      if (t.toegewezen_aan !== myName) return false
+      if (t.toegewezen_aan_id && myId ? t.toegewezen_aan_id !== myId : t.toegewezen_aan !== myName) return false
       if (t.status === 'klaar') return false
       if (!t.deadline) return false
       const d = new Date(t.deadline)
       return isSameMonth(d, visibleMonth)
     }).length
-  }, [taken, myName, visibleMonth])
+  }, [taken, myName, myId, visibleMonth])
 
   const monthLabel = format(visibleMonth, 'LLLL yyyy', { locale: nl })
 
