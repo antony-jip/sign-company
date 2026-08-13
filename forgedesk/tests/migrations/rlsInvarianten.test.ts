@@ -238,7 +238,7 @@ describe('elke tabel houdt ALGEMENE leestoegang, niet alleen een uitzondering', 
     'offerte_opvolg_log',
     'offerte_opvolg_stappen',
     'portaal_activiteiten',
-    'werkbon_afbeeldingen',   // via werkbon_items -> werkbonnen
+    'werkbon_afbeeldingen',   // sinds 205 eigen organisatie_id + org-policy; koppelpolicy uit 022 wordt daar gedropt
     'uitnodigingen',          // via organisaties.eigenaar_id
   ])
 
