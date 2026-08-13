@@ -446,9 +446,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const orgIdForBudget = await resolveOrgId(userId)
     const withinLimit = await checkUsageLimit(userId, orgIdForBudget)
     if (!withinLimit) {
+      const { limiet } = orgIdForBudget
+        ? await haalMaandlimiet(orgIdForBudget, getCurrentMonth())
+        : { limiet: MONTHLY_LIMIT }
       return res.status(429).json({
         error: 'AI limiet bereikt',
-        message: `Je hebt deze maand voor \u20ac${MONTHLY_LIMIT} aan Daan-gebruik bereikt.`,
+        message: `Je hebt deze maand voor \u20ac${limiet} aan Daan-gebruik bereikt.`,
       })
     }
     if (orgIdForBudget) {

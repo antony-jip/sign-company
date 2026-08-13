@@ -2413,8 +2413,8 @@ export function FactuurEditor() {
                   </Button>
                 )}
 
-                {/* Exact Online sync */}
-                {settings.exact_online_connected && existingFactuur && (
+                {/* Exact Online sync: pas na verwerken, concepten hebben geen definitief nummer */}
+                {settings.exact_online_connected && existingFactuur && existingFactuur.status !== 'concept' && !!existingFactuur.nummer && (
                   existingFactuur.exact_synced_at ? (
                     <div className="flex items-center gap-1">
                       <Badge

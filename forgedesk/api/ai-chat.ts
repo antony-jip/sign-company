@@ -940,9 +940,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const withinLimit = await checkUsageLimit(userId, orgIdForBudget)
     if (!withinLimit) {
+      // Toon het echte staffelbedrag, niet de hardcoded eerste trede.
+      const { limiet } = orgIdForBudget
+        ? await haalMaandlimiet(orgIdForBudget, getCurrentMonth())
+        : { limiet: MONTHLY_LIMIT }
       return res.status(429).json({
         error: 'Daan limiet bereikt',
-        message: `Je hebt deze maand voor \u20ac${MONTHLY_LIMIT} aan Daan-gebruik bereikt.`,
+        message: `Je hebt deze maand voor \u20ac${limiet} aan Daan-gebruik bereikt.`,
       })
     }
 
@@ -1256,7 +1260,7 @@ ${JSON.stringify(dataContext, null, 2)}`
     const resultaat = {
       answer: resultText,
       usage: currentUsage.geschatte_kosten,
-      limiet: MONTHLY_LIMIT,
+      limiet: orgIdForBudget ? (await haalMaandlimiet(orgIdForBudget, getCurrentMonth())).limiet : MONTHLY_LIMIT,
       ...(acties.length > 0 ? { acties } : {}),
       ...(genoteerd.length > 0 ? { genoteerd } : {}),
     }

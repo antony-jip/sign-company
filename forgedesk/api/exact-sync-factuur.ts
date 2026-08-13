@@ -679,6 +679,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Factuur niet gevonden.' })
     }
 
+    // Concepten horen niet in Exact: geen definitief nummer betekent een lege
+    // YourRef en een gat zodra het echte reeksnummer wordt toegekend. Eerst
+    // verwerken, dan syncen. Retry-modi mogen er langs (die vereisen een
+    // bestaande SalesEntry en dus een eerder gesyncte, definitieve factuur).
+    if (!attachment_only && !bijlagen_only && (factuur.status === 'concept' || !factuur.nummer)) {
+      return res.status(400).json({ error: 'Verwerk de factuur eerst; concepten kunnen niet naar Exact.' })
+    }
+
     // Idempotency. Exact heeft geen idempotency-key, dus een tweede POST maakt
     // een tweede SalesEntry: de factuur staat dan dubbel in de administratie van
     // de klant. Dat kon op twee manieren gebeuren. Twee keer op synchroniseren
