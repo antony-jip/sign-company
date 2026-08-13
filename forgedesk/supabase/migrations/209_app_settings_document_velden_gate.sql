@@ -30,16 +30,37 @@ DECLARE
     'factuur_betaaltermijn_dagen','factuur_voorwaarden','factuur_intro_tekst','factuur_outro_tekst',
     'werkbon_prefix','werkbon_volgnummer','project_prefix'
   ];
-  nieuw jsonb := to_jsonb(NEW);
-  oud jsonb := to_jsonb(OLD);
 BEGIN
   -- service_role / SQL-editor: auth.uid() is NULL, alles toegestaan.
   IF aanvrager IS NULL THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
+  -- DELETE en heropbouw-INSERT zijn de omweg om de UPDATE-gate heen: een
+  -- niet-admin die de org-rij dropt en opnieuw insert zou anders vrij spel
+  -- hebben. De allereerste rij per org (onboarding) blijft toegestaan.
+  IF TG_OP = 'DELETE' THEN
+    SELECT rol = 'admin' INTO is_admin FROM profiles WHERE id = aanvrager;
+    IF NOT COALESCE(is_admin, false) THEN
+      RAISE EXCEPTION 'Alleen admins kunnen organisatie-instellingen verwijderen';
+    END IF;
+    RETURN OLD;
+  END IF;
+
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.organisatie_id IS NOT NULL AND EXISTS (
+      SELECT 1 FROM app_settings WHERE organisatie_id = NEW.organisatie_id
+    ) THEN
+      SELECT rol = 'admin' INTO is_admin FROM profiles WHERE id = aanvrager;
+      IF NOT COALESCE(is_admin, false) THEN
+        RAISE EXCEPTION 'Alleen admins kunnen een extra instellingen-rij aanmaken';
+      END IF;
+    END IF;
     RETURN NEW;
   END IF;
 
   FOREACH kolom IN ARRAY beschermde LOOP
-    IF (nieuw -> kolom) IS DISTINCT FROM (oud -> kolom) THEN
+    IF (to_jsonb(NEW) -> kolom) IS DISTINCT FROM (to_jsonb(OLD) -> kolom) THEN
       SELECT rol = 'admin' INTO is_admin FROM profiles WHERE id = aanvrager;
       IF NOT COALESCE(is_admin, false) THEN
         RAISE EXCEPTION 'Alleen admins kunnen documentinstellingen wijzigen (veld: %)', kolom;
@@ -54,8 +75,13 @@ $$;
 
 DROP TRIGGER IF EXISTS app_settings_document_velden_beschermen_trigger ON app_settings;
 CREATE TRIGGER app_settings_document_velden_beschermen_trigger
-  BEFORE UPDATE ON app_settings
+  BEFORE INSERT OR UPDATE OR DELETE ON app_settings
   FOR EACH ROW EXECUTE FUNCTION app_settings_document_velden_beschermen();
+
+-- Verifieer bij het draaien meteen of de één-rij-per-org-index uit 094 live
+-- staat (de map loopt uit de pas); zonder die index is een tweede rij ook
+-- voor de leeslaag verwarrend:
+--   SELECT indexname FROM pg_indexes WHERE tablename = 'app_settings';
 
 COMMIT;
 

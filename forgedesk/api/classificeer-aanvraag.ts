@@ -754,15 +754,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq('organisatie_id', orgIdVoorBudget)
         const orgUserIds = (orgLeden || []).map((r) => r.id).filter((id) => id !== userId)
         if (orgUserIds.length) {
+          // Alleen echte AI-oordelen hergebruiken (zekerheid > 0): de voorfilter
+          // en het onbruikbaar-pad schrijven zekerheid 0 en zijn user-specifiek
+          // (eigen adres, eigen leveranciers) — die false mag een collega geen
+          // echte aanvraag kosten. Bij meerdere collega-rijen wint een true.
           const { data: alBeoordeeld } = await supabaseAdmin
             .from('emails')
             .select('message_id, is_aanvraag, aanvraag_zekerheid, aanvraag_samenvatting')
             .in('message_id', metMessageId.map((m) => m.message_id as string))
             .in('user_id', orgUserIds)
             .not('is_aanvraag', 'is', null)
+            .gt('aanvraag_zekerheid', 0)
           const oordeelPerMessageId = new Map<string, { is_aanvraag: boolean; aanvraag_zekerheid: number | null; aanvraag_samenvatting: string | null }>()
           for (const rij of alBeoordeeld || []) {
-            if (rij.message_id && !oordeelPerMessageId.has(rij.message_id)) oordeelPerMessageId.set(rij.message_id, rij)
+            if (!rij.message_id) continue
+            const bestaand = oordeelPerMessageId.get(rij.message_id)
+            if (!bestaand || (rij.is_aanvraag && !bestaand.is_aanvraag)) oordeelPerMessageId.set(rij.message_id, rij)
           }
           if (oordeelPerMessageId.size) {
             const over: typeof kandidaten = []
@@ -946,6 +953,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       beoordeeld: calls,
       aanvragen,
+      hergebruikt,
       voorgefilterd: afgevallen.length,
     })
   } catch (err) {

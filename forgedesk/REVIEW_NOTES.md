@@ -1357,3 +1357,24 @@ gefixt in de vervolgcommit. Blijft staan voor een volgende ronde:
   facturen-header is vergrendeld). Meenemen als 111 ooit wordt uitgebreid.
 - **Voorschot-/eindafrekening-verrekening kent dezelfde check-then-act-race**
   (FacturenLayout:1355-1488); buiten scope van deze ronde, kandidaat fase 3.
+
+## Fase 3 gate-review (2026-08-13)
+
+AKKOORD-MET-OPMERKINGEN op 4be837bb..b8b3a4ee; bevindingen 1-5 direct
+gefixt (209-trigger dekt nu ook INSERT/DELETE, classifier hergebruikt
+alleen AI-oordelen met zekerheid > 0 en true wint, hergebruikt-teller in
+eindresponse, revertFields incl. toegewezen_aan_id, bulkBusy in de
+Taken-refresh-guard). Blijft staan als backlog:
+
+- **Voorschot-verrekening niet atomair**: conditional update
+  (`.eq('is_voorschot_verrekend', false)` + rowcount-check) hoort in de
+  DB; ook generateTypedNummer (VS/EA) blijft client-side raceable.
+- **Planning-refresh venster drop-naar-commit**: saving-teller in de
+  guard van MontagePlanningLayout zou het laatste venster dichten.
+- **Admin-notificatie-moeheid monitoren**: admins krijgen nu elk
+  klant-event van de hele org; mute-instelling is een kandidaat.
+- **Bij draaien van 209**: check of `uniq_app_settings_organisatie`
+  (migratie 094) live staat: `SELECT indexname FROM pg_indexes WHERE
+  tablename = 'app_settings';`
+- Swimlane-collapsed-state (naam-keys) klapt eenmalig open; taak met id
+  van verwijderde medewerker toont raw UUID als lane-label. Cosmetisch.

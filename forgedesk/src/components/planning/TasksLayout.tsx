@@ -483,7 +483,7 @@ export function TasksLayout() {
       // maar de optimistische state zou anders een stale toegewezen_aan_id houden
       // en de taak onder de oude persoon laten staan tot de volgende refresh.
       const id = naamNaarMedewerkerId.get(naam.trim().toLowerCase()) ?? null
-      return runBulkUpdate(() => ({ toegewezen_aan: naam, toegewezen_aan_id: id }), 'toegewezen', ['toegewezen_aan'])
+      return runBulkUpdate(() => ({ toegewezen_aan: naam, toegewezen_aan_id: id }), 'toegewezen', ['toegewezen_aan', 'toegewezen_aan_id'])
     },
     [runBulkUpdate, naamNaarMedewerkerId]
   )
@@ -681,7 +681,7 @@ export function TasksLayout() {
   }, [])
   useStilleRefresh({
     verversen: stilVerversen,
-    magVerversen: () => !draggingTaakId && !editDialogOpen && !deleteDialogOpen && !fabOpen,
+    magVerversen: () => !draggingTaakId && !editDialogOpen && !deleteDialogOpen && !fabOpen && !bulkBusy,
   })
 
   // Update now-line every minute
