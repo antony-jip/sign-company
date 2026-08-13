@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { isAdminUser } from '@/utils/authHelpers'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
@@ -34,7 +35,8 @@ function formatDatum(iso: string): string {
 }
 
 export function AbonnementTab() {
-  const { trialStatus, trialDagenOver, organisatie, session, refreshOrganisatie } = useAuth()
+  const { trialStatus, trialDagenOver, organisatie, session, refreshOrganisatie, userRol } = useAuth()
+  const magOpzeggen = isAdminUser(userRol)
   const [searchParams, setSearchParams] = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [loadingAction, setLoadingAction] = useState<'activate' | 'opzeggen' | null>(null)
@@ -204,17 +206,19 @@ export function AbonnementTab() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {bevestigOpzeggen && !isLoading && (
-                <Button onClick={() => setBevestigOpzeggen(false)} variant="ghost" className="text-muted-foreground">
-                  Toch niet
+            {magOpzeggen && (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {bevestigOpzeggen && !isLoading && (
+                  <Button onClick={() => setBevestigOpzeggen(false)} variant="ghost" className="text-muted-foreground">
+                    Toch niet
+                  </Button>
+                )}
+                <Button onClick={handleOpzeggen} disabled={isLoading} variant="outline" className="border-petrol/20 text-petrol dark:border-white/15 dark:text-[#5AABB5]">
+                  {loadingAction === 'opzeggen' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {bevestigOpzeggen ? 'Bevestig opzegging' : 'Opzeggen'}
                 </Button>
-              )}
-              <Button onClick={handleOpzeggen} disabled={isLoading} variant="outline" className="border-petrol/20 text-petrol dark:border-white/15 dark:text-[#5AABB5]">
-                {loadingAction === 'opzeggen' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {bevestigOpzeggen ? 'Bevestig opzegging' : 'Opzeggen'}
-              </Button>
-            </div>
+              </div>
+            )}
           </div>
 
           <dl className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
