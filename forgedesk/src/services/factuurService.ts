@@ -165,6 +165,24 @@ export async function getStandaardFacturenVoorOfferte(offerteId: string): Promis
   )
 }
 
+// Verse stand voor de voorschot-flows: de lijst in component-state kan
+// verouderd zijn terwijl een collega net verrekend of aangemaakt heeft.
+export async function getVoorschottenVoorOfferte(offerteId: string): Promise<Array<Pick<Factuur, 'id' | 'nummer' | 'status' | 'is_voorschot_verrekend' | 'subtotaal' | 'totaal'>>> {
+  assertId(offerteId, 'offerte_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('facturen')
+      .select('id, nummer, status, is_voorschot_verrekend, subtotaal, totaal')
+      .eq('offerte_id', offerteId)
+      .eq('factuur_type', 'voorschot')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Factuur>('facturen').filter(
+    (f) => f.offerte_id === offerteId && f.factuur_type === 'voorschot'
+  )
+}
+
 export async function deleteFactuur(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {

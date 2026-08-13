@@ -79,6 +79,7 @@ import {
   getProjecten,
   getOffertesByProject,
   getFacturenByProject,
+  getVoorschottenVoorOfferte,
 } from '@/services/supabaseService'
 import { setFactuurClipboard } from '@/utils/factuurClipboard'
 import { getCached, fetchQuery } from '@/lib/queryCache'
@@ -1379,6 +1380,22 @@ export function FacturenLayout() {
       return
     }
 
+    // Verse DB-check: een collega kan net al een voorschot voor deze offerte
+    // gemaakt hebben terwijl deze lijst nog van een uur geleden is.
+    const bestaande = await getVoorschottenVoorOfferte(voorschotOfferte.id).catch(() => [])
+    if (bestaande.length > 0) {
+      const nummers = bestaande.map((f) => f.nummer || 'een concept').join(', ')
+      const doorgaan = await confirm({
+        title: 'Er bestaat al een voorschot',
+        message: bestaande.length > 1
+          ? `Voor deze offerte bestaan al voorschotfacturen: ${nummers}. Wil je er nog een naast maken?`
+          : `Voor deze offerte bestaat al voorschotfactuur ${nummers}. Wil je er nog een naast maken?`,
+        confirmLabel: 'Extra voorschot maken',
+        cancelLabel: 'Annuleren',
+      })
+      if (!doorgaan) return
+    }
+
     try {
       setIsSaving(true)
       const nummer = generateTypedNummer(facturen, 'VS')
@@ -1447,13 +1464,29 @@ export function FacturenLayout() {
   const handleCreateEindafrekening = useCallback(async () => {
     if (!eindafrekeningFactuur) return
 
+    // Verse stand uit de DB: een collega kan intussen al verrekend hebben, en
+    // een net-betaald voorschot mag niet gemist worden. Valt de fetch weg, dan
+    // is de lokale lijst de terugval.
+    let teVerrekenen = betaaldeVoorschotten
+    if (eindafrekeningFactuur.offerte_id) {
+      const vers = await getVoorschottenVoorOfferte(eindafrekeningFactuur.offerte_id).catch(() => null)
+      if (vers) {
+        teVerrekenen = vers.filter((f) => f.status === 'betaald' && !f.is_voorschot_verrekend) as typeof betaaldeVoorschotten
+        if (teVerrekenen.length === 0) {
+          toast.error('Er zijn geen onverrekende betaalde voorschotten meer voor deze offerte. Waarschijnlijk heeft een collega ze net verrekend.')
+          setEindafrekeningDialogOpen(false)
+          return
+        }
+      }
+    }
+
     try {
       setIsSaving(true)
       const nummer = generateTypedNummer(facturen, 'EA')
       const selectedKlant = klanten.find((k) => k.id === eindafrekeningFactuur.klant_id)
 
-      const voorschotTotaal = round2(betaaldeVoorschotten.reduce((s, f) => s + f.totaal, 0))
-      const voorschotSubtotaal = round2(betaaldeVoorschotten.reduce((s, f) => s + f.subtotaal, 0))
+      const voorschotTotaal = round2(teVerrekenen.reduce((s, f) => s + f.totaal, 0))
+      const voorschotSubtotaal = round2(teVerrekenen.reduce((s, f) => s + f.subtotaal, 0))
       const restSubtotaal = round2(eindafrekeningFactuur.subtotaal - voorschotSubtotaal)
       const restBtw = round2(restSubtotaal * (eindafrekeningFactuur.subtotaal > 0 ? eindafrekeningFactuur.btw_bedrag / eindafrekeningFactuur.subtotaal : 0.21))
       const restBedrag = round2(restSubtotaal + restBtw)
@@ -1474,25 +1507,25 @@ export function FacturenLayout() {
         betaald_bedrag: 0,
         factuurdatum: getTodayString(),
         vervaldatum: getDefaultVervaldatum(getTodayString()),
-        notities: `Eindafrekening na ${betaaldeVoorschotten.length} voorschot(ten) (${formatCurrency(voorschotTotaal)} verrekend)`,
+        notities: `Eindafrekening na ${teVerrekenen.length} voorschot(ten) (${formatCurrency(voorschotTotaal)} verrekend)`,
         voorwaarden: eindafrekeningFactuur.voorwaarden,
         factuur_type: 'eindafrekening',
         betaal_token: eaToken,
         betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
         betaal_link: `${window.location.origin}/betalen/${eaToken}`,
         gerelateerde_factuur_id: eindafrekeningFactuur.id,
-        verrekende_voorschot_ids: betaaldeVoorschotten.map((f) => f.id),
+        verrekende_voorschot_ids: teVerrekenen.map((f) => f.id),
       }
 
       const saved = await createFactuur(eindafrekening)
       logCreate({ user, entityType: 'factuur', entityId: saved.id, omschrijving: 'Eindafrekening' })
 
       // Mark voorschotten as verrekend
-      for (const vs of betaaldeVoorschotten) {
+      for (const vs of teVerrekenen) {
         await updateFactuur(vs.id, { is_voorschot_verrekend: true })
       }
       setFacturen((prev) => prev.map((f) =>
-        betaaldeVoorschotten.some((vs) => vs.id === f.id)
+        teVerrekenen.some((vs) => vs.id === f.id)
           ? { ...f, is_voorschot_verrekend: true }
           : f
       ))
