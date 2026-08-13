@@ -1,0 +1,10 @@
+# Wat niet mee hoeft in een CLI-deploy. Vercel installeert zelf.
+# Zonder dit is de upload ruim 690 MB en loopt hij bovendien tegen de
+# limiet van 15.000 bestanden aan.
+node_modules
+forgedesk/node_modules
+forgedesk/video/node_modules
+dist
+forgedesk/dist
+.next
+.claude
