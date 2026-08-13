@@ -108,12 +108,20 @@ faalpad dat in de doorlichting van 13 aug is gevonden.
 
 15. **Mailsync-capaciteit**: de sync verwerkt 8 mailboxen per ronde. Het
     oude cron-pad draait elke 3 minuten (25+ mailboxen = ruime vertraging);
-    het nieuwere werker-pad draait elke minuut maar zit achter een
-    feature-vlag. Stand 13 aug, live gecheckt: de `feature_flags`-tabel
-    bestaat nog niet (migratie 200 nooit gedraaid), dus het werker-pad is
-    overal uit. Wil je het aanzetten, draai dan eerst migraties 200 en 202
-    en zet daarna de vlag; anders is de verwachting: mail loopt met 25
-    mailboxen tot ~10 minuten achter.
+    het werker-pad draait elke minuut (cron staat al in vercel.json) maar
+    zit achter feature-vlag `mailsync_queue`. Volgorde: migraties 200 en
+    202 draaien in de SQL-editor, daarna per org een vlag-rij aanzetten
+    (kan via Claude met de service-role, of):
+
+    ```sql
+    INSERT INTO feature_flags (naam, organisatie_id, aan, reden)
+    VALUES ('mailsync_queue', '<org-id>', true, 'Uitrol 25-users-org');
+    ```
+
+    De werker en het oude pad delen hetzelfde watermerk
+    (email_sync_state), dus ze kunnen zonder dubbele rondes naast elkaar
+    bestaan; zonder vlag blijft alles op het 3-minuten-pad en loopt mail
+    met 25 mailboxen tot ~10 minuten achter.
 
 16. **AI-aanvraagherkenning**: de classifier draait per binnenkomende mail
     per mailbox. Mails die bij meerdere collega's binnenkomen (cc,
