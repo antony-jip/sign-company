@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
-  Rows3, StretchHorizontal, Clock, Moon, Menu, Edit3, ChevronLeft, Target,
+  Rows3, StretchHorizontal, Clock, CalendarClock, Hourglass, Moon, Menu, Edit3, ChevronLeft, Target,
 } from 'lucide-react'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, markeerEmailGelezenOpServer, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail, emailImapActie, prefetchEmailBodies } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
@@ -27,7 +27,7 @@ import { EmailFocusKaart } from './EmailFocusKaart'
 import type { Email, EmailAttachment } from '@/types'
 import { logger } from '../../utils/logger'
 import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
-import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, SEARCH_OPERATORS, SNOOZE_OPTIONS, calculateSnoozeDate, getAvatarStyle, formatRelativeSync } from './emailHelpers'
+import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, SNOOZE_OPTIONS, calculateSnoozeDate, getAvatarStyle, formatRelativeSync } from './emailHelpers'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -48,7 +48,7 @@ const IngeplandeBerichtenLijst = lazy(() => import('./IngeplandeBerichtenLijst')
 const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] = [
   { id: 'inbox', label: 'Inbox', icon: Inbox },
   { id: 'verzonden', label: 'Verzonden', icon: Send },
-  { id: 'sales-wacht', label: 'Opvolgen', icon: Clock },
+  { id: 'sales-wacht', label: 'Opvolgen', icon: Hourglass },
   { id: 'sales-beantwoord', label: 'Beantwoord', icon: CheckCheck },
   { id: 'gesnoozed', label: 'Gesnoozed', icon: Moon },
   { id: 'concepten', label: 'Concepten', icon: FileEdit },
@@ -2106,7 +2106,7 @@ export function EmailLayout() {
                 : 'text-foreground/70 hover:bg-background hover:text-foreground',
             )}
           >
-            <Clock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-petrol')} />
+            <CalendarClock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-petrol')} />
             <span className="flex-1 text-left">Ingeplande berichten</span>
           </button>
         </div>
@@ -2160,7 +2160,7 @@ export function EmailLayout() {
                 : 'text-[#3A3A36] dark:text-foreground/80 font-medium hover:bg-black/[0.04] dark:hover:bg-white/[0.05]',
             )}
           >
-            <Clock className={cn('h-[17px] w-[17px] flex-shrink-0', selectedFolder === 'gepland' ? 'text-petrol' : 'text-muted-foreground')} />
+            <CalendarClock className={cn('h-[17px] w-[17px] flex-shrink-0', selectedFolder === 'gepland' ? 'text-petrol' : 'text-muted-foreground')} />
             <span className="flex-1 text-left truncate">Ingeplande berichten</span>
           </button>
         </div>
@@ -2288,7 +2288,7 @@ export function EmailLayout() {
                 : 'text-[#8FA0A4] hover:text-petrol hover:bg-petrol/[0.06] dark:text-[#6A8085] dark:hover:text-[#5FB5C0] dark:hover:bg-petrol/[0.22]',
             )}
           >
-            <Clock className="h-[19px] w-[19px]" strokeWidth={selectedFolder === 'gepland' ? 2.2 : 1.8} />
+            <CalendarClock className="h-[19px] w-[19px]" strokeWidth={selectedFolder === 'gepland' ? 2.2 : 1.8} />
           </button>
         </nav>
 
@@ -2395,11 +2395,18 @@ export function EmailLayout() {
       {/* Email list (idle view) */}
       {selectedFolder !== 'gepland' && (<>
         {/* Sticky header + toolbar · desktop only */}
-        <div className="sticky top-0 z-20 bg-white dark:bg-card border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 flex-shrink-0 hidden md:block">
-          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[rgba(26,83,92,0.06)] dark:border-white/[0.06]">
-            <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
-              {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}<span className="text-flame">.</span>
-            </h1>
+        <div className="sticky top-0 z-20 bg-gradient-to-b from-[#F3F7F7] to-white dark:from-white/[0.05] dark:to-card flex-shrink-0 hidden md:block">
+          <div className="flex items-center justify-between px-4 h-[52px]">
+            <div className="flex items-baseline gap-2 min-w-0">
+              <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
+                {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}<span className="text-flame">.</span>
+              </h1>
+              {folderCounts[selectedFolder] > 0 && (
+                <span className="font-mono tabular-nums text-[11px] font-semibold leading-none text-petrol dark:text-[#7FB5BF] bg-petrol/[0.07] dark:bg-[#2A7A86]/20 rounded-full px-2 py-1">
+                  {folderCounts[selectedFolder]} nieuw
+                </span>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => handleCompose()}
@@ -2410,7 +2417,7 @@ export function EmailLayout() {
               Nieuw bericht
             </button>
           </div>
-        <div className="flex items-center justify-between gap-2 px-4 h-12 min-w-0 overflow-hidden">
+        <div className="flex items-center justify-between gap-2 px-4 h-11 min-w-0 overflow-hidden">
           <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
             <input
               type="checkbox"
@@ -2436,7 +2443,7 @@ export function EmailLayout() {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-0.5 bg-background rounded-lg p-0.5 min-w-0 overflow-x-auto scrollbar-none">
+              <div className="flex items-center gap-0.5 bg-petrol/[0.05] dark:bg-white/[0.06] rounded-[10px] p-0.5 min-w-0 overflow-x-auto scrollbar-none">
                 {filtersList.map(f => {
                   const isActiveFilter = filter === f.id
                   return (
@@ -2444,10 +2451,10 @@ export function EmailLayout() {
                       key={f.id}
                       onClick={() => setFilter(f.id)}
                       className={cn(
-                        'px-2 py-1 rounded-md text-[11px] transition-all duration-150 whitespace-nowrap',
+                        'px-2.5 py-1 rounded-lg text-[12px] transition-all duration-150 whitespace-nowrap',
                         isActiveFilter
-                          ? 'bg-white dark:bg-white/10 text-foreground font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                          : 'text-muted-foreground hover:text-foreground/70',
+                          ? 'bg-petrol text-white font-semibold shadow-[0_1px_3px_rgba(26,83,92,0.28)]'
+                          : 'text-muted-foreground hover:text-petrol hover:bg-white/70 dark:hover:bg-white/10',
                       )}
                     >
                       {f.label}
@@ -2462,9 +2469,11 @@ export function EmailLayout() {
             {/* List-style + font-size toggles · verborgen in 3-kolom layout (te smal).
                 Logica blijft intact, kan via settings/popover terug. */}
 
-            {lastSyncAt && (
+            {/* Sync-tijd alleen als de lijstkolom breed genoeg is; anders schuift
+                hij over de filterpills heen. */}
+            {lastSyncAt && listWidth >= 470 && (
               <span
-                className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap hidden lg:inline"
+                className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap mr-1"
                 title={new Date(lastSyncAt).toLocaleString('nl-NL')}
               >
                 {formatRelativeSync(lastSyncAt, nowTick)}
@@ -2495,8 +2504,8 @@ export function EmailLayout() {
         </div>
 
         {/* Search bar · desktop only; mobile uses de topbar pill. */}
-        <div className="hidden md:block px-4 py-2 border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 bg-white dark:bg-card">
-          <div className="flex items-center gap-2 h-9 px-3 bg-background rounded-lg focus-within:ring-2 focus-within:ring-petrol/20 transition-shadow">
+        <div className="hidden md:block px-4 pb-2.5 border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 bg-white dark:bg-card">
+          <div className="flex items-center gap-2.5 h-10 px-3 bg-background rounded-[10px] focus-within:ring-2 focus-within:ring-petrol/20 transition-shadow">
             <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <input
               ref={searchInputRef}
@@ -2505,35 +2514,20 @@ export function EmailLayout() {
               onChange={(e) => handleSearchChange(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-              placeholder="Zoek in emails... (van:naam, na:2024, voor:2025-06, bijlage:ja)"
+              placeholder="Zoek in e-mails"
               className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
             />
+            {!searchInput && !searchFocused && (
+              <kbd className="hidden lg:inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-[5px] border border-black/[0.08] dark:border-white/15 bg-white dark:bg-white/[0.06] font-mono text-[10px] text-muted-foreground leading-none">
+                /
+              </kbd>
+            )}
             {searchInput && (
               <button onClick={() => { setSearchInput(''); setSearchQuery('') }} className="p-1 hover:bg-border rounded">
                 <X className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             )}
           </div>
-          {searchFocused && !searchInput && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {SEARCH_OPERATORS.map((op) => (
-                <button
-                  key={op.key}
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => {
-                    setSearchInput(op.key)
-                    searchInputRef.current?.focus()
-                  }}
-                  title={op.example}
-                  className="px-2 py-0.5 rounded-md bg-muted hover:bg-petrol/[0.08] text-[11px] text-foreground/70 hover:text-petrol transition-colors duration-150 inline-flex items-center gap-1"
-                >
-                  <span className="font-mono">{op.key}</span>
-                  <span className="text-muted-foreground">{op.description}</span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Sales-banner zit BUITEN de scroll-container zodat de virtualizer
@@ -2566,7 +2560,7 @@ export function EmailLayout() {
           // andere as om naar auto, en dan schuift de lijst tijdens het
           // scrollen zijwaarts mee zodra één rij te breed uitvalt — een lang
           // onderwerp zonder spaties is al genoeg.
-          className="flex-1 overflow-y-auto overflow-x-hidden overscroll-x-none scroll-smooth relative"
+          className="flex-1 overflow-y-auto overflow-x-hidden overscroll-x-none scroll-smooth relative bg-[#F7FAFA] dark:bg-transparent"
           onScroll={handleScroll}
         >
           {/* Trek-om-te-verversen · alleen mobiel, alleen bovenaan de lijst */}
@@ -2588,7 +2582,7 @@ export function EmailLayout() {
               scroll. Virtualizer rendert echte headers absolute, dus deze
               overlay vult de gap. */}
           {activeGroup && (
-            <div className="sticky top-0 z-10 px-4 pt-3 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/55 dark:text-foreground/60 bg-card/85 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.06] -mb-[36px]">
+            <div className="sticky top-0 z-10 px-4 pl-10 pt-3 pb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-petrol/65 dark:text-foreground/60 bg-card/85 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.06] -mb-[36px]">
               {activeGroup === 'Vandaag' ? (
                 <>
                   <span className="md:hidden">Eerder vandaag</span>
@@ -2686,7 +2680,7 @@ export function EmailLayout() {
                       }}
                     >
                       {it.type === 'header-pinned' ? (
-                        <div className="px-4 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/50 dark:text-foreground/55">
+                        <div className="px-4 pl-10 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/50 dark:text-foreground/55">
                           Vastgepind<span className="text-flame tracking-normal">.</span>
                         </div>
                       ) : it.type === 'header-group' ? (() => {
@@ -2694,7 +2688,7 @@ export function EmailLayout() {
                         const allGroupChecked = groupIds.length > 0 && groupIds.every(id => checkedEmails.has(id))
                         const someGroupChecked = !allGroupChecked && groupIds.some(id => checkedEmails.has(id))
                         return (
-                          <div className="px-4 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/50 dark:text-foreground/55 flex items-center gap-2">
+                          <div className="px-4 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/65 dark:text-foreground/60 flex items-center gap-2.5">
                             <input
                               type="checkbox"
                               checked={allGroupChecked}
@@ -2703,7 +2697,7 @@ export function EmailLayout() {
                               className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-petrol"
                               onClick={(e) => e.stopPropagation()}
                             />
-                            <span>
+                            <span className="font-semibold whitespace-nowrap">
                               {it.group === 'Vandaag' ? (
                                 <>
                                   <span className="md:hidden">Eerder vandaag</span>
@@ -2711,6 +2705,8 @@ export function EmailLayout() {
                                 </>
                               ) : it.group}<span className="text-flame tracking-normal">.</span>
                             </span>
+                            <span className="flex-1 h-px bg-gradient-to-r from-petrol/[0.14] to-transparent dark:from-white/10" aria-hidden />
+                            <span className="tabular-nums tracking-normal text-petrol/40 dark:text-foreground/40">{groupIds.length}</span>
                           </div>
                         )
                       })() : (

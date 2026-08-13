@@ -41,7 +41,10 @@ export function zoekKlantVoorAfzender(klanten: Klant[], afzenderEmail: string): 
 
 export function extractSenderName(from: string): string {
   const match = from.match(/^([^<]+)/)
-  return match ? match[1].trim() : from
+  const naam = match ? match[1].trim() : from
+  // Mailservers quoten displaynamen met een komma of haakje erin. Zonder deze
+  // strip staat er een aanhalingsteken in de avatar-initiaal.
+  return naam.replace(/^["'](.*)["']$/s, '$1').trim()
 }
 
 export function extractSenderEmail(from: string): string {
@@ -350,8 +353,15 @@ export function cleanEmailPreview(raw: string): string {
   s = s.replace(/\{[^{}]*\}/g, ' ')
   // CSS-achtige selectors / declaraties die overblijven (bv. ".foo:hover")
   s = s.replace(/[.#][a-z][\w-]*\s*:\s*[^;]+;?/gi, ' ')
-  // URLs vervangen door korte placeholder
-  s = s.replace(/https?:\/\/\S+/gi, '[link]')
+  // Markdown-resten uit geconverteerde HTML: afbeeldingen weg, links terug naar
+  // hun linktekst. Zonder dit levert een nieuwsbrief previews als "[Logo]([link])".
+  s = s.replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+  s = s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+  // Kale URLs dragen niets bij aan een preview-regel
+  s = s.replace(/https?:\/\/\S+/gi, ' ')
+  s = s.replace(/\(\s*\)/g, ' ')
+  // Losse haken die overblijven zodra een markdown-link half is opgeruimd
+  s = s.replace(/[[\]]/g, ' ')
   // HTML entities
   s = s.replace(/&nbsp;/gi, ' ')
   s = s.replace(/&amp;/gi, '&')
