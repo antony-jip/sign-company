@@ -256,6 +256,9 @@ export function ForgieChatWidget() {
   const [fabLabel, setFabLabel] = useState(() => {
     try { return localStorage.getItem('doen_daan_fab_gezien') === null } catch { return false }
   })
+  // Weggeklikt met het kruisje: de knop hangt soms voor een verzendknop of
+  // tabel. Bewust alleen voor deze sessie, een refresh brengt Daan terug.
+  const [fabVerborgen, setFabVerborgen] = useState(false)
   const [view, setView] = useState<WidgetView>('daan')
   const [messages, setMessages] = useState<WidgetMessage[]>([])
   const [input, setInput] = useState('')
@@ -945,62 +948,77 @@ export function ForgieChatWidget() {
         </div>
       )}
 
-      {/* ── FAB (Floating Action Button) ── */}
-      <button
-        onClick={() => {
-          setIsOpen(prev => !prev)
-          if (fabLabel) {
-            setFabLabel(false)
-            try { localStorage.setItem('doen_daan_fab_gezien', '1') } catch { /* niet kritisch */ }
-          }
-        }}
-        className={cn(
-          // Op mobiel woont Daan in de bottom-nav; een zwevende knop zou daar
-          // alleen over de content hangen.
-          'fixed z-[9999] items-center justify-center gap-2 transition-all duration-200 hidden md:flex',
-        )}
-        style={{
-          right: 16,
-          bottom: 16,
-          width: !isOpen && fabLabel ? undefined : 48,
-          padding: !isOpen && fabLabel ? '0 18px 0 14px' : 0,
-          height: 48,
-          borderRadius: 14,
-          backgroundColor: '#1A535C',
-          boxShadow: isOpen
-            ? '0 2px 8px rgba(26, 83, 92, 0.2)'
-            : '0 2px 12px rgba(26, 83, 92, 0.3)',
-        }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'
-          ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(26, 83, 92, 0.4)'
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1)'
-          ;(e.currentTarget as HTMLElement).style.boxShadow = isOpen
-            ? '0 2px 8px rgba(26, 83, 92, 0.2)'
-            : '0 2px 12px rgba(26, 83, 92, 0.3)'
-        }}
-      >
-        {isOpen ? (
-          <X className="w-5 h-5 text-white" />
-        ) : (
-          <>
-            <MessageSquare className="w-[22px] h-[22px] text-white" />
-            {fabLabel && (
-              <span className="text-white text-[13px] font-semibold">
-                Daan<span className="text-flame">.</span>
-              </span>
+      {/* ── FAB (Floating Action Button) ──
+          Op mobiel woont Daan in de bottom-nav; een zwevende knop zou daar
+          alleen over de content hangen. */}
+      {!fabVerborgen && (
+        <div
+          className="fixed z-[9999] hidden md:block group/fab"
+          style={{ right: 16, bottom: 16 }}
+        >
+          <button
+            onClick={() => {
+              setIsOpen(prev => !prev)
+              if (fabLabel) {
+                setFabLabel(false)
+                try { localStorage.setItem('doen_daan_fab_gezien', '1') } catch { /* niet kritisch */ }
+              }
+            }}
+            className="relative flex items-center justify-center gap-2 transition-all duration-200"
+            style={{
+              width: !isOpen && fabLabel ? undefined : 48,
+              padding: !isOpen && fabLabel ? '0 18px 0 14px' : 0,
+              height: 48,
+              borderRadius: 14,
+              backgroundColor: '#1A535C',
+              boxShadow: isOpen
+                ? '0 2px 8px rgba(26, 83, 92, 0.2)'
+                : '0 2px 12px rgba(26, 83, 92, 0.3)',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'
+              ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(26, 83, 92, 0.4)'
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.transform = 'scale(1)'
+              ;(e.currentTarget as HTMLElement).style.boxShadow = isOpen
+                ? '0 2px 8px rgba(26, 83, 92, 0.2)'
+                : '0 2px 12px rgba(26, 83, 92, 0.3)'
+            }}
+          >
+            {isOpen ? (
+              <X className="w-5 h-5 text-white" />
+            ) : (
+              <>
+                <MessageSquare className="w-[22px] h-[22px] text-white" />
+                {fabLabel && (
+                  <span className="text-white text-[13px] font-semibold">
+                    Daan<span className="text-flame">.</span>
+                  </span>
+                )}
+                {showUnread && (
+                  <span
+                    className="absolute -top-1 -right-1 rounded-full animate-pulse"
+                    style={{ width: 10, height: 10, backgroundColor: '#F15025', border: '2px solid #FFFFFF' }}
+                  />
+                )}
+              </>
             )}
-            {showUnread && (
-              <span
-                className="absolute -top-1 -right-1 rounded-full animate-pulse"
-                style={{ width: 10, height: 10, backgroundColor: '#F15025', border: '2px solid #FFFFFF' }}
-              />
-            )}
-          </>
-        )}
-      </button>
+          </button>
+
+          {!isOpen && (
+            <button
+              type="button"
+              onClick={() => setFabVerborgen(true)}
+              title="Daan even wegklikken · komt terug na verversen"
+              aria-label="Daan tijdelijk verbergen"
+              className="absolute -top-1.5 -left-1.5 h-5 w-5 rounded-full bg-white dark:bg-card text-petrol dark:text-foreground/70 border border-black/[0.08] dark:border-white/15 shadow-[0_1px_4px_rgba(26,83,92,0.25)] flex items-center justify-center opacity-0 group-hover/fab:opacity-100 focus-visible:opacity-100 transition-opacity duration-150 hover:text-[#C0451A]"
+            >
+              <X className="h-3 w-3" strokeWidth={2.4} />
+            </button>
+          )}
+        </div>
+      )}
     </>
   )
 }
