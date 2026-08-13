@@ -109,11 +109,11 @@ faalpad dat in de doorlichting van 13 aug is gevonden.
 15. **Mailsync-capaciteit**: de sync verwerkt 8 mailboxen per ronde. Het
     oude cron-pad draait elke 3 minuten (25+ mailboxen = ruime vertraging);
     het nieuwere werker-pad draait elke minuut maar zit achter een
-    feature-vlag. Check en overweeg die aan te zetten voor deze org:
-
-    ```sql
-    SELECT * FROM feature_flags WHERE naam LIKE '%mailsync%';
-    ```
+    feature-vlag. Stand 13 aug, live gecheckt: de `feature_flags`-tabel
+    bestaat nog niet (migratie 200 nooit gedraaid), dus het werker-pad is
+    overal uit. Wil je het aanzetten, draai dan eerst migraties 200 en 202
+    en zet daarna de vlag; anders is de verwachting: mail loopt met 25
+    mailboxen tot ~10 minuten achter.
 
 16. **AI-aanvraagherkenning**: de classifier draait per binnenkomende mail
     per mailbox. Mails die bij meerdere collega's binnenkomen (cc,
