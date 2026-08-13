@@ -174,11 +174,12 @@ export function RapportagesLayout() {
   // en de creditnota staat als aparte regel met een negatief bedrag in dezelfde
   // lijst. Er hier ook nog uitgooien zou dubbel corrigeren.
   const NIET_IN_OMZET: readonly Factuur['status'][] = ['concept'];
+  const teltAlsOmzet = (f: Factuur) => !NIET_IN_OMZET.includes(f.status);
 
   const gefilterdeFacturen = useMemo(
     () =>
       facturen.filter((f) => {
-        if (NIET_IN_OMZET.includes(f.status)) return false;
+        if (!teltAlsOmzet(f)) return false;
         const d = new Date(f.factuurdatum);
         return d >= range.start && d <= range.end;
       }),
@@ -229,7 +230,13 @@ export function RapportagesLayout() {
       maand: MAAND_NAMEN[i],
       waarde: 0,
     }));
-    facturen.forEach((f) => {
+    // Zelfde definitie van omzet als de KPI hierboven, anders staan er twee
+    // getallen op één scherm die elkaar tegenspreken: de KPI liet concepten weg
+    // en deze staven niet, wat 7.300 euro verschil gaf.
+    //
+    // De periodekiezer geldt hier bewust NIET: dit is een jaaroverzicht, zoals
+    // de kop van de kaart ook zegt.
+    facturen.filter(teltAlsOmzet).forEach((f) => {
       const d = new Date(f.factuurdatum);
       if (d.getFullYear() === jaar) {
         data[d.getMonth()].waarde += f.totaal;
