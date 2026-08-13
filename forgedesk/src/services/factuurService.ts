@@ -227,8 +227,13 @@ export async function replaceFactuurItems(
       })),
     })
     if (!rpcError) return (viaRpc as FactuurItem[]) || []
-    const functieOntbreekt = rpcError.code === 'PGRST202' || /vervang_factuur_items/i.test(rpcError.message || '')
+    // Alleen terugvallen als de functie echt ontbreekt (migratie 206 nog niet
+    // gedraaid): PGRST202 = PostgREST kent hem niet, 42883 = Postgres kent hem
+    // niet. Andere fouten (bv. 42501 permission denied) mogen niet stil naar
+    // het race-gevoelige pad degraderen.
+    const functieOntbreekt = rpcError.code === 'PGRST202' || rpcError.code === '42883'
     if (!functieOntbreekt) throw rpcError
+    Sentry.addBreadcrumb({ category: 'facturen', message: 'vervang_factuur_items ontbreekt; drie-stappen-fallback actief', level: 'warning' })
 
     const { data: bestaand, error: leesError } = await supabase
       .from('factuur_items').select('id').eq('factuur_id', factuurId)

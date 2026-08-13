@@ -1338,3 +1338,22 @@ Wat blijft staan:
 - **Ongetest tot de migratie draait**: de trigger heeft nul dekking, en de
   idempotency-test bewijst alleen dat twee aanroepen dezelfde sleutel geven, niet
   dat Postgres de tweede insert weigert.
+
+## Factuur-races 25-gebruikers-ronde (2026-08-13)
+
+Gate-review op b98d8c8e (AKKOORD-MET-OPMERKINGEN). Bevinding 1 (stale
+existingFactuur na mislukte regels-stap), de foutcode-detectie van de
+RPC-fallback, het 111-comment en `SET search_path` op de RPC zijn direct
+gefixt in de vervolgcommit. Blijft staan voor een volgende ronde:
+
+- **Exact-sync-knop zichtbaar op concepten; `api/exact-sync-factuur.ts`
+  heeft geen status-guard.** Een concept met leeg nummer syncen stuurt
+  `YourRef: ''` naar Exact. Pre-existing; goedkope fix is knop verbergen
+  bij `status === 'concept'` plus een server-side weigering.
+- **Confirm-check offerte-naar-factuur is TOCTOU** (twee exact gelijktijdige
+  conversies passeren beide). Bewust geaccepteerd: productie heeft 11
+  legitieme deelfactuur-paren, dus een unique constraint kan niet.
+- **factuur_items valt buiten de abonnement-write-lock van 111** (alleen de
+  facturen-header is vergrendeld). Meenemen als 111 ooit wordt uitgebreid.
+- **Voorschot-/eindafrekening-verrekening kent dezelfde check-then-act-race**
+  (FacturenLayout:1355-1488); buiten scope van deze ronde, kandidaat fase 3.

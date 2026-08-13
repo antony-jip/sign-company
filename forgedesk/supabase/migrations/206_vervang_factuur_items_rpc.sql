@@ -6,8 +6,9 @@
 -- deleteten allebei alleen de oude: de factuur eindigde met de regels van
 -- beide gebruikers dubbel. Eén plpgsql-functie draait in één transactie.
 --
--- SECURITY INVOKER: de RLS-policies van factuur_items (org-scoped, met
--- abonnement-write-lock in WITH CHECK) blijven volledig gelden.
+-- SECURITY INVOKER: de org-scoped RLS-policies van factuur_items blijven
+-- volledig gelden. (De abonnement-write-lock uit 111 staat niet op
+-- factuur_items zelf; die grijpt een stap eerder, op de facturen-header.)
 
 BEGIN;
 
@@ -15,6 +16,7 @@ CREATE OR REPLACE FUNCTION vervang_factuur_items(p_factuur_id uuid, p_items json
 RETURNS SETOF factuur_items
 LANGUAGE plpgsql
 SECURITY INVOKER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   DELETE FROM factuur_items WHERE factuur_id = p_factuur_id;

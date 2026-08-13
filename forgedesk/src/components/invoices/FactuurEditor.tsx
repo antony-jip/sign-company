@@ -1231,6 +1231,11 @@ export function FactuurEditor() {
         // nog niets aan de regels veranderd. Het verwerken-pad kan bovendien
         // een nummer-race verliezen (23505); de retry hergenereert dan.
         const updated = await updateFactuurWithNummerRetry(existingFactuur.id, updates, existingFactuur.updated_at)
+        // State direct verversen: faalt de regels-stap hieronder, dan zou een
+        // tweede opslaan anders op de eigen header-write stranden met een vals
+        // "door iemand anders gewijzigd"-conflict.
+        setExistingFactuur({ ...existingFactuur, ...updated })
+        setNummer(updated.nummer ?? nummer)
 
         await replaceFactuurItems(existingFactuur.id, validItems.map((item, i) => ({
           user_id: user?.id || '',
@@ -1245,8 +1250,6 @@ export function FactuurEditor() {
           detail_regels: (item.detail_regels || []).filter((r) => r.label || r.waarde),
         })))
 
-        setExistingFactuur({ ...existingFactuur, ...updated })
-        setNummer(updated.nummer ?? nummer)
         setIsDirty(false)
         toast.success(verwerken ? `Factuur ${updated.nummer ?? effectiefNummer} verwerkt` : 'Factuur bijgewerkt')
       } else {
