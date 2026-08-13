@@ -8,13 +8,13 @@ import {
   ArrowLeft, Trash2, Pin, Archive, MailOpen,
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
-  List, ListOrdered, Sparkles, Loader2, Download, FolderPlus,
+  List, ListOrdered, Sparkles, ScrollText, Loader2, Download, FolderPlus,
   Undo2, Redo2, X, Clock, Tag, MoreHorizontal,
 } from 'lucide-react'
 import { EmailActionsPopover } from './EmailActionsPopover'
 import { cn } from '@/lib/utils'
 import type { Email, EmailAttachment } from '@/types'
-import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, lijktOpHtml, platteTekstNaarHtml, SNOOZE_OPTIONS, labelColors } from './emailHelpers'
+import { extractSenderName, extractSenderEmail, cleanEmailPreview, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, lijktOpHtml, platteTekstNaarHtml, SNOOZE_OPTIONS, labelColors } from './emailHelpers'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -1667,7 +1667,7 @@ export function EmailReader({
               disabled={summaryLoading}
               title="Samenvatten (⌘⇧S)"
             >
-              {summaryLoading ? <Loader2 className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 animate-spin" /> : <Sparkles className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />}
+              {summaryLoading ? <Loader2 className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 animate-spin" /> : <ScrollText className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 text-flame" />}
               <span className="hidden md:inline">Samenvatten</span>
             </Button>
             <Button
@@ -1678,7 +1678,7 @@ export function EmailReader({
               disabled={forgieLoading}
               title="Beantwoord met AI (⌘⇧R)"
             >
-              {forgieLoading ? <Loader2 className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 animate-spin" /> : <Sparkles className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />}
+              {forgieLoading ? <Loader2 className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 animate-spin" /> : <Sparkles className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 text-flame" />}
               <span className="hidden md:inline">Beantwoord</span>
             </Button>
             {emailIndex !== undefined && emailTotal !== undefined && (
@@ -1722,7 +1722,7 @@ export function EmailReader({
                     disabled={summaryLoading}
                     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[14px] text-foreground/80 active:bg-petrol/[0.06] disabled:opacity-50"
                   >
-                    {summaryLoading ? <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin" /> : <Sparkles className="h-4 w-4 flex-shrink-0" />}
+                    {summaryLoading ? <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin" /> : <ScrollText className="h-4 w-4 flex-shrink-0" />}
                     Samenvatten
                   </button>
                   <button
@@ -1888,18 +1888,28 @@ export function EmailReader({
                   gehighlight, klik op een ander bericht om dat te openen. */}
               {threadEmails && threadEmails.length > 1 && (
                 <div className="mb-6">
-                  <div className="flex items-center gap-2 px-1 mb-2">
-                    <span className="text-[10px] font-semibold text-muted-foreground/80 uppercase tracking-[0.08em]">
-                      Gesprek
+                  <div className="flex items-center gap-2.5 px-1 mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/65 dark:text-foreground/60">
+                    <span className="font-semibold whitespace-nowrap">
+                      Gesprek<span className="text-flame tracking-normal">.</span>
                     </span>
-                    <span className="text-[10px] text-muted-foreground/60 tabular-nums">
-                      · {threadEmails.length}
+                    <span className="flex-1 h-px bg-gradient-to-r from-petrol/[0.14] to-transparent dark:from-white/10" aria-hidden />
+                    <span className="tabular-nums tracking-normal text-petrol/40 dark:text-foreground/40">
+                      {threadEmails.length}
                     </span>
                   </div>
-                  <div className="rounded-tile border border-border/60 overflow-hidden divide-y divide-border/50">
+                  {/* Tijdlijn: de verticale draad loopt door het midden van de
+                      avatars, die hem met hun ring onderbreken. */}
+                  <div className="relative flex flex-col gap-0.5">
+                    <div
+                      className="absolute left-[18px] top-5 bottom-5 w-px bg-petrol/[0.14] dark:bg-white/10"
+                      aria-hidden
+                    />
                     {threadEmails.map((tEmail) => {
                       const isCurrent = tEmail.id === email.id
                       const senderShort = extractSenderName(tEmail.van)
+                      const threadAvatar = getAvatarStyle(senderShort)
+                      const isEigen = tEmail.map === 'verzonden'
+                      const threadPreview = cleanEmailPreview(tEmail.body_text || tEmail.inhoud || '').slice(0, 160)
                       return (
                         <button
                           key={tEmail.id}
@@ -1908,35 +1918,41 @@ export function EmailReader({
                             if (!isCurrent && onSelectEmail) onSelectEmail(tEmail)
                           }}
                           className={cn(
-                            'w-full flex items-start gap-3 px-3.5 py-2.5 text-left transition-colors',
+                            'relative w-full flex items-start gap-3 pl-1 pr-3 py-2 rounded-[12px] text-left transition-colors duration-150',
                             isCurrent
-                              ? 'bg-petrol/[0.05]'
-                              : 'bg-background hover:bg-petrol/[0.06] cursor-pointer',
+                              ? 'bg-petrol/[0.06] dark:bg-[#2A7A86]/[0.14]'
+                              : 'hover:bg-petrol/[0.04] dark:hover:bg-white/[0.05] cursor-pointer',
                           )}
                         >
-                          <div className="flex-shrink-0 mt-1.5">
-                            <div className={cn(
-                              'w-1.5 h-1.5 rounded-full',
-                              isCurrent ? 'bg-petrol' : 'bg-muted-foreground/30',
-                            )} />
+                          <div
+                            className="relative z-10 w-7 h-7 rounded-[10px] flex items-center justify-center flex-shrink-0 ring-[3px] ring-card dark:ring-card"
+                            style={{ backgroundColor: threadAvatar.bg }}
+                            aria-hidden
+                          >
+                            <span className="text-[11px] font-bold leading-none" style={{ color: threadAvatar.text }}>
+                              {senderShort[0]?.toUpperCase()}
+                            </span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
                               <span className={cn(
-                                'text-[13px] truncate',
-                                isCurrent ? 'font-semibold text-foreground' : 'text-foreground/80',
+                                'text-[13px] truncate tracking-[-0.005em]',
+                                isCurrent ? 'font-bold text-foreground' : 'font-medium text-foreground/80',
                               )}>
-                                {senderShort}
+                                {isEigen ? 'Jij' : senderShort}
                               </span>
-                              <span className="text-[11px] text-muted-foreground tabular-nums flex-shrink-0">
+                              {isCurrent && (
+                                <span className="flex-shrink-0 font-mono text-[9px] uppercase tracking-[0.12em] text-petrol dark:text-[#7FB5BF] bg-petrol/[0.09] dark:bg-[#2A7A86]/20 rounded-full px-1.5 py-0.5 leading-none">
+                                  Nu open
+                                </span>
+                              )}
+                              <span className="ml-auto pl-2 text-[11px] font-mono tabular-nums text-muted-foreground/80 flex-shrink-0">
                                 {formatShortDate(tEmail.datum)}
                               </span>
                             </div>
-                            {!isCurrent && tEmail.body_text && (
-                              <p className="text-[12px] text-muted-foreground/80 truncate mt-0.5">
-                                {tEmail.body_text.replace(/\s+/g, ' ').slice(0, 120)}
-                              </p>
-                            )}
+                            <p className="text-[12px] leading-snug text-muted-foreground/85 truncate mt-0.5">
+                              {threadPreview || tEmail.onderwerp || 'Geen voorbeeldtekst'}
+                            </p>
                           </div>
                         </button>
                       )

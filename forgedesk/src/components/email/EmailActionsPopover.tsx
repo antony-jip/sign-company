@@ -217,21 +217,29 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
   const inputCls = "w-full px-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-[8px] outline-none border border-border focus:border-petrol transition-colors duration-150 placeholder:text-muted-foreground/80"
   const labelCls = "text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground block mb-1"
 
+  const quickActionCls = "tap-press inline-flex items-center justify-center gap-1.5 h-9 md:h-8 px-2 lg:px-2.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap text-foreground/70 border border-transparent hover:text-flame hover:bg-flame/[0.07] hover:border-flame/20 transition-colors duration-150"
+
   // Breedte morpht per view voor smooth animation
   const widthClass = view === 'menu' ? 'w-[240px]' : view === 'koppel' ? 'w-[380px]' : 'w-[340px]'
 
   return (
-    <div ref={containerRef} className="relative flex items-center gap-1.5">
-      {/* Aanmaken vanuit deze mail · subtiele icon-buttons met tooltip-label */}
+    <div ref={containerRef} className="relative flex items-center gap-1">
+      {/* Aanmaken vanuit deze mail · label erbij zodat de actie leesbaar is
+          zonder eerst te moeten hoveren; op smalle panelen valt hij terug
+          op alleen het icoon. */}
+      <span className="hidden xl:inline font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 mr-1.5 whitespace-nowrap">
+        Maak
+      </span>
       <TooltipProvider delayDuration={200}>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               onClick={() => { hapticLight(); setView('klant'); setOpen(true) }}
-              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-flame hover:bg-flame/[0.06] transition-colors duration-150"
+              className={quickActionCls}
               aria-label="Klant aanmaken"
             >
-              <UserPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
+              <UserPlus className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.9} />
+              <span className="hidden lg:inline">Klant</span>
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-[12px]">Klant aanmaken</TooltipContent>
@@ -240,10 +248,11 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
           <TooltipTrigger asChild>
             <button
               onClick={() => { hapticLight(); onOpenProjectDialog() }}
-              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-flame hover:bg-flame/[0.06] transition-colors duration-150"
+              className={quickActionCls}
               aria-label="Project aanmaken"
             >
-              <FolderPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
+              <FolderPlus className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.9} />
+              <span className="hidden lg:inline">Project</span>
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-[12px]">Project aanmaken</TooltipContent>
@@ -252,10 +261,11 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
           <TooltipTrigger asChild>
             <button
               onClick={() => { hapticLight(); setView('taak'); setOpen(true) }}
-              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-flame hover:bg-flame/[0.06] transition-colors duration-150"
+              className={quickActionCls}
               aria-label="Taak aanmaken"
             >
-              <ListPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
+              <ListPlus className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.9} />
+              <span className="hidden lg:inline">Taak</span>
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-[12px]">Taak aanmaken</TooltipContent>
@@ -264,10 +274,11 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
           <TooltipTrigger asChild>
             <button
               onClick={() => { hapticLight(); setView('koppel'); setOpen(true) }}
-              className="tap-press flex items-center justify-center h-9 w-9 md:h-8 md:w-8 rounded-button text-muted-foreground hover:text-flame hover:bg-flame/[0.06] transition-colors duration-150"
+              className={quickActionCls}
               aria-label="Aan project koppelen"
             >
-              <Link2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+              <Link2 className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.9} />
+              <span className="hidden lg:inline">Koppelen</span>
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-[12px]">Aan project koppelen</TooltipContent>
