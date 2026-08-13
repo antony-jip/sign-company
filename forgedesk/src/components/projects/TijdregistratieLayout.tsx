@@ -556,7 +556,10 @@ export function TijdregistratieLayout() {
           klant_id: klant?.id || "",
           klant_naam: klant?.bedrijfsnaam || project?.klant_naam || "",
           project_id: projectId,
-          nummer: `FAC-${Date.now().toString(36).toUpperCase()}`,
+          // Leeg: het echte reeksnummer komt pas bij verwerken in de editor,
+          // net als bij elk ander concept. Een timestamp-nummer hier viel
+          // buiten de boekhoudreeks en bleef daarna voor altijd staan.
+          nummer: '',
           titel: `Uren ${project?.naam || "project"} - ${new Date().toLocaleDateString("nl-NL")}`,
           status: "concept",
           subtotaal,

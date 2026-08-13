@@ -74,6 +74,9 @@ import {
   getFactuur,
   getFactuurItems,
   createFactuur,
+  updateFactuurWithNummerRetry,
+  getStandaardFacturenVoorOfferte,
+  FactuurConflictError,
   createFactuurItem,
   replaceFactuurItems,
   updateFactuur,
@@ -1224,6 +1227,11 @@ export function FactuurEditor() {
           ...(verwerken ? { nummer: effectiefNummer, status: 'open' as const } : {}),
         }
 
+        // Eerst de header, met optimistic lock: botst een collega, dan is er
+        // nog niets aan de regels veranderd. Het verwerken-pad kan bovendien
+        // een nummer-race verliezen (23505); de retry hergenereert dan.
+        const updated = await updateFactuurWithNummerRetry(existingFactuur.id, updates, existingFactuur.updated_at)
+
         await replaceFactuurItems(existingFactuur.id, validItems.map((item, i) => ({
           user_id: user?.id || '',
           beschrijving: item.beschrijving,
@@ -1237,12 +1245,31 @@ export function FactuurEditor() {
           detail_regels: (item.detail_regels || []).filter((r) => r.label || r.waarde),
         })))
 
-        const updated = await updateFactuur(existingFactuur.id, updates)
         setExistingFactuur({ ...existingFactuur, ...updated })
         setNummer(updated.nummer ?? nummer)
         setIsDirty(false)
-        toast.success(verwerken ? `Factuur ${effectiefNummer} verwerkt` : 'Factuur bijgewerkt')
+        toast.success(verwerken ? `Factuur ${updated.nummer ?? effectiefNummer} verwerkt` : 'Factuur bijgewerkt')
       } else {
+        // Verse DB-check: de geladen offerte-status kan uren oud zijn, dus een
+        // collega kan deze offerte intussen al gefactureerd hebben. Deelfacturen
+        // blijven mogelijk, maar alleen als bewuste keuze.
+        if (offerteId && !isCreditFactuur) {
+          const alBestaand = await getStandaardFacturenVoorOfferte(offerteId).catch(() => [])
+          if (alBestaand.length > 0) {
+            const nummers = alBestaand.map((f) => f.nummer || 'concept').join(', ')
+            const tochDoorgaan = await confirm({
+              title: 'Offerte is al gefactureerd',
+              message: `Voor deze offerte bestaat al factuur ${nummers}. Wil je er nog een factuur naast maken?`,
+              confirmLabel: 'Extra factuur maken',
+              cancelLabel: 'Annuleren',
+            })
+            if (!tochDoorgaan) {
+              setIsSaving(false)
+              return
+            }
+          }
+        }
+
         const betaalToken = generateBetaalToken()
         const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
 
@@ -1407,6 +1434,10 @@ export function FactuurEditor() {
         return
       }
     } catch (err) {
+      if (err instanceof FactuurConflictError) {
+        toast.error(err.message)
+        return
+      }
       logger.error('Fout bij opslaan factuur:', err)
       toast.error('Kon factuur niet opslaan')
     } finally {
@@ -1711,6 +1742,7 @@ export function FactuurEditor() {
       if (werkbonId && attachments) {
         try {
           const wb = await getWerkbon(werkbonId)
+          if (!wb) throw new Error('Werkbon niet gevonden')
           const wbItems = await getWerkbonItems(wb.id)
           const wbFotos = await getWerkbonFotos(wb.id)
           const project = projectId ? await getProject(projectId).catch(() => null) : null
@@ -1741,7 +1773,7 @@ export function FactuurEditor() {
             documentStyle,
             { fotos: wbFotos }
           )
-          const wbBase64 = wbDoc.output('datauristring').split(',')[1]
+          const wbBase64 = (await wbDoc).output('datauristring').split(',')[1]
           attachments.push({ filename: `Werkbon-${wb.werkbon_nummer}.pdf`, content: wbBase64, encoding: 'base64' })
         } catch (wbErr) {
           logger.warn('Werkbon PDF bijlage mislukt:', wbErr)
@@ -2146,7 +2178,7 @@ export function FactuurEditor() {
         ...existingFactuur,
         exact_entry_id: data.exact_entry_id,
         exact_synced_at: existingFactuur.exact_synced_at || new Date().toISOString(),
-        exact_document_id: data.document_id,
+        exact_document_id: data.document_id ?? undefined,
         exact_bijlage_gesynced_op: data.bijlage_synced
           ? new Date().toISOString()
           : existingFactuur.exact_bijlage_gesynced_op,
