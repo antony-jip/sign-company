@@ -24,6 +24,8 @@ import {
   NAV_GROEPEN, ALLE_MODULES, MOBIELE_NAV_LABELS, normaliseerMenuVoorkeur,
   type NavItem,
 } from '@/lib/navigatie'
+import { useFeatureFlags } from '@/contexts/FeatureFlagsContext'
+import { zonderUitgezetteModules } from '@/lib/featureFlags'
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768)
@@ -92,13 +94,26 @@ export function Sidebar() {
     }
   }, [settings?.sidebar_items, isMobieleNav])
 
-  const filteredNavItems = useMemo(() => ALLE_MODULES.filter(i => isItemVisible(i.label)), [isItemVisible])
+  // Modules die achter een uitgezette feature-flag hangen bestaan hier niet:
+  // niet in het menu, niet onder "Overig" en niet in de bewerk-modus. Dit
+  // gaat vóór de persoonlijke menukeuze, want een gesloten module is geen
+  // voorkeur maar een besluit van buiten.
+  const { staatUit } = useFeatureFlags()
+  const beschikbareModules = useMemo(() => zonderUitgezetteModules(ALLE_MODULES, staatUit), [staatUit])
+  const beschikbareGroepen = useMemo(
+    () => NAV_GROEPEN
+      .map(g => ({ ...g, items: zonderUitgezetteModules(g.items, staatUit) }))
+      .filter(g => g.items.length > 0),
+    [staatUit],
+  )
+
+  const filteredNavItems = useMemo(() => beschikbareModules.filter(i => isItemVisible(i.label)), [beschikbareModules, isItemVisible])
 
   const filteredGroups = useMemo(() => {
-    return NAV_GROEPEN
+    return beschikbareGroepen
       .map(g => ({ ...g, items: g.items.filter(i => isItemVisible(i.label)) }))
       .filter(g => g.items.length > 0)
-  }, [isItemVisible])
+  }, [beschikbareGroepen, isItemVisible])
 
   // ── Glijdende actieve-indicator (expanded, desktop) ──
   // Eén frosted surface die met een spring tussen items glijdt i.p.v.
@@ -134,18 +149,18 @@ export function Sidebar() {
   // Items die niet in het hoofdmenu staan, gegroepeerd per sectie → "Overig".
   const overigGroups = useMemo(() => {
     if (isMobieleNav) return []
-    return NAV_GROEPEN
+    return beschikbareGroepen
       .map(g => ({ ...g, items: g.items.filter(i => !isItemVisible(i.label)) }))
       .filter(g => g.items.length > 0)
-  }, [isItemVisible, isMobieleNav])
+  }, [beschikbareGroepen, isItemVisible, isMobieleNav])
   const heeftOverig = overigGroups.length > 0
 
   // Huidige selectie als concrete lijst (default = alles).
   const curatedLabels = useMemo(() => {
     const pref = settings?.sidebar_items
     if (Array.isArray(pref) && pref.length > 0) return normaliseerMenuVoorkeur(pref)
-    return ALLE_MODULES.map(i => i.label)
-  }, [settings?.sidebar_items])
+    return beschikbareModules.map(i => i.label)
+  }, [settings?.sidebar_items, beschikbareModules])
 
   const removeFromMenu = (label: string) => {
     if (label === 'Maatjes') return

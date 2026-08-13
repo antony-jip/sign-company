@@ -18,7 +18,23 @@ visuele wijziging.
 
 ### Code-discipline
 - `npm run build` na ELKE wijziging. Geen uitzonderingen.
-- Fix ALLE TypeScript errors voordat je doorgaat.
+- **`npm run build` is `vite build` en typecheckt NIET.** De echte poort is
+  `npx tsc --noEmit`. Er staat een bak bestaande fouten open, dus "fix alles"
+  is geen werkbare instructie: **meet het aantal zelf vóór je begint**
+  (`npx tsc --noEmit 2>&1 | grep -cE "error TS"`) en zorg dat jouw werk dat
+  getal niet verhoogt. Raak je een bestand toch aan, ruim dan op wat er in dát
+  bestand staat.
+- De meeste openstaande fouten zitten in een handvol grote componenten, met
+  `FactuurEditor.tsx` als uitschieter. Reken erop dat je die tegenkomt zodra je
+  daar iets wijzigt.
+- **`api/` heeft een EIGEN poort: `npm run typecheck:api`.** `tsconfig.json`
+  dekt alleen `src`, en `vite build` bundelt alleen de client, dus de 93
+  serverless functions vielen daarbuiten. Dat gat liet in één nacht twee fouten
+  door, waaronder een ontbrekende accolade waar build én tsc groen op bleven.
+  Raak je iets in `api/` aan, draai dan **beide** commando's. Baseline daar is
+  **52 fouten** (gemeten 13 aug 2026). Wat er nog staat is grotendeels
+  `unknown` uit een niet-getypeerde fetch-respons; dat vraagt per geval een
+  oordeel over de vorm van het antwoord, dus dat is echt werk en geen zoekvervang.
 - Tests: `npm run test` (vitest watch) of `npm run test:run` (one-shot).
 - Geen nieuwe npm packages zonder expliciete toestemming.
 
@@ -52,10 +68,15 @@ visuele wijziging.
 - Uitzondering: email-credentials (RLS op `user_id`, persoonlijk).
 
 ### Grote bestanden — grep, nooit cat
-- `supabaseService.ts` (5700+ regels) — kan Claude Code sessies laten
-  crashen bij volledig lezen.
-- `types/index.ts` (1700+ regels) — zelfde issue.
-- Altijd grep gebruiken voor zoekopdrachten in deze files.
+- `types/index.ts` (2453 regels) — kan Claude Code sessies laten crashen bij
+  volledig lezen. Altijd grep.
+- `src/components/invoices/FactuurEditor.tsx` (3786), `planning/MontagePlanningLayout.tsx`
+  (3709), `projects/ProjectDetail.tsx` (3504), `planning/TasksLayout.tsx` (3130),
+  `invoices/FacturenLayout.tsx` (3107), `email/EmailLayout.tsx` (2992). Ook grep.
+- **`supabaseService.ts` is GESPLITST en nog maar 335 regels.** Het is een barrel
+  die re-exporteert uit ~49 domeinservices (`offerteService`, `factuurService`,
+  `klantService`, …). Zoek een functie dus in de domeinservice, niet hier. Een
+  kwart van wat de barrel re-exporteert heeft geen consument.
 
 ### Vercel serverless
 - `api/*` bestanden zijn standalone — GEEN imports uit `src/`.
@@ -78,9 +99,32 @@ visuele wijziging.
 - RLS-policies op `organisatie_id` (zie migrations/048 als referentie-pattern).
 - Nieuwe tabellen/kolommen krijgen altijd org-scoped RLS-policy
   (SELECT/INSERT/UPDATE/DELETE elk afgedekt).
-- **Migratie-nummering:** check `schema_migrations` voor het eerstvolgende
-  vrije nummer voordat je een nieuwe migratie aanmaakt. Het historische
-  conflict op 093/094 niet opnieuw gebruiken.
+- **Migratie-nummering:** neem het eerstvolgende vrije nummer op basis van de
+  bestandsnamen in `supabase/migrations/`. Hoogste nummer nu: **201**. Vertrouw
+  hiervoor NIET op `doen_migraties`: die tabel is administratie en bewust
+  incompleet, dus de map is voor nummering de betrouwbaarder bron.
+- **`doen_migraties` is de administratie** van wat gedraaid is (migratie 198;
+  `schema_migrations` is bezet door Supabase zelf). Alleen `service_role` komt
+  erbij; de app leest deze tabel niet. Wil je weten of iets écht live staat, vraag
+  het de database (`pg_policies`, `information_schema`) en niet deze tabel.
+- **Elke nieuwe migratie eindigt op één INSERT-regel** buiten de COMMIT:
+  `INSERT INTO doen_migraties (bestand) VALUES ('<bestandsnaam>.sql') ON CONFLICT DO NOTHING;`
+  De tabel is administratie, geen bron van waarheid: spreekt hij de database
+  tegen, dan heeft de database gelijk.
+- **Twee nummerschema's, wees voorzichtig.** Naast `NNN_*.sql` bestaat er een
+  oudere reeks `migration_NNN_*.sql` (034 t/m 052). Zeven nummers komen in beide
+  voor, en lexicografisch sorteert `migration_*` ná `189`. Gebruik alleen het
+  `NNN_`-schema voor nieuw werk.
+- **De map loopt uit de pas met de database.** `072:62` maakt een policy op
+  `grootboek` terwijl `001:409` `grootboeken` aanmaakt; `047`/`078` noemen een
+  tabel `events` die niemand aanmaakt; en geen enkele migratie maakt
+  `organisaties` aan. Het schema is dus niet uit de map te herbouwen. Zie
+  `docs/RESTORE.md`.
+- **`DROP POLICY IF EXISTS` op een verkeerde naam slaagt stil.** Zo bleven de
+  legacy user_id-policies na migratie 048 een jaar staan en werkte de
+  abonnementsvergrendeling niet. Drop op de naam die de `CREATE` gebruikt, of
+  lees `pg_policies` zoals migratie 195. `tests/migrations/rlsInvarianten.test.ts`
+  vangt nieuwe gevallen.
 - Migraties idempotent maken: `CREATE TABLE IF NOT EXISTS`,
   `ON CONFLICT DO NOTHING`, etc.
 - Migraties worden door Antony zelf in de Supabase SQL Editor gedraaid.
@@ -90,7 +134,9 @@ visuele wijziging.
 - **Sticky top action-bar:** `#1A535C` teal achtergrond
   (Clients/Quotes/Facturen).
 - **Searchable combobox:** `components/shared/MedewerkerFilterCombobox`.
-- **Admin-detectie:** `utils/authHelpers.ts :: isAdminUser(medewerker, user)`.
+- **Admin-detectie:** `utils/authHelpers.ts :: isAdminUser(profielRol)`. Eén
+  argument, `profiles.rol`. De oude bronnen (`user_metadata.app_rol`,
+  `medewerkers.rol`) zijn bewust geschrapt: die kon de gebruiker zelf schrijven.
 - **localStorage-keys:** `doen_<module>_<feature>`.
 - **Migration-markers voor breaking defaults:** `doen_<module>_migration_v<N>`.
 - **Swimlane-view** met collapse-state in localStorage.

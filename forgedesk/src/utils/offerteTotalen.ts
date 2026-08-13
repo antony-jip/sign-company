@@ -51,13 +51,6 @@ export function getActievePrijsRegel(item: PrijsRegelBron): OfferteTotaalRegel {
   }
 }
 
-/** Regel-totaal (na korting) van het actieve variant of de basisprijs. */
-export function berekenRegelTotaal(item: PrijsRegelBron): number {
-  const r = getActievePrijsRegel(item)
-  const bruto = round2(r.aantal * r.eenheidsprijs)
-  return round2(bruto - bruto * (r.korting_percentage / 100))
-}
-
 /**
  * Berekent de offerte-totalen uit de prijsregels: subtotaal (netto, na korting),
  * gewogen BTW per regel, en het totaal. Optioneel met afrondingskorting en

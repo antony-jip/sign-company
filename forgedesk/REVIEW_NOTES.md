@@ -1240,3 +1240,101 @@ inbound-only fetch. Gelogde restpunten:
 - Onbeantwoord-punt herhaalt max 9 nachten (dag 5-14) zonder escalatie en
   valt op dag 14 geruisloos weg; bewust ontwerp, consistent met de andere
   lanen.
+
+## Inkoopfactuur-projectvoorstel + migratie-administratie (12 aug 2026)
+
+Gate-review verdict AKKOORD-MET-OPMERKINGEN. Vier punten zijn gefixt in
+`6c697331`. Wat bewust blijft staan:
+
+- **`api/*` wordt door geen enkele geautomatiseerde poort gedekt.**
+  `tsconfig.json` heeft `include: ["src", "trigger.config.ts"]`, dus noch
+  `tsc --noEmit` noch de vite-build kijkt naar de 92 endpoints. Het zwaarste
+  bestand van deze ronde (`api/inkoopfactuur-extract.ts`) is daarom los
+  getypechecked met `--strict` (schoon). Dit is een echt gat in de toolketen en
+  geen eigenschap van deze wijziging: de laag waar geld en tenant-isolatie zitten
+  is de laag zonder compiler. Een tweede tsconfig voor `api/` zou het dichten.
+- **Projectnummer `P-2026-001` matcht een referentie `P-2026-0019`.** Vergt
+  inconsistente padding aan leverancierszijde, en als dat langere nummer óók een
+  bestaand project is worden het twee treffers en dus geen voorstel. Degradeert
+  dus naar de veilige kant.
+- **`parsed.vertrouwen || 'laag'`** (`api/inkoopfactuur-extract.ts:481`): laat het
+  model het veld weg, dan land je in Nakijken. Ruim aan de goede kant, bewust.
+- **Geen accent-normalisatie**: project `Nieuwbouw Café de Zwaan` matcht niet op
+  `cafe`. Een misser in plaats van een verkeerd voorstel, dus de goede richting.
+## AVG-export (12 aug 2026)
+
+Gate-review verdict BLOKKADE, gefixt. De blokkade: `facturen.betaal_link` bevat
+letterlijk `/betalen/<betaal_token>` (`FactuurEditor.tsx:1247`), en het filter
+haalde `betaal_token` weg maar liet `betaal_link` staan. De uitvoer bevatte dus
+per factuur een levende sleutel naar een publieke pagina zonder inlog. Opgelost
+met een tweede filterlaag op de WAARDE, want een naamfilter mist per definitie de
+volgende kolom die een URL blijkt te zijn. Vastgelegd in
+`tests/api/orgExportFilter.test.ts`.
+
+Ook gefixt: het filter faalde open voorbij nestdiepte 8 (gaf de ruwe subtree
+terug), de auditregel werd vóór de groottecheck geschreven zodat een 413 als
+geslaagde uitvoer in het logboek stond, en de toast meldde alleen het rijtotaal
+zodat een mislukte tabel als succes las.
+
+Wat blijft staan:
+
+- **`inkoopfactuur_inbox_config` exporteert `imap_host`/`imap_port`/`imap_user`.**
+  Het wachtwoord gaat eruit op `encrypted`, maar dit is dezelfde mailkoppeling
+  waarvoor `user_email_settings` juist wordt uitgesloten, alleen op org-niveau.
+  Kies bij de volgende ronde: tabel uitsluiten, of ook de gebruikersnamen
+  strippen.
+- **`profiles.iban` en `leveranciers.iban` gaan mee.** Geen credential en
+  terecht een gegeven, maar het zijn betaalgegevens van collega's in een bestand
+  dat bedoeld is om door te sturen. Bewuste keuze, hoort expliciet in
+  `docs/AVG.md`.
+- **Zonder Upstash-env-vars is er geen rate limit** (alleen een `console.warn`),
+  en een Redis-fout faalt open. `docs/AVG.md` noemt "twee per uur" als feit;
+  dat geldt alleen als Upstash geconfigureerd is.
+- **De definitieve secret-sweep vraagt de database.** `eboekhouden_api_token` en
+  `moneybird_api_token` staan in `docs/AVG.md` maar in geen enkele migratie, en
+  van `organisaties` bestaat geen `CREATE TABLE` in de map. Een sluitende
+  controle is `information_schema.columns` tegen de regex; dat is een
+  terugkerende check, niet een eenmalige.
+- **`verwijderde_kolommen` vult alleen aan uit tabellen die rijen teruggaven.**
+  De belofte "je ziet wat er ontbreekt" geldt dus niet voor lege tabellen.
+- **Ongetest tot deploy**: de gzip-route en de 413-tak. Beide falen zichtbaar.
+  Controleer bij de eerste echte download of het bestand JSON is en geen
+  gzip-bytes, want of Vercel's proxy `Content-Encoding` ongemoeid doorlaat is
+  statisch niet vast te stellen.
+## Support-inbox: paginatie, toewijzing, melding (13 aug 2026)
+
+Gate-review verdict BLOKKADE op twee punten, beide gefixt in `82aed6f7`: de
+Resend-fout werd niet gelezen (stil falen plus een kwartier stilte door een
+blijvende idempotency-claim), en de heartbeat pingde zolang er een tabblad
+openstond, waardoor er nooit een mail uitging. Plus de ontbrekende tiebreaker
+op de paginatie.
+
+Wat blijft staan:
+
+- **`berekenAttentie` is nog ongebonden** (`api/support-inbox.ts:180-189`):
+  selecteert álle open gesprekken en haalt daarna previews voor die volledige
+  set. Draait op elke lijst-GET én op elke realtime-INSERT. Bewust niet
+  begrensd: elke haastige cap maakt de badge stil te laag, en dat is de fout
+  die deze hele ronde wegwerkt. De goede oplossing is een aggregatie
+  server-side, zoals migratie 199 voor rapportages doet.
+- **De preview-limiet is globaal, niet per gesprek** (`:162-164`). Eén lange
+  thread binnen het tijdvenster kan de hele limiet opeten; andere gesprekken
+  krijgen dan geen preview en `telAttentie` telt ze niet mee. De badge kan dus
+  onderrapporteren.
+- **Zoeken en filteren gaat alleen over geladen rijen**
+  (`SupportInboxPage.tsx:57-67`). De lege staat zegt "Geen gesprekken voor dit
+  filter" zonder te melden dat er maar een deel geladen is. Paginatie maakt dit
+  zichtbaar waar het eerder verborgen was. Echte fix is server-side zoeken.
+- **`laadMeer` kan vastlopen** (`useSupportInbox.ts:56-66`): de offset is het
+  aantal geladen rijen, dus levert een pagina alleen al-geziene ids, dan schuift
+  de offset niet meer. Lage kans, echte dead-end.
+- **De trigger dekt INSERT en UPDATE, niet DELETE.** Een klant mag onder
+  `122:59-62` zijn eigen gesprek verwijderen, wat de berichten cascadeert en de
+  toewijzing wegpoetst. De toewijzing is dus niet volledig klant-proof. Het
+  terugschroeven van die `FOR ALL` is een besluit over wat klanten mogen.
+- **De melding wordt ge-`await`'d binnen het klantverzoek** (`:316`), dus de
+  klant wacht op de Resend-roundtrip. Op Vercel is dat de juiste keuze, maar het
+  staat in het kritieke pad.
+- **Ongetest tot de migratie draait**: de trigger heeft nul dekking, en de
+  idempotency-test bewijst alleen dat twee aanroepen dezelfde sleutel geven, niet
+  dat Postgres de tweede insert weigert.

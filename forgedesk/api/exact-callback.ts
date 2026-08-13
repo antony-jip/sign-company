@@ -124,7 +124,7 @@ async function loadAppSettingsOrgFirst(
       .select(columns)
       .eq('organisatie_id', orgId)
       .maybeSingle()
-    if (data) return data as Record<string, unknown>
+    if (data) return data as unknown as Record<string, unknown>
   }
   const { data } = await supabase
     .from('app_settings')
@@ -243,6 +243,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         client_id: exactClientId,
         client_secret: exactClientSecret,
       }).toString(),
+      // Token-exchange is een kleine POST; de gebruiker staat hier in de
+      // browser te wachten op de redirect, dus kort houden.
+      signal: AbortSignal.timeout(10_000),
     })
 
     // Lees response body als text zodat we hem zowel kunnen loggen bij
@@ -297,6 +300,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         Authorization: `Bearer ${tokens.access_token}`,
         Accept: 'application/json',
       },
+      // Eén klein veld ophalen; de gebruiker wacht op de OAuth-redirect.
+      signal: AbortSignal.timeout(10_000),
     })
 
     let division: number | null = null
@@ -335,7 +340,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         const typesRes = await fetch(
           `${EXACT_API_BASE}/${division}/documents/DocumentTypes?$filter=DocumentIsCreatable eq true&$select=ID,Description,TypeCategory&$orderby=Description`,
-          { headers: { Authorization: `Bearer ${tokens.access_token}`, Accept: 'application/json' } },
+          {
+            headers: { Authorization: `Bearer ${tokens.access_token}`, Accept: 'application/json' },
+            // Best-effort en al in een try/catch: een timeout laat de
+            // OAuth-flow gewoon doorlopen zonder default-documenttype.
+            signal: AbortSignal.timeout(10_000),
+          },
         )
         if (typesRes.ok) {
           const typesBody = await typesRes.json() as {

@@ -193,6 +193,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Verifieer betaling bij Mollie
     const mollieResponse = await fetch(`${MOLLIE_API_BASE}/${paymentId}`, {
       headers: { 'Authorization': `Bearer ${mollieApiKey}` },
+      // Read-only verificatie. Mollie hanteert korte webhook-deadlines en
+      // stuurt de webhook opnieuw als wij niet snel 200 teruggeven.
+      signal: AbortSignal.timeout(15_000),
     })
 
     if (!mollieResponse.ok) {

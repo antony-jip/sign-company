@@ -103,19 +103,3 @@ export async function downloadFactuurPdfFromStorage(
 
   return data
 }
-
-/**
- * Converteer een Blob naar een base64-string (zonder data-URL prefix).
- * Werkt veilig voor grote PDFs via FileReader (geen UTF-8 decode-risico).
- */
-export async function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const dataUrl = reader.result as string
-      resolve(dataUrl.split(',')[1])
-    }
-    reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'))
-    reader.readAsDataURL(blob)
-  })
-}

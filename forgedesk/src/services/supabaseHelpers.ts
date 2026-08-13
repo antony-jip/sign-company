@@ -125,19 +125,40 @@ export async function fetchAllPages<T>(
 
 const TYPED_PREFIXES = ['CN', 'CR', 'VS', 'EA']
 
+/**
+ * Het hoogste nummer achter een prefix, om het volgende te kunnen uitgeven.
+ *
+ * Waarom dit pagineert. PostgREST levert maximaal 1000 rijen per request. Zonder
+ * paginatie las deze functie het maximum van de eerste 1000 rijen die de server
+ * toevallig teruggaf, en gaf dus een te laag nummer terug zodra één prefix over
+ * de 1000 ging. Gevolg: een tweede factuur met een nummer dat al bestaat. Stil,
+ * en precies op de plek waar het niet mag.
+ *
+ * Waarom niet `order desc limit 1`, wat sneller zou zijn: de collisiefilter
+ * hieronder moet over álle rijen. `F` is een prefix van niets, maar `CN2026-3`
+ * (creditnota) begint met `C` en zou een zoektocht naar prefix `C` vergiftigen.
+ * Die filter zit in de reduce en kan niet in de query, dus alle rijen zijn nodig.
+ *
+ * De `.order()` is er niet voor de sortering maar voor de paginatie: `.range()`
+ * zonder ordening geeft geen stabiele vensters, en dan kan een rij dubbel of
+ * helemaal niet langskomen.
+ */
 export async function getMaxNummer(table: string, field: string, prefix: string): Promise<number> {
   if (isSupabaseConfigured() && supabase) {
     const orgId = await getOrgId()
-    let query = supabase
-      .from(table)
-      .select(field)
-      .like(field, `${prefix}%`)
-    if (orgId) query = query.eq('organisatie_id', orgId)
-    const { data, error } = await query
-    if (error) throw error
-    if (!data) return 0
-    return data.reduce<number>((max, row) => {
-      const value = String((row as unknown as Record<string, unknown>)[field])
+    const rijen = await fetchAllPages<Record<string, unknown>>(async (van, tot) => {
+      let query = supabase!
+        .from(table)
+        .select(field)
+        .like(field, `${prefix}%`)
+      if (orgId) query = query.eq('organisatie_id', orgId)
+      const { data, error } = await query.order(field, { ascending: true }).range(van, tot)
+      // `select()` met een variabele kolomnaam kan PostgREST niet typen; die
+      // kende het schema niet op compile-time. Eén cast hier in plaats van per rij.
+      return { data: data as unknown as Record<string, unknown>[] | null, error }
+    })
+    return rijen.reduce<number>((max, row) => {
+      const value = String(row[field])
       const collidesWithTyped = TYPED_PREFIXES.some(
         (tp) => value.startsWith(tp) && !prefix.startsWith(tp)
       )

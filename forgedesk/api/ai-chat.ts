@@ -1088,6 +1088,10 @@ ${JSON.stringify(dataContext, null, 2)}`
         tools: [actieTool, legVastTool],
         tool_choice: { type: 'auto' },
       }),
+      // Alleen op het niet-streamende pad. AbortSignal.timeout kapt ook een
+      // response-body af die nog binnenkomt, dus op de stream zou een lang
+      // antwoord halverwege stoppen; daar blijft het gedrag ongewijzigd.
+      ...(wilStream ? {} : { signal: AbortSignal.timeout(90_000) }),
     })
 
     if (!response.ok) {

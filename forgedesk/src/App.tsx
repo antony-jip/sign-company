@@ -4,11 +4,11 @@ import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { PaletteProvider } from '@/contexts/PaletteContext'
-import { LanguageProvider } from '@/contexts/LanguageContext'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import { TabsProvider } from '@/contexts/TabsContext'
 import { AppSettingsProvider, useAppSettings } from '@/contexts/AppSettingsContext'
 import { MedewerkersProvider } from '@/contexts/MedewerkersContext'
+import { FeatureFlagsProvider, useFeatureUitgezet } from '@/contexts/FeatureFlagsContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppLayout } from '@/components/layouts/AppLayout'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
@@ -139,9 +139,8 @@ function WerkbonDetailWrapper() {
   return <WerkbonDetail />
 }
 
-// Kennisbank + Changelog
+// Kennisbank
 const KennisbankPage = lazy(() => import('@/components/kennisbank/KennisbankPage'), 'KennisbankPage')
-const ChangelogPage = lazy(() => import('@/components/changelog/ChangelogPage'), 'ChangelogPage')
 
 // Bestelbonnen
 const BestelbonnenLayout = lazy(() => import('@/components/bestelbonnen/BestelbonnenLayout'), 'BestelbonnenLayout')
@@ -168,7 +167,6 @@ const PortalenOverzicht = lazy(() => import('@/components/portaal/PortalenOverzi
 const MeldingenPage = lazy(() => import('@/components/notifications/MeldingenPage'), 'MeldingenPage')
 
 // AI / Daan
-const FORGEdeskAIChat = lazy(() => import('@/components/forgie/FORGEdeskAIChat'), 'FORGEdeskAIChat')
 const ForgieChatPage = lazy(() => import('@/components/forgie/ForgieChatPage'), 'ForgieChatPage')
 const SupportInboxPage = lazy(() => import('@/components/support/SupportInboxPage'), 'SupportInboxPage')
 
@@ -213,6 +211,17 @@ function GoedkeuringRedirect() {
 function OfferteDetailRedirect() {
   const { id } = useParams()
   return <Navigate to={`/offertes/${id}/bewerken`} replace />
+}
+
+/**
+ * Studio zit achter feature-flag `module_studio` (migratie 200). Alleen een
+ * expliciete 'uit' sluit de deur; onbekend of een mislukte flag-query laat de
+ * module gewoon staan. Het menu-item verdwijnt tegelijk, dus wie hier komt
+ * heeft het adres ingetypt of een oude tab open.
+ */
+function StudioRoute() {
+  if (useFeatureUitgezet('module_studio')) return <Navigate to="/" replace />
+  return <VisualizerLayout />
 }
 
 function AppContent() {
@@ -320,11 +329,9 @@ function AppContent() {
         <Route path="team" element={<TeamLayout />} />
 
         <Route path="importeren" element={<DataImportPage />} />
-        <Route path="ai" element={<FORGEdeskAIChat />} />
         <Route path="forgie" element={<ForgieChatPage />} />
         <Route path="support" element={<SupportInboxPage />} />
         <Route path="kennisbank" element={<KennisbankPage />} />
-        <Route path="changelog" element={<ChangelogPage />} />
         <Route path="werkbonnen" element={<WerkbonnenRoute />} />
         <Route path="werkbonnen/:id" element={<WerkbonDetailWrapper />} />
         <Route path="bestelbonnen" element={<BestelbonnenLayout />} />
@@ -340,7 +347,7 @@ function AppContent() {
         <Route path="aanvragen" element={<WebsiteAanvragenLayout />} />
         <Route path="forecast" element={<ForecastLayout />} />
         <Route path="booking" element={<BookingBeheer />} />
-        <Route path="visualizer" element={<VisualizerLayout />} />
+        <Route path="visualizer" element={<StudioRoute />} />
         <Route path="portalen" element={<PortalenOverzicht />} />
         <Route path="meldingen" element={<MeldingenPage />} />
         <Route path="instellingen" element={<SettingsLayout />} />
@@ -361,45 +368,45 @@ function App() {
     <BrowserRouter>
       <ThemeProvider>
         <PaletteProvider>
-          <LanguageProvider>
-            <AuthProvider>
-              <MedewerkersProvider>
-                <AppSettingsProvider>
-                  <SidebarProvider>
-                    <TabsProvider>
-                    <ErrorBoundary>
-                      <Toaster
-                        position="top-right"
-                        visibleToasts={2}
-                        duration={4000}
-                        toastOptions={{
-                          style: {
-                            background: 'rgba(253, 252, 250, 0.86)',
-                            backdropFilter: 'blur(24px) saturate(180%)',
-                            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                            border: '0.5px solid rgba(26, 83, 92, 0.14)',
-                            borderRadius: '14px',
-                            boxShadow: '0 12px 36px -8px rgba(100, 80, 40, 0.20), 0 0 24px -6px rgba(241, 80, 37, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.70)',
-                            color: '#191919',
-                            fontSize: '12px',
-                            animation: 'toast-in 300ms ease-out',
-                          },
-                          classNames: {
-                            success: 'toast-success',
-                            error: 'toast-error',
-                          },
-                        }}
-                      />
-                      <ConfirmDialog />
-                      <MijlpaalOverlay />
-                      <AppContent />
-                    </ErrorBoundary>
-                    </TabsProvider>
-                  </SidebarProvider>
-                </AppSettingsProvider>
-              </MedewerkersProvider>
-            </AuthProvider>
-          </LanguageProvider>
+          <AuthProvider>
+            <MedewerkersProvider>
+              <AppSettingsProvider>
+                <FeatureFlagsProvider>
+                <SidebarProvider>
+                  <TabsProvider>
+                  <ErrorBoundary>
+                    <Toaster
+                      position="top-right"
+                      visibleToasts={2}
+                      duration={4000}
+                      toastOptions={{
+                        style: {
+                          background: 'rgba(253, 252, 250, 0.86)',
+                          backdropFilter: 'blur(24px) saturate(180%)',
+                          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                          border: '0.5px solid rgba(26, 83, 92, 0.14)',
+                          borderRadius: '14px',
+                          boxShadow: '0 12px 36px -8px rgba(100, 80, 40, 0.20), 0 0 24px -6px rgba(241, 80, 37, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.70)',
+                          color: '#191919',
+                          fontSize: '12px',
+                          animation: 'toast-in 300ms ease-out',
+                        },
+                        classNames: {
+                          success: 'toast-success',
+                          error: 'toast-error',
+                        },
+                      }}
+                    />
+                    <ConfirmDialog />
+                    <MijlpaalOverlay />
+                    <AppContent />
+                  </ErrorBoundary>
+                  </TabsProvider>
+                </SidebarProvider>
+                </FeatureFlagsProvider>
+              </AppSettingsProvider>
+            </MedewerkersProvider>
+          </AuthProvider>
         </PaletteProvider>
       </ThemeProvider>
     </BrowserRouter>

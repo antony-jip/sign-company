@@ -40,30 +40,6 @@ export async function updateLeadNotities(id: string, notities: string): Promise<
   if (error) throw error
 }
 
-export async function maakLead(lead: Partial<Lead>): Promise<Lead | null> {
-  if (!isSupabaseConfigured() || !supabase) return null
-  const payload = await withUserId({
-    naam: '',
-    bedrijf: '',
-    telefoon: '',
-    email: '',
-    provincie: '',
-    plaats: '',
-    status: 'nieuw' as LeadStatus,
-    bron: '',
-    bron_status: '',
-    tags: [],
-    contactpersonen: [],
-    notities: '',
-    import_bron: 'handmatig',
-    import_sleutel: `handmatig-${Date.now()}`,
-    ...lead,
-  })
-  const { data, error } = await supabase.from('leads').insert(payload).select().single()
-  if (error) throw error
-  return data as unknown as Lead
-}
-
 /** E.164 zonder spaties/plus, zoals wa.me verwacht. */
 export function whatsappLink(telefoon: string): string | null {
   const cijfers = telefoon.replace(/[^\d+]/g, '')

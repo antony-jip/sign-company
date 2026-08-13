@@ -3,6 +3,8 @@ import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -299,6 +301,33 @@ async function readCachedSignedUrls(user_id: string, email_uuid: string): Promis
 
 export const config = { maxDuration: 30 }
 
+// ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
+const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+if (!rlConfigured) {
+  console.warn('[ratelimit] UPSTASH env vars missing for read-email, requests will not be rate limited')
+}
+const ratelimit = rlConfigured
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(60, '60 s'), prefix: 'rl:read-email', timeout: 2000 })
+  : null
+
+async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
+  if (!ratelimit) return true
+  try {
+    const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
+    if (success) return true
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+    console.warn(`[ratelimit-hit] read-email id=${identifier} limit=${limit}`)
+    res.setHeader('Retry-After', String(retryAfter))
+    res.setHeader('X-RateLimit-Limit', String(limit))
+    res.setHeader('X-RateLimit-Remaining', String(remaining))
+    res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    return false
+  } catch (err) {
+    console.warn(`[ratelimit-error] read-email id=${identifier} err=${(err as Error).message}`)
+    return true
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -312,6 +341,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Haal user_id uit JWT en credentials uit database (fallback naar request body)
     const user_id = await verifyUser(req)
+    if (!(await enforceRateLimit(user_id, res))) return
     let gmail_address: string, app_password: string, imap_host: string, imap_port: number
     try {
       const creds = await getEmailCredentials(user_id)

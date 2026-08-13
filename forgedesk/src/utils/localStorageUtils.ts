@@ -74,19 +74,3 @@ export function safeSetItem(key: string, value: string): boolean {
     }
   }
 }
-
-/**
- * Get an approximate total size of localStorage in bytes.
- */
-export function getLocalStorageSize(): number {
-  let total = 0
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (!key) continue
-    const value = localStorage.getItem(key)
-    if (value) {
-      total += key.length * 2 + value.length * 2 // UTF-16
-    }
-  }
-  return total
-}

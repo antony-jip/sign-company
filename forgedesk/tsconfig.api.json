@@ -1,0 +1,39 @@
+{
+  // Typecheck voor api/*, dat door tsconfig.json NIET wordt gedekt.
+  //
+  // Waarom dit bestand bestaat. `tsconfig.json` heeft `include: ["src", ...]`
+  // en `npm run build` is `vite build`, die alleen de client bundelt. De 93
+  // serverless functions vielen daardoor buiten élke geautomatiseerde poort —
+  // precies de laag waar geld, tenant-isolatie en mailcredentials zitten.
+  //
+  // Dat is geen theorie. In één nacht liet dat gat twee fouten door: een
+  // ontbrekende accolade in api/support-bericht.ts (build groen, tsc groen,
+  // alleen een test ving hem) en een ongeldige cast in api/exact-sync-factuur.ts
+  // die nooit gemeten was.
+  //
+  // Niet samengevoegd met tsconfig.json, want de twee werelden verschillen
+  // echt: api/* draait in Node zonder DOM, mag niets uit src/ importeren
+  // (Vercel bundelt die imports niet mee), en heeft geen JSX.
+  //
+  // Draaien: npm run typecheck:api
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    // Bewust GEEN "paths" voor @/*. Een api-bestand dat uit src/ importeert
+    // hoort hier te falen: Vercel bundelt die import niet mee en de functie
+    // klapt pas in productie. Zie CLAUDE.md sectie 2.
+    "baseUrl": "."
+  },
+  "include": ["api"]
+}

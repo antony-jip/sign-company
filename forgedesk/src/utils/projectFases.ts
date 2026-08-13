@@ -39,7 +39,3 @@ export function getFase(status: string): { label: string; percentage: number; co
   const key = status.toLowerCase().replace(/\s+/g, '_') as ProjectFase
   return PROJECT_FASES[key] ?? DEFAULT_FASE
 }
-
-export function getSpectrumGradient(): string {
-  return 'linear-gradient(90deg, #F15025 0%, #D4453A 18%, #9A4070 38%, #6A5A8A 50%, #3A6B8C 65%, #2D6B48 80%, #1A535C 100%)'
-}

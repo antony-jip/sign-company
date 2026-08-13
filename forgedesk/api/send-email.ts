@@ -243,7 +243,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body,
       html,
       attachments,
-      opvolging_id,
       scheduledAt,
       wacht_op_reactie = false,
       // Threading: meegegeven door de frontend bij reply/forward
@@ -257,7 +256,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body?: string
       html?: string
       attachments?: Array<{ filename: string; content?: string; encoding?: 'base64'; storagePath?: string; bucket?: string; cleanupAfter?: boolean; size?: number }>
-      opvolging_id?: string
       scheduledAt?: string
       wacht_op_reactie?: boolean
       in_reply_to?: string
@@ -532,30 +530,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           console.error(`[send-email] Storage cleanup mislukt voor bucket ${bucket}:`, err)
           Sentry.captureException(err, { tags: { phase: 'storage-cleanup', bucket } })
         })
-      }
-    }
-
-    // Trigger auto-opvolging task als opvolging_id meegegeven is
-    if (opvolging_id) {
-      try {
-        // Ownership-check vóór het triggeren: de opvolging moet van deze user
-        // zijn (service-role bypasst RLS, dus app-laag afdwingen).
-        const { data: opvolging } = await supabaseAdmin
-          .from('email_opvolgingen')
-          .select('id, user_id')
-          .eq('id', opvolging_id)
-          .maybeSingle()
-        if (!opvolging || opvolging.user_id !== user_id) {
-          console.warn('[send-email] Opvolging-trigger geweigerd: geen toegang tot opvolging', opvolging_id)
-          return res.status(200).json({ success: true, message: 'Email verzonden' })
-        }
-        const { tasks } = await import("@trigger.dev/sdk/v3")
-        await tasks.trigger("email-opvolging", { opvolgingId: opvolging_id })
-        console.log('[send-email] Auto-opvolging task getriggerd:', opvolging_id)
-      } catch (triggerErr) {
-        // Niet fataal — email is al verstuurd, log de fout en rapporteer naar Sentry
-        console.error('[send-email] Trigger.dev task starten mislukt:', triggerErr)
-        Sentry.captureException(triggerErr, { tags: { phase: 'trigger-dev' } })
       }
     }
 

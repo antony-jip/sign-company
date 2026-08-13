@@ -31,10 +31,14 @@
   ],
   "functions": {
     "api/cron-email-sync.ts": { "maxDuration": 60 },
+    "api/cron-mailsync-werker.ts": { "maxDuration": 60 },
     "api/inkoopfactuur-extract.ts": { "maxDuration": 300 },
     "api/offerte-uitschrijven.ts": { "maxDuration": 300 },
     "api/inkoopfactuur-sync.ts": { "maxDuration": 120 },
-    "api/billing-webhook.ts": { "maxDuration": 60 }
+    "api/billing-webhook.ts": { "maxDuration": 60 },
+    "api/exact-sync-factuur.ts": { "maxDuration": 300 },
+    "api/generate-signing-mockup.ts": { "maxDuration": 300 },
+    "api/org-export.ts": { "maxDuration": 120 }
   },
   "crons": [
     {
@@ -48,6 +52,10 @@
     {
       "path": "/api/cron-email-sync",
       "schedule": "*/3 * * * *"
+    },
+    {
+      "path": "/api/cron-mailsync-werker",
+      "schedule": "* * * * *"
     }
   ]
 }

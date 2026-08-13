@@ -21,6 +21,10 @@ function formatScheduledAt(iso: string): string {
 
 const STATUS_LABEL: Record<IngeplandBericht['status'], string> = {
   wachtend: 'Wachtend',
+  // De database kent deze stand sinds migratie 120, de UI niet. Een bericht dat
+  // erin blijft hangen (proces gestorven tussen claim en afronding) rendde
+  // daardoor zonder label en zonder annuleerknop: onzichtbaar vastgelopen.
+  verwerken: 'Bezig met versturen',
   verzonden: 'Verzonden',
   geannuleerd: 'Geannuleerd',
   mislukt: 'Mislukt',
@@ -95,7 +99,7 @@ export function IngeplandeBerichtenLijst() {
                 key={b.id}
                 className={cn(
                   'border border-border rounded-xl px-4 py-3 bg-white dark:bg-white/[0.04]',
-                  !isWachtend && 'opacity-60',
+                  !isWachtend && b.status !== 'verwerken' && 'opacity-60',
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -111,6 +115,10 @@ export function IngeplandeBerichtenLijst() {
                           b.status === 'verzonden' && 'bg-emerald-100 text-emerald-700',
                           b.status === 'geannuleerd' && 'bg-muted text-muted-foreground',
                           b.status === 'mislukt' && 'bg-red-100 text-red-700',
+                          // Amber, want dit is geen eindstand: de cron heeft hem
+                          // geclaimd en pakt alleen 'wachtend' op, dus blijft hij
+                          // hier hangen dan komt er niemand meer langs.
+                          b.status === 'verwerken' && 'bg-amber-100 text-amber-800',
                         )}>
                           {STATUS_LABEL[b.status]}
                         </span>

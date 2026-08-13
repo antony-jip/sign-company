@@ -9,17 +9,6 @@ import type { Project } from '@/types'
  * gok, want een bestand bij de verkeerde klant is erger dan een extra klik.
  */
 
-/** Mappen zoals de documentenmodule ze aanbiedt bij handmatige upload. */
-export const DOCUMENT_MAPPEN = [
-  'Ontwerpen',
-  'Technisch',
-  'Offertes',
-  'Contracten',
-  'Branding',
-  'Planning',
-  "Foto's",
-] as const
-
 /** Map waar mailbijlagen tot nu toe altijd in landden; blijft de terugval. */
 export const MAP_BIJLAGEN = 'Bijlagen'
 

@@ -14,6 +14,7 @@ import { logger } from '../../utils/logger'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { SubTabNav } from './SubTabNav'
 import { getBaseTemplate } from '@/services/emailTemplateService'
+import { DataExportKaart } from './DataExportKaart'
 import type { SubTab } from './settingsShared'
 
 const BEDRIJF_TABS: SubTab[] = [
@@ -357,6 +358,8 @@ export function BedrijfTab() {
           {saveButton}
         </div>
       )}
+
+      <DataExportKaart />
 
       <DemoDataSection />
     </>

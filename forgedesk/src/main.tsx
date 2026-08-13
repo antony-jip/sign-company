@@ -32,8 +32,25 @@ if (SENTRY_DSN) {
         delete event.user.email
       }
       const SENSITIVE_KEY = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+
+      // Tweede laag, op de WAARDE. Een filter op sleutelnaam raakt de URL nooit,
+      // en juist daar staat de token: de vijf publieke routes in App.tsx dragen
+      // hem in het pad. Stond een klant op /betalen/<token> toen het misging,
+      // dan ging die levende sleutel mee naar Sentry, en wie de issue kan lezen
+      // kan de factuur openen en een betaling starten.
+      //
+      // Zelfde les als in api/org-export.ts: een naamfilter mist per definitie
+      // de volgende plek waar een URL opduikt.
+      const CAPABILITY_URL = /\/(betalen|goedkeuring|offerte-bekijken|formulier|portaal)\/[A-Za-z0-9_-]{8,}/g
+      const anonimiseerUrl = (tekst: string) =>
+        tekst.replace(CAPABILITY_URL, (_m, route) => `/${route}/[Filtered]`)
+
       const scrub = (val: unknown, depth = 0): unknown => {
-        if (depth > 6 || val == null) return val
+        // Voorbij de diepte de ruwe waarde teruggeven laat het filter OPEN
+        // falen, precies op de plek waar iets ongefilterd langskomt.
+        if (depth > 6) return '[Filtered: te diep genest]'
+        if (val == null) return val
+        if (typeof val === 'string') return anonimiseerUrl(val)
         if (Array.isArray(val)) return val.map(v => scrub(v, depth + 1))
         if (typeof val === 'object') {
           const out: Record<string, unknown> = {}
@@ -44,6 +61,25 @@ if (SENTRY_DSN) {
         }
         return val
       }
+
+      // De drie plekken waar de URL zelf staat, en die de oude scrub niet zag.
+      if (event.request?.url) event.request.url = anonimiseerUrl(event.request.url)
+      if (event.request?.headers) {
+        const h = event.request.headers as Record<string, string>
+        for (const k of Object.keys(h)) {
+          if (typeof h[k] === 'string') h[k] = anonimiseerUrl(h[k])
+        }
+      }
+      // Breadcrumbs dragen navigatie- en fetch-URLs, dus daar staat de token
+      // ook in als de gebruiker de pagina heeft geopend vóór de fout.
+      if (event.breadcrumbs) {
+        event.breadcrumbs = event.breadcrumbs.map((b) => ({
+          ...b,
+          message: typeof b.message === 'string' ? anonimiseerUrl(b.message) : b.message,
+          data: b.data ? (scrub(b.data) as typeof b.data) : b.data,
+        }))
+      }
+      if (event.transaction) event.transaction = anonimiseerUrl(event.transaction)
       if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
       if (event.extra) event.extra = scrub(event.extra) as typeof event.extra
       if (event.contexts) event.contexts = scrub(event.contexts) as typeof event.contexts

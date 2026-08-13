@@ -5,11 +5,28 @@ import { Redis } from '@upstash/redis'
 import * as Sentry from '@sentry/node'
 
 if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
     tracesSampleRate: 0.1,
     sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
   })
 }
 
@@ -201,6 +218,18 @@ function kolomOntbreekt(fout: { code?: string }): boolean {
   return fout.code === '42703' || fout.code === 'PGRST204'
 }
 
+/**
+ * Een PO-nummer of projectaanduiding is kort. Wat langer is dan dit is geen
+ * kenmerk maar een stuk factuurtekst dat het model heeft meegesleept, en dat
+ * matcht straks toch niets; liever leeg dan vervuild.
+ */
+function korteTekst(waarde: unknown): string | null {
+  if (typeof waarde !== 'string') return null
+  const schoon = waarde.trim()
+  if (!schoon || schoon.length > 120) return null
+  return schoon
+}
+
 async function checkAIBudget(
   organisatieId: string,
   geschatteKosten: number
@@ -273,11 +302,15 @@ const SYSTEM_PROMPT = `Je bent een Nederlandse inkoopfactuur extractor. Analysee
       "regel_totaal": number
     }
   ],
+  "referentie_kenmerk": "string | null",
+  "vermoedelijk_project": "string | null",
   "vertrouwen": "hoog" | "midden" | "laag",
   "opmerkingen": ""
 }
 Als totaal niet matcht met subtotaal + btw: zet vertrouwen op "laag" en beschrijf in opmerkingen.
 Als geen factuurnummer vindbaar: null.
+referentie_kenmerk: het PO-, order- of referentienummer dat de klant aan de leverancier heeft opgegeven, zoals het op de factuur staat (velden als "Uw referentie", "PO-nummer", "Ordernummer", "Kenmerk", of een referentie in een regelomschrijving). Neem het over zoals het er staat, verzin niets. Niet het factuurnummer van de leverancier zelf. Geen enkele referentie op de factuur: null.
+vermoedelijk_project: de projectnaam of -aanduiding als die letterlijk op de factuur staat, bijvoorbeeld in een regelomschrijving of bij een leveradres. Alleen overnemen wat er staat, niet afleiden uit de leveranciersnaam of het soort werk. Niets vindbaar: null.
 Bedragen altijd als number, niet string met comma.`
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -452,24 +485,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`[extract] Parsed: leverancier=${parsed.leverancier_naam}, totaal=${parsed.totaal}`)
 
-    const { error: updateError } = await supabase
+    const kernVelden = {
+      leverancier_naam: parsed.leverancier_naam || '',
+      factuur_nummer: parsed.factuur_nummer || null,
+      factuur_datum: parsed.factuur_datum || null,
+      vervaldatum: parsed.vervaldatum || null,
+      subtotaal: parsed.subtotaal || 0,
+      btw_bedrag: parsed.btw_bedrag || 0,
+      totaal: parsed.totaal || 0,
+      valuta: parsed.valuta || 'EUR',
+      status: 'verwerkt',
+      extractie_vertrouwen: parsed.vertrouwen || 'laag',
+      extractie_opmerkingen: parsed.opmerkingen || null,
+      raw_extractie_json: parsed,
+      updated_at: new Date().toISOString(),
+    }
+
+    // Deze twee kolommen komen uit migratie 197. Zolang die niet gedraaid is,
+    // weigert PostgREST de hele update en zou een factuur onverwerkt blijven.
+    // Dan schrijven we de kernvelden alsnog weg; de ruwe waarden staan al in
+    // raw_extractie_json, dus na de migratie is er niets onherstelbaar kwijt.
+    const suggestieVelden = {
+      referentie_kenmerk: korteTekst(parsed.referentie_kenmerk),
+      vermoedelijk_project: korteTekst(parsed.vermoedelijk_project),
+    }
+
+    let { error: updateError } = await supabase
       .from('inkoopfacturen')
-      .update({
-        leverancier_naam: parsed.leverancier_naam || '',
-        factuur_nummer: parsed.factuur_nummer || null,
-        factuur_datum: parsed.factuur_datum || null,
-        vervaldatum: parsed.vervaldatum || null,
-        subtotaal: parsed.subtotaal || 0,
-        btw_bedrag: parsed.btw_bedrag || 0,
-        totaal: parsed.totaal || 0,
-        valuta: parsed.valuta || 'EUR',
-        status: 'verwerkt',
-        extractie_vertrouwen: parsed.vertrouwen || 'laag',
-        extractie_opmerkingen: parsed.opmerkingen || null,
-        raw_extractie_json: parsed,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ ...kernVelden, ...suggestieVelden })
       .eq('id', inkoopfactuur_id)
+
+    if (updateError && kolomOntbreekt(updateError)) {
+      console.warn('[extract] referentie_kenmerk/vermoedelijk_project niet opgeslagen; migratie 197 lijkt nog niet gedraaid')
+      ;({ error: updateError } = await supabase
+        .from('inkoopfacturen')
+        .update(kernVelden)
+        .eq('id', inkoopfactuur_id))
+    }
 
     if (updateError) {
       if (updateError.message.includes('duplicate key') || updateError.message.includes('unique constraint')) {

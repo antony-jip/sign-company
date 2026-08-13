@@ -88,7 +88,7 @@ async function loadAppSettingsOrgFirst(
       .select(columns)
       .eq('organisatie_id', orgId)
       .maybeSingle()
-    if (data) return data as Record<string, unknown>
+    if (data) return data as unknown as Record<string, unknown>
   }
   const { data } = await supabase
     .from('app_settings')
@@ -154,6 +154,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const mbRes = await fetch(`${MONEYBIRD_API_BASE}/administrations.json`, {
       headers: { Authorization: `Bearer ${token}` },
+      // Token-validatie tijdens het koppelen; de gebruiker wacht erop.
+      signal: AbortSignal.timeout(10_000),
     })
 
     if (mbRes.status === 401) {

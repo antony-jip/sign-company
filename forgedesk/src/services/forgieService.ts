@@ -92,25 +92,3 @@ export async function getForgieUsage(): Promise<ForgieUsage> {
 
   return response.json()
 }
-
-export async function isForgieConfigured(): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false
-  try {
-    const token = await getAuthToken()
-    const response = await fetch('/api/ai-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ action: 'get-usage' }),
-    })
-    if (!response.ok) {
-      const data: { configured?: boolean } = await response.json().catch(() => ({}))
-      if (data?.configured === false) return false
-    }
-    return true
-  } catch (err) {
-    return false
-  }
-}

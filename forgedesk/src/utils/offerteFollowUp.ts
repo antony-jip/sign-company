@@ -1,16 +1,5 @@
 import type { Offerte } from '@/types'
 
-export function getDagenOpen(offerte: Offerte): number {
-  const datum = offerte.verstuurd_op || offerte.created_at
-  if (!datum) return 0
-  return Math.floor((Date.now() - new Date(datum).getTime()) / (1000 * 60 * 60 * 24))
-}
-
-export function getDagenTotVerlopen(offerte: Offerte): number {
-  if (!offerte.geldig_tot) return 999
-  return Math.floor((new Date(offerte.geldig_tot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-}
-
 export function isFollowUpNodig(offerte: Offerte): boolean {
   if (offerte.status !== 'verzonden' && offerte.status !== 'bekeken') return false
 

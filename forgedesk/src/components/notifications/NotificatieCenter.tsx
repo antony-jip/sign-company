@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useId } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/utils/logger";
@@ -297,15 +297,28 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
   }, [laadNotificaties]);
 
   // Real-time Supabase subscription voor instant notificaties (gefilterd op user)
+  // Uniek per component-instantie. Dit component staat op DRIE plekken in de
+  // boom (TopNav, Header, EmailMobileTopBar), en staan er twee tegelijk
+  // gemount, dan vragen ze hetzelfde kanaal op. supabase.channel() geeft bij
+  // een bestaande topic hetzelfde object terug, dus de tweede krijgt een kanaal
+  // dat al ge-subscribed is en valt over "cannot add postgres_changes callbacks
+  // after subscribe()". Dat trad echt op, ook in een gebouwde versie.
+  //
+  // useId geeft een stabiele id per instantie; de dubbele punten die React
+  // erin zet horen niet in een kanaalnaam thuis.
+  const kanaalId = useId().replace(/[^a-zA-Z0-9]/g, '');
+
   useEffect(() => {
     if (!supabase || !user?.id) return;
 
     const userId = user.id;
 
-    const setupChannel = async () => {
-      const channel = supabase!
-        .channel(`notificaties-${userId}`)
-        .on(
+    // Bewust synchroon. Stond dit in een async functie met .then(), dan liep de
+    // cleanup (die synchroon draait) vóór het toekennen van de referentie: het
+    // kanaal werd dan niet opgeruimd en bleef achter.
+    const channel = supabase!
+      .channel(`notificaties-${userId}-${kanaalId}`)
+      .on(
           'postgres_changes',
           {
             event: 'INSERT',
@@ -332,19 +345,13 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
               // Negeer audio fouten
             }
           }
-        )
-        .subscribe();
-
-      return channel;
-    };
-
-    let channelRef: ReturnType<typeof supabase.channel> | undefined;
-    setupChannel().then((ch) => { channelRef = ch; });
+      )
+      .subscribe();
 
     return () => {
-      if (channelRef) supabase!.removeChannel(channelRef);
+      supabase!.removeChannel(channel);
     };
-  }, [user?.id]);
+  }, [user?.id, kanaalId]);
 
   useEffect(() => {
     function handleBuitenKlik(event: MouseEvent) {

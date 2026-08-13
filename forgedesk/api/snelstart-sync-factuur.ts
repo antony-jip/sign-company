@@ -18,11 +18,28 @@ import crypto from 'crypto'
 import * as Sentry from '@sentry/node'
 
 if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
     tracesSampleRate: 0,
     sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
   })
 }
 
@@ -88,7 +105,7 @@ async function loadAppSettingsOrgFirst(
       .select(columns)
       .eq('organisatie_id', orgId)
       .maybeSingle()
-    if (data) return data as Record<string, unknown>
+    if (data) return data as unknown as Record<string, unknown>
   }
   const { data } = await supabase
     .from('app_settings')
@@ -244,6 +261,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ grant_type: 'clientkey', clientkey: sleutel }).toString(),
+      // Token-endpoint is een kleine POST; hangt hij, dan is er geen budget
+      // meer voor de vier sync-calls die erna komen.
+      signal: AbortSignal.timeout(10_000),
     })
     if (!tokenRes.ok) {
       return res.status(401).json({ error: 'SnelStart koppelsleutel is niet meer geldig. Verbind opnieuw via Instellingen > Integraties.' })
@@ -274,7 +294,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : `Naam eq '${odataNaam}'`
     const lookupRes = await fetch(
       `${SNELSTART_API_BASE}/relaties?$filter=${encodeURIComponent(filter)}`,
-      { headers: apiHeaders },
+      // Read-only lookup: afbreken is veilig, er is nog niets geboekt.
+      { headers: apiHeaders, signal: AbortSignal.timeout(20_000) },
     )
     if (lookupRes.ok) {
       const kandidaten = await lookupRes.json() as Array<{ id: string; relatiecode?: number; naam?: string }>
@@ -297,7 +318,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // niet via ISO-codes. Soft-fail: zonder land geen vestigingsAdres.
       let landId: string | null = null
       try {
-        const landenRes = await fetch(`${SNELSTART_API_BASE}/landen`, { headers: apiHeaders })
+        // Soft-fail lookup in een eigen try/catch: een abort betekent alleen
+        // een relatie zonder adres, dus mag kort.
+        const landenRes = await fetch(`${SNELSTART_API_BASE}/landen`, { headers: apiHeaders, signal: AbortSignal.timeout(15_000) })
         if (landenRes.ok) {
           const landen = await landenRes.json() as Array<{ id: string; landcodeISO?: string; naam?: string }>
           // klanten.land is vrije tekst: match op ISO-code óf landnaam.
@@ -337,6 +360,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           telefoon: (klant?.telefoon as string | null) || undefined,
           btwNummer: (klant?.btw_nummer as string | null) || undefined,
         }),
+        // Schrijvende call: ruimer dan de lookups, want een abort laat in het
+        // ongewisse of de relatie toch is aangemaakt.
+        signal: AbortSignal.timeout(25_000),
       })
       if (!createRes.ok) {
         const body = await createRes.text()
@@ -418,6 +444,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })),
         btw: btwGroepen,
       }),
+      // De eigenlijke boeking: ruimste marge van alle calls hier, want een
+      // abort laat in het ongewisse of de verkoopboeking toch staat.
+      signal: AbortSignal.timeout(25_000),
     })
 
     if (!boekingRes.ok) {

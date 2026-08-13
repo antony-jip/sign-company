@@ -1,4 +1,5 @@
 import React, { Component, ReactNode } from 'react'
+import * as Sentry from '@sentry/react'
 import { AlertTriangle, RotateCcw } from 'lucide-react'
 import { logger } from '../../utils/logger'
 import { isChunkLoadError, probeerHerstelNaChunkFout } from '../../utils/chunkErrorHandler'
@@ -32,6 +33,20 @@ export class ErrorBoundary extends Component<Props, State> {
     // we geen foutscherm, want dat flikkert alleen maar voorbij.
     if (probeerHerstelNaChunkFout(error)) {
       this.setState({ herlaadt: true })
+    }
+
+    // Zonder deze melding bereikt een React-crash Sentry nooit: logger.error
+    // schrijft alleen naar de console, en die staat op het toestel van de
+    // gebruiker. Een wit scherm bij een klant was dus onzichtbaar tenzij hij
+    // zelf belde.
+    //
+    // Chunk-load-fouten gaan er bewust niet in. Die horen bij een verse deploy,
+    // lossen zich met een herlaadactie op, en zouden Sentry vullen met ruis die
+    // niets over de code zegt.
+    if (!isChunkLoadError(error)) {
+      Sentry.captureException(error, {
+        contexts: { react: { componentStack: errorInfo.componentStack } },
+      })
     }
   }
 

@@ -8,6 +8,343 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
+// ── GEDEELD-MET-API BEGIN ──────────────────────────────────────────────
+// Letterlijke kopie in api/cron-mailsync-werker.ts en api/fetch-emails.ts.
+// Bewust zonder imports, zodat het blok in een standalone api-bestand past.
+
+type FlagStand = 'aan' | 'uit' | 'onbekend'
+
+interface FeatureFlagRij {
+  naam: string
+  organisatie_id: string | null
+  aan: boolean
+}
+
+// Serverkant van migratie 200. Zelfde rangorde als src/lib/featureFlags.ts:
+// een globale false is een noodstop die geen org-rij kan overrulen, een
+// org-rij gaat vóór een globale true, en géén rij is 'onbekend'.
+function bepaalStand(
+  naam: string,
+  rijen: readonly FeatureFlagRij[],
+  organisatieId: string | null,
+): FlagStand {
+  const vanDezeFlag = rijen.filter((r) => r.naam === naam)
+  const globaal = vanDezeFlag.find((r) => r.organisatie_id == null)
+
+  if (globaal && !globaal.aan) return 'uit'
+
+  const perOrg = organisatieId
+    ? vanDezeFlag.find((r) => r.organisatie_id === organisatieId)
+    : undefined
+  if (perOrg) return perOrg.aan ? 'aan' : 'uit'
+
+  if (globaal) return 'aan'
+  return 'onbekend'
+}
+
+// Faalt dicht: alles wat geen expliciete 'aan' is houdt het nieuwe pad uit.
+function vlagStaatAan(
+  naam: string,
+  rijen: readonly FeatureFlagRij[],
+  organisatieId: string | null,
+): boolean {
+  return bepaalStand(naam, rijen, organisatieId) === 'aan'
+}
+
+// Faalt dicht op transportniveau: een queryfout of een ontbrekende tabel
+// levert nul rijen, dus staat geen enkele flag op 'aan'. De serverkant heeft
+// geen bestaand gedrag te beschermen — hier is stil niets doen het juiste.
+async function veiligeVlagRijen(
+  laad: () => Promise<FeatureFlagRij[]>,
+  onFout?: (fout: unknown) => void,
+): Promise<FeatureFlagRij[]> {
+  try {
+    return await laad()
+  } catch (fout) {
+    onFout?.(fout)
+    return []
+  }
+}
+
+type TaakStatus = 'wachtend' | 'verwerken' | 'gedaan' | 'mislukt'
+type FoutSoort = 'auth' | 'netwerk' | 'database' | 'onbekend'
+// 'uitstel' is geen fout: de tijd was op vóór het werk klaar was. Die mag het
+// foutbudget niet opmaken, anders belandt een grote mailbox die vier ronden
+// nodig heeft om bij te komen in de dodebrievenbus.
+type Aanleiding = FoutSoort | 'uitstel'
+
+// Lease van 90s met 60s marge voor de opruimer. De marge dekt het klokverschil
+// tussen de Vercel-runtime (die lease_tot berekent) en Postgres (dat now()
+// levert), en garandeert dat een nog levende functie — maxDuration 60 — nooit
+// onder zijn eigen taak wordt weggetrokken.
+const LEASE_MS = 90_000
+const LEASE_MARGE_MS = 60_000
+// Tempo van de terugkerende incrementele taak: gelijk aan de oude cron
+// (*/3 * * * *), zodat aanzetten geen tempoverandering is.
+const HERPLAN_MS = 180_000
+// Langer dan de [1, 5, 15] van ingeplande_berichten: daar wacht een mens op
+// een mail, hier niet, en een kapotte mailserver is in 15 minuten niet heel.
+// Zeven pogingen, samen ruim 10 uur.
+const RETRY_DELAYS_MIN = [1, 3, 10, 30, 60, 180, 360]
+// Plafond voor het uitstel dat géén fout is. Vangt de taak die binnen geen
+// enkel venster af kan; zonder plafond draait die eeuwig rond.
+const MAX_UITSTEL = 20
+
+function leaseGrens(nu: number): string {
+  return new Date(nu - LEASE_MARGE_MS).toISOString()
+}
+
+// Alleen de mailbox zelf is 'auth'. Die krijgt géén backoff maar meteen de
+// dodebrievenbus: een verkeerd wachtwoord elke drie minuten opnieuw bij Gmail
+// aanbieden is de manier om het account door Gmail geblokkeerd te krijgen.
+const AUTH_PATROON = /authenticationfailed|invalid credentials|auth(?:enticatie)?\s*(?:mislukt|geweigerd|failed)|wachtwoord|password/i
+
+// Serverconfiguratie, geen gebruikersfout. Deze twee kwamen eerst in
+// AUTH_PATROON terecht en gingen daarmee zonder backoff naar de dodebrievenbus.
+// Gevolg: een scheve EMAIL_ENCRYPTION_KEY na een deploy zette in één ronde ALLE
+// pilot-mailboxen permanent uit, en er is geen herstelpad in code. Ze horen bij
+// 'onbekend': backoff, en dus vanzelf herstel zodra de env-var goed staat.
+const CONFIG_PATROON = /encryption_key|geen email instellingen/i
+const NETWERK_PATROON = /timeout|timed out|etimedout|econnreset|econnrefused|enotfound|eai_again|socket|network|aborted|abort/i
+const DATABASE_PATROON = /\bupsert\b|postgrest|pgrst|does not exist|violates|constraint|database/i
+
+function classificeerFout(bericht: string): FoutSoort {
+  if (AUTH_PATROON.test(bericht)) return 'auth'
+  if (NETWERK_PATROON.test(bericht)) return 'netwerk'
+  if (DATABASE_PATROON.test(bericht)) return 'database'
+  return 'onbekend'
+}
+
+// De HTTP-antwoorden van /api/fetch-emails apart, want de tekst alleen is hier
+// misleidend. 401/403 betekent dat het cron-secret niet klopt: dat is een
+// configuratiefout van de hele deploy en niet van deze mailbox, dus die mag
+// niet elke taak in de dodebrievenbus duwen. 429 is de rate limit en dus
+// uitstel, geen fout.
+function classificeerHttp(status: number, tekst: string): Aanleiding {
+  if (status === 429) return 'uitstel'
+  // Vóór de 400-tak: fetch-emails geeft 400 bij een ontbrekende sleutel, en dat
+  // is een deployfout die vanzelf overgaat, geen verlopen app-password.
+  if (CONFIG_PATROON.test(tekst)) return 'onbekend'
+  if (status === 400) return classificeerFout(tekst)
+  if (status === 401 || status === 403) return 'onbekend'
+  if (status >= 500) return 'netwerk'
+  return classificeerFout(tekst)
+}
+
+interface TaakUitkomst {
+  status: Extract<TaakStatus, 'wachtend' | 'mislukt'>
+  retry_count: number
+  uitstel_count: number
+  fout_soort: FoutSoort | null
+  vertraging_ms: number
+}
+
+function bepaalFoutAfhandeling(
+  aanleiding: Aanleiding,
+  retryCount: number,
+  uitstelCount: number,
+): TaakUitkomst {
+  if (aanleiding === 'uitstel') {
+    const volgend = uitstelCount + 1
+    return {
+      status: volgend > MAX_UITSTEL ? 'mislukt' : 'wachtend',
+      retry_count: retryCount,
+      uitstel_count: volgend,
+      fout_soort: volgend > MAX_UITSTEL ? 'onbekend' : null,
+      vertraging_ms: 0,
+    }
+  }
+
+  if (aanleiding === 'auth') {
+    return {
+      status: 'mislukt',
+      retry_count: retryCount + 1,
+      uitstel_count: uitstelCount,
+      fout_soort: 'auth',
+      vertraging_ms: 0,
+    }
+  }
+
+  if (retryCount < RETRY_DELAYS_MIN.length) {
+    return {
+      status: 'wachtend',
+      retry_count: retryCount + 1,
+      uitstel_count: uitstelCount,
+      fout_soort: aanleiding,
+      vertraging_ms: RETRY_DELAYS_MIN[retryCount] * 60_000,
+    }
+  }
+
+  return {
+    status: 'mislukt',
+    retry_count: retryCount + 1,
+    uitstel_count: uitstelCount,
+    fout_soort: aanleiding,
+    vertraging_ms: 0,
+  }
+}
+
+// De payload van de claim. Apart van de uitvoering zodat hij te testen is:
+// api/* praat via supabase-js en PostgREST kan `now() + interval` niet in een
+// UPDATE-payload uitdrukken, dus lease_tot wordt hier berekend. geclaimd_op
+// blijft bewust óók een JS-tijd zodat beide velden uit dezelfde klok komen.
+function claimWaarden(runId: string, nu: number): Record<string, unknown> {
+  return {
+    status: 'verwerken',
+    geclaimd_op: new Date(nu).toISOString(),
+    geclaimd_door: runId,
+    lease_tot: new Date(nu + LEASE_MS).toISOString(),
+    updated_at: new Date(nu).toISOString(),
+  }
+}
+
+// Compare-and-swap: de uitvoerder MOET `status = 'wachtend'` in zijn WHERE
+// zetten en false teruggeven als de UPDATE nul rijen raakte. Zo verliest bij
+// twee gelijktijdige claims er precies één, en die slaat de taak over in
+// plaats van hem naast de winnaar te verwerken.
+type CasUitvoer = (
+  waarden: Record<string, unknown>,
+  verwachteStatus: TaakStatus,
+) => Promise<boolean>
+
+async function claimTaak(
+  runId: string,
+  nu: number,
+  cas: CasUitvoer,
+): Promise<Record<string, unknown> | null> {
+  const waarden = claimWaarden(runId, nu)
+  return (await cas(waarden, 'wachtend')) ? waarden : null
+}
+
+// Verlopen lease terugzetten. Verhoogt retry_count: zonder dat blijft een taak
+// die structureel de functietijd overschrijdt eeuwig rondgaan zonder ooit in
+// de dodebrievenbus te belanden.
+function opruimWaarden(nu: number, retryCount: number): Record<string, unknown> {
+  return {
+    status: 'wachtend',
+    retry_count: retryCount + 1,
+    fout_soort: 'onbekend',
+    foutmelding: 'lease verlopen: proces gestorven of functietijd op',
+    scheduled_at: new Date(nu).toISOString(),
+    geclaimd_op: null,
+    geclaimd_door: null,
+    lease_tot: null,
+    updated_at: new Date(nu).toISOString(),
+  }
+}
+
+// Ook de opruimer is een CAS, op `status = 'verwerken'`, zodat twee
+// gelijktijdige opruimers dezelfde taak niet twee keer terugzetten en
+// retry_count niet twee keer verhogen.
+async function opruimTaak(
+  nu: number,
+  retryCount: number,
+  cas: CasUitvoer,
+): Promise<Record<string, unknown> | null> {
+  const waarden = opruimWaarden(nu, retryCount)
+  return (await cas(waarden, 'verwerken')) ? waarden : null
+}
+
+// Terugkerende taak hergebruiken in plaats van 'gedaan' zetten en een nieuwe
+// inplannen. Zo blijft de coalescing-index betekenisvol (precies één rij per
+// mailbox, altijd) en blijft de tabel klein.
+function herplanWaarden(nu: number, duurMs: number | null): Record<string, unknown> {
+  return {
+    status: 'wachtend',
+    scheduled_at: new Date(nu + HERPLAN_MS).toISOString(),
+    retry_count: 0,
+    uitstel_count: 0,
+    fout_soort: null,
+    foutmelding: null,
+    gemeld_op: null,
+    geclaimd_op: null,
+    geclaimd_door: null,
+    lease_tot: null,
+    laatste_duur_ms: duurMs,
+    updated_at: new Date(nu).toISOString(),
+  }
+}
+
+// FNV-1a, 32 bits. Bewust geen crypto: dit blok moet zonder imports in een
+// standalone api-bestand passen. Er hangt geen beveiliging aan de waarde, hij
+// moet alleen deterministisch en kort zijn.
+function korteHash(tekst: string): string {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < tekst.length; i++) {
+    hash ^= tekst.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  return hash.toString(36)
+}
+
+// Mail zonder Message-ID dupliceert vandaag bij elke herhaalde ophaal: de
+// constraint is UNIQUE (user_id, message_id) zonder NULLS NOT DISTINCT, en
+// Postgres ziet twee NULL's als verschillend. Een id uit de IMAP-identiteit is
+// stabiel zolang UIDVALIDITY niet wisselt, dus dekt de bestaande constraint
+// daarna 100 procent van de rijen zonder tweede conflictdoel.
+//
+// Het domein maakt later leesbaar dat de waarde niet van de afzender komt. Een
+// gesynthetiseerd id matcht nooit een In-Reply-To, en dat is correct: naar een
+// bericht zonder Message-ID kan niemand verwijzen.
+function synthetiseerMessageId(
+  uid: number,
+  uidvalidity: number,
+  imapFolder: string,
+): string {
+  return `<uid-${uid}.${uidvalidity}.${korteHash(imapFolder)}@sync.doen.local>`
+}
+
+function messageIdVoorRij(
+  headerMessageId: string | null | undefined,
+  uid: number | null | undefined,
+  uidvalidity: number,
+  imapFolder: string,
+): string | null {
+  if (headerMessageId) return headerMessageId
+  // Zonder UID is er geen stabiele identiteit; dan liever NULL dan een id dat
+  // bij de volgende ronde anders is en alsnog dupliceert.
+  if (!uid) return null
+  return synthetiseerMessageId(uid, uidvalidity, imapFolder)
+}
+
+// ── GEDEELD-MET-API EINDE ──────────────────────────────────────────────
+
+const VLAG_QUEUE = 'mailsync_queue'
+// Kort in cache per invocatie, niet per request: dit is de warmste route van
+// de app en een vlagquery per verversing is te duur.
+const VLAG_CACHE_MS = 30_000
+let vlagCache: { op: number; rijen: FeatureFlagRij[] } | null = null
+
+/**
+ * Serverkant van het feature-flag-mechanisme uit migratie 200. Zie de
+ * uitgebreide toelichting in api/cron-mailsync-werker.ts; de resolutie staat in
+ * het gedeelde blok hierboven, want api/* mag niets uit src/ importeren.
+ *
+ * Faalt dicht: elke fout, en ook een ontbrekende feature_flags-tabel, levert
+ * nul rijen en dus 'onbekend'. Deze functie hangt in het pad waarlangs de mail
+ * van een echt bedrijf binnenkomt, dus hij mag nooit gooien.
+ */
+async function queueVlagAan(organisatieId: string | null): Promise<boolean> {
+  const nu = Date.now()
+  let rijen = vlagCache && nu - vlagCache.op < VLAG_CACHE_MS ? vlagCache.rijen : null
+  if (!rijen) {
+    rijen = await veiligeVlagRijen(
+      async () => {
+        const { data, error } = await supabaseAdmin
+          .from('feature_flags')
+          .select('naam, organisatie_id, aan')
+          .eq('naam', VLAG_QUEUE)
+        if (error) throw new Error(error.message)
+        return (data ?? []) as FeatureFlagRij[]
+      },
+      (fout) => console.warn('[fetch-emails] feature_flags niet leesbaar, mailsync_queue blijft uit:',
+        fout instanceof Error ? fout.message : fout),
+    )
+    vlagCache = { op: nu, rijen }
+  }
+  return vlagStaatAan(VLAG_QUEUE, rijen, organisatieId)
+}
+
 async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
   const { data } = await supabaseAdmin.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
   return data === true
@@ -201,11 +538,40 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
 
 export const config = { maxDuration: 60 }
 
+/**
+ * "We hebben gekeken" vastleggen, zonder de waterlijn aan te raken.
+ *
+ * De cron sorteert op deze kolom en pakt de acht oudste. Tikt een pad hem niet
+ * aan, dan blijft dat account permanent vooraan en verdringt het de mailboxen
+ * die wel post krijgen. Dat gold aanvankelijk voor de stille mailbox, en het
+ * geldt net zo voor de kapotte: een fout app-password of een onbereikbare
+ * server bezet anders eeuwig een plek.
+ *
+ * Bewust een partiele update en geen upsert: bestaat de rij niet, dan is dit een
+ * no-op en dat is juist. Een nieuwe rij aanmaken zou een waterlijn van 0
+ * suggereren op een mailbox die nooit gelezen is.
+ */
+async function tikSyncTijdstip(user_id: string, mapValue: string): Promise<void> {
+  try {
+    await supabaseAdmin
+      .from('email_sync_state')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('user_id', user_id)
+      .eq('folder', mapValue)
+  } catch {
+    // Mag de sync nooit laten falen: dit is administratie, geen mail.
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   let client: ImapFlow | null = null
+  // Buiten de try, zodat de catch nog weet welke folder we probeerden. mapValue
+  // zelf staat binnen de try en is daar niet in scope.
+  let mapValueVoorTik: string | null = null
+  let userIdVoorTik: string | null = null
 
   try {
     // `snel`: alleen mail ophalen en wegschrijven, zonder de nabewerking
@@ -217,6 +583,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { folder = 'INBOX', limit = 100, snel = false } = req.body
 
     const user_id = await verifyUser(req)
+    userIdVoorTik = user_id
 
     // E-mails horen org-gestempeld de tabel in: de nachtploeg-briefing en
     // andere org-brede lezers filteren op organisatie_id, en RLS-backfills
@@ -227,6 +594,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', user_id)
       .maybeSingle()
     const mailOrgId = (orgProfiel?.organisatie_id as string | null) ?? null
+
+    // Staat de wachtrij aan, dan krijgt mail zonder Message-ID er een uit zijn
+    // IMAP-identiteit. Zie messageIdVoorRij hierboven en het gebruik verderop;
+    // zonder vlag blijft de kolom NULL, precies zoals vandaag.
+    const queueVlag = await queueVlagAan(mailOrgId)
 
     // IMAP-verbindingen zijn duur — begrens per gebruiker
     if (await isRateLimited(`fetch-emails:${user_id}`, 30, 60)) {
@@ -252,6 +624,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const mapValue = folder.toUpperCase() === 'INBOX' ? 'inbox' : folder.toLowerCase()
+    mapValueVoorTik = mapValue
 
     // ─── Connect to IMAP ───
     client = new ImapFlow({
@@ -273,6 +646,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const total = mailbox.exists
 
     if (total === 0) {
+      // Een lege mailbox is wel bekeken, dus hij hoort achteraan in de wachtrij.
+      await tikSyncTijdstip(user_id, mapValue)
       await client.logout()
       return res.status(200).json({ synced: 0, total: 0, fetched: 0 })
     }
@@ -383,7 +758,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         user_id,
         organisatie_id: mailOrgId,
         uid: message.uid,
-        message_id: messageId || null,
+        // Zonder vlag letterlijk het oude gedrag: `messageId || null`. Met vlag
+        // vult messageIdVoorRij het NULL-geval met een deterministisch id, zodat
+        // UNIQUE (user_id, message_id) ook die mail dedupliceert — nu levert elke
+        // herhaalde ophaal daarvan een nieuwe rij op (migratie 038 regel 9-10).
+        message_id: queueVlag
+          ? messageIdVoorRij(messageId, message.uid, uidValidity, imapFolder)
+          : (messageId || null),
         in_reply_to: inReplyTo,
         imap_folder: imapFolder,
         map: mapValue,
@@ -594,6 +975,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (stateErr) {
         console.warn('[fetch-emails] sync-state opslaan mislukt (migratie 131 gedraaid?):', stateErr.message)
       }
+    } else if (errors.length === 0 && stateBruikbaar) {
+      // Foutloze ronde zonder nieuwe mail. De waterlijn mag hier NIET opschuiven
+      // (dat is de voorwaarde hierboven), maar "we hebben gekeken" moet wel
+      // vastgelegd worden, en dat stond op dezelfde kolom.
+      //
+      // Zonder dit verhongert de cron precies de actieve mailboxen:
+      // cron-email-sync.ts:139 sorteert op updated_at, oudste eerst, en pakt er
+      // acht. Schrijft een stille mailbox die kolom nooit, dan blijft hij
+      // permanent vooraan staan en komen de mailboxen waar wél mail binnenkomt
+      // achteraan. De sortering betekende dus "langst geen mail ontvangen
+      // eerst" in plaats van "langst niet gesynct eerst", wat de comment daar
+      // belooft.
+      //
+      // Een partiële update, dus PostgREST schrijft uitsluitend updated_at. Niet
+      // een upsert met last_seen_uid erbij: die waarde komt uit een read van
+      // eerder in deze functie, en terugschrijven zou precies de reset-race
+      // introduceren die dit blok moet vermijden.
+      const { error: tikErr } = await supabaseAdmin
+        .from('email_sync_state')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('user_id', user_id)
+        .eq('folder', mapValue)
+      if (tikErr) {
+        console.warn('[fetch-emails] sync-tijdstip bijwerken mislukt:', tikErr.message)
+      }
     }
 
     // ─── Sales Inbox auto-match v2 ───
@@ -781,6 +1187,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ synced: 0, total: 0, error: msg })
     }
     console.error('[fetch-emails] Fatal error:', error)
+    // Ook een mislukte poging is een poging. Zonder deze tik bezet een account
+    // met een verlopen app-password of een onbereikbare server voor altijd een
+    // van de acht plekken per cron-ronde.
+    if (userIdVoorTik && mapValueVoorTik) await tikSyncTijdstip(userIdVoorTik, mapValueVoorTik)
     return res.status(500).json({ synced: 0, total: 0, error: msg })
   } finally {
     // Ensure IMAP connection is always closed

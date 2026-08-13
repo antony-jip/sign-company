@@ -7,5 +7,3 @@ function vibrate(pattern: number | number[]): void {
 
 export const hapticLight = () => vibrate(8)
 export const hapticMedium = () => vibrate(14)
-export const hapticSuccess = () => vibrate([10, 40, 12])
-export const hapticWarning = () => vibrate([20, 60, 20])

@@ -19,21 +19,6 @@ export async function getDocumenten(): Promise<Document[]> {
   return getLocalData<Document>('documenten')
 }
 
-export async function getDocument(id: string): Promise<Document | null> {
-  assertId(id)
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('documenten')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
-    if (error) throw error
-    return data
-  }
-  const documenten = getLocalData<Document>('documenten')
-  return documenten.find((d) => d.id === id) || null
-}
-
 export async function createDocument(document: Omit<Document, 'id' | 'created_at' | 'updated_at'>): Promise<Document> {
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()
@@ -55,26 +40,6 @@ export async function createDocument(document: Omit<Document, 'id' | 'created_at
   documenten.push(newDoc)
   setLocalData('documenten', documenten)
   return newDoc
-}
-
-export async function updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
-  assertId(id)
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('documenten')
-      .update({ ...updates, updated_at: now() })
-      .eq('id', id)
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
-  const documenten = getLocalData<Document>('documenten')
-  const index = documenten.findIndex((d) => d.id === id)
-  if (index === -1) throw new Error('Document niet gevonden')
-  documenten[index] = { ...documenten[index], ...updates, updated_at: now() }
-  setLocalData('documenten', documenten)
-  return documenten[index]
 }
 
 export async function deleteDocument(id: string): Promise<void> {

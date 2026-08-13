@@ -45,21 +45,6 @@ export async function setBackfillTarget(target: BackfillTarget): Promise<void> {
 
 // ============ EMAIL CACHING ============
 
-export async function cacheEmailsToSupabase(
-  _userId: string,
-  _emails: unknown[],
-  _folder: string
-): Promise<void> {
-  // email cache tabel bestaat nog niet — no-op
-}
-
-export async function getCachedEmails(
-  _userId: string,
-  _folder: string
-): Promise<Email[]> {
-  return []
-}
-
 // ============ EMAILS ============
 
 // Lijst-kolommen voor de inbox-rendering. body_text wordt server-side
@@ -277,28 +262,6 @@ export async function getEmailsMetAdres(adres: string, limit = 20): Promise<Emai
     .slice(0, limit)
 }
 
-export async function createEmail(email: Omit<Email, 'id' | 'created_at'>): Promise<Email> {
-  if (isSupabaseConfigured() && supabase) {
-    const _orgId = await getOrgId()
-    const { data, error } = await supabase
-      .from('emails')
-      .insert({ ...await withUserId(email), organisatie_id: _orgId })
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
-  const emails = getLocalData<Email>('emails')
-  const newEmail: Email = {
-    ...email,
-    id: generateId(),
-    created_at: now(),
-  } as Email
-  emails.push(newEmail)
-  setLocalData('emails', emails)
-  return newEmail
-}
-
 export async function updateEmail(id: string, updates: Partial<Email>): Promise<Email> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
@@ -342,48 +305,6 @@ export async function deleteEmail(id: string): Promise<void> {
 }
 
 // ============ GEDEELDE INBOX (Tier 3 Feature 3) ============
-
-export async function getGedeeldeEmails(limit = 200): Promise<Email[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('emails')
-      .select('id, user_id, from_address, from_name, van, aan, to_addresses, onderwerp, datum, gelezen, bijlagen, has_attachments, inbox_type, toegewezen_aan, created_at')
-      .eq('inbox_type', 'gedeeld')
-      .order('datum', { ascending: false })
-      .limit(limit)
-    if (error) throw error
-    return (data || []) as unknown as Email[]
-  }
-  return getLocalData<Email>('emails').filter((e) => e.inbox_type === 'gedeeld')
-}
-
-export async function getGedeeldeEmailsByToewijzing(medewerkerId: string): Promise<Email[]> {
-  assertId(medewerkerId, 'medewerker_id')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('emails').select('*').eq('inbox_type', 'gedeeld').eq('toegewezen_aan', medewerkerId).order('datum', { ascending: false })
-    if (error) throw error
-    return data || []
-  }
-  return getLocalData<Email>('emails').filter((e) => e.inbox_type === 'gedeeld' && e.toegewezen_aan === medewerkerId)
-}
-
-export async function updateEmailToewijzing(emailId: string, medewerkerId: string): Promise<Email> {
-  assertId(emailId, 'email_id')
-  return updateEmail(emailId, { toegewezen_aan: medewerkerId })
-}
-
-export async function updateEmailTicketStatus(emailId: string, ticketStatus: Email['ticket_status']): Promise<Email> {
-  assertId(emailId, 'email_id')
-  return updateEmail(emailId, { ticket_status: ticketStatus })
-}
-
-export async function addInterneNotitie(emailId: string, notitie: InternEmailNotitie): Promise<Email> {
-  assertId(emailId, 'email_id')
-  const email = await getEmail(emailId)
-  if (!email) throw new Error('Email niet gevonden')
-  const huidigeNotities = email.interne_notities || []
-  return updateEmail(emailId, { interne_notities: [...huidigeNotities, notitie] })
-}
 
 // ============ SALES INBOX v1 ============
 // UX-laag op outbound mail. Queries draaien onder anon-key; RLS scope't
@@ -500,18 +421,6 @@ export async function terugZettenNaarWacht(outboundId: string, inkomendeMailId: 
     })
     .eq('id', outboundId)
   if (error) throw error
-}
-
-// ── Email auto-opvolging ──
-export async function createEmailOpvolging(opvolging: Omit<import('@/types').EmailOpvolging, 'id' | 'created_at'>): Promise<import('@/types').EmailOpvolging> {
-  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
-  const { data, error } = await supabase
-    .from('email_opvolgingen')
-    .insert(opvolging)
-    .select()
-    .single()
-  if (error) throw error
-  return data
 }
 
 // ── Ingeplande berichten ──

@@ -46,7 +46,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const response = await fetch(
       `https://api.mollie.com/v2/customers/${org.mollie_customer_id}/subscriptions/${org.mollie_subscription_id}`,
-      { headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` } }
+      // Read-only weergave-call. Een abort landt in de catch onderaan (500),
+      // wat beter is dan de functieduur volmaken op een hangende Mollie.
+      { headers: { 'Authorization': `Bearer ${MOLLIE_API_KEY}` }, signal: AbortSignal.timeout(15_000) }
     )
 
     if (!response.ok) {

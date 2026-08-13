@@ -1,17 +1,24 @@
 import {
   supabase, isSupabaseConfigured,
   assertId, getLocalData, setLocalData, generateId, now,
-  withUserId, getOrgId, sanitizeDates, round2,
+  withUserId, getOrgId, sanitizeDates, round2, fetchAllPages,
 } from './supabaseHelpers'
 import type { Deal, DealActiviteit, LeadFormulier, LeadInzending, InkoopOfferte, InkoopRegel } from '@/types'
 
 // ============ DEALS / SALES PIPELINE (Tier 3 Feature 1) ============
 
-export async function getDeals(limit = 500): Promise<Deal[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('deals').select('*').order('updated_at', { ascending: false }).limit(limit)
-    if (error) throw error
-    return data || []
+// De forecast telt pipeline-waarde over álle open deals op. Met een vaste
+// .limit(500) rekende die som stil over de eerste 500 rijen.
+export async function getDeals(limit = 50000): Promise<Deal[]> {
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<Deal>((van, tot) =>
+      sb
+        .from('deals')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
   }
   return getLocalData<Deal>('deals')
 }
@@ -34,25 +41,6 @@ export async function getDealsByKlant(klantId: string): Promise<Deal[]> {
     return data || []
   }
   return getLocalData<Deal>('deals').filter((d) => d.klant_id === klantId)
-}
-
-export async function getDealsByFase(fase: string): Promise<Deal[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('deals').select('*').eq('fase', fase)
-    if (error) throw error
-    return data || []
-  }
-  return getLocalData<Deal>('deals').filter((d) => d.fase === fase)
-}
-
-export async function getDealsByMedewerker(medewerkerId: string): Promise<Deal[]> {
-  assertId(medewerkerId, 'medewerker_id')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('deals').select('*').eq('medewerker_id', medewerkerId)
-    if (error) throw error
-    return data || []
-  }
-  return getLocalData<Deal>('deals').filter((d) => d.medewerker_id === medewerkerId)
 }
 
 export async function createDeal(data: Omit<Deal, 'id' | 'created_at' | 'updated_at'>): Promise<Deal> {
@@ -118,17 +106,6 @@ export async function createDealActiviteit(data: Omit<DealActiviteit, 'id' | 'cr
   items.unshift(newItem)
   setLocalData('deal_activiteiten', items)
   return newItem
-}
-
-export async function deleteDealActiviteit(id: string): Promise<void> {
-  assertId(id)
-  if (isSupabaseConfigured() && supabase) {
-    const { error } = await supabase.from('deal_activiteiten').delete().eq('id', id)
-    if (error) throw error
-    return
-  }
-  const items = getLocalData<DealActiviteit>('deal_activiteiten')
-  setLocalData('deal_activiteiten', items.filter((a) => a.id !== id))
 }
 
 // ============ LEAD CAPTURE (Tier 3 Feature 2) ============
@@ -208,16 +185,6 @@ export async function deleteLeadFormulier(id: string): Promise<void> {
 
 // Lead Inzendingen
 
-export async function getLeadInzendingen(formulierId: string): Promise<LeadInzending[]> {
-  assertId(formulierId, 'formulier_id')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('lead_inzendingen').select('*').eq('formulier_id', formulierId).order('created_at', { ascending: false })
-    if (error) throw error
-    return data || []
-  }
-  return getLocalData<LeadInzending>('lead_inzendingen').filter((i) => i.formulier_id === formulierId)
-}
-
 export async function getAllLeadInzendingen(): Promise<LeadInzending[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('lead_inzendingen').select('*').order('created_at', { ascending: false })
@@ -225,15 +192,6 @@ export async function getAllLeadInzendingen(): Promise<LeadInzending[]> {
     return data || []
   }
   return getLocalData<LeadInzending>('lead_inzendingen')
-}
-
-export async function getLeadInzendingenNieuw(): Promise<LeadInzending[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('lead_inzendingen').select('*').eq('status', 'nieuw').order('created_at', { ascending: false })
-    if (error) throw error
-    return data || []
-  }
-  return getLocalData<LeadInzending>('lead_inzendingen').filter((i) => i.status === 'nieuw')
 }
 
 export async function createLeadInzending(data: Omit<LeadInzending, 'id' | 'created_at'>): Promise<LeadInzending> {
@@ -266,16 +224,18 @@ export async function updateLeadInzending(id: string, updates: Partial<LeadInzen
 
 // ============ INKOOP OFFERTES ============
 
-export async function getInkoopOffertes(user_id: string): Promise<InkoopOfferte[]> {
+export async function getInkoopOffertes(user_id: string, limit = 50000): Promise<InkoopOfferte[]> {
   assertId(user_id, 'user_id')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('inkoop_offertes')
-      .select('*, regels:inkoop_regels(*)')
-      .eq('user_id', user_id)
-      .order('created_at', { ascending: false })
-    if (error) throw error
-    return data || []
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<InkoopOfferte>((van, tot) =>
+      sb
+        .from('inkoop_offertes')
+        .select('*, regels:inkoop_regels(*)')
+        .eq('user_id', user_id)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot), limit)
   }
   const offertes = getLocalData<InkoopOfferte>('inkoop_offertes')
   const regels = getLocalData<InkoopRegel>('inkoop_regels')

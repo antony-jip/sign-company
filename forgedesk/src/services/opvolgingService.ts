@@ -121,14 +121,3 @@ export async function ensureDefaultOpvolgSchema(organisatieId: string): Promise<
   const full = await getDefaultOpvolgSchema(organisatieId)
   return full || schema
 }
-
-export async function getOpvolgLog(offerteId: string): Promise<OpvolgLogEntry[]> {
-  if (!isSupabaseConfigured() || !supabase) return []
-  const { data, error } = await supabase
-    .from('offerte_opvolg_log')
-    .select('*')
-    .eq('offerte_id', offerteId)
-    .order('created_at', { ascending: true })
-  if (error) throw error
-  return (data || []) as OpvolgLogEntry[]
-}

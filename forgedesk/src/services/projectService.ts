@@ -315,21 +315,6 @@ export async function getTaken(limit = 50000): Promise<Taak[]> {
   return getLocalData<Taak>('taken')
 }
 
-export async function getTaak(id: string): Promise<Taak | null> {
-  assertId(id)
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('taken')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
-    if (error) throw error
-    return data
-  }
-  const taken = getLocalData<Taak>('taken')
-  return taken.find((t) => t.id === id) || null
-}
-
 export async function getTakenByProject(projectId: string): Promise<Taak[]> {
   assertId(projectId, 'project_id')
   if (isSupabaseConfigured() && supabase) {
@@ -512,16 +497,6 @@ export async function getProjectToewijzingen(projectId: string): Promise<Project
     return data || []
   }
   return getLocalData<ProjectToewijzing>('project_toewijzingen').filter((t) => t.project_id === projectId)
-}
-
-export async function getProjectToewijzingenVoorMedewerker(medewerkerId: string): Promise<ProjectToewijzing[]> {
-  assertId(medewerkerId, 'medewerker_id')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('project_toewijzingen').select('*').eq('medewerker_id', medewerkerId)
-    if (error) throw error
-    return data || []
-  }
-  return getLocalData<ProjectToewijzing>('project_toewijzingen').filter((t) => t.medewerker_id === medewerkerId)
 }
 
 export async function createProjectToewijzing(toewijzing: Omit<ProjectToewijzing, 'id' | 'created_at'>): Promise<ProjectToewijzing> {

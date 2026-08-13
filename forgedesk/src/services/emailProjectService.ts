@@ -5,15 +5,6 @@ import type { Project } from '@/types'
 // Koppeling tussen één email-thread en één project (sprint mail-koppeling).
 // RLS doet de organisatie-scope, geen extra filters nodig in queries.
 
-export interface EmailProjectKoppeling {
-  id: string
-  organisatie_id: string
-  thread_id: string
-  project_id: string
-  gekoppeld_door: string | null
-  gekoppeld_op: string
-}
-
 /** Welk project hangt aan deze thread? (null als geen koppeling) */
 export async function getProjectVoorThread(threadId: string): Promise<{ project: Project; gekoppeld_op: string } | null> {
   if (!threadId || !isSupabaseConfigured() || !supabase) return null

@@ -24,10 +24,8 @@ import {
   PRIMAIRE_LABELS, MOBIELE_NAV_LABELS, normaliseerMenuVoorkeur,
   type NavItem,
 } from '@/lib/navigatie'
-
-// Dashboard staat los; de modules komen uit de gedeelde navigatiebron zodat
-// zijbalk en topbalk dezelfde iconen, kleuren en paden gebruiken.
-const navItems: NavItem[] = [DASHBOARD_ITEM, ...ALLE_MODULES]
+import { useFeatureFlags } from '@/contexts/FeatureFlagsContext'
+import { zonderUitgezetteModules } from '@/lib/featureFlags'
 
 const quickAddItems = [
   { label: 'Nieuw Project', icon: FolderKanban, path: '/projecten/nieuw', color: '#7EB5A6' },
@@ -59,6 +57,14 @@ export function TopNav() {
 
   // Maatje is een buitendienst-feature: alleen op mobiel tonen.
   const isMobieleNav = useMediaQuery('(max-width: 1023px)')
+
+  // Dashboard staat los; de modules komen uit de gedeelde navigatiebron zodat
+  // zijbalk en topbalk dezelfde iconen, kleuren en paden gebruiken. Modules
+  // achter een uitgezette feature-flag vallen hier al weg, ook uit "Overig".
+  const { staatUit } = useFeatureFlags()
+  const beschikbareModules = useMemo(() => zonderUitgezetteModules(ALLE_MODULES, staatUit), [staatUit])
+  const navItems = useMemo<NavItem[]>(() => [DASHBOARD_ITEM, ...beschikbareModules], [beschikbareModules])
+
   const visibleItems = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
     const heeftVoorkeur = Array.isArray(sidebarItems) && sidebarItems.length > 0
@@ -70,7 +76,7 @@ export function TopNav() {
       if (!heeftVoorkeur) return true
       return normalized.includes(item.label) || item.label === 'Dashboard'
     })
-  }, [settings?.sidebar_items, isMobieleNav])
+  }, [navItems, settings?.sidebar_items, isMobieleNav])
 
   // Splits de zichtbare modules in een vaste primaire set + een "Overig"-rest.
   // Primair volgt de PRIMAIRE_LABELS-volgorde; Overig houdt de menu-volgorde aan.
@@ -89,8 +95,8 @@ export function TopNav() {
   const verborgenItems = useMemo(() => {
     if (isMobieleNav) return []
     const zichtbaar = new Set(visibleItems.map((i) => i.label))
-    return ALLE_MODULES.filter((i) => !zichtbaar.has(i.label))
-  }, [visibleItems, isMobieleNav])
+    return beschikbareModules.filter((i) => !zichtbaar.has(i.label))
+  }, [beschikbareModules, visibleItems, isMobieleNav])
 
   const overigActive = [...overigItems, ...verborgenItems].some((i) => location.pathname.startsWith(i.path))
 

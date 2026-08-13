@@ -68,7 +68,7 @@ async function loadAppSettingsOrgFirst(
       .select(columns)
       .eq('organisatie_id', orgId)
       .maybeSingle()
-    if (data) return data as Record<string, unknown>
+    if (data) return data as unknown as Record<string, unknown>
   }
   const { data } = await supabase
     .from('app_settings')
@@ -110,6 +110,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const mbRes = await fetch(`${MONEYBIRD_API_BASE}/${administratieId}/ledger_accounts.json`, {
       headers: { Authorization: `Bearer ${token}` },
+      // Read-only lijst uit een boekhoudpakket; 20s is ruim.
+      signal: AbortSignal.timeout(20_000),
     })
 
     if (mbRes.status === 401) {

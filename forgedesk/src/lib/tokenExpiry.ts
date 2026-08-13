@@ -15,7 +15,3 @@ export function offerteTokenExpiry(): string {
 export function factuurBetaalTokenExpiry(): string {
   return daysFromNow(TOKEN_TTL_DAYS.FACTUUR_BETAAL)
 }
-
-export function goedkeuringTokenExpiry(): string {
-  return daysFromNow(TOKEN_TTL_DAYS.GOEDKEURING)
-}
