@@ -42,19 +42,20 @@ function sortKey(deadline?: string): number {
 interface TasksDayTabProps {
   taken: Taak[]
   myName: string
+  myId?: string | null
   selectedDate: Date
   setSelectedDate: (d: Date | ((prev: Date) => Date)) => void
   toggleTask: (t: Taak) => void
   loading: boolean
 }
 
-export function TasksDayTab({ taken, myName, selectedDate, setSelectedDate, toggleTask, loading }: TasksDayTabProps) {
+export function TasksDayTab({ taken, myName, myId, selectedDate, setSelectedDate, toggleTask, loading }: TasksDayTabProps) {
   const tasksForDay = useMemo(() => {
     return taken
-      .filter((t) => t.toegewezen_aan === myName)
+      .filter((t) => (t.toegewezen_aan_id && myId ? t.toegewezen_aan_id === myId : t.toegewezen_aan === myName))
       .filter((t) => deadlineMatchesDate(t.deadline, selectedDate))
       .sort((a, b) => sortKey(a.deadline) - sortKey(b.deadline))
-  }, [taken, myName, selectedDate])
+  }, [taken, myName, myId, selectedDate])
 
   const openCount = tasksForDay.filter((t) => t.status !== 'klaar').length
   const isToday = startOfDay(selectedDate).getTime() === startOfDay(new Date()).getTime()

@@ -97,6 +97,7 @@ export function TasksLayoutMobile() {
         <TasksDayTab
           taken={taken}
           myName={myName}
+          myId={currentMedewerker?.id ?? null}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           toggleTask={toggleTask}
@@ -106,6 +107,7 @@ export function TasksLayoutMobile() {
         <TasksMonthTab
           taken={taken}
           myName={myName}
+          myId={currentMedewerker?.id ?? null}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           setActiveTab={setActiveTab}
