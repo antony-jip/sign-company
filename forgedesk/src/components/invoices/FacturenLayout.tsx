@@ -115,6 +115,7 @@ import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from 
 import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 import { berekenDagenOpen, getAgingColor, getAgingBgColor } from '@/utils/spectrumUtils'
 import { useTrialGuard } from '@/hooks/useTrialGuard'
+import { useStilleRefresh } from '@/hooks/useStilleRefresh'
 import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 import { confirm } from '@/components/shared/ConfirmDialog'
 
@@ -423,6 +424,26 @@ export function FacturenLayout() {
     loadData()
     return () => { cancelled = true }
   }, [])
+
+  // Stille verversing van de primaire lijsten zodat collega's elkaars
+  // facturen en statuswijzigingen zien; nooit terwijl hier iets openstaat.
+  const stilVerversen = useCallback(async () => {
+    const [facturenData, klantenData, offertesData] = await Promise.all([
+      fetchQuery('facturen', getFacturen).catch(() => null),
+      fetchQuery('klanten', getKlanten).catch(() => null),
+      fetchQuery('offertes', getOffertes).catch(() => null),
+    ])
+    if (facturenData) setFacturen(facturenData)
+    if (klantenData) setKlanten(klantenData)
+    if (offertesData) setOffertes(offertesData)
+  }, [])
+  useStilleRefresh({
+    verversen: stilVerversen,
+    magVerversen: () =>
+      !isSaving && !createDialogOpen && !editingFactuur && !offerteDialogOpen &&
+      !herinneringDialogOpen && !creditnotaDialogOpen && !voorschotDialogOpen &&
+      !eindafrekeningDialogOpen,
+  })
 
   // ============ COMPUTED VALUES ============
 

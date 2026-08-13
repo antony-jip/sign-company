@@ -76,6 +76,7 @@ import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
 import { getAvatarStyle as getLaneAvatarStyle } from '@/utils/medewerkerAvatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOptimisticState } from '@/hooks/useOptimistic'
+import { useStilleRefresh } from '@/hooks/useStilleRefresh'
 import { SelectionRectangle } from '@/components/planning/SelectionRectangle'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
@@ -641,6 +642,25 @@ export function TasksLayout() {
     loadData()
     return () => { cancelled = true }
   }, [])
+
+  // Stille verversing zodat het team elkaars taken en verplaatsingen ziet;
+  // nooit tijdens een drag of open dialoog.
+  const stilVerversen = useCallback(async () => {
+    const [takenData, projectenData, montageData, medewerkersData] = await Promise.all([
+      fetchQuery('taken', getTaken).catch(() => null),
+      fetchQuery('projecten', getProjecten).catch(() => null),
+      fetchQuery('montageAfspraken', getMontageAfspraken).catch(() => null),
+      fetchQuery('medewerkers', getMedewerkers).catch(() => null),
+    ])
+    if (takenData) setTaken(takenData)
+    if (projectenData) setProjecten(projectenData)
+    if (montageData) setMontageAfspraken(montageData)
+    if (medewerkersData) setMedewerkers(medewerkersData)
+  }, [])
+  useStilleRefresh({
+    verversen: stilVerversen,
+    magVerversen: () => !draggingTaakId && !editDialogOpen && !deleteDialogOpen && !fabOpen,
+  })
 
   // Update now-line every minute
   useEffect(() => {
