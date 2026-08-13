@@ -195,3 +195,112 @@ describe('api-typecheck blijft bestaan', () => {
     expect(pkg.scripts['typecheck:api']).toContain('tsconfig.api.json')
   })
 })
+
+/**
+ * De les van migratie 195, in een controle.
+ *
+ * 195 dropte legacy user_id-policies, met een guard die alleen keek OF de tabel
+ * daarna nog een permissieve policy met `organisatie_id` overhield. Op `emails`
+ * was dat "Team-leden zien mails via project-koppeling", en die geeft alleen
+ * SELECT en alleen als `thread_id` via `email_project_koppelingen` aan een
+ * project hangt. De guard controleerde dus BESTAAN, niet DEKKING.
+ *
+ * Gevolg op productie: van 13.982 inbox-rijen bleef alleen projectmail
+ * zichtbaar, en omdat de gedropte policy `FOR ALL` was verdwenen ook UPDATE en
+ * DELETE. Hersteld in migratie 203.
+ *
+ * De regel die deze test afdwingt: een policy waarvan de voorwaarde een `EXISTS`
+ * bevat is een UITZONDERING, niet algemene toegang. Heeft een tabel alleen nog
+ * zulke leespolicies, dan kan een gewone gebruiker zijn eigen rijen niet meer
+ * zien tenzij de koppeling bestaat.
+ *
+ * WAT DEZE TEST NIET DOET, en dat is belangrijker dan wat hij wel doet.
+ * Hij had het incident van 13 aug NIET voorkomen. 195 dropt via dynamische SQL
+ * (`EXECUTE format(...)` in een lus over `pg_policies`), dus welke policies
+ * verdwenen hangt af van wat er op dat moment in de database stond. Statisch is
+ * dat niet te weten: de map zegt nog steeds dat `001` een algemene policy op
+ * `emails` aanmaakt, terwijl die in de database weg was.
+ *
+ * Wat hij WEL vangt: een tabel die in de map nooit een algemene leespolicy
+ * krijgt, alleen een koppeling-policy. Dat is een echte fout, maar een andere.
+ *
+ * De sluitende controle voor het 195-geval is `docs/rls-dekking.sql`, en die
+ * MOET met de hand tegen de database gedraaid worden na elke migratie die
+ * policies dropt. Zie CLAUDE.md sectie 3.
+ */
+describe('elke tabel houdt ALGEMENE leestoegang, niet alleen een uitzondering', () => {
+  // Tabellen waar een koppeling de juiste afbakening IS. Alle drie zijn
+  // kindtabellen zonder eigen organisatie_id: de ouder bepaalt wie mag lezen.
+  const KOPPELING_IS_CORRECT = new Set([
+    'inkoopfactuur_regels',   // via inkoopfacturen.organisatie_id
+    'nieuwsbrief_events',     // via nieuwsbrieven.user_id
+    'nieuwsbrief_afmeldingen',
+    'offerte_opvolg_log',
+    'offerte_opvolg_stappen',
+    'portaal_activiteiten',
+    'werkbon_afbeeldingen',   // via werkbon_items -> werkbonnen
+    'uitnodigingen',          // via organisaties.eigenaar_id
+  ])
+
+  function leesPolicyBodies() {
+    // Naam, tabel en de voorwaarde tot de afsluitende puntkomma. Een
+    // policy-body bevat zelf geen puntkomma, ook niet met een subquery erin.
+    const re = /CREATE\s+POLICY\s+"([^"]+)"\s+ON\s+(?:public\.)?(\w+)([\s\S]*?);/gi
+    const perTabel = new Map<string, { naam: string; body: string; bestand: string }[]>()
+
+    for (const bestand of readdirSync(MIGRATIES).filter((f) => f.endsWith('.sql')).sort()) {
+      const sql = readFileSync(`${MIGRATIES}/${bestand}`, 'utf8').replace(/--[^\n]*/g, '')
+      for (const m of sql.matchAll(re)) {
+        const tabel = m[2].toLowerCase()
+        if (!perTabel.has(tabel)) perTabel.set(tabel, [])
+        perTabel.get(tabel)!.push({ naam: m[1], body: m[3], bestand })
+      }
+    }
+    return perTabel
+  }
+
+  const isLeesPolicy = (body: string) =>
+    /FOR\s+SELECT/i.test(body) || /FOR\s+ALL/i.test(body) || !/FOR\s+(INSERT|UPDATE|DELETE)/i.test(body)
+
+  const isAlgemeen = (body: string) => {
+    // `TO service_role` met USING (true) is de nette vorm voor een tabel die
+    // bewust dicht is voor de app. Die heeft geen auth.*-functie in de body, dus
+    // zonder deze regel viel elke correct gehardende tabel hier ten onrechte uit.
+    if (/\bTO\s+service_role\b/i.test(body)) return true
+    if (/EXISTS/i.test(body)) return false
+    // Beide schrijfrichtingen, en de kolomnaam varieert: user_id, gebruiker_id,
+    // en bij `organisaties` heet hij simpelweg `id`. Dat waren precies de drie
+    // blinde vlekken in mijn eerste diagnose-query.
+    return /auth\.uid\(\)/.test(body)
+      || /auth_organisatie_id\(\)/.test(body)
+      || /auth\.role\(\)/.test(body)
+      || /profiles\.organisatie_id/.test(body)
+  }
+
+  it('markeert geen tabel waarvan alleen nog een koppeling-policy overblijft', () => {
+    const perTabel = leesPolicyBodies()
+    const verdacht: string[] = []
+
+    for (const [tabel, policies] of perTabel) {
+      if (KOPPELING_IS_CORRECT.has(tabel)) continue
+      const lees = policies.filter((p) => isLeesPolicy(p.body))
+      if (lees.length === 0) continue
+      if (lees.some((p) => isAlgemeen(p.body))) continue
+      verdacht.push(
+        `${tabel}: alleen ${lees.map((p) => `"${p.naam}" (${p.bestand})`).join(', ')}`,
+      )
+    }
+
+    expect(
+      verdacht,
+      'Deze tabellen hebben in de migratiemap alleen nog een leespolicy met een\n' +
+        'EXISTS erin. Dat is een uitzondering, geen algemene toegang: een gebruiker\n' +
+        'ziet zijn eigen rijen dan alleen als de koppeling bestaat. Dit is precies\n' +
+        'wat migratie 195 met `emails` deed, en dat kostte 13.982 rijen aan\n' +
+        'zichtbaarheid zonder één foutmelding.\n\n' +
+        'Voeg een algemene policy toe, of zet de tabel in KOPPELING_IS_CORRECT als\n' +
+        'de koppeling daar de juiste afbakening IS (kindtabel zonder eigen\n' +
+        'organisatie_id) met de reden erbij.\n\n' + verdacht.join('\n'),
+    ).toEqual([])
+  })
+})

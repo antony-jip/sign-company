@@ -14,11 +14,44 @@ verificatie-output teruggelezen. Ze zijn dus **klaar, niet opnieuw draaien**
 |---|---|---|
 | `190_organisatie_delete_intrekken.sql` | DELETE-recht op `organisaties` ingetrokken | drie policies over, geen enkele met `cmd = DELETE` |
 | `192_organisatie_id_backfill.sql` | `organisatie_id` gevuld via `profiles` | `emails_zonder_org` en `notificaties_zonder_org` beide 0 |
-| `195_legacy_user_policies_droppen.sql` | 49 legacy user_id-policies gedropt over 23 tabellen | 0 overgeslagen, `legacy_policies_over` = 0 |
+| `195_legacy_user_policies_droppen.sql` | 49 legacy user_id-policies gedropt over 23 tabellen | 0 overgeslagen, `legacy_policies_over` = 0. **LET OP: deze migratie had een fout, zie hieronder.** |
 
 Effect daarvan: de abonnementsvergrendeling uit migratie 111 werkt sindsdien
 echt. Die was ruim een jaar omzeilbaar omdat migratie 048 policynamen dropte die
 nergens werden aangemaakt.
+
+### Migratie 195 had een fout, en die heeft schade gedaan
+
+De guard in 195 dropte een legacy-policy zodra de tabel daarna nog **een**
+permissieve policy met `organisatie_id` overhield. Die guard toetste
+**bestaan**, niet **dekking**. Op `emails` was de overgebleven policy
+"Team-leden zien mails via project-koppeling": alleen `SELECT`, en alleen als
+`thread_id` via `email_project_koppelingen` aan een project hangt.
+
+Gevolg op productie, gemerkt op 13 aug: van 13.982 inbox-rijen was alleen nog
+projectmail zichtbaar. En omdat de gedropte policy `FOR ALL` was, verdwenen ook
+`UPDATE` en `DELETE`: gelezen markeren, sterren, snoozen en verwijderen faalden
+stil. De sync bleef intact, want die draait als `service_role` en omzeilt RLS,
+dus de mail kwám binnen en was alleen onzichtbaar. Dat maakte het lastig te
+herkennen.
+
+Herstel: **migratie 203**. Gedraaid en bevestigd, de inbox werkt weer.
+
+Wat hieruit volgt en wat je moet weten voordat je nog eens policies dropt:
+
+- **Een policy met `EXISTS` erin is een uitzondering, geen algemene toegang.**
+  Dat onderscheid ontbrak in de guard.
+- **Een test kan dit niet vangen.** 195 dropt via dynamische SQL in een lus over
+  `pg_policies`, dus welke policies verdwijnen hangt af van wat er op dat moment
+  in de database staat. `tests/migrations/rlsInvarianten.test.ts` vangt een
+  ander, smaller geval en zegt dat er nu ook zo bij.
+- **Draai `docs/rls-dekking.sql` na elke migratie die policies dropt.** Dat is
+  de enige sluitende controle. Hij toont per tabel welke van de vier opdrachten
+  geen dekking meer heeft.
+- De blast radius van 195 is voor `SELECT` nagelopen: `emails` was het enige
+  slachtoffer, de tien andere treffers waren een fout in de meetquery zelf
+  (omgekeerde operanden, afwijkende kolomnamen, `service_role` niet herkend).
+  **Voor `UPDATE` en `DELETE` op de 23 andere tabellen staat dat nog open.**
 
 ## Alleen lezen, veilig, mag altijd
 

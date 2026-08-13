@@ -160,9 +160,19 @@ export function RapportagesLayout() {
   // Filter data by selected period
   const range = useMemo(() => getPeriodeRange(periode), [periode]);
 
+  // Omzet is wat de deur uit is, niet wat er in de map staat. Een concept is een
+  // factuur die nog niet bestaat voor de klant, en een geannuleerde is er nooit
+  // geweest. Beide telden hier mee, en dat liep door in de KPI, de indicatieve
+  // winst, de top-5 klanten, de maandstaven, de CSV/Excel-export en de PDF.
+  //
+  // Het filter zit hier op één plek en niet per berekening, zodat die zes niet
+  // uit elkaar kunnen lopen.
+  const OMZET_STATUSSEN = ['verstuurd', 'betaald'];
+
   const gefilterdeFacturen = useMemo(
     () =>
       facturen.filter((f) => {
+        if (!OMZET_STATUSSEN.includes(f.status)) return false;
         const d = new Date(f.factuurdatum);
         return d >= range.start && d <= range.end;
       }),
