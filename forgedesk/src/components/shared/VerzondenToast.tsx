@@ -1,34 +1,30 @@
 interface VerzondenToastProps {
-  /** Statuswoord · krijgt de flame-punt achter zich. */
+  /** Statuswoord · de flame-punt komt er zelf achteraan gevlogen. */
   titel?: string
-  /** Eén regel context: naar wie, of waar de mail nu staat. */
+  /** Korte context achter het middenpunt: naar wie, of wanneer hij weggaat. */
   onder?: string
 }
 
 /**
- * Bevestiging na het verzenden. Geen standaard-vinkje maar het doen.-gebaar:
- * statuswoord met flame-punt, een vinkje dat zichzelf tekent en een ring die
- * één keer uitzet. Zie index.css voor de keyframes.
+ * Bevestiging na het verzenden, voor de gevallen waar de UI het zelf niet laat
+ * zien. Bewust zonder eigen kader: de Toaster zet al een matglas-kaart om elke
+ * melding, en een tweede kaart daarbinnen las als een banner.
+ *
+ * Het gebaar zit in de punt. Die komt in een boog binnen en landt achter het
+ * woord: de punt is de mail. Zie index.css · punt-baan / punt-vlucht.
  */
 export function VerzondenToast({ titel = 'Verzonden', onder }: VerzondenToastProps) {
   return (
-    <div className="flex items-center gap-3 w-full min-w-[240px] rounded-2xl border border-black/[0.06] dark:border-white/10 bg-white dark:bg-card px-3.5 py-3 shadow-[0_12px_32px_-12px_rgba(26,83,92,0.4)]">
-      <span className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center">
-        <span className="absolute inset-0 rounded-full bg-petrol/25 verzonden-ring" />
-        <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-petrol verzonden-bel">
-          <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M20 6 9 17l-5-5" className="verzonden-vink" />
-          </svg>
+    // min-w-0 is wat truncate hier werkend maakt: zonder dat weigert een
+    // flex-item te krimpen en duwt een lang adres de melding open.
+    <p className="text-[12px] leading-none truncate min-w-0">
+      <span className="font-semibold text-foreground">
+        {titel}
+        <span className="punt-baan" aria-hidden>
+          <span className="punt-vlucht" />
         </span>
       </span>
-      <div className="min-w-0">
-        <p className="text-[14px] font-semibold text-foreground leading-tight tracking-[-0.01em]">
-          {titel}<span className="text-flame">.</span>
-        </p>
-        {onder && (
-          <p className="text-[12px] text-muted-foreground leading-tight truncate mt-[3px]">{onder}</p>
-        )}
-      </div>
-    </div>
+      {onder && <span className="text-muted-foreground"> · {onder}</span>}
+    </p>
   )
 }

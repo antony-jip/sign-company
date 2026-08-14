@@ -588,12 +588,12 @@ export function calculateSnoozeDate(hours: number): Date {
 }
 
 /**
- * Korte "naar wie"-regel onder een verzendbevestiging. Meerdere ontvangers
- * worden geteld in plaats van uitgeschreven · anders loopt de toast vol.
+ * Wie de mail kreeg, kort genoeg voor één toast-regel. Meerdere ontvangers
+ * worden geteld in plaats van uitgeschreven · anders loopt de regel vol.
  */
 export function ontvangerLabel(adressen: string): string {
   const lijst = adressen.split(/[,;]/).map((a) => a.trim()).filter(Boolean)
   if (lijst.length === 0) return ''
-  if (lijst.length > 1) return `naar ${lijst.length} ontvangers`
-  return `naar ${extractSenderName(lijst[0])}`
+  if (lijst.length > 1) return `${lijst.length} ontvangers`
+  return extractSenderName(lijst[0])
 }

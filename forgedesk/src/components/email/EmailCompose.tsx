@@ -745,11 +745,11 @@ export function EmailCompose({
       },
       {
         loading: attachments.length > 0
-          ? `${attachments.length} bijlage${attachments.length > 1 ? 'n' : ''} (${formatFileSize(attachments.reduce((s, f) => s + f.size, 0))}) uploaden en verzenden...`
-          : 'Email wordt verzonden...',
+          ? `${attachments.length} bijlage${attachments.length > 1 ? 'n' : ''} uploaden (${formatFileSize(attachments.reduce((s, f) => s + f.size, 0))})`
+          : 'Versturen',
         success: capturedWacht ? 'Email verzonden · toegevoegd aan Opvolgen' : 'Email verzonden',
         successRender: () => (
-          <VerzondenToast onder={capturedWacht ? 'Staat nu in Opvolgen' : ontvangerLabel(to)} />
+          <VerzondenToast onder={capturedWacht ? 'staat in Opvolgen' : ontvangerLabel(to)} />
         ),
       }
     )
@@ -799,7 +799,7 @@ export function EmailCompose({
         wisConcept(conceptVanDezeVerzending)
       },
       {
-        loading: 'Bezig met inplannen...',
+        loading: 'Inplannen',
         success: `Email ingepland: ${label}`,
         error: 'Inplannen mislukt',
         successRender: () => <VerzondenToast titel="Ingepland" onder={`Gaat weg ${label.toLowerCase()}`} />,

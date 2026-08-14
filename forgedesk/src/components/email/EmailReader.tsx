@@ -199,6 +199,20 @@ export function EmailReader({
   const [replyBrief, setReplyBrief] = useState('')
   const [replyAttachments, setReplyAttachments] = useState<File[]>([])
 
+  // Een verstuurd antwoord schuift meteen onderin de gespreksdraad · dat is de
+  // bevestiging. De echte rij komt pas bij de volgende sync binnen, dus tot die
+  // tijd staat hij hier. Zodra de draad groeit ruimen we 'm op, anders zie je
+  // je antwoord twee keer.
+  const [zojuistVerzonden, setZojuistVerzonden] = useState<{ tekst: string; datum: string } | null>(null)
+  const draadLengteBijVerzendenRef = useRef(0)
+  const huidigeEmailIdRef = useRef(email?.id)
+  huidigeEmailIdRef.current = email?.id
+  useEffect(() => { setZojuistVerzonden(null) }, [email?.id])
+  useEffect(() => {
+    if (!zojuistVerzonden) return
+    if ((threadEmails?.length ?? 0) > draadLengteBijVerzendenRef.current) setZojuistVerzonden(null)
+  }, [threadEmails?.length, zojuistVerzonden])
+
   // Blob-URLs voor image-thumbnails op user-uploaded reply-bijlagen
   const replyImagePreviewUrls = useMemo(() => {
     const map = new Map<File, string>()
@@ -1016,15 +1030,30 @@ export function EmailReader({
     setIsSending(false)
 
     const naar = ontvangerLabel(payload.to)
+    const doelEmailId = email?.id
+    draadLengteBijVerzendenRef.current = threadEmails?.length ?? 0
+    // Sta je nog bij dezelfde mail, dan bevestigt de draad het zelf en houden
+    // we de zwevende melding dicht. Ben je doorgeklikt, dan is die melding het
+    // enige wat je nog vertelt dat hij weg is.
+    const draadBevestigt = () => huidigeEmailIdRef.current === doelEmailId
+
     sendInBackground(
-      async () => { await onSendReply(payload) },
+      async () => {
+        await onSendReply(payload)
+        if (draadBevestigt()) {
+          setZojuistVerzonden({
+            tekst: cleanEmailPreview(payload.body || '').slice(0, 160),
+            datum: new Date().toISOString(),
+          })
+        }
+      },
       {
-        loading: 'Email wordt verzonden...',
+        loading: 'Versturen',
         success: 'Email verzonden',
-        successRender: () => <VerzondenToast onder={naar} />,
+        successRender: () => (draadBevestigt() ? null : <VerzondenToast onder={naar} />),
       }
     )
-  }, [onSendReply, buildReplyPayload, clearDraft])
+  }, [onSendReply, buildReplyPayload, clearDraft, email?.id, threadEmails?.length])
 
   const handleScheduleSend = useCallback(async (scheduledAt: string, label: string) => {
     if (!onSendReply) return
@@ -1044,7 +1073,7 @@ export function EmailReader({
     sendInBackground(
       async () => { await onSendReply({ ...payload, scheduledAt }) },
       {
-        loading: 'Bezig met inplannen...',
+        loading: 'Inplannen',
         success: `Email ingepland: ${label}`,
         error: 'Inplannen mislukt',
         successRender: () => <VerzondenToast titel="Ingepland" onder={`Gaat weg ${label.toLowerCase()}`} />,
@@ -2001,7 +2030,7 @@ export function EmailReader({
               {/* ── Thread navigation strip ──
                   Toon alle berichten in dezelfde conversatie. De huidige is
                   gehighlight, klik op een ander bericht om dat te openen. */}
-              {threadEmails && threadEmails.length > 1 && (
+              {((threadEmails && threadEmails.length > 1) || zojuistVerzonden) && (
                 <div className="mb-6">
                   <div className="flex items-center gap-2.5 px-1 mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/65 dark:text-foreground/60">
                     <span className="font-semibold whitespace-nowrap">
@@ -2009,7 +2038,7 @@ export function EmailReader({
                     </span>
                     <span className="flex-1 h-px bg-gradient-to-r from-petrol/[0.14] to-transparent dark:from-white/10" aria-hidden />
                     <span className="tabular-nums tracking-normal text-petrol/40 dark:text-foreground/40">
-                      {threadEmails.length}
+                      {(threadEmails?.length ?? 1) + (zojuistVerzonden ? 1 : 0)}
                     </span>
                   </div>
                   {/* Tijdlijn: de verticale draad loopt door het midden van de
@@ -2019,7 +2048,7 @@ export function EmailReader({
                       className="absolute left-[18px] top-5 bottom-5 w-px bg-petrol/[0.14] dark:bg-white/10"
                       aria-hidden
                     />
-                    {threadEmails.map((tEmail) => {
+                    {(threadEmails ?? []).map((tEmail) => {
                       const isCurrent = tEmail.id === email.id
                       const senderShort = extractSenderName(tEmail.van)
                       const threadAvatar = getAvatarStyle(senderShort)
@@ -2072,6 +2101,40 @@ export function EmailReader({
                         </button>
                       )
                     })}
+
+                    {/* Je zojuist verstuurde antwoord · schuift binnen met een
+                        petrol-gloed die wegebt. Dit ís de verzendbevestiging. */}
+                    {zojuistVerzonden && (() => {
+                      const eigenNaam = extractSenderName(eigenAdres || 'Jij')
+                      const eigenAvatar = getAvatarStyle(eigenNaam)
+                      return (
+                        <div className="antwoord-landt relative w-full flex items-start gap-3 pl-1 pr-3 py-2 rounded-[12px] text-left">
+                          <div
+                            className="relative z-10 w-7 h-7 rounded-[10px] flex items-center justify-center flex-shrink-0 ring-[3px] ring-card"
+                            style={{ backgroundColor: eigenAvatar.bg }}
+                            aria-hidden
+                          >
+                            <span className="text-[11px] font-bold leading-none" style={{ color: eigenAvatar.text }}>
+                              {eigenNaam[0]?.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-[13px] font-bold text-foreground truncate tracking-[-0.005em]">Jij</span>
+                              <span className="flex-shrink-0 font-mono text-[9px] uppercase tracking-[0.12em] text-petrol dark:text-[#7FB5BF] bg-petrol/[0.09] dark:bg-[#2A7A86]/20 rounded-full px-1.5 py-0.5 leading-none">
+                                Verzonden
+                              </span>
+                              <span className="ml-auto pl-2 text-[11px] font-mono tabular-nums text-muted-foreground/80 flex-shrink-0">
+                                {formatShortDate(zojuistVerzonden.datum)}
+                              </span>
+                            </div>
+                            <p className="text-[12px] leading-snug text-muted-foreground/85 truncate mt-0.5">
+                              {zojuistVerzonden.tekst || 'Antwoord verstuurd'}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               )}

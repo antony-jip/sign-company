@@ -9,8 +9,13 @@ interface BackgroundSendOptions {
   /**
    * Eigen bevestiging in plaats van de standaard success-toast · zie
    * VerzondenToast. `success` blijft de schermlezer-tekst.
+   *
+   * Geeft dit null terug, dan zwijgt de toast helemaal. Dat is voor schermen
+   * die het resultaat zelf al tonen · een antwoord dat in de gespreksdraad
+   * landt bevestigt beter dan een kaartje in de hoek. Pas op het moment van
+   * slagen aangeroepen, dus de keuze mag afhangen van waar je dan staat.
    */
-  successRender?: () => ReactElement
+  successRender?: () => ReactElement | null
 }
 
 /**
@@ -25,7 +30,13 @@ export function sendInBackground(task: () => Promise<void>, opts: BackgroundSend
     task()
       .then(() => {
         if (opts.successRender) {
-          toast.custom(opts.successRender, { id: toastId, duration: 4000 })
+          const inhoud = opts.successRender()
+          // Niet over de loading-toast heen leggen: sonner zet de
+          // dismiss-timer stil zolang `type` op 'loading' staat, en
+          // toast.custom() schrijft dat type niet over. De bevestiging bleef
+          // dan staan tot je 'm wegveegde. Oude weg, nieuwe erbij.
+          toast.dismiss(toastId)
+          if (inhoud) toast.custom(() => inhoud, { duration: 3500 })
         } else {
           toast.success(opts.success, { id: toastId })
         }

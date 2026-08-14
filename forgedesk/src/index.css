@@ -3616,35 +3616,91 @@ button.doen-panel:hover {
   }
 }
 
-/* ================================================================
-   VERZEND-BEVESTIGING — vinkje tekent zich, ring zet één keer uit
-   ================================================================ */
-@keyframes verzonden-vink-tekent {
-  from { stroke-dashoffset: 24; }
-  to { stroke-dashoffset: 0; }
-}
-@keyframes verzonden-bel-pop {
-  0% { transform: scale(0.72); }
-  55% { transform: scale(1.08); }
-  100% { transform: scale(1); }
-}
-@keyframes verzonden-ring-uit {
-  0% { transform: scale(0.7); opacity: 0.85; }
-  100% { transform: scale(2.05); opacity: 0; }
-}
-.verzonden-vink {
-  stroke-dasharray: 24;
-  stroke-dashoffset: 24;
-  animation: verzonden-vink-tekent 380ms cubic-bezier(0.65, 0, 0.35, 1) 110ms forwards;
-}
-.verzonden-bel {
-  animation: verzonden-bel-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-.verzonden-ring {
-  animation: verzonden-ring-uit 700ms cubic-bezier(0.22, 1, 0.36, 1) 120ms forwards;
-}
 @media (prefers-reduced-motion: reduce) {
-  .verzonden-vink, .verzonden-bel, .verzonden-ring { animation: none; }
-  .verzonden-vink { stroke-dashoffset: 0; }
-  .verzonden-ring { opacity: 0; }
+  .animate-checkmark { animation: none; stroke-dashoffset: 0; }
+}
+
+/* ================================================================
+   VERZEND-BEVESTIGING
+   De flame-punt is de mail. Hij komt in een boog het scherm in en
+   landt als de punt achter het statuswoord. De staart erachter is
+   petrol en verdampt onderweg.
+   ================================================================ */
+
+/* Ongeregistreerd blijft een custom property een string en springt de kleur
+   hard om. Zo interpoleert petrol naar flame echt. */
+@property --punt-kleur {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #1A535C;
+}
+
+/* Vast plekje in de tekstregel · de punt vliegt absoluut binnen dit doosje,
+   zodat de baan-coordinaten voorspelbaar zijn en de regel niet verspringt. */
+.punt-baan {
+  position: relative;
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  vertical-align: baseline;
+  margin-left: 1px;
+}
+
+.punt-vlucht {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--punt-kleur);
+  offset-path: path("M -86 18 C -56 -12, -22 -11, 2 2");
+  offset-rotate: auto;
+  animation: punt-landt 620ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+}
+
+@keyframes punt-landt {
+  0%   { offset-distance: 0%;   opacity: 0; --punt-kleur: #1A535C; }
+  14%  { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 1; --punt-kleur: #F15025; }
+}
+
+/* Staart · kind van de punt, dus hij draait mee met de baan en blijft
+   raaklijn. Weg gemaskeerd naar achteren toe in plaats van hard afgeknipt. */
+.punt-vlucht::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  width: 26px;
+  height: 1.5px;
+  transform: translateY(-50%);
+  border-radius: 1px;
+  background: linear-gradient(to left, rgba(26, 83, 92, 0.55), rgba(26, 83, 92, 0));
+  animation: punt-staart 620ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+}
+
+.dark .punt-vlucht::before {
+  background: linear-gradient(to left, rgba(127, 181, 191, 0.5), rgba(127, 181, 191, 0));
+}
+
+@keyframes punt-staart {
+  0%   { opacity: 0; width: 4px; }
+  20%  { opacity: 1; width: 26px; }
+  70%  { opacity: 1; width: 26px; }
+  100% { opacity: 0; width: 0; }
+}
+
+/* Een verstuurd antwoord landt in de gespreksdraad · petrol die wegebt. */
+@keyframes antwoord-landt {
+  0%   { opacity: 0; transform: translateY(9px); background-color: rgba(26, 83, 92, 0.14); }
+  55%  { opacity: 1; transform: translateY(0);   background-color: rgba(26, 83, 92, 0.10); }
+  100% { opacity: 1; transform: translateY(0);   background-color: rgba(26, 83, 92, 0); }
+}
+.antwoord-landt {
+  animation: antwoord-landt 1500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-checkmark { animation: none; stroke-dashoffset: 0; }
+  .punt-vlucht { offset-path: none; animation: none; background: #F15025; }
+  .punt-vlucht::before { display: none; }
+  .antwoord-landt { animation: none; }
 }
