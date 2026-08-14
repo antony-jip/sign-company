@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
-import { Paperclip, Send, X, FileText, Image as ImageIcon, File, Bold, Italic, Underline, List, Link as LinkIcon, Loader2, Receipt, CreditCard, Wrench, Check, Plus, ChevronDown, MessagesSquare, Clock } from 'lucide-react'
+import { Paperclip, Send, X, FileText, Image as ImageIcon, File, Bold, Italic, Underline, List, Link as LinkIcon, Loader2, Receipt, CreditCard, Wrench, Check, Plus, ChevronDown, Clock } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -20,6 +20,7 @@ import { uploadEmailAttachment, deleteFile } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem, SigningVisualisatie } from '@/types'
 import { useOntvangerZoeker, OntvangerLijst, type Ontvanger } from '@/components/shared/OntvangerVeld'
+import { getAvatarStyle } from '@/components/email/emailHelpers'
 import { handtekeningAfbeeldingHtml, handtekeningBreedte } from '@/utils/handtekening'
 
 const MAX_BIJLAGE_BYTES = 20 * 1024 * 1024
@@ -344,6 +345,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const [threadMails, setThreadMails] = useState<ProjectMail[]>([])
   const [threadId, setThreadId] = useState<string | null>(null)
   const [threadOpen, setThreadOpen] = useState(true)
+  const [openThreadMailId, setOpenThreadMailId] = useState<string | null>(null)
 
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleAt, setScheduleAt] = useState('')
@@ -978,51 +980,74 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       <div className="px-4 py-3.5 space-y-2.5">
         {threadMails.length > 0 && (
           <div>
+            {/* Zelfde tijdlijn als de Gesprek-strip in de mailmodule · één
+                regel per bericht, klik om de volledige tekst uit te klappen. */}
             <button
               type="button"
               onClick={() => setThreadOpen((v) => !v)}
-              className="w-full flex items-center justify-between px-1 py-1.5 hover:opacity-70 transition-opacity"
+              className="w-full flex items-center gap-2.5 px-1 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/65 hover:text-petrol transition-colors"
             >
-              <span className="flex items-center gap-2 text-[11px] font-semibold text-petrol">
-                <MessagesSquare className="h-3.5 w-3.5" strokeWidth={1.75} />
-                Gesprek
-                <span className="font-mono text-[10px] font-medium text-muted-foreground bg-white border border-[#EBEBEB] px-1.5 py-0.5 rounded-full">{threadMails.length}</span>
+              <span className="font-semibold whitespace-nowrap">
+                Gesprek<span className="text-flame tracking-normal">.</span>
               </span>
-              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", threadOpen && "rotate-180")} />
+              <span className="flex-1 h-px bg-gradient-to-r from-petrol/[0.14] to-transparent" aria-hidden />
+              <span className="tabular-nums tracking-normal text-petrol/40">{threadMails.length}</span>
+              <ChevronDown className={cn('h-3.5 w-3.5 text-petrol/40 transition-transform duration-200', threadOpen && 'rotate-180')} />
             </button>
             {threadOpen && (
-              <div className="max-h-[260px] overflow-y-auto px-1 pb-1 pt-2 space-y-4">
-                {[...threadMails].reverse().map((m) => {
-                  const incoming = !!contactEmailLower && (m.van || '').toLowerCase().includes(contactEmailLower)
-                  const naam = m.from_name || m.van || ''
-                  return (
-                    <div key={m.id} className={cn("flex items-end gap-2.5", incoming ? "justify-start" : "justify-end")}>
-                      {incoming && (
-                        <div className="h-7 w-7 rounded-full bg-[#3A6B8C] flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-[9px] font-bold">{getInitials(naam)}</span>
+              <div className="relative max-h-[300px] overflow-y-auto pb-1 pt-2">
+                <div className="absolute left-[18px] top-7 bottom-3 w-px bg-petrol/[0.14]" aria-hidden />
+                <div className="relative flex flex-col gap-0.5">
+                  {[...threadMails].reverse().map((m) => {
+                    const incoming = !!contactEmailLower && (m.van || '').toLowerCase().includes(contactEmailLower)
+                    const naam = incoming ? (m.from_name || m.van || '') : 'Jij'
+                    const avatar = getAvatarStyle(m.from_name || m.van || '')
+                    const uitgeklapt = openThreadMailId === m.id
+                    const tekst = mailPreview(m) || '(geen tekst)'
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setOpenThreadMailId(uitgeklapt ? null : m.id)}
+                        className="relative w-full flex items-start gap-3 pl-1 pr-2 py-2 rounded-[12px] text-left transition-colors duration-150 hover:bg-petrol/[0.04]"
+                      >
+                        <div
+                          className="relative z-10 w-7 h-7 rounded-[10px] flex items-center justify-center flex-shrink-0 ring-[3px] ring-white"
+                          style={{ backgroundColor: avatar.bg }}
+                          aria-hidden
+                        >
+                          <span className="text-[11px] font-bold leading-none" style={{ color: avatar.text }}>
+                            {getInitials(m.from_name || m.van || '')[0]}
+                          </span>
                         </div>
-                      )}
-                      <div className={cn(
-                        "max-w-[76%] rounded-2xl px-3.5 py-2.5 border",
-                        incoming ? "bg-white border-[#EBEBEB] rounded-bl-md" : "bg-petrol/[0.07] border-petrol/10 rounded-br-md",
-                      )}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={cn("text-[10px] font-semibold truncate", incoming ? "text-foreground" : "text-petrol")}>{naam}</span>
-                          <span className="text-[9px] font-mono flex-shrink-0 text-muted-foreground">{formatThreadDatum(m.datum)}</span>
+                        <div className="flex-1 min-w-0 pt-0.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-[13px] font-medium text-foreground/80 truncate tracking-[-0.005em]">{naam}</span>
+                            <span className="ml-auto pl-2 text-[11px] font-mono tabular-nums text-muted-foreground/80 flex-shrink-0">
+                              {formatThreadDatum(m.datum)}
+                            </span>
+                          </div>
+                          <p className={cn(
+                            'text-[12px] leading-snug text-muted-foreground/85 mt-0.5',
+                            uitgeklapt ? 'whitespace-pre-wrap break-words' : 'truncate',
+                          )}>
+                            {tekst}
+                          </p>
                         </div>
-                        <div className="text-[12px] leading-relaxed whitespace-pre-wrap break-words text-foreground">{mailPreview(m) || '(geen tekst)'}</div>
-                      </div>
-                    </div>
-                  )
-                })}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
         )}
 
-        <div className="rounded-lg border border-border/70 divide-y divide-border/50 overflow-hidden">
+        {/* Geen overflow-hidden: dat knipte de contactsuggesties onder het
+            Aan-veld af zodra ze voorbij de Onderwerp-regel kwamen. */}
+        <div className="rounded-lg border border-border/70 divide-y divide-border/50">
           <div className="flex items-center gap-2 md:gap-3 px-3 py-1.5 min-h-[36px] min-w-0">
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[48px] md:w-[76px] flex-shrink-0 whitespace-nowrap">Aan</label>
+            <label className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 select-none w-[48px] md:w-[74px] flex-shrink-0 whitespace-nowrap">Aan</label>
             <EmailChipsInput value={toEmails} onChange={setToEmails} placeholder="naam@bedrijf.nl" />
             {!showCcBcc && (
               <button
@@ -1038,18 +1063,18 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
           {showCcBcc && (
             <>
               <div className="flex items-center gap-2 md:gap-3 px-3 py-1.5 min-h-[36px] min-w-0">
-                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[48px] md:w-[76px] flex-shrink-0 whitespace-nowrap">Cc</label>
+                <label className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 select-none w-[48px] md:w-[74px] flex-shrink-0 whitespace-nowrap">Cc</label>
                 <EmailChipsInput value={ccEmails} onChange={setCcEmails} placeholder="cc@bedrijf.nl" />
               </div>
               <div className="flex items-center gap-2 md:gap-3 px-3 py-1.5 min-h-[36px] min-w-0">
-                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[48px] md:w-[76px] flex-shrink-0 whitespace-nowrap">Bcc</label>
+                <label className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 select-none w-[48px] md:w-[74px] flex-shrink-0 whitespace-nowrap">Bcc</label>
                 <EmailChipsInput value={bccEmails} onChange={setBccEmails} placeholder="bcc@bedrijf.nl" />
               </div>
             </>
           )}
 
           <div className="flex items-center gap-2 md:gap-3 px-3 py-1.5 min-h-[36px] min-w-0">
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground w-[48px] md:w-[76px] flex-shrink-0 whitespace-nowrap">Onderwerp</label>
+            <label className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 select-none w-[48px] md:w-[74px] flex-shrink-0 whitespace-nowrap">Onderwerp</label>
             <input
               type="text"
               value={subject}
@@ -1284,10 +1309,10 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             onClick={() => handleSend()}
             disabled={!canSend}
             className={cn(
-              "inline-flex items-center gap-1.5 h-9 px-4 rounded-xl text-[13px] font-semibold text-white transition-all min-w-[120px] justify-center active:scale-[0.98]",
+              "inline-flex items-center gap-2 h-9 px-6 rounded-[10px] text-[13px] font-semibold text-white transition-all duration-150 min-w-[120px] justify-center active:translate-y-0",
               !canSend
                 ? "bg-[#9B9B95] cursor-not-allowed"
-                : "bg-gradient-to-b from-flame to-[#E04518] shadow-[0_2px_8px_rgba(241,80,37,0.3)] hover:shadow-[0_6px_18px_rgba(241,80,37,0.4)] hover:-translate-y-[1px]"
+                : "bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px"
             )}
           >
             {isSending ? (
@@ -1298,7 +1323,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             ) : (
               <>
                 <Send className="h-3.5 w-3.5" />
-                Versturen
+                Verzenden
               </>
             )}
           </button>
