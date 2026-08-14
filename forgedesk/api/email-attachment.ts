@@ -205,16 +205,15 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
 // ───── Persistent attachment-cache (sprint 3) ─────
 const STORAGE_BUCKET = 'email-attachments'
 const SIGNED_URL_TTL = 60 * 60 // 1 uur
-const MAX_CACHE_IMAGE_BYTES = 10 * 1024 * 1024
-const MAX_CACHE_PDF_BYTES = 25 * 1024 * 1024
+// De cache is de enige route langs de 4,5 MB responslimiet van Vercel: wat hier
+// niet doorheen komt moet als base64 door de functierespons en sneuvelt daarboven.
+// Daarom geen witte lijst per formaat meer. Een .eps of .ai van een klant is even
+// goed een projectbijlage als een pdf, en juist die bestanden zijn groot.
+const MAX_CACHE_BYTES = 25 * 1024 * 1024
 
 function isCacheable(filename: string, contentType: string, size: number, isInlineCid: boolean): boolean {
   if (isInlineCid || !filename || size === 0) return false
-  const ct = contentType.toLowerCase()
-  const ext = filename.split('.').pop()?.toLowerCase() || ''
-  const isImage = ct.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)
-  const isPdf = ct === 'application/pdf' || ext === 'pdf'
-  return (isImage && size <= MAX_CACHE_IMAGE_BYTES) || (isPdf && size <= MAX_CACHE_PDF_BYTES)
+  return size <= MAX_CACHE_BYTES
 }
 
 async function writeAttachmentToCache(

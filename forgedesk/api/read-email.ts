@@ -210,8 +210,9 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
 // ───── Persistent attachment-cache (sprint 3) ─────
 const STORAGE_BUCKET = 'email-attachments'
 const SIGNED_URL_TTL = 60 * 60 // 1 uur — voldoende voor reading-sessie
-const MAX_CACHE_IMAGE_BYTES = 10 * 1024 * 1024
-const MAX_CACHE_PDF_BYTES = 25 * 1024 * 1024
+// Zie api/email-attachment.ts: alles tot deze grens gaat via storage, want een
+// grotere bijlage past niet in de 4,5 MB responslimiet van Vercel.
+const MAX_CACHE_BYTES = 25 * 1024 * 1024
 
 interface RawAttachmentBuffer {
   filename: string
@@ -224,11 +225,7 @@ interface RawAttachmentBuffer {
 function isCacheableAttachment(rb: RawAttachmentBuffer): boolean {
   if (rb.isInlineCid || !rb.filename) return false
   if (!rb.buffer.length) return false
-  const contentType = rb.contentType.toLowerCase()
-  const ext = rb.filename.split('.').pop()?.toLowerCase() || ''
-  const isImage = contentType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)
-  const isPdf = contentType === 'application/pdf' || ext === 'pdf'
-  return (isImage && rb.size <= MAX_CACHE_IMAGE_BYTES) || (isPdf && rb.size <= MAX_CACHE_PDF_BYTES)
+  return rb.size <= MAX_CACHE_BYTES
 }
 
 async function cacheAttachmentsToStorage(
