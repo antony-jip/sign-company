@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import { toast } from 'sonner'
 import { logger } from './logger'
 
@@ -5,6 +6,11 @@ interface BackgroundSendOptions {
   loading: string
   success: string
   error?: string
+  /**
+   * Eigen bevestiging in plaats van de standaard success-toast · zie
+   * VerzondenToast. `success` blijft de schermlezer-tekst.
+   */
+  successRender?: () => ReactElement
 }
 
 /**
@@ -18,7 +24,11 @@ export function sendInBackground(task: () => Promise<void>, opts: BackgroundSend
     const toastId = toast.loading(opts.loading)
     task()
       .then(() => {
-        toast.success(opts.success, { id: toastId })
+        if (opts.successRender) {
+          toast.custom(opts.successRender, { id: toastId, duration: 4000 })
+        } else {
+          toast.success(opts.success, { id: toastId })
+        }
       })
       .catch((err) => {
         logger.error('Achtergrond-verzending mislukt:', err)

@@ -14,10 +14,12 @@ import {
 import { EmailActionsPopover } from './EmailActionsPopover'
 import { cn } from '@/lib/utils'
 import type { Email, EmailAttachment } from '@/types'
-import { extractSenderName, extractSenderEmail, cleanEmailPreview, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, lijktOpHtml, platteTekstNaarHtml, SNOOZE_OPTIONS, labelColors } from './emailHelpers'
+import { extractSenderName, extractSenderEmail, cleanEmailPreview, ontvangerLabel, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, lijktOpHtml, platteTekstNaarHtml, SNOOZE_OPTIONS, labelColors } from './emailHelpers'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useVisueleViewport } from '@/hooks/useVisueleViewport'
 import { callForgie } from '@/services/forgieService'
 import { downloadEmailAttachment, downloadAllEmailAttachments } from '@/services/gmailService'
 import { bijlageNaarProject } from '@/services/documentenService'
@@ -32,6 +34,7 @@ import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
 import { AanvraagKaart } from './AanvraagKaart'
 import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 import { LinkInvoegKnop } from '@/components/shared/LinkInvoegKnop'
+import { VerzondenToast } from '@/components/shared/VerzondenToast'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -221,6 +224,37 @@ export function EmailReader({
   const editorRef = useRef<HTMLDivElement>(null)
   const emailBodyRef = useRef<HTMLDivElement>(null)
   const replyFileInputRef = useRef<HTMLInputElement>(null)
+
+  // Antwoorden op mobiel is een eigen schermvullend venster, niet een blok
+  // onderaan de lezer. iOS verschuift bij het openen van het toetsenbord de
+  // visual viewport omhoog; alles wat op de normale flow meelift (kop,
+  // verzendknop) schoof daardoor achter het toetsenbord. Door het venster
+  // exact op de gemeten viewport te zetten blijven kop en balk in beeld.
+  const isMobiel = useMediaQuery('(max-width: 767px)')
+  const venster = useVisueleViewport(isMobiel && !!replyMode)
+
+  // Het formulier verhuist tussen het mobiele venster en de inline-versie zodra
+  // de breedte de md-grens passeert (toestel draaien). De editor hermount dan,
+  // dus houden we een spiegel van de HTML bij en zetten die terug. Volgorde is
+  // hier het punt: dit effect moet vóór de observer staan, anders overschrijft
+  // die de spiegel met de lege verse editor.
+  const editorHtmlRef = useRef('')
+  const vorigMobielRef = useRef(isMobiel)
+  useEffect(() => {
+    if (vorigMobielRef.current === isMobiel) return
+    vorigMobielRef.current = isMobiel
+    if (!replyMode || !editorRef.current || !editorHtmlRef.current) return
+    editorRef.current.innerHTML = editorHtmlRef.current
+  }, [isMobiel, replyMode])
+
+  useEffect(() => {
+    const el = editorRef.current
+    if (!el || !replyMode) return
+    editorHtmlRef.current = el.innerHTML
+    const observer = new MutationObserver(() => { editorHtmlRef.current = el.innerHTML })
+    observer.observe(el, { childList: true, subtree: true, characterData: true, attributes: true })
+    return () => observer.disconnect()
+  }, [replyMode, isMobiel])
 
   // Summary state
   const [summary, setSummary] = useState<string | null>(null)
@@ -981,9 +1015,14 @@ export function EmailReader({
     setForwardOriginalAttachments([])
     setIsSending(false)
 
+    const naar = ontvangerLabel(payload.to)
     sendInBackground(
       async () => { await onSendReply(payload) },
-      { loading: 'Email wordt verzonden...', success: 'Email verzonden' }
+      {
+        loading: 'Email wordt verzonden...',
+        success: 'Email verzonden',
+        successRender: () => <VerzondenToast onder={naar} />,
+      }
     )
   }, [onSendReply, buildReplyPayload, clearDraft])
 
@@ -1004,7 +1043,12 @@ export function EmailReader({
 
     sendInBackground(
       async () => { await onSendReply({ ...payload, scheduledAt }) },
-      { loading: 'Bezig met inplannen...', success: `Email ingepland: ${label}`, error: 'Inplannen mislukt' }
+      {
+        loading: 'Bezig met inplannen...',
+        success: `Email ingepland: ${label}`,
+        error: 'Inplannen mislukt',
+        successRender: () => <VerzondenToast titel="Ingepland" onder={`Gaat weg ${label.toLowerCase()}`} />,
+      }
     )
   }, [onSendReply, buildReplyPayload, clearDraft])
 
@@ -1102,6 +1146,14 @@ export function EmailReader({
   const avatarColor = useMemo(() => getAvatarColor(senderName), [senderName])
   const avatarRingColor = useMemo(() => getAvatarRingColor(senderName), [senderName])
   const avatarStyle = useMemo(() => getAvatarStyle(senderName), [senderName])
+
+  // Terwijl de volledige mail binnenkomt tonen we de platte tekst die de lijst
+  // al had. Dan lees je de eerste regels meteen in plaats van naar grijze
+  // balken te kijken · dat scheelt geen milliseconde, maar wel het wachten.
+  const voorproefje = useMemo(() => {
+    const raw = email?.body_text || ''
+    return raw ? cleanEmailPreview(raw).slice(0, 340) : ''
+  }, [email?.body_text])
 
   const sanitizedBody = useMemo(() => {
     if (!email?.inhoud) return ''
@@ -1396,29 +1448,31 @@ export function EmailReader({
             )}
 
             {/* ─── Toolbar (sticky bottom · iOS-style frosted material) ─── */}
-            <div className="sticky bottom-0 z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 pl-3 pr-3 md:pl-5 md:pr-3 py-2.5 border-t border-black/[0.06] dark:border-white/[0.08] bg-card/85 backdrop-blur-xl shadow-[0_-1px_0_rgba(0,0,0,0.02),0_-8px_24px_-12px_rgba(0,0,0,0.08)]">
-              <div className="flex items-center">
+            <div className="sticky bottom-0 z-20 flex items-center justify-between gap-2 md:gap-0 pl-3 pr-3 md:pl-5 md:pr-3 py-2.5 border-t border-black/[0.06] dark:border-white/[0.08] bg-card/85 backdrop-blur-xl shadow-[0_-1px_0_rgba(0,0,0,0.02),0_-8px_24px_-12px_rgba(0,0,0,0.08)]">
+              {/* Op mobiel schuiven de opmaakknoppen zijwaarts weg in plaats van
+                  naar een tweede regel: die regel viel achter het toetsenbord. */}
+              <div className="flex items-center min-w-0 flex-1 md:flex-none overflow-x-auto scrollbar-hide md:overflow-visible">
                 {/* mousedown-preventDefault: anders verliest WebKit de selectie
                     zodra de knop focus pakt en doet het commando niets. */}
-                <div className="flex items-center gap-px mr-2">
-                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
-                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
+                <div className="flex items-center gap-px mr-2 flex-shrink-0">
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('undo')} className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('redo')} className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
                 </div>
-                <div className="w-px h-5 bg-petrol/10 mr-2" />
-                <div className="flex items-center gap-px">
-                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
-                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
-                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
+                <div className="w-px h-5 bg-petrol/10 mr-2 flex-shrink-0" />
+                <div className="flex items-center gap-px flex-shrink-0">
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('bold')} className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('italic')} className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('underline')} className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
                 </div>
-                <div className="w-px h-5 bg-petrol/10 mx-1" />
-                <div className="flex items-center gap-px">
-                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
-                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
+                <div className="w-px h-5 bg-petrol/10 mx-1 flex-shrink-0" />
+                <div className="flex items-center gap-px flex-shrink-0">
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('insertUnorderedList')} className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
+                  <button onMouseDown={(e) => e.preventDefault()} onClick={() => execCommand('insertOrderedList')} className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
                 </div>
-                <div className="w-px h-5 bg-petrol/10 mx-1" />
-                <div className="flex items-center gap-px">
-                  <LinkInvoegKnop editorRef={editorRef} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" />
-                  <button onClick={() => replyFileInputRef.current?.click()} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
+                <div className="w-px h-5 bg-petrol/10 mx-1 flex-shrink-0" />
+                <div className="flex items-center gap-px flex-shrink-0">
+                  <LinkInvoegKnop editorRef={editorRef} className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" />
+                  <button onClick={() => replyFileInputRef.current?.click()} className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground/70 hover:bg-petrol/[0.06] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
                   <input
                     ref={replyFileInputRef}
                     type="file"
@@ -1433,13 +1487,15 @@ export function EmailReader({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto justify-end md:justify-start">
+              {/* Weggooien en verzenden staan op mobiel in de kop van het
+                  antwoordvenster · daar zijn ze altijd zichtbaar. */}
+              <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 justify-end md:justify-start">
                 <button
                   onClick={() => setReplyMode(null)}
-                  className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150"
+                  className="hidden md:flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground/80 hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150"
                   title="Annuleren"
                 >
-                  <Trash2 className="h-[18px] w-[18px] md:h-4 md:w-4" />
+                  <Trash2 className="h-4 w-4" />
                 </button>
                 <span className="text-[10px] text-muted-foreground/80 hidden md:block">
                   {navigator.platform.includes('Mac') ? '\u2318' : 'Ctrl'}+Enter
@@ -1525,17 +1581,74 @@ export function EmailReader({
                   )}
                 </div>
                 <button
-                  className="tap-press h-10 md:h-9 px-5 md:px-6 rounded-[10px] text-[14px] md:text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
+                  className="tap-press hidden md:flex h-9 px-6 rounded-[10px] text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 items-center gap-2 disabled:opacity-50"
                   onClick={() => { hapticMedium(); handleSend() }}
                   disabled={isSending}
                 >
-                  <Send className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                  <Send className="h-3.5 w-3.5" />
                   {isSending ? 'Verzenden...' : 'Verzenden'}
                 </button>
               </div>
             </div>
 
           </div>
+    </div>
+  ) : null
+
+  const antwoordTitel = replyMode === 'forward'
+    ? 'Doorsturen'
+    : replyMode === 'reply-all'
+      ? 'Allen beantwoorden'
+      : 'Beantwoorden'
+
+  // Mobiel antwoordvenster · schermvullend bovenop de lezer, met de
+  // verzendknop in de kop zodat het toetsenbord hem nooit kan afdekken.
+  const mobielAntwoordVenster = isMobiel && replyMode ? (
+    <div
+      className="md:hidden fixed inset-x-0 z-50 flex flex-col bg-white dark:bg-card animate-in fade-in duration-150"
+      style={{
+        top: venster.top,
+        height: venster.hoogte || '100dvh',
+        paddingBottom: venster.toetsenbord > 60 ? 0 : 'env(safe-area-inset-bottom)',
+      }}
+    >
+      <div className="flex items-center gap-1.5 pl-1 pr-2 h-14 flex-shrink-0 border-b border-black/[0.06] dark:border-white/[0.08] bg-card/95 backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={() => { hapticLight(); setReplyMode(null) }}
+          className="tap-press h-10 w-10 flex items-center justify-center rounded-full text-foreground/70 active:bg-petrol/[0.08] transition-colors flex-shrink-0"
+          aria-label="Antwoord sluiten"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-semibold text-foreground leading-tight truncate tracking-[-0.01em]">{antwoordTitel}</p>
+          <p className="text-[12px] text-muted-foreground leading-tight truncate">
+            {replyTo || 'nog geen ontvanger'}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => replyFileInputRef.current?.click()}
+          className="tap-press h-10 w-10 flex items-center justify-center rounded-full text-foreground/70 active:bg-petrol/[0.08] transition-colors flex-shrink-0"
+          aria-label="Bijlage toevoegen"
+        >
+          <Paperclip className="h-[19px] w-[19px]" />
+        </button>
+        <button
+          type="button"
+          className="tap-press h-10 pl-4 pr-[18px] rounded-full text-[14px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.28)] active:scale-[0.96] transition-transform duration-100 flex items-center gap-1.5 disabled:opacity-50 flex-shrink-0"
+          onClick={() => { hapticMedium(); handleSend() }}
+          disabled={isSending}
+        >
+          {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          Verzenden
+        </button>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+        {inlineReplyForm}
+      </div>
     </div>
   ) : null
 
@@ -1791,7 +1904,7 @@ export function EmailReader({
             {/* Header: subject + sender + reply actions */}
             {/* In reply-mode collapsen we naar één compacte regel · sender + onderwerp
                 staan toch al in de Aan/Ond-velden van het formulier eronder. */}
-            {replyMode ? (
+            {replyMode && !isMobiel ? (
               <div className="flex items-center gap-3 px-5 md:px-7 py-3 border-b border-black/[0.06] dark:border-white/[0.08]">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatarStyle.bg }}>
                   <span className="text-[11px] font-semibold leading-none tracking-tight" style={{ color: avatarStyle.text }}>{senderName[0]?.toUpperCase()}</span>
@@ -1878,8 +1991,10 @@ export function EmailReader({
               </div>
             )}
 
-            {/* Inline reply form · verschijnt boven body wanneer replyMode actief is */}
-            {inlineReplyForm}
+            {/* Inline reply form · verschijnt boven body wanneer replyMode actief is.
+                Op mobiel woont hetzelfde formulier in het schermvullende
+                antwoordvenster onderaan deze component. */}
+            {!isMobiel && inlineReplyForm}
 
             {/* Email body content area */}
             <div className="px-4 md:px-8 py-6">
@@ -1991,11 +2106,22 @@ export function EmailReader({
 
               {/* Email body · readable, clean hierarchy */}
               {isLoadingBody ? (
-                <div className="space-y-3 py-2">
-                  <div className="h-4 bg-muted rounded w-full animate-pulse" />
-                  <div className="h-4 bg-muted rounded w-[90%] animate-pulse" />
-                  <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-                  <div className="h-4 bg-muted rounded w-[85%] animate-pulse" />
+                <div className="min-w-0 max-w-full" aria-busy="true" aria-label="Bericht wordt geladen">
+                  {voorproefje && (
+                    <p
+                      className="text-[14px] leading-[1.75] text-foreground/75 break-words"
+                      style={{ maskImage: 'linear-gradient(to bottom, #000 45%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, #000 45%, transparent 100%)' }}
+                    >
+                      {voorproefje}
+                    </p>
+                  )}
+                  <div className={cn('space-y-3', voorproefje ? 'mt-1' : 'py-2')} aria-hidden>
+                    <div className="h-3.5 skeleton-warm w-full" />
+                    <div className="h-3.5 skeleton-warm w-[92%]" />
+                    <div className="h-3.5 skeleton-warm w-3/4" />
+                    <div className="h-3.5 skeleton-warm w-[85%]" />
+                    <div className="h-3.5 skeleton-warm w-[58%]" />
+                  </div>
                 </div>
               ) : (
                 <div ref={emailBodyRef} className="min-w-0 max-w-full">
@@ -2360,6 +2486,8 @@ export function EmailReader({
           voortgang={koppelVoortgang}
           onBevestig={handleBijlageBevestig}
         />
+
+        {mobielAntwoordVenster}
     </div>
   )
 }

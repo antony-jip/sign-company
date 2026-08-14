@@ -23,7 +23,11 @@ import { Switch } from '@/components/ui/switch'
 import { getWachtendeEmailNaarAdres } from '@/services/emailService'
 import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 import { leesConcept, schrijfConcept, wisConcept, isLeegConcept, type EmailConcept } from '@/utils/emailConceptDraft'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useVisueleViewport } from '@/hooks/useVisueleViewport'
 import { LinkInvoegKnop, type LinkInvoegHandle } from '@/components/shared/LinkInvoegKnop'
+import { VerzondenToast } from '@/components/shared/VerzondenToast'
+import { ontvangerLabel } from './emailHelpers'
 
 export interface ComposeActions {
   forgieWrite: () => void
@@ -153,6 +157,11 @@ export function EmailCompose({
 }: EmailComposeProps) {
   const isReply = !!(replyToText && replyToText.trim())
   const navigate = useNavigate()
+  // Zie useVisueleViewport: op mobiel zetten we het opstelvenster vast op de
+  // zichtbare viewport, zodat kop (met Verzenden) en opmaakbalk boven het
+  // toetsenbord blijven staan in plaats van eronder te verdwijnen.
+  const isMobiel = useMediaQuery('(max-width: 767px)')
+  const venster = useVisueleViewport(isMobiel && open)
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam } = useAppSettings()
   const { organisatieId } = useAuth()
 
@@ -739,6 +748,9 @@ export function EmailCompose({
           ? `${attachments.length} bijlage${attachments.length > 1 ? 'n' : ''} (${formatFileSize(attachments.reduce((s, f) => s + f.size, 0))}) uploaden en verzenden...`
           : 'Email wordt verzonden...',
         success: capturedWacht ? 'Email verzonden · toegevoegd aan Opvolgen' : 'Email verzonden',
+        successRender: () => (
+          <VerzondenToast onder={capturedWacht ? 'Staat nu in Opvolgen' : ontvangerLabel(to)} />
+        ),
       }
     )
   }, [to, subject, cc, bcc, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie, attachments, draftId])
@@ -790,6 +802,7 @@ export function EmailCompose({
         loading: 'Bezig met inplannen...',
         success: `Email ingepland: ${label}`,
         error: 'Inplannen mislukt',
+        successRender: () => <VerzondenToast titel="Ingepland" onder={`Gaat weg ${label.toLowerCase()}`} />,
       }
     )
   }, [to, subject, cc, bcc, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie, draftId])
@@ -835,7 +848,15 @@ export function EmailCompose({
 
   return (
     <div
-      className="relative flex flex-col h-full bg-white dark:bg-card min-w-0 [&:focus-visible]:shadow-none"
+      className={cn(
+        'relative flex flex-col bg-white dark:bg-card min-w-0 [&:focus-visible]:shadow-none',
+        isMobiel ? 'fixed inset-x-0 z-50' : 'h-full',
+      )}
+      style={isMobiel ? {
+        top: venster.top,
+        height: venster.hoogte || '100dvh',
+        paddingBottom: venster.toetsenbord > 60 ? 0 : 'env(safe-area-inset-bottom)',
+      } : undefined}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -881,7 +902,7 @@ export function EmailCompose({
             disabled={isSending}
           >
             {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {isSending ? 'Verzenden' : 'Verstuur'}
+            Verzenden
           </button>
 
           <button
@@ -1246,8 +1267,10 @@ export function EmailCompose({
 
         {/* Bottom bar · formatting + send. Rechts net genoeg ruimte om de
             zwevende Daan-knop te ontwijken; Verzenden staat er direct naast. */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 px-3 md:pl-6 md:pr-[76px] py-2.5 border-t border-border flex-shrink-0">
-          <div className="flex items-center gap-0.5">
+        <div className="flex items-center justify-between gap-2 md:gap-0 px-3 md:pl-6 md:pr-[76px] py-2.5 border-t border-border flex-shrink-0">
+          {/* Op mobiel schuiven de opmaakknoppen zijwaarts weg in plaats van
+              naar een tweede regel: die regel viel achter het toetsenbord. */}
+          <div className="flex items-center gap-0.5 min-w-0 flex-1 md:flex-none overflow-x-auto scrollbar-hide md:overflow-visible">
             {/* mousedown-preventDefault: anders verliest WebKit de tekstselectie
                 zodra de knop focus pakt en doet het commando niets. */}
             {([
@@ -1259,7 +1282,7 @@ export function EmailCompose({
                 key={knop.cmd}
                 type="button"
                 className={cn(
-                  'h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150',
+                  'h-10 w-10 md:h-8 md:w-8 flex-shrink-0 flex items-center justify-center rounded-md transition-colors duration-150',
                   knop.actief ? 'text-petrol bg-petrol/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                 )}
                 onMouseDown={(e) => e.preventDefault()}
@@ -1269,11 +1292,11 @@ export function EmailCompose({
                 {knop.icoon}
               </button>
             ))}
-            <div className="w-px h-4 bg-border mx-1.5" />
+            <div className="w-px h-4 bg-border mx-1.5 flex-shrink-0" />
             <button
               type="button"
               className={cn(
-                'h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150',
+                'h-10 w-10 md:h-8 md:w-8 flex-shrink-0 flex items-center justify-center rounded-md transition-colors duration-150',
                 opmaakActief.lijst ? 'text-petrol bg-petrol/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted',
               )}
               onMouseDown={(e) => e.preventDefault()}
@@ -1285,10 +1308,10 @@ export function EmailCompose({
             <LinkInvoegKnop
               ref={linkKnopRef}
               editorRef={editorRef}
-              className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
+              className="h-10 w-10 md:h-8 md:w-8 flex-shrink-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
             />
-            <div className="w-px h-4 bg-border mx-1.5" />
-            <button className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => fileInputRef.current?.click()} title="Bijlage">
+            <div className="w-px h-4 bg-border mx-1.5 flex-shrink-0" />
+            <button className="h-10 w-10 md:h-8 md:w-8 flex-shrink-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150" onClick={() => fileInputRef.current?.click()} title="Bijlage">
               <Paperclip className="h-4 w-4" />
             </button>
             <input
@@ -1300,7 +1323,7 @@ export function EmailCompose({
               accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx,.eps,.ai,.cdr,.svg,.indd,.psd,.zip,.rar"
             />
           </div>
-          <div className="flex items-center gap-2 w-full md:w-auto justify-end md:justify-start">
+          <div className="flex items-center gap-2 flex-shrink-0 justify-end md:justify-start">
             {/* Sales Inbox v1: opvolg-toggle */}
             <label className="inline-flex items-center gap-1.5 text-[12px] text-[#67645E] dark:text-muted-foreground cursor-pointer select-none" title="Vlag deze mail om op te volgen">
               <Switch checked={wachtOpReactie} onCheckedChange={setWachtOpReactie} />

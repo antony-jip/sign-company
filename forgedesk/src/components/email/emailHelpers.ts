@@ -586,3 +586,14 @@ export function calculateSnoozeDate(hours: number): Date {
   }
   return new Date(now.getTime() + hours * 60 * 60 * 1000)
 }
+
+/**
+ * Korte "naar wie"-regel onder een verzendbevestiging. Meerdere ontvangers
+ * worden geteld in plaats van uitgeschreven · anders loopt de toast vol.
+ */
+export function ontvangerLabel(adressen: string): string {
+  const lijst = adressen.split(/[,;]/).map((a) => a.trim()).filter(Boolean)
+  if (lijst.length === 0) return ''
+  if (lijst.length > 1) return `naar ${lijst.length} ontvangers`
+  return `naar ${extractSenderName(lijst[0])}`
+}
