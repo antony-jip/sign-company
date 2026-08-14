@@ -11,7 +11,7 @@ import {
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, markeerEmailGelezenOpServer, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail, emailImapActie, prefetchEmailBodies } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
-import { leesMailCache, schrijfMailCache, maakEigenaarSleutel } from '@/lib/mailCache'
+import { leesMailCache, schrijfMailCache, maakEigenaarSleutel, leesBodies, bewaarBodies } from '@/lib/mailCache'
 import supabase from '@/services/supabaseClient'
 import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers, getEmailBodies } from '@/services/emailService'
 import { cn } from '@/lib/utils'
@@ -339,26 +339,46 @@ export function EmailLayout() {
   // wachten: het zijn volledige HTML-berichten. Mobiel houdt het bij een
   // handvol; het venster-prefetch-effect hieronder vult bij wat je nadert.
   const vulBodyCacheUitDb = useCallback(async (mails: Email[], maximum?: number) => {
+    // Het netwerkplafond blijft bescheiden; het toestel lezen we ruimer uit,
+    // want dat kost niets. Zo profiteert de hele zichtbare lijst van wat er
+    // vorige sessie al binnenkwam.
     const plafond = maximum ?? (isDesktopRef.current ? 60 : 8)
     const ontbreekt: string[] = []
     for (const mail of mails) {
-      if (ontbreekt.length >= plafond) break
+      if (ontbreekt.length >= Math.max(plafond, 60)) break
       if (mail.inhoud) continue
       if (bodyCacheRef.current.has(mail.id)) continue
       ontbreekt.push(mail.id)
     }
     if (ontbreekt.length === 0) return 0
 
-    const rijen = await getEmailBodies(ontbreekt).catch(() => [])
+    // Eerst het toestel · dat kost geen netwerk en geen wachttijd. Wat daar
+    // staat hoeft de server niet nog eens te sturen.
+    const bewaard = await leesBodies(ontbreekt, eigenaarRef.current)
+    for (const [id, rij] of bewaard) {
+      bodyCacheRef.current.set(id, rij.html)
+      if (Array.isArray(rij.bijlagen) && rij.bijlagen.length > 0) {
+        attachmentCacheRef.current.set(id, rij.bijlagen as EmailAttachment[])
+      }
+    }
+
+    const restant = ontbreekt.filter((id) => !bewaard.has(id)).slice(0, plafond)
+    if (restant.length === 0) return bewaard.size
+
+    const rijen = await getEmailBodies(restant).catch(() => [])
+    const teBewaren: Array<{ id: string; html: string; bijlagen?: unknown[] }> = []
     for (const rij of rijen) {
       const body = rij.body_html || rij.body_text || ''
       if (!body) continue
       bodyCacheRef.current.set(rij.id, body)
-      if (Array.isArray(rij.attachment_meta) && rij.attachment_meta.length > 0) {
-        attachmentCacheRef.current.set(rij.id, rij.attachment_meta as EmailAttachment[])
-      }
+      const bijlagen = Array.isArray(rij.attachment_meta) && rij.attachment_meta.length > 0
+        ? rij.attachment_meta as EmailAttachment[]
+        : undefined
+      if (bijlagen) attachmentCacheRef.current.set(rij.id, bijlagen)
+      teBewaren.push({ id: rij.id, html: body, bijlagen })
     }
-    return rijen.length
+    void bewaarBodies(teBewaren, eigenaarRef.current)
+    return bewaard.size + rijen.length
   }, [])
 
   // ─── Bodies laten voorladen door de server ───
@@ -475,8 +495,13 @@ export function EmailLayout() {
     void (async () => {
       const bewaard = await leesMailCache<Email[]>('emails', eigenaarRef.current)
       if (gestopt || !bewaard?.length) return
-      setEmails((vorige) => (vorige.length > 0 ? vorige : normalizeEmails(bewaard)))
+      const lijst = normalizeEmails(bewaard)
+      setEmails((vorige) => (vorige.length > 0 ? vorige : lijst))
       setIsLoading(false)
+      // De teksten staan naast de lijst op het toestel. Ze nú inlezen betekent
+      // dat de eerste mail die je aantikt al openligt voordat de server
+      // überhaupt geantwoord heeft.
+      if (!gestopt) void vulBodyCacheUitDb(lijst, 0)
     })()
     return () => { gestopt = true }
   }, [user?.id])
@@ -1337,9 +1362,11 @@ export function EmailLayout() {
           : ''
         if (body) {
           bodyCacheRef.current.set(email.id, body)
-          if (dbBody?.attachment_meta && Array.isArray(dbBody.attachment_meta) && dbBody.attachment_meta.length > 0) {
-            attachmentCacheRef.current.set(email.id, dbBody.attachment_meta as EmailAttachment[])
-          }
+          const bijlagen = dbBody?.attachment_meta && Array.isArray(dbBody.attachment_meta) && dbBody.attachment_meta.length > 0
+            ? dbBody.attachment_meta as EmailAttachment[]
+            : undefined
+          if (bijlagen) attachmentCacheRef.current.set(email.id, bijlagen)
+          void bewaarBodies([{ id: email.id, html: body, bijlagen }], eigenaarRef.current)
           return body
         }
 
@@ -1351,6 +1378,9 @@ export function EmailLayout() {
         const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
         const imapBody = detail.bodyHtml || detail.bodyText || tekstUitDb
         bodyCacheRef.current.set(email.id, imapBody)
+        // Deze ronde kostte een IMAP-verbinding · die willen we nooit twee
+        // keer voor dezelfde mail betalen, ook niet na een herstart.
+        if (imapBody) void bewaarBodies([{ id: email.id, html: imapBody }], eigenaarRef.current)
         if (detail.attachments?.length) {
           const inlineBytes: Record<string, string> = {}
           const signedUrls: Record<string, string> = {}
@@ -1526,6 +1556,28 @@ export function EmailLayout() {
     }, 250)
     return () => { afgebroken = true; clearTimeout(timer) }
   }, [zichtbaarBereik, isDesktop, flatItems, fetchBodyToCache, selectedFolder, vulBodyCacheUitDb])
+
+  // ─── Voorraad aanleggen voor de vólgende keer ───
+  // Mobiel haalt tijdens het openen bewust maar een handvol bodies op, anders
+  // vecht dat met de mail die je nú aantikt. Een paar seconden later is die
+  // drukte voorbij en halen we een ruimere slok op. Die belandt op het toestel,
+  // dus vanaf de volgende sessie opent die mail zonder netwerk. Niet doen op
+  // een zuinige of trage verbinding: dan is dit andermans databundel.
+  const voorraadGedaanRef = useRef(false)
+  const voorraadLijstRef = useRef<Email[]>([])
+  voorraadLijstRef.current = emails
+  const heeftLijst = emails.length > 0
+  useEffect(() => {
+    if (isDesktop || !heeftLijst || voorraadGedaanRef.current) return
+    const verbinding = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection
+    if (verbinding?.saveData) return
+    if (verbinding?.effectiveType && /(^|-)2g$/.test(verbinding.effectiveType)) return
+    voorraadGedaanRef.current = true
+    const timer = setTimeout(() => {
+      void vulBodyCacheUitDb(voorraadLijstRef.current, 30)
+    }, 4000)
+    return () => clearTimeout(timer)
+  }, [isDesktop, heeftLijst, vulBodyCacheUitDb])
 
   // ─── Realtime: nieuwe mail schuift binnen zodra de rij landt ───
   // Wie de sync deed doet er niet toe — eigen poll, tweede apparaat of de
@@ -2602,17 +2654,39 @@ export function EmailLayout() {
               <div className="px-4 pt-5 pb-2">
                 <Skeleton className="h-3 w-16" />
               </div>
+              {/* De vorm volgt de echte rij · een compacte regel waar straks
+                  drie regels komen laat de lijst zichtbaar verspringen zodra
+                  de mail binnen is. */}
               {Array.from({ length: 12 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2.5 pl-3 pr-3 h-[46px]"
-                >
-                  <div className="flex-shrink-0 h-5 w-4" />
-                  <Skeleton className="w-[26px] h-[26px] rounded-md flex-shrink-0" />
-                  <Skeleton className="h-3.5 flex-shrink-0" style={{ width: i % 3 === 0 ? 130 : i % 2 === 0 ? 100 : 150 }} />
-                  <Skeleton className="h-3.5 flex-1 max-w-[60%]" />
-                  <Skeleton className="h-3 w-10 flex-shrink-0 ml-auto" />
-                </div>
+                isDesktop && listStyle === 'stacked' ? (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2.5 pl-3 pr-3 h-[46px] animate-in fade-in fill-mode-both duration-300"
+                    style={{ animationDelay: `${i * 35}ms` }}
+                  >
+                    <div className="flex-shrink-0 h-5 w-4" />
+                    <Skeleton className="w-[26px] h-[26px] rounded-md flex-shrink-0" />
+                    <Skeleton className="h-3.5 flex-shrink-0" style={{ width: i % 3 === 0 ? 130 : i % 2 === 0 ? 100 : 150 }} />
+                    <Skeleton className="h-3.5 flex-1 max-w-[60%]" />
+                    <Skeleton className="h-3 w-10 flex-shrink-0 ml-auto" />
+                  </div>
+                ) : (
+                  <div
+                    key={i}
+                    className="flex items-start gap-2.5 pl-3 pr-3 h-[70px] pt-3.5 animate-in fade-in fill-mode-both duration-300"
+                    style={{ animationDelay: `${i * 35}ms` }}
+                  >
+                    <Skeleton className="w-[26px] h-[26px] rounded-md flex-shrink-0" />
+                    <div className="flex-1 min-w-0 space-y-[7px]">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-2.5" style={{ width: i % 3 === 0 ? 108 : i % 2 === 0 ? 84 : 126 }} />
+                        <Skeleton className="h-2.5 w-8 ml-auto flex-shrink-0" />
+                      </div>
+                      <Skeleton className="h-3" style={{ width: i % 2 === 0 ? '78%' : '62%' }} />
+                      <Skeleton className="h-2.5" style={{ width: i % 3 === 0 ? '52%' : '88%' }} />
+                    </div>
+                  </div>
+                )
               ))}
             </div>
           ) : threadedEmails.length === 0 ? (
