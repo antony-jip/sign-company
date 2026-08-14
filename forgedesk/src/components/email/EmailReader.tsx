@@ -34,7 +34,7 @@ import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
 import { AanvraagKaart } from './AanvraagKaart'
 import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 import { LinkInvoegKnop } from '@/components/shared/LinkInvoegKnop'
-import { VerzondenToast } from '@/components/shared/VerzondenToast'
+import { MailStatusToast } from '@/components/shared/MailStatusToast'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -1048,7 +1048,8 @@ export function EmailReader({
       {
         loading: 'Versturen',
         success: 'Email verzonden',
-        successRender: () => <VerzondenToast onder={naar} />,
+        loadingRender: () => <MailStatusToast bezig titel="Versturen" onder={naar} />,
+        successRender: () => <MailStatusToast titel="Verzonden" onder={naar} />,
       }
     )
   }, [onSendReply, buildReplyPayload, clearDraft, email?.id, threadEmails?.length])
@@ -1074,7 +1075,8 @@ export function EmailReader({
         loading: 'Inplannen',
         success: `Email ingepland: ${label}`,
         error: 'Inplannen mislukt',
-        successRender: () => <VerzondenToast titel="Ingepland" onder={`Gaat weg ${label.toLowerCase()}`} />,
+        loadingRender: () => <MailStatusToast bezig titel="Inplannen" onder={label.toLowerCase()} />,
+        successRender: () => <MailStatusToast titel="Ingepland" onder={`gaat weg ${label.toLowerCase()}`} />,
       }
     )
   }, [onSendReply, buildReplyPayload, clearDraft])

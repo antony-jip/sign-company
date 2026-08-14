@@ -1,19 +1,25 @@
-interface VerzondenToastProps {
-  /** Statuswoord · de flame-punt komt er zelf achteraan gevlogen. */
-  titel?: string
+interface MailStatusToastProps {
+  /** Statuswoord · de punt hoort erachter, dus houd het één woord. */
+  titel: string
   /** Korte context achter het middenpunt: naar wie, of wanneer hij weggaat. */
   onder?: string
+  /** Nog bezig · dan wacht de punt op zijn plek in plaats van te landen. */
+  bezig?: boolean
 }
 
 /**
- * Bevestiging na het verzenden, voor de gevallen waar de UI het zelf niet laat
- * zien. Bewust zonder eigen kader: de Toaster zet al een matglas-kaart om elke
+ * Eén vorm voor de hele verzendhandeling, zodat bezig en klaar op elkaar
+ * lijken: zelfde regel, zelfde teksthoogte, punt op dezelfde plek. Wisselt
+ * alleen van stand.
+ *
+ * Bewust zonder eigen kader: de Toaster zet al een matglas-kaart om elke
  * melding, en een tweede kaart daarbinnen las als een banner.
  *
- * Het gebaar zit in de punt. Die komt in een boog binnen en landt achter het
- * woord: de punt is de mail. Zie index.css · punt-baan / punt-vlucht.
+ * Het gebaar zit in de punt. Tijdens het versturen klopt hij rustig in petrol;
+ * bij succes komt hij in een boog binnen en landt als de flame-punt achter het
+ * woord. Zie index.css · punt-baan / punt-vlucht / punt-wacht.
  */
-export function VerzondenToast({ titel = 'Verzonden', onder }: VerzondenToastProps) {
+export function MailStatusToast({ titel, onder, bezig = false }: MailStatusToastProps) {
   return (
     // min-w-0 is wat truncate hier werkend maakt: zonder dat weigert een
     // flex-item te krimpen en duwt een lang adres de melding open.
@@ -21,7 +27,7 @@ export function VerzondenToast({ titel = 'Verzonden', onder }: VerzondenToastPro
       <span className="font-semibold text-foreground">
         {titel}
         <span className="punt-baan" aria-hidden>
-          <span className="punt-vlucht" />
+          <span className={bezig ? 'punt-wacht' : 'punt-vlucht'} />
         </span>
       </span>
       {onder && <span className="text-muted-foreground"> · {onder}</span>}

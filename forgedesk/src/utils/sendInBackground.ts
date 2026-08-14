@@ -6,10 +6,9 @@ interface BackgroundSendOptions {
   loading: string
   success: string
   error?: string
-  /**
-   * Eigen bevestiging in plaats van de standaard success-toast · zie
-   * VerzondenToast. `success` blijft de schermlezer-tekst.
-   */
+  /** Eigen laadmelding · `loading` blijft de schermlezer-tekst. */
+  loadingRender?: () => ReactElement
+  /** Eigen bevestiging · `success` blijft de schermlezer-tekst. */
   successRender?: () => ReactElement
 }
 
@@ -18,22 +17,23 @@ interface BackgroundSendOptions {
  * Toont een live toast (laden → verzonden), en bij falen een error-toast met
  * een 'Opnieuw'-knop die exact dezelfde taak nogmaals draait. De payload blijft
  * in de closure van `task` bewaard, dus retry verliest geen concept.
+ *
+ * Elke overgang ruimt de vorige toast op en zet er een verse neer, in plaats
+ * van er een over te schrijven op id. Sonner merget dan namelijk velden van de
+ * oude toast mee: `type: 'loading'` houdt de dismiss-timer stil (de melding
+ * bleef staan tot je 'm wegveegde) en een eerder gezette `jsx` overschaduwt de
+ * fouttekst.
  */
 export function sendInBackground(task: () => Promise<void>, opts: BackgroundSendOptions): void {
   const run = () => {
-    const toastId = toast.loading(opts.loading)
+    const toastId = opts.loadingRender
+      ? toast.custom(opts.loadingRender, { duration: Infinity })
+      : toast.loading(opts.loading)
     task()
       .then(() => {
-        if (opts.successRender) {
-          // Niet over de loading-toast heen leggen: sonner zet de
-          // dismiss-timer stil zolang `type` op 'loading' staat, en
-          // toast.custom() schrijft dat type niet over. De bevestiging bleef
-          // dan staan tot je 'm wegveegde. Oude weg, nieuwe erbij.
-          toast.dismiss(toastId)
-          toast.custom(opts.successRender, { duration: 3500 })
-        } else {
-          toast.success(opts.success, { id: toastId })
-        }
+        toast.dismiss(toastId)
+        if (opts.successRender) toast.custom(opts.successRender, { duration: 3500 })
+        else toast.success(opts.success)
       })
       .catch((err) => {
         logger.error('Achtergrond-verzending mislukt:', err)
@@ -41,8 +41,8 @@ export function sendInBackground(task: () => Promise<void>, opts: BackgroundSend
         const boodschap = err instanceof Error && err.message
           ? err.message
           : (opts.error ?? 'Verzenden mislukt')
+        toast.dismiss(toastId)
         toast.error(boodschap, {
-          id: toastId,
           duration: 10000,
           action: { label: 'Opnieuw', onClick: run },
         })

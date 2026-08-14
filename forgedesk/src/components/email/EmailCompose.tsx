@@ -26,7 +26,7 @@ import { leesConcept, schrijfConcept, wisConcept, isLeegConcept, type EmailConce
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useVisueleViewport } from '@/hooks/useVisueleViewport'
 import { LinkInvoegKnop, type LinkInvoegHandle } from '@/components/shared/LinkInvoegKnop'
-import { VerzondenToast } from '@/components/shared/VerzondenToast'
+import { MailStatusToast } from '@/components/shared/MailStatusToast'
 import { ontvangerLabel } from './emailHelpers'
 
 export interface ComposeActions {
@@ -748,8 +748,11 @@ export function EmailCompose({
           ? `${attachments.length} bijlage${attachments.length > 1 ? 'n' : ''} uploaden (${formatFileSize(attachments.reduce((s, f) => s + f.size, 0))})`
           : 'Versturen',
         success: capturedWacht ? 'Email verzonden · toegevoegd aan Opvolgen' : 'Email verzonden',
+        loadingRender: () => (
+          <MailStatusToast bezig titel="Versturen" onder={attachments.length > 0 ? 'met bijlagen' : ontvangerLabel(to)} />
+        ),
         successRender: () => (
-          <VerzondenToast onder={capturedWacht ? 'staat in Opvolgen' : ontvangerLabel(to)} />
+          <MailStatusToast titel="Verzonden" onder={capturedWacht ? 'staat in Opvolgen' : ontvangerLabel(to)} />
         ),
       }
     )
@@ -802,7 +805,8 @@ export function EmailCompose({
         loading: 'Inplannen',
         success: `Email ingepland: ${label}`,
         error: 'Inplannen mislukt',
-        successRender: () => <VerzondenToast titel="Ingepland" onder={`Gaat weg ${label.toLowerCase()}`} />,
+        loadingRender: () => <MailStatusToast bezig titel="Inplannen" onder={label.toLowerCase()} />,
+        successRender: () => <MailStatusToast titel="Ingepland" onder={`gaat weg ${label.toLowerCase()}`} />,
       }
     )
   }, [to, subject, cc, bcc, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie, draftId])

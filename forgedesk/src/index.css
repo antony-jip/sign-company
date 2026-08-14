@@ -3704,3 +3704,21 @@ button.doen-panel:hover {
   .punt-vlucht::before { display: none; }
   .antwoord-landt { animation: none; }
 }
+
+/* Wachtstand van dezelfde punt · klopt rustig in petrol tot de mail weg is. */
+@keyframes punt-wacht {
+  0%, 100% { opacity: 0.35; transform: scale(0.75); }
+  50%      { opacity: 1;    transform: scale(1); }
+}
+.punt-wacht {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: #1A535C;
+  animation: punt-wacht 1.1s ease-in-out infinite;
+}
+.dark .punt-wacht { background: #7FB5BF; }
+
+@media (prefers-reduced-motion: reduce) {
+  .punt-wacht { animation: none; opacity: 0.55; }
+}
