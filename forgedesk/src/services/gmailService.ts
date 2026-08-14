@@ -310,7 +310,12 @@ export async function fetchEmailsFromIMAP(
  * api/classificeer-aanvraag). Draait na de sync en faalt stil: de mail staat
  * er dan al, alleen de kaart in de reader blijft weg.
  */
-export async function classificeerAanvragen(): Promise<{ beoordeeld: number; aanvragen: number } | null> {
+/**
+ * Beoordeelt inbox-mail op aanvragen. Met `emailId` alleen die ene mail · dat
+ * is het voorrangspad voor de mail die je nu opent, die anders tot de volgende
+ * ronde moet wachten. Staat er al een oordeel op, dan is het een lege ronde.
+ */
+export async function classificeerAanvragen(emailId?: string): Promise<{ beoordeeld: number; aanvragen: number } | null> {
   try {
     const token = await getAuthToken()
     const response = await fetch('/api/classificeer-aanvraag', {
@@ -319,7 +324,7 @@ export async function classificeerAanvragen(): Promise<{ beoordeeld: number; aan
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: '{}',
+      body: JSON.stringify(emailId ? { emailId } : {}),
     })
     if (!response.ok) return null
     return await response.json()

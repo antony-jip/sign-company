@@ -666,16 +666,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // ── Laag 1: nog niet beoordeelde inbox-mail van de laatste twee weken ──
+    // Met een emailId beoordelen we alleen díe mail. Dat is het pad voor de
+    // mail die je zojuist opende: wachten op de volgende ronde kostte veertig
+    // seconden tot zeven minuten, en precies dan sta je ernaar te kijken.
+    // Staat er al een oordeel op, dan valt hij hier vanzelf weg.
+    const enkeleId = typeof (req.body as { emailId?: unknown } | undefined)?.emailId === 'string'
+      ? (req.body as { emailId: string }).emailId
+      : null
     const grens = new Date(Date.now() - MAX_LEEFTIJD_DAGEN * 24 * 60 * 60 * 1000).toISOString()
-    const { data: rijen, error } = await supabaseAdmin
+    const basis = supabaseAdmin
       .from('emails')
       .select('id, uid, imap_folder, from_address, from_name, onderwerp, body_text, thread_id, datum, message_id')
       .eq('user_id', userId)
-      .eq('map', 'inbox')
       .is('is_aanvraag', null)
-      .gte('datum', grens)
-      .order('datum', { ascending: false })
-      .limit(MAX_KANDIDATEN_PER_RUN * 4)
+    const { data: rijen, error } = enkeleId
+      ? await basis.eq('id', enkeleId).limit(1)
+      : await basis
+          .eq('map', 'inbox')
+          .gte('datum', grens)
+          .order('datum', { ascending: false })
+          .limit(MAX_KANDIDATEN_PER_RUN * 4)
     if (error) throw error
 
     const alle = (rijen || []) as KandidaatRij[]

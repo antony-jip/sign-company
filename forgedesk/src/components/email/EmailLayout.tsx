@@ -9,7 +9,7 @@ import {
   Rows3, StretchHorizontal, Clock, CalendarClock, Hourglass, Moon, Menu, Edit3, ChevronLeft, Target,
 } from 'lucide-react'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, markeerEmailGelezenOpServer, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail, emailImapActie, prefetchEmailBodies } from '@/services/gmailService'
-import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
+import { getEmails, getEmail, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { getCached, setCached } from '@/lib/queryCache'
 import { leesMailCache, schrijfMailCache, maakEigenaarSleutel, leesBodies, bewaarBodies } from '@/lib/mailCache'
 import supabase from '@/services/supabaseClient'
@@ -435,6 +435,28 @@ export function EmailLayout() {
   // De ronde loopt na het openen én na elke poll; twee tegelijk zouden dezelfde
   // mail dubbel langs Claude sturen.
   const aanvraagBezigRef = useRef(false)
+  // De mail die je nu opent voor laten gaan. De ronde-classificatie loopt op
+  // eigen tempo achter de sync aan; open je een verse mail, dan sta je precies
+  // in dat gat te kijken en lijkt het of Daan hem niet als aanvraag ziet.
+  // Eén mail per keer, en alleen als er nog geen oordeel op staat.
+  const aanvraagVoorrangRef = useRef<Set<string>>(new Set())
+  const beoordeelDezeMail = useCallback(async (mail: Email) => {
+    if (mail.map !== 'inbox' || mail.is_aanvraag != null) return
+    if (aanvraagVoorrangRef.current.has(mail.id)) return
+    aanvraagVoorrangRef.current.add(mail.id)
+    const uitkomst = await classificeerAanvragen(mail.id).catch(() => null)
+    if (!uitkomst?.beoordeeld) return
+    // Alleen deze ene rij bijwerken · een volle lijstquery zou de bodies en de
+    // scrollpositie onnodig door de molen halen.
+    const vers = await getEmail(mail.id).catch(() => null)
+    if (!vers) return
+    const bijwerken = (e: Email) => e.id === mail.id
+      ? { ...e, is_aanvraag: vers.is_aanvraag, aanvraag_zekerheid: vers.aanvraag_zekerheid, aanvraag_samenvatting: vers.aanvraag_samenvatting }
+      : e
+    setEmails((vorige) => vorige.map(bijwerken))
+    setSelectedEmail((vorige) => (vorige && vorige.id === mail.id ? bijwerken(vorige) : vorige))
+  }, [])
+
   const herkenAanvragen = useCallback(async () => {
     if (aanvraagBezigRef.current) return
     aanvraagBezigRef.current = true
@@ -530,18 +552,26 @@ export function EmailLayout() {
               // Re-read from Supabase after sync
               const fresh = await readFromSupabase()
               if (fresh.length > 0) setEmails(fresh)
+              // Meteen starten, niet achteraan de rij. De classificatie haalt
+              // ontbrekende mailtekst zelf op, dus ze hoeft niet te wachten op
+              // het voorladen hieronder · dat kostte minuten voordat er een
+              // aanvraagkaart stond.
+              const aanvraagRonde = herkenAanvragen().catch(() => {})
               await vulBodyCacheUitDb(fresh.length > 0 ? fresh : dbEmails)
               // Nieuw binnengekomen mail heeft nog geen body; die halen we in
               // één ronde op. Daarna opnieuw lezen, want dat vult ook de
               // preview-regels in de lijst.
-              if (await laadBodiesVoor('INBOX')) {
+              const nieuweBodies = await laadBodiesVoor('INBOX')
+              // Eerst het oordeel binnenhalen: de verse lijst hieronder zou de
+              // zojuist gezette aanvraagvlaggen anders weer overschrijven.
+              await aanvraagRonde
+              if (nieuweBodies) {
                 const metBodies = await readFromSupabase()
                 if (metBodies.length > 0) {
                   setEmails(metBodies)
                   await vulBodyCacheUitDb(metBodies)
                 }
               }
-              void herkenAanvragen()
               void runBackfillAchtergrond()
             })
             .catch((err) => {
@@ -559,12 +589,14 @@ export function EmailLayout() {
           const synced = await readFromSupabase()
           setEmails(synced)
           setIsLoading(false)
-          if (await laadBodiesVoor('INBOX')) {
+          const aanvraagRonde = herkenAanvragen().catch(() => {})
+          const nieuweBodies = await laadBodiesVoor('INBOX')
+          await aanvraagRonde
+          if (nieuweBodies) {
             const metBodies = await readFromSupabase()
             if (metBodies.length > 0) setEmails(metBodies)
             await vulBodyCacheUitDb(metBodies.length > 0 ? metBodies : synced)
           }
-          void herkenAanvragen()
           void runBackfillAchtergrond()
         } catch (err) {
           logger.error('IMAP sync failed:', err)
@@ -1802,7 +1834,11 @@ export function EmailLayout() {
     loadEmailBody(email, selectedFolder).then((withBody) => {
       setSelectedEmail(markeerAlsGelezen ? withBody : { ...withBody, gelezen: email.gelezen })
     })
-  }, [loadEmailBody, selectedFolder, toggleCheckEmail, markeerGelezen])
+
+    // Nog geen oordeel? Dan deze mail nu laten beoordelen in plaats van te
+    // wachten tot de volgende ronde langskomt.
+    void beoordeelDezeMail(email)
+  }, [loadEmailBody, selectedFolder, toggleCheckEmail, markeerGelezen, beoordeelDezeMail])
 
   // Verlopen concepten opruimen bij het openen van de module; zonder dit
   // blijven ze eeuwig in localStorage staan.
