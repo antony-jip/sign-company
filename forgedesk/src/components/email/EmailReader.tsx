@@ -1032,15 +1032,13 @@ export function EmailReader({
     const naar = ontvangerLabel(payload.to)
     const doelEmailId = email?.id
     draadLengteBijVerzendenRef.current = threadEmails?.length ?? 0
-    // Sta je nog bij dezelfde mail, dan bevestigt de draad het zelf en houden
-    // we de zwevende melding dicht. Ben je doorgeklikt, dan is die melding het
-    // enige wat je nog vertelt dat hij weg is.
-    const draadBevestigt = () => huidigeEmailIdRef.current === doelEmailId
 
     sendInBackground(
       async () => {
         await onSendReply(payload)
-        if (draadBevestigt()) {
+        // De rij in de draad is de blijvende plek waar je je antwoord
+        // terugvindt, niet de bevestiging zelf. Die zegt de melding.
+        if (huidigeEmailIdRef.current === doelEmailId) {
           setZojuistVerzonden({
             tekst: cleanEmailPreview(payload.body || '').slice(0, 160),
             datum: new Date().toISOString(),
@@ -1050,7 +1048,7 @@ export function EmailReader({
       {
         loading: 'Versturen',
         success: 'Email verzonden',
-        successRender: () => (draadBevestigt() ? null : <VerzondenToast onder={naar} />),
+        successRender: () => <VerzondenToast onder={naar} />,
       }
     )
   }, [onSendReply, buildReplyPayload, clearDraft, email?.id, threadEmails?.length])
