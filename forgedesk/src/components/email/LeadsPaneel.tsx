@@ -206,13 +206,13 @@ export function LeadsPaneel({ onMailLead, naastCompose = false, mailDirect = fal
   }, [notitieConcept])
 
   return (
-    <div className={cn('flex min-w-0 bg-white dark:bg-card', naastCompose ? 'md:flex-shrink-0' : 'flex-1')}>
+    <div className={cn('flex min-w-0 bg-card', naastCompose ? 'md:flex-shrink-0' : 'flex-1')}>
       {/* Lijst */}
       <div className={cn(
         'flex-col min-w-0 w-full md:w-[380px] md:flex-shrink-0 md:border-r md:border-border',
         naastCompose ? 'hidden 2xl:flex' : 'flex',
       )}>
-        <div className="sticky top-0 z-20 bg-white dark:bg-card border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 flex-shrink-0">
+        <div className="sticky top-0 z-20 bg-card border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 flex-shrink-0">
           <div className="px-4 pt-4 pb-3">
             <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
               Leads<span className="text-flame">.</span>

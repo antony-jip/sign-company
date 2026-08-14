@@ -407,7 +407,7 @@ export const CRMSidebar = memo(function CRMSidebar({
 
     const cfg = panelConfig[activePanel]
     return (
-      <div className="bg-white dark:bg-card rounded-[10px] border border-border overflow-hidden" style={{ boxShadow: `0 2px 12px -2px ${cfg.accent}15` }}>
+      <div className="bg-card rounded-[10px] border border-border overflow-hidden" style={{ boxShadow: `0 2px 12px -2px ${cfg.accent}15` }}>
         <div className="flex items-center justify-between px-3.5 py-2.5" style={{ background: `${cfg.accent}0C`, borderBottom: `1px solid ${cfg.accent}15` }}>
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.accent }} />

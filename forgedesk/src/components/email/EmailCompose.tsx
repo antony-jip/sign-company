@@ -853,7 +853,7 @@ export function EmailCompose({
   return (
     <div
       className={cn(
-        'relative flex flex-col bg-white dark:bg-card min-w-0 [&:focus-visible]:shadow-none',
+        'relative flex flex-col bg-card min-w-0 [&:focus-visible]:shadow-none',
         isMobiel ? 'fixed inset-x-0 z-50' : 'h-full',
       )}
       style={isMobiel ? {
@@ -871,7 +871,7 @@ export function EmailCompose({
           <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
             <div className="absolute inset-3 rounded-2xl border-2 border-dashed border-petrol/40 bg-petrol/[0.05] backdrop-blur-[1px]" />
             <div className="relative flex flex-col items-center gap-2.5 text-petrol dark:text-[#7FB5BF]">
-              <div className="h-14 w-14 rounded-2xl bg-white dark:bg-card shadow-[0_4px_20px_rgba(26,83,92,0.18)] flex items-center justify-center">
+              <div className="h-14 w-14 rounded-2xl bg-card shadow-[0_4px_20px_rgba(26,83,92,0.18)] flex items-center justify-center">
                 <Paperclip className="h-6 w-6" />
               </div>
               <p className="text-[15px] font-semibold leading-none">Sleep bestanden hierheen</p>

@@ -1218,9 +1218,9 @@ export function EmailReader({
   // Body blijft zichtbaar eronder; geen mode-switch meer (was: full-screen takeover).
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const inlineReplyForm = replyMode ? (
-    <div className="bg-white dark:bg-card">
+    <div className="bg-card">
           {/* ─── Compose fields (iOS-style: hairlines, ruime padding, duidelijke labels) ─── */}
-          <div className="bg-white dark:bg-card flex-shrink-0">
+          <div className="bg-card flex-shrink-0">
             {/* Aan field */}
             <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06] dark:border-white/[0.08]">
               <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Aan</span>
@@ -1404,7 +1404,7 @@ export function EmailReader({
           </div>
 
           {/* ─── Editor + toolbar ─── */}
-          <div className="bg-white dark:bg-card">
+          <div className="bg-card">
             {/* Editor */}
             <div
               ref={editorRef}
@@ -1634,7 +1634,7 @@ export function EmailReader({
   // verzendknop in de kop zodat het toetsenbord hem nooit kan afdekken.
   const mobielAntwoordVenster = isMobiel && replyMode ? (
     <div
-      className="md:hidden fixed inset-x-0 z-50 flex flex-col bg-white dark:bg-card animate-in fade-in duration-150"
+      className="md:hidden fixed inset-x-0 z-50 flex flex-col bg-card animate-in fade-in duration-150"
       style={{
         top: venster.top,
         height: venster.hoogte || '100dvh',
@@ -1928,7 +1928,7 @@ export function EmailReader({
             andere as om naar auto, dus een brede handtekening sleepte de hele
             lezer zijwaarts mee — kop, knoppen en antwoordvenster incl. Het
             bericht zelf houdt hieronder zijn eigen scrollbare kader. */}
-        <div className="flex-1 overflow-y-auto max-md:overflow-x-hidden bg-white dark:bg-card">
+        <div className="flex-1 overflow-y-auto max-md:overflow-x-hidden bg-card">
           <div className="w-full min-w-0 max-w-full">
             {/* Header: subject + sender + reply actions */}
             {/* In reply-mode collapsen we naar één compacte regel · sender + onderwerp
@@ -2478,7 +2478,7 @@ export function EmailReader({
             onClick={closePreview}
           >
             <div
-              className="relative max-w-[92vw] max-h-[92vh] bg-white dark:bg-card rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              className="relative max-w-[92vw] max-h-[92vh] bg-card rounded-2xl shadow-2xl overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-border">

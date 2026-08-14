@@ -2307,7 +2307,7 @@ export function EmailLayout() {
 
   // ─── UNIFIED 3-COLUMN LAYOUT ───
   return (
-    <div className={cn('h-full flex flex-col overflow-hidden antialiased', viewMode === 'idle' || focusModus ? 'bg-background' : 'bg-white dark:bg-card')}>
+    <div className={cn('h-full flex flex-col overflow-hidden antialiased', viewMode === 'idle' || focusModus ? 'bg-background' : 'bg-card')}>
       {focusModus ? (
         <EmailFocusKaart onUitzetten={() => setFocusModus(false)} />
       ) : (
@@ -2419,7 +2419,7 @@ export function EmailLayout() {
           )}
           <div
             className={cn(
-              'md:hidden fixed inset-y-0 left-0 z-50 w-[80vw] max-w-[300px] bg-white dark:bg-card border-r border-border flex flex-col transform transition-transform duration-300 ease-in-out',
+              'md:hidden fixed inset-y-0 left-0 z-50 w-[80vw] max-w-[300px] bg-card border-r border-border flex flex-col transform transition-transform duration-300 ease-in-out',
               folderDrawerOpen ? 'translate-x-0' : '-translate-x-full',
             )}
           >
@@ -2469,7 +2469,7 @@ export function EmailLayout() {
       {/* ─── LIST COLUMN · altijd zichtbaar op desktop (resizable), op mobile alleen wanneer idle ─── */}
       <div
         className={cn(
-          'bg-white dark:bg-card flex-col min-w-0 relative',
+          'bg-card flex-col min-w-0 relative',
           'md:flex-shrink-0 md:border-r md:border-border md:flex',
           viewMode === 'idle' ? 'flex flex-1' : 'hidden',
           selectedFolder === 'leads' && 'hidden md:hidden',
@@ -2494,8 +2494,10 @@ export function EmailLayout() {
                 {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}<span className="text-flame">.</span>
               </h1>
               {folderCounts[selectedFolder] > 0 && (
-                <span className="font-mono tabular-nums text-[11px] font-semibold leading-none text-petrol dark:text-[#7FB5BF] bg-petrol/[0.07] dark:bg-[#2A7A86]/20 rounded-full px-2 py-1">
-                  {folderCounts[selectedFolder]} nieuw
+                // Tekst met een flame-punt, geen gekleurde pill · het aantal
+                // hoort naast de titel te fluisteren, niet te roepen.
+                <span className="font-mono tabular-nums text-[11px] leading-none text-muted-foreground">
+                  {folderCounts[selectedFolder]} nieuw<span className="text-flame">.</span>
                 </span>
               )}
             </div>
@@ -2535,7 +2537,9 @@ export function EmailLayout() {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-0.5 bg-petrol/[0.05] dark:bg-white/[0.06] rounded-[10px] p-0.5 min-w-0 overflow-x-auto scrollbar-none">
+              // Filters zijn tekstlinks, geen pills · een gevulde donkere pill
+              // trekt hier meer aandacht dan de mail eronder.
+              <div className="flex items-center gap-4 min-w-0 overflow-x-auto scrollbar-none">
                 {filtersList.map(f => {
                   const isActiveFilter = filter === f.id
                   return (
@@ -2543,13 +2547,16 @@ export function EmailLayout() {
                       key={f.id}
                       onClick={() => setFilter(f.id)}
                       className={cn(
-                        'px-2.5 py-1 rounded-lg text-[12px] transition-all duration-150 whitespace-nowrap',
+                        'relative py-1 text-[12px] whitespace-nowrap transition-colors duration-150',
                         isActiveFilter
-                          ? 'bg-petrol text-white font-semibold shadow-[0_1px_3px_rgba(26,83,92,0.28)]'
-                          : 'text-muted-foreground hover:text-petrol hover:bg-white/70 dark:hover:bg-white/10',
+                          ? 'font-semibold text-foreground'
+                          : 'text-muted-foreground hover:text-foreground/80',
                       )}
                     >
                       {f.label}
+                      {isActiveFilter && (
+                        <span className="absolute -bottom-0.5 left-0 right-0 h-px bg-flame" aria-hidden />
+                      )}
                     </button>
                   )
                 })}
@@ -2596,7 +2603,7 @@ export function EmailLayout() {
         </div>
 
         {/* Search bar · desktop only; mobile uses de topbar pill. */}
-        <div className="hidden md:block px-4 pb-2.5 border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 bg-white dark:bg-card">
+        <div className="hidden md:block px-4 pb-2.5 border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 bg-card">
           <div className="flex items-center gap-2.5 h-10 px-3 bg-background rounded-[10px] focus-within:ring-2 focus-within:ring-petrol/20 transition-shadow">
             <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <input
@@ -2869,7 +2876,7 @@ export function EmailLayout() {
       {showShortcuts && (
         <>
           <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white dark:bg-card dark:border dark:border-white/10 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8 w-[360px]">
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card dark:border dark:border-white/10 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8 w-[360px]">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-heading text-[18px] font-bold text-foreground tracking-[-0.01em]">Sneltoetsen</h3>
               <button onClick={() => setShowShortcuts(false)} className="p-1.5 hover:bg-muted rounded-lg transition-colors duration-150">
@@ -2899,7 +2906,7 @@ export function EmailLayout() {
 
       {/* ─── READER COLUMN · flex-1 op desktop, op mobile zichtbaar bij reading/composing ─── */}
       <div className={cn(
-        'bg-white dark:bg-card flex-col min-w-0',
+        'bg-card flex-col min-w-0',
         'md:flex md:flex-1',
         viewMode === 'idle' ? 'hidden md:flex' : 'flex flex-1',
         selectedFolder === 'leads' && viewMode === 'idle' && 'hidden md:hidden',

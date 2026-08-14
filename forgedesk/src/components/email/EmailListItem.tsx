@@ -468,7 +468,7 @@ export const EmailListItem = memo(function EmailListItem({
       </div>
 
       {/* Hover-acties · zweven rechts zodat de rij niet verspringt */}
-      <div className="hidden md:group-hover:flex absolute right-2.5 top-1.5 items-center gap-px p-0.5 rounded-xl bg-white dark:bg-card border border-black/[0.06] dark:border-white/10 shadow-[0_2px_10px_rgba(26,83,92,0.12)]">
+      <div className="hidden md:group-hover:flex absolute right-2.5 top-1.5 items-center gap-px p-0.5 rounded-xl bg-card border border-black/[0.06] dark:border-white/10 shadow-[0_2px_10px_rgba(26,83,92,0.12)]">
         <button
           type="button"
           onClick={handlePinClick}
