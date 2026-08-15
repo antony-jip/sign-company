@@ -1255,7 +1255,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({
           error: ONDERSTEUNDE_BTW_TARIEVEN.includes(tarief)
             ? `Geen Exact-btw-code geconfigureerd voor ${tarief}% btw. Vul de btw-codes in bij Instellingen > Integraties.`
-            : `Exact kent geen btw-tarief van ${tarief}%. Splits de factuurregel op in losse regels per tarief, of corrigeer het percentage naar 21%, 9% of 0%.`,
+            : `Exact kent geen btw-tarief van ${String(tarief).replace('.', ',')}%. Splits de factuurregel op in losse regels per tarief, of corrigeer het percentage naar 21%, 9% of 0%.`,
         })
       }
     }

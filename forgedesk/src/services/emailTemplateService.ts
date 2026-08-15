@@ -470,14 +470,16 @@ export function factuurHerinneringTemplate(data: FactuurHerinneringData): EmailR
     </table>
     ${buttonHtml}`
 
-  // Elke ingestelde tekst eindigt op een groet; het bedragblok en de knop
-  // horen daar vóór, niet achter. Zonder eigen tekst blijft de oude volgorde
-  // (tekst, blok, afsluiting) staan.
+  // Bewuste volgorde: de ingestelde tekst is één ondeelbaar blok dat op een
+  // groet eindigt, dus het bedragblok en de betaalknop staan eronder — het
+  // gangbare patroon in facturatie-mails (brief eerst, betaalinformatie als
+  // afsluitend blok). Boven de aanhef zetten leest als een bijlage vóór de
+  // brief. Zonder eigen tekst blijft de oude volgorde inclusief afsluiting.
   const bodyHtml = eigenTekst
     ? `
     ${kopHtml}
-    ${infoBlokHtml}
-    ${tekstHtml}`
+    ${tekstHtml}
+    ${infoBlokHtml}`
     : `
     ${kopHtml}
     ${tekstHtml}

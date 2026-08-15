@@ -1545,7 +1545,7 @@ export function generateFactuurPDF(
   const btwTarieven = Array.from(
     new Set(items.filter((it) => it.soort !== 'tekst').map((it) => it.btw_percentage))
   )
-  const btwLabel = btwTarieven.length === 1 ? `BTW (${btwTarieven[0]}%)` : 'BTW'
+  const btwLabel = btwTarieven.length === 1 ? `BTW (${String(btwTarieven[0]).replace('.', ',')}%)` : 'BTW'
 
   doc.setTextColor(120, 120, 115)
   doc.text(btwLabel, totalsX, totalsY)

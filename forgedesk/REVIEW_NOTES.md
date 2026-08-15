@@ -1483,3 +1483,39 @@ Bewuste keuzes/backlog uit ronde 2:
   de verse PDF komt er wel naast.
 - **Naam-mismatch bij Code-match**: nieuwe relatie zonder Code + zichtbare
   waarschuwing; opruimen (relaties samenvoegen in Exact) blijft handwerk.
+
+## Facturatie: loop-rondes 3-5, afronding (2026-08-15)
+
+Ronde 3 (~12 punten) en ronde 4 (~8 punten) gefixt in commits
+9079fb82..3ff8449c en 2c448dc5..b6d0c08c; slotronde 5 (drie lenzen op de
+laatste commits): nul blokkerend, nul risico. Resterende bewuste keuzes:
+
+- **Intern-doorlaat restvenster**: faalt de log-insert (venster 212
+  zonder 214, of abonnement inactief), dan is de handmatige doorlaat
+  binnen 10 minuten van de intern-registratie herbruikbaar; daarbuiten
+  sluit hij. Smal en zelfsluitend.
+- **Outbox-tak vlag-write best-effort**: mislukt de vlag-update terwijl
+  de mail wel in de outbox staat, dan kan de cron de stap later nogmaals
+  sturen; alleen bereikbaar als Supabase net wél en /api/send-email net
+  niet werkt.
+- **Proefmail = handmatige mail**: de testknop in Instellingen toont de
+  handmatige template; de automatische cron-mail gebruikt de
+  portal-bouwer met dezelfde tekst maar andere omlijsting.
+- **Btw-kruischeck-tolerantie** groeit met ~0,005 per regel (per-regel-
+  afronding); een echte tariefmismatch valt daar orders buiten.
+- **Ladder-volgorde wordt niet gevalideerd** in Instellingen; een
+  niet-oplopende ladder geeft geen suggestie (cron en UI consistent).
+  Backlog: volgorde-check in de subtab.
+- **Mailvolgorde**: brieftekst eerst, bedragblok + betaalknop als
+  afsluitend blok (gangbaar facturatie-patroon); bewust niet boven de
+  aanhef.
+
+Nagekomen uit slotronde 5 (btw-lens), gefixt: het mengvorm-percentage is
+nu adaptief (2-6 decimalen) zodat het btw-bedrag op de cent exact
+reconstrueert en nooit op een zuiver tarief afrondt dat de cent-poort
+verwierp; btw-invoerveld step="any"; NL-notatie in PDF-label en
+guard-melding; mailvolgorde definitief brieftekst-eerst. Bewust laten
+staan: UBL-export zet een mengpercentage zonder guard in <cbc:Percent>
+(UBL is download-only en sowieso niet-compliant, zie fase-1-onderzoek)
+en de dode helper-callers in FacturenLayout (handleOpenEdit/Create/
+ConvertOfferte zonder aanroepers) zijn een opruimkandidaat.

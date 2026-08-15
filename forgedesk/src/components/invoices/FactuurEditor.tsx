@@ -242,11 +242,24 @@ function btwRegelsUitTotalen(
   const zuiver = [21, 9, 0].find((tarief) => Math.abs(absBtw - round2((absNetto * tarief) / 100)) <= 0.02)
   if (zuiver !== undefined) return [{ beschrijving, eenheidsprijs: netto, btw_percentage: zuiver }]
 
-  // Twee decimalen, geen heel getal: de kop wordt uit deze regel herberekend
-  // en een afgerond percentage (17 i.p.v. 17,4) zou het btw-bedrag en dus het
-  // factuurtotaal stil veranderen. Met 2 decimalen blijft het bedrag op de
-  // cent gelijk aan wat de klant accepteerde.
-  return [{ beschrijving, eenheidsprijs: netto, btw_percentage: round2((absBtw / absNetto) * 100) }]
+  // Zoek het kortste percentage dat het btw-bedrag op de cent exact
+  // reconstrueert: de kop wordt uit deze regel herberekend, dus een te grof
+  // afgerond percentage zou het factuurbedrag stil veranderen (bij twee
+  // decimalen al vanaf ~200 euro netto). En als de afronding per ongeluk op
+  // een zuiver tarief uitkomt terwijl de cent-poort hierboven dat net
+  // verwierp, dan meer decimalen: anders glipt een mengvorm als "zuiver"
+  // langs de sync-guard de verkeerde aangifte-rubriek in.
+  const ruwPct = (absBtw / absNetto) * 100
+  let pct = round2(ruwPct)
+  for (const decimalen of [2, 3, 4, 5, 6]) {
+    const kandidaat = Number(ruwPct.toFixed(decimalen))
+    pct = kandidaat
+    const reconstrueert = Math.abs(round2((absNetto * kandidaat) / 100) - absBtw) < 0.005
+    const botstMetZuiver = kandidaat === 21 || kandidaat === 9 || kandidaat === 0
+    if (reconstrueert && !botstMetZuiver) break
+  }
+  return [{ beschrijving, eenheidsprijs: netto, btw_percentage: pct }]
+
 }
 
 function lineItemsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number): LineItem[] {
@@ -3509,7 +3522,10 @@ export function FactuurEditor() {
                       onChange={(e) => handleUpdateItem(item.id, 'btw_percentage', parseFloat(e.target.value) || 0)}
                       className="text-sm text-right"
                       min={0}
-                      step="1"
+                      // "any": een gewogen mengtarief (bv. 20,9952) mag niet
+                      // :invalid worden of door de spinner naar een heel
+                      // getal springen, dat verandert stil het bedrag.
+                      step="any"
                       disabled={isReadOnly}
                     />
                     <Input
