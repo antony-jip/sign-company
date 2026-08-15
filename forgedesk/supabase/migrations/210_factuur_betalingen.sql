@@ -49,6 +49,12 @@ CREATE POLICY "factuur_betalingen_org" ON factuur_betalingen FOR SELECT
 -- veranderde alleen status naar 'verzonden', zonder tijdstip.
 ALTER TABLE facturen ADD COLUMN IF NOT EXISTS verzonden_op timestamptz;
 
+-- DROP vooraf: het returntype is op de branch uitgebreid en Postgres
+-- weigert een CREATE OR REPLACE dat het rijtype wijzigt (42P13). Zonder
+-- deze regel is de migratie niet her-runbaar op een database waar een
+-- eerdere versie al staat.
+DROP FUNCTION IF EXISTS factuur_betaling_verwerk(uuid, text, text, numeric, date);
+
 CREATE OR REPLACE FUNCTION factuur_betaling_verwerk(
   p_factuur_id uuid,
   p_bron text,
