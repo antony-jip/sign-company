@@ -126,17 +126,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
     // Zoek de factuur met dit mollie_payment_id om de user_id te achterhalen
-    const { data: factuur, error: factuurLookupError } = await supabase
+    let { data: factuur, error: factuurLookupError } = await supabase
       .from('facturen')
       .select('id, user_id, organisatie_id, totaal, betaald_bedrag, status, nummer, klant_id')
       .eq('mollie_payment_id', paymentId)
-      .single()
+      .maybeSingle()
 
-    // PGRST116 = no rows; alle andere error-codes zijn echte DB-failures
     if (factuurLookupError && factuurLookupError.code !== 'PGRST116') {
       console.error(`Mollie webhook: factuur lookup faalde voor payment ${paymentId}`, factuurLookupError)
       Sentry.captureException(factuurLookupError, { extra: { paymentId } })
       return res.status(500).json({ error: 'Database lookup failed' })
+    }
+
+    // facturen.mollie_payment_id is één kolom die bij elke nieuwe checkout
+    // wordt overschreven. Een webhook van een oudere payment (bv. een refund
+    // op een eerdere deelbetaling) vindt de factuur alleen nog via de
+    // betalingsregistratie.
+    if (!factuur) {
+      const { data: eerdereBetaling } = await supabase
+        .from('factuur_betalingen')
+        .select('factuur_id')
+        .eq('bron', 'mollie')
+        .eq('bron_referentie', paymentId)
+        .maybeSingle()
+      if (eerdereBetaling?.factuur_id) {
+        const { data: viaBetaling } = await supabase
+          .from('facturen')
+          .select('id, user_id, organisatie_id, totaal, betaald_bedrag, status, nummer, klant_id')
+          .eq('id', eerdereBetaling.factuur_id)
+          .maybeSingle()
+        factuur = viaBetaling ?? null
+      }
     }
 
     if (!factuur) {
@@ -203,7 +223,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: 'Kon betaling niet verifiëren bij Mollie' })
     }
 
-    const payment = await mollieResponse.json()
+    const payment = (await mollieResponse.json()) as {
+      status?: string
+      amount?: { value?: string }
+      amountRefunded?: { value?: string }
+      amountChargedBack?: { value?: string }
+      paidAt?: string
+    }
 
     console.log(`Mollie webhook: payment ${paymentId} status=${payment.status}`)
 
@@ -219,39 +245,101 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (payment.status === 'paid') {
-      // Idempotency: skip als factuur al betaald is
-      if (factuur.status === 'betaald') {
-        console.log(`Factuur ${factuur.id} is al betaald — webhook skip`)
-        return res.status(200).json({ received: true, already_paid: true })
-      }
-
       // Bedrag-verificatie: vertrouw het betaalde bedrag van Mollie, niet de
-      // aanname dat elke 'paid'-webhook de volledige factuur dekt. Voorkomt dat
-      // een onderbetaling (bv. €0,01) de factuur als volledig voldaan markeert.
-      const betaaldNu = Number(payment.amount?.value) || 0
+      // aanname dat elke 'paid'-webhook de volledige factuur dekt. Refunds en
+      // chargebacks houden status 'paid' maar verlagen het effectieve bedrag.
+      const bruto = Number(payment.amount?.value) || 0
+      const terugbetaald = Number(payment.amountRefunded?.value) || 0
+      const chargeback = Number(payment.amountChargedBack?.value) || 0
+      const effectief = Math.round((bruto - terugbetaald - chargeback) * 100) / 100
       const totaal = Number(factuur.totaal) || 0
-      const reedsBetaald = Number(factuur.betaald_bedrag) || 0
-      const nieuwBetaald = Math.round((reedsBetaald + betaaldNu) * 100) / 100
-      const volledigVoldaan = nieuwBetaald + 0.01 >= totaal
 
-      const now = new Date().toISOString()
-      const { error: updateError } = await supabase
-        .from('facturen')
-        .update({
-          status: volledigVoldaan ? 'betaald' : factuur.status,
-          betaaldatum: volledigVoldaan ? now.split('T')[0] : null,
-          betaald_bedrag: nieuwBetaald,
-          updated_at: now,
-        })
-        .eq('id', factuur.id)
+      // De RPC lockt de factuurrij, registreert deze payment onder zijn
+      // tr_-id en past alleen de delta toe: een herlevering van dezelfde
+      // webhook is daarmee een no-op, een refund een negatieve delta.
+      const { data: verwerkingRows, error: rpcError } = await supabase.rpc('factuur_betaling_verwerk', {
+        p_factuur_id: factuur.id,
+        p_bron: 'mollie',
+        p_bron_referentie: paymentId,
+        p_bedrag: effectief,
+        p_betaald_op: typeof payment.paidAt === 'string' ? payment.paidAt.split('T')[0] : null,
+      })
 
-      if (updateError) {
-        console.error(`Mollie webhook: UPDATE faalde voor factuur ${factuur.id}, payment ${paymentId}`, updateError)
-        Sentry.captureException(updateError, { extra: { paymentId, factuurId: factuur.id } })
+      if (rpcError) {
+        const functieOntbreekt = rpcError.code === 'PGRST202' || /factuur_betaling_verwerk/.test(rpcError.message || '')
+        if (functieOntbreekt) {
+          // Migratie 210 is nog niet gedraaid. Betalingen mogen niet stilvallen
+          // op een deploy-volgorde, dus val terug op het oude additieve pad.
+          // Dat pad is niet idempotent voor deelbetalingen en stuurt geen
+          // betaalbevestiging; de Sentry-melding houdt dit venster zichtbaar.
+          Sentry.captureMessage('mollie-webhook: migratie 210 ontbreekt, legacy betaalpad actief', 'warning')
+          if (factuur.status === 'betaald') {
+            return res.status(200).json({ received: true, already_paid: true })
+          }
+          const reedsBetaald = Number(factuur.betaald_bedrag) || 0
+          const nieuwBetaaldLegacy = Math.round((reedsBetaald + bruto) * 100) / 100
+          const voldaanLegacy = nieuwBetaaldLegacy + 0.01 >= totaal
+          const nowIso = new Date().toISOString()
+          const { error: legacyError } = await supabase
+            .from('facturen')
+            .update({
+              status: voldaanLegacy ? 'betaald' : factuur.status,
+              betaaldatum: voldaanLegacy ? nowIso.split('T')[0] : null,
+              betaald_bedrag: nieuwBetaaldLegacy,
+              updated_at: nowIso,
+            })
+            .eq('id', factuur.id)
+          if (legacyError) {
+            console.error(`Mollie webhook: legacy UPDATE faalde voor factuur ${factuur.id}, payment ${paymentId}`, legacyError)
+            Sentry.captureException(legacyError, { extra: { paymentId, factuurId: factuur.id } })
+            return res.status(500).json({ error: 'Database update failed' })
+          }
+          return res.status(200).json({ received: true, legacy: true })
+        }
+        console.error(`Mollie webhook: factuur_betaling_verwerk faalde voor factuur ${factuur.id}, payment ${paymentId}`, rpcError)
+        Sentry.captureException(rpcError, { extra: { paymentId, factuurId: factuur.id } })
         return res.status(500).json({ error: 'Database update failed' })
       }
 
-      if (volledigVoldaan) {
+      const verwerking = (Array.isArray(verwerkingRows) ? verwerkingRows[0] : verwerkingRows) as {
+        delta: number
+        nieuw_betaald: number
+        volledig_voldaan: boolean
+        vorige_status: string
+        nieuwe_status: string
+      } | undefined
+
+      if (!verwerking || Number(verwerking.delta) === 0) {
+        console.log(`Mollie webhook: payment ${paymentId} al verwerkt (delta 0), skip`)
+        return res.status(200).json({ received: true, already_processed: true })
+      }
+
+      const delta = Number(verwerking.delta)
+      const nieuwBetaald = Number(verwerking.nieuw_betaald)
+      const werdBetaald = verwerking.nieuwe_status === 'betaald' && verwerking.vorige_status !== 'betaald'
+      const werdTeruggedraaid = delta < 0
+
+      if (werdTeruggedraaid) {
+        console.warn(`Mollie webhook: refund/chargeback €${Math.abs(delta)} op factuur ${factuur.id} (payment ${paymentId}), status nu ${verwerking.nieuwe_status}`)
+        Sentry.captureMessage(`Mollie terugboeking: factuur ${factuur.id} €${Math.abs(delta)} teruggedraaid, betaald nu €${nieuwBetaald}`, 'warning')
+        try {
+          await supabase.from('notificaties').insert({
+            user_id: factuur.user_id,
+            type: 'betaling_teruggedraaid',
+            titel: factuur.nummer ? `Betaling factuur ${factuur.nummer} teruggedraaid` : 'Betaling teruggedraaid',
+            bericht: `${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(Math.abs(delta))} terugbetaald of gestorneerd via Mollie`,
+            link: '/facturen',
+            gelezen: false,
+          })
+        } catch (notifErr) {
+          console.warn('Mollie webhook: terugboek-notificatie aanmaken mislukt:', notifErr)
+        }
+        return res.status(200).json({ received: true, reversed: true })
+      }
+
+      const betaaldNu = delta
+
+      if (werdBetaald) {
         console.log(`Factuur ${factuur.id} gemarkeerd als betaald via Mollie`)
 
         // In-app notificatie voor het bedrijf (niet-blokkerend)
