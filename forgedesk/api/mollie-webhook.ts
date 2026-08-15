@@ -143,12 +143,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // op een eerdere deelbetaling) vindt de factuur alleen nog via de
     // betalingsregistratie.
     if (!factuur) {
-      const { data: eerdereBetaling } = await supabase
+      // limit(2), geen maybeSingle: de unique key is (organisatie_id, bron,
+      // bron_referentie), dus dezelfde tr_-referentie mág in twee organisaties
+      // bestaan. maybeSingle geeft dan niets terug en de betaling verdampt.
+      const { data: eerdereBetalingen } = await supabase
         .from('factuur_betalingen')
         .select('factuur_id')
         .eq('bron', 'mollie')
         .eq('bron_referentie', paymentId)
-        .maybeSingle()
+        .limit(2)
+      if (eerdereBetalingen && eerdereBetalingen.length > 1) {
+        // Niet te bepalen welke factuur bijgeschreven moet worden. 500 zodat
+        // Mollie blijft retrien tot iemand er handmatig naar kijkt.
+        console.error(`Mollie webhook: payment ${paymentId} matcht meerdere organisaties in factuur_betalingen`)
+        Sentry.captureMessage(`Mollie webhook: payment ${paymentId} matcht meerdere factuur_betalingen-rijen, verwerking gestopt`, 'warning')
+        return res.status(500).json({ error: 'Betaling matcht meerdere organisaties' })
+      }
+      const eerdereBetaling = eerdereBetalingen?.[0]
       if (eerdereBetaling?.factuur_id) {
         const { data: viaBetaling } = await supabase
           .from('facturen')
@@ -161,6 +172,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!factuur) {
       console.warn(`Mollie webhook: geen factuur gevonden voor payment ${paymentId}`)
+      // Sinds elke checkout een 0-euro registratierij in factuur_betalingen
+      // wegschrijft, hoort een onbekende tr_ niet meer voor te komen: dit is
+      // verdacht en moet zichtbaar zijn. De 200 blijft wel staan, want een
+      // verzonnen id mag Mollie niet eeuwig laten retrien.
+      Sentry.captureMessage(`Mollie webhook: geen factuur gevonden voor payment ${paymentId}`, 'warning')
       // Truly not-found — 200 zodat Mollie niet blijft retrien
       return res.status(200).json({ received: true })
     }
@@ -262,6 +278,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         p_bron: 'mollie',
         p_bron_referentie: paymentId,
         p_bedrag: effectief,
+        // Bewust de datum uit paidAt's eigen offset (bv. +02:00) en niet uit UTC:
+        // die zone is de onze, dus rond middernacht is dit de juiste boekdatum.
         p_betaald_op: typeof payment.paidAt === 'string' ? payment.paidAt.split('T')[0] : null,
       })
 
