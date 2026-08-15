@@ -518,13 +518,27 @@ async function exactPost(token: string, division: string, endpoint: string, data
 // leesbare 400 van maakt in plaats van een verkeerde btw-code in Exact.
 const ONDERSTEUNDE_BTW_TARIEVEN = [21, 9, 0]
 
-function bepaalBtwCode(btwPercentage: number, settings: ExactSettings): string | null {
+function bepaalBtwCode(btwPercentage: unknown, settings: ExactSettings): string | null {
   // numeric uit PostgREST kan als string binnenkomen; === zou daar stil op falen.
+  // Ontbreekt het percentage helemaal, dan mag Number() er geen 0 van maken: dat
+  // mapt een regel zónder tarief stil op de nul-code. Null hier laat de guard
+  // vóór het boeken er een leesbare 400 van maken.
+  if (btwPercentage === null || btwPercentage === undefined || btwPercentage === '') return null
   const tarief = Number(btwPercentage)
   if (tarief === 21) return settings.exact_btw_hoog || null
   if (tarief === 9) return settings.exact_btw_laag || null
   if (tarief === 0) return settings.exact_btw_nul || null
   return null
+}
+
+// numeric-kolommen komen via PostgREST soms als string binnen, en dan bestaat
+// .toFixed() er niet op. Alles wat als bedrag naar Exact gaat loopt daarom via
+// dit ene punt. Een ontbrekende of onleesbare waarde levert null in plaats van
+// een stille 0, zodat de guards vóór het boeken er een 400 van maken.
+function alsBedrag(waarde: unknown): number | null {
+  if (waarde === null || waarde === undefined || waarde === '') return null
+  const getal = Number(waarde)
+  return Number.isFinite(getal) ? getal : null
 }
 
 // ── Grootboek GUID cache ──
@@ -583,11 +597,14 @@ function landNaarIso(land: string | null | undefined): string | null {
   return null
 }
 
+// Geeft naast de GUID een `naamWaarschuwing` terug: alleen Sentry zag voorheen
+// dat een Code-hit op naamverschil werd afgewezen en er dus een tweede relatie
+// in Exact bijkwam. De caller hangt die tekst aan de succes-respons.
 async function findOrCreateKlant(
   token: string,
   division: string,
   klant: KlantVoorExact
-): Promise<string> {
+): Promise<{ id: string; naamWaarschuwing: string | null }> {
   // Eerst op debiteurennummer (Account.Code): dat is een stabiele sleutel,
   // waar naam-matching breekt op elke spellingsvariant. Exact slaat Code op
   // als 18 tekens rechts uitgelijnd, dus beide varianten proberen.
@@ -611,7 +628,7 @@ async function findOrCreateKlant(
     const hit = codeData?.d?.results?.[0]
     if (hit?.ID) {
       const zelfdeNaam = (hit.Name || '').trim().toLowerCase() === klant.naam.trim().toLowerCase()
-      if (zelfdeNaam) return hit.ID
+      if (zelfdeNaam) return { id: hit.ID, naamWaarschuwing: null }
       codeHitAfgewezen = true
       console.warn('[exact-sync] debiteurennummer-match afgewezen: naam wijkt af', {
         debiteurennummer, exact_naam: hit.Name, doen_naam: klant.naam,
@@ -633,7 +650,7 @@ async function findOrCreateKlant(
   ) as { d?: { results?: Array<{ ID: string }> } }
 
   const existingId = searchData?.d?.results?.[0]?.ID
-  if (existingId) return existingId
+  if (existingId) return { id: existingId, naamWaarschuwing: null }
 
   // Klant niet gevonden, maak aan met Status 'C' (Customer) zodat de
   // latere SalesEntry-sync werkt — Exact accepteert geen SalesEntry voor
@@ -664,7 +681,12 @@ async function findOrCreateKlant(
     throw new Error(`Klant "${klant.naam}" kon niet aangemaakt worden in Exact Online.`)
   }
 
-  return newId
+  return {
+    id: newId,
+    naamWaarschuwing: codeHitAfgewezen
+      ? `Klantnaam wijkt af van de Exact-relatie met debiteurennummer ${debiteurennummer}; er is een nieuwe relatie zonder nummer aangemaakt. Controleer in Exact of dit klopt.`
+      : null,
+  }
 }
 
 // Loop factuur_bijlagen (alleen onsync'd) en POST elk als DocumentAttachment.
@@ -773,6 +795,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // uit deze functie weer los, anders blijft de factuur tien minuten op slot.
   let claimActief = false
   let geclaimdeFactuurId: string | null = null
+  // De timestamp die wij zelf op de claim schreven. De vrijgave is daarop
+  // voorwaardelijk: wordt maxDuration ooit boven de tien minuten verjaring
+  // getild, dan wist een trage invocatie anders de verse claim van de collega
+  // die hem inmiddels had overgenomen.
+  let eigenClaimTimestamp: string | null = null
+  // Het 504-pad weet niet of Exact de boeking heeft aangenomen. De claim blijft
+  // dan bewust staan, zodat een tweede klik niet meteen opnieuw kan boeken; de
+  // verjaring van tien minuten bewaakt dat venster machinaal.
+  let claimBehouden = false
 
   try {
     const user_id = await verifyUser(req)
@@ -868,10 +899,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!claimFout.message?.includes('exact_sync_gestart_op')) throw new Error(claimFout.message)
         console.warn('[exact-sync] claim-kolom ontbreekt (migratie 214 nog niet gedraaid); sync zonder claim')
       } else if (!geclaimd?.length) {
+        // Nul rijen heeft twee mogelijke oorzaken: er loopt echt een sync, óf de
+        // factuur is tussen onze lezing en de claim alsnog geboekt — beide
+        // claim-updates eisen immers `exact_entry_id IS NULL`. Herlees dus eerst,
+        // anders krijgt de gebruiker een conflict te zien voor een factuur die
+        // gewoon klaar is.
+        const { data: herlezen } = await supabaseAdmin
+          .from('facturen')
+          .select('exact_entry_id, exact_document_id, exact_bijlage_gesynced_op')
+          .eq('id', factuur_id)
+          .maybeSingle()
+        if (herlezen?.exact_entry_id) {
+          return res.status(200).json({
+            success: true,
+            al_gesynct: true,
+            exact_entry_id: herlezen.exact_entry_id,
+            document_id: (herlezen.exact_document_id as string | null) ?? null,
+            bijlage_synced: !!herlezen.exact_bijlage_gesynced_op,
+            bijlagen_synced: 0,
+            bijlagen_failed: 0,
+            bijlagen_geprobeerd: 0,
+          })
+        }
         return res.status(409).json({ error: 'Er loopt al een synchronisatie voor deze factuur' })
       } else {
         claimActief = true
         geclaimdeFactuurId = factuur_id
+        eigenClaimTimestamp = nu
       }
     }
 
@@ -1010,11 +1064,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const retryKlantNaam = retryKlant?.bedrijfsnaam || factuur.klant_naam || 'Onbekende klant'
         let retryCustomerGuid: string
         try {
-          retryCustomerGuid = await findOrCreateKlant(token, division, {
+          const retryKlantResultaat = await findOrCreateKlant(token, division, {
             naam: retryKlantNaam,
             email: retryKlant?.email,
             telefoon: retryKlant?.telefoon,
           })
+          retryCustomerGuid = retryKlantResultaat.id
         } catch (klantErr) {
           console.error('Klant lookup mislukt in retry-flow:', klantErr)
           return res.status(502).json({ error: 'Klant niet gevonden in Exact' })
@@ -1174,8 +1229,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Elke regel moet op een geconfigureerde btw-code uitkomen; een lege code
     // ging voorheen stilzwijgend als VATCode null naar Exact.
-    for (const item of factuurItems as Array<{ btw_percentage: number }>) {
+    for (const item of factuurItems as Array<{ btw_percentage: unknown }>) {
       if (bepaalBtwCode(item.btw_percentage, exactSettings) === null) {
+        if (item.btw_percentage === null || item.btw_percentage === undefined || item.btw_percentage === '') {
+          return res.status(400).json({
+            error: 'Een factuurregel heeft geen btw-tarief. Open de factuur, vul het percentage in en sla opnieuw op voordat je naar Exact boekt.',
+          })
+        }
         const tarief = Number(item.btw_percentage)
         return res.status(400).json({
           error: ONDERSTEUNDE_BTW_TARIEVEN.includes(tarief)
@@ -1183,6 +1243,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             : `Exact kent geen btw-tarief van ${tarief}%. Splits de factuurregel op in losse regels per tarief, of corrigeer het percentage naar 21%, 9% of 0%.`,
         })
       }
+    }
+
+    // Bedragen één keer normaliseren, in regelvolgorde. numeric komt via
+    // PostgREST soms als string binnen en `.toFixed()` op een string gooit.
+    const regelTotalen: number[] = []
+    for (const item of factuurItems as Array<{ totaal: unknown }>) {
+      const regelBedrag = alsBedrag(item.totaal)
+      if (regelBedrag === null) {
+        return res.status(400).json({
+          error: 'Een factuurregel heeft geen geldig regeltotaal. Open de factuur, controleer de regels en sla opnieuw op.',
+        })
+      }
+      regelTotalen.push(regelBedrag)
+    }
+
+    const btwBedrag = alsBedrag(factuur.btw_bedrag)
+    if (btwBedrag === null) {
+      return res.status(400).json({
+        error: 'Het btw-bedrag van deze factuur ontbreekt of is ongeldig. Open de factuur en sla hem opnieuw op voordat je naar Exact boekt.',
+      })
+    }
+
+    // Kop en regels moeten bij dezelfde versie van de factuur horen. Slaagt een
+    // editor-save maar half (kop bijgewerkt, regels nog de oude), dan kloppen de
+    // regelbedragen niet bij het btw-totaal van de kop en landt er een boeking in
+    // Exact die alleen met een correctie recht te zetten is. 0,02 speling voor
+    // afrondingsverschillen per regel. Een lege subtotaal-kop slaan we over: dan
+    // is er niets om tegen te vergelijken.
+    const subtotaalKop = alsBedrag(factuur.subtotaal)
+    const regelsSom = regelTotalen.reduce((som, bedrag) => som + bedrag, 0)
+    if (subtotaalKop !== null && Math.abs(regelsSom - subtotaalKop) > 0.02) {
+      return res.status(400).json({
+        error: `De kop en de regels van deze factuur horen niet bij dezelfde versie: het subtotaal is € ${subtotaalKop.toFixed(2)}, terwijl de regels optellen tot € ${regelsSom.toFixed(2)}. Open de factuur en sla hem opnieuw op voordat je naar Exact boekt.`,
+      })
     }
 
     // 4. Klant zoeken/aanmaken
@@ -1207,15 +1301,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       kvk_nummer: klant?.kvk_nummer,
     }
     let customerGuid: string
+    // Alleen Sentry zag voorheen dat een debiteurennummer-match op naamverschil
+    // werd afgewezen en er dus een dubbele relatie in Exact bijkwam. Deze tekst
+    // gaat mee in de succes-respons, die de editor als toast.warning toont.
+    let klantNaamWaarschuwing: string | null = null
 
     try {
-      customerGuid = await findOrCreateKlant(token, division, klantVoorExact)
+      const klantResultaat = await findOrCreateKlant(token, division, klantVoorExact)
+      customerGuid = klantResultaat.id
+      klantNaamWaarschuwing = klantResultaat.naamWaarschuwing
     } catch (klantError: unknown) {
       // Token verlopen tijdens klant zoeken? Refresh en retry 1x
       try {
         token = await getValidToken(tokenUserId, user_id, tokenCache)
 
-        customerGuid = await findOrCreateKlant(token, division, klantVoorExact)
+        const klantResultaat = await findOrCreateKlant(token, division, klantVoorExact)
+        customerGuid = klantResultaat.id
+        klantNaamWaarschuwing = klantResultaat.naamWaarschuwing
       } catch {
         const msg = klantError instanceof Error ? klantError.message : 'Klant aanmaken mislukt'
         await registreerSyncFout(factuur_id, msg)
@@ -1252,6 +1354,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // nieuwe PDF-bijlage aan en bleven de vorige als wezen in Exact staan.
       // Zelfde patroon als de attachment_only-tak hierboven.
       documentId = (factuur.exact_document_id as string | null) ?? null
+      // exact_bijlage_gesynced_op is de enige beslisser over opnieuw uploaden.
+      // De UI zet hem op null zodra pdf_storage_path geïnvalideerd wordt (de
+      // factuur is inhoudelijk gewijzigd), en dan hangt deze flow de verse PDF
+      // aan hetzelfde bestaande Document — geen tweede Document dus.
+      // Let op: de oude bijlage blijft in Exact aan dat Document hangen. Exact
+      // biedt via dit pad geen delete op een DocumentAttachment, dus er staan na
+      // een herziening twee PDF's bij het document. Dat is bewust: liever een
+      // dubbele bijlage die zichtbaar is dan een document zonder actuele PDF.
       const pdfAlGekoppeld = !!factuur.exact_bijlage_gesynced_op
 
       if (!documentId) {
@@ -1396,9 +1506,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       eenheidsprijs: number
       korting_percentage: number
       grootboek_code?: string | null
-    }) => {
-      // factuur_items.totaal is al excl. BTW (zie calcLineTotal in FactuurEditor)
-      const regelTotaal = item.totaal
+    }, index: number) => {
+      // factuur_items.totaal is al excl. BTW (zie calcLineTotal in FactuurEditor).
+      // Genormaliseerd bij de consistentiecheck hierboven, in dezelfde volgorde.
+      const regelTotaal = regelTotalen[index]
       const btwCode = bepaalBtwCode(item.btw_percentage, exactSettings)
       const regelGrootboekCode = (item.grootboek_code || '').trim() || defaultGrootboekCode
 
@@ -1426,8 +1537,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       EntryDate: `${factuurdatum}T00:00:00`,
       ReportingPeriod: reportingPeriod,
       ReportingYear: reportingYear,
-      VATAmountDC: (factuur.btw_bedrag as number).toFixed(2),
-      VATAmountFC: (factuur.btw_bedrag as number).toFixed(2),
+      VATAmountDC: btwBedrag.toFixed(2),
+      VATAmountFC: btwBedrag.toFixed(2),
       SalesEntryLines: salesEntryLines,
     }
     // Vervaldatum bepaalt in Exact de openstaande-postentermijn; zonder
@@ -1460,9 +1571,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
         Sentry.captureException(syncError, { extra: { factuur_id, fase: 'salesentry-post-afgebroken' } })
         await registreerSyncFout(factuur_id, 'Exact reageerde niet binnen de tijd; boeking mogelijk wel aangekomen.')
+        // Claim vasthouden: er is geen exact_entry_id om de idempotency-guard mee
+        // te voeden, dus de claim is het enige wat een tweede boeking tegenhoudt.
+        // Hij verjaart na tien minuten vanzelf — genoeg tijd om in Exact te kijken.
+        claimBehouden = true
         return res.status(504).json({
           success: false,
-          error: 'Exact reageerde niet binnen de tijd. De boeking is mogelijk wél aangekomen. Controleer in Exact of de factuur er staat voordat je opnieuw synchroniseert.',
+          error: 'Exact reageerde niet binnen de tijd. De boeking is mogelijk wél aangekomen. Controleer in Exact of de factuur er staat voordat je opnieuw synchroniseert. Probeer het na tien minuten opnieuw.',
         })
       }
       // Retry 1x na token refresh
@@ -1504,8 +1619,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     // Verloren exact_entry_id betekent dat de idempotency-guard de volgende
     // klik niet meer tegenhoudt en de factuur dubbel in Exact kan landen.
-    // Niet stil laten passeren.
+    // Niet stil laten passeren, en de claim laten staan: dan houdt de
+    // 10-minuten-verjaring een snelle tweede poging machinaal tegen, net als
+    // op het 504-pad.
     if (syncOpslagFout) {
+      claimBehouden = true
       console.error('[exact-sync] exact_entry_id NIET opgeslagen na geslaagde boeking', {
         factuur_id, exact_entry_id: exactEntryId, fout: syncOpslagFout.message,
       })
@@ -1515,6 +1633,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
+    // Er kan meer dan één ding zijn misgegaan zonder dat de boeking faalde; de
+    // editor toont één `waarschuwing`-veld, dus alles wat speelt gaat samen mee.
+    const waarschuwingen = [
+      syncOpslagFout
+        ? 'De boeking staat in Exact, maar het registreren in doen. mislukte. Synchroniseer NIET opnieuw voordat je in Exact gecontroleerd hebt of de factuur er staat.'
+        : null,
+      klantNaamWaarschuwing,
+    ].filter((tekst): tekst is string => !!tekst)
+
     return res.status(200).json({
       success: true,
       exact_entry_id: exactEntryId,
@@ -1523,9 +1650,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       bijlagen_synced: mainBijlagenSyncResult.synced,
       bijlagen_failed: mainBijlagenSyncResult.failed,
       bijlagen_geprobeerd: mainBijlagenSyncResult.geprobeerd,
-      ...(syncOpslagFout ? {
-        waarschuwing: 'De boeking staat in Exact, maar het registreren in doen. mislukte. Synchroniseer NIET opnieuw voordat je in Exact gecontroleerd hebt of de factuur er staat.',
-      } : {}),
+      ...(waarschuwingen.length ? { waarschuwing: waarschuwingen.join(' ') } : {}),
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout bij synchroniseren'
@@ -1535,12 +1660,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (factuurGeautoriseerd && factuurId) await registreerSyncFout(factuurId, message)
     return res.status(500).json({ success: false, error: message })
   } finally {
-    // Claim vrijgeven op elk vertrekpunt: geslaagd, gefaald of geworpen.
-    if (claimActief && geclaimdeFactuurId) {
+    // Claim vrijgeven op elk vertrekpunt: geslaagd, gefaald of geworpen. Behalve
+    // na een afgebroken SalesEntry-POST: daar is de uitkomst onbekend en houdt
+    // de claim de tweede klik tegen tot de verjaring hem loslaat.
+    // Alleen de eigen claim wissen, nooit die van een overnemer.
+    if (claimActief && geclaimdeFactuurId && !claimBehouden) {
       const { error: vrijgaveFout } = await supabaseAdmin
         .from('facturen')
         .update({ exact_sync_gestart_op: null })
         .eq('id', geclaimdeFactuurId)
+        .eq('exact_sync_gestart_op', eigenClaimTimestamp)
       if (vrijgaveFout) {
         // Niet fataal: de claim verloopt vanzelf na tien minuten.
         console.warn('[exact-sync] claim vrijgeven mislukt:', vrijgaveFout.message)
