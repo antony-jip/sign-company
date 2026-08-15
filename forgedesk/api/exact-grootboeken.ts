@@ -239,15 +239,18 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
   // dus nul geraakte rijen betekent dat iemand anders de keten al vervangen of
   // de koppeling ontkoppeld heeft. Een blinde upsert overschreef in dat geval de
   // verse keten van een net afgeronde OAuth of wekte een ontkoppelde rij weer op.
+  const nieuweRij = {
+    user_id: userId,
+    access_token: encryptSecret(tokens.access_token),
+    refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
+    expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+    division: data.division,
+    updated_at: new Date().toISOString(),
+  }
+
   const { data: bijgewerkt, error: updateFout } = await supabaseAdmin
     .from('exact_tokens')
-    .update({
-      access_token: encryptSecret(tokens.access_token),
-      refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
-      expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-      division: data.division,
-      updated_at: new Date().toISOString(),
-    })
+    .update(nieuweRij)
     .eq('user_id', userId)
     .eq('refresh_token', data.refresh_token)
     .select('user_id')
@@ -262,8 +265,8 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
       extra: { user_id: userId, fout: updateFout.message },
     })
   } else if (!bijgewerkt?.length) {
-    // Deze route leest alleen gegevens op. Bij een verloren race is de nieuwste
-    // keten van iemand anders leidend en hoeven we niets te herstellen.
+    // Verloren race: staat er een nieuwere keten, dan is die van iemand anders
+    // leidend en hoeven we niets te herstellen.
     const { data: huidig } = await supabaseAdmin
       .from('exact_tokens')
       .select('access_token, division')
@@ -272,6 +275,40 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     const rij = huidig as { access_token?: string | null; division?: number | null } | null
     if (rij?.access_token) {
       return { token: decryptSecret(rij.access_token), division: rij.division as number }
+    }
+
+    // Rij is weg. Dat kan een expliciete ontkoppeling zijn (dan NIET
+    // reanimeren), maar ook een parallel pad dat tijdens onze refresh
+    // invalid_grant kreeg en de rij wiste — dan is onze verse keten de enige
+    // werkende die nog bestaat en zou hem laten vallen de hele org ontkoppelen.
+    // Zelfde discriminator als exact-sync-factuur.ts: exact_owner_user_id en
+    // exact_online_connected worden bij een echte ontkoppeling geleegd.
+    const settings = await loadAppSettingsOrgFirst(
+      supabaseAdmin,
+      userId,
+      'exact_owner_user_id, exact_online_connected',
+    )
+    const eigenaar = (settings?.exact_owner_user_id as string | null) ?? null
+    const nogGekoppeld = eigenaar === userId || (eigenaar === null && settings?.exact_online_connected === true)
+
+    if (!nogGekoppeld) {
+      console.warn('[Exact] rotatie niet bewaard: koppeling is inmiddels ontkoppeld', {
+        user_id: userId, endpoint: 'exact-grootboeken.ts',
+      })
+    } else {
+      const { error: insertFout } = await supabaseAdmin.from('exact_tokens').insert(nieuweRij)
+      // 23505 = een parallel request maakte de rij net aan; die keten is dan
+      // nieuwer dan de onze en mag blijven staan.
+      if (insertFout && insertFout.code !== '23505') {
+        console.error('[Exact] geroteerde token NIET opgeslagen (insert)', {
+          user_id: userId, endpoint: 'exact-grootboeken.ts', fout: insertFout.message,
+        })
+        Sentry.captureException(new Error('Exact token rotation not persisted'), {
+          level: 'error',
+          tags: { exact_endpoint: 'exact-grootboeken', oauth_error: 'rotation_not_persisted' },
+          extra: { user_id: userId, fout: insertFout.message },
+        })
+      }
     }
   }
 

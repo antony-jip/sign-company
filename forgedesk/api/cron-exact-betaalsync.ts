@@ -17,8 +17,10 @@
  * 5000/dag per app per administratie).
  *
  * BEVEILIGD: vereist Authorization: Bearer ${CRON_SECRET} header.
- * Schedule: dagelijks 06:45 UTC (07:45/08:45 Amsterdam), ruim vóór de
- * factuur-herinnering-cron van 09:30 zodat die met een verse stand draait.
+ * Schedule: dagelijks 05:45 UTC (06:45 winter- / 07:45 zomertijd Amsterdam).
+ * De factuur-herinnering draait op 09:30 Amsterdam; door de cron in UTC te
+ * plannen blijft de marge ook in zomertijd bijna twee uur, zodat de
+ * herinneringen altijd met een verse stand vertrekken.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
@@ -308,15 +310,26 @@ async function getValidToken(tokenUserId: string, cache: TokenCache): Promise<{ 
   return { token: bestaand, division: tokenData.division }
 }
 
-// 429 met Retry-After (gecapt) en maximaal twee extra pogingen; GET's zijn
-// idempotent dus ook timeouts mogen opnieuw.
+// 429 met Retry-After (gecapt) en maximaal twee extra pogingen. Alle calls in
+// dit bestand zijn idempotente GET's, dus een afgekapte poging mag ook één keer
+// over: AbortSignal.timeout gooit een TimeoutError (oudere runtimes: AbortError)
+// en die zou anders de hele org-run laten falen op één trage response.
 async function exactFetchMetRetry(url: string, init: RequestInit): Promise<Response> {
-  for (let poging = 0; ; poging++) {
-    const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) })
-    if (response.status !== 429 || poging >= 2) return response
-    const retryAfter = Number(response.headers.get('Retry-After'))
-    const wachtMs = Math.min((retryAfter > 0 ? retryAfter : 5) * 1000, 15_000)
-    await new Promise((r) => setTimeout(r, wachtMs))
+  let rateLimitPogingen = 0
+  let timeoutPogingOver = true
+  for (;;) {
+    try {
+      const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) })
+      if (response.status !== 429 || rateLimitPogingen >= 2) return response
+      rateLimitPogingen++
+      const retryAfter = Number(response.headers.get('Retry-After'))
+      const wachtMs = Math.min((retryAfter > 0 ? retryAfter : 5) * 1000, 15_000)
+      await new Promise((r) => setTimeout(r, wachtMs))
+    } catch (err) {
+      const naam = err instanceof Error ? err.name : ''
+      if (!timeoutPogingOver || (naam !== 'TimeoutError' && naam !== 'AbortError')) throw err
+      timeoutPogingOver = false
+    }
   }
 }
 
@@ -377,7 +390,19 @@ interface OrgConfig {
   exact_betaalsync_actief?: boolean | null
 }
 
-interface SpiegelTermijn { factuur_id: string; bedrag: number; status: number | null }
+interface SpiegelTermijn {
+  factuur_id: string
+  bedrag: number
+  status: number | null
+  laatste_betaaldatum: string | null
+}
+
+// Facturen per chunk gelijktijdig evalueren. Sequentieel kost elke factuur 1-2
+// Supabase-roundtrips; bij een inhaalslag van duizenden facturen loopt dat over
+// de maxDuration heen, waarna de kill de state-upsert verhindert en de volgende
+// run exact hetzelfde probleem heeft. Tien tegelijk is genoeg om binnen het
+// budget te blijven zonder de connectiepool te verzuipen.
+const EVALUATIE_CHUNK = 10
 
 // Match op YourRef: daar staat het doen.-factuurnummer sinds de eerste sync
 // (exact-sync-factuur.ts stuurt nummer als YourRef mee). Exacts eigen
@@ -410,39 +435,72 @@ async function zoekFacturenOpNummer(orgId: string, refs: string[]): Promise<Map<
 // in plaats van de oude settle-rij te herinterpreteren en betaald_bedrag te
 // verlagen. Dubbele gelijktijdige aanroepen serialiseren op de lock: de
 // tweede ziet restant 0 en boekt niets.
+async function evalueerFactuur(
+  orgId: string,
+  factuur: { id: string; status: string },
+  rijen: SpiegelTermijn[],
+): Promise<boolean> {
+  if (rijen.length === 0) return false
+
+  const openstaand = Math.round(rijen
+    .filter((r) => r.status !== 50)
+    .reduce((som, r) => som + (Number(r.bedrag) || 0), 0) * 100) / 100
+  const allesAfgeletterd = rijen.every((r) => r.status === 50)
+
+  // De org-filter is defensief: de ids komen uit org-gefilterde bronnen, maar
+  // een factuur die ooit van organisatie wisselde zou anders cross-org
+  // beschreven worden.
+  const { error: standFout } = await supabaseAdmin
+    .from('facturen')
+    .update({ openstaand_exact: openstaand, exact_stand_op: new Date().toISOString() })
+    .eq('id', factuur.id)
+    .eq('organisatie_id', orgId)
+  if (standFout) throw new Error(`openstaand_exact-update mislukt: ${standFout.message}`)
+
+  // Bewuste versimpeling: status 50 kan ook via betalingskorting of een
+  // afboeking bereikt zijn; het restant wordt dan toch als "ontvangen"
+  // geboekt. De korting-kolom staat in de spiegel voor wie dat later
+  // wil uitsplitsen.
+  if (allesAfgeletterd && ['open', 'verzonden', 'vervallen'].includes(factuur.status)) {
+    // Jongste bankdatum van de termijnen: dát is de dag waarop de factuur
+    // volledig binnen was. Zonder deze waarde zou de RPC terugvallen op de
+    // crondag en zou elke betaling de datum van de nachtrun krijgen.
+    const betaaldOp = rijen
+      .map((r) => r.laatste_betaaldatum)
+      .filter((d): d is string => !!d)
+      .sort()
+      .pop() ?? null
+
+    const { error: settleFout } = await supabaseAdmin.rpc('factuur_markeer_betaald', {
+      p_factuur_id: factuur.id,
+      p_bron: 'exact',
+      p_betaald_op: betaaldOp,
+    })
+    if (settleFout) throw new Error(`settle mislukt voor factuur ${factuur.id}: ${settleFout.message}`)
+    return true
+  }
+  return false
+}
+
+// De deadline is hard: bij overschrijding stopt de evaluatie met
+// EVALUATIE_ONVOLTOOID, zodat de catch in de handler alleen laatste_fout zet.
+// De cursor (laatste_timestamp) en inhaalslag_bezig blijven dan staan en de
+// volgende run herstart idempotent — beter een halve evaluatie die morgen
+// verdergaat dan een platform-kill die de state-upsert helemaal overslaat.
 async function evalueerFacturen(
   orgId: string,
   facturen: { id: string; status: string }[],
   termijnenPerFactuur: Map<string, SpiegelTermijn[]>,
+  deadline: number,
 ): Promise<number> {
   let gesettled = 0
-  for (const factuur of facturen) {
-    const rijen = termijnenPerFactuur.get(factuur.id) ?? []
-    if (rijen.length === 0) continue
-
-    const openstaand = Math.round(rijen
-      .filter((r) => r.status !== 50)
-      .reduce((som, r) => som + (Number(r.bedrag) || 0), 0) * 100) / 100
-    const allesAfgeletterd = rijen.every((r) => r.status === 50)
-
-    const { error: standFout } = await supabaseAdmin
-      .from('facturen')
-      .update({ openstaand_exact: openstaand, exact_stand_op: new Date().toISOString() })
-      .eq('id', factuur.id)
-    if (standFout) throw new Error(`openstaand_exact-update mislukt: ${standFout.message}`)
-
-    // Bewuste versimpeling: status 50 kan ook via betalingskorting of een
-    // afboeking bereikt zijn; het restant wordt dan toch als "ontvangen"
-    // geboekt. De korting-kolom staat in de spiegel voor wie dat later
-    // wil uitsplitsen.
-    if (allesAfgeletterd && ['open', 'verzonden', 'vervallen'].includes(factuur.status)) {
-      const { error: settleFout } = await supabaseAdmin.rpc('factuur_markeer_betaald', {
-        p_factuur_id: factuur.id,
-        p_bron: 'exact',
-      })
-      if (settleFout) throw new Error(`settle mislukt voor factuur ${factuur.id}: ${settleFout.message}`)
-      gesettled++
-    }
+  for (let i = 0; i < facturen.length; i += EVALUATIE_CHUNK) {
+    if (Date.now() > deadline) throw new Error('EVALUATIE_ONVOLTOOID')
+    const chunk = facturen.slice(i, i + EVALUATIE_CHUNK)
+    const uitkomsten = await Promise.all(
+      chunk.map((factuur) => evalueerFactuur(orgId, factuur, termijnenPerFactuur.get(factuur.id) ?? []))
+    )
+    gesettled += uitkomsten.filter(Boolean).length
   }
   return gesettled
 }
@@ -459,7 +517,7 @@ async function haalSpiegel(orgId: string, factuurIds?: string[]): Promise<Map<st
     for (let i = 0; i < factuurIds.length; i += 50) {
       const { data, error } = await supabaseAdmin
         .from('exact_betaaltermijnen')
-        .select('factuur_id, bedrag, status')
+        .select('factuur_id, bedrag, status, laatste_betaaldatum')
         .eq('organisatie_id', orgId)
         .eq('line_type', 20)
         .in('factuur_id', factuurIds.slice(i, i + 50))
@@ -473,7 +531,7 @@ async function haalSpiegel(orgId: string, factuurIds?: string[]): Promise<Map<st
   for (let offset = 0; ; offset += 1000) {
     const { data, error } = await supabaseAdmin
       .from('exact_betaaltermijnen')
-      .select('factuur_id, bedrag, status')
+      .select('factuur_id, bedrag, status, laatste_betaaldatum')
       .eq('organisatie_id', orgId)
       .eq('line_type', 20)
       .not('factuur_id', 'is', null)
@@ -486,17 +544,49 @@ async function haalSpiegel(orgId: string, factuurIds?: string[]): Promise<Map<st
   return perFactuur
 }
 
-async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gesettled: number; afgekapt: boolean }> {
-  if (!org.exact_owner_user_id) throw new Error('GEEN_EIGENAAR')
+// Legacy-orgs zijn gekoppeld zonder dat exact_owner_user_id ooit gevuld is:
+// exact_online_connected staat aan en de rest van de keten (o.a. de
+// nogGekoppeld-discriminator) beschouwt zo'n org terecht als gekoppeld. Hard
+// falen op GEEN_EIGENAAR zou de betaalsync daar stil voor altijd stilzetten, en
+// daarmee ook de herinneringsmotor die op een verse stand wacht. Zoek daarom de
+// tokenhouder op: een exact_tokens-rij van een gebruiker die via
+// profiles.organisatie_id bij deze org hoort. Meerdere kandidaten? De laatst
+// ververste keten is de levende.
+async function zoekTokenhouderVoorOrg(orgId: string): Promise<string | null> {
+  const { data: profielen } = await supabaseAdmin
+    .from('profiles')
+    .select('id')
+    .eq('organisatie_id', orgId)
+  const userIds = ((profielen ?? []) as { id: string }[]).map((p) => p.id)
+  if (userIds.length === 0) return null
+
+  const { data: tokens } = await supabaseAdmin
+    .from('exact_tokens')
+    .select('user_id')
+    .in('user_id', userIds)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+  return ((tokens ?? []) as { user_id: string }[])[0]?.user_id ?? null
+}
+
+async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verwerkt: number; gesettled: number; afgekapt: boolean }> {
+  let eigenaarUserId = org.exact_owner_user_id
+  if (!eigenaarUserId) {
+    eigenaarUserId = await zoekTokenhouderVoorOrg(org.organisatie_id)
+    if (!eigenaarUserId) throw new Error('GEEN_EIGENAAR')
+    console.log('[cron-exact-betaalsync] lege exact_owner_user_id, terugval op tokenhouder', {
+      organisatie_id: org.organisatie_id, token_user_id: eigenaarUserId,
+    })
+  }
 
   // `exact_tokens` heeft geen organisatie_id: check dat de eigenaar nog bij
   // déze organisatie hoort, anders synct org A met de sessie (en mogelijk de
   // administratie) die de verhuisde eigenaar inmiddels voor org B gebruikt.
-  const eigenaarOrg = await getOrgIdForUser(supabaseAdmin, org.exact_owner_user_id)
+  const eigenaarOrg = await getOrgIdForUser(supabaseAdmin, eigenaarUserId)
   if (eigenaarOrg !== org.organisatie_id) throw new Error('EIGENAAR_ANDERE_ORG')
 
   const cache: TokenCache = { accessToken: null, expiresAt: 0 }
-  const { token, division: tokenDivision } = await getValidToken(org.exact_owner_user_id, cache)
+  const { token, division: tokenDivision } = await getValidToken(eigenaarUserId, cache)
   const division = org.exact_administratie_id || (tokenDivision != null ? String(tokenDivision) : null)
   if (!division) throw new Error('GEEN_ADMINISTRATIE')
 
@@ -598,6 +688,7 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
         const { data: statusRijen, error } = await supabaseAdmin
           .from('facturen')
           .select('id, status')
+          .eq('organisatie_id', org.organisatie_id)
           .in('id', alleIds.slice(i, i + 100))
         if (error) throw new Error(`facturen-status lezen mislukt: ${error.message}`)
         for (const f of (statusRijen ?? []) as { id: string; status: string }[]) statusPerId.set(f.id, f.status)
@@ -606,6 +697,7 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
         org.organisatie_id,
         alleIds.map((id) => ({ id, status: statusPerId.get(id) ?? 'onbekend' })),
         spiegel,
+        deadline,
       )
     } else {
       const geraakteFacturen = Array.from(new Map(
@@ -615,7 +707,7 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
           .map((f) => [f.id, f])
       ).values())
       const spiegel = await haalSpiegel(org.organisatie_id, geraakteFacturen.map((f) => f.id))
-      gesettled = await evalueerFacturen(org.organisatie_id, geraakteFacturen, spiegel)
+      gesettled = await evalueerFacturen(org.organisatie_id, geraakteFacturen, spiegel, deadline)
     }
   }
 
@@ -699,6 +791,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const start = Date.now()
   const TIJD_BUDGET_MS = 240_000
+  // Zelfde budget als de org-loop: de evaluatie binnen één org moet stoppen op
+  // hetzelfde moment waarop de loop geen nieuwe org meer zou starten.
+  const deadline = start + TIJD_BUDGET_MS
   const resultaten: Record<string, unknown> = {}
   // Sequentieel: elke org heeft eigen rate-limits, maar de token-refresh-keten
   // per eigenaar verdraagt geen parallelle refreshes vanuit dezelfde run.
@@ -709,13 +804,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       resultaten[org.organisatie_id] = { uitgeschakeld: true }
       continue
     }
-    if (Date.now() - start > TIJD_BUDGET_MS) {
+    if (Date.now() > deadline) {
       // Uitgestelde orgs staan morgen door de oudste-eerst-sortering voorop.
       resultaten[org.organisatie_id] = { uitgesteld: true }
       continue
     }
     try {
-      resultaten[org.organisatie_id] = await syncOrganisatie(org)
+      resultaten[org.organisatie_id] = await syncOrganisatie(org, deadline)
     } catch (err) {
       const melding = err instanceof Error ? err.message : String(err)
       resultaten[org.organisatie_id] = { fout: melding }

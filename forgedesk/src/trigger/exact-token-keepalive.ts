@@ -47,6 +47,39 @@ function decryptSecret(text: string): string {
 type Credentials = { clientId: string; clientSecret: string };
 
 /**
+ * Zelfde volgorde als loadAppSettingsOrgFirst in de api-routes: eerst de rij van
+ * de organisatie waar de gebruiker bij hoort, dan zijn persoonlijke rij.
+ */
+async function laadAppSettingsOrgEerst(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  userId: string,
+  kolommen: string,
+): Promise<Record<string, unknown> | null> {
+  const { data: profiel } = await supabase
+    .from("profiles")
+    .select("organisatie_id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const orgId = (profiel as { organisatie_id?: string } | null)?.organisatie_id;
+  if (orgId) {
+    const { data } = await supabase
+      .from("app_settings")
+      .select(kolommen)
+      .eq("organisatie_id", orgId)
+      .maybeSingle();
+    if (data) return data as unknown as Record<string, unknown>;
+  }
+
+  const { data } = await supabase
+    .from("app_settings")
+    .select(kolommen)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return (data as Record<string, unknown> | null) ?? null;
+}
+
+/**
  * Credentials staan org-breed of, bij oudere accounts, per user. Zelfde
  * volgorde als de api-routes: eerst de organisatie van de tokenhouder, dan zijn
  * persoonlijke rij.
@@ -149,6 +182,10 @@ export const exactTokenKeepaliveCron = schedules.task({
             client_id: credentials.clientId,
             client_secret: credentials.clientSecret,
           }).toString(),
+          // Token-endpoint is een kleine POST die normaal in een seconde klaar
+          // is; hangt Exact, dan eet één rij anders de hele maxDuration op en
+          // blijven de resterende kandidaten onaangeraakt.
+          signal: AbortSignal.timeout(10_000),
         });
 
         if (!res.ok) {
@@ -178,15 +215,18 @@ export const exactTokenKeepaliveCron = schedules.task({
         // Compare-and-swap op de keten die we gelezen hebben, net als in de
         // api-routes. Raakt dit nul rijen, dan heeft een gebruiker in de
         // tussentijd zelf ververst of ontkoppeld en is die keten leidend.
+        const nieuweRij = {
+          user_id: rij.user_id,
+          access_token: encryptSecret(nieuw.access_token),
+          refresh_token: encryptSecret(nieuw.refresh_token || decryptSecret(rij.refresh_token)),
+          expires_at: new Date(Date.now() + nieuw.expires_in * 1000).toISOString(),
+          division: rij.division,
+          updated_at: new Date().toISOString(),
+        };
+
         const { data: bijgewerkt } = await supabase
           .from("exact_tokens")
-          .update({
-            access_token: encryptSecret(nieuw.access_token),
-            refresh_token: encryptSecret(nieuw.refresh_token || decryptSecret(rij.refresh_token)),
-            expires_at: new Date(Date.now() + nieuw.expires_in * 1000).toISOString(),
-            division: rij.division,
-            updated_at: new Date().toISOString(),
-          })
+          .update(nieuweRij)
           .eq("user_id", rij.user_id)
           .eq("refresh_token", rij.refresh_token)
           .select("user_id");
@@ -194,8 +234,60 @@ export const exactTokenKeepaliveCron = schedules.task({
         if (bijgewerkt?.length) {
           ververst++;
         } else {
-          overgeslagen++;
-          logger.warn("Exact keepalive: keten inmiddels vervangen", { user_id: rij.user_id });
+          // Nul rijen: de rij is vervangen óf verdwenen. Alleen loggen volstaat
+          // niet — Exact heeft de oude keten al ongeldig gemaakt, dus als de rij
+          // wég is en wij niets doen, is de enige werkende keten die van deze
+          // uitwisseling en die gooien we dan weg. Zelfde discriminator als
+          // api/exact-sync-factuur.ts.
+          const { data: huidig } = await supabase
+            .from("exact_tokens")
+            .select("access_token")
+            .eq("user_id", rij.user_id)
+            .maybeSingle();
+
+          if ((huidig as { access_token?: string | null } | null)?.access_token) {
+            overgeslagen++;
+            logger.warn("Exact keepalive: keten inmiddels vervangen", { user_id: rij.user_id });
+          } else {
+            // Rij weg. Dat kan een expliciete ontkoppeling zijn (dan NIET
+            // reanimeren), maar ook een interactief pad dat tijdens onze
+            // uitwisseling invalid_grant kreeg en de rij wiste. Bij een echte
+            // ontkoppeling worden exact_owner_user_id en exact_online_connected
+            // geleegd; dat is het onderscheid.
+            const settings = await laadAppSettingsOrgEerst(
+              supabase,
+              rij.user_id,
+              "exact_owner_user_id, exact_online_connected",
+            );
+            const eigenaar = (settings?.exact_owner_user_id as string | null) ?? null;
+            const nogGekoppeld =
+              eigenaar === rij.user_id ||
+              (eigenaar === null && settings?.exact_online_connected === true);
+
+            if (!nogGekoppeld) {
+              overgeslagen++;
+              logger.warn("Exact keepalive: koppeling is ontkoppeld, rotatie niet bewaard", {
+                user_id: rij.user_id,
+              });
+            } else {
+              const { error: insertFout } = await supabase.from("exact_tokens").insert(nieuweRij);
+              if (!insertFout) {
+                ververst++;
+              } else if (insertFout.code === "23505") {
+                // Een parallel request maakte de rij net aan; die keten is nieuwer.
+                overgeslagen++;
+                logger.warn("Exact keepalive: keten inmiddels opnieuw aangemaakt", {
+                  user_id: rij.user_id,
+                });
+              } else {
+                afgewezen++;
+                logger.error("Exact keepalive: geroteerde token NIET opgeslagen (insert)", {
+                  user_id: rij.user_id,
+                  fout: insertFout.message,
+                });
+              }
+            }
+          }
         }
       } catch (err) {
         afgewezen++;
