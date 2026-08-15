@@ -1905,7 +1905,7 @@ export function FactuurEditor() {
       logger.error('Opvolging togglen:', err)
       const melding = (err as { message?: string })?.message || ''
       toast.error(melding.includes('opvolging_actief')
-        ? 'Deze instelling werkt zodra migratie 212 gedraaid is.'
+        ? 'Deze instelling is nog niet beschikbaar. Probeer het later opnieuw.'
         : 'Kon de opvolging niet aanpassen')
     }
   }, [existingFactuur])

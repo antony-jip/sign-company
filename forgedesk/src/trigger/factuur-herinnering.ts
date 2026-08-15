@@ -114,17 +114,22 @@ export const factuurHerinneringCron = schedules.task({
     const supabase = getSupabaseAdmin();
     const result = { verstuurd: 0, overgeslagen: 0, gepauzeerd: 0, errors: [] as string[] };
 
-    // Migratie 212 gedraaid? Zo niet: oud gedrag, geen nieuwe kolommen/tabellen.
+    // Migratie 212 gedraaid? Drie standen: succes = v2, PGRST205 = legacy,
+    // en elke andere fout breekt de run af. Fail-open zou hier betekenen dat
+    // een transiente DB-hik alle kill-switches en de staleness-guard
+    // uitschakelt en er tóch gemaild wordt; één dag uitstel is de veilige
+    // kant (Trigger.dev retried de run).
     const { error: probeError } = await supabase.from("factuur_opvolg_stappen").select("id").limit(1);
-    const v2 = !probeError;
     if (probeError && probeError.code !== "PGRST205") {
-      logger.error("factuur-herinnering: probe factuur_opvolg_stappen faalde", { error: probeError.message });
+      logger.error("factuur-herinnering: probe factuur_opvolg_stappen faalde, run afgebroken", { error: probeError.message });
+      throw new Error(`probe factuur_opvolg_stappen faalde: ${probeError.message}`);
     }
+    const v2 = !probeError;
 
     const { data: settingsRijen, error: settingsError } = await supabase
       .from("app_settings")
       .select(
-        "organisatie_id, user_id, updated_at, factuur_opvolging_automatisch, exact_online_connected, herinnering_1_tekst, herinnering_1_onderwerp, herinnering_2_tekst, herinnering_2_onderwerp, aanmaning_tekst, aanmaning_onderwerp"
+        "organisatie_id, user_id, updated_at, factuur_opvolging_automatisch, exact_online_connected, exact_betaalsync_actief, herinnering_1_tekst, herinnering_1_onderwerp, herinnering_2_tekst, herinnering_2_onderwerp, aanmaning_tekst, aanmaning_onderwerp"
       )
       .not("organisatie_id", "is", null)
       .order("updated_at", { ascending: false });
@@ -202,19 +207,28 @@ export const factuurHerinneringCron = schedules.task({
         .maybeSingle();
 
       // Fail-safe: bankbetalingen kennen we alleen via de Exact-betaalsync.
-      // Is die stand verouderd (koppeling een week down, cron kapot), dan
-      // NIET blind doorgaan — dan manen we klanten die al betaald hebben.
-      if (v2 && settings.exact_online_connected === true) {
+      // Is die stand verouderd (koppeling een week down, cron kapot) of
+      // loopt de eerste inhaalslag nog (dan is openstaand_exact voor geen
+      // enkele factuur geschreven), dan NIET blind doorgaan — dan manen we
+      // klanten die al betaald hebben. De guard kijkt naar de settings-vlag
+      // ÉN naar het bestaan van een sync-state-rij: de vlag kan op een
+      // oudere app_settings-rij staan dan de rij die deze cron leest.
+      if (v2) {
         const { data: syncState, error: syncError } = await supabase
           .from("exact_sync_state")
-          .select("laatste_sync_op")
+          .select("laatste_sync_op, inhaalslag_bezig")
           .eq("organisatie_id", orgId)
           .maybeSingle();
         // Bestaat exact_sync_state niet (migratie 211 nog niet gedraaid),
         // dan is er geen betaalsync om op te wachten — geen guard.
-        if (!syncError || syncError.code !== "PGRST205") {
+        // Betaalsync per org uitgezet = bewust push-only; dan is er geen
+        // Exact-stand om op te wachten en geldt de guard niet.
+        const betaalsyncUit = settings.exact_betaalsync_actief === false;
+        const heeftExact = !betaalsyncUit && ((!syncError && !!syncState) || settings.exact_online_connected === true);
+        if (heeftExact && (!syncError || syncError.code !== "PGRST205")) {
           const laatsteSync = syncState?.laatste_sync_op as string | null | undefined;
-          const verouderd = !laatsteSync || dagenSinds(laatsteSync) >= MAX_SYNC_LEEFTIJD_DAGEN;
+          const inhaalslag = syncState?.inhaalslag_bezig === true;
+          const verouderd = !laatsteSync || inhaalslag || dagenSinds(laatsteSync) >= MAX_SYNC_LEEFTIJD_DAGEN;
           if (verouderd) {
             result.gepauzeerd++;
             logger.warn("factuur-herinnering: org gepauzeerd, Exact-betaalsync verouderd", {
@@ -236,9 +250,11 @@ export const factuurHerinneringCron = schedules.task({
                 user_id: eigenaar,
                 type: "factuur_opvolging_gepauzeerd",
                 titel: "Betalingsherinneringen gepauzeerd",
-                bericht: laatsteSync
-                  ? `De Exact-betaalstand is ${dagenSinds(laatsteSync)} dagen oud; herinneringen wachten tot de sync weer draait.`
-                  : "Er is nog geen Exact-betaalsync gedraaid; herinneringen wachten tot de eerste sync klaar is.",
+                bericht: inhaalslag
+                  ? "De eerste Exact-inhaalslag loopt nog; herinneringen wachten tot de betaalstand compleet is."
+                  : laatsteSync
+                    ? `De Exact-betaalstand is ${dagenSinds(laatsteSync)} dagen oud; herinneringen wachten tot de sync weer draait.`
+                    : "Er is nog geen Exact-betaalsync gedraaid; herinneringen wachten tot de eerste sync klaar is.",
                 link: "/instellingen?tab=integraties",
                 gelezen: false,
               });
@@ -407,7 +423,7 @@ export const factuurHerinneringCron = schedules.task({
         // Kanaal 'intern': geen klantmail, alleen een notificatie voor het
         // team — voor orgs die zelf willen bellen bij deze stap.
         if (stapConfig.kanaal === "intern") {
-          await supabase.from("notificaties").insert({
+          const { error: internNotifError } = await supabase.from("notificaties").insert({
             user_id: factuur.user_id,
             type: "factuur_herinnering",
             titel: `Opvolgstap ${stap.replace("_", " ")} bereikt`,
@@ -415,6 +431,15 @@ export const factuurHerinneringCron = schedules.task({
             link: "/facturen",
             gelezen: false,
           });
+          if (internNotifError) {
+            // De stap niet consumeren als niemand het signaal zag: geen vlag,
+            // anders escaleert de ladder over vijf dagen langs een stap die
+            // nooit is aangekomen.
+            logger.error("factuur-herinnering: interne notificatie mislukt", { factuurId: factuur.id, error: internNotifError.message });
+            result.errors.push(`Factuur ${factuur.nummer}: interne notificatie mislukt`);
+            await schrijfLog(orgId, factuur, stap, "intern", null, onderwerp, "fout", internNotifError.message);
+            continue;
+          }
           const { error: vlagError } = await supabase
             .from("facturen")
             .update({ [VLAG_VELD[stap]]: new Date().toISOString(), updated_at: new Date().toISOString() })

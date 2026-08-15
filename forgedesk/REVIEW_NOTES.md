@@ -1401,3 +1401,31 @@ PGRST202-only. Blijft staan als bewuste keuze/backlog:
   venster alsnog goed.
 - **Legacy-fallback-pad webhook** (pre-migratie-venster) blijft
   niet-idempotent voor deelbetalingen; venster sluit zodra 210 draait.
+
+## Facturatie-automatisering fase 2+3 gate-review + leger-verificatie (2026-08-15)
+
+Multi-lens adversarial review (6 lenzen, 18 bevindingen, 13 bevestigd)
+op de Exact-betaalsync leverde 4 blokkades die in 13768c41 zijn gefixt;
+een aparte verificatieronde (4 skeptici) bevestigde alle 4 fixes als
+dicht. Senior-gate-review daarna: BLOKKADE op de fail-open v2-probe in
+factuur-herinnering (gefixt: drie-standig, run breekt af bij een
+onverwachte probe-fout) + opmerkingen die direct verwerkt zijn
+(staleness-guard dekt nu ook de inhaalslag en ankert op de
+exact_sync_state-rij, intern-kanaal consumeert de stap niet meer bij een
+mislukte notificatie, org-dedup in de cron, koppelpas-paginatie herleest
+vanaf 0, neutrale pre-migratie-toasts). Blijft staan als bewuste
+keuze/backlog:
+
+- **Settle vertrouwt Exacts afletterstatus**: status 50 via
+  betalingskorting/afboeking telt als ontvangen; korting-kolom staat in
+  de spiegel voor latere uitsplitsing. Na een Mollie-refund op een in
+  Exact afgeletterde factuur boekt een her-evaluatie het restant opnieuw.
+- **Disconnect-venster**: settings-lezing in het milliseconden-venster
+  tussen token-delete en flag-update kan een rij reanimeren; zelfde
+  venster bestaat in het referentiepad exact-sync-factuur.
+- **Vreemde Exact-boeking met YourRef van een wél-gesyncte factuur**
+  koppelt mee; faalrichting is veilig (blokkeert settle eerder dan
+  forceren; hooguit een herinnering te veel).
+- **Verwijderde/teruggeboekte termijnen** verschijnen niet in de delta
+  (sync/Deleted niet geïmplementeerd); wekelijkse ReceivablesList-
+  reconciliatie is de kandidaat-oplossing als dit ooit knelt.

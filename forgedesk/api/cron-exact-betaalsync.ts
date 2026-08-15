@@ -8,7 +8,8 @@
  * payout ook in Exact op en zou dan dubbel tellen. Pas als álle termijnen van
  * een factuur status 50 (afgeletterd) hebben, boekt de cron het nog
  * openstaande restant als één betaling via factuur_markeer_betaald
- * (bron 'exact', referentie 'exact-settle:<factuur_id>', idempotent).
+ * (bron 'exact'; de RPC berekent het restant onder de rij-lock en genereert
+ * per settle een unieke referentie).
  *
  * Exact-webhooks zijn hier bewust niet gebruikt: er bestaat geen topic voor
  * betalingen/afletteren en Exact geeft geen afleveringsgarantie. Eén delta-run
@@ -373,6 +374,7 @@ interface OrgConfig {
   organisatie_id: string
   exact_owner_user_id: string | null
   exact_administratie_id: string | null
+  exact_betaalsync_actief?: boolean | null
 }
 
 interface SpiegelTermijn { factuur_id: string; bedrag: number; status: number | null }
@@ -429,6 +431,10 @@ async function evalueerFacturen(
       .eq('id', factuur.id)
     if (standFout) throw new Error(`openstaand_exact-update mislukt: ${standFout.message}`)
 
+    // Bewuste versimpeling: status 50 kan ook via betalingskorting of een
+    // afboeking bereikt zijn; het restant wordt dan toch als "ontvangen"
+    // geboekt. De korting-kolom staat in de spiegel voor wie dat later
+    // wil uitsplitsen.
     if (allesAfgeletterd && ['open', 'verzonden', 'vervallen'].includes(factuur.status)) {
       const { error: settleFout } = await supabaseAdmin.rpc('factuur_markeer_betaald', {
         p_factuur_id: factuur.id,
@@ -549,7 +555,10 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
       // volledig afgeletterd waren) komen nooit meer in een delta terug en
       // zouden anders nooit gesettled worden. Eerst nog niet-gekoppelde
       // spiegelrijen alsnog aan facturen koppelen.
-      for (let offset = 0; ; offset += 1000) {
+      // Steeds vanaf offset 0 herlezen: de updates halen rijen uit de
+      // filterset (factuur_id IS NULL), dus een oplopende offset zou
+      // windows overslaan. Stoppen zodra een pass niets meer koppelt.
+      for (let pass = 0; pass < 50; pass++) {
         const { data: losseRijen, error } = await supabaseAdmin
           .from('exact_betaaltermijnen')
           .select('id, your_ref')
@@ -558,22 +567,25 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
           .is('factuur_id', null)
           .not('your_ref', 'is', null)
           .order('id')
-          .range(offset, offset + 999)
+          .range(0, 999)
         if (error) throw new Error(`spiegel-koppeling lezen mislukt: ${error.message}`)
         const rijen = (losseRijen ?? []) as { id: string; your_ref: string }[]
-        if (rijen.length > 0) {
-          const losseRefs = Array.from(new Set(rijen.map((r) => r.your_ref)))
-          const gevonden = await zoekFacturenOpNummer(org.organisatie_id, losseRefs)
-          for (const [ref, factuur] of gevonden) {
-            const { error: koppelFout } = await supabaseAdmin
-              .from('exact_betaaltermijnen')
-              .update({ factuur_id: factuur.id, updated_at: new Date().toISOString() })
-              .eq('organisatie_id', org.organisatie_id)
-              .eq('your_ref', ref)
-              .is('factuur_id', null)
-            if (koppelFout) throw new Error(`spiegel-koppeling mislukt: ${koppelFout.message}`)
-          }
+        if (rijen.length === 0) break
+
+        const losseRefs = Array.from(new Set(rijen.map((r) => r.your_ref)))
+        const gevonden = await zoekFacturenOpNummer(org.organisatie_id, losseRefs)
+        if (gevonden.size === 0) break
+        for (const [ref, factuur] of gevonden) {
+          const { error: koppelFout } = await supabaseAdmin
+            .from('exact_betaaltermijnen')
+            .update({ factuur_id: factuur.id, updated_at: new Date().toISOString() })
+            .eq('organisatie_id', org.organisatie_id)
+            .eq('your_ref', ref)
+            .is('factuur_id', null)
+          if (koppelFout) throw new Error(`spiegel-koppeling mislukt: ${koppelFout.message}`)
         }
+        // Minder dan een volle pagina gelezen: alles gezien, en wat te
+        // koppelen viel is zojuist gekoppeld.
         if (rijen.length < 1000) break
       }
 
@@ -646,20 +658,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { data: orgRijen, error: orgFout } = await supabaseAdmin
     .from('app_settings')
-    .select('organisatie_id, exact_owner_user_id, exact_administratie_id')
+    .select('organisatie_id, exact_owner_user_id, exact_administratie_id, exact_betaalsync_actief')
     .eq('exact_online_connected', true)
     .not('organisatie_id', 'is', null)
     .neq('organisatie_id', ZOMBIE_ORG)
+    .order('updated_at', { ascending: false })
 
   if (orgFout) {
     Sentry.captureException(orgFout)
     return res.status(500).json({ error: orgFout.message })
   }
 
+  // Nieuwste rij per organisatie: orgs kunnen door een historische bug
+  // meerdere app_settings-rijen hebben, en een legacy-rij met een oude
+  // eigenaar zou anders na een geslaagde run alsnog een fout wegschrijven.
+  const perOrg = new Map<string, OrgConfig>()
+  for (const rij of (orgRijen ?? []) as OrgConfig[]) {
+    if (!perOrg.has(rij.organisatie_id)) perOrg.set(rij.organisatie_id, rij)
+  }
+
   // Oudste sync eerst: een org met een grote inhaalslag mag de rest niet
   // dagen achtereen verhongeren binnen de maxDuration. Nooit-gesyncte orgs
   // (geen state-rij) gaan voorop.
-  const orgs = (orgRijen ?? []) as OrgConfig[]
+  const orgs = Array.from(perOrg.values())
   const { data: stateRijen } = await supabaseAdmin
     .from('exact_sync_state')
     .select('organisatie_id, laatste_sync_op')
@@ -680,6 +701,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Sequentieel: elke org heeft eigen rate-limits, maar de token-refresh-keten
   // per eigenaar verdraagt geen parallelle refreshes vanuit dezelfde run.
   for (const org of orgs) {
+    // Per org uitschakelbaar: sommige bedrijven willen alleen de push naar
+    // Exact en laten de betaalstatus bij de boekhouder.
+    if (org.exact_betaalsync_actief === false) {
+      resultaten[org.organisatie_id] = { uitgeschakeld: true }
+      continue
+    }
     if (Date.now() - start > TIJD_BUDGET_MS) {
       // Uitgestelde orgs staan morgen door de oudste-eerst-sortering voorop.
       resultaten[org.organisatie_id] = { uitgesteld: true }

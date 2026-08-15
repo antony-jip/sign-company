@@ -294,12 +294,15 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
       }
 
       // Draait migratie 212 nog niet (kolom geen_betalingsherinneringen
-      // ontbreekt), dan mag opslaan daar niet op stranden.
+      // ontbreekt), dan mag opslaan daar niet op stranden — maar de
+      // gebruiker moet wel horen dat die ene instelling niet is bewaard.
+      let killSwitchOvergeslagen = false
       const opslaan = async (data: typeof klantData): Promise<Klant> => {
         try {
           return isEditing && klant ? await updateKlant(klant.id, data) : await createKlant(data)
         } catch (err) {
           if ((err as { message?: string })?.message?.includes('geen_betalingsherinneringen')) {
+            killSwitchOvergeslagen = true
             const { geen_betalingsherinneringen: _nietBeschikbaar, ...zonder } = data
             return isEditing && klant ? await updateKlant(klant.id, zonder as typeof klantData) : await createKlant(zonder as typeof klantData)
           }
@@ -307,6 +310,9 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         }
       }
       const savedKlant = await opslaan(klantData)
+      if (killSwitchOvergeslagen && formData.geen_betalingsherinneringen) {
+        toast.info('De instelling "geen betalingsherinneringen" is nog niet beschikbaar en is niet opgeslagen.')
+      }
       if (isEditing && klant) {
         toast.success('Klant bijgewerkt', {
           description: `${savedKlant.bedrijfsnaam} is succesvol bijgewerkt.`,
