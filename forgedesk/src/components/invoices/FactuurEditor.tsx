@@ -2212,6 +2212,7 @@ export function FactuurEditor() {
         document_id: string | null
         bijlage_synced: boolean
         al_gesynct?: boolean
+        waarschuwing?: string
       }
 
       setExistingFactuur({
@@ -2231,7 +2232,11 @@ export function FactuurEditor() {
         : attachmentOnly
         ? 'Bijlage opnieuw verstuurd naar Exact Online'
         : 'Factuur gesynchroniseerd met Exact Online'
-      toast.success(successMsg, { id: toastId })
+      if (data.waarschuwing) {
+        toast.warning(data.waarschuwing, { id: toastId, duration: 10000 })
+      } else {
+        toast.success(successMsg, { id: toastId })
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Sync mislukt'
       toast.error(msg, { id: toastId })
