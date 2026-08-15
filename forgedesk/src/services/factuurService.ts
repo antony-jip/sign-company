@@ -155,10 +155,24 @@ export async function markeerFactuurBetaald(id: string, totaal: number): Promise
         ...(rij?.bijgewerkt_op ? { updated_at: rij.bijgewerkt_op } : {}),
       }
     }
-    // Alleen PGRST202 (functie onbekend, migratie 210 nog niet gedraaid) mag
-    // stil terugvallen; een permission-fout moet juist zichtbaar falen.
-    if (error.code !== 'PGRST202') {
+    // Alleen een onbruikbare functie mag stil terugvallen; een permission-fout
+    // moet juist zichtbaar falen. PGRST202 = functie onbekend (migratie 210 nog
+    // niet gedraaid). PGRST203 = ambigu: er staan twee overloads van
+    // factuur_markeer_betaald naast elkaar, waardoor PostgREST niet kiest en de
+    // knop voor iedereen hard zou falen. De directe update is dan het net,
+    // maar de database moet opgeruimd worden.
+    const functieOnbruikbaar = error.code === 'PGRST202' || error.code === 'PGRST203'
+    if (!functieOnbruikbaar) {
       throw error
+    }
+    if (error.code === 'PGRST203') {
+      const melding = 'factuur_markeer_betaald bestaat in meerdere overloads; draai migratie 211 opnieuw om de oude versie te droppen'
+      console.warn(`[facturen] ${melding}`)
+      Sentry.captureMessage('Functie-overload factuur_markeer_betaald', {
+        level: 'warning',
+        tags: { bron: 'rpc-fallback', entiteit: 'factuur' },
+        extra: { melding, code: error.code },
+      })
     }
   }
   return await updateFactuurStatus(id, { status: 'betaald', betaald_bedrag: totaal, betaaldatum: vandaag })
