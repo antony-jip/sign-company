@@ -242,7 +242,11 @@ function btwRegelsUitTotalen(
   const zuiver = [21, 9, 0].find((tarief) => Math.abs(absBtw - round2((absNetto * tarief) / 100)) <= 0.02)
   if (zuiver !== undefined) return [{ beschrijving, eenheidsprijs: netto, btw_percentage: zuiver }]
 
-  return [{ beschrijving, eenheidsprijs: netto, btw_percentage: Math.round((absBtw / absNetto) * 100) }]
+  // Twee decimalen, geen heel getal: de kop wordt uit deze regel herberekend
+  // en een afgerond percentage (17 i.p.v. 17,4) zou het btw-bedrag en dus het
+  // factuurtotaal stil veranderen. Met 2 decimalen blijft het bedrag op de
+  // cent gelijk aan wat de klant accepteerde.
+  return [{ beschrijving, eenheidsprijs: netto, btw_percentage: round2((absBtw / absNetto) * 100) }]
 }
 
 function lineItemsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number): LineItem[] {
@@ -1142,7 +1146,7 @@ export function FactuurEditor() {
         return
       }
       if (data.inhaalslag_bezig === true) {
-        setExactStandWaarschuwing('De eerste Exact-inhaalslag loopt nog, dus de bankbetalingen zijn nog niet compleet. Mogelijk is deze factuur al betaald.')
+        setExactStandWaarschuwing('De Exact-betaalsync is de stand nog aan het inhalen, dus de bankbetalingen zijn nog niet compleet. Mogelijk is deze factuur al betaald.')
         return
       }
       const laatste = data.laatste_sync_op as string | null
@@ -2275,7 +2279,12 @@ export function FactuurEditor() {
       // Zelfde rem als de cron: is er al een hogere stap verstuurd, dan stelt
       // de dialoog geen lagere stap meer voor. Handmatig kiezen blijft kunnen.
       if (ladder.slice(i + 1).some((hoger) => vlaggen[hoger])) continue
+      // Zelfde stop als de cron: de eerste bruikbare kandidaat beslist. Is
+      // zijn drempel nog niet bereikt, dan is er vandaag geen suggestie —
+      // doorlopen zou bij een niet-oplopend ingestelde ladder een stap
+      // voorstellen die de cron nooit kiest.
       if (dagenVervallen >= dagenDrempel(type)) return type
+      break
     }
     return null
   }, [existingFactuur, dagenVervallen, dagenDrempel, stapActief])
@@ -2341,25 +2350,34 @@ export function FactuurEditor() {
 
   // Het kanaal van de nieuwste logregel voor deze stap. 'intern' betekent dat
   // de cron alleen een interne notificatie stuurde en de klant nog niets zag.
-  const laatsteLogKanaal = useCallback(async (factuurId: string, stap: HerinneringType): Promise<string | null> => {
-    if (!supabase || !organisatieId) return null
+  // De vlag zegt alleen "stap geconsumeerd"; deze check bepaalt of de klant
+  // ook echt gemaild is. Doorlaten mag alleen als (a) er nergens een
+  // email-verzending voor deze stap gelogd staat, (b) er wél een interne
+  // geregistreerd is, en (c) de vlag-timestamp bij die interne registratie
+  // hoort — een latere handmatige mail waarvan de logregel faalde zet de
+  // vlag opnieuw en valt dan buiten dat venster, zodat de doorlaat niet
+  // onbeperkt herbruikbaar is.
+  const magInternDoorlaten = useCallback(async (factuurId: string, stap: HerinneringType, vlagTijd: string | null): Promise<boolean> => {
+    if (!supabase || !organisatieId || !vlagTijd) return false
     try {
       const { data, error } = await supabase
         .from('factuur_opvolg_log')
-        .select('kanaal')
+        .select('kanaal, resultaat, verzonden_op')
         .eq('organisatie_id', organisatieId)
         .eq('factuur_id', factuurId)
         .eq('stap', stap)
-        .order('verzonden_op', { ascending: false })
-        .limit(1)
       if (error) {
         logger.error('Herinnering-log lezen mislukt:', error.message)
-        return null
+        return false
       }
-      return ((data?.[0] as { kanaal?: string } | undefined)?.kanaal) || null
+      const rijen = (data ?? []) as { kanaal?: string; resultaat?: string; verzonden_op?: string }[]
+      if (rijen.some((r) => r.kanaal === 'email' && r.resultaat === 'verstuurd')) return false
+      const intern = rijen.filter((r) => r.kanaal === 'intern' && r.resultaat === 'verstuurd')
+      const vlagMs = new Date(vlagTijd).getTime()
+      return intern.some((r) => r.verzonden_op && Math.abs(new Date(r.verzonden_op).getTime() - vlagMs) < 10 * 60 * 1000)
     } catch (err) {
       logger.error('Herinnering-log lezen mislukt:', err)
-      return null
+      return false
     }
   }, [organisatieId])
 
@@ -2408,7 +2426,7 @@ export function FactuurEditor() {
         // deze dialoog belooft. Geen logregel betekent blokkeren.
         let internDoorlaten = false
         if (vers[updateField]) {
-          internDoorlaten = (await laatsteLogKanaal(vers.id, herinneringType)) === 'intern'
+          internDoorlaten = await magInternDoorlaten(vers.id, herinneringType, vers[updateField] as string | null)
           if (!internDoorlaten) {
             toast.error(`Deze ${herinneringType === 'aanmaning' ? 'aanmaning' : 'herinnering'} is inmiddels al verstuurd. De factuur is bijgewerkt met de actuele stand.`)
             setHerinneringDialogOpen(false)
@@ -2452,6 +2470,19 @@ export function FactuurEditor() {
         })
         await sendEmail(ontvangerEmail, onderwerp, inhoudTekst, { html })
       } catch (err) {
+        // De outbox-terugval in sendEmail betekent dat de mail wel degelijk
+        // wordt bezorgd; de stap moet dan als verstuurd tellen, anders mailt
+        // de cron morgen dezelfde stap nogmaals.
+        if (err instanceof Error && err.message.includes('outbox')) {
+          logger.warn('Herinnering in de outbox geplaatst:', err.message)
+          const updates: Partial<Factuur> = { [updateField]: new Date().toISOString() }
+          await updateFactuur(existingFactuur.id, updates).catch(() => undefined)
+          setExistingFactuur((prev) => (prev ? { ...prev, ...updates } : prev))
+          await logHerinnering(existingFactuur, herinneringType, 'email', ontvangerEmail, onderwerp)
+          toast.info('De mail staat in de outbox en wordt automatisch verstuurd. De herinnering is gemarkeerd.')
+          setHerinneringDialogOpen(false)
+          return
+        }
         logger.error('Verstuur herinnering email:', err)
         toast.error('Email niet verzonden. De herinnering is niet gemarkeerd.')
         return
@@ -2471,7 +2502,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, resolvedCp, herinneringAan, herinneringOntvanger, herinneringTekst, herinneringType, replaceHerinneringVars, dagenVervallen, bedrijfsnaam, primaireKleur, profile, logHerinnering, laatsteLogKanaal, isTrialBlocked, setShowTrialDialog])
+  }, [existingFactuur, selectedKlant, resolvedCp, herinneringAan, herinneringOntvanger, herinneringTekst, herinneringType, replaceHerinneringVars, dagenVervallen, bedrijfsnaam, primaireKleur, profile, logHerinnering, magInternDoorlaten, isTrialBlocked, setShowTrialDialog])
 
   // ============ EXACT SYNC ============
 

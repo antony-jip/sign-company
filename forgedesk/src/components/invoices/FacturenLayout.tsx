@@ -344,10 +344,15 @@ function calcBtwBedrag(items: LineItem[]): number {
   }, 0))
 }
 
-// Eén regel met een gewogen btw-percentage (bv. 17%) is in Exact onboekbaar:
-// de btw-mapping kent alleen de echte tarieven. Zet een subtotaal + btw-bedrag
-// daarom om in regels met een écht tarief (21 / 9 / 0), zodat subtotaal en
-// btw-bedrag samen precies gelijk blijven aan wat er nu uit kwam.
+// Eén regel met een gewogen btw-percentage (bv. 17,4%) is in Exact onboekbaar:
+// de btw-mapping kent alleen de echte tarieven. Valt het btw-bedrag op centen
+// na samen met een écht tarief (21 / 9 / 0), dan boeken we dat tarief. Is het
+// een mengvorm, dan bewust één regel met het gewogen percentage op twee
+// decimalen: de grondslag per tarief valt hier niet te herleiden, een
+// verzonnen verdeling zet de klant in de verkeerde aangifte-rubrieken, en het
+// exacte percentage houdt het factuurbedrag op de cent gelijk. De sync-guard
+// weigert zo'n regel met de leesbare melding om de factuur zelf te splitsen.
+// Spiegel van dezelfde helper in FactuurEditor.tsx.
 function btwRegelsUitTotalen(
   beschrijving: string,
   subtotaal: number,
@@ -356,25 +361,13 @@ function btwRegelsUitTotalen(
   const netto = round2(subtotaal)
   if (netto === 0) return [{ beschrijving, eenheidsprijs: 0, btw_percentage: 21 }]
 
-  const teken = netto < 0 ? -1 : 1
   const absNetto = Math.abs(netto)
   const absBtw = Math.abs(round2(btwBedrag))
-  const effectief = (absBtw / absNetto) * 100
 
-  const zuiver = [21, 9, 0].find((tarief) => Math.abs(effectief - tarief) < 0.5)
+  const zuiver = [21, 9, 0].find((tarief) => Math.abs(absBtw - round2((absNetto * tarief) / 100)) <= 0.02)
   if (zuiver !== undefined) return [{ beschrijving, eenheidsprijs: netto, btw_percentage: zuiver }]
 
-  // Mengvorm: verdeel over de twee omliggende tarieven zodat het btw-bedrag
-  // uitkomt. Boven de 21% valt er niets te verdelen, dan blijft het 21%.
-  const [hoog, laag] = effectief > 9 ? [21, 9] : [9, 0]
-  const ruwHoog = (absBtw - absNetto * (laag / 100)) / ((hoog - laag) / 100)
-  const deelHoog = round2(Math.max(0, Math.min(absNetto, ruwHoog)))
-  const deelLaag = round2(absNetto - deelHoog)
-
-  const regels: Array<{ beschrijving: string; eenheidsprijs: number; btw_percentage: number }> = []
-  if (deelHoog !== 0) regels.push({ beschrijving: `${beschrijving} (${hoog}% btw)`, eenheidsprijs: round2(deelHoog * teken), btw_percentage: hoog })
-  if (deelLaag !== 0) regels.push({ beschrijving: `${beschrijving} (${laag}% btw)`, eenheidsprijs: round2(deelLaag * teken), btw_percentage: laag })
-  return regels.length > 0 ? regels : [{ beschrijving, eenheidsprijs: netto, btw_percentage: 21 }]
+  return [{ beschrijving, eenheidsprijs: netto, btw_percentage: round2((absBtw / absNetto) * 100) }]
 }
 
 function lineItemsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number): LineItem[] {
@@ -612,7 +605,7 @@ export function FacturenLayout() {
         return
       }
       if (data.inhaalslag_bezig === true) {
-        setExactStandWaarschuwing('De eerste Exact-inhaalslag loopt nog, dus de bankbetalingen zijn nog niet compleet. Mogelijk is deze factuur al betaald.')
+        setExactStandWaarschuwing('De Exact-betaalsync is de stand nog aan het inhalen, dus de bankbetalingen zijn nog niet compleet. Mogelijk is deze factuur al betaald.')
         return
       }
       const laatste = data.laatste_sync_op as string | null
@@ -1152,8 +1145,10 @@ export function FacturenLayout() {
         factuur_plaats: factuur.factuur_plaats || undefined,
       }
 
-      // Regels uit de totalen, gesplitst per echt btw-tarief · anders staat er
-      // een verzonnen percentage (bv. 17%) in de btw-specificatie op de PDF.
+      // Regels uit de totalen. Een zuiver tarief wordt herkend; een mengvorm
+      // houdt bewust het gewogen percentage (op twee decimalen) zodat het
+      // bedrag exact klopt — verzonnen grondslagen per tarief horen niet op
+      // een klantdocument.
       const items: OfferteItem[] = btwRegelsUitTotalen(factuur.titel, factuur.subtotaal, factuur.btw_bedrag).map((r, idx) => ({
         id: '',
         offerte_id: '',
@@ -1354,7 +1349,12 @@ export function FacturenLayout() {
       // Zelfde rem als de cron: is er al een hogere stap verstuurd, dan stelt
       // de dialoog geen lagere stap meer voor. Handmatig kiezen blijft kunnen.
       if (ladder.slice(i + 1).some((hoger) => vlaggen[hoger])) continue
+      // Zelfde stop als de cron: de eerste bruikbare kandidaat beslist. Is
+      // zijn drempel nog niet bereikt, dan is er vandaag geen suggestie —
+      // doorlopen zou bij een niet-oplopend ingestelde ladder een stap
+      // voorstellen die de cron nooit kiest.
       if (dagen >= dagenDrempel(type)) return type
+      break
     }
     return null
   }, [getDagenVerlopen, dagenDrempel, stapActief])
@@ -1415,25 +1415,34 @@ export function FacturenLayout() {
 
   // Het kanaal van de nieuwste logregel voor deze stap. 'intern' betekent dat
   // de cron alleen een interne notificatie stuurde en de klant nog niets zag.
-  const laatsteLogKanaal = useCallback(async (factuurId: string, stap: HerinneringType): Promise<string | null> => {
-    if (!supabase || !organisatieId) return null
+  // De vlag zegt alleen "stap geconsumeerd"; deze check bepaalt of de klant
+  // ook echt gemaild is. Doorlaten mag alleen als (a) er nergens een
+  // email-verzending voor deze stap gelogd staat, (b) er wél een interne
+  // geregistreerd is, en (c) de vlag-timestamp bij die interne registratie
+  // hoort — een latere handmatige mail waarvan de logregel faalde zet de
+  // vlag opnieuw en valt dan buiten dat venster, zodat de doorlaat niet
+  // onbeperkt herbruikbaar is.
+  const magInternDoorlaten = useCallback(async (factuurId: string, stap: HerinneringType, vlagTijd: string | null): Promise<boolean> => {
+    if (!supabase || !organisatieId || !vlagTijd) return false
     try {
       const { data, error } = await supabase
         .from('factuur_opvolg_log')
-        .select('kanaal')
+        .select('kanaal, resultaat, verzonden_op')
         .eq('organisatie_id', organisatieId)
         .eq('factuur_id', factuurId)
         .eq('stap', stap)
-        .order('verzonden_op', { ascending: false })
-        .limit(1)
       if (error) {
         logger.error('Herinnering-log lezen mislukt:', error.message)
-        return null
+        return false
       }
-      return ((data?.[0] as { kanaal?: string } | undefined)?.kanaal) || null
+      const rijen = (data ?? []) as { kanaal?: string; resultaat?: string; verzonden_op?: string }[]
+      if (rijen.some((r) => r.kanaal === 'email' && r.resultaat === 'verstuurd')) return false
+      const intern = rijen.filter((r) => r.kanaal === 'intern' && r.resultaat === 'verstuurd')
+      const vlagMs = new Date(vlagTijd).getTime()
+      return intern.some((r) => r.verzonden_op && Math.abs(new Date(r.verzonden_op).getTime() - vlagMs) < 10 * 60 * 1000)
     } catch (err) {
       logger.error('Herinnering-log lezen mislukt:', err)
-      return null
+      return false
     }
   }, [organisatieId])
 
@@ -1485,7 +1494,7 @@ export function FacturenLayout() {
         // deze dialoog belooft. Geen logregel betekent blokkeren.
         let internDoorlaten = false
         if (vers[updateField]) {
-          internDoorlaten = (await laatsteLogKanaal(vers.id, herinneringType)) === 'intern'
+          internDoorlaten = await magInternDoorlaten(vers.id, herinneringType, vers[updateField] as string | null)
           if (!internDoorlaten) {
             toast.error(`Deze ${herinneringType === 'aanmaning' ? 'aanmaning' : 'herinnering'} is inmiddels al verstuurd. Herlaad de lijst voor de actuele stand.`)
             setHerinneringDialogOpen(false)
@@ -1531,6 +1540,19 @@ export function FacturenLayout() {
         })
         await sendEmail(ontvangerEmail, onderwerp, inhoudTekst, { html })
       } catch (err) {
+        // De outbox-terugval in sendEmail betekent dat de mail wel degelijk
+        // wordt bezorgd; de stap moet dan als verstuurd tellen, anders mailt
+        // de cron morgen dezelfde stap nogmaals.
+        if (err instanceof Error && err.message.includes('outbox')) {
+          logger.warn('Herinnering in de outbox geplaatst:', err.message)
+          const updates: Partial<Factuur> = { [updateField]: new Date().toISOString() }
+          await updateFactuur(herinneringFactuur.id, updates).catch(() => undefined)
+          setFacturen((prev) => prev.map((f) => f.id === herinneringFactuur.id ? { ...f, ...updates } : f))
+          await logHerinnering(herinneringFactuur, herinneringType, 'email', ontvangerEmail, onderwerp)
+          toast.info('De mail staat in de outbox en wordt automatisch verstuurd. De herinnering is gemarkeerd.')
+          setHerinneringDialogOpen(false)
+          return
+        }
         logger.error('Fout bij verzenden herinnering email:', err)
         toast.error('Email niet verzonden. De herinnering is niet gemarkeerd.')
         return
@@ -1550,7 +1572,7 @@ export function FacturenLayout() {
     } finally {
       setHerinneringBezig(false)
     }
-  }, [herinneringFactuur, klanten, herinneringOntvanger, herinneringTekst, herinneringType, replaceHerinneringVars, bedrijfsnaam, primaireKleur, profile, isTrialBlocked, setShowTrialDialog, logHerinnering, laatsteLogKanaal])
+  }, [herinneringFactuur, klanten, herinneringOntvanger, herinneringTekst, herinneringType, replaceHerinneringVars, bedrijfsnaam, primaireKleur, profile, isTrialBlocked, setShowTrialDialog, logHerinnering, magInternDoorlaten])
 
   // ============ CREDITNOTA / VOORSCHOT LOGIC ============
 

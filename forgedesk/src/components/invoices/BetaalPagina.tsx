@@ -253,7 +253,7 @@ export function BetaalPagina() {
   }
 
   const isBetaald = factuur.status === 'betaald'
-  const isVervallen = !isBetaald && factuur.vervaldatum < new Date().toISOString().split('T')[0]
+  const isVervallen = !isBetaald && factuur.vervaldatum < new Date().toLocaleDateString('sv-SE')
 
   // Use IBAN from company profile (loaded after factuur)
   const companyIban = companyProfile?.iban || null

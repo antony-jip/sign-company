@@ -154,7 +154,7 @@ export function FactuurOpvolgingSubTab() {
         // De proefmail moet de eigen tekst tonen, niet het generieke blok:
         // dat is precies wat de klant straks ook krijgt.
         eigenTekst: body,
-        heading: stap.stap_type === 'aanmaning' ? 'Aanmaning' : 'Betalingsherinnering',
+        heading: stap.stap_type === 'aanmaning' ? 'Aanmaning' : 'Herinnering',
       })
       await sendEmail(user.email, `[TEST] ${sub}`, body, { html })
       toast.success(`Testmail verstuurd naar ${user.email}`)

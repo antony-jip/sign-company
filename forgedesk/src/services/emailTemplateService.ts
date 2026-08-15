@@ -458,19 +458,30 @@ export function factuurHerinneringTemplate(data: FactuurHerinneringData): EmailR
     </p>
     <p style="margin: 16px 0 0 0;">Met vriendelijke groet,</p>`
 
-  const bodyHtml = `
-    ${kopHtml}
-    ${tekstHtml}
+  const infoBlokHtml = `
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
         <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
-          <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
+          <strong>Openstaand bedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
           <strong>Vervaldatum:</strong> ${escapeHtml(data.vervaldatum)}<br />
           <strong>Dagen vervallen:</strong> ${data.dagenVervallen}
         </td>
       </tr>
     </table>
-    ${buttonHtml}
+    ${buttonHtml}`
+
+  // Elke ingestelde tekst eindigt op een groet; het bedragblok en de knop
+  // horen daar vóór, niet achter. Zonder eigen tekst blijft de oude volgorde
+  // (tekst, blok, afsluiting) staan.
+  const bodyHtml = eigenTekst
+    ? `
+    ${kopHtml}
+    ${infoBlokHtml}
+    ${tekstHtml}`
+    : `
+    ${kopHtml}
+    ${tekstHtml}
+    ${infoBlokHtml}
     ${afsluitingHtml}`
 
   const { wrap } = getBaseTemplate(data)
@@ -485,7 +496,7 @@ export function factuurHerinneringTemplate(data: FactuurHerinneringData): EmailR
           `Graag willen wij u er vriendelijk aan herinneren dat factuur ${data.factuurNummer} voor ${data.factuurTitel} inmiddels ${data.dagenVervallen} ${data.dagenVervallen === 1 ? 'dag' : 'dagen'} over de vervaldatum is.`,
         ]),
     '',
-    `Totaalbedrag: ${data.totaalBedrag}`,
+    `Openstaand bedrag: ${data.totaalBedrag}`,
     `Vervaldatum: ${data.vervaldatum}`,
     `Dagen vervallen: ${data.dagenVervallen}`,
     '',

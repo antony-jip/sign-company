@@ -333,7 +333,7 @@ export const factuurHerinneringCron = schedules.task({
                 type: "factuur_opvolging_gepauzeerd",
                 titel: "Betalingsherinneringen gepauzeerd",
                 bericht: inhaalslag
-                  ? "De eerste Exact-inhaalslag loopt nog; herinneringen wachten tot de betaalstand compleet is."
+                  ? "De Exact-betaalsync is de stand nog aan het inhalen; herinneringen wachten tot de betaalstand compleet is."
                   : laatsteSync
                     ? `De Exact-betaalstand is ${dagenSinds(laatsteSync)} dagen oud; herinneringen wachten tot de sync weer draait.`
                     : "Er is nog geen Exact-betaalsync gedraaid; herinneringen wachten tot de eerste sync klaar is.",
