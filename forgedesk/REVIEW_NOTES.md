@@ -1429,3 +1429,27 @@ keuze/backlog:
 - **Verwijderde/teruggeboekte termijnen** verschijnen niet in de delta
   (sync/Deleted niet geïmplementeerd); wekelijkse ReceivablesList-
   reconciliatie is de kandidaat-oplossing als dit ooit knelt.
+
+## Facturatie-automatisering fase 4 gate + QAA-eindreview (2026-08-15)
+
+Senior-gate op 86d7ac8b/9d031492: BLOKKADE op de Code-first-klantmatch
+(nummerbotsing met een vreemde Exact-relatie = stille misboeking), gefixt
+met een naam-verificatie op de Code-hit (afwijkende naam -> Sentry-warning
++ terugval op naam-match; create-met-Code faalt bij botsing luid op
+Exacts duplicate-fout). Overige opmerkingen verwerkt: vangnet + response-
+waarschuwing bij een verloren exact_entry_id-write, kolom-tolerante
+settings-select in factuur-herinnering (redeploy-voor-migratie-venster),
+cursor-paginatie in de koppelpas, landNaarIso laat onbekende landen weg
+i.p.v. NL te gokken, TOKEN_AFGEWEZEN uit de dubbele Sentry-lijst,
+exact-disconnect ruimt exact_sync_state op (QAA-punt: anders blijft een
+ontkoppelde org permanent gepauzeerd), dubbele supabase-guards
+ontdubbeld. QAA-eindoordeel: groen licht, 12/14 vol, restpunten zijn
+deploy-volgorde-afspraken.
+
+Livegang-afspraken (volgorde is bindend):
+1. Mergen + pushen (Vercel deployt); 2. migraties 210 -> 211 -> 212 ->
+213 in de SQL Editor (check eerst dat 210/211 nog nergens gedraaid zijn:
+ze zijn op de branch meermaals herschreven); 3. controle-query uit 210
+(moet 0 rijen geven); 4. PAS DAARNA `npx trigger.dev@latest deploy`;
+5. bestaande Exact-orgs langslopen voor de exact_betaalsync_actief-keuze
+(default aan = gedragswijziging t.o.v. "betaald vink je zelf af").

@@ -1,0 +1,1 @@
+- [Facturatie-automatisering QAA-restpunten](project_facturatie_automatisering_qaa.md) — 2 open ⚠️'s: Trigger.dev-redeploy pas ná migratie 211, exact-disconnect laat exact_sync_state staan

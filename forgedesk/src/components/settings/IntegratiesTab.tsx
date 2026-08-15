@@ -487,7 +487,6 @@ export function IntegratiesTab() {
     setMoneybirdConfigError(null)
     try {
       if (!supabase) throw new Error('Niet ingelogd')
-      if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
       if (!token) throw new Error('Niet ingelogd')
@@ -559,7 +558,6 @@ export function IntegratiesTab() {
     setMoneybirdConnecting(true)
     try {
       if (!supabase) throw new Error('Niet ingelogd')
-      if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
       if (!token) throw new Error('Niet ingelogd')
@@ -610,7 +608,6 @@ export function IntegratiesTab() {
     setEboekhoudenConfigError(null)
     try {
       if (!supabase) throw new Error('Niet ingelogd')
-      if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
       if (!token) throw new Error('Niet ingelogd')
@@ -648,7 +645,6 @@ export function IntegratiesTab() {
   const handleEboekhoudenConnect = async () => {
     setEboekhoudenConnecting(true)
     try {
-      if (!supabase) throw new Error('Niet ingelogd')
       if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
@@ -694,7 +690,6 @@ export function IntegratiesTab() {
     setBoekhoudDisconnecting(true)
     try {
       if (!supabase) throw new Error('Niet ingelogd')
-      if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
       if (!token) throw new Error('Niet ingelogd')
@@ -722,7 +717,6 @@ export function IntegratiesTab() {
     setSnelstartConfigLoading(true)
     setSnelstartConfigError(null)
     try {
-      if (!supabase) throw new Error('Niet ingelogd')
       if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
@@ -761,7 +755,6 @@ export function IntegratiesTab() {
   const handleSnelstartConnect = async () => {
     setSnelstartConnecting(true)
     try {
-      if (!supabase) throw new Error('Niet ingelogd')
       if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token

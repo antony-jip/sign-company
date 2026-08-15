@@ -555,11 +555,13 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
       // volledig afgeletterd waren) komen nooit meer in een delta terug en
       // zouden anders nooit gesettled worden. Eerst nog niet-gekoppelde
       // spiegelrijen alsnog aan facturen koppelen.
-      // Steeds vanaf offset 0 herlezen: de updates halen rijen uit de
-      // filterset (factuur_id IS NULL), dus een oplopende offset zou
-      // windows overslaan. Stoppen zodra een pass niets meer koppelt.
-      for (let pass = 0; pass < 50; pass++) {
-        const { data: losseRijen, error } = await supabaseAdmin
+      // Cursor-paginatie op id: de updates in deze loop halen rijen uit de
+      // filterset (factuur_id IS NULL), dus offset-vensters zouden rijen
+      // overslaan. Een cursor die alleen vooruit beweegt ziet elke rij
+      // precies één keer, ongeacht wat er onderweg gekoppeld wordt.
+      let cursor = ''
+      for (;;) {
+        let query = supabaseAdmin
           .from('exact_betaaltermijnen')
           .select('id, your_ref')
           .eq('organisatie_id', org.organisatie_id)
@@ -567,14 +569,16 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
           .is('factuur_id', null)
           .not('your_ref', 'is', null)
           .order('id')
-          .range(0, 999)
+          .limit(1000)
+        if (cursor) query = query.gt('id', cursor)
+        const { data: losseRijen, error } = await query
         if (error) throw new Error(`spiegel-koppeling lezen mislukt: ${error.message}`)
         const rijen = (losseRijen ?? []) as { id: string; your_ref: string }[]
         if (rijen.length === 0) break
+        cursor = rijen[rijen.length - 1].id
 
         const losseRefs = Array.from(new Set(rijen.map((r) => r.your_ref)))
         const gevonden = await zoekFacturenOpNummer(org.organisatie_id, losseRefs)
-        if (gevonden.size === 0) break
         for (const [ref, factuur] of gevonden) {
           const { error: koppelFout } = await supabaseAdmin
             .from('exact_betaaltermijnen')
@@ -584,8 +588,6 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
             .is('factuur_id', null)
           if (koppelFout) throw new Error(`spiegel-koppeling mislukt: ${koppelFout.message}`)
         }
-        // Minder dan een volle pagina gelezen: alles gezien, en wat te
-        // koppelen viel is zojuist gekoppeld.
         if (rijen.length < 1000) break
       }
 
@@ -719,7 +721,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       resultaten[org.organisatie_id] = { fout: melding }
       // Verwachte configuratie-gaten en al-naar-Sentry-gelogde token-fouten
       // niet nogmaals naar Sentry; echte fouten wel.
-      if (!['GEEN_TOKENS', 'GEEN_EIGENAAR', 'GEEN_ADMINISTRATIE', 'EIGENAAR_ANDERE_ORG', 'TOKEN_ROTATIE_NIET_OPGESLAGEN'].includes(melding)) {
+      if (!['GEEN_TOKENS', 'GEEN_EIGENAAR', 'GEEN_ADMINISTRATIE', 'EIGENAAR_ANDERE_ORG', 'TOKEN_ROTATIE_NIET_OPGESLAGEN', 'TOKEN_AFGEWEZEN'].includes(melding)) {
         Sentry.captureException(err instanceof Error ? err : new Error(melding), {
           tags: { cron: 'exact-betaalsync' },
           extra: { organisatie_id: org.organisatie_id },

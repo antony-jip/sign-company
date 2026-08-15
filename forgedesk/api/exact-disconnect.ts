@@ -196,6 +196,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Ontkoppelen half gelukt. Herlaad de pagina en probeer het opnieuw.' })
     }
 
+    // Sync-state opruimen: een achtergebleven rij zou de herinneringsmotor
+    // permanent laten pauzeren ("Exact-stand verouderd") voor een org die
+    // helemaal geen Exact meer heeft. De spiegel (exact_betaaltermijnen)
+    // blijft bewust staan als audit-historie. Best-effort: vóór migratie 211
+    // bestaat de tabel niet.
+    const { error: stateDeleteError } = await supabaseAdmin
+      .from('exact_sync_state')
+      .delete()
+      .eq('organisatie_id', orgId)
+    if (stateDeleteError && stateDeleteError.code !== 'PGRST205') {
+      console.warn('[exact-disconnect] exact_sync_state opruimen mislukt:', stateDeleteError.message)
+    }
+
     await logAuditEvent(supabaseAdmin, {
       organisatie_id: orgId,
       actor_user_id: userId,

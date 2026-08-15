@@ -562,13 +562,15 @@ interface KlantVoorExact {
 }
 
 // klanten.land is vrije tekst ("Nederland"); Exact wil een ISO-landcode.
-function landNaarIso(land: string | null | undefined): string {
+// Onbekende landen leveren null: Country dan liever weglaten (Exact vult de
+// administratie-default in) dan hem fout op NL zetten.
+function landNaarIso(land: string | null | undefined): string | null {
   const genormaliseerd = (land || '').trim().toLowerCase()
   if (!genormaliseerd || genormaliseerd === 'nederland') return 'NL'
   if (genormaliseerd === 'belgië' || genormaliseerd === 'belgie') return 'BE'
   if (genormaliseerd === 'duitsland') return 'DE'
   if (/^[a-z]{2}$/.test(genormaliseerd)) return genormaliseerd.toUpperCase()
-  return 'NL'
+  return null
 }
 
 async function findOrCreateKlant(
@@ -579,6 +581,9 @@ async function findOrCreateKlant(
   // Eerst op debiteurennummer (Account.Code): dat is een stabiele sleutel,
   // waar naam-matching breekt op elke spellingsvariant. Exact slaat Code op
   // als 18 tekens rechts uitgelijnd, dus beide varianten proberen.
+  // De hit telt alleen als ook de naam (genormaliseerd) klopt: doen. genereert
+  // debiteurennummers los van Exact, en een nummerbotsing met een ándere
+  // Exact-relatie zou anders elke factuur stil op de verkeerde debiteur boeken.
   const debiteurennummer = (klant.debiteurennummer || '').trim()
   if (debiteurennummer) {
     const escaped = debiteurennummer.replace(/'/g, "''")
@@ -586,10 +591,20 @@ async function findOrCreateKlant(
     const codeData = await exactGet(
       token,
       division,
-      `crm/Accounts?$filter=(Code eq '${padded}' or Code eq '${escaped}') and Status eq 'C'&$select=ID`
-    ) as { d?: { results?: Array<{ ID: string }> } }
-    const opCode = codeData?.d?.results?.[0]?.ID
-    if (opCode) return opCode
+      `crm/Accounts?$filter=(Code eq '${padded}' or Code eq '${escaped}') and Status eq 'C'&$select=ID,Name`
+    ) as { d?: { results?: Array<{ ID: string; Name?: string }> } }
+    const hit = codeData?.d?.results?.[0]
+    if (hit?.ID) {
+      const zelfdeNaam = (hit.Name || '').trim().toLowerCase() === klant.naam.trim().toLowerCase()
+      if (zelfdeNaam) return hit.ID
+      console.warn('[exact-sync] debiteurennummer-match afgewezen: naam wijkt af', {
+        debiteurennummer, exact_naam: hit.Name, doen_naam: klant.naam,
+      })
+      Sentry.captureMessage(
+        `Exact Code-match afgewezen: debiteurennummer ${debiteurennummer} hoort in Exact bij "${hit.Name}", doen. verwacht "${klant.naam}"`,
+        'warning'
+      )
+    }
   }
 
   // Zoek alleen onder customer accounts (Status 'C') zodat we geen
@@ -616,7 +631,8 @@ async function findOrCreateKlant(
   if (klant.adres?.trim()) newAccount.AddressLine1 = klant.adres.trim()
   if (klant.postcode?.trim()) newAccount.Postcode = klant.postcode.trim()
   if (klant.stad?.trim()) newAccount.City = klant.stad.trim()
-  newAccount.Country = landNaarIso(klant.land)
+  const landCode = landNaarIso(klant.land)
+  if (landCode) newAccount.Country = landCode
   if (klant.btw_nummer?.trim()) newAccount.VATNumber = klant.btw_nummer.trim()
   if (klant.kvk_nummer?.trim()) newAccount.ChamberOfCommerce = klant.kvk_nummer.trim()
 
@@ -1344,7 +1360,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const exactEntryId = entryResult?.d?.EntryID
 
     // 7. Sla op in factuur; een geslaagde sync wist de vorige foutmelding.
-    const { error: syncOpslagFout } = await supabaseAdmin
+    let { error: syncOpslagFout } = await supabaseAdmin
       .from('facturen')
       .update({
         exact_entry_id: exactEntryId || null,
@@ -1355,10 +1371,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', factuur_id)
     if (syncOpslagFout && syncOpslagFout.message?.includes('exact_sync_fout')) {
       // Migratie 213 nog niet gedraaid: zonder foutlog-kolommen opslaan.
-      await supabaseAdmin
+      const { error: fallbackFout } = await supabaseAdmin
         .from('facturen')
         .update({ exact_entry_id: exactEntryId || null, exact_synced_at: new Date().toISOString() })
         .eq('id', factuur_id)
+      syncOpslagFout = fallbackFout
+    }
+    // Verloren exact_entry_id betekent dat de idempotency-guard de volgende
+    // klik niet meer tegenhoudt en de factuur dubbel in Exact kan landen.
+    // Niet stil laten passeren.
+    if (syncOpslagFout) {
+      console.error('[exact-sync] exact_entry_id NIET opgeslagen na geslaagde boeking', {
+        factuur_id, exact_entry_id: exactEntryId, fout: syncOpslagFout.message,
+      })
+      Sentry.captureException(new Error('Exact entry id not persisted after booking'), {
+        level: 'error',
+        extra: { factuur_id, exact_entry_id: exactEntryId, fout: syncOpslagFout.message },
+      })
     }
 
     return res.status(200).json({
@@ -1369,6 +1398,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       bijlagen_synced: mainBijlagenSyncResult.synced,
       bijlagen_failed: mainBijlagenSyncResult.failed,
       bijlagen_geprobeerd: mainBijlagenSyncResult.geprobeerd,
+      ...(syncOpslagFout ? {
+        waarschuwing: 'De boeking staat in Exact, maar het registreren in doen. mislukte. Synchroniseer NIET opnieuw voordat je in Exact gecontroleerd hebt of de factuur er staat.',
+      } : {}),
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout bij synchroniseren'

@@ -126,17 +126,30 @@ export const factuurHerinneringCron = schedules.task({
     }
     const v2 = !probeError;
 
-    const { data: settingsRijen, error: settingsError } = await supabase
+    // exact_betaalsync_actief bestaat pas na migratie 211; als deze code
+    // geredeployed is vóór die migratie mag de hele run daar niet op
+    // stilvallen — dan zonder die kolom opnieuw proberen.
+    const basisKolommen =
+      "organisatie_id, user_id, updated_at, factuur_opvolging_automatisch, exact_online_connected, herinnering_1_tekst, herinnering_1_onderwerp, herinnering_2_tekst, herinnering_2_onderwerp, aanmaning_tekst, aanmaning_onderwerp";
+    let { data: settingsRijen, error: settingsError } = await supabase
       .from("app_settings")
-      .select(
-        "organisatie_id, user_id, updated_at, factuur_opvolging_automatisch, exact_online_connected, exact_betaalsync_actief, herinnering_1_tekst, herinnering_1_onderwerp, herinnering_2_tekst, herinnering_2_onderwerp, aanmaning_tekst, aanmaning_onderwerp"
-      )
+      .select(`${basisKolommen}, exact_betaalsync_actief`)
       .not("organisatie_id", "is", null)
       .order("updated_at", { ascending: false });
 
+    if (settingsError && settingsError.message?.includes("exact_betaalsync_actief")) {
+      const fallback = await supabase
+        .from("app_settings")
+        .select(basisKolommen)
+        .not("organisatie_id", "is", null)
+        .order("updated_at", { ascending: false });
+      settingsRijen = (fallback.data ?? null) as typeof settingsRijen;
+      settingsError = fallback.error;
+    }
+
     if (settingsError) {
-      // Kolom bestaat pas na migratie 149 — tot die tijd stilletjes klaar
-      logger.error("factuur-herinnering: settings query faalde (migratie 149 gedraaid?)", {
+      // De opvolg-kolommen bestaan pas na migratie 149 — tot die tijd klaar.
+      logger.error("factuur-herinnering: settings query faalde (migraties 149/211 gedraaid?)", {
         error: settingsError.message,
       });
       return result;
