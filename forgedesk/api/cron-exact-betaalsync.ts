@@ -771,12 +771,17 @@ async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verw
       // van gisteren nooit als vers en begint elke run weer bij dezelfde kop:
       // 24 uur cadans + marge voor zomertijd-schuif en late starts = 30 uur.
       const standGrens = Date.now() - 30 * 60 * 60 * 1000
-      const teEvalueren = alleIds
+      const metStand = alleIds
         .map((id) => ({ id, ...(statusPerId.get(id) ?? { status: 'onbekend', standOp: null }) }))
-        // Facturen uit de delta van déze run altijd mee, hoe vers hun stand ook
-        // is: hun spiegel is zojuist veranderd.
-        .filter((f) => geraakteIds.has(f.id) || !f.standOp || new Date(f.standOp).getTime() < standGrens)
-        .map((f) => ({ id: f.id, status: f.status }))
+      const isOnvers = (f: { standOp: string | null }) => !f.standOp || new Date(f.standOp).getTime() < standGrens
+      // Volgorde bewaakt de monotone voortgang: eerst de nog niet (vers)
+      // geëvalueerde staart van de cursor, pas daarna de facturen die alleen
+      // meegaan omdat ze in de delta van déze run zaten. Andersom zou een
+      // grote, elke run identieke delta-set het budget opeten en de cursor
+      // nooit laten opschuiven.
+      const cursorRest = metStand.filter(isOnvers)
+      const geforceerdVers = metStand.filter((f) => !isOnvers(f) && geraakteIds.has(f.id))
+      const teEvalueren = [...cursorRest, ...geforceerdVers].map((f) => ({ id: f.id, status: f.status }))
 
       gesettled = await evalueerFacturen(org.organisatie_id, teEvalueren, spiegel, deadline)
     } else {
@@ -786,6 +791,22 @@ async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verw
       const spiegel = await haalSpiegel(org.organisatie_id, deadline, geraakteFacturen.map((f) => f.id))
       gesettled = await evalueerFacturen(org.organisatie_id, geraakteFacturen, spiegel, deadline)
     }
+  }
+
+  // Een afkap die niets ophaalde (deadline verstreek vóór pagina 1) is geen
+  // sync-resultaat: de spiegel is exact even compleet als daarvoor. De vlag
+  // inhaalslag_bezig flippen zou een gezonde delta-org onterecht pauzeren en
+  // een verse laatste_sync_op zou de staleness-detectie uitschakelen terwijl
+  // er nul werk gedaan is. Alleen laatste_fout + updated_at (fairness).
+  if (afgekapt && termijnen.length === 0) {
+    await supabaseAdmin
+      .from('exact_sync_state')
+      .upsert({
+        organisatie_id: org.organisatie_id,
+        laatste_fout: 'RUN_ONVOLTOOID',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'organisatie_id' })
+    return { verwerkt: 0, gesettled: 0, afgekapt: true }
   }
 
   const { error: stateFout } = await supabaseAdmin

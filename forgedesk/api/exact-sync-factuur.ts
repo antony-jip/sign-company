@@ -1303,13 +1303,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // gezet terwijl de kop nog 21% telt), dan boekt Exact een btw-bedrag dat niet uit
     // de regels volgt. Dat is alleen met een correctieboeking recht te zetten en het
     // raakt de aangifte, dus hier hard tegenhouden.
-    // 0,05 speling: de kop rondt het tarief over het subtotaal af in plaats van per
-    // regel (TijdregistratieLayout zet round2(subtotaal x 0,21)), dus centenverschil
-    // is legitiem; een tariefverschil is dat nooit.
-    const btwUitRegels = regelTotalen.reduce(
-      (som, bedrag, index) => som + (bedrag * regelBtwTarieven[index]) / 100,
-      0,
-    )
+    // De kop wordt op twee manieren opgebouwd: de editor rondt per regel af
+    // (round2 per regel, dan optellen) en TijdregistratieLayout rondt over het
+    // subtotaal. Vergelijk daarom tegen beide sommen en keur goed als een van
+    // de twee binnen 0,05 valt — anders blokkeert stapelende halve-cent-
+    // afronding (11 regels op ,50 geeft al 0,055) een correcte factuur.
+    // Een tariefverschil haalt geen van beide toleranties.
+    const rondCent = (bedrag: number) => Math.round(bedrag * 100) / 100
+    let btwOngerond = 0
+    let btwPerRegelGerond = 0
+    for (let index = 0; index < regelTotalen.length; index++) {
+      const regelBtw = (regelTotalen[index] * regelBtwTarieven[index]) / 100
+      btwOngerond += regelBtw
+      btwPerRegelGerond += rondCent(regelBtw)
+    }
+    const btwUitRegels = Math.abs(btwPerRegelGerond - btwBedrag) <= Math.abs(btwOngerond - btwBedrag)
+      ? btwPerRegelGerond
+      : btwOngerond
     if (Math.abs(btwUitRegels - btwBedrag) > 0.05) {
       return res.status(400).json({
         error: `Het btw-bedrag van de kop hoort niet bij de tarieven op de regels: de kop zegt € ${btwBedrag.toFixed(2)}, de regeltarieven geven € ${btwUitRegels.toFixed(2)}. Open de factuur, controleer de btw-percentages per regel en sla hem opnieuw op voordat je naar Exact boekt.`,
