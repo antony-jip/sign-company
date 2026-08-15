@@ -306,7 +306,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const userId = await verifyUser(req)
-    const { token, division } = await getValidToken(userId)
+    // Org-brede koppeling: gebruik het token van de eigenaar (zelfde patroon
+    // als exact-document-types), zodat deze lijst ook werkt voor collega's
+    // zonder eigen exact_tokens-rij.
+    const orgSettings = await loadAppSettingsOrgFirst(supabaseAdmin, userId, 'exact_owner_user_id')
+    const eigenaar = (orgSettings?.exact_owner_user_id as string | null) || null
+    let tokenUserId = userId
+    if (eigenaar && eigenaar !== userId) {
+      const [callerOrg, eigenaarOrg] = await Promise.all([
+        getOrgIdForUser(supabaseAdmin, userId),
+        getOrgIdForUser(supabaseAdmin, eigenaar),
+      ])
+      if (callerOrg && callerOrg === eigenaarOrg) tokenUserId = eigenaar
+    }
+    const { token, division } = await getValidToken(tokenUserId)
 
     // Haal alle divisies op via system endpoint
     const divisionsRes = await exactFetchMetRetry(

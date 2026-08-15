@@ -61,6 +61,7 @@ const ALLOWED_FIELDS = [
   'exact_btw_nul',
   'exact_document_type_id',
   'exact_document_type_naam',
+  'exact_betaalsync_actief',
   'boekhoud_pakket',
   'snelstart_koppelsleutel',
   'snelstart_grootboek_id',

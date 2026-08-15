@@ -848,6 +848,8 @@ export interface AppSettings {
   exact_btw_nul?: string;
   exact_document_type_id?: number;
   exact_document_type_naam?: string;
+  /** Dagelijkse betaalstatus-pull uit Exact (migratie 211); false = alleen push. */
+  exact_betaalsync_actief?: boolean;
   // Boekhoudkoppeling (migratie 132) — één pakket tegelijk, naast eventueel Exact Online
   boekhoud_pakket?: BoekhoudPakket | null;
   snelstart_koppelsleutel?: string;

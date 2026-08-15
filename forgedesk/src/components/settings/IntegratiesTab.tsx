@@ -45,6 +45,7 @@ const INTEGRATIES_TABS: SubTab[] = [
 ]
 
 async function saveIntegrationSettings(settings: Record<string, unknown>): Promise<void> {
+  if (!supabase) throw new Error('Niet ingelogd')
   const { data } = await supabase.auth.getSession()
   const token = data?.session?.access_token
   if (!token) throw new Error('Niet ingelogd')
@@ -87,6 +88,10 @@ export function IntegratiesTab() {
   const [documentTypes, setDocumentTypes] = useState<Array<{ id: number; description: string; typeCategory: number }>>([])
   const [docTypesLoading, setDocTypesLoading] = useState(false)
   const [docTypesError, setDocTypesError] = useState<string | null>(null)
+  const [exactBetaalsyncActief, setExactBetaalsyncActief] = useState(true)
+  const [exactCodes, setExactCodes] = useState<{ dagboeken: Array<{ code: string; naam: string }>; grootboeken: Array<{ code: string; naam: string }>; btwCodes: Array<{ code: string; naam: string }> }>({ dagboeken: [], grootboeken: [], btwCodes: [] })
+  const [exactCodesLoading, setExactCodesLoading] = useState(false)
+  const [exactCodesError, setExactCodesError] = useState<string | null>(null)
 
   // Koppeling-status van de ORGANISATIE. De koppeling is org-breed: de eigenaar
   // houdt de OAuth-sessie en iedereen synct met dát token. /api/exact-token-status
@@ -179,6 +184,7 @@ export function IntegratiesTab() {
       setExactBtwNul(s.exact_btw_nul ?? '')
       setExactDocumentTypeId(s.exact_document_type_id ?? null)
       setExactDocumentTypeNaam(s.exact_document_type_naam ?? '')
+      setExactBetaalsyncActief(s.exact_betaalsync_actief ?? true)
       const pakket = s.boekhoud_pakket ?? ''
       setBoekhoudPakket(pakket)
       const tokenPerPakket: Record<BoekhoudPakket, string | undefined> = {
@@ -253,7 +259,7 @@ export function IntegratiesTab() {
     let cancelled = false
     async function fetchStatus() {
       try {
-        const { data: sess } = await supabase.auth.getSession()
+        const { data: sess } = supabase ? await supabase.auth.getSession() : { data: null }
         const token = sess?.session?.access_token
         if (!token) {
           if (!cancelled) setExactHeeftTokens(false)
@@ -310,6 +316,7 @@ export function IntegratiesTab() {
     setDocTypesLoading(true)
     setDocTypesError(null)
     try {
+      if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
       if (!token) throw new Error('Niet ingelogd')
@@ -339,11 +346,52 @@ export function IntegratiesTab() {
     if (exactConnected && exactHeeftTokens) loadDocumentTypes()
   }, [exactConnected, exactHeeftTokens, loadDocumentTypes])
 
+  // Dagboek-, grootboek- en btw-codes uit Exact als kieslijst bij de
+  // code-velden; handmatig typen blijft mogelijk (fallback bij een fout).
+  const loadExactCodes = useCallback(async () => {
+    if (!exactConnected) return
+    setExactCodesLoading(true)
+    setExactCodesError(null)
+    try {
+      if (!supabase) throw new Error('Niet ingelogd')
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess?.session?.access_token
+      if (!token) throw new Error('Niet ingelogd')
+      const haal = async (pad: string) => {
+        const res = await fetch(pad, { headers: { Authorization: `Bearer ${token}` } })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || `Status ${res.status}`)
+        }
+        return await res.json() as Array<{ code: string; naam: string }>
+      }
+      const [dagboeken, grootboeken, btwCodes] = await Promise.all([
+        haal('/api/exact-dagboeken'),
+        haal('/api/exact-grootboeken'),
+        haal('/api/exact-btw-codes'),
+      ])
+      setExactCodes({ dagboeken, grootboeken, btwCodes })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Onbekende fout'
+      setExactCodesError(msg)
+      logger.error('Exact-codes laden mislukt:', err)
+    } finally {
+      setExactCodesLoading(false)
+    }
+  }, [exactConnected])
+
+  useEffect(() => {
+    if (exactAdvancedOpen && exactConnected && exactHeeftTokens && exactCodes.grootboeken.length === 0 && !exactCodesLoading && !exactCodesError) {
+      loadExactCodes()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exactAdvancedOpen, exactConnected, exactHeeftTokens])
+
   const handleExactDisconnect = async () => {
     if (!supabase) return
     setExactOntkoppelen(true)
     try {
-      const { data } = await supabase.auth.getSession()
+      const { data } = supabase ? await supabase.auth.getSession() : { data: null }
       const token = data?.session?.access_token
       if (!token) {
         toast.error('Niet ingelogd')
@@ -391,7 +439,7 @@ export function IntegratiesTab() {
         exact_online_client_id: exactClientId,
         exact_online_client_secret: exactClientSecret,
       })
-      const { data } = await supabase.auth.getSession()
+      const { data } = supabase ? await supabase.auth.getSession() : { data: null }
       const token = data?.session?.access_token
       if (!token) {
         toast.error('Niet ingelogd')
@@ -438,6 +486,7 @@ export function IntegratiesTab() {
     setMoneybirdConfigLoading(true)
     setMoneybirdConfigError(null)
     try {
+      if (!supabase) throw new Error('Niet ingelogd')
       if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
@@ -510,6 +559,7 @@ export function IntegratiesTab() {
     setMoneybirdConnecting(true)
     try {
       if (!supabase) throw new Error('Niet ingelogd')
+      if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
       if (!token) throw new Error('Niet ingelogd')
@@ -560,6 +610,7 @@ export function IntegratiesTab() {
     setEboekhoudenConfigError(null)
     try {
       if (!supabase) throw new Error('Niet ingelogd')
+      if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
       if (!token) throw new Error('Niet ingelogd')
@@ -597,6 +648,7 @@ export function IntegratiesTab() {
   const handleEboekhoudenConnect = async () => {
     setEboekhoudenConnecting(true)
     try {
+      if (!supabase) throw new Error('Niet ingelogd')
       if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
@@ -642,6 +694,7 @@ export function IntegratiesTab() {
     setBoekhoudDisconnecting(true)
     try {
       if (!supabase) throw new Error('Niet ingelogd')
+      if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
       if (!token) throw new Error('Niet ingelogd')
@@ -669,6 +722,7 @@ export function IntegratiesTab() {
     setSnelstartConfigLoading(true)
     setSnelstartConfigError(null)
     try {
+      if (!supabase) throw new Error('Niet ingelogd')
       if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
@@ -707,6 +761,7 @@ export function IntegratiesTab() {
   const handleSnelstartConnect = async () => {
     setSnelstartConnecting(true)
     try {
+      if (!supabase) throw new Error('Niet ingelogd')
       if (!supabase) throw new Error('Niet ingelogd')
       const { data: sess } = await supabase.auth.getSession()
       const token = sess?.session?.access_token
@@ -779,6 +834,7 @@ export function IntegratiesTab() {
         exact_btw_hoog: exactBtwHoog,
         exact_btw_laag: exactBtwLaag,
         exact_btw_nul: exactBtwNul,
+        exact_betaalsync_actief: exactBetaalsyncActief,
       })
       if (exactClientSecret) setExactSecretOpgeslagen(true)
       toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
@@ -1045,33 +1101,77 @@ export function IntegratiesTab() {
                       )}
                       <p className="text-xs text-muted-foreground">Bepaalt waar PDF-bijlagen worden geboekt in Exact bij synchroniseren.</p>
                     </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        {exactCodesError
+                          ? `Kieslijsten ophalen mislukt: ${exactCodesError}. Codes handmatig invullen kan altijd.`
+                          : 'Codes komen als kieslijst uit je Exact-administratie; handmatig typen kan ook.'}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={loadExactCodes}
+                        disabled={exactCodesLoading || !exactConnected}
+                        className="h-7 text-xs gap-1 shrink-0"
+                      >
+                        <RefreshCw className={cn('w-3 h-3', exactCodesLoading && 'animate-spin')} />
+                        Codes ophalen
+                      </Button>
+                    </div>
+                    <datalist id="exact-dagboeken-lijst">
+                      {exactCodes.dagboeken.map((c) => <option key={c.code} value={c.code}>{c.naam}</option>)}
+                    </datalist>
+                    <datalist id="exact-grootboeken-lijst">
+                      {exactCodes.grootboeken.map((c) => <option key={c.code} value={c.code}>{c.naam}</option>)}
+                    </datalist>
+                    <datalist id="exact-btw-lijst">
+                      {exactCodes.btwCodes.map((c) => <option key={c.code} value={c.code}>{c.naam}</option>)}
+                    </datalist>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="exact-verkoopboek" className="text-sm">Verkoopboek code</Label>
-                        <Input id="exact-verkoopboek" value={exactVerkoopboek} onChange={(e) => setExactVerkoopboek(e.target.value)} placeholder="80" className="font-mono text-sm" />
+                        <Input id="exact-verkoopboek" list="exact-dagboeken-lijst" value={exactVerkoopboek} onChange={(e) => setExactVerkoopboek(e.target.value)} placeholder="80" className="font-mono text-sm" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="exact-grootboek" className="text-sm">Grootboek code</Label>
-                        <Input id="exact-grootboek" value={exactGrootboek} onChange={(e) => setExactGrootboek(e.target.value)} placeholder="8090" className="font-mono text-sm" />
+                        <Input id="exact-grootboek" list="exact-grootboeken-lijst" value={exactGrootboek} onChange={(e) => setExactGrootboek(e.target.value)} placeholder="8090" className="font-mono text-sm" />
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="exact-btw-hoog" className="text-sm">BTW code hoog</Label>
-                        <Input id="exact-btw-hoog" value={exactBtwHoog} onChange={(e) => setExactBtwHoog(e.target.value)} placeholder="2" className="font-mono text-sm" />
+                        <Input id="exact-btw-hoog" list="exact-btw-lijst" value={exactBtwHoog} onChange={(e) => setExactBtwHoog(e.target.value)} placeholder="2" className="font-mono text-sm" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="exact-btw-laag" className="text-sm">BTW code laag</Label>
-                        <Input id="exact-btw-laag" value={exactBtwLaag} onChange={(e) => setExactBtwLaag(e.target.value)} placeholder="" className="font-mono text-sm" />
+                        <Input id="exact-btw-laag" list="exact-btw-lijst" value={exactBtwLaag} onChange={(e) => setExactBtwLaag(e.target.value)} placeholder="" className="font-mono text-sm" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="exact-btw-nul" className="text-sm">BTW code nul</Label>
-                        <Input id="exact-btw-nul" value={exactBtwNul} onChange={(e) => setExactBtwNul(e.target.value)} placeholder="" className="font-mono text-sm" />
+                        <Input id="exact-btw-nul" list="exact-btw-lijst" value={exactBtwNul} onChange={(e) => setExactBtwNul(e.target.value)} placeholder="" className="font-mono text-sm" />
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">Deze codes worden gebruikt bij het genereren van UBL-bestanden voor Exact Online.</p>
+                    <p className="text-xs text-muted-foreground">Deze codes gaan als dagboek, grootboekrekening en btw-code mee wanneer een factuur in Exact wordt geboekt.</p>
                   </div>
                 )}
+                <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-border/50 bg-muted/20 mt-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="exact-betaalsync" className="text-sm font-medium">
+                      Betaalstatus terughalen uit Exact
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Haalt dagelijks de openstaande posten op en vinkt facturen die per bank
+                      betaald zijn automatisch af. Uitgezet worden facturen alleen naar Exact
+                      gestuurd en houd je de betaalstatus zelf of via je boekhouder bij.
+                    </p>
+                  </div>
+                  <Switch
+                    id="exact-betaalsync"
+                    checked={exactBetaalsyncActief}
+                    onCheckedChange={setExactBetaalsyncActief}
+                  />
+                </div>
               </div>
 
               {/* Alleen conclusies tonen als de status echt geladen is. Anders

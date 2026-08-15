@@ -168,6 +168,24 @@ function magOpnieuwNaFout(err: unknown): boolean {
   return naam !== 'TimeoutError' && naam !== 'AbortError'
 }
 
+// Laatste syncfout op de factuur bewaren (migratie 213), zodat er na het
+// wegklikken van de toast nog iets terug te vinden is. Best-effort: vóór de
+// migratie ontbreken de kolommen en mag dit de echte foutafhandeling niet
+// verstoren.
+async function registreerSyncFout(factuurId: string, melding: string): Promise<void> {
+  try {
+    const { error } = await supabaseAdmin
+      .from('facturen')
+      .update({ exact_sync_fout: melding.slice(0, 500), exact_sync_fout_op: new Date().toISOString() })
+      .eq('id', factuurId)
+    if (error && !error.message?.includes('exact_sync_fout')) {
+      console.warn('[exact-sync] foutlog schrijven mislukt:', error.message)
+    }
+  } catch {
+    // nooit de hoofdfout maskeren
+  }
+}
+
 // ── Helpers ──
 
 interface ExactSettings {
@@ -315,7 +333,7 @@ async function getValidToken(tokenUserId: string, settingsUserId: string, cache:
       throw new Error('Exact Online token vernieuwen mislukt. Probeer het opnieuw.')
     }
 
-    const tokens = await refreshRes.json()
+    const tokens = (await refreshRes.json()) as { access_token?: string; refresh_token?: string; expires_in?: number }
     if (!tokens?.access_token) {
       console.error('[Exact] refresh gaf 200 zonder access_token', { endpoint: 'exact-sync-factuur.ts' })
       throw new Error('Exact Online gaf een onverwacht antwoord bij token vernieuwen. Probeer het opnieuw.')
@@ -325,7 +343,7 @@ async function getValidToken(tokenUserId: string, settingsUserId: string, cache:
       user_id: tokenUserId,
       access_token: encryptSecret(tokens.access_token),
       refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(tokenData.refresh_token)),
-      expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+      expires_at: new Date(Date.now() + (tokens.expires_in ?? 600) * 1000).toISOString(),
       division: tokenData.division,
       updated_at: new Date().toISOString(),
     }
@@ -530,16 +548,53 @@ async function getGrootboekGuid(token: string, division: string, rekeningNummer:
 
 // ── Klant zoeken/aanmaken ──
 
+interface KlantVoorExact {
+  naam: string
+  email?: string | null
+  telefoon?: string | null
+  debiteurennummer?: string | null
+  adres?: string | null
+  postcode?: string | null
+  stad?: string | null
+  land?: string | null
+  btw_nummer?: string | null
+  kvk_nummer?: string | null
+}
+
+// klanten.land is vrije tekst ("Nederland"); Exact wil een ISO-landcode.
+function landNaarIso(land: string | null | undefined): string {
+  const genormaliseerd = (land || '').trim().toLowerCase()
+  if (!genormaliseerd || genormaliseerd === 'nederland') return 'NL'
+  if (genormaliseerd === 'belgië' || genormaliseerd === 'belgie') return 'BE'
+  if (genormaliseerd === 'duitsland') return 'DE'
+  if (/^[a-z]{2}$/.test(genormaliseerd)) return genormaliseerd.toUpperCase()
+  return 'NL'
+}
+
 async function findOrCreateKlant(
   token: string,
   division: string,
-  klantNaam: string,
-  klantEmail?: string,
-  klantTelefoon?: string
+  klant: KlantVoorExact
 ): Promise<string> {
+  // Eerst op debiteurennummer (Account.Code): dat is een stabiele sleutel,
+  // waar naam-matching breekt op elke spellingsvariant. Exact slaat Code op
+  // als 18 tekens rechts uitgelijnd, dus beide varianten proberen.
+  const debiteurennummer = (klant.debiteurennummer || '').trim()
+  if (debiteurennummer) {
+    const escaped = debiteurennummer.replace(/'/g, "''")
+    const padded = escaped.padStart(18, ' ')
+    const codeData = await exactGet(
+      token,
+      division,
+      `crm/Accounts?$filter=(Code eq '${padded}' or Code eq '${escaped}') and Status eq 'C'&$select=ID`
+    ) as { d?: { results?: Array<{ ID: string }> } }
+    const opCode = codeData?.d?.results?.[0]?.ID
+    if (opCode) return opCode
+  }
+
   // Zoek alleen onder customer accounts (Status 'C') zodat we geen
   // leveranciers of prospects matchen die toevallig dezelfde naam hebben.
-  const encodedName = klantNaam.replace(/'/g, "''")
+  const encodedName = klant.naam.replace(/'/g, "''")
   const searchData = await exactGet(
     token,
     division,
@@ -551,10 +606,19 @@ async function findOrCreateKlant(
 
   // Klant niet gevonden, maak aan met Status 'C' (Customer) zodat de
   // latere SalesEntry-sync werkt — Exact accepteert geen SalesEntry voor
-  // een account zonder customer rol.
-  const newAccount: Record<string, string> = { Name: klantNaam, Status: 'C' }
-  if (klantEmail) newAccount.Email = klantEmail
-  if (klantTelefoon) newAccount.Phone = klantTelefoon
+  // een account zonder customer rol. Adres, btw-nummer, KvK en het
+  // debiteurennummer gaan mee zodat de relatie in Exact compleet is en de
+  // volgende sync op Code kan matchen.
+  const newAccount: Record<string, string> = { Name: klant.naam, Status: 'C' }
+  if (debiteurennummer) newAccount.Code = debiteurennummer
+  if (klant.email) newAccount.Email = klant.email
+  if (klant.telefoon) newAccount.Phone = klant.telefoon
+  if (klant.adres?.trim()) newAccount.AddressLine1 = klant.adres.trim()
+  if (klant.postcode?.trim()) newAccount.Postcode = klant.postcode.trim()
+  if (klant.stad?.trim()) newAccount.City = klant.stad.trim()
+  newAccount.Country = landNaarIso(klant.land)
+  if (klant.btw_nummer?.trim()) newAccount.VATNumber = klant.btw_nummer.trim()
+  if (klant.kvk_nummer?.trim()) newAccount.ChamberOfCommerce = klant.kvk_nummer.trim()
 
   const createData = await exactPost(token, division, 'crm/Accounts', newAccount) as {
     d?: { ID: string }
@@ -562,7 +626,7 @@ async function findOrCreateKlant(
 
   const newId = createData?.d?.ID
   if (!newId) {
-    throw new Error(`Klant "${klantNaam}" kon niet aangemaakt worden in Exact Online.`)
+    throw new Error(`Klant "${klant.naam}" kon niet aangemaakt worden in Exact Online.`)
   }
 
   return newId
@@ -844,13 +908,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const retryKlantNaam = retryKlant?.bedrijfsnaam || factuur.klant_naam || 'Onbekende klant'
         let retryCustomerGuid: string
         try {
-          retryCustomerGuid = await findOrCreateKlant(
-            token,
-            division,
-            retryKlantNaam,
-            retryKlant?.email,
-            retryKlant?.telefoon,
-          )
+          retryCustomerGuid = await findOrCreateKlant(token, division, {
+            naam: retryKlantNaam,
+            email: retryKlant?.email,
+            telefoon: retryKlant?.telefoon,
+          })
         } catch (klantErr) {
           console.error('Klant lookup mislukt in retry-flow:', klantErr)
           return res.status(502).json({ error: 'Klant niet gevonden in Exact' })
@@ -989,40 +1051,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
+    // Zonder regels valt er niets te boeken; Exact geeft daar zelf een
+    // onnavolgbare 400 op (komt voor bij creditnota's uit de snelle
+    // lijst-dialoog, die alleen kopbedragen aanmaakt).
+    if (!factuurItems || factuurItems.length === 0) {
+      return res.status(400).json({
+        error: 'Deze factuur heeft geen regels; voeg regels toe voordat je naar Exact boekt.',
+      })
+    }
+
+    // Elke regel moet op een geconfigureerde btw-code uitkomen; een lege code
+    // ging voorheen stilzwijgend als VATCode null naar Exact.
+    for (const item of factuurItems as Array<{ btw_percentage: number }>) {
+      if (bepaalBtwCode(item.btw_percentage, exactSettings) === null) {
+        return res.status(400).json({
+          error: `Geen Exact-btw-code geconfigureerd voor ${item.btw_percentage}% btw. Vul de btw-codes in bij Instellingen > Integraties.`,
+        })
+      }
+    }
+
     // 4. Klant zoeken/aanmaken
     // Haal klantgegevens op uit Supabase
     const { data: klant, error: klantError } = await supabaseAdmin
       .from('klanten')
-      .select('bedrijfsnaam, email, telefoon')
+      .select('bedrijfsnaam, email, telefoon, debiteurennummer, adres, postcode, stad, land, btw_nummer, kvk_nummer')
       .eq('id', factuur.klant_id)
       .maybeSingle()
     if (klantError) console.error('[exact-sync] klant lookup fout:', klantError.message)
 
-    const klantNaam = klant?.bedrijfsnaam || factuur.klant_naam || 'Onbekende klant'
+    const klantVoorExact: KlantVoorExact = {
+      naam: klant?.bedrijfsnaam || factuur.klant_naam || 'Onbekende klant',
+      email: klant?.email,
+      telefoon: klant?.telefoon,
+      debiteurennummer: klant?.debiteurennummer,
+      adres: klant?.adres,
+      postcode: klant?.postcode,
+      stad: klant?.stad,
+      land: klant?.land,
+      btw_nummer: klant?.btw_nummer,
+      kvk_nummer: klant?.kvk_nummer,
+    }
     let customerGuid: string
 
     try {
-      customerGuid = await findOrCreateKlant(
-        token,
-        division,
-        klantNaam,
-        klant?.email,
-        klant?.telefoon
-      )
+      customerGuid = await findOrCreateKlant(token, division, klantVoorExact)
     } catch (klantError: unknown) {
       // Token verlopen tijdens klant zoeken? Refresh en retry 1x
       try {
         token = await getValidToken(tokenUserId, user_id, tokenCache)
 
-        customerGuid = await findOrCreateKlant(
-          token,
-          division,
-          klantNaam,
-          klant?.email,
-          klant?.telefoon
-        )
+        customerGuid = await findOrCreateKlant(token, division, klantVoorExact)
       } catch {
         const msg = klantError instanceof Error ? klantError.message : 'Klant aanmaken mislukt'
+        await registreerSyncFout(factuur_id, msg)
         return res.status(502).json({ error: msg })
       }
     }
@@ -1154,6 +1235,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const reportingYear = parseInt(dateParts[0], 10)
     const reportingPeriod = parseInt(dateParts[1], 10)
 
+    // Kostenplaats van de factuur gaat als code mee op elke regel; hij ging
+    // al wel in de UBL maar nooit naar Exact.
+    let kostenplaatsCode: string | null = null
+    if (factuur.kostenplaats_id) {
+      const { data: kostenplaats } = await supabaseAdmin
+        .from('kostenplaatsen')
+        .select('code')
+        .eq('id', factuur.kostenplaats_id)
+        .maybeSingle()
+      kostenplaatsCode = (kostenplaats?.code as string | undefined)?.trim() || null
+    }
+
     const salesEntryLines = (factuurItems || []).map((item: {
       beschrijving: string
       btw_percentage: number
@@ -1175,6 +1268,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         GLAccount: grootboekGuidPerCode.get(regelGrootboekCode) ?? null,
         VATCode: btwCode,
       }
+      if (kostenplaatsCode) line.CostCenter = kostenplaatsCode
 
       return line
     })
@@ -1194,6 +1288,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       VATAmountDC: (factuur.btw_bedrag as number).toFixed(2),
       VATAmountFC: (factuur.btw_bedrag as number).toFixed(2),
       SalesEntryLines: salesEntryLines,
+    }
+    // Vervaldatum bepaalt in Exact de openstaande-postentermijn; zonder
+    // DueDate rekent Exact zelf vanuit de betalingsconditie van de relatie
+    // en lopen de vervaldata in doen. en Exact uit elkaar.
+    if (factuur.vervaldatum) {
+      salesEntry.DueDate = `${factuur.vervaldatum}T00:00:00`
     }
     if (documentId) {
       salesEntry.Document = documentId
@@ -1218,6 +1318,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           factuur_id, naam: (syncError as { name?: string })?.name,
         })
         Sentry.captureException(syncError, { extra: { factuur_id, fase: 'salesentry-post-afgebroken' } })
+        await registreerSyncFout(factuur_id, 'Exact reageerde niet binnen de tijd; boeking mogelijk wel aangekomen.')
         return res.status(504).json({
           success: false,
           error: 'Exact reageerde niet binnen de tijd. De boeking is mogelijk wél aangekomen. Controleer in Exact of de factuur er staat voordat je opnieuw synchroniseert.',
@@ -1235,20 +1336,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ) as { d?: { EntryID?: string } }
       } catch {
         const msg = syncError instanceof Error ? syncError.message : 'Factuur synchroniseren mislukt'
+        await registreerSyncFout(factuur_id, msg)
         return res.status(502).json({ success: false, error: msg })
       }
     }
 
     const exactEntryId = entryResult?.d?.EntryID
 
-    // 7. Sla op in factuur
-    await supabaseAdmin
+    // 7. Sla op in factuur; een geslaagde sync wist de vorige foutmelding.
+    const { error: syncOpslagFout } = await supabaseAdmin
       .from('facturen')
       .update({
         exact_entry_id: exactEntryId || null,
         exact_synced_at: new Date().toISOString(),
+        exact_sync_fout: null,
+        exact_sync_fout_op: null,
       })
       .eq('id', factuur_id)
+    if (syncOpslagFout && syncOpslagFout.message?.includes('exact_sync_fout')) {
+      // Migratie 213 nog niet gedraaid: zonder foutlog-kolommen opslaan.
+      await supabaseAdmin
+        .from('facturen')
+        .update({ exact_entry_id: exactEntryId || null, exact_synced_at: new Date().toISOString() })
+        .eq('id', factuur_id)
+    }
 
     return res.status(200).json({
       success: true,
@@ -1262,6 +1373,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout bij synchroniseren'
     console.error('Exact sync factuur error:', message)
+    const factuurId = (req.body as { factuur_id?: string } | undefined)?.factuur_id
+    if (factuurId) await registreerSyncFout(factuurId, message)
     return res.status(500).json({ success: false, error: message })
   }
 }

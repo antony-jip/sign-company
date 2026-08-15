@@ -12,6 +12,12 @@
 
 BEGIN;
 
+-- Per organisatie uitschakelbaar: voor sommige bedrijven is de push
+-- (doen. -> Exact) genoeg en doet de boekhouder de rest. Staat hij uit,
+-- dan slaat de cron de org over en behandelt de herinneringsmotor de org
+-- als niet-Exact (geen staleness-pauze).
+ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS exact_betaalsync_actief boolean NOT NULL DEFAULT true;
+
 CREATE TABLE IF NOT EXISTS exact_sync_state (
   organisatie_id uuid PRIMARY KEY REFERENCES organisaties(id) ON DELETE CASCADE,
   division text,
