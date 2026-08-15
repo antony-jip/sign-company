@@ -205,6 +205,10 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Ook hier eerst droppen: een oudere 1-arg-versie op de branch had een
+  -- smaller rijtype en CREATE OR REPLACE weigert dat (42P13).
+  EXECUTE 'DROP FUNCTION IF EXISTS factuur_markeer_betaald(uuid)';
+
   EXECUTE $fn$
 CREATE OR REPLACE FUNCTION factuur_markeer_betaald(p_factuur_id uuid)
 RETURNS TABLE (nieuw_betaald numeric, nieuwe_status text, bijgewerkt_op timestamptz)
