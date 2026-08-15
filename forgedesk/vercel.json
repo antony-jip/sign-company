@@ -52,7 +52,7 @@
     },
     {
       "path": "/api/cron-exact-betaalsync",
-      "schedule": "45 6 * * *"
+      "schedule": "45 5 * * *"
     },
     {
       "path": "/api/cron-email-sync",

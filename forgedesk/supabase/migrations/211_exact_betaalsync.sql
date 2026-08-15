@@ -79,11 +79,16 @@ ALTER TABLE facturen ADD COLUMN IF NOT EXISTS exact_stand_op timestamptz;
 -- worden hard op 'handmatig' gezet; alleen service-processen (auth.uid()
 -- is null) mogen een andere bron meegeven.
 DROP FUNCTION IF EXISTS factuur_markeer_betaald(uuid);
+DROP FUNCTION IF EXISTS factuur_markeer_betaald(uuid, text, text);
 
 CREATE OR REPLACE FUNCTION factuur_markeer_betaald(
   p_factuur_id uuid,
   p_bron text DEFAULT 'handmatig',
-  p_referentie text DEFAULT NULL
+  p_referentie text DEFAULT NULL,
+  -- Werkelijke betaaldatum (bv. LastPaymentDate uit Exact); zonder waarde
+  -- de huidige dag in Europe/Amsterdam, niet UTC — rond middernacht zou
+  -- CURRENT_DATE anders gisteren opleveren.
+  p_betaald_op date DEFAULT NULL
 ) RETURNS TABLE (nieuw_betaald numeric, nieuwe_status text, bijgewerkt_op timestamptz)
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -125,11 +130,14 @@ BEGIN
   v_rest := round(v_totaal - v_betaald, 2);
   IF v_rest > 0 THEN
     RETURN QUERY SELECT r.nieuw_betaald, r.nieuwe_status, r.bijgewerkt_op
-      FROM factuur_betaling_verwerk(p_factuur_id, v_bron, v_ref, v_rest, CURRENT_DATE) r;
+      FROM factuur_betaling_verwerk(
+        p_factuur_id, v_bron, v_ref, v_rest,
+        COALESCE(p_betaald_op, (now() AT TIME ZONE 'Europe/Amsterdam')::date)
+      ) r;
   ELSE
     UPDATE facturen f
        SET status = 'betaald',
-           betaaldatum = COALESCE(f.betaaldatum, CURRENT_DATE),
+           betaaldatum = COALESCE(f.betaaldatum, p_betaald_op, (now() AT TIME ZONE 'Europe/Amsterdam')::date),
            updated_at = now()
      WHERE f.id = p_factuur_id
        AND f.status IN ('open', 'verzonden', 'vervallen')
@@ -139,8 +147,8 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION factuur_markeer_betaald(uuid, text, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION factuur_markeer_betaald(uuid, text, text) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION factuur_markeer_betaald(uuid, text, text, date) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION factuur_markeer_betaald(uuid, text, text, date) TO authenticated, service_role;
 
 COMMIT;
 

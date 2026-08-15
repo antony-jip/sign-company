@@ -149,9 +149,11 @@ BEGIN
        SET betaald_bedrag = v_nieuw_betaald,
            status = v_nieuwe_status,
            -- betaaldatum is in de live database DATE (geverifieerd 15-08-2026,
-           -- ondanks TEXT in 001_create_all_tables.sql).
+           -- ondanks TEXT in 001_create_all_tables.sql). Fallback-datum in
+           -- Europe/Amsterdam: CURRENT_DATE is UTC en zou rond middernacht
+           -- gisteren opleveren.
            betaaldatum = CASE
-             WHEN v_nieuwe_status = 'betaald' AND v_status <> 'betaald' THEN COALESCE(p_betaald_op, CURRENT_DATE)
+             WHEN v_nieuwe_status = 'betaald' AND v_status <> 'betaald' THEN COALESCE(p_betaald_op, (now() AT TIME ZONE 'Europe/Amsterdam')::date)
              WHEN v_nieuwe_status <> 'betaald' AND v_status = 'betaald' THEN NULL
              ELSE f.betaaldatum
            END,
@@ -174,12 +176,31 @@ GRANT EXECUTE ON FUNCTION factuur_betaling_verwerk(uuid, text, text, numeric, da
 -- handmatige betaling door het grootboek, zodat betaald_bedrag nooit
 -- buiten factuur_betalingen om verandert. Dubbelklik serialiseert op de
 -- FOR UPDATE-lock: de tweede aanroep ziet restant 0 en boekt niets.
+--
+-- Her-run-guard: migratie 211 vervangt deze functie door een variant met
+-- meer parameters. Draait 210 daarna per ongeluk opnieuw, dan zou de
+-- 1-arg-versie hier terugkomen NAAST de nieuwe en wordt de RPC-aanroep
+-- ambigu (PGRST203). Bestaat de 211-variant al, ruim de 1-arg dan juist op.
+DO $do$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public'
+       AND p.proname = 'factuur_markeer_betaald'
+       AND p.pronargs > 1
+  ) THEN
+    RAISE NOTICE 'factuur_markeer_betaald (211-variant) bestaat al; 1-arg-versie niet aangemaakt';
+    RETURN;
+  END IF;
+
+  EXECUTE $fn$
 CREATE OR REPLACE FUNCTION factuur_markeer_betaald(p_factuur_id uuid)
 RETURNS TABLE (nieuw_betaald numeric, nieuwe_status text, bijgewerkt_op timestamptz)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $$
+AS $body$
 DECLARE
   v_org uuid;
   v_totaal numeric;
@@ -209,12 +230,13 @@ BEGIN
   IF v_rest > 0 THEN
     RETURN QUERY SELECT r.nieuw_betaald, r.nieuwe_status, r.bijgewerkt_op
       FROM factuur_betaling_verwerk(
-        p_factuur_id, 'handmatig', 'handmatig:' || gen_random_uuid(), v_rest, CURRENT_DATE
+        p_factuur_id, 'handmatig', 'handmatig:' || gen_random_uuid(), v_rest,
+        (now() AT TIME ZONE 'Europe/Amsterdam')::date
       ) r;
   ELSE
     UPDATE facturen f
        SET status = 'betaald',
-           betaaldatum = COALESCE(f.betaaldatum, CURRENT_DATE),
+           betaaldatum = COALESCE(f.betaaldatum, (now() AT TIME ZONE 'Europe/Amsterdam')::date),
            updated_at = now()
      WHERE f.id = p_factuur_id
        AND f.status IN ('open', 'verzonden', 'vervallen')
@@ -222,10 +244,13 @@ BEGIN
     RETURN QUERY SELECT v_betaald, 'betaald'::text, v_bijgewerkt_op;
   END IF;
 END;
-$$;
+$body$
+$fn$;
 
-REVOKE EXECUTE ON FUNCTION factuur_markeer_betaald(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION factuur_markeer_betaald(uuid) TO authenticated, service_role;
+  EXECUTE 'REVOKE EXECUTE ON FUNCTION factuur_markeer_betaald(uuid) FROM PUBLIC, anon';
+  EXECUTE 'GRANT EXECUTE ON FUNCTION factuur_markeer_betaald(uuid) TO authenticated, service_role';
+END;
+$do$;
 
 -- Backfill: elke factuur met betaald_bedrag > 0 krijgt precies één rij,
 -- zodat de invariant "betaald_bedrag = som(factuur_betalingen)" vanaf dag
@@ -242,7 +267,10 @@ SELECT f.organisatie_id, f.id, 'mollie', f.mollie_payment_id, round(f.betaald_be
  WHERE f.mollie_payment_id IS NOT NULL
    AND f.organisatie_id IS NOT NULL
    AND f.organisatie_id <> '08352d84-e2be-4760-9436-f468b4327438'
-   AND COALESCE(f.betaald_bedrag, 0) > 0
+   -- <> 0, niet > 0: een vóór deze migratie betaalde creditnota heeft een
+   -- negatief betaald_bedrag en moet ook een rij krijgen, anders faalt de
+   -- controle-query op die facturen.
+   AND COALESCE(f.betaald_bedrag, 0) <> 0
    -- NOT EXISTS ook hier: bij een tweede run (doen_migraties is bewust
    -- incompleet) mag een factuur die inmiddels via de RPC's rijen heeft
    -- geen tweede backfill-rij krijgen.
@@ -257,7 +285,7 @@ SELECT f.organisatie_id, f.id, 'handmatig', 'backfill:' || f.id, round(f.betaald
   FROM facturen f
  WHERE f.organisatie_id IS NOT NULL
    AND f.organisatie_id <> '08352d84-e2be-4760-9436-f468b4327438'
-   AND COALESCE(f.betaald_bedrag, 0) > 0
+   AND COALESCE(f.betaald_bedrag, 0) <> 0
    AND NOT EXISTS (SELECT 1 FROM factuur_betalingen fb WHERE fb.factuur_id = f.id)
 ON CONFLICT (organisatie_id, bron, bron_referentie) DO NOTHING;
 
