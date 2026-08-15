@@ -511,10 +511,20 @@ async function exactPost(token: string, division: string, endpoint: string, data
   return response.json()
 }
 
+// Exacte mapping, geen drempels. Met `>= 9` kreeg een gewogen percentage als
+// 12% stil de laag-code en 6% zelfs de nul-code, en die percentages ontstaan
+// echt: de editor rekent bij gemengde regels een gewogen tarief uit. Een
+// onbekend tarief levert nu null, zodat de pre-check vóór het boeken er een
+// leesbare 400 van maakt in plaats van een verkeerde btw-code in Exact.
+const ONDERSTEUNDE_BTW_TARIEVEN = [21, 9, 0]
+
 function bepaalBtwCode(btwPercentage: number, settings: ExactSettings): string | null {
-  if (btwPercentage >= 21) return settings.exact_btw_hoog || null
-  if (btwPercentage >= 9) return settings.exact_btw_laag || null
-  return settings.exact_btw_nul || null
+  // numeric uit PostgREST kan als string binnenkomen; === zou daar stil op falen.
+  const tarief = Number(btwPercentage)
+  if (tarief === 21) return settings.exact_btw_hoog || null
+  if (tarief === 9) return settings.exact_btw_laag || null
+  if (tarief === 0) return settings.exact_btw_nul || null
+  return null
 }
 
 // ── Grootboek GUID cache ──
@@ -585,6 +595,11 @@ async function findOrCreateKlant(
   // debiteurennummers los van Exact, en een nummerbotsing met een ándere
   // Exact-relatie zou anders elke factuur stil op de verkeerde debiteur boeken.
   const debiteurennummer = (klant.debiteurennummer || '').trim()
+  // Was er wél een relatie met dit debiteurennummer, maar met een andere naam?
+  // Dan is de Code in Exact bezet en zou een nieuwe relatie MET die Code een
+  // rauwe 400 geven bij elke volgende factuur van deze klant. Dat gebeurt al bij
+  // een spellingswijziging ("Jansen BV" -> "Jansen B.V.").
+  let codeHitAfgewezen = false
   if (debiteurennummer) {
     const escaped = debiteurennummer.replace(/'/g, "''")
     const padded = escaped.padStart(18, ' ')
@@ -597,6 +612,7 @@ async function findOrCreateKlant(
     if (hit?.ID) {
       const zelfdeNaam = (hit.Name || '').trim().toLowerCase() === klant.naam.trim().toLowerCase()
       if (zelfdeNaam) return hit.ID
+      codeHitAfgewezen = true
       console.warn('[exact-sync] debiteurennummer-match afgewezen: naam wijkt af', {
         debiteurennummer, exact_naam: hit.Name, doen_naam: klant.naam,
       })
@@ -624,8 +640,11 @@ async function findOrCreateKlant(
   // een account zonder customer rol. Adres, btw-nummer, KvK en het
   // debiteurennummer gaan mee zodat de relatie in Exact compleet is en de
   // volgende sync op Code kan matchen.
+  // Zonder Code als het nummer in Exact al bij een andere naam hoort: die Code
+  // is bezet, dus aanmaken mét Code faalt gegarandeerd. De Sentry-warning
+  // hierboven blijft staan zodat de dubbele relatie opgeruimd kan worden.
   const newAccount: Record<string, string> = { Name: klant.naam, Status: 'C' }
-  if (debiteurennummer) newAccount.Code = debiteurennummer
+  if (debiteurennummer && !codeHitAfgewezen) newAccount.Code = debiteurennummer
   if (klant.email) newAccount.Email = klant.email
   if (klant.telefoon) newAccount.Phone = klant.telefoon
   if (klant.adres?.trim()) newAccount.AddressLine1 = klant.adres.trim()
@@ -701,6 +720,16 @@ async function syncFactuurBijlagenToExact(params: {
       try {
         await exactPost(tokenRef.current, division, 'documents/DocumentAttachments', payload)
       } catch (firstErr) {
+        // Afgebroken request: de POST kan wél aangekomen zijn, dus niet opnieuw
+        // proberen — anders hangt dezelfde bijlage twee keer aan het Document.
+        // Zie magOpnieuwNaFout.
+        if (!magOpnieuwNaFout(firstErr)) {
+          console.error(`[Exact] bijlage-POST afgebroken; niet opnieuw geprobeerd voor ${bij.bestandsnaam}`, {
+            naam: (firstErr as { name?: string })?.name,
+          })
+          failed++
+          continue
+        }
         try {
           tokenRef.current = await getValidToken(tokenUserId, user_id, tokenCache)
           await exactPost(tokenRef.current, division, 'documents/DocumentAttachments', payload)
@@ -734,6 +763,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  // Pas true zodra de factuur bestaat én bij de organisatie van de caller
+  // hoort. De catch-all onderaan schreef zijn foutmelding anders op een
+  // factuur_id uit de request-body die nog nergens tegen getoetst was: een
+  // ongeauthenticeerde POST kon zo een spook-syncfout op andermans factuur
+  // zetten.
+  let factuurGeautoriseerd = false
+  // Claim gezet op deze factuur (migratie 214)? Dan moet hij bij élk vertrek
+  // uit deze functie weer los, anders blijft de factuur tien minuten op slot.
+  let claimActief = false
+  let geclaimdeFactuurId: string | null = null
+
   try {
     const user_id = await verifyUser(req)
     const { factuur_id, attachment_only, bijlagen_only } = req.body as { factuur_id: string; attachment_only?: boolean; bijlagen_only?: boolean }
@@ -758,6 +798,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!callerOrgId || factuur.organisatie_id !== callerOrgId) {
       return res.status(404).json({ error: 'Factuur niet gevonden.' })
     }
+    factuurGeautoriseerd = true
 
     // Concepten horen niet in Exact: geen definitief nummer betekent een lege
     // YourRef en een gat zodra het echte reeksnummer wordt toegekend. Eerst
@@ -787,6 +828,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bijlagen_failed: 0,
         bijlagen_geprobeerd: 0,
       })
+    }
+
+    // Claim. De guard hierboven is check-then-act: twee tabs die tegelijk op
+    // synchroniseren drukken lezen allebei een lege exact_entry_id, passeren
+    // allebei en boeken de factuur dubbel in Exact. Deze conditionele UPDATE
+    // (migratie 214) laat er maar één door. Een claim ouder dan tien minuten is
+    // van een invocatie die het platform allang gekild heeft en mag
+    // overgenomen worden, anders zit de factuur na één crash voorgoed vast.
+    //
+    // Twee losse updates in plaats van één met `.or()`: PostgREST verwerkt een
+    // or-filter niet op een UPDATE (geeft 42703 op een kolom die wél bestaat).
+    // Elke update is op zichzelf atomair, dus de race blijft afgedekt.
+    if (!attachment_only && !bijlagen_only) {
+      const claimVerlooptVoor = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+      const nu = new Date().toISOString()
+
+      const claimBasis = () => supabaseAdmin
+        .from('facturen')
+        .update({ exact_sync_gestart_op: nu })
+        .eq('id', factuur_id)
+        .is('exact_entry_id', null)
+
+      let { data: geclaimd, error: claimFout } = await claimBasis()
+        .is('exact_sync_gestart_op', null)
+        .select('id')
+
+      if (!claimFout && !geclaimd?.length) {
+        // Geen verse claim mogelijk: neem een verlopen claim over.
+        const overname = await claimBasis()
+          .lt('exact_sync_gestart_op', claimVerlooptVoor)
+          .select('id')
+        geclaimd = overname.data
+        claimFout = overname.error
+      }
+
+      if (claimFout) {
+        // Migratie 214 nog niet gedraaid: doorgaan zonder claim, zoals voorheen.
+        if (!claimFout.message?.includes('exact_sync_gestart_op')) throw new Error(claimFout.message)
+        console.warn('[exact-sync] claim-kolom ontbreekt (migratie 214 nog niet gedraaid); sync zonder claim')
+      } else if (!geclaimd?.length) {
+        return res.status(409).json({ error: 'Er loopt al een synchronisatie voor deze factuur' })
+      } else {
+        claimActief = true
+        geclaimdeFactuurId = factuur_id
+      }
     }
 
     const { data: factuurItems, error: itemsError } = await supabaseAdmin
@@ -996,6 +1082,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await exactPost(token, division, 'documents/DocumentAttachments', attPayload)
         bijlageSynced = true
       } catch (attErr) {
+        // Afgebroken request: niet opnieuw posten, dan hangt de PDF dubbel aan
+        // het Document. Zie magOpnieuwNaFout.
+        if (!magOpnieuwNaFout(attErr)) {
+          console.error('[Exact] DocumentAttachment POST afgebroken; niet opnieuw geprobeerd', {
+            factuur_id, naam: (attErr as { name?: string })?.name,
+          })
+          return res.status(504).json({
+            error: 'Exact reageerde niet binnen de tijd bij het uploaden van de bijlage. Controleer in Exact of de PDF al aan het document hangt voordat je opnieuw probeert.',
+          })
+        }
         try {
           token = await getValidToken(tokenUserId, user_id, tokenCache)
           await exactPost(token, division, 'documents/DocumentAttachments', attPayload)
@@ -1080,8 +1176,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ging voorheen stilzwijgend als VATCode null naar Exact.
     for (const item of factuurItems as Array<{ btw_percentage: number }>) {
       if (bepaalBtwCode(item.btw_percentage, exactSettings) === null) {
+        const tarief = Number(item.btw_percentage)
         return res.status(400).json({
-          error: `Geen Exact-btw-code geconfigureerd voor ${item.btw_percentage}% btw. Vul de btw-codes in bij Instellingen > Integraties.`,
+          error: ONDERSTEUNDE_BTW_TARIEVEN.includes(tarief)
+            ? `Geen Exact-btw-code geconfigureerd voor ${tarief}% btw. Vul de btw-codes in bij Instellingen > Integraties.`
+            : `Exact kent geen btw-tarief van ${tarief}%. Splits de factuurregel op in losse regels per tarief, of corrigeer het percentage naar 21%, 9% of 0%.`,
         })
       }
     }
@@ -1148,58 +1247,73 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Aparte 401-retry per call zodat een retry op Attachment geen dubbele
     // Document aanmaakt (Exact heeft geen idempotency-key).
     if (pdfBase64) {
-      const documentSubject = factuur.factuur_type === 'creditnota'
-        ? `Creditnota ${factuur.nummer}`
-        : `Factuur ${factuur.nummer}`
+      // Hergebruik het Document van een eerdere poging die op de SalesEntry
+      // strandde. Zonder deze check maakte élke retry een nieuw Document met een
+      // nieuwe PDF-bijlage aan en bleven de vorige als wezen in Exact staan.
+      // Zelfde patroon als de attachment_only-tak hierboven.
+      documentId = (factuur.exact_document_id as string | null) ?? null
+      const pdfAlGekoppeld = !!factuur.exact_bijlage_gesynced_op
 
-      const documentPayload = {
-        Subject: documentSubject,
-        Type: exactSettings.exact_document_type_id,
-        Account: customerGuid,
-      }
+      if (!documentId) {
+        const documentSubject = factuur.factuur_type === 'creditnota'
+          ? `Creditnota ${factuur.nummer}`
+          : `Factuur ${factuur.nummer}`
 
-      try {
-        const docResult = await exactPost(
-          token,
-          division,
-          'documents/Documents',
-          documentPayload,
-        ) as { d?: { ID?: string } }
-        documentId = docResult?.d?.ID ?? null
-      } catch (docErr) {
-        // Afgebroken request: niet opnieuw posten. Anders staat het document
-        // dubbel in Exact. Zie magOpnieuwNaFout. Hier niet-fataal: de SalesEntry
-        // is al geboekt, dus alleen de bijlage-koppeling ontbreekt en die is via
-        // attachment_only opnieuw te proberen.
-        if (!magOpnieuwNaFout(docErr)) {
-          console.error('[Exact] Document POST afgebroken; niet opnieuw geprobeerd', {
-            factuur_id, naam: (docErr as { name?: string })?.name,
-          })
-          documentId = null
-        } else {
-          try {
-            token = await getValidToken(tokenUserId, user_id, tokenCache)
+        const documentPayload = {
+          Subject: documentSubject,
+          Type: exactSettings.exact_document_type_id,
+          Account: customerGuid,
+        }
 
-            const docResult = await exactPost(
-              token,
-              division,
-              'documents/Documents',
-              documentPayload,
-            ) as { d?: { ID?: string } }
-            documentId = docResult?.d?.ID ?? null
-          } catch (retryErr) {
-            console.error('Document POST mislukt (na retry):', docErr, retryErr)
+        try {
+          const docResult = await exactPost(
+            token,
+            division,
+            'documents/Documents',
+            documentPayload,
+          ) as { d?: { ID?: string } }
+          documentId = docResult?.d?.ID ?? null
+        } catch (docErr) {
+          // Afgebroken request: niet opnieuw posten. Anders staat het document
+          // dubbel in Exact. Zie magOpnieuwNaFout. Hier niet-fataal: de SalesEntry
+          // is al geboekt, dus alleen de bijlage-koppeling ontbreekt en die is via
+          // attachment_only opnieuw te proberen.
+          if (!magOpnieuwNaFout(docErr)) {
+            console.error('[Exact] Document POST afgebroken; niet opnieuw geprobeerd', {
+              factuur_id, naam: (docErr as { name?: string })?.name,
+            })
             documentId = null
+          } else {
+            try {
+              token = await getValidToken(tokenUserId, user_id, tokenCache)
+
+              const docResult = await exactPost(
+                token,
+                division,
+                'documents/Documents',
+                documentPayload,
+              ) as { d?: { ID?: string } }
+              documentId = docResult?.d?.ID ?? null
+            } catch (retryErr) {
+              console.error('Document POST mislukt (na retry):', docErr, retryErr)
+              documentId = null
+            }
           }
+        }
+
+        if (documentId) {
+          await supabaseAdmin
+            .from('facturen')
+            .update({ exact_document_id: documentId })
+            .eq('id', factuur_id)
         }
       }
 
-      if (documentId) {
-        await supabaseAdmin
-          .from('facturen')
-          .update({ exact_document_id: documentId })
-          .eq('id', factuur_id)
-
+      if (documentId && pdfAlGekoppeld) {
+        // De factuur-PDF hangt al aan dit Document; opnieuw posten zou hem een
+        // tweede keer koppelen.
+        bijlageSynced = true
+      } else if (documentId) {
         const attachmentPayload = {
           Document: documentId,
           FileName: `Factuur-${factuur.nummer}.pdf`,
@@ -1210,13 +1324,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           await exactPost(token, division, 'documents/DocumentAttachments', attachmentPayload)
           bijlageSynced = true
         } catch (attErr) {
-          try {
-            token = await getValidToken(tokenUserId, user_id, tokenCache)
+          // Afgebroken request: niet opnieuw posten, dan hangt de PDF dubbel aan
+          // het Document. Zie magOpnieuwNaFout. Niet-fataal; via attachment_only
+          // is de koppeling later te herstellen.
+          if (!magOpnieuwNaFout(attErr)) {
+            console.error('[Exact] DocumentAttachment POST afgebroken; niet opnieuw geprobeerd', {
+              factuur_id, naam: (attErr as { name?: string })?.name,
+            })
+          } else {
+            try {
+              token = await getValidToken(tokenUserId, user_id, tokenCache)
 
-            await exactPost(token, division, 'documents/DocumentAttachments', attachmentPayload)
-            bijlageSynced = true
-          } catch (retryErr) {
-            console.error('DocumentAttachment POST mislukt (na retry):', attErr, retryErr)
+              await exactPost(token, division, 'documents/DocumentAttachments', attachmentPayload)
+              bijlageSynced = true
+            } catch (retryErr) {
+              console.error('DocumentAttachment POST mislukt (na retry):', attErr, retryErr)
+            }
           }
         }
 
@@ -1226,7 +1349,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .update({ exact_bijlage_gesynced_op: new Date().toISOString() })
             .eq('id', factuur_id)
         }
+      }
 
+      if (documentId) {
         // Losse factuur_bijlagen (klant-inkooporders, extra docs) elk als
         // aparte DocumentAttachment posten. Best-effort: faalt één, dan
         // blijven de andere staan en blokkeert het de factuur-sync niet.
@@ -1406,7 +1531,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const message = error instanceof Error ? error.message : 'Onbekende fout bij synchroniseren'
     console.error('Exact sync factuur error:', message)
     const factuurId = (req.body as { factuur_id?: string } | undefined)?.factuur_id
-    if (factuurId) await registreerSyncFout(factuurId, message)
+    // Alleen loggen op een factuur waarvan vaststaat dat de caller erbij mag.
+    if (factuurGeautoriseerd && factuurId) await registreerSyncFout(factuurId, message)
     return res.status(500).json({ success: false, error: message })
+  } finally {
+    // Claim vrijgeven op elk vertrekpunt: geslaagd, gefaald of geworpen.
+    if (claimActief && geclaimdeFactuurId) {
+      const { error: vrijgaveFout } = await supabaseAdmin
+        .from('facturen')
+        .update({ exact_sync_gestart_op: null })
+        .eq('id', geclaimdeFactuurId)
+      if (vrijgaveFout) {
+        // Niet fataal: de claim verloopt vanzelf na tien minuten.
+        console.warn('[exact-sync] claim vrijgeven mislukt:', vrijgaveFout.message)
+      }
+    }
   }
 }
