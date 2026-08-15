@@ -347,8 +347,8 @@ function calcBtwBedrag(items: LineItem[]): number {
 // Eén regel met een gewogen btw-percentage (bv. 17,4%) is in Exact onboekbaar:
 // de btw-mapping kent alleen de echte tarieven. Valt het btw-bedrag op centen
 // na samen met een écht tarief (21 / 9 / 0), dan boeken we dat tarief. Is het
-// een mengvorm, dan bewust één regel met het gewogen percentage op twee
-// decimalen: de grondslag per tarief valt hier niet te herleiden, een
+// een mengvorm, dan bewust één regel met het gewogen percentage (adaptief
+// aantal decimalen): de grondslag per tarief valt hier niet te herleiden, een
 // verzonnen verdeling zet de klant in de verkeerde aangifte-rubrieken, en het
 // exacte percentage houdt het factuurbedrag op de cent gelijk. De sync-guard
 // weigert zo'n regel met de leesbare melding om de factuur zelf te splitsen.
@@ -1163,7 +1163,7 @@ export function FacturenLayout() {
       }
 
       // Regels uit de totalen. Een zuiver tarief wordt herkend; een mengvorm
-      // houdt bewust het gewogen percentage (op twee decimalen) zodat het
+      // houdt bewust het gewogen percentage (adaptieve decimalen) zodat het
       // bedrag exact klopt — verzonnen grondslagen per tarief horen niet op
       // een klantdocument.
       const items: OfferteItem[] = btwRegelsUitTotalen(factuur.titel, factuur.subtotaal, factuur.btw_bedrag).map((r, idx) => ({

@@ -16,6 +16,15 @@ BEGIN;
 
 ALTER TABLE facturen ADD COLUMN IF NOT EXISTS exact_sync_gestart_op timestamptz;
 
+-- 3. btw_percentage zonder schaalbeperking. De migratiemap spreekt zichzelf
+--    tegen (schema.sql/001_missing_tables: DECIMAL(5,2); 001_create_all_tables:
+--    kale NUMERIC). Een (5,2)-kolom zou een gewogen mengtarief (bv. 20,9952)
+--    stil naar 21,00 quantiseren, waarmee het bedrag verschuift en een
+--    mengvorm als zuiver 21% langs de sync-guard glipt. Kale numeric maakt
+--    de opslag verliesvrij; op een al-kale kolom is dit een no-op.
+ALTER TABLE factuur_items ALTER COLUMN btw_percentage TYPE numeric;
+ALTER TABLE offerte_items ALTER COLUMN btw_percentage TYPE numeric;
+
 DROP POLICY IF EXISTS "factuur_opvolg_log_org_insert" ON factuur_opvolg_log;
 CREATE POLICY "factuur_opvolg_log_org_insert" ON factuur_opvolg_log FOR INSERT
   WITH CHECK (organisatie_id = auth_organisatie_id() AND auth_abonnement_actief());

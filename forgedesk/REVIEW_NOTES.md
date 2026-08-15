@@ -1512,8 +1512,8 @@ laatste commits): nul blokkerend, nul risico. Resterende bewuste keuzes:
 
 Nagekomen uit slotronde 5 (btw-lens), gefixt: het mengvorm-percentage is
 nu adaptief (2-6 decimalen) zodat het btw-bedrag op de cent exact
-reconstrueert en nooit op een zuiver tarief afrondt dat de cent-poort
-verwierp; btw-invoerveld step="any"; NL-notatie in PDF-label en
+reconstrueert en praktisch nooit (pas boven ~5 miljoen netto) op een
+zuiver tarief afrondt dat de cent-poort verwierp; btw-invoerveld step="any"; NL-notatie in PDF-label en
 guard-melding; mailvolgorde definitief brieftekst-eerst. Bewust laten
 staan: UBL-export zet een mengpercentage zonder guard in <cbc:Percent>
 (UBL is download-only en sowieso niet-compliant, zie fase-1-onderzoek)
