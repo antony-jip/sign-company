@@ -1453,3 +1453,32 @@ ze zijn op de branch meermaals herschreven); 3. controle-query uit 210
 (moet 0 rijen geven); 4. PAS DAARNA `npx trigger.dev@latest deploy`;
 5. bestaande Exact-orgs langslopen voor de exact_betaalsync_actief-keuze
 (default aan = gedragswijziging t.o.v. "betaald vink je zelf af").
+
+## Facturatie: zes-lenzen-loop ronde 1+2 (2026-08-15)
+
+Op verzoek van Antony draait een review-loop (zes lenzen: geldstromen,
+Exact/tokens, herinneringsmotor, multi-tenancy, boekingskant, tijd) tot
+een ronde niets meer vindt; fixes per ronde door losse opus-agents.
+
+Ronde 1: 1 BLOKKEREND (debiteurennummer-paginatie) + ~20 RISICO's, alle
+gefixt (commits 3ac534fb..7f25f0e8). Ronde 2 (op de fixes + rest): 1 HOOG
+(negende refresh-kopie exact-document-types zonder her-insert) + ~15
+RISICO's, gefixt in de tweede fixronde. Met live bewijs afgevoerd i.p.v.
+gefixt: Exact-datums zijn exact UTC-middernacht (parseExactDate correct;
+ms % 86400000 = 0 op een echte LastPaymentDate) en er bestaan 0 facturen
+zonder organisatie_id.
+
+Bewuste keuzes/backlog uit ronde 2:
+- **Webhook-legacy-pad telt bruto i.p.v. effectief** (alleen relevant in
+  het pre-210-venster; refund-herlevering in dat venster boekt te veel).
+  Venster sluit bij de migratie; niet extra gerepareerd.
+- **PGRST203-runbook**: na een overload-Sentry-melding eerst de
+  controle-query uit migratie 210 draaien en 211 opnieuw uitvoeren; het
+  UI-vangnet schrijft in dat venster buiten het grootboek om.
+- **sendEmailForUser eigenaar-fallback** bepaalt de org uit profiles van
+  de maker (tweede org-bron; pre-existing, raakt alle trigger-mails).
+- **Oude Exact-bijlage blijft hangen** na PDF-vernieuwing op een
+  hergebruikt Document (Exact kent geen attachment-delete via dit pad);
+  de verse PDF komt er wel naast.
+- **Naam-mismatch bij Code-match**: nieuwe relatie zonder Code + zichtbare
+  waarschuwing; opruimen (relaties samenvoegen in Exact) blijft handwerk.
