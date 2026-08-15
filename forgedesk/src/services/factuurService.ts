@@ -142,7 +142,9 @@ export async function markeerFactuurVerzonden(id: string): Promise<Factuur> {
 // nog niet draait valt dit terug op de oude directe update.
 export async function markeerFactuurBetaald(id: string, totaal: number): Promise<Partial<Factuur>> {
   assertId(id, 'factuur_id')
-  const vandaag = new Date().toISOString().split('T')[0]
+  // Lokale dag, geen UTC: de RPC boekt in Europe/Amsterdam en rond
+  // middernacht zou de optimistische UI-waarde anders een dag achterlopen.
+  const vandaag = new Date().toLocaleDateString('sv-SE')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.rpc('factuur_markeer_betaald', { p_factuur_id: id })
     if (!error) {
@@ -431,7 +433,7 @@ export async function getFacturenByProject(projectId: string): Promise<Factuur[]
 
 export async function getVerlopenFacturen(): Promise<Factuur[]> {
   const facturen = await getFacturen()
-  const vandaag = new Date().toISOString().split('T')[0]
+  const vandaag = new Date().toLocaleDateString('sv-SE')
   return facturen.filter((f) => f.vervaldatum < vandaag && f.status !== 'betaald' && f.status !== 'gecrediteerd' && (f.factuur_type || 'standaard') !== 'creditnota')
 }
 
@@ -701,8 +703,8 @@ export async function createVoorschotfactuur(
     btw_bedrag: voorschotBtw,
     totaal: voorschotTotaal,
     betaald_bedrag: 0,
-    factuurdatum: new Date().toISOString().split('T')[0],
-    vervaldatum: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+    factuurdatum: new Date().toLocaleDateString('sv-SE'),
+    vervaldatum: new Date(Date.now() + 14 * 86400000).toLocaleDateString('sv-SE'),
     notities: `Voorschot van ${percentage}% op ${origineel.nummer}`,
     voorwaarden: origineel.voorwaarden || '',
     factuur_type: 'voorschot',
