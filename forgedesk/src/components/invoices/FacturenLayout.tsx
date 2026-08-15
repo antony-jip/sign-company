@@ -65,6 +65,7 @@ import {
   createFactuur,
   updateFactuur,
   updateFactuurStatus,
+  markeerFactuurVerzonden,
   generateFactuurNummer as generateFactuurNrDb,
   deleteFactuur,
   getKlanten,
@@ -1109,10 +1110,8 @@ export function FacturenLayout() {
         await sendEmail(klant.email, subject, '', { html })
 
         // Update status to 'verzonden'
-        const updates: Partial<Factuur> = { status: 'verzonden' }
-
         try {
-          const updated = await updateFactuur(factuur.id, updates)
+          const updated = await markeerFactuurVerzonden(factuur.id)
           setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
         } catch (err) {
           logger.error('Fout bij bijwerken factuur in database:', err)
@@ -1120,7 +1119,7 @@ export function FacturenLayout() {
           setFacturen((prev) =>
             prev.map((f) =>
               f.id === factuur.id
-                ? { ...f, ...updates, updated_at: new Date().toISOString() }
+                ? { ...f, status: 'verzonden' as const, updated_at: new Date().toISOString() }
                 : f
             )
           )

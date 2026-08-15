@@ -80,7 +80,7 @@ export {
 export type { Conventie } from './conventieService'
 
 export {
-  getFacturen, getFactuur, createFactuur, updateFactuur, deleteFactuur,
+  getFacturen, getFactuur, createFactuur, updateFactuur, deleteFactuur, markeerFactuurVerzonden,
   updateFactuurWithNummerRetry, getStandaardFacturenVoorOfferte, getVoorschottenVoorOfferte, FactuurConflictError,
   getFactuurItems, createFactuurItem, replaceFactuurItems,
   getFacturenByKlant, getFacturenByProject,

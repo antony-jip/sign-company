@@ -121,6 +121,20 @@ export async function updateFactuur(id: string, updates: Partial<Factuur>, expec
   return items[index]
 }
 
+// De status mag nooit achterblijven omdat het tijdstip niet weg kan: draait
+// migratie 210 nog niet (kolom verzonden_op ontbreekt), dan valt dit terug
+// op alleen de statusovergang.
+export async function markeerFactuurVerzonden(id: string): Promise<Factuur> {
+  try {
+    return await updateFactuur(id, { status: 'verzonden', verzonden_op: new Date().toISOString() })
+  } catch (err) {
+    if ((err as { message?: string })?.message?.includes('verzonden_op')) {
+      return await updateFactuur(id, { status: 'verzonden' })
+    }
+    throw err
+  }
+}
+
 // Voor het verwerken-pad: daar krijgt een bestaand concept zijn volgnummer via
 // een UPDATE, en die had — anders dan createFactuur — geen 23505-afhandeling.
 // Twee gebruikers die tegelijk elk hun eigen concept verwerken berekenen

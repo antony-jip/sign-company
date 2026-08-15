@@ -80,6 +80,7 @@ import {
   createFactuurItem,
   replaceFactuurItems,
   updateFactuur,
+  markeerFactuurVerzonden,
   updateFactuurStatus,
   generateFactuurNummer as generateFactuurNrDb,
   deleteFactuur,
@@ -1838,7 +1839,7 @@ export function FactuurEditor() {
 
       await sendEmail(ontvangerEmail, subject, '', { html, attachments })
 
-      const updated = await updateFactuur(existingFactuur.id, { status: 'verzonden' })
+      const updated = await markeerFactuurVerzonden(existingFactuur.id)
       setExistingFactuur({ ...existingFactuur, ...updated, status: 'verzonden' })
 
       // Update gekoppeld project naar 'gefactureerd'

@@ -1071,6 +1071,7 @@ export interface Factuur {
   factuurdatum: string;
   vervaldatum: string;
   betaaldatum?: string;
+  verzonden_op?: string;
   betalingsherinnering_verzonden?: boolean;
   notities: string;
   voorwaarden: string;
