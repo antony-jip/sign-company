@@ -906,7 +906,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // gewoon klaar is.
         const { data: herlezen } = await supabaseAdmin
           .from('facturen')
-          .select('exact_entry_id, exact_document_id, exact_bijlage_gesynced_op')
+          .select('exact_entry_id, exact_document_id, exact_bijlage_gesynced_op, exact_sync_gestart_op')
           .eq('id', factuur_id)
           .maybeSingle()
         if (herlezen?.exact_entry_id) {
@@ -919,6 +919,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             bijlagen_synced: 0,
             bijlagen_failed: 0,
             bijlagen_geprobeerd: 0,
+          })
+        }
+        // De claim staat er nog en is niet verjaard, maar dat betekent niet dat
+        // er iets draait. Een invocatie leeft hooguit maxDuration (300s, zie
+        // vercel.json); is de claim ouder dan dat, dan is er niemand meer aan het
+        // werk en houden we hier de claim vast die het 504-pad bewust liet staan
+        // omdat onbekend is of Exact de boeking heeft aangenomen. "Er loopt al
+        // een synchronisatie" stuurt de gebruiker dan de verkeerde kant op.
+        const claimGestartOp = herlezen?.exact_sync_gestart_op
+          ? Date.parse(herlezen.exact_sync_gestart_op as string)
+          : NaN
+        const claimIsGestrand = Number.isFinite(claimGestartOp) && Date.now() - claimGestartOp > 300 * 1000
+        if (claimIsGestrand) {
+          return res.status(409).json({
+            error: 'De vorige poging is mogelijk halverwege gestrand. Controleer eerst in Exact of de factuur er staat; over enkele minuten kan het opnieuw.',
           })
         }
         return res.status(409).json({ error: 'Er loopt al een synchronisatie voor deze factuur' })
@@ -1248,7 +1263,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Bedragen één keer normaliseren, in regelvolgorde. numeric komt via
     // PostgREST soms als string binnen en `.toFixed()` op een string gooit.
     const regelTotalen: number[] = []
-    for (const item of factuurItems as Array<{ totaal: unknown }>) {
+    const regelBtwTarieven: number[] = []
+    for (const item of factuurItems as Array<{ totaal: unknown; btw_percentage: unknown }>) {
       const regelBedrag = alsBedrag(item.totaal)
       if (regelBedrag === null) {
         return res.status(400).json({
@@ -1256,6 +1272,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }
       regelTotalen.push(regelBedrag)
+      // Veilig: de guard hierboven liet alleen 21, 9 of 0 door.
+      regelBtwTarieven.push(Number(item.btw_percentage))
     }
 
     const btwBedrag = alsBedrag(factuur.btw_bedrag)
@@ -1276,6 +1294,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (subtotaalKop !== null && Math.abs(regelsSom - subtotaalKop) > 0.02) {
       return res.status(400).json({
         error: `De kop en de regels van deze factuur horen niet bij dezelfde versie: het subtotaal is € ${subtotaalKop.toFixed(2)}, terwijl de regels optellen tot € ${regelsSom.toFixed(2)}. Open de factuur en sla hem opnieuw op voordat je naar Exact boekt.`,
+      })
+    }
+
+    // Tweede kruischeck, want een kloppend subtotaal zegt niets over het btw-bedrag.
+    // De regels gaan met hun eigen VATCode naar Exact, de kop met VATAmountDC; hoort
+    // dat kopbedrag bij een ander tarief dan de regels dragen (bv. regels naar 9%
+    // gezet terwijl de kop nog 21% telt), dan boekt Exact een btw-bedrag dat niet uit
+    // de regels volgt. Dat is alleen met een correctieboeking recht te zetten en het
+    // raakt de aangifte, dus hier hard tegenhouden.
+    // 0,05 speling: de kop rondt het tarief over het subtotaal af in plaats van per
+    // regel (TijdregistratieLayout zet round2(subtotaal x 0,21)), dus centenverschil
+    // is legitiem; een tariefverschil is dat nooit.
+    const btwUitRegels = regelTotalen.reduce(
+      (som, bedrag, index) => som + (bedrag * regelBtwTarieven[index]) / 100,
+      0,
+    )
+    if (Math.abs(btwUitRegels - btwBedrag) > 0.05) {
+      return res.status(400).json({
+        error: `Het btw-bedrag van de kop hoort niet bij de tarieven op de regels: de kop zegt € ${btwBedrag.toFixed(2)}, de regeltarieven geven € ${btwUitRegels.toFixed(2)}. Open de factuur, controleer de btw-percentages per regel en sla hem opnieuw op voordat je naar Exact boekt.`,
       })
     }
 
@@ -1577,7 +1614,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         claimBehouden = true
         return res.status(504).json({
           success: false,
-          error: 'Exact reageerde niet binnen de tijd. De boeking is mogelijk wél aangekomen. Controleer in Exact of de factuur er staat voordat je opnieuw synchroniseert. Probeer het na tien minuten opnieuw.',
+          error: 'Exact reageerde niet binnen de tijd. De boeking is mogelijk wél aangekomen. Kijk eerst in Exact of de factuur er staat; staat hij er, dan is hij geboekt en hoef je niets meer te doen. Alleen als je hebt vastgesteld dat de factuur er níet staat, synchroniseer je hem over tien minuten opnieuw.',
         })
       }
       // Retry 1x na token refresh

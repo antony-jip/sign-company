@@ -259,7 +259,7 @@ async function getValidToken(tokenUserId: string, settingsUserId: string): Promi
 
   const nieuweRij = {
     user_id: tokenUserId,
-    access_token: encryptSecret(tokens.access_token ?? ''),
+    access_token: encryptSecret(tokens.access_token),
     refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
     expires_at: new Date(Date.now() + (tokens.expires_in ?? 600) * 1000).toISOString(),
     division: data.division,
@@ -337,7 +337,7 @@ async function getValidToken(tokenUserId: string, settingsUserId: string): Promi
     }
   }
 
-  return { token: tokens.access_token ?? '', division: data.division }
+  return { token: tokens.access_token, division: data.division }
 }
 
 

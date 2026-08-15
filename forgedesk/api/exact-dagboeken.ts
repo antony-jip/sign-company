@@ -235,6 +235,12 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     throw new Error('Exact Online token vernieuwen mislukt. Probeer het opnieuw.')
   }
   const tokens = (await refreshRes.json()) as { access_token?: string; refresh_token?: string; expires_in?: number }
+  // Een 200 zonder access_token mag nooit als leeg token de DB in: die rij blijft
+  // tien minuten geldig lijken en laat elke Exact-route intussen op 401 lopen.
+  if (!tokens?.access_token) {
+    console.error('[Exact] refresh gaf 200 zonder access_token', { endpoint: 'exact-dagboeken.ts' })
+    throw new Error('Exact Online gaf een onverwacht antwoord bij token vernieuwen. Probeer het opnieuw.')
+  }
 
   // Compare-and-swap op de refresh_token die we gelezen hebben. Het ciphertext
   // is een betrouwbaar versiemerk (elke write gebruikt een nieuwe random salt),
@@ -243,7 +249,7 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
   // verse keten van een net afgeronde OAuth of wekte een ontkoppelde rij weer op.
   const nieuweRij = {
     user_id: userId,
-    access_token: encryptSecret(tokens.access_token ?? ''),
+    access_token: encryptSecret(tokens.access_token),
     refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
     expires_at: new Date(Date.now() + (tokens.expires_in ?? 600) * 1000).toISOString(),
     division: data.division,
@@ -314,7 +320,7 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     }
   }
 
-  return { token: tokens.access_token ?? '', division: data.division }
+  return { token: tokens.access_token, division: data.division }
 }
 
 // Exact hanteert per-minuut rate-limits; bij 429 kort wachten (Retry-After,

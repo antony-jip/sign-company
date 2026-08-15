@@ -382,7 +382,11 @@ async function haalTermijnPaginas(token: string, division: string, vanafTimestam
   let paginas = 0
 
   while (url && paginas < MAX_PAGINAS_PER_RUN) {
-    if (Date.now() > deadline) throw new Error('RUN_ONVOLTOOID')
+    // Op de deadline NIET gooien maar breken: gooien zou de al opgehaalde
+    // termijnen én de cursor-vooruitgang weggooien, waarna dezelfde run morgen
+    // identiek strandt. Breken laat het bestaande afkap-mechanisme de spiegel
+    // upserten en de timestamp vooruitzetten, dus de volgende run begint verder.
+    if (Date.now() > deadline) break
     const pagina: { d?: { results?: ExactPaymentTerm[]; __next?: string } } = await exactFetchJsonMetRetry(
       url,
       { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } },
@@ -499,8 +503,10 @@ async function evalueerFactuur(
 // De cursor (laatste_timestamp) en inhaalslag_bezig blijven dan staan en de
 // volgende run herstart idempotent — beter een halve evaluatie die morgen
 // verdergaat dan een platform-kill die de state-upsert helemaal overslaat.
-// De fetch-, koppel- en spiegelfase bewaken dezelfde deadline en gooien
-// RUN_ONVOLTOOID; de afhandeling is identiek.
+// De koppel- en spiegel-leesfase bewaken dezelfde deadline en gooien
+// RUN_ONVOLTOOID; daar gaat niets verloren (de spiegel is idempotent en de
+// cursor staat al goed). De fetchfase gooit bewust niet maar kapt af, omdat
+// daar wél opgehaalde delta en cursor-vooruitgang op het spel staan.
 async function evalueerFacturen(
   orgId: string,
   facturen: { id: string; status: string }[],
@@ -611,6 +617,15 @@ async function zoekTokenhouderVoorOrg(orgId: string, administratieId: string | n
 async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verwerkt: number; gesettled: number; afgekapt: boolean }> {
   let eigenaarUserId = org.exact_owner_user_id
   if (!eigenaarUserId) {
+    // Zonder ingestelde administratie is de tokenhouder niet te verifiëren en
+    // geeft zoekTokenhouderVoorOrg null. Dat als GEEN_EIGENAAR wegschrijven
+    // wijst de beheerder de verkeerde kant op: het gat zit in de administratie.
+    if (!org.exact_administratie_id) {
+      console.warn('[cron-exact-betaalsync] geen exact_owner_user_id én geen administratie ingesteld, tokenhouder niet te bepalen', {
+        organisatie_id: org.organisatie_id,
+      })
+      throw new Error('GEEN_ADMINISTRATIE')
+    }
     eigenaarUserId = await zoekTokenhouderVoorOrg(org.organisatie_id, org.exact_administratie_id)
     if (!eigenaarUserId) throw new Error('GEEN_EIGENAAR')
     console.log('[cron-exact-betaalsync] lege exact_owner_user_id, terugval op tokenhouder', {
@@ -673,6 +688,17 @@ async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verw
       if (error) throw new Error(`spiegel-upsert mislukt: ${error.message}`)
     }
   }
+
+  // Facturen die in déze run in de delta zaten. Beide takken hebben ze nodig:
+  // de delta-tak evalueert precies deze set, de inhaalslag-tak moet ze altijd
+  // meenemen omdat hun spiegel zojuist gewijzigd is.
+  const geraakteFacturen = Array.from(new Map(
+    relevant
+      .map((t) => factuurPerRef.get((t.YourRef || '').trim()))
+      .filter((f): f is { id: string; status: string } => !!f)
+      .map((f) => [f.id, f])
+  ).values())
+  const geraakteIds = new Set(geraakteFacturen.map((f) => f.id))
 
   // Zolang de inhaalslag loopt kan de spiegel incompleet zijn; dan alleen
   // spiegelen en nog niets betaald markeren of openstaand terugschrijven.
@@ -741,21 +767,19 @@ async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verw
       // kwam een grote spiegel nooit voorbij dezelfde kop — de klassieke
       // livelock. evalueerFactuur zet exact_stand_op bij elke openstaand-update,
       // dus een verse stand betekent dat een eerdere run deze factuur al deed.
-      // 20 uur is ruim binnen de dagelijkse cadans en dekt zomertijd-schuif.
-      const standGrens = Date.now() - 20 * 60 * 60 * 1000
+      // Het venster moet LANGER zijn dan het runinterval, anders telt het werk
+      // van gisteren nooit als vers en begint elke run weer bij dezelfde kop:
+      // 24 uur cadans + marge voor zomertijd-schuif en late starts = 30 uur.
+      const standGrens = Date.now() - 30 * 60 * 60 * 1000
       const teEvalueren = alleIds
         .map((id) => ({ id, ...(statusPerId.get(id) ?? { status: 'onbekend', standOp: null }) }))
-        .filter((f) => !f.standOp || new Date(f.standOp).getTime() < standGrens)
+        // Facturen uit de delta van déze run altijd mee, hoe vers hun stand ook
+        // is: hun spiegel is zojuist veranderd.
+        .filter((f) => geraakteIds.has(f.id) || !f.standOp || new Date(f.standOp).getTime() < standGrens)
         .map((f) => ({ id: f.id, status: f.status }))
 
       gesettled = await evalueerFacturen(org.organisatie_id, teEvalueren, spiegel, deadline)
     } else {
-      const geraakteFacturen = Array.from(new Map(
-        relevant
-          .map((t) => factuurPerRef.get((t.YourRef || '').trim()))
-          .filter((f): f is { id: string; status: string } => !!f)
-          .map((f) => [f.id, f])
-      ).values())
       // Delta-tak: die set is klein en mag altijd verversen, dus hier geen
       // exact_stand_op-filter — een factuur die vandaag opnieuw in de delta
       // zit, is in Exact ook echt gewijzigd.
@@ -824,21 +848,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!perOrg.has(rij.organisatie_id)) perOrg.set(rij.organisatie_id, rij)
   }
 
-  // Oudste sync eerst: een org met een grote inhaalslag mag de rest niet
-  // dagen achtereen verhongeren binnen de maxDuration. Nooit-gesyncte orgs
-  // (geen state-rij) gaan voorop.
+  // Langst niet aangeraakt eerst: een org met een grote inhaalslag mag de rest
+  // niet dagen achtereen verhongeren binnen de maxDuration. Sorteren op
+  // updated_at en niet op laatste_sync_op, want updated_at wordt óók in het
+  // foutpad bijgewerkt: een org die elke nacht strandt houdt anders voor altijd
+  // een lege laatste_sync_op, staat elke run vooraan en eet het budget op.
+  // Nooit-gesyncte orgs (geen state-rij) gaan voorop.
   const orgs = Array.from(perOrg.values())
   const { data: stateRijen } = await supabaseAdmin
     .from('exact_sync_state')
-    .select('organisatie_id, laatste_sync_op')
+    .select('organisatie_id, updated_at')
     .in('organisatie_id', orgs.map((o) => o.organisatie_id))
-  const syncOpPerOrg = new Map(
-    ((stateRijen ?? []) as { organisatie_id: string; laatste_sync_op: string | null }[])
-      .map((r) => [r.organisatie_id, r.laatste_sync_op])
+  const aangeraaktPerOrg = new Map(
+    ((stateRijen ?? []) as { organisatie_id: string; updated_at: string | null }[])
+      .map((r) => [r.organisatie_id, r.updated_at])
   )
   orgs.sort((a, b) => {
-    const ta = syncOpPerOrg.get(a.organisatie_id) ?? ''
-    const tb = syncOpPerOrg.get(b.organisatie_id) ?? ''
+    const ta = aangeraaktPerOrg.get(a.organisatie_id) ?? ''
+    const tb = aangeraaktPerOrg.get(b.organisatie_id) ?? ''
     // ISO-8601 in UTC: byte-volgorde is chronologische volgorde.
     return ta < tb ? -1 : ta > tb ? 1 : 0
   })
@@ -853,25 +880,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 'uitgesteld' bleef en hun herinneringen op een verouderde Exact-stand
   // pauzeerden. Loopt een org op zijn eigen plafond stuk, dan komen de
   // volgende alsnog aan de beurt; de gestrande org gaat morgen door waar hij
-  // gebleven was (cursor + hervat-cursor blijven staan).
+  // gebleven was (cursor + hervat-cursor blijven staan). Alleen van kracht
+  // zolang er ná deze org nog een actieve org wacht.
   const ORG_BUDGET_MS = 120_000
   const resultaten: Record<string, unknown> = {}
-  // Sequentieel: elke org heeft eigen rate-limits, maar de token-refresh-keten
-  // per eigenaar verdraagt geen parallelle refreshes vanuit dezelfde run.
+
+  // Per org uitschakelbaar: sommige bedrijven willen alleen de push naar Exact
+  // en laten de betaalstatus bij de boekhouder. Vooraf uitfilteren, zodat een
+  // uitgeschakelde org niet meetelt als "er wacht nog iemand" hieronder.
+  const actieveOrgs: OrgConfig[] = []
   for (const org of orgs) {
-    // Per org uitschakelbaar: sommige bedrijven willen alleen de push naar
-    // Exact en laten de betaalstatus bij de boekhouder.
     if (org.exact_betaalsync_actief === false) {
       resultaten[org.organisatie_id] = { uitgeschakeld: true }
       continue
     }
+    actieveOrgs.push(org)
+  }
+
+  // Sequentieel: elke org heeft eigen rate-limits, maar de token-refresh-keten
+  // per eigenaar verdraagt geen parallelle refreshes vanuit dezelfde run.
+  for (let i = 0; i < actieveOrgs.length; i++) {
+    const org = actieveOrgs[i]
     if (Date.now() > deadline) {
       // Uitgestelde orgs staan morgen door de oudste-eerst-sortering voorop.
       resultaten[org.organisatie_id] = { uitgesteld: true }
       continue
     }
     try {
-      const orgDeadline = Math.min(deadline, Date.now() + ORG_BUDGET_MS)
+      // Is dit de laatste org die nog aan de beurt komt, dan is een eigen
+      // plafond pure budgethalvering: er wacht niemand meer op zijn beurt, dus
+      // mag hij de rest van het globale budget gebruiken.
+      const alleenNogDezeOrg = i === actieveOrgs.length - 1
+      const orgDeadline = alleenNogDezeOrg ? deadline : Math.min(deadline, Date.now() + ORG_BUDGET_MS)
       resultaten[org.organisatie_id] = await syncOrganisatie(org, orgDeadline)
     } catch (err) {
       const melding = err instanceof Error ? err.message : String(err)
