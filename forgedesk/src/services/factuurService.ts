@@ -145,14 +145,19 @@ export async function markeerFactuurBetaald(id: string, totaal: number): Promise
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.rpc('factuur_markeer_betaald', { p_factuur_id: id })
     if (!error) {
-      const rij = (Array.isArray(data) ? data[0] : data) as { nieuw_betaald?: number } | null
+      const rij = (Array.isArray(data) ? data[0] : data) as { nieuw_betaald?: number; bijgewerkt_op?: string } | null
       return {
         status: 'betaald',
         betaald_bedrag: rij?.nieuw_betaald ?? totaal,
         betaaldatum: vandaag,
+        // De RPC hoogt updated_at op; zonder deze terugkoppeling zou het
+        // optimistic lock in de editor bij de eerstvolgende save klappen.
+        ...(rij?.bijgewerkt_op ? { updated_at: rij.bijgewerkt_op } : {}),
       }
     }
-    if (error.code !== 'PGRST202' && !/factuur_markeer_betaald/.test(error.message || '')) {
+    // Alleen PGRST202 (functie onbekend, migratie 210 nog niet gedraaid) mag
+    // stil terugvallen; een permission-fout moet juist zichtbaar falen.
+    if (error.code !== 'PGRST202') {
       throw error
     }
   }

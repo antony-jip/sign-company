@@ -1378,3 +1378,26 @@ Taken-refresh-guard). Blijft staan als backlog:
   tablename = 'app_settings';`
 - Swimlane-collapsed-state (naam-keys) klapt eenmalig open; taak met id
   van verwijderde medewerker toont raw UUID als lane-label. Cosmetisch.
+
+## Facturatie-automatisering fase 1 gate-review (2026-08-15)
+
+Eerste ronde BLOKKADE (dubbeltel-gat op betaalde facturen zonder
+grootboek-rij), gefixt met een centrale guard in factuur_betaling_verwerk
+(delta 0 bij onbekende referentie op status 'betaald'). Herronde
+AKKOORD-MET-OPMERKINGEN op 5aee5caf/d877498f; direct verwerkt: NOT EXISTS
+op de Mollie-backfill-insert, factuur_betalingen-policy versmald naar
+SELECT-only, bijgewerkt_op (updated_at) in de RETURNS van beide
+markeer-betaald-RPC's plus doorgave in markeerFactuurBetaald (optimistic
+lock in de editor), fallback-detectie in factuurService versmald naar
+PGRST202-only. Blijft staan als bewuste keuze/backlog:
+
+- **Mengfacturen-backfill**: facturen die deels handmatig én deels via
+  Mollie betaald waren krijgen hun hele stand op de Mollie-referentie;
+  een latere refund kan daar te veel aftrekken (tot het handmatige deel).
+  Geaccepteerd omdat pure-Mollie de norm is en refunds daar dan wél
+  correct verwerken; gedocumenteerd in migratie 210.
+- **Deploy-volgorde 210**: eerst deployen, dan migratie draaien — dan
+  boekt de volledige backfill eventuele legacy-optellingen uit het
+  venster alsnog goed.
+- **Legacy-fallback-pad webhook** (pre-migratie-venster) blijft
+  niet-idempotent voor deelbetalingen; venster sluit zodra 210 draait.

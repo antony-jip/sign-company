@@ -38,10 +38,12 @@ CREATE INDEX IF NOT EXISTS factuur_betalingen_factuur_idx
 
 ALTER TABLE factuur_betalingen ENABLE ROW LEVEL SECURITY;
 
+-- Bewust SELECT-only: het grootboek muteert uitsluitend via de RPC's
+-- (SECURITY DEFINER) en de service-role. Een schrijf-policy zou org-leden
+-- buiten de delta-boekhouding om rijen laten toevoegen.
 DROP POLICY IF EXISTS "factuur_betalingen_org" ON factuur_betalingen;
-CREATE POLICY "factuur_betalingen_org" ON factuur_betalingen FOR ALL
-  USING (organisatie_id = auth_organisatie_id())
-  WITH CHECK (organisatie_id = auth_organisatie_id() AND auth_abonnement_actief());
+CREATE POLICY "factuur_betalingen_org" ON factuur_betalingen FOR SELECT
+  USING (organisatie_id = auth_organisatie_id());
 
 -- Wanneer de factuur voor het laatst naar de klant is gemaild. Tot nu toe
 -- veranderde alleen status naar 'verzonden', zonder tijdstip.
@@ -58,7 +60,8 @@ CREATE OR REPLACE FUNCTION factuur_betaling_verwerk(
   nieuw_betaald numeric,
   volledig_voldaan boolean,
   vorige_status text,
-  nieuwe_status text
+  nieuwe_status text,
+  bijgewerkt_op timestamptz
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -75,9 +78,10 @@ DECLARE
   v_nieuw_betaald numeric;
   v_voldaan boolean;
   v_nieuwe_status text;
+  v_bijgewerkt_op timestamptz;
 BEGIN
-  SELECT f.organisatie_id, COALESCE(f.totaal, 0), f.status, COALESCE(f.betaald_bedrag, 0)
-    INTO v_org, v_totaal, v_status, v_betaald
+  SELECT f.organisatie_id, COALESCE(f.totaal, 0), f.status, COALESCE(f.betaald_bedrag, 0), f.updated_at
+    INTO v_org, v_totaal, v_status, v_betaald, v_bijgewerkt_op
     FROM facturen f
    WHERE f.id = p_factuur_id
      FOR UPDATE;
@@ -107,7 +111,7 @@ BEGIN
   -- grootboek om volbetaald raakten; een refund-webhook daarop zou anders
   -- het effectieve bedrag als nieuwe bijschrijving boeken.
   IF v_bestaand_factuur IS NULL AND v_status = 'betaald' THEN
-    RETURN QUERY SELECT 0::numeric, v_betaald, true, v_status, v_status;
+    RETURN QUERY SELECT 0::numeric, v_betaald, true, v_status, v_status, v_bijgewerkt_op;
     RETURN;
   END IF;
 
@@ -152,10 +156,11 @@ BEGIN
              ELSE f.betaaldatum
            END,
            updated_at = now()
-     WHERE f.id = p_factuur_id;
+     WHERE f.id = p_factuur_id
+     RETURNING f.updated_at INTO v_bijgewerkt_op;
   END IF;
 
-  RETURN QUERY SELECT v_delta, v_nieuw_betaald, v_voldaan, v_status, v_nieuwe_status;
+  RETURN QUERY SELECT v_delta, v_nieuw_betaald, v_voldaan, v_status, v_nieuwe_status, v_bijgewerkt_op;
 END;
 $$;
 
@@ -170,7 +175,7 @@ GRANT EXECUTE ON FUNCTION factuur_betaling_verwerk(uuid, text, text, numeric, da
 -- buiten factuur_betalingen om verandert. Dubbelklik serialiseert op de
 -- FOR UPDATE-lock: de tweede aanroep ziet restant 0 en boekt niets.
 CREATE OR REPLACE FUNCTION factuur_markeer_betaald(p_factuur_id uuid)
-RETURNS TABLE (nieuw_betaald numeric, nieuwe_status text)
+RETURNS TABLE (nieuw_betaald numeric, nieuwe_status text, bijgewerkt_op timestamptz)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
@@ -181,9 +186,10 @@ DECLARE
   v_status text;
   v_betaald numeric;
   v_rest numeric;
+  v_bijgewerkt_op timestamptz;
 BEGIN
-  SELECT f.organisatie_id, COALESCE(f.totaal, 0), f.status, COALESCE(f.betaald_bedrag, 0)
-    INTO v_org, v_totaal, v_status, v_betaald
+  SELECT f.organisatie_id, COALESCE(f.totaal, 0), f.status, COALESCE(f.betaald_bedrag, 0), f.updated_at
+    INTO v_org, v_totaal, v_status, v_betaald, v_bijgewerkt_op
     FROM facturen f
    WHERE f.id = p_factuur_id
      FOR UPDATE;
@@ -201,7 +207,7 @@ BEGIN
 
   v_rest := round(v_totaal - v_betaald, 2);
   IF v_rest > 0 THEN
-    RETURN QUERY SELECT r.nieuw_betaald, r.nieuwe_status
+    RETURN QUERY SELECT r.nieuw_betaald, r.nieuwe_status, r.bijgewerkt_op
       FROM factuur_betaling_verwerk(
         p_factuur_id, 'handmatig', 'handmatig:' || gen_random_uuid(), v_rest, CURRENT_DATE
       ) r;
@@ -211,8 +217,9 @@ BEGIN
            betaaldatum = COALESCE(f.betaaldatum, CURRENT_DATE),
            updated_at = now()
      WHERE f.id = p_factuur_id
-       AND f.status IN ('open', 'verzonden', 'vervallen');
-    RETURN QUERY SELECT v_betaald, 'betaald'::text;
+       AND f.status IN ('open', 'verzonden', 'vervallen')
+     RETURNING f.updated_at INTO v_bijgewerkt_op;
+    RETURN QUERY SELECT v_betaald, 'betaald'::text, v_bijgewerkt_op;
   END IF;
 END;
 $$;
@@ -236,6 +243,10 @@ SELECT f.organisatie_id, f.id, 'mollie', f.mollie_payment_id, round(f.betaald_be
    AND f.organisatie_id IS NOT NULL
    AND f.organisatie_id <> '08352d84-e2be-4760-9436-f468b4327438'
    AND COALESCE(f.betaald_bedrag, 0) > 0
+   -- NOT EXISTS ook hier: bij een tweede run (doen_migraties is bewust
+   -- incompleet) mag een factuur die inmiddels via de RPC's rijen heeft
+   -- geen tweede backfill-rij krijgen.
+   AND NOT EXISTS (SELECT 1 FROM factuur_betalingen fb WHERE fb.factuur_id = f.id)
 ON CONFLICT (organisatie_id, bron, bron_referentie) DO NOTHING;
 
 -- Vangnet voor de rest: geen Mollie-referentie (of die was al bezet door

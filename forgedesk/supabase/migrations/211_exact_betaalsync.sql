@@ -78,7 +78,7 @@ CREATE OR REPLACE FUNCTION factuur_markeer_betaald(
   p_factuur_id uuid,
   p_bron text DEFAULT 'handmatig',
   p_referentie text DEFAULT NULL
-) RETURNS TABLE (nieuw_betaald numeric, nieuwe_status text)
+) RETURNS TABLE (nieuw_betaald numeric, nieuwe_status text, bijgewerkt_op timestamptz)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
@@ -91,9 +91,10 @@ DECLARE
   v_rest numeric;
   v_bron text;
   v_ref text;
+  v_bijgewerkt_op timestamptz;
 BEGIN
-  SELECT f.organisatie_id, COALESCE(f.totaal, 0), f.status, COALESCE(f.betaald_bedrag, 0)
-    INTO v_org, v_totaal, v_status, v_betaald
+  SELECT f.organisatie_id, COALESCE(f.totaal, 0), f.status, COALESCE(f.betaald_bedrag, 0), f.updated_at
+    INTO v_org, v_totaal, v_status, v_betaald, v_bijgewerkt_op
     FROM facturen f
    WHERE f.id = p_factuur_id
      FOR UPDATE;
@@ -117,7 +118,7 @@ BEGIN
 
   v_rest := round(v_totaal - v_betaald, 2);
   IF v_rest > 0 THEN
-    RETURN QUERY SELECT r.nieuw_betaald, r.nieuwe_status
+    RETURN QUERY SELECT r.nieuw_betaald, r.nieuwe_status, r.bijgewerkt_op
       FROM factuur_betaling_verwerk(p_factuur_id, v_bron, v_ref, v_rest, CURRENT_DATE) r;
   ELSE
     UPDATE facturen f
@@ -125,8 +126,9 @@ BEGIN
            betaaldatum = COALESCE(f.betaaldatum, CURRENT_DATE),
            updated_at = now()
      WHERE f.id = p_factuur_id
-       AND f.status IN ('open', 'verzonden', 'vervallen');
-    RETURN QUERY SELECT v_betaald, 'betaald'::text;
+       AND f.status IN ('open', 'verzonden', 'vervallen')
+     RETURNING f.updated_at INTO v_bijgewerkt_op;
+    RETURN QUERY SELECT v_betaald, 'betaald'::text, v_bijgewerkt_op;
   END IF;
 END;
 $$;
