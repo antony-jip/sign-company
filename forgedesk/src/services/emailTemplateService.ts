@@ -43,6 +43,12 @@ interface FactuurEmailData extends EmailTemplateData {
 
 interface FactuurHerinneringData extends FactuurEmailData {
   dagenVervallen: number
+  // De ingestelde stap-tekst, al gerenderd (variabelen vervangen) en plat.
+  // Staat die er, dan draagt de mail die tekst in plaats van het vaste
+  // vriendelijke blok, zodat een aanmaning ook als aanmaning leest.
+  eigenTekst?: string
+  // Kop passend bij de stap: Herinnering of Aanmaning.
+  heading?: string
 }
 
 interface TekeningGoedkeuringData extends EmailTemplateData {
@@ -417,13 +423,23 @@ export function factuurVerzendTemplate(data: FactuurEmailData): EmailResult {
 
 export function factuurHerinneringTemplate(data: FactuurHerinneringData): EmailResult {
   const kleur = data.primaireKleur || DEFAULT_KLEUR
-  const subject = `Herinnering: Factuur ${data.factuurNummer}`
+  const kop = data.heading?.trim() || 'Herinnering'
+  const subject = `${kop}: Factuur ${data.factuurNummer}`
 
   const buttonHtml = data.betaalUrl
     ? renderButton('Factuur betalen', data.betaalUrl, kleur)
     : ''
 
-  const bodyHtml = `
+  const eigenTekst = data.eigenTekst?.trim() || ''
+  const kopHtml = data.heading?.trim()
+    ? `<p style="margin: 0 0 16px 0; font-size: 18px; font-weight: bold; color: #333333;">${escapeHtml(kop)}</p>`
+    : ''
+
+  // Met een ingestelde tekst draagt die tekst de mail; het vaste vriendelijke
+  // blok zou een aanmaning anders als eerste herinnering laten lezen.
+  const tekstHtml = eigenTekst
+    ? `<div style="margin: 0 0 16px 0;">${escapeHtml(eigenTekst).replace(/\n/g, '<br />')}</div>`
+    : `
     <p style="margin: 0 0 16px 0;">Beste ${escapeHtml(data.klantNaam)},</p>
     <p style="margin: 0 0 16px 0;">
       Graag willen wij u er vriendelijk aan herinneren dat factuur
@@ -431,7 +447,20 @@ export function factuurHerinneringTemplate(data: FactuurHerinneringData): EmailR
       <strong>${escapeHtml(data.factuurTitel)}</strong> inmiddels
       <strong>${data.dagenVervallen} ${data.dagenVervallen === 1 ? 'dag' : 'dagen'}</strong>
       over de vervaldatum is.
+    </p>`
+
+  const afsluitingHtml = eigenTekst
+    ? ''
+    : `
+    <p style="margin: 16px 0 0 0;">
+      Indien u de betaling reeds heeft voldaan, kunt u deze herinnering als niet verzonden beschouwen.
+      Mocht u vragen hebben, neem dan gerust contact met ons op.
     </p>
+    <p style="margin: 16px 0 0 0;">Met vriendelijke groet,</p>`
+
+  const bodyHtml = `
+    ${kopHtml}
+    ${tekstHtml}
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
         <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">
@@ -442,30 +471,34 @@ export function factuurHerinneringTemplate(data: FactuurHerinneringData): EmailR
       </tr>
     </table>
     ${buttonHtml}
-    <p style="margin: 16px 0 0 0;">
-      Indien u de betaling reeds heeft voldaan, kunt u deze herinnering als niet verzonden beschouwen.
-      Mocht u vragen hebben, neem dan gerust contact met ons op.
-    </p>
-    <p style="margin: 16px 0 0 0;">Met vriendelijke groet,</p>`
+    ${afsluitingHtml}`
 
   const { wrap } = getBaseTemplate(data)
   const html = wrap(bodyHtml)
 
   const text = [
-    `Beste ${data.klantNaam},`,
-    '',
-    `Graag willen wij u er vriendelijk aan herinneren dat factuur ${data.factuurNummer} voor ${data.factuurTitel} inmiddels ${data.dagenVervallen} ${data.dagenVervallen === 1 ? 'dag' : 'dagen'} over de vervaldatum is.`,
+    ...(eigenTekst
+      ? [eigenTekst]
+      : [
+          `Beste ${data.klantNaam},`,
+          '',
+          `Graag willen wij u er vriendelijk aan herinneren dat factuur ${data.factuurNummer} voor ${data.factuurTitel} inmiddels ${data.dagenVervallen} ${data.dagenVervallen === 1 ? 'dag' : 'dagen'} over de vervaldatum is.`,
+        ]),
     '',
     `Totaalbedrag: ${data.totaalBedrag}`,
     `Vervaldatum: ${data.vervaldatum}`,
     `Dagen vervallen: ${data.dagenVervallen}`,
     '',
     data.betaalUrl ? `Betaal de factuur: ${data.betaalUrl}` : '',
-    '',
-    'Indien u de betaling reeds heeft voldaan, kunt u deze herinnering als niet verzonden beschouwen. Mocht u vragen hebben, neem dan gerust contact met ons op.',
-    '',
-    'Met vriendelijke groet,',
-    data.handtekening || '',
+    ...(eigenTekst
+      ? []
+      : [
+          '',
+          'Indien u de betaling reeds heeft voldaan, kunt u deze herinnering als niet verzonden beschouwen. Mocht u vragen hebben, neem dan gerust contact met ons op.',
+          '',
+          'Met vriendelijke groet,',
+          data.handtekening || '',
+        ]),
   ]
     .filter((line) => line !== undefined)
     .join('\n')

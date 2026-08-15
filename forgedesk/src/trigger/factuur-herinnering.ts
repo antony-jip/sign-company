@@ -124,7 +124,28 @@ interface KlantRij {
   bedrijfsnaam?: string | null;
   contactpersoon?: string | null;
   email?: string | null;
+  contactpersonen?: unknown;
   geen_betalingsherinneringen?: boolean | null;
+}
+
+// klanten.contactpersonen is JSONB, maar komt bij oudere imports als string
+// terug. Spiegel van parseContactpersonenJson in src/services/factuurService.ts.
+function parseContactpersonenJson(waarde: unknown): Array<{ id?: string; email?: string }> {
+  let rauw = waarde;
+  if (typeof rauw === "string") {
+    try {
+      rauw = JSON.parse(rauw);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(rauw)) return [];
+  return (rauw as unknown[]).filter((c): c is { id?: string; email?: string } => !!c && typeof c === "object");
+}
+
+function schoonEmail(waarde: unknown): string | null {
+  const adres = typeof waarde === "string" ? waarde.trim() : "";
+  return adres || null;
 }
 
 interface ContactRij {
@@ -393,7 +414,10 @@ export const factuurHerinneringCron = schedules.task({
 
       const klantPerId = new Map<string, KlantRij>();
       if (klantIds.length > 0) {
-        const klantKolommen = "id, bedrijfsnaam, contactpersoon, email" + (v2 ? ", geen_betalingsherinneringen" : "");
+        // contactpersonen (JSONB) hoort er altijd bij: facturen.contactpersoon_id
+        // heeft bewust geen FK en kan naar een contact in die kolom wijzen.
+        const klantKolommen =
+          "id, bedrijfsnaam, contactpersoon, email, contactpersonen" + (v2 ? ", geen_betalingsherinneringen" : "");
         let klantenFout: string | null = null;
         for (const stuk of inStukken(klantIds)) {
           const { data, error } = await supabase
@@ -548,21 +572,31 @@ export const factuurHerinneringCron = schedules.task({
           continue;
         }
 
-        // Ontvanger-volgorde van migratie 101: de contactpersoon van de factuur
-        // zelf, dan het factuur-standaard-contact van de klant, dan het
-        // algemene klantadres. Een contactpersoon_id kan ook naar de
-        // klanten.contactpersonen-JSONB wijzen; dan staat hij niet in deze
-        // tabel en schuift de volgorde vanzelf door.
+        // Ontvanger-volgorde van migratie 101, gelijk aan
+        // factuurService.bepaalHerinneringOntvanger: (1) het contact dat op de
+        // factuur staat, (2) datzelfde id in de klanten.contactpersonen-JSONB
+        // (de contactkiezer zet nieuwe contacten daar neer, zonder rij in de
+        // contactpersonen-tabel), (3) het factuur-standaard-contact van de
+        // klant, (4) het algemene klantadres.
         const factuurContact = factuur.contactpersoon_id ? contactPerId.get(factuur.contactpersoon_id) : undefined;
         const factuurContactVanDezeOrg =
           !!factuurContact &&
           !!factuurContact.email &&
           (factuurContact.klant_id === factuur.klant_id || factuurContact.organisatie_id === orgId);
+        const jsonbContactEmail = factuur.contactpersoon_id
+          ? schoonEmail(
+              parseContactpersonenJson(klantRij.contactpersonen).find((c) => c.id === factuur.contactpersoon_id)?.email
+            )
+          : null;
         const standaardContact = (contactPerKlant.get(factuur.klant_id) || []).find(
           (c) => c.is_factuur_standaard === true && c.email
         );
         const ontvanger =
-          (factuurContactVanDezeOrg ? factuurContact!.email : null) || standaardContact?.email || klantRij.email || null;
+          (factuurContactVanDezeOrg ? factuurContact!.email : null) ||
+          jsonbContactEmail ||
+          standaardContact?.email ||
+          klantRij.email ||
+          null;
 
         // Een intern-signaal-stap heeft geen klantadres nodig; alleen het
         // email-kanaal strandt op een ontbrekend adres.

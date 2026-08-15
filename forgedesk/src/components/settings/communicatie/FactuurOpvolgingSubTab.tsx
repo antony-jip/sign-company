@@ -151,6 +151,10 @@ export function FactuurOpvolgingSubTab() {
         bedrijfsnaam: vars.bedrijfsnaam,
         logoUrl: p?.logo_url || undefined,
         betaalUrl: vars.betaal_link,
+        // De proefmail moet de eigen tekst tonen, niet het generieke blok:
+        // dat is precies wat de klant straks ook krijgt.
+        eigenTekst: body,
+        heading: stap.stap_type === 'aanmaning' ? 'Aanmaning' : 'Betalingsherinnering',
       })
       await sendEmail(user.email, `[TEST] ${sub}`, body, { html })
       toast.success(`Testmail verstuurd naar ${user.email}`)
