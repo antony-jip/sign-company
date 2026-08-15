@@ -56,6 +56,7 @@ import {
   MoreHorizontal,
   CreditCard,
   Bell,
+  BellOff,
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
@@ -1890,6 +1891,25 @@ export function FactuurEditor() {
     }
   }, [selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, existingFactuur, persoonlijkBericht])
 
+  // ============ OPVOLGING PAUZEREN ============
+
+  const handleToggleOpvolging = useCallback(async () => {
+    if (!existingFactuur) return
+    const pauzeren = existingFactuur.opvolging_actief !== false
+    try {
+      // null = volg de org-instelling weer; false = deze factuur nooit manen.
+      const updated = await updateFactuur(existingFactuur.id, { opvolging_actief: pauzeren ? false : null })
+      setExistingFactuur({ ...existingFactuur, ...updated, opvolging_actief: pauzeren ? false : null })
+      toast.success(pauzeren ? 'Automatische herinneringen gepauzeerd voor deze factuur' : 'Automatische herinneringen hervat')
+    } catch (err) {
+      logger.error('Opvolging togglen:', err)
+      const melding = (err as { message?: string })?.message || ''
+      toast.error(melding.includes('opvolging_actief')
+        ? 'Deze instelling werkt zodra migratie 212 gedraaid is.'
+        : 'Kon de opvolging niet aanpassen')
+    }
+  }, [existingFactuur])
+
   // ============ MARK AS PAID ============
 
   const handleMarkAsBetaald = useCallback(async () => {
@@ -2512,6 +2532,14 @@ export function FactuurEditor() {
                       <DropdownMenuItem onClick={openHerinneringDialog}>
                         <Bell className="h-4 w-4 mr-2" />
                         Herinnering versturen
+                      </DropdownMenuItem>
+                    )}
+                    {(currentStatus === 'open' || currentStatus === 'verzonden' || isVervallen) && (
+                      <DropdownMenuItem onClick={handleToggleOpvolging}>
+                        <BellOff className="h-4 w-4 mr-2" />
+                        {existingFactuur?.opvolging_actief === false
+                          ? 'Automatische herinneringen hervatten'
+                          : 'Automatische herinneringen pauzeren'}
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />

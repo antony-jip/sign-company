@@ -125,6 +125,8 @@ export interface Klant {
   kvk_nummer: string;
   btw_nummer: string;
   status: 'actief' | 'inactief' | 'prospect';
+  /** Kill-switch: nooit automatische betalingsherinneringen naar deze klant (migratie 212). */
+  geen_betalingsherinneringen?: boolean;
   tags: string[];
   notities: string;
   contactpersonen: Contactpersoon[];
@@ -1072,6 +1074,11 @@ export interface Factuur {
   vervaldatum: string;
   betaaldatum?: string;
   verzonden_op?: string;
+  /** null = volg de org-instelling; false = deze factuur nooit automatisch manen (migratie 212). */
+  opvolging_actief?: boolean | null;
+  /** Openstaand volgens Exact (som niet-afgeletterde termijnen, migratie 211). */
+  openstaand_exact?: number | null;
+  exact_stand_op?: string | null;
   betalingsherinnering_verzonden?: boolean;
   notities: string;
   voorwaarden: string;

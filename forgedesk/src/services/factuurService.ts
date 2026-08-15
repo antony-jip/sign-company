@@ -164,6 +164,47 @@ export async function markeerFactuurBetaald(id: string, totaal: number): Promise
   return await updateFactuurStatus(id, { status: 'betaald', betaald_bedrag: totaal, betaaldatum: vandaag })
 }
 
+// Configureerbare herinnerings-ladder (migratie 212). Geen rij voor een stap
+// = de standaard van de cron (7/14/21/30 dagen, herinnering_3 uit).
+export interface FactuurOpvolgStap {
+  stap_type: 'herinnering_1' | 'herinnering_2' | 'herinnering_3' | 'aanmaning'
+  dagen_na_vervaldatum: number
+  kanaal: 'email' | 'intern'
+  onderwerp: string | null
+  inhoud: string | null
+  actief: boolean
+}
+
+export async function getFactuurOpvolgStappen(organisatieId: string): Promise<FactuurOpvolgStap[]> {
+  if (!(isSupabaseConfigured() && supabase)) return []
+  const { data, error } = await supabase
+    .from('factuur_opvolg_stappen')
+    .select('stap_type, dagen_na_vervaldatum, kanaal, onderwerp, inhoud, actief')
+    .eq('organisatie_id', organisatieId)
+  if (error) {
+    if (error.code === 'PGRST205') return []
+    throw error
+  }
+  return (data ?? []) as FactuurOpvolgStap[]
+}
+
+// Retourneert false als migratie 212 nog niet gedraaid is; de caller kan dan
+// melden dat alleen de teksten (app_settings) zijn opgeslagen.
+export async function upsertFactuurOpvolgStappen(organisatieId: string, stappen: FactuurOpvolgStap[]): Promise<boolean> {
+  if (!(isSupabaseConfigured() && supabase)) return false
+  const { error } = await supabase
+    .from('factuur_opvolg_stappen')
+    .upsert(
+      stappen.map((s) => ({ ...s, organisatie_id: organisatieId, updated_at: new Date().toISOString() })),
+      { onConflict: 'organisatie_id,stap_type' }
+    )
+  if (error) {
+    if (error.code === 'PGRST205') return false
+    throw error
+  }
+  return true
+}
+
 // Voor het verwerken-pad: daar krijgt een bestaand concept zijn volgnummer via
 // een UPDATE, en die had — anders dan createFactuur — geen 23505-afhandeling.
 // Twee gebruikers die tegelijk elk hun eigen concept verwerken berekenen
