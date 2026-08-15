@@ -107,6 +107,8 @@ import {
   updateContactpersoonDB,
   updateKlant,
 } from '@/services/supabaseService'
+import { getFactuurOpvolgStappen, type FactuurOpvolgStap } from '@/services/factuurService'
+import supabase from '@/services/supabaseClient'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -279,9 +281,52 @@ function getTodayString(): string {
 }
 
 function getDefaultVervaldatum(factuurdatum: string, dagen: number = 30): string {
-  const d = new Date(factuurdatum)
-  d.setDate(d.getDate() + dagen)
-  return d.toISOString().split('T')[0]
+  // Lokaal rekenen: new Date('YYYY-MM-DD') is UTC-middernacht, waardoor
+  // toISOString() over de zomertijdovergang een dag terugvalt.
+  const [jaar, maand, dag] = factuurdatum.split('-').map(Number)
+  const d = new Date(jaar, maand - 1, dag + dagen)
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mm}-${dd}`
+}
+
+// De factuur-stappen uit HerinneringTemplate['type']; de offerte-varianten
+// horen niet in deze module thuis.
+type HerinneringType = 'herinnering_1' | 'herinnering_2' | 'herinnering_3' | 'aanmaning'
+
+// Standaardladder van de cron: zonder eigen rij in factuur_opvolg_stappen
+// gelden deze drempels ook handmatig.
+const STANDAARD_HERINNERING_DAGEN: Record<HerinneringType, number> = {
+  herinnering_1: 7,
+  herinnering_2: 14,
+  herinnering_3: 21,
+  aanmaning: 30,
+}
+
+const STANDAARD_HERINNERING_ONDERWERP: Record<HerinneringType, string> = {
+  herinnering_1: 'Herinnering: factuur {factuur_nummer}',
+  herinnering_2: 'Tweede herinnering: factuur {factuur_nummer}',
+  herinnering_3: 'Derde herinnering: factuur {factuur_nummer}',
+  aanmaning: 'Aanmaning: factuur {factuur_nummer}',
+}
+
+function isVandaag(tijdstempel: string | null | undefined): boolean {
+  if (!tijdstempel) return false
+  const d = new Date(tijdstempel)
+  if (isNaN(d.getTime())) return false
+  const nu = new Date()
+  return d.getFullYear() === nu.getFullYear() && d.getMonth() === nu.getMonth() && d.getDate() === nu.getDate()
+}
+
+// De cron draait om 09:30; zonder deze rem stuurt een handmatige klik om
+// 10:00 dezelfde klant een tweede mail op dezelfde dag.
+function alVandaagHerinnerd(f: Factuur): boolean {
+  return [
+    f.herinnering_1_verstuurd,
+    f.herinnering_2_verstuurd,
+    f.herinnering_3_verstuurd,
+    f.aanmaning_verstuurd,
+  ].some((t) => isVandaag(t))
 }
 
 function buildFactuurNummer(prefix: string, volgnummer: number): string {
@@ -335,7 +380,7 @@ export function FactuurEditor() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
-  const { user } = useAuth()
+  const { user, organisatieId } = useAuth()
   const { medewerkers } = useMedewerkers()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   const {
@@ -467,7 +512,9 @@ export function FactuurEditor() {
   const [verzendAan, setVerzendAan] = useState('')
   const [herinneringAan, setHerinneringAan] = useState('')
   const [herinneringTemplates, setHerinneringTemplates] = useState<HerinneringTemplate[]>([])
-  const [herinneringType, setHerinneringType] = useState<HerinneringTemplate['type']>('herinnering_1')
+  // Ladder uit Instellingen (migratie 212); leeg = standaardladder van de cron
+  const [opvolgStappen, setOpvolgStappen] = useState<FactuurOpvolgStap[]>([])
+  const [herinneringType, setHerinneringType] = useState<HerinneringType>('herinnering_1')
   const [herinneringPreview, setHerinneringPreview] = useState('')
   const [extraTekstOpen, setExtraTekstOpen] = useState(false)
 
@@ -744,7 +791,7 @@ export function FactuurEditor() {
                 setOfferteId(origFactuur.offerte_id || '')
                 setNummer(creditnotaDoornummeren
                   ? await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
-                  : generateTypedNummer(facturenData, 'CR'))
+                  : generateTypedNummer(facturenData, creditnotaPrefix))
                 setKostenplaatsId(origFactuur.kostenplaats_id || '')
                 if (origFactuur.voorwaarden) setVoorwaarden(origFactuur.voorwaarden)
                 if (origFactuur.intro_tekst) setIntroTekst(origFactuur.intro_tekst)
@@ -984,6 +1031,17 @@ export function FactuurEditor() {
   useEffect(() => {
     if (herinneringDialogOpen) setHerinneringAan(resolvedCp?.email || selectedKlant?.email || '')
   }, [herinneringDialogOpen, resolvedCp?.email, selectedKlant?.email])
+
+  // Dezelfde ladder als de cron: teksten en dagen die in Instellingen staan
+  // moeten ook de handmatige herinnering aansturen.
+  useEffect(() => {
+    if (!organisatieId) return
+    let cancelled = false
+    getFactuurOpvolgStappen(organisatieId)
+      .then((stappen) => { if (!cancelled) setOpvolgStappen(stappen) })
+      .catch(() => { if (!cancelled) setOpvolgStappen([]) })
+    return () => { cancelled = true }
+  }, [organisatieId])
 
   // Voorvullen adresblok: in edit-mode wint een opgeslagen override, anders het
   // klantadres. Open het blok automatisch als er al een override staat.
@@ -1974,7 +2032,6 @@ export function FactuurEditor() {
         ? await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
         : generateTypedNummer(allFacturen, creditnotaPrefix)
 
-      const cnToken = generateBetaalToken()
       const creditnota: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
         user_id: user?.id || '',
         klant_id: existingFactuur.klant_id,
@@ -1993,9 +2050,9 @@ export function FactuurEditor() {
         notities: `Creditnota: ${creditReden}`,
         voorwaarden: existingFactuur.voorwaarden,
         factuur_type: 'creditnota',
-        betaal_token: cnToken,
-        betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
-        betaal_link: `${window.location.origin}/betalen/${cnToken}`,
+        // Geen betaal_token/betaal_link: een klant kan een negatief bedrag
+        // niet betalen, dus een betaallink is hier zinloos.
+        kostenplaats_id: existingFactuur.kostenplaats_id || undefined,
         gerelateerde_factuur_id: existingFactuur.id,
         credit_reden: creditReden,
       }
@@ -2018,6 +2075,9 @@ export function FactuurEditor() {
           totaal: round2(-item.totaal),
           volgorde: item.volgorde,
           detail_regels: item.detail_regels || [],
+          // Zonder dezelfde grootboekrekening saldeert de creditboeking in
+          // Exact niet tegen de originele factuur.
+          grootboek_code: item.grootboek_code || undefined,
         } as Omit<FactuurItem, 'id' | 'created_at'>)
       }
 
@@ -2040,21 +2100,49 @@ export function FactuurEditor() {
 
   // ============ HERINNERING ============
 
-  const getVolgendeHerinnering = useCallback((): HerinneringTemplate['type'] | null => {
+  const dagenDrempel = useCallback((type: HerinneringType): number => {
+    const stap = opvolgStappen.find((s) => s.stap_type === type)
+    return stap?.dagen_na_vervaldatum ?? STANDAARD_HERINNERING_DAGEN[type]
+  }, [opvolgStappen])
+
+  // Teksten in dezelfde voorrang als de cron: eigen stap-rij, dan de
+  // app_settings-teksten, dan de legacy-template.
+  const herinneringTekst = useCallback((type: HerinneringType) => {
+    const stap = opvolgStappen.find((s) => s.stap_type === type)
+    const legacy = herinneringTemplates.find((t) => t.type === type)
+    const uitSettings: Record<HerinneringType, { onderwerp?: string; inhoud?: string }> = {
+      herinnering_1: { onderwerp: settings.herinnering_1_onderwerp, inhoud: settings.herinnering_1_tekst },
+      herinnering_2: { onderwerp: settings.herinnering_2_onderwerp, inhoud: settings.herinnering_2_tekst },
+      herinnering_3: {},
+      aanmaning: { onderwerp: settings.aanmaning_onderwerp, inhoud: settings.aanmaning_tekst },
+    }
+    const inhoud = stap?.inhoud || uitSettings[type].inhoud || legacy?.inhoud || ''
+    if (!inhoud) return null
+    return {
+      onderwerp: stap?.onderwerp || uitSettings[type].onderwerp || legacy?.onderwerp || STANDAARD_HERINNERING_ONDERWERP[type],
+      inhoud,
+      kanaal: stap?.kanaal || 'email',
+    }
+  }, [opvolgStappen, herinneringTemplates, settings])
+
+  const getVolgendeHerinnering = useCallback((): HerinneringType | null => {
     if (!existingFactuur || dagenVervallen <= 0) return null
-    if (!existingFactuur.herinnering_1_verstuurd && dagenVervallen >= 7) return 'herinnering_1'
-    if (!existingFactuur.herinnering_2_verstuurd && dagenVervallen >= 14) return 'herinnering_2'
-    if (!existingFactuur.herinnering_3_verstuurd && dagenVervallen >= 21) return 'herinnering_3'
-    if (!existingFactuur.aanmaning_verstuurd && dagenVervallen >= 30) return 'aanmaning'
+    // Rustdag: is er vandaag al een stap verstuurd (bijvoorbeeld door de cron
+    // van 09:30), dan vandaag geen tweede mail aanbieden.
+    if (alVandaagHerinnerd(existingFactuur)) return null
+    if (!existingFactuur.herinnering_1_verstuurd && dagenVervallen >= dagenDrempel('herinnering_1')) return 'herinnering_1'
+    if (!existingFactuur.herinnering_2_verstuurd && dagenVervallen >= dagenDrempel('herinnering_2')) return 'herinnering_2'
+    if (!existingFactuur.herinnering_3_verstuurd && dagenVervallen >= dagenDrempel('herinnering_3')) return 'herinnering_3'
+    if (!existingFactuur.aanmaning_verstuurd && dagenVervallen >= dagenDrempel('aanmaning')) return 'aanmaning'
     return null
-  }, [existingFactuur, dagenVervallen])
+  }, [existingFactuur, dagenVervallen, dagenDrempel])
 
   const replaceHerinneringVars = useCallback((text: string) => {
     if (!existingFactuur || !selectedKlant) return text
     return text
       .replace(/{klant_naam}/g, selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam)
       .replace(/{factuur_nummer}/g, existingFactuur.nummer)
-      .replace(/{factuur_bedrag}/g, formatCurrency(existingFactuur.totaal))
+      .replace(/{factuur_bedrag}/g, formatCurrency(round2((existingFactuur.totaal || 0) - (existingFactuur.betaald_bedrag || 0))))
       .replace(/{vervaldatum}/g, formatDate(existingFactuur.vervaldatum))
       .replace(/{dagen_verlopen}/g, String(dagenVervallen))
       .replace(/{bedrijfsnaam}/g, bedrijfsnaam || '')
@@ -2064,13 +2152,38 @@ export function FactuurEditor() {
   const openHerinneringDialog = useCallback(() => {
     if (!existingFactuur || !selectedKlant) return
     const type = getVolgendeHerinnering() || 'herinnering_1'
-    const template = herinneringTemplates.find((t) => t.type === type)
-    if (template) {
-      setHerinneringPreview(replaceHerinneringVars(template.inhoud))
-    }
+    const tekst = herinneringTekst(type)
+    setHerinneringPreview(tekst ? replaceHerinneringVars(tekst.inhoud) : '')
     setHerinneringType(type)
     setHerinneringDialogOpen(true)
-  }, [existingFactuur, selectedKlant, getVolgendeHerinnering, herinneringTemplates, replaceHerinneringVars])
+  }, [existingFactuur, selectedKlant, getVolgendeHerinnering, herinneringTekst, replaceHerinneringVars])
+
+  // Best-effort bewijsregel; vóór migratie 212/214 bestaat de tabel (of het
+  // insert-recht) nog niet en mag dat de verzending niet blokkeren.
+  const logHerinnering = useCallback(async (
+    factuur: Factuur,
+    stap: HerinneringType,
+    kanaal: string,
+    ontvanger: string,
+    onderwerp: string
+  ) => {
+    if (!supabase || !organisatieId) return
+    try {
+      const { error } = await supabase.from('factuur_opvolg_log').insert({
+        organisatie_id: organisatieId,
+        factuur_id: factuur.id,
+        factuur_nummer: factuur.nummer,
+        stap,
+        kanaal,
+        ontvanger,
+        onderwerp,
+        resultaat: 'verstuurd',
+      })
+      if (error) logger.error('Herinnering-log schrijven mislukt:', error.message)
+    } catch (err) {
+      logger.error('Herinnering-log schrijven mislukt:', err)
+    }
+  }, [organisatieId])
 
   const handleVerstuurHerinnering = useCallback(async () => {
     const herinneringOntvanger = herinneringAan.trim() || resolvedCp?.email || selectedKlant?.email || ''
@@ -2079,22 +2192,25 @@ export function FactuurEditor() {
       return
     }
 
-    const template = herinneringTemplates.find((t) => t.type === herinneringType)
-    if (!template) {
-      toast.error('Geen herinnering template gevonden')
+    const tekst = herinneringTekst(herinneringType)
+    if (!tekst) {
+      toast.error('Geen herinneringstekst gevonden. Stel er een in bij Instellingen > Communicatie.')
       return
     }
 
     try {
       setIsSending(true)
-      const onderwerp = replaceHerinneringVars(template.onderwerp)
+      const onderwerp = replaceHerinneringVars(tekst.onderwerp)
 
+      // De vlag pas na een geslaagde verzending: zet je hem ook bij een
+      // mislukte mail, dan escaleert de cron over vijf dagen op een stap die
+      // de klant nooit heeft gezien.
       try {
         const { html } = factuurHerinneringTemplate({
           klantNaam: selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '',
           factuurNummer: existingFactuur.nummer,
           factuurTitel: existingFactuur.titel,
-          totaalBedrag: formatCurrency(existingFactuur.totaal),
+          totaalBedrag: formatCurrency(round2((existingFactuur.totaal || 0) - (existingFactuur.betaald_bedrag || 0))),
           vervaldatum: formatDate(existingFactuur.vervaldatum),
           dagenVervallen,
           bedrijfsnaam,
@@ -2105,7 +2221,8 @@ export function FactuurEditor() {
         await sendEmail(herinneringOntvanger, onderwerp, herinneringPreview, { html })
       } catch (err) {
         logger.error('Verstuur herinnering email:', err)
-        toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Herinnering is wel gemarkeerd.')
+        toast.error('Email niet verzonden. De herinnering is niet gemarkeerd.')
+        return
       }
 
       const fieldMap: Record<string, string> = {
@@ -2119,8 +2236,9 @@ export function FactuurEditor() {
 
       await updateFactuur(existingFactuur.id, updates)
       setExistingFactuur({ ...existingFactuur, ...updates })
+      await logHerinnering(existingFactuur, herinneringType, 'email', herinneringOntvanger, onderwerp)
 
-      toast.success(`${template.type === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} verstuurd voor ${existingFactuur.nummer}`)
+      toast.success(`${herinneringType === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} verstuurd voor ${existingFactuur.nummer}`)
       setHerinneringDialogOpen(false)
     } catch (err) {
       logger.error('Verstuur herinnering:', err)
@@ -2128,7 +2246,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, resolvedCp, herinneringAan, herinneringTemplates, herinneringType, herinneringPreview, replaceHerinneringVars, dagenVervallen, bedrijfsnaam, primaireKleur, profile])
+  }, [existingFactuur, selectedKlant, resolvedCp, herinneringAan, herinneringTekst, herinneringType, herinneringPreview, replaceHerinneringVars, dagenVervallen, bedrijfsnaam, primaireKleur, profile, logHerinnering])
 
   // ============ EXACT SYNC ============
 
@@ -3631,7 +3749,12 @@ export function FactuurEditor() {
               <Label className="text-sm">Type</Label>
               <Select
                 value={herinneringType}
-                onValueChange={(v) => setHerinneringType(v as HerinneringTemplate['type'])}
+                onValueChange={(v) => {
+                  const type = v as HerinneringType
+                  setHerinneringType(type)
+                  const tekst = herinneringTekst(type)
+                  setHerinneringPreview(tekst ? replaceHerinneringVars(tekst.inhoud) : '')
+                }}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue />
@@ -3644,6 +3767,12 @@ export function FactuurEditor() {
                 </SelectContent>
               </Select>
             </div>
+            {herinneringTekst(herinneringType)?.kanaal === 'intern' && (
+              <div className="rounded-lg border border-[#F15025]/30 bg-[#F15025]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
+                Deze stap staat in Instellingen op intern. Normaal krijgt de klant hier geen mail, maar bel je zelf.
+                Verstuur je hem toch, dan gaat de tekst gewoon naar de klant.
+              </div>
+            )}
             {herinneringPreview && (
               <div>
                 <Label className="text-sm">Voorbeeld</Label>

@@ -32,6 +32,15 @@ type Stap = "herinnering_1" | "herinnering_2" | "herinnering_3" | "aanmaning";
 const MIN_DAGEN_TUSSEN_STAPPEN = 5;
 const MAX_SYNC_LEEFTIJD_DAGEN = 3;
 
+// Restant-organisatie van een verwijderd account; die rijen mogen nergens
+// meer verwerkt worden (zelfde uitsluiting als cron-exact-betaalsync).
+const ZOMBIE_ORG = "08352d84-e2be-4760-9436-f468b4327438";
+
+// De handmatige flow blokkeert op dezelfde statussen (useTrialGuard:
+// verlopen/opgezegd = geblokkeerd, trial mag wel mailen). Zonder deze guard
+// stuurt de cron nog jaren namens een opgezegde organisatie.
+const ABONNEMENT_MAG_MAILEN = ["actief", "trial"];
+
 const STANDAARD_LADDER: { stap: Stap; dagen: number; actief: boolean }[] = [
   { stap: "herinnering_1", dagen: 7, actief: true },
   { stap: "herinnering_2", dagen: 14, actief: true },
@@ -88,6 +97,7 @@ interface FactuurRow {
   vervaldatum: string | null;
   factuur_type: string | null;
   betaal_link: string | null;
+  betaal_token_verloopt_op: string | null;
   herinnering_1_verstuurd: string | null;
   herinnering_2_verstuurd: string | null;
   herinnering_3_verstuurd: string | null;
@@ -165,7 +175,7 @@ export const factuurHerinneringCron = schedules.task({
       if (!nieuwstePerOrg.has(orgId)) nieuwstePerOrg.set(orgId, rij);
     }
     const orgSettings = [...nieuwstePerOrg.values()].filter(
-      (r) => r.factuur_opvolging_automatisch === true
+      (r) => r.factuur_opvolging_automatisch === true && r.organisatie_id !== ZOMBIE_ORG
     );
 
     if (orgSettings.length === 0) {
@@ -215,9 +225,20 @@ export const factuurHerinneringCron = schedules.task({
 
       const { data: org } = await supabase
         .from("organisaties")
-        .select("eigenaar_id")
+        .select("eigenaar_id, abonnement_status")
         .eq("id", orgId)
         .maybeSingle();
+
+      // Zonder rij of zonder status: behandelen als trial, net als de app doet.
+      const abonnementStatus = (org?.abonnement_status as string) || "trial";
+      if (!ABONNEMENT_MAG_MAILEN.includes(abonnementStatus)) {
+        result.overgeslagen++;
+        logger.info("factuur-herinnering: org overgeslagen, abonnement niet actief", {
+          orgId,
+          abonnementStatus,
+        });
+        continue;
+      }
 
       // Fail-safe: bankbetalingen kennen we alleen via de Exact-betaalsync.
       // Is die stand verouderd (koppeling een week down, cron kapot) of
@@ -277,15 +298,42 @@ export const factuurHerinneringCron = schedules.task({
         }
       }
 
-      const factuurKolommen =
-        "id, user_id, klant_id, nummer, titel, totaal, betaald_bedrag, vervaldatum, factuur_type, betaal_link, herinnering_1_verstuurd, herinnering_2_verstuurd, herinnering_3_verstuurd, aanmaning_verstuurd" +
-        (v2 ? ", opvolging_actief, openstaand_exact, exact_stand_op" : "");
-      const { data: facturen } = await supabase
-        .from("facturen")
-        .select(factuurKolommen)
-        .eq("organisatie_id", orgId)
-        .in("status", ["verzonden", "vervallen"])
-        .not("vervaldatum", "is", null);
+      // openstaand_exact/exact_stand_op komen pas met migratie 211. Staat 212
+      // wel en 211 niet, dan faalde deze select en viel de hele motor
+      // geluidloos stil; daarom eerst zonder die kolommen opnieuw proberen en
+      // pas daarna de org overslaan met een luide fout.
+      const basisFactuurKolommen =
+        "id, user_id, klant_id, nummer, titel, totaal, betaald_bedrag, vervaldatum, factuur_type, betaal_link, betaal_token_verloopt_op, herinnering_1_verstuurd, herinnering_2_verstuurd, herinnering_3_verstuurd, aanmaning_verstuurd" +
+        (v2 ? ", opvolging_actief" : "");
+      const factuurKolommen = basisFactuurKolommen + (v2 ? ", openstaand_exact, exact_stand_op" : "");
+      const haalFacturen = (kolommen: string) =>
+        supabase
+          .from("facturen")
+          .select(kolommen)
+          .eq("organisatie_id", orgId)
+          .in("status", ["verzonden", "vervallen"])
+          .not("vervaldatum", "is", null);
+
+      let { data: facturen, error: facturenError } = await haalFacturen(factuurKolommen);
+
+      if (
+        facturenError &&
+        (facturenError.message?.includes("openstaand_exact") || facturenError.message?.includes("exact_stand_op"))
+      ) {
+        logger.warn("factuur-herinnering: Exact-kolommen ontbreken (migratie 211?), opnieuw zonder", { orgId });
+        const zonderExact = await haalFacturen(basisFactuurKolommen);
+        facturen = zonderExact.data;
+        facturenError = zonderExact.error;
+      }
+
+      if (facturenError) {
+        logger.error("factuur-herinnering: facturen ophalen mislukt, org overgeslagen", {
+          orgId,
+          error: facturenError.message,
+        });
+        result.errors.push(`Org ${orgId}: facturen ophalen mislukt (${facturenError.message})`);
+        continue;
+      }
 
       if (!facturen || facturen.length === 0) continue;
 
@@ -399,13 +447,62 @@ export const factuurHerinneringCron = schedules.task({
           result.overgeslagen++;
           continue;
         }
-        if (!klantRij?.email) {
+        // Ontvanger zoals de app hem kiest: het contact met de
+        // factuur-standaard-vlag gaat voor het algemene klantadres.
+        let ontvanger = klantRij?.email || null;
+        const { data: contactpersonen, error: contactError } = await supabase
+          .from("contactpersonen")
+          .select("email, is_factuur_standaard")
+          .eq("klant_id", factuur.klant_id);
+        if (contactError) {
+          logger.warn("factuur-herinnering: contactpersonen ophalen mislukt, val terug op klant-e-mail", {
+            klantId: factuur.klant_id,
+            error: contactError.message,
+          });
+        } else {
+          const standaard = (contactpersonen || []).find(
+            (c) => (c as { is_factuur_standaard?: boolean }).is_factuur_standaard === true && (c as { email?: string }).email
+          );
+          if (standaard) ontvanger = (standaard as { email: string }).email;
+        }
+
+        // Een intern-signaal-stap heeft geen klantadres nodig; alleen het
+        // email-kanaal strandt op een ontbrekend adres.
+        if (!ontvanger && stapConfig.kanaal === "email") {
           result.overgeslagen++;
+          // Deze skip was permanent stil: de gebruiker zag nooit waarom er
+          // niets gebeurde. Eén logregel per factuur volstaat als bewijs.
+          if (v2) {
+            const { data: alGelogd } = await supabase
+              .from("factuur_opvolg_log")
+              .select("id")
+              .eq("factuur_id", factuur.id)
+              .eq("resultaat", "overgeslagen_geen_email")
+              .limit(1);
+            if (!alGelogd || alGelogd.length === 0) {
+              await schrijfLog(
+                orgId,
+                factuur,
+                stap,
+                stapConfig.kanaal,
+                null,
+                null,
+                "overgeslagen_geen_email",
+                "Klant en factuur-contactpersoon hebben geen e-mailadres"
+              );
+            }
+          }
           continue;
         }
 
+        // Het betaal-token verloopt na 92 dagen; een CTA naar een verlopen
+        // link levert de klant een 410 op. Dan liever geen knop.
+        const betaalTokenGeldig =
+          !factuur.betaal_token_verloopt_op || new Date(factuur.betaal_token_verloopt_op).getTime() > Date.now();
+        const betaallink = betaalTokenGeldig ? factuur.betaal_link : null;
+
         const vars: Record<string, string> = {
-          klant_naam: klantRij.contactpersoon || klantRij.bedrijfsnaam || "klant",
+          klant_naam: klantRij?.contactpersoon || klantRij?.bedrijfsnaam || "klant",
           factuur_nummer: factuur.nummer || "",
           factuur_bedrag: new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(openstaand),
           vervaldatum: new Date(factuur.vervaldatum).toLocaleDateString("nl-NL", {
@@ -415,7 +512,7 @@ export const factuurHerinneringCron = schedules.task({
           }),
           dagen_verlopen: String(dagen),
           bedrijfsnaam,
-          betaal_link: factuur.betaal_link || "",
+          betaal_link: betaallink || "",
         };
 
         // Tekst-voorrang: stap-rij (v2) → app_settings-velden → standaard.
@@ -470,14 +567,20 @@ export const factuurHerinneringCron = schedules.task({
           itemTitel: `Factuur ${factuur.nummer || ""}${factuur.titel ? ` — ${factuur.titel}` : ""}`,
           beschrijving: inhoud,
           ctaLabel: "Factuur betalen →",
-          ctaUrl: factuur.betaal_link || undefined,
+          ctaUrl: betaallink || undefined,
           bedrijfsnaam: bedrijfsnaam || undefined,
           logoUrl: (bedrijfsProfiel?.logo_url as string) || undefined,
         });
 
+        // Na de intern-tak hierboven is dit gegarandeerd het email-kanaal en
+        // heeft de guard een lege ontvanger al weggefilterd.
+        if (!ontvanger) {
+          result.overgeslagen++;
+          continue;
+        }
         const sendResult = await sendEmailForUser({
           userId: factuur.user_id,
-          to: klantRij.email,
+          to: ontvanger,
           subject: onderwerp,
           text: inhoud,
           html,
@@ -487,7 +590,7 @@ export const factuurHerinneringCron = schedules.task({
 
         if (!sendResult.success) {
           result.errors.push(`Factuur ${factuur.nummer}: ${sendResult.error}`);
-          await schrijfLog(orgId, factuur, stap, "email", klantRij.email, onderwerp, "fout", sendResult.error);
+          await schrijfLog(orgId, factuur, stap, "email", ontvanger, onderwerp, "fout", sendResult.error);
           continue;
         }
 
@@ -507,12 +610,12 @@ export const factuurHerinneringCron = schedules.task({
         }
 
         if (sendResult.skipped) {
-          await schrijfLog(orgId, factuur, stap, "email", klantRij.email, onderwerp, "overgeslagen_idempotent");
+          await schrijfLog(orgId, factuur, stap, "email", ontvanger, onderwerp, "overgeslagen_idempotent");
           result.overgeslagen++;
           continue;
         }
 
-        await schrijfLog(orgId, factuur, stap, "email", klantRij.email, onderwerp, "verstuurd");
+        await schrijfLog(orgId, factuur, stap, "email", ontvanger, onderwerp, "verstuurd");
 
         await supabase.from("notificaties").insert({
           user_id: factuur.user_id,
