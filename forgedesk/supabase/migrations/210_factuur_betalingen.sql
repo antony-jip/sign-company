@@ -61,7 +61,12 @@ CREATE OR REPLACE FUNCTION factuur_betaling_verwerk(
   volledig_voldaan boolean,
   vorige_status text,
   nieuwe_status text,
-  bijgewerkt_op timestamptz
+  bijgewerkt_op timestamptz,
+  -- true als de betaling is genegeerd omdat de referentie onbekend was op
+  -- een al betaalde factuur (de legacy-guard). De webhook kan daarmee een
+  -- écht binnengekomen bedrag onderscheiden van een herlevering en alarm
+  -- slaan in plaats van stil "already_processed" te melden.
+  referentie_onbekend boolean
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -111,7 +116,7 @@ BEGIN
   -- grootboek om volbetaald raakten; een refund-webhook daarop zou anders
   -- het effectieve bedrag als nieuwe bijschrijving boeken.
   IF v_bestaand_factuur IS NULL AND v_status = 'betaald' THEN
-    RETURN QUERY SELECT 0::numeric, v_betaald, true, v_status, v_status, v_bijgewerkt_op;
+    RETURN QUERY SELECT 0::numeric, v_betaald, true, v_status, v_status, v_bijgewerkt_op, true;
     RETURN;
   END IF;
 
@@ -162,7 +167,7 @@ BEGIN
      RETURNING f.updated_at INTO v_bijgewerkt_op;
   END IF;
 
-  RETURN QUERY SELECT v_delta, v_nieuw_betaald, v_voldaan, v_status, v_nieuwe_status, v_bijgewerkt_op;
+  RETURN QUERY SELECT v_delta, v_nieuw_betaald, v_voldaan, v_status, v_nieuwe_status, v_bijgewerkt_op, false;
 END;
 $$;
 
