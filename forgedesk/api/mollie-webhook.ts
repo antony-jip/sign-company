@@ -266,7 +266,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
 
       if (rpcError) {
-        const functieOntbreekt = rpcError.code === 'PGRST202' || /factuur_betaling_verwerk/.test(rpcError.message || '')
+        // Alleen PGRST202 (functie onbekend in de schema cache) telt als
+        // "migratie 210 ontbreekt". Een permission-fout bevat ook de
+        // functienaam en moet juist hard falen, niet stil legacy draaien.
+        const functieOntbreekt = rpcError.code === 'PGRST202'
         if (functieOntbreekt) {
           // Migratie 210 is nog niet gedraaid. Betalingen mogen niet stilvallen
           // op een deploy-volgorde, dus val terug op het oude additieve pad.
@@ -322,17 +325,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (werdTeruggedraaid) {
         console.warn(`Mollie webhook: refund/chargeback €${Math.abs(delta)} op factuur ${factuur.id} (payment ${paymentId}), status nu ${verwerking.nieuwe_status}`)
         Sentry.captureMessage(`Mollie terugboeking: factuur ${factuur.id} €${Math.abs(delta)} teruggedraaid, betaald nu €${nieuwBetaald}`, 'warning')
-        try {
-          await supabase.from('notificaties').insert({
-            user_id: factuur.user_id,
-            type: 'betaling_teruggedraaid',
-            titel: factuur.nummer ? `Betaling factuur ${factuur.nummer} teruggedraaid` : 'Betaling teruggedraaid',
-            bericht: `${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(Math.abs(delta))} terugbetaald of gestorneerd via Mollie`,
-            link: '/facturen',
-            gelezen: false,
-          })
-        } catch (notifErr) {
-          console.warn('Mollie webhook: terugboek-notificatie aanmaken mislukt:', notifErr)
+        const { error: terugboekNotifError } = await supabase.from('notificaties').insert({
+          user_id: factuur.user_id,
+          type: 'betaling_teruggedraaid',
+          titel: factuur.nummer ? `Betaling factuur ${factuur.nummer} teruggedraaid` : 'Betaling teruggedraaid',
+          bericht: `${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(Math.abs(delta))} terugbetaald of gestorneerd via Mollie`,
+          link: '/facturen',
+          gelezen: false,
+        })
+        if (terugboekNotifError) {
+          console.warn('Mollie webhook: terugboek-notificatie aanmaken mislukt:', terugboekNotifError.message)
+          Sentry.captureMessage(`Mollie webhook: terugboek-notificatie mislukt: ${terugboekNotifError.message}`, 'warning')
         }
         return res.status(200).json({ received: true, reversed: true })
       }
@@ -343,17 +346,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log(`Factuur ${factuur.id} gemarkeerd als betaald via Mollie`)
 
         // In-app notificatie voor het bedrijf (niet-blokkerend)
-        try {
-          await supabase.from('notificaties').insert({
-            user_id: factuur.user_id,
-            type: 'betaling_ontvangen',
-            titel: factuur.nummer ? `Factuur ${factuur.nummer} betaald` : 'Factuur betaald',
-            bericht: `${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(betaaldNu)} ontvangen via Mollie`,
-            link: '/facturen',
-            gelezen: false,
-          })
-        } catch (notifErr) {
-          console.warn('Mollie webhook: notificatie aanmaken mislukt:', notifErr)
+        const { error: notifError } = await supabase.from('notificaties').insert({
+          user_id: factuur.user_id,
+          type: 'betaling_ontvangen',
+          titel: factuur.nummer ? `Factuur ${factuur.nummer} betaald` : 'Factuur betaald',
+          bericht: `${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(betaaldNu)} ontvangen via Mollie`,
+          link: '/facturen',
+          gelezen: false,
+        })
+        if (notifError) {
+          console.warn('Mollie webhook: notificatie aanmaken mislukt:', notifError.message)
         }
 
         // Betaalbevestiging naar de klant, branded namens het bedrijf (niet-blokkerend)

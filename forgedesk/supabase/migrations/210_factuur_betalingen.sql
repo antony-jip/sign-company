@@ -101,6 +101,16 @@ BEGIN
       p_bron_referentie, p_bron, v_bestaand_factuur;
   END IF;
 
+  -- Onbekende referentie op een al betaalde factuur: registreren noch
+  -- optellen. Dit is het gedrag van de oude webhook-guard en dekt betalingen
+  -- die vóór deze migratie (of via het legacy-deploy-venster) buiten het
+  -- grootboek om volbetaald raakten; een refund-webhook daarop zou anders
+  -- het effectieve bedrag als nieuwe bijschrijving boeken.
+  IF v_bestaand_factuur IS NULL AND v_status = 'betaald' THEN
+    RETURN QUERY SELECT 0::numeric, v_betaald, true, v_status, v_status;
+    RETURN;
+  END IF;
+
   IF v_bestaand_factuur IS NULL THEN
     INSERT INTO factuur_betalingen (organisatie_id, factuur_id, bron, bron_referentie, bedrag, betaald_op)
     VALUES (v_org, p_factuur_id, p_bron, p_bron_referentie, round(p_bedrag, 2), p_betaald_op);
@@ -150,8 +160,10 @@ END;
 $$;
 
 -- Alleen service-processen (webhook, Exact-cron) roepen de delta-RPC direct
--- aan; de app gaat via factuur_markeer_betaald hieronder.
+-- aan; de app gaat via factuur_markeer_betaald hieronder. De service_role-
+-- grant expliciet, niet via default privileges (patroon 147/178/206).
 REVOKE EXECUTE ON FUNCTION factuur_betaling_verwerk(uuid, text, text, numeric, date) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION factuur_betaling_verwerk(uuid, text, text, numeric, date) TO service_role;
 
 -- Handmatig "markeer als betaald" vanuit de UI: boekt het restant als
 -- handmatige betaling door het grootboek, zodat betaald_bedrag nooit
@@ -206,7 +218,7 @@ END;
 $$;
 
 REVOKE EXECUTE ON FUNCTION factuur_markeer_betaald(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION factuur_markeer_betaald(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION factuur_markeer_betaald(uuid) TO authenticated, service_role;
 
 -- Backfill: elke factuur met betaald_bedrag > 0 krijgt precies één rij,
 -- zodat de invariant "betaald_bedrag = som(factuur_betalingen)" vanaf dag
