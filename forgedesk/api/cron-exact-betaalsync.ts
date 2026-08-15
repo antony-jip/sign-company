@@ -150,6 +150,12 @@ async function schrijfGeroteerdeKeten(params: {
   if (!updateFout && bijgewerkt?.length) return versAccessToken
 
   if (updateFout) {
+    // Exact heeft de oude keten al ongeldig gemaakt; zonder deze write staat
+    // er een dode keten in de DB. Anders dan het interactieve pad (waar een
+    // gebruiker op zijn factuur wacht) is er voor een nachtelijke cron geen
+    // reden om door te syncen alsof er niets gebeurd is: hard falen zet
+    // laatste_fout en maakt de breuk zichtbaar vóór iemand anders op de dode
+    // keten invalid_grant haalt.
     console.error('[Exact] geroteerde token NIET opgeslagen — keten is hierna dood', {
       token_user_id: tokenUserId, endpoint: 'cron-exact-betaalsync.ts', fout: updateFout.message,
     })
@@ -158,21 +164,54 @@ async function schrijfGeroteerdeKeten(params: {
       tags: { exact_endpoint: 'cron-exact-betaalsync', oauth_error: 'rotation_not_persisted' },
       extra: { token_user_id: tokenUserId, fout: updateFout.message },
     })
-    return versAccessToken
+    throw new Error('TOKEN_ROTATIE_NIET_OPGESLAGEN')
   }
 
-  // Nul rijen geraakt: iemand anders (parallelle refresh of verse OAuth-
-  // callback) schreef een nieuwere keten, of de koppeling is net ontkoppeld.
-  // De cron maakt de rij bewust nooit opnieuw aan: een nachtelijke job mag
-  // een expliciete ontkoppeling niet tot leven wekken. De keepalive-cron en
-  // de eerstvolgende handmatige sync herstellen een gemiste rotatie.
+  // Nul rijen geraakt: de rij is inmiddels vervangen of verwijderd.
   const { data: huidig } = await supabaseAdmin
     .from('exact_tokens')
     .select('access_token')
     .eq('user_id', tokenUserId)
     .maybeSingle()
   const huidigToken = (huidig as { access_token?: string | null } | null)?.access_token
-  if (huidigToken) return decryptSecret(huidigToken)
+  if (huidigToken) {
+    // Nieuwere keten van een parallelle refresh of verse OAuth-callback is
+    // leidend; onze rotatie laten we vallen.
+    return decryptSecret(huidigToken)
+  }
+
+  // Rij is weg. Dat kan een expliciete ontkoppeling zijn (dan NIET
+  // reanimeren), maar ook een interactief pad dat tijdens onze refresh
+  // invalid_grant kreeg en de rij wiste — dan is onze verse keten de enige
+  // werkende die nog bestaat en zou weggooien de hele org ontkoppelen.
+  // Zelfde discriminator als exact-sync-factuur.ts: exact_owner_user_id en
+  // exact_online_connected worden bij een echte ontkoppeling geleegd.
+  const settings = await loadAppSettingsOrgFirst(
+    supabaseAdmin,
+    tokenUserId,
+    'exact_owner_user_id, exact_online_connected',
+  )
+  const eigenaar = (settings?.exact_owner_user_id as string | null) ?? null
+  const nogGekoppeld = eigenaar === tokenUserId || (eigenaar === null && settings?.exact_online_connected === true)
+
+  if (!nogGekoppeld) {
+    console.warn('[Exact] rotatie niet bewaard: koppeling is inmiddels ontkoppeld', { token_user_id: tokenUserId })
+    return versAccessToken
+  }
+
+  const { error: insertFout } = await supabaseAdmin.from('exact_tokens').insert(nieuweRij)
+  // 23505 = een parallel request maakte de rij net aan; die keten is nieuwer.
+  if (insertFout && insertFout.code !== '23505') {
+    console.error('[Exact] geroteerde token NIET opgeslagen (insert)', {
+      token_user_id: tokenUserId, fout: insertFout.message,
+    })
+    Sentry.captureException(new Error('Exact token rotation not persisted'), {
+      level: 'error',
+      tags: { exact_endpoint: 'cron-exact-betaalsync', oauth_error: 'rotation_not_persisted' },
+      extra: { token_user_id: tokenUserId, fout: insertFout.message },
+    })
+    throw new Error('TOKEN_ROTATIE_NIET_OPGESLAGEN')
+  }
   return versAccessToken
 }
 
@@ -336,8 +375,119 @@ interface OrgConfig {
   exact_administratie_id: string | null
 }
 
+interface SpiegelTermijn { factuur_id: string; bedrag: number; status: number | null }
+
+// Match op YourRef: daar staat het doen.-factuurnummer sinds de eerste sync
+// (exact-sync-factuur.ts stuurt nummer als YourRef mee). Exacts eigen
+// InvoiceNumber is een integer met een eigen reeks en matcht dus niet.
+// De guard op exact_entry_id voorkomt dat een handmatige Exact-boeking met
+// een toevallig gelijk "uw referentie" (bv. een PO-nummer van een klant)
+// zich aan een nooit-gesyncte doen.-factuur hangt en die op betaald zet.
+async function zoekFacturenOpNummer(orgId: string, refs: string[]): Promise<Map<string, { id: string; status: string }>> {
+  const factuurPerRef = new Map<string, { id: string; status: string }>()
+  for (let i = 0; i < refs.length; i += 100) {
+    const chunk = refs.slice(i, i + 100)
+    const { data: facturen, error } = await supabaseAdmin
+      .from('facturen')
+      .select('id, nummer, status')
+      .eq('organisatie_id', orgId)
+      .not('exact_entry_id', 'is', null)
+      .in('nummer', chunk)
+    if (error) throw new Error(`facturen-lookup mislukt: ${error.message}`)
+    for (const f of (facturen ?? []) as { id: string; nummer: string; status: string }[]) {
+      factuurPerRef.set(f.nummer, { id: f.id, status: f.status })
+    }
+  }
+  return factuurPerRef
+}
+
+// Openstaand terugschrijven en volledig afgeletterde facturen betaald
+// markeren. Geen vaste settle-referentie: factuur_markeer_betaald berekent
+// het restant onder de rij-lock en genereert zelf een unieke referentie,
+// zodat een tweede settle (bv. na een Mollie-refund) het restant bíjboekt
+// in plaats van de oude settle-rij te herinterpreteren en betaald_bedrag te
+// verlagen. Dubbele gelijktijdige aanroepen serialiseren op de lock: de
+// tweede ziet restant 0 en boekt niets.
+async function evalueerFacturen(
+  orgId: string,
+  facturen: { id: string; status: string }[],
+  termijnenPerFactuur: Map<string, SpiegelTermijn[]>,
+): Promise<number> {
+  let gesettled = 0
+  for (const factuur of facturen) {
+    const rijen = termijnenPerFactuur.get(factuur.id) ?? []
+    if (rijen.length === 0) continue
+
+    const openstaand = Math.round(rijen
+      .filter((r) => r.status !== 50)
+      .reduce((som, r) => som + (Number(r.bedrag) || 0), 0) * 100) / 100
+    const allesAfgeletterd = rijen.every((r) => r.status === 50)
+
+    const { error: standFout } = await supabaseAdmin
+      .from('facturen')
+      .update({ openstaand_exact: openstaand, exact_stand_op: new Date().toISOString() })
+      .eq('id', factuur.id)
+    if (standFout) throw new Error(`openstaand_exact-update mislukt: ${standFout.message}`)
+
+    if (allesAfgeletterd && ['open', 'verzonden', 'vervallen'].includes(factuur.status)) {
+      const { error: settleFout } = await supabaseAdmin.rpc('factuur_markeer_betaald', {
+        p_factuur_id: factuur.id,
+        p_bron: 'exact',
+      })
+      if (settleFout) throw new Error(`settle mislukt voor factuur ${factuur.id}: ${settleFout.message}`)
+      gesettled++
+    }
+  }
+  return gesettled
+}
+
+async function haalSpiegel(orgId: string, factuurIds?: string[]): Promise<Map<string, SpiegelTermijn[]>> {
+  const perFactuur = new Map<string, SpiegelTermijn[]>()
+  const verwerk = (rijen: SpiegelTermijn[]) => {
+    for (const r of rijen) {
+      if (!perFactuur.has(r.factuur_id)) perFactuur.set(r.factuur_id, [])
+      perFactuur.get(r.factuur_id)!.push(r)
+    }
+  }
+  if (factuurIds) {
+    for (let i = 0; i < factuurIds.length; i += 50) {
+      const { data, error } = await supabaseAdmin
+        .from('exact_betaaltermijnen')
+        .select('factuur_id, bedrag, status')
+        .eq('organisatie_id', orgId)
+        .eq('line_type', 20)
+        .in('factuur_id', factuurIds.slice(i, i + 50))
+        .range(0, 4999)
+      if (error) throw new Error(`spiegel-lezing mislukt: ${error.message}`)
+      verwerk((data ?? []) as SpiegelTermijn[])
+    }
+    return perFactuur
+  }
+  // Volledige spiegel, gepagineerd (PostgREST kapt op 1000 af).
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from('exact_betaaltermijnen')
+      .select('factuur_id, bedrag, status')
+      .eq('organisatie_id', orgId)
+      .eq('line_type', 20)
+      .not('factuur_id', 'is', null)
+      .order('id')
+      .range(offset, offset + 999)
+    if (error) throw new Error(`spiegel-lezing mislukt: ${error.message}`)
+    verwerk((data ?? []) as SpiegelTermijn[])
+    if (!data || data.length < 1000) break
+  }
+  return perFactuur
+}
+
 async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gesettled: number; afgekapt: boolean }> {
   if (!org.exact_owner_user_id) throw new Error('GEEN_EIGENAAR')
+
+  // `exact_tokens` heeft geen organisatie_id: check dat de eigenaar nog bij
+  // déze organisatie hoort, anders synct org A met de sessie (en mogelijk de
+  // administratie) die de verhuisde eigenaar inmiddels voor org B gebruikt.
+  const eigenaarOrg = await getOrgIdForUser(supabaseAdmin, org.exact_owner_user_id)
+  if (eigenaarOrg !== org.organisatie_id) throw new Error('EIGENAAR_ANDERE_ORG')
 
   const cache: TokenCache = { accessToken: null, expiresAt: 0 }
   const { token, division: tokenDivision } = await getValidToken(org.exact_owner_user_id, cache)
@@ -350,6 +500,9 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
     .eq('organisatie_id', org.organisatie_id)
     .maybeSingle()
   const vanaf = Number((state as { laatste_timestamp?: number } | null)?.laatste_timestamp ?? 0)
+  // Ontbrekende rij telt als inhaalslag: de eerste run moet sowieso de
+  // volledige evaluatie draaien zodra hij compleet is.
+  const inhaalslagWasBezig = (state as { inhaalslag_bezig?: boolean } | null)?.inhaalslag_bezig ?? true
 
   const { termijnen, afgekapt } = await haalTermijnPaginas(token, division, vanaf)
 
@@ -358,23 +511,8 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
   const relevant = termijnen.filter((t) => t.LineType === 20 && t.ID)
   const maxTimestamp = termijnen.reduce((max, t) => Math.max(max, Number(t.Timestamp) || 0), vanaf)
 
-  // Match op YourRef: daar staat het doen.-factuurnummer sinds de eerste
-  // sync (exact-sync-factuur.ts stuurt nummer als YourRef mee). Exacts eigen
-  // InvoiceNumber is een integer met een eigen reeks en matcht dus niet.
   const refs = Array.from(new Set(relevant.map((t) => (t.YourRef || '').trim()).filter(Boolean)))
-  const factuurPerRef = new Map<string, { id: string; status: string }>()
-  for (let i = 0; i < refs.length; i += 100) {
-    const chunk = refs.slice(i, i + 100)
-    const { data: facturen, error } = await supabaseAdmin
-      .from('facturen')
-      .select('id, nummer, status')
-      .eq('organisatie_id', org.organisatie_id)
-      .in('nummer', chunk)
-    if (error) throw new Error(`facturen-lookup mislukt: ${error.message}`)
-    for (const f of (facturen ?? []) as { id: string; nummer: string; status: string }[]) {
-      factuurPerRef.set(f.nummer, { id: f.id, status: f.status })
-    }
-  }
+  const factuurPerRef = await zoekFacturenOpNummer(org.organisatie_id, refs)
 
   if (relevant.length > 0) {
     const nu = new Date().toISOString()
@@ -405,43 +543,65 @@ async function syncOrganisatie(org: OrgConfig): Promise<{ verwerkt: number; gese
   // spiegelen en nog niets betaald markeren of openstaand terugschrijven.
   let gesettled = 0
   if (!afgekapt) {
-    const geraakteFacturen = Array.from(new Set(
-      relevant.map((t) => factuurPerRef.get((t.YourRef || '').trim())?.id).filter((id): id is string => !!id)
-    ))
-    for (const factuurId of geraakteFacturen) {
-      const { data: termRijen, error } = await supabaseAdmin
-        .from('exact_betaaltermijnen')
-        .select('bedrag, status')
-        .eq('organisatie_id', org.organisatie_id)
-        .eq('factuur_id', factuurId)
-        .eq('line_type', 20)
-      if (error) throw new Error(`spiegel-lezing mislukt: ${error.message}`)
-      const rijen = (termRijen ?? []) as { bedrag: number; status: number | null }[]
-      if (rijen.length === 0) continue
-
-      const openstaand = Math.round(rijen
-        .filter((r) => r.status !== 50)
-        .reduce((som, r) => som + (Number(r.bedrag) || 0), 0) * 100) / 100
-      const allesAfgeletterd = rijen.every((r) => r.status === 50)
-
-      const { error: standFout } = await supabaseAdmin
-        .from('facturen')
-        .update({ openstaand_exact: openstaand, exact_stand_op: new Date().toISOString() })
-        .eq('id', factuurId)
-      if (standFout) throw new Error(`openstaand_exact-update mislukt: ${standFout.message}`)
-
-      if (allesAfgeletterd) {
-        const factuurStatus = Array.from(factuurPerRef.values()).find((f) => f.id === factuurId)?.status
-        if (factuurStatus && ['open', 'verzonden', 'vervallen'].includes(factuurStatus)) {
-          const { error: settleFout } = await supabaseAdmin.rpc('factuur_markeer_betaald', {
-            p_factuur_id: factuurId,
-            p_bron: 'exact',
-            p_referentie: `exact-settle:${factuurId}`,
-          })
-          if (settleFout) throw new Error(`settle mislukt voor factuur ${factuurId}: ${settleFout.message}`)
-          gesettled++
+    if (inhaalslagWasBezig) {
+      // De run die de inhaalslag afrondt evalueert de VOLLEDIGE spiegel:
+      // termijnen uit eerdere afgekapte runs (waaronder facturen die toen al
+      // volledig afgeletterd waren) komen nooit meer in een delta terug en
+      // zouden anders nooit gesettled worden. Eerst nog niet-gekoppelde
+      // spiegelrijen alsnog aan facturen koppelen.
+      for (let offset = 0; ; offset += 1000) {
+        const { data: losseRijen, error } = await supabaseAdmin
+          .from('exact_betaaltermijnen')
+          .select('id, your_ref')
+          .eq('organisatie_id', org.organisatie_id)
+          .eq('line_type', 20)
+          .is('factuur_id', null)
+          .not('your_ref', 'is', null)
+          .order('id')
+          .range(offset, offset + 999)
+        if (error) throw new Error(`spiegel-koppeling lezen mislukt: ${error.message}`)
+        const rijen = (losseRijen ?? []) as { id: string; your_ref: string }[]
+        if (rijen.length > 0) {
+          const losseRefs = Array.from(new Set(rijen.map((r) => r.your_ref)))
+          const gevonden = await zoekFacturenOpNummer(org.organisatie_id, losseRefs)
+          for (const [ref, factuur] of gevonden) {
+            const { error: koppelFout } = await supabaseAdmin
+              .from('exact_betaaltermijnen')
+              .update({ factuur_id: factuur.id, updated_at: new Date().toISOString() })
+              .eq('organisatie_id', org.organisatie_id)
+              .eq('your_ref', ref)
+              .is('factuur_id', null)
+            if (koppelFout) throw new Error(`spiegel-koppeling mislukt: ${koppelFout.message}`)
+          }
         }
+        if (rijen.length < 1000) break
       }
+
+      const spiegel = await haalSpiegel(org.organisatie_id)
+      const alleIds = Array.from(spiegel.keys())
+      const statusPerId = new Map<string, string>()
+      for (let i = 0; i < alleIds.length; i += 100) {
+        const { data: statusRijen, error } = await supabaseAdmin
+          .from('facturen')
+          .select('id, status')
+          .in('id', alleIds.slice(i, i + 100))
+        if (error) throw new Error(`facturen-status lezen mislukt: ${error.message}`)
+        for (const f of (statusRijen ?? []) as { id: string; status: string }[]) statusPerId.set(f.id, f.status)
+      }
+      gesettled = await evalueerFacturen(
+        org.organisatie_id,
+        alleIds.map((id) => ({ id, status: statusPerId.get(id) ?? 'onbekend' })),
+        spiegel,
+      )
+    } else {
+      const geraakteFacturen = Array.from(new Map(
+        relevant
+          .map((t) => factuurPerRef.get((t.YourRef || '').trim()))
+          .filter((f): f is { id: string; status: string } => !!f)
+          .map((f) => [f.id, f])
+      ).values())
+      const spiegel = await haalSpiegel(org.organisatie_id, geraakteFacturen.map((f) => f.id))
+      gesettled = await evalueerFacturen(org.organisatie_id, geraakteFacturen, spiegel)
     }
   }
 
@@ -471,11 +631,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  // Migratie 211 nog niet gedraaid? Dan is er niets te doen en niets kapot.
-  const { error: tabelProbe } = await supabaseAdmin.from('exact_sync_state').select('organisatie_id').limit(1)
-  if (tabelProbe && tabelProbe.code === 'PGRST205') {
+  // Beide migraties nodig: 211 (spiegel + state) én 210 (de betaal-RPC's).
+  // Ontbreekt er één, dan is er niets te doen en niets kapot.
+  const { error: probe211 } = await supabaseAdmin.from('exact_sync_state').select('organisatie_id').limit(1)
+  if (probe211 && probe211.code === 'PGRST205') {
     console.warn('[cron-exact-betaalsync] migratie 211 ontbreekt nog, run overgeslagen')
     return res.status(200).json({ skipped: 'migratie_211_ontbreekt' })
+  }
+  const { error: probe210 } = await supabaseAdmin.from('factuur_betalingen').select('id').limit(1)
+  if (probe210 && probe210.code === 'PGRST205') {
+    console.warn('[cron-exact-betaalsync] migratie 210 ontbreekt nog, run overgeslagen')
+    return res.status(200).json({ skipped: 'migratie_210_ontbreekt' })
   }
 
   const { data: orgRijen, error: orgFout } = await supabaseAdmin
@@ -490,17 +656,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: orgFout.message })
   }
 
+  // Oudste sync eerst: een org met een grote inhaalslag mag de rest niet
+  // dagen achtereen verhongeren binnen de maxDuration. Nooit-gesyncte orgs
+  // (geen state-rij) gaan voorop.
+  const orgs = (orgRijen ?? []) as OrgConfig[]
+  const { data: stateRijen } = await supabaseAdmin
+    .from('exact_sync_state')
+    .select('organisatie_id, laatste_sync_op')
+    .in('organisatie_id', orgs.map((o) => o.organisatie_id))
+  const syncOpPerOrg = new Map(
+    ((stateRijen ?? []) as { organisatie_id: string; laatste_sync_op: string | null }[])
+      .map((r) => [r.organisatie_id, r.laatste_sync_op])
+  )
+  orgs.sort((a, b) => {
+    const ta = syncOpPerOrg.get(a.organisatie_id) ?? ''
+    const tb = syncOpPerOrg.get(b.organisatie_id) ?? ''
+    return ta.localeCompare(tb)
+  })
+
+  const start = Date.now()
+  const TIJD_BUDGET_MS = 240_000
   const resultaten: Record<string, unknown> = {}
   // Sequentieel: elke org heeft eigen rate-limits, maar de token-refresh-keten
   // per eigenaar verdraagt geen parallelle refreshes vanuit dezelfde run.
-  for (const org of (orgRijen ?? []) as OrgConfig[]) {
+  for (const org of orgs) {
+    if (Date.now() - start > TIJD_BUDGET_MS) {
+      // Uitgestelde orgs staan morgen door de oudste-eerst-sortering voorop.
+      resultaten[org.organisatie_id] = { uitgesteld: true }
+      continue
+    }
     try {
       resultaten[org.organisatie_id] = await syncOrganisatie(org)
     } catch (err) {
       const melding = err instanceof Error ? err.message : String(err)
       resultaten[org.organisatie_id] = { fout: melding }
-      // Verwachte configuratie-gaten niet naar Sentry; echte fouten wel.
-      if (!['GEEN_TOKENS', 'GEEN_EIGENAAR', 'GEEN_ADMINISTRATIE'].includes(melding)) {
+      // Verwachte configuratie-gaten en al-naar-Sentry-gelogde token-fouten
+      // niet nogmaals naar Sentry; echte fouten wel.
+      if (!['GEEN_TOKENS', 'GEEN_EIGENAAR', 'GEEN_ADMINISTRATIE', 'EIGENAAR_ANDERE_ORG', 'TOKEN_ROTATIE_NIET_OPGESLAGEN'].includes(melding)) {
         Sentry.captureException(err instanceof Error ? err : new Error(melding), {
           tags: { cron: 'exact-betaalsync' },
           extra: { organisatie_id: org.organisatie_id },
