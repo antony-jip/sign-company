@@ -48,6 +48,8 @@ const STANDAARD_LADDER: { stap: Stap; dagen: number; actief: boolean }[] = [
   { stap: "aanmaning", dagen: 30, actief: true },
 ];
 
+// Spiegel van STANDAARD_HERINNERING_TEKSTEN in src/services/factuurService.ts:
+// de cron draait los van de app-bundel en houdt bewust een eigen kopie.
 const STANDAARD_TEKSTEN: Record<Stap, { onderwerp: string; inhoud: string }> = {
   herinnering_1: {
     onderwerp: "Herinnering: factuur {factuur_nummer}",
@@ -90,6 +92,7 @@ interface FactuurRow {
   id: string;
   user_id: string;
   klant_id: string | null;
+  contactpersoon_id: string | null;
   nummer: string | null;
   titel: string | null;
   totaal: number | null;
@@ -114,6 +117,30 @@ interface StapConfig {
   kanaal: "email" | "intern";
   onderwerp: string | null;
   inhoud: string | null;
+}
+
+interface KlantRij {
+  id: string;
+  bedrijfsnaam?: string | null;
+  contactpersoon?: string | null;
+  email?: string | null;
+  geen_betalingsherinneringen?: boolean | null;
+}
+
+interface ContactRij {
+  id: string;
+  klant_id: string | null;
+  email: string | null;
+  is_factuur_standaard?: boolean | null;
+  organisatie_id?: string | null;
+}
+
+// PostgREST stuurt een .in()-filter als querystring mee; een org met honderden
+// openstaande facturen zou anders een URL bouwen die de proxy weigert.
+function inStukken<T>(waarden: T[], maat = 120): T[][] {
+  const stukken: T[][] = [];
+  for (let i = 0; i < waarden.length; i += maat) stukken.push(waarden.slice(i, i + maat));
+  return stukken;
 }
 
 export const factuurHerinneringCron = schedules.task({
@@ -303,7 +330,7 @@ export const factuurHerinneringCron = schedules.task({
       // geluidloos stil; daarom eerst zonder die kolommen opnieuw proberen en
       // pas daarna de org overslaan met een luide fout.
       const basisFactuurKolommen =
-        "id, user_id, klant_id, nummer, titel, totaal, betaald_bedrag, vervaldatum, factuur_type, betaal_link, betaal_token_verloopt_op, herinnering_1_verstuurd, herinnering_2_verstuurd, herinnering_3_verstuurd, aanmaning_verstuurd" +
+        "id, user_id, klant_id, contactpersoon_id, nummer, titel, totaal, betaald_bedrag, vervaldatum, factuur_type, betaal_link, betaal_token_verloopt_op, herinnering_1_verstuurd, herinnering_2_verstuurd, herinnering_3_verstuurd, aanmaning_verstuurd" +
         (v2 ? ", opvolging_actief" : "");
       const factuurKolommen = basisFactuurKolommen + (v2 ? ", openstaand_exact, exact_stand_op" : "");
       const haalFacturen = (kolommen: string) =>
@@ -356,7 +383,80 @@ export const factuurHerinneringCron = schedules.task({
         };
       });
 
-      for (const factuur of facturen as unknown as FactuurRow[]) {
+      const factuurRijen = facturen as unknown as FactuurRow[];
+
+      // Klanten en contactpersonen in een handvol queries per org in plaats van
+      // twee roundtrips per factuur; bij 300 openstaande facturen scheelde dat
+      // 600 losse calls binnen één cron-run.
+      const klantIds = [...new Set(factuurRijen.map((f) => f.klant_id).filter(Boolean) as string[])];
+      const factuurCpIds = [...new Set(factuurRijen.map((f) => f.contactpersoon_id).filter(Boolean) as string[])];
+
+      const klantPerId = new Map<string, KlantRij>();
+      if (klantIds.length > 0) {
+        const klantKolommen = "id, bedrijfsnaam, contactpersoon, email" + (v2 ? ", geen_betalingsherinneringen" : "");
+        let klantenFout: string | null = null;
+        for (const stuk of inStukken(klantIds)) {
+          const { data, error } = await supabase
+            .from("klanten")
+            .select(klantKolommen)
+            .in("id", stuk)
+            .eq("organisatie_id", orgId);
+          if (error) {
+            klantenFout = error.message;
+            break;
+          }
+          for (const rij of (data || []) as unknown as KlantRij[]) klantPerId.set(rij.id, rij);
+        }
+        if (klantenFout) {
+          logger.error("factuur-herinnering: klanten ophalen mislukt, org overgeslagen", { orgId, error: klantenFout });
+          result.errors.push(`Org ${orgId}: klanten ophalen mislukt (${klantenFout})`);
+          continue;
+        }
+      }
+
+      // Twee id-sets: de contactpersonen van de klanten (voor de
+      // is_factuur_standaard-route) en die waar facturen.contactpersoon_id
+      // rechtstreeks naar wijst. contactpersonen.organisatie_id bestaat wel
+      // (migratie_041) maar is op oude rijen niet gevuld, dus de org-controle
+      // leunt in eerste instantie op de klant-koppeling: die klant is hierboven
+      // al op organisatie_id gefilterd.
+      const contactPerKlant = new Map<string, ContactRij[]>();
+      const contactPerId = new Map<string, ContactRij>();
+      const contactKolommen = "id, klant_id, email, is_factuur_standaard, organisatie_id";
+      const haalContacten = async (kolom: "klant_id" | "id", ids: string[]): Promise<string | null> => {
+        for (const stuk of inStukken(ids)) {
+          let { data, error } = await supabase.from("contactpersonen").select(contactKolommen).in(kolom, stuk);
+          if (error && error.message?.includes("organisatie_id")) {
+            const zonderOrg = await supabase
+              .from("contactpersonen")
+              .select("id, klant_id, email, is_factuur_standaard")
+              .in(kolom, stuk);
+            data = zonderOrg.data as typeof data;
+            error = zonderOrg.error;
+          }
+          if (error) return error.message;
+          for (const rij of (data || []) as unknown as ContactRij[]) {
+            contactPerId.set(rij.id, rij);
+            if (rij.klant_id) {
+              const lijst = contactPerKlant.get(rij.klant_id);
+              if (lijst) lijst.push(rij);
+              else contactPerKlant.set(rij.klant_id, [rij]);
+            }
+          }
+        }
+        return null;
+      };
+      const contactFout =
+        (klantIds.length > 0 ? await haalContacten("klant_id", klantIds) : null) ??
+        (factuurCpIds.length > 0 ? await haalContacten("id", factuurCpIds) : null);
+      if (contactFout) {
+        logger.warn("factuur-herinnering: contactpersonen ophalen mislukt, val terug op klant-e-mail", {
+          orgId,
+          error: contactFout,
+        });
+      }
+
+      for (const factuur of factuurRijen) {
         if (factuur.factuur_type === "creditnota" || factuur.factuur_type === "credit") continue;
         if (!factuur.vervaldatum) continue;
 
@@ -434,49 +534,49 @@ export const factuurHerinneringCron = schedules.task({
           result.overgeslagen++;
           continue;
         }
-        const klantKolommen = "bedrijfsnaam, contactpersoon, email" + (v2 ? ", geen_betalingsherinneringen" : "");
-        const { data: klant } = await supabase
-          .from("klanten")
-          .select(klantKolommen)
-          .eq("id", factuur.klant_id)
-          .maybeSingle();
-        const klantRij = klant as { bedrijfsnaam?: string; contactpersoon?: string; email?: string; geen_betalingsherinneringen?: boolean } | null;
-
-        // Kill-switch per klant
-        if (v2 && klantRij?.geen_betalingsherinneringen === true) {
+        const klantRij = klantPerId.get(factuur.klant_id) || null;
+        // Geen klantrij binnen deze org: de factuur hoort bij een klant van een
+        // andere organisatie of de klant is verwijderd. Niet mailen.
+        if (!klantRij) {
           result.overgeslagen++;
           continue;
         }
-        // Ontvanger zoals de app hem kiest: het contact met de
-        // factuur-standaard-vlag gaat voor het algemene klantadres.
-        let ontvanger = klantRij?.email || null;
-        const { data: contactpersonen, error: contactError } = await supabase
-          .from("contactpersonen")
-          .select("email, is_factuur_standaard")
-          .eq("klant_id", factuur.klant_id);
-        if (contactError) {
-          logger.warn("factuur-herinnering: contactpersonen ophalen mislukt, val terug op klant-e-mail", {
-            klantId: factuur.klant_id,
-            error: contactError.message,
-          });
-        } else {
-          const standaard = (contactpersonen || []).find(
-            (c) => (c as { is_factuur_standaard?: boolean }).is_factuur_standaard === true && (c as { email?: string }).email
-          );
-          if (standaard) ontvanger = (standaard as { email: string }).email;
+
+        // Kill-switch per klant
+        if (v2 && klantRij.geen_betalingsherinneringen === true) {
+          result.overgeslagen++;
+          continue;
         }
+
+        // Ontvanger-volgorde van migratie 101: de contactpersoon van de factuur
+        // zelf, dan het factuur-standaard-contact van de klant, dan het
+        // algemene klantadres. Een contactpersoon_id kan ook naar de
+        // klanten.contactpersonen-JSONB wijzen; dan staat hij niet in deze
+        // tabel en schuift de volgorde vanzelf door.
+        const factuurContact = factuur.contactpersoon_id ? contactPerId.get(factuur.contactpersoon_id) : undefined;
+        const factuurContactVanDezeOrg =
+          !!factuurContact &&
+          !!factuurContact.email &&
+          (factuurContact.klant_id === factuur.klant_id || factuurContact.organisatie_id === orgId);
+        const standaardContact = (contactPerKlant.get(factuur.klant_id) || []).find(
+          (c) => c.is_factuur_standaard === true && c.email
+        );
+        const ontvanger =
+          (factuurContactVanDezeOrg ? factuurContact!.email : null) || standaardContact?.email || klantRij.email || null;
 
         // Een intern-signaal-stap heeft geen klantadres nodig; alleen het
         // email-kanaal strandt op een ontbrekend adres.
         if (!ontvanger && stapConfig.kanaal === "email") {
           result.overgeslagen++;
           // Deze skip was permanent stil: de gebruiker zag nooit waarom er
-          // niets gebeurde. Eén logregel per factuur volstaat als bewijs.
+          // niets gebeurde. Eén logregel per factuur én per stap: strandt een
+          // latere stap opnieuw, dan hoort daar een eigen bewijsregel bij.
           if (v2) {
             const { data: alGelogd } = await supabase
               .from("factuur_opvolg_log")
               .select("id")
               .eq("factuur_id", factuur.id)
+              .eq("stap", stap)
               .eq("resultaat", "overgeslagen_geen_email")
               .limit(1);
             if (!alGelogd || alGelogd.length === 0) {
