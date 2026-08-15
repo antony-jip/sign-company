@@ -135,6 +135,30 @@ export async function markeerFactuurVerzonden(id: string): Promise<Factuur> {
   }
 }
 
+// Handmatig "markeer als betaald" loopt door het betalingsgrootboek: de RPC
+// boekt het restant als handmatige betaling in factuur_betalingen, zodat
+// betaald_bedrag nooit buiten die tabel om verandert. Zolang migratie 210
+// nog niet draait valt dit terug op de oude directe update.
+export async function markeerFactuurBetaald(id: string, totaal: number): Promise<Partial<Factuur>> {
+  assertId(id, 'factuur_id')
+  const vandaag = new Date().toISOString().split('T')[0]
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.rpc('factuur_markeer_betaald', { p_factuur_id: id })
+    if (!error) {
+      const rij = (Array.isArray(data) ? data[0] : data) as { nieuw_betaald?: number } | null
+      return {
+        status: 'betaald',
+        betaald_bedrag: rij?.nieuw_betaald ?? totaal,
+        betaaldatum: vandaag,
+      }
+    }
+    if (error.code !== 'PGRST202' && !/factuur_markeer_betaald/.test(error.message || '')) {
+      throw error
+    }
+  }
+  return await updateFactuurStatus(id, { status: 'betaald', betaald_bedrag: totaal, betaaldatum: vandaag })
+}
+
 // Voor het verwerken-pad: daar krijgt een bestaand concept zijn volgnummer via
 // een UPDATE, en die had — anders dan createFactuur — geen 23505-afhandeling.
 // Twee gebruikers die tegelijk elk hun eigen concept verwerken berekenen

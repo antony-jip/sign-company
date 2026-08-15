@@ -149,27 +149,106 @@ BEGIN
 END;
 $$;
 
--- Alleen service-processen (webhooks, crons) mogen dit aanroepen; de app
--- muteert betalingen niet via deze route.
+-- Alleen service-processen (webhook, Exact-cron) roepen de delta-RPC direct
+-- aan; de app gaat via factuur_markeer_betaald hieronder.
 REVOKE EXECUTE ON FUNCTION factuur_betaling_verwerk(uuid, text, text, numeric, date) FROM PUBLIC, anon, authenticated;
 
--- Backfill: facturen met een geregistreerde Mollie-payment en een deels
--- betaald bedrag krijgen hun bestaande stand als rij, zodat een late
--- webhook-herlevering van diezelfde payment delta 0 oplevert in plaats van
--- een tweede optelling. Volledig betaalde facturen hoeven niet mee: daar
--- ving de status-guard in de webhook herleveringen al af, en hun
--- betaald_bedrag kan handmatige bedragen bevatten die we niet aan Mollie
--- willen toeschrijven.
+-- Handmatig "markeer als betaald" vanuit de UI: boekt het restant als
+-- handmatige betaling door het grootboek, zodat betaald_bedrag nooit
+-- buiten factuur_betalingen om verandert. Dubbelklik serialiseert op de
+-- FOR UPDATE-lock: de tweede aanroep ziet restant 0 en boekt niets.
+CREATE OR REPLACE FUNCTION factuur_markeer_betaald(p_factuur_id uuid)
+RETURNS TABLE (nieuw_betaald numeric, nieuwe_status text)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_org uuid;
+  v_totaal numeric;
+  v_status text;
+  v_betaald numeric;
+  v_rest numeric;
+BEGIN
+  SELECT f.organisatie_id, COALESCE(f.totaal, 0), f.status, COALESCE(f.betaald_bedrag, 0)
+    INTO v_org, v_totaal, v_status, v_betaald
+    FROM facturen f
+   WHERE f.id = p_factuur_id
+     FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'factuur % niet gevonden', p_factuur_id;
+  END IF;
+  IF auth.uid() IS NOT NULL THEN
+    IF v_org IS DISTINCT FROM auth_organisatie_id() THEN
+      RAISE EXCEPTION 'geen toegang tot deze factuur';
+    END IF;
+    IF NOT auth_abonnement_actief() THEN
+      RAISE EXCEPTION 'abonnement niet actief';
+    END IF;
+  END IF;
+
+  v_rest := round(v_totaal - v_betaald, 2);
+  IF v_rest > 0 THEN
+    RETURN QUERY SELECT r.nieuw_betaald, r.nieuwe_status
+      FROM factuur_betaling_verwerk(
+        p_factuur_id, 'handmatig', 'handmatig:' || gen_random_uuid(), v_rest, CURRENT_DATE
+      ) r;
+  ELSE
+    UPDATE facturen f
+       SET status = 'betaald',
+           betaaldatum = COALESCE(f.betaaldatum, CURRENT_DATE),
+           updated_at = now()
+     WHERE f.id = p_factuur_id
+       AND f.status IN ('open', 'verzonden', 'vervallen');
+    RETURN QUERY SELECT v_betaald, 'betaald'::text;
+  END IF;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION factuur_markeer_betaald(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION factuur_markeer_betaald(uuid) TO authenticated;
+
+-- Backfill: elke factuur met betaald_bedrag > 0 krijgt precies één rij,
+-- zodat de invariant "betaald_bedrag = som(factuur_betalingen)" vanaf dag
+-- één geldt. Is er een Mollie-payment-id bekend, dan draagt die rij dat id
+-- als referentie: een late webhook-herlevering of refund van diezelfde
+-- payment rekent dan als delta tegen de bestaande stand. Kanttekening: bij
+-- een factuur die deels handmatig én deels via Mollie betaald was, wordt
+-- het hele bedrag aan de Mollie-referentie toegeschreven; een latere
+-- refund op zo'n mengfactuur kan daardoor iets te veel aftrekken.
 INSERT INTO factuur_betalingen (organisatie_id, factuur_id, bron, bron_referentie, bedrag, betaald_op)
 SELECT f.organisatie_id, f.id, 'mollie', f.mollie_payment_id, round(f.betaald_bedrag::numeric, 2),
        f.betaaldatum
   FROM facturen f
  WHERE f.mollie_payment_id IS NOT NULL
    AND f.organisatie_id IS NOT NULL
+   AND f.organisatie_id <> '08352d84-e2be-4760-9436-f468b4327438'
    AND COALESCE(f.betaald_bedrag, 0) > 0
-   AND f.status <> 'betaald'
+ON CONFLICT (organisatie_id, bron, bron_referentie) DO NOTHING;
+
+-- Vangnet voor de rest: geen Mollie-referentie (of die was al bezet door
+-- een andere factuur) -> één handmatige backfill-rij.
+INSERT INTO factuur_betalingen (organisatie_id, factuur_id, bron, bron_referentie, bedrag, betaald_op)
+SELECT f.organisatie_id, f.id, 'handmatig', 'backfill:' || f.id, round(f.betaald_bedrag::numeric, 2),
+       f.betaaldatum
+  FROM facturen f
+ WHERE f.organisatie_id IS NOT NULL
+   AND f.organisatie_id <> '08352d84-e2be-4760-9436-f468b4327438'
+   AND COALESCE(f.betaald_bedrag, 0) > 0
+   AND NOT EXISTS (SELECT 1 FROM factuur_betalingen fb WHERE fb.factuur_id = f.id)
 ON CONFLICT (organisatie_id, bron, bron_referentie) DO NOTHING;
 
 COMMIT;
+
+-- Controle na het draaien (moet 0 rijen geven):
+--
+--   SELECT f.id, f.nummer, f.betaald_bedrag, COALESCE(som.bedrag, 0) AS geboekt
+--     FROM facturen f
+--     LEFT JOIN (SELECT factuur_id, round(sum(bedrag), 2) AS bedrag
+--                  FROM factuur_betalingen GROUP BY factuur_id) som
+--       ON som.factuur_id = f.id
+--    WHERE f.organisatie_id IS NOT NULL
+--      AND f.organisatie_id <> '08352d84-e2be-4760-9436-f468b4327438'
+--      AND round(COALESCE(f.betaald_bedrag, 0)::numeric, 2) <> COALESCE(som.bedrag, 0);
 
 INSERT INTO doen_migraties (bestand) VALUES ('210_factuur_betalingen.sql') ON CONFLICT DO NOTHING;

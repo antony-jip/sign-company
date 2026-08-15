@@ -81,7 +81,7 @@ import {
   replaceFactuurItems,
   updateFactuur,
   markeerFactuurVerzonden,
-  updateFactuurStatus,
+  markeerFactuurBetaald,
   generateFactuurNummer as generateFactuurNrDb,
   deleteFactuur,
   getOffertes,
@@ -1896,13 +1896,8 @@ export function FactuurEditor() {
     if (!existingFactuur) return
 
     try {
-      const updates: Partial<Factuur> = {
-        status: 'betaald',
-        betaald_bedrag: existingFactuur.totaal,
-        betaaldatum: getTodayString(),
-      }
-      const updated = await updateFactuurStatus(existingFactuur.id, updates)
-      setExistingFactuur({ ...existingFactuur, ...updated, ...updates })
+      const updated = await markeerFactuurBetaald(existingFactuur.id, existingFactuur.totaal)
+      setExistingFactuur({ ...existingFactuur, ...updated })
       if (user?.id) {
         const naam = user.user_metadata?.voornaam ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim() : user.email || ''
         logWijziging({ userId: user.id, entityType: 'factuur', entityId: existingFactuur.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: existingFactuur.status, nieuweWaarde: 'betaald' })

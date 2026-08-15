@@ -64,8 +64,8 @@ import {
   getFacturen,
   createFactuur,
   updateFactuur,
-  updateFactuurStatus,
   markeerFactuurVerzonden,
+  markeerFactuurBetaald,
   generateFactuurNummer as generateFactuurNrDb,
   deleteFactuur,
   getKlanten,
@@ -760,14 +760,8 @@ export function FacturenLayout() {
 
   const handleMarkAsBetaald = useCallback(
     async (factuur: Factuur) => {
-      const updates: Partial<Factuur> = {
-        status: 'betaald',
-        betaald_bedrag: factuur.totaal,
-        betaaldatum: getTodayString(),
-      }
-
       try {
-        const updated = await updateFactuurStatus(factuur.id, updates)
+        const updated = await markeerFactuurBetaald(factuur.id, factuur.totaal)
         setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
       } catch (err) {
         logger.error('Fout bij bijwerken factuurstatus:', err)
