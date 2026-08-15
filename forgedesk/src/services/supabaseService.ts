@@ -87,8 +87,7 @@ export {
   getVerlopenFacturen, updateFactuurStatus,
   getHerinneringTemplates, getDefaultHerinneringTemplates,
   createHerinneringTemplate, updateHerinneringTemplate, deleteHerinneringTemplate,
-  generateFactuurNummer, generateCreditnotaNummer,
-  createCreditnota, createVoorschotfactuur,
+  generateFactuurNummer, createVoorschotfactuur,
 } from './factuurService'
 
 export {
