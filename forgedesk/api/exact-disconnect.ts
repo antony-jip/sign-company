@@ -152,35 +152,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // Tokens van de tokenhouder weg. Ook die van de caller als dat iemand
-    // anders is: een oude rij van een vorige eigenaar zou anders blijven staan
-    // en later alsnog als tokenhouder opduiken.
+    // Wie er opgeruimd moet worden, vóór de vlaggen bepalen: de update zet
+    // `exact_owner_user_id` op null, dus daarna is niet meer te zien wiens
+    // tokenrij er nog ligt en zou een retry na een gefaalde delete de rij van
+    // een andere eigenaar laten staan.
     //
-    // Alleen de rij van de eigenaar aanraken als die nog bij deze organisatie
-    // hoort. `exact_tokens` heeft geen organisatie_id, dus zonder deze check zou
-    // een verhuisde eigenaar zijn actieve tokens van zijn nieuwe organisatie
-    // kwijtraken doordat de oude organisatie ontkoppelt.
+    // Ook die van de caller als dat iemand anders is: een oude rij van een
+    // vorige eigenaar zou anders blijven staan en later alsnog als tokenhouder
+    // opduiken. Alleen de rij van de eigenaar aanraken als die nog bij deze
+    // organisatie hoort. `exact_tokens` heeft geen organisatie_id, dus zonder
+    // deze check zou een verhuisde eigenaar zijn actieve tokens van zijn nieuwe
+    // organisatie kwijtraken doordat de oude organisatie ontkoppelt.
     const eigenaarOrg = eigenaarId ? await getOrgIdForUser(supabaseAdmin, eigenaarId) : null
     const eigenaarHoortErbij = !!eigenaarId && eigenaarOrg === orgId
     const teVerwijderen = [...new Set([eigenaarHoortErbij ? eigenaarId : null, userId].filter(Boolean))] as string[]
-    const { error: deleteError } = await supabaseAdmin
-      .from('exact_tokens')
-      .delete()
-      .in('user_id', teVerwijderen)
 
-    if (deleteError) {
-      console.error('[exact-disconnect] tokens verwijderen mislukt:', deleteError.message)
-      Sentry.captureException(new Error('Exact disconnect: token delete failed'), {
-        level: 'error',
-        tags: { exact_endpoint: 'exact-disconnect' },
-        extra: { org_id: orgId, fout: deleteError.message },
-      })
-      return res.status(500).json({ error: 'Ontkoppelen mislukt. Probeer het opnieuw.' })
-    }
-
-    // Pas de vlag omlaag ná het verwijderen van de tokens. Andersom zou een
-    // gefaalde delete een koppeling achterlaten die "uit" lijkt maar nog
-    // werkende tokens heeft.
+    // Eerst de vlaggen omlaag, daarna pas de tokens weg. Andersom bestaat er
+    // een venster tussen delete en update waarin een parallelle refresh de
+    // verdwenen tokenrij ziet, aan `exact_owner_user_id`/`exact_online_connected`
+    // afleest dat de koppeling nog leeft, en de rij via de her-insert opnieuw
+    // aanmaakt — de ontkoppeling was dan ongedaan gemaakt. Met deze volgorde
+    // ziet zo'n refresh een lege eigenaar en laat hij zijn keten vallen.
     const { error: updateError } = await supabaseAdmin
       .from('app_settings')
       .update({ exact_online_connected: false, exact_owner_user_id: null })
@@ -193,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         tags: { exact_endpoint: 'exact-disconnect' },
         extra: { org_id: orgId, fout: updateError.message },
       })
-      return res.status(500).json({ error: 'Ontkoppelen half gelukt. Herlaad de pagina en probeer het opnieuw.' })
+      return res.status(500).json({ error: 'Ontkoppelen mislukt. Probeer het opnieuw.' })
     }
 
     // Sync-state opruimen: een achtergebleven rij zou de herinneringsmotor
@@ -207,6 +199,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('organisatie_id', orgId)
     if (stateDeleteError && stateDeleteError.code !== 'PGRST205') {
       console.warn('[exact-disconnect] exact_sync_state opruimen mislukt:', stateDeleteError.message)
+    }
+
+    // Tokens van de tokenhouder weg.
+    const { error: deleteError } = await supabaseAdmin
+      .from('exact_tokens')
+      .delete()
+      .in('user_id', teVerwijderen)
+
+    if (deleteError) {
+      // De vlaggen staan al uit, dus de koppeling is functioneel weg en niets
+      // reanimeert hem nog. Er blijft alleen een dode tokenrij liggen; een
+      // retry ruimt die alsnog op.
+      console.error('[exact-disconnect] tokens verwijderen mislukt:', deleteError.message)
+      Sentry.captureException(new Error('Exact disconnect: token delete failed'), {
+        level: 'error',
+        tags: { exact_endpoint: 'exact-disconnect' },
+        extra: { org_id: orgId, fout: deleteError.message },
+      })
+      return res.status(500).json({ error: 'Ontkoppelen half gelukt. Herlaad de pagina en probeer het opnieuw.' })
     }
 
     await logAuditEvent(supabaseAdmin, {

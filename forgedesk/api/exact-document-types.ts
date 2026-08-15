@@ -251,7 +251,7 @@ async function getValidToken(tokenUserId: string, settingsUserId: string): Promi
     })
     throw new Error('Exact Online token vernieuwen mislukt. Probeer het opnieuw.')
   }
-  const tokens = await refreshRes.json()
+  const tokens = (await refreshRes.json()) as { access_token?: string; refresh_token?: string; expires_in?: number }
   if (!tokens?.access_token) {
     console.error('[Exact] refresh gaf 200 zonder access_token', { endpoint: 'exact-document-types.ts' })
     throw new Error('Exact Online gaf een onverwacht antwoord bij token vernieuwen. Probeer het opnieuw.')
@@ -259,9 +259,9 @@ async function getValidToken(tokenUserId: string, settingsUserId: string): Promi
 
   const nieuweRij = {
     user_id: tokenUserId,
-    access_token: encryptSecret(tokens.access_token),
+    access_token: encryptSecret(tokens.access_token ?? ''),
     refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
-    expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+    expires_at: new Date(Date.now() + (tokens.expires_in ?? 600) * 1000).toISOString(),
     division: data.division,
     updated_at: new Date().toISOString(),
   }
@@ -289,8 +289,8 @@ async function getValidToken(tokenUserId: string, settingsUserId: string): Promi
       extra: { token_user_id: tokenUserId, caller_user_id: settingsUserId, fout: updateFout.message },
     })
   } else if (!bijgewerkt?.length) {
-    // Deze route leest alleen Document-types op. Bij een verloren race is de
-    // nieuwste keten van iemand anders leidend en hoeven we niets te herstellen.
+    // Verloren race: staat er een nieuwere keten, dan is die van iemand anders
+    // leidend en hoeven we niets te herstellen.
     const { data: huidig } = await supabaseAdmin
       .from('exact_tokens')
       .select('access_token, division')
@@ -300,9 +300,44 @@ async function getValidToken(tokenUserId: string, settingsUserId: string): Promi
     if (rij?.access_token) {
       return { token: decryptSecret(rij.access_token), division: rij.division as number }
     }
+
+    // Rij is weg. Dat kan een expliciete ontkoppeling zijn (dan NIET
+    // reanimeren), maar ook een parallel pad dat tijdens onze refresh
+    // invalid_grant kreeg en de rij wiste — dan is onze verse keten de enige
+    // werkende die nog bestaat en zou hem laten vallen de hele org ontkoppelen.
+    // Zelfde discriminator als exact-sync-factuur.ts: exact_owner_user_id en
+    // exact_online_connected worden bij een echte ontkoppeling geleegd.
+    const settings = await loadAppSettingsOrgFirst(
+      supabaseAdmin,
+      tokenUserId,
+      'exact_owner_user_id, exact_online_connected',
+    )
+    const eigenaar = (settings?.exact_owner_user_id as string | null) ?? null
+    const nogGekoppeld = eigenaar === tokenUserId || (eigenaar === null && settings?.exact_online_connected === true)
+
+    if (!nogGekoppeld) {
+      console.warn('[Exact] rotatie niet bewaard: koppeling is inmiddels ontkoppeld', {
+        token_user_id: tokenUserId, caller_user_id: settingsUserId, endpoint: 'exact-document-types.ts',
+      })
+    } else {
+      const { error: insertFout } = await supabaseAdmin.from('exact_tokens').insert(nieuweRij)
+      // 23505 = een parallel request maakte de rij net aan; die keten is dan
+      // nieuwer dan de onze en mag blijven staan.
+      if (insertFout && insertFout.code !== '23505') {
+        console.error('[Exact] geroteerde token NIET opgeslagen (insert)', {
+          token_user_id: tokenUserId, caller_user_id: settingsUserId,
+          endpoint: 'exact-document-types.ts', fout: insertFout.message,
+        })
+        Sentry.captureException(new Error('Exact token rotation not persisted'), {
+          level: 'error',
+          tags: { exact_endpoint: 'exact-document-types', oauth_error: 'rotation_not_persisted' },
+          extra: { token_user_id: tokenUserId, caller_user_id: settingsUserId, fout: insertFout.message },
+        })
+      }
+    }
   }
 
-  return { token: tokens.access_token, division: data.division }
+  return { token: tokens.access_token ?? '', division: data.division }
 }
 
 

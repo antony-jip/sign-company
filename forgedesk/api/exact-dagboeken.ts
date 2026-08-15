@@ -234,7 +234,7 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     })
     throw new Error('Exact Online token vernieuwen mislukt. Probeer het opnieuw.')
   }
-  const tokens = await refreshRes.json()
+  const tokens = (await refreshRes.json()) as { access_token?: string; refresh_token?: string; expires_in?: number }
 
   // Compare-and-swap op de refresh_token die we gelezen hebben. Het ciphertext
   // is een betrouwbaar versiemerk (elke write gebruikt een nieuwe random salt),
@@ -243,9 +243,9 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
   // verse keten van een net afgeronde OAuth of wekte een ontkoppelde rij weer op.
   const nieuweRij = {
     user_id: userId,
-    access_token: encryptSecret(tokens.access_token),
+    access_token: encryptSecret(tokens.access_token ?? ''),
     refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
-    expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+    expires_at: new Date(Date.now() + (tokens.expires_in ?? 600) * 1000).toISOString(),
     division: data.division,
     updated_at: new Date().toISOString(),
   }
@@ -314,7 +314,7 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     }
   }
 
-  return { token: tokens.access_token, division: data.division }
+  return { token: tokens.access_token ?? '', division: data.division }
 }
 
 // Exact hanteert per-minuut rate-limits; bij 429 kort wachten (Retry-After,
@@ -365,7 +365,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (journalsRes.status === 429) throw new Error('Exact Online rate-limit bereikt. Probeer het over een minuut opnieuw.')
     if (!journalsRes.ok) throw new Error('Kon verkoopboeken niet ophalen')
 
-    const body = await journalsRes.json()
+    const body = (await journalsRes.json()) as { d?: { results?: Array<{ Code: string; Description: string }> } }
     const results = (body.d?.results || []).map((j: { Code: string; Description: string }) => ({
       id: j.Code,
       code: j.Code,

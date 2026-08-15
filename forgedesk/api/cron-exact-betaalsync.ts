@@ -314,17 +314,28 @@ async function getValidToken(tokenUserId: string, cache: TokenCache): Promise<{ 
 // dit bestand zijn idempotente GET's, dus een afgekapte poging mag ook één keer
 // over: AbortSignal.timeout gooit een TimeoutError (oudere runtimes: AbortError)
 // en die zou anders de hele org-run laten falen op één trage response.
-async function exactFetchMetRetry(url: string, init: RequestInit): Promise<Response> {
+//
+// Fetch én json() zitten samen in de lus. Stond het body-lezen erbuiten, dan
+// gooide een trage body ná snelle headers een TimeoutError die de retry-laag
+// niet zag — precies het geval dat deze retry moest afvangen.
+async function exactFetchJsonMetRetry<T>(url: string, init: RequestInit, label: string): Promise<T> {
   let rateLimitPogingen = 0
   let timeoutPogingOver = true
   for (;;) {
     try {
       const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) })
-      if (response.status !== 429 || rateLimitPogingen >= 2) return response
-      rateLimitPogingen++
-      const retryAfter = Number(response.headers.get('Retry-After'))
-      const wachtMs = Math.min((retryAfter > 0 ? retryAfter : 5) * 1000, 15_000)
-      await new Promise((r) => setTimeout(r, wachtMs))
+      if (response.status === 429 && rateLimitPogingen < 2) {
+        rateLimitPogingen++
+        const retryAfter = Number(response.headers.get('Retry-After'))
+        const wachtMs = Math.min((retryAfter > 0 ? retryAfter : 5) * 1000, 15_000)
+        await new Promise((r) => setTimeout(r, wachtMs))
+        continue
+      }
+      if (!response.ok) {
+        const body = await response.text()
+        throw new Error(`Exact API fout (${label}): ${response.status} - ${body.slice(0, 300)}`)
+      }
+      return await response.json() as T
     } catch (err) {
       const naam = err instanceof Error ? err.name : ''
       if (!timeoutPogingOver || (naam !== 'TimeoutError' && naam !== 'AbortError')) throw err
@@ -347,6 +358,9 @@ interface ExactPaymentTerm {
 }
 
 // Exact serialiseert datums als "/Date(1618963200000)/".
+// Geverifieerd tegen een echte Exact-respons: LastPaymentDate staat op exacte
+// UTC-middernacht (ms % 86400000 === 0), dus toISOString() knipt de juiste dag
+// af en er is geen tijdzone-correctie nodig. Niet "fixen".
 function parseExactDate(value: string | null | undefined): string | null {
   if (!value) return null
   const m = /\/Date\((\d+)/.exec(value)
@@ -354,7 +368,7 @@ function parseExactDate(value: string | null | undefined): string | null {
   return new Date(Number(m[1])).toISOString().split('T')[0]
 }
 
-async function haalTermijnPaginas(token: string, division: string, vanafTimestamp: number): Promise<{
+async function haalTermijnPaginas(token: string, division: string, vanafTimestamp: number, deadline: number): Promise<{
   termijnen: ExactPaymentTerm[]
   afgekapt: boolean
 }> {
@@ -368,16 +382,14 @@ async function haalTermijnPaginas(token: string, division: string, vanafTimestam
   let paginas = 0
 
   while (url && paginas < MAX_PAGINAS_PER_RUN) {
-    const response = await exactFetchMetRetry(url, {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-    })
-    if (!response.ok) {
-      const body = await response.text()
-      throw new Error(`Exact API fout (sync/Cashflow/PaymentTerms): ${response.status} - ${body.slice(0, 300)}`)
-    }
-    const json = await response.json() as { d?: { results?: ExactPaymentTerm[]; __next?: string } }
-    termijnen.push(...(json?.d?.results ?? []))
-    url = json?.d?.__next ?? null
+    if (Date.now() > deadline) throw new Error('RUN_ONVOLTOOID')
+    const pagina: { d?: { results?: ExactPaymentTerm[]; __next?: string } } = await exactFetchJsonMetRetry(
+      url,
+      { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } },
+      'sync/Cashflow/PaymentTerms',
+    )
+    termijnen.push(...(pagina?.d?.results ?? []))
+    url = pagina?.d?.__next ?? null
     paginas++
   }
   return { termijnen, afgekapt: !!url }
@@ -487,6 +499,8 @@ async function evalueerFactuur(
 // De cursor (laatste_timestamp) en inhaalslag_bezig blijven dan staan en de
 // volgende run herstart idempotent — beter een halve evaluatie die morgen
 // verdergaat dan een platform-kill die de state-upsert helemaal overslaat.
+// De fetch-, koppel- en spiegelfase bewaken dezelfde deadline en gooien
+// RUN_ONVOLTOOID; de afhandeling is identiek.
 async function evalueerFacturen(
   orgId: string,
   facturen: { id: string; status: string }[],
@@ -505,7 +519,7 @@ async function evalueerFacturen(
   return gesettled
 }
 
-async function haalSpiegel(orgId: string, factuurIds?: string[]): Promise<Map<string, SpiegelTermijn[]>> {
+async function haalSpiegel(orgId: string, deadline: number, factuurIds?: string[]): Promise<Map<string, SpiegelTermijn[]>> {
   const perFactuur = new Map<string, SpiegelTermijn[]>()
   const verwerk = (rijen: SpiegelTermijn[]) => {
     for (const r of rijen) {
@@ -515,6 +529,7 @@ async function haalSpiegel(orgId: string, factuurIds?: string[]): Promise<Map<st
   }
   if (factuurIds) {
     for (let i = 0; i < factuurIds.length; i += 50) {
+      if (Date.now() > deadline) throw new Error('RUN_ONVOLTOOID')
       const { data, error } = await supabaseAdmin
         .from('exact_betaaltermijnen')
         .select('factuur_id, bedrag, status, laatste_betaaldatum')
@@ -529,6 +544,7 @@ async function haalSpiegel(orgId: string, factuurIds?: string[]): Promise<Map<st
   }
   // Volledige spiegel, gepagineerd (PostgREST kapt op 1000 af).
   for (let offset = 0; ; offset += 1000) {
+    if (Date.now() > deadline) throw new Error('RUN_ONVOLTOOID')
     const { data, error } = await supabaseAdmin
       .from('exact_betaaltermijnen')
       .select('factuur_id, bedrag, status, laatste_betaaldatum')
@@ -550,9 +566,17 @@ async function haalSpiegel(orgId: string, factuurIds?: string[]): Promise<Map<st
 // falen op GEEN_EIGENAAR zou de betaalsync daar stil voor altijd stilzetten, en
 // daarmee ook de herinneringsmotor die op een verse stand wacht. Zoek daarom de
 // tokenhouder op: een exact_tokens-rij van een gebruiker die via
-// profiles.organisatie_id bij deze org hoort. Meerdere kandidaten? De laatst
+// profiles.organisatie_id bij deze org hoort.
+//
+// Alleen met een ingestelde administratie, en bij voorkeur een kandidaat wiens
+// token op diezelfde division staat. Zonder die toets kan een gebruiker die
+// naar deze org verhuisd is met een wees-tokenrij van zijn vórige werkgever de
+// tokenhouder worden, en spiegelt de cron de betaalstand van een vreemde
+// boekhouding naar de facturen van deze org. Meerdere kandidaten? De laatst
 // ververste keten is de levende.
-async function zoekTokenhouderVoorOrg(orgId: string): Promise<string | null> {
+async function zoekTokenhouderVoorOrg(orgId: string, administratieId: string | null): Promise<string | null> {
+  if (!administratieId) return null
+
   const { data: profielen } = await supabaseAdmin
     .from('profiles')
     .select('id')
@@ -562,17 +586,32 @@ async function zoekTokenhouderVoorOrg(orgId: string): Promise<string | null> {
 
   const { data: tokens } = await supabaseAdmin
     .from('exact_tokens')
-    .select('user_id')
+    .select('user_id, division')
     .in('user_id', userIds)
     .order('updated_at', { ascending: false })
-    .limit(1)
-  return ((tokens ?? []) as { user_id: string }[])[0]?.user_id ?? null
+  const kandidaten = (tokens ?? []) as { user_id: string; division: number | null }[]
+  if (kandidaten.length === 0) return null
+
+  const opAdministratie = kandidaten.find(
+    (k) => k.division != null && String(k.division) === String(administratieId)
+  )
+  if (opAdministratie) return opAdministratie.user_id
+
+  // Geen enkele kandidaat staat op de ingestelde administratie. Dat hoeft niet
+  // fout te zijn (de division-kolom kan NULL zijn als /current/Me faalde bij de
+  // callback), maar het is niet te verifiëren — daarom zichtbaar in de log.
+  console.warn('[cron-exact-betaalsync] tokenhouder gekozen zonder administratie-match', {
+    organisatie_id: orgId,
+    token_user_id: kandidaten[0].user_id,
+    administratie_id: administratieId,
+  })
+  return kandidaten[0].user_id
 }
 
 async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verwerkt: number; gesettled: number; afgekapt: boolean }> {
   let eigenaarUserId = org.exact_owner_user_id
   if (!eigenaarUserId) {
-    eigenaarUserId = await zoekTokenhouderVoorOrg(org.organisatie_id)
+    eigenaarUserId = await zoekTokenhouderVoorOrg(org.organisatie_id, org.exact_administratie_id)
     if (!eigenaarUserId) throw new Error('GEEN_EIGENAAR')
     console.log('[cron-exact-betaalsync] lege exact_owner_user_id, terugval op tokenhouder', {
       organisatie_id: org.organisatie_id, token_user_id: eigenaarUserId,
@@ -600,7 +639,7 @@ async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verw
   // volledige evaluatie draaien zodra hij compleet is.
   const inhaalslagWasBezig = (state as { inhaalslag_bezig?: boolean } | null)?.inhaalslag_bezig ?? true
 
-  const { termijnen, afgekapt } = await haalTermijnPaginas(token, division, vanaf)
+  const { termijnen, afgekapt } = await haalTermijnPaginas(token, division, vanaf, deadline)
 
   // Alleen debiteurentermijnen (LineType 20); crediteuren (22) zijn de
   // inkoopkant en blijven buiten dit domein.
@@ -651,6 +690,7 @@ async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verw
       // precies één keer, ongeacht wat er onderweg gekoppeld wordt.
       let cursor = ''
       for (;;) {
+        if (Date.now() > deadline) throw new Error('RUN_ONVOLTOOID')
         let query = supabaseAdmin
           .from('exact_betaaltermijnen')
           .select('id, your_ref')
@@ -681,24 +721,34 @@ async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verw
         if (rijen.length < 1000) break
       }
 
-      const spiegel = await haalSpiegel(org.organisatie_id)
+      const spiegel = await haalSpiegel(org.organisatie_id, deadline)
       const alleIds = Array.from(spiegel.keys())
-      const statusPerId = new Map<string, string>()
+      const statusPerId = new Map<string, { status: string; standOp: string | null }>()
       for (let i = 0; i < alleIds.length; i += 100) {
         const { data: statusRijen, error } = await supabaseAdmin
           .from('facturen')
-          .select('id, status')
+          .select('id, status, exact_stand_op')
           .eq('organisatie_id', org.organisatie_id)
           .in('id', alleIds.slice(i, i + 100))
         if (error) throw new Error(`facturen-status lezen mislukt: ${error.message}`)
-        for (const f of (statusRijen ?? []) as { id: string; status: string }[]) statusPerId.set(f.id, f.status)
+        for (const f of (statusRijen ?? []) as { id: string; status: string; exact_stand_op: string | null }[]) {
+          statusPerId.set(f.id, { status: f.status, standOp: f.exact_stand_op })
+        }
       }
-      gesettled = await evalueerFacturen(
-        org.organisatie_id,
-        alleIds.map((id) => ({ id, status: statusPerId.get(id) ?? 'onbekend' })),
-        spiegel,
-        deadline,
-      )
+
+      // Hervat-cursor voor de volledige evaluatie. Zonder dit begon een op de
+      // deadline afgebroken evaluatie de volgende run weer bij factuur één en
+      // kwam een grote spiegel nooit voorbij dezelfde kop — de klassieke
+      // livelock. evalueerFactuur zet exact_stand_op bij elke openstaand-update,
+      // dus een verse stand betekent dat een eerdere run deze factuur al deed.
+      // 20 uur is ruim binnen de dagelijkse cadans en dekt zomertijd-schuif.
+      const standGrens = Date.now() - 20 * 60 * 60 * 1000
+      const teEvalueren = alleIds
+        .map((id) => ({ id, ...(statusPerId.get(id) ?? { status: 'onbekend', standOp: null }) }))
+        .filter((f) => !f.standOp || new Date(f.standOp).getTime() < standGrens)
+        .map((f) => ({ id: f.id, status: f.status }))
+
+      gesettled = await evalueerFacturen(org.organisatie_id, teEvalueren, spiegel, deadline)
     } else {
       const geraakteFacturen = Array.from(new Map(
         relevant
@@ -706,7 +756,10 @@ async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verw
           .filter((f): f is { id: string; status: string } => !!f)
           .map((f) => [f.id, f])
       ).values())
-      const spiegel = await haalSpiegel(org.organisatie_id, geraakteFacturen.map((f) => f.id))
+      // Delta-tak: die set is klein en mag altijd verversen, dus hier geen
+      // exact_stand_op-filter — een factuur die vandaag opnieuw in de delta
+      // zit, is in Exact ook echt gewijzigd.
+      const spiegel = await haalSpiegel(org.organisatie_id, deadline, geraakteFacturen.map((f) => f.id))
       gesettled = await evalueerFacturen(org.organisatie_id, geraakteFacturen, spiegel, deadline)
     }
   }
@@ -786,7 +839,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   orgs.sort((a, b) => {
     const ta = syncOpPerOrg.get(a.organisatie_id) ?? ''
     const tb = syncOpPerOrg.get(b.organisatie_id) ?? ''
-    return ta.localeCompare(tb)
+    // ISO-8601 in UTC: byte-volgorde is chronologische volgorde.
+    return ta < tb ? -1 : ta > tb ? 1 : 0
   })
 
   const start = Date.now()
@@ -794,6 +848,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Zelfde budget als de org-loop: de evaluatie binnen één org moet stoppen op
   // hetzelfde moment waarop de loop geen nieuwe org meer zou starten.
   const deadline = start + TIJD_BUDGET_MS
+  // Per org een eigen plafond binnen dat budget. Eén org met een grote
+  // inhaalslag at anders de hele 240s op, waarna de rest dag na dag
+  // 'uitgesteld' bleef en hun herinneringen op een verouderde Exact-stand
+  // pauzeerden. Loopt een org op zijn eigen plafond stuk, dan komen de
+  // volgende alsnog aan de beurt; de gestrande org gaat morgen door waar hij
+  // gebleven was (cursor + hervat-cursor blijven staan).
+  const ORG_BUDGET_MS = 120_000
   const resultaten: Record<string, unknown> = {}
   // Sequentieel: elke org heeft eigen rate-limits, maar de token-refresh-keten
   // per eigenaar verdraagt geen parallelle refreshes vanuit dezelfde run.
@@ -810,13 +871,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       continue
     }
     try {
-      resultaten[org.organisatie_id] = await syncOrganisatie(org, deadline)
+      const orgDeadline = Math.min(deadline, Date.now() + ORG_BUDGET_MS)
+      resultaten[org.organisatie_id] = await syncOrganisatie(org, orgDeadline)
     } catch (err) {
       const melding = err instanceof Error ? err.message : String(err)
       resultaten[org.organisatie_id] = { fout: melding }
-      // Verwachte configuratie-gaten en al-naar-Sentry-gelogde token-fouten
-      // niet nogmaals naar Sentry; echte fouten wel.
-      if (!['GEEN_TOKENS', 'GEEN_EIGENAAR', 'GEEN_ADMINISTRATIE', 'EIGENAAR_ANDERE_ORG', 'TOKEN_ROTATIE_NIET_OPGESLAGEN', 'TOKEN_AFGEWEZEN'].includes(melding)) {
+      if (melding === 'RUN_ONVOLTOOID' || melding === 'EVALUATIE_ONVOLTOOID') {
+        console.warn('[cron-exact-betaalsync] org raakte zijn tijdbudget op, gaat morgen verder', {
+          organisatie_id: org.organisatie_id, signaal: melding,
+        })
+      }
+      // Verwachte configuratie-gaten, al-naar-Sentry-gelogde token-fouten en
+      // capaciteitssignalen niet nogmaals naar Sentry; echte fouten wel.
+      // RUN_/EVALUATIE_ONVOLTOOID zijn zelfherstellend: het per-org-budget laat
+      // de rest doorlopen en de hervat-cursor laat deze org morgen verdergaan.
+      if (!['GEEN_TOKENS', 'GEEN_EIGENAAR', 'GEEN_ADMINISTRATIE', 'EIGENAAR_ANDERE_ORG', 'TOKEN_ROTATIE_NIET_OPGESLAGEN', 'TOKEN_AFGEWEZEN', 'RUN_ONVOLTOOID', 'EVALUATIE_ONVOLTOOID'].includes(melding)) {
         Sentry.captureException(err instanceof Error ? err : new Error(melding), {
           tags: { cron: 'exact-betaalsync' },
           extra: { organisatie_id: org.organisatie_id },

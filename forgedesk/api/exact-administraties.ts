@@ -237,7 +237,7 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     })
     throw new Error('Exact Online token vernieuwen mislukt. Probeer het opnieuw.')
   }
-  const tokens = await refreshRes.json()
+  const tokens = (await refreshRes.json()) as { access_token?: string; refresh_token?: string; expires_in?: number }
 
   // Compare-and-swap op de refresh_token die we gelezen hebben. Het ciphertext
   // is een betrouwbaar versiemerk (elke write gebruikt een nieuwe random salt),
@@ -246,9 +246,9 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
   // verse keten van een net afgeronde OAuth of wekte een ontkoppelde rij weer op.
   const nieuweRij = {
     user_id: userId,
-    access_token: encryptSecret(tokens.access_token),
+    access_token: encryptSecret(tokens.access_token ?? ''),
     refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
-    expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+    expires_at: new Date(Date.now() + (tokens.expires_in ?? 600) * 1000).toISOString(),
     division: data.division,
     updated_at: new Date().toISOString(),
   }
@@ -317,7 +317,7 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     }
   }
 
-  return { token: tokens.access_token, division: data.division }
+  return { token: tokens.access_token ?? '', division: data.division }
 }
 
 
@@ -371,7 +371,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error(`Kon administraties niet ophalen (${divisionsRes.status})`)
     }
 
-    const body = await divisionsRes.json()
+    const body = (await divisionsRes.json()) as { d?: { results?: Array<{ Code: number; Description: string }> } }
     const results = (body.d?.results || []).map((d: { Code: number; Description: string }) => ({
       id: String(d.Code),
       naam: `${d.Code} - ${d.Description}`,

@@ -185,7 +185,13 @@ export const exactTokenKeepaliveCron = schedules.task({
           // Token-endpoint is een kleine POST die normaal in een seconde klaar
           // is; hangt Exact, dan eet één rij anders de hele maxDuration op en
           // blijven de resterende kandidaten onaangeraakt.
-          signal: AbortSignal.timeout(10_000),
+          //
+          // Ruimer dan de 10s van de interactieve paden, en dat is hier
+          // bewust: breken we een uitwisseling af die Exact serverside wél
+          // verwerkt heeft, dan is de oude keten al ongeldig en de nieuwe nooit
+          // aangekomen — de koppeling is dan definitief dood. Een tragere run
+          // is goedkoper dan dat risico.
+          signal: AbortSignal.timeout(30_000),
         });
 
         if (!res.ok) {
