@@ -299,6 +299,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       _links?: { checkout?: { href?: string } }
     }
 
+    // Zonder id kan de webhook deze betaling nooit terugvinden: de
+    // registratierij én mollie_payment_id zouden leeg blijven. Hier stoppen is
+    // duidelijker dan verderop stranden met een betaling die nergens landt.
+    if (!payment.id) {
+      console.error('[mollie-create-payment] Mollie-antwoord zonder payment id:', payment)
+      Sentry.captureMessage('mollie-create-payment: Mollie gaf een payment zonder id terug', 'warning')
+      return res.status(502).json({ error: 'Mollie gaf een onvolledig antwoord terug. Probeer opnieuw.' })
+    }
+
     // Sla mollie_payment_id op in factuur.
     // betaal_link NIET overschrijven — dit veld bevat de doen.-eigen URL
     // /betalen/{token} en moet stabiel blijven over meerdere mails/herinneringen.

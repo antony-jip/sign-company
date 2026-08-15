@@ -86,6 +86,16 @@ function decryptSecret(text: string): string {
 // Mollie post `id=tr_...` als application/x-www-form-urlencoded. Vercel parst
 // dat normaal naar een object, maar bij een afwijkende content-type komt de
 // body als string binnen. Beide afhandelen, want dit pad mag niet stilvallen.
+// Mollie serialiseert paidAt met offset +00:00, dus de datum uit de ISO-string
+// is de UTC-dag: een betaling om 00:30 Nederlandse tijd zou op gisteren boeken.
+// De RPC's boeken op Europe/Amsterdam, dus doen wij dat hier ook.
+// sv-SE levert het formaat YYYY-MM-DD.
+function amsterdamseDag(isoString: string): string | null {
+  const datum = new Date(isoString)
+  if (Number.isNaN(datum.getTime())) return null
+  return datum.toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' })
+}
+
 function leesPaymentId(body: unknown): string | null {
   if (typeof body === 'string') {
     const params = new URLSearchParams(body)
@@ -278,9 +288,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         p_bron: 'mollie',
         p_bron_referentie: paymentId,
         p_bedrag: effectief,
-        // Bewust de datum uit paidAt's eigen offset (bv. +02:00) en niet uit UTC:
-        // die zone is de onze, dus rond middernacht is dit de juiste boekdatum.
-        p_betaald_op: typeof payment.paidAt === 'string' ? payment.paidAt.split('T')[0] : null,
+        // Boekdatum in Europe/Amsterdam, gelijk aan wat de RPC's zelf hanteren.
+        p_betaald_op: typeof payment.paidAt === 'string' ? amsterdamseDag(payment.paidAt) : null,
       })
 
       if (rpcError) {
@@ -305,7 +314,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .from('facturen')
             .update({
               status: voldaanLegacy ? 'betaald' : factuur.status,
-              betaaldatum: voldaanLegacy ? nowIso.split('T')[0] : null,
+              betaaldatum: voldaanLegacy ? amsterdamseDag(nowIso) : null,
               betaald_bedrag: nieuwBetaaldLegacy,
               updated_at: nowIso,
             })
@@ -328,9 +337,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         volledig_voldaan: boolean
         vorige_status: string
         nieuwe_status: string
+        // Optioneel: oudere RPC-versies (vóór migratie 210) leveren dit veld
+        // niet. undefined betekent dus "geen oordeel", geen alarm.
+        referentie_onbekend?: boolean
       } | undefined
 
       if (!verwerking || Number(verwerking.delta) === 0) {
+        // De RPC negeert een onbekende referentie op een al betaalde factuur.
+        // Bij een bedrag > 0 is dat geen herlevering maar echt geld dat nergens
+        // geboekt staat: dat mag niet als stille no-op verdwijnen.
+        if (verwerking?.referentie_onbekend === true && effectief > 0) {
+          const melding = `Mollie-betaling van EUR ${effectief.toFixed(2)} op al betaalde factuur ${factuur.id} genegeerd (referentie onbekend); handmatig controleren`
+          console.error(melding)
+          Sentry.captureMessage(melding, 'warning')
+          // Wel 200: herleveringen van dezelfde webhook lossen dit niet op.
+          return res.status(200).json({ received: true, referentie_onbekend: true })
+        }
         console.log(`Mollie webhook: payment ${paymentId} al verwerkt (delta 0), skip`)
         return res.status(200).json({ received: true, already_processed: true })
       }
