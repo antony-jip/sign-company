@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Facturatie en betaalregistratie in doen.</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 14mm 14mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 10pt; line-height: 1.5; color: #1f2a2c;
+  }
+  .kop {
+    background: #1A535C; color: #ffffff; border-radius: 14px;
+    padding: 20px 24px 18px 24px; margin-bottom: 14px;
+  }
+  .kop .merk { font-size: 13pt; font-weight: 800; letter-spacing: -0.3px; }
+  .kop .merk span { color: #F15025; }
+  h1 { font-size: 19pt; color: #ffffff; letter-spacing: -0.5px; margin-top: 6px; line-height: 1.15; font-weight: 800; }
+  h1 .punt { color: #F15025; }
+  .sub { color: #cfe0e2; margin-top: 6px; font-size: 10pt; }
+
+  h2 {
+    font-size: 12.5pt; color: #1A535C; margin: 16px 0 8px 0; font-weight: 800; letter-spacing: -0.2px;
+  }
+  h2 .nr { color: #F15025; font-weight: 800; margin-right: 7px; }
+  p { margin: 0 0 7px 0; }
+  strong { color: #14383e; }
+
+  .kaart {
+    background: #f2f6f6; border-radius: 14px; padding: 14px 16px 10px 16px; margin: 0 0 12px 0;
+    page-break-inside: avoid;
+  }
+  .kaart .kaarttitel {
+    font-size: 8.5pt; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+    color: #1A535C; margin-bottom: 8px;
+  }
+  .kaart .kaarttitel span { color: #F15025; }
+
+  .formule {
+    background: #1A535C; color: #ffffff; border-radius: 14px; text-align: center;
+    padding: 14px 16px; margin: 0 0 12px 0; page-break-inside: avoid;
+  }
+  .formule .f { font-size: 14pt; font-weight: 800; letter-spacing: -0.2px; }
+  .formule .f em { color: #FFB9A0; font-style: normal; }
+  .formule .toel { color: #cfe0e2; font-size: 9pt; margin-top: 4px; }
+
+  .tegels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 12px 0; }
+  .tegels.drie { grid-template-columns: repeat(3, 1fr); }
+  .tegel {
+    background: #ffffff; border: 1.4px solid #1A535C; border-radius: 12px;
+    padding: 10px 12px; page-break-inside: avoid;
+  }
+  .tegel.flame { border-color: #F15025; background: #fdf3ef; }
+  .tegel .t { font-weight: 800; color: #1A535C; font-size: 10pt; line-height: 1.25; }
+  .tegel .t span { color: #F15025; }
+  .tegel.flame .t { color: #C0451A; }
+  .tegel .s { font-size: 8.5pt; color: #5a6a6c; margin-top: 4px; line-height: 1.4; }
+
+  .stappenstrip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 10px 0; }
+  .stap {
+    background: #ffffff; border: 1.4px solid #dfe6e6; border-radius: 12px; padding: 10px 12px;
+    position: relative; page-break-inside: avoid;
+  }
+  .stap .nr {
+    display: inline-block; width: 22px; height: 22px; border-radius: 50%;
+    background: #F15025; color: #ffffff; font-weight: 800; font-size: 10pt;
+    text-align: center; line-height: 22px; margin-bottom: 6px;
+  }
+  .stap .t { font-weight: 800; color: #1A535C; font-size: 9.5pt; line-height: 1.25; }
+  .stap .s { font-size: 8pt; color: #5a6a6c; margin-top: 3px; line-height: 1.35; }
+
+  .badge-beta {
+    display: inline-block; background: #fdf3ef; color: #F15025; border: 1px solid #f6c6b5;
+    border-radius: 5px; font-size: 7.5pt; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; padding: 1px 7px; vertical-align: 2px; margin-left: 6px;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px 0; font-size: 9pt; }
+  th { background: #1A535C; color: #ffffff; text-align: left; padding: 5px 9px; font-weight: 700; }
+  td { padding: 5px 9px; border-bottom: 1px solid #e3e9e9; vertical-align: top; }
+  tr:nth-child(even) td { background: #f7fafa; }
+
+  ul { margin: 0 0 8px 0; padding-left: 16px; }
+  li { margin-bottom: 3px; }
+  .paginabreek { page-break-before: always; }
+  .voet { margin-top: 18px; padding-top: 8px; border-top: 1px solid #dfe6e6; font-size: 8.5pt; color: #8a9596; }
+  .voet .merk { font-weight: 800; color: #1A535C; }
+  .voet .merk span { color: #F15025; }
+  .klein { font-size: 8.5pt; color: #5a6a6c; }
+</style>
+</head>
+<body>
+
+<!-- ══ Pagina 1 · het hele verhaal in beeld ══ -->
+
+<div class="kop">
+  <div class="merk">doen<span>.</span></div>
+  <h1>Facturatie en betaalregistratie<span class="punt">.</span></h1>
+  <div class="sub">Het hele proces in beeld · voor de financiële administratie · Sign Company · augustus 2026</div>
+</div>
+
+<div class="kaart">
+  <div class="kaarttitel">Van concept tot betaald<span>.</span></div>
+  <svg viewBox="0 0 680 258" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+    <defs>
+      <marker id="pijl" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="#1A535C"/>
+      </marker>
+      <marker id="pijlf" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="#F15025"/>
+      </marker>
+    </defs>
+
+    <!-- Rij 1: maken en versturen -->
+    <rect x="2" y="14" width="128" height="48" rx="9" fill="#ffffff" stroke="#1A535C" stroke-width="1.4"/>
+    <text x="66" y="34" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1A535C">Factuur opslaan</text>
+    <text x="66" y="49" text-anchor="middle" font-size="8.5" fill="#5a6a6c">concept · ook in serie</text>
+
+    <line x1="132" y1="38" x2="158" y2="38" stroke="#1A535C" stroke-width="1.4" marker-end="url(#pijl)"/>
+
+    <rect x="162" y="14" width="136" height="48" rx="9" fill="#ffffff" stroke="#1A535C" stroke-width="1.4"/>
+    <text x="230" y="34" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1A535C">Te verzenden-lijst</text>
+    <text x="230" y="49" text-anchor="middle" font-size="8.5" fill="#5a6a6c">verzamelt alles onverzonden</text>
+
+    <line x1="300" y1="38" x2="326" y2="38" stroke="#1A535C" stroke-width="1.4" marker-end="url(#pijl)"/>
+
+    <rect x="330" y="10" width="192" height="56" rx="9" fill="#F15025"/>
+    <text x="426" y="30" text-anchor="middle" font-size="11.5" font-weight="800" fill="#ffffff">Verwerk en verzend</text>
+    <text x="426" y="44" text-anchor="middle" font-size="8.5" fill="#ffe3d8">nummer &#8594; PDF &#8594; Exact &#8594; mail</text>
+    <text x="426" y="57" text-anchor="middle" font-size="8.5" fill="#ffe3d8">per stuk of de hele lijst in één keer</text>
+
+    <line x1="524" y1="38" x2="550" y2="38" stroke="#F15025" stroke-width="1.6" marker-end="url(#pijlf)"/>
+
+    <rect x="554" y="14" width="124" height="48" rx="9" fill="#1A535C"/>
+    <text x="616" y="34" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffffff">Openstaand</text>
+    <text x="616" y="49" text-anchor="middle" font-size="8.5" fill="#cfe0e2">wacht op betaling</text>
+
+    <!-- Verticale pijl naar betalen -->
+    <line x1="616" y1="64" x2="616" y2="102" stroke="#1A535C" stroke-width="1.4" marker-end="url(#pijl)"/>
+    <text x="624" y="88" font-size="8.5" fill="#5a6a6c">klant betaalt</text>
+
+    <!-- Herinneringstak -->
+    <line x1="554" y1="50" x2="500" y2="50" stroke="#8a9596" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <line x1="500" y1="50" x2="500" y2="102" stroke="#8a9596" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#pijl)"/>
+    <rect x="386" y="106" width="228" height="46" rx="9" fill="#ffffff" stroke="#8a9596" stroke-width="1.2"/>
+    <text x="500" y="124" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1A535C">Niet betaald? Herinneringsladder</text>
+    <text x="500" y="139" text-anchor="middle" font-size="8.5" fill="#5a6a6c">dag 7 · dag 14 · dag 30 · pauzeert bij verouderde bankstand</text>
+
+    <!-- Rij 2: betaalbronnen -->
+    <rect x="2" y="106" width="116" height="46" rx="9" fill="#ffffff" stroke="#1A535C" stroke-width="1.2"/>
+    <text x="60" y="124" text-anchor="middle" font-size="10" font-weight="700" fill="#1A535C">iDEAL / Mollie</text>
+    <text x="60" y="139" text-anchor="middle" font-size="8.5" fill="#5a6a6c">via de betaallink</text>
+
+    <rect x="130" y="106" width="116" height="46" rx="9" fill="#ffffff" stroke="#1A535C" stroke-width="1.2"/>
+    <text x="188" y="124" text-anchor="middle" font-size="10" font-weight="700" fill="#1A535C">Bank via Exact</text>
+    <text x="188" y="139" text-anchor="middle" font-size="8.5" fill="#5a6a6c">afletteren blijft leidend</text>
+
+    <rect x="258" y="106" width="116" height="46" rx="9" fill="#ffffff" stroke="#1A535C" stroke-width="1.2"/>
+    <text x="316" y="124" text-anchor="middle" font-size="10" font-weight="700" fill="#1A535C">Handmatig</text>
+    <text x="316" y="139" text-anchor="middle" font-size="8.5" fill="#5a6a6c">contant of verrekening</text>
+
+    <!-- Pijlen bronnen naar registratie -->
+    <line x1="60" y1="152" x2="60" y2="182" stroke="#1A535C" stroke-width="1.2"/>
+    <line x1="188" y1="152" x2="188" y2="182" stroke="#1A535C" stroke-width="1.2"/>
+    <line x1="316" y1="152" x2="316" y2="182" stroke="#1A535C" stroke-width="1.2"/>
+    <line x1="60" y1="182" x2="316" y2="182" stroke="#1A535C" stroke-width="1.2"/>
+    <line x1="188" y1="182" x2="188" y2="196" stroke="#1A535C" stroke-width="1.4" marker-end="url(#pijl)"/>
+
+    <!-- Registratie-grootboek -->
+    <rect x="2" y="200" width="372" height="48" rx="9" fill="#1A535C"/>
+    <text x="188" y="220" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">Betalingsregistratie: elke ontvangst één regel</text>
+    <text x="188" y="235" text-anchor="middle" font-size="8.5" fill="#cfe0e2">bron · uniek kenmerk · bedrag · datum</text>
+
+    <!-- Pijl naar betaald -->
+    <line x1="378" y1="224" x2="548" y2="224" stroke="#1A535C" stroke-width="1.4" marker-end="url(#pijl)"/>
+    <text x="463" y="216" text-anchor="middle" font-size="8.5" fill="#5a6a6c">som dekt het factuurbedrag</text>
+
+    <rect x="554" y="200" width="124" height="48" rx="9" fill="#2D6B48"/>
+    <text x="616" y="229" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">betaald<tspan fill="#FFB9A0">.</tspan></text>
+  </svg>
+</div>
+
+<div class="formule">
+  <div class="f">betaald bedrag <em>=</em> som van de betalingsregistraties</div>
+  <div class="toel">de vaste sluitregel · hoort bij elke maandafsluiting nul afwijkingen te geven (controle-opdracht in de installatie-instructie)</div>
+</div>
+
+<div class="tegels">
+  <div class="tegel">
+    <div class="t">Registratie als grootboek<span>.</span></div>
+    <div class="s">"Betaald bedrag" is geen invulveld meer maar een optelsom. Dubbel klikken of een dubbele Mollie-melding kan nooit dubbel tellen.</div>
+  </div>
+  <div class="tegel">
+    <div class="t">Exact tweerichting<span>.</span></div>
+    <div class="s">doen. boekt facturen in Exact én haalt elke ochtend de betaalstatus terug. Afletteren blijft jullie werk en blijft leidend.</div>
+  </div>
+  <div class="tegel">
+    <div class="t">Herinneren met verstand<span>.</span></div>
+    <div class="s">Instelbare ladder die pauzeert zodra de bankstand verouderd is. Een klant die al betaalde krijgt geen aanmaning.</div>
+  </div>
+  <div class="tegel flame">
+    <div class="t">In één keer de deur uit<span>.</span></div>
+    <div class="s">Nieuw (beta): facturen klaarzetten en met één knop verwerken, boeken en mailen. Zie pagina 2.</div>
+  </div>
+</div>
+
+<div class="paginabreek"></div>
+
+<!-- ══ Pagina 2 · Te verzenden ══ -->
+
+<h2><span class="nr">1.</span>Facturen klaarzetten en in één keer verzenden<span class="badge-beta">Beta</span></h2>
+<p>
+Maken en versturen zijn twee losse momenten: sla facturen gewoon op ("Opslaan en volgende" opent
+direct de volgende), en alles wat nog niet verstuurd is verzamelt zich in de lijst
+<strong>Te verzenden</strong>. Eén knop verwerkt daarna de hele lijst — of alleen je selectie —
+per factuur in vier vaste stappen:
+</p>
+
+<div class="stappenstrip">
+  <div class="stap">
+    <div class="nr">1</div>
+    <div class="t">Nummer toekennen</div>
+    <div class="s">Alleen bij concepten; de reeks blijft aaneengesloten.</div>
+  </div>
+  <div class="stap">
+    <div class="nr">2</div>
+    <div class="t">PDF opstellen</div>
+    <div class="s">Eén exemplaar voor archief, Exact én klant.</div>
+  </div>
+  <div class="stap">
+    <div class="nr">3</div>
+    <div class="t">Boeken in Exact</div>
+    <div class="s">Alleen bij een actieve koppeling, met alle harde controles. Weigert Exact, dan wordt er niet gemaild.</div>
+  </div>
+  <div class="stap">
+    <div class="nr">4</div>
+    <div class="t">Mailen naar de klant</div>
+    <div class="s">Met de PDF als bijlage, naar het factuurcontact van de klant.</div>
+  </div>
+</div>
+
+<div class="tegels drie">
+  <div class="tegel">
+    <div class="t">Nooit dubbel gemaild<span>.</span></div>
+    <div class="s">Ook niet vanuit twee schermen tegelijk of een verouderde lijst: de tweede poging wordt geweigerd.</div>
+  </div>
+  <div class="tegel">
+    <div class="t">Nooit dubbel geboekt<span>.</span></div>
+    <div class="s">Een factuur kan maar één keer in Exact belanden; een tweede boeking is technisch afgesloten.</div>
+  </div>
+  <div class="tegel">
+    <div class="t">Fouten blijven zichtbaar<span>.</span></div>
+    <div class="s">Verstuurd = weg uit de lijst. Wat misgaat blijft staan mét de reden; niets valt stilletjes weg.</div>
+  </div>
+</div>
+
+<ul>
+  <li>Eén factuur direct wegsturen kan ook: knop <strong>"Verwerken en direct verzenden"</strong> in de editor — zelfde stappen, zelfde controles.</li>
+  <li>Zonder Exact-koppeling werkt de flow gewoon; stap 3 wordt dan overgeslagen en het scherm zegt dat erbij.</li>
+  <li>Beta: controleer de eerste weken even in Exact en de verzonden e-mails. De info-knop bij de lijst legt de werking in het scherm uit.</li>
+</ul>
+
+<h2><span class="nr">2.</span>Drie betaalbronnen, één registratie</h2>
+<table>
+  <tr><th style="width:20%">Bron</th><th style="width:26%">Kenmerk</th><th>Zo telt het mee</th></tr>
+  <tr>
+    <td><strong>iDEAL / Mollie</strong></td>
+    <td>Mollie-transactienummer</td>
+    <td>Dubbele meldingen tellen één keer. Terugbetaling of storno verlaagt de registratie; volledig teruggeboekt = factuur weer open.</td>
+  </tr>
+  <tr>
+    <td><strong>Bank via Exact</strong></td>
+    <td>Exact-afletterstatus</td>
+    <td>Pas als álle termijnen in Exact gematcht zijn, boekt doen. het restant als één ontvangst. Nooit opgeteld bij een iDEAL-bedrag (dat zou dezelfde euro dubbel tellen).</td>
+  </tr>
+  <tr>
+    <td><strong>Handmatig</strong></td>
+    <td>"Markeer als betaald"</td>
+    <td>Het openstaande restant, met datum van vandaag. Dubbel klikken boekt niet dubbel.</td>
+  </tr>
+</table>
+<p class="klein">Deelbetalingen blijven losse regels; de factuur gaat pas op betaald als de som het factuurbedrag dekt.</p>
+
+<div class="paginabreek"></div>
+
+<h2><span class="nr">3.</span>doen. en Exact: wat gaat heen, wat komt terug</h2>
+<div class="kaart">
+  <svg viewBox="0 0 680 150" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+    <defs>
+      <marker id="p2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="#1A535C"/>
+      </marker>
+      <marker id="p2f" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="#F15025"/>
+      </marker>
+    </defs>
+    <rect x="2" y="30" width="150" height="90" rx="12" fill="#1A535C"/>
+    <text x="77" y="72" text-anchor="middle" font-size="17" font-weight="800" fill="#ffffff">doen<tspan fill="#F15025">.</tspan></text>
+    <text x="77" y="92" text-anchor="middle" font-size="8.5" fill="#cfe0e2">facturen en opvolging</text>
+
+    <rect x="528" y="30" width="150" height="90" rx="12" fill="#ffffff" stroke="#1A535C" stroke-width="1.6"/>
+    <text x="603" y="72" text-anchor="middle" font-size="15" font-weight="800" fill="#1A535C">Exact Online</text>
+    <text x="603" y="92" text-anchor="middle" font-size="8.5" fill="#5a6a6c">boekhouding · afletteren</text>
+
+    <line x1="160" y1="52" x2="520" y2="52" stroke="#F15025" stroke-width="1.8" marker-end="url(#p2f)"/>
+    <text x="340" y="42" text-anchor="middle" font-size="9.5" font-weight="700" fill="#C0451A">verkoopfacturen, bij het verzenden</text>
+    <text x="340" y="66" text-anchor="middle" font-size="8" fill="#5a6a6c">dagboek · grootboek · btw-code · vervaldatum · kostenplaats · debiteur · PDF</text>
+
+    <line x1="520" y1="98" x2="160" y2="98" stroke="#1A535C" stroke-width="1.8" marker-end="url(#p2)"/>
+    <text x="340" y="90" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1A535C">betaalstatus, elke ochtend terug</text>
+    <text x="340" y="112" text-anchor="middle" font-size="8" fill="#5a6a6c">afgeletterd in Exact = betaald in doen. · deelbetaling verlaagt openstaand</text>
+  </svg>
+</div>
+<ul>
+  <li><strong>Harde controles vóór elke boeking:</strong> regels moeten optellen tot de kop, btw moet kloppen en bestaan in Exact; anders wordt de boeking geweigerd met een duidelijke melding.</li>
+  <li>Creditnota's worden nooit automatisch gesaldeerd; de eerste keer draait een eenmalige <strong>inhaalslag</strong> (zolang die loopt wordt niets afgevinkt en niet automatisch herinnerd).</li>
+  <li>De terughaalfunctie is per organisatie uit te zetten; dan is de koppeling weer alleen richting Exact.</li>
+</ul>
+
+<h2><span class="nr">4.</span>De herinneringsladder</h2>
+<div class="kaart">
+  <svg viewBox="0 0 680 120" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+    <line x1="20" y1="52" x2="660" y2="52" stroke="#1A535C" stroke-width="2"/>
+    <!-- vervaldatum -->
+    <circle cx="60" cy="52" r="7" fill="#1A535C"/>
+    <text x="60" y="32" text-anchor="middle" font-size="9.5" font-weight="800" fill="#1A535C">vervaldatum</text>
+    <text x="60" y="76" text-anchor="middle" font-size="8.5" fill="#5a6a6c">dag 0</text>
+    <!-- h1 -->
+    <circle cx="230" cy="52" r="7" fill="#F15025"/>
+    <text x="230" y="32" text-anchor="middle" font-size="9.5" font-weight="800" fill="#C0451A">herinnering 1</text>
+    <text x="230" y="76" text-anchor="middle" font-size="8.5" fill="#5a6a6c">dag 7</text>
+    <!-- h2 -->
+    <circle cx="400" cy="52" r="7" fill="#F15025"/>
+    <text x="400" y="32" text-anchor="middle" font-size="9.5" font-weight="800" fill="#C0451A">herinnering 2</text>
+    <text x="400" y="76" text-anchor="middle" font-size="8.5" fill="#5a6a6c">dag 14</text>
+    <!-- aanmaning -->
+    <circle cx="580" cy="52" r="7" fill="#C0451A"/>
+    <text x="580" y="32" text-anchor="middle" font-size="9.5" font-weight="800" fill="#C0451A">aanmaning</text>
+    <text x="580" y="76" text-anchor="middle" font-size="8.5" fill="#5a6a6c">dag 30</text>
+    <text x="340" y="104" text-anchor="middle" font-size="8.5" fill="#5a6a6c">dagen en teksten per organisatie instelbaar · elke stap: klantmail of intern signaal ("zelf bellen") · altijd het openstaande bedrag, nooit het factuurtotaal</text>
+  </svg>
+</div>
+<div class="tegels drie">
+  <div class="tegel">
+    <div class="t">Pauzeert vanzelf<span>.</span></div>
+    <div class="s">Bankstand uit Exact ouder dan drie dagen of inhaalslag bezig? Dan geen automatische herinneringen; de eigenaar krijgt daar een melding van.</div>
+  </div>
+  <div class="tegel">
+    <div class="t">Alles bewijsbaar<span>.</span></div>
+    <div class="s">Elke verzending en elke bewust overgeslagen stap staat in het logboek: datum, tijd, ontvanger, onderwerp.</div>
+  </div>
+  <div class="tegel">
+    <div class="t">Administratie leest mee<span>.</span></div>
+    <div class="s">Stel een BCC-adres in en elke herinnering of aanmaning komt als blinde kopie ook in de administratie-mailbox.</div>
+  </div>
+</div>
+<p class="klein">Uitzonderingen instelbaar per klant ("nooit automatische herinneringen") en per factuur (pauzeknop). Handmatig versturen kan altijd; handmatig en automatisch kunnen elkaar niet dubbel mailen.</p>
+
+<div class="paginabreek"></div>
+
+<h2><span class="nr">5.</span>Signalen die aandacht vragen</h2>
+<table>
+  <tr><th style="width:40%">Melding</th><th>Actie</th></tr>
+  <tr>
+    <td>"Betalingsherinneringen gepauzeerd"</td>
+    <td>Bankstand verouderd of inhaalslag bezig. Lost meestal de volgende ochtend zichzelf op; anders de koppeling checken onder Instellingen &gt; Integraties.</td>
+  </tr>
+  <tr>
+    <td>"Betaling teruggedraaid"</td>
+    <td>Mollie verwerkte een terugbetaling of storno; de factuur staat weer open en de opvolging herleeft.</td>
+  </tr>
+  <tr>
+    <td>Boeking: klantnaam wijkt af</td>
+    <td>Debiteurennummer bestond in Exact onder een andere naam; even controleren en zo nodig relaties samenvoegen.</td>
+  </tr>
+  <tr>
+    <td>Boeking geweigerd (btw of regels)</td>
+    <td>Bewuste beveiliging: de melding zegt precies wat er moet gebeuren (meestal regel splitsen per btw-tarief).</td>
+  </tr>
+  <tr>
+    <td>Factuur blijft in "Te verzenden" staan</td>
+    <td>Bewust overgeslagen (Exact weigerde, geen e-mailadres, of al door een collega verzonden). Reden staat bij de factuur; na herstel gewoon opnieuw meenemen.</td>
+  </tr>
+</table>
+
+<h2><span class="nr">6.</span>Bewuste keuzes en grenzen</h2>
+<ul>
+  <li><strong>Exact is de waarheid voor bank, Mollie voor iDEAL</strong> — samengevoegd tot één betaalstatus, nooit bij elkaar opgeteld.</li>
+  <li>In Exact <strong>verwijderde of teruggeboekte</strong> boekingen ziet doen. niet vanzelf; dat blijft handmatige correctie.</li>
+  <li>De <strong>inkoopadministratie</strong> gaat bewust niet automatisch naar Exact; de boekhouder boekt inkoopfacturen zelf.</li>
+  <li>Btw-aangifte, periodeafsluiting en afletteren blijven volledig bij de administratie; doen. levert de juiste codes en bedragen aan.</li>
+</ul>
+
+<div class="voet">
+  <span class="merk">doen<span>.</span></span> · facturatie en betaalregistratie · uitleg voor de financiële administratie ·
+  versie augustus 2026 · vragen: antony@signcompany.nl
+</div>
+
+</body>
+</html>
