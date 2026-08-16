@@ -36,10 +36,38 @@ async function enforceRateLimit(identifier: string, res: VercelResponse): Promis
 }
 
 function getClientIp(req: VercelRequest): string {
+  // x-real-ip wordt door Vercel gezet en is niet client-spoofbaar; de linkerkant
+  // van x-forwarded-for is dat wel. Val daarom terug op de LAATSTE (door Vercel
+  // toegevoegde) waarde, nooit de eerste, anders is de rate-limit-key te faken.
+  const real = req.headers['x-real-ip']
+  if (typeof real === 'string' && real.trim()) return real.trim()
   const fwd = req.headers['x-forwarded-for']
-  if (typeof fwd === 'string') return fwd.split(',')[0].trim()
-  if (Array.isArray(fwd)) return fwd[0]
+  if (typeof fwd === 'string') {
+    const parts = fwd.split(',').map((p) => p.trim()).filter(Boolean)
+    if (parts.length) return parts[parts.length - 1]
+  }
+  if (Array.isArray(fwd) && fwd.length) return fwd[fwd.length - 1]
   return 'unknown'
+}
+
+// Alleen deze factuurvelden gaan naar de publieke (onauth'd) klantpagina. De
+// hele rij teruggeven lekt interne boekhoud-/sync-kolommen (exact_entry_id,
+// mollie_payment_id, opvolg-/aanmaan-status, pdf_storage_path). betaal_link en
+// mollie_payment_url blijven wél: de betaalknop in de frontend heeft ze nodig.
+const FACTUUR_VELDEN = [
+  'id', 'nummer', 'titel', 'status', 'factuur_type',
+  'subtotaal', 'btw_bedrag', 'totaal', 'betaald_bedrag',
+  'factuurdatum', 'vervaldatum', 'betaaldatum', 'created_at',
+  'klant_id', 'klant_naam',
+  'factuur_adres', 'factuur_bedrijfsnaam', 'factuur_plaats', 'factuur_postcode', 'factuur_tav',
+  'notities', 'voorwaarden', 'betaalvoorwaarden',
+  'betaal_link', 'mollie_payment_url',
+] as const
+
+function pickFactuur(obj: Record<string, unknown>): Record<string, unknown> {
+  const uit: Record<string, unknown> = {}
+  for (const k of FACTUUR_VELDEN) if (k in obj) uit[k] = obj[k]
+  return uit
 }
 
 export const config = { maxDuration: 15 }
@@ -214,10 +242,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       appSettings = data
     }
 
-    // betaal_token niet meeteruggeven: het portaal-token-pad hoort de betaallink
-    // niet te lekken, en de betaalpagina leest de token uit de eigen URL. Rest
-    // van de factuur blijft ongemoeid zodat de portaal-weergave niets mist.
-    const { betaal_token: _bt, betaal_token_verloopt_op: _bte, ...factuurPubliek } = factuur as Record<string, unknown>
+    // Strikte whitelist: alleen klant-relevante velden verlaten de server, zodat
+    // interne boekhoud-/sync-kolommen (en betaal_token) niet lekken.
+    const factuurPubliek = pickFactuur(factuur as Record<string, unknown>)
 
     return res.status(200).json({
       factuur: factuurPubliek,
