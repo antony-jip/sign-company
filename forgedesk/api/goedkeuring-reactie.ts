@@ -185,15 +185,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://app.doen.team')
 
-        const { sendDoenNotification } = await import('./resend-notify')
-        sendDoenNotification({
+        // Met .js-extensie (ESM-runtime) en mét await: zonder await bevriest
+        // Vercel de lambda na de response en sterft de Resend-request.
+        const { sendDoenNotification } = await import('./resend-notify.js')
+        await sendDoenNotification({
           to: userEmail,
           subject: onderwerp,
           heading: `Tekening ${actieLabel} door ${klantNaam}`,
           itemTitel: project?.naam || 'Project',
           quote: status === 'revisie' ? revisie_opmerkingen!.trim() : undefined,
           ctaUrl: `${appUrl}/projecten/${gk.project_id}`,
-        }).catch(err => console.warn('Resend notify mislukt:', err))
+        })
       }
     } catch (notifErr) {
       console.warn('Notificatie/email bij goedkeuring mislukt:', notifErr)

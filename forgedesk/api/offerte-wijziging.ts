@@ -147,7 +147,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('user_id', offerte.user_id).single()
 
       if (emailSettings?.gmail_address) {
-        const { sendDoenNotification } = await import('./resend-notify')
+        // Met .js-extensie: de Vercel-runtime draait ESM en vindt de module
+        // zonder extensie niet (ERR_MODULE_NOT_FOUND op /var/task/...).
+        const { sendDoenNotification } = await import('./resend-notify.js')
         await sendDoenNotification({
           to: emailSettings.gmail_address,
           subject: `Wijziging aangevraagd voor offerte ${offerte.nummer} — ${offerte.klant_naam || 'Klant'}`,
