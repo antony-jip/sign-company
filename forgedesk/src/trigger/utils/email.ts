@@ -132,6 +132,7 @@ export async function sendEmailForUser(params: {
   subject: string;
   text: string;
   html?: string;
+  bcc?: string;
   organisatieId?: string;
   idempotencyKey?: string;
 }): Promise<{ success: boolean; error?: string; skipped?: boolean }> {
@@ -180,6 +181,7 @@ export async function sendEmailForUser(params: {
         subject: params.subject,
         text: params.text,
         html: params.html,
+        ...(params.bcc ? { bcc: params.bcc } : {}),
       });
     } catch (sendErr) {
       if (useIdempotency) {

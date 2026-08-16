@@ -56,6 +56,7 @@ import {
   MoreHorizontal,
   CreditCard,
   Bell,
+  BellOff,
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
@@ -80,7 +81,8 @@ import {
   createFactuurItem,
   replaceFactuurItems,
   updateFactuur,
-  updateFactuurStatus,
+  markeerFactuurVerzonden,
+  markeerFactuurBetaald,
   generateFactuurNummer as generateFactuurNrDb,
   deleteFactuur,
   getOffertes,
@@ -105,6 +107,14 @@ import {
   updateContactpersoonDB,
   updateKlant,
 } from '@/services/supabaseService'
+import {
+  getFactuurOpvolgStappen,
+  bepaalHerinneringOntvanger,
+  STANDAARD_HERINNERING_TEKSTEN,
+  type FactuurOpvolgStap,
+  type HerinneringOntvanger,
+} from '@/services/factuurService'
+import supabase from '@/services/supabaseClient'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -211,9 +221,63 @@ function calcLineTotal(item: LineItem): number {
   return round2(subtotaal - korting)
 }
 
+// Eén regel met een gewogen btw-percentage (bv. 17%) is in Exact onboekbaar:
+// de btw-mapping kent alleen de echte tarieven. Valt het btw-bedrag op centen
+// na samen met een écht tarief (21 / 9 / 0), dan boeken we dat tarief. Is het
+// een mengvorm, dan geven we bewust één regel met het gewogen percentage: de
+// grondslag per tarief valt hier niet te herleiden, en een verzonnen verdeling
+// zet de klant in de verkeerde aangifte-rubrieken. De sync-guard weigert zo'n
+// regel met de leesbare melding om de factuur zelf te splitsen.
+function btwRegelsUitTotalen(
+  beschrijving: string,
+  subtotaal: number,
+  btwBedrag: number
+): Array<{ beschrijving: string; eenheidsprijs: number; btw_percentage: number }> {
+  const netto = round2(subtotaal)
+  if (netto === 0) return [{ beschrijving, eenheidsprijs: 0, btw_percentage: 21 }]
+
+  const absNetto = Math.abs(netto)
+  const absBtw = Math.abs(round2(btwBedrag))
+
+  const zuiver = [21, 9, 0].find((tarief) => Math.abs(absBtw - round2((absNetto * tarief) / 100)) <= 0.02)
+  if (zuiver !== undefined) return [{ beschrijving, eenheidsprijs: netto, btw_percentage: zuiver }]
+
+  // Zoek het kortste percentage dat het btw-bedrag op de cent exact
+  // reconstrueert: de kop wordt uit deze regel herberekend, dus een te grof
+  // afgerond percentage zou het factuurbedrag stil veranderen (bij twee
+  // decimalen al vanaf ~200 euro netto). En als de afronding per ongeluk op
+  // een zuiver tarief uitkomt terwijl de cent-poort hierboven dat net
+  // verwierp, dan meer decimalen: anders glipt een mengvorm als "zuiver"
+  // langs de sync-guard de verkeerde aangifte-rubriek in.
+  const ruwPct = (absBtw / absNetto) * 100
+  let pct = round2(ruwPct)
+  for (const decimalen of [2, 3, 4, 5, 6]) {
+    const kandidaat = Number(ruwPct.toFixed(decimalen))
+    pct = kandidaat
+    const reconstrueert = Math.abs(round2((absNetto * kandidaat) / 100) - absBtw) < 0.005
+    const botstMetZuiver = kandidaat === 21 || kandidaat === 9 || kandidaat === 0
+    if (reconstrueert && !botstMetZuiver) break
+  }
+  return [{ beschrijving, eenheidsprijs: netto, btw_percentage: pct }]
+
+}
+
+function lineItemsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number): LineItem[] {
+  return btwRegelsUitTotalen(beschrijving, subtotaal, btwBedrag).map((r) => ({
+    id: crypto.randomUUID(),
+    beschrijving: r.beschrijving,
+    aantal: 1,
+    eenheidsprijs: r.eenheidsprijs,
+    btw_percentage: r.btw_percentage,
+    korting_percentage: 0,
+    grootboek_code: '',
+    detail_regels: [],
+  }))
+}
+
 // Zet offerte-items om naar factuurregels. Gebruikt de actieve prijsvariant
-// (niet de basisprijs) en voegt één correctieregel toe die afrondingskorting +
-// urencorrectie bundelt, zodat het factuur-subtotaal exact gelijk is aan het
+// (niet de basisprijs) en voegt correctieregels toe die afrondingskorting +
+// urencorrectie bundelen, zodat het factuur-subtotaal exact gelijk is aan het
 // opgeslagen offerte.subtotaal — anders wijkt de factuur af van wat de klant
 // op de offerte accepteerde.
 function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Offerte): LineItem[] {
@@ -237,19 +301,44 @@ function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Off
   const regelsNetto = round2(regels.reduce((sum, r) => sum + calcLineTotal(r), 0))
   const correctie = round2((offerte.subtotaal || 0) - regelsNetto)
   if (correctie !== 0) {
-    const weightedBtw = offerte.subtotaal > 0
-      ? Math.round((offerte.btw_bedrag / offerte.subtotaal) * 100)
-      : 21
-    regels.push({
-      id: crypto.randomUUID(),
-      beschrijving: 'Afronding / correctie',
-      aantal: 1,
-      eenheidsprijs: correctie,
-      btw_percentage: weightedBtw,
-      korting_percentage: 0,
-      grootboek_code: '',
-      detail_regels: [],
-    })
+    // Eén correctieregel met een gewogen percentage (bv. 17%) is in Exact
+    // onboekbaar. Verdeel de correctie daarom over de tarieven die de offerte
+    // écht gebruikt, naar rato van het netto per tarief; het restcentje gaat
+    // naar de grootste groep zodat de som exact gelijk blijft.
+    const nettoPerTarief = new Map<number, number>()
+    for (const r of regels) {
+      nettoPerTarief.set(r.btw_percentage, round2((nettoPerTarief.get(r.btw_percentage) || 0) + calcLineTotal(r)))
+    }
+    const totaalNetto = [...nettoPerTarief.values()].reduce((s, v) => s + Math.abs(v), 0)
+    const groepen = [...nettoPerTarief.entries()].sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+
+    const correctieRegels: LineItem[] =
+      groepen.length === 0 || totaalNetto === 0
+        ? lineItemsUitTotalen('Afronding / correctie', correctie, correctie * ((offerte.subtotaal ? offerte.btw_bedrag / offerte.subtotaal : 0.21)))
+        : (() => {
+            let resterend = correctie
+            const uit: LineItem[] = []
+            groepen.forEach(([tarief, netto], index) => {
+              const deel = index === groepen.length - 1
+                ? round2(resterend)
+                : round2(correctie * (Math.abs(netto) / totaalNetto))
+              resterend = round2(resterend - deel)
+              if (deel === 0) return
+              uit.push({
+                id: crypto.randomUUID(),
+                beschrijving: groepen.length > 1 ? `Afronding / correctie (${tarief}% btw)` : 'Afronding / correctie',
+                aantal: 1,
+                eenheidsprijs: deel,
+                btw_percentage: tarief,
+                korting_percentage: 0,
+                grootboek_code: '',
+                detail_regels: [],
+              })
+            })
+            return uit
+          })()
+
+    regels.push(...correctieRegels)
   }
   return regels
 }
@@ -273,13 +362,94 @@ function calcBtwBedrag(items: LineItem[]): number {
 }
 
 function getTodayString(): string {
-  return new Date().toISOString().split('T')[0]
+  // Lokale dag, niet de UTC-dag: tussen middernacht en 02:00 levert
+  // toISOString() hier de datum van gisteren op.
+  return new Date().toLocaleDateString('sv-SE')
 }
 
 function getDefaultVervaldatum(factuurdatum: string, dagen: number = 30): string {
-  const d = new Date(factuurdatum)
-  d.setDate(d.getDate() + dagen)
-  return d.toISOString().split('T')[0]
+  // Lokaal rekenen: new Date('YYYY-MM-DD') is UTC-middernacht, waardoor
+  // toISOString() over de zomertijdovergang een dag terugvalt.
+  const [jaar, maand, dag] = factuurdatum.split('-').map(Number)
+  const d = new Date(jaar, maand - 1, dag + dagen)
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mm}-${dd}`
+}
+
+// De factuur-stappen uit HerinneringTemplate['type']; de offerte-varianten
+// horen niet in deze module thuis.
+type HerinneringType = 'herinnering_1' | 'herinnering_2' | 'herinnering_3' | 'aanmaning'
+
+// Standaardladder van de cron: zonder eigen rij in factuur_opvolg_stappen
+// gelden deze drempels ook handmatig.
+const STANDAARD_HERINNERING_DAGEN: Record<HerinneringType, number> = {
+  herinnering_1: 7,
+  herinnering_2: 14,
+  herinnering_3: 21,
+  aanmaning: 30,
+}
+
+// Stappen die zonder eigen rij in factuur_opvolg_stappen aan staan; identiek
+// aan de STANDAARD_LADDER van de cron. Herinnering 3 is standaard uit en dus
+// handmatig domein: hij wordt niet vanzelf aangeboden, maar is in de dialoog
+// wel te kiezen.
+const STANDAARD_HERINNERING_ACTIEF: Record<HerinneringType, boolean> = {
+  herinnering_1: true,
+  herinnering_2: true,
+  herinnering_3: false,
+  aanmaning: true,
+}
+
+// Zelfde rem als de cron (MIN_DAGEN_TUSSEN_STAPPEN): minstens vijf dagen
+// tussen twee stappen. Die vijf dagen omvatten vandaag, dus dit vervangt de
+// oude zelfde-dag-guard.
+const MIN_DAGEN_TUSSEN_STAPPEN = 5
+
+function dagenSindsLaatsteStap(f: Factuur): number | null {
+  const stempels = [
+    f.herinnering_1_verstuurd,
+    f.herinnering_2_verstuurd,
+    f.herinnering_3_verstuurd,
+    f.aanmaning_verstuurd,
+  ].filter(Boolean) as string[]
+  if (stempels.length === 0) return null
+  const laatste = [...stempels].sort()[stempels.length - 1]
+  const d = new Date(laatste)
+  if (isNaN(d.getTime())) return null
+  return Math.floor((Date.now() - d.getTime()) / 86400000)
+}
+
+function inRustperiode(f: Factuur): boolean {
+  const dagen = dagenSindsLaatsteStap(f)
+  return dagen !== null && dagen < MIN_DAGEN_TUSSEN_STAPPEN
+}
+
+// Zelfde grens als de cron: een Exact-stand ouder dan drie dagen zegt niets
+// meer over wat er nu openstaat.
+const MAX_SYNC_LEEFTIJD_DAGEN = 3
+
+function exactMeldtBetaald(f: Factuur): boolean {
+  if (f.openstaand_exact == null || !f.exact_stand_op) return false
+  const stand = new Date(f.exact_stand_op).getTime()
+  if (isNaN(stand)) return false
+  const dagenOud = Math.floor((Date.now() - stand) / 86400000)
+  return dagenOud < MAX_SYNC_LEEFTIJD_DAGEN && Number(f.openstaand_exact) <= 0.05
+}
+
+// Het betaal-token verloopt na 92 dagen; een knop naar een verlopen link
+// levert de klant een 410 op. Dan liever geen knop.
+function geldigeBetaalUrl(f: Factuur): string | undefined {
+  if (!f.betaal_link) return undefined
+  if (f.betaal_token_verloopt_op && new Date(f.betaal_token_verloopt_op).getTime() <= Date.now()) return undefined
+  return f.betaal_link
+}
+
+const HERINNERING_BRON_LABEL: Record<HerinneringOntvanger['bron'], string> = {
+  factuur_contact: 'contactpersoon van deze factuur',
+  klant_standaard: 'vaste factuur-contactpersoon',
+  klant: 'algemeen klantadres',
+  geen: 'geen adres gevonden',
 }
 
 function buildFactuurNummer(prefix: string, volgnummer: number): string {
@@ -333,7 +503,7 @@ export function FactuurEditor() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
-  const { user } = useAuth()
+  const { user, organisatieId } = useAuth()
   const { medewerkers } = useMedewerkers()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   const {
@@ -465,8 +635,13 @@ export function FactuurEditor() {
   const [verzendAan, setVerzendAan] = useState('')
   const [herinneringAan, setHerinneringAan] = useState('')
   const [herinneringTemplates, setHerinneringTemplates] = useState<HerinneringTemplate[]>([])
-  const [herinneringType, setHerinneringType] = useState<HerinneringTemplate['type']>('herinnering_1')
+  // Ladder uit Instellingen (migratie 212); leeg = standaardladder van de cron
+  const [opvolgStappen, setOpvolgStappen] = useState<FactuurOpvolgStap[]>([])
+  const [herinneringType, setHerinneringType] = useState<HerinneringType>('herinnering_1')
   const [herinneringPreview, setHerinneringPreview] = useState('')
+  // Ontvanger volgens dezelfde volgorde als de cron (migratie 101)
+  const [herinneringOntvanger, setHerinneringOntvanger] = useState<HerinneringOntvanger | null>(null)
+  const [exactStandWaarschuwing, setExactStandWaarschuwing] = useState<string | null>(null)
   const [extraTekstOpen, setExtraTekstOpen] = useState(false)
 
   // ============ DATA LOADING ============
@@ -627,24 +802,9 @@ export function FactuurEditor() {
                     setOrigineleItems(mapped.map((item) => ({ ...item })))
                     setHasOfferteItems(true)
                   } else {
-                    setItems([{
-                      id: crypto.randomUUID(),
-                      beschrijving: offerte.titel,
-                      aantal: 1,
-                      eenheidsprijs: offerte.subtotaal,
-                      btw_percentage: offerte.subtotaal > 0 ? Math.round((offerte.btw_bedrag / offerte.subtotaal) * 100) : 21,
-                      korting_percentage: 0,
-                      grootboek_code: '',
-                    }])
-                    setOrigineleItems([{
-                      id: crypto.randomUUID(),
-                      beschrijving: offerte.titel,
-                      aantal: 1,
-                      eenheidsprijs: offerte.subtotaal,
-                      btw_percentage: offerte.subtotaal > 0 ? Math.round((offerte.btw_bedrag / offerte.subtotaal) * 100) : 21,
-                      korting_percentage: 0,
-                      grootboek_code: '',
-                    }])
+                    const uitTotalen = lineItemsUitTotalen(offerte.titel, offerte.subtotaal, offerte.btw_bedrag)
+                    setItems(uitTotalen)
+                    setOrigineleItems(uitTotalen.map((item) => ({ ...item })))
                     setHasOfferteItems(true)
                   }
                 }
@@ -706,17 +866,7 @@ export function FactuurEditor() {
                   setOrigineleItems(mapped.map((item) => ({ ...item })))
                   setHasOfferteItems(true)
                 } else {
-                  setItems([
-                    {
-                      id: crypto.randomUUID(),
-                      beschrijving: offerte.titel,
-                      aantal: 1,
-                      eenheidsprijs: offerte.subtotaal,
-                      btw_percentage: offerte.subtotaal > 0 ? Math.round((offerte.btw_bedrag / offerte.subtotaal) * 100) : 21,
-                      korting_percentage: 0,
-                      grootboek_code: '',
-                    },
-                  ])
+                  setItems(lineItemsUitTotalen(offerte.titel, offerte.subtotaal, offerte.btw_bedrag))
                 }
               }
             } catch (err) {
@@ -742,7 +892,7 @@ export function FactuurEditor() {
                 setOfferteId(origFactuur.offerte_id || '')
                 setNummer(creditnotaDoornummeren
                   ? await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
-                  : generateTypedNummer(facturenData, 'CR'))
+                  : generateTypedNummer(facturenData, creditnotaPrefix))
                 setKostenplaatsId(origFactuur.kostenplaats_id || '')
                 if (origFactuur.voorwaarden) setVoorwaarden(origFactuur.voorwaarden)
                 if (origFactuur.intro_tekst) setIntroTekst(origFactuur.intro_tekst)
@@ -764,15 +914,7 @@ export function FactuurEditor() {
                       }))
                   )
                 } else {
-                  setItems([{
-                    id: crypto.randomUUID(),
-                    beschrijving: origFactuur.titel,
-                    aantal: 1,
-                    eenheidsprijs: round2(-origFactuur.subtotaal),
-                    btw_percentage: origFactuur.subtotaal > 0 ? Math.round((origFactuur.btw_bedrag / origFactuur.subtotaal) * 100) : 21,
-                    korting_percentage: 0,
-                    grootboek_code: '',
-                  }])
+                  setItems(lineItemsUitTotalen(origFactuur.titel, round2(-origFactuur.subtotaal), round2(-origFactuur.btw_bedrag)))
                 }
               }
             } catch (err) {
@@ -979,9 +1121,60 @@ export function FactuurEditor() {
     if (sendDialogOpen) setVerzendAan(resolvedCp?.email || selectedKlant?.email || '')
   }, [sendDialogOpen, resolvedCp?.email, selectedKlant?.email])
 
+  // Voorzet zolang bepaalHerinneringOntvanger nog onderweg is; die overschrijft
+  // dit veld zodra hij de ontvanger volgens de cron-volgorde kent.
   useEffect(() => {
     if (herinneringDialogOpen) setHerinneringAan(resolvedCp?.email || selectedKlant?.email || '')
   }, [herinneringDialogOpen, resolvedCp?.email, selectedKlant?.email])
+
+  // Dezelfde ladder als de cron: teksten en dagen die in Instellingen staan
+  // moeten ook de handmatige herinnering aansturen.
+  useEffect(() => {
+    if (!organisatieId) return
+    let cancelled = false
+    getFactuurOpvolgStappen(organisatieId)
+      .then((stappen) => { if (!cancelled) setOpvolgStappen(stappen) })
+      .catch(() => { if (!cancelled) setOpvolgStappen([]) })
+    return () => { cancelled = true }
+  }, [organisatieId])
+
+  // Bankbetalingen kent doen. alleen via de Exact-betaalsync. Loopt die achter,
+  // dan kan deze factuur al betaald zijn en manen we een klant voor niets. Niet
+  // blokkerend: de gebruiker weet zelf of hij hem toch wil sturen.
+  useEffect(() => {
+    if (!herinneringDialogOpen || !supabase || !organisatieId) {
+      setExactStandWaarschuwing(null)
+      return
+    }
+    let cancelled = false
+    const controleer = async () => {
+      const { data, error } = await supabase!
+        .from('exact_sync_state')
+        .select('laatste_sync_op, inhaalslag_bezig')
+        .eq('organisatie_id', organisatieId)
+        .maybeSingle()
+      if (cancelled) return
+      if (error || !data) {
+        setExactStandWaarschuwing(null)
+        return
+      }
+      if (data.inhaalslag_bezig === true) {
+        setExactStandWaarschuwing('De Exact-betaalsync is de stand nog aan het inhalen, dus de bankbetalingen zijn nog niet compleet. Mogelijk is deze factuur al betaald.')
+        return
+      }
+      const laatste = data.laatste_sync_op as string | null
+      const dagen = laatste ? Math.floor((Date.now() - new Date(laatste).getTime()) / 86400000) : null
+      if (dagen === null) {
+        setExactStandWaarschuwing('Er is nog geen Exact-betaalsync gedraaid, dus bankbetalingen staan hier nog niet in. Mogelijk is deze factuur al betaald.')
+      } else if (dagen >= 3) {
+        setExactStandWaarschuwing(`De Exact-betaalstand is ${dagen} dagen oud. Mogelijk is deze factuur per bank al betaald.`)
+      } else {
+        setExactStandWaarschuwing(null)
+      }
+    }
+    controleer().catch(() => { if (!cancelled) setExactStandWaarschuwing(null) })
+    return () => { cancelled = true }
+  }, [herinneringDialogOpen, organisatieId])
 
   // Voorvullen adresblok: in edit-mode wint een opgeslagen override, anders het
   // klantadres. Open het blok automatisch als er al een override staat.
@@ -1226,8 +1419,16 @@ export function FactuurEditor() {
       if (isEditMode && existingFactuur) {
         // De PDF van een verzonden factuur staat bevroren in storage en is
         // storage-first bij downloaden. Zonder invalidatie blijft de oude PDF
-        // terugkomen na een wijziging (bv. een adrescorrectie).
+        // terugkomen na een wijziging (bv. een adrescorrectie). De
+        // Exact-bijlage hangt aan diezelfde PDF, dus die stempel moet mee weg:
+        // anders denkt de volgende sync dat de bijlage al klopt en blijft er in
+        // Exact een verouderd document aan het Document hangen.
         const pdfVerouderd = !!existingFactuur.pdf_storage_path
+        // exact_bijlage_gesynced_op staat in types/index.ts als optioneel string
+        // terwijl de kolom nullable is; leeggooien kan alleen langs de typing om.
+        const pdfInvalidatie = (pdfVerouderd
+          ? { pdf_storage_path: null, exact_bijlage_gesynced_op: null }
+          : {}) as unknown as Partial<Factuur>
 
         const updates: Partial<Factuur> = {
           ...adresOverride,
@@ -1246,7 +1447,7 @@ export function FactuurEditor() {
           totaal,
           kostenplaats_id: kostenplaatsId || undefined,
           werkbon_id: werkbonId || undefined,
-          ...(pdfVerouderd ? { pdf_storage_path: null } : {}),
+          ...pdfInvalidatie,
         }
 
         // Drie stappen, definitief-maken als laatste. (1) Header met optimistic
@@ -1838,7 +2039,7 @@ export function FactuurEditor() {
 
       await sendEmail(ontvangerEmail, subject, '', { html, attachments })
 
-      const updated = await updateFactuur(existingFactuur.id, { status: 'verzonden' })
+      const updated = await markeerFactuurVerzonden(existingFactuur.id)
       setExistingFactuur({ ...existingFactuur, ...updated, status: 'verzonden' })
 
       // Update gekoppeld project naar 'gefactureerd'
@@ -1889,19 +2090,33 @@ export function FactuurEditor() {
     }
   }, [selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, existingFactuur, persoonlijkBericht])
 
+  // ============ OPVOLGING PAUZEREN ============
+
+  const handleToggleOpvolging = useCallback(async () => {
+    if (!existingFactuur) return
+    const pauzeren = existingFactuur.opvolging_actief !== false
+    try {
+      // null = volg de org-instelling weer; false = deze factuur nooit manen.
+      const updated = await updateFactuur(existingFactuur.id, { opvolging_actief: pauzeren ? false : null })
+      setExistingFactuur({ ...existingFactuur, ...updated, opvolging_actief: pauzeren ? false : null })
+      toast.success(pauzeren ? 'Automatische herinneringen gepauzeerd voor deze factuur' : 'Automatische herinneringen hervat')
+    } catch (err) {
+      logger.error('Opvolging togglen:', err)
+      const melding = (err as { message?: string })?.message || ''
+      toast.error(melding.includes('opvolging_actief')
+        ? 'Deze instelling is nog niet beschikbaar. Probeer het later opnieuw.'
+        : 'Kon de opvolging niet aanpassen')
+    }
+  }, [existingFactuur])
+
   // ============ MARK AS PAID ============
 
   const handleMarkAsBetaald = useCallback(async () => {
     if (!existingFactuur) return
 
     try {
-      const updates: Partial<Factuur> = {
-        status: 'betaald',
-        betaald_bedrag: existingFactuur.totaal,
-        betaaldatum: getTodayString(),
-      }
-      const updated = await updateFactuurStatus(existingFactuur.id, updates)
-      setExistingFactuur({ ...existingFactuur, ...updated, ...updates })
+      const updated = await markeerFactuurBetaald(existingFactuur.id, existingFactuur.totaal)
+      setExistingFactuur({ ...existingFactuur, ...updated })
       if (user?.id) {
         const naam = user.user_metadata?.voornaam ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim() : user.email || ''
         logWijziging({ userId: user.id, entityType: 'factuur', entityId: existingFactuur.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: existingFactuur.status, nieuweWaarde: 'betaald' })
@@ -1958,7 +2173,6 @@ export function FactuurEditor() {
         ? await generateFactuurNrDb(factuurPrefix, factuurStartNummer)
         : generateTypedNummer(allFacturen, creditnotaPrefix)
 
-      const cnToken = generateBetaalToken()
       const creditnota: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
         user_id: user?.id || '',
         klant_id: existingFactuur.klant_id,
@@ -1973,22 +2187,21 @@ export function FactuurEditor() {
         totaal: round2(-existingFactuur.totaal),
         betaald_bedrag: 0,
         factuurdatum: getTodayString(),
-        vervaldatum: getDefaultVervaldatum(getTodayString()),
+        vervaldatum: getDefaultVervaldatum(getTodayString(), factuurBetaaltermijnDagen),
         notities: `Creditnota: ${creditReden}`,
         voorwaarden: existingFactuur.voorwaarden,
         factuur_type: 'creditnota',
-        betaal_token: cnToken,
-        betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
-        betaal_link: `${window.location.origin}/betalen/${cnToken}`,
+        // Geen betaal_token/betaal_link: een klant kan een negatief bedrag
+        // niet betalen, dus een betaallink is hier zinloos.
+        kostenplaats_id: existingFactuur.kostenplaats_id || undefined,
         gerelateerde_factuur_id: existingFactuur.id,
         credit_reden: creditReden,
       }
 
       const saved = await createFactuur(creditnota)
 
-      // Kopieer items als negatieve bedragen (zelfde patroon als
-      // factuurService.createCreditnota) · zonder regels kan de creditnota
-      // niet naar de boekhouding gesynct worden.
+      // Kopieer items als negatieve bedragen · zonder regels kan de
+      // creditnota niet naar de boekhouding gesynct worden.
       const origineleItems = await getFactuurItems(existingFactuur.id)
       for (const item of origineleItems) {
         await createFactuurItem({
@@ -2002,6 +2215,9 @@ export function FactuurEditor() {
           totaal: round2(-item.totaal),
           volgorde: item.volgorde,
           detail_regels: item.detail_regels || [],
+          // Zonder dezelfde grootboekrekening saldeert de creditboeking in
+          // Exact niet tegen de originele factuur.
+          grootboek_code: item.grootboek_code || undefined,
         } as Omit<FactuurItem, 'id' | 'created_at'>)
       }
 
@@ -2020,91 +2236,283 @@ export function FactuurEditor() {
     } finally {
       setIsSaving(false)
     }
-  }, [existingFactuur, creditReden, allFacturen, selectedKlant, user, navigate, isTrialBlocked, setShowTrialDialog])
+  }, [existingFactuur, creditReden, allFacturen, selectedKlant, user, navigate, isTrialBlocked, setShowTrialDialog, factuurBetaaltermijnDagen, creditnotaDoornummeren, creditnotaPrefix, factuurPrefix, factuurStartNummer])
 
   // ============ HERINNERING ============
 
-  const getVolgendeHerinnering = useCallback((): HerinneringTemplate['type'] | null => {
-    if (!existingFactuur || dagenVervallen <= 0) return null
-    if (!existingFactuur.herinnering_1_verstuurd && dagenVervallen >= 7) return 'herinnering_1'
-    if (!existingFactuur.herinnering_2_verstuurd && dagenVervallen >= 14) return 'herinnering_2'
-    if (!existingFactuur.herinnering_3_verstuurd && dagenVervallen >= 21) return 'herinnering_3'
-    if (!existingFactuur.aanmaning_verstuurd && dagenVervallen >= 30) return 'aanmaning'
-    return null
-  }, [existingFactuur, dagenVervallen])
+  const dagenDrempel = useCallback((type: HerinneringType): number => {
+    const stap = opvolgStappen.find((s) => s.stap_type === type)
+    return stap?.dagen_na_vervaldatum ?? STANDAARD_HERINNERING_DAGEN[type]
+  }, [opvolgStappen])
 
-  const replaceHerinneringVars = useCallback((text: string) => {
-    if (!existingFactuur || !selectedKlant) return text
+  // Teksten in dezelfde voorrang als de cron: eigen stap-rij, dan de
+  // app_settings-teksten, dan de legacy-template, dan de standaardtekst die de
+  // cron ook zou sturen. Die bodemplaat voorkomt dat handmatig strandt op
+  // "geen tekst gevonden" waar de cron wél zou mailen.
+  const herinneringTekst = useCallback((type: HerinneringType) => {
+    const stap = opvolgStappen.find((s) => s.stap_type === type)
+    const legacy = herinneringTemplates.find((t) => t.type === type)
+    const uitSettings: Record<HerinneringType, { onderwerp?: string; inhoud?: string }> = {
+      herinnering_1: { onderwerp: settings.herinnering_1_onderwerp, inhoud: settings.herinnering_1_tekst },
+      herinnering_2: { onderwerp: settings.herinnering_2_onderwerp, inhoud: settings.herinnering_2_tekst },
+      herinnering_3: {},
+      aanmaning: { onderwerp: settings.aanmaning_onderwerp, inhoud: settings.aanmaning_tekst },
+    }
+    return {
+      onderwerp: stap?.onderwerp || uitSettings[type].onderwerp || legacy?.onderwerp || STANDAARD_HERINNERING_TEKSTEN[type].onderwerp,
+      inhoud: stap?.inhoud || uitSettings[type].inhoud || legacy?.inhoud || STANDAARD_HERINNERING_TEKSTEN[type].inhoud,
+      kanaal: stap?.kanaal || 'email',
+    }
+  }, [opvolgStappen, herinneringTemplates, settings])
+
+  // Een stap die in Instellingen uit staat slaat de cron over; handmatig bieden
+  // we hem dan ook niet aan. De escalatie loopt er wel overheen door, en in de
+  // dialoog blijft elke stap kiesbaar voor wie hem bewust wil sturen.
+  const stapActief = useCallback((type: HerinneringType): boolean => {
+    const stap = opvolgStappen.find((s) => s.stap_type === type)
+    return stap ? stap.actief : STANDAARD_HERINNERING_ACTIEF[type]
+  }, [opvolgStappen])
+
+  const getVolgendeHerinnering = useCallback((): HerinneringType | null => {
+    if (!existingFactuur || dagenVervallen <= 0) return null
+    // Minstens vijf dagen rust tussen twee stappen, net als de cron: anders
+    // stuurt een handmatige klik om 10:00 dezelfde klant een tweede mail.
+    if (inRustperiode(existingFactuur)) return null
+    const vlaggen: Record<HerinneringType, string | null | undefined> = {
+      herinnering_1: existingFactuur.herinnering_1_verstuurd,
+      herinnering_2: existingFactuur.herinnering_2_verstuurd,
+      herinnering_3: existingFactuur.herinnering_3_verstuurd,
+      aanmaning: existingFactuur.aanmaning_verstuurd,
+    }
+    const ladder: HerinneringType[] = ['herinnering_1', 'herinnering_2', 'herinnering_3', 'aanmaning']
+    for (let i = 0; i < ladder.length; i++) {
+      const type = ladder[i]
+      if (!stapActief(type)) continue
+      if (vlaggen[type]) continue
+      // Zelfde rem als de cron: is er al een hogere stap verstuurd, dan stelt
+      // de dialoog geen lagere stap meer voor. Handmatig kiezen blijft kunnen.
+      if (ladder.slice(i + 1).some((hoger) => vlaggen[hoger])) continue
+      // Zelfde stop als de cron: de eerste bruikbare kandidaat beslist. Is
+      // zijn drempel nog niet bereikt, dan is er vandaag geen suggestie —
+      // doorlopen zou bij een niet-oplopend ingestelde ladder een stap
+      // voorstellen die de cron nooit kiest.
+      if (dagenVervallen >= dagenDrempel(type)) return type
+      break
+    }
+    return null
+  }, [existingFactuur, dagenVervallen, dagenDrempel, stapActief])
+
+  // factuurOverride laat de verzendkant de verse rij doorgeven, zodat het
+  // bedrag in de mail klopt met wat er op dat moment openstaat.
+  const replaceHerinneringVars = useCallback((text: string, factuurOverride?: Factuur) => {
+    const factuur = factuurOverride || existingFactuur
+    if (!factuur || !selectedKlant) return text
     return text
       .replace(/{klant_naam}/g, selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam)
-      .replace(/{factuur_nummer}/g, existingFactuur.nummer)
-      .replace(/{factuur_bedrag}/g, formatCurrency(existingFactuur.totaal))
-      .replace(/{vervaldatum}/g, formatDate(existingFactuur.vervaldatum))
+      .replace(/{factuur_nummer}/g, factuur.nummer)
+      .replace(/{factuur_bedrag}/g, formatCurrency(round2((factuur.totaal || 0) - (factuur.betaald_bedrag || 0))))
+      .replace(/{vervaldatum}/g, formatDate(factuur.vervaldatum))
       .replace(/{dagen_verlopen}/g, String(dagenVervallen))
       .replace(/{bedrijfsnaam}/g, bedrijfsnaam || '')
-      .replace(/{betaal_link}/g, existingFactuur.betaal_link || '')
+      .replace(/{betaal_link}/g, geldigeBetaalUrl(factuur) || '')
   }, [existingFactuur, selectedKlant, dagenVervallen, bedrijfsnaam])
 
   const openHerinneringDialog = useCallback(() => {
     if (!existingFactuur || !selectedKlant) return
     const type = getVolgendeHerinnering() || 'herinnering_1'
-    const template = herinneringTemplates.find((t) => t.type === type)
-    if (template) {
-      setHerinneringPreview(replaceHerinneringVars(template.inhoud))
-    }
+    setHerinneringPreview(replaceHerinneringVars(herinneringTekst(type).inhoud))
     setHerinneringType(type)
+    setHerinneringOntvanger(null)
     setHerinneringDialogOpen(true)
-  }, [existingFactuur, selectedKlant, getVolgendeHerinnering, herinneringTemplates, replaceHerinneringVars])
+    // Zelfde volgorde als de cron: contactpersoon van de factuur, dan het
+    // vaste factuur-contact van de klant, dan het algemene klantadres.
+    bepaalHerinneringOntvanger({ klant_id: existingFactuur.klant_id, contactpersoon_id: existingFactuur.contactpersoon_id })
+      .then((gevonden) => {
+        setHerinneringOntvanger(gevonden)
+        if (gevonden.email) setHerinneringAan(gevonden.email)
+      })
+      .catch(() => setHerinneringOntvanger(null))
+  }, [existingFactuur, selectedKlant, getVolgendeHerinnering, herinneringTekst, replaceHerinneringVars])
+
+  // Best-effort bewijsregel; vóór migratie 212/214 bestaat de tabel (of het
+  // insert-recht) nog niet en mag dat de verzending niet blokkeren.
+  const logHerinnering = useCallback(async (
+    factuur: Factuur,
+    stap: HerinneringType,
+    kanaal: string,
+    ontvanger: string,
+    onderwerp: string
+  ) => {
+    if (!supabase || !organisatieId) return
+    try {
+      const { error } = await supabase.from('factuur_opvolg_log').insert({
+        organisatie_id: organisatieId,
+        factuur_id: factuur.id,
+        factuur_nummer: factuur.nummer,
+        stap,
+        kanaal,
+        ontvanger,
+        onderwerp,
+        resultaat: 'verstuurd',
+      })
+      if (error) logger.error('Herinnering-log schrijven mislukt:', error.message)
+    } catch (err) {
+      logger.error('Herinnering-log schrijven mislukt:', err)
+    }
+  }, [organisatieId])
+
+  // Het kanaal van de nieuwste logregel voor deze stap. 'intern' betekent dat
+  // de cron alleen een interne notificatie stuurde en de klant nog niets zag.
+  // De vlag zegt alleen "stap geconsumeerd"; deze check bepaalt of de klant
+  // ook echt gemaild is. Doorlaten mag alleen als (a) er nergens een
+  // email-verzending voor deze stap gelogd staat, (b) er wél een interne
+  // geregistreerd is, en (c) de vlag-timestamp bij die interne registratie
+  // hoort — een latere handmatige mail waarvan de logregel faalde zet de
+  // vlag opnieuw en valt dan buiten dat venster, zodat de doorlaat niet
+  // onbeperkt herbruikbaar is.
+  const magInternDoorlaten = useCallback(async (factuurId: string, stap: HerinneringType, vlagTijd: string | null): Promise<boolean> => {
+    if (!supabase || !organisatieId || !vlagTijd) return false
+    try {
+      const { data, error } = await supabase
+        .from('factuur_opvolg_log')
+        .select('kanaal, resultaat, verzonden_op')
+        .eq('organisatie_id', organisatieId)
+        .eq('factuur_id', factuurId)
+        .eq('stap', stap)
+      if (error) {
+        logger.error('Herinnering-log lezen mislukt:', error.message)
+        return false
+      }
+      const rijen = (data ?? []) as { kanaal?: string; resultaat?: string; verzonden_op?: string }[]
+      if (rijen.some((r) => r.kanaal === 'email' && r.resultaat === 'verstuurd')) return false
+      const intern = rijen.filter((r) => r.kanaal === 'intern' && r.resultaat === 'verstuurd')
+      const vlagMs = new Date(vlagTijd).getTime()
+      return intern.some((r) => r.verzonden_op && Math.abs(new Date(r.verzonden_op).getTime() - vlagMs) < 10 * 60 * 1000)
+    } catch (err) {
+      logger.error('Herinnering-log lezen mislukt:', err)
+      return false
+    }
+  }, [organisatieId])
 
   const handleVerstuurHerinnering = useCallback(async () => {
-    const herinneringOntvanger = herinneringAan.trim() || resolvedCp?.email || selectedKlant?.email || ''
-    if (!existingFactuur || !herinneringOntvanger) {
+    // Zelfde abonnement-guard als de lijstweergave: een verlopen of opgezegd
+    // abonnement mag ook vanuit de editor niet namens de organisatie mailen.
+    if (isTrialBlocked) {
+      setShowTrialDialog(true)
+      return
+    }
+    const ontvangerEmail = herinneringAan.trim() || herinneringOntvanger?.email || resolvedCp?.email || selectedKlant?.email || ''
+    if (!existingFactuur || !ontvangerEmail) {
       toast.error('Geen emailadres gevonden voor deze klant')
       return
     }
 
-    const template = herinneringTemplates.find((t) => t.type === herinneringType)
-    if (!template) {
-      toast.error('Geen herinnering template gevonden')
-      return
+    const tekst = herinneringTekst(herinneringType)
+    const vlagVelden: Record<HerinneringType, keyof Factuur> = {
+      herinnering_1: 'herinnering_1_verstuurd',
+      herinnering_2: 'herinnering_2_verstuurd',
+      herinnering_3: 'herinnering_3_verstuurd',
+      aanmaning: 'aanmaning_verstuurd',
     }
+    const updateField = vlagVelden[herinneringType]
 
     try {
       setIsSending(true)
-      const onderwerp = replaceHerinneringVars(template.onderwerp)
 
+      // Dit tabblad kan uren open staan terwijl de cron van 09:30 al gemaild
+      // heeft. Daarom vlak voor verzending de verse rij lezen.
+      const vers = await getFactuur(existingFactuur.id).catch(() => null)
+      if (vers) {
+        setExistingFactuur(vers)
+        if (round2((vers.totaal || 0) - (vers.betaald_bedrag || 0)) <= 0) {
+          toast.error('Volgens de laatste stand staat er niets meer open op deze factuur.')
+          setHerinneringDialogOpen(false)
+          return
+        }
+        if (exactMeldtBetaald(vers)) {
+          toast.error('De bankstand uit Exact Online meldt deze factuur als betaald. Er gaat geen herinnering uit.')
+          setHerinneringDialogOpen(false)
+          return
+        }
+        // Een stap met kanaal 'intern' zet de vlag zonder dat de klant iets
+        // zag. Dan mag de handmatige mail alsnog, precies wat de banner in
+        // deze dialoog belooft. Geen logregel betekent blokkeren.
+        let internDoorlaten = false
+        if (vers[updateField]) {
+          internDoorlaten = await magInternDoorlaten(vers.id, herinneringType, vers[updateField] as string | null)
+          if (!internDoorlaten) {
+            toast.error(`Deze ${herinneringType === 'aanmaning' ? 'aanmaning' : 'herinnering'} is inmiddels al verstuurd. De factuur is bijgewerkt met de actuele stand.`)
+            setHerinneringDialogOpen(false)
+            return
+          }
+        }
+        // De intern-stap zette zelf de stempel die de rustperiode laat afgaan;
+        // die telt hier dus niet mee.
+        const voorRust = internDoorlaten ? ({ ...vers, [updateField]: null } as Factuur) : vers
+        if (inRustperiode(voorRust)) {
+          toast.error(`Er is in de afgelopen ${MIN_DAGEN_TUSSEN_STAPPEN} dagen al een herinnering verstuurd voor deze factuur.`)
+          setHerinneringDialogOpen(false)
+          return
+        }
+      }
+
+      const actueleFactuur = vers || existingFactuur
+      const onderwerp = replaceHerinneringVars(tekst.onderwerp, actueleFactuur)
+
+      // De vlag pas na een geslaagde verzending: zet je hem ook bij een
+      // mislukte mail, dan escaleert de cron over vijf dagen op een stap die
+      // de klant nooit heeft gezien.
+      // De ingestelde stap-tekst draagt de mail; anders leest een aanmaning als
+      // eerste herinnering. Opnieuw gerenderd op de verse rij, zodat het bedrag
+      // klopt met wat er nu openstaat.
+      const inhoudTekst = replaceHerinneringVars(tekst.inhoud, actueleFactuur)
       try {
         const { html } = factuurHerinneringTemplate({
           klantNaam: selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '',
-          factuurNummer: existingFactuur.nummer,
-          factuurTitel: existingFactuur.titel,
-          totaalBedrag: formatCurrency(existingFactuur.totaal),
-          vervaldatum: formatDate(existingFactuur.vervaldatum),
+          factuurNummer: actueleFactuur.nummer,
+          factuurTitel: actueleFactuur.titel,
+          totaalBedrag: formatCurrency(round2((actueleFactuur.totaal || 0) - (actueleFactuur.betaald_bedrag || 0))),
+          vervaldatum: formatDate(actueleFactuur.vervaldatum),
           dagenVervallen,
           bedrijfsnaam,
           primaireKleur,
           logoUrl: profile?.logo_url || undefined,
-          betaalUrl: existingFactuur.betaal_link || undefined,
+          betaalUrl: geldigeBetaalUrl(actueleFactuur),
+          eigenTekst: inhoudTekst,
+          heading: herinneringType === 'aanmaning' ? 'Aanmaning' : 'Herinnering',
         })
-        await sendEmail(herinneringOntvanger, onderwerp, herinneringPreview, { html })
+        // Kopie naar het ingestelde BCC-adres zodat de eigen administratie
+        // meekijkt met wat er naar de klant gaat.
+        const herinneringBcc = settings?.herinnering_bcc_adres?.includes('@')
+          ? settings.herinnering_bcc_adres.trim()
+          : undefined
+        await sendEmail(ontvangerEmail, onderwerp, inhoudTekst, { html, bcc: herinneringBcc })
       } catch (err) {
+        // De outbox-terugval in sendEmail betekent dat de mail wel degelijk
+        // wordt bezorgd; de stap moet dan als verstuurd tellen, anders mailt
+        // de cron morgen dezelfde stap nogmaals.
+        if (err instanceof Error && err.message.includes('outbox')) {
+          logger.warn('Herinnering in de outbox geplaatst:', err.message)
+          const updates: Partial<Factuur> = { [updateField]: new Date().toISOString() }
+          await updateFactuur(existingFactuur.id, updates).catch(() => undefined)
+          setExistingFactuur((prev) => (prev ? { ...prev, ...updates } : prev))
+          await logHerinnering(existingFactuur, herinneringType, 'email', ontvangerEmail, onderwerp)
+          toast.info('De mail staat in de outbox en wordt automatisch verstuurd. De herinnering is gemarkeerd.')
+          setHerinneringDialogOpen(false)
+          return
+        }
         logger.error('Verstuur herinnering email:', err)
-        toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Herinnering is wel gemarkeerd.')
+        toast.error('Email niet verzonden. De herinnering is niet gemarkeerd.')
+        return
       }
 
-      const fieldMap: Record<string, string> = {
-        herinnering_1: 'herinnering_1_verstuurd',
-        herinnering_2: 'herinnering_2_verstuurd',
-        herinnering_3: 'herinnering_3_verstuurd',
-        aanmaning: 'aanmaning_verstuurd',
-      }
-      const updateField = fieldMap[herinneringType]
       const updates: Partial<Factuur> = { [updateField]: new Date().toISOString() }
 
       await updateFactuur(existingFactuur.id, updates)
-      setExistingFactuur({ ...existingFactuur, ...updates })
+      setExistingFactuur((prev) => (prev ? { ...prev, ...updates } : prev))
+      await logHerinnering(existingFactuur, herinneringType, 'email', ontvangerEmail, onderwerp)
 
-      toast.success(`${template.type === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} verstuurd voor ${existingFactuur.nummer}`)
+      toast.success(`${herinneringType === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} verstuurd voor ${existingFactuur.nummer}`)
       setHerinneringDialogOpen(false)
     } catch (err) {
       logger.error('Verstuur herinnering:', err)
@@ -2112,12 +2520,20 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, resolvedCp, herinneringAan, herinneringTemplates, herinneringType, herinneringPreview, replaceHerinneringVars, dagenVervallen, bedrijfsnaam, primaireKleur, profile])
+  }, [existingFactuur, selectedKlant, resolvedCp, herinneringAan, herinneringOntvanger, herinneringTekst, herinneringType, replaceHerinneringVars, dagenVervallen, bedrijfsnaam, primaireKleur, profile, logHerinnering, magInternDoorlaten, isTrialBlocked, setShowTrialDialog])
 
   // ============ EXACT SYNC ============
 
   const handleSyncExact = useCallback(async (attachmentOnly: boolean) => {
     if (!existingFactuur) return
+
+    // De server boekt de DB-staat; met onopgeslagen wijzigingen zouden boeking
+    // (oude regels) en PDF (nieuwe editor-staat) uiteenlopen. Zelfde patroon
+    // als de boekhoudpakket-syncknop.
+    if (isDirty) {
+      toast.error('Sla de factuur eerst op voordat je naar Exact Online synct')
+      return
+    }
 
     // De knop verdwijnt pas als exact_synced_at terug is, dus tijdens de call
     // blijft hij aanklikbaar. Exact heeft geen idempotency-key, dus een tweede
@@ -2196,6 +2612,7 @@ export function FactuurEditor() {
         document_id: string | null
         bijlage_synced: boolean
         al_gesynct?: boolean
+        waarschuwing?: string
       }
 
       setExistingFactuur({
@@ -2215,14 +2632,20 @@ export function FactuurEditor() {
         : attachmentOnly
         ? 'Bijlage opnieuw verstuurd naar Exact Online'
         : 'Factuur gesynchroniseerd met Exact Online'
+      // De waarschuwing is niet fataal: de boeking staat er wel. Bevestig dat
+      // eerst, en zet de waarschuwing als losse toast ernaast in plaats van
+      // eroverheen.
       toast.success(successMsg, { id: toastId })
+      if (data.waarschuwing) {
+        toast.warning(data.waarschuwing, { duration: 10000 })
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Sync mislukt'
       toast.error(msg, { id: toastId })
     } finally {
       exactSyncBezigRef.current = false
     }
-  }, [existingFactuur, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCreditFactuur, selectedKlant, documentStyle])
+  }, [existingFactuur, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCreditFactuur, selectedKlant, documentStyle, isDirty])
 
   // ============ BOEKHOUD SYNC (SnelStart / Moneybird / e-Boekhouden) ============
 
@@ -2516,6 +2939,14 @@ export function FactuurEditor() {
                       <DropdownMenuItem onClick={openHerinneringDialog}>
                         <Bell className="h-4 w-4 mr-2" />
                         Herinnering versturen
+                      </DropdownMenuItem>
+                    )}
+                    {(currentStatus === 'open' || currentStatus === 'verzonden' || isVervallen) && (
+                      <DropdownMenuItem onClick={handleToggleOpvolging}>
+                        <BellOff className="h-4 w-4 mr-2" />
+                        {existingFactuur?.opvolging_actief === false
+                          ? 'Automatische herinneringen hervatten'
+                          : 'Automatische herinneringen pauzeren'}
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
@@ -3096,7 +3527,10 @@ export function FactuurEditor() {
                       onChange={(e) => handleUpdateItem(item.id, 'btw_percentage', parseFloat(e.target.value) || 0)}
                       className="text-sm text-right"
                       min={0}
-                      step="1"
+                      // "any": een gewogen mengtarief (bv. 20,9952) mag niet
+                      // :invalid worden of door de spinner naar een heel
+                      // getal springen, dat verandert stil het bedrag.
+                      step="any"
                       disabled={isReadOnly}
                     />
                     <Input
@@ -3587,6 +4021,11 @@ export function FactuurEditor() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
+            {exactStandWaarschuwing && (
+              <div className="rounded-lg border border-[#F15025]/30 bg-[#F15025]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
+                {exactStandWaarschuwing}
+              </div>
+            )}
             <div>
               <Label className="text-sm">Aan</Label>
               <div className="mt-1">
@@ -3597,12 +4036,24 @@ export function FactuurEditor() {
                   inputClassName={FACTUUR_AAN_CLS}
                 />
               </div>
+              {herinneringOntvanger?.email && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Voorgestelde ontvanger: {HERINNERING_BRON_LABEL[herinneringOntvanger.bron]}
+                </p>
+              )}
+              {herinneringOntvanger && !herinneringOntvanger.email && (
+                <p className="mt-1 text-xs text-[#F15025]">Geen emailadres bekend voor deze klant</p>
+              )}
             </div>
             <div>
               <Label className="text-sm">Type</Label>
               <Select
                 value={herinneringType}
-                onValueChange={(v) => setHerinneringType(v as HerinneringTemplate['type'])}
+                onValueChange={(v) => {
+                  const type = v as HerinneringType
+                  setHerinneringType(type)
+                  setHerinneringPreview(replaceHerinneringVars(herinneringTekst(type).inhoud))
+                }}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue />
@@ -3615,6 +4066,12 @@ export function FactuurEditor() {
                 </SelectContent>
               </Select>
             </div>
+            {herinneringTekst(herinneringType)?.kanaal === 'intern' && (
+              <div className="rounded-lg border border-[#F15025]/30 bg-[#F15025]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
+                Deze stap staat in Instellingen op intern. Normaal krijgt de klant hier geen mail, maar bel je zelf.
+                Verstuur je hem toch, dan gaat de tekst gewoon naar de klant.
+              </div>
+            )}
             {herinneringPreview && (
               <div>
                 <Label className="text-sm">Voorbeeld</Label>

@@ -277,15 +277,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // wekte een ontkoppelde rij weer op.
     const expires_at = new Date(Date.now() + tokens.expires_in * 1000).toISOString()
 
+    const nieuweRij = {
+      user_id,
+      access_token: encryptSecret(tokens.access_token),
+      refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(tokenData.refresh_token)),
+      expires_at,
+      division: tokenData.division,
+      updated_at: new Date().toISOString(),
+    }
+
     const { data: bijgewerkt, error: updateFout } = await supabase
       .from('exact_tokens')
-      .update({
-        access_token: encryptSecret(tokens.access_token),
-        refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(tokenData.refresh_token)),
-        expires_at,
-        division: tokenData.division,
-        updated_at: new Date().toISOString(),
-      })
+      .update(nieuweRij)
       .eq('user_id', user_id)
       .eq('refresh_token', tokenData.refresh_token)
       .select('user_id')
@@ -301,8 +304,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     } else if (!bijgewerkt?.length) {
       // Verloren race of ontkoppeling: staat er een nieuwere keten, geef die
-      // terug. Is de rij weg, dan is de koppeling bewust verbroken en wekken we
-      // hem niet opnieuw tot leven.
+      // terug.
       const { data: huidig } = await supabase
         .from('exact_tokens')
         .select('access_token, expires_at')
@@ -315,9 +317,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           expires_at: rij.expires_at,
         })
       }
-      return res.status(400).json({
-        error: 'Exact Online is ontkoppeld. Verbind opnieuw via Instellingen > Integraties.',
-      })
+
+      // Rij is weg. Dat kan een expliciete ontkoppeling zijn (dan NIET
+      // reanimeren), maar ook een parallel pad dat tijdens onze refresh
+      // invalid_grant kreeg en de rij wiste — dan is onze verse keten de enige
+      // werkende die nog bestaat en zou 400 teruggeven de hele org ontkoppelen.
+      // Zelfde discriminator als exact-sync-factuur.ts: exact_owner_user_id en
+      // exact_online_connected worden bij een echte ontkoppeling geleegd.
+      const settings = await loadAppSettingsOrgFirst(
+        supabase,
+        user_id,
+        'exact_owner_user_id, exact_online_connected',
+      )
+      const eigenaar = (settings?.exact_owner_user_id as string | null) ?? null
+      const nogGekoppeld = eigenaar === user_id || (eigenaar === null && settings?.exact_online_connected === true)
+
+      if (!nogGekoppeld) {
+        return res.status(400).json({
+          error: 'Exact Online is ontkoppeld. Verbind opnieuw via Instellingen > Integraties.',
+        })
+      }
+
+      const { error: insertFout } = await supabase.from('exact_tokens').insert(nieuweRij)
+      // 23505 = een parallel request maakte de rij net aan; die keten is nieuwer
+      // dan de onze en mag blijven staan.
+      if (insertFout && insertFout.code !== '23505') {
+        console.error('[Exact] geroteerde token NIET opgeslagen (insert)', {
+          user_id, endpoint: 'exact-refresh.ts', fout: insertFout.message,
+        })
+        Sentry.captureException(new Error('Exact token rotation not persisted'), {
+          level: 'error',
+          tags: { exact_endpoint: 'exact-refresh', oauth_error: 'rotation_not_persisted' },
+          extra: { user_id, fout: insertFout.message },
+        })
+      }
     }
 
     return res.status(200).json({

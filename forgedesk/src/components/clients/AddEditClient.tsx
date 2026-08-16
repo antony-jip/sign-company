@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -55,6 +56,7 @@ interface FormData {
   kvk_nummer: string
   btw_nummer: string
   status: 'actief' | 'inactief' | 'prospect'
+  geen_betalingsherinneringen: boolean
   tags: string
   notities: string
   klant_labels: string[]
@@ -77,6 +79,7 @@ const initialFormData: FormData = {
   kvk_nummer: '',
   btw_nummer: '',
   status: 'actief',
+  geen_betalingsherinneringen: false,
   tags: '',
   notities: '',
   klant_labels: [],
@@ -209,6 +212,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         kvk_nummer: klant.kvk_nummer,
         btw_nummer: klant.btw_nummer,
         status: klant.status,
+        geen_betalingsherinneringen: klant.geen_betalingsherinneringen === true,
         tags: klant.tags.join(', '),
         notities: klant.notities,
         klant_labels: klant.klant_labels || [],
@@ -279,6 +283,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         kvk_nummer: formData.kvk_nummer.trim(),
         btw_nummer: formData.btw_nummer.trim(),
         status: formData.status,
+        geen_betalingsherinneringen: formData.geen_betalingsherinneringen,
         tags: tagsArray,
         notities: formData.notities.trim(),
         contactpersonen: klant?.contactpersonen || [],
@@ -288,14 +293,31 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         labels: formData.labels,
       }
 
-      let savedKlant: Klant
+      // Draait migratie 212 nog niet (kolom geen_betalingsherinneringen
+      // ontbreekt), dan mag opslaan daar niet op stranden — maar de
+      // gebruiker moet wel horen dat die ene instelling niet is bewaard.
+      let killSwitchOvergeslagen = false
+      const opslaan = async (data: typeof klantData): Promise<Klant> => {
+        try {
+          return isEditing && klant ? await updateKlant(klant.id, data) : await createKlant(data)
+        } catch (err) {
+          if ((err as { message?: string })?.message?.includes('geen_betalingsherinneringen')) {
+            killSwitchOvergeslagen = true
+            const { geen_betalingsherinneringen: _nietBeschikbaar, ...zonder } = data
+            return isEditing && klant ? await updateKlant(klant.id, zonder as typeof klantData) : await createKlant(zonder as typeof klantData)
+          }
+          throw err
+        }
+      }
+      const savedKlant = await opslaan(klantData)
+      if (killSwitchOvergeslagen && formData.geen_betalingsherinneringen) {
+        toast.info('De instelling "geen betalingsherinneringen" is nog niet beschikbaar en is niet opgeslagen.')
+      }
       if (isEditing && klant) {
-        savedKlant = await updateKlant(klant.id, klantData)
         toast.success('Klant bijgewerkt', {
           description: `${savedKlant.bedrijfsnaam} is succesvol bijgewerkt.`,
         })
       } else {
-        savedKlant = await createKlant(klantData)
         toast.success('Klant aangemaakt', {
           description: `${savedKlant.bedrijfsnaam} is succesvol aangemaakt.`,
         })
@@ -620,6 +642,23 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                 placeholder="NL123456789B01"
               />
             </div>
+          </div>
+
+          {/* Betalingsherinneringen kill-switch */}
+          <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-border/50 bg-muted/20">
+            <div className="space-y-1">
+              <Label htmlFor="geen_betalingsherinneringen" className="text-sm font-medium">
+                Geen automatische betalingsherinneringen
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Deze klant ontvangt nooit automatische herinneringen of aanmaningen. Handmatig versturen blijft mogelijk.
+              </p>
+            </div>
+            <Switch
+              id="geen_betalingsherinneringen"
+              checked={formData.geen_betalingsherinneringen}
+              onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, geen_betalingsherinneringen: checked }))}
+            />
           </div>
 
           {/* Row 6: Tags */}

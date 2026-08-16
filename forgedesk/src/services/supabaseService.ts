@@ -80,15 +80,14 @@ export {
 export type { Conventie } from './conventieService'
 
 export {
-  getFacturen, getFactuur, createFactuur, updateFactuur, deleteFactuur,
+  getFacturen, getFactuur, createFactuur, updateFactuur, deleteFactuur, markeerFactuurVerzonden, markeerFactuurBetaald,
   updateFactuurWithNummerRetry, getStandaardFacturenVoorOfferte, getVoorschottenVoorOfferte, FactuurConflictError,
   getFactuurItems, createFactuurItem, replaceFactuurItems,
   getFacturenByKlant, getFacturenByProject,
   getVerlopenFacturen, updateFactuurStatus,
   getHerinneringTemplates, getDefaultHerinneringTemplates,
   createHerinneringTemplate, updateHerinneringTemplate, deleteHerinneringTemplate,
-  generateFactuurNummer, generateCreditnotaNummer,
-  createCreditnota, createVoorschotfactuur,
+  generateFactuurNummer, createVoorschotfactuur,
 } from './factuurService'
 
 export {

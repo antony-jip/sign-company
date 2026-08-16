@@ -227,7 +227,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           signal: AbortSignal.timeout(15_000),
         })
         if (existingResp.ok) {
-          const existing = await existingResp.json()
+          const existing = (await existingResp.json()) as {
+            id?: string
+            status?: string
+            expiresAt?: string
+            _links?: { checkout?: { href?: string } }
+          }
           const expiresAt = existing.expiresAt ? new Date(existing.expiresAt) : null
           const stillValid = expiresAt ? expiresAt.getTime() > Date.now() : false
           if (existing.status === 'open' && stillValid) {
@@ -288,7 +293,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: `Mollie fout: ${mollieResponse.status}` })
     }
 
-    const payment = await mollieResponse.json()
+    const payment = (await mollieResponse.json()) as {
+      id?: string
+      status?: string
+      _links?: { checkout?: { href?: string } }
+    }
+
+    // Zonder id kan de webhook deze betaling nooit terugvinden: de
+    // registratierij én mollie_payment_id zouden leeg blijven. Hier stoppen is
+    // duidelijker dan verderop stranden met een betaling die nergens landt.
+    if (!payment.id) {
+      console.error('[mollie-create-payment] Mollie-antwoord zonder payment id:', payment)
+      Sentry.captureMessage('mollie-create-payment: Mollie gaf een payment zonder id terug', 'warning')
+      return res.status(502).json({ error: 'Mollie gaf een onvolledig antwoord terug. Probeer opnieuw.' })
+    }
 
     // Sla mollie_payment_id op in factuur.
     // betaal_link NIET overschrijven — dit veld bevat de doen.-eigen URL
@@ -297,6 +315,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // niet in DB.
     if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+      // Registreer de payment meteen in het grootboek met bedrag 0. facturen.
+      // mollie_payment_id is één kolom die een volgende checkout overschrijft;
+      // de webhook van déze payment vindt de factuur dan niet meer, antwoordt
+      // 200 en Mollie stopt definitief met retrien terwijl het geld binnen is.
+      // Met deze rij blijft elke payment via bron_referentie terugvindbaar.
+      // Bedrag 0 raakt de invariant betaald_bedrag = som(rijen) niet; de RPC
+      // herkent de rij later op referentie en boekt de delta erop bij.
+      if (organisatie_id) {
+        const { error: registratieError } = await supabase
+          .from('factuur_betalingen')
+          .upsert(
+            {
+              organisatie_id,
+              factuur_id,
+              bron: 'mollie',
+              bron_referentie: payment.id,
+              bedrag: 0,
+            },
+            { onConflict: 'organisatie_id,bron,bron_referentie', ignoreDuplicates: true },
+          )
+        if (registratieError) {
+          if (registratieError.code === 'PGRST205') {
+            // Migratie 210 nog niet gedraaid — geen tabel, geen registratie.
+            console.warn('[mollie-create-payment] factuur_betalingen bestaat nog niet, registratie overgeslagen')
+          } else {
+            // Niet blokkeren: de payment zelf en mollie_payment_id hieronder
+            // dragen de normale flow. Wel zichtbaar maken, want zonder deze rij
+            // is een overschreven payment_id weer een blinde vlek.
+            console.error('[mollie-create-payment] registratierij aanmaken faalde voor payment.id=', payment.id, registratieError)
+            Sentry.captureException(registratieError, { extra: { factuur_id, paymentId: payment.id } })
+          }
+        }
+      }
+
       const { error: updateError } = await supabase
         .from('facturen')
         .update({

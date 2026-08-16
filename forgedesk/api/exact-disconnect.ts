@@ -3,9 +3,9 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import * as Sentry from '@sentry/node'
 
-// Ontkoppelt Exact Online voor de hele organisatie: gooit de tokens van de
-// eigenaar weg en maakt `exact_owner_user_id` leeg zodat er weer opnieuw
-// verbonden kan worden. Zonder dit pad blijft een koppeling voor altijd bij de
+// Ontkoppelt Exact Online voor de hele organisatie: gooit de tokens van alle
+// leden van de organisatie weg en maakt `exact_owner_user_id` leeg zodat er
+// weer opnieuw verbonden kan worden. Zonder dit pad blijft een koppeling voor altijd bij de
 // eerste OAuth-gebruiker hangen en is er geen weg terug zonder DB-rechten.
 //
 // De configuratie (administratie, dagboek, grootboek, btw-codes, document-type)
@@ -43,17 +43,6 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL |
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
-// ─── Inline org-aware app_settings helpers ───
-// Vercel serverless functions kunnen geen modules delen tussen API routes.
-async function getOrgIdForUser(supabase: SupabaseClient, userId: string): Promise<string | null> {
-  const { data } = await supabase
-    .from('profiles')
-    .select('organisatie_id')
-    .eq('id', userId)
-    .maybeSingle()
-  return ((data as { organisatie_id?: string } | null)?.organisatie_id) ?? null
-}
 
 function getClientIp(req: VercelRequest): string | null {
   const fwd = req.headers['x-forwarded-for']
@@ -152,35 +141,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // Tokens van de tokenhouder weg. Ook die van de caller als dat iemand
-    // anders is: een oude rij van een vorige eigenaar zou anders blijven staan
-    // en later alsnog als tokenhouder opduiken.
+    // Opruimen op organisatie-lidmaatschap, niet op `exact_owner_user_id`: die
+    // vlag staat na een eerdere (half gelukte) poging al op null, waarna een
+    // retry de tokenrij van de vorige eigenaar voorgoed zou laten staan — en de
+    // keepalive houdt die dan levend. De hele organisatie ontkoppelt, dus alle
+    // tokenrijen van haar leden mogen weg; de caller altijd erbij.
     //
-    // Alleen de rij van de eigenaar aanraken als die nog bij deze organisatie
-    // hoort. `exact_tokens` heeft geen organisatie_id, dus zonder deze check zou
-    // een verhuisde eigenaar zijn actieve tokens van zijn nieuwe organisatie
-    // kwijtraken doordat de oude organisatie ontkoppelt.
-    const eigenaarOrg = eigenaarId ? await getOrgIdForUser(supabaseAdmin, eigenaarId) : null
-    const eigenaarHoortErbij = !!eigenaarId && eigenaarOrg === orgId
-    const teVerwijderen = [...new Set([eigenaarHoortErbij ? eigenaarId : null, userId].filter(Boolean))] as string[]
-    const { error: deleteError } = await supabaseAdmin
-      .from('exact_tokens')
-      .delete()
-      .in('user_id', teVerwijderen)
-
-    if (deleteError) {
-      console.error('[exact-disconnect] tokens verwijderen mislukt:', deleteError.message)
-      Sentry.captureException(new Error('Exact disconnect: token delete failed'), {
-        level: 'error',
-        tags: { exact_endpoint: 'exact-disconnect' },
-        extra: { org_id: orgId, fout: deleteError.message },
-      })
+    // `exact_tokens` heeft geen organisatie_id, vandaar de omweg via
+    // profiles.organisatie_id. Een verhuisde ex-eigenaar valt er zo terecht
+    // buiten: die hoort inmiddels bij een andere organisatie en zou anders zijn
+    // actieve koppeling daar kwijtraken.
+    const { data: orgLeden, error: ledenError } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('organisatie_id', orgId)
+    if (ledenError) {
+      console.error('[exact-disconnect] organisatieleden ophalen mislukt:', ledenError.message)
       return res.status(500).json({ error: 'Ontkoppelen mislukt. Probeer het opnieuw.' })
     }
+    const teVerwijderen = [...new Set([
+      ...((orgLeden ?? []) as { id: string }[]).map((p) => p.id),
+      userId,
+    ])]
 
-    // Pas de vlag omlaag ná het verwijderen van de tokens. Andersom zou een
-    // gefaalde delete een koppeling achterlaten die "uit" lijkt maar nog
-    // werkende tokens heeft.
+    // Eerst de vlaggen omlaag, daarna pas de tokens weg. Andersom bestaat er
+    // een venster tussen delete en update waarin een parallelle refresh de
+    // verdwenen tokenrij ziet, aan `exact_owner_user_id`/`exact_online_connected`
+    // afleest dat de koppeling nog leeft, en de rij via de her-insert opnieuw
+    // aanmaakt — de ontkoppeling was dan ongedaan gemaakt. Met deze volgorde
+    // ziet zo'n refresh een lege eigenaar en laat hij zijn keten vallen.
     const { error: updateError } = await supabaseAdmin
       .from('app_settings')
       .update({ exact_online_connected: false, exact_owner_user_id: null })
@@ -192,6 +181,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         level: 'error',
         tags: { exact_endpoint: 'exact-disconnect' },
         extra: { org_id: orgId, fout: updateError.message },
+      })
+      return res.status(500).json({ error: 'Ontkoppelen mislukt. Probeer het opnieuw.' })
+    }
+
+    // Sync-state opruimen: een achtergebleven rij zou de herinneringsmotor
+    // permanent laten pauzeren ("Exact-stand verouderd") voor een org die
+    // helemaal geen Exact meer heeft. De spiegel (exact_betaaltermijnen)
+    // blijft bewust staan als audit-historie. Best-effort: vóór migratie 211
+    // bestaat de tabel niet.
+    const { error: stateDeleteError } = await supabaseAdmin
+      .from('exact_sync_state')
+      .delete()
+      .eq('organisatie_id', orgId)
+    if (stateDeleteError && stateDeleteError.code !== 'PGRST205') {
+      console.warn('[exact-disconnect] exact_sync_state opruimen mislukt:', stateDeleteError.message)
+    }
+
+    // Tokens van de organisatie weg. Een retry doet exact hetzelfde: de lijst
+    // hangt niet meer aan vlaggen die deze handler zelf al gewist heeft.
+    const { error: deleteError } = await supabaseAdmin
+      .from('exact_tokens')
+      .delete()
+      .in('user_id', teVerwijderen)
+
+    if (deleteError) {
+      // De vlaggen staan al uit, dus de koppeling is functioneel weg en niets
+      // reanimeert hem nog. Er blijft alleen een dode tokenrij liggen; een
+      // retry ruimt die alsnog op.
+      console.error('[exact-disconnect] tokens verwijderen mislukt:', deleteError.message)
+      Sentry.captureException(new Error('Exact disconnect: token delete failed'), {
+        level: 'error',
+        tags: { exact_endpoint: 'exact-disconnect' },
+        extra: { org_id: orgId, fout: deleteError.message },
       })
       return res.status(500).json({ error: 'Ontkoppelen half gelukt. Herlaad de pagina en probeer het opnieuw.' })
     }

@@ -125,6 +125,8 @@ export interface Klant {
   kvk_nummer: string;
   btw_nummer: string;
   status: 'actief' | 'inactief' | 'prospect';
+  /** Kill-switch: nooit automatische betalingsherinneringen naar deze klant (migratie 212). */
+  geen_betalingsherinneringen?: boolean;
   tags: string[];
   notities: string;
   contactpersonen: Contactpersoon[];
@@ -846,6 +848,10 @@ export interface AppSettings {
   exact_btw_nul?: string;
   exact_document_type_id?: number;
   exact_document_type_naam?: string;
+  /** Dagelijkse betaalstatus-pull uit Exact (migratie 211); false = alleen push. */
+  exact_betaalsync_actief?: boolean;
+  /** BCC-kopie op elke herinnerings-/aanmaningsmail (migratie 215); leeg = geen kopie. */
+  herinnering_bcc_adres?: string;
   // Boekhoudkoppeling (migratie 132) — één pakket tegelijk, naast eventueel Exact Online
   boekhoud_pakket?: BoekhoudPakket | null;
   snelstart_koppelsleutel?: string;
@@ -1071,6 +1077,12 @@ export interface Factuur {
   factuurdatum: string;
   vervaldatum: string;
   betaaldatum?: string;
+  verzonden_op?: string;
+  /** null = volg de org-instelling; false = deze factuur nooit automatisch manen (migratie 212). */
+  opvolging_actief?: boolean | null;
+  /** Openstaand volgens Exact (som niet-afgeletterde termijnen, migratie 211). */
+  openstaand_exact?: number | null;
+  exact_stand_op?: string | null;
   betalingsherinnering_verzonden?: boolean;
   notities: string;
   voorwaarden: string;

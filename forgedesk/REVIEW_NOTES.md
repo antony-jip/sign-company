@@ -1378,3 +1378,144 @@ Taken-refresh-guard). Blijft staan als backlog:
   tablename = 'app_settings';`
 - Swimlane-collapsed-state (naam-keys) klapt eenmalig open; taak met id
   van verwijderde medewerker toont raw UUID als lane-label. Cosmetisch.
+
+## Facturatie-automatisering fase 1 gate-review (2026-08-15)
+
+Eerste ronde BLOKKADE (dubbeltel-gat op betaalde facturen zonder
+grootboek-rij), gefixt met een centrale guard in factuur_betaling_verwerk
+(delta 0 bij onbekende referentie op status 'betaald'). Herronde
+AKKOORD-MET-OPMERKINGEN op 5aee5caf/d877498f; direct verwerkt: NOT EXISTS
+op de Mollie-backfill-insert, factuur_betalingen-policy versmald naar
+SELECT-only, bijgewerkt_op (updated_at) in de RETURNS van beide
+markeer-betaald-RPC's plus doorgave in markeerFactuurBetaald (optimistic
+lock in de editor), fallback-detectie in factuurService versmald naar
+PGRST202-only. Blijft staan als bewuste keuze/backlog:
+
+- **Mengfacturen-backfill**: facturen die deels handmatig én deels via
+  Mollie betaald waren krijgen hun hele stand op de Mollie-referentie;
+  een latere refund kan daar te veel aftrekken (tot het handmatige deel).
+  Geaccepteerd omdat pure-Mollie de norm is en refunds daar dan wél
+  correct verwerken; gedocumenteerd in migratie 210.
+- **Deploy-volgorde 210**: eerst deployen, dan migratie draaien — dan
+  boekt de volledige backfill eventuele legacy-optellingen uit het
+  venster alsnog goed.
+- **Legacy-fallback-pad webhook** (pre-migratie-venster) blijft
+  niet-idempotent voor deelbetalingen; venster sluit zodra 210 draait.
+
+## Facturatie-automatisering fase 2+3 gate-review + leger-verificatie (2026-08-15)
+
+Multi-lens adversarial review (6 lenzen, 18 bevindingen, 13 bevestigd)
+op de Exact-betaalsync leverde 4 blokkades die in 13768c41 zijn gefixt;
+een aparte verificatieronde (4 skeptici) bevestigde alle 4 fixes als
+dicht. Senior-gate-review daarna: BLOKKADE op de fail-open v2-probe in
+factuur-herinnering (gefixt: drie-standig, run breekt af bij een
+onverwachte probe-fout) + opmerkingen die direct verwerkt zijn
+(staleness-guard dekt nu ook de inhaalslag en ankert op de
+exact_sync_state-rij, intern-kanaal consumeert de stap niet meer bij een
+mislukte notificatie, org-dedup in de cron, koppelpas-paginatie herleest
+vanaf 0, neutrale pre-migratie-toasts). Blijft staan als bewuste
+keuze/backlog:
+
+- **Settle vertrouwt Exacts afletterstatus**: status 50 via
+  betalingskorting/afboeking telt als ontvangen; korting-kolom staat in
+  de spiegel voor latere uitsplitsing. Na een Mollie-refund op een in
+  Exact afgeletterde factuur boekt een her-evaluatie het restant opnieuw.
+- **Disconnect-venster**: settings-lezing in het milliseconden-venster
+  tussen token-delete en flag-update kan een rij reanimeren; zelfde
+  venster bestaat in het referentiepad exact-sync-factuur.
+- **Vreemde Exact-boeking met YourRef van een wél-gesyncte factuur**
+  koppelt mee; faalrichting is veilig (blokkeert settle eerder dan
+  forceren; hooguit een herinnering te veel).
+- **Verwijderde/teruggeboekte termijnen** verschijnen niet in de delta
+  (sync/Deleted niet geïmplementeerd); wekelijkse ReceivablesList-
+  reconciliatie is de kandidaat-oplossing als dit ooit knelt.
+
+## Facturatie-automatisering fase 4 gate + QAA-eindreview (2026-08-15)
+
+Senior-gate op 86d7ac8b/9d031492: BLOKKADE op de Code-first-klantmatch
+(nummerbotsing met een vreemde Exact-relatie = stille misboeking), gefixt
+met een naam-verificatie op de Code-hit (afwijkende naam -> Sentry-warning
++ terugval op naam-match; create-met-Code faalt bij botsing luid op
+Exacts duplicate-fout). Overige opmerkingen verwerkt: vangnet + response-
+waarschuwing bij een verloren exact_entry_id-write, kolom-tolerante
+settings-select in factuur-herinnering (redeploy-voor-migratie-venster),
+cursor-paginatie in de koppelpas, landNaarIso laat onbekende landen weg
+i.p.v. NL te gokken, TOKEN_AFGEWEZEN uit de dubbele Sentry-lijst,
+exact-disconnect ruimt exact_sync_state op (QAA-punt: anders blijft een
+ontkoppelde org permanent gepauzeerd), dubbele supabase-guards
+ontdubbeld. QAA-eindoordeel: groen licht, 12/14 vol, restpunten zijn
+deploy-volgorde-afspraken.
+
+Livegang-afspraken (volgorde is bindend):
+1. Mergen + pushen (Vercel deployt); 2. migraties 210 -> 211 -> 212 ->
+213 -> 214 -> 215 in de SQL Editor (210 is dankzij de DROP-guards her-runbaar,
+maar check bij twijfel doen_migraties; zonder 214 draait de Exact-sync
+zonder claim-guard en logt handmatig versturen niet); 3. controle-query
+uit 210 (moet 0 rijen geven); 4. PAS DAARNA `npx trigger.dev@latest deploy`;
+5. bestaande Exact-orgs langslopen voor de exact_betaalsync_actief-keuze
+(default aan = gedragswijziging t.o.v. "betaald vink je zelf af").
+
+## Facturatie: zes-lenzen-loop ronde 1+2 (2026-08-15)
+
+Op verzoek van Antony draait een review-loop (zes lenzen: geldstromen,
+Exact/tokens, herinneringsmotor, multi-tenancy, boekingskant, tijd) tot
+een ronde niets meer vindt; fixes per ronde door losse opus-agents.
+
+Ronde 1: 1 BLOKKEREND (debiteurennummer-paginatie) + ~20 RISICO's, alle
+gefixt (commits 3ac534fb..7f25f0e8). Ronde 2 (op de fixes + rest): 1 HOOG
+(negende refresh-kopie exact-document-types zonder her-insert) + ~15
+RISICO's, gefixt in de tweede fixronde. Met live bewijs afgevoerd i.p.v.
+gefixt: Exact-datums zijn exact UTC-middernacht (parseExactDate correct;
+ms % 86400000 = 0 op een echte LastPaymentDate) en er bestaan 0 facturen
+zonder organisatie_id.
+
+Bewuste keuzes/backlog uit ronde 2:
+- **Webhook-legacy-pad telt bruto i.p.v. effectief** (alleen relevant in
+  het pre-210-venster; refund-herlevering in dat venster boekt te veel).
+  Venster sluit bij de migratie; niet extra gerepareerd.
+- **PGRST203-runbook**: na een overload-Sentry-melding eerst de
+  controle-query uit migratie 210 draaien en 211 opnieuw uitvoeren; het
+  UI-vangnet schrijft in dat venster buiten het grootboek om.
+- **sendEmailForUser eigenaar-fallback** bepaalt de org uit profiles van
+  de maker (tweede org-bron; pre-existing, raakt alle trigger-mails).
+- **Oude Exact-bijlage blijft hangen** na PDF-vernieuwing op een
+  hergebruikt Document (Exact kent geen attachment-delete via dit pad);
+  de verse PDF komt er wel naast.
+- **Naam-mismatch bij Code-match**: nieuwe relatie zonder Code + zichtbare
+  waarschuwing; opruimen (relaties samenvoegen in Exact) blijft handwerk.
+
+## Facturatie: loop-rondes 3-5, afronding (2026-08-15)
+
+Ronde 3 (~12 punten) en ronde 4 (~8 punten) gefixt in commits
+9079fb82..3ff8449c en 2c448dc5..b6d0c08c; slotronde 5 (drie lenzen op de
+laatste commits): nul blokkerend, nul risico. Resterende bewuste keuzes:
+
+- **Intern-doorlaat restvenster**: faalt de log-insert (venster 212
+  zonder 214, of abonnement inactief), dan is de handmatige doorlaat
+  binnen 10 minuten van de intern-registratie herbruikbaar; daarbuiten
+  sluit hij. Smal en zelfsluitend.
+- **Outbox-tak vlag-write best-effort**: mislukt de vlag-update terwijl
+  de mail wel in de outbox staat, dan kan de cron de stap later nogmaals
+  sturen; alleen bereikbaar als Supabase net wél en /api/send-email net
+  niet werkt.
+- **Proefmail = handmatige mail**: de testknop in Instellingen toont de
+  handmatige template; de automatische cron-mail gebruikt de
+  portal-bouwer met dezelfde tekst maar andere omlijsting.
+- **Btw-kruischeck-tolerantie** groeit met ~0,005 per regel (per-regel-
+  afronding); een echte tariefmismatch valt daar orders buiten.
+- **Ladder-volgorde wordt niet gevalideerd** in Instellingen; een
+  niet-oplopende ladder geeft geen suggestie (cron en UI consistent).
+  Backlog: volgorde-check in de subtab.
+- **Mailvolgorde**: brieftekst eerst, bedragblok + betaalknop als
+  afsluitend blok (gangbaar facturatie-patroon); bewust niet boven de
+  aanhef.
+
+Nagekomen uit slotronde 5 (btw-lens), gefixt: het mengvorm-percentage is
+nu adaptief (2-6 decimalen) zodat het btw-bedrag op de cent exact
+reconstrueert en praktisch nooit (pas boven ~5 miljoen netto) op een
+zuiver tarief afrondt dat de cent-poort verwierp; btw-invoerveld step="any"; NL-notatie in PDF-label en
+guard-melding; mailvolgorde definitief brieftekst-eerst. Bewust laten
+staan: UBL-export zet een mengpercentage zonder guard in <cbc:Percent>
+(UBL is download-only en sowieso niet-compliant, zie fase-1-onderzoek)
+en de dode helper-callers in FacturenLayout (handleOpenEdit/Create/
+ConvertOfferte zonder aanroepers) zijn een opruimkandidaat.

@@ -5,56 +5,135 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Mail, Loader2, Save, Send } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
+import { getFactuurOpvolgStappen, upsertFactuurOpvolgStappen, type FactuurOpvolgStap } from '@/services/factuurService'
 import { sendEmail } from '@/services/gmailService'
 import { factuurHerinneringTemplate } from '@/services/emailTemplateService'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 
+type StapType = FactuurOpvolgStap['stap_type']
+
+interface StapState {
+  stap_type: StapType
+  label: string
+  actief: boolean
+  dagen: number
+  kanaal: 'email' | 'intern'
+  onderwerp: string
+  inhoud: string
+  placeholder: string
+  standaardOnderwerp: string
+}
+
+const STANDAARD_STAPPEN: Omit<StapState, 'onderwerp' | 'inhoud'>[] = [
+  { stap_type: 'herinnering_1', label: 'Herinnering 1', actief: true, dagen: 7, kanaal: 'email', placeholder: 'Bijv. Misschien is het je ontgaan, maar we hebben nog geen betaling ontvangen voor factuur {factuur_nummer}.', standaardOnderwerp: 'Herinnering: factuur {factuur_nummer}' },
+  { stap_type: 'herinnering_2', label: 'Herinnering 2', actief: true, dagen: 14, kanaal: 'email', placeholder: 'Bijv. Ondanks onze eerdere herinnering hebben we nog geen betaling ontvangen voor factuur {factuur_nummer}.', standaardOnderwerp: 'Tweede herinnering: factuur {factuur_nummer}' },
+  { stap_type: 'herinnering_3', label: 'Herinnering 3', actief: false, dagen: 21, kanaal: 'email', placeholder: 'Bijv. Factuur {factuur_nummer} staat nog altijd open; we verzoeken u per omgaande te betalen.', standaardOnderwerp: 'Derde herinnering: factuur {factuur_nummer}' },
+  { stap_type: 'aanmaning', label: 'Aanmaning', actief: true, dagen: 30, kanaal: 'email', placeholder: 'Bijv. Als we binnen 7 dagen geen betaling ontvangen voor factuur {factuur_nummer}, zijn we genoodzaakt verdere stappen te ondernemen.', standaardOnderwerp: 'Aanmaning: factuur {factuur_nummer}' },
+]
+
 export function FactuurOpvolgingSubTab() {
-  const { user } = useAuth()
+  const { user, organisatieId } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isSendingTest, setIsSendingTest] = useState<string | null>(null)
-
-  const [herinnering1, setHerinnering1] = useState('')
-  const [herinnering1Onderwerp, setHerinnering1Onderwerp] = useState('Herinnering: Factuur {factuur_nummer}')
-  const [herinnering2, setHerinnering2] = useState('')
-  const [herinnering2Onderwerp, setHerinnering2Onderwerp] = useState('2e herinnering: Factuur {factuur_nummer}')
-  const [aanmaningTekst, setAanmaningTekst] = useState('')
-  const [aanmaningOnderwerp, setAanmaningOnderwerp] = useState('Aanmaning: Factuur {factuur_nummer}')
   const [automatisch, setAutomatisch] = useState(false)
+  const [bccAdres, setBccAdres] = useState('')
+  const [stappen, setStappen] = useState<StapState[]>([])
 
   useEffect(() => {
     if (!user?.id) return
-    getAppSettings(user.id).then((data) => {
-      setHerinnering1(data.herinnering_1_tekst || '')
-      setHerinnering1Onderwerp(data.herinnering_1_onderwerp || 'Herinnering: Factuur {factuur_nummer}')
-      setHerinnering2(data.herinnering_2_tekst || '')
-      setHerinnering2Onderwerp(data.herinnering_2_onderwerp || '2e herinnering: Factuur {factuur_nummer}')
-      setAanmaningTekst(data.aanmaning_tekst || '')
-      setAanmaningOnderwerp(data.aanmaning_onderwerp || 'Aanmaning: Factuur {factuur_nummer}')
-      setAutomatisch(data.factuur_opvolging_automatisch === true)
-      setIsLoading(false)
-    }).catch(() => setIsLoading(false))
-  }, [user?.id])
+    const laad = async () => {
+      try {
+        const data = await getAppSettings(user.id)
+        setAutomatisch(data.factuur_opvolging_automatisch === true)
+        setBccAdres(data.herinnering_bcc_adres || '')
+        const appTeksten: Partial<Record<StapType, { onderwerp?: string; inhoud?: string }>> = {
+          herinnering_1: { onderwerp: data.herinnering_1_onderwerp, inhoud: data.herinnering_1_tekst },
+          herinnering_2: { onderwerp: data.herinnering_2_onderwerp, inhoud: data.herinnering_2_tekst },
+          aanmaning: { onderwerp: data.aanmaning_onderwerp, inhoud: data.aanmaning_tekst },
+        }
+        const eigenRijen = organisatieId ? await getFactuurOpvolgStappen(organisatieId).catch(() => []) : []
+        const perType = new Map(eigenRijen.map((r) => [r.stap_type, r]))
+        setStappen(STANDAARD_STAPPEN.map((std) => {
+          const eigen = perType.get(std.stap_type)
+          return {
+            ...std,
+            actief: eigen?.actief ?? std.actief,
+            dagen: eigen?.dagen_na_vervaldatum ?? std.dagen,
+            kanaal: eigen?.kanaal ?? std.kanaal,
+            onderwerp: eigen?.onderwerp ?? appTeksten[std.stap_type]?.onderwerp ?? std.standaardOnderwerp,
+            inhoud: eigen?.inhoud ?? appTeksten[std.stap_type]?.inhoud ?? '',
+          }
+        }))
+      } catch (err) {
+        logger.error('Fout bij laden opvolg-instellingen:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    laad()
+  }, [user?.id, organisatieId])
+
+  const wijzigStap = (stapType: StapType, wijziging: Partial<StapState>) => {
+    setStappen((prev) => prev.map((s) => (s.stap_type === stapType ? { ...s, ...wijziging } : s)))
+  }
 
   const handleSave = async () => {
     if (!user?.id) return
     setIsSaving(true)
     try {
-      await updateAppSettings(user.id, {
-        herinnering_1_tekst: herinnering1,
-        herinnering_1_onderwerp: herinnering1Onderwerp,
-        herinnering_2_tekst: herinnering2,
-        herinnering_2_onderwerp: herinnering2Onderwerp,
-        aanmaning_tekst: aanmaningTekst,
-        aanmaning_onderwerp: aanmaningOnderwerp,
+      const perType = new Map(stappen.map((s) => [s.stap_type, s]))
+      // De teksten ook in app_settings: de Trigger.dev-cron leest die zolang
+      // hij nog niet opnieuw gedeployed is, en als fallback daarna.
+      const settingsPayload = {
+        herinnering_1_tekst: perType.get('herinnering_1')?.inhoud ?? '',
+        herinnering_1_onderwerp: perType.get('herinnering_1')?.onderwerp ?? '',
+        herinnering_2_tekst: perType.get('herinnering_2')?.inhoud ?? '',
+        herinnering_2_onderwerp: perType.get('herinnering_2')?.onderwerp ?? '',
+        aanmaning_tekst: perType.get('aanmaning')?.inhoud ?? '',
+        aanmaning_onderwerp: perType.get('aanmaning')?.onderwerp ?? '',
         factuur_opvolging_automatisch: automatisch,
-      })
-      toast.success('Instellingen opgeslagen.')
+        herinnering_bcc_adres: bccAdres.trim(),
+      }
+      try {
+        await updateAppSettings(user.id, settingsPayload)
+      } catch (err) {
+        // Vóór migratie 215 bestaat de BCC-kolom niet; de rest van de
+        // instellingen mag daar niet op stranden.
+        if ((err as { message?: string })?.message?.includes('herinnering_bcc_adres')) {
+          const { herinnering_bcc_adres: _nogNiet, ...zonderBcc } = settingsPayload
+          await updateAppSettings(user.id, zonderBcc)
+          if (bccAdres.trim()) {
+            toast.info('Het BCC-adres is nog niet beschikbaar en is niet opgeslagen.')
+          }
+        } else {
+          throw err
+        }
+      }
+      let ladderOpgeslagen = false
+      if (organisatieId) {
+        ladderOpgeslagen = await upsertFactuurOpvolgStappen(
+          organisatieId,
+          stappen.map((s) => ({
+            stap_type: s.stap_type,
+            dagen_na_vervaldatum: Math.max(1, Math.round(s.dagen) || 1),
+            kanaal: s.kanaal,
+            onderwerp: s.onderwerp || null,
+            inhoud: s.inhoud || null,
+            actief: s.actief,
+          }))
+        )
+      }
+      if (ladderOpgeslagen) {
+        toast.success('Instellingen opgeslagen.')
+      } else {
+        toast.info('Teksten opgeslagen. De ladder-instellingen (dagen, kanaal, aan/uit per stap) worden actief zodra migratie 212 gedraaid is.')
+      }
     } catch (err) {
       logger.error('Fout bij opslaan templates:', err)
       toast.error('Kon instellingen niet opslaan')
@@ -63,9 +142,9 @@ export function FactuurOpvolgingSubTab() {
     }
   }
 
-  const handleSendTest = async (key: string, onderwerp: string, inhoud: string, placeholder: string) => {
+  const handleSendTest = async (stap: StapState) => {
     if (!user?.id || !user?.email) return
-    setIsSendingTest(key)
+    setIsSendingTest(stap.stap_type)
     try {
       const p = await getProfile(user.id)
       const vars: Record<string, string> = {
@@ -73,23 +152,27 @@ export function FactuurOpvolgingSubTab() {
         factuur_nummer: 'FAC-2026-0001',
         factuur_bedrag: '€ 1.250,00',
         vervaldatum: '15 maart 2026',
-        dagen_verlopen: '7',
+        dagen_verlopen: String(stap.dagen),
         bedrijfsnaam: p?.bedrijfsnaam || 'Uw Bedrijf',
         betaal_link: `${window.location.origin}/betalen/test-voorbeeld`,
       }
       const replaceVars = (s: string) => Object.entries(vars).reduce((r, [k, v]) => r.replace(new RegExp(`\\{${k}\\}`, 'g'), v), s)
-      const sub = replaceVars(onderwerp)
-      const body = replaceVars(inhoud || placeholder)
+      const sub = replaceVars(stap.onderwerp || stap.standaardOnderwerp)
+      const body = replaceVars(stap.inhoud || stap.placeholder)
       const { html } = factuurHerinneringTemplate({
         klantNaam: vars.klant_naam,
         factuurNummer: vars.factuur_nummer,
         factuurTitel: 'Voorbeeld factuur',
         totaalBedrag: vars.factuur_bedrag,
         vervaldatum: vars.vervaldatum,
-        dagenVervallen: 7,
+        dagenVervallen: stap.dagen,
         bedrijfsnaam: vars.bedrijfsnaam,
         logoUrl: p?.logo_url || undefined,
         betaalUrl: vars.betaal_link,
+        // De proefmail moet de eigen tekst tonen, niet het generieke blok:
+        // dat is precies wat de klant straks ook krijgt.
+        eigenTekst: body,
+        heading: stap.stap_type === 'aanmaning' ? 'Aanmaning' : 'Herinnering',
       })
       await sendEmail(user.email, `[TEST] ${sub}`, body, { html })
       toast.success(`Testmail verstuurd naar ${user.email}`)
@@ -103,12 +186,6 @@ export function FactuurOpvolgingSubTab() {
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
 
-  const templates = [
-    { key: 'h1', label: 'Herinnering 1', onderwerp: herinnering1Onderwerp, setOnderwerp: setHerinnering1Onderwerp, inhoud: herinnering1, setInhoud: setHerinnering1, placeholder: 'Bijv. Misschien is het je ontgaan, maar we hebben nog geen betaling ontvangen voor factuur {factuur_nummer}.' },
-    { key: 'h2', label: 'Herinnering 2', onderwerp: herinnering2Onderwerp, setOnderwerp: setHerinnering2Onderwerp, inhoud: herinnering2, setInhoud: setHerinnering2, placeholder: 'Bijv. Ondanks onze eerdere herinnering hebben we nog geen betaling ontvangen voor factuur {factuur_nummer}.' },
-    { key: 'aanmaning', label: 'Aanmaning', onderwerp: aanmaningOnderwerp, setOnderwerp: setAanmaningOnderwerp, inhoud: aanmaningTekst, setInhoud: setAanmaningTekst, placeholder: 'Bijv. Als we binnen 7 dagen geen betaling ontvangen voor factuur {factuur_nummer}, zijn we genoodzaakt verdere stappen te ondernemen.' },
-  ] as const
-
   return (
     <div className="space-y-6">
       <Card>
@@ -118,7 +195,7 @@ export function FactuurOpvolgingSubTab() {
             Betalingsherinneringen
           </CardTitle>
           <CardDescription>
-            Email-templates voor factuur-herinneringen en aanmaningen. Verstuurd via je eigen email.
+            Stel per stap in wanneer hij verstuurd wordt, via welk kanaal, en met welke tekst. Mails gaan via je eigen email.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -128,12 +205,12 @@ export function FactuurOpvolgingSubTab() {
                 Automatisch versturen
               </Label>
               <p className="text-xs text-muted-foreground">
-                Verstuurt herinneringen dagelijks (09:30) vanzelf: herinnering 1 na 7 dagen,
-                herinnering 2 na 14 dagen en de aanmaning na 30 dagen over de vervaldatum.
-                Alleen voor facturen met status verzonden of vervallen; handmatig verstuurde
-                herinneringen tellen mee, dus dubbel mailen kan niet. Deelbetalingen worden
-                verrekend en facturen die al langer dan 180 dagen openstaan zonder eerdere
-                herinnering worden overgeslagen.
+                Verstuurt de onderstaande ladder dagelijks (09:30) vanzelf voor facturen met
+                status verzonden of vervallen. Handmatig verstuurde herinneringen tellen mee,
+                dus dubbel mailen kan niet. Deelbetalingen worden verrekend, facturen die al
+                langer dan 180 dagen openstaan zonder eerdere herinnering worden overgeslagen,
+                en met een actieve Exact-koppeling pauzeert de opvolging als de betaalstand
+                verouderd is.
               </p>
             </div>
             <Switch
@@ -141,6 +218,24 @@ export function FactuurOpvolgingSubTab() {
               checked={automatisch}
               onCheckedChange={setAutomatisch}
             />
+          </div>
+          <div className="space-y-1.5 p-3 rounded-lg border border-border/50 bg-muted/20">
+            <Label htmlFor="herinnering-bcc" className="text-sm font-medium">
+              Kopie (BCC) naar
+            </Label>
+            <Input
+              id="herinnering-bcc"
+              type="email"
+              value={bccAdres}
+              onChange={(e) => setBccAdres(e.target.value)}
+              placeholder="administratie@jouwbedrijf.nl"
+              className="text-sm h-9"
+            />
+            <p className="text-xs text-muted-foreground">
+              Elke herinnering en aanmaning, automatisch en handmatig, gaat als blinde kopie
+              ook naar dit adres. Zo ziet je eigen administratie precies wat de klant ontvangt.
+              Leeg laten = geen kopie.
+            </p>
           </div>
           <div className="rounded-md border bg-muted/50 px-3 py-2.5">
             <p className="text-xs font-medium text-muted-foreground mb-1">Beschikbare variabelen:</p>
@@ -150,23 +245,59 @@ export function FactuurOpvolgingSubTab() {
               ))}
             </div>
           </div>
-          {templates.map((t) => (
-            <div key={t.key} className="space-y-2 p-3 rounded-lg border border-border/50 bg-muted/20">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">{t.label}</Label>
+          {stappen.map((stap) => (
+            <div key={stap.stap_type} className={`space-y-2 p-3 rounded-lg border border-border/50 ${stap.actief ? 'bg-muted/20' : 'bg-muted/40 opacity-70'}`}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id={`stap-actief-${stap.stap_type}`}
+                    checked={stap.actief}
+                    onCheckedChange={(actief) => wijzigStap(stap.stap_type, { actief })}
+                  />
+                  <Label htmlFor={`stap-actief-${stap.stap_type}`} className="text-sm font-medium">{stap.label}</Label>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-                  disabled={isSendingTest === t.key}
-                  onClick={() => handleSendTest(t.key, t.onderwerp, t.inhoud, t.placeholder)}
+                  disabled={isSendingTest === stap.stap_type}
+                  onClick={() => handleSendTest(stap)}
                 >
-                  {isSendingTest === t.key ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                  {isSendingTest === stap.stap_type ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                   Testmail
                 </Button>
               </div>
-              <Input value={t.onderwerp} onChange={(e) => t.setOnderwerp(e.target.value)} placeholder="Onderwerp" className="text-xs h-8" />
-              <Textarea value={t.inhoud} onChange={(e) => t.setInhoud(e.target.value)} placeholder={t.placeholder} rows={2} className="text-xs" />
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={stap.dagen}
+                    onChange={(e) => wijzigStap(stap.stap_type, { dagen: Number(e.target.value) })}
+                    className="h-8 w-20 text-xs"
+                  />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">dagen na vervaldatum</span>
+                </div>
+                <Select value={stap.kanaal} onValueChange={(kanaal) => wijzigStap(stap.stap_type, { kanaal: kanaal as 'email' | 'intern' })}>
+                  <SelectTrigger className="h-8 w-44 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">Mail naar klant</SelectItem>
+                    <SelectItem value="intern">Alleen intern signaal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {stap.kanaal === 'email' ? (
+                <>
+                  <Input value={stap.onderwerp} onChange={(e) => wijzigStap(stap.stap_type, { onderwerp: e.target.value })} placeholder="Onderwerp" className="text-xs h-8" />
+                  <Textarea value={stap.inhoud} onChange={(e) => wijzigStap(stap.stap_type, { inhoud: e.target.value })} placeholder={stap.placeholder} rows={3} className="text-xs" />
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Geen mail naar de klant; het team krijgt een notificatie om zelf contact op te nemen.
+                </p>
+              )}
             </div>
           ))}
         </CardContent>

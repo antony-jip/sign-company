@@ -237,22 +237,31 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     })
     throw new Error('Exact Online token vernieuwen mislukt. Probeer het opnieuw.')
   }
-  const tokens = await refreshRes.json()
+  const tokens = (await refreshRes.json()) as { access_token?: string; refresh_token?: string; expires_in?: number }
+  // Een 200 zonder access_token mag nooit als leeg token de DB in: die rij blijft
+  // tien minuten geldig lijken en laat elke Exact-route intussen op 401 lopen.
+  if (!tokens?.access_token) {
+    console.error('[Exact] refresh gaf 200 zonder access_token', { endpoint: 'exact-administraties.ts' })
+    throw new Error('Exact Online gaf een onverwacht antwoord bij token vernieuwen. Probeer het opnieuw.')
+  }
 
   // Compare-and-swap op de refresh_token die we gelezen hebben. Het ciphertext
   // is een betrouwbaar versiemerk (elke write gebruikt een nieuwe random salt),
   // dus nul geraakte rijen betekent dat iemand anders de keten al vervangen of
   // de koppeling ontkoppeld heeft. Een blinde upsert overschreef in dat geval de
   // verse keten van een net afgeronde OAuth of wekte een ontkoppelde rij weer op.
+  const nieuweRij = {
+    user_id: userId,
+    access_token: encryptSecret(tokens.access_token),
+    refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
+    expires_at: new Date(Date.now() + (tokens.expires_in ?? 600) * 1000).toISOString(),
+    division: data.division,
+    updated_at: new Date().toISOString(),
+  }
+
   const { data: bijgewerkt, error: updateFout } = await supabaseAdmin
     .from('exact_tokens')
-    .update({
-      access_token: encryptSecret(tokens.access_token),
-      refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(data.refresh_token)),
-      expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-      division: data.division,
-      updated_at: new Date().toISOString(),
-    })
+    .update(nieuweRij)
     .eq('user_id', userId)
     .eq('refresh_token', data.refresh_token)
     .select('user_id')
@@ -267,8 +276,8 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
       extra: { user_id: userId, fout: updateFout.message },
     })
   } else if (!bijgewerkt?.length) {
-    // Deze route leest alleen gegevens op. Bij een verloren race is de nieuwste
-    // keten van iemand anders leidend en hoeven we niets te herstellen.
+    // Verloren race: staat er een nieuwere keten, dan is die van iemand anders
+    // leidend en hoeven we niets te herstellen.
     const { data: huidig } = await supabaseAdmin
       .from('exact_tokens')
       .select('access_token, division')
@@ -277,6 +286,40 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     const rij = huidig as { access_token?: string | null; division?: number | null } | null
     if (rij?.access_token) {
       return { token: decryptSecret(rij.access_token), division: rij.division as number }
+    }
+
+    // Rij is weg. Dat kan een expliciete ontkoppeling zijn (dan NIET
+    // reanimeren), maar ook een parallel pad dat tijdens onze refresh
+    // invalid_grant kreeg en de rij wiste — dan is onze verse keten de enige
+    // werkende die nog bestaat en zou hem laten vallen de hele org ontkoppelen.
+    // Zelfde discriminator als exact-sync-factuur.ts: exact_owner_user_id en
+    // exact_online_connected worden bij een echte ontkoppeling geleegd.
+    const settings = await loadAppSettingsOrgFirst(
+      supabaseAdmin,
+      userId,
+      'exact_owner_user_id, exact_online_connected',
+    )
+    const eigenaar = (settings?.exact_owner_user_id as string | null) ?? null
+    const nogGekoppeld = eigenaar === userId || (eigenaar === null && settings?.exact_online_connected === true)
+
+    if (!nogGekoppeld) {
+      console.warn('[Exact] rotatie niet bewaard: koppeling is inmiddels ontkoppeld', {
+        user_id: userId, endpoint: 'exact-administraties.ts',
+      })
+    } else {
+      const { error: insertFout } = await supabaseAdmin.from('exact_tokens').insert(nieuweRij)
+      // 23505 = een parallel request maakte de rij net aan; die keten is dan
+      // nieuwer dan de onze en mag blijven staan.
+      if (insertFout && insertFout.code !== '23505') {
+        console.error('[Exact] geroteerde token NIET opgeslagen (insert)', {
+          user_id: userId, endpoint: 'exact-administraties.ts', fout: insertFout.message,
+        })
+        Sentry.captureException(new Error('Exact token rotation not persisted'), {
+          level: 'error',
+          tags: { exact_endpoint: 'exact-administraties', oauth_error: 'rotation_not_persisted' },
+          extra: { user_id: userId, fout: insertFout.message },
+        })
+      }
     }
   }
 
@@ -306,7 +349,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const userId = await verifyUser(req)
-    const { token, division } = await getValidToken(userId)
+    // Org-brede koppeling: gebruik het token van de eigenaar (zelfde patroon
+    // als exact-document-types), zodat deze lijst ook werkt voor collega's
+    // zonder eigen exact_tokens-rij.
+    const orgSettings = await loadAppSettingsOrgFirst(supabaseAdmin, userId, 'exact_owner_user_id')
+    const eigenaar = (orgSettings?.exact_owner_user_id as string | null) || null
+    let tokenUserId = userId
+    if (eigenaar && eigenaar !== userId) {
+      const [callerOrg, eigenaarOrg] = await Promise.all([
+        getOrgIdForUser(supabaseAdmin, userId),
+        getOrgIdForUser(supabaseAdmin, eigenaar),
+      ])
+      if (callerOrg && callerOrg === eigenaarOrg) tokenUserId = eigenaar
+    }
+    const { token, division } = await getValidToken(tokenUserId)
 
     // Haal alle divisies op via system endpoint
     const divisionsRes = await exactFetchMetRetry(
@@ -321,7 +377,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error(`Kon administraties niet ophalen (${divisionsRes.status})`)
     }
 
-    const body = await divisionsRes.json()
+    const body = (await divisionsRes.json()) as { d?: { results?: Array<{ Code: number; Description: string }> } }
     const results = (body.d?.results || []).map((d: { Code: number; Description: string }) => ({
       id: String(d.Code),
       naam: `${d.Code} - ${d.Description}`,
