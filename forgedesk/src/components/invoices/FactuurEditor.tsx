@@ -132,6 +132,7 @@ import { getActievePrijsRegel } from '@/utils/offerteTotalen'
 import { generateFactuurPDF, generateOffertePDF } from '@/services/pdfService'
 import { getFactuurClipboard } from '@/utils/factuurClipboard'
 import { genereerEnUploadFactuurPdf, downloadFactuurPdfFromStorage } from '@/services/factuurPdfService'
+import { verwerkEnVerzendFactuur, heeftExactTokens, FactuurKetenFout } from '@/services/factuurVerzendService'
 import { generateUBLInvoice, downloadUBLXml } from '@/services/ublService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
@@ -531,6 +532,12 @@ export function FactuurEditor() {
   const [allOffertes, setAllOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  // Verwerken + syncen + verzenden in één klik (de directe keten)
+  const [ketenBezig, setKetenBezig] = useState(false)
+  // De keten loopt seconden door na de save; navigeert de gebruiker intussen
+  // weg, dan mag de afronding hem niet alsnog wegtrekken van waar hij zit.
+  const gemountRef = useRef(true)
+  useEffect(() => () => { gemountRef.current = false }, [])
   const [isEditMode, setIsEditMode] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
 
@@ -1011,11 +1018,18 @@ export function FactuurEditor() {
   // gebeurt bewust pas ná het laden: de database vult dezelfde velden en
   // zou anders overschrijven wat we net hersteld hadden.
   const herstelWachtrijRef = useRef<FactuurMomentopname | null>(null)
+  // Na een geslaagde save in nieuw-mode volgt direct een navigate; de
+  // setIsDirty(false) haalt de unmount-cleanup dan niet meer (React batcht hem
+  // met de router-update). Zonder deze ref zou de cleanup het zojuist
+  // opgeslagen concept als momentopname wegschrijven en zou de volgende
+  // /facturen/nieuw-mount ("Opslaan en volgende") het oude concept over de
+  // verse prefill heen terugzetten — met een dubbele factuur als risico.
+  const netOpgeslagenRef = useRef(false)
   useTabSnapshot<FactuurMomentopname>(
     // Sleutel per factuur: open je in hetzelfde tabblad daarna een andere
     // factuur, dan mag het concept van de vorige daar niet in landen.
     `factuur-editor-${editFactuurId || 'nieuw'}`,
-    () => isDirty ? {
+    () => (isDirty && !netOpgeslagenRef.current) ? {
       klantId, contactpersoonId, offerteId, projectId, titel, nummer,
       factuurdatum, vervaldatum, voorwaarden, notities, introTekst, outroTekst,
       items, kostenplaatsId, werkbonId, factureerPercentage,
@@ -1326,22 +1340,26 @@ export function FactuurEditor() {
 
   // ============ SAVE ============
 
-  const handleSave = useCallback(async (verwerken = false) => {
+  // Geeft de opgeslagen factuur terug zodat vervolgstappen (direct verzenden,
+  // opslaan-en-volgende) op het verse record kunnen doorwerken; null = niet
+  // opgeslagen. skipNavigate laat een nieuwe factuur niet wegnavigeren zodat
+  // de aanroeper zelf het vervolg bepaalt.
+  const handleSave = useCallback(async (verwerken = false, opts?: { skipNavigate?: boolean }): Promise<Factuur | null> => {
     if (isTrialBlocked) {
       setShowTrialDialog(true)
-      return
+      return null
     }
     if (!klantId) {
       toast.error('Selecteer een klant')
-      return
+      return null
     }
     if (!titel.trim()) {
       toast.error('Vul een titel in')
-      return
+      return null
     }
     if (validItems.length === 0) {
       toast.error('Voeg minimaal een regelitem toe')
-      return
+      return null
     }
 
     try {
@@ -1375,7 +1393,7 @@ export function FactuurEditor() {
           })
           if (!tochDoorgaan) {
             setIsSaving(false)
-            return
+            return null
           }
         }
       }
@@ -1459,6 +1477,7 @@ export function FactuurEditor() {
         // State direct verversen: anders zou een tweede opslaan na een fout
         // hieronder op de eigen header-write stranden met een vals conflict.
         setExistingFactuur({ ...existingFactuur, ...updated })
+        let eindstand: Factuur = { ...existingFactuur, ...updated }
 
         try {
           await replaceFactuurItems(existingFactuur.id, validItems.map((item, i) => ({
@@ -1476,7 +1495,7 @@ export function FactuurEditor() {
         } catch (itemsErr) {
           logger.error('Factuurregels opslaan mislukt na header-update:', itemsErr)
           toast.error('De factuur is opgeslagen maar de regels niet. Sla opnieuw op om de regels bij te werken.')
-          return
+          return null
         }
 
         let definitiefNummer = updated.nummer ?? nummer
@@ -1488,12 +1507,14 @@ export function FactuurEditor() {
             updated.updated_at
           )
           setExistingFactuur({ ...existingFactuur, ...verwerkt })
+          eindstand = { ...eindstand, ...verwerkt }
           definitiefNummer = verwerkt.nummer ?? effectiefNummer
         }
 
         setNummer(definitiefNummer)
         setIsDirty(false)
         toast.success(verwerken ? `Factuur ${definitiefNummer} verwerkt` : 'Factuur bijgewerkt')
+        return eindstand
       } else {
         const betaalToken = generateBetaalToken()
         const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
@@ -1633,9 +1654,15 @@ export function FactuurEditor() {
           } catch { /* dan gewoon de toast */ }
         }
 
-        // Check of er nog meer offertes te factureren zijn
+        netOpgeslagenRef.current = true
+        setIsDirty(false)
+
+        // Check of er nog meer offertes te factureren zijn. Bij skipNavigate
+        // bepaalt de aanroeper zelf het vervolg (direct verzenden of "Opslaan
+        // en volgende"); een actietoast die intussen wegnavigeert zou de
+        // lopende keten kapen, dus dan alleen de kale melding.
         const opslaanMelding = verwerken ? `Factuur ${effectiefNummer} verwerkt` : 'Concept opgeslagen'
-        const nextOfferte = teFacturerenOffertes.find((o) => o.id !== offerteId)
+        const nextOfferte = opts?.skipNavigate ? undefined : teFacturerenOffertes.find((o) => o.id !== offerteId)
         if (nextOfferte) {
           toast.success(opslaanMelding, {
             action: {
@@ -1655,16 +1682,19 @@ export function FactuurEditor() {
         } else {
           toast.success(opslaanMelding)
         }
-        navigate(`/facturen/${newFactuur.id}`)
-        return
+        if (!opts?.skipNavigate) {
+          navigate(`/facturen/${newFactuur.id}`)
+        }
+        return newFactuur
       }
     } catch (err) {
       if (err instanceof FactuurConflictError) {
         toast.error(err.message)
-        return
+        return null
       }
       logger.error('Fout bij opslaan factuur:', err)
       toast.error('Kon factuur niet opslaan')
+      return null
     } finally {
       setIsSaving(false)
     }
@@ -1674,7 +1704,96 @@ export function FactuurEditor() {
     subtotaal, btwBedrag, totaal, nummer, offerteId, projectId, user, navigate,
     kostenplaatsId, isCreditFactuur, creditVoorFactuurId,
     isTrialBlocked, setShowTrialDialog, factuurPrefix, factuurStartNummer,
+    adresBedrijfsnaam, adresTav, adresRegel, adresPostcode, adresPlaats,
+    adresOokOpKlant, werkbonId,
   ])
+
+  // Verwerken en direct verzenden: opslaan + nummer toekennen, dan de gedeelde
+  // keten (PDF, Exact-sync als de org echt gekoppeld is, mail met bijlage).
+  // Zelfde route als de bulkknop in de Te verzenden-tab, zodat één factuur
+  // direct wegsturen en de hele lijst tegelijk exact hetzelfde doen.
+  const handleVerwerkEnVerzend = useCallback(async () => {
+    if (ketenBezig) return
+    const opgeslagen = await handleSave(true, { skipNavigate: true })
+    if (!opgeslagen) return
+
+    setKetenBezig(true)
+    const toastId = toast.loading('Factuur verzenden...')
+    try {
+      const exactVlag = settings.exact_online_connected ?? false
+      let metExact = exactVlag
+      if (exactVlag) {
+        const tokens = await heeftExactTokens()
+        if (tokens === false) metExact = false
+      }
+      if (exactVlag && !metExact) {
+        toast.warning('Exact-sync overgeslagen: de koppeling is niet actief · verbind opnieuw via Instellingen · Integraties', { duration: 10000 })
+      }
+      const resultaat = await verwerkEnVerzendFactuur({
+        factuurId: opgeslagen.id,
+        stijl: {
+          bedrijfsProfiel: { ...profile, primaireKleur },
+          documentStyle,
+          bedrijfsnaam,
+          primaireKleur,
+          emailHandtekening: emailHandtekening || undefined,
+          logoUrl: profile?.logo_url || undefined,
+        },
+        metExact,
+        klant: selectedKlant || undefined,
+      })
+      toast.success(
+        resultaat.exactGesynct && metExact
+          ? `Factuur ${resultaat.factuur.nummer} naar Exact gesynct en verzonden naar ${resultaat.ontvanger}`
+          : `Factuur ${resultaat.factuur.nummer} verzonden naar ${resultaat.ontvanger}`,
+        { id: toastId }
+      )
+      if (resultaat.exactWaarschuwing) {
+        toast.warning(resultaat.exactWaarschuwing, { duration: 10000 })
+      }
+      if (resultaat.statusWaarschuwing) {
+        toast.warning(resultaat.statusWaarschuwing, { duration: 10000 })
+      }
+      if (isEditMode) {
+        setExistingFactuur((prev) => (prev ? { ...prev, ...resultaat.factuur } : prev))
+      } else if (gemountRef.current) {
+        navigate(`/facturen/${opgeslagen.id}`)
+      }
+    } catch (err) {
+      logger.error('Direct verzenden mislukt:', err)
+      toast.error(err instanceof FactuurKetenFout ? err.gebruikersmelding : 'Kon factuur niet verzenden', { id: toastId })
+      // De factuur is wél verwerkt; laat de gebruiker op het record landen
+      // zodat de vervolgactie (opnieuw proberen, adres aanvullen) daar kan.
+      if (isEditMode) {
+        const vers = await getFactuur(opgeslagen.id).catch(() => null)
+        if (vers) setExistingFactuur((prev) => (prev ? { ...prev, ...vers } : vers))
+      } else if (gemountRef.current) {
+        navigate(`/facturen/${opgeslagen.id}`)
+      }
+    } finally {
+      setKetenBezig(false)
+    }
+  }, [ketenBezig, handleSave, settings.exact_online_connected, profile, primaireKleur, documentStyle, bedrijfsnaam, emailHandtekening, selectedKlant, isEditMode, navigate])
+
+  // Serie-invoer: concept opslaan (landt in de Te verzenden-tab) en meteen door
+  // naar de volgende factuur. Is er nog een te factureren offerte, dan staat
+  // die alvast klaar; anders een leeg formulier.
+  const handleOpslaanEnVolgende = useCallback(async () => {
+    const opgeslagen = await handleSave(false, { skipNavigate: true })
+    if (!opgeslagen) return
+    const volgende = teFacturerenOffertes.find((o) => o.id !== offerteId)
+    if (volgende) {
+      const params = new URLSearchParams({
+        offerte_id: volgende.id,
+        klant_id: volgende.klant_id,
+      })
+      if (volgende.titel) params.set('titel', volgende.titel)
+      if (volgende.project_id) params.set('project_id', volgende.project_id)
+      navigate(`/facturen/nieuw?${params.toString()}`)
+    } else {
+      navigate('/facturen/nieuw')
+    }
+  }, [handleSave, teFacturerenOffertes, offerteId, navigate])
 
   // ============ PDF ============
 
@@ -2973,7 +3092,7 @@ export function FactuurEditor() {
               size="sm"
               variant={currentStatus === 'concept' ? 'outline' : 'default'}
               onClick={() => handleSave(false)}
-              disabled={isSaving || isReadOnly}
+              disabled={isSaving || ketenBezig || isReadOnly}
               title={isReadOnly ? `Factuur is ${currentStatus} en kan niet meer worden gewijzigd` : undefined}
             >
               {isSaving ? (
@@ -2987,14 +3106,50 @@ export function FactuurEditor() {
             {currentStatus === 'concept' && !isReadOnly && (
               <Button
                 size="sm"
-                onClick={() => handleSave(true)}
-                disabled={isSaving}
-                className="bg-flame text-white hover:bg-flame/90"
-                title="Kent een definitief factuurnummer toe (status wordt Open). De factuur is daarna klaar om te versturen."
+                variant="outline"
+                onClick={handleOpslaanEnVolgende}
+                disabled={isSaving || ketenBezig}
+                title="Slaat dit concept op (komt in de Te verzenden-lijst) en opent direct de volgende factuur"
               >
-                <Send className="h-4 w-4 mr-1" />
-                Verwerken
+                Opslaan en volgende
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
+            )}
+
+            {currentStatus === 'concept' && !isReadOnly && (
+              <div className="flex items-center">
+                <Button
+                  size="sm"
+                  onClick={() => handleSave(true)}
+                  disabled={isSaving || ketenBezig}
+                  className="bg-flame text-white hover:bg-flame/90 rounded-r-none"
+                  title="Kent een definitief factuurnummer toe (status wordt Open). De factuur is daarna klaar om te versturen."
+                >
+                  <Send className="h-4 w-4 mr-1" />
+                  Verwerken
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      disabled={isSaving || ketenBezig}
+                      className="bg-flame text-white hover:bg-flame/90 rounded-l-none border-l border-white/30 px-1.5"
+                      aria-label="Meer verwerk-opties"
+                    >
+                      {ketenBezig ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleVerwerkEnVerzend} disabled={isSaving || ketenBezig}>
+                      <Send className="h-4 w-4 mr-2" />
+                      {settings.exact_online_connected
+                        ? 'Verwerken, syncen en direct verzenden'
+                        : 'Verwerken en direct verzenden'}
+                      <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-flame">Beta</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             )}
           </div>
         </div>

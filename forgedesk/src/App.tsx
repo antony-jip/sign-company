@@ -224,6 +224,14 @@ function StudioRoute() {
   return <VisualizerLayout />
 }
 
+// Serie-invoer ("Opslaan en volgende") navigeert van /facturen/nieuw naar
+// /facturen/nieuw; zonder key blijft de editor-state van het vorige concept
+// staan. location.key verandert per navigatie en dwingt een verse mount af.
+function NieuweFactuurRoute() {
+  const location = useLocation()
+  return <FactuurEditor key={location.key} />
+}
+
 function AppContent() {
   const { isReady } = useDataInit()
   const location = useLocation()
@@ -320,7 +328,7 @@ function AppContent() {
         <Route path="financieel" element={<FinancialLayout />} />
         <Route path="taken" element={<TakenRoute />} />
         <Route path="facturen" element={<FacturenLayout />} />
-        <Route path="facturen/nieuw" element={<FactuurEditor />} />
+        <Route path="facturen/nieuw" element={<NieuweFactuurRoute />} />
         <Route path="facturen/:id" element={<FactuurEditor />} />
         <Route path="facturen/:id/bewerken" element={<FactuurEditor />} />
         <Route path="rapportages" element={<RapportagesLayout />} />
