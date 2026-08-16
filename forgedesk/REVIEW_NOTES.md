@@ -1448,7 +1448,7 @@ deploy-volgorde-afspraken.
 
 Livegang-afspraken (volgorde is bindend):
 1. Mergen + pushen (Vercel deployt); 2. migraties 210 -> 211 -> 212 ->
-213 -> 214 in de SQL Editor (210 is dankzij de DROP-guards her-runbaar,
+213 -> 214 -> 215 in de SQL Editor (210 is dankzij de DROP-guards her-runbaar,
 maar check bij twijfel doen_migraties; zonder 214 draait de Exact-sync
 zonder claim-guard en logt handmatig versturen niet); 3. controle-query
 uit 210 (moet 0 rijen geven); 4. PAS DAARNA `npx trigger.dev@latest deploy`;

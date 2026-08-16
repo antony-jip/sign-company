@@ -1555,7 +1555,12 @@ export function FacturenLayout() {
           eigenTekst: inhoudTekst,
           heading: herinneringType === 'aanmaning' ? 'Aanmaning' : 'Herinnering',
         })
-        await sendEmail(ontvangerEmail, onderwerp, inhoudTekst, { html })
+        // Kopie naar het ingestelde BCC-adres zodat de eigen administratie
+        // meekijkt met wat er naar de klant gaat.
+        const herinneringBcc = settings?.herinnering_bcc_adres?.includes('@')
+          ? settings.herinnering_bcc_adres.trim()
+          : undefined
+        await sendEmail(ontvangerEmail, onderwerp, inhoudTekst, { html, bcc: herinneringBcc })
       } catch (err) {
         // De outbox-terugval in sendEmail betekent dat de mail wel degelijk
         // wordt bezorgd; de stap moet dan als verstuurd tellen, anders mailt

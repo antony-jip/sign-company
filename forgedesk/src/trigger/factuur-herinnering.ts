@@ -184,25 +184,44 @@ export const factuurHerinneringCron = schedules.task({
     }
     const v2 = !probeError;
 
-    // exact_betaalsync_actief bestaat pas na migratie 211; als deze code
-    // geredeployed is vóór die migratie mag de hele run daar niet op
-    // stilvallen — dan zonder die kolom opnieuw proberen.
+    // exact_betaalsync_actief (migratie 211) en herinnering_bcc_adres
+    // (migratie 215) bestaan mogelijk nog niet; als deze code geredeployed
+    // is vóór die migraties mag de hele run daar niet op stilvallen — dan
+    // zonder de ontbrekende kolommen opnieuw proberen (de foutmelding van
+    // PostgREST noemt de kolomnaam).
     const basisKolommen =
       "organisatie_id, user_id, updated_at, factuur_opvolging_automatisch, exact_online_connected, herinnering_1_tekst, herinnering_1_onderwerp, herinnering_2_tekst, herinnering_2_onderwerp, aanmaning_tekst, aanmaning_onderwerp";
-    let { data: settingsRijen, error: settingsError } = await supabase
-      .from("app_settings")
-      .select(`${basisKolommen}, exact_betaalsync_actief`)
-      .not("organisatie_id", "is", null)
-      .order("updated_at", { ascending: false });
-
-    if (settingsError && settingsError.message?.includes("exact_betaalsync_actief")) {
-      const fallback = await supabase
+    interface SettingsRij {
+      organisatie_id: string;
+      user_id: string;
+      updated_at: string;
+      factuur_opvolging_automatisch: boolean | null;
+      exact_online_connected: boolean | null;
+      exact_betaalsync_actief?: boolean | null;
+      herinnering_bcc_adres?: string | null;
+      herinnering_1_tekst: string | null;
+      herinnering_1_onderwerp: string | null;
+      herinnering_2_tekst: string | null;
+      herinnering_2_onderwerp: string | null;
+      aanmaning_tekst: string | null;
+      aanmaning_onderwerp: string | null;
+    }
+    const optioneleKolommen = ["exact_betaalsync_actief", "herinnering_bcc_adres"];
+    let actieveOptioneel = [...optioneleKolommen];
+    // De kolomlijst is dynamisch, dus PostgREST kan de rijen niet typen;
+    // SettingsRij is de handmatige spiegel van de select hierboven.
+    const selecteerSettings = async () => {
+      const { data, error } = await supabase
         .from("app_settings")
-        .select(basisKolommen)
+        .select([basisKolommen, ...actieveOptioneel].join(", "))
         .not("organisatie_id", "is", null)
         .order("updated_at", { ascending: false });
-      settingsRijen = (fallback.data ?? null) as typeof settingsRijen;
-      settingsError = fallback.error;
+      return { data: data as unknown as SettingsRij[] | null, error };
+    };
+    let { data: settingsRijen, error: settingsError } = await selecteerSettings();
+    while (settingsError && actieveOptioneel.some((k) => settingsError!.message?.includes(k))) {
+      actieveOptioneel = actieveOptioneel.filter((k) => !settingsError!.message?.includes(k));
+      ({ data: settingsRijen, error: settingsError } = await selecteerSettings());
     }
 
     if (settingsError) {
@@ -712,12 +731,18 @@ export const factuurHerinneringCron = schedules.task({
           result.overgeslagen++;
           continue;
         }
+        // Kopie naar het eigen ingestelde BCC-adres, zodat de administratie
+        // meekijkt met wat er daadwerkelijk naar de klant gaat.
+        const bccAdres = typeof settings.herinnering_bcc_adres === "string" && settings.herinnering_bcc_adres.includes("@")
+          ? settings.herinnering_bcc_adres.trim()
+          : undefined;
         const sendResult = await sendEmailForUser({
           userId: factuur.user_id,
           to: ontvanger,
           subject: onderwerp,
           text: inhoud,
           html,
+          bcc: bccAdres,
           organisatieId: orgId,
           idempotencyKey: `factuur_herinnering:${factuur.id}:${stap}`,
         });

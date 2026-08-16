@@ -42,6 +42,7 @@ export function FactuurOpvolgingSubTab() {
   const [isSaving, setIsSaving] = useState(false)
   const [isSendingTest, setIsSendingTest] = useState<string | null>(null)
   const [automatisch, setAutomatisch] = useState(false)
+  const [bccAdres, setBccAdres] = useState('')
   const [stappen, setStappen] = useState<StapState[]>([])
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export function FactuurOpvolgingSubTab() {
       try {
         const data = await getAppSettings(user.id)
         setAutomatisch(data.factuur_opvolging_automatisch === true)
+        setBccAdres(data.herinnering_bcc_adres || '')
         const appTeksten: Partial<Record<StapType, { onderwerp?: string; inhoud?: string }>> = {
           herinnering_1: { onderwerp: data.herinnering_1_onderwerp, inhoud: data.herinnering_1_tekst },
           herinnering_2: { onderwerp: data.herinnering_2_onderwerp, inhoud: data.herinnering_2_tekst },
@@ -88,7 +90,7 @@ export function FactuurOpvolgingSubTab() {
       const perType = new Map(stappen.map((s) => [s.stap_type, s]))
       // De teksten ook in app_settings: de Trigger.dev-cron leest die zolang
       // hij nog niet opnieuw gedeployed is, en als fallback daarna.
-      await updateAppSettings(user.id, {
+      const settingsPayload = {
         herinnering_1_tekst: perType.get('herinnering_1')?.inhoud ?? '',
         herinnering_1_onderwerp: perType.get('herinnering_1')?.onderwerp ?? '',
         herinnering_2_tekst: perType.get('herinnering_2')?.inhoud ?? '',
@@ -96,7 +98,23 @@ export function FactuurOpvolgingSubTab() {
         aanmaning_tekst: perType.get('aanmaning')?.inhoud ?? '',
         aanmaning_onderwerp: perType.get('aanmaning')?.onderwerp ?? '',
         factuur_opvolging_automatisch: automatisch,
-      })
+        herinnering_bcc_adres: bccAdres.trim(),
+      }
+      try {
+        await updateAppSettings(user.id, settingsPayload)
+      } catch (err) {
+        // Vóór migratie 215 bestaat de BCC-kolom niet; de rest van de
+        // instellingen mag daar niet op stranden.
+        if ((err as { message?: string })?.message?.includes('herinnering_bcc_adres')) {
+          const { herinnering_bcc_adres: _nogNiet, ...zonderBcc } = settingsPayload
+          await updateAppSettings(user.id, zonderBcc)
+          if (bccAdres.trim()) {
+            toast.info('Het BCC-adres is nog niet beschikbaar en is niet opgeslagen.')
+          }
+        } else {
+          throw err
+        }
+      }
       let ladderOpgeslagen = false
       if (organisatieId) {
         ladderOpgeslagen = await upsertFactuurOpvolgStappen(
@@ -200,6 +218,24 @@ export function FactuurOpvolgingSubTab() {
               checked={automatisch}
               onCheckedChange={setAutomatisch}
             />
+          </div>
+          <div className="space-y-1.5 p-3 rounded-lg border border-border/50 bg-muted/20">
+            <Label htmlFor="herinnering-bcc" className="text-sm font-medium">
+              Kopie (BCC) naar
+            </Label>
+            <Input
+              id="herinnering-bcc"
+              type="email"
+              value={bccAdres}
+              onChange={(e) => setBccAdres(e.target.value)}
+              placeholder="administratie@jouwbedrijf.nl"
+              className="text-sm h-9"
+            />
+            <p className="text-xs text-muted-foreground">
+              Elke herinnering en aanmaning, automatisch en handmatig, gaat als blinde kopie
+              ook naar dit adres. Zo ziet je eigen administratie precies wat de klant ontvangt.
+              Leeg laten = geen kopie.
+            </p>
           </div>
           <div className="rounded-md border bg-muted/50 px-3 py-2.5">
             <p className="text-xs font-medium text-muted-foreground mb-1">Beschikbare variabelen:</p>
