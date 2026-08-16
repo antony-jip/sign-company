@@ -83,7 +83,13 @@ async function verifyUserAndCredits(
   resolutie: string
 ): Promise<{ userId: string; creditsNodig: number } | { error: string; status: number }> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-    // Geen Supabase = geen credit enforcement (lokale dev)
+    // In een deploy (Vercel) is ontbrekende Supabase-config een misconfiguratie,
+    // geen dev-scenario. Fail closed: anders vallen op een betaalde AI-endpoint
+    // stilletjes zowel auth als creditafschrijving weg.
+    if (process.env.VERCEL) {
+      return { error: 'Serverconfiguratie onvolledig', status: 500 }
+    }
+    // Alleen lokale dev zonder Supabase: geen credit-enforcement.
     return { userId: 'local', creditsNodig: 0 }
   }
 

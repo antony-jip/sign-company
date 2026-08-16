@@ -21,7 +21,12 @@ interface ChatMessage {
 }
 
 async function verifyUser(req: VercelRequest): Promise<string | null> {
-  if (!supabase) return 'local'
+  if (!supabase) {
+    // Op Vercel is ontbrekende Supabase-config een misconfiguratie, geen dev:
+    // fail closed (401) i.p.v. een 'local'-user die de auth-check overslaat.
+    if (process.env.VERCEL) return null
+    return 'local'
+  }
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) return null
   const token = authHeader.split(' ')[1]
@@ -77,7 +82,7 @@ async function schrijfSpoor(
   inhoud: Record<string, unknown>,
   klantId: string | null = null
 ): Promise<void> {
-  if (!orgId) return
+  if (!orgId || !supabase) return
   try {
     await supabase.from('ai_sporen').insert({
       organisatie_id: orgId,
