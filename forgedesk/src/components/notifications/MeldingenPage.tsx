@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import {
   Bell, Eye, AlertTriangle, AlertCircle, Clock, Mail, CheckCircle2, Truck,
   Banknote, Wallet, CalendarCheck, RotateCcw, MessageSquare, BellRing,
-  Search, Check, Trash2, Filter, X, Inbox,
+  Search, Check, Trash2, Filter, X, Inbox, UserCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -31,6 +31,8 @@ const typeConfig: Record<
   offerte_verlopen:    { icon: AlertTriangle, colorClass: 'text-amber-600', bgClass: 'bg-amber-100', label: 'Offerte verlopen', categorie: 'offertes' },
   offerte_geaccepteerd:{ icon: CheckCircle2, colorClass: 'text-green-600', bgClass: 'bg-green-100', label: 'Offerte geaccepteerd', categorie: 'offertes' },
   offerte_wijziging:   { icon: AlertCircle, colorClass: 'text-blue-600', bgClass: 'bg-blue-100', label: 'Offerte wijziging', categorie: 'offertes' },
+  offerte_check_gevraagd:    { icon: UserCheck, colorClass: 'text-amber-600', bgClass: 'bg-amber-100', label: 'Check gevraagd', categorie: 'offertes' },
+  offerte_check_afgehandeld: { icon: UserCheck, colorClass: 'text-green-600', bgClass: 'bg-green-100', label: 'Check afgerond', categorie: 'offertes' },
   factuur_vervallen:   { icon: AlertCircle, colorClass: 'text-red-600', bgClass: 'bg-red-100', label: 'Factuur vervallen', categorie: 'systeem' },
   deadline_nadert:     { icon: Clock, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Deadline nadert', categorie: 'systeem' },
   nieuwe_email:        { icon: Mail, colorClass: 'text-blue-600', bgClass: 'bg-blue-100', label: 'Nieuwe email', categorie: 'systeem' },

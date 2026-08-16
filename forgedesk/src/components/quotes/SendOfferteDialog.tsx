@@ -20,6 +20,7 @@ import {
   getPortaalItems,
 } from '@/services/supabaseService'
 import { sendEmail } from '@/services/gmailService'
+import { rondOfferteCheckAf } from '@/services/offerteCheckService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { vierMijlpaal, markeerEenmalig } from '@/lib/mijlpaal'
 import { generateOffertePDF } from '@/services/pdfService'
@@ -294,6 +295,13 @@ export function SendOfferteDialog({
       }
 
       const updated = await updateOfferte(offerte.id, updates)
+
+      // Stond er een collega-check open, dan is die met dit versturen afgerond;
+      // de aanvrager krijgt daar server-side een melding van.
+      if (offerte.check_status === 'open') {
+        rondOfferteCheckAf(offerte.id, 'verstuurd')
+          .catch((err) => logger.error('Check afronden na versturen mislukt:', err))
+      }
 
       if (mode === 'follow-up') {
         try {

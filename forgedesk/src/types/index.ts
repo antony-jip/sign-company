@@ -410,6 +410,13 @@ export interface Offerte {
   opvolging_actief?: boolean;
   opvolging_schema_id?: string;
   verzendwijze?: 'via_portaal' | 'via_email_pdf' | 'via_handmatig';
+  // Interne check door collega (migratie 216)
+  check_status?: 'open' | 'akkoord' | 'verstuurd' | null;
+  check_gevraagd_aan?: string | null;
+  check_gevraagd_door?: string | null;
+  check_gevraagd_op?: string | null;
+  check_notitie?: string | null;
+  check_afgehandeld_op?: string | null;
   // Kostenplaats
   kostenplaats_id?: string;
   created_at: string;
@@ -418,7 +425,7 @@ export interface Offerte {
 
 export interface OfferteActiviteit {
   datum: string;
-  type: 'aangemaakt' | 'bewerkt' | 'verstuurd' | 'bekeken' | 'akkoord' | 'afgewezen' | 'gefactureerd' | 'wijziging_gevraagd';
+  type: 'aangemaakt' | 'bewerkt' | 'verstuurd' | 'bekeken' | 'akkoord' | 'afgewezen' | 'gefactureerd' | 'wijziging_gevraagd' | 'check_gevraagd' | 'check_afgehandeld';
   beschrijving: string;
   medewerker?: string;
 }
@@ -1223,7 +1230,7 @@ export interface Notificatie {
   id: string;
   user_id?: string;
   organisatie_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld';
   titel: string;
   bericht: string;
   link?: string;

@@ -19,6 +19,7 @@ import {
   Send,
   Mail,
   Globe,
+  UserCheck,
 } from 'lucide-react'
 import type { Klant } from '@/types'
 import { cn } from '@/lib/utils'
@@ -58,6 +59,10 @@ export interface QuoteHeaderProps {
   setShowKlantSelector: (v: boolean) => void
   onWerkbon?: () => void
   onOpdrachtbevestiging?: () => void
+  // Interne check door collega
+  onLatenChecken?: () => void
+  checkStatus?: 'open' | 'akkoord' | 'verstuurd' | null
+  checkAanNaam?: string
   // Kopieer naar andere klant
   showKopieerNaarKlant?: boolean
   setShowKopieerNaarKlant?: (v: boolean) => void
@@ -90,6 +95,9 @@ export function QuoteHeader({
   setShowKlantSelector,
   onWerkbon,
   onOpdrachtbevestiging,
+  onLatenChecken,
+  checkStatus,
+  checkAanNaam,
   showKopieerNaarKlant,
   setShowKopieerNaarKlant,
   kopieerZoek,
@@ -169,6 +177,20 @@ export function QuoteHeader({
               <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#3A5A9A] bg-[hsl(var(--status-blue-bg))] border border-[#3A5A9A]/20 px-2 py-0.5 rounded-md">
                 <Send className="h-3 w-3" strokeWidth={1.75} />
                 Verstuurd{verstuurdNaar ? ` · ${verstuurdNaar}` : ''} · {new Date(verstuurdOp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+              </span>
+            )}
+
+            {/* Interne check-status */}
+            {checkStatus === 'open' && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#8A6A2A] bg-[hsl(var(--status-amber-bg))] border border-[#8A6A2A]/15 px-2 py-0.5 rounded-md">
+                <UserCheck className="h-3 w-3" strokeWidth={1.75} />
+                Ter controle{checkAanNaam ? ` · ${checkAanNaam}` : ''}
+              </span>
+            )}
+            {checkStatus === 'akkoord' && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2D6B48] bg-[hsl(var(--status-green-bg))] border border-[#2D6B48]/20 px-2 py-0.5 rounded-md">
+                <UserCheck className="h-3 w-3" strokeWidth={1.75} />
+                Gecheckt{checkAanNaam ? ` · ${checkAanNaam}` : ''}
               </span>
             )}
 
@@ -350,6 +372,15 @@ export function QuoteHeader({
                       <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                       Klant wijzigen
                     </button>
+                    {onLatenChecken && (
+                      <button
+                        onClick={() => { onLatenChecken(); setShowActionsMenu(false) }}
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] flex items-center gap-2 transition-colors"
+                      >
+                        <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                        {checkStatus === 'open' ? 'Check opnieuw vragen' : 'Laten checken'}
+                      </button>
+                    )}
                     {onWerkbon && (
                       <button
                         onClick={() => { onWerkbon(); setShowActionsMenu(false) }}

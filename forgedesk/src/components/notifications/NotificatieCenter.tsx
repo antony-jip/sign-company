@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Loader2,
   Settings,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,16 @@ const typeConfig: Record<
     icon: Eye,
     colorClass: "text-[#5A4A78]",
     bgClass: "bg-[hsl(var(--status-violet-bg))]",
+  },
+  offerte_check_gevraagd: {
+    icon: UserCheck,
+    colorClass: "text-[#8A6A2A]",
+    bgClass: "bg-[hsl(var(--status-amber-bg))]",
+  },
+  offerte_check_afgehandeld: {
+    icon: UserCheck,
+    colorClass: "text-petrol",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
   website_chat: {
     icon: MessageSquare,

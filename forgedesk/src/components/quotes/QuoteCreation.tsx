@@ -63,6 +63,7 @@ import {
   FolderPlus,
   FolderOpen,
   AlertTriangle,
+  UserCheck,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject, syncOfferteItems, getRecentOfferteItemSuggesties, getNextOfferteNummer, OfferteConflictError, createContactpersoonDB, getContactpersonenByKlant, heeftMailkoppeling } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -87,6 +88,9 @@ import { RegelTemplateEditor } from './RegelTemplateEditor'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import { OfferteUitschrijvenDialog, type UitgeschrevenPost } from './OfferteUitschrijvenDialog'
+import { OfferteCheckDialog } from './OfferteCheckDialog'
+import { rondOfferteCheckAf } from '@/services/offerteCheckService'
+import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { vulDetailRegels } from '@/utils/offerteSpecs'
 import { useSidebarLayout, type SidebarSectionId } from '@/hooks/useSidebarLayout'
 import type { CalculatieRegel, InkoopRegel } from '@/types'
@@ -334,6 +338,14 @@ export function QuoteCreation() {
     if (label) setActiveTabLabel(label)
   }, [offerteTitel, offerteNummer, setActiveTabLabel])
   const [verstuurdNaar, setVerstuurdNaar] = useState<string | undefined>()
+
+  // ── Interne check door collega ──
+  const { medewerkers } = useMedewerkers()
+  const [checkInfo, setCheckInfoState] = useState<{ status: 'open' | 'akkoord' | 'verstuurd' | null; aan?: string; door?: string; notitie?: string }>({ status: null })
+  // Ref-spiegel zodat de async verzendhandlers de actuele stand zien.
+  const checkInfoRef = useRef(checkInfo)
+  const updateCheckInfo = (c: typeof checkInfo) => { checkInfoRef.current = c; setCheckInfoState(c) }
+  const naamVoorUser = (uid?: string) => medewerkers.find((m) => m.user_id === uid)?.naam
 
   // ── Offerte status & linked factuur (for factureren workflow) ──
   const [offerteStatus, setOfferteStatus] = useState<string>('concept')
@@ -704,6 +716,12 @@ export function QuoteCreation() {
         setOfferteNummer(offerte.nummer)
         setVerstuurdOp(offerte.verstuurd_op || undefined)
         setVerstuurdNaar(offerte.verstuurd_naar || undefined)
+        updateCheckInfo({
+          status: offerte.check_status || null,
+          aan: offerte.check_gevraagd_aan || undefined,
+          door: offerte.check_gevraagd_door || undefined,
+          notitie: offerte.check_notitie || undefined,
+        })
         setGeldigTot(offerte.geldig_tot?.split('T')[0] || '')
         setNotities(offerte.notities || '')
         setVoorwaarden(offerte.voorwaarden || settings.offerte_voorwaarden)
@@ -1713,6 +1731,7 @@ export function QuoteCreation() {
         // Ref bijwerken, anders ziet de volgende autosave de eigen
         // status-update als extern conflict en stopt de autosave-loop.
         lastKnownUpdatedAtRef.current = saved.updated_at
+        voltooiCheckNaVersturen(savedQuoteId)
       }
 
       // Stuur email notificatie naar klant
@@ -1854,7 +1873,7 @@ export function QuoteCreation() {
           const pdfFilename = `Offerte ${offerteNummer || 'concept'} - ${offerteTitel || 'offerte'}.pdf`
           const pdfBlob = doc.output('blob') as Blob
           const pdfPath = `${uploadDir}/${crypto.randomUUID()}-offerte.pdf`
-          const { error: pdfUploadErr } = await supabase.storage
+          const { error: pdfUploadErr } = await supabase!.storage
             .from('documenten-prive')
             .upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: false })
           if (pdfUploadErr) throw pdfUploadErr
@@ -1871,7 +1890,7 @@ export function QuoteCreation() {
         for (const bijlage of email.emailExtraBijlagen) {
           try {
             const path = `${uploadDir}/${crypto.randomUUID()}-${sanitizeStorageFilename(bijlage.naam)}`
-            const { error: upErr } = await supabase.storage
+            const { error: upErr } = await supabase!.storage
               .from('documenten-prive')
               .upload(path, bijlage.file, { contentType: bijlage.file.type || 'application/octet-stream', upsert: false })
             if (upErr) throw upErr
@@ -1913,6 +1932,7 @@ export function QuoteCreation() {
         lastKnownUpdatedAtRef.current = saved.updated_at
         setVerstuurdOp(verstuurdOp)
         setVerstuurdNaar(email.emailTo.trim())
+        voltooiCheckNaVersturen(quoteId)
       }
       if (isScheduled) {
         toast.success(`Email ingepland voor ${new Date(scheduledAt!).toLocaleString('nl-NL')}`)
@@ -1934,6 +1954,34 @@ export function QuoteCreation() {
   const [showActionsMenu, setShowActionsMenu] = useState(false)
   const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
   const [showObPreview, setShowObPreview] = useState(false)
+  const [showCheckDialog, setShowCheckDialog] = useState(false)
+  const [isCheckAkkoordBezig, setIsCheckAkkoordBezig] = useState(false)
+
+  // Een openstaande check is afgerond zodra de offerte daadwerkelijk de deur
+  // uit gaat; de aanvrager krijgt daar server-side een melding van.
+  const voltooiCheckNaVersturen = (quoteId: string) => {
+    if (checkInfoRef.current.status !== 'open') return
+    updateCheckInfo({ ...checkInfoRef.current, status: 'verstuurd' })
+    rondOfferteCheckAf(quoteId, 'verstuurd')
+      .then((r) => { if (r.offerte?.updated_at) lastKnownUpdatedAtRef.current = r.offerte.updated_at })
+      .catch((err) => logger.error('Check afronden na versturen mislukt:', err))
+  }
+
+  const handleCheckAkkoord = async () => {
+    if (!editOfferteId) return
+    setIsCheckAkkoordBezig(true)
+    try {
+      const r = await rondOfferteCheckAf(editOfferteId, 'akkoord')
+      if (r.offerte?.updated_at) lastKnownUpdatedAtRef.current = r.offerte.updated_at
+      updateCheckInfo({ ...checkInfoRef.current, status: 'akkoord' })
+      toast.success(<>Akkoord gegeven<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('Akkoord geven mislukt:', err)
+      toast.error(err instanceof Error && err.message ? err.message : 'Kon geen akkoord geven')
+    } finally {
+      setIsCheckAkkoordBezig(false)
+    }
+  }
 
   // ── Helper: markup color for sidebar (≥90% green, 60-89% orange, <60% red) ──
   const getMargeColorSidebar = (pct: number) => {
@@ -2043,12 +2091,38 @@ export function QuoteCreation() {
         setShowKlantSelector={setShowKlantSelector}
         onWerkbon={isEditMode ? () => setShowWerkbonDialog(true) : undefined}
         onOpdrachtbevestiging={isEditMode ? () => setShowObPreview(true) : undefined}
+        onLatenChecken={isEditMode && editOfferteId ? () => setShowCheckDialog(true) : undefined}
+        checkStatus={checkInfo.status}
+        checkAanNaam={naamVoorUser(checkInfo.aan)}
         showKopieerNaarKlant={showKopieerNaarKlant}
         setShowKopieerNaarKlant={setShowKopieerNaarKlant}
         kopieerZoek={kopieerZoek}
         setKopieerZoek={setKopieerZoek}
         klanten={klanten}
       />
+
+      {/* ──── CHECK-VERZOEK VOOR DE INGELOGDE COLLEGA ──── */}
+      {checkInfo.status === 'open' && user?.id === checkInfo.aan && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-petrol/20 bg-petrol/5 px-4 py-3">
+          <UserCheck className="h-4 w-4 text-petrol shrink-0" strokeWidth={1.75} />
+          <div className="min-w-0 flex-1 text-[13px]">
+            <span className="font-semibold text-foreground">{naamVoorUser(checkInfo.door) || 'Een collega'}</span>
+            <span className="text-foreground/80"> vraagt je deze offerte te checken. Akkoord geven kan hier, versturen via de Verstuur-knop.</span>
+            {checkInfo.notitie && (
+              <span className="block text-muted-foreground italic mt-0.5">&ldquo;{checkInfo.notitie}&rdquo;</span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleCheckAkkoord}
+            disabled={isCheckAkkoordBezig}
+            className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-petrol text-white hover:bg-[#0F3D44] transition-colors disabled:opacity-50"
+          >
+            <Check className="h-3.5 w-3.5" strokeWidth={2} />
+            {isCheckAkkoordBezig ? 'Bezig…' : 'Akkoord geven'}
+          </button>
+        </div>
+      )}
 
       {/* ──── PROJECT KOPPELING ──── */}
       {!selectedProjectId && selectedKlantId && isEditMode && (
@@ -2600,6 +2674,20 @@ export function QuoteCreation() {
         />
       )}
       <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
+
+      {/* Laten checken door collega */}
+      {editOfferteId && (
+        <OfferteCheckDialog
+          open={showCheckDialog}
+          onOpenChange={setShowCheckDialog}
+          offerteId={editOfferteId}
+          offerteNummer={offerteNummer}
+          onGevraagd={({ aanUserId, notitie, updatedAt }) => {
+            if (updatedAt) lastKnownUpdatedAtRef.current = updatedAt
+            updateCheckInfo({ status: 'open', aan: aanUserId, door: user?.id, notitie })
+          }}
+        />
+      )}
     </div>
   )
 }
