@@ -170,7 +170,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       if (mailAdres) {
         const { sendDoenNotification } = await import('./resend-notify')
-        sendDoenNotification({
+        // Awaiten is verplicht: zonder await bevriest Vercel de lambda direct
+        // na de response en sterft de Resend-request voordat hij vertrokken is.
+        await sendDoenNotification({
           to: mailAdres,
           subject: `${aanvragerNaam} vraagt je een offerte te checken`,
           heading: `${aanvragerNaam} vraagt je een offerte te checken`,
@@ -178,7 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           quote: schoneNotitie || undefined,
           ctaUrl: `${appUrl()}${link}`,
           ctaLabel: 'Bekijk de offerte →',
-        }).catch(err => console.warn('[offerte-check-vragen] Resend mislukt:', err))
+        })
       }
     } catch (notifErr) {
       console.warn('[offerte-check-vragen] notificatie mislukt:', notifErr)

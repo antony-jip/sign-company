@@ -168,14 +168,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         if (mailAdres) {
           const { sendDoenNotification } = await import('./resend-notify')
-          sendDoenNotification({
+          // Awaiten is verplicht: zonder await bevriest Vercel de lambda direct
+          // na de response en sterft de Resend-request voordat hij vertrokken is.
+          await sendDoenNotification({
             to: mailAdres,
             subject: titel,
             heading: titel,
             itemTitel: offerteLabel,
             ctaUrl: `${appUrl()}${link}`,
             ctaLabel: 'Bekijk de offerte →',
-          }).catch(err => console.warn('[offerte-check-reactie] Resend mislukt:', err))
+          })
         }
       } catch (notifErr) {
         console.warn('[offerte-check-reactie] notificatie mislukt:', notifErr)
