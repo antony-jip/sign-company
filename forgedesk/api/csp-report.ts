@@ -8,11 +8,14 @@ const supabaseAdmin = createClient(
 )
 
 async function isRateLimited(ip: string, maxCount: number, windowSeconds: number): Promise<boolean> {
-  const { data } = await supabaseAdmin.rpc('check_rate_limit', {
+  const { data, error } = await supabaseAdmin.rpc('check_rate_limit', {
     p_key: `csp-report:${ip}`,
     p_max_count: maxCount,
     p_window_seconds: windowSeconds,
   })
+  // Fail closed: hapert de rate-limit-RPC, dan weigeren i.p.v. onbeperkt inserts
+  // toelaten (anders is de violations-tabel via rapport-spam vol te schrijven).
+  if (error) return true
   return data === true
 }
 
@@ -53,7 +56,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).end()
 
-  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown'
+  // x-real-ip is door Vercel gezet (niet client-spoofbaar); anders de LAATSTE
+  // x-forwarded-for-waarde, nooit de eerste, zodat de rate-limit-key niet te faken is
+  const clientIp = (req.headers['x-real-ip'] as string)?.trim() || (req.headers['x-forwarded-for'] as string)?.split(',').pop()?.trim() || 'unknown'
   if (await isRateLimited(clientIp, 100, 60)) {
     return res.status(429).end()
   }
