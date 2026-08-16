@@ -34,3 +34,6 @@ vite.config.d.ts
 .vercel
 .env.local
 .env*.local
+
+# Interne security-audit-rapporten, niet committen
+.audit-tmp/
