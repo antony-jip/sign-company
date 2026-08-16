@@ -4,6 +4,7 @@ import { createTransport } from 'nodemailer'
 import { createClient } from '@supabase/supabase-js'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import { lookup } from 'dns/promises'
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -19,6 +20,45 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 }
 
 export const config = { maxDuration: 30 }
+
+// ── SSRF-bescherming ──────────────────────────────────────────────────────
+// host/poort komen uit de request-body. Zonder guard kan een ingelogde
+// gebruiker dit endpoint als poortscanner tegen het interne Vercel-/cloud-
+// netwerk gebruiken (inclusief het metadata-adres 169.254.169.254). We staan
+// alleen de bekende mailpoorten toe en weigeren hosts die naar een privé-,
+// loopback- of link-local-adres resolven.
+const TOEGESTANE_POORTEN = new Set([143, 993, 110, 995, 25, 465, 587])
+
+function isPrivaatIp(ip: string): boolean {
+  const schoon = ip.replace(/^::ffff:/i, '') // IPv4-mapped IPv6
+  const v4 = schoon.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/)
+  if (v4) {
+    const [a, b] = [Number(v4[1]), Number(v4[2])]
+    if (a === 10 || a === 127 || a === 0) return true
+    if (a === 172 && b >= 16 && b <= 31) return true
+    if (a === 192 && b === 168) return true
+    if (a === 169 && b === 254) return true // link-local + metadata
+    if (a === 100 && b >= 64 && b <= 127) return true // CGNAT
+    return false
+  }
+  const l = schoon.toLowerCase()
+  if (l === '::1' || l === '::') return true
+  if (l.startsWith('fe80') || l.startsWith('fc') || l.startsWith('fd')) return true
+  return false
+}
+
+async function valideerMailDoel(host: string, port: number): Promise<string | null> {
+  if (!TOEGESTANE_POORTEN.has(Number(port))) return `Poort ${port} is niet toegestaan`
+  if (!host || /[^a-z0-9.\-:[\]]/i.test(host)) return 'Ongeldige hostnaam'
+  try {
+    const adressen = await lookup(host, { all: true })
+    if (!adressen.length) return 'Host kon niet worden opgezocht'
+    if (adressen.some((a) => isPrivaatIp(a.address))) return 'Host verwijst naar een intern adres'
+  } catch {
+    return 'Host kon niet worden opgezocht'
+  }
+  return null
+}
 
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
@@ -76,6 +116,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         imap_ok: false,
         smtp_ok: false,
         error: 'E-mailadres en app-wachtwoord zijn verplicht',
+      })
+    }
+
+    const imapFout = await valideerMailDoel(String(imap_host), Number(imap_port))
+    const smtpFout = await valideerMailDoel(String(smtp_host), Number(smtp_port))
+    if (imapFout || smtpFout) {
+      return res.status(400).json({
+        imap_ok: false,
+        smtp_ok: false,
+        error: imapFout || smtpFout,
       })
     }
 
