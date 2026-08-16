@@ -41,7 +41,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown'
+  // x-real-ip is door Vercel gezet (niet client-spoofbaar); anders de LAATSTE
+  // x-forwarded-for-waarde, nooit de eerste, zodat de rate-limit-key niet te faken is
+  const clientIp = (req.headers['x-real-ip'] as string)?.trim() || (req.headers['x-forwarded-for'] as string)?.split(',').pop()?.trim() || 'unknown'
   if (await isRateLimited(clientIp, 'goedkeuring-reactie', 10, 3600)) {
     return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
   }

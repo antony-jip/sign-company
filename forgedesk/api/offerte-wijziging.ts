@@ -38,9 +38,17 @@ async function enforceRateLimit(identifier: string, res: VercelResponse): Promis
 }
 
 function getClientIp(req: VercelRequest): string {
+  // x-real-ip wordt door Vercel gezet en is niet client-spoofbaar; de linkerkant
+  // van x-forwarded-for is dat wel. Val daarom terug op de LAATSTE (door Vercel
+  // toegevoegde) waarde, nooit de eerste, anders is de rate-limit-key te faken.
+  const real = req.headers['x-real-ip']
+  if (typeof real === 'string' && real.trim()) return real.trim()
   const fwd = req.headers['x-forwarded-for']
-  if (typeof fwd === 'string') return fwd.split(',')[0].trim()
-  if (Array.isArray(fwd)) return fwd[0]
+  if (typeof fwd === 'string') {
+    const parts = fwd.split(',').map((p) => p.trim()).filter(Boolean)
+    if (parts.length) return parts[parts.length - 1]
+  }
+  if (Array.isArray(fwd) && fwd.length) return fwd[fwd.length - 1]
   return 'unknown'
 }
 
