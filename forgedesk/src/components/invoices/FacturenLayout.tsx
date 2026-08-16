@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,13 +59,13 @@ import {
   Share2,
   MinusCircle,
   Paperclip,
+  Info,
 } from 'lucide-react'
 import {
   getFacturen,
   getFactuur,
   createFactuur,
   updateFactuur,
-  markeerFactuurVerzonden,
   markeerFactuurBetaald,
   generateFactuurNummer as generateFactuurNrDb,
   deleteFactuur,
@@ -90,6 +90,11 @@ import {
   type FactuurOpvolgStap,
   type HerinneringOntvanger,
 } from '@/services/factuurService'
+import {
+  verwerkEnVerzendFactuur,
+  heeftExactTokens,
+  FactuurKetenFout,
+} from '@/services/factuurVerzendService'
 import supabase from '@/services/supabaseClient'
 import { setFactuurClipboard } from '@/utils/factuurClipboard'
 import { getCached, fetchQuery } from '@/lib/queryCache'
@@ -106,7 +111,7 @@ import { toast } from 'sonner'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
 import { sendEmail } from '@/services/gmailService'
-import { factuurHerinneringTemplate, factuurVerzendTemplate } from '@/services/emailTemplateService'
+import { factuurHerinneringTemplate } from '@/services/emailTemplateService'
 import { generateFactuurPDF } from '@/services/pdfService'
 import { downloadFactuurPdfFromStorage } from '@/services/factuurPdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -134,7 +139,7 @@ import { confirm } from '@/components/shared/ConfirmDialog'
 
 type FactuurStatus = Factuur['status']
 type FactuurType = NonNullable<Factuur['factuur_type']>
-type FilterStatus = 'alle' | FactuurStatus | 'verlopen' | 'te_factureren' | 'credit'
+type FilterStatus = 'alle' | FactuurStatus | 'verlopen' | 'te_factureren' | 'credit' | 'te_verzenden'
 type SortField = 'datum' | 'bedrag' | 'klantnaam'
 type SortDir = 'asc' | 'desc'
 
@@ -180,6 +185,7 @@ const TYPE_CONFIG: Record<FactuurType, { label: string; prefix: string; color: s
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'alle', label: 'Alle' },
+  { value: 'te_verzenden', label: 'Te verzenden' },
   { value: 'concept', label: 'Concept' },
   { value: 'open', label: 'Open' },
   { value: 'verzonden', label: 'Verzonden' },
@@ -484,6 +490,12 @@ export function FacturenLayout() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const PAGE_SIZE = 50
 
+  // Bulkverwerking in de Te verzenden-tab: per factuur de fase + eventuele fout
+  const [bulkBezig, setBulkBezig] = useState(false)
+  const [bulkStatus, setBulkStatus] = useState<Record<string, { fase: 'wachten' | 'bezig' | 'klaar' | 'fout'; melding?: string }>>({})
+  const bulkStopRef = useRef(false)
+  const [bulkUitlegOpen, setBulkUitlegOpen] = useState(false)
+
   // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [offerteDialogOpen, setOfferteDialogOpen] = useState(false)
@@ -528,6 +540,15 @@ export function FacturenLayout() {
   // URL params for workflow integration
   const [searchParams, setSearchParams] = useSearchParams()
   const [topTab, setTopTab] = useState<'facturen' | 'inkoop'>(searchParams.get('tab') === 'inkoop' ? 'inkoop' : 'facturen')
+
+  // Deeplink naar een filterchip, bv. /facturen?filter=te_verzenden vanuit de editor
+  useEffect(() => {
+    const filterParam = searchParams.get('filter')
+    if (filterParam && FILTER_OPTIONS.some((o) => o.value === filterParam)) {
+      setFilterStatus(filterParam as FilterStatus)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ============ DATA LOADING ============
 
@@ -704,6 +725,8 @@ export function FacturenLayout() {
     if (filterStatus === 'verlopen') {
       const vandaag = getTodayString()
       result = result.filter((f) => isAchterstallig(f, vandaag))
+    } else if (filterStatus === 'te_verzenden') {
+      result = result.filter((f) => f.status === 'concept' || f.status === 'open')
     } else if (filterStatus === 'credit') {
       result = result.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit')
     } else if (filterStatus !== 'alle') {
@@ -740,6 +763,11 @@ export function FacturenLayout() {
   // Reset page when filters change
   useEffect(() => { setCurrentPage(1) }, [searchQuery, filterStatus, dagenOpenFilter, sortField, sortDir])
 
+  // Selectie wist mee met het filter: anders belooft de bulkknop in de
+  // Te verzenden-tab N facturen terwijl een deel van de selectie uit een
+  // andere weergave (bv. betaald) stamt en stil wegfiltert.
+  useEffect(() => { setSelectedIds(new Set()) }, [filterStatus, searchQuery])
+
   const totalPages = Math.ceil(filteredFacturen.length / PAGE_SIZE)
   const paginatedFacturen = useMemo(
     () => filteredFacturen.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
@@ -756,6 +784,7 @@ export function FacturenLayout() {
       counts[f.status] = (counts[f.status] || 0) + 1
     }
     counts['te_factureren'] = teFacturerenProjecten.length
+    counts['te_verzenden'] = facturen.filter((f) => f.status === 'concept' || f.status === 'open').length
     counts['credit'] = facturen.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit').length
     const vandaag = getTodayString()
     counts['verlopen'] = facturen.filter((f) => isAchterstallig(f, vandaag)).length
@@ -1191,69 +1220,162 @@ export function FacturenLayout() {
     [klanten, profile, primaireKleur, documentStyle]
   )
 
+  const werkProjectBijNaVerzending = useCallback(
+    async (factuur: Factuur) => {
+      if (!factuur.project_id) return
+      try {
+        const huidigProject = await getProject(factuur.project_id).catch(() => null)
+        await updateProject(factuur.project_id, { status: 'gefactureerd' })
+        if (user?.id && huidigProject?.status) {
+          const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+          logWijziging({ userId: user.id, entityType: 'project', entityId: factuur.project_id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: huidigProject.status, nieuweWaarde: 'gefactureerd' })
+        }
+      } catch (err) { /* projectstatus is best-effort */ }
+    },
+    [user, medewerkers]
+  )
+
+  const verzendStijl = useMemo(() => ({
+    bedrijfsProfiel: { ...profile, primaireKleur },
+    documentStyle,
+    bedrijfsnaam,
+    primaireKleur,
+    emailHandtekening: emailHandtekening || undefined,
+    logoUrl: profile?.logo_url || undefined,
+  }), [profile, primaireKleur, documentStyle, bedrijfsnaam, emailHandtekening])
+
   const handleSendFactuur = useCallback(
     async (factuur: Factuur) => {
       if (isTrialBlocked) {
         setShowTrialDialog(true)
         return
       }
-      const klant = klanten.find((k) => k.id === factuur.klant_id)
-      if (!klant?.email) {
-        toast.error('Geen emailadres gevonden voor deze klant')
+      try {
+        // Zelfde keten als de editor en de bulkverwerking: mét PDF-bijlage en
+        // ontvanger via de contactpersoon-resolver. Geen Exact-sync hier; dat
+        // blijft een aparte, bewuste actie of de bulkknop.
+        const klant = klanten.find((k) => k.id === factuur.klant_id)
+        const resultaat = await verwerkEnVerzendFactuur({
+          factuurId: factuur.id,
+          stijl: verzendStijl,
+          metExact: false,
+          klant,
+          // De rij-actie staat ook op verzonden/vervallen facturen: dat is
+          // bewust opnieuw sturen.
+          herverzenden: factuur.status === 'verzonden' || factuur.status === 'vervallen',
+        })
+        setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...resultaat.factuur } : f)))
+        await werkProjectBijNaVerzending(factuur)
+        toast.success(`Factuur ${resultaat.factuur.nummer} verzonden naar ${resultaat.ontvanger}`)
+        if (resultaat.statusWaarschuwing) toast.warning(resultaat.statusWaarschuwing, { duration: 10000 })
+      } catch (err) {
+        logger.error('Fout bij verzenden factuur:', err)
+        toast.error(err instanceof FactuurKetenFout ? err.gebruikersmelding : 'Kon factuur niet verzenden')
+      }
+    },
+    [klanten, verzendStijl, werkProjectBijNaVerzending, isTrialBlocked, setShowTrialDialog]
+  )
+
+  // Bulkverwerking vanuit de Te verzenden-tab: serieel per factuur verwerken
+  // (nummer toekennen), naar Exact syncen (als de org echt gekoppeld is) en
+  // mailen. Serieel is bewust: de Exact-route claimt per factuur en e-mail
+  // versturen parallel levert alleen rate-limits op. Een falende factuur
+  // blijft met foutmelding in de lijst staan; de rest gaat gewoon door.
+  const handleBulkVerzenden = useCallback(
+    async (teDoen: Factuur[]) => {
+      if (isTrialBlocked) {
+        setShowTrialDialog(true)
+        return
+      }
+      if (bulkBezig) return
+      const lijst = teDoen.filter((f) => f.status === 'concept' || f.status === 'open')
+      if (lijst.length === 0) {
+        toast.info('Geen facturen in de selectie die verwerkt kunnen worden')
         return
       }
 
-      try {
-        const { subject, html } = factuurVerzendTemplate({
-          klantNaam: klant.contactpersoon || klant.bedrijfsnaam,
-          factuurNummer: factuur.nummer,
-          factuurTitel: factuur.titel,
-          totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(factuur.totaal),
-          vervaldatum: formatDate(factuur.vervaldatum),
-          bedrijfsnaam,
-          primaireKleur,
-          handtekening: emailHandtekening || undefined,
-          logoUrl: profile?.logo_url || undefined,
-          betaalUrl: factuur.betaal_link || undefined,
-        })
+      // De org-vlag blijft na ontkoppelen op true staan; de tokenstatus is de
+      // waarheid. Vóór de bevestiging checken, zodat de dialoog niet een
+      // Exact-sync belooft die stil overgeslagen zou worden. Bij twijfel
+      // (netwerkfout, null) volgen we de vlag en laat een eventuele syncfout
+      // de factuur gewoon met melding in de lijst staan.
+      const exactVlag = settings.exact_online_connected ?? false
+      let metExact = exactVlag
+      if (exactVlag) {
+        const tokens = await heeftExactTokens()
+        if (tokens === false) metExact = false
+      }
 
-        await sendEmail(klant.email, subject, '', { html })
+      const bevestigd = await confirm({
+        title: `${lijst.length} ${lijst.length === 1 ? 'factuur' : 'facturen'} verwerken en verzenden`,
+        message: metExact
+          ? 'Elke factuur krijgt een definitief nummer, wordt naar Exact Online gesynchroniseerd en per e-mail (met PDF) naar de klant gestuurd. Dit is niet terug te draaien.'
+          : exactVlag
+            ? 'Let op: de Exact-koppeling is niet actief (opnieuw verbinden kan via Instellingen · Integraties). Elke factuur krijgt een definitief nummer en wordt per e-mail (met PDF) naar de klant gestuurd, zonder Exact-sync. Dit is niet terug te draaien.'
+            : 'Elke factuur krijgt een definitief nummer en wordt per e-mail (met PDF) naar de klant gestuurd. Dit is niet terug te draaien.',
+        confirmLabel: 'Verwerk en verzend',
+        cancelLabel: 'Annuleren',
+      })
+      if (!bevestigd) return
 
-        // Update status to 'verzonden'
+      setBulkBezig(true)
+      bulkStopRef.current = false
+      setBulkStatus(Object.fromEntries(lijst.map((f) => [f.id, { fase: 'wachten' as const }])))
+
+      let gelukt = 0
+      let mislukt = 0
+      let overgeslagen = 0
+      for (const f of lijst) {
+        if (bulkStopRef.current) {
+          overgeslagen++
+          setBulkStatus((prev) => ({ ...prev, [f.id]: { fase: 'fout', melding: 'Gestopt vóór verwerking' } }))
+          continue
+        }
+        setBulkStatus((prev) => ({ ...prev, [f.id]: { fase: 'bezig' } }))
         try {
-          const updated = await markeerFactuurVerzonden(factuur.id)
-          setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
+          const klant = klanten.find((k) => k.id === f.klant_id)
+          const resultaat = await verwerkEnVerzendFactuur({
+            factuurId: f.id,
+            stijl: verzendStijl,
+            metExact,
+            verwerkOpties: { prefix: factuurPrefix, startNummer: factuurStartNummer },
+            klant,
+          })
+          setFacturen((prev) => prev.map((x) => (x.id === f.id ? { ...x, ...resultaat.factuur } : x)))
+          setBulkStatus((prev) => ({
+            ...prev,
+            [f.id]: {
+              fase: 'klaar',
+              melding: resultaat.exactWaarschuwing
+                ? `Verzonden naar ${resultaat.ontvanger} · Exact: ${resultaat.exactWaarschuwing}`
+                : `Verzonden naar ${resultaat.ontvanger}`,
+            },
+          }))
+          if (resultaat.statusWaarschuwing) toast.warning(resultaat.statusWaarschuwing, { duration: 10000 })
+          gelukt++
+          await werkProjectBijNaVerzending(f)
         } catch (err) {
-          logger.error('Fout bij bijwerken factuur in database:', err)
-          // Still update locally even if DB update fails
-          setFacturen((prev) =>
-            prev.map((f) =>
-              f.id === factuur.id
-                ? { ...f, status: 'verzonden' as const, updated_at: new Date().toISOString() }
-                : f
-            )
-          )
+          mislukt++
+          const melding = err instanceof FactuurKetenFout
+            ? err.gebruikersmelding
+            : err instanceof Error ? err.message : 'Onbekende fout'
+          setBulkStatus((prev) => ({ ...prev, [f.id]: { fase: 'fout', melding } }))
+          logger.error(`Bulkverzending mislukt voor factuur ${f.nummer || f.id}:`, err)
         }
+      }
 
-        // Update gekoppeld project naar 'gefactureerd'
-        if (factuur.project_id) {
-          try {
-            const huidigProject = await getProject(factuur.project_id).catch(() => null)
-            await updateProject(factuur.project_id, { status: 'gefactureerd' })
-            if (user?.id && huidigProject?.status) {
-              const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
-              logWijziging({ userId: user.id, entityType: 'project', entityId: factuur.project_id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: huidigProject.status, nieuweWaarde: 'gefactureerd' })
-            }
-          } catch (err) { /* ignore */ }
-        }
-
-        toast.success(`Factuur ${factuur.nummer} verzonden naar ${klant.email}`)
-      } catch (err) {
-        logger.error('Fout bij verzenden factuur:', err)
-        toast.error('Kon factuur niet verzenden')
+      setBulkBezig(false)
+      setSelectedIds(new Set())
+      const delen = [`${gelukt} verzonden`]
+      if (mislukt > 0) delen.push(`${mislukt} mislukt`)
+      if (overgeslagen > 0) delen.push(`${overgeslagen} overgeslagen (gestopt)`)
+      if (mislukt === 0 && overgeslagen === 0) {
+        toast.success(`${gelukt} ${gelukt === 1 ? 'factuur' : 'facturen'} verwerkt en verzonden`)
+      } else {
+        toast.warning(`${delen.join(', ')} · zie de lijst voor details`)
       }
     },
-    [klanten, bedrijfsnaam, primaireKleur, emailHandtekening, isTrialBlocked, setShowTrialDialog]
+    [bulkBezig, klanten, verzendStijl, settings.exact_online_connected, factuurPrefix, factuurStartNummer, werkProjectBijNaVerzending, isTrialBlocked, setShowTrialDialog]
   )
 
   // Verwerken: kent het concept een definitief volgnummer toe en zet het op
@@ -2116,6 +2238,110 @@ export function FacturenLayout() {
         </div>
       </div>
 
+      {/* ── Bulkbalk Te verzenden: hele lijst (of selectie) in één keer verwerken, syncen en mailen ── */}
+      {filterStatus === 'te_verzenden' && (filteredFacturen.length > 0 || bulkBezig) && (
+        <div className="doen-slate-surface rounded-2xl px-5 py-4 flex flex-wrap items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <span>
+                {selectedIds.size > 0
+                  ? `${selectedIds.size} van ${filteredFacturen.length} geselecteerd`
+                  : `${filteredFacturen.length} ${filteredFacturen.length === 1 ? 'factuur staat' : 'facturen staan'} klaar`}
+              </span>
+              <Badge className="bg-flame/10 text-flame border border-flame/25 text-[10px] font-semibold uppercase tracking-wide hover:bg-flame/10">
+                Beta
+              </Badge>
+              <button
+                type="button"
+                onClick={() => setBulkUitlegOpen(true)}
+                className="text-muted-foreground hover:text-petrol dark:hover:text-foreground transition-colors"
+                title="Wat doet deze knop?"
+                aria-label="Uitleg over verwerken en verzenden"
+              >
+                <Info className="h-4 w-4" />
+              </button>
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {bulkBezig
+                ? (() => {
+                    const klaar = Object.values(bulkStatus).filter((s) => s.fase === 'klaar' || s.fase === 'fout').length
+                    return `Bezig · ${klaar} van ${Object.keys(bulkStatus).length} verwerkt`
+                  })()
+                : exactConnected
+                  ? 'Nummer toekennen · naar Exact Online · mailen met PDF'
+                  : 'Nummer toekennen · mailen met PDF'}
+            </p>
+          </div>
+          {bulkBezig ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { bulkStopRef.current = true }}
+            >
+              Stoppen na huidige
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              className="bg-flame text-white hover:bg-flame/90"
+              onClick={() => handleBulkVerzenden(
+                selectedIds.size > 0
+                  ? filteredFacturen.filter((f) => selectedIds.has(f.id))
+                  : filteredFacturen
+              )}
+            >
+              <Send className="h-4 w-4 mr-1" />
+              {selectedIds.size > 0 ? `Verwerk en verzend selectie (${selectedIds.size})` : 'Verwerk en verzend alles'}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Uitleg-popup bij de Te verzenden-bulkverwerking */}
+      <Dialog open={bulkUitlegOpen} onOpenChange={setBulkUitlegOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Te verzenden
+              <Badge className="bg-flame/10 text-flame border border-flame/25 text-[10px] font-semibold uppercase tracking-wide hover:bg-flame/10">
+                Beta
+              </Badge>
+            </DialogTitle>
+            <DialogDescription>
+              Alles wat opgeslagen maar nog niet verstuurd is, verzamelt zich hier.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-foreground/85">
+            <p>
+              In deze lijst staan al je concepten en verwerkte facturen die nog niet naar de klant zijn gemaild.
+              Sla je facturen alleen op (bijvoorbeeld met "Opslaan en volgende" in de editor), dan komen ze hier
+              vanzelf terecht, zodat je ze aan het eind in één keer kunt wegsturen.
+            </p>
+            <div>
+              <p className="font-semibold text-foreground mb-1">De knop "Verwerk en verzend" doet per factuur, in deze volgorde:</p>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li>Definitief factuurnummer toekennen (alleen bij concepten).</li>
+                <li>De factuur-PDF opstellen en bewaren.</li>
+                <li>Boeken in Exact Online, als je organisatie gekoppeld is. Mislukt de boeking, dan wordt deze factuur niet gemaild en blijft hij met een foutmelding in de lijst staan.</li>
+                <li>De factuur mailen naar de klant, met de PDF als bijlage. De ontvanger is het factuurcontact van de klant, of anders het algemene klantadres.</li>
+              </ol>
+            </div>
+            <p>
+              Wil je niet alles tegelijk versturen? Vink dan alleen de facturen aan die mee moeten; de knop verwerkt
+              dan alleen jouw selectie. Verstuurde facturen verdwijnen uit deze lijst; wat misgaat blijft staan met
+              de reden erbij.
+            </p>
+            <p className="text-muted-foreground">
+              Deze functie is nieuw (beta). Controleer de eerste weken even in Exact en je verzonden e-mails of alles
+              loopt zoals je verwacht.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setBulkUitlegOpen(false)}>Begrepen</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ── Te factureren projecten view ── */}
       {filterStatus === 'te_factureren' ? (
         <div className="rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
@@ -2481,11 +2707,42 @@ export function FacturenLayout() {
                       })()}
                     </td>
                     <td className="py-3.5 pr-4">
-                      <StatusBadge
-                        status={factuur.status}
-                        label={config.label}
-                        {...(factuur.status === 'vervallen' ? { color: '#C0451A' } : {})}
-                      />
+                      <div className="flex flex-col gap-1 items-start">
+                        <StatusBadge
+                          status={factuur.status}
+                          label={config.label}
+                          {...(factuur.status === 'vervallen' ? { color: '#C0451A' } : {})}
+                        />
+                        {(() => {
+                          const bulk = bulkStatus[factuur.id]
+                          if (!bulk) return null
+                          if (bulk.fase === 'wachten') {
+                            return <span className="text-[11px] text-muted-foreground/70">In wachtrij</span>
+                          }
+                          if (bulk.fase === 'bezig') {
+                            return (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-petrol dark:text-[#5AABB5]">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Bezig
+                              </span>
+                            )
+                          }
+                          if (bulk.fase === 'klaar') {
+                            return (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-[#2D6B48] dark:text-[#4A9960] max-w-[220px]" title={bulk.melding}>
+                                <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{bulk.melding || 'Verzonden'}</span>
+                              </span>
+                            )
+                          }
+                          return (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-[#C03A18] dark:text-[#FF8866] max-w-[220px]" title={bulk.melding}>
+                              <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{bulk.melding || 'Mislukt'}</span>
+                            </span>
+                          )
+                        })()}
+                      </div>
                     </td>
                     <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
                       {isOverdue && (
@@ -2605,7 +2862,7 @@ export function FacturenLayout() {
                             </DropdownMenuItem>
                           )}
                           {(factuur.status === 'open' || factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
-                            <DropdownMenuItem onClick={() => handleSendFactuur(factuur)}>
+                            <DropdownMenuItem onClick={() => handleSendFactuur(factuur)} disabled={bulkBezig}>
                               <Send className="h-4 w-4 mr-2" />
                               Verstuur factuur
                             </DropdownMenuItem>
