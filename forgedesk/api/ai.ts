@@ -66,11 +66,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    const { messages, max_tokens = 2000 } = req.body as { messages: ChatMessage[]; max_tokens?: number }
+    const { messages, max_tokens: maxTokensRaw = 2000 } = req.body as { messages: ChatMessage[]; max_tokens?: number }
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array is verplicht' })
     }
+
+    // max_tokens komt uit de client: server-side clampen zodat een trial-account
+    // niet met een torenhoge waarde het Anthropic-tegoed kan leegtrekken.
+    const max_tokens = Math.min(Math.max(1, Number(maxTokensRaw) || 2000), 4000)
 
     // Extract system prompt from messages
     const systemMessages = messages.filter((m: ChatMessage) => m.role === 'system')
