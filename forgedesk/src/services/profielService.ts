@@ -503,6 +503,8 @@ export async function getMedewerkers(): Promise<Medewerker[]> {
         status: (p.status === 'actief' ? 'actief' : 'inactief') as 'actief' | 'inactief',
         rol: (p.rol || 'medewerker') as Medewerker['rol'],
         vaardigheden: [],
+        start_datum: '',
+        notities: '',
         created_at: '',
         updated_at: '',
       } as Medewerker)
@@ -590,9 +592,14 @@ export async function deleteMedewerker(id: string): Promise<void> {
 
 export async function getNotificaties(limit = 100): Promise<Notificatie[]> {
   if (isSupabaseConfigured() && supabase) {
+    // Expliciet op de eigen user filteren en niet alleen op RLS leunen: de
+    // live policies bleken in aug 2026 org-breed te lekken (migratie 217).
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user.id) return []
     const { data, error } = await supabase
       .from('notificaties')
       .select('id, user_id, type, titel, bericht, link, gelezen, created_at')
+      .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
       .limit(limit)
     if (error) throw error
@@ -617,7 +624,11 @@ export async function markNotificatieGelezen(id: string): Promise<void> {
 
 export async function markAlleNotificatiesGelezen(): Promise<void> {
   if (isSupabaseConfigured() && supabase) {
-    await supabase.from('notificaties').update({ gelezen: true }).eq('gelezen', false)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user.id) return
+    await supabase.from('notificaties').update({ gelezen: true })
+      .eq('gelezen', false)
+      .eq('user_id', session.user.id)
     return
   }
   const items = getLocalData<Notificatie>('notificaties')
