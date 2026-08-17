@@ -73,6 +73,9 @@ export interface ProjectMail {
   gelezen: boolean
   bijlagen: number
   from_name: string | null
+  // Het Message-ID uit de mailheader. Nodig om vanuit een project een antwoord
+  // te sturen dat bij de ontvanger in hetzelfde gesprek belandt.
+  message_id: string | null
 }
 
 /**
@@ -87,7 +90,7 @@ export async function getEmailsVoorProject(projectId: string, limit = 100): Prom
   if (threadIds.length === 0) return []
   const { data, error } = await supabase
     .from('emails')
-    .select('id, thread_id, van, aan, onderwerp, datum, body_text, body_html, gelezen, bijlagen, from_name')
+    .select('id, thread_id, van, aan, onderwerp, datum, body_text, body_html, gelezen, bijlagen, from_name, message_id')
     .in('thread_id', threadIds)
     .order('datum', { ascending: false })
     .limit(limit)

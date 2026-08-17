@@ -345,6 +345,12 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const [threadMails, setThreadMails] = useState<ProjectMail[]>([])
   const [threadId, setThreadId] = useState<string | null>(null)
   const [threadOpen, setThreadOpen] = useState(true)
+  // Losse mail of doorgaan op het lopende gesprek. Bij een antwoord gaan de
+  // headers In-Reply-To en References mee, waardoor het bericht ook in de
+  // mailbox van de klant onder het gesprek hangt in plaats van als nieuw
+  // onderwerp te beginnen.
+  const [mailModus, setMailModus] = useState<'nieuw' | 'antwoord'>('nieuw')
+  const modusZelfGekozenRef = useRef(false)
   const [openThreadMailId, setOpenThreadMailId] = useState<string | null>(null)
 
   const [scheduleOpen, setScheduleOpen] = useState(false)
@@ -879,7 +885,12 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#1A1A1A">${bodyHtml}${signaturImg}</div>`
 
       const toStr = toEmails.join(', ')
-      const sendThreadId = threadId || crypto.randomUUID()
+      // Antwoorden haakt aan het lopende gesprek: hetzelfde thread_id binnen
+      // doen. en het Message-ID van het vorige bericht als In-Reply-To, waar de
+      // verzendroute de headers van maakt. Een los bericht begint bewust een
+      // nieuwe thread, ook als er al correspondentie ligt.
+      const antwoordt = mailModus === 'antwoord' && !!antwoordAnker?.message_id
+      const sendThreadId = antwoordt ? (threadId || antwoordAnker!.thread_id) : crypto.randomUUID()
       await sendEmail(toStr, subject.trim(), body, {
         attachments,
         html,
@@ -887,6 +898,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         bcc: bccEmails.length > 0 ? bccEmails.join(', ') : undefined,
         wacht_op_reactie: opvolgen,
         thread_id: sendThreadId,
+        in_reply_to: antwoordt ? antwoordAnker!.message_id! : undefined,
         scheduledAt: scheduledAt || undefined,
       })
 
@@ -949,6 +961,29 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const initiaal = (defaultNaam || defaultEmail || '?').trim().charAt(0).toUpperCase()
   const contactEmailLower = (defaultEmail || '').toLowerCase()
 
+  // Het bericht waarop een antwoord aanhaakt: het nieuwste uit het gesprek dat
+  // een Message-ID heeft. Eigen verzonden mails krijgen dat pas nadat de
+  // mailsync ze heeft opgehaald, dus zonder anker is antwoorden geen optie.
+  const antwoordAnker = threadMails.find((m) => !!m.message_id) ?? null
+  const antwoordOnderwerp = antwoordAnker
+    ? `Re: ${antwoordAnker.onderwerp.replace(/^\s*(re|fwd?)\s*:\s*/i, '')}`
+    : defaultSubject
+
+  // Loopt er al een gesprek, dan is doorgaan de verwachte keuze. Het onderwerp
+  // schuift alleen mee zolang het nog het onbewerkte standaardonderwerp is;
+  // een zelf getypt of uit een concept teruggehaald onderwerp blijft staan.
+  useEffect(() => {
+    if (modusZelfGekozenRef.current || !antwoordAnker) return
+    setMailModus('antwoord')
+    setSubject((huidig) => (huidig === defaultSubject ? antwoordOnderwerp : huidig))
+  }, [antwoordAnker?.message_id, antwoordOnderwerp, defaultSubject])
+
+  const kiesModus = (modus: 'nieuw' | 'antwoord') => {
+    modusZelfGekozenRef.current = true
+    setMailModus(modus)
+    setSubject(modus === 'antwoord' ? antwoordOnderwerp : defaultSubject)
+  }
+
   return (
     <div
       ref={containerRef}
@@ -961,7 +996,30 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             {initiaal}
           </span>
           <div className="min-w-0">
-            <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-petrol">Nieuw bericht</div>
+            {antwoordAnker ? (
+              <div className="inline-flex items-center gap-[2px] rounded-button bg-petrol/[0.06] p-[2px] mb-1">
+                {([
+                  { waarde: 'antwoord' as const, label: 'Antwoord in gesprek' },
+                  { waarde: 'nieuw' as const, label: 'Nieuw bericht' },
+                ]).map((keuze) => (
+                  <button
+                    key={keuze.waarde}
+                    type="button"
+                    onClick={() => kiesModus(keuze.waarde)}
+                    className={cn(
+                      'px-2 py-[3px] rounded-button text-[10px] font-semibold transition-colors',
+                      mailModus === keuze.waarde
+                        ? 'bg-white text-petrol shadow-[0_1px_2px_rgba(26,83,92,0.08)]'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {keuze.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-petrol">Nieuw bericht</div>
+            )}
             <div className="text-[13px] font-semibold text-foreground truncate leading-tight">{defaultNaam || 'Nieuwe ontvanger'}</div>
             {defaultEmail && <div className="text-[11px] text-muted-foreground truncate leading-tight">{defaultEmail}</div>}
           </div>
