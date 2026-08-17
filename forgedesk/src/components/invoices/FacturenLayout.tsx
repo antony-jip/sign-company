@@ -139,7 +139,7 @@ import { confirm } from '@/components/shared/ConfirmDialog'
 
 type FactuurStatus = Factuur['status']
 type FactuurType = NonNullable<Factuur['factuur_type']>
-type FilterStatus = 'alle' | FactuurStatus | 'verlopen' | 'te_factureren' | 'credit' | 'te_verzenden'
+type FilterStatus = 'alle' | FactuurStatus | 'verlopen' | 'te_factureren' | 'credit' | 'te_verzenden' | 'exact_open'
 type SortField = 'datum' | 'bedrag' | 'klantnaam'
 type SortDir = 'asc' | 'desc'
 
@@ -194,7 +194,15 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'gecrediteerd', label: 'Gecrediteerd' },
   { value: 'credit', label: "Creditnota's" },
   { value: 'te_factureren', label: 'Te factureren' },
+  { value: 'exact_open', label: 'Te synchroniseren' },
 ]
+
+// Een factuur kan pas naar Exact als hij verwerkt is en een nummer heeft;
+// concepten weigert de sync-route. Zelfde voorwaarde als de sync-knop in de
+// editor, zodat de tab niets toont wat je daar niet kunt versturen.
+function moetNaarExact(factuur: Factuur): boolean {
+  return factuur.status !== 'concept' && !!factuur.nummer && !factuur.exact_synced_at
+}
 
 const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'datum', label: 'Datum' },
@@ -729,6 +737,8 @@ export function FacturenLayout() {
       result = result.filter((f) => f.status === 'concept' || f.status === 'open')
     } else if (filterStatus === 'credit') {
       result = result.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit')
+    } else if (filterStatus === 'exact_open') {
+      result = result.filter(moetNaarExact)
     } else if (filterStatus !== 'alle') {
       result = result.filter((f) => f.status === filterStatus)
     }
@@ -786,6 +796,7 @@ export function FacturenLayout() {
     counts['te_factureren'] = teFacturerenProjecten.length
     counts['te_verzenden'] = facturen.filter((f) => f.status === 'concept' || f.status === 'open').length
     counts['credit'] = facturen.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit').length
+    counts['exact_open'] = facturen.filter(moetNaarExact).length
     const vandaag = getTodayString()
     counts['verlopen'] = facturen.filter((f) => isAchterstallig(f, vandaag)).length
     return counts
@@ -2202,7 +2213,7 @@ export function FacturenLayout() {
         {/* Filter tabs */}
         <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border">
           <div className="flex items-center gap-1 flex-1 flex-nowrap md:flex-wrap overflow-x-auto">
-            {FILTER_OPTIONS.map((option) => {
+            {FILTER_OPTIONS.filter((option) => option.value !== 'exact_open' || exactConnected).map((option) => {
               const count = statusCounts[option.value] || 0
               const isActive = filterStatus === option.value
               return (
