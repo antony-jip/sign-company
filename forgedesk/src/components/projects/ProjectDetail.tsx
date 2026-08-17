@@ -442,6 +442,8 @@ export function ProjectDetail() {
   }
   // takenWeergave removed · using TaskChecklistView only
   const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
+  // Gevuld = dezelfde dialog werkt als bewerk-dialog voor die taak.
+  const [editTaakId, setEditTaakId] = useState<string | null>(null)
   const [nieuweTaakTitel, setNieuweTaakTitel] = useState('')
   const [nieuweTaakBeschrijving, setNieuweTaakBeschrijving] = useState('')
   const [nieuweTaakToegewezen, setNieuweTaakToegewezen] = useState('')
@@ -704,7 +706,9 @@ export function ProjectDetail() {
     `project-detail-${id || 'onbekend'}`,
     () => {
       const briefingGewijzigd = briefingText !== (project?.beschrijving || '')
-      const taakBegonnen = Boolean(nieuweTaakTitel.trim() || nieuweTaakBeschrijving.trim())
+      // Bewerk-stand niet meenemen: die data staat al in de database, en een
+      // herstel zonder editTaakId zou de taak als nieuwe taak dupliceren.
+      const taakBegonnen = !editTaakId && Boolean(nieuweTaakTitel.trim() || nieuweTaakBeschrijving.trim())
       if (!briefingGewijzigd && !taakBegonnen) return null
       return {
         briefingText: briefingGewijzigd ? briefingText : null,
@@ -1793,6 +1797,16 @@ export function ProjectDetail() {
             onMontageDelete={handleDeleteMontage}
             onNewMontage={handleOpenMontageDialog}
             onNewTaak={() => setNieuweTaakOpen(true)}
+            onTaakEdit={(taak) => {
+              setEditTaakId(taak.id)
+              setNieuweTaakTitel(taak.titel)
+              setNieuweTaakBeschrijving(taak.beschrijving || '')
+              setNieuweTaakToegewezen(taak.toegewezen_aan || '')
+              setNieuweTaakDeadline(taak.deadline?.split('T')[0] || '')
+              setNieuweTaakStatus(taak.status)
+              setNieuweTaakPrioriteit(taak.prioriteit)
+              setNieuweTaakOpen(true)
+            }}
             onNewOfferte={openNieuweOfferte}
             onQuickOfferte={handleQuickOfferte}
             onUpdateOffertePrice={handleUpdateOffertePrice}
@@ -2635,6 +2649,7 @@ export function ProjectDetail() {
       <Dialog open={nieuweTaakOpen} onOpenChange={(open) => {
         setNieuweTaakOpen(open)
         if (!open) {
+          setEditTaakId(null)
           setNieuweTaakTitel('')
           setNieuweTaakBeschrijving('')
           setNieuweTaakToegewezen('')
@@ -2644,7 +2659,7 @@ export function ProjectDetail() {
         }
       }}>
         <DialogContent className="sm:max-w-[540px] p-0 gap-0 max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader className="sr-only"><DialogTitle>Nieuwe taak</DialogTitle></DialogHeader>
+          <DialogHeader className="sr-only"><DialogTitle>{editTaakId ? 'Taak bewerken' : 'Nieuwe taak'}</DialogTitle></DialogHeader>
 
           <div className="flex-1 overflow-y-auto">
             {/* Titel als inline groot input */}
@@ -2792,21 +2807,44 @@ export function ProjectDetail() {
               disabled={!nieuweTaakTitel.trim()}
               onClick={async () => {
                 try {
-                  const newTaak = await createTaak({
-                    user_id: user?.id || '',
-                    project_id: id!,
-                    titel: nieuweTaakTitel.trim(),
-                    beschrijving: nieuweTaakBeschrijving.trim(),
-                    status: nieuweTaakStatus,
-                    prioriteit: nieuweTaakPrioriteit,
-                    toegewezen_aan: nieuweTaakToegewezen.trim(),
-                    deadline: nieuweTaakDeadline || new Date().toISOString().split('T')[0],
-                    geschatte_tijd: 0,
-                    bestede_tijd: 0,
-                  })
-                  logCreate({ user, medewerkers: alleMedewerkers, entityType: 'taak', entityId: newTaak.id })
-                  toast.success(`Taak "${nieuweTaakTitel}" toegevoegd`)
+                  if (editTaakId) {
+                    await updateTaak(editTaakId, {
+                      titel: nieuweTaakTitel.trim(),
+                      beschrijving: nieuweTaakBeschrijving.trim(),
+                      status: nieuweTaakStatus,
+                      prioriteit: nieuweTaakPrioriteit,
+                      toegewezen_aan: nieuweTaakToegewezen.trim(),
+                      ...(nieuweTaakDeadline ? { deadline: nieuweTaakDeadline } : {}),
+                    })
+                    if (user) {
+                      logWijziging({
+                        userId: user.id,
+                        entityType: 'taak',
+                        entityId: editTaakId,
+                        actie: 'gewijzigd',
+                        medewerkerNaam: resolveMedewerkerNaam(user, alleMedewerkers),
+                        omschrijving: `Taak "${nieuweTaakTitel.trim()}" bijgewerkt`,
+                      })
+                    }
+                    toast.success(`Taak "${nieuweTaakTitel}" bijgewerkt`)
+                  } else {
+                    const newTaak = await createTaak({
+                      user_id: user?.id || '',
+                      project_id: id!,
+                      titel: nieuweTaakTitel.trim(),
+                      beschrijving: nieuweTaakBeschrijving.trim(),
+                      status: nieuweTaakStatus,
+                      prioriteit: nieuweTaakPrioriteit,
+                      toegewezen_aan: nieuweTaakToegewezen.trim(),
+                      deadline: nieuweTaakDeadline || new Date().toISOString().split('T')[0],
+                      geschatte_tijd: 0,
+                      bestede_tijd: 0,
+                    })
+                    logCreate({ user, medewerkers: alleMedewerkers, entityType: 'taak', entityId: newTaak.id })
+                    toast.success(`Taak "${nieuweTaakTitel}" toegevoegd`)
+                  }
                   setNieuweTaakOpen(false)
+                  setEditTaakId(null)
                   setNieuweTaakTitel('')
                   setNieuweTaakBeschrijving('')
                   setNieuweTaakToegewezen('')
@@ -2815,12 +2853,12 @@ export function ProjectDetail() {
                   setNieuweTaakPrioriteit('medium')
                   await fetchTaken()
                 } catch (err) {
-                  logger.error('Fout bij aanmaken taak:', err)
-                  toast.error('Kon taak niet aanmaken')
+                  logger.error('Fout bij opslaan taak:', err)
+                  toast.error(editTaakId ? 'Kon taak niet bijwerken' : 'Kon taak niet aanmaken')
                 }
               }}
             >
-              Taak toevoegen
+              {editTaakId ? 'Opslaan' : 'Taak toevoegen'}
             </Button>
             </div>
           </div>

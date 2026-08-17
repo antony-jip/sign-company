@@ -54,6 +54,7 @@ interface TakenOfferteGridProps {
   onNewTaak: () => void
   onNewOfferte: () => void
   onTaakStatusChange: (taakId: string, newStatus: Taak['status']) => Promise<void>
+  onTaakEdit?: (taak: Taak) => void
   onTaakDelete?: (taak: Taak) => Promise<void> | void
   onOpdrachtbevestiging?: (offerte: Offerte) => void
   onOfferteDelete?: (offerte: Offerte) => Promise<void> | void
@@ -72,6 +73,7 @@ export function TakenOfferteGrid({
   onNewTaak,
   onNewOfferte,
   onTaakStatusChange,
+  onTaakEdit,
   onTaakDelete,
   onOfferteDelete,
   onQuickOfferte,
@@ -239,6 +241,7 @@ export function TakenOfferteGrid({
               taken={taken}
               medewerkers={medewerkers}
               onStatusChange={onTaakStatusChange}
+              onTaskClick={onTaakEdit}
               onTaakDelete={onTaakDelete}
             />
           </div>
