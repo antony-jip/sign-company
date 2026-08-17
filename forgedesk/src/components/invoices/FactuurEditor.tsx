@@ -614,6 +614,10 @@ export function FactuurEditor() {
   // Te factureren projecten (DEEL 3)
   const [teFacturerenProjecten, setTeFacturerenProjecten] = useState<(Project & { offerteBedrag: number })[]>([])
 
+  // Projecten met status 'te-factureren'. Alleen deze mogen in de serie-invoer
+  // opduiken; goedgekeurd zijn zegt niets over of het werk af is.
+  const [teFacturerenProjectIds, setTeFacturerenProjectIds] = useState<Set<string>>(new Set())
+
   // Track form modifications after initial load
   const initialLoadDone = useRef(false)
   useEffect(() => {
@@ -658,13 +662,14 @@ export function FactuurEditor() {
     async function loadData() {
       try {
         setIsLoading(true)
-        const [klantenData, facturenData, herinneringData, offertesData, grootboekData, kostenplaatsenData] = await Promise.all([
+        const [klantenData, facturenData, herinneringData, offertesData, grootboekData, kostenplaatsenData, projectenData] = await Promise.all([
           getKlanten().catch(() => []),
           getFacturen().catch(() => []),
           getHerinneringTemplates().catch(() => []),
           getOffertes().catch(() => []),
           getGrootboek().catch(() => []),
           getKostenplaatsen().catch(() => []),
+          getProjecten().catch(() => []),
         ])
         if (!cancelled) {
           setKlanten(klantenData)
@@ -673,6 +678,7 @@ export function FactuurEditor() {
           setAllOffertes(offertesData)
           setGrootboekrekeningen(grootboekData)
           setKostenplaatsen(kostenplaatsenData.filter((k: Kostenplaats) => k.actief))
+          setTeFacturerenProjectIds(new Set(projectenData.filter((p) => p.status === 'te-factureren').map((p) => p.id)))
         }
 
         // Edit mode: load existing factuur
@@ -823,7 +829,6 @@ export function FactuurEditor() {
 
           // Load te factureren projecten (DEEL 3)
           try {
-            const projectenData = await getProjecten()
             const tfProjecten = projectenData.filter((p) => p.status === 'te-factureren')
             const enriched = await Promise.all(
               tfProjecten.map(async (project) => {
@@ -1237,7 +1242,10 @@ export function FactuurEditor() {
     return Math.max(0, Math.floor((vandaag.getTime() - vervaldatum.getTime()) / (1000 * 60 * 60 * 24)))
   }, [existingFactuur])
 
-  // Te factureren offertes: goedgekeurd maar nog geen factuur
+  // Te factureren offertes: goedgekeurd, nog geen factuur, en het project staat
+  // op 'te factureren'. Zonder die laatste eis kwam elke goedgekeurde offerte
+  // in de lijst, ook van werk dat nog moet beginnen, en die sleepte "Opslaan en
+  // volgende" een reeks projecten in die nog niet gefactureerd mogen worden.
   const teFacturerenOffertes = useMemo(() => {
     const gefactuurdeOfferteIds = new Set(
       allFacturen
@@ -1246,8 +1254,9 @@ export function FactuurEditor() {
     )
     return allOffertes
       .filter((o) => o.status === 'goedgekeurd' && !gefactuurdeOfferteIds.has(o.id))
+      .filter((o) => !!o.project_id && teFacturerenProjectIds.has(o.project_id))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-  }, [allOffertes, allFacturen])
+  }, [allOffertes, allFacturen, teFacturerenProjectIds])
 
   // ============ ITEM HANDLERS ============
 
