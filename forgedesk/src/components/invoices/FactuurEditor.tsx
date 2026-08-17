@@ -1666,31 +1666,11 @@ export function FactuurEditor() {
         netOpgeslagenRef.current = true
         setIsDirty(false)
 
-        // Check of er nog meer offertes te factureren zijn. Bij skipNavigate
-        // bepaalt de aanroeper zelf het vervolg (direct verzenden of "Opslaan
-        // en volgende"); een actietoast die intussen wegnavigeert zou de
-        // lopende keten kapen, dus dan alleen de kale melding.
-        const opslaanMelding = verwerken ? `Factuur ${effectiefNummer} verwerkt` : 'Concept opgeslagen'
-        const nextOfferte = opts?.skipNavigate ? undefined : teFacturerenOffertes.find((o) => o.id !== offerteId)
-        if (nextOfferte) {
-          toast.success(opslaanMelding, {
-            action: {
-              label: `Volgende: ${nextOfferte.nummer}`,
-              onClick: () => {
-                const params = new URLSearchParams({
-                  offerte_id: nextOfferte.id,
-                  klant_id: nextOfferte.klant_id,
-                })
-                if (nextOfferte.titel) params.set('titel', nextOfferte.titel)
-                if (nextOfferte.project_id) params.set('project_id', nextOfferte.project_id)
-                navigate(`/facturen/nieuw?${params.toString()}`)
-              },
-            },
-            duration: 8000,
-          })
-        } else {
-          toast.success(opslaanMelding)
-        }
+        // Alleen bevestigen dat het opslaan gelukt is. Hier stond een knop naar
+        // de volgende te factureren offerte, maar die las als een openstaande
+        // stap terwijl de factuur al opgeslagen was. Een reeks achter elkaar
+        // doen gaat via de knop "Opslaan en volgende".
+        toast.success(verwerken ? `Factuur ${effectiefNummer} verwerkt` : 'Concept opgeslagen')
         if (!opts?.skipNavigate) {
           navigate(`/facturen/${newFactuur.id}`)
         }
