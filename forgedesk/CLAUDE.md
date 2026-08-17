@@ -100,7 +100,7 @@ visuele wijziging.
 - Nieuwe tabellen/kolommen krijgen altijd org-scoped RLS-policy
   (SELECT/INSERT/UPDATE/DELETE elk afgedekt).
 - **Migratie-nummering:** neem het eerstvolgende vrije nummer op basis van de
-  bestandsnamen in `supabase/migrations/`. Hoogste nummer nu: **216**. Vertrouw
+  bestandsnamen in `supabase/migrations/`. Hoogste nummer nu: **217**. Vertrouw
   hiervoor NIET op `doen_migraties`: die tabel is administratie en bewust
   incompleet, dus de map is voor nummering de betrouwbaarder bron.
 - **`doen_migraties` is de administratie** van wat gedraaid is (migratie 198;
