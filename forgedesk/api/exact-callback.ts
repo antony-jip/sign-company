@@ -80,6 +80,17 @@ const EXACT_API_BASE = 'https://start.exactonline.nl/api/v1'
 const REDIRECT_URI = 'https://app.doen.team/api/exact-callback'
 const APP_URL = 'https://app.doen.team'
 
+// OAuth-foutcode (RFC 6749) naar de reason-slug die IntegratiesTab omzet in een
+// melding. Codes die hier niet in staan vallen terug op `token_exchange`.
+const REASON_PER_OAUTH_FOUT: Record<string, string> = {
+  invalid_client: 'oauth_client',
+  unauthorized_client: 'oauth_client',
+  invalid_grant: 'oauth_grant',
+  invalid_request: 'oauth_verzoek',
+  invalid_scope: 'oauth_verzoek',
+  unsupported_grant_type: 'oauth_verzoek',
+}
+
 // Inline copy van verifyState uit exact-auth.ts. Vercel serverless functions
 // kunnen geen lokale modules importeren — elke route moet standalone zijn.
 // Moet in sync blijven met signState/verifyState in exact-auth.ts:
@@ -270,6 +281,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } catch {
         // Exact antwoordt bij sommige fouten met HTML of platte tekst.
       }
+      // Eén reason voor elke weigering stuurde iedereen naar het App Center om
+      // de sleutels te controleren, ook als het probleem de redirect-URI of een
+      // storing bij Exact was. De OAuth-code benoemt de oorzaak wel, dus vertaal
+      // hem naar een eigen slug. Vertalen en niet doorgeven: alleen bekende
+      // codes belanden zo in de redirect-URL.
+      const reason =
+        tokenResponse.status >= 500
+          ? 'exact_storing'
+          : (oauthError && REASON_PER_OAUTH_FOUT[oauthError]) || 'token_exchange'
+
       console.error('Exact token exchange error:', tokenResponse.status, oauthError, oauthDescription)
       Sentry.captureException(new Error('Exact token exchange failed'), {
         level: 'error',
@@ -282,7 +303,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           user_id,
         },
       })
-      return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=token_exchange`)
+      return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=${reason}`)
     }
 
     let tokens: { access_token: string; refresh_token: string; expires_in: number }
