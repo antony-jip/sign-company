@@ -35,6 +35,7 @@ import { AanvraagKaart } from './AanvraagKaart'
 import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
 import { LinkInvoegKnop } from '@/components/shared/LinkInvoegKnop'
 import { MailStatusToast } from '@/components/shared/MailStatusToast'
+import { OntvangerInput } from '@/components/shared/OntvangerVeld'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -1225,12 +1226,12 @@ export function EmailReader({
             <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06] dark:border-white/[0.08]">
               <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Aan</span>
               <div className="flex-1 flex items-center gap-2 min-w-0">
-                <input
-                  type="text"
+                <OntvangerInput
                   value={replyTo}
-                  onChange={(e) => setReplyTo(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none text-[14px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
+                  onChange={setReplyTo}
+                  type="text"
                   placeholder="ontvanger@voorbeeld.nl"
+                  inputClassName="w-full bg-transparent border-none outline-none text-[14px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
                 />
               </div>
               {!showCcBcc && (
@@ -1301,22 +1302,22 @@ export function EmailReader({
               <>
                 <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06] dark:border-white/[0.08]">
                   <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Cc</span>
-                  <input
-                    type="text"
+                  <OntvangerInput
                     value={replyCc}
-                    onChange={(e) => setReplyCc(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
+                    onChange={setReplyCc}
+                    type="text"
                     placeholder="cc@voorbeeld.nl"
+                    inputClassName="w-full bg-transparent border-none outline-none text-[14px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
                   />
                 </div>
                 <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06] dark:border-white/[0.08]">
                   <span className="text-[12px] text-muted-foreground/80 flex-shrink-0 w-[80px] font-medium">Bcc</span>
-                  <input
-                    type="text"
+                  <OntvangerInput
                     value={replyBcc}
-                    onChange={(e) => setReplyBcc(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
+                    onChange={setReplyBcc}
+                    type="text"
                     placeholder="bcc@voorbeeld.nl"
+                    inputClassName="w-full bg-transparent border-none outline-none text-[14px] text-foreground min-w-0 placeholder:text-muted-foreground/80"
                   />
                 </div>
               </>
