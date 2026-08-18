@@ -4820,3 +4820,44 @@ button.doen-panel:hover {
 /* De kop van de afgerond-sectie ging bij de rand van de kolom staan in plaats
    van bij de tijdrail eronder. */
 .planning-stapel .stapel-afgerond-kop { padding-left: 8px; }
+
+/* Dagbelasting · een balkje tegen de dagnorm in de kop van een stapeldag.
+   Zonder dit las je "9 · 4,25u" als een rustige dag, terwijl het aantal en de
+   uren niets over elkaar zeggen. */
+.stapel-belasting {
+  display: inline-block;
+  width: 22px;
+  height: 3px;
+  margin-left: 6px;
+  vertical-align: 2px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, #1A535C 12%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+.stapel-belasting::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(100% * var(--vol, 0));
+  border-radius: 9999px;
+  background: color-mix(in srgb, #1A535C 55%, transparent);
+  transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.stapel-belasting.is-vol::after { background: #F15025; width: 100%; }
+.dark .stapel-belasting { background: rgba(255, 255, 255, 0.12); }
+.dark .stapel-belasting::after { background: rgba(159, 197, 204, 0.6); }
+.dark .stapel-belasting.is-vol::after { background: #F15025; }
+
+.stapel-uren-zacht.is-vol { color: #F15025; opacity: 1; font-weight: 600; }
+
+/* Geselecteerd voor een bulk-actie · geen vinkje op elke kaart, alleen een
+   duidelijk vlak op wat je hebt aangewezen. */
+.doen-stapel .stapel-kaart.is-geselecteerd {
+  --kaart-bg: color-mix(in srgb, #1A535C 9%, transparent);
+  box-shadow: inset 2px 0 0 #1A535C;
+}
+.dark .doen-stapel .stapel-kaart.is-geselecteerd {
+  --kaart-bg: rgba(159, 197, 204, 0.14);
+  box-shadow: inset 2px 0 0 #9FC5CC;
+}

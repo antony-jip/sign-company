@@ -19,6 +19,10 @@ import type { Taak, MontageAfspraak } from '@/types'
 
 const DAY_LABELS = ['MA', 'DI', 'WO', 'DO', 'VR', 'ZA', 'ZO']
 
+// Waar een dag vol raakt. Ruw, en dat mag: het gaat er niet om of het 7 of 8
+// uur is, maar of woensdag overloopt terwijl maandag leegstaat.
+const DAGNORM_UREN = 8
+
 type DocumentWithVT = Document & {
   startViewTransition?: (cb: () => void) => { finished: Promise<void> }
 }
@@ -64,6 +68,9 @@ export interface StapelHandlers {
   onDrop: (taakId: string, dayIndex: number, hour: number) => void
   onQuickAdd: (day: Date, titel: string) => void
   onSleepChange?: (taakId: string | null) => void
+  /** Bulk-selectie · zat vast aan de weekweergave, terwijl je hier landt. */
+  geselecteerd?: Set<string>
+  onSelecteer?: (taakId: string, uitbreiden: boolean) => void
 }
 
 interface Props extends StapelHandlers {
@@ -81,6 +88,7 @@ export function TakenStapelView({
   weekDays, today, tasksByDay, montageByDay,
   projectMap, klantMap, projectKlantMap, isLoading,
   onToggle, onTogglePrio, onEdit, onDelete, onDrop, onQuickAdd, onSleepChange,
+  geselecteerd, onSelecteer,
 }: Props) {
   const [sleepId, setSleepIdRaw] = useState<string | null>(null)
   const setSleepId = useCallback((id: string | null) => {
@@ -112,10 +120,14 @@ export function TakenStapelView({
     const open = alle.filter((t) => t.status !== 'klaar').sort(sorteer)
     const afgerond = alle.filter((t) => t.status === 'klaar').sort(sorteer)
     const geschat = open.reduce((som, t) => som + (t.geschatte_tijd > 0 ? t.geschatte_tijd : 0), 0)
+    // Hoeveel taken er géén schatting hebben · zonder dat getal liegt het
+    // uren-totaal: "9 taken, 4,25u" leest als een rustige dag terwijl er zes
+    // taken van onbekende lengte tussen staan.
+    const zonderSchatting = open.filter((t) => !(t.geschatte_tijd > 0)).length
     const totaal = open.length + afgerond.length
     const voortgang = totaal > 0 ? Math.round((afgerond.length / totaal) * 100) : 0
     return {
-      day, dayIndex, key, open, afgerond, geschat, voortgang,
+      day, dayIndex, key, open, afgerond, geschat, voortgang, zonderSchatting,
       montages: montageByDay.get(key) || [],
       isToday: isSameDay(day, today),
       isVerleden: day < today && !isSameDay(day, today),
@@ -344,16 +356,33 @@ export function TakenStapelView({
                 {DAY_LABELS[dag.dayIndex]}{dag.isToday && <span className="stapel-punt">.</span>}
               </span>
               <span className="stapel-datum">{dag.day.getDate()}</span>
-              {dag.open.length > 0 && (
-                <span
-                  className="stapel-uren"
-                  title={dag.geschat > 0
-                    ? `${dag.open.length} open, waarvan ${duurLabel(dag.geschat)} geschat`
-                    : `${dag.open.length} open`}
-                >
-                  {dag.open.length}{dag.geschat > 0 && <span className="stapel-uren-zacht"> · {duurLabel(dag.geschat)}</span>}
-                </span>
-              )}
+              {dag.open.length > 0 && (() => {
+                const vol = DAGNORM_UREN > 0 ? dag.geschat / DAGNORM_UREN : 0
+                const over = dag.geschat > DAGNORM_UREN
+                const uitleg = [
+                  `${dag.open.length} open`,
+                  dag.geschat > 0 ? `${duurLabel(dag.geschat)} geschat van ${DAGNORM_UREN}u` : null,
+                  dag.zonderSchatting > 0 ? `${dag.zonderSchatting} zonder schatting` : null,
+                ].filter(Boolean).join(' · ')
+                return (
+                  <span className="stapel-uren" title={uitleg}>
+                    {dag.open.length}
+                    {dag.geschat > 0 && (
+                      <span className={cn('stapel-uren-zacht', over && 'is-vol')}> · {duurLabel(dag.geschat)}</span>
+                    )}
+                    {/* Een balkje tegen de dagnorm · zo zie je in één blik dat
+                        woensdag overloopt en maandag leegstaat, en wat je moet
+                        verslepen. */}
+                    {dag.geschat > 0 && (
+                      <span
+                        className={cn('stapel-belasting', over && 'is-vol')}
+                        style={{ ['--vol' as string]: Math.min(1, vol) }}
+                        aria-hidden
+                      />
+                    )}
+                  </span>
+                )
+              })()}
               <button
                 className="stapel-plus"
                 title="Taak toevoegen op deze dag"
@@ -405,6 +434,8 @@ export function TakenStapelView({
                     projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
                     sleept={sleepId === taak.id}
                     heeftFocus={focus?.dag === dag.dayIndex && focus?.index === i}
+                    isGeselecteerd={geselecteerd?.has(taak.id)}
+                    onSelecteer={onSelecteer}
                     onDragStart={() => setSleepId(taak.id)}
                     onDragEnd={() => { setSleepId(null); setDropDoel(null) }}
                     onToggle={() => metOvergang(() => onToggle(taak))}
@@ -497,7 +528,7 @@ function DropStrook({ actief, laatste, onOver, onDrop }: {
 }
 
 function StapelKaart({
-  taak, klantNaam, projectNaam, sleept, heeftFocus,
+  taak, klantNaam, projectNaam, sleept, heeftFocus, isGeselecteerd, onSelecteer,
   onDragStart, onDragEnd, onToggle, onTogglePrio, onEdit, onDelete,
 }: {
   taak: Taak
@@ -505,6 +536,8 @@ function StapelKaart({
   projectNaam?: string
   sleept?: boolean
   heeftFocus?: boolean
+  isGeselecteerd?: boolean
+  onSelecteer?: (taakId: string, uitbreiden: boolean) => void
   onDragStart: () => void
   onDragEnd: () => void
   onToggle: () => void
@@ -525,7 +558,7 @@ function StapelKaart({
   return (
     <article
       ref={kaartRef}
-      className={cn('stapel-kaart', klaar && 'is-klaar', sleept && 'is-sleept', heeftFocus && 'heeft-focus')}
+      className={cn('stapel-kaart', klaar && 'is-klaar', sleept && 'is-sleept', heeftFocus && 'heeft-focus', isGeselecteerd && 'is-geselecteerd')}
       style={{ viewTransitionName: `taak-${taak.id.replace(/[^a-zA-Z0-9]/g, '')}` }}
       data-prio={taak.prioriteit}
       draggable
@@ -535,7 +568,17 @@ function StapelKaart({
         onDragStart()
       }}
       onDragEnd={onDragEnd}
-      onClick={onEdit}
+      onClick={(e) => {
+        // Cmd/Ctrl selecteert in plaats van te openen, shift breidt uit ·
+        // dezelfde greep als in een bestandsvenster, en er komt geen vinkje
+        // op elke kaart voor te staan.
+        if (onSelecteer && (e.metaKey || e.ctrlKey || e.shiftKey)) {
+          e.preventDefault()
+          onSelecteer(taak.id, e.shiftKey)
+          return
+        }
+        onEdit()
+      }}
       title={context ? `${taak.titel} · ${context}` : taak.titel}
     >
       <button

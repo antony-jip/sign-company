@@ -928,6 +928,36 @@ export function TasksLayout() {
     return map
   }, [filteredTaken, weekDays])
 
+  const laatsteSelectie = useRef<string | null>(null)
+
+  // Cmd/ctrl-klik zet er één bij, shift-klik pakt alles ertussen binnen dezelfde
+  // dag · verder loopt het door dezelfde selectie-state als week en team.
+  const handleStapelSelectie = useCallback((taakId: string, uitbreiden: boolean) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev)
+      if (uitbreiden && laatsteSelectie.current) {
+        const dagVan = (id: string) => {
+          const t = taken.find((x) => x.id === id)
+          return t?.deadline ? new Date(t.deadline).toDateString() : null
+        }
+        const dag = dagVan(taakId)
+        if (dag && dag === dagVan(laatsteSelectie.current)) {
+          const rij = (tasksByDay.get(dag) || []).map((t) => t.id)
+          const a = rij.indexOf(laatsteSelectie.current)
+          const b = rij.indexOf(taakId)
+          if (a >= 0 && b >= 0) {
+            for (const id of rij.slice(Math.min(a, b), Math.max(a, b) + 1)) next.add(id)
+            return next
+          }
+        }
+      }
+      if (next.has(taakId)) next.delete(taakId)
+      else next.add(taakId)
+      return next
+    })
+    laatsteSelectie.current = taakId
+  }, [taken, tasksByDay])
+
   // Wat deze week al af is · voedt de gedaan-balk onderin
   const weekAfgerond = useMemo(() => {
     const dagen = new Set(weekDays.map((d) => d.toDateString()))
@@ -2059,7 +2089,25 @@ export function TasksLayout() {
               onDrop={handleDropTask}
               onQuickAdd={(day, titel) => handleDayQuickAdd(day, titel)}
               onSleepChange={setStapelSleepId}
+              geselecteerd={selectedTaskIds}
+              onSelecteer={handleStapelSelectie}
             />
+            {/* Bulk zat vast aan de weekweergave · dit is sinds kort de
+                weergave waar je in landt, dus hier hoorde hij ook te werken. */}
+            {selectedTaskIds.size > 0 && (
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+                <TakenBulkActionBar
+                  count={selectedTaskIds.size}
+                  medewerkers={medewerkers}
+                  busy={bulkBusy}
+                  onMove={handleBulkMove}
+                  onAssign={handleBulkAssign}
+                  onStatus={handleBulkStatus}
+                  onDelete={handleBulkDelete}
+                  onClear={clearSelection}
+                />
+              </div>
+            )}
           </div>
         )}
 
