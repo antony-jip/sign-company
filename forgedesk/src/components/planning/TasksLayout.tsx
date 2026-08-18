@@ -2719,7 +2719,6 @@ function TaskCard({
   const [justCompleted, setJustCompleted] = useState(false)
   const pc = PRIORITEIT_COLORS[taak.prioriteit]
   const isPriority = taak.prioriteit === 'kritiek'
-  const hour = getHourFromDeadline(taak.deadline ?? "")
 
   function handleToggle(e: React.MouseEvent) {
     e.stopPropagation()
@@ -2786,13 +2785,22 @@ function TaskCard({
         isResizing && 'ring-2 ring-petrol/30 dark:ring-[#5FB5C0]/40 z-30',
         isSelected && 'ring-2 ring-petrol dark:ring-[#5FB5C0] z-20',
         isDimmedForBulkDrag && 'opacity-40',
-        isDone
-          ? 'bg-[#E8F0F0] dark:bg-petrol/15'
-          : cn(PRIO_CARD_BG[taak.prioriteit], PRIO_CARD_STRIPE[taak.prioriteit])
+        'bg-card',
+        !isDone && PRIO_CARD_STRIPE[taak.prioriteit]
       )}
       style={heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : undefined}
       onClick={onEdit}
     >
+      {/* Tint over een dekkende bodem · anders schijnen de uurlijnen van het
+          raster dwars door de kaart heen */}
+      <div
+        aria-hidden
+        className={cn(
+          'absolute inset-0 pointer-events-none',
+          isDone ? 'bg-[#E8F0F0] dark:bg-petrol/15' : PRIO_CARD_BG[taak.prioriteit],
+        )}
+      />
+
       {/* Checkbox · Priority Pulse: cirkel met binnen-dot in priority-kleur, groeit bij hover */}
       <button
         onClick={handleToggle}
@@ -2814,7 +2822,7 @@ function TaskCard({
       </button>
 
       {/* Content · pl-7 voor ruimte naast checkbox (iets breder dan voorheen) */}
-      <div className={cn('h-full', isCompact ? 'pl-7 pr-1.5 py-1' : 'pl-7 pr-1.5 py-2', isDone && 'opacity-60')}>
+      <div className={cn('relative h-full', isCompact ? 'pl-7 pr-1.5 py-1' : 'pl-7 pr-1.5 py-2', isDone && 'opacity-60')}>
         <div className="flex items-center gap-1.5">
           <p
             className={cn(
@@ -2850,23 +2858,22 @@ function TaskCard({
         {!isCompact && (
           <div
             className={cn(
-              'flex items-center gap-2 mt-1 overflow-hidden',
+              'flex items-center gap-1.5 mt-1 overflow-hidden',
               isDone ? 'text-muted-foreground dark:text-muted-foreground/60' : cn(PRIO_CARD_TEXT[taak.prioriteit], 'opacity-70'),
             )}
           >
-            {scheduled && hour !== null && (
-              <span className="text-[11px] font-mono tabular-nums">{formatHourLabel(hour)}</span>
-            )}
             {durationLabel && (
-              <span className="text-[11px] font-mono tabular-nums">{durationLabel}</span>
+              <span className="text-[11px] font-mono tabular-nums opacity-70 flex-shrink-0">{durationLabel}</span>
             )}
-            {/* Klant + project · zodat je in het overzicht ziet voor wie de taak is */}
-            {(klantNaam || projectNaam) && (
-              <span className="text-[11px] truncate min-w-0 flex-1">
-                {klantNaam && <span className="font-medium">{klantNaam}</span>}
-                {klantNaam && projectNaam && <span className="opacity-50"> · </span>}
-                {projectNaam}
-              </span>
+            {/* Klant + project · de klant houdt voorrang, het project vult de rest */}
+            {klantNaam && (
+              <span className="text-[11px] font-medium truncate flex-shrink-0 max-w-[65%]">{klantNaam}</span>
+            )}
+            {klantNaam && projectNaam && (
+              <span className="text-[11px] opacity-40 flex-shrink-0">·</span>
+            )}
+            {projectNaam && (
+              <span className="text-[11px] truncate opacity-75 min-w-0">{projectNaam}</span>
             )}
           </div>
         )}
