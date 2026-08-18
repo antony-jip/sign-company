@@ -52,8 +52,10 @@ import {
   FileSpreadsheet,
   Calendar as CalendarIcon,
   ExternalLink,
+  RotateCcw,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { flushSync } from 'react-dom'
 import { cn } from '@/lib/utils'
 // DOEN design · ModuleHeader verwijderd
 import { useAuth } from '@/contexts/AuthContext'
@@ -79,6 +81,7 @@ import { useOptimisticState } from '@/hooks/useOptimistic'
 import { useStilleRefresh } from '@/hooks/useStilleRefresh'
 import { SelectionRectangle } from '@/components/planning/SelectionRectangle'
 import { TakenStapelView } from '@/components/planning/TakenStapelView'
+import { TaakSleepActies } from '@/components/planning/TaakSleepActies'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
 const TAKEN_FILTER_MIGRATION_V2 = 'doen_taken_filter_migration_v2'
@@ -280,6 +283,7 @@ export function TasksLayout() {
   const [toonHeleDag, setToonHeleDag] = useState(false)
   // Snel toevoegen hoort bij de dagkop · in de kolom zelf viel de knop over de
   // eerste taakkaart heen
+  const [stapelSleepId, setStapelSleepId] = useState<string | null>(null)
   const [bakjeOver, setBakjeOver] = useState(false)
   const [bakjeTitel, setBakjeTitel] = useState('')
   const [quickAddDag, setQuickAddDag] = useState<string | null>(null)
@@ -885,6 +889,14 @@ export function TasksLayout() {
     return map
   }, [filteredTaken, weekDays])
 
+  // Wat deze week al af is · voedt de gedaan-balk onderin
+  const weekAfgerond = useMemo(() => {
+    const dagen = new Set(weekDays.map((d) => d.toDateString()))
+    return taken
+      .filter((t) => t.status === 'klaar' && t.deadline && dagen.has(new Date(t.deadline).toDateString()))
+      .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
+  }, [taken, weekDays])
+
   // Totaal aantal zichtbare taken in de week · voor empty-state
   const weekTotal = useMemo(
     () => [...tasksByDay.values()].reduce((s, a) => s + a.length, 0),
@@ -1076,6 +1088,18 @@ export function TasksLayout() {
   }, [nowMinutes, startHour, visibleHours.length])
 
   const isCurrentWeek = weekOffset === 0
+
+  // Wisselen van weergave mag de browser overbruggen · scheelt de harde knip
+  // tussen een raster en een stapel.
+  function wisselWeergave(v: typeof viewMode) {
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } }
+    if (typeof doc.startViewTransition !== 'function'
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setViewMode(v)
+      return
+    }
+    doc.startViewTransition(() => { flushSync(() => setViewMode(v)) }).finished.catch(() => { /* afgebroken */ })
+  }
 
   // === HANDLERS ===
 
@@ -1455,7 +1479,7 @@ export function TasksLayout() {
 
   return (
     <>
-      <div className="flex flex-col h-full bg-card">
+      <div className="taken-week flex flex-col h-full bg-card">
         {/* === Sticky toolbar · 1 rij === */}
         <div className="sticky top-0 z-20 bg-card border-b border-border px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           {/* Titel + counter */}
@@ -1531,7 +1555,7 @@ export function TasksLayout() {
               ['maand', 'Maand'],
               ['swimlane', 'Team'],
             ] as const).map(([v, label]) => (
-              <button key={v} onClick={() => setViewMode(v)} className={cn(
+              <button key={v} onClick={() => wisselWeergave(v)} className={cn(
                 'text-[13px] py-1 transition-colors',
                 viewMode === v
                   ? 'text-foreground font-semibold'
@@ -1830,27 +1854,6 @@ export function TasksLayout() {
             })}
           </div>
 
-          {/* Buiten het venster staat niets · één klik haalt het etmaal terug */}
-          {!toonHeleDag && !heleDagZichtbaar && (
-            <div className="flex justify-center py-2 border-t border-border/60">
-              <button
-                onClick={() => setToonHeleDag(true)}
-                className="text-[11px] text-muted-foreground hover:text-petrol dark:hover:text-foreground transition-colors px-3 py-1 rounded-md hover:bg-petrol/[0.05] dark:hover:bg-white/[0.05]"
-              >
-                Hele dag tonen
-              </button>
-            </div>
-          )}
-          {toonHeleDag && (
-            <div className="flex justify-center py-2 border-t border-border/60">
-              <button
-                onClick={() => setToonHeleDag(false)}
-                className="text-[11px] text-muted-foreground hover:text-petrol dark:hover:text-foreground transition-colors px-3 py-1 rounded-md hover:bg-petrol/[0.05] dark:hover:bg-white/[0.05]"
-              >
-                Alleen werkuren tonen
-              </button>
-            </div>
-          )}
         </div>
         {rectBox && <SelectionRectangle {...rectBox} />}
         {selectedTaskIds.size > 0 && (
@@ -1882,6 +1885,7 @@ export function TasksLayout() {
               onDelete={handleDeleteDirect}
               onDrop={handleDropTask}
               onQuickAdd={(day, titel) => handleDayQuickAdd(day, titel)}
+              onSleepChange={setStapelSleepId}
             />
           </div>
         )}
@@ -2246,6 +2250,47 @@ export function TasksLayout() {
           </div>
         </div>
         )}
+
+        {/* === GEDAAN · de tegenhanger van het bakje. Wat je vandaag wegwerkt
+             zakt hierheen, en één klik zet het terug als je te snel was. === */}
+        {(viewMode === 'week' || viewMode === 'stapel') && (
+          <div className="flex items-center gap-2 px-4 py-2 border-t border-border/50 bg-muted/25 flex-shrink-0">
+            <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground flex-shrink-0">Gedaan</span>
+            <span className="text-[10px] font-mono text-muted-foreground/70">{weekAfgerond.length}</span>
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+              {weekAfgerond.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => handleToggleComplete(t)}
+                  title="Terugzetten op de planning"
+                  className={cn(
+                    'gedaan-chip group flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] whitespace-nowrap flex-shrink-0',
+                    'border border-border/70 text-muted-foreground hover:text-petrol dark:hover:text-foreground',
+                    'hover:border-petrol/30 hover:bg-petrol/[0.04] transition-colors',
+                  )}
+                >
+                  <Check className="w-3 h-3 text-petrol/60 group-hover:hidden" strokeWidth={3} />
+                  <RotateCcw className="w-3 h-3 hidden group-hover:block" />
+                  <span className="line-through group-hover:no-underline">{t.titel}</span>
+                  {t.project_id && projectKlantMap[t.project_id] && (
+                    <span className="text-[10px] opacity-70">{projectKlantMap[t.project_id]}</span>
+                  )}
+                </button>
+              ))}
+              {weekAfgerond.length === 0 && (
+                <span className="text-[11px] text-muted-foreground/70">Nog niets afgevinkt deze week</span>
+              )}
+            </div>
+            {viewMode === 'week' && !heleDagZichtbaar && (
+              <button
+                onClick={() => setToonHeleDag((v) => !v)}
+                className="text-[11px] text-muted-foreground hover:text-petrol dark:hover:text-foreground transition-colors px-2.5 py-1 rounded-md hover:bg-petrol/[0.05] dark:hover:bg-white/[0.05] flex-shrink-0"
+              >
+                {toonHeleDag ? 'Alleen werkuren' : 'Hele dag'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* === FLOATING ACTION BUTTON · DOEN. Mobiel vrij van de Daan-knop. === */}
@@ -2323,6 +2368,18 @@ export function TasksLayout() {
           <Plus className="w-6 h-6" />
         </button>
       </div>
+
+      <TaakSleepActies
+        actief={Boolean(draggingTaakId || stapelSleepId)}
+        onGedaan={(id) => {
+          const taak = taken.find((t) => t.id === id)
+          if (taak && taak.status !== 'klaar') handleToggleComplete(taak)
+        }}
+        onVerwijder={(id) => {
+          const taak = taken.find((t) => t.id === id)
+          if (taak) handleDeleteDirect(taak)
+        }}
+      />
 
       {/* Edit dialog */}
       <EditTaskDialog

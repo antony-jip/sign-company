@@ -74,6 +74,7 @@ export interface StapelHandlers {
   onDelete: (taak: Taak) => void
   onDrop: (taakId: string, dayIndex: number, hour: number) => void
   onQuickAdd: (day: Date, titel: string) => void
+  onSleepChange?: (taakId: string | null) => void
 }
 
 interface Props extends StapelHandlers {
@@ -90,9 +91,13 @@ interface Props extends StapelHandlers {
 export function TakenStapelView({
   weekDays, today, tasksByDay, montageByDay,
   projectMap, klantMap, projectKlantMap, isLoading,
-  onToggle, onTogglePrio, onEdit, onDelete, onDrop, onQuickAdd,
+  onToggle, onTogglePrio, onEdit, onDelete, onDrop, onQuickAdd, onSleepChange,
 }: Props) {
-  const [sleepId, setSleepId] = useState<string | null>(null)
+  const [sleepId, setSleepIdRaw] = useState<string | null>(null)
+  const setSleepId = useCallback((id: string | null) => {
+    setSleepIdRaw(id)
+    onSleepChange?.(id)
+  }, [onSleepChange])
   const [dropDoel, setDropDoel] = useState<{ dag: number; index: number } | null>(null)
   const [afgerondOpen, setAfgerondOpen] = useState<Set<string>>(new Set())
   const [focus, setFocus] = useState<{ dag: number; index: number } | null>(null)

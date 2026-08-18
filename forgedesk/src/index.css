@@ -4091,3 +4091,228 @@ button.doen-panel:hover {
 @media (prefers-reduced-motion: reduce) {
   .stapel-kaart.is-klaar .stapel-vink { animation: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TAKEN · SLEEPACTIES
+   Verschijnt onderin zodra je een taak oppakt. Twee doelen, ver genoeg uit
+   elkaar dat je er niet per ongeluk in valt.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.sleep-acties {
+  position: fixed;
+  left: 50%;
+  bottom: 48px;
+  z-index: 60;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 16px;
+  background: color-mix(in srgb, hsl(var(--card)) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border: 1px solid rgba(130, 100, 60, 0.16);
+  box-shadow: 0 10px 30px -8px rgba(26, 45, 50, 0.28), 0 2px 6px rgba(26, 45, 50, 0.08);
+  transform: translateX(-50%);
+  animation: sleep-acties-op 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: auto;
+}
+
+.dark .sleep-acties {
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 10px 34px -8px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes sleep-acties-op {
+  from { opacity: 0; transform: translate(-50%, 22px) scale(0.94); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.sleep-zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border: 1px dashed transparent;
+  transition:
+    background-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 180ms ease,
+    transform 220ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 200ms ease;
+}
+
+.sleep-zone.is-gedaan {
+  color: #1A535C;
+  background: color-mix(in srgb, #1A535C 7%, transparent);
+  border-color: color-mix(in srgb, #1A535C 24%, transparent);
+}
+.sleep-zone.is-verwijder {
+  color: #B33B18;
+  background: color-mix(in srgb, #C03A18 6%, transparent);
+  border-color: color-mix(in srgb, #C03A18 22%, transparent);
+}
+.dark .sleep-zone.is-gedaan { color: #9FC5CC; }
+.dark .sleep-zone.is-verwijder { color: #E08A78; }
+
+/* Het doel waar je boven hangt zwelt op en wordt massief · onmiskenbaar waar
+   de taak landt als je nu loslaat. */
+.sleep-zone.is-gedaan.is-boven {
+  color: #fff;
+  background: #1A535C;
+  border-color: #1A535C;
+  border-style: solid;
+  transform: scale(1.06);
+  box-shadow: 0 6px 18px -4px rgba(26, 83, 92, 0.5);
+}
+.sleep-zone.is-verwijder.is-boven {
+  color: #fff;
+  background: #C03A18;
+  border-color: #C03A18;
+  border-style: solid;
+  transform: scale(1.06);
+  box-shadow: 0 6px 18px -4px rgba(192, 58, 24, 0.5);
+}
+
+.sleep-zone.is-boven svg { animation: sleep-icoon-tik 320ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes sleep-icoon-tik {
+  0%   { transform: scale(0.7) rotate(-6deg); }
+  60%  { transform: scale(1.15) rotate(2deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+.sleep-punt { color: #F15025; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sleep-acties { animation: none; }
+  .sleep-zone, .sleep-zone.is-boven svg { transition: none; animation: none; }
+  .sleep-zone.is-boven { transform: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TAKEN · BEWEGING
+   Eén set curves voor de hele module, zodat oppakken, neerzetten en afvinken
+   uit dezelfde hand komen.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.taken-stapel,
+.taken-week {
+  --doen-uit: cubic-bezier(0.22, 1, 0.36, 1);
+  --doen-veer: cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+
+/* Een kaart die je vasthoudt kantelt licht uit het raster · dat leest als
+   opgetild in plaats van uitgegrijsd. */
+.stapel-kaart.is-sleept,
+[data-taak-id][data-sleept="true"] {
+  opacity: 0.42;
+  transform: rotate(-1.4deg) scale(0.975);
+  box-shadow: 0 12px 26px -10px rgba(26, 45, 50, 0.35);
+  cursor: grabbing;
+}
+
+.stapel-kaart { transition-timing-function: var(--doen-uit); }
+
+/* De opening tussen twee kaarten groeit open op de plek waar hij landt. */
+.stapel-drop {
+  transition: height 180ms var(--doen-uit), background-color 180ms ease, margin 180ms var(--doen-uit);
+}
+.stapel-drop.is-actief {
+  height: 30px;
+  margin: 3px 0;
+  background: color-mix(in srgb, #F15025 12%, transparent);
+  border: 1px dashed color-mix(in srgb, #F15025 55%, transparent);
+  border-radius: 10px;
+}
+
+/* Terwijl je sleept treedt de rest een stap terug. */
+.taken-stapel:has(.stapel-kaart.is-sleept) .stapel-kaart:not(.is-sleept) {
+  opacity: 0.72;
+  transition: opacity 200ms var(--doen-uit);
+}
+
+/* Het vinkje van een afgeronde taak trekt een cirkel dicht. */
+@keyframes doen-vink-ring {
+  from { box-shadow: 0 0 0 0 color-mix(in srgb, #1A535C 45%, transparent); }
+  to   { box-shadow: 0 0 0 9px transparent; }
+}
+.stapel-kaart.is-klaar .stapel-vink { animation: stapel-vink-pop 320ms var(--doen-veer), doen-vink-ring 520ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stapel-kaart.is-sleept,
+  [data-taak-id][data-sleept="true"] { transform: none; }
+  .stapel-kaart.is-klaar .stapel-vink { animation: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TAKEN · AFWERKING
+   De laatste laag: dieptewerking op kaarten, een dunne scrollbar, en focus
+   die zichtbaar is zonder te schreeuwen.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.taken-week [data-taak-id],
+.taken-stapel .stapel-kaart {
+  letter-spacing: -0.005em;
+}
+
+/* Twee lagen schaduw · een korte harde voor de rand op het papier en een
+   langere zachte voor de hoogte erboven. */
+.taken-stapel .stapel-kaart {
+  box-shadow:
+    0 1px 1px rgba(130, 100, 60, 0.04),
+    0 2px 6px -2px rgba(130, 100, 60, 0.07);
+}
+.taken-stapel .stapel-kaart:hover {
+  box-shadow:
+    0 1px 1px rgba(130, 100, 60, 0.05),
+    0 6px 16px -6px rgba(130, 100, 60, 0.18);
+}
+.dark .taken-stapel .stapel-kaart {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.dark .taken-stapel .stapel-kaart:hover {
+  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.55);
+}
+
+/* Toetsenbordfocus op de knoppen in de module · muisklikken laat niets achter. */
+.taken-week button:focus-visible,
+.taken-stapel button:focus-visible {
+  outline: 2px solid color-mix(in srgb, #1A535C 60%, transparent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Een dunne scrollbar hoort bij een scherm waar je de hele dag in kijkt. */
+.taken-week *::-webkit-scrollbar,
+.taken-stapel *::-webkit-scrollbar { width: 10px; height: 10px; }
+.taken-week *::-webkit-scrollbar-track,
+.taken-stapel *::-webkit-scrollbar-track { background: transparent; }
+.taken-week *::-webkit-scrollbar-thumb,
+.taken-stapel *::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, #1A535C 16%, transparent);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 9999px;
+}
+.taken-week *::-webkit-scrollbar-thumb:hover,
+.taken-stapel *::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, #1A535C 30%, transparent);
+  background-clip: content-box;
+}
+
+.taken-week ::selection,
+.taken-stapel ::selection {
+  background: color-mix(in srgb, #1A535C 18%, transparent);
+}
+
+/* Wisselen van weergave · de kolommen schuiven één keer rustig in beeld in
+   plaats van hard om te klappen. */
+::view-transition-old(root) { animation: doen-vt-uit 160ms ease both; }
+::view-transition-new(root) { animation: doen-vt-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes doen-vt-uit { to { opacity: 0; } }
+@keyframes doen-vt-in { from { opacity: 0; transform: translateY(6px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+}
