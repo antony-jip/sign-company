@@ -110,19 +110,21 @@ const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
 
 // Dark-aware kaart-classes · PRIORITEIT_COLORS zijn light-hexen voor inline
 // styles; in dark mode moeten bg, tekst en accent-stripe via classes schakelen.
+// Een wash over het kaartpapier · alleen kritiek verdient kleur, de rest zou
+// een raster van gelijk gekleurde blokken opleveren
 const PRIO_CARD_BG: Record<TaakPrioriteit, string> = {
-  kritiek: 'bg-[rgba(241,80,37,0.09)] dark:bg-[rgba(241,80,37,0.15)]',
-  hoog: 'bg-[rgba(26,83,92,0.07)] dark:bg-[rgba(95,181,192,0.10)]',
-  medium: 'bg-[rgba(26,83,92,0.07)] dark:bg-[rgba(95,181,192,0.10)]',
-  laag: 'bg-[rgba(26,83,92,0.07)] dark:bg-[rgba(95,181,192,0.10)]',
+  kritiek: 'bg-[rgba(241,80,37,0.055)] dark:bg-[rgba(241,80,37,0.12)]',
+  hoog: 'bg-transparent',
+  medium: 'bg-transparent',
+  laag: 'bg-transparent',
 }
 // Alleen kritiek draagt een volle streep · stond die op elke kaart, dan
 // onderscheidde hij niets en gaf hij de kolom alleen maar meer gewicht.
 const PRIO_CARD_STRIPE: Record<TaakPrioriteit, string> = {
   kritiek: 'border-l-2 border-l-flame',
-  hoog: 'border-l-2 border-l-petrol/25 dark:border-l-[#5FB5C0]/25',
-  medium: 'border-l-2 border-l-petrol/25 dark:border-l-[#5FB5C0]/25',
-  laag: 'border-l-2 border-l-petrol/25 dark:border-l-[#5FB5C0]/25',
+  hoog: 'border-l-2 border-l-petrol/20 dark:border-l-[#5FB5C0]/25',
+  medium: 'border-l-2 border-l-petrol/20 dark:border-l-[#5FB5C0]/25',
+  laag: 'border-l-2 border-l-petrol/20 dark:border-l-[#5FB5C0]/25',
 }
 const PRIO_CARD_TEXT: Record<TaakPrioriteit, string> = {
   kritiek: 'text-[#C03A18] dark:text-[#FF8866]',
@@ -310,7 +312,7 @@ export function TasksLayout() {
   const [hourHeight, setHourHeight] = useState(() => {
     try { const v = parseInt(localStorage.getItem(ZOOM_STORAGE_KEY) || '', 10); return v >= HOUR_HEIGHT_MIN && v <= HOUR_HEIGHT_MAX ? v : HOUR_HEIGHT_DEFAULT } catch (err) { return HOUR_HEIGHT_DEFAULT }
   })
-  const HOUR_HEIGHT = hourHeight
+  const [gridHoogte, setGridHoogte] = useState(0)
   const handleZoom = useCallback((delta: number) => {
     setHourHeight(prev => {
       const next = Math.max(HOUR_HEIGHT_MIN, Math.min(HOUR_HEIGHT_MAX, prev + delta))
@@ -725,6 +727,15 @@ export function TasksLayout() {
     }
   }, [isLoading])
 
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const obs = new ResizeObserver(() => setGridHoogte(el.clientHeight))
+    obs.observe(el)
+    setGridHoogte(el.clientHeight)
+    return () => obs.disconnect()
+  }, [viewMode])
+
   // Focus FAB input
   useEffect(() => {
     if (fabOpen) setTimeout(() => fabInputRef.current?.focus(), 100)
@@ -1047,6 +1058,15 @@ export function TasksLayout() {
 
   const startHour = visibleHours[0] ?? 0
   const heleDagZichtbaar = visibleHours.length === 24
+
+  // Past het venster in het scherm, dan rekken de uren mee tot de onderrand in
+  // plaats van een strook leegte achter te laten. Inzoomen blijft leidend zodra
+  // de gebruiker verder inzoomt dan wat er past.
+  const HOUR_HEIGHT = useMemo(() => {
+    if (!gridHoogte || visibleHours.length === 0) return hourHeight
+    const passend = Math.floor((gridHoogte - 40) / visibleHours.length)
+    return Math.max(hourHeight, passend)
+  }, [gridHoogte, hourHeight, visibleHours.length])
 
   // Now-line position · percentage binnen het zichtbare venster
   const nowLineTop = useMemo(() => {
@@ -1393,7 +1413,7 @@ export function TasksLayout() {
 
         {/* Day headers skeleton */}
         <div className="flex border-b border-border bg-background flex-shrink-0">
-          <div className="w-14 flex-shrink-0" />
+          <div className="w-9 flex-shrink-0" />
           {Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="flex-1 min-w-0 text-center py-3 border-l border-border/30">
               <div className="flex items-center justify-center gap-1.5">
@@ -1650,8 +1670,8 @@ export function TasksLayout() {
 
         {viewMode === 'week' && (<>
         {/* === DAY HEADERS === */}
-        <div className="sticky top-[52px] z-10 flex border-b border-border bg-card flex-shrink-0">
-          <div className="w-14 flex-shrink-0" />
+        <div className="sticky top-[52px] z-10 flex border-b border-border/35 bg-[hsl(40,42%,97.6%)] dark:bg-[hsl(200,15%,11%)] flex-shrink-0">
+          <div className="w-9 flex-shrink-0" />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today)
             const dayTasks = tasksByDay.get(day.toDateString()) || []
@@ -1662,14 +1682,14 @@ export function TasksLayout() {
               <div
                 key={i}
                 className={cn(
-                  'group/dagkop min-w-0 text-center py-4 border-l border-border transition-colors',
+                  'group/dagkop min-w-0 text-center py-1.5 transition-colors',
                   isToday && 'bg-petrol/[0.04] dark:bg-white/[0.03]'
                 )}
                 style={{ flexGrow: dayWeights[i], flexShrink: 1, flexBasis: 0 }}
               >
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex items-baseline justify-center gap-1.5">
                   <span className={cn(
-                    'text-[11px] font-semibold tracking-[0.06em] uppercase',
+                    'text-[10.5px] font-semibold tracking-[0.07em] uppercase',
                     isToday ? 'text-petrol dark:text-[#5AABB5]' : isPast ? 'text-muted-foreground/80' : 'text-muted-foreground'
                   )}>
                     {DAY_LABELS[i]}{isToday && <span className="text-flame">.</span>}
@@ -1678,9 +1698,9 @@ export function TasksLayout() {
                     <span className={cn(
                       'tabular-nums font-bold',
                       isToday
-                        ? 'w-7 h-7 rounded-full bg-petrol text-white flex items-center justify-center text-[13px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
-                        : isPast ? 'text-muted-foreground/80 text-[16px]'
-                        : 'text-foreground text-[16px]'
+                        ? 'w-[22px] h-[22px] rounded-full bg-petrol text-white inline-flex items-center justify-center text-[12px] self-center'
+                        : isPast ? 'text-muted-foreground/80 text-[14px]'
+                        : 'text-foreground text-[14px]'
                     )}>
                       {day.getDate()}
                     </span>
@@ -1737,7 +1757,7 @@ export function TasksLayout() {
         </div>
 
         {/* === CALENDAR GRID · DOEN === */}
-        <div ref={scrollRef} onMouseDown={handleGridMouseDown} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-card">
+        <div ref={scrollRef} onMouseDown={handleGridMouseDown} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[hsl(40,42%,97.6%)] dark:bg-[hsl(200,15%,11%)]">
           {weekTotal === 0 && !isLoading && (
             <div className="sticky top-24 z-10 flex flex-col items-center pointer-events-none mx-auto max-w-md text-center">
               <div className="w-12 h-12 rounded-full bg-petrol/[0.08] dark:bg-white/[0.06] flex items-center justify-center mb-3">
@@ -1749,10 +1769,10 @@ export function TasksLayout() {
           )}
           <div className="flex" style={{ minHeight: visibleHours.length * HOUR_HEIGHT }}>
             {/* Time gutter */}
-            <div className="w-14 flex-shrink-0 relative border-r border-border">
+            <div className="w-9 flex-shrink-0 relative">
               {visibleHours.map((hour) => (
                 <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative">
-                  <span className="absolute -top-2.5 right-3 text-[11px] text-muted-foreground font-mono tabular-nums font-medium">
+                  <span className="absolute -top-2 right-2 text-[10px] text-muted-foreground/70 font-mono tabular-nums">
                     {String(hour).padStart(2, '0')}
                   </span>
                 </div>
@@ -2640,8 +2660,8 @@ function DayColumn({
   return (
     <div
       className={cn(
-        'min-w-0 border-l border-border relative',
-        isToday && 'bg-petrol/[0.015] dark:bg-white/[0.02]'
+        'min-w-0 relative',
+        isToday && 'bg-petrol/[0.025] dark:bg-white/[0.025]'
       )}
       style={{ flexGrow, flexShrink: 1, flexBasis: 0 }}
     >
@@ -2660,8 +2680,8 @@ function DayColumn({
             key={hour}
             style={{ height: HOUR_HEIGHT }}
             className={cn(
-              'group/hour border-b border-border transition-all duration-200 relative',
-              isDropHere && 'bg-petrol/[0.06] dark:bg-white/[0.05]'
+              'group/hour transition-all duration-200 relative rounded-lg',
+              isDropHere && 'bg-petrol/[0.07] dark:bg-white/[0.06]'
             )}
             onDragOver={(e) => handleDragOver(e, hour)}
             onDrop={(e) => handleDrop(e, hour)}
@@ -2754,7 +2774,7 @@ function DayColumn({
         return (
           <div
             key={taak.id}
-            className={cn('absolute z-10 transition-[left,width] duration-200 ease-out', isResizing && 'z-30')}
+            className={cn('absolute z-10 px-[3px] pb-[3px] transition-[left,width] duration-200 ease-out', isResizing && 'z-30')}
             style={{
               top: topPx,
               left: `${leftPercent}%`,
@@ -2844,7 +2864,7 @@ function DayColumn({
       })}
 
       {/* Unscheduled tasks - at top of column */}
-      <div className="absolute inset-x-0 top-0 p-1 pt-1.5 flex flex-col gap-1 z-10 pointer-events-none">
+      <div className="absolute inset-x-0 top-0 px-[3px] pt-1.5 flex flex-col gap-1.5 z-10 pointer-events-none">
         {unscheduledTasks.map((taak, i) => (
           <div key={taak.id} className="pointer-events-auto" style={{ animationDelay: `${i * 30}ms` }}>
             <TaskCard
@@ -2954,10 +2974,11 @@ function TaskCard({
       onDragStart={handleDragStart}
       onDragEnd={(e) => { const el = e.currentTarget as HTMLElement; el.style.opacity = '1'; el.style.transform = ''; onDragEnd() }}
       className={cn(
-        'group relative rounded-none transition-all duration-200 ease-out select-none',
+        'group relative rounded-[10px] overflow-hidden transition-all duration-200 ease-out select-none',
         scheduled ? 'h-full' : '',
         !isResizing && 'cursor-grab active:cursor-grabbing',
-        'hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:z-10',
+        'border border-[rgba(130,100,60,0.14)] dark:border-white/[0.07]',
+        'shadow-[0_1px_2px_rgba(130,100,60,0.05)] hover:shadow-[0_2px_8px_rgba(130,100,60,0.10)] hover:-translate-y-[1px] hover:z-10',
         isPast && !isDone && 'opacity-55',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
         isResizing && 'ring-2 ring-petrol/30 dark:ring-[#5FB5C0]/40 z-30',
@@ -2975,7 +2996,7 @@ function TaskCard({
         aria-hidden
         className={cn(
           'absolute inset-0 pointer-events-none',
-          isDone ? 'bg-[#E8F0F0] dark:bg-petrol/15' : PRIO_CARD_BG[taak.prioriteit],
+          isDone ? 'bg-[rgba(26,83,92,0.055)] dark:bg-petrol/15' : PRIO_CARD_BG[taak.prioriteit],
         )}
       />
 
@@ -3000,7 +3021,11 @@ function TaskCard({
       </button>
 
       {/* Content · pl-7 voor ruimte naast checkbox (iets breder dan voorheen) */}
-      <div className={cn('relative h-full', isCompact ? 'pl-7 pr-1.5 py-1' : 'pl-7 pr-1.5 py-2', isDone && 'opacity-60')}>
+      <div className={cn(
+        'relative h-full flex flex-col justify-center',
+        isCompact ? 'pl-7 pr-1.5 py-1' : 'pl-7 pr-2 py-2',
+        isDone && 'opacity-60',
+      )}>
         <div className="flex items-center gap-1.5">
           <p
             className={cn(

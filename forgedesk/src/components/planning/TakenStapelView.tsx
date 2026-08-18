@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Check, Flame, Plus, Trash2, Wrench, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Taak, MontageAfspraak } from '@/types'
@@ -95,6 +95,7 @@ export function TakenStapelView({
   const [sleepId, setSleepId] = useState<string | null>(null)
   const [dropDoel, setDropDoel] = useState<{ dag: number; index: number } | null>(null)
   const [afgerondOpen, setAfgerondOpen] = useState<Set<string>>(new Set())
+  const [focus, setFocus] = useState<{ dag: number; index: number } | null>(null)
   const [addDag, setAddDag] = useState<string | null>(null)
   const [addTitel, setAddTitel] = useState('')
   const addRef = useRef<HTMLInputElement>(null)
@@ -113,8 +114,10 @@ export function TakenStapelView({
     const open = alle.filter((t) => t.status !== 'klaar').sort(sorteer)
     const afgerond = alle.filter((t) => t.status === 'klaar').sort(sorteer)
     const geschat = open.reduce((som, t) => som + (t.geschatte_tijd > 0 ? t.geschatte_tijd : 0), 0)
+    const totaal = open.length + afgerond.length
+    const voortgang = totaal > 0 ? Math.round((afgerond.length / totaal) * 100) : 0
     return {
-      day, dayIndex, key, open, afgerond, geschat,
+      day, dayIndex, key, open, afgerond, geschat, voortgang,
       montages: montageByDay.get(key) || [],
       isToday: isSameDay(day, today),
       isVerleden: day < today && !isSameDay(day, today),
@@ -150,6 +153,89 @@ export function TakenStapelView({
     metOvergang(() => onDrop(id, dagIndex, tijdVoorPositie(dagIndex, index, id)))
   }, [onDrop, sleepId, tijdVoorPositie])
 
+  // Toetsenbord · wie hier de hele dag in zit wil niet voor elke afvink naar de
+  // muis grijpen. Pijltjes lopen door de week, spatie vinkt af, n opent een
+  // nieuwe taak op de dag waar je staat.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const el = e.target as HTMLElement | null
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      const dagMetTaken = dagen.findIndex((d) => d.open.length > 0)
+      if (!focus) {
+        if (['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'j', 'k'].includes(e.key) && dagMetTaken >= 0) {
+          e.preventDefault()
+          setFocus({ dag: dagMetTaken, index: 0 })
+        }
+        return
+      }
+
+      const huidige = dagen[focus.dag]
+      const taak = huidige?.open[focus.index]
+
+      switch (e.key) {
+        case 'ArrowDown':
+        case 'j': {
+          e.preventDefault()
+          const max = (huidige?.open.length ?? 1) - 1
+          setFocus({ ...focus, index: Math.min(max, focus.index + 1) })
+          break
+        }
+        case 'ArrowUp':
+        case 'k': {
+          e.preventDefault()
+          setFocus({ ...focus, index: Math.max(0, focus.index - 1) })
+          break
+        }
+        case 'ArrowRight':
+        case 'ArrowLeft': {
+          e.preventDefault()
+          const richting = e.key === 'ArrowRight' ? 1 : -1
+          for (let i = 1; i <= dagen.length; i++) {
+            const kandidaat = focus.dag + richting * i
+            if (kandidaat < 0 || kandidaat >= dagen.length) break
+            if (dagen[kandidaat].open.length > 0) {
+              setFocus({ dag: kandidaat, index: 0 })
+              break
+            }
+          }
+          break
+        }
+        case ' ':
+        case 'Enter': {
+          if (!taak) return
+          e.preventDefault()
+          if (e.key === ' ') metOvergang(() => onToggle(taak))
+          else onEdit(taak)
+          break
+        }
+        case 'n': {
+          e.preventDefault()
+          const dag = dagen[focus.dag]
+          if (dag) { setAddDag(dag.key); setAddTitel(''); setTimeout(() => addRef.current?.focus(), 40) }
+          break
+        }
+        case 'Escape':
+          setFocus(null)
+          break
+        default:
+          break
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [dagen, focus, onToggle, onEdit])
+
+  // Focus die buiten de lijst valt (taak afgevinkt of verplaatst) opschonen.
+  useEffect(() => {
+    if (!focus) return
+    const dag = dagen[focus.dag]
+    if (!dag || focus.index >= dag.open.length) {
+      setFocus(dag && dag.open.length > 0 ? { dag: focus.dag, index: dag.open.length - 1 } : null)
+    }
+  }, [dagen, focus])
+
   const toggleAfgerond = (key: string) => {
     setAfgerondOpen((prev) => {
       const next = new Set(prev)
@@ -175,7 +261,7 @@ export function TakenStapelView({
             onDragOver={(e) => { e.preventDefault(); setDropDoel({ dag: dag.dayIndex, index: dag.open.length }) }}
             onDrop={(e) => handleDrop(e, dag.dayIndex, dag.open.length)}
           >
-            <header className="stapel-kop">
+            <header className="stapel-kop" style={{ ['--voortgang' as string]: `${dag.voortgang}%` }}>
               <span className="stapel-dagnaam">
                 {DAY_LABELS[dag.dayIndex]}{dag.isToday && <span className="stapel-punt">.</span>}
               </span>
@@ -240,6 +326,7 @@ export function TakenStapelView({
                     klantNaam={(taak.klant_id ? klantMap[taak.klant_id] : undefined) || (taak.project_id ? projectKlantMap[taak.project_id] : undefined)}
                     projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
                     sleept={sleepId === taak.id}
+                    heeftFocus={focus?.dag === dag.dayIndex && focus?.index === i}
                     onDragStart={() => setSleepId(taak.id)}
                     onDragEnd={() => { setSleepId(null); setDropDoel(null) }}
                     onToggle={() => metOvergang(() => onToggle(taak))}
@@ -260,7 +347,9 @@ export function TakenStapelView({
               />
 
               {dag.open.length === 0 && !isLoading && (
-                <p className="stapel-leeg">{dag.isVerleden ? 'Niets meer open' : 'Vrij'}</p>
+                dag.afgerond.length > 0
+                  ? <p className="stapel-klaar">Klaar<span className="stapel-punt">.</span></p>
+                  : <p className="stapel-leeg">{dag.isVerleden ? 'Niets meer open' : 'Vrij'}</p>
               )}
             </div>
 
@@ -310,13 +399,14 @@ function DropStrook({ actief, laatste, onOver, onDrop }: {
 }
 
 function StapelKaart({
-  taak, klantNaam, projectNaam, sleept,
+  taak, klantNaam, projectNaam, sleept, heeftFocus,
   onDragStart, onDragEnd, onToggle, onTogglePrio, onEdit, onDelete,
 }: {
   taak: Taak
   klantNaam?: string
   projectNaam?: string
   sleept?: boolean
+  heeftFocus?: boolean
   onDragStart: () => void
   onDragEnd: () => void
   onToggle: () => void
@@ -324,14 +414,20 @@ function StapelKaart({
   onEdit: () => void
   onDelete: () => void
 }) {
+  const kaartRef = useRef<HTMLElement>(null)
   const klaar = taak.status === 'klaar'
   const project = projectNaam ? zonderKlantPrefix(projectNaam, klantNaam) : undefined
+
+  useEffect(() => {
+    if (heeftFocus) kaartRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [heeftFocus])
   const duur = duurLabel(taak.geschatte_tijd)
   const context = [klantNaam, project].filter(Boolean).join(' · ')
 
   return (
     <article
-      className={cn('stapel-kaart', klaar && 'is-klaar', sleept && 'is-sleept')}
+      ref={kaartRef}
+      className={cn('stapel-kaart', klaar && 'is-klaar', sleept && 'is-sleept', heeftFocus && 'heeft-focus')}
       data-prio={taak.prioriteit}
       draggable
       onDragStart={(e) => {
