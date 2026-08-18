@@ -1,7 +1,7 @@
 # DOEN-VIDEO-FRAMEWORK
 
 PROJECT: product-demo video van doen. in Remotion (~/doen-video).
-DOEN BRON: ~/sign-company/forgedesk (Vite/React app, Tailwind 3.4).
+DOEN BRON: ~/sign-company/doen (Vite/React app, Tailwind 3.4).
 
 ## FORMAAT
 Hoofd 1920x1080 16:9 30fps (web hero + YouTube). Variant 1080x1920 9:16 voor social.
@@ -35,7 +35,7 @@ Module-kleuren:
 - accent #CC8A3F
 - status sage / mist / coral
 
-Lees de echte waarden uit forgedesk/src/index.css en forgedesk/tailwind.config.js en port ze
+Lees de echte waarden uit doen/src/index.css en doen/tailwind.config.js en port ze
 naar v4-stijl in index.css.
 
 ## FONTS

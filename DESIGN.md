@@ -1,6 +1,6 @@
 # DESIGN.md — doen. marketing-site
 
-Visueel systeem sinds de redesign van juli 2026. Geldt voor `src/` (marketing-site), niet voor `forgedesk/`.
+Visueel systeem sinds de redesign van juli 2026. Geldt voor `src/` (marketing-site), niet voor `doen/`.
 Canonieke voorbeelden: `src/components/home/*` (Hero, Demo, Statement, Modules, PricingSection, FaqSection, CTASection), `src/components/Navbar.tsx`, `src/components/Footer.tsx`.
 
 ## Richting

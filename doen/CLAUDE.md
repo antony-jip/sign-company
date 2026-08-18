@@ -9,7 +9,7 @@ Anthropic Claude voor Daan AI-assistent.
 **App-naam:** doen. (lowercase, altijd). AI-assistent heet **Daan**
 (nooit Forgie, nooit FORGEdesk).
 
-**Werkmap:** altijd eerst `cd ~/sign-company/forgedesk` voor commands.
+**Werkmap:** altijd eerst `cd ~/sign-company/doen` voor commands.
 
 **Design-systeem:** lees `.claude/skills/doen-design/SKILL.md` bij elke
 visuele wijziging.
@@ -211,4 +211,4 @@ opmerkingen. Hij hoeft de diff niet zelf te lezen.
 
 - `src/components/planning/MontagePlanningLayout.tsx` week/maand D&D-logica.
 - `supabaseService.ts` splitsen (5700 regels, blijft zoals het is).
-- Root Next.js marketing site (altijd in `forgedesk/` werken, niet in root).
+- Root Next.js marketing site (altijd in `doen/` werken, niet in root).

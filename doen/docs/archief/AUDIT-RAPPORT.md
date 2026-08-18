@@ -30,7 +30,7 @@ Datum: 25 maart 2026
 - **Fix**: Implementeer server-side pagination met `LIMIT 50` + offset/cursor. Begin met klanten en facturen
 
 ### CRIT-004: Secrets in .env.local
-- **Bestand**: `forgedesk/.env.local`
+- **Bestand**: `doen/.env.local`
 - **Probleem**: Bevat live productie secrets: Stripe live key (sk_live_...), Mollie live key, Supabase service role key, FAL API key, Trigger.dev secret, email encryption key
 - **Impact**: Als het bestand wordt gedeeld of de machine compromised: volledige toegang tot alle betaaldiensten en database
 - **Mitigatie**: Bestand staat in `.gitignore` — niet in git

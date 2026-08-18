@@ -2,7 +2,7 @@
 
 Referentiedocument voor projectcontext. Bedoeld om in één keer in een Claude.ai-gesprek te uploaden, zodat de sparringpartner zonder verdere uitleg weet wat er in de app zit.
 
-Bron: `~/sign-company/forgedesk/` — gegenereerd op basis van router, services, types, trigger-tasks, API-routes, components, migrations, CLAUDE.md, LOG.md, ANTONY_TODO.md.
+Bron: `~/sign-company/doen/` — gegenereerd op basis van router, services, types, trigger-tasks, API-routes, components, migrations, CLAUDE.md, LOG.md, ANTONY_TODO.md.
 
 ---
 
@@ -432,7 +432,7 @@ Dependency-volgorde: Auth → AppSettings → DashboardData.
 - "Groot" = > 3 bestanden of > 100 regels: eerst analyseren, rapporteren, wachten op akkoord.
 
 **Werkmap**
-- Altijd `cd ~/sign-company/forgedesk` voor commands.
+- Altijd `cd ~/sign-company/doen` voor commands.
 - Niet in root Next.js marketing site werken.
 
 **Data-isolatie**

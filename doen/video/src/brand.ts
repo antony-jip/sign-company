@@ -1,6 +1,6 @@
 // Merk-tokens voor de doen.-video.
 // Bron: DOEN-VIDEO-FRAMEWORK.md, met waarden geverifieerd tegen
-// forgedesk/src/index.css en forgedesk/tailwind.config.js (niet verzonnen).
+// doen/src/index.css en doen/tailwind.config.js (niet verzonnen).
 
 // Merk-laag: doen. identiteit.
 export const merk = {
@@ -10,7 +10,7 @@ export const merk = {
   ink: "#1A1A18",
 } as const;
 
-// Module-kleuren — uit forgedesk/tailwind.config.js (mod-*).
+// Module-kleuren — uit doen/tailwind.config.js (mod-*).
 export const modules = {
   projecten: { kleur: "#2b535c", light: "#E2F0F0", border: "#B8D8DA", text: "#2b535c" },
   offertes: { kleur: "#df5c36", light: "#FDE8E2", border: "#F5C4B4", text: "#C03A18" },
@@ -30,7 +30,7 @@ export const app = {
   accent: "#CC8A3F",
 } as const;
 
-// Status-pastels — uit forgedesk/src/index.css (sage/mist/coral).
+// Status-pastels — uit doen/src/index.css (sage/mist/coral).
 export const status = {
   sage: { bg: "#E8F2EC", text: "#3A7D52", border: "#C2DFCC" },
   mist: { bg: "#E8EEF9", text: "#3A5A9A", border: "#C2D0EE" },

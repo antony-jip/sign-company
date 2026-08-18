@@ -2,7 +2,7 @@
 
 **Datum:** 2026-03-14
 **Scope:** Volledige pre-RLS audit van de doen. codebase
-**Repository:** `forgedesk/` in `sign-company`
+**Repository:** `doen/` in `sign-company`
 **Supabase project:** hrqxmelzguhohzzwjfzg
 
 ---

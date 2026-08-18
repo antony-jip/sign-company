@@ -45,7 +45,7 @@ Fase-2-features verdwijnen uit UI; bestaande data blijft canonical voor render.
 2. **Anon Key** -> Supabase Dashboard -> Settings -> API -> anon/public key
 
 ### Wat je moet doen:
-1. Open `.env` in de `forgedesk/` map
+1. Open `.env` in de `doen/` map
 2. Vul in:
    ```
    VITE_SUPABASE_URL=https://jouw-project-id.supabase.co
@@ -147,7 +147,7 @@ CREATE POLICY "Public read access" ON offerte_templates FOR SELECT USING (true);
 **Moet je lokaal doen:**
 
 ```bash
-cd forgedesk
+cd doen
 npm install
 npx tsc --noEmit    # TypeScript check - moet 0 fouten geven
 npm run build       # Production build - moet slagen

@@ -1,7 +1,7 @@
 SESSIE 4F — ONBOARDING REDESIGN — OVERZICHT
 =============================================
 
-Bestand: forgedesk/src/components/onboarding/OnboardingWizard.tsx
+Bestand: doen/src/components/onboarding/OnboardingWizard.tsx
 Branch:  claude/css-tokens-fonts-setup-e5qFn
 Commit:  feat: laag 4f — onboarding redesign met 3 stappen en spectrum
 

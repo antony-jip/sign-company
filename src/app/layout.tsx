@@ -8,7 +8,7 @@ import './globals.css'
 import { Analytics } from '@vercel/analytics/next'
 
 /* Koppen draaien op Instrument Sans, hetzelfde kopfont als de app
-   (forgedesk/tailwind.config.js). Zo leest de site als hetzelfde product.
+   (doen/tailwind.config.js). Zo leest de site als hetzelfde product.
    Instrument Sans gaat tot gewicht 700; waar de site 800 vroeg valt hij
    terug op 700. */
 const instrumentSans = Instrument_Sans({

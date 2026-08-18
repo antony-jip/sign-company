@@ -197,7 +197,7 @@ Wat NU acceptabel is, maar gemerkt blijft voor toekomst:
 
 ## 8. Bronverwijzingen (top-3 per rapport)
 
-**agent1 · database** (`/Users/antonybootsma/sign-company/forgedesk/.audit-tmp/agent1-database.md`)
+**agent1 · database** (`/Users/antonybootsma/sign-company/doen/.audit-tmp/agent1-database.md`)
 - §6 Connection pooling ontbreekt · `src/services/supabaseClient.ts:1-14` · blocker bij 100 users.
 - §3 RLS per-row subqueries · `071_rls_batch1_onbeveiligd.sql:71/87`, `088_audit_log_feature.sql:88` · wall bij 100k+ rijen.
 - §7 `emails`-tabel groeit naar 1,2M rijen @ 100 orgs · FTS-index-bloat en disk-quota-risico bij 250+ orgs.

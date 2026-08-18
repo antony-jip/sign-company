@@ -36,7 +36,7 @@ Niet omdat de tekst incompleet is, maar omdat deze punten geld kosten als ze fou
 ## Wat is aangepast
 
 - `/voorwaarden` toegevoegd, gelinkt vanuit de footer en de sitemap.
-- Registratie in de app (`forgedesk/src/components/auth/RegisterPage.tsx`) vraagt nu een
+- Registratie in de app (`doen/src/components/auth/RegisterPage.tsx`) vraagt nu een
   expliciet vinkje met een link naar de voorwaarden. Zonder vinkje geen account.
 - Twee FAQ-antwoorden gecorrigeerd die feitelijk onjuist waren:
   - "Geen data verlaat Europa" klopte niet, want twaalf endpoints sturen inhoud naar
@@ -55,14 +55,14 @@ Niet omdat de tekst incompleet is, maar omdat deze punten geld kosten als ze fou
   wat anders dan een sub-verwerkerslijst.
 - **Retentie technisch afdwingen.** Artikel 17 belooft verwijdering na 30 dagen plus 30
   dagen back-up. Er draait nog geen job die dat uitvoert.
-- **Afmeldregel in koude outreach.** `forgedesk/src/components/email/LeadsPaneel.tsx`
+- **Afmeldregel in koude outreach.** `doen/src/components/email/LeadsPaneel.tsx`
   stuurt via de eigen mailbox, dus zonder de afmeldlink die de nieuwsbrief wel heeft.
   Voor zakelijke koude e-mail is een afmeldmogelijkheid verplicht (Telecommunicatiewet
   11.7).
 
 ## Sub-verwerkers bijwerken
 
-Bijlage B is afgeleid uit de integraties in `forgedesk`: elke partij met een eigen
+Bijlage B is afgeleid uit de integraties in `doen`: elke partij met een eigen
 API-sleutel of externe host in `api/`. Komt er een koppeling bij, werk dan
 `subVerwerkers` in `src/data/voorwaarden.ts` bij en meld de wijziging 30 dagen vooraf
 aan je klanten (Bijlage A, artikel A5.2).

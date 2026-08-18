@@ -1,6 +1,6 @@
 ---
 name: doen-design
-description: DOEN design system — Linear/Notion-inspired minimal UI for creative tradespeople. Use when modifying any visual styling, colors, typography, spacing, components, layout, or UI feel in the forgedesk/ app.
+description: DOEN design system — Linear/Notion-inspired minimal UI for creative tradespeople. Use when modifying any visual styling, colors, typography, spacing, components, layout, or UI feel in the doen/ app.
 ---
 
 # DOEN Design System

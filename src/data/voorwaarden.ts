@@ -8,7 +8,7 @@
 
    De sub-verwerkers in Bijlage B zijn afgeleid uit de code: elke
    integratie met een eigen API-sleutel of externe host in
-   forgedesk/api. Komt er een koppeling bij, dan hoort die hier ook bij.
+   doen/api. Komt er een koppeling bij, dan hoort die hier ook bij.
 
    Contractspartij is Sign Company VOF. Let op: een VOF is geen
    rechtspersoon, dus de vennoten zijn hoofdelijk aansprakelijk. Dat maakt

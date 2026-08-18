@@ -29,7 +29,7 @@ type NavItem = { icon: LucideIcon; label: string; activeOn: View[]; color: strin
 type NavGroup = { section: string; items: NavItem[] }
 
 // Zelfde secties, volgorde, iconen en module-kleuren als de sidebar van de
-// echte app (forgedesk/src/components/layouts/Sidebar.tsx).
+// echte app (doen/src/components/layouts/Sidebar.tsx).
 const navGroups: NavGroup[] = [
   {
     section: 'Werk',
@@ -156,7 +156,7 @@ function AppFrame({ view, setView }: { view: View; setView: (v: View) => void })
         backgroundColor: BG,
         border: `1px solid ${LINE}`,
         boxShadow: '0 4px 10px rgba(20,40,40,0.05), 0 24px 60px -20px rgba(19,62,69,0.18)',
-        // App-body font: systeem/Inter, zoals forgedesk/src/index.css
+        // App-body font: systeem/Inter, zoals doen/src/index.css
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'IBM Plex Sans', system-ui, sans-serif",
       }}
     >
@@ -536,7 +536,7 @@ function SideNav({ view, setView }: { view: View; setView: (v: View) => void }) 
 }
 
 /* Slanke topbalk boven de content: breadcrumb "Module." + zoeken + bel + avatar,
-   zoals forgedesk/src/components/layouts/Header.tsx */
+   zoals doen/src/components/layouts/Header.tsx */
 const headerMeta: Record<View, { module: string; sub?: string }> = {
   dashboard: { module: 'Dashboard' },
   projecten: { module: 'Projecten' },
@@ -2514,7 +2514,7 @@ function InkoopView() {
 
 /* ──────────────────────────────────────────────────────────────
    TAKEN VIEW — Team-weergave (swimlane per medewerker), zoals
-   forgedesk/src/components/planning/TasksLayout.tsx (viewMode
+   doen/src/components/planning/TasksLayout.tsx (viewMode
    'swimlane'). Prioriteiten: kritiek = flame, rest = petrol.
    ────────────────────────────────────────────────────────────── */
 

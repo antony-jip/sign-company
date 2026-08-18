@@ -4,7 +4,7 @@
 
 brand
 
-> Geldt voor de Next.js marketing-site in `src/`. De doen.-app in `forgedesk/` is een product-register met eigen conventies (`forgedesk/CLAUDE.md`, doen-design skill).
+> Geldt voor de Next.js marketing-site in `src/`. De doen.-app in `doen/` is een product-register met eigen conventies (`doen/CLAUDE.md`, doen-design skill).
 
 ## Users
 

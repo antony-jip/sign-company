@@ -1,6 +1,6 @@
 # UX-analyse doen. — april/mei 2026
 
-> Bron: code-pass op `forgedesk/src/components/` op 2026-05-04.
+> Bron: code-pass op `doen/src/components/` op 2026-05-04.
 > Methode: lezen + grep, geen browser-test. Diepte op `DoenDashboard` + sweep over 8 modules.
 > Streefdatum launch: 17 mei 2026 (T-13 dagen).
 
@@ -44,7 +44,7 @@ Buiten scope (Sidebar/TopNav niet gelezen). Spot-check: TabBar + MobileBottomNav
 ### 8. Brand-consistentie ⚠️
 - ✅ Flame `#F15025` als hero-accent en CTA-kleur. Petrol `#1A535C` voor sub-actions en filters.
 - ✅ Flame-dot signature staat op: hero greeting, "Aan de slag.", "Klaar.", "Werk vanuit projecten.", "Klanten.", "Offertes.", offerte-status badges in pipeline.
-- ❌ Flame-dot **ontbreekt** op factuur-statuslabels (`FacturenLayout.tsx`) en op klant-statusbadges (`ClientsLayout.tsx:341-358`). Inconsistent met de "verstuurd. betaald. gedaan."-conventie uit `forgedesk/CLAUDE.md`.
+- ❌ Flame-dot **ontbreekt** op factuur-statuslabels (`FacturenLayout.tsx`) en op klant-statusbadges (`ClientsLayout.tsx:341-358`). Inconsistent met de "verstuurd. betaald. gedaan."-conventie uit `doen/CLAUDE.md`.
 - ✅ Geen emoji-violations gevonden in dashboard, projects, quotes, invoices, clients (gegrept op de gangbare ranges).
 
 ### 9. Animations & transitions ✅
@@ -96,7 +96,7 @@ Dit suggereert dat het dashboard architecturaal in transitie is geweest en de ou
 + Sterke inline header (`Projecten.` met flame dot, count-badge), Toolbar-card met search + filters + import/export.
 + Gebruikt `<SkeletonTable>` (`r.464`) en `<EmptyState>` (`r.741`) — voorbeeld voor andere modules.
 - Twee `&mdash;` violations in regels 1124, 1150 (placeholder voor lege cellen — zie patroon-sectie).
-- Geen sticky teal action-bar zoals `forgedesk/CLAUDE.md` zegt; toolbar is wit met teal underline-indicators op active tabs.
+- Geen sticky teal action-bar zoals `doen/CLAUDE.md` zegt; toolbar is wit met teal underline-indicators op active tabs.
 
 ### `/offertes` — `QuotesPipeline.tsx` (1.388 regels)
 + Pipeline-view met kolom-headers per status, flame-dot op statuslabels (`r.875, 924, 1145, 1250`). Sterke brand-consistency.

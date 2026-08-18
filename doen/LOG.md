@@ -45,7 +45,7 @@ Bijna elke bevinding had dezelfde vorm: **iets faalt en het rapport zegt dat het
 ### Werkwijze die werkte
 Tien reviews, waarvan er **acht iets echts vonden**, inclusief drie blokkades die niet uit eigen controle kwamen. Twee daarvan zaten in code die in deze ronde zelf was geschreven. Stil fout vind je niet door zorgvuldig te zijn; die vind je door iemand anders te laten kijken.
 
-Waarschuwing voor de volgende sessie: **zes van de acht worktrees werden geseed van `774d6267`**, een commit waarin `forgedesk/` niet bestaat. Controleer `ls forgedesk/api | wc -l` (hoort ~92 te zijn) vóór je begint.
+Waarschuwing voor de volgende sessie: **zes van de acht worktrees werden geseed van `774d6267`**, een commit waarin `doen/` niet bestaat. Controleer `ls doen/api | wc -l` (hoort ~92 te zijn) vóór je begint.
 
 ## Augustus 2026 — Ronde "20 gebruikers" (branch, migraties wél live)
 

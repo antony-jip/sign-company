@@ -49,7 +49,7 @@ organisatie_id = '<jouw-org-uuid>'` runnen.
 ### D. Branch + build lokaal
 
 ```bash
-cd ~/sign-company/forgedesk
+cd ~/sign-company/doen
 git checkout feat/werkbon-canvas-fase1
 npm run build
 npm run dev

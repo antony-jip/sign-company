@@ -7,11 +7,11 @@
 
 **Dit document gaat ALLEEN over de marketingsite op doen.team.**
 
-Dit is NIET de app-styleguide. De doen.-app (app.doen.team) draait op Vite + React in de `/forgedesk` map en heeft een eigen design system. Deze styleguide heeft daar niks mee te maken. Niet mixen.
+Dit is NIET de app-styleguide. De doen.-app (app.doen.team) draait op Vite + React in de `/doen` map en heeft een eigen design system. Deze styleguide heeft daar niks mee te maken. Niet mixen.
 
 **Technisch:**
 - Next.js project in de root van `sign-company/` (met `src/app/`, `src/components/`)
-- De Vite app staat apart in `sign-company/forgedesk/`
+- De Vite app staat apart in `sign-company/doen/`
 - Madellin font bestanden staan in `public/fonts/`
 
 **Taal:** De hele site is Nederlands. Geen Engelse termen in UI-teksten behalve "AI" en "PDF". Geen "Get started", geen "Learn more" — altijd Nederlands.

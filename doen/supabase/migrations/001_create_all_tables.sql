@@ -1,6 +1,6 @@
 -- ============================================================
 -- doen.: Volledige database migratie
--- Alle tabellen gebaseerd op forgedesk/src/types/index.ts
+-- Alle tabellen gebaseerd op doen/src/types/index.ts
 -- ============================================================
 
 -- ============ PROFILES ============

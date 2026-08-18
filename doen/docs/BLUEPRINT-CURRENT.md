@@ -7,7 +7,7 @@
 
 ## 1. BESTANDSSTRUCTUUR
 
-### forgedesk/src/ — Top-level
+### doen/src/ — Top-level
 
 | Bestand | Beschrijving |
 |---------|-------------|
@@ -16,7 +16,7 @@
 | `index.css` | Globale CSS / Tailwind imports |
 | `vite-env.d.ts` | Vite TypeScript environment declaraties |
 
-### forgedesk/src/types/
+### doen/src/types/
 
 | Bestand | Beschrijving |
 |---------|-------------|
@@ -24,7 +24,7 @@
 | `visualizer.ts` | Types voor de Signing Visualizer module |
 | `fal-ai-client.d.ts` | Type declaraties voor fal.ai client |
 
-### forgedesk/src/contexts/
+### doen/src/contexts/
 
 | Bestand | Beschrijving |
 |---------|-------------|
@@ -36,7 +36,7 @@
 | `TabsContext.tsx` | Browser-style tabs navigatie met dirty-state tracking |
 | `ThemeContext.tsx` | Light/dark mode |
 
-### forgedesk/src/hooks/
+### doen/src/hooks/
 
 | Bestand | Beschrijving |
 |---------|-------------|
@@ -57,7 +57,7 @@
 | `useTrialGuard.ts` | Trial-periode check / upgrade prompt |
 | `useUnsavedWarning.ts` | Browser beforeunload warning |
 
-### forgedesk/src/services/
+### doen/src/services/
 
 | Bestand | Beschrijving |
 |---------|-------------|
@@ -77,7 +77,7 @@
 | `ublService.ts` | UBL XML factuur generatie (e-facturatie) |
 | `werkbonPdfService.ts` | Werkbon instructie-PDF generatie |
 
-### forgedesk/src/lib/
+### doen/src/lib/
 
 | Bestand | Beschrijving |
 |---------|-------------|
@@ -87,7 +87,7 @@
 | `moduleColors.ts` | Module-specifieke kleurdefinities (mod-* systeem) |
 | `utils.ts` | Algemene utility functies (cn, formatters) |
 
-### forgedesk/src/utils/
+### doen/src/utils/
 
 | Bestand | Beschrijving |
 |---------|-------------|
@@ -106,7 +106,7 @@
 | `visualizerDefaults.ts` | Default waarden voor Visualizer |
 | `zipBuilder.ts` | ZIP file builder (voor downloads) |
 
-### forgedesk/src/components/ — Overzicht
+### doen/src/components/ — Overzicht
 
 | Map | # | Beschrijving |
 |-----|---|-------------|
@@ -461,7 +461,7 @@ Bestanden die al mod-* gebruiken (o.a.):
 
 ## 6. API ROUTES
 
-38 bestanden in `forgedesk/api/`:
+38 bestanden in `doen/api/`:
 
 | Bestand | Beschrijving |
 |---------|-------------|

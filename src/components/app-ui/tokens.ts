@@ -5,7 +5,7 @@ import { Space_Grotesk } from 'next/font/google'
    op de homepage en de stap-panelen op /hoe-het-werkt. Wijkt de app af,
    dan pas je het hier aan en niet op twee plekken.
 
-   Herkomst: forgedesk/tailwind.config.js + forgedesk/src/index.css
+   Herkomst: doen/tailwind.config.js + doen/src/index.css
    (--background #F8F7F5, --primary #F15025, petrol #1A535C). */
 
 // De app zet alle cijfers en codes in Space Grotesk (tabular-nums); binnen

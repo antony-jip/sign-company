@@ -48,7 +48,7 @@
 |   | - Ga naar [supabase.com](https://supabase.com) | | |
 |   | - Maak een nieuw project aan | | |
 |   | - Kopieer de URL en Anon Key | | |
-|   | - Vul in: `forgedesk/.env` met `VITE_SUPABASE_URL` en `VITE_SUPABASE_ANON_KEY` | | |
+|   | - Vul in: `doen/.env` met `VITE_SUPABASE_URL` en `VITE_SUPABASE_ANON_KEY` | | |
 | 2 | **Database tabellen aanmaken in Supabase** | Data persistentie | 45 min |
 |   | - Maak tabellen aan: profiles, klanten, projecten, taken, offertes, offerte_items, documenten, emails, events, grootboek, btw_codes, kortingen, ai_chats, nieuwsbrieven, app_settings | | |
 |   | - Stel Row Level Security (RLS) in zodat users alleen hun eigen data zien | | |
@@ -132,7 +132,7 @@ Supabase (of localStorage in demo modus)
 
 ## 5. Omgevingsvariabelen (.env)
 
-Maak een bestand `forgedesk/.env` aan met:
+Maak een bestand `doen/.env` aan met:
 
 ```env
 # Supabase (VERPLICHT voor productie)
