@@ -115,11 +115,13 @@ const PRIO_CARD_BG: Record<TaakPrioriteit, string> = {
   medium: 'bg-[rgba(26,83,92,0.07)] dark:bg-[rgba(95,181,192,0.10)]',
   laag: 'bg-[rgba(26,83,92,0.07)] dark:bg-[rgba(95,181,192,0.10)]',
 }
+// Alleen kritiek draagt een volle streep · stond die op elke kaart, dan
+// onderscheidde hij niets en gaf hij de kolom alleen maar meer gewicht.
 const PRIO_CARD_STRIPE: Record<TaakPrioriteit, string> = {
   kritiek: 'border-l-2 border-l-flame',
-  hoog: 'border-l-2 border-l-petrol dark:border-l-[#5FB5C0]',
-  medium: 'border-l-2 border-l-petrol dark:border-l-[#5FB5C0]',
-  laag: 'border-l-2 border-l-petrol dark:border-l-[#5FB5C0]',
+  hoog: 'border-l-2 border-l-petrol/25 dark:border-l-[#5FB5C0]/25',
+  medium: 'border-l-2 border-l-petrol/25 dark:border-l-[#5FB5C0]/25',
+  laag: 'border-l-2 border-l-petrol/25 dark:border-l-[#5FB5C0]/25',
 }
 const PRIO_CARD_TEXT: Record<TaakPrioriteit, string> = {
   kritiek: 'text-[#C03A18] dark:text-[#FF8866]',
@@ -272,6 +274,7 @@ export function TasksLayout() {
   const [showMontage, setShowMontage] = useState(false)
   const [isLoading, setIsLoading] = useState(() => getCached('taken') === undefined)
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
+  const [toonHeleDag, setToonHeleDag] = useState(false)
 
   // In het weekend is de hele werkweek al verleden tijd (verlopen taken staan
   // ingeklapt), dus dan opent standaard de komende week
@@ -710,7 +713,7 @@ export function TasksLayout() {
       const nowHour = new Date().getHours()
       const withinWerkuren = nowHour >= 6 && nowHour <= 20
       const targetHour = withinWerkuren ? Math.max(0, nowHour - 1) : 7
-      scrollRef.current.scrollTop = targetHour * HOUR_HEIGHT
+      scrollRef.current.scrollTop = Math.max(0, targetHour - startHour) * HOUR_HEIGHT
     }
   }, [isLoading])
 
@@ -994,12 +997,55 @@ export function TasksLayout() {
     return `${first.getDate()} ${MONTH_NAMES[first.getMonth()]} – ${last.getDate()} ${MONTH_NAMES[last.getMonth()]}`
   }, [weekDays])
 
-  // Now-line position
+  // === ZICHTBAAR URENVENSTER ===
+  // Een etmaal tekenen terwijl er tussen 18:00 en middernacht nooit iets staat
+  // kost een derde van het scherm aan leegte. Het raster loopt daarom van het
+  // vroegste tot het laatste uur waar deze week werk staat, met de werkdag als
+  // ondergrens. Eén klik zet het terug op het hele etmaal.
+  const visibleHours = useMemo(() => {
+    if (toonHeleDag) return HOURS
+    let eerste = 8
+    let laatste = 17
+    tasksByDay.forEach((list) => {
+      list.forEach((t) => {
+        const h = getHourFromDeadline(t.deadline ?? '')
+        if (h === null) return
+        eerste = Math.min(eerste, Math.floor(h))
+        laatste = Math.max(laatste, Math.ceil(h + (t.geschatte_tijd > 0 ? t.geschatte_tijd : 1)))
+      })
+    })
+    montageByDay.forEach((list) => {
+      list.forEach((m) => {
+        const start = parseInt((m.start_tijd || '').split(':')[0] ?? '', 10)
+        const eind = parseInt((m.eind_tijd || '').split(':')[0] ?? '', 10)
+        if (!isNaN(start)) eerste = Math.min(eerste, start)
+        if (!isNaN(eind)) laatste = Math.max(laatste, eind + 1)
+      })
+    })
+    const start = Math.max(0, Math.min(eerste, 23))
+    const eind = Math.min(23, Math.max(laatste, start + 3))
+    return Array.from({ length: eind - start + 1 }, (_, i) => start + i)
+  }, [tasksByDay, montageByDay, toonHeleDag])
+
+  // Kolombreedte volgt de drukte: een lege dag hoeft niet net zoveel ruimte te
+  // krijgen als de dag waar alles op staat.
+  const dayWeights = useMemo(() => weekDays.map((d) => {
+    const aantal = (tasksByDay.get(d.toDateString()) || []).length
+    const montages = (montageByDay.get(d.toDateString()) || []).length
+    const totaal = aantal + montages
+    if (totaal === 0) return 0.72
+    return 1 + Math.min(totaal, 8) / 8 * 0.45
+  }), [weekDays, tasksByDay, montageByDay])
+
+  const startHour = visibleHours[0] ?? 0
+  const heleDagZichtbaar = visibleHours.length === 24
+
+  // Now-line position · percentage binnen het zichtbare venster
   const nowLineTop = useMemo(() => {
-    const totalMin = 24 * 60
-    if (nowMinutes < 0 || nowMinutes > totalMin) return null
-    return (nowMinutes / totalMin) * 100
-  }, [nowMinutes])
+    const pos = ((nowMinutes / 60) - startHour) / visibleHours.length
+    if (pos < 0 || pos > 1) return null
+    return pos * 100
+  }, [nowMinutes, startHour, visibleHours.length])
 
   const isCurrentWeek = weekOffset === 0
 
@@ -1550,9 +1596,10 @@ export function TasksLayout() {
               <div
                 key={i}
                 className={cn(
-                  'flex-1 min-w-0 text-center py-4 border-l border-border transition-colors',
+                  'min-w-0 text-center py-4 border-l border-border transition-colors',
                   isToday && 'bg-petrol/[0.04] dark:bg-white/[0.03]'
                 )}
+                style={{ flexGrow: dayWeights[i], flexShrink: 1, flexBasis: 0 }}
               >
                 <div className="flex flex-col items-center gap-1">
                   <span className={cn(
@@ -1603,10 +1650,10 @@ export function TasksLayout() {
               <p className="text-[12px] text-muted-foreground mt-1 max-w-[280px]">Klik op een tijdslot om er een in te plannen, of sleep een taak hierheen.</p>
             </div>
           )}
-          <div className="flex" style={{ minHeight: HOURS.length * HOUR_HEIGHT }}>
+          <div className="flex" style={{ minHeight: visibleHours.length * HOUR_HEIGHT }}>
             {/* Time gutter */}
             <div className="w-14 flex-shrink-0 relative border-r border-border">
-              {HOURS.map((hour) => (
+              {visibleHours.map((hour) => (
                 <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative">
                   <span className="absolute -top-2.5 right-3 text-[11px] text-muted-foreground font-mono tabular-nums font-medium">
                     {String(hour).padStart(2, '0')}
@@ -1658,10 +1705,35 @@ export function TasksLayout() {
                   selectedTaskIds={selectedTaskIds}
                   montageAfspraken={montageByDay.get(day.toDateString()) || []}
                   hourHeight={HOUR_HEIGHT}
+                  hours={visibleHours}
+                  startHour={startHour}
+                  flexGrow={dayWeights[dayIndex]}
                 />
               )
             })}
           </div>
+
+          {/* Buiten het venster staat niets · één klik haalt het etmaal terug */}
+          {!toonHeleDag && !heleDagZichtbaar && (
+            <div className="flex justify-center py-2 border-t border-border/60">
+              <button
+                onClick={() => setToonHeleDag(true)}
+                className="text-[11px] text-muted-foreground hover:text-petrol dark:hover:text-foreground transition-colors px-3 py-1 rounded-md hover:bg-petrol/[0.05] dark:hover:bg-white/[0.05]"
+              >
+                Hele dag tonen
+              </button>
+            </div>
+          )}
+          {toonHeleDag && (
+            <div className="flex justify-center py-2 border-t border-border/60">
+              <button
+                onClick={() => setToonHeleDag(false)}
+                className="text-[11px] text-muted-foreground hover:text-petrol dark:hover:text-foreground transition-colors px-3 py-1 rounded-md hover:bg-petrol/[0.05] dark:hover:bg-white/[0.05]"
+              >
+                Alleen werkuren tonen
+              </button>
+            </div>
+          )}
         </div>
         {rectBox && <SelectionRectangle {...rectBox} />}
         {selectedTaskIds.size > 0 && (
@@ -2272,6 +2344,7 @@ function NietVergetenStrip() {
 
 function DayColumn({
   day, dayIndex, isToday, isPast, tasks, projectMap, klantMap, projectKlantMap, offerteMap, nowLineTop,
+  hours, startHour, flexGrow,
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
   onToggle, onTogglePrio, onEdit, onDelete, onQuickAdd, onQuickAddAtTime, onResize,
@@ -2305,6 +2378,9 @@ function DayColumn({
   selectedTaskIds?: Set<string>
   montageAfspraken?: MontageAfspraak[]
   hourHeight: number
+  hours: number[]
+  startHour: number
+  flexGrow: number
 }) {
   const [addTitle, setAddTitle] = useState('')
   const [isAdding, setIsAdding] = useState(false)
@@ -2447,12 +2523,15 @@ function DayColumn({
   }
 
   return (
-    <div className={cn(
-      'flex-1 min-w-0 border-l border-border relative',
-      isToday && 'bg-petrol/[0.015] dark:bg-white/[0.02]'
-    )}>
+    <div
+      className={cn(
+        'min-w-0 border-l border-border relative',
+        isToday && 'bg-petrol/[0.015] dark:bg-white/[0.02]'
+      )}
+      style={{ flexGrow, flexShrink: 1, flexBasis: 0 }}
+    >
       {/* Hour grid lines + drop zones */}
-      {HOURS.map((hour) => {
+      {hours.map((hour) => {
         const dropHourInThisCell = dropTarget?.dayIndex === dayIndex && dropTarget?.hour !== undefined && dropTarget.hour >= hour && dropTarget.hour < hour + 1
         const dropIsBottomHalf = dropHourInThisCell && (dropTarget!.hour - hour) >= 0.5
         const isDropHere = dropHourInThisCell
@@ -2543,7 +2622,7 @@ function DayColumn({
       {/* Scheduled tasks - positioned at their time */}
       {scheduledTasks.map((taak) => {
         const hour = getHourFromDeadline(taak.deadline ?? "")!
-        const topPx = hour * HOUR_HEIGHT
+        const topPx = (hour - startHour) * HOUR_HEIGHT
         const duration = taak.geschatte_tijd || 0
         const isResizing = resizingTaakId === taak.id
         // Height: use geschatte_tijd if > 0, otherwise auto (null)
@@ -2600,13 +2679,13 @@ function DayColumn({
 
       {/* Montage afspraken - subtle gradient overlay BEHIND tasks */}
       {montageAfspraken.map((afspraak) => {
-        const startHour = afspraak.start_tijd ? parseInt(afspraak.start_tijd.split(':')[0], 10) : null
+        const startUur = afspraak.start_tijd ? parseInt(afspraak.start_tijd.split(':')[0], 10) : null
         const startMin = afspraak.start_tijd ? parseInt(afspraak.start_tijd.split(':')[1], 10) || 0 : 0
-        const endHour = afspraak.eind_tijd ? parseInt(afspraak.eind_tijd.split(':')[0], 10) : null
+        const eindUur = afspraak.eind_tijd ? parseInt(afspraak.eind_tijd.split(':')[0], 10) : null
         const endMin = afspraak.eind_tijd ? parseInt(afspraak.eind_tijd.split(':')[1], 10) || 0 : 0
-        if (startHour === null || startHour < 0 || startHour >= 24) return null
-        const topPx = startHour * HOUR_HEIGHT + (startMin / 60) * HOUR_HEIGHT
-        const endTotal = endHour !== null && endHour > startHour ? endHour * HOUR_HEIGHT + (endMin / 60) * HOUR_HEIGHT : topPx + HOUR_HEIGHT
+        if (startUur === null || startUur < 0 || startUur >= 24) return null
+        const topPx = (startUur - startHour) * HOUR_HEIGHT + (startMin / 60) * HOUR_HEIGHT
+        const endTotal = eindUur !== null && eindUur > startUur ? (eindUur - startHour) * HOUR_HEIGHT + (endMin / 60) * HOUR_HEIGHT : topPx + HOUR_HEIGHT
         const heightPx = Math.max(endTotal - topPx, 20)
 
         const STATUS_LABELS: Record<string, string> = {
