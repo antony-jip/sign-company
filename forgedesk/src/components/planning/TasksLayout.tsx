@@ -3053,7 +3053,7 @@ function TaskCard({
         aria-hidden
         className={cn(
           'absolute inset-0 pointer-events-none',
-          isDone ? 'bg-[rgba(26,83,92,0.055)] dark:bg-petrol/15' : PRIO_CARD_BG[taak.prioriteit],
+          isDone ? 'taak-af-wash' : PRIO_CARD_BG[taak.prioriteit],
         )}
       />
 
@@ -3064,7 +3064,7 @@ function TaskCard({
         title={isDone ? 'Ongedaan maken' : 'Markeer als klaar'}
       >
         {isDone ? (
-          <div className="w-3.5 h-3.5 rounded-full bg-petrol flex items-center justify-center ring-2 ring-petrol/15 transition-all duration-200">
+          <div className={cn('w-3.5 h-3.5 rounded-full bg-petrol flex items-center justify-center ring-2 ring-petrol/15 transition-all duration-200', justCompleted && 'taak-vink-vast')}>
             <Check className="w-2 h-2 text-white" strokeWidth={4} />
           </div>
         ) : (
@@ -3087,11 +3087,13 @@ function TaskCard({
           <p
             className={cn(
               'text-[13px] font-semibold leading-tight truncate flex-1',
-              isDone ? 'line-through text-muted-foreground dark:text-muted-foreground/70' : PRIO_CARD_TEXT[taak.prioriteit],
+              isDone ? 'text-muted-foreground dark:text-muted-foreground/70' : PRIO_CARD_TEXT[taak.prioriteit],
               isCompact && 'text-[11px]'
             )}
           >
-            {taak.titel}
+            <span className={cn(isDone && 'taak-af-titel', isDone && justCompleted && 'is-net-af', 'truncate')}>
+              {taak.titel}
+            </span>
           </p>
           {/* Prioriteit · flame-toggle: oranje box markeert prioriteit */}
           <button

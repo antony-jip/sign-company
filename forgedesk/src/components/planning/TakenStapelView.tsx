@@ -266,7 +266,7 @@ export function TakenStapelView({
             onDragOver={(e) => { e.preventDefault(); setDropDoel({ dag: dag.dayIndex, index: dag.open.length }) }}
             onDrop={(e) => handleDrop(e, dag.dayIndex, dag.open.length)}
           >
-            <header className="stapel-kop" style={{ ['--voortgang' as string]: `${dag.voortgang}%` }}>
+            <header className="stapel-kop" style={{ ['--voortgang-f' as string]: dag.voortgang / 100 }}>
               <span className="stapel-dagnaam">
                 {DAY_LABELS[dag.dayIndex]}{dag.isToday && <span className="stapel-punt">.</span>}
               </span>
@@ -454,7 +454,9 @@ function StapelKaart({
       </button>
 
       <div className="stapel-tekst">
-        <h3 className="stapel-titel">{taak.titel}</h3>
+        <h3 className="stapel-titel">
+          <span className={klaar ? 'taak-af-titel' : undefined}>{taak.titel}</span>
+        </h3>
         {context && (
           <p className="stapel-context">
             {klantNaam && <span className="stapel-klant">{klantNaam}</span>}
