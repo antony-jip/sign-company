@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { EmptyState } from '@/components/ui/empty-state'
 import { DatePicker } from '@/components/ui/date-picker'
+import { SchattingSelect } from '@/components/shared/TaakVelden'
 import { toast } from 'sonner'
 import {
   Plus,
@@ -284,6 +285,7 @@ export function QuotesPipeline() {
   const [taakOfferte, setTaakOfferte] = useState<Offerte | null>(null)
   const [taakTitel, setTaakTitel] = useState('')
   const [taakDeadline, setTaakDeadline] = useState('')
+  const [taakSchatting, setTaakSchatting] = useState(0)
   const [taakToegewezen, setTaakToegewezen] = useState('')
   const [taakSaving, setTaakSaving] = useState(false)
 
@@ -591,7 +593,7 @@ export function QuotesPipeline() {
         prioriteit: 'medium',
         toegewezen_aan: taakToegewezen,
         deadline: taakDeadline || undefined,
-        geschatte_tijd: 0,
+        geschatte_tijd: taakSchatting,
         bestede_tijd: 0,
       })
       toast.success(`Taak "${taakTitel.trim()}" aangemaakt`)
@@ -1707,6 +1709,11 @@ export function QuotesPipeline() {
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:border-petrol focus:ring-2 focus:ring-petrol/10"
               />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-medium text-foreground/70">Schatting</label>
+              <SchattingSelect waarde={taakSchatting} onChange={setTaakSchatting} />
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-[12px] font-medium text-foreground/70">Deadline</label>
               <DatePicker

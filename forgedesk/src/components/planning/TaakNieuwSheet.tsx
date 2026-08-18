@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SchattingSelect } from '@/components/shared/TaakVelden'
 import { createTaak } from '@/services/supabaseService'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -31,6 +32,7 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
   const [datum, setDatum] = useState(() => toDateInputValue(defaultDate))
   const [tijd, setTijd] = useState('')
   const [saving, setSaving] = useState(false)
+  const [schatting, setSchatting] = useState(0)
 
   useEffect(() => {
     if (open) {
@@ -61,7 +63,7 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
         prioriteit: 'medium',
         toegewezen_aan: toegewezenAan,
         deadline,
-        geschatte_tijd: 0,
+        geschatte_tijd: schatting,
         bestede_tijd: 0,
       })
       logCreate({ user, entityType: 'taak', entityId: created.id })
@@ -88,13 +90,13 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
       />
       <div
         className={cn(
-          'md:hidden fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl px-6 pt-2 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] transform transition-transform duration-300 ease-out shadow-[0_-4px_24px_rgba(0,0,0,0.12)]',
+          'md:hidden fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-2xl px-6 pt-2 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] transform transition-transform duration-300 ease-out shadow-[0_-4px_24px_rgba(0,0,0,0.12)]',
           open ? 'translate-y-0' : 'translate-y-full',
         )}
         role="dialog"
         aria-modal="true"
       >
-        <div className="mx-auto h-1 w-10 rounded-full bg-[#D4D2CE] mb-5" />
+        <div className="mx-auto h-1 w-10 rounded-full bg-border mb-5" />
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[18px] font-bold text-foreground">
             Nieuwe taak<span className="text-flame">.</span>
@@ -114,7 +116,7 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
             value={titel}
             onChange={(e) => setTitel(e.target.value)}
             placeholder="Wat moet er gebeuren?"
-            className="w-full h-11 px-3 rounded-lg bg-background border border-border focus:border-petrol focus:bg-white focus:ring-2 focus:ring-petrol/10 outline-none text-[15px] text-foreground placeholder:text-muted-foreground transition-all"
+            className="w-full h-11 px-3 rounded-lg bg-background border border-border focus:border-petrol focus:bg-card focus:ring-2 focus:ring-petrol/10 outline-none text-[15px] text-foreground placeholder:text-muted-foreground transition-all"
           />
           <div className="flex gap-2">
             <DatePicker
@@ -127,9 +129,13 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
               type="time"
               value={tijd}
               onChange={(e) => setTijd(e.target.value)}
-              className="w-32 h-11 px-3 rounded-lg bg-background border border-border focus:border-petrol focus:bg-white focus:ring-2 focus:ring-petrol/10 outline-none text-[14px] text-foreground transition-all"
+              className="w-32 h-11 px-3 rounded-lg bg-background border border-border focus:border-petrol focus:bg-card focus:ring-2 focus:ring-petrol/10 outline-none text-[14px] text-foreground transition-all"
             />
           </div>
+          {/* Schatting · zelfde veld als op desktop, want de stapel rekent
+              er hier net zo goed mee. */}
+          <SchattingSelect waarde={schatting} onChange={setSchatting} triggerClassName="h-11 w-full justify-between rounded-lg border-border bg-background px-3 text-[14px]" />
+
           <button
             type="submit"
             disabled={!titel.trim() || saving}

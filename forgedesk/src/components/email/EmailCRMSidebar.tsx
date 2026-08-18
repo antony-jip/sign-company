@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import type { Email, Klant } from '@/types'
 import { getKlanten, createKlant, createOfferte, createProject, createTaak } from '@/services/supabaseService'
 import { extractSenderEmail, formatShortDate, zoekKlantVoorAfzender } from './emailHelpers'
+import { SchattingSelect } from '@/components/shared/TaakVelden'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { useAuth } from '@/contexts/AuthContext'
@@ -84,6 +85,7 @@ export const CRMSidebar = memo(function CRMSidebar({
   const [projectForm, setProjectForm] = useState({ naam: '', beschrijving: '' })
   // Taak form
   const [taakForm, setTaakForm] = useState({ titel: '', beschrijving: '' })
+  const [taakSchatting, setTaakSchatting] = useState(0)
 
   const personName = useMemo(() => senderName.replace(/\s*[|–—-]\s*.+$/, '').trim(), [senderName])
   const companyGuess = useMemo(() => extractCompanyName(senderName, senderEmail), [senderName, senderEmail])
@@ -198,7 +200,7 @@ export const CRMSidebar = memo(function CRMSidebar({
     try {
       const taak = await createTaak({
         titel: taakForm.titel, beschrijving: taakForm.beschrijving,
-        status: 'todo', prioriteit: 'medium', toegewezen_aan: '', geschatte_tijd: 0, bestede_tijd: 0,
+        status: 'todo', prioriteit: 'medium', toegewezen_aan: '', geschatte_tijd: taakSchatting, bestede_tijd: 0,
         klant_id: linkedKlant?.id || '',
       })
       logCreate({ user, entityType: 'taak', entityId: taak.id })
@@ -379,6 +381,7 @@ export const CRMSidebar = memo(function CRMSidebar({
             <textarea value={projectForm.beschrijving} onChange={e => setProjectForm(f => ({ ...f, beschrijving: e.target.value }))}
               className="w-full px-2.5 py-2 text-[13px] bg-background border border-border rounded-[8px] outline-none focus:border-petrol/20 focus:bg-white dark:focus:bg-white/[0.06] transition-colors placeholder:text-muted-foreground/80 resize-none h-16"
               placeholder="Beschrijving" />
+            <SchattingSelect waarde={taakSchatting} onChange={setTaakSchatting} />
           </>
         ),
       },

@@ -40,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { SchattingSelect } from '@/components/shared/TaakVelden'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import {
@@ -152,6 +153,7 @@ export function PortalenOverzicht() {
   // Taak dialog state
   const [taakDialogOpen, setTaakDialogOpen] = useState(false)
   const [taakTitel, setTaakTitel] = useState('')
+  const [taakSchatting, setTaakSchatting] = useState(0)
   const [taakBeschrijving, setTaakBeschrijving] = useState('')
   const [taakDeadline, setTaakDeadline] = useState('')
   const [taakToegewezen, setTaakToegewezen] = useState('')
@@ -278,7 +280,7 @@ export function PortalenOverzicht() {
         prioriteit: taakPrioriteit,
         toegewezen_aan: taakToegewezen,
         deadline: taakDeadline || undefined,
-        geschatte_tijd: 0,
+        geschatte_tijd: taakSchatting,
         bestede_tijd: 0,
       })
       logCreate({ user, entityType: 'taak', entityId: taak.id })
@@ -645,6 +647,11 @@ export function PortalenOverzicht() {
                 placeholder="Wat moet er gebeuren?"
                 className="h-9"
               />
+            </div>
+
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Schatting</Label>
+              <SchattingSelect waarde={taakSchatting} onChange={setTaakSchatting} />
             </div>
 
             <div>
