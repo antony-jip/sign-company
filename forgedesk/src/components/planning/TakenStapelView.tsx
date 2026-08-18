@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Check, Flame, Plus, Trash2, Wrench, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, zonderKlantPrefix } from '@/lib/utils'
 import type { Taak, MontageAfspraak } from '@/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -54,17 +54,6 @@ function duurLabel(uren: number): string | null {
   if (uren < 1) return `${Math.round(uren * 60)}m`
   const getal = Number.isInteger(uren) ? String(uren) : uren.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
   return `${getal.replace('.', ',')}u`
-}
-
-// Projectnamen beginnen vaak met de klantnaam · die kop hoeft er niet twee keer
-// te staan als de klant ernaast wordt getoond.
-function zonderKlantPrefix(projectNaam: string, klantNaam?: string): string {
-  if (!klantNaam) return projectNaam
-  const p = projectNaam.trim()
-  const k = klantNaam.trim()
-  if (!k || !p.toLowerCase().startsWith(k.toLowerCase())) return p
-  const rest = p.slice(k.length).replace(/^[\s\-–—·|:]+/, '').trim()
-  return rest || p
 }
 
 export interface StapelHandlers {

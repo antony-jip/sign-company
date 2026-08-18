@@ -109,6 +109,22 @@ const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
   kritiek: 'text-[#C03A18]', hoog: 'text-[#3A5A9A]', medium: 'text-[#3A5A9A]', laag: 'text-[#3A5A9A]',
 }
 
+// "Medium" was het enige Engelse woord in een verder Nederlands scherm. De
+// waarde in de database blijft `medium`, alleen het label wordt Nederlands.
+const PRIORITEIT_LABEL: Record<TaakPrioriteit, string> = {
+  kritiek: 'Kritiek', hoog: 'Hoog', medium: 'Normaal', laag: 'Laag',
+}
+
+// Schatten moet in één klik kunnen · een vrij invoerveld voor uren levert in
+// de praktijk lege velden op.
+const TIJD_OPTIES: { waarde: number; label: string }[] = [
+  { waarde: 0.25, label: '15m' }, { waarde: 0.5, label: '30m' },
+  { waarde: 1, label: '1u' }, { waarde: 1.5, label: '1,5u' },
+  { waarde: 2, label: '2u' }, { waarde: 3, label: '3u' },
+  { waarde: 4, label: '4u' }, { waarde: 6, label: '6u' },
+  { waarde: 8, label: 'Hele dag' },
+]
+
 // Dark-aware kaart-classes · PRIORITEIT_COLORS zijn light-hexen voor inline
 // styles; in dark mode moeten bg, tekst en accent-stripe via classes schakelen.
 // Een wash over het kaartpapier · alleen kritiek verdient kleur, de rest zou
@@ -2456,14 +2472,14 @@ export function TasksLayout() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-7 text-xs gap-1 rounded-lg">
                     <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[fabPriority]}`} />
-                    {fabPriority === 'medium' ? 'Prio' : fabPriority.charAt(0).toUpperCase() + fabPriority.slice(1)}
+                    {fabPriority === 'medium' ? 'Prio' : PRIORITEIT_LABEL[fabPriority]}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {(['kritiek', 'hoog', 'medium', 'laag'] as TaakPrioriteit[]).map((p) => (
                     <DropdownMenuItem key={p} onClick={() => setFabPriority(p)}>
                       <Flag className={`w-3.5 h-3.5 mr-2 ${PRIORITEIT_FLAG_COLORS[p]}`} />
-                      {p.charAt(0).toUpperCase() + p.slice(1)}
+                      {PRIORITEIT_LABEL[p]}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -3312,47 +3328,21 @@ function EditTaskDialog({
         <DialogHeader className="sr-only"><DialogTitle>Taak bewerken</DialogTitle></DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
-        {/* Titel + Open project rechtsboven */}
-        <div className="px-7 pt-7 pb-2 flex items-start justify-between gap-3">
+        {/* Titel · stond er als een kop bij, dus het was niet te zien dat je
+            hem kon wijzigen. Nu dezelfde behandeling als de briefing eronder:
+            in rust vlak, bij hover een vlak, bij focus wit met een ring. */}
+        <div className="px-7 pt-7 pb-3">
           <Input
             value={formData.titel}
             onChange={(e) => updateField('titel', e.target.value)}
             placeholder="Titel van de taak"
-            className="border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-[#1A4A52] dark:text-foreground placeholder:text-muted-foreground placeholder:font-medium focus-visible:ring-0 tracking-[-0.3px] flex-1 min-w-0"
+            title="Klik om de titel te wijzigen"
+            className="border-0 shadow-none h-auto py-2 px-3 -mx-3 w-[calc(100%+1.5rem)] bg-background hover:bg-muted focus:bg-card rounded-lg text-[20px] font-bold text-[#1A4A52] dark:text-foreground placeholder:text-muted-foreground placeholder:font-medium focus-visible:ring-1 focus-visible:ring-petrol/25 tracking-[-0.3px] transition-colors cursor-text"
           />
-          {formData.project_id && (
-            <button
-              type="button"
-              onClick={() => { onOpenChange(false); navigate(`/projecten/${formData.project_id}`) }}
-              className="flex-shrink-0 inline-flex items-center gap-1 text-[12px] font-medium text-petrol dark:text-[#5AABB5] hover:text-[#0F3A40] dark:hover:text-foreground transition-colors mt-1"
-              title="Open project in nieuw tabblad"
-            >
-              Open project
-              <ExternalLink className="w-3 h-3" />
-            </button>
-          )}
         </div>
 
         {/* Meta-pill rij · alles op 1 lijn, type-segment inline */}
         <div className="px-7 pb-4 flex items-center gap-1.5 flex-wrap">
-          {/* Prioriteit */}
-          <Select value={formData.prioriteit} onValueChange={(v) => updateField('prioriteit', v as TaakPrioriteit)}>
-            <SelectTrigger className={cn(pillBase, 'w-auto focus:ring-0 [&>svg]:hidden')}>
-              <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[formData.prioriteit]}`} />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(['kritiek', 'hoog', 'medium', 'laag'] as TaakPrioriteit[]).map((p) => (
-                <SelectItem key={p} value={p}>
-                  <div className="flex items-center gap-2">
-                    <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[p]}`} />
-                    {p.charAt(0).toUpperCase() + p.slice(1)}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           {/* Deadline · DOEN-styled date picker via Popover */}
           <DatePicker
             value={formData.deadline}
@@ -3365,10 +3355,36 @@ function EditTaskDialog({
             }
           />
 
+          {/* Schatting · dit veld stond niet in het formulier, terwijl de
+              stapel er de blokduur mee tekent en de dagkop er zijn uren-totaal
+              uit optelt. Vandaar dat negen van de tien taken geen schatting
+              hadden en er "9 · 4,25u" boven een dag stond. */}
+          <Select
+            value={formData.geschatte_tijd > 0 ? String(formData.geschatte_tijd) : 'geen'}
+            onValueChange={(v) => updateField('geschatte_tijd', v === 'geen' ? 0 : Number(v))}
+          >
+            <SelectTrigger className={cn(pillBase, 'w-auto focus:ring-0 [&>svg:last-child]:hidden')}>
+              <Clock className="w-3 h-3 text-foreground/70" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="geen"><span className="text-muted-foreground">Geen schatting</span></SelectItem>
+              {/* Een waarde die van elders komt (bijvoorbeeld 1,75u uit een
+                  resize in de weekweergave) hoort ook gewoon te blijven staan. */}
+              {(TIJD_OPTIES.some((o) => o.waarde === formData.geschatte_tijd) || formData.geschatte_tijd <= 0
+                ? TIJD_OPTIES
+                : [...TIJD_OPTIES, { waarde: formData.geschatte_tijd, label: `${String(formData.geschatte_tijd).replace('.', ',')}u` }]
+                    .sort((a, b) => a.waarde - b.waarde)
+              ).map((o) => (
+                <SelectItem key={o.waarde} value={String(o.waarde)}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* Toegewezen */}
           {medewerkers.length > 0 ? (
             <Select value={formData.toegewezen_aan || undefined} onValueChange={(v) => updateField('toegewezen_aan', v)}>
-              <SelectTrigger className={cn(pillBase, 'w-auto focus:ring-0 [&>svg]:hidden max-w-[160px]')}>
+              <SelectTrigger className={cn(pillBase, 'w-auto focus:ring-0 [&>svg:last-child]:hidden max-w-[160px]')}>
                 <User2 className="w-3 h-3 text-foreground/70" />
                 <SelectValue placeholder="Kies medewerker" />
               </SelectTrigger>
@@ -3394,7 +3410,30 @@ function EditTaskDialog({
 
         {/* Project · altijd zichtbaar, geen type-toggle meer */}
         <div className="px-7 pb-4 space-y-1.5">
-          <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</Label>
+          <div className="flex items-baseline justify-between gap-3">
+            <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</Label>
+            {/* Stond rechtsboven naast de titel, met een external-link-icoon en
+                "opent in nieuw tabblad" in de tooltip — terwijl hij gewoon in
+                dit tabblad navigeerde. Nu staat hij bij het veld waar hij over
+                gaat, is het een echte link (dus cmd-klik wérkt), en klopt wat
+                er staat. */}
+            {formData.project_id && (
+              <a
+                href={`/projecten/${formData.project_id}`}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey) return
+                  e.preventDefault()
+                  onOpenChange(false)
+                  navigate(`/projecten/${formData.project_id}`)
+                }}
+                title="Ga naar dit project · cmd-klik voor een nieuw tabblad"
+                className="flex-shrink-0 inline-flex items-center gap-0.5 text-[12px] font-medium text-petrol dark:text-[#5AABB5] hover:text-[#0F3A40] dark:hover:text-foreground transition-colors"
+              >
+                Open project
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+          </div>
           <ProjectCombobox
             projecten={projecten}
             value={formData.project_id || ''}

@@ -61,3 +61,18 @@ export function getPriorityColor(priority: string): string {
   }
   return colors[priority] || 'badge-grijs'
 }
+
+/**
+ * Projectnamen beginnen vaak met de klantnaam. Staat de klant er los naast,
+ * dan hoeft die kop er niet twee keer te staan: "Aldu bevestigingsmaterialen -
+ * Rolmaten · Aldu bevestigingsmaterialen" wordt "Rolmaten · Aldu bevestigings-
+ * materialen". Blijft er niets over, dan houden we de naam heel.
+ */
+export function zonderKlantPrefix(projectNaam: string, klantNaam?: string): string {
+  if (!klantNaam) return projectNaam
+  const p = projectNaam.trim()
+  const k = klantNaam.trim()
+  if (!k || !p.toLowerCase().startsWith(k.toLowerCase())) return p
+  const rest = p.slice(k.length).replace(/^[\s\-–—·|:]+/, '').trim()
+  return rest || p
+}
