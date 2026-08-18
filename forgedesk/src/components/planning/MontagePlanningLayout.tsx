@@ -74,6 +74,7 @@ import {
 import { getDagNotities, upsertDagNotitie, deleteDagNotitie, getVrijPatronen, createVrijPatroon, updateVrijPatroon, deleteVrijPatroon, getAfwezigheid, createAfwezigheid, deleteAfwezigheid } from "@/services/planningService";
 import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie, VrijPatroon, Afwezigheid, AfwezigheidType } from "@/types";
 import { buildAfwezigheidIndex, resolveAfwezig } from "@/utils/afwezigheid";
+import { MontageStapelView } from '@/components/planning/MontageStapelView';
 import { AfwezigheidPopover } from "./AfwezigheidPopover";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { ClipboardCheck } from "lucide-react";
@@ -107,7 +108,7 @@ const PLANNING_FILTER_KEY = 'doen_planning_filter_v1';
 const PLANNING_SCOPE_KEY = 'doen_planning_scope_v1';
 const PLANNING_VIEWMODE_KEY = 'doen_planning_viewmode_v1';
 
-type ViewMode = 'week' | 'maand';
+type ViewMode = 'stapel' | 'week' | 'maand';
 const FASES_BLOKKEREN_AFRONDEN: Array<Project['status']> = ['te-factureren', 'gefactureerd', 'afgerond'];
 
 type ScopeMode = 'alle' | 'mijn' | 'medewerker';
@@ -431,9 +432,10 @@ export function MontagePlanningLayout() {
   const [viewMode, setViewModeState] = useState<ViewMode>(() => {
     try {
       const raw = localStorage.getItem(PLANNING_VIEWMODE_KEY);
-      return raw === 'maand' ? 'maand' : 'week';
+      if (raw === 'maand' || raw === 'week' || raw === 'stapel') return raw;
+      return 'stapel';
     } catch {
-      return 'week';
+      return 'stapel';
     }
   });
   const setViewMode = useCallback((mode: ViewMode) => {
@@ -1697,6 +1699,47 @@ export function MontagePlanningLayout() {
         });
       }, 800);
     }
+  }
+
+  // ── Stapel · de hele week in beeld, maar zonder uurraster ──
+  function renderStapelView() {
+    const vandaagSleutel = formatDate(new Date());
+    return (
+      <MontageStapelView
+        weekDates={weekDates}
+        datumSleutel={formatDate}
+        afsprakenPerDag={afsprakenPerDag}
+        takenPerDag={takenPerDag}
+        vandaagSleutel={vandaagSleutel}
+        conflictIds={conflictAfspraakIds}
+        sleepId={draggingAfspraakId}
+        onSleepStart={setDraggingAfspraakId}
+        onSleepEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
+        onDropOpDag={(id, datum) => {
+          const feestdagInfo = isFeestdag(datum, feestdagen);
+          if (feestdagInfo) {
+            toast.error(`Kan niet inplannen op ${feestdagInfo.naam}`);
+            return;
+          }
+          handleDragDrop(id, datum, undefined, undefined);
+        }}
+        onOpen={openEditDialog}
+        onAfronden={(a) => afrondenAfspraak(a, false)}
+        onTerugzetten={toggleAfgerond}
+        onNieuwOpDag={(datum) => openNewDialog(datum)}
+        accentKleur={(a) => a.status === 'afgerond'
+          ? '#CBC9C4'
+          : a.prioriteit
+            ? '#F15025'
+            : (STATUS_CONFIG[a.status]?.dot ?? '#1A535C')}
+        toonMonteurs={selectedMonteur === 'alle'}
+        monteurLabel={(a) => a.monteurs
+          .map((id) => monteurMap[id]?.naam)
+          .filter(Boolean)
+          .join(', ')}
+        gesloten={(datum) => isFeestdag(datum, feestdagen)?.naam ?? null}
+      />
+    );
   }
 
   // ── Card with colored left border · DOEN style ──
@@ -3427,11 +3470,13 @@ export function MontagePlanningLayout() {
         <>
         {/* Compacte paginatitel */}
         <div className="px-4 pt-5 pb-3 flex items-center justify-between gap-2 shrink-0">
+          {/* De titel stond hier én in de balk erboven · TE PLANNEN hieronder
+              is de kop die deze kolom echt nodig heeft. */}
           <div className="flex items-baseline gap-2 min-w-0">
-            <h1 className="text-[17px] font-bold tracking-[-0.3px] text-[#1A4A52] dark:text-foreground leading-none">
-              Planning<span className="text-flame">.</span>
-            </h1>
-            <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Deze week
+            </span>
+            <span className="text-[12px] font-mono tabular-nums text-foreground">
               {stats.totaalWeek}
             </span>
           </div>
@@ -3462,7 +3507,7 @@ export function MontagePlanningLayout() {
               <span>Niets te plannen</span>
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto px-2 py-2 flex flex-col gap-2">
+            <div className="flex-1 overflow-y-auto px-2 py-1 flex flex-col">
               {tePlannenProjecten.map((project) => {
                 const isPrio = project.prioriteit === 'hoog' || project.prioriteit === 'kritiek';
                 return (
@@ -3488,19 +3533,41 @@ export function MontagePlanningLayout() {
                     onDragEnd={() => { setDraggingProjectId(null); setDragOverDate(null); }}
                     onClick={() => openNewDialogFromProject(project)}
                     className={cn(
-                      "group/card relative w-full text-left border-l-2 rounded-none transition-colors duration-150 cursor-grab active:cursor-grabbing select-none hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.05]",
-                      isPrio
-                        ? "border-l-flame bg-[rgba(241,80,37,0.05)]"
-                        : "border-l-petrol/35",
+                      "group/card relative w-full text-left border-l-2 rounded-lg transition-colors duration-150 cursor-grab active:cursor-grabbing select-none",
+                      "shadow-[inset_0_1px_0_hsl(var(--border)/0.55)] first:shadow-none hover:shadow-none",
+                      "hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.05]",
+                      isPrio ? "border-l-flame" : "border-l-transparent",
                       draggingProjectId === project.id && "opacity-50"
                     )}
                     style={{ padding: '8px 10px' }}
                   >
+                    {/* De naam kapte af op de plek waar hij onderscheidend werd:
+                        "Nieuwe signing - De ..." en "Nieuwe signing locati..."
+                        waren niet uit elkaar te houden. Hij mag nu afbreken. */}
                     <div className="pr-5">
-                      <div className="text-[13px] font-medium truncate leading-tight text-foreground">{project.naam}</div>
-                      {project.klant_naam && (
-                        <div className="text-[11px] text-muted-foreground truncate mt-0.5">{project.klant_naam}</div>
-                      )}
+                      <div className="text-[13px] font-medium leading-snug text-foreground [text-wrap:pretty]">{project.naam}</div>
+                      <div className="flex items-baseline gap-1.5 mt-0.5">
+                        {project.klant_naam && (
+                          <span className="text-[11px] text-muted-foreground truncate">{project.klant_naam}</span>
+                        )}
+                        {/* Hoe lang het al wacht · daar plan je op, niet op
+                            de volgorde waarin het toevallig binnenkwam. */}
+                        {(() => {
+                          const dagen = Math.floor((Date.now() - new Date(project.created_at).getTime()) / 86400000)
+                          if (!Number.isFinite(dagen) || dagen < 1) return null
+                          return (
+                            <span
+                              className={cn(
+                                'ml-auto shrink-0 text-[10px] font-mono tabular-nums',
+                                dagen >= 30 ? 'text-flame/80' : 'text-muted-foreground/70'
+                              )}
+                              title={`Staat ${dagen} dagen te wachten`}
+                            >
+                              {dagen}d
+                            </span>
+                          )
+                        })()}
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -3594,6 +3661,13 @@ export function MontagePlanningLayout() {
           <div className="flex rounded-lg bg-[hsl(38,20%,95.5%)] dark:bg-white/[0.06] p-0.5 text-[12px]">
             <button
               type="button"
+              onClick={() => setViewMode('stapel')}
+              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'stapel' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            >
+              Stapel
+            </button>
+            <button
+              type="button"
               onClick={() => setViewMode('week')}
               className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'week' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
@@ -3684,11 +3758,13 @@ export function MontagePlanningLayout() {
 
         {/* Main view */}
         <div className="flex-1 overflow-auto">
-          {viewMode === 'maand'
-            ? renderMonthView()
-            : selectedMonteur === "alle"
-              ? renderMultiMonteurView()
-              : renderMemberWeekView()}
+          {viewMode === 'stapel'
+            ? renderStapelView()
+            : viewMode === 'maand'
+              ? renderMonthView()
+              : selectedMonteur === "alle"
+                ? renderMultiMonteurView()
+                : renderMemberWeekView()}
         </div>
       </div>
 

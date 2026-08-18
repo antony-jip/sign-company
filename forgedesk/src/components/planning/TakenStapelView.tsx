@@ -284,7 +284,7 @@ export function TakenStapelView({
 
   return (
     <div
-      className={cn('taken-stapel', focus && 'heeft-toetsfocus')}
+      className={cn('doen-stapel taken-stapel', focus && 'heeft-toetsfocus')}
       style={{ gridTemplateColumns: dagen.map((d) => (isIngeklapt(d) ? 'var(--stapel-strook)' : 'minmax(0, 1fr)')).join(' ') }}
     >
       {focus && !sleepId && (

@@ -3724,13 +3724,14 @@ button.doen-panel:hover {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TAKEN · STAPEL
-   De dag als geordende stapel. Kolommen zijn containers, zodat een kaart zijn
-   eigen dichtheid kiest op basis van de ruimte die hij krijgt in plaats van op
-   basis van de vensterbreedte.
+   STAPEL · gedeeld door Taken en Planning
+   De dag als geordende stapel in plaats van een uurraster. Kolommen zijn
+   containers, zodat een kaart zijn eigen dichtheid kiest op basis van de ruimte
+   die hij krijgt in plaats van op basis van de vensterbreedte. De basis heet
+   .doen-stapel; een module zet daar zijn eigen klasse naast voor wat afwijkt.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.taken-stapel {
+.doen-stapel {
   --stapel-lijn: color-mix(in srgb, hsl(var(--border)) 55%, transparent);
   --stapel-kaart: hsl(var(--card));
   --stapel-schaduw-hoog: 0 2px 8px rgba(130, 100, 60, 0.10);
@@ -3753,7 +3754,7 @@ button.doen-panel:hover {
   transition: grid-template-columns 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.dark .taken-stapel {
+.dark .doen-stapel {
   --stapel-kaart: hsl(var(--card));
   --stapel-schaduw-hoog: 0 2px 8px rgba(0, 0, 0, 0.35);
   --stapel-tekst: #CFE3E6;
@@ -3873,7 +3874,7 @@ button.doen-panel:hover {
 .dark .stapel-leeg.is-inklapbaar:hover { background: color-mix(in srgb, #FFFFFF 4%, transparent); }
 
 @media (prefers-reduced-motion: reduce) {
-  .taken-stapel { transition: none; }
+  .doen-stapel { transition: none; }
 }
 
 /* Een dag met kritiek werk verdient een teken in de kop, zonder dat elke kaart
@@ -4357,7 +4358,7 @@ button.doen-panel:hover {
    uit dezelfde hand komen.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.taken-stapel,
+.doen-stapel,
 .taken-week {
   --doen-uit: cubic-bezier(0.22, 1, 0.36, 1);
   --doen-veer: cubic-bezier(0.34, 1.5, 0.64, 1);
@@ -4388,7 +4389,7 @@ button.doen-panel:hover {
 }
 
 /* Terwijl je sleept treedt de rest een stap terug. */
-.taken-stapel:has(.stapel-kaart.is-sleept) .stapel-kaart:not(.is-sleept) {
+.doen-stapel:has(.stapel-kaart.is-sleept) .stapel-kaart:not(.is-sleept) {
   opacity: 0.72;
   transition: opacity 200ms var(--doen-uit);
 }
@@ -4413,29 +4414,29 @@ button.doen-panel:hover {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .taken-week [data-taak-id],
-.taken-stapel .stapel-kaart {
+.doen-stapel .stapel-kaart {
   letter-spacing: -0.005em;
 }
 
 /* In rust draagt de kaart alleen zijn haarlijn. Bij hover komt het vlak los
    van de kolom · twee lagen, een korte harde voor de rand op het papier en een
    langere zachte voor de hoogte erboven. */
-.taken-stapel .stapel-kaart { box-shadow: inset 0 1px 0 var(--stapel-lijn); }
-.taken-stapel .stapel-lijst > div:first-of-type .stapel-kaart { box-shadow: none; }
-.taken-stapel .stapel-kaart:hover,
-.taken-stapel .stapel-lijst > div:first-of-type .stapel-kaart:hover {
+.doen-stapel .stapel-kaart { box-shadow: inset 0 1px 0 var(--stapel-lijn); }
+.doen-stapel .stapel-lijst > div:first-of-type .stapel-kaart { box-shadow: none; }
+.doen-stapel .stapel-kaart:hover,
+.doen-stapel .stapel-lijst > div:first-of-type .stapel-kaart:hover {
   box-shadow:
     0 1px 1px rgba(130, 100, 60, 0.05),
     0 6px 16px -6px rgba(130, 100, 60, 0.18);
 }
-.dark .taken-stapel .stapel-kaart:hover,
-.dark .taken-stapel .stapel-lijst > div:first-of-type .stapel-kaart:hover {
+.dark .doen-stapel .stapel-kaart:hover,
+.dark .doen-stapel .stapel-lijst > div:first-of-type .stapel-kaart:hover {
   box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.55);
 }
 
 /* Toetsenbordfocus op de knoppen in de module · muisklikken laat niets achter. */
 .taken-week button:focus-visible,
-.taken-stapel button:focus-visible {
+.doen-stapel button:focus-visible {
   outline: 2px solid color-mix(in srgb, #1A535C 60%, transparent);
   outline-offset: 2px;
   border-radius: 8px;
@@ -4443,24 +4444,24 @@ button.doen-panel:hover {
 
 /* Een dunne scrollbar hoort bij een scherm waar je de hele dag in kijkt. */
 .taken-week *::-webkit-scrollbar,
-.taken-stapel *::-webkit-scrollbar { width: 10px; height: 10px; }
+.doen-stapel *::-webkit-scrollbar { width: 10px; height: 10px; }
 .taken-week *::-webkit-scrollbar-track,
-.taken-stapel *::-webkit-scrollbar-track { background: transparent; }
+.doen-stapel *::-webkit-scrollbar-track { background: transparent; }
 .taken-week *::-webkit-scrollbar-thumb,
-.taken-stapel *::-webkit-scrollbar-thumb {
+.doen-stapel *::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, #1A535C 16%, transparent);
   border: 3px solid transparent;
   background-clip: content-box;
   border-radius: 9999px;
 }
 .taken-week *::-webkit-scrollbar-thumb:hover,
-.taken-stapel *::-webkit-scrollbar-thumb:hover {
+.doen-stapel *::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, #1A535C 30%, transparent);
   background-clip: content-box;
 }
 
 .taken-week ::selection,
-.taken-stapel ::selection {
+.doen-stapel ::selection {
   background: color-mix(in srgb, #1A535C 18%, transparent);
 }
 
@@ -4601,7 +4602,7 @@ button.doen-panel:hover {
   from { opacity: 0; transform: translateY(-6px) scale(0.985); }
   to   { opacity: 1; transform: none; }
 }
-.taken-stapel .stapel-lijst > div > .stapel-kaart {
+.doen-stapel .stapel-lijst > div > .stapel-kaart {
   animation: stapel-kaart-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--i, 0) * 22ms);
 }
@@ -4622,13 +4623,187 @@ button.doen-panel:hover {
 
 /* De kolom houdt zijn scroll bij zichzelf en glijdt naar de kaart die focus
    krijgt in plaats van erheen te springen. */
-.taken-stapel { scroll-behavior: smooth; overscroll-behavior: contain; }
+.doen-stapel { scroll-behavior: smooth; overscroll-behavior: contain; }
 
 .stapel-kaart:hover { will-change: transform, box-shadow; }
 .stapel-kaart { will-change: auto; }
 
 @media (prefers-reduced-motion: reduce) {
-  .taken-stapel .stapel-lijst > div > .stapel-kaart,
+  .doen-stapel .stapel-lijst > div > .stapel-kaart,
   .stapel-afgerond .stapel-kaart { animation: none; }
-  .taken-stapel { scroll-behavior: auto; }
+  .doen-stapel { scroll-behavior: auto; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PLANNING · STAPEL
+   Wat afwijkt van de stapel in Taken. De basis (.doen-stapel) is gedeeld; hier
+   staat alleen wat een montage-agenda anders nodig heeft dan een takenlijst.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.planning-stapel .stapel-kaart {
+  grid-template-columns: 38px minmax(0, 1fr);
+  column-gap: 8px;
+  border-left-width: 2px;
+}
+
+/* De tijdrail vervangt het uurraster · begin bovenaan, eind eronder. Zo lees
+   je de volgorde én de duur zonder dat lege uren hoogte kosten. */
+.planning-stapel .stapel-tijd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  padding-top: 1px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--stapel-tekst);
+}
+.planning-stapel .stapel-tijd-eind {
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--stapel-zacht);
+}
+
+.planning-stapel .stapel-pin {
+  width: 9px;
+  height: 9px;
+  margin-right: 3px;
+  vertical-align: -1px;
+  display: inline-block;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.5;
+  opacity: 0.6;
+}
+
+.planning-stapel .stapel-monteurs {
+  margin-top: 2px;
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--stapel-zacht) 80%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Een dubbele boeking mag je niet over het hoofd zien · een rand die niets
+   verschuift, geen extra blok. */
+.planning-stapel .stapel-kaart.heeft-conflict {
+  background: color-mix(in srgb, #C03A18 5%, transparent);
+  box-shadow: inset 0 1px 0 var(--stapel-lijn), inset 2px 0 0 #C03A18;
+}
+
+/* Een vrije dag is in Taken niets, maar in Planning is het capaciteit. Die
+   klapt hier dus niet in — hij nodigt uit. */
+.planning-stapel .stapel-vrij {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 14px 10px;
+  border: 1px dashed color-mix(in srgb, #1A535C 22%, transparent);
+  border-radius: 10px;
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.planning-stapel .stapel-vrij:hover {
+  border-color: color-mix(in srgb, #1A535C 45%, transparent);
+  background: color-mix(in srgb, #1A535C 3.5%, transparent);
+}
+.dark .planning-stapel .stapel-vrij { border-color: rgba(255, 255, 255, 0.14); }
+.dark .planning-stapel .stapel-vrij:hover { background: rgba(255, 255, 255, 0.04); }
+
+.planning-stapel .stapel-vrij-woord {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--stapel-tekst);
+}
+.planning-stapel .stapel-vrij-hint {
+  font-size: 11px;
+  color: var(--stapel-zacht);
+}
+
+.planning-stapel .stapel-gesloten {
+  margin-top: 4px;
+  padding: 12px 8px;
+  font-size: 11.5px;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+  opacity: 0.6;
+}
+.planning-stapel .stapel-dag.is-gesloten { opacity: 0.5; }
+
+/* Taken met een deadline op deze dag staan niet in de planning, maar leggen er
+   wel beslag op · daarom een regel, geen kaart. */
+.planning-stapel .stapel-taakregel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px 5px 11px;
+  font-size: 11px;
+  color: var(--stapel-zacht);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.planning-stapel .stapel-taakstip {
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+/* Afgerond in de planning is naslag · één regel per montage, geen tweede
+   stapel kaarten onder de eerste. De doorhaling van .taak-af-titel is gemaakt
+   voor één regel tekst; over twee regels landt hij er precies tussenin. */
+.planning-stapel .stapel-afregel {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 8px;
+  padding: 4px 6px 4px 0;
+  border-radius: 7px;
+  cursor: pointer;
+  opacity: 0.62;
+  transition: opacity 150ms ease, background-color 150ms ease;
+}
+.planning-stapel .stapel-afregel:hover {
+  opacity: 1;
+  background: color-mix(in srgb, #1A535C 4%, transparent);
+}
+.dark .planning-stapel .stapel-afregel:hover { background: rgba(255, 255, 255, 0.04); }
+
+.planning-stapel .stapel-afregel-tijd {
+  justify-self: end;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  color: var(--stapel-zacht);
+}
+.planning-stapel .stapel-afregel-tekst {
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--stapel-tekst);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.planning-stapel .stapel-afregel-klant {
+  margin-left: 6px;
+  color: var(--stapel-zacht);
+}
+.planning-stapel .stapel-afregel-terug {
+  padding: 2px;
+  border-radius: 5px;
+  color: hsl(var(--muted-foreground));
+  opacity: 0;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+.planning-stapel .stapel-afregel:hover .stapel-afregel-terug { opacity: 1; }
+.planning-stapel .stapel-afregel-terug:hover { color: var(--stapel-tekst); }
