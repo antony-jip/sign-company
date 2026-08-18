@@ -167,7 +167,8 @@ export function TakenStapelView({
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
 
-      const dagMetTaken = dagen.findIndex((d) => d.open.length > 0)
+      const vandaag = dagen.findIndex((d) => d.isToday && d.open.length > 0)
+      const dagMetTaken = vandaag >= 0 ? vandaag : dagen.findIndex((d) => d.open.length > 0)
       if (!focus) {
         if (['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'j', 'k'].includes(e.key) && dagMetTaken >= 0) {
           e.preventDefault()
@@ -178,6 +179,26 @@ export function TakenStapelView({
 
       const huidige = dagen[focus.dag]
       const taak = huidige?.open[focus.index]
+
+      // Shift + pijl verplaatst de taak zelf · zo plan je een dag opnieuw in
+      // zonder de muis erbij te pakken.
+      if (e.shiftKey && taak && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault()
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          const doel = e.key === 'ArrowUp' ? focus.index - 1 : focus.index + 1
+          if (doel < 0 || doel > huidige.open.length - 1) return
+          metOvergang(() => onDrop(taak.id, focus.dag, tijdVoorPositie(focus.dag, doel, taak.id)))
+          setFocus({ ...focus, index: doel })
+        } else {
+          const richting = e.key === 'ArrowRight' ? 1 : -1
+          const doelDag = focus.dag + richting
+          if (doelDag < 0 || doelDag >= dagen.length) return
+          const positie = dagen[doelDag].open.length
+          metOvergang(() => onDrop(taak.id, doelDag, tijdVoorPositie(doelDag, positie, taak.id)))
+          setFocus({ dag: doelDag, index: positie })
+        }
+        return
+      }
 
       switch (e.key) {
         case 'ArrowDown':
@@ -230,7 +251,7 @@ export function TakenStapelView({
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [dagen, focus, onToggle, onEdit])
+  }, [dagen, focus, onToggle, onEdit, onDrop, tijdVoorPositie])
 
   // Focus die buiten de lijst valt (taak afgevinkt of verplaatst) opschonen.
   useEffect(() => {
@@ -251,7 +272,16 @@ export function TakenStapelView({
   }
 
   return (
-    <div className="taken-stapel">
+    <div className={cn('taken-stapel', focus && 'heeft-toetsfocus')}>
+      {focus && !sleepId && (
+        <div className="stapel-toetsen" role="status">
+          <kbd>↑↓</kbd> kiezen
+          <kbd>⇧↑↓←→</kbd> verplaatsen
+          <kbd>spatie</kbd> klaar
+          <kbd>n</kbd> nieuw
+          <kbd>esc</kbd> los
+        </div>
+      )}
       {dagen.map((dag) => {
         const toonAfgerond = afgerondOpen.has(dag.key)
         // De nu-streep valt vóór de eerste taak die nog moet komen.
@@ -357,6 +387,14 @@ export function TakenStapelView({
                   : <p className="stapel-leeg">{dag.isVerleden ? 'Niets meer open' : 'Vrij'}</p>
               )}
             </div>
+
+            {/* De rest van de kolom is klikbaar · een lege plek onder de dag is
+                waar je intuïtief een nieuwe taak begint. */}
+            <button
+              className="stapel-vulling"
+              aria-label={`Taak toevoegen op ${DAY_LABELS[dag.dayIndex]} ${dag.day.getDate()}`}
+              onClick={() => { setAddDag(dag.key); setAddTitel(''); setTimeout(() => addRef.current?.focus(), 40) }}
+            />
 
             {dag.afgerond.length > 0 && (
               <div className="stapel-afgerond">

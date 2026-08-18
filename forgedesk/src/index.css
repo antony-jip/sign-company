@@ -4402,3 +4402,55 @@ button.doen-panel:hover {
   .taak-af-titel.is-net-af::after { animation: none; }
   .taak-vink-vast { animation: none; }
 }
+
+/* De lege ruimte onder een dag is een knop · zonder hem te laten opvallen. */
+.stapel-vulling {
+  flex: 1 1 auto;
+  min-height: 44px;
+  border-radius: 10px;
+  cursor: text;
+  transition: background-color 160ms ease;
+}
+.stapel-vulling:hover { background: color-mix(in srgb, #1A535C 3%, transparent); }
+.dark .stapel-vulling:hover { background: color-mix(in srgb, #FFFFFF 3%, transparent); }
+
+/* Sneltoetsen verschijnen pas als je het toetsenbord pakt · daarvoor zijn ze
+   ruis, daarna zijn ze precies wat je nodig hebt. */
+.stapel-toetsen {
+  position: fixed;
+  left: 50%;
+  bottom: 52px;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 11px;
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  background: color-mix(in srgb, hsl(var(--card)) 90%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(130, 100, 60, 0.14);
+  box-shadow: 0 6px 20px -8px rgba(26, 45, 50, 0.22);
+  transform: translateX(-50%);
+  animation: sleep-acties-op 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: none;
+}
+.dark .stapel-toetsen { border-color: rgba(255, 255, 255, 0.09); }
+
+.stapel-toetsen kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  padding: 2px 5px;
+  margin-left: 6px;
+  border-radius: 5px;
+  color: #1A535C;
+  background: color-mix(in srgb, #1A535C 8%, transparent);
+  border: 1px solid color-mix(in srgb, #1A535C 14%, transparent);
+}
+.stapel-toetsen kbd:first-child { margin-left: 0; }
+.dark .stapel-toetsen kbd { color: #9FC5CC; background: color-mix(in srgb, #9FC5CC 12%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .stapel-toetsen { animation: none; }
+}
