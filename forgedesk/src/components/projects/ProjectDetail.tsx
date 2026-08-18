@@ -164,6 +164,7 @@ import { ActiviteitFeed, buildActivityFeed, type ActivityEvent } from './cockpit
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
+import { SchattingSelect } from '@/components/shared/TaakVelden'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto, AuditLogEntry, Contactpersoon, ContactpersoonRecord, Maatje } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
@@ -449,6 +450,7 @@ export function ProjectDetail() {
   const [nieuweTaakToegewezen, setNieuweTaakToegewezen] = useState('')
   const [nieuweTaakDeadline, setNieuweTaakDeadline] = useState(() => new Date().toISOString().split('T')[0])
   const [nieuweTaakStatus, setNieuweTaakStatus] = useState<Taak['status']>('todo')
+  const [nieuweTaakGeschat, setNieuweTaakGeschat] = useState(0)
   const [nieuweTaakPrioriteit, setNieuweTaakPrioriteit] = useState<Taak['prioriteit']>('medium')
 
   const [project, setProject] = useState<Project | null>(null)
@@ -2728,6 +2730,13 @@ export function ProjectDetail() {
             </div>
 
             {/* Deadline · eigen sectie met snel-pillen */}
+            {/* Schatting · de stapel in Taken tekent hier zijn blokhoogte mee
+                en de dagkop telt er zijn uren mee op. */}
+            <div className="px-7 pb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Schatting</p>
+              <SchattingSelect waarde={nieuweTaakGeschat} onChange={setNieuweTaakGeschat} />
+            </div>
+
             <div className="px-7 pb-4">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Deadline</p>
               <div className="flex items-center gap-2 flex-wrap">
@@ -2849,7 +2858,7 @@ export function ProjectDetail() {
                       prioriteit: nieuweTaakPrioriteit,
                       toegewezen_aan: nieuweTaakToegewezen.trim(),
                       deadline: nieuweTaakDeadline || new Date().toISOString().split('T')[0],
-                      geschatte_tijd: 0,
+                      geschatte_tijd: nieuweTaakGeschat,
                       bestede_tijd: 0,
                     })
                     logCreate({ user, medewerkers: alleMedewerkers, entityType: 'taak', entityId: newTaak.id })
