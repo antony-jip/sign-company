@@ -17,8 +17,8 @@ export default {
       fontFamily: {
         sans: ['"Inter"', '"IBM Plex Sans"', 'system-ui', 'sans-serif'],
         heading: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', '"DM Mono"', '"Space Grotesk"', 'ui-monospace', 'monospace'],
-        cijfer: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['Inter', 'ui-monospace', 'monospace'],
+        cijfer: ['Inter', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         "2xs": ["10px", { lineHeight: "14px" }],

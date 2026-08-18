@@ -10,7 +10,7 @@
    ================================================================ */
 
 /* ================================================================
-   FONTS — Inter overal; IBM Plex Mono voor code, Instrument Serif als accent
+   FONTS — Inter, en alleen Inter
    ================================================================ */
 
 @layer base {
@@ -427,13 +427,12 @@
   h3 { @apply text-lg font-semibold; }
   h4 { @apply text-base font-medium; }
 
-  /* Alle getallen in Space Grotesk met tabular-nums */
+  /* Alle getallen op tabular-nums · uitlijnen zonder een eigen letter */
   .font-mono, [data-mono],
   input[type="number"],
   input[inputmode="numeric"],
   input[inputmode="decimal"],
   input[inputmode="tel"] {
-    font-family: 'Space Grotesk', system-ui, sans-serif;
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum' 1;
     letter-spacing: -0.3px;
@@ -2240,7 +2239,6 @@ html, body, #root {
 
 /* KPI card — oversized number with subtle gradient text */
 .wm-kpi-value {
-  font-family: 'IBM Plex Mono', 'DM Mono', monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
   line-height: 1;
@@ -2283,7 +2281,6 @@ html, body, #root {
 
 /* Number highlight — for inline metrics */
 .wm-number-highlight {
-  font-family: 'IBM Plex Mono', 'DM Mono', monospace;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: hsl(var(--foreground));
@@ -2520,13 +2517,11 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 
 /* Serif italic accent */
 .lf-serif-accent {
-  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
 }
 
 /* Price number styling */
 .lf-price-number {
-  font-family: 'IBM Plex Mono', 'DM Mono', monospace;
   font-weight: 800;
 }
 
@@ -2829,7 +2824,6 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 
 /* ── Number Display — Large, premium data presentation ── */
 .display-number {
-  font-family: 'IBM Plex Mono', 'DM Mono', ui-monospace, SFMono-Regular, monospace;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
