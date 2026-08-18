@@ -109,9 +109,9 @@ export function Header() {
       />
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         {/* Zoeken · stond in het midden, maar dat is nu de plek van de module. */}
-        <GlobalSearch className="hidden md:flex w-44 lg:w-56" />
+        <GlobalSearch className="hidden md:flex w-44 lg:w-56 mr-1.5" />
 
         {/* Mobile search button */}
         <Button

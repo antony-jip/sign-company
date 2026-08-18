@@ -72,6 +72,7 @@ import { getCached, fetchQuery } from '@/lib/queryCache'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import { ProjectCombobox } from '@/components/shared/ProjectCombobox'
 import { ModuleToolbar } from '@/components/layouts/ModuleToolbar'
+import { NieuweTaakModal } from '@/components/quick-actions/NieuweTaakModal'
 import { SchattingSelect, deadlineLabel } from '@/components/shared/TaakVelden'
 import { Checkbox } from '@/components/ui/checkbox'
 import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
@@ -389,6 +390,7 @@ export function TasksLayout() {
 
   // Edit
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
   const [editingTaak, setEditingTaak] = useState<Taak | null>(null)
   const [formData, setFormData] = useState<TaakFormData>(EMPTY_FORM)
   const [isSaving, setIsSaving] = useState(false)
@@ -1078,6 +1080,16 @@ export function TasksLayout() {
   }, [montageAfspraken, weekDays, showMontage])
 
   // Week range label
+  const weekNummer = useMemo(() => {
+    // ISO-8601: de week van de donderdag bepaalt het nummer.
+    const d = new Date(weekDays[0])
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7))
+    const eersteDonderdag = new Date(d.getFullYear(), 0, 4)
+    eersteDonderdag.setDate(eersteDonderdag.getDate() + 3 - ((eersteDonderdag.getDay() + 6) % 7))
+    return 1 + Math.round((d.getTime() - eersteDonderdag.getTime()) / (7 * 86400000))
+  }, [weekDays])
+
   const weekLabel = useMemo(() => {
     const first = weekDays[0]
     const last = weekDays[weekDays.length - 1]
@@ -1546,7 +1558,6 @@ export function TasksLayout() {
                   : 'text-muted-foreground hover:text-foreground'
               )}>{label}</button>
             ))}
-            <span className="w-px h-3.5 bg-border" />
             <button onClick={() => setShowMontage(!showMontage)} className={cn(
               'text-[13px] py-1 transition-colors whitespace-nowrap flex items-center gap-1.5',
               showMontage
@@ -1555,9 +1566,12 @@ export function TasksLayout() {
             )}><Wrench className="w-3.5 h-3.5" />Montage</button>
           </div>
 
+          <span className="w-px h-4 bg-border/70 flex-shrink-0" aria-hidden />
+
+
           {/* Mijn-taken snelknop */}
-          {currentMedewerker && medewerkers.length > 0 && (() => {
-            const mijnActief = medewerkerFilter === currentMedewerker.naam
+          {currentMedewerker && medewerkers.length > 0 && !medewerkerFilter && (() => {
+            const mijnActief = false
             return (
               <button
                 type="button"
@@ -1582,25 +1596,27 @@ export function TasksLayout() {
               medewerkers={medewerkers}
               value={medewerkerFilter}
               onChange={handleMedewerkerFilterChange}
+              className="border-transparent bg-transparent hover:bg-muted text-[13px] flex-shrink-0"
             />
           )}
 
-          {/* View toggle · text-only met onderlijn-actief */}
-          <div className="inline-flex items-center gap-3 flex-shrink-0">
-            {([
-              ['week', 'Week'],
-              ['stapel', 'Stapel'],
-              ['maand', 'Maand'],
-              ['swimlane', 'Team'],
-            ] as const).map(([v, label]) => (
-              <button key={v} onClick={() => wisselWeergave(v)} className={cn(
-                'text-[13px] py-1 transition-colors',
-                viewMode === v
-                  ? 'text-foreground font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}>{label}</button>
-            ))}
-          </div>
+          <span className="w-px h-4 bg-border/70 flex-shrink-0" aria-hidden />
+
+          {/* Weergave · vier woorden naast elkaar namen evenveel ruimte als
+              de rest van de balk samen, terwijl er altijd maar één telt. */}
+          <Select value={viewMode} onValueChange={(v) => wisselWeergave(v as ViewMode)}>
+            <SelectTrigger className="h-7 w-auto flex-shrink-0 gap-1.5 rounded-md border-0 bg-transparent px-2 text-[13px] font-semibold text-foreground hover:bg-muted focus:ring-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start">
+              <SelectItem value="week">Week</SelectItem>
+              <SelectItem value="stapel">Stapel</SelectItem>
+              <SelectItem value="maand">Maand</SelectItem>
+              <SelectItem value="swimlane">Team</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <span className="w-px h-4 bg-border/70 flex-shrink-0" aria-hidden />
 
           {/* Date nav */}
           <div className="flex items-center gap-0.5">
@@ -1616,7 +1632,12 @@ export function TasksLayout() {
               onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
               title="Spring naar vandaag"
             >
-              {viewMode === 'maand' ? monthLabel : weekLabel}
+              {viewMode === 'maand' ? monthLabel : (
+                <>
+                  <span className="text-muted-foreground font-medium mr-1.5">wk {weekNummer}</span>
+                  {weekLabel}
+                </>
+              )}
             </button>
             <button
               className="p-1 rounded-full hover:bg-muted transition-all"
@@ -1635,12 +1656,34 @@ export function TasksLayout() {
             </button>
           )}
 
+          <span className="w-px h-4 bg-border/70 flex-shrink-0" aria-hidden />
+
           {/* Zoom · twee subtiele text-knoppen */}
           <div className="flex items-center gap-1">
             <button onClick={() => handleZoom(-4)} className="px-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors" title="Kleiner">A</button>
             <button onClick={() => handleZoom(4)} className="px-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors font-medium" title="Groter">A</button>
           </div>
+
+          <span className="w-px h-4 bg-border/70 flex-shrink-0" aria-hidden />
+
+          {/* Nieuwe taak · de zwevende knop rechtsonder staat er nog, maar
+              vanuit de balk is het één klik zonder eerst te zoeken waar hij zit. */}
+          <button
+            type="button"
+            onClick={() => setNieuweTaakOpen(true)}
+            title="Nieuwe taak"
+            aria-label="Nieuwe taak"
+            className="h-7 w-7 flex-shrink-0 rounded-full flex items-center justify-center text-flame hover:bg-flame/10 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
         </ModuleToolbar>
+
+        <NieuweTaakModal
+          open={nieuweTaakOpen}
+          onOpenChange={setNieuweTaakOpen}
+          onCreated={(taak) => setTaken((prev) => [...prev, taak])}
+        />
 
         <ModuleIntro
           id="taken"

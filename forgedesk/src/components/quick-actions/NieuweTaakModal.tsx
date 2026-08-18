@@ -3,7 +3,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { logger } from '@/utils/logger'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { createTaak, getProjecten, getMedewerkers } from '@/services/supabaseService'
-import type { Project, Medewerker } from '@/types'
+import type { Project, Medewerker, Taak } from '@/types'
 import { toast } from 'sonner'
 import { MedewerkerSelector } from '@/components/shared/MedewerkerSelector'
 import { ProjectCombobox } from '@/components/shared/ProjectCombobox'
@@ -14,9 +14,12 @@ import { logCreate } from '@/utils/auditLogger'
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Voor schermen die hun eigen takenlijst bijhouden · zonder dit verschijnt
+   *  een nieuwe taak pas na een verversing. */
+  onCreated?: (taak: Taak) => void
 }
 
-export function NieuweTaakModal({ open, onOpenChange }: Props) {
+export function NieuweTaakModal({ open, onOpenChange, onCreated }: Props) {
   const { user } = useAuth()
   const [projecten, setProjecten] = useState<Project[]>([])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
@@ -53,6 +56,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
         bestede_tijd: 0,
       })
       logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
+      onCreated?.(taak)
       toast.success('Taak toegevoegd')
       onOpenChange(false)
       setTitel('')
