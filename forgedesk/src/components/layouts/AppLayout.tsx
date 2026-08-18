@@ -80,6 +80,10 @@ export function AppLayout() {
   const isFullBleed = ['/email', '/planning', '/taken', '/montage', '/kalender', '/support', '/visualizer'].some(
     (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
   )
+  // Taken is een werkscherm waar je de hele dag in zit · daar kost elke extra
+  // balk bovenaan rust en ruimte. De tabbalk vervalt er; navigeren gaat via de
+  // zijbalk en de paginakop draagt de titel al.
+  const hideTabBar = location.pathname === '/taken' || location.pathname.startsWith('/taken/')
   useTabShortcuts()
 
   useEffect(() => {
@@ -137,7 +141,7 @@ export function AppLayout() {
               <>
                 <div className="flex-shrink-0">
                   {!hideTopNav && <TopNav />}
-                  <TabBar />
+                  {!hideTabBar && <TabBar />}
                 </div>
                 <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden page-content-enter p-0">
                   <Outlet />
@@ -182,7 +186,7 @@ export function AppLayout() {
                 praktisch onvindbaar. */}
             <div className="flex-shrink-0 bg-background">
               <Header />
-              <TabBar />
+              {!hideTabBar && <TabBar />}
             </div>
 
             <main className="flex-1 overflow-hidden flex flex-col min-h-0">

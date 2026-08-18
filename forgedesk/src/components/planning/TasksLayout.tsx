@@ -145,6 +145,17 @@ function getProjectColor(name: string): string {
 
 const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
 const MONTH_NAMES = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+// Projectnamen beginnen vaak met de klantnaam ("Toolstra Bouwbedrijf - Offerte").
+// Naast de klant erbij zou dat twee keer hetzelfde lezen, dus die kop eraf.
+function zonderKlantPrefix(projectNaam: string, klantNaam?: string): string {
+  if (!klantNaam) return projectNaam
+  const p = projectNaam.trim()
+  const k = klantNaam.trim()
+  if (!k || !p.toLowerCase().startsWith(k.toLowerCase())) return p
+  const rest = p.slice(k.length).replace(/^[\s-–—·|:]+/, '').trim()
+  return rest || p
+}
+
 const HOURS = Array.from({ length: 24 }, (_, i) => i) // 00:00 - 23:00
 const HOUR_HEIGHT_DEFAULT = 44
 const HOUR_HEIGHT_MIN = 36
@@ -2763,9 +2774,11 @@ function TaskCard({
 
   const isCompact = heightPx !== undefined && heightPx < 36
 
+  const projectLabel = projectNaam ? zonderKlantPrefix(projectNaam, klantNaam) : undefined
+
   // Volledige context in de hover-titel · op smalle of lage kaarten wordt de
   // regel met klant en project afgekapt of helemaal verborgen
-  const contextLabel = [klantNaam, projectNaam].filter(Boolean).join(' · ')
+  const contextLabel = [klantNaam, projectLabel].filter(Boolean).join(' · ')
   const cardTitle = contextLabel ? `${taak.titel} · ${contextLabel}` : taak.titel
 
   return (
@@ -2869,11 +2882,11 @@ function TaskCard({
             {klantNaam && (
               <span className="text-[11px] font-medium truncate flex-shrink-0 max-w-[65%]">{klantNaam}</span>
             )}
-            {klantNaam && projectNaam && (
+            {klantNaam && projectLabel && (
               <span className="text-[11px] opacity-40 flex-shrink-0">·</span>
             )}
-            {projectNaam && (
-              <span className="text-[11px] truncate opacity-75 min-w-0">{projectNaam}</span>
+            {projectLabel && (
+              <span className="text-[11px] truncate opacity-75 min-w-0">{projectLabel}</span>
             )}
           </div>
         )}
