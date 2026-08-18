@@ -4454,3 +4454,44 @@ button.doen-panel:hover {
 @media (prefers-reduced-motion: reduce) {
   .stapel-toetsen { animation: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TAKEN · STAPEL, NATUURLIJKE BEWEGING
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Kaarten komen na elkaar binnen in plaats van als één blok · het oog volgt de
+   kolom naar beneden zoals je hem ook leest. */
+@keyframes stapel-kaart-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+.taken-stapel .stapel-lijst > div > .stapel-kaart {
+  animation: stapel-kaart-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 22ms);
+}
+
+/* Een taak die naar de afgerond-sectie verhuist verplaatst zichtbaar, dankzij
+   de eigen view-transition-naam per kaart. */
+::view-transition-group(*) { animation-duration: 340ms; }
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Uitgeklapte afgeronde taken vouwen zichzelf open. */
+.stapel-afgerond .stapel-kaart {
+  animation: stapel-kaart-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* De kolom houdt zijn scroll bij zichzelf en glijdt naar de kaart die focus
+   krijgt in plaats van erheen te springen. */
+.taken-stapel { scroll-behavior: smooth; overscroll-behavior: contain; }
+
+.stapel-kaart:hover { will-change: transform, box-shadow; }
+.stapel-kaart { will-change: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .taken-stapel .stapel-lijst > div > .stapel-kaart,
+  .stapel-afgerond .stapel-kaart { animation: none; }
+  .taken-stapel { scroll-behavior: auto; }
+}

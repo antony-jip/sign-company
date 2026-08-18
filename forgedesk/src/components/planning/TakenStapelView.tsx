@@ -349,7 +349,7 @@ export function TakenStapelView({
 
             <div className="stapel-lijst">
               {dag.open.map((taak, i) => (
-                <div key={taak.id}>
+                <div key={taak.id} style={{ ['--i' as string]: i }}>
                   {nuIndex === i && <div className="stapel-nu" aria-hidden />}
                   <DropStrook
                     actief={dropDoel?.dag === dag.dayIndex && dropDoel?.index === i}
@@ -471,6 +471,7 @@ function StapelKaart({
     <article
       ref={kaartRef}
       className={cn('stapel-kaart', klaar && 'is-klaar', sleept && 'is-sleept', heeftFocus && 'heeft-focus')}
+      style={{ viewTransitionName: `taak-${taak.id.replace(/[^a-zA-Z0-9]/g, '')}` }}
       data-prio={taak.prioriteit}
       draggable
       onDragStart={(e) => {
