@@ -4,7 +4,7 @@ import path from 'path'
 
 // Stub for framer-motion — prevents TDZ error "Cannot access 'Ge' before
 // initialization" caused by framer-motion v12 being resolved from root
-// node_modules via hoisting, even though forgedesk doesn't depend on it.
+// node_modules via hoisting, even though the doen. app doesn't depend on it.
 const framerMotionStub = `
   export const motion = new Proxy({}, { get: () => 'div' });
   export const AnimatePresence = ({ children }) => children;

@@ -289,7 +289,7 @@ toevoegen.
 `useDashboardData()` voor interne data-fetch op basis van een
 Planner-claim: *"DashboardDataContext is app-breed geladen, bevestigd
 door alle module-layouts die useDashboardData al consumeren"*. Die
-claim was fout — de provider zit alleen in `FORGEdeskDashboard.tsx`
+claim was fout — de provider zit alleen in `DoenDashboard.tsx`
 rond de dashboard-index-route. Op elke andere route mount het
 component buiten de provider en crasht `useDashboardData` met
 `"useDashboardData must be used within DashboardDataProvider"`. Een

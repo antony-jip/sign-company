@@ -2,7 +2,7 @@ import { merk, modules } from "../../brand";
 import { fonts } from "../../fonts";
 import { T, TopNav, TabStrip } from "./AppChrome";
 
-// Geporte e-mail-inbox (forgedesk EmailLayout), rijk gevuld met demo-afzenders
+// Geporte e-mail-inbox (de doen.-app EmailLayout), rijk gevuld met demo-afzenders
 // (signbedrijf-context, fictief). Statische schil voor de montage.
 const MAILS = [
   { a: "Hotel De Linde", s: "Akkoord op offerte lichtbakken", t: "20:22", on: true, sel: true, bijlage: true, kl: modules.klanten.kleur },

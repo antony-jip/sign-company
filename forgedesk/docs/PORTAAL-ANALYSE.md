@@ -351,7 +351,7 @@ app_settings.portaal_instellingen (JSONB kolom)
 - **Base64 fallback in upload:** Als Supabase Storage faalt, worden bestanden als base64 data URLs opgeslagen in de database (regel 102 van portaal-upload.ts). Dit kan de database opblazen
 - **`PortaalSidebarCard.tsx` is 869 regels:** Bevat veel logica voor items toevoegen, berichten, bestanden — overweeg opsplitsen
 - **Dubbele portaal functies:** `getAllPortalen()` (zonder userId filter) en `getAllePortalen(userId)` doen bijna hetzelfde maar met andere queries. Verwarrend
-- **Branding "Doen." vs "FORGEdesk":** De email templates in `portaal-reactie.ts` gebruiken "Doen." branding (regel 44, 47) terwijl de app "FORGEdesk" heet. Dit is ofwel de nieuwe merknaam of een inconsistentie
+- **Branding:** ~~De email templates in `portaal-reactie.ts` gebruiken "Doen." branding (regel 44, 47) terwijl de app "FORGEdesk" heet.~~ Opgelost — de merknaam is overal **doen.**
 - **Email sturen is niet-blokkerend:** `sendMail()` draait als fire-and-forget promise (regel 279-287), fouten worden alleen gelogd. Klant weet niet of bedrijf de reactie email ontvangen heeft
 
 ### Aanbevelingen
@@ -361,4 +361,4 @@ app_settings.portaal_instellingen (JSONB kolom)
 3. **Verwijder base64 fallback** in portaal-upload — beter een error tonen dan de DB vullen
 4. **Splits PortaalSidebarCard** op in kleinere componenten
 5. **Maak email templates configureerbaar** — gebruik de templates uit PortaalInstellingen
-6. **Kies één merknaam** — "Doen." of "FORGEdesk"
+6. ~~**Kies één merknaam**~~ — gedaan, de merknaam is overal **doen.**

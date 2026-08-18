@@ -2,7 +2,7 @@ import { merk, modules } from "../../brand";
 import { fonts } from "../../fonts";
 import { T, TopNav, TabStrip } from "./AppChrome";
 
-// Geporte werkbon-editor (forgedesk WerkbonDetail). Verzonnen De Linde-data; de
+// Geporte werkbon-editor (de doen.-app WerkbonDetail). Verzonnen De Linde-data; de
 // situatiefoto is een nette abstractie met opmeting-annotaties (echte foto n.v.t.).
 const WERKBON = "WB-2026-0188";
 const WB_FLAME = modules.werkbonnen.kleur; // #C44830

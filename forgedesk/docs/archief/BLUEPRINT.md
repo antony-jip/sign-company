@@ -71,7 +71,7 @@ Lazy-loaded via `React.lazy()`. Authentication via `<ProtectedRoute>`. Adaptive 
 
 | Pad | Component | Doel |
 |---|---|---|
-| `/` | FORGEdeskDashboard | Hoofddashboard, KPI's, snelle acties |
+| `/` | DoenDashboard | Hoofddashboard, KPI's, snelle acties |
 | `/projecten`, `/projecten/nieuw`, `/projecten/:id` | ProjectsList / ProjectCreate / ProjectDetail | Projectenmodule |
 | `/klanten`, `/klanten/:id` | ClientsLayout / ClientProfile | Klantenmodule |
 | `/deals`, `/deals/:id` | DealsLayout / DealDetail | Sales-pipeline |
@@ -95,7 +95,7 @@ Lazy-loaded via `React.lazy()`. Authentication via `<ProtectedRoute>`. Adaptive 
 | `/nacalculatie` | NacalculatieLayout | Nacalculatie |
 | `/team` | TeamLayout | Teamleden, rollen |
 | `/importeren` | DataImportPage | Bulk-import (CSV/Excel/JamesPro) |
-| `/ai`, `/forgie` | FORGEdeskAIChat / ForgieChatPage | Daan AI-chat |
+| `/ai`, `/forgie` | DoenAIChat / ForgieChatPage | Daan AI-chat |
 | `/kennisbank` | KennisbankPage | Interne kennisbank |
 | `/changelog` | ChangelogPage | Release notes |
 | `/booking` | BookingBeheer | Beheer publieke bookinglinks |
@@ -125,7 +125,7 @@ Component-tree onder `src/components/` heeft 28+ feature-mappen.
 - **email** — EmailLayout (lijst + reader + compose), ReaderAIToolbar, ComposePage, Templates, CRMSidebar, ContextSidebar, IngeplandeBerichtenLijst.
 - **financial** — UitgavenLayout, LeveranciersLayout, VoorraadLayout, DiscountsSettings, VATCodesSettings, GeneralLedgerSettings.
 - **visualizer** — VisualizerLayout, Gallery, Lightbox, SigningVisualizerDialog (3D), CreditsPakketDialog, KostenDashboard.
-- **forgie** — Daan-chat (ChatPage, Widget, app-wide FORGEdeskAIChat), ActieKaart, Avatar, AITextGenerator.
+- **forgie** — Daan-chat (ChatPage, Widget, app-wide DoenAIChat), ActieKaart, Avatar, AITextGenerator.
 - **documents / leads / kennisbank / changelog** — Documenten-pipeline, leadformulier-editor + publieke pagina, KB-artikelen, changelog.
 - **import** — DataImportPage + ImportWizard (bedrijfsdata, contactpersonen, JamesPro, losse contacten, hulpbanner).
 - **settings** — Profiel, Team, Bedrijf, Huisstijl, Portaal, Integraties, Kennisbank, Calculatie, Kostenplaatsen, Abonnement, Forgie, Visualizer, Beveiliging, Weergave, Sidebar. Submap **communicatie/** met Mijn Email, Templates, Factuur/Offerte-opvolging, PortaalEmails, Onboarding/Trial, TemplateEditor.

@@ -9,7 +9,7 @@
 const isDesktop = () => window.matchMedia('(min-width: 768px)').matches
 
 const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
-  '/': () => import('@/components/dashboard/FORGEdeskDashboard'),
+  '/': () => import('@/components/dashboard/DoenDashboard'),
   '/projecten': () => import('@/components/projects/ProjectsList'),
   '/klanten': () => import('@/components/clients/ClientsLayout'),
   '/leveranciers': () => import('@/components/financial/LeveranciersLayout'),

@@ -37,7 +37,7 @@ Datum: 2026-03-15
 | 25 | Race condition | `VisualizerLayout.tsx:111` | 3 parallelle fetches + setTimeout zonder cleanup | Memory leak + stale state |
 | 26 | Race condition | `ForgieTab.tsx:135` | 4 parallelle fetches zonder cancelled flag | setState op unmounted component |
 | 27 | Race condition | `CalculatieModal.tsx:132` | Catalogus laden bij modal open zonder cleanup | Stale data bij snel open/close |
-| 28 | Race condition | `FORGEdeskAIChat.tsx:448` | Facturen laden zonder cancelled flag | Memory leak |
+| 28 | Race condition | `DoenAIChat.tsx:448` | Facturen laden zonder cancelled flag | Memory leak |
 
 ## Known Limitations (niet gefixt, wel gedocumenteerd)
 

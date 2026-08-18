@@ -1,7 +1,7 @@
-# FORGEdesk Audit Report
+# doen. Audit Report
 
 **Datum:** 2026-03-14
-**Scope:** Volledige pre-RLS audit van de FORGEdesk codebase
+**Scope:** Volledige pre-RLS audit van de doen. codebase
 **Repository:** `forgedesk/` in `sign-company`
 **Supabase project:** hrqxmelzguhohzzwjfzg
 
@@ -106,7 +106,7 @@
 - **Bestand**: `vercel.json:15`
 - **Probleem**: Alle API routes accepteren cross-origin requests van elk domein.
 - **Consequentie**: Elke website kan de publieke endpoints aanroepen. In combinatie met de onbeveiligde email-routes is dit extra gevaarlijk.
-- **Fix richting**: Restrict naar `https://app.forgedesk.io`.
+- **Fix richting**: Restrict naar `https://app.doen.team`.
 - **Geschatte effort**: S
 
 ### B14: ClientProfile crasht op niet-bestaand klant-UUID
@@ -198,7 +198,7 @@
 ### H11: OAuth CSRF in Exact Online integratie
 - **Bestand**: `api/exact-auth.ts:48`, `api/exact-callback.ts:17`
 - **Probleem**: OAuth `state` parameter is het rauwe `user_id` zonder HMAC of nonce.
-- **Consequentie**: Aanvaller kan zijn Exact Online account koppelen aan het FORGEdesk account van een slachtoffer.
+- **Consequentie**: Aanvaller kan zijn Exact Online account koppelen aan het doen.-account van een slachtoffer.
 - **Fix richting**: Voeg HMAC signing toe aan de state parameter.
 - **Geschatte effort**: M
 

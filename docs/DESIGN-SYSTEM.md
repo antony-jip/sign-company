@@ -400,8 +400,12 @@ Regels:
 
 ## 9. Migratiestrategie: FORGEdesk → Doen
 
+> **Status:** Laag 2 (tekst en branding) is uitgevoerd — de naam "FORGEdesk" komt
+> nergens meer voor als productnaam. "Forgie" → "Daan" staat nog open. De oude
+> naam blijft in dit hoofdstuk staan omdat het hier het onderwerp is.
+
 ### BELANGRIJK
-De huidige app (FORGEdesk) werkt en is live. Elke migratiestap moet:
+De app werkt en is live. Elke migratiestap moet:
 - De app werkend houden na elke stap
 - Getest worden met `npm run build` voor push
 - In een eigen Claude Code sessie gedaan worden (nooit alles tegelijk)

@@ -1,4 +1,4 @@
--- FORGEdesk Database Schema for Supabase
+-- doen. Database Schema for Supabase
 -- Voer dit uit in de Supabase SQL Editor
 
 -- ============================================================

@@ -1,8 +1,8 @@
 {
-  "name": "forgedesk",
+  "name": "doen",
   "version": "1.0.0",
   "private": true,
-  "description": "FORGEdesk - De alles-in-één bedrijfssoftware voor creatieve bedrijven",
+  "description": "doen. - De alles-in-één bedrijfssoftware voor creatieve bedrijven",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

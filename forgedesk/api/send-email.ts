@@ -335,7 +335,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       processedHtml = processedHtml.replace(
         /<img([^>]*)src="data:(image\/(png|jpeg|jpg|gif|webp|svg\+xml));base64,([^"]+)"([^>]*)>/gi,
         (_match, before, mimeType, ext, b64Data, after) => {
-          const cid = `inline-${crypto.randomUUID()}@forgedesk`
+          const cid = `inline-${crypto.randomUUID()}@doen.team`
           const extension = ext.replace('+xml', '').replace('jpeg', 'jpg')
           inlineAttachments.push({
             filename: `inline-${imgIndex++}.${extension}`,

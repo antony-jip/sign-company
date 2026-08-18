@@ -3,7 +3,7 @@ import { Img, staticFile } from "remotion";
 import { merk, modules } from "../../brand";
 import { fonts } from "../../fonts";
 
-// Geporte OVERZICHT-tab van forgedesk ProjectDetail (cockpit-subcomponenten:
+// Geporte OVERZICHT-tab van de doen.-app ProjectDetail (cockpit-subcomponenten:
 // CockpitTopBar, ProjectFaseBar, BriefingCard, TakenOfferteGrid, KlantCard,
 // ActiesCard). Shadcn-tokens vertaald naar expliciete waarden; hooks/data/
 // handlers gestript; verzonnen, on-brand data (geen echte klantgegevens).

@@ -2,7 +2,7 @@ import { merk } from "../../brand";
 import { fonts } from "../../fonts";
 import { T, TopNav, TabStrip } from "./AppChrome";
 
-// Geport klantportaal-blok (forgedesk PortaalPanel). Verzonnen De Linde-data.
+// Geport klantportaal-blok (de doen.-app PortaalPanel). Verzonnen De Linde-data.
 // Statische schil voor de montage.
 export const PortaalScreen: React.FC = () => (
   <div style={{ backgroundColor: T.page, fontFamily: fonts.body }}>

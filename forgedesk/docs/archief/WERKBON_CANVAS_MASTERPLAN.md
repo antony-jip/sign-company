@@ -723,7 +723,7 @@ Bij regressie in jsPDF render: feature-flag terug naar lagere fase → flow-base
 |---|---|---|
 | 1 | Per-item drop-zone of centraal? | **Per-item drop-zone, geen centrale.** Nieuwe items via "+ Item toevoegen" knop zoals nu. Voorkomt twee patronen voor één actie. |
 | 2 | Logo-blok render specs? | **Vast 40×40mm rechtsboven in item-block voor fase 1.** In fase 3 wordt 'ie vrij plaatsbaar zoals andere blokken. |
-| 3 | Drop-zone styling? | **Dashed flame-border (#F15025) tijdens dragover op cream-bg (#F8F7F5).** Conform forgedesk-design skill. |
+| 3 | Drop-zone styling? | **Dashed flame-border (#F15025) tijdens dragover op cream-bg (#F8F7F5).** Conform doen-design skill. |
 | 4 | Mobile-fork keuze? | **Optie C direct vanaf fase 1**: aparte `WerkbonMonteurView` component. Clean separation, geen conditional-rendering-hel. Iets meer werk nu, veel minder pijn later. |
 | 5 | Migratie 114 vrij? | **Repo: ja, 113 is laatste.** Vóór fase 1 commit moet Antony bevestigen dat `schema_migrations` in productie geen parallel 114 heeft. Zo wel → 115. Vermelden in commit message. |
 

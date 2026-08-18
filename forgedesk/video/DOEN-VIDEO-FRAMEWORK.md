@@ -1,7 +1,7 @@
 # DOEN-VIDEO-FRAMEWORK
 
 PROJECT: product-demo video van doen. in Remotion (~/doen-video).
-FORGEDESK BRON: ~/sign-company/forgedesk (Vite/React app, Tailwind 3.4).
+DOEN BRON: ~/sign-company/forgedesk (Vite/React app, Tailwind 3.4).
 
 ## FORMAAT
 Hoofd 1920x1080 16:9 30fps (web hero + YouTube). Variant 1080x1920 9:16 voor social.
@@ -29,18 +29,18 @@ Module-kleuren:
 - team #5A5A55
 - email #6A5A8A
 
-## APP-CONTENT (FORGEdesk warm-pastel, voor mockups)
+## APP-CONTENT (warm-pastel van de app, voor mockups)
 - pageBg #F4F3F0
 - card #FFFFFE
 - accent #CC8A3F
 - status sage / mist / coral
 
-Lees de echte waarden uit forgedesk src/index.css en tailwind.config.js en port ze
+Lees de echte waarden uit forgedesk/src/index.css en forgedesk/tailwind.config.js en port ze
 naar v4-stijl in index.css.
 
 ## FONTS
 - Bricolage Grotesque 800 (koppen)
-- Inter (body) -- zoals forgedesk zelf; niet DM Sans
+- Inter (body) -- zoals de app zelf; niet DM Sans
 - DM Mono (cijfers/bedragen)
 
 Via @remotion/google-fonts.
@@ -60,7 +60,7 @@ Via @remotion/google-fonts.
 7. CTA (doen., app.doen.team, "30 dagen gratis. geen contract. begin vandaag.").
 
 ## PORT-STRATEGIE (sectie 5b)
-Held-scenes niet natekenen. Lees het echte forgedesk-component, neem JSX + classNames
+Held-scenes niet natekenen. Lees het echte app-component, neem JSX + classNames
 exact over, strip data/context/hooks (Supabase, AuthContext, react-router), hardcode
 realistische voorbeelddata, en laat beweging van Remotion komen
 (useCurrentFrame/interpolate), niet van de component. Snelle niet-bewegende schermen

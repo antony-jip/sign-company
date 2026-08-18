@@ -30,8 +30,9 @@ const DEFAULT_CONFIG: ProjectSidebarConfig = {
 
 export function useProjectSidebarConfig() {
   const [config, setConfig] = useLocalStorage<ProjectSidebarConfig>(
-    'forgedesk-project-sidebar-config',
+    'doen-project-sidebar-config',
     DEFAULT_CONFIG,
+    'forgedesk-project-sidebar-config',
   )
 
   // Ensure all keys exist (in case new ones were added)

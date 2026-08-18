@@ -3,7 +3,7 @@ import { merk } from "../../brand";
 import { fonts } from "../../fonts";
 import { T, TopNav } from "./AppChrome";
 
-// Geport doen.-dashboard (forgedesk home), rijk gevuld met demo-data die
+// Geport doen.-dashboard (de doen.-app, home), rijk gevuld met demo-data die
 // consistent is met de rest van de video (Remco, fictieve signbedrijf-data). Ontworpen
 // op 1790px breedte zodat het in de browser-frame meeschaalt zoals de andere
 // schermen. Dit is de "alles op één plek"-onthulling van scene 2.

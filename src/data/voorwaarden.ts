@@ -373,7 +373,7 @@ export const bijlageA: Artikel[] = [
 ]
 
 /* ── Bijlage B · sub-verwerkers ─────────────────────────────────
-   Afgeleid uit de integraties in forgedesk: elke partij met een eigen
+   Afgeleid uit de integraties in de doen.-app: elke partij met een eigen
    API-sleutel of externe host. Wijzigt er iets, werk dan deze lijst bij
    en meld het 30 dagen vooraf (Bijlage A, artikel A5). */
 

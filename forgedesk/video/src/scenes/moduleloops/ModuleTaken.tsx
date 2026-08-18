@@ -4,7 +4,7 @@ import { TakenScreen } from "../screens/TakenScreen";
 import { LoopAchtergrond, LoopChip } from "./LoopKader";
 import { LoopCursor } from "./LoopCursor";
 
-// Module-loop Taken: de echte Team-swimlane (forgedesk TasksLayout.tsx,
+// Module-loop Taken: de echte Team-swimlane (TasksLayout.tsx,
 // viewMode 'swimlane') in plaats van de oude lijst-per-collega. De
 // toolbar komt op, de swimlane bouwt rij voor rij op, de kritieke taak
 // van Remco op vandaag springt eruit, de cursor vinkt hem af (teller

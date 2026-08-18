@@ -1,13 +1,13 @@
-# FORGEdesk Website Styleguide
+# doen. Website Styleguide
 ## Voor Claude Code implementatie in Next.js
 
 ---
 
 ## 0. Scope & context
 
-**Dit document gaat ALLEEN over de marketingsite op forgedesk.io.**
+**Dit document gaat ALLEEN over de marketingsite op doen.team.**
 
-Dit is NIET de app-styleguide. De FORGEdesk app (app.forgedesk.io) draait op Vite + React in de `/forgedesk` map en heeft een eigen design system. Deze styleguide heeft daar niks mee te maken. Niet mixen.
+Dit is NIET de app-styleguide. De doen.-app (app.doen.team) draait op Vite + React in de `/forgedesk` map en heeft een eigen design system. Deze styleguide heeft daar niks mee te maken. Niet mixen.
 
 **Technisch:**
 - Next.js project in de root van `sign-company/` (met `src/app/`, `src/components/`)
@@ -19,8 +19,8 @@ Dit is NIET de app-styleguide. De FORGEdesk app (app.forgedesk.io) draait op Vit
 **Pagina's:** Op dit moment is er alleen een homepage (one-page). Toekomstige pagina's (/pricing, /features, /over-ons) volgen dezelfde styleguide.
 
 **Links:**
-- "Start gratis" / "Start 30 dagen gratis" → linkt naar de sign-up flow op app.forgedesk.io (of een /aanmelden route)
-- "Inloggen" → app.forgedesk.io/login
+- "Start gratis" / "Start 30 dagen gratis" → linkt naar de sign-up flow op app.doen.team (of een /aanmelden route)
+- "Inloggen" → app.doen.team/login
 - "Bekijk hoe het werkt" → scroll anchor naar de stappen-sectie (#stappen)
 
 **Visuele referenties:**
@@ -583,13 +583,13 @@ export default {
 
 ```tsx
 export const metadata: Metadata = {
-  title: 'FORGEdesk — Bedrijfssoftware voor signmakers & monteurs',
+  title: 'doen. — Bedrijfssoftware voor signmakers & monteurs',
   description: 'Van offerte tot factuur in minuten. €49/maand voor je hele team. Geen kosten per gebruiker.',
   openGraph: {
-    title: 'FORGEdesk — Smeed je bedrijf tot een geoliede machine',
+    title: 'doen. — Smeed je bedrijf tot een geoliede machine',
     description: 'Bedrijfssoftware voor signmakers, interieurbouwers en monteurs. 30 dagen gratis.',
-    url: 'https://forgedesk.io',
-    siteName: 'FORGEdesk',
+    url: 'https://doen.team',
+    siteName: 'doen.',
     locale: 'nl_NL',
     type: 'website',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
@@ -599,7 +599,7 @@ export const metadata: Metadata = {
 
 **Favicon:** Zet een favicon.ico en apple-touch-icon.png in `public/`. Gebruik het FORGE logo-mark (zwart vierkant met afgeronde hoeken, witte "F" erin) of genereer er één.
 
-**OG image:** Maak een 1200×630px afbeelding met de gradient mesh achtergrond + "FORGEdesk" in Donatto + de tagline. Zet in `public/og-image.png`.
+**OG image:** Maak een 1200×630px afbeelding met de gradient mesh achtergrond + "doen." in Donatto + de tagline. Zet in `public/og-image.png`.
 
 ---
 
@@ -611,12 +611,12 @@ Simpel, één regel. Geen mega-footer met 4 kolommen.
 Layout: flex, space-between, border-top 1px ink-10
 Padding: 40px 48px
 Font: 13px, color ink-40
-Links: Privacy · Voorwaarden · support@forgedesk.io
+Links: Privacy · Voorwaarden · hello@doen.team
 Links hover: color ink-60
 ```
 
-Tekst links: `© 2026 FORGEdesk`
-Tekst rechts: `Privacy · Voorwaarden · support@forgedesk.io`
+Tekst links: `© 2026 doen.`
+Tekst rechts: `Privacy · Voorwaarden · hello@doen.team`
 
 ---
 

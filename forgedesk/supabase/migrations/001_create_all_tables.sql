@@ -1,5 +1,5 @@
 -- ============================================================
--- ForgeDesk: Volledige database migratie
+-- doen.: Volledige database migratie
 -- Alle tabellen gebaseerd op forgedesk/src/types/index.ts
 -- ============================================================
 

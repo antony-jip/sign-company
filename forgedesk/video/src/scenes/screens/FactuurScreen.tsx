@@ -2,7 +2,7 @@ import { merk, modules } from "../../brand";
 import { fonts } from "../../fonts";
 import { T, TopNav, TabStrip } from "./AppChrome";
 
-// Geporte factuur-editor (forgedesk FactuurEditor) conform screenshot. Verzonnen
+// Geporte factuur-editor (de doen.-app FactuurEditor) conform screenshot. Verzonnen
 // De Linde-data; bedragen consistent met offerte/factuur-thread.
 const GROEN = modules.facturen.kleur; // #2D6B48
 const FACTNR = "2026117";

@@ -1,7 +1,7 @@
 # UX-analyse doen. — april/mei 2026
 
 > Bron: code-pass op `forgedesk/src/components/` op 2026-05-04.
-> Methode: lezen + grep, geen browser-test. Diepte op `FORGEdeskDashboard` + sweep over 8 modules.
+> Methode: lezen + grep, geen browser-test. Diepte op `DoenDashboard` + sweep over 8 modules.
 > Streefdatum launch: 17 mei 2026 (T-13 dagen).
 
 ---
@@ -21,7 +21,7 @@ Inconsistent en functioneel zwak. Van de 28 widget-files gebruikt **0** het Shad
 Slechts **6 van 28** dashboard-files hebben een echte empty-state UI: `ActionBlock`, `CalendarMiniWidget`, `OpenstaandeOffertesWidget`, `SalesFollowUpWidget`, `TodayPlanningWidget`, `WorkflowWidget`. `MoneyBlock`, `RecenteActiviteitWidget`, `PriorityTasks`, `TeFacturerenWidget`, `InboxPreviewWidget`, `OpenstaandeOffertesWidget` (gedeeltelijk) tonen óf niets óf een leeg blok bij geen data. `AanDeSlagSectie` (`AanDeSlagSectie.tsx:35-167`) is wel een sterke onboarding-empty (zes tegels, voortgangsbalk, dismiss).
 
 ### 3. Visuele hiërarchie ⚠️
-- ✅ Hero greeting (`FORGEdeskDashboard.tsx:222-231`) + datum is sterk en persoonlijk.
+- ✅ Hero greeting (`DoenDashboard.tsx:222-231`) + datum is sterk en persoonlijk.
 - ✅ Verlopen-facturen alert (rood, regel 242-256) trekt het oog goed.
 - ⚠️ Daarna geen voorgeschreven volgorde: gebruiker schuift widgets via drag-and-drop zelf op volgorde. Voor een **default-dashboard** voelt dat als het probleem doorschuiven naar de gebruiker. Wat een signbedrijf-eigenaar 's ochtends wil ("wat moet ik vandaag doen?") moet bij elkaar in één blok staan, niet verspreid over 3 widgets (TodayPlanning + ActionBlock-die-niet-bestaat + PriorityTasks).
 - ⚠️ Statistieken (6 cards, `StatisticsCards.tsx`) is mooi maar voelt secundair t.o.v. "wat moet ik nu doen". Defaultgewijs staat het bovenaan het grid.
@@ -76,8 +76,8 @@ Buiten scope (Sidebar/TopNav niet gelezen). Spot-check: TabBar + MobileBottomNav
 
 | Bestand | Regels | Status |
 |---|---|---|
-| `ActionBlock.tsx` | 252 | Geïmporteerd in `FORGEdeskDashboard.tsx:7`, **niet in registry** |
-| `MoneyBlock.tsx` | 167 | Geïmporteerd in `FORGEdeskDashboard.tsx:8`, **niet in registry** |
+| `ActionBlock.tsx` | 252 | Geïmporteerd in `DoenDashboard.tsx:7`, **niet in registry** |
+| `MoneyBlock.tsx` | 167 | Geïmporteerd in `DoenDashboard.tsx:8`, **niet in registry** |
 | `SalesFollowUpWidget.tsx` | 582 | Niet geïmporteerd |
 | `WorkflowWidget.tsx` | 168 | Niet geïmporteerd |
 | `AIInsightWidget.tsx` | 218 | Niet geïmporteerd |
@@ -167,13 +167,13 @@ Geprioriteerd op zichtbare-impact-per-uur:
    `QuotesPipeline.tsx:121`. Lost feedback-memory inconsistentie op. Eén regel.
 
 3. **Dead code uit `dashboard/` verwijderen** (~45 min)
-   Verwijder `ActionBlock.tsx`, `MoneyBlock.tsx`, `SalesFollowUpWidget.tsx`, `WorkflowWidget.tsx`, `AIInsightWidget.tsx`, `EmailCommunicationHub.tsx`, `SalesForecastWidget.tsx`, `SalesPulseWidget.tsx` + de twee dode imports in `FORGEdeskDashboard.tsx:7-8`. ~1.775 regels schoner. **Of** integreer ActionBlock terug — zie 'Grotere brokken'.
+   Verwijder `ActionBlock.tsx`, `MoneyBlock.tsx`, `SalesFollowUpWidget.tsx`, `WorkflowWidget.tsx`, `AIInsightWidget.tsx`, `EmailCommunicationHub.tsx`, `SalesForecastWidget.tsx`, `SalesPulseWidget.tsx` + de twee dode imports in `DoenDashboard.tsx:7-8`. ~1.775 regels schoner. **Of** integreer ActionBlock terug — zie 'Grotere brokken'.
 
 4. **Skeletons i.p.v. spinners in dashboard-widgets** (~90 min)
    22 widgets met `Loader2` vervangen door `<Skeleton>` of een per-widget skeleton-shape. Eindresultaat: geen layout-shift bij settled state, "alles is altijd er, maar is nog leeg" gevoel. Begin met de 6 grootste (StatisticsCards al klaar): `TodayPlanningWidget`, `MontagePlanningWidget`, `WeekStripWidget`, `OpenstaandeOffertesWidget`, `PriorityTasks`, `RecenteActiviteitWidget`.
 
 5. **Focus-rings + aria-labels op dashboard icon-buttons** (~60 min)
-   Voeg `focus-visible:ring-2 focus-visible:ring-[#1A535C]/40` toe aan widget resize/eyeOff/grip buttons in `FORGEdeskDashboard.tsx:132-138, 342-352` en `WidgetResizeControl`. Vervang de `title=`-attributes door `aria-label=` (of voeg toe naast). Toetsenbord-gebruikers en a11y-audit zijn dan blij.
+   Voeg `focus-visible:ring-2 focus-visible:ring-[#1A535C]/40` toe aan widget resize/eyeOff/grip buttons in `DoenDashboard.tsx:132-138, 342-352` en `WidgetResizeControl`. Vervang de `title=`-attributes door `aria-label=` (of voeg toe naast). Toetsenbord-gebruikers en a11y-audit zijn dan blij.
 
 ---
 

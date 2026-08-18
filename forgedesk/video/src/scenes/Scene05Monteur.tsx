@@ -11,7 +11,7 @@ import { DeviceFrame } from "../components/DeviceFrame";
 import { fadeUp, popIn } from "../helpers/entrances";
 
 // Scene 5 - De monteur. Werkbon op de bouwplaats, op de iPhone. Geporte schil
-// uit forgedesk WerkbonMonteurView (uitgevoerd werk, uren, handtekening,
+// uit de doen.-app WerkbonMonteurView (uitgevoerd werk, uren, handtekening,
 // afronden). Beweging frame-driven.
 const T = { fg: merk.ink, card: "#FFFFFF", border: "#EAE7E1", muted: "#F4F2EE", mutedFg: "#8A8278" };
 

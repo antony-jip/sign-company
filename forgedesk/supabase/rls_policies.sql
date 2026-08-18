@@ -1,5 +1,5 @@
 -- ============================================================
--- FORGEdesk — Complete Row Level Security Policies
+-- doen. — Complete Row Level Security Policies
 -- Covers ALL 49 tables used by the application
 -- Generated 2026-02-26
 -- ============================================================

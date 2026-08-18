@@ -1,12 +1,12 @@
 import type { CSSProperties, ReactNode } from "react";
 
-// Drager voor geporte forgedesk-schermen (Fase 2). Twee varianten:
+// Drager voor geporte app-schermen (Fase 2). Twee varianten:
 //   - browser: titelbalk + adresbalk, voor desktop-schermen (offerte, Daan).
 //   - iphone:  frame met dynamic-island + safe-area, voor de monteur-scene.
 // Warme schaduw (bruin-getint), geen zwart. iPhone-bezel is donker-petrol,
 // niet puur zwart, zodat het op-merk blijft.
 
-// Warme elevatie, in lijn met forgedesk (--shadow rgba(120,90,50,...)).
+// Warme elevatie, in lijn met de doen.-app (--shadow rgba(120,90,50,...)).
 const WARME_SCHADUW =
   "0 30px 80px -24px rgba(120,90,50,0.34), 0 12px 32px -14px rgba(120,90,50,0.22)";
 
@@ -100,7 +100,7 @@ const Browser: React.FC<Omit<BrowserProps, "variant">> = ({
         {/* Rechter-vulling zodat de adresbalk optisch gecentreerd blijft */}
         <div style={{ width: 67 }} />
       </div>
-      {/* Scherm-inhoud (geport forgedesk-component) */}
+      {/* Scherm-inhoud (geport app-component) */}
       <div style={{ backgroundColor: "#F4F3F0" }}>{children}</div>
     </div>
   );

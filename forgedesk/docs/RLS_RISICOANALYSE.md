@@ -1,4 +1,4 @@
-# RLS Risicoanalyse — FORGEdesk
+# RLS Risicoanalyse — doen.
 
 > **Doel:** Alle potentiele breekpunten identificeren VOORDAT RLS policies worden aangescherpt.
 > Als RLS eenmaal aan staat, falen queries **stil** — je krijgt gewoon `[]` terug zonder error.

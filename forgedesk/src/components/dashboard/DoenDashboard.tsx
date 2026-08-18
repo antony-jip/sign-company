@@ -141,15 +141,15 @@ function pickWeerGreeting(iconKey: string | undefined, temp: number | undefined)
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
-export function FORGEdeskDashboard() {
+export function DoenDashboard() {
   return (
     <DashboardDataProvider>
-      <FORGEdeskDashboardInner />
+      <DoenDashboardInner />
     </DashboardDataProvider>
   )
 }
 
-function FORGEdeskDashboardInner() {
+function DoenDashboardInner() {
   const { user } = useAuth()
   const { profile, settings } = useAppSettings()
   const zichtbaar = useMemo(() => zichtbareBlokken(settings.dashboard_blokken), [settings.dashboard_blokken])

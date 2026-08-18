@@ -2,7 +2,7 @@ import { merk } from "../../brand";
 import { fonts } from "../../fonts";
 import { T, TopNav, TabStrip } from "./AppChrome";
 
-// Geporte Planning-week (forgedesk MontagePlanningLayout). Verzonnen, on-brand
+// Geporte Planning-week (de doen.-app MontagePlanningLayout). Verzonnen, on-brand
 // montage-opdrachten voor een signbedrijf. Statische schil voor de montage.
 const TE_PLANNEN = [
   { t: "Gevelletters vervangen", k: "Bouwbedrijf Veld" },

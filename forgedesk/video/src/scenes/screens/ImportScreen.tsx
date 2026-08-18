@@ -2,7 +2,7 @@ import { merk } from "../../brand";
 import { fonts } from "../../fonts";
 import { T, TopNav } from "./AppChrome";
 
-// Geport import-scherm (forgedesk onboarding/import). Eén CSV met alle
+// Geport import-scherm (de doen.-app, onboarding/import). Eén CSV met alle
 // bedrijfsdata + een CSV met contactpersonen. Op 1790px ontworpen zodat het in de
 // browser-frame meeschaalt. De `klaar`-prop flipt de bedrijfsdata-zone naar de
 // succes-staat (voor de "zo makkelijk overgezet"-beat).

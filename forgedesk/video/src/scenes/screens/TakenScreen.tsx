@@ -2,8 +2,8 @@ import { interpolate } from "remotion";
 import { fonts } from "../../fonts";
 import { T, TopNav, TabStrip } from "./AppChrome";
 
-// Taken-scherm: de Team-swimlane uit de echte app (forgedesk
-// TasksLayout.tsx, viewMode === 'swimlane'). Rijen = medewerkers, kolommen
+// Taken-scherm: de Team-swimlane uit de echte app (TasksLayout.tsx,
+// viewMode === 'swimlane'). Rijen = medewerkers, kolommen
 // = MA t/m VR, plus een "Niet toegewezen"-lane onderaan. Kritieke taken
 // krijgen een flame-rand/tint (exacte hex uit TasksLayout.tsx
 // PRIORITEIT_COLORS), overige taken blijven rustig petrol/blauw.

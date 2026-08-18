@@ -1,4 +1,4 @@
-# BLUEPRINT-CURRENT.md — FORGEdesk SaaS App
+# BLUEPRINT-CURRENT.md — doen. SaaS App
 
 > Automatisch gegenereerd op 2026-03-23
 > Doel: Volledige snapshot van de huidige codebase staat
@@ -162,7 +162,7 @@
 
 | Pad | Component |
 |-----|-----------|
-| `/` | `FORGEdeskDashboard` |
+| `/` | `DoenDashboard` |
 | `/welkom` | `WelkomPagina` |
 | `/onboarding` | `OnboardingWizard` |
 | `/projecten` | `ProjectsList` |
@@ -198,7 +198,7 @@
 | `/team` | `TeamLayout` |
 | `/nieuwsbrieven` | `NewsletterBuilder` |
 | `/importeren` | `DataImportLayout` |
-| `/ai` | `FORGEdeskAIChat` |
+| `/ai` | `DoenAIChat` |
 | `/forgie` | `ForgieChatPage` |
 | `/werkbonnen` | `WerkbonnenLayout` |
 | `/werkbonnen/:id` | `WerkbonDetail` |
@@ -337,7 +337,7 @@
 
 ### Dashboard (`components/dashboard/`)
 
-`FORGEdeskDashboard.tsx` — Hoofd dashboard met configureerbaar widget grid
+`DoenDashboard.tsx` — Hoofd dashboard met configureerbaar widget grid
 `ActionBlock.tsx`, `AIInsightWidget.tsx`, `CalendarMiniWidget.tsx`, `ClockWidget.tsx`, `EmailCommunicationHub.tsx`, `FloatingQuickActions.tsx`, `InboxPreviewWidget.tsx`, `MoneyBlock.tsx`, `MontagePlanningWidget.tsx`, `NieuwsWidget.tsx`, `NotitieWidget.tsx`, `OpenstaandeOffertesWidget.tsx`, `PortaalAlerts.tsx`, `PriorityTasks.tsx`, `QuickActions.tsx`, `RecenteActiviteitWidget.tsx`, `SalesFollowUpWidget.tsx` (584), `SalesForecastWidget.tsx`, `SalesPulseWidget.tsx`, `StatisticsCards.tsx`, `TeFacturerenWidget.tsx`, `TodayPlanningWidget.tsx`, `VisualizerDashboardWidget.tsx`, `WeatherWidget.tsx`, `WeekStripWidget.tsx`, `WorkflowWidget.tsx`
 
 ### Projecten (`components/projects/`)
@@ -384,7 +384,7 @@ Taken worden beheerd in `TasksLayout.tsx` (1631) binnen de planning module.
 
 ### AI/Daan (Forgie) (`components/forgie/`)
 
-`FORGEdeskAIChat.tsx` (811), `ForgieChatPage.tsx`, `ForgieChatWidget.tsx`, `AITextGenerator.tsx` (512), `ForgieActieKaart.tsx`, `ForgieAvatar.tsx`
+`DoenAIChat.tsx` (811), `ForgieChatPage.tsx`, `ForgieChatWidget.tsx`, `AITextGenerator.tsx` (512), `ForgieActieKaart.tsx`, `ForgieAvatar.tsx`
 
 ### Quick Actions (`components/quick-actions/`)
 
@@ -587,7 +587,7 @@ Bestanden die al mod-* gebruiken (o.a.):
 |---------|----------|-------------|
 | `AuthContext` | `AuthProvider` | User, session, profile, organisatie, login/logout, trial status, isAdmin |
 | `AppSettingsContext` | `AppSettingsProvider` | 30+ computed properties: valuta, btw, pipeline, offerte/factuur nummering, forgie config |
-| `ThemeContext` | `ThemeProvider` | Light/dark mode toggle, localStorage `forgedesk_theme` |
+| `ThemeContext` | `ThemeProvider` | Light/dark mode toggle, localStorage `doen_app_theme` |
 | `PaletteContext` | `PaletteProvider` | 2 thema's + 6 accent paletten (Petrol, Flame, Sage, Ocean, Terracotta, Slate), CSS variables |
 | `LanguageContext` | `LanguageProvider` | nl/en met 900+ vertaalsleutels in 20 secties, `t()` functie |
 | `SidebarContext` | `SidebarProvider` | Collapsed/expanded, layoutMode ('sidebar'/'topnav'), RAIL=88px, EXPANDED=220px |
@@ -661,9 +661,14 @@ BrowserRouter → ThemeProvider → PaletteProvider → LanguageProvider
 | `quick-actions/NieuweOfferteModal.tsx` | 996 | Medium |
 | ... en nog 27 bestanden tussen 500-1000 regels |
 
-### FORGEdesk/Forgie branding in UI-tekst
+### Forgie-branding in code en UI-tekst
 
-136 voorkomens in 22 bestanden. **Verwacht gedrag** — "FORGEdesk" is de productnaam, "Forgie"/"Daan" is de AI assistant.
+De oude productnaam "FORGEdesk" is overal vervangen door **doen.**. De AI-assistent
+heet inmiddels **Daan**, maar de oude naam "Forgie" zit nog in 274 voorkomens
+verspreid over 26 bestanden — mapnaam `components/forgie/`, componenten
+(`ForgieChatWidget`, `ForgieChatPage`, `ForgieActieKaart`, `ForgieTab`), services
+(`forgieService.ts`, `forgieChatService.ts`) en `utils/forgieMarkdown.tsx`.
+Nog te hernoemen naar Daan.
 
 ### supabaseService.ts is extreem groot
 

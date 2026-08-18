@@ -2,7 +2,7 @@ import { merk } from "../../brand";
 import { fonts } from "../../fonts";
 import { T, TopNav, TabStrip } from "./AppChrome";
 
-// Geporte offerte-editor (forgedesk QuoteCreation), rijk gevuld met demo-data
+// Geporte offerte-editor (de doen.-app QuoteCreation), rijk gevuld met demo-data
 // (De Linde, lichtbakken). Bedragen consistent met de rest van de video.
 const GROEN = "#2D7D52";
 

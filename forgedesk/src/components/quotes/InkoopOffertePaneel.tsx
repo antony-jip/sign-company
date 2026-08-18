@@ -32,7 +32,7 @@ import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import { gooiBijBudgetError } from '@/lib/aiBudgetError'
 
 // Drag data type for inkoop regels
-export const INKOOP_DRAG_TYPE = 'application/x-forgedesk-inkoop-regel'
+export const INKOOP_DRAG_TYPE = 'application/x-doen-inkoop-regel'
 
 export interface InkoopDragData {
   omschrijving: string

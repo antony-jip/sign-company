@@ -1,6 +1,6 @@
 import { Space_Grotesk } from 'next/font/google'
 
-/* Design-tokens van de échte app (forgedesk).
+/* Design-tokens van de échte app (doen.).
    Eén bron voor alles wat de app nabouwt op de site: de klikbare showcase
    op de homepage en de stap-panelen op /hoe-het-werkt. Wijkt de app af,
    dan pas je het hier aan en niet op twee plekken.

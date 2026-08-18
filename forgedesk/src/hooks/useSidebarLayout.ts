@@ -16,7 +16,7 @@ const DEFAULT_STATE: SidebarLayoutState = {
 }
 
 export function useSidebarLayout() {
-  const [layout, setLayout] = useLocalStorage<SidebarLayoutState>('forgedesk-sidebar-layout', DEFAULT_STATE)
+  const [layout, setLayout] = useLocalStorage<SidebarLayoutState>('doen-sidebar-layout', DEFAULT_STATE, 'forgedesk-sidebar-layout')
 
   // Drag state
   const [draggedSection, setDraggedSection] = useState<SidebarSectionId | null>(null)

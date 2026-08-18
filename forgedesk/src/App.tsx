@@ -40,7 +40,7 @@ const TeamWelkomPagina = lazy(() => import('@/components/onboarding/TeamWelkomPa
 const OnboardingWizard = lazy(() => import('@/components/onboarding/OnboardingWizard'), 'OnboardingWizard')
 
 // Dashboard
-const FORGEdeskDashboard = lazy(() => import('@/components/dashboard/FORGEdeskDashboard'), 'FORGEdeskDashboard')
+const DoenDashboard = lazy(() => import('@/components/dashboard/DoenDashboard'), 'DoenDashboard')
 
 // Maatjes
 const MaatjeKladblok = lazy(() => import('@/components/maatjes/MaatjeKladblok'), 'MaatjeKladblok')
@@ -299,7 +299,7 @@ function AppContent() {
           <AppLayout />
         </ProtectedRoute>
       }>
-        <Route index element={<FORGEdeskDashboard />} />
+        <Route index element={<DoenDashboard />} />
         <Route path="projecten" element={<ProjectsList />} />
         <Route path="projecten/nieuw" element={<ProjectCreate />} />
         <Route path="projecten/:id" element={<ProjectDetail />} />

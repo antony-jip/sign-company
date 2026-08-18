@@ -1,8 +1,8 @@
-# Plan van Aanpak (PVA) - FORGEdesk CRM
+# Plan van Aanpak (PVA) - doen. CRM
 
 ## 1. Projectoverzicht
 
-**Project:** FORGEdesk - Business Management CRM voor Sign Company
+**Project:** doen. - Business Management CRM voor Sign Company
 **Doel:** Een volledig functionerend CRM-systeem dat alle bedrijfsprocessen van Sign Company ondersteunt: klantenbeheer, offertes, projecten, facturatie, email, en meer.
 
 ---

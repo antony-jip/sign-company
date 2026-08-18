@@ -212,7 +212,7 @@ export default function DemoPage() {
 
         {/* De app zelf, onderaan: na de video en de argumenten wil je niet
             nog een verhaal maar het ding zelf. Dezelfde nabouw als op de
-            homepage, met de tokens uit forgedesk. */}
+            homepage, met de tokens uit de doen.-app. */}
         <section id="de-app" className="bg-bg border-t border-petrol/10 scroll-mt-24">
           <div className="container-site pt-14 md:pt-20">
             <div className="md:grid md:grid-cols-12 md:gap-10">
