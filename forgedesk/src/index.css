@@ -3736,6 +3736,7 @@ button.doen-panel:hover {
   --stapel-schaduw-hoog: 0 2px 8px rgba(130, 100, 60, 0.10);
   --stapel-tekst: #1A535C;
   --stapel-zacht: color-mix(in srgb, #1A535C 62%, transparent);
+  --stapel-strook: 54px;
 
   background: hsl(40 42% 97.6%);
 
@@ -3749,6 +3750,7 @@ button.doen-panel:hover {
   align-items: stretch;
   min-height: 100%;
   padding: 0 0 3rem;
+  transition: grid-template-columns 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark .taken-stapel {
@@ -3779,6 +3781,99 @@ button.doen-panel:hover {
 }
 .dark .stapel-dag.is-vandaag .stapel-kop {
   border-bottom-color: color-mix(in srgb, #9FC5CC 40%, transparent);
+}
+
+/* ── Strook · een lege dag houdt geen volle kolom bezet ──────────────────────
+   Met het werk op woensdag en donderdag ging de halve week naar kolommen waar
+   niets in stond. Een lege dag valt terug tot een strook die je met één klik
+   weer opent, en die vanzelf opengaat als je er een taak boven houdt. */
+.stapel-dag.is-strook {
+  padding: 0;
+  container-type: normal;
+}
+
+.stapel-strook-knop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  padding: 12px 0 18px;
+  color: hsl(var(--muted-foreground));
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.stapel-strook-knop:hover {
+  background: color-mix(in srgb, #1A535C 4%, transparent);
+  color: var(--stapel-tekst);
+}
+.dark .stapel-strook-knop:hover { background: color-mix(in srgb, #FFFFFF 4%, transparent); }
+
+.stapel-strook-dag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.stapel-strook-datum {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+  opacity: 0.5;
+}
+/* Vandaag houdt zijn gevulde cirkel ook als strook · anders raak je in een
+   rustige week het anker kwijt waar je op mikt. */
+.is-strook.is-vandaag .stapel-strook-datum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #1A535C;
+  color: #fff;
+  font-size: 12.5px;
+  opacity: 1;
+}
+.is-strook.is-vandaag .stapel-strook-dag { color: var(--stapel-tekst); }
+.stapel-strook-klaar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 2px;
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: color-mix(in srgb, #1A535C 55%, transparent);
+}
+.dark .stapel-strook-klaar { color: color-mix(in srgb, #9FC5CC 65%, transparent); }
+
+/* Het woord staat rechtop in de strook · zo blijft leesbaar waaróm de dag
+   is dichtgeklapt zonder dat de strook breder hoeft. */
+.stapel-strook-label {
+  margin-top: 10px;
+  writing-mode: vertical-rl;
+  font-size: 10.5px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  opacity: 0.45;
+}
+
+/* Terug inklappen · alleen zichtbaar als jij hem zelf hebt opengezet. */
+.stapel-leeg.is-inklapbaar {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-radius: 8px;
+  transition: background-color 150ms ease, opacity 150ms ease;
+}
+.stapel-leeg.is-inklapbaar:hover {
+  opacity: 0.85;
+  background: color-mix(in srgb, #1A535C 4%, transparent);
+}
+.dark .stapel-leeg.is-inklapbaar:hover { background: color-mix(in srgb, #FFFFFF 4%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .taken-stapel { transition: none; }
 }
 
 /* Een dag met kritiek werk verdient een teken in de kop, zonder dat elke kaart
@@ -3965,7 +4060,7 @@ button.doen-panel:hover {
   min-width: 0;
 }
 .stapel-context {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   font-size: 11px;
   line-height: 1.35;

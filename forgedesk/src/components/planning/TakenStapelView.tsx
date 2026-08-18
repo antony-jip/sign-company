@@ -104,6 +104,10 @@ export function TakenStapelView({
   const [addDag, setAddDag] = useState<string | null>(null)
   const [addTitel, setAddTitel] = useState('')
   const addRef = useRef<HTMLInputElement>(null)
+  // Dagen die de gebruiker zelf openklapte, en dagen die tijdelijk openstaan
+  // omdat er een taak boven zweeft. Die laatste vallen vanzelf weer dicht.
+  const [handOpen, setHandOpen] = useState<Set<string>>(new Set())
+  const [sleepOpen, setSleepOpen] = useState<Set<string>>(new Set())
 
   const nuUur = useMemo(() => {
     const n = new Date()
@@ -126,8 +130,19 @@ export function TakenStapelView({
       montages: montageByDay.get(key) || [],
       isToday: isSameDay(day, today),
       isVerleden: day < today && !isSameDay(day, today),
+      isLeeg: open.length === 0 && (montageByDay.get(key) || []).length === 0,
     }
   }), [weekDays, tasksByDay, montageByDay, today])
+
+  // Een week waarin het werk op twee dagen staat gaf de helft van het scherm
+  // weg aan lege kolommen. Die klappen terug tot een strook. Ook vandaag, want
+  // een lege dag is een lege dag — de strook houdt wel zijn gevulde datum, en
+  // een taak die je erboven houdt klapt hem vanzelf open. Staat er nergens
+  // werk, dan klapt er niets in: dan keek je alleen nog naar strookjes.
+  const heeftWerk = useMemo(() => dagen.some((d) => d.open.length > 0), [dagen])
+  const isIngeklapt = useCallback((d: typeof dagen[number]) => (
+    heeftWerk && d.isLeeg && !handOpen.has(d.key) && !sleepOpen.has(d.key)
+  ), [heeftWerk, handOpen, sleepOpen])
 
   // Waar een taak tussen twee buren landt, wordt de tijd het midden ertussen.
   // Zo blijft de volgorde die je sleept bewaard zonder dat je hem hoeft in te
@@ -253,6 +268,13 @@ export function TakenStapelView({
     return () => document.removeEventListener('keydown', onKey)
   }, [dagen, focus, onToggle, onEdit, onDrop, tijdVoorPositie])
 
+  // Een dag die alleen openging omdat je er met een taak boven hing, valt weer
+  // dicht zodra je loslaat. Landde de taak er echt, dan is de dag niet meer
+  // leeg en blijft hij vanzelf open.
+  useEffect(() => {
+    if (!sleepId && sleepOpen.size > 0) setSleepOpen(new Set())
+  }, [sleepId, sleepOpen])
+
   // Focus die buiten de lijst valt (taak afgevinkt of verplaatst) opschonen.
   useEffect(() => {
     if (!focus) return
@@ -272,7 +294,10 @@ export function TakenStapelView({
   }
 
   return (
-    <div className={cn('taken-stapel', focus && 'heeft-toetsfocus')}>
+    <div
+      className={cn('taken-stapel', focus && 'heeft-toetsfocus')}
+      style={{ gridTemplateColumns: dagen.map((d) => (isIngeklapt(d) ? 'var(--stapel-strook)' : 'minmax(0, 1fr)')).join(' ') }}
+    >
       {focus && !sleepId && (
         <div className="stapel-toetsen" role="status">
           <kbd>↑↓</kbd> kiezen
@@ -283,6 +308,35 @@ export function TakenStapelView({
         </div>
       )}
       {dagen.map((dag) => {
+        if (isIngeklapt(dag)) {
+          return (
+            <section
+              key={dag.key}
+              className={cn('stapel-dag is-strook', dag.isToday && 'is-vandaag', dag.isVerleden && 'is-verleden')}
+              onDragOver={(e) => { e.preventDefault(); setSleepOpen((p) => (p.has(dag.key) ? p : new Set(p).add(dag.key))) }}
+              onDrop={(e) => handleDrop(e, dag.dayIndex, 0)}
+            >
+              <button
+                className="stapel-strook-knop"
+                onClick={() => metOvergang(() => setHandOpen((p) => new Set(p).add(dag.key)))}
+                title={`${DAY_LABELS[dag.dayIndex]} ${dag.day.getDate()} · niets open · klik om te openen`}
+              >
+                <span className="stapel-strook-dag">
+                  {DAY_LABELS[dag.dayIndex]}{dag.isToday && <span className="stapel-punt">.</span>}
+                </span>
+                <span className="stapel-strook-datum">{dag.day.getDate()}</span>
+                {dag.afgerond.length > 0 && (
+                  <span className="stapel-strook-klaar">
+                    <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                    {dag.afgerond.length}
+                  </span>
+                )}
+                <span className="stapel-strook-label">{dag.isVerleden ? 'Niets open' : 'Vrij'}</span>
+              </button>
+            </section>
+          )
+        }
+
         const toonAfgerond = afgerondOpen.has(dag.key)
         // De nu-streep valt vóór de eerste taak die nog moet komen.
         const nuIndex = dag.isToday
@@ -384,7 +438,17 @@ export function TakenStapelView({
               {dag.open.length === 0 && !isLoading && (
                 dag.afgerond.length > 0
                   ? <p className="stapel-klaar">Klaar<span className="stapel-punt">.</span></p>
-                  : <p className="stapel-leeg">{dag.isVerleden ? 'Niets meer open' : 'Vrij'}</p>
+                  : handOpen.has(dag.key)
+                    ? (
+                      <button
+                        className="stapel-leeg is-inklapbaar"
+                        title="Weer inklappen"
+                        onClick={() => metOvergang(() => setHandOpen((p) => { const n = new Set(p); n.delete(dag.key); return n }))}
+                      >
+                        {dag.isVerleden ? 'Niets meer open' : 'Vrij'}
+                      </button>
+                    )
+                    : <p className="stapel-leeg">{dag.isVerleden ? 'Niets meer open' : 'Vrij'}</p>
               )}
             </div>
 
