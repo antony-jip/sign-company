@@ -108,7 +108,7 @@ const PLANNING_FILTER_KEY = 'doen_planning_filter_v1';
 const PLANNING_SCOPE_KEY = 'doen_planning_scope_v1';
 const PLANNING_VIEWMODE_KEY = 'doen_planning_viewmode_v1';
 
-type ViewMode = 'stapel' | 'week' | 'maand';
+type ViewMode = 'stapel' | 'maand';
 const FASES_BLOKKEREN_AFRONDEN: Array<Project['status']> = ['te-factureren', 'gefactureerd', 'afgerond'];
 
 type ScopeMode = 'alle' | 'mijn' | 'medewerker';
@@ -432,7 +432,7 @@ export function MontagePlanningLayout() {
   const [viewMode, setViewModeState] = useState<ViewMode>(() => {
     try {
       const raw = localStorage.getItem(PLANNING_VIEWMODE_KEY);
-      if (raw === 'maand' || raw === 'week' || raw === 'stapel') return raw;
+      if (raw === 'maand') return 'maand';
       return 'stapel';
     } catch {
       return 'stapel';
@@ -1727,11 +1727,14 @@ export function MontagePlanningLayout() {
         onAfronden={(a) => afrondenAfspraak(a, false)}
         onTerugzetten={toggleAfgerond}
         onNieuwOpDag={(datum) => openNewDialog(datum)}
-        accentKleur={(a) => a.status === 'afgerond'
-          ? '#CBC9C4'
-          : a.prioriteit
-            ? '#F15025'
-            : (STATUS_CONFIG[a.status]?.dot ?? '#1A535C')}
+        /* Alleen de uitzondering krijgt kleur. Met een streep per status werd
+           de kolom een kleurenstaal en viel niets meer op · 'gepland' is de
+           normale toestand en hoeft niets te zeggen. */
+        accentKleur={(a) => a.prioriteit
+          ? '#F15025'
+          : (a.status === 'gepland' || a.status === 'afgerond')
+            ? 'transparent'
+            : (STATUS_CONFIG[a.status]?.dot ?? 'transparent')}
         toonMonteurs={selectedMonteur === 'alle'}
         monteurLabel={(a) => a.monteurs
           .map((id) => monteurMap[id]?.naam)
@@ -3664,13 +3667,9 @@ export function MontagePlanningLayout() {
               onClick={() => setViewMode('stapel')}
               className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'stapel' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
-              Stapel
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('week')}
-              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'week' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
-            >
+              {/* Heet intern 'stapel', maar voor wie plant is dit gewoon de
+                  week · er is geen andere weekweergave meer om van te
+                  onderscheiden. */}
               Week
             </button>
             <button
@@ -3758,13 +3757,7 @@ export function MontagePlanningLayout() {
 
         {/* Main view */}
         <div className="flex-1 overflow-auto">
-          {viewMode === 'stapel'
-            ? renderStapelView()
-            : viewMode === 'maand'
-              ? renderMonthView()
-              : selectedMonteur === "alle"
-                ? renderMultiMonteurView()
-                : renderMemberWeekView()}
+          {viewMode === 'maand' ? renderMonthView() : renderStapelView()}
         </div>
       </div>
 

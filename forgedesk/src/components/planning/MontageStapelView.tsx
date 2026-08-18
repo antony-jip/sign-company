@@ -134,22 +134,13 @@ export function MontageStapelView({
                   /* Zes montages afgerond is geen vrije dag · dat is een dag
                      die af is. */
                   ? <p className="stapel-klaar">Klaar<span className="stapel-punt">.</span></p>
-                  /* Een écht lege dag is hier geen leegte maar ruimte · die mag
-                     je zien en er meteen iets in kunnen zetten. */
-                  : (
-                    <button className="stapel-vrij" onClick={() => onNieuwOpDag(sleutel)}>
-                      <span className="stapel-vrij-woord">Vrij</span>
-                      <span className="stapel-vrij-hint">Plan een montage</span>
-                    </button>
-                  )
+                  /* Een écht lege dag is ruimte, geen leegte · maar hij zegt
+                     dat in dezelfde vorm als "Klaar.", niet in een gestippeld
+                     blok dat verder nergens op het scherm voorkomt. De hele
+                     kolom eronder is de klikruimte. */
+                  : <p className="stapel-vrij">Vrij<span className="stapel-punt">.</span></p>
               )}
             </div>
-
-            <button
-              className="stapel-vulling"
-              aria-label={`Montage inplannen op ${DAG_NAMEN[i]} ${datum.getDate()}`}
-              onClick={() => !dicht && onNieuwOpDag(sleutel)}
-            />
 
             {afgerond.length > 0 && (
               <div className="stapel-afgerond">
@@ -190,6 +181,15 @@ export function MontageStapelView({
                 ))}
               </div>
             )}
+
+            {/* De klikruimte staat ná afgerond · stond hij ervoor, dan werd de
+                afgerond-sectie naar de voet van de kolom geduwd en gaapte er
+                900px niets tussen de dag en zijn eigen afgeronde werk. */}
+            <button
+              className="stapel-vulling"
+              aria-label={`Montage inplannen op ${DAG_NAMEN[i]} ${datum.getDate()}`}
+              onClick={() => !dicht && onNieuwOpDag(sleutel)}
+            />
           </section>
         )
       })}

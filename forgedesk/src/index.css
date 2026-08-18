@@ -4696,35 +4696,25 @@ button.doen-panel:hover {
   box-shadow: inset 0 1px 0 var(--stapel-lijn), inset 2px 0 0 #C03A18;
 }
 
-/* Een vrije dag is in Taken niets, maar in Planning is het capaciteit. Die
-   klapt hier dus niet in — hij nodigt uit. */
+/* Een vrije dag is in Taken niets, maar in Planning is het capaciteit. Hij
+   klapt hier dus niet in — maar hij zegt het in dezelfde vorm als "Klaar.",
+   want een gestippeld blok was het enige van zijn soort op het scherm. */
 .planning-stapel .stapel-vrij {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  margin-top: 4px;
-  padding: 14px 10px;
-  border: 1px dashed color-mix(in srgb, #1A535C 22%, transparent);
-  border-radius: 10px;
-  text-align: left;
-  transition: border-color 160ms ease, background-color 160ms ease;
-}
-.planning-stapel .stapel-vrij:hover {
-  border-color: color-mix(in srgb, #1A535C 45%, transparent);
-  background: color-mix(in srgb, #1A535C 3.5%, transparent);
-}
-.dark .planning-stapel .stapel-vrij { border-color: rgba(255, 255, 255, 0.14); }
-.dark .planning-stapel .stapel-vrij:hover { background: rgba(255, 255, 255, 0.04); }
-
-.planning-stapel .stapel-vrij-woord {
-  font-size: 13px;
+  padding: 10px 8px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--stapel-tekst);
 }
-.planning-stapel .stapel-vrij-hint {
-  font-size: 11px;
-  color: var(--stapel-zacht);
+.dark .planning-stapel .stapel-vrij { color: #9FC5CC; }
+
+/* De klikruimte onder een dag mocht wel bestaan, maar niet als grijs vlak van
+   een halve meter · een kolom die je aanwijst hoort niet het luidste ding op
+   het scherm te worden. */
+.planning-stapel .stapel-vulling:hover {
+  background: color-mix(in srgb, #1A535C 1.6%, transparent);
+}
+.dark .planning-stapel .stapel-vulling:hover {
+  background: color-mix(in srgb, #FFFFFF 1.8%, transparent);
 }
 
 .planning-stapel .stapel-gesloten {
