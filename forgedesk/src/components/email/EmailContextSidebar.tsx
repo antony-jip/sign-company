@@ -10,6 +10,7 @@ import type { Email, Klant, Medewerker, ContactpersoonRecord, Project } from '@/
 import { getKlanten, getProjectenByKlant, getOffertesByKlant, createKlant, createProject, createTaak, getMedewerkers, generateProjectNummer, getAppSettings, getContactpersonenByKlant, createContactpersoonDB, getKlantIdByContactEmail, getProjecten } from '@/services/supabaseService'
 import { getProjectVoorThread } from '@/services/emailProjectService'
 import { ProjectCombobox } from '@/components/shared/ProjectCombobox'
+import { SchattingSelect } from '@/components/shared/TaakVelden'
 import { chatCompletion } from '@/services/aiService'
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
@@ -152,6 +153,7 @@ export function EmailContextSidebar({
   })
   const [taakForm, setTaakForm] = useState({ titel: '', beschrijving: '', deadline: '', toegewezen_aan: '' })
   const [taakProjectId, setTaakProjectId] = useState('')
+  const [taakSchatting, setTaakSchatting] = useState(0)
   const [projecten, setProjecten] = useState<Project[]>([])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
 
@@ -348,7 +350,7 @@ export function EmailContextSidebar({
     try {
       const taak = await createTaak({
         titel: taakForm.titel, beschrijving: taakForm.beschrijving,
-        status: 'todo', prioriteit: 'medium', toegewezen_aan: taakForm.toegewezen_aan, geschatte_tijd: 0, bestede_tijd: 0,
+        status: 'todo', prioriteit: 'medium', toegewezen_aan: taakForm.toegewezen_aan, geschatte_tijd: taakSchatting, bestede_tijd: 0,
         klant_id: linkedKlant?.id || '',
         ...(taakProjectId ? { project_id: taakProjectId } : {}),
         deadline: taakForm.deadline || undefined,
@@ -738,6 +740,10 @@ export function EmailContextSidebar({
                   leegLabel="Geen project"
                   placeholder="Kies een project"
                 />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-1">Schatting</label>
+                <SchattingSelect waarde={taakSchatting} onChange={setTaakSchatting} />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground block mb-1">Inplannen op</label>

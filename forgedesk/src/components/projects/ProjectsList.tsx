@@ -55,6 +55,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
 import type { Project, Klant, Offerte, Medewerker, Taak } from '@/types'
 import { createTaak } from '@/services/projectService'
+import { SchattingSelect } from '@/components/shared/TaakVelden'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -463,6 +464,7 @@ export function ProjectsList() {
   const [quickTaakTitel, setQuickTaakTitel] = useState('')
   const [quickTaakToegewezen, setQuickTaakToegewezen] = useState('')
   const [quickTaakDeadline, setQuickTaakDeadline] = useState('')
+  const [quickTaakSchatting, setQuickTaakSchatting] = useState(0)
   const [quickTaakSaving, setQuickTaakSaving] = useState(false)
   const quickTaakInputRef = useRef<HTMLInputElement>(null)
 
@@ -478,7 +480,7 @@ export function ProjectsList() {
         prioriteit: 'medium',
         toegewezen_aan: quickTaakToegewezen,
         deadline: quickTaakDeadline || undefined,
-        geschatte_tijd: 0,
+        geschatte_tijd: quickTaakSchatting,
         bestede_tijd: 0,
       } as Omit<Taak, 'id' | 'created_at' | 'updated_at'>)
       logCreate({ user, entityType: 'taak', entityId: taak.id })
@@ -487,6 +489,7 @@ export function ProjectsList() {
       setQuickTaakTitel('')
       setQuickTaakToegewezen('')
       setQuickTaakDeadline('')
+      setQuickTaakSchatting(0)
       setQuickTaakProjectId(null)
     } catch {
       toast.error('Kon taak niet aanmaken')
@@ -1978,6 +1981,10 @@ export function ProjectsList() {
                   })}
                 </div>
               </div>
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground mb-1.5 block">Schatting</label>
+              <SchattingSelect waarde={quickTaakSchatting} onChange={setQuickTaakSchatting} />
             </div>
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground mb-1.5 block">Toewijzen aan</label>

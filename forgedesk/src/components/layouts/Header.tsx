@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
 import { cn } from '@/lib/utils'
+import { MODULE_TOOLBAR_ID } from '@/components/layouts/ModuleToolbar'
 
 const ROUTE_NAMES: Record<string, string> = {
   '': 'Dashboard',
@@ -69,14 +70,14 @@ export function Header() {
   return (
     <header
       className={cn(
-        'doen-toolbar h-11 flex items-center justify-between px-5 flex-shrink-0 z-10 transition-all duration-200 relative bg-[#F8F7F5] dark:bg-background',
+        'doen-toolbar h-12 flex items-center justify-between px-5 flex-shrink-0 z-10 transition-all duration-200 relative bg-[#F8F7F5] dark:bg-background',
         !tabBarVisible && 'border-b border-border',
       )}
       style={{ boxShadow: scrolled && !tabBarVisible ? '0 1px 3px rgba(0,0,0,0.04)' : 'none' }}
     >
       {/* Mobile search overlay */}
       {mobileSearchOpen && (
-        <div className="absolute inset-x-0 top-0 h-11 z-20 flex items-center gap-2 px-3 md:hidden bg-card border-b border-border">
+        <div className="absolute inset-x-0 top-0 h-12 z-20 flex items-center gap-2 px-3 md:hidden bg-card border-b border-border">
           <GlobalSearch className="flex flex-1" compact />
           <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground" onClick={() => setMobileSearchOpen(false)}>
             <X className="w-4 h-4" />
@@ -99,13 +100,19 @@ export function Header() {
         )}
       </div>
 
-      {/* Center: Search bar (desktop) · compact */}
-      <div className="hidden md:flex flex-1 justify-center mx-8">
-        <GlobalSearch className="w-full max-w-xs" />
-      </div>
+      {/* Midden: het gereedschap van de module die openstaat · zie
+          ModuleToolbar. Elke module tekende hiervoor zijn eigen tweede balk,
+          met daarin nog eens de titel die hier links al staat. */}
+      <div
+        id={MODULE_TOOLBAR_ID}
+        className="hidden md:flex flex-1 items-center justify-center gap-3 mx-6 min-w-0 overflow-x-auto scrollbar-hide"
+      />
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
+        {/* Zoeken · stond in het midden, maar dat is nu de plek van de module. */}
+        <GlobalSearch className="hidden md:flex w-44 lg:w-56" />
+
         {/* Mobile search button */}
         <Button
           variant="ghost"

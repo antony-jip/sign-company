@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { createKlant, createTaak, getMedewerkers, getKlanten, updateKlant, getProjecten } from '@/services/supabaseService'
 import { getProjectVoorThread } from '@/services/emailProjectService'
 import { ProjectCombobox } from '@/components/shared/ProjectCombobox'
+import { SchattingSelect } from '@/components/shared/TaakVelden'
 import { logCreate } from '@/utils/auditLogger'
 import { logger } from '@/utils/logger'
 import { extractSenderName, extractSenderEmail, getAvatarStyle } from './emailHelpers'
@@ -50,6 +51,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
   const [allKlanten, setAllKlanten] = useState<Klant[]>([])
   const [taakForm, setTaakForm] = useState({ titel: '', deadline: '', toegewezen_aan: '' })
   const [taakProjectId, setTaakProjectId] = useState('')
+  const [taakSchatting, setTaakSchatting] = useState(0)
   const [projecten, setProjecten] = useState<Project[]>([])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
 
@@ -197,7 +199,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
         status: 'todo',
         prioriteit: 'medium',
         toegewezen_aan: taakForm.toegewezen_aan,
-        geschatte_tijd: 0,
+        geschatte_tijd: taakSchatting,
         bestede_tijd: 0,
         klant_id: '',
         ...(taakProjectId ? { project_id: taakProjectId } : {}),
@@ -212,7 +214,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
     } finally {
       setSaving(false)
     }
-  }, [taakForm, taakProjectId, user, medewerkers])
+  }, [taakForm, taakProjectId, taakSchatting, user, medewerkers])
 
   const inputCls = "w-full px-3 py-2 text-[13px] bg-white dark:bg-white/[0.05] rounded-[8px] outline-none border border-border focus:border-petrol transition-colors duration-150 placeholder:text-muted-foreground/80"
   const labelCls = "text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground block mb-1"
@@ -439,6 +441,10 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                     leegLabel="Geen project"
                     placeholder="Kies een project"
                   />
+                </div>
+                <div>
+                  <label className={labelCls}>Schatting</label>
+                  <SchattingSelect waarde={taakSchatting} onChange={setTaakSchatting} />
                 </div>
                 <div>
                   <label className={labelCls}>Inplannen op</label>

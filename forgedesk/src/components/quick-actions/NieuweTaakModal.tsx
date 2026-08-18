@@ -6,6 +6,8 @@ import { createTaak, getProjecten, getMedewerkers } from '@/services/supabaseSer
 import type { Project, Medewerker } from '@/types'
 import { toast } from 'sonner'
 import { MedewerkerSelector } from '@/components/shared/MedewerkerSelector'
+import { ProjectCombobox } from '@/components/shared/ProjectCombobox'
+import { SchattingSelect } from '@/components/shared/TaakVelden'
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
 
@@ -22,11 +24,12 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
   const [projectId, setProjectId] = useState('')
   const [toegewezenAan, setToegewezenAan] = useState('')
   const [deadline, setDeadline] = useState(() => new Date().toISOString().split('T')[0])
+  const [schatting, setSchatting] = useState(0)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (open) {
-      getProjecten().then(p => setProjecten(p.filter(pr => pr.status === 'actief' || pr.status === 'gepland'))).catch(() => {})
+      getProjecten().then(setProjecten).catch(() => {})
       getMedewerkers().then(m => setMedewerkers(m.filter(mw => mw.status === 'actief'))).catch(() => {})
     }
   }, [open])
@@ -46,7 +49,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
         prioriteit: 'medium',
         toegewezen_aan: toegewezenAan || '',
         deadline: deadline || new Date().toISOString().split('T')[0],
-        geschatte_tijd: 0,
+        geschatte_tijd: schatting,
         bestede_tijd: 0,
       })
       logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
@@ -56,6 +59,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
       setProjectId('')
       setToegewezenAan('')
       setDeadline(new Date().toISOString().split('T')[0])
+      setSchatting(0)
     } catch (err) {
       logger.error('Taak toevoegen mislukt:', err)
       toast.error('Kon taak niet toevoegen')
@@ -80,18 +84,11 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
           />
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="relative">
-              <select
-                value={projectId}
-                onChange={e => setProjectId(e.target.value)}
-                className={`w-full ${selectClass}`}
-              >
-                <option value="">Geen project</option>
-                {projecten.map(p => (
-                  <option key={p.id} value={p.id}>{p.naam}</option>
-                ))}
-              </select>
-            </div>
+            <ProjectCombobox
+              projecten={projecten}
+              value={projectId}
+              onChange={setProjectId}
+            />
 
             <MedewerkerSelector
               mode="single"
@@ -115,6 +112,8 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
                 className={`w-full ${selectClass} font-mono`}
               />
             </div>
+
+            <SchattingSelect waarde={schatting} onChange={setSchatting} triggerClassName="h-9 flex-shrink-0" />
 
             <button
               type="submit"
