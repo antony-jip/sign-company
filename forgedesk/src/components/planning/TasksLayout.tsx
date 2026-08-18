@@ -164,6 +164,10 @@ function zonderKlantPrefix(projectNaam: string, klantNaam?: string): string {
   return rest || p
 }
 
+const VIEW_MODES = ['week', 'stapel', 'maand', 'swimlane'] as const
+type ViewMode = typeof VIEW_MODES[number]
+const WEERGAVE_KEY = 'doen_taken_weergave'
+
 const HOURS = Array.from({ length: 24 }, (_, i) => i) // 00:00 - 23:00
 const HOUR_HEIGHT_DEFAULT = 44
 const HOUR_HEIGHT_MIN = 36
@@ -297,7 +301,25 @@ export function TasksLayout() {
     return dag === 0 || dag === 6 ? 1 : 0
   })
   const [monthOffset, setMonthOffset] = useState(0)
-  const [viewMode, setViewMode] = useState<'week' | 'stapel' | 'maand' | 'swimlane'>('week')
+  // Je weergavekeuze hoort bij hoe je werkt, niet bij deze ene keer dat je de
+  // pagina opent · dus blijft hij staan tussen tabs en sessies door.
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const opgeslagen = localStorage.getItem(WEERGAVE_KEY)
+      if (opgeslagen && VIEW_MODES.includes(opgeslagen as ViewMode)) return opgeslagen as ViewMode
+    } catch (err) {
+      logger.warn('[taken] weergave lezen', err)
+    }
+    return 'week'
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(WEERGAVE_KEY, viewMode)
+    } catch (err) {
+      logger.warn('[taken] weergave bewaren', err)
+    }
+  }, [viewMode])
   const [collapsedAssignees, setCollapsedAssignees] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem(SWIMLANE_COLLAPSED_KEY)
