@@ -67,9 +67,7 @@ import type { Taak, Project, Klant, MontageAfspraak, Offerte, Medewerker } from 
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
-import { CompletionPromptModal } from '@/components/shared/CompletionPromptModal'
 import { DatePicker } from '@/components/ui/date-picker'
-import { updateProject, getProject } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import { ProjectCombobox } from '@/components/shared/ProjectCombobox'
@@ -167,6 +165,10 @@ function zonderKlantPrefix(projectNaam: string, klantNaam?: string): string {
 const VIEW_MODES = ['week', 'stapel', 'maand', 'swimlane'] as const
 type ViewMode = typeof VIEW_MODES[number]
 const WEERGAVE_KEY = 'doen_taken_weergave'
+// De stapel werd de standaard nadat het onthouden al leefde · iedereen die de
+// pagina sindsdien opende heeft ongemerkt 'week' laten wegschrijven, dus die
+// eerste opgeslagen waarde tellen we één keer niet mee.
+const WEERGAVE_MIGRATIE_KEY = 'doen_taken_weergave_migration_v1'
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i) // 00:00 - 23:00
 const HOUR_HEIGHT_DEFAULT = 44
@@ -305,12 +307,16 @@ export function TasksLayout() {
   // pagina opent · dus blijft hij staan tussen tabs en sessies door.
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
+      if (!localStorage.getItem(WEERGAVE_MIGRATIE_KEY)) {
+        localStorage.setItem(WEERGAVE_MIGRATIE_KEY, '1')
+        return 'stapel'
+      }
       const opgeslagen = localStorage.getItem(WEERGAVE_KEY)
       if (opgeslagen && VIEW_MODES.includes(opgeslagen as ViewMode)) return opgeslagen as ViewMode
     } catch (err) {
       logger.warn('[taken] weergave lezen', err)
     }
-    return 'week'
+    return 'stapel'
   })
 
   useEffect(() => {
@@ -383,7 +389,6 @@ export function TasksLayout() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   // Completion prompt
-  const [completionPrompt, setCompletionPrompt] = useState<{ open: boolean; projectId: string; projectNaam: string }>({ open: false, projectId: '', projectNaam: '' })
 
   // Month-view inline add
   const [monthAddingDay, setMonthAddingDay] = useState<string | null>(null)
@@ -1199,19 +1204,7 @@ export function TasksLayout() {
     if (user?.id) {
       logWijziging({ userId: user.id, entityType: 'taak', entityId: taak.id, actie: 'status_gewijzigd', medewerkerNaam, veld: 'status', oudeWaarde: taak.status, nieuweWaarde: newStatus })
     }
-    if (newStatus === 'klaar' && taak.project_id) {
-      const projectTaken = taken
-        .map((t) => t.id === taak.id ? { ...t, status: newStatus } : t)
-        .filter((t) => t.project_id === taak.project_id)
-      const alleKlaar = projectTaken.length > 0 && projectTaken.every((t) => t.status === 'klaar')
-      if (alleKlaar) {
-        const project = projecten.find((p) => p.id === taak.project_id)
-        if (project && project.status !== 'afgerond') {
-          setTimeout(() => setCompletionPrompt({ open: true, projectId: project.id, projectNaam: project.naam }), 500)
-        }
-      }
-    }
-    if (newStatus === 'klaar') toast.success('Taak afgerond!')
+    if (newStatus === 'klaar') toast.success(<>Taak afgerond<span style={{ color: '#F15025' }}>.</span></>)
   }
 
   async function handleDeleteDirect(taak: Taak) {
@@ -2440,26 +2433,6 @@ export function TasksLayout() {
         </DialogContent>
       </Dialog>
 
-      {/* Completion prompt modal */}
-      <CompletionPromptModal
-        open={completionPrompt.open}
-        projectNaam={completionPrompt.projectNaam}
-        onClose={() => setCompletionPrompt((prev) => ({ ...prev, open: false }))}
-        onUpdateStatus={async (status) => {
-          try {
-            const huidigProject = await getProject(completionPrompt.projectId).catch(() => null)
-            await updateProject(completionPrompt.projectId, { status: status as Project['status'] })
-            if (user?.id && huidigProject?.status) {
-              const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
-              logWijziging({ userId: user.id, entityType: 'project', entityId: completionPrompt.projectId, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: huidigProject.status, nieuweWaarde: status })
-            }
-            toast.success(`Project gemarkeerd als ${status}`)
-          } catch (err) {
-            logger.error('updateProjectStatus:', err)
-            toast.error('Kon projectstatus niet bijwerken')
-          }
-        }}
-      />
     </>
   )
 }
