@@ -34,6 +34,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!titel.trim()) return
+    if (!toegewezenAan.trim()) { toast.error('Wijs de taak toe aan een medewerker'); return }
 
     setSaving(true)
     try {
@@ -99,7 +100,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
               onChange={(v) => setToegewezenAan(v ?? '')}
               valueKind="naam"
               trigger="input"
-              allLabel="Niet toegewezen"
+              allLabel="Kies medewerker"
               placeholder="Zoek medewerker…"
             />
           </div>
@@ -117,7 +118,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
 
             <button
               type="submit"
-              disabled={!titel.trim() || saving}
+              disabled={!titel.trim() || !toegewezenAan.trim() || saving}
               className="h-9 px-5 text-[13px] font-semibold text-white rounded-xl transition-all duration-150 disabled:opacity-50 whitespace-nowrap shrink-0 bg-petrol hover:bg-[#16454D] shadow-sm hover:shadow active:scale-[0.98]"
             >
               {saving ? 'Toevoegen...' : 'Toevoegen'}

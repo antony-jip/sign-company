@@ -786,6 +786,7 @@ export function ProjectDetail() {
     if (!montageTitel.trim()) { toast.error('Vul een titel in'); return }
     if (montageStatus !== 'te-plannen' && !montageDatum) { toast.error('Selecteer een datum'); return }
     if (!montageLocatie.trim()) { toast.error('Vul een locatie in'); return }
+    if (montageStatus !== 'te-plannen' && montageMonteurs.length === 0) { toast.error('Selecteer minimaal een monteur'); return }
 
     try {
       setIsSavingMontage(true)
@@ -2804,8 +2805,9 @@ export function ProjectDetail() {
               Annuleren
             </Button>
             <Button
-              disabled={!nieuweTaakTitel.trim()}
+              disabled={!nieuweTaakTitel.trim() || !nieuweTaakToegewezen.trim()}
               onClick={async () => {
+                if (!nieuweTaakToegewezen.trim()) { toast.error('Wijs de taak toe aan een medewerker'); return }
                 try {
                   if (editTaakId) {
                     await updateTaak(editTaakId, {

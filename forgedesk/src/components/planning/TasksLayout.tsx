@@ -720,6 +720,17 @@ export function TasksLayout() {
     return map
   }, [klanten])
 
+  // Klant per project · zodat een taak die aan een project hangt in het
+  // overzicht laat zien voor wie het is, ook als de taak zelf geen klant heeft
+  const projectKlantMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    projecten.forEach((p) => {
+      const naam = p.klant_naam || (p.klant_id ? klantMap[p.klant_id] : '')
+      if (naam) map[p.id] = naam
+    })
+    return map
+  }, [projecten, klantMap])
+
   const offerteMap = useMemo(() => {
     const map: Record<string, Offerte> = {}
     offertes.forEach((o) => { map[o.id] = o })
@@ -1100,6 +1111,7 @@ export function TasksLayout() {
 
   async function handleSave() {
     if (!formData.titel.trim()) { toast.error('Titel is verplicht'); return }
+    if (!formData.toegewezen_aan.trim()) { toast.error('Wijs de taak toe aan een medewerker'); return }
     setIsSaving(true)
     try {
       const updated = await updateTaak(editingTaak!.id, {
@@ -1611,6 +1623,7 @@ export function TasksLayout() {
                   tasks={dayTasks}
                   projectMap={projectMap}
                   klantMap={klantMap}
+                  projectKlantMap={projectKlantMap}
                   offerteMap={offerteMap}
                   nowLineTop={isCurrentWeek && isToday ? nowLineTop : null}
                   draggingTaakId={draggingTaakId}
@@ -2247,7 +2260,7 @@ function NietVergetenStrip() {
 }
 
 function DayColumn({
-  day, dayIndex, isToday, isPast, tasks, projectMap, klantMap, offerteMap, nowLineTop,
+  day, dayIndex, isToday, isPast, tasks, projectMap, klantMap, projectKlantMap, offerteMap, nowLineTop,
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
   onToggle, onTogglePrio, onEdit, onDelete, onQuickAdd, onQuickAddAtTime, onResize,
@@ -2262,6 +2275,7 @@ function DayColumn({
   tasks: Taak[]
   projectMap: Record<string, string>
   klantMap: Record<string, string>
+  projectKlantMap: Record<string, string>
   offerteMap: Record<string, Offerte>
   nowLineTop: number | null
   draggingTaakId: string | null
@@ -2546,7 +2560,7 @@ function DayColumn({
             <TaskCard
               taak={taak}
               projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
-              klantNaam={taak.klant_id ? klantMap[taak.klant_id] : undefined}
+              klantNaam={(taak.klant_id ? klantMap[taak.klant_id] : undefined) || (taak.project_id ? projectKlantMap[taak.project_id] : undefined)}
               offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: offerteMap[taak.offerte_id].totaal, status: offerteMap[taak.offerte_id].status } : undefined}
               isPast={isPast}
               scheduled
@@ -2631,7 +2645,7 @@ function DayColumn({
             <TaskCard
               taak={taak}
               projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
-              klantNaam={taak.klant_id ? klantMap[taak.klant_id] : undefined}
+              klantNaam={(taak.klant_id ? klantMap[taak.klant_id] : undefined) || (taak.project_id ? projectKlantMap[taak.project_id] : undefined)}
               offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: offerteMap[taak.offerte_id].totaal, status: offerteMap[taak.offerte_id].status } : undefined}
               isPast={isPast}
               onDragStart={() => onDragStart(taak.id)}
@@ -2750,9 +2764,15 @@ function TaskCard({
 
   const isCompact = heightPx !== undefined && heightPx < 36
 
+  // Volledige context in de hover-titel · op smalle of lage kaarten wordt de
+  // regel met klant en project afgekapt of helemaal verborgen
+  const contextLabel = [klantNaam, projectNaam].filter(Boolean).join(' · ')
+  const cardTitle = contextLabel ? `${taak.titel} · ${contextLabel}` : taak.titel
+
   return (
     <div
       data-taak-id={taak.id}
+      title={cardTitle}
       draggable={!isResizing}
       onDragStart={handleDragStart}
       onDragEnd={(e) => { const el = e.currentTarget as HTMLElement; el.style.opacity = '1'; el.style.transform = ''; onDragEnd() }}
@@ -2840,8 +2860,13 @@ function TaskCard({
             {durationLabel && (
               <span className="text-[11px] font-mono tabular-nums">{durationLabel}</span>
             )}
-            {projectNaam && (
-              <span className="text-[11px] truncate max-w-[100px]">{projectNaam}</span>
+            {/* Klant + project · zodat je in het overzicht ziet voor wie de taak is */}
+            {(klantNaam || projectNaam) && (
+              <span className="text-[11px] truncate min-w-0 flex-1">
+                {klantNaam && <span className="font-medium">{klantNaam}</span>}
+                {klantNaam && projectNaam && <span className="opacity-50"> · </span>}
+                {projectNaam}
+              </span>
             )}
           </div>
         )}
@@ -2963,13 +2988,12 @@ function EditTaskDialog({
 
           {/* Toegewezen */}
           {medewerkers.length > 0 ? (
-            <Select value={formData.toegewezen_aan || 'none'} onValueChange={(v) => updateField('toegewezen_aan', v === 'none' ? '' : v)}>
+            <Select value={formData.toegewezen_aan || undefined} onValueChange={(v) => updateField('toegewezen_aan', v)}>
               <SelectTrigger className={cn(pillBase, 'w-auto focus:ring-0 [&>svg]:hidden max-w-[160px]')}>
                 <User2 className="w-3 h-3 text-foreground/70" />
-                <SelectValue placeholder="Niet toegewezen" />
+                <SelectValue placeholder="Kies medewerker" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Niet toegewezen</SelectItem>
                 {medewerkers.filter((m) => m.status === 'actief').map((m) => (
                   <SelectItem key={m.id} value={m.naam}>{m.naam}</SelectItem>
                 ))}
@@ -2981,7 +3005,7 @@ function EditTaskDialog({
               <input
                 value={formData.toegewezen_aan}
                 onChange={(e) => updateField('toegewezen_aan', e.target.value)}
-                placeholder="Niet toegewezen"
+                placeholder="Kies medewerker"
                 className="bg-transparent border-0 outline-none text-xs font-medium text-foreground placeholder:text-muted-foreground w-28"
               />
             </div>
