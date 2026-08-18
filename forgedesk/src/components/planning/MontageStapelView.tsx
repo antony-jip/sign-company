@@ -20,7 +20,9 @@ import type { MontageAfspraak, Taak } from '@/types'
 // dat is precies wat een planner zoekt.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const DAG_NAMEN = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag']
+// Zelfde afkortingen als de stapel in Taken · een volle dagnaam in dezelfde
+// kleine, getrackte kop leest als een ander scherm.
+const DAG_NAMEN = ['MA', 'DI', 'WO', 'DO', 'VR', 'ZA', 'ZO']
 
 function kortTijd(t?: string): string {
   return t ? t.slice(0, 5) : ''

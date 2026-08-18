@@ -75,6 +75,7 @@ import { getDagNotities, upsertDagNotitie, deleteDagNotitie, getVrijPatronen, cr
 import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie, VrijPatroon, Afwezigheid, AfwezigheidType } from "@/types";
 import { buildAfwezigheidIndex, resolveAfwezig } from "@/utils/afwezigheid";
 import { MontageStapelView } from '@/components/planning/MontageStapelView';
+import { ModuleToolbar } from '@/components/layouts/ModuleToolbar';
 import { AfwezigheidPopover } from "./AfwezigheidPopover";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { ClipboardCheck } from "lucide-react";
@@ -3607,8 +3608,10 @@ export function MontagePlanningLayout() {
 
       {/* ── Right content: member's week planning ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Toolbar */}
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[rgba(26,83,92,0.08)] bg-card">
+        {/* Gereedschap · gaat de header in, net als bij Taken. Planning had
+            hier een tweede balk met zijn eigen titel erin, boven een header die
+            "Planning." al zei. */}
+        <ModuleToolbar>
           {/* Scope · één dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -3645,7 +3648,11 @@ export function MontagePlanningLayout() {
                   title="Naar huidige week"
                   className="px-2 py-0.5 rounded-md text-[13px] font-semibold text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                 >
-                  Week <span className="font-mono tabular-nums">{weekNumber}</span>
+                  {/* Zelfde vorm als in Taken · daar staat "wk 34 17 – 21 aug",
+                      en dat is ook hier het antwoord dat je zoekt. */}
+                  <span className="text-muted-foreground font-medium mr-1.5">wk {weekNumber}</span>
+                  {weekDates[0].getDate()} – {weekDates[weekDates.length - 1].getDate()}{' '}
+                  {weekDates[weekDates.length - 1].toLocaleDateString('nl-NL', { month: 'short' })}
                 </button>
                 <button
                   className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
@@ -3728,7 +3735,7 @@ export function MontagePlanningLayout() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </ModuleToolbar>
         {/* Conflict banner */}
         {conflicts.length > 0 && (
           <div className="bg-[hsl(var(--status-flame-bg))] border-b border-[#F0C8BC] px-4 py-2 flex items-center gap-2">
