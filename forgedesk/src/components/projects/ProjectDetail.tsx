@@ -453,6 +453,14 @@ export function ProjectDetail() {
 
   const [project, setProject] = useState<Project | null>(null)
   const projectMaker = project?.user_id ? medewerkers.find((m) => m.user_id === project.user_id) : undefined
+
+  // Je eigen medewerkerprofiel · zelfde afleiding als in Planning.
+  const eigenMedewerker = useMemo(() => {
+    if (!user?.id || medewerkers.length === 0) return null
+    return medewerkers.find((m) => m.user_id === user.id)
+      || medewerkers.find((m) => m.email?.toLowerCase() === user.email?.toLowerCase())
+      || null
+  }, [user, medewerkers])
   const [klant, setKlant] = useState<Klant | null>(null)
   const [editKlantOpen, setEditKlantOpen] = useState(false)
 
@@ -743,7 +751,9 @@ export function ProjectDetail() {
     setMontageStartTijd('08:00')
     setMontageEindTijd('17:00')
     setMontageNotities('')
-    setMontageMonteurs([])
+    // Wie de montage aanmaakt staat er zelf bijna altijd op · en dit formulier
+    // weigert zonder monteur op te slaan, dus dat was elke keer een klik erbij.
+    setMontageMonteurs(eigenMedewerker ? [eigenMedewerker.id] : [])
     setMontageBijlagen([])
     setMontageWerkbonId('')
     setMontageStatus('gepland')
@@ -3311,13 +3321,13 @@ export function ProjectDetail() {
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div>
-              <Label className="text-sm">Titel</Label>
+              <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Titel</Label>
               <Input value={montageTitel} onChange={(e) => setMontageTitel(e.target.value)} placeholder="Bijv. Montage gevelreclame" className="mt-1 h-9" />
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <Label className="text-sm">Datum</Label>
+                  <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Datum</Label>
                   <label className="flex items-center gap-1 cursor-pointer select-none text-[11px] font-medium text-muted-foreground hover:text-petrol transition-colors">
                     <input
                       type="checkbox"
@@ -3331,21 +3341,21 @@ export function ProjectDetail() {
                 <DatePicker value={montageDatum} onChange={(v) => setMontageDatum(v)} asInput className="mt-1 h-9" />
               </div>
               <div>
-                <Label className="text-sm">Start</Label>
+                <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Start</Label>
                 <Input type="time" value={montageStartTijd} onChange={(e) => setMontageStartTijd(e.target.value)} className="mt-1 h-9 [color-scheme:light] dark:[color-scheme:dark]" />
               </div>
               <div>
-                <Label className="text-sm">Eind</Label>
+                <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Eind</Label>
                 <Input type="time" value={montageEindTijd} onChange={(e) => setMontageEindTijd(e.target.value)} className="mt-1 h-9 [color-scheme:light] dark:[color-scheme:dark]" />
               </div>
             </div>
             <div>
-              <Label className="text-sm">Locatie</Label>
+              <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Locatie</Label>
               <Input value={montageLocatie} onChange={(e) => setMontageLocatie(e.target.value)} placeholder="Adres / locatie" className="mt-1 h-9" />
             </div>
             {alleMedewerkers.length > 0 && (
               <div>
-                <Label className="text-sm">Monteurs</Label>
+                <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Monteurs</Label>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {alleMedewerkers.map((m) => (
                     <button
@@ -3422,7 +3432,7 @@ export function ProjectDetail() {
             </div>
 
             <div>
-              <Label className="text-sm">Notities</Label>
+              <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Notities</Label>
               <Textarea value={montageNotities} onChange={(e) => setMontageNotities(e.target.value)} placeholder="Optioneel..." rows={2} className="mt-1 min-h-[50px]" />
             </div>
 

@@ -51,19 +51,25 @@ export interface StapelProps {
   toonMonteurs: boolean
   /** Feestdag of vrije dag · dan is er geen capaciteit te vergeven. */
   gesloten?: (datum: string) => string | null
+  /** Vergroting in procenten · voor wie 11px niet prettig leest. */
+  zoom?: number
 }
 
 export function MontageStapelView({
   weekDates, datumSleutel, afsprakenPerDag, takenPerDag, vandaagSleutel,
   accentKleur, conflictIds, sleepId, onSleepStart, onSleepEnd, onDropOpDag,
   onOpen, onAfronden, onTerugzetten, onNieuwOpDag, monteurLabel, toonMonteurs, gesloten,
+  zoom = 100,
 }: StapelProps) {
   // Afgerond staat dicht · een dag waarop zes montages klaar zijn is juist een
   // rustige dag, en die hoort niet de langste kolom op het scherm te zijn.
   const [afgerondOpen, setAfgerondOpen] = useState<Set<string>>(new Set())
 
   return (
-    <div className="doen-stapel planning-stapel">
+    /* zoom schaalt de hele stapel in één keer · elke maat in dit blok staat in
+       px, en die stuk voor stuk naar em omzetten levert alleen afrondingsruis
+       op. De kolommen blijven de volle breedte houden. */
+    <div className="doen-stapel planning-stapel" style={zoom === 100 ? undefined : { zoom: zoom / 100 }}>
       {weekDates.map((datum, i) => {
         const sleutel = datumSleutel(datum)
         const afspraken = afsprakenPerDag[sleutel] || []

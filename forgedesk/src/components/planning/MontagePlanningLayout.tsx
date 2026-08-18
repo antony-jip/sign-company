@@ -51,6 +51,7 @@ import {
   Upload,
   Eye,
   ArrowUpRight,
+  ExternalLink,
   Check,
   Flame,
   ChevronDown,
@@ -76,6 +77,7 @@ import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offer
 import { buildAfwezigheidIndex, resolveAfwezig } from "@/utils/afwezigheid";
 import { MontageStapelView } from '@/components/planning/MontageStapelView';
 import { ModuleToolbar } from '@/components/layouts/ModuleToolbar';
+import { ProjectCombobox } from '@/components/shared/ProjectCombobox';
 import { AfwezigheidPopover } from "./AfwezigheidPopover";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { ClipboardCheck } from "lucide-react";
@@ -108,6 +110,7 @@ const LANE_GROUPING_KEY = 'doen_planning_lane_grouping';
 const PLANNING_FILTER_KEY = 'doen_planning_filter_v1';
 const PLANNING_SCOPE_KEY = 'doen_planning_scope_v1';
 const PLANNING_VIEWMODE_KEY = 'doen_planning_viewmode_v1';
+const PLANNING_ZOOM_KEY = 'doen_planning_zoom_v1';
 
 type ViewMode = 'stapel' | 'maand';
 const FASES_BLOKKEREN_AFRONDEN: Array<Project['status']> = ['te-factureren', 'gefactureerd', 'afgerond'];
@@ -430,6 +433,24 @@ export function MontagePlanningLayout() {
   const [currentMonday, setCurrentMonday] = useState<Date>(() =>
     getMondayOfWeek(new Date())
   );
+  // Zoom · niet iedereen leest 11px net zo makkelijk. Blijft staan tussen
+  // sessies, want wie hem nodig heeft, heeft hem elke dag nodig.
+  const [stapelZoom, setStapelZoomState] = useState<number>(() => {
+    try {
+      const raw = Number(localStorage.getItem(PLANNING_ZOOM_KEY));
+      return raw >= 90 && raw <= 160 ? raw : 100;
+    } catch {
+      return 100;
+    }
+  });
+  const zoomStap = useCallback((delta: number) => {
+    setStapelZoomState((z) => {
+      const next = Math.min(160, Math.max(90, z + delta));
+      try { localStorage.setItem(PLANNING_ZOOM_KEY, String(next)); } catch { /* private mode */ }
+      return next;
+    });
+  }, []);
+
   const [viewMode, setViewModeState] = useState<ViewMode>(() => {
     try {
       const raw = localStorage.getItem(PLANNING_VIEWMODE_KEY);
@@ -1104,7 +1125,9 @@ export function MontagePlanningLayout() {
     setFormData({
       ...EMPTY_FORM,
       datum: datum || todayStr,
-      monteurs: prefillMonteurId ? [prefillMonteurId] : [],
+      // Wie een montage aanmaakt staat er zelf bijna altijd op · dat hoef je
+      // niet elke keer aan te klikken. Een andere keuze haal je er zo weer af.
+      monteurs: prefillMonteurId ? [prefillMonteurId] : eigenMedewerker ? [eigenMedewerker.id] : [],
     });
     setDialogOpen(true);
   }
@@ -1122,7 +1145,7 @@ export function MontagePlanningLayout() {
       titel: project.naam,
       datum: datum || todayStr,
       locatie,
-      monteurs: prefillMonteurId ? [prefillMonteurId] : [],
+      monteurs: prefillMonteurId ? [prefillMonteurId] : eigenMedewerker ? [eigenMedewerker.id] : [],
     });
     if (project.id) {
       getWerkbonnenByProject(project.id).then((wbs) => {
@@ -1707,6 +1730,7 @@ export function MontagePlanningLayout() {
     const vandaagSleutel = formatDate(new Date());
     return (
       <MontageStapelView
+        zoom={stapelZoom}
         weekDates={weekDates}
         datumSleutel={formatDate}
         afsprakenPerDag={afsprakenPerDag}
@@ -2943,17 +2967,18 @@ export function MontagePlanningLayout() {
             <div className="flex items-start justify-between gap-3 pr-6 flex-wrap">
               <div className="flex-1 min-w-0 space-y-0.5">
                 <DialogTitle className="m-0">
-                  <div className="group relative">
-                    <input
-                      type="text"
-                      value={formData.titel}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, titel: e.target.value }))}
-                      placeholder={editingAfspraak ? "Montage afspraak" : "Nieuwe montage afspraak"}
-                      aria-label="Titel van montage afspraak"
-                      className="bg-transparent border-0 outline-none w-full text-[24px] font-extrabold tracking-[-0.3px] text-foreground placeholder:text-muted-foreground hover:bg-background focus:bg-background rounded-lg px-2 -mx-2 py-0.5 pr-7 transition-colors truncate leading-tight"
-                    />
-                    <Pencil className="absolute right-1 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-0 transition-opacity pointer-events-none" />
-                  </div>
+                  {/* Zelfde behandeling als de titel in het taakformulier: in
+                      rust al een vlak, zodat je ziet dat je hem kunt wijzigen
+                      zonder dat er een potloodje bij hoeft. */}
+                  <input
+                    type="text"
+                    value={formData.titel}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, titel: e.target.value }))}
+                    placeholder={editingAfspraak ? "Montage afspraak" : "Nieuwe montage afspraak"}
+                    aria-label="Titel van montage afspraak"
+                    title="Klik om de titel te wijzigen"
+                    className="w-full rounded-lg border-0 bg-background px-3 py-2.5 text-[20px] font-bold leading-tight tracking-[-0.3px] text-[#1A4A52] dark:text-foreground outline-none transition-colors placeholder:font-medium placeholder:text-muted-foreground hover:bg-muted focus:bg-card focus-visible:ring-1 focus-visible:ring-petrol/25 cursor-text"
+                  />
                 </DialogTitle>
                 {editingAfspraak && STATUS_CONFIG[formData.status] && (
                   <div className="text-[13px] text-foreground/70 font-medium px-0">
@@ -2961,11 +2986,23 @@ export function MontagePlanningLayout() {
                   </div>
                 )}
               </div>
-              {formData.project_id && (
-                <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-6 py-2">
+            {/* Project · context bovenin */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="project" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</Label>
+                {/* Stond rechtsboven naast de titel · hij hoort bij het veld
+                    waar hij over gaat, en is nu een echte link zodat cmd-klik
+                    werkt. */}
+                {formData.project_id && (
+                  <a
+                    href={`/projecten/${formData.project_id}`}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                      e.preventDefault();
                       const project = projecten.find((p) => p.id === formData.project_id);
                       setDialogOpen(false);
                       navigateWithTab({
@@ -2974,46 +3011,24 @@ export function MontagePlanningLayout() {
                         id: `/projecten/${formData.project_id}`,
                       });
                     }}
-                    className="inline-flex items-center gap-1 text-[12px] font-medium text-petrol dark:text-[#5AABB5] hover:text-[#143F46] dark:hover:text-foreground hover:underline shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-petrol/30 dark:focus-visible:ring-white/20 focus-visible:ring-offset-1"
+                    title="Ga naar dit project · cmd-klik voor een nieuw tabblad"
+                    className="group inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-flame/85 hover:text-flame transition-colors"
                   >
-                    Open project
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </DialogHeader>
-
-          <div className="space-y-6 py-2">
-            {/* Project · context bovenin */}
-            <div className="space-y-1.5">
-              <Label htmlFor="project" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</Label>
-              <Select value={formData.project_id} onValueChange={handleProjectChange}>
-                <SelectTrigger id="project">
-                  {formData.project_id ? (
-                    <span className="truncate inline-flex items-baseline gap-1.5">
-                      <span>{projecten.find((p) => p.id === formData.project_id)?.naam}</span>
-                      {formData.klant_naam && (
-                        <span className="text-muted-foreground text-[12px] truncate">· {formData.klant_naam}</span>
-                      )}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">Selecteer project</span>
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  {projecten.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      <div className="flex flex-col leading-tight">
-                        <span className="text-[13px]">{project.naam}</span>
-                        {project.klant_naam && (
-                          <span className="text-[11px] text-muted-foreground">{project.klant_naam}</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    <span className="border-b border-transparent group-hover:border-current transition-colors">Open project</span>
+                    <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
+                )}
+              </div>
+              {/* Was een Select met álle projecten en geen zoekveld · dezelfde
+                  combobox als in Taken en de mail, dus zoekbaar en nieuwste
+                  bovenaan. */}
+              <ProjectCombobox
+                projecten={projecten}
+                value={formData.project_id}
+                onChange={handleProjectChange}
+                leegLabel="Geen project"
+                placeholder="Selecteer project"
+              />
             </div>
 
             {/* Wanneer */}
@@ -3666,6 +3681,26 @@ export function MontagePlanningLayout() {
           )}
 
           <div className="flex-1" />
+
+          {/* Zoom · twee subtiele text-knoppen, net als in Taken. */}
+          {viewMode !== 'maand' && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => zoomStap(-10)}
+                title="Kleiner"
+                aria-label="Kleiner weergeven"
+                className="px-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              >A</button>
+              <button
+                type="button"
+                onClick={() => zoomStap(10)}
+                title="Groter"
+                aria-label="Groter weergeven"
+                className="px-1 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >A</button>
+            </div>
+          )}
 
           {/* Week / Maand · compacte segmented toggle */}
           <div className="flex rounded-lg bg-[hsl(38,20%,95.5%)] dark:bg-white/[0.06] p-0.5 text-[12px]">
