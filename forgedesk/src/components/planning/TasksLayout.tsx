@@ -3316,9 +3316,21 @@ function EditTaskDialog({
     el.style.height = `${Math.min(el.scrollHeight, 400)}px`
   }, [formData.beschrijving, open])
 
-  const displayDeadline = formData.deadline
-    ? new Date(formData.deadline).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
-    : 'Geen deadline'
+  // "19 aug" laat je zelf uitrekenen welke dag dat is · in een weergave die op
+  // dagen is gebouwd is de weekdag het antwoord dat je zoekt. Vandaag en morgen
+  // krijgen hun eigen woord, want die twee zoek je het vaakst.
+  const displayDeadline = (() => {
+    if (!formData.deadline) return 'Geen deadline'
+    const d = new Date(formData.deadline)
+    if (isNaN(d.getTime())) return 'Geen deadline'
+    const nul = (x: Date) => { const c = new Date(x); c.setHours(0, 0, 0, 0); return c.getTime() }
+    const verschil = Math.round((nul(d) - nul(new Date())) / 86400000)
+    const datum = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+    if (verschil === 0) return `Vandaag · ${datum}`
+    if (verschil === 1) return `Morgen · ${datum}`
+    const dag = d.toLocaleDateString('nl-NL', { weekday: 'short' }).replace('.', '')
+    return `${dag} ${datum}`
+  })()
 
   const pillBase = 'h-7 px-2.5 inline-flex items-center gap-1.5 rounded-full border border-border bg-card text-xs font-medium text-foreground hover:border-border hover:bg-background transition-colors'
 
@@ -3331,13 +3343,17 @@ function EditTaskDialog({
         {/* Titel · stond er als een kop bij, dus het was niet te zien dat je
             hem kon wijzigen. Nu dezelfde behandeling als de briefing eronder:
             in rust vlak, bij hover een vlak, bij focus wit met een ring. */}
-        <div className="px-7 pt-7 pb-3">
+        {/* pt-11 houdt het veld vrij van de sluitknop (absolute, top-3, 28px
+            hoog) · met een titel zonder vlak viel die overlap niet op, met een
+            vlak wel. Geen negatieve marges meer, zodat de linker- en
+            rechterrand precies op het projectveld en de briefing uitkomen. */}
+        <div className="px-7 pt-11 pb-2">
           <Input
             value={formData.titel}
             onChange={(e) => updateField('titel', e.target.value)}
             placeholder="Titel van de taak"
             title="Klik om de titel te wijzigen"
-            className="border-0 shadow-none h-auto py-2 px-3 -mx-3 w-[calc(100%+1.5rem)] bg-background hover:bg-muted focus:bg-card rounded-lg text-[20px] font-bold text-[#1A4A52] dark:text-foreground placeholder:text-muted-foreground placeholder:font-medium focus-visible:ring-1 focus-visible:ring-petrol/25 tracking-[-0.3px] transition-colors cursor-text"
+            className="border-0 shadow-none h-auto w-full py-2.5 px-3 bg-background hover:bg-muted focus:bg-card rounded-lg text-[20px] font-bold text-[#1A4A52] dark:text-foreground placeholder:text-muted-foreground placeholder:font-medium focus-visible:ring-1 focus-visible:ring-petrol/25 tracking-[-0.3px] transition-colors cursor-text"
           />
         </div>
 
@@ -3410,7 +3426,7 @@ function EditTaskDialog({
 
         {/* Project · altijd zichtbaar, geen type-toggle meer */}
         <div className="px-7 pb-4 space-y-1.5">
-          <div className="flex items-baseline justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Project</Label>
             {/* Stond rechtsboven naast de titel, met een external-link-icoon en
                 "opent in nieuw tabblad" in de tooltip — terwijl hij gewoon in
@@ -3427,10 +3443,10 @@ function EditTaskDialog({
                   navigate(`/projecten/${formData.project_id}`)
                 }}
                 title="Ga naar dit project · cmd-klik voor een nieuw tabblad"
-                className="flex-shrink-0 inline-flex items-center gap-0.5 text-[12px] font-medium text-petrol dark:text-[#5AABB5] hover:text-[#0F3A40] dark:hover:text-foreground transition-colors"
+                className="group flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-flame/85 hover:text-flame transition-colors"
               >
-                Open project
-                <ExternalLink className="w-3 h-3" />
+                <span className="border-b border-transparent group-hover:border-current transition-colors">Open project</span>
+                <ExternalLink className="w-2.5 h-2.5" />
               </a>
             )}
           </div>
