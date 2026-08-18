@@ -3511,7 +3511,7 @@ export function MontagePlanningLayout() {
               <span>Niets te plannen</span>
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto px-2 py-1 flex flex-col">
+            <div className="flex-1 overflow-y-auto px-1.5 py-1 flex flex-col">
               {tePlannenProjecten.map((project) => {
                 const isPrio = project.prioriteit === 'hoog' || project.prioriteit === 'kritiek';
                 return (
@@ -3543,7 +3543,7 @@ export function MontagePlanningLayout() {
                       isPrio ? "border-l-flame" : "border-l-transparent",
                       draggingProjectId === project.id && "opacity-50"
                     )}
-                    style={{ padding: '8px 10px' }}
+                    style={{ padding: '8px 10px 8px 12px' }}
                   >
                     {/* De naam kapte af op de plek waar hij onderscheidend werd:
                         "Nieuwe signing - De ..." en "Nieuwe signing locati..."

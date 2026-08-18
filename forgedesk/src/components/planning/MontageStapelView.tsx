@@ -169,7 +169,7 @@ export function MontageStapelView({
                   >
                     <span className="stapel-afregel-tijd">{kortTijd(a.start_tijd)}</span>
                     <span className="stapel-afregel-tekst">
-                      <span className="taak-af-titel">{a.titel}</span>
+                      <span className="stapel-afregel-titel">{a.titel}</span>
                       {a.klant_naam && <span className="stapel-afregel-klant">{a.klant_naam}</span>}
                     </span>
                     <button
@@ -191,7 +191,14 @@ export function MontageStapelView({
               className="stapel-vulling"
               aria-label={`Montage inplannen op ${DAG_NAMEN[i]} ${datum.getDate()}`}
               onClick={() => !dicht && onNieuwOpDag(sleutel)}
-            />
+            >
+              {!dicht && (
+                <span className="stapel-vulling-hint">
+                  <Plus className="w-3 h-3" />
+                  Inplannen
+                </span>
+              )}
+            </button>
           </section>
         )
       })}

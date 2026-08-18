@@ -4707,15 +4707,39 @@ button.doen-panel:hover {
 }
 .dark .planning-stapel .stapel-vrij { color: #9FC5CC; }
 
-/* De klikruimte onder een dag mocht wel bestaan, maar niet als grijs vlak van
-   een halve meter · een kolom die je aanwijst hoort niet het luidste ding op
-   het scherm te worden. */
-.planning-stapel .stapel-vulling:hover {
-  background: color-mix(in srgb, #1A535C 1.6%, transparent);
+/* De klikruimte onder een dag mag bestaan, maar niet als grijs vlak van bijna
+   een meter · een kolom die je aanwijst hoort niet het luidste ding op het
+   scherm te worden. Geen vulling meer, alleen een woord bovenin. */
+.planning-stapel .stapel-vulling {
+  display: block;
+  text-align: left;
 }
-.dark .planning-stapel .stapel-vulling:hover {
-  background: color-mix(in srgb, #FFFFFF 1.8%, transparent);
+.planning-stapel .stapel-vulling:hover { background: transparent; }
+
+.planning-stapel .stapel-vulling-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 7px;
+  font-size: 11px;
+  color: var(--stapel-zacht);
+  opacity: 0;
+  transition: opacity 160ms ease, background-color 160ms ease;
 }
+.planning-stapel .stapel-vulling:hover .stapel-vulling-hint {
+  opacity: 1;
+  background: color-mix(in srgb, #1A535C 5%, transparent);
+}
+.dark .planning-stapel .stapel-vulling:hover .stapel-vulling-hint {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Geen inline-block met een eigen ::after-lijn hier · dan grijpt de ellipsis
+   van de regel op die doos in plaats van op de tekst, en knipt de titel hard
+   af midden in een woord. Een gewone doorhaling laat het afkappen intact. */
+.planning-stapel .stapel-afregel-titel { text-decoration: line-through; }
 
 .planning-stapel .stapel-gesloten {
   margin-top: 4px;
@@ -4754,10 +4778,12 @@ button.doen-panel:hover {
    voor één regel tekst; over twee regels landt hij er precies tussenin. */
 .planning-stapel .stapel-afregel {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  /* Zelfde tijdrail en dezelfde linkerinspring als een open kaart (2px rand +
+     9px padding), anders staan de tijden van een dag niet onder elkaar. */
+  grid-template-columns: 38px minmax(0, 1fr) auto;
   align-items: baseline;
   column-gap: 8px;
-  padding: 4px 6px 4px 0;
+  padding: 4px 10px 4px 11px;
   border-radius: 7px;
   cursor: pointer;
   opacity: 0.62;
@@ -4797,3 +4823,7 @@ button.doen-panel:hover {
 }
 .planning-stapel .stapel-afregel:hover .stapel-afregel-terug { opacity: 1; }
 .planning-stapel .stapel-afregel-terug:hover { color: var(--stapel-tekst); }
+
+/* De kop van de afgerond-sectie ging bij de rand van de kolom staan in plaats
+   van bij de tijdrail eronder. */
+.planning-stapel .stapel-afgerond-kop { padding-left: 8px; }
