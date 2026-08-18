@@ -3722,3 +3722,321 @@ button.doen-panel:hover {
 @media (prefers-reduced-motion: reduce) {
   .punt-wacht { animation: none; opacity: 0.55; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TAKEN · STAPEL
+   De dag als geordende stapel. Kolommen zijn containers, zodat een kaart zijn
+   eigen dichtheid kiest op basis van de ruimte die hij krijgt in plaats van op
+   basis van de vensterbreedte.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.taken-stapel {
+  --stapel-lijn: hsl(var(--border));
+  --stapel-kaart: color-mix(in srgb, #1A535C 6%, transparent);
+  --stapel-kaart-hover: color-mix(in srgb, #1A535C 10%, transparent);
+  --stapel-tekst: #1A535C;
+  --stapel-zacht: color-mix(in srgb, #1A535C 62%, transparent);
+
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: start;
+  min-height: 100%;
+  padding: 0 0 3rem;
+}
+
+.dark .taken-stapel {
+  --stapel-kaart: color-mix(in srgb, #5FB5C0 10%, transparent);
+  --stapel-kaart-hover: color-mix(in srgb, #5FB5C0 16%, transparent);
+  --stapel-tekst: #CFE3E6;
+  --stapel-zacht: color-mix(in srgb, #CFE3E6 60%, transparent);
+}
+
+.stapel-dag {
+  container-type: inline-size;
+  container-name: stapeldag;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 0 6px 1rem;
+  border-left: 1px solid var(--stapel-lijn);
+}
+
+.stapel-dag.is-verleden { opacity: 0.62; }
+.stapel-dag.is-vandaag { background: color-mix(in srgb, #1A535C 2.5%, transparent); }
+.dark .stapel-dag.is-vandaag { background: color-mix(in srgb, #FFFFFF 3%, transparent); }
+
+/* Een dag met kritiek werk verdient een teken in de kop, zonder dat elke kaart
+   erom hoeft te schreeuwen. */
+.stapel-dag:has(.stapel-kaart[data-prio="kritiek"]) .stapel-dagnaam::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 5px;
+  border-radius: 9999px;
+  background: #F15025;
+  vertical-align: middle;
+}
+
+.stapel-kop {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 10px 4px 8px;
+  background: hsl(var(--card));
+  border-bottom: 1px solid var(--stapel-lijn);
+}
+
+.stapel-dagnaam {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: hsl(var(--muted-foreground));
+}
+.is-vandaag .stapel-dagnaam { color: var(--stapel-tekst); }
+.stapel-punt { color: #F15025; }
+
+.stapel-datum {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+}
+.is-vandaag .stapel-datum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #1A535C;
+  color: #fff;
+  font-size: 12.5px;
+}
+
+.stapel-uren {
+  margin-left: auto;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--muted-foreground));
+}
+
+.stapel-plus {
+  opacity: 0;
+  padding: 2px;
+  border-radius: 6px;
+  color: hsl(var(--muted-foreground));
+  transition: opacity 150ms ease, color 150ms ease, background-color 150ms ease;
+}
+.stapel-dag:hover .stapel-plus,
+.stapel-plus:focus-visible { opacity: 1; }
+.stapel-plus:hover { color: #F15025; background: color-mix(in srgb, #F15025 10%, transparent); }
+
+.stapel-invoer {
+  width: 100%;
+  margin: 6px 0 2px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: hsl(var(--foreground));
+  background: hsl(var(--card));
+  border: 1px solid color-mix(in srgb, #1A535C 30%, transparent);
+  border-radius: 8px;
+  outline: none;
+}
+.stapel-invoer:focus { border-color: #1A535C; box-shadow: 0 0 0 3px color-mix(in srgb, #1A535C 12%, transparent); }
+
+.stapel-lijst { display: flex; flex-direction: column; }
+
+/* ── Kaart ────────────────────────────────────────────────────────────────── */
+
+.stapel-kaart {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: start;
+  column-gap: 7px;
+  padding: 7px 8px 8px 7px;
+  border-radius: 9px;
+  background: var(--stapel-kaart);
+  border-left: 2px solid transparent;
+  cursor: grab;
+  transition: background-color 160ms ease, transform 160ms ease, opacity 200ms ease;
+}
+
+/* Nieuwe of verplaatste kaarten komen rustig binnen in plaats van te knallen. */
+@starting-style {
+  .stapel-kaart { opacity: 0; transform: translateY(-4px); }
+}
+
+.stapel-kaart:hover { background: var(--stapel-kaart-hover); }
+.stapel-kaart:active { cursor: grabbing; }
+.stapel-kaart.is-sleept { opacity: 0.35; }
+.stapel-kaart[data-prio="kritiek"] { border-left-color: #F15025; }
+.stapel-kaart.is-klaar { background: transparent; opacity: 0.5; }
+.stapel-kaart.is-klaar .stapel-titel { text-decoration: line-through; }
+
+.stapel-vink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border-radius: 9999px;
+  border: 1.5px solid color-mix(in srgb, currentColor 40%, transparent);
+  color: hsl(var(--muted-foreground));
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+.stapel-vink:hover { border-color: #1A535C; transform: scale(1.12); }
+.stapel-kaart.is-klaar .stapel-vink { background: #1A535C; border-color: #1A535C; color: #fff; }
+
+.stapel-vink-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.55;
+  transition: width 160ms ease, height 160ms ease, opacity 160ms ease;
+}
+.stapel-vink:hover .stapel-vink-dot { width: 6px; height: 6px; opacity: 1; }
+.stapel-kaart[data-prio="kritiek"] .stapel-vink-dot { background: #F15025; opacity: 1; }
+
+.stapel-tekst { min-width: 0; }
+
+.stapel-titel {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--stapel-tekst);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.stapel-context {
+  margin-top: 1px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--stapel-zacht);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stapel-klant { font-weight: 500; }
+.stapel-scheiding { padding: 0 4px; opacity: 0.45; }
+
+.stapel-duur {
+  font-size: 10.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--stapel-zacht);
+  padding-top: 2px;
+}
+
+.stapel-acties { display: flex; gap: 1px; opacity: 0; transition: opacity 150ms ease; }
+.stapel-kaart:hover .stapel-acties { opacity: 1; }
+.stapel-actie {
+  padding: 3px;
+  border-radius: 6px;
+  color: hsl(var(--muted-foreground));
+  transition: color 150ms ease, background-color 150ms ease;
+}
+.stapel-actie:hover { color: #F15025; background: color-mix(in srgb, #F15025 10%, transparent); }
+.stapel-actie.is-aan { opacity: 1; color: #F15025; }
+.stapel-kaart .stapel-actie.is-aan svg { fill: #F15025; }
+.stapel-actie.is-verwijder:hover { color: #C03A18; background: color-mix(in srgb, #C03A18 10%, transparent); }
+
+/* Kritieke kaarten laten hun vlam altijd zien, ook zonder hover. */
+.stapel-kaart[data-prio="kritiek"] .stapel-acties { opacity: 1; }
+.stapel-kaart[data-prio="kritiek"]:not(:hover) .stapel-actie.is-verwijder { opacity: 0; }
+
+/* Smalle kolom: klant en project onder elkaar zou te veel hoogte kosten, dus
+   dan valt de duur weg en krijgt de context de volle breedte. */
+@container stapeldag (max-width: 190px) {
+  .stapel-duur { display: none; }
+  .stapel-titel { font-size: 12px; }
+}
+
+/* ── Sleepdoelen ──────────────────────────────────────────────────────────── */
+
+.stapel-drop {
+  height: 4px;
+  margin: 1px 0;
+  border-radius: 9999px;
+  background: transparent;
+  transition: background-color 120ms ease, height 120ms ease;
+}
+.stapel-drop.is-laatste { height: 26px; }
+.stapel-drop.is-actief {
+  height: 6px;
+  background: #F15025;
+}
+
+.stapel-nu {
+  height: 1px;
+  margin: 3px 2px;
+  background: #F15025;
+  position: relative;
+}
+.stapel-nu::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: -2.5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #F15025;
+}
+
+.stapel-leeg {
+  padding: 10px 8px;
+  font-size: 11.5px;
+  color: color-mix(in srgb, currentColor 45%, transparent);
+  color: hsl(var(--muted-foreground));
+  opacity: 0.7;
+}
+
+/* ── Montage ──────────────────────────────────────────────────────────────── */
+
+.stapel-montage {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 2px 0;
+  padding: 5px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+  color: #4E7F73;
+  background: color-mix(in srgb, #7EB5A6 14%, transparent);
+  border-left: 2px solid color-mix(in srgb, #7EB5A6 55%, transparent);
+}
+.dark .stapel-montage { color: #9CCBBD; }
+.stapel-montage-tijd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: 0.8; }
+.stapel-montage-titel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Afgerond ─────────────────────────────────────────────────────────────── */
+
+.stapel-afgerond { margin-top: 6px; }
+.stapel-afgerond-kop {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  color: hsl(var(--muted-foreground));
+  border-radius: 6px;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+.stapel-afgerond-kop:hover { color: var(--stapel-tekst); background: color-mix(in srgb, #1A535C 6%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .stapel-kaart, .stapel-vink, .stapel-vink-dot, .stapel-drop { transition: none; }
+}
+
+.stapel-uren-zacht { opacity: 0.6; }

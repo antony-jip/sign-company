@@ -78,6 +78,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useOptimisticState } from '@/hooks/useOptimistic'
 import { useStilleRefresh } from '@/hooks/useStilleRefresh'
 import { SelectionRectangle } from '@/components/planning/SelectionRectangle'
+import { TakenStapelView } from '@/components/planning/TakenStapelView'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
 const TAKEN_FILTER_MIGRATION_V2 = 'doen_taken_filter_migration_v2'
@@ -275,6 +276,13 @@ export function TasksLayout() {
   const [isLoading, setIsLoading] = useState(() => getCached('taken') === undefined)
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
   const [toonHeleDag, setToonHeleDag] = useState(false)
+  // Snel toevoegen hoort bij de dagkop · in de kolom zelf viel de knop over de
+  // eerste taakkaart heen
+  const [bakjeOver, setBakjeOver] = useState(false)
+  const [bakjeTitel, setBakjeTitel] = useState('')
+  const [quickAddDag, setQuickAddDag] = useState<string | null>(null)
+  const [quickAddTitel, setQuickAddTitel] = useState('')
+  const quickAddRef = useRef<HTMLInputElement>(null)
 
   // In het weekend is de hele werkweek al verleden tijd (verlopen taken staan
   // ingeklapt), dus dan opent standaard de komende week
@@ -283,7 +291,7 @@ export function TasksLayout() {
     return dag === 0 || dag === 6 ? 1 : 0
   })
   const [monthOffset, setMonthOffset] = useState(0)
-  const [viewMode, setViewMode] = useState<'week' | 'maand' | 'swimlane'>('week')
+  const [viewMode, setViewMode] = useState<'week' | 'stapel' | 'maand' | 'swimlane'>('week')
   const [collapsedAssignees, setCollapsedAssignees] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem(SWIMLANE_COLLAPSED_KEY)
@@ -1166,6 +1174,28 @@ export function TasksLayout() {
     setEditDialogOpen(true)
   }
 
+  // Uit de planning halen zonder de taak te verliezen · deadline wordt null,
+  // waardoor hij in het bakje bovenaan verschijnt.
+  async function handleNaarBakje(taakId: string) {
+    const taak = taken.find((t) => t.id === taakId)
+    if (!taak || !taak.deadline) return
+    setTaken((prev) => prev.map((t) => (t.id === taakId ? { ...t, deadline: undefined } : t)))
+    try {
+      // null wist de kolom · een lege string of undefined wordt door
+      // sanitizeDates juist weggelaten, dan blijft de oude deadline staan
+      await updateTaak(taakId, { deadline: null } as unknown as Partial<Taak>)
+      toast.success('In het bakje gezet')
+    } catch (error) {
+      logger.error('Fout bij verplaatsen naar bakje:', error)
+      setTaken((prev) => prev.map((t) => (t.id === taakId ? taak : t)))
+      toast.error('Kon de taak niet verplaatsen')
+    }
+  }
+
+  async function handleBakjeAdd(titel: string) {
+    await handleQuickAdd(titel, 'medium', '', '')
+  }
+
   async function handleSave() {
     if (!formData.titel.trim()) { toast.error('Titel is verplicht'); return }
     if (!formData.toegewezen_aan.trim()) { toast.error('Wijs de taak toe aan een medewerker'); return }
@@ -1477,6 +1507,7 @@ export function TasksLayout() {
           <div className="inline-flex items-center gap-3 flex-shrink-0">
             {([
               ['week', 'Week'],
+              ['stapel', 'Stapel'],
               ['maand', 'Maand'],
               ['swimlane', 'Team'],
             ] as const).map(([v, label]) => (
@@ -1548,22 +1579,53 @@ export function TasksLayout() {
           />
         )}
 
-        {viewMode === 'week' && (<>
-        {/* === ONGEPLAND · taken zonder deadline, anders onvindbaar === */}
-        {unscheduledTaken.length > 0 && (
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-muted/30 flex-shrink-0">
-            <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground flex-shrink-0">Ongepland</span>
+        {/* === BAKJE · alles zonder dag. Sleep een taak hierheen om hem uit de
+             planning te halen zonder hem kwijt te raken, en er weer uit zodra
+             hij aan de beurt is. === */}
+        {(viewMode === 'week' || viewMode === 'stapel') && (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setBakjeOver(true) }}
+            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setBakjeOver(false) }}
+            onDrop={(e) => {
+              e.preventDefault()
+              setBakjeOver(false)
+              const id = e.dataTransfer.getData('text/plain') || draggingTaakId
+              if (id) handleNaarBakje(id)
+            }}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 border-b border-border flex-shrink-0 transition-colors',
+              bakjeOver ? 'bg-flame/[0.07] border-flame/40' : 'bg-muted/30',
+            )}
+          >
+            <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground flex-shrink-0">Bakje</span>
             <span className="text-[10px] font-mono text-muted-foreground/70">{unscheduledTaken.length}</span>
+            <input
+              value={bakjeTitel}
+              onChange={(e) => setBakjeTitel(e.target.value)}
+              placeholder="Niet vergeten…"
+              className="w-40 flex-shrink-0 text-[12px] px-2 py-1 rounded-md border border-transparent bg-transparent hover:border-border focus:border-petrol focus:bg-card focus:outline-none focus:ring-2 focus:ring-petrol/15 text-foreground placeholder:text-muted-foreground/70 transition-all"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && bakjeTitel.trim()) { handleBakjeAdd(bakjeTitel.trim()); setBakjeTitel('') }
+                if (e.key === 'Escape') setBakjeTitel('')
+              }}
+            />
             <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
               {unscheduledTaken.map((t) => {
                 const isDone = t.status === 'klaar'
                 return (
                   <button
                     key={t.id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = 'move'
+                      e.dataTransfer.setData('text/plain', t.id)
+                      setDraggingTaakId(t.id)
+                    }}
+                    onDragEnd={() => setDraggingTaakId(null)}
                     onClick={() => openEditDialog(t)}
-                    title="Geen deadline · klik om te plannen"
+                    title="Sleep naar een dag om in te plannen"
                     className={cn(
-                      'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] whitespace-nowrap flex-shrink-0 transition-colors',
+                      'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] whitespace-nowrap flex-shrink-0 transition-colors cursor-grab active:cursor-grabbing',
                       'border border-border hover:border-petrol/30 hover:bg-petrol/[0.04]',
                       isDone && 'opacity-40 line-through',
                     )}
@@ -1579,10 +1641,14 @@ export function TasksLayout() {
                   </button>
                 )
               })}
+              {unscheduledTaken.length === 0 && (
+                <span className="text-[11px] text-muted-foreground/70">Sleep hier wat je nog niet wilt plannen</span>
+              )}
             </div>
           </div>
         )}
 
+        {viewMode === 'week' && (<>
         {/* === DAY HEADERS === */}
         <div className="sticky top-[52px] z-10 flex border-b border-border bg-card flex-shrink-0">
           <div className="w-14 flex-shrink-0" />
@@ -1596,7 +1662,7 @@ export function TasksLayout() {
               <div
                 key={i}
                 className={cn(
-                  'min-w-0 text-center py-4 border-l border-border transition-colors',
+                  'group/dagkop min-w-0 text-center py-4 border-l border-border transition-colors',
                   isToday && 'bg-petrol/[0.04] dark:bg-white/[0.03]'
                 )}
                 style={{ flexGrow: dayWeights[i], flexShrink: 1, flexBasis: 0 }}
@@ -1618,6 +1684,19 @@ export function TasksLayout() {
                     )}>
                       {day.getDate()}
                     </span>
+                    {!isPast && (
+                      <button
+                        onClick={() => {
+                          setQuickAddDag(dayKey)
+                          setQuickAddTitel('')
+                          setTimeout(() => quickAddRef.current?.focus(), 50)
+                        }}
+                        className="opacity-0 group-hover/dagkop:opacity-100 focus:opacity-100 p-0.5 rounded text-muted-foreground/70 hover:text-flame hover:bg-flame/10 transition-all"
+                        title="Taak toevoegen op deze dag"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    )}
                     {isPast && dayTasks.length > 0 ? (
                       <button
                         onClick={() => togglePastDay(dayKey)}
@@ -1633,6 +1712,24 @@ export function TasksLayout() {
                       )
                     )}
                   </div>
+                  {quickAddDag === dayKey && (
+                    <input
+                      ref={quickAddRef}
+                      value={quickAddTitel}
+                      onChange={(e) => setQuickAddTitel(e.target.value)}
+                      placeholder="Taak..."
+                      className="mt-1 w-[88%] text-xs px-2 py-1 rounded-md border border-petrol/30 bg-card focus:outline-none focus:border-petrol focus:ring-2 focus:ring-petrol/15 text-foreground placeholder:text-muted-foreground/80"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && quickAddTitel.trim()) {
+                          handleDayQuickAdd(day, quickAddTitel.trim())
+                          setQuickAddTitel('')
+                          setQuickAddDag(null)
+                        }
+                        if (e.key === 'Escape') { setQuickAddDag(null); setQuickAddTitel('') }
+                      }}
+                      onBlur={() => { if (!quickAddTitel.trim()) { setQuickAddDag(null); setQuickAddTitel('') } }}
+                    />
+                  )}
                 </div>
               </div>
             )
@@ -1748,6 +1845,27 @@ export function TasksLayout() {
           </div>
         )}
         </>)}
+        {viewMode === 'stapel' && (
+          <div className="flex-1 min-h-0 overflow-y-auto bg-card">
+            <TakenStapelView
+              weekDays={weekDays}
+              today={today}
+              tasksByDay={tasksByDay}
+              montageByDay={montageByDay}
+              projectMap={projectMap}
+              klantMap={klantMap}
+              projectKlantMap={projectKlantMap}
+              isLoading={isLoading}
+              onToggle={handleToggleComplete}
+              onTogglePrio={handleTogglePrio}
+              onEdit={openEditDialog}
+              onDelete={handleDeleteDirect}
+              onDrop={handleDropTask}
+              onQuickAdd={(day, titel) => handleDayQuickAdd(day, titel)}
+            />
+          </div>
+        )}
+
         {viewMode === 'maand' && (() => {
         /* === MONTH VIEW · DOEN === */
         // Show working days only (Mon-Fri). Compute the visible week count
@@ -2382,11 +2500,8 @@ function DayColumn({
   startHour: number
   flexGrow: number
 }) {
-  const [addTitle, setAddTitle] = useState('')
-  const [isAdding, setIsAdding] = useState(false)
   const [addingAtHour, setAddingAtHour] = useState<number | null>(null)
   const [hourAddTitle, setHourAddTitle] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
   const hourInputRef = useRef<HTMLInputElement>(null)
 
   // Resize state
@@ -2748,35 +2863,6 @@ function DayColumn({
           </div>
         ))}
 
-        {/* Quick add inline */}
-        <div className="pointer-events-auto">
-          {isAdding ? (
-            <div className="mx-0.5">
-              <input
-                ref={inputRef}
-                value={addTitle}
-                onChange={(e) => setAddTitle(e.target.value)}
-                placeholder="Taak..."
-                className="w-full text-xs px-2.5 py-2 rounded-lg border border-petrol/30 bg-card focus:outline-none focus:border-petrol focus:ring-2 focus:ring-petrol/20 text-foreground placeholder:text-muted-foreground/80 transition-all"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && addTitle.trim()) {
-                    onQuickAdd(addTitle.trim())
-                    setAddTitle('')
-                  }
-                  if (e.key === 'Escape') { setIsAdding(false); setAddTitle('') }
-                }}
-                onBlur={() => { if (!addTitle.trim()) { setIsAdding(false); setAddTitle('') } }}
-              />
-            </div>
-          ) : (
-            <button
-              onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground/80/40 hover:text-petrol dark:hover:text-foreground hover:bg-petrol/[0.05] dark:hover:bg-white/[0.05] transition-all duration-200"
-            >
-              <Plus className="w-3 h-3" />
-            </button>
-          )}
-        </div>
       </div>
     </div>
   )

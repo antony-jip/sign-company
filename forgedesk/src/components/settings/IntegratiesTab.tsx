@@ -22,6 +22,8 @@ import {
   ArrowRight,
   RefreshCw,
   BookOpen,
+  FolderSync,
+  Loader2,
 } from 'lucide-react'
 import type { BoekhoudPakket } from '@/types'
 
@@ -64,6 +66,14 @@ export function IntegratiesTab() {
   const [subTab, setSubTab] = useState('koppelingen')
   const { user } = useAuth()
   const { refreshSettings } = useAppSettings()
+  // Google Drive state
+  const [driveActief, setDriveActief] = useState(false)
+  const [driveHoofdmap, setDriveHoofdmap] = useState('')
+  const [driveMapAanmaken, setDriveMapAanmaken] = useState(true)
+  const [driveSaving, setDriveSaving] = useState(false)
+  const [driveTesten, setDriveTesten] = useState(false)
+  const [driveServiceAccount, setDriveServiceAccount] = useState<string | null>(null)
+  const [driveTest, setDriveTest] = useState<{ ok: boolean; bericht: string } | null>(null)
   // Mollie state
   const [mollieEnabled, setMollieEnabled] = useState(false)
   const [mollieApiKey, setMollieApiKey] = useState('')
@@ -168,6 +178,9 @@ export function IntegratiesTab() {
     // dubbel versleuteld.
     const isEncrypted = (v: string) => /^[0-9a-f]{32}:/.test(v) || v.startsWith('g1:')
     getAppSettings(user.id).then((s) => {
+      setDriveActief(s.drive_actief ?? false)
+      setDriveHoofdmap(s.drive_hoofdmap_id ?? '')
+      setDriveMapAanmaken(s.drive_map_aanmaken ?? true)
       setMollieEnabled(s.mollie_enabled ?? false)
       setMollieApiKey(isEncrypted(s.mollie_api_key ?? '') ? '' : (s.mollie_api_key ?? ''))
       setMollieLoaded(true)
@@ -802,6 +815,84 @@ export function IntegratiesTab() {
     }
   }
 
+  const driveVerzoek = useCallback(async (methode: 'GET' | 'POST', body?: Record<string, unknown>) => {
+    if (!supabase) throw new Error('Niet ingelogd')
+    const { data } = await supabase.auth.getSession()
+    const token = data?.session?.access_token
+    if (!token) throw new Error('Niet ingelogd')
+    const res = await fetch('/api/drive-status', {
+      method: methode,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    return await res.json() as {
+      geconfigureerd?: boolean
+      ok?: boolean
+      naam?: string
+      mapId?: string
+      gedeeldeSchijf?: boolean
+      serviceAccount?: string
+      bericht?: string
+      error?: string
+    }
+  }, [])
+
+  // Het adres van het service-account moet zichtbaar zijn: zonder dat weet
+  // niemand met wie hij zijn schijf moet delen.
+  useEffect(() => {
+    if (!user?.id) return
+    let afgebroken = false
+    driveVerzoek('GET')
+      .then((res) => { if (!afgebroken) setDriveServiceAccount(res.serviceAccount ?? null) })
+      .catch(() => { /* Adres niet op te halen: de kaart legt dan alleen minder uit. */ })
+    return () => { afgebroken = true }
+  }, [user?.id, driveVerzoek])
+
+  const handleDriveTest = async () => {
+    if (!driveHoofdmap.trim()) return
+    setDriveTesten(true)
+    setDriveTest(null)
+    try {
+      const res = await driveVerzoek('POST', { hoofdmap: driveHoofdmap })
+      if (res.ok) {
+        // Het id opschonen zodat een geplakte link als id wordt opgeslagen.
+        if (res.mapId) setDriveHoofdmap(res.mapId)
+        setDriveTest({
+          ok: true,
+          bericht: res.gedeeldeSchijf
+            ? `Gevonden: "${res.naam}". Klaar om te koppelen.`
+            : `Gevonden: "${res.naam}", maar dit is geen gedeelde schijf. Bestanden die doen. hier neerzet lopen tegen de opslaglimiet aan.`,
+        })
+      } else {
+        setDriveTest({ ok: false, bericht: res.bericht || res.error || 'Map niet bereikbaar' })
+      }
+    } catch (err) {
+      logger.error('Drive-controle mislukt:', err)
+      setDriveTest({ ok: false, bericht: 'Controle mislukt' })
+    } finally {
+      setDriveTesten(false)
+    }
+  }
+
+  const handleDriveSave = async () => {
+    if (!user?.id) return
+    setDriveSaving(true)
+    try {
+      await saveIntegrationSettings({
+        drive_actief: driveActief,
+        drive_hoofdmap_id: driveHoofdmap,
+        drive_map_aanmaken: driveMapAanmaken,
+      })
+      await refreshSettings()
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('Fout bij opslaan Drive-instellingen:', err)
+      toast.error(err instanceof Error ? err.message : 'Kon Drive-instellingen niet opslaan')
+    } finally {
+      setDriveSaving(false)
+    }
+  }
+
   const handleMollieSave = async () => {
     if (!user?.id) return
     setMollieSaving(true)
@@ -847,6 +938,101 @@ export function IntegratiesTab() {
     <>
     <SubTabNav tabs={INTEGRATIES_TABS} active={subTab} onChange={setSubTab} variant="underline" />
     <div className="space-y-4">
+      {/* ── Google Drive ── */}
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-petrol/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <FolderSync className="w-5 h-5 text-petrol dark:text-[#2A7A86]" />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">Google Drive</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Elk bestand dat je aan een project koppelt komt ook in de map van die klant, in een submap per project.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="drive-actief" className="text-sm font-medium">
+                  Bestanden doorzetten naar Drive
+                </Label>
+                <Switch id="drive-actief" checked={driveActief} onCheckedChange={setDriveActief} />
+              </div>
+
+              {driveActief && (
+                <>
+                  {driveServiceAccount && (
+                    <div className="rounded-lg bg-[#F8F7F5] dark:bg-muted/40 p-3.5 space-y-1.5">
+                      <p className="text-sm font-medium text-foreground">Geef doen. eerst toegang</p>
+                      <p className="text-xs text-muted-foreground">
+                        Deel je gedeelde schijf met dit adres, als Inhoudsbeheerder:
+                      </p>
+                      <code className="block font-mono text-xs text-foreground break-all">{driveServiceAccount}</code>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="drive-hoofdmap" className="text-sm font-medium">
+                      Map met je klantmappen
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="drive-hoofdmap"
+                        value={driveHoofdmap}
+                        onChange={(e) => { setDriveHoofdmap(e.target.value); setDriveTest(null) }}
+                        placeholder="Plak de link naar de map in Drive"
+                        className="font-mono text-sm"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDriveTest}
+                        disabled={driveTesten || !driveHoofdmap.trim()}
+                      >
+                        {driveTesten ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Controleren'}
+                      </Button>
+                    </div>
+                    {driveTest && (
+                      <p className={cn(
+                        'text-xs flex items-start gap-1.5',
+                        driveTest.ok ? 'text-[#3A7D52]' : 'text-[#C0451A]',
+                      )}>
+                        {driveTest.ok
+                          ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-px" />
+                          : <XCircle className="w-3.5 h-3.5 flex-shrink-0 mt-px" />}
+                        <span>{driveTest.bericht}</span>
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      doen. zoekt hierin de map van de klant op bedrijfsnaam en onthoudt welke map dat is.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="drive-aanmaken" className="text-sm font-medium">
+                        Nieuwe klantmap aanmaken
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Staat dit uit, dan blijft een bestand wachten tot de map er is.
+                      </p>
+                    </div>
+                    <Switch id="drive-aanmaken" checked={driveMapAanmaken} onCheckedChange={setDriveMapAanmaken} />
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end">
+                <Button onClick={handleDriveSave} disabled={driveSaving} size="sm">
+                  {driveSaving ? 'Opslaan...' : 'Opslaan'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* ── Mollie Instellingen ── */}
       <Card>
         <CardContent className="p-6 space-y-4">

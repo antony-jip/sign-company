@@ -841,6 +841,10 @@ export interface AppSettings {
   // Mollie betaalintegratie
   mollie_api_key?: string;
   mollie_enabled?: boolean;
+  // Google Drive: projectbestanden doorzetten naar de klantmap
+  drive_actief?: boolean;
+  drive_hoofdmap_id?: string;
+  drive_map_aanmaken?: boolean;
   // Exact Online integratie
   exact_online_client_id?: string;
   exact_online_client_secret?: string;

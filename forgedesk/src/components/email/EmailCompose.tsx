@@ -18,6 +18,7 @@ import { OntvangerInput } from '@/components/shared/OntvangerVeld'
 import { logger } from '../../utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
+import { InlineSuggestie } from './InlineSuggestie'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Switch } from '@/components/ui/switch'
 import { getWachtendeEmailNaarAdres } from '@/services/emailService'
@@ -162,7 +163,7 @@ export function EmailCompose({
   // toetsenbord blijven staan in plaats van eronder te verdwijnen.
   const isMobiel = useMediaQuery('(max-width: 767px)')
   const venster = useVisueleViewport(isMobiel && open)
-  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam, settings } = useAppSettings()
   const { organisatieId } = useAuth()
 
   const [to, setTo] = useState(defaultTo)
@@ -1219,6 +1220,16 @@ export function EmailCompose({
 
             {/* AI Text Selection Toolbar */}
             <AIContentEditableToolbar editorRef={editorRef} />
+
+            {/* Grijze schrijfsuggestie achter de cursor · Tab neemt hem over */}
+            <InlineSuggestie
+              editorRef={editorRef}
+              actief={open && !forgieLoading}
+              onderwerp={subject}
+              ontvanger={to}
+              replyTekst={replyToText}
+              schrijfstijl={settings.ai_tone_of_voice}
+            />
 
             {/* Attachments · getinte sectie zodat de frosted-glass chips ergens op rusten */}
             {attachments.length > 0 && (

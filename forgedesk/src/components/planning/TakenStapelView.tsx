@@ -1,0 +1,386 @@
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { Check, Flame, Plus, Trash2, Wrench, ChevronRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { Taak, MontageAfspraak } from '@/types'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STAPEL · de dag als geordende stapel in plaats van een uurraster.
+//
+// De uurposities in doen. zijn in de praktijk geen afspraaktijden maar een
+// volgorde: taken staan achter elkaar in blokken zo lang als hun schatting.
+// Een etmaal uittekenen kost dan alleen maar hoogte. Deze weergave houdt de
+// volgorde vast (en schrijft hem ook terug als tijd, zodat de weekweergave
+// hetzelfde blijft zien) maar geeft elke taak evenveel ruimte.
+//
+// De opmaak leunt op recente CSS: container queries voor de kaartdichtheid,
+// :has() voor dag-accenten, @starting-style voor het inkomen van kaarten.
+// Zie de blok "TAKEN · STAPEL" in index.css.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DAY_LABELS = ['MA', 'DI', 'WO', 'DO', 'VR', 'ZA', 'ZO']
+
+type DocumentWithVT = Document & {
+  startViewTransition?: (cb: () => void) => { finished: Promise<void> }
+}
+
+// Kleine wrapper: de browser mag de wissel animeren, maar nooit ten koste van
+// de actie zelf — zonder ondersteuning of bij reduced-motion gebeurt hij direct.
+function metOvergang(fn: () => void) {
+  const doc = document as DocumentWithVT
+  if (typeof doc.startViewTransition !== 'function'
+    || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    fn()
+    return
+  }
+  doc.startViewTransition(fn).finished.catch(() => { /* afgebroken */ })
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+}
+
+function uurUitDeadline(deadline: string | undefined): number | null {
+  if (!deadline || !deadline.includes('T')) return null
+  const tijd = deadline.split('T')[1]
+  if (!tijd) return null
+  const [h, m] = tijd.split(':')
+  const uur = parseInt(h, 10)
+  if (isNaN(uur) || uur < 0 || uur >= 24) return null
+  return uur + (parseInt(m || '0', 10) || 0) / 60
+}
+
+function duurLabel(uren: number): string | null {
+  if (!uren || uren <= 0) return null
+  if (uren < 1) return `${Math.round(uren * 60)}m`
+  const getal = Number.isInteger(uren) ? String(uren) : uren.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
+  return `${getal.replace('.', ',')}u`
+}
+
+// Projectnamen beginnen vaak met de klantnaam · die kop hoeft er niet twee keer
+// te staan als de klant ernaast wordt getoond.
+function zonderKlantPrefix(projectNaam: string, klantNaam?: string): string {
+  if (!klantNaam) return projectNaam
+  const p = projectNaam.trim()
+  const k = klantNaam.trim()
+  if (!k || !p.toLowerCase().startsWith(k.toLowerCase())) return p
+  const rest = p.slice(k.length).replace(/^[\s\-–—·|:]+/, '').trim()
+  return rest || p
+}
+
+export interface StapelHandlers {
+  onToggle: (taak: Taak) => void
+  onTogglePrio: (taak: Taak) => void
+  onEdit: (taak: Taak) => void
+  onDelete: (taak: Taak) => void
+  onDrop: (taakId: string, dayIndex: number, hour: number) => void
+  onQuickAdd: (day: Date, titel: string) => void
+}
+
+interface Props extends StapelHandlers {
+  weekDays: Date[]
+  today: Date
+  tasksByDay: Map<string, Taak[]>
+  montageByDay: Map<string, MontageAfspraak[]>
+  projectMap: Record<string, string>
+  klantMap: Record<string, string>
+  projectKlantMap: Record<string, string>
+  isLoading?: boolean
+}
+
+export function TakenStapelView({
+  weekDays, today, tasksByDay, montageByDay,
+  projectMap, klantMap, projectKlantMap, isLoading,
+  onToggle, onTogglePrio, onEdit, onDelete, onDrop, onQuickAdd,
+}: Props) {
+  const [sleepId, setSleepId] = useState<string | null>(null)
+  const [dropDoel, setDropDoel] = useState<{ dag: number; index: number } | null>(null)
+  const [afgerondOpen, setAfgerondOpen] = useState<Set<string>>(new Set())
+  const [addDag, setAddDag] = useState<string | null>(null)
+  const [addTitel, setAddTitel] = useState('')
+  const addRef = useRef<HTMLInputElement>(null)
+
+  const nuUur = useMemo(() => {
+    const n = new Date()
+    return n.getHours() + n.getMinutes() / 60
+  }, [])
+
+  // Per dag: open taken op volgorde, afgeronde apart. Sorteren op de tijd die
+  // in de deadline staat — dat is de volgorde die de weekweergave ook tekent.
+  const dagen = useMemo(() => weekDays.map((day, dayIndex) => {
+    const key = day.toDateString()
+    const alle = tasksByDay.get(key) || []
+    const sorteer = (a: Taak, b: Taak) => (uurUitDeadline(a.deadline ?? '') ?? 99) - (uurUitDeadline(b.deadline ?? '') ?? 99)
+    const open = alle.filter((t) => t.status !== 'klaar').sort(sorteer)
+    const afgerond = alle.filter((t) => t.status === 'klaar').sort(sorteer)
+    const geschat = open.reduce((som, t) => som + (t.geschatte_tijd > 0 ? t.geschatte_tijd : 0), 0)
+    return {
+      day, dayIndex, key, open, afgerond, geschat,
+      montages: montageByDay.get(key) || [],
+      isToday: isSameDay(day, today),
+      isVerleden: day < today && !isSameDay(day, today),
+    }
+  }), [weekDays, tasksByDay, montageByDay, today])
+
+  // Waar een taak tussen twee buren landt, wordt de tijd het midden ertussen.
+  // Zo blijft de volgorde die je sleept bewaard zonder dat je hem hoeft in te
+  // typen, en blijft de weekweergave dezelfde rij tonen.
+  const tijdVoorPositie = useCallback((dagIndex: number, index: number, taakId: string): number => {
+    const dag = dagen[dagIndex]
+    if (!dag) return 8
+    const rij = dag.open.filter((t) => t.id !== taakId)
+    const vorige = rij[index - 1]
+    const volgende = rij[index]
+    const tv = vorige ? uurUitDeadline(vorige.deadline ?? '') : null
+    const tn = volgende ? uurUitDeadline(volgende.deadline ?? '') : null
+    let uur: number
+    if (tv === null && tn === null) uur = 8
+    else if (tv === null) uur = Math.max(0, (tn as number) - 0.5)
+    else if (tn === null) uur = tv + Math.max(0.5, vorige?.geschatte_tijd || 0.5)
+    else uur = (tv + tn) / 2
+    return Math.min(23.75, Math.max(0, Math.round(uur * 4) / 4))
+  }, [dagen])
+
+  const handleDrop = useCallback((e: React.DragEvent, dagIndex: number, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const id = e.dataTransfer.getData('text/plain') || sleepId
+    setDropDoel(null)
+    setSleepId(null)
+    if (!id) return
+    metOvergang(() => onDrop(id, dagIndex, tijdVoorPositie(dagIndex, index, id)))
+  }, [onDrop, sleepId, tijdVoorPositie])
+
+  const toggleAfgerond = (key: string) => {
+    setAfgerondOpen((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  return (
+    <div className="taken-stapel">
+      {dagen.map((dag) => {
+        const toonAfgerond = afgerondOpen.has(dag.key)
+        // De nu-streep valt vóór de eerste taak die nog moet komen.
+        const nuIndex = dag.isToday
+          ? dag.open.findIndex((t) => (uurUitDeadline(t.deadline ?? '') ?? 99) > nuUur)
+          : -1
+
+        return (
+          <section
+            key={dag.key}
+            className={cn('stapel-dag', dag.isToday && 'is-vandaag', dag.isVerleden && 'is-verleden')}
+            onDragOver={(e) => { e.preventDefault(); setDropDoel({ dag: dag.dayIndex, index: dag.open.length }) }}
+            onDrop={(e) => handleDrop(e, dag.dayIndex, dag.open.length)}
+          >
+            <header className="stapel-kop">
+              <span className="stapel-dagnaam">
+                {DAY_LABELS[dag.dayIndex]}{dag.isToday && <span className="stapel-punt">.</span>}
+              </span>
+              <span className="stapel-datum">{dag.day.getDate()}</span>
+              {dag.open.length > 0 && (
+                <span
+                  className="stapel-uren"
+                  title={dag.geschat > 0
+                    ? `${dag.open.length} open, waarvan ${duurLabel(dag.geschat)} geschat`
+                    : `${dag.open.length} open`}
+                >
+                  {dag.open.length}{dag.geschat > 0 && <span className="stapel-uren-zacht"> · {duurLabel(dag.geschat)}</span>}
+                </span>
+              )}
+              <button
+                className="stapel-plus"
+                title="Taak toevoegen op deze dag"
+                onClick={() => { setAddDag(dag.key); setAddTitel(''); setTimeout(() => addRef.current?.focus(), 40) }}
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </header>
+
+            {addDag === dag.key && (
+              <input
+                ref={addRef}
+                className="stapel-invoer"
+                value={addTitel}
+                placeholder="Wat moet er gebeuren?"
+                onChange={(e) => setAddTitel(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && addTitel.trim()) {
+                    onQuickAdd(dag.day, addTitel.trim())
+                    setAddTitel('')
+                    setAddDag(null)
+                  }
+                  if (e.key === 'Escape') { setAddDag(null); setAddTitel('') }
+                }}
+                onBlur={() => { if (!addTitel.trim()) { setAddDag(null); setAddTitel('') } }}
+              />
+            )}
+
+            {dag.montages.map((m) => (
+              <div key={m.id} className="stapel-montage" title={[m.titel, m.locatie].filter(Boolean).join(' · ')}>
+                <Wrench className="w-3 h-3 flex-shrink-0" />
+                <span className="stapel-montage-tijd">{m.start_tijd?.slice(0, 5)}</span>
+                <span className="stapel-montage-titel">{m.titel}</span>
+              </div>
+            ))}
+
+            <div className="stapel-lijst">
+              {dag.open.map((taak, i) => (
+                <div key={taak.id}>
+                  {nuIndex === i && <div className="stapel-nu" aria-hidden />}
+                  <DropStrook
+                    actief={dropDoel?.dag === dag.dayIndex && dropDoel?.index === i}
+                    onOver={() => setDropDoel({ dag: dag.dayIndex, index: i })}
+                    onDrop={(e) => handleDrop(e, dag.dayIndex, i)}
+                  />
+                  <StapelKaart
+                    taak={taak}
+                    klantNaam={(taak.klant_id ? klantMap[taak.klant_id] : undefined) || (taak.project_id ? projectKlantMap[taak.project_id] : undefined)}
+                    projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
+                    sleept={sleepId === taak.id}
+                    onDragStart={() => setSleepId(taak.id)}
+                    onDragEnd={() => { setSleepId(null); setDropDoel(null) }}
+                    onToggle={() => metOvergang(() => onToggle(taak))}
+                    onTogglePrio={() => onTogglePrio(taak)}
+                    onEdit={() => onEdit(taak)}
+                    onDelete={() => onDelete(taak)}
+                  />
+                </div>
+              ))}
+
+              {nuIndex === -1 && dag.isToday && dag.open.length > 0 && <div className="stapel-nu" aria-hidden />}
+
+              <DropStrook
+                actief={dropDoel?.dag === dag.dayIndex && dropDoel?.index === dag.open.length}
+                laatste
+                onOver={() => setDropDoel({ dag: dag.dayIndex, index: dag.open.length })}
+                onDrop={(e) => handleDrop(e, dag.dayIndex, dag.open.length)}
+              />
+
+              {dag.open.length === 0 && !isLoading && (
+                <p className="stapel-leeg">{dag.isVerleden ? 'Niets meer open' : 'Vrij'}</p>
+              )}
+            </div>
+
+            {dag.afgerond.length > 0 && (
+              <div className="stapel-afgerond">
+                <button className="stapel-afgerond-kop" onClick={() => toggleAfgerond(dag.key)}>
+                  <ChevronRight className={cn('w-3 h-3 transition-transform', toonAfgerond && 'rotate-90')} />
+                  {dag.afgerond.length} afgerond
+                </button>
+                {toonAfgerond && dag.afgerond.map((taak) => (
+                  <StapelKaart
+                    key={taak.id}
+                    taak={taak}
+                    klantNaam={(taak.klant_id ? klantMap[taak.klant_id] : undefined) || (taak.project_id ? projectKlantMap[taak.project_id] : undefined)}
+                    projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
+                    onDragStart={() => setSleepId(taak.id)}
+                    onDragEnd={() => setSleepId(null)}
+                    onToggle={() => metOvergang(() => onToggle(taak))}
+                    onTogglePrio={() => onTogglePrio(taak)}
+                    onEdit={() => onEdit(taak)}
+                    onDelete={() => onDelete(taak)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
+function DropStrook({ actief, laatste, onOver, onDrop }: {
+  actief: boolean
+  laatste?: boolean
+  onOver: () => void
+  onDrop: (e: React.DragEvent) => void
+}) {
+  return (
+    <div
+      className={cn('stapel-drop', laatste && 'is-laatste', actief && 'is-actief')}
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); onOver() }}
+      onDrop={onDrop}
+      aria-hidden
+    />
+  )
+}
+
+function StapelKaart({
+  taak, klantNaam, projectNaam, sleept,
+  onDragStart, onDragEnd, onToggle, onTogglePrio, onEdit, onDelete,
+}: {
+  taak: Taak
+  klantNaam?: string
+  projectNaam?: string
+  sleept?: boolean
+  onDragStart: () => void
+  onDragEnd: () => void
+  onToggle: () => void
+  onTogglePrio: () => void
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const klaar = taak.status === 'klaar'
+  const project = projectNaam ? zonderKlantPrefix(projectNaam, klantNaam) : undefined
+  const duur = duurLabel(taak.geschatte_tijd)
+  const context = [klantNaam, project].filter(Boolean).join(' · ')
+
+  return (
+    <article
+      className={cn('stapel-kaart', klaar && 'is-klaar', sleept && 'is-sleept')}
+      data-prio={taak.prioriteit}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', taak.id)
+        onDragStart()
+      }}
+      onDragEnd={onDragEnd}
+      onClick={onEdit}
+      title={context ? `${taak.titel} · ${context}` : taak.titel}
+    >
+      <button
+        className="stapel-vink"
+        onClick={(e) => { e.stopPropagation(); onToggle() }}
+        title={klaar ? 'Ongedaan maken' : 'Markeer als klaar'}
+        aria-pressed={klaar}
+      >
+        {klaar ? <Check className="w-2.5 h-2.5" strokeWidth={4} /> : <span className="stapel-vink-dot" />}
+      </button>
+
+      <div className="stapel-tekst">
+        <h3 className="stapel-titel">{taak.titel}</h3>
+        {context && (
+          <p className="stapel-context">
+            {klantNaam && <span className="stapel-klant">{klantNaam}</span>}
+            {klantNaam && project && <span className="stapel-scheiding">·</span>}
+            {project}
+          </p>
+        )}
+      </div>
+
+      {duur && <span className="stapel-duur">{duur}</span>}
+
+      <div className="stapel-acties">
+        <button
+          className={cn('stapel-actie', taak.prioriteit === 'kritiek' && 'is-aan')}
+          onClick={(e) => { e.stopPropagation(); onTogglePrio() }}
+          title={taak.prioriteit === 'kritiek' ? 'Prioriteit weghalen' : 'Markeer als prioriteit'}
+        >
+          <Flame className="w-3.5 h-3.5" />
+        </button>
+        <button
+          className="stapel-actie is-verwijder"
+          onClick={(e) => { e.stopPropagation(); onDelete() }}
+          title="Verwijderen"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </article>
+  )
+}
