@@ -3733,8 +3733,6 @@ button.doen-panel:hover {
 .taken-stapel {
   --stapel-lijn: color-mix(in srgb, hsl(var(--border)) 55%, transparent);
   --stapel-kaart: hsl(var(--card));
-  --stapel-rand: rgba(130, 100, 60, 0.14);
-  --stapel-schaduw: 0 1px 2px rgba(130, 100, 60, 0.05);
   --stapel-schaduw-hoog: 0 2px 8px rgba(130, 100, 60, 0.10);
   --stapel-tekst: #1A535C;
   --stapel-zacht: color-mix(in srgb, #1A535C 62%, transparent);
@@ -3744,15 +3742,17 @@ button.doen-panel:hover {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
-  align-items: start;
+  /* Kolommen lopen door tot onderaan · met align-items:start eindigde elke dag
+     op zijn eigen inhoudshoogte, waardoor de scheidingslijnen op vijf
+     verschillende hoogtes afbraken en de klikbare vulling onder een lege dag
+     niets meer te vullen had. */
+  align-items: stretch;
   min-height: 100%;
   padding: 0 0 3rem;
 }
 
 .dark .taken-stapel {
   --stapel-kaart: hsl(var(--card));
-  --stapel-rand: rgba(255, 255, 255, 0.07);
-  --stapel-schaduw: 0 1px 2px rgba(0, 0, 0, 0.25);
   --stapel-schaduw-hoog: 0 2px 8px rgba(0, 0, 0, 0.35);
   --stapel-tekst: #CFE3E6;
   --stapel-zacht: color-mix(in srgb, #CFE3E6 60%, transparent);
@@ -3771,12 +3771,15 @@ button.doen-panel:hover {
 }
 
 .stapel-dag.is-verleden { opacity: 0.62; }
-.stapel-dag.is-vandaag {
-  background: color-mix(in srgb, #1A535C 2.8%, transparent);
-  border-radius: 16px;
-  border-left-color: transparent;
+/* Vandaag was een afgeronde bak over de volle kolomhoogte · op een rustige
+   dag werd dat het luidste vlak op het scherm terwijl er niets in stond. De
+   gevulde datumcirkel en een streep onder de kop wijzen net zo goed. */
+.stapel-dag.is-vandaag .stapel-kop {
+  border-bottom-color: color-mix(in srgb, #1A535C 45%, transparent);
 }
-.dark .stapel-dag.is-vandaag { background: color-mix(in srgb, #FFFFFF 3.5%, transparent); }
+.dark .stapel-dag.is-vandaag .stapel-kop {
+  border-bottom-color: color-mix(in srgb, #9FC5CC 40%, transparent);
+}
 
 /* Een dag met kritiek werk verdient een teken in de kop, zonder dat elke kaart
    erom hoeft te schreeuwen. */
@@ -3867,44 +3870,50 @@ button.doen-panel:hover {
 /* ── Kaart ────────────────────────────────────────────────────────────────── */
 
 .stapel-kaart {
+  /* Een kolom vol omrande dozen leest als tien rechthoeken, niet als een
+     stapel. De kaart is daarom een regel: geen rand, geen vlak, alleen een
+     haarlijn erboven. Het vlak komt pas als je hem aanwijst · dan is er ook
+     maar één kaart die om aandacht vraagt. */
+  --kaart-bg: transparent;
+  position: relative;
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: 14px minmax(0, 1fr);
   align-items: start;
-  column-gap: 7px;
-  margin: 3px 0;
-  padding: 8px 9px 9px 8px;
-  border-radius: 10px;
-  background: var(--stapel-kaart);
-  border: 1px solid var(--stapel-rand);
-  border-left-width: 2px;
-  box-shadow: var(--stapel-schaduw);
+  column-gap: 9px;
+  margin: 0;
+  padding: 9px 10px 10px 9px;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 9px;
+  background: var(--kaart-bg);
+  /* Scheidingslijn als inset-schaduw en niet als rand · zo kan hij bij hover
+     verdwijnen zonder dat er ook maar een pixel verschuift. */
+  box-shadow: inset 0 1px 0 var(--stapel-lijn);
   cursor: grab;
-  transition: box-shadow 160ms ease, transform 160ms ease, opacity 200ms ease, background-color 160ms ease;
+  transition: box-shadow 160ms ease, background-color 160ms ease, opacity 200ms ease;
 }
+.stapel-lijst > div:first-of-type .stapel-kaart { box-shadow: none; }
 
 /* Nieuwe of verplaatste kaarten komen rustig binnen in plaats van te knallen. */
 @starting-style {
   .stapel-kaart { opacity: 0; transform: translateY(-4px); }
 }
 
-.stapel-kaart:hover { box-shadow: var(--stapel-schaduw-hoog); transform: translateY(-1px); }
+.stapel-kaart:hover { --kaart-bg: var(--stapel-kaart); box-shadow: var(--stapel-schaduw-hoog); }
 .stapel-kaart:active { cursor: grabbing; }
 .stapel-kaart.is-sleept { opacity: 0.35; }
-.stapel-kaart[data-prio="kritiek"] {
-  border-left-color: #F15025;
-  background: color-mix(in srgb, #F15025 5%, hsl(var(--card)));
+.stapel-kaart[data-prio="kritiek"] { border-left-color: #F15025; }
+.stapel-kaart[data-prio="kritiek"]:hover {
+  --kaart-bg: color-mix(in srgb, #F15025 4%, var(--stapel-kaart));
 }
 .stapel-kaart.is-klaar {
-  background-color: color-mix(in srgb, #1A535C 4%, hsl(var(--card)));
+  --kaart-bg: color-mix(in srgb, #1A535C 3.5%, transparent);
   background-image: repeating-linear-gradient(
     135deg,
     color-mix(in srgb, #1A535C 5%, transparent) 0 5px,
     transparent 5px 11px
   );
-  border-color: color-mix(in srgb, #1A535C 12%, transparent);
-  box-shadow: none;
-  opacity: 0.7;
-  transform: scale(0.994);
+  opacity: 0.66;
 }
 
 
@@ -3914,7 +3923,7 @@ button.doen-panel:hover {
   justify-content: center;
   width: 14px;
   height: 14px;
-  margin-top: 2px;
+  margin-top: 1px;
   border-radius: 9999px;
   border: 1.5px solid color-mix(in srgb, currentColor 40%, transparent);
   color: hsl(var(--muted-foreground));
@@ -3945,30 +3954,65 @@ button.doen-panel:hover {
   overflow-wrap: anywhere;
 }
 
-.stapel-context {
+/* Klant en project links, de duur rechts · de duur had een eigen gridkolom in
+   de kaart, waardoor hij ruimte afsnoepte van de tekst óók als er geen duur
+   was. Nu deelt hij de regel en wint de tekst de ruimte terug. */
+.stapel-onder {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   margin-top: 1px;
+  min-width: 0;
+}
+.stapel-context {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 11px;
   line-height: 1.35;
   color: var(--stapel-zacht);
-  white-space: nowrap;
+  /* Twee regels in plaats van één · in een kolom van 290px brak een naam als
+     "Gitzels Plantenkwekerij onroerend goed bv" altijd af, en juist de klant is
+     wat je zoekt als tien taken "Offerte maken" heten. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .stapel-klant { font-weight: 500; }
 .stapel-scheiding { padding: 0 4px; opacity: 0.45; }
 
 .stapel-duur {
+  flex: 0 0 auto;
+  transition: opacity 150ms ease;
   font-size: 10.5px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
   color: var(--stapel-zacht);
-  padding-top: 2px;
 }
 
-.stapel-acties { display: flex; gap: 1px; opacity: 0; transition: opacity 150ms ease; }
+/* De twee knoppen stonden als vaste gridkolom in de kaart en hielden daar
+   37px bezet die je nooit zag. Nu zweven ze over de kaart, op het vlak dat bij
+   hover toch al verschijnt. */
+.stapel-acties {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: flex;
+  gap: 1px;
+  padding: 1px;
+  border-radius: 8px;
+  opacity: 0;
+  background: var(--kaart-bg);
+  box-shadow: 0 0 0 4px var(--kaart-bg);
+  transition: opacity 150ms ease;
+}
+/* Terwijl je naar de vlam of de prullenbak reikt is de schatting niet wat je
+   nodig hebt · hij maakt plaats in plaats van eronder te verdwijnen. */
+.stapel-kaart:hover .stapel-duur { opacity: 0; }
+.stapel-kaart:not(:hover) .stapel-acties { pointer-events: none; }
 .stapel-kaart:hover .stapel-acties { opacity: 1; }
 .stapel-actie {
-  padding: 3px;
+  padding: 2px;
   border-radius: 6px;
   color: hsl(var(--muted-foreground));
   transition: color 150ms ease, background-color 150ms ease;
@@ -3978,15 +4022,15 @@ button.doen-panel:hover {
 .stapel-kaart .stapel-actie.is-aan svg { fill: #F15025; }
 .stapel-actie.is-verwijder:hover { color: #C03A18; background: color-mix(in srgb, #C03A18 10%, transparent); }
 
-/* Kritieke kaarten laten hun vlam altijd zien, ook zonder hover. */
-.stapel-kaart[data-prio="kritiek"] .stapel-acties { opacity: 1; }
-.stapel-kaart[data-prio="kritiek"]:not(:hover) .stapel-actie.is-verwijder { opacity: 0; }
+/* De vlam brandde vroeger permanent op kritieke kaarten. Met de oranje
+   linkerrand én de oranje stip in de dagkop is dat het derde signaal voor
+   hetzelfde · weg ermee. */
 
 /* Smalle kolom: klant en project onder elkaar zou te veel hoogte kosten, dus
    dan valt de duur weg en krijgt de context de volle breedte. */
 @container stapeldag (max-width: 190px) {
-  .stapel-duur { display: none; }
   .stapel-titel { font-size: 12px; }
+  .stapel-kaart { padding-inline: 8px; }
 }
 
 /* ── Sleepdoelen ──────────────────────────────────────────────────────────── */
@@ -4278,22 +4322,19 @@ button.doen-panel:hover {
   letter-spacing: -0.005em;
 }
 
-/* Twee lagen schaduw · een korte harde voor de rand op het papier en een
+/* In rust draagt de kaart alleen zijn haarlijn. Bij hover komt het vlak los
+   van de kolom · twee lagen, een korte harde voor de rand op het papier en een
    langere zachte voor de hoogte erboven. */
-.taken-stapel .stapel-kaart {
-  box-shadow:
-    0 1px 1px rgba(130, 100, 60, 0.04),
-    0 2px 6px -2px rgba(130, 100, 60, 0.07);
-}
-.taken-stapel .stapel-kaart:hover {
+.taken-stapel .stapel-kaart { box-shadow: inset 0 1px 0 var(--stapel-lijn); }
+.taken-stapel .stapel-lijst > div:first-of-type .stapel-kaart { box-shadow: none; }
+.taken-stapel .stapel-kaart:hover,
+.taken-stapel .stapel-lijst > div:first-of-type .stapel-kaart:hover {
   box-shadow:
     0 1px 1px rgba(130, 100, 60, 0.05),
     0 6px 16px -6px rgba(130, 100, 60, 0.18);
 }
-.dark .taken-stapel .stapel-kaart {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-.dark .taken-stapel .stapel-kaart:hover {
+.dark .taken-stapel .stapel-kaart:hover,
+.dark .taken-stapel .stapel-lijst > div:first-of-type .stapel-kaart:hover {
   box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.55);
 }
 
@@ -4479,6 +4520,7 @@ button.doen-panel:hover {
 }
 
 /* Uitgeklapte afgeronde taken vouwen zichzelf open. */
+.stapel-afgerond .stapel-kaart:first-of-type { box-shadow: none; }
 .stapel-afgerond .stapel-kaart {
   animation: stapel-kaart-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }

@@ -388,14 +388,6 @@ export function TakenStapelView({
               )}
             </div>
 
-            {/* De rest van de kolom is klikbaar · een lege plek onder de dag is
-                waar je intuïtief een nieuwe taak begint. */}
-            <button
-              className="stapel-vulling"
-              aria-label={`Taak toevoegen op ${DAY_LABELS[dag.dayIndex]} ${dag.day.getDate()}`}
-              onClick={() => { setAddDag(dag.key); setAddTitel(''); setTimeout(() => addRef.current?.focus(), 40) }}
-            />
-
             {dag.afgerond.length > 0 && (
               <div className="stapel-afgerond">
                 <button className="stapel-afgerond-kop" onClick={() => toggleAfgerond(dag.key)}>
@@ -418,6 +410,16 @@ export function TakenStapelView({
                 ))}
               </div>
             )}
+
+            {/* De rest van de kolom is klikbaar · een lege plek onder de dag is
+                waar je intuïtief een nieuwe taak begint. Hij staat ná de
+                afgeronde taken, zodat die bij hun dag blijven staan in plaats
+                van naar de voet van de kolom te worden geduwd. */}
+            <button
+              className="stapel-vulling"
+              aria-label={`Taak toevoegen op ${DAY_LABELS[dag.dayIndex]} ${dag.day.getDate()}`}
+              onClick={() => { setAddDag(dag.key); setAddTitel(''); setTimeout(() => addRef.current?.focus(), 40) }}
+            />
           </section>
         )
       })}
@@ -496,16 +498,17 @@ function StapelKaart({
         <h3 className="stapel-titel">
           <span className={klaar ? 'taak-af-titel' : undefined}>{taak.titel}</span>
         </h3>
-        {context && (
-          <p className="stapel-context">
-            {klantNaam && <span className="stapel-klant">{klantNaam}</span>}
-            {klantNaam && project && <span className="stapel-scheiding">·</span>}
-            {project}
+        {(context || duur) && (
+          <p className="stapel-onder">
+            <span className="stapel-context">
+              {klantNaam && <span className="stapel-klant">{klantNaam}</span>}
+              {klantNaam && project && <span className="stapel-scheiding">·</span>}
+              {project}
+            </span>
+            {duur && <span className="stapel-duur">{duur}</span>}
           </p>
         )}
       </div>
-
-      {duur && <span className="stapel-duur">{duur}</span>}
 
       <div className="stapel-acties">
         <button
