@@ -291,6 +291,7 @@ export function TasksLayout() {
   // eerste taakkaart heen
   const [stapelSleepId, setStapelSleepId] = useState<string | null>(null)
   const [bakjeOver, setBakjeOver] = useState(false)
+  const [achterstandUit, setAchterstandUit] = useState(false)
   const [bakjeTitel, setBakjeTitel] = useState('')
   const [quickAddDag, setQuickAddDag] = useState<string | null>(null)
   const [quickAddTitel, setQuickAddTitel] = useState('')
@@ -943,6 +944,28 @@ export function TasksLayout() {
     })
     return map
   }, [filteredTaken])
+
+  // Open taken met een deadline vóór de zichtbare week. Die vielen tot nu toe
+  // door de mand: tasksByDay gooit alles weg wat buiten de week valt, en het
+  // Bakje vangt ze niet op omdat dat op `!t.deadline` filtert — deze taken
+  // hébben een deadline, alleen een verlopen. Ze bestonden dus wel, maar er was
+  // geen scherm waar ze nog langskwamen.
+  const achterstandTaken = useMemo(() => {
+    const grens = new Date(weekDays[0])
+    grens.setHours(0, 0, 0, 0)
+    return filteredTaken
+      .filter((t) => {
+        if (t.status === 'klaar' || !t.deadline) return false
+        const d = new Date(t.deadline)
+        if (isNaN(d.getTime())) return false
+        d.setHours(0, 0, 0, 0)
+        return d < grens
+      })
+      // Minst te laat eerst. Wat gisteren bleef liggen pak je vandaag nog op;
+      // wat vier maanden ligt is een opruimklus, geen dagtaak. Die fossielen
+      // blijven bereikbaar via uitklappen.
+      .sort((a, b) => (b.deadline || '').localeCompare(a.deadline || ''))
+  }, [filteredTaken, weekDays])
 
   // Tasks without deadline (ongepland)
   const unscheduledTaken = useMemo(() => {
@@ -1641,6 +1664,98 @@ export function TasksLayout() {
         {/* === BAKJE · alles zonder dag. Sleep een taak hierheen om hem uit de
              planning te halen zonder hem kwijt te raken, en er weer uit zodra
              hij aan de beurt is. === */}
+        {/* Achterstand · alleen als er iets ligt. Leeg is hij weg, en dat is
+            precies de beloning. Ingeklapt is het één rij met de taken die je
+            vandaag nog kunt redden; uitgeklapt zie je de hele stapel. */}
+        {(viewMode === 'week' || viewMode === 'stapel') && achterstandTaken.length > 0 && (() => {
+          const KRAP = 10
+          const zichtbaar = achterstandUit ? achterstandTaken : achterstandTaken.slice(0, KRAP)
+          const rest = achterstandTaken.length - zichtbaar.length
+          return (
+            <div className="flex items-start gap-2 px-4 py-2 border-b border-flame/25 bg-flame/[0.05] flex-shrink-0">
+              <button
+                onClick={() => setAchterstandUit((v) => !v)}
+                className="flex items-center gap-2 flex-shrink-0 pt-1 group"
+                title={achterstandUit ? 'Inklappen' : 'Alles tonen'}
+              >
+                <span className="text-[10px] uppercase tracking-widest font-semibold text-flame">Achterstand</span>
+                <span className="text-[10px] font-mono text-flame/70 group-hover:text-flame transition-colors">
+                  {achterstandTaken.length}
+                </span>
+              </button>
+              <div className={cn(
+                'flex-1 min-w-0 flex items-center gap-1.5',
+                achterstandUit
+                  ? 'flex-wrap max-h-[34vh] overflow-y-auto items-start'
+                  : 'overflow-x-auto scrollbar-hide',
+              )}>
+                {zichtbaar.map((t) => {
+                  const dagenTeLaat = Math.max(1, Math.round((today.getTime() - new Date(t.deadline!).setHours(0, 0, 0, 0)) / 86400000))
+                  const klant = t.klant_id ? klantMap[t.klant_id] : (t.project_id ? projectKlantMap[t.project_id] : undefined)
+                  return (
+                    <div
+                      key={t.id}
+                      role="button"
+                      tabIndex={0}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = 'move'
+                        e.dataTransfer.setData('text/plain', t.id)
+                        setDraggingTaakId(t.id)
+                      }}
+                      onDragEnd={() => setDraggingTaakId(null)}
+                      onClick={() => openEditDialog(t)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditDialog(t) }
+                      }}
+                      title={`Stond op ${new Date(t.deadline!).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })} · sleep naar een dag om opnieuw te plannen, of naar het Bakje om hem van de kalender te halen`}
+                      className={cn(
+                        'group flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-md text-[12px] whitespace-nowrap flex-shrink-0 transition-colors cursor-grab active:cursor-grabbing',
+                        'border border-flame/25 bg-card hover:border-flame/50 hover:bg-flame/[0.06]',
+                      )}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: PRIORITEIT_COLORS[t.prioriteit]?.dot || 'hsl(var(--muted-foreground))' }}
+                      />
+                      <span className="text-foreground">{t.titel}</span>
+                      {klant && <span className="text-[10px] text-muted-foreground">{klant}</span>}
+                      <span className="text-[10px] font-mono text-flame/80 tabular-nums">{dagenTeLaat}d</span>
+                      {/* Het kruisje verschijnt pas bij hover · in een uitgeklapte
+                          lijst van tientallen chips wil je niet dat een misklik
+                          een taak opruimt die nog moet gebeuren. */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteDirect(t) }}
+                        title="Verwijderen · deze hoeft niet meer"
+                        aria-label={`${t.titel} verwijderen`}
+                        className="flex-shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground/70 hover:text-[#C03A18] hover:bg-[#C03A18]/10 transition-all"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )
+                })}
+                {rest > 0 && (
+                  <button
+                    onClick={() => setAchterstandUit(true)}
+                    className="flex-shrink-0 px-2.5 py-1 rounded-md text-[12px] text-flame/90 hover:text-flame hover:bg-flame/[0.08] transition-colors"
+                  >
+                    +{rest} ouder
+                  </button>
+                )}
+                {achterstandUit && (
+                  <button
+                    onClick={() => setAchterstandUit(false)}
+                    className="flex-shrink-0 px-2.5 py-1 rounded-md text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Inklappen
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
         {(viewMode === 'week' || viewMode === 'stapel') && (
           <div
             onDragOver={(e) => { e.preventDefault(); setBakjeOver(true) }}
