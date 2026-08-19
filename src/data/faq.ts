@@ -14,6 +14,26 @@ export type CategoryId = typeof categories[number]['id']
 export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'product',
+    q: 'Wat levert doen. me eigenlijk op?',
+    a: 'Bij ons eigen signbedrijf scheelt het ongeveer **twee uur per dag**: niet meer zoeken waar een offerte bleef, niet meer overtypen van offerte naar werkbon naar factuur, niet meer nabellen wie wat heeft gedaan. Daarnaast krijg je iets wat lastiger in uren is te vangen, namelijk **overzicht**. Je ziet in één scherm wat er open staat, wat er vandaag gebeurt en wat er nog binnen moet komen.',
+  },
+  {
+    category: 'support',
+    q: 'Kan mijn boekhouder meekijken?',
+    a: 'Ja, die krijgt gewoon een account. **Tot tien gebruikers betaal je dezelfde prijs**, dus voor de meeste bedrijven verandert er niets aan wat het kost. Werkt hij met Exact Online, dan kun je je facturen ook rechtstreeks die kant op sturen.',
+  },
+  {
+    category: 'support',
+    q: 'Wat gebeurt er als doen. eruit ligt?',
+    a: 'Storingen **komen automatisch bij ons binnen**, dus we horen het zonder dat jij hoeft te bellen. Merk je zelf iets, dan is de supportknop in de app de snelste weg naar een mens.',
+  },
+  {
+    category: 'prijs',
+    q: 'Gaat die € 129 volgend jaar omhoog?',
+    a: 'We houden de prijs zo lang mogelijk gelijk en verhogen **mondjesmaat, niet harder dan de inflatie**. Gebeurt het, dan hoor je het **minstens 30 dagen van tevoren per e-mail** en mag je opzeggen tegen de datum waarop de nieuwe prijs ingaat. Dat staat ook zo in de voorwaarden.',
+  },
+  {
+    category: 'product',
     q: 'Ziet mijn monteur straks alles, ook mijn marges?',
     a: 'Ja, en dat is een bewuste keuze. Binnen jouw bedrijf ziet iedereen dezelfde projecten, klanten en planning. **Niemand hoeft te bellen om te weten hoe iets ervoor staat**, en er is geen rechtenbeheer dat je moet bijhouden. Je monteur die op de bok staat weet zelf welke klus erna komt en wat er is afgesproken. Externe partijen zoals een freelancer krijgen die toegang niet.',
   },
