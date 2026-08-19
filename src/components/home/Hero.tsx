@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 
 /* Entree via CSS-keyframes (globals.css: .hero-line / .hero-fade) zodat de
@@ -6,13 +7,42 @@ import Link from 'next/link'
 export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-petrol-deep">
+      {/* Het werk zelf achter de belofte. Het beeld staat rechts uitgelijnd,
+          zodat de montage in de rechterhelft valt waar geen tekst staat. */}
+      <Image
+        src="/images/fotos/hoogwerker-aan-de-gevel-breed.webp"
+        alt=""
+        aria-hidden
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-[70%_center]"
+      />
+      {/* Twee lagen doen hier verschillend werk. Een petrol-waas over het hele
+          beeld houdt de merkkleur vast, ook waar de foto doorschijnt; anders
+          leest de rechterhelft als een grijze foto zonder merk. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none bg-petrol"
+        style={{ opacity: 0.45, mixBlendMode: 'multiply' }}
+      />
+      {/* En een verloop dat links dicht genoeg is voor witte tekst en rechts
+          open genoeg om de gevel te laten zien. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'linear-gradient(100deg, rgba(13,52,60,0.92) 0%, rgba(13,52,60,0.84) 40%, rgba(13,52,60,0.55) 70%, rgba(13,52,60,0.42) 100%)',
+        }}
+      />
       {/* Eén diepe lichtval linksboven — verder niets */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 85% 90% at 12% 0%, rgba(42,111,122,0.55) 0%, rgba(42,111,122,0) 62%)',
+            'radial-gradient(ellipse 85% 90% at 12% 0%, rgba(42,111,122,0.5) 0%, rgba(42,111,122,0) 62%)',
         }}
       />
 

@@ -1012,6 +1012,28 @@ function ModuleDetailPage({ detail }: { detail: ModuleDetail }) {
   const prev = details[(index - 1 + details.length) % details.length]
   const next = details[(index + 1) % details.length]
 
+/* Niet elke module heeft een moment in de echte wereld. Waar dat wel zo is,
+   staat het beeld naast de kop; de rest houdt de kale kop, want een foto die
+   er niet bij hoort is erger dan geen foto. */
+const MODULE_FOTO: Record<string, { src: string; alt: string }> = {
+  planning: {
+    src: '/images/fotos/planning-op-het-bord.webp',
+    alt: 'Planner zet de week uit op een magneetbord, met de werkplaats en de bus achter zich',
+  },
+  werkbonnen: {
+    src: '/images/fotos/werkbon-op-de-telefoon.webp',
+    alt: 'Monteur kijkt bij de gevel op zijn telefoon, gereedschapstas naast zich en de bus erachter',
+  },
+  offertes: {
+    src: '/images/fotos/prijs-uitrekenen.webp',
+    alt: 'Ondernemer rekent een prijs uit aan zijn bureau, met materiaalmonsters naast de papieren',
+  },
+  projecten: {
+    src: '/images/fotos/tekening-op-de-werkbank.webp',
+    alt: 'Twee collega\'s meten een tekening na op de werkbank, tussen de rollen folie',
+  },
+}
+
   return (
     <>
       {/* Hero: schakelaar, kop en subregel, verder niks.
@@ -1019,6 +1041,8 @@ function ModuleDetailPage({ detail }: { detail: ModuleDetail }) {
       <section className="bg-bg">
         <div className="container-site pt-24 md:pt-36 pb-10 md:pb-20">
           <ModuleSwitcher actief={detail.slug} />
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-10 lg:gap-16 items-end">
+            <div>
           {detail.slug === 'visualizer' && (
             <div className="hero-fade mb-5" style={{ animationDelay: '0.05s' }}>
               <StudioBadges />
@@ -1041,6 +1065,21 @@ function ModuleDetailPage({ detail }: { detail: ModuleDetail }) {
           >
             {detail.sub}
           </p>
+            </div>
+
+            {MODULE_FOTO[detail.slug] && (
+              <div className="hero-fade relative hidden lg:block aspect-[3/4] w-full overflow-hidden rounded-[10px] bg-petrol-deep/5" style={{ animationDelay: '0.4s' }}>
+                <Image
+                  src={MODULE_FOTO[detail.slug].src}
+                  alt={MODULE_FOTO[detail.slug].alt}
+                  fill
+                  priority
+                  sizes="380px"
+                  className="object-cover"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
