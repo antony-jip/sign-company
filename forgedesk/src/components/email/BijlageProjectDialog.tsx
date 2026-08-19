@@ -260,7 +260,7 @@ export function BijlageProjectDialog({
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Zoek project."
+                    placeholder="Zoek op project of klant"
                     className="flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
                   />
                   {query && (

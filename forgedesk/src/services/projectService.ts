@@ -36,12 +36,26 @@ export async function getProjecten(limit = 50000): Promise<Project[]> {
 }
 
 /**
- * Server-side zoeken voor de globale zoekbalk. Matcht op naam en beschrijving.
+ * Klant-ids waarvan de bedrijfsnaam op de zoekterm lijkt.
  *
- * De bedrijfsnaam van de klant zit in een gejoinde tabel en past niet in
- * dezelfde or-filter, dus daarop zoeken loopt via de klanten-categorie die er in
- * de zoekbalk direct boven staat. Dat is een versmalling tegenover de oude
- * client-side filter, geen omissie.
+ * De bedrijfsnaam staat in een gejoinde tabel en kan daardoor niet mee in de
+ * or-filter op projecten. Wie een klantnaam intikt zoekt wel degelijk naar de
+ * projecten van die klant, dus halen we eerst de ids op en filteren daarna
+ * daarop. Twee queries, maar het scheelt de gebruiker "geen resultaat".
+ */
+export async function zoekKlantIdsOpNaam(veiligeTerm: string, limit = 20): Promise<string[]> {
+  if (!veiligeTerm || !isSupabaseConfigured() || !supabase) return []
+  const { data } = await supabase
+    .from('klanten')
+    .select('id')
+    .ilike('bedrijfsnaam', `%${veiligeTerm}%`)
+    .limit(limit)
+  return ((data as Array<{ id: string }> | null) || []).map((k) => k.id)
+}
+
+/**
+ * Server-side zoeken voor de globale zoekbalk. Matcht op naam, beschrijving en
+ * de bedrijfsnaam van de klant.
  */
 export async function zoekProjecten(term: string, limit = 20): Promise<Project[]> {
   const gezocht = term.trim()
@@ -52,10 +66,13 @@ export async function zoekProjecten(term: string, limit = 20): Promise<Project[]
   // jokers in ilike. Allebei eruit, zodat een zoekterm een zoekterm blijft.
   const veilig = gezocht.replace(/[,%_()"*\\]/g, '')
   if (!veilig) return []
+    const klantIds = await zoekKlantIdsOpNaam(veilig)
+    const filters = [`naam.ilike.%${veilig}%`, `beschrijving.ilike.%${veilig}%`]
+    if (klantIds.length > 0) filters.push(`klant_id.in.(${klantIds.join(',')})`)
     const { data, error } = await sb
       .from('projecten')
       .select('*, klanten(bedrijfsnaam)')
-      .or(`naam.ilike.%${veilig}%,beschrijving.ilike.%${veilig}%`)
+      .or(filters.join(','))
       .order('created_at', { ascending: false })
       .limit(limit)
     if (error) throw error

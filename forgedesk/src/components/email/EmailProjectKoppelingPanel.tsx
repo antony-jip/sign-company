@@ -164,7 +164,13 @@ export function EmailProjectKoppelingPanel({
       >
         <Briefcase className={cn('h-3.5 w-3.5 flex-shrink-0', active ? 'text-petrol' : 'text-muted-foreground')} />
         <div className="min-w-0 flex-1">
-          <div className="text-[12px] font-medium text-foreground truncate">{p.naam}</div>
+          <div className="text-[12px] font-medium text-foreground truncate">
+            {p.naam}
+            {/* Zonder klantnaam zijn twee projecten "Gevelbord" niet uit elkaar te houden. */}
+            {p.klant_naam && (
+              <span className="font-normal text-muted-foreground"> · {p.klant_naam}</span>
+            )}
+          </div>
           {p.project_nummer && (
             <div className="text-[10px] text-muted-foreground font-mono">{p.project_nummer}</div>
           )}
@@ -219,9 +225,13 @@ export function EmailProjectKoppelingPanel({
             >
               {linkedProject.naam}
             </button>
-            {linkedProject.project_nummer && (
-              <p className="text-[11px] text-muted-foreground font-mono">{linkedProject.project_nummer}</p>
-            )}
+            <p className="text-[11px] text-muted-foreground truncate">
+              {linkedProject.project_nummer && (
+                <span className="font-mono">{linkedProject.project_nummer}</span>
+              )}
+              {linkedProject.project_nummer && linkedProject.klant_naam && <span> · </span>}
+              {linkedProject.klant_naam}
+            </p>
           </div>
           <button
             type="button"
@@ -253,7 +263,7 @@ export function EmailProjectKoppelingPanel({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Zoek project."
+              placeholder="Zoek op project of klant"
               className="flex-1 bg-transparent text-[12px] text-foreground outline-none placeholder:text-muted-foreground"
             />
             {query && (

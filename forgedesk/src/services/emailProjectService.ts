@@ -1,6 +1,19 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 import { getOrgId } from './supabaseHelpers'
+import { zoekKlantIdsOpNaam } from './projectService'
 import type { Project } from '@/types'
+
+/**
+ * De klantnaam zit niet in projecten maar in de gejoinde klanten-rij. Zonder
+ * die naam zie je in een lijst met "Gevelbord" en "Gevelreclame" niet bij wie
+ * je zit, dus elke query hier haalt hem mee en plat hem naar klant_naam.
+ */
+type ProjectMetKlant = Project & { klanten?: { bedrijfsnaam?: string } | null }
+const PROJECT_SELECT = '*, klanten(bedrijfsnaam)'
+function metKlantNaam(rij: ProjectMetKlant): Project {
+  const { klanten, ...project } = rij
+  return { ...project, klant_naam: klanten?.bedrijfsnaam || '' } as Project
+}
 
 // Koppeling tussen één email-thread en één project (sprint mail-koppeling).
 // RLS doet de organisatie-scope, geen extra filters nodig in queries.
@@ -10,14 +23,14 @@ export async function getProjectVoorThread(threadId: string): Promise<{ project:
   if (!threadId || !isSupabaseConfigured() || !supabase) return null
   const { data, error } = await supabase
     .from('email_project_koppelingen')
-    .select('gekoppeld_op, project:projecten(*)')
+    .select('gekoppeld_op, project:projecten(*, klanten(bedrijfsnaam))')
     .eq('thread_id', threadId)
     .maybeSingle()
   if (error || !data?.project) return null
   // Supabase typeert join-resultaten breed; cast naar het project-type
-  const project = (Array.isArray(data.project) ? data.project[0] : data.project) as Project | undefined
-  if (!project) return null
-  return { project, gekoppeld_op: data.gekoppeld_op as string }
+  const rij = (Array.isArray(data.project) ? data.project[0] : data.project) as ProjectMetKlant | undefined
+  if (!rij) return null
+  return { project: metKlantNaam(rij), gekoppeld_op: data.gekoppeld_op as string }
 }
 
 /** Koppel een thread aan een project. Vervangt bestaande koppeling op dezelfde thread. */
@@ -153,12 +166,12 @@ export async function getProjectSuggestiesVoorEmail(emailAdres: string): Promise
 
   const { data: projecten } = await supabase
     .from('projecten')
-    .select('*')
+    .select(PROJECT_SELECT)
     .in('klant_id', Array.from(klantIds))
     .neq('status', 'afgerond')
     .order('created_at', { ascending: false })
     .limit(8)
-  return (projecten as Project[] | null) || []
+  return ((projecten as ProjectMetKlant[] | null) || []).map(metKlantNaam)
 }
 
 /** Eén project ophalen op id. Voor de compose-mode om parent-controlled selectie te resolven. */
@@ -166,30 +179,36 @@ export async function getProjectById(id: string): Promise<Project | null> {
   if (!id || !isSupabaseConfigured() || !supabase) return null
   const { data } = await supabase
     .from('projecten')
-    .select('*')
+    .select(PROJECT_SELECT)
     .eq('id', id)
     .maybeSingle()
-  return (data as Project | null) || null
+  return data ? metKlantNaam(data as ProjectMetKlant) : null
 }
 
-/** Zoek projecten op vrije query (titel / klant-naam). Voor de picker als suggesties leeg zijn. */
+/** Zoek projecten op vrije query (naam / nummer / klantnaam). Voor de picker als suggesties leeg zijn. */
 export async function zoekProjecten(query: string, limit = 12): Promise<Project[]> {
   if (!isSupabaseConfigured() || !supabase) return []
   if (!query.trim()) {
     const { data } = await supabase
       .from('projecten')
-      .select('*')
+      .select(PROJECT_SELECT)
       .neq('status', 'afgerond')
       .order('created_at', { ascending: false })
       .limit(limit)
-    return (data as Project[] | null) || []
+    return ((data as ProjectMetKlant[] | null) || []).map(metKlantNaam)
   }
-  const sanitized = query.replace(/[\\%_]/g, (c) => `\\${c}`)
+  // Komma en haakjes zijn structuur in de or-syntax van PostgREST, % en _ zijn
+  // jokers in ilike: allemaal eruit zodat een zoekterm een zoekterm blijft.
+  const veilig = query.replace(/[,%_()"*\\]/g, '').trim()
+  if (!veilig) return []
+  const klantIds = await zoekKlantIdsOpNaam(veilig)
+  const filters = [`naam.ilike.%${veilig}%`, `project_nummer.ilike.%${veilig}%`]
+  if (klantIds.length > 0) filters.push(`klant_id.in.(${klantIds.join(',')})`)
   const { data } = await supabase
     .from('projecten')
-    .select('*')
-    .or(`naam.ilike.%${sanitized}%,project_nummer.ilike.%${sanitized}%`)
+    .select(PROJECT_SELECT)
+    .or(filters.join(','))
     .order('created_at', { ascending: false })
     .limit(limit)
-  return (data as Project[] | null) || []
+  return ((data as ProjectMetKlant[] | null) || []).map(metKlantNaam)
 }
