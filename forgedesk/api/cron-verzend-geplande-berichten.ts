@@ -229,7 +229,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (bericht.html) {
           let imgIndex = 0
           const processedHtml = (bericht.html as string).replace(
-            /<img([^>]*)src="data:(image\/(png|jpeg|jpg|gif|webp|svg\+xml));base64,([^"]+)"([^>]*)>/gi,
+            /<img([^>]*)src=["']data:(image\/([a-z0-9.+-]+));base64,([^"']+)["']([^>]*)>/gi,
             (_m: string, before: string, mimeType: string, ext: string, b64Data: string, after: string) => {
               const cid = `inline-${crypto.randomUUID()}@forgedesk`
               const extension = ext.replace('+xml', '').replace('jpeg', 'jpg')

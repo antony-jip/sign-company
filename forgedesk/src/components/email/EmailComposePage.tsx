@@ -24,6 +24,7 @@ import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
 import { toast } from 'sonner'
+import { inlineLokaleAfbeeldingen } from '@/utils/mailAfbeeldingen'
 import { cn, formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
@@ -214,7 +215,9 @@ export function EmailComposePage() {
     }
 
     const body = editorRef.current?.innerText || ''
-    const html = editorRef.current?.innerHTML || ''
+    // Vangnet: blob:-verwijzingen uit dit tabblad worden alsnog ingesloten,
+    // anders ziet de ontvanger een leeg vakje waar jij de foto ziet staan.
+    const html = await inlineLokaleAfbeeldingen(editorRef.current?.innerHTML || '')
     const toAddr = to.trim()
     const subj = subject.trim()
     const offerteId = offerte?.id

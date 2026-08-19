@@ -23,6 +23,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Switch } from '@/components/ui/switch'
 import { getWachtendeEmailNaarAdres } from '@/services/emailService'
 import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
+import { inlineLokaleAfbeeldingen } from '@/utils/mailAfbeeldingen'
 import { leesConcept, schrijfConcept, wisConcept, isLeegConcept, type EmailConcept } from '@/utils/emailConceptDraft'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useVisueleViewport } from '@/hooks/useVisueleViewport'
@@ -732,13 +733,16 @@ export function EmailCompose({
       async () => {
         const payload = await buildPayload()
         if (!payload) throw new Error('Bijlagen uploaden mislukt')
+        // Vangnet: een foto die de browser aan een blob:-verwijzing hing wordt
+        // hier alsnog ingesloten, anders ziet de ontvanger een leeg vakje.
+        const htmlMetBeeld = await inlineLokaleAfbeeldingen(html)
         await onSend?.({
           to,
           subject,
           cc: cc.trim() || undefined,
           bcc: bcc.trim() || undefined,
           body: body + payload.linksText,
-          html: html + payload.linksHtml,
+          html: htmlMetBeeld + payload.linksHtml,
           wacht_op_reactie: capturedWacht,
           attachments: payload.attachments,
         })
@@ -789,13 +793,16 @@ export function EmailCompose({
       async () => {
         const payload = await buildPayload()
         if (!payload) throw new Error('Bijlagen uploaden mislukt')
+        // Vangnet: een foto die de browser aan een blob:-verwijzing hing wordt
+        // hier alsnog ingesloten, anders ziet de ontvanger een leeg vakje.
+        const htmlMetBeeld = await inlineLokaleAfbeeldingen(html)
         await onSend?.({
           to,
           subject,
           cc: cc.trim() || undefined,
           bcc: bcc.trim() || undefined,
           body: body + payload.linksText,
-          html: html + payload.linksHtml,
+          html: htmlMetBeeld + payload.linksHtml,
           scheduledAt,
           wacht_op_reactie: capturedWacht,
           attachments: payload.attachments,

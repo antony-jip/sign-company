@@ -27,6 +27,7 @@ import { createProjectFoto } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { BijlageProjectDialog, type BijlageProjectKeuze, type BijlageKandidaat, type BijlageMetBestemming } from './BijlageProjectDialog'
 import { valideerBijlagen, uploadBijlagenMetLinkFallback } from '@/utils/groteBijlagen'
+import { afbeeldingenUitLijst, voegAfbeeldingenIn, inlineLokaleAfbeeldingen } from '@/utils/mailAfbeeldingen'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { sendInBackground } from '@/utils/sendInBackground'
@@ -928,7 +929,9 @@ export function EmailReader({
       toast.error('Ongeldig emailadres in "BCC"')
       return null
     }
-    const html = editorRef.current.innerHTML
+    // Een foto die je in de editor zet hangt aan een blob:-verwijzing uit je
+    // eigen tabblad. Vlak voor verzenden wordt die alsnog ingesloten.
+    const html = await inlineLokaleAfbeeldingen(editorRef.current.innerHTML)
     const bodyText = editorRef.current.innerText
     if (!html.replace(/<[^>]*>/g, '').trim()) {
       toast.error('Bericht is leeg')
@@ -1413,6 +1416,21 @@ export function EmailReader({
               suppressContentEditableWarning
               className="min-h-[360px] md:min-h-[calc(100dvh-380px)] py-5 px-4 md:px-6 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[400px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-0.5 [&_a]:text-petrol dark:[&_a]:text-[#7FB5BF] [&_a]:underline [&_a]:underline-offset-2 empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/80 empty:before:pointer-events-none"
               data-placeholder="Schrijf je antwoord..."
+              onPaste={(e) => {
+                const beelden = afbeeldingenUitLijst(e.clipboardData?.items)
+                if (beelden.length === 0) return
+                e.preventDefault()
+                void voegAfbeeldingenIn(editorRef.current, beelden)
+              }}
+              onDragOver={(e) => {
+                if (afbeeldingenUitLijst(e.dataTransfer?.items).length > 0) e.preventDefault()
+              }}
+              onDrop={(e) => {
+                const beelden = afbeeldingenUitLijst(e.dataTransfer?.files)
+                if (beelden.length === 0) return
+                e.preventDefault()
+                void voegAfbeeldingenIn(editorRef.current, beelden)
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault()

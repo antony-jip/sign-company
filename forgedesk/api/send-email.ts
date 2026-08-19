@@ -333,7 +333,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (processedHtml) {
       let imgIndex = 0
       processedHtml = processedHtml.replace(
-        /<img([^>]*)src="data:(image\/(png|jpeg|jpg|gif|webp|svg\+xml));base64,([^"]+)"([^>]*)>/gi,
+        /<img([^>]*)src=["']data:(image\/([a-z0-9.+-]+));base64,([^"']+)["']([^>]*)>/gi,
         (_match, before, mimeType, ext, b64Data, after) => {
           const cid = `inline-${crypto.randomUUID()}@forgedesk`
           const extension = ext.replace('+xml', '').replace('jpeg', 'jpg')
