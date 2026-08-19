@@ -48,9 +48,9 @@ const nextConfig = {
     ]
   },
   transpilePackages: ['framer-motion'],
-  experimental: {
-    viewTransition: true,
-  },
+  // De sleutel experimental.viewTransition bestaat pas vanaf Next 15 en zorgde
+  // hier alleen voor een waarschuwing bij elke start zonder iets te doen.
+  // Terugzetten zodra de site meegaat naar Next 15.
   images: {
     domains: ['localhost'],
     formats: ['image/avif', 'image/webp'],
