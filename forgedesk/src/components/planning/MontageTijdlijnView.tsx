@@ -21,6 +21,7 @@ const DEFAULT_START_UUR = 7
 const DEFAULT_EIND_UUR = 18
 const SNAP_MINUTEN = 15
 const NOTITIE_HOOGTE = 24
+const KOP_HOOGTE = 42
 const MIN_DUUR_MINUTEN = 15
 
 function naarMinuten(t?: string | null): number | null {
@@ -211,7 +212,7 @@ export function MontageTijdlijnView({
   return (
     <div className="planning-tijdlijn flex overflow-x-auto">
       {/* Urenkolom */}
-      <div className="flex-shrink-0 w-12 select-none" style={{ paddingTop: 32 + notitieHoogte + takenBandHoogte }}>
+      <div className="flex-shrink-0 w-12 select-none" style={{ paddingTop: KOP_HOOGTE + notitieHoogte + takenBandHoogte }}>
         {uren.map((m) => (
           <div key={m} className="relative" style={{ height: uurHoogte }}>
             <span className="absolute -top-[7px] right-2 text-[10px] font-medium tabular-nums text-muted-foreground/70">
@@ -230,18 +231,49 @@ export function MontageTijdlijnView({
           const dicht = gesloten?.(sleutel) ?? null
           const isVandaag = sleutel === vandaagSleutel
           const banen = verdeelInBanen(afspraken)
+          const afgerond = afspraken.filter((a) => a.status === 'afgerond').length
+          const openAantal = afspraken.length - afgerond
+          const voortgang = afspraken.length === 0 ? 0 : afgerond / afspraken.length
 
           return (
             <div key={sleutel} className="group flex-1 min-w-[118px]">
-              <div className={cn(
-                'h-8 flex items-baseline gap-1.5 px-2 border-b border-border/60',
-                isVandaag && 'text-flame',
-              )}>
-                <span className="text-[10px] font-bold tracking-[0.08em] text-muted-foreground">{DAG_NAMEN[i]}</span>
-                <span className={cn('text-[13px] font-semibold', isVandaag ? 'text-flame' : 'text-foreground')}>
-                  {datum.getDate()}
+              {/* Zelfde dagkop als de stapel in Taken · dagnaam, datum, aantal
+                  open, en een voortgangsbalk die meegroeit met wat af is. */}
+              <div
+                className="relative flex items-baseline gap-[7px] border-b border-border/60 px-1"
+                style={{ height: KOP_HOOGTE }}
+              >
+                <span className={cn(
+                  'text-[10.5px] font-bold tracking-[0.08em]',
+                  isVandaag ? 'text-[#1A535C] dark:text-[#CFE3E6]' : 'text-muted-foreground',
+                )}>
+                  {DAG_NAMEN[i]}{isVandaag && <span className="text-flame">.</span>}
                 </span>
-                {dicht && <span className="text-[10px] text-muted-foreground truncate">{dicht}</span>}
+
+                {isVandaag ? (
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-petrol text-[12.5px] font-bold tabular-nums text-white">
+                    {datum.getDate()}
+                  </span>
+                ) : (
+                  <span className="text-[15px] font-bold tabular-nums text-foreground">{datum.getDate()}</span>
+                )}
+
+                {dicht && <span className="truncate text-[10px] text-muted-foreground">{dicht}</span>}
+
+                {openAantal > 0 && (
+                  <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">{openAantal}</span>
+                )}
+
+                {voortgang > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-px left-1 h-[2px] rounded-full"
+                    style={{
+                      width: `calc((100% - 8px) * ${voortgang})`,
+                      background: 'linear-gradient(90deg, color-mix(in srgb, #1A535C 55%, transparent), #1A535C)',
+                    }}
+                  />
+                )}
               </div>
 
               {renderDagNotitie && (
