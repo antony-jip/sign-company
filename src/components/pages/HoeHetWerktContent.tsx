@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import {
   ArrowLeft, CalendarClock, Check, CheckCircle2, CloudRain, Download, Send, Sparkles, Sun,
@@ -117,42 +118,116 @@ const flowSteps: FlowStep[] = [
   },
 ]
 
+/* De zeven stappen als één doorlopende beweging: de tekst scrolt, het scherm
+   ernaast blijft staan en wisselt mee. Zo lees je de klus als één klus in
+   plaats van als zeven losse blokken. Op mobiel blijft het gestapeld, want een
+   vastgezette kolom naast een smalle tekstkolom heeft daar geen ruimte. */
 function Stappen() {
+  const [actief, setActief] = useState(flowSteps[0].nr)
+  const blokken = useRef<Array<HTMLDivElement | null>>([])
+
+  // Welke stap in beeld is, bepalen we door van alle blokken de afstand tot het
+  // midden van het scherm te meten en de kleinste te nemen.
+  //
+  // Aangejaagd door een IntersectionObserver en niet door scroll-events: die
+  // laatste vuren onbetrouwbaar (bij smooth scrolling en in een tabblad dat
+  // niet op de voorgrond staat blijft de reeks anders op stap 1 hangen).
+  useEffect(() => {
+    const bepaal = () => {
+      const midden = window.innerHeight / 2
+      let beste = flowSteps[0].nr
+      let kleinste = Infinity
+      blokken.current.forEach((el, i) => {
+        if (!el) return
+        const rand = el.getBoundingClientRect()
+        const afstand = Math.abs(rand.top + rand.height / 2 - midden)
+        if (afstand < kleinste) {
+          kleinste = afstand
+          beste = flowSteps[i].nr
+        }
+      })
+      setActief(beste)
+    }
+
+    const waarnemer = new IntersectionObserver(bepaal, {
+      // Meerdere drempels, zodat hij ook meldt terwijl een blok langzaam
+      // doorschuift en niet alleen op het moment van binnenkomen.
+      threshold: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1],
+    })
+    blokken.current.forEach((el) => el && waarnemer.observe(el))
+    bepaal()
+    window.addEventListener('resize', bepaal)
+    return () => {
+      waarnemer.disconnect()
+      window.removeEventListener('resize', bepaal)
+    }
+  }, [])
+
   return (
     <section className="bg-white">
       <div className="container-site pt-4 md:pt-8 pb-16 md:pb-24">
-        <div className="border-b border-petrol/10">
-          {flowSteps.map((step) => (
-            <StepBlock key={step.nr} step={step} />
-          ))}
+        <div className="grid md:grid-cols-2 gap-6 md:gap-14">
+          <div className="border-b border-petrol/10 md:border-b-0">
+            {flowSteps.map((step, i) => (
+              <div
+                key={step.nr}
+                id={`stap-${step.nr}`}
+                data-stap={step.nr}
+                ref={(el) => { blokken.current[i] = el }}
+                className="border-t border-petrol/10 md:border-t-0 py-8 md:py-0 md:min-h-[62vh] md:flex md:flex-col md:justify-center scroll-mt-24"
+              >
+                <p className="text-[13px] font-semibold text-flame mb-2">Stap {Number(step.nr)} van 7</p>
+                <h2
+                  className="font-heading text-[24px] md:text-[30px] font-bold text-petrol leading-tight mb-3"
+                  style={{ letterSpacing: '-0.025em' }}
+                >
+                  {step.title}
+                  <span className="text-flame">.</span>
+                </h2>
+                <p className="text-[15px] md:text-[16px] leading-[1.6] text-muted max-w-md">{step.line}</p>
+
+                <div className="md:hidden mt-6">
+                  <StepMockup nr={step.nr} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block">
+            <div className="sticky top-28 h-[62vh] flex flex-col justify-center gap-5">
+              {/* Zeven streepjes: waar je bent in de klus, zonder er woorden
+                  aan vuil te maken. */}
+              <div className="flex items-center gap-1.5 justify-end" aria-hidden>
+                {flowSteps.map((step) => (
+                  <span
+                    key={step.nr}
+                    className={[
+                      'h-[3px] rounded-full motion-safe:transition-all motion-safe:duration-500',
+                      step.nr === actief ? 'w-8 bg-flame' : 'w-4 bg-petrol/15',
+                    ].join(' ')}
+                  />
+                ))}
+              </div>
+              <div className="relative w-full flex-1">
+                {flowSteps.map((step) => (
+                  <div
+                    key={step.nr}
+                    aria-hidden={actief !== step.nr}
+                    className={[
+                      'absolute inset-0 flex items-center justify-end',
+                      'motion-safe:transition-opacity motion-safe:duration-500',
+                      actief === step.nr ? 'opacity-100' : 'opacity-0 pointer-events-none',
+                    ].join(' ')}
+                  >
+                    <StepMockup nr={step.nr} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
-  )
-}
-
-function StepBlock({ step }: { step: FlowStep }) {
-  return (
-    <div
-      id={`stap-${step.nr}`}
-      className="border-t border-petrol/10 py-8 md:py-12 grid md:grid-cols-2 gap-6 md:gap-14 items-center scroll-mt-24"
-    >
-      <div>
-        <p className="text-[13px] font-semibold text-flame mb-2">Stap {Number(step.nr)} van 7</p>
-        <h2
-          className="font-heading text-[24px] md:text-[30px] font-bold text-petrol leading-tight mb-3"
-          style={{ letterSpacing: '-0.025em' }}
-        >
-          {step.title}
-          <span className="text-flame">.</span>
-        </h2>
-        <p className="text-[15px] md:text-[16px] leading-[1.6] text-muted max-w-md">{step.line}</p>
-      </div>
-
-      <div className="md:justify-self-end">
-        <StepMockup nr={step.nr} />
-      </div>
-    </div>
   )
 }
 
@@ -448,7 +523,7 @@ function MockupPlanning() {
           tijd="08:00 – 12:00"
           titel="Montage gevelreclame"
           klant="Jansen Bouw · Beemster"
-          ref="WB-2026-039"
+          bonnummer="WB-2026-039"
           stripe="#4A7AC7"
           bg="#E8EEF9"
           tekst={STATUS.actief}
@@ -470,9 +545,9 @@ function MockupPlanning() {
 }
 
 function PlanBlok({
-  tijd, titel, klant, ref: refnr, stripe, bg, tekst, status, crew,
+  tijd, titel, klant, bonnummer: refnr, stripe, bg, tekst, status, crew,
 }: {
-  tijd: string; titel: string; klant: string; ref?: string
+  tijd: string; titel: string; klant: string; bonnummer?: string
   stripe: string; bg: string; tekst: string; status: string; crew?: string
 }) {
   return (

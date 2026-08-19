@@ -5,15 +5,21 @@ const nextConfig = {
 
   // Security-headers voor alle routes. De site is volledig self-contained
   // (fonts via next/font, geen externe scripts), dus de CSP kan strak.
+  //
+  // Uitzondering voor de dev-server: de hot-reload van Next draait op eval en
+  // liep stuk op deze CSP. Gevolg was dat de client-bundel lokaal nooit
+  // startte en er dus niets interactief was, van de klikbare app-demo tot de
+  // stappenreeks. In productie blijft het onveranderd streng.
   async headers() {
+    const isDev = process.env.NODE_ENV === 'development'
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data:",
       "media-src 'self'",
       "font-src 'self'",
-      "connect-src 'self'",
+      `connect-src 'self'${isDev ? ' ws: http://localhost:*' : ''}`,
       "frame-src 'none'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
