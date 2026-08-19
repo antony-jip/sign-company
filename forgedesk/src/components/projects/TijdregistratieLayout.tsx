@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { logger } from "@/utils/logger";
 import {
   Card,
@@ -30,7 +30,6 @@ import { Separator } from "@/components/ui/separator";
 import {
   Clock,
   Play,
-  Pause,
   Square,
   Plus,
   Pencil,
@@ -48,6 +47,7 @@ import {
 } from "lucide-react";
 import {
   getTijdregistraties,
+  getMedewerkers,
   createTijdregistratie,
   updateTijdregistratie,
   deleteTijdregistratie,
@@ -57,7 +57,7 @@ import {
   createFactuurItem,
 } from "@/services/supabaseService";
 import { getCached, fetchQuery } from "@/lib/queryCache";
-import type { Tijdregistratie, Project, Klant } from "@/types";
+import type { Tijdregistratie, Project, Klant, Medewerker } from "@/types";
 import { round2 } from "@/utils/budgetUtils";
 import { cn, formatCurrency } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -65,19 +65,9 @@ import { toast } from "sonner";
 import { exportCSV, exportExcel } from "@/lib/export";
 import { useAuth } from "@/contexts/AuthContext";
 import { logCreate } from "@/utils/auditLogger";
+import { useTijdSessies } from "@/hooks/useTijdSessies";
 
 type FilterType = "alle" | "deze_week" | "deze_maand" | "facturabel" | "niet_facturabel" | "gefactureerd" | "niet_gefactureerd";
-
-type TimerStatus = "stopped" | "running" | "paused";
-
-interface TimerState {
-  status: TimerStatus;
-  projectId: string;
-  projectNaam: string;
-  omschrijving: string;
-  startTijd: string;
-  elapsedSeconds: number;
-}
 
 interface FormData {
   project_id: string;
@@ -191,31 +181,35 @@ export function TijdregistratieLayout() {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  const [timer, setTimer] = useState<TimerState>({
-    status: "stopped",
-    projectId: "",
-    projectNaam: "",
-    omschrijving: "",
-    startTijd: "",
-    elapsedSeconds: 0,
-  });
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? []);
+  const [keuzeProjectId, setKeuzeProjectId] = useState("");
+  const [keuzeOmschrijving, setKeuzeOmschrijving] = useState("");
 
-  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timerStartRef = useRef<number>(0);
-  const timerPausedElapsedRef = useRef<number>(0);
+  const eigenMedewerker = useMemo(() => {
+    if (!user?.id || medewerkers.length === 0) return null;
+    return medewerkers.find((m) => m.user_id === user.id)
+      || medewerkers.find((m) => m.email?.toLowerCase() === user.email?.toLowerCase())
+      || null;
+  }, [user, medewerkers]);
+
+  const {
+    eigenSessie, bezig: sessieBezig, inklokken, uitklokken, secondenVan, isVerlopen,
+  } = useTijdSessies({ medewerker: eigenMedewerker });
 
   const loadData = useCallback(async () => {
     if (getCached('tijdregistraties') === undefined) setLoading(true);
     try {
-      const [regData, projData, klantData] = await Promise.all([
+      const [regData, projData, klantData, medewerkerData] = await Promise.all([
         fetchQuery('tijdregistraties', getTijdregistraties),
         fetchQuery('projecten', getProjecten),
         fetchQuery('klanten', getKlanten),
+        fetchQuery('medewerkers', getMedewerkers),
       ]);
 
       setRegistraties(regData || []);
       setProjecten(projData || []);
       setKlanten(klantData || []);
+      setMedewerkers(medewerkerData || []);
     } catch (err) {
       logger.error('Kon tijdregistraties niet laden:', err);
       toast.error('Kon tijdregistraties niet laden');
@@ -228,121 +222,47 @@ export function TijdregistratieLayout() {
     loadData();
   }, [loadData]);
 
-  useEffect(() => {
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-    };
-  }, []);
-
-  const startTimer = useCallback(() => {
-    if (!timer.projectId) {
-      toast.error("Selecteer eerst een project om de timer te starten");
+  async function handleInklokken() {
+    if (!keuzeProjectId) {
+      toast.error("Selecteer eerst een project om in te klokken");
       return;
     }
-
-    timerStartRef.current = Date.now();
-    timerPausedElapsedRef.current = 0;
-
-    setTimer((prev) => ({
-      ...prev,
-      status: "running",
-      startTijd: new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }),
-      elapsedSeconds: 0,
-    }));
-
-    timerIntervalRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - timerStartRef.current) / 1000) + timerPausedElapsedRef.current;
-      setTimer((prev) => ({ ...prev, elapsedSeconds: elapsed }));
-    }, 1000);
-
-    toast.success("Timer gestart");
-  }, [timer.projectId]);
-
-  const pauseTimer = useCallback(() => {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
-
-    timerPausedElapsedRef.current = timer.elapsedSeconds;
-
-    setTimer((prev) => ({ ...prev, status: "paused" }));
-    toast.info("Timer gepauzeerd");
-  }, [timer.elapsedSeconds]);
-
-  const resumeTimer = useCallback(() => {
-    timerStartRef.current = Date.now();
-
-    timerIntervalRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - timerStartRef.current) / 1000) + timerPausedElapsedRef.current;
-      setTimer((prev) => ({ ...prev, elapsedSeconds: elapsed }));
-    }, 1000);
-
-    setTimer((prev) => ({ ...prev, status: "running" }));
-    toast.success("Timer hervat");
-  }, []);
-
-  const stopTimer = useCallback(async () => {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
-
-    const duurMinuten = Math.round(timer.elapsedSeconds / 60);
-    const now = new Date();
-    const eindTijd = now.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
-
-    const nieuweRegistratie: Partial<Tijdregistratie> = {
-      project_id: timer.projectId,
-      project_naam: timer.projectNaam,
-      omschrijving: timer.omschrijving || "Timer registratie",
-      datum: now.toISOString().split("T")[0],
-      start_tijd: timer.startTijd,
-      eind_tijd: eindTijd,
-      duur_minuten: duurMinuten,
-      uurtarief: 65,
-      facturabel: true,
-      gefactureerd: false,
-    };
-
     try {
-      await createTijdregistratie(nieuweRegistratie as Tijdregistratie);
-      toast.success(`Tijdregistratie opgeslagen: ${formatDuur(duurMinuten)}`);
+      const vorige = await inklokken({
+        projectId: keuzeProjectId,
+        projectNaam: projecten.find((p) => p.id === keuzeProjectId)?.naam,
+        omschrijving: keuzeOmschrijving || undefined,
+      });
+      if (vorige?.registratie) {
+        toast.success(`Uitgeklokt op ${vorige.sessie.project_naam || 'vorig project'}: ${formatDuur(vorige.duurMinuten)} geboekt`);
+        loadData();
+      } else {
+        toast.success("Ingeklokt");
+      }
+      setKeuzeOmschrijving("");
+    } catch (err) {
+      logger.error('Inklokken mislukt:', err);
+      toast.error("Inklokken mislukt");
+    }
+  }
+
+  async function handleUitklokken() {
+    try {
+      const resultaat = await uitklokken();
+      if (!resultaat) return;
+      if (resultaat.verlopen) {
+        toast.warning("Deze sessie liep langer dan een werkdag en is op nul gezet. Vul de uren handmatig aan.");
+      } else if (resultaat.duurMinuten < 1) {
+        toast.info("Uitgeklokt, minder dan een minuut is niet geboekt");
+      } else {
+        toast.success(`Uitgeklokt: ${formatDuur(resultaat.duurMinuten)} geboekt`);
+      }
       loadData();
     } catch (err) {
-      logger.error('Fout bij opslaan tijdregistratie:', err);
-      const fallbackEntry: Tijdregistratie = {
-        id: `timer-${Date.now()}`,
-        user_id: "user-1",
-        project_id: timer.projectId,
-        project_naam: timer.projectNaam,
-        omschrijving: timer.omschrijving || "Timer registratie",
-        datum: now.toISOString().split("T")[0],
-        start_tijd: timer.startTijd,
-        eind_tijd: eindTijd,
-        duur_minuten: duurMinuten,
-        uurtarief: 65,
-        facturabel: true,
-        gefactureerd: false,
-        created_at: now.toISOString(),
-        updated_at: now.toISOString(),
-      };
-      setRegistraties((prev) => [fallbackEntry, ...prev]);
-      toast.success(`Tijdregistratie lokaal opgeslagen: ${formatDuur(duurMinuten)}`);
+      logger.error('Uitklokken mislukt:', err);
+      toast.error("Uitklokken mislukt");
     }
-
-    setTimer({
-      status: "stopped",
-      projectId: "",
-      projectNaam: "",
-      omschrijving: "",
-      startTijd: "",
-      elapsedSeconds: 0,
-    });
-    timerPausedElapsedRef.current = 0;
-  }, [timer, loadData]);
+  }
 
   const filteredRegistraties = registraties.filter((r) => {
     switch (activeFilter) {
@@ -687,13 +607,13 @@ export function TijdregistratieLayout() {
         </div>
       </div>
 
-      {/* Active Timer */}
+      {/* Inklokken · dezelfde sessie als op de projectpagina */}
       <Card
         className={cn(
           "border-2 transition-colors",
-          timer.status === "running" && "border-green-500 bg-green-50 dark:bg-green-950/20",
-          timer.status === "paused" && "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20",
-          timer.status === "stopped" && "border-dashed"
+          eigenSessie && !isVerlopen(eigenSessie) && "border-green-500 bg-green-50 dark:bg-green-950/20",
+          eigenSessie && isVerlopen(eigenSessie) && "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20",
+          !eigenSessie && "border-dashed"
         )}
       >
         <CardContent className="pt-6">
@@ -702,53 +622,40 @@ export function TijdregistratieLayout() {
               <div
                 className={cn(
                   "flex h-12 w-12 items-center justify-center rounded-full",
-                  timer.status === "running" && "bg-green-100 dark:bg-green-900",
-                  timer.status === "paused" && "bg-yellow-100 dark:bg-yellow-900",
-                  timer.status === "stopped" && "bg-muted"
+                  eigenSessie ? "bg-green-100 dark:bg-green-900" : "bg-muted"
                 )}
               >
                 <Timer
                   className={cn(
                     "h-6 w-6",
-                    timer.status === "running" && "text-green-600 animate-pulse",
-                    timer.status === "paused" && "text-yellow-600",
-                    timer.status === "stopped" && "text-muted-foreground"
+                    eigenSessie ? "text-green-600 animate-pulse" : "text-muted-foreground"
                   )}
                 />
               </div>
               <div>
                 <div className="text-3xl font-mono font-bold tabular-nums">
-                  {formatElapsedTime(timer.elapsedSeconds)}
+                  {formatElapsedTime(eigenSessie ? secondenVan(eigenSessie) : 0)}
                 </div>
-                {timer.status !== "stopped" && (
+                {eigenSessie ? (
                   <div className="text-sm text-muted-foreground">
-                    {timer.projectNaam} - Gestart om {timer.startTijd}
+                    {eigenSessie.project_naam || "Project"} · ingeklokt sinds{" "}
+                    {new Date(eigenSessie.gestart_op).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}
+                    {isVerlopen(eigenSessie) && " · langer dan een werkdag, deze boekt geen uren"}
                   </div>
-                )}
-                {timer.status === "stopped" && (
+                ) : (
                   <div className="text-sm text-muted-foreground">
-                    Selecteer een project en start de timer
+                    Selecteer een project en klok in
                   </div>
                 )}
               </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              {timer.status === "stopped" && (
+              {!eigenSessie && (
                 <>
                   <div className="w-full sm:w-56">
                     <Label className="text-xs text-muted-foreground mb-1 block">Project</Label>
-                    <Select
-                      value={timer.projectId}
-                      onValueChange={(value) => {
-                        const proj = projecten.find((p) => p.id === value);
-                        setTimer((prev) => ({
-                          ...prev,
-                          projectId: value,
-                          projectNaam: proj?.naam || "",
-                        }));
-                      }}
-                    >
+                    <Select value={keuzeProjectId} onValueChange={setKeuzeProjectId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Kies project..." />
                       </SelectTrigger>
@@ -765,66 +672,29 @@ export function TijdregistratieLayout() {
                     <Label className="text-xs text-muted-foreground mb-1 block">Omschrijving</Label>
                     <Input
                       placeholder="Waar werk je aan?"
-                      value={timer.omschrijving}
-                      onChange={(e) =>
-                        setTimer((prev) => ({ ...prev, omschrijving: e.target.value }))
-                      }
+                      value={keuzeOmschrijving}
+                      onChange={(e) => setKeuzeOmschrijving(e.target.value)}
                     />
                   </div>
                 </>
               )}
 
               <div className="flex items-center gap-2">
-                {timer.status === "stopped" && (
+                {eigenSessie ? (
+                  <Button onClick={handleUitklokken} disabled={sessieBezig} variant="destructive" size="lg">
+                    <Square className="mr-2 h-4 w-4" />
+                    Uitklokken
+                  </Button>
+                ) : (
                   <Button
-                    onClick={startTimer}
+                    onClick={handleInklokken}
+                    disabled={sessieBezig}
                     className="bg-green-600 hover:bg-green-700"
                     size="lg"
                   >
                     <Play className="mr-2 h-4 w-4" />
-                    Start
+                    Inklokken
                   </Button>
-                )}
-                {timer.status === "running" && (
-                  <>
-                    <Button
-                      onClick={pauseTimer}
-                      variant="outline"
-                      size="lg"
-                      className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
-                    >
-                      <Pause className="mr-2 h-4 w-4" />
-                      Pauzeer
-                    </Button>
-                    <Button
-                      onClick={stopTimer}
-                      variant="destructive"
-                      size="lg"
-                    >
-                      <Square className="mr-2 h-4 w-4" />
-                      Stop
-                    </Button>
-                  </>
-                )}
-                {timer.status === "paused" && (
-                  <>
-                    <Button
-                      onClick={resumeTimer}
-                      className="bg-green-600 hover:bg-green-700"
-                      size="lg"
-                    >
-                      <Play className="mr-2 h-4 w-4" />
-                      Hervat
-                    </Button>
-                    <Button
-                      onClick={stopTimer}
-                      variant="destructive"
-                      size="lg"
-                    >
-                      <Square className="mr-2 h-4 w-4" />
-                      Stop
-                    </Button>
-                  </>
                 )}
               </div>
             </div>

@@ -12,6 +12,12 @@ import type { TijdSessie, Medewerker } from '@/types'
 
 const POLL_MS = 30_000
 
+export interface InklokDoel {
+  projectId?: string
+  projectNaam?: string
+  omschrijving?: string
+}
+
 interface Opties {
   projectId?: string
   projectNaam?: string
@@ -93,16 +99,19 @@ export function useTijdSessies({ projectId, projectNaam, medewerker }: Opties) {
 
   const eigenSessieElders = eigenSessie && eigenSessie.project_id !== projectId ? eigenSessie : null
 
-  const inklokken = useCallback(async (omschrijving?: string): Promise<StopResultaat | null> => {
-    if (!user?.id || !projectId || bezig) return null
+  // Doel is optioneel: de projectkaart klokt in op haar eigen project, de
+  // urenpagina op het project dat je daar in de lijst kiest.
+  const inklokken = useCallback(async (doel?: InklokDoel): Promise<StopResultaat | null> => {
+    const doelProject = doel?.projectId || projectId
+    if (!user?.id || !doelProject || bezig) return null
     setBezig(true)
     try {
       const { vorige } = await startTijdSessie(user.id, {
-        project_id: projectId,
-        project_naam: projectNaam,
+        project_id: doelProject,
+        project_naam: doel?.projectNaam ?? projectNaam,
         medewerker_id: medewerker?.id,
         medewerker_naam: medewerker?.naam,
-        omschrijving,
+        omschrijving: doel?.omschrijving,
         uurtarief,
       })
       await herlaad()

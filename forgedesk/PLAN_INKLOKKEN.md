@@ -1,6 +1,7 @@
 # Plan · Inklokken op project
 
-Status: **wacht op akkoord van Antony**. Geen code geschreven.
+Status: **uitgevoerd**, alle drie de fases. Fase 1 en 2 staan op main; fase 3 op
+`feature/inklokken-fase-3`. Migratie 219 moet nog op productie gedraaid worden.
 
 ## 1. Aanleiding
 

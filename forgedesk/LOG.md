@@ -1,5 +1,30 @@
 # doen. — Development Log
 
+## 19 augustus 2026 — Inklokken op project (migratie 219)
+
+**Branch:** `feature/inklokken-op-project` (fase 1 en 2, gemerged naar main), `feature/inklokken-fase-3`.
+
+### Aanleiding
+Het projectlogboek liet zien *wat* er gebeurd was, niet *hoelang* iemand eraan gewerkt had. Er was al een volledige urenmodule — tabel `tijdregistraties`, nacalculatie, budgetbewaking, klant-urentab — maar de stopwatch leefde in React-state op één pagina: een refresh wiste de teller, collega's zagen niets, `medewerker_id` werd nooit gezet en het tarief stond hardgecodeerd op 65.
+
+### De keuze die de rest bepaalde
+Lopende sessies in een **aparte tabel** (`tijd_sessies`) in plaats van een `loopt`-vlag op `tijdregistraties`. Een lopende sessie zou anders als 0-minutenrij meetellen in nacalculatie, budget, klant-urentab, rapportages en facturatie: vijf lezers aanpassen tegenover nul. Uitklokken schrijft één rij in `tijdregistraties`, dus alle bestaande consumenten pikken het op zonder wijziging.
+
+Eén sessie per persoon is een **unieke index op `user_id`**, geen UI-belofte. Dubbel inklokken op twee projecten kan daardoor technisch niet.
+
+### Vergeten uitklokken
+Een sessie boven de 12 uur boekt **nul**. De leeskant beslist dat zelf (`tijdSessieService`), dus het geldt ook als de opruim-cron nooit draait; `api/cron-tijd-sessies-opruimen` doet alleen het opruimwerk en stuurt een notificatie. Een nacht van veertien uur stil in de nacalculatie is erger dan een gat in de urenlijst.
+
+### Wat je ziet
+Kaart bovenaan de projectsidebar met lopende teller, wie er nu ingeklokt staat, en de geboekte uren **uitgesplitst per persoon**. Uren van vóór deze feature hebben geen `medewerker_id` — de oude timer én het handmatige formulier zetten die nooit — en staan daarom onder "Niet toegewezen" in plaats van toegeschreven aan iemand die ze misschien niet gemaakt heeft. Verder een chip in de bovenbalk zolang je ergens ingeklokt staat, en een `tijd`-event in de activiteitenfeed.
+
+### Fase 3
+De losse stopwatch op `/tijdregistratie` is vervangen door dezelfde gedeelde sessie: 214 regels eruit, 93 erin. Pauzeren is daarmee verdwenen — even weg is uitklokken en later opnieuw inklokken, wat twee eerlijke regels geeft in plaats van één regel met verborgen gaten.
+
+### Nog open
+Migratie 219 moet op productie gedraaid worden. Inklokken kan alleen per project, niet per taak; `taak_id` zit wel in het schema zodat dat later geen migratie kost.
+
+
 ## Augustus 2026 — Auditronde (branch `audit/integratie`, 3 migraties live)
 
 **Branch:** `audit/integratie`, 78 commits, niet gemerged en niet gepusht. `main` onaangeroerd.
