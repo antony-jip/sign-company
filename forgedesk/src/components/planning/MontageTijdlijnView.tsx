@@ -156,6 +156,14 @@ export function MontageTijdlijnView({
 
   const rasterHoogte = ((vensterEind - vensterStart) / 60) * uurHoogte
 
+  // Taken hebben geen tijdstip en staan in een strook boven het raster. Die
+  // strook is in élke kolom even hoog, ook de lege: anders zakt een kolom met
+  // taken weg ten opzichte van de uren-as ernaast en klopt geen enkele lijn.
+  const takenBandHoogte = useMemo(() => {
+    const meeste = Math.max(0, ...weekDates.map((d) => (takenPerDag[datumSleutel(d)] || []).length))
+    return meeste === 0 ? 0 : meeste * 18 + 8
+  }, [weekDates, takenPerDag, datumSleutel])
+
   function minutenUitPositie(el: HTMLElement, clientY: number): number {
     const rect = el.getBoundingClientRect()
     const offset = clientY - rect.top
@@ -198,7 +206,7 @@ export function MontageTijdlijnView({
   return (
     <div className="planning-tijdlijn flex overflow-x-auto">
       {/* Urenkolom */}
-      <div className="flex-shrink-0 w-12 pt-8 select-none">
+      <div className="flex-shrink-0 w-12 select-none" style={{ paddingTop: 32 + takenBandHoogte }}>
         {uren.map((m) => (
           <div key={m} className="relative" style={{ height: uurHoogte }}>
             <span className="absolute -top-[7px] right-2 text-[10px] font-medium tabular-nums text-muted-foreground/70">
@@ -231,10 +239,13 @@ export function MontageTijdlijnView({
                 {dicht && <span className="text-[10px] text-muted-foreground truncate">{dicht}</span>}
               </div>
 
-              {taken.length > 0 && (
-                <div className="px-1 py-1 border-b border-border/40 space-y-0.5">
+              {takenBandHoogte > 0 && (
+                <div
+                  className="px-1 py-1 border-b border-border/40 space-y-0.5 overflow-hidden"
+                  style={{ height: takenBandHoogte }}
+                >
                   {taken.map((t) => (
-                    <div key={t.id} className="truncate rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    <div key={t.id} className="truncate rounded bg-muted/60 px-1.5 py-0.5 text-[10px] leading-[14px] text-muted-foreground">
                       {t.titel}
                     </div>
                   ))}

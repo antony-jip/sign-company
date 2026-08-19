@@ -75,7 +75,6 @@ import {
 import { getDagNotities, upsertDagNotitie, deleteDagNotitie, getVrijPatronen, createVrijPatroon, updateVrijPatroon, deleteVrijPatroon, getAfwezigheid, createAfwezigheid, deleteAfwezigheid } from "@/services/planningService";
 import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie, VrijPatroon, Afwezigheid, AfwezigheidType } from "@/types";
 import { buildAfwezigheidIndex, resolveAfwezig } from "@/utils/afwezigheid";
-import { MontageStapelView } from '@/components/planning/MontageStapelView';
 import { MontageTijdlijnView } from '@/components/planning/MontageTijdlijnView';
 import { ModuleToolbar } from '@/components/layouts/ModuleToolbar';
 import { ProjectCombobox } from '@/components/shared/ProjectCombobox';
@@ -113,7 +112,7 @@ const PLANNING_SCOPE_KEY = 'doen_planning_scope_v1';
 const PLANNING_VIEWMODE_KEY = 'doen_planning_viewmode_v1';
 const PLANNING_ZOOM_KEY = 'doen_planning_zoom_v1';
 
-type ViewMode = 'stapel' | 'tijdlijn' | 'maand';
+type ViewMode = 'week' | 'maand';
 const FASES_BLOKKEREN_AFRONDEN: Array<Project['status']> = ['te-factureren', 'gefactureerd', 'afgerond'];
 
 type ScopeMode = 'alle' | 'mijn' | 'medewerker';
@@ -456,10 +455,11 @@ export function MontagePlanningLayout() {
     try {
       const raw = localStorage.getItem(PLANNING_VIEWMODE_KEY);
       if (raw === 'maand') return 'maand';
-      if (raw === 'tijdlijn') return 'tijdlijn';
-      return 'stapel';
+      // Wie 'stapel' of 'tijdlijn' opgeslagen had komt in de week uit · er is
+      // nog maar één weekweergave om naartoe te gaan.
+      return 'week';
     } catch {
-      return 'stapel';
+      return 'week';
     }
   });
   const setViewMode = useCallback((mode: ViewMode) => {
@@ -1736,51 +1736,7 @@ export function MontagePlanningLayout() {
     }
   }
 
-  // ── Stapel · de hele week in beeld, maar zonder uurraster ──
-  function renderStapelView() {
-    const vandaagSleutel = formatDate(new Date());
-    return (
-      <MontageStapelView
-        zoom={stapelZoom}
-        weekDates={weekDates}
-        datumSleutel={formatDate}
-        afsprakenPerDag={afsprakenPerDag}
-        takenPerDag={takenPerDag}
-        vandaagSleutel={vandaagSleutel}
-        conflictIds={conflictAfspraakIds}
-        sleepId={draggingAfspraakId}
-        onSleepStart={setDraggingAfspraakId}
-        onSleepEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
-        onDropOpDag={(id, datum) => {
-          const feestdagInfo = isFeestdag(datum, feestdagen);
-          if (feestdagInfo) {
-            toast.error(`Kan niet inplannen op ${feestdagInfo.naam}`);
-            return;
-          }
-          handleDragDrop(id, datum, undefined, undefined);
-        }}
-        onOpen={openEditDialog}
-        onAfronden={(a) => afrondenAfspraak(a, false)}
-        onTerugzetten={toggleAfgerond}
-        onNieuwOpDag={(datum) => openNewDialog(datum)}
-        /* Alleen de uitzondering krijgt kleur. Met een streep per status werd
-           de kolom een kleurenstaal en viel niets meer op · 'gepland' is de
-           normale toestand en hoeft niets te zeggen. */
-        accentKleur={(a) => a.prioriteit
-          ? '#F15025'
-          : (a.status === 'gepland' || a.status === 'afgerond')
-            ? 'transparent'
-            : (STATUS_CONFIG[a.status]?.dot ?? 'transparent')}
-        toonMonteurs={selectedMonteur === 'alle'}
-        monteurLabel={(a) => a.monteurs
-          .map((id) => monteurMap[id]?.naam)
-          .filter(Boolean)
-          .join(', ')}
-        gesloten={(datum) => isFeestdag(datum, feestdagen)?.naam ?? null}
-      />
-    );
-  }
-
+  // ── Week · uurraster met de werkdag als venster ──
   async function handleDuurWijzigen(afspraak: MontageAfspraak, eindTijd: string) {
     if (eindTijd === afspraak.eind_tijd) return;
     const vorige = afspraak.eind_tijd;
@@ -1794,7 +1750,7 @@ export function MontagePlanningLayout() {
     }
   }
 
-  function renderTijdlijnView() {
+  function renderWeekView() {
     return (
       <MontageTijdlijnView
         zoom={stapelZoom}
@@ -2982,20 +2938,10 @@ export function MontagePlanningLayout() {
           <div className="flex rounded-lg bg-[hsl(38,20%,95.5%)] dark:bg-white/[0.06] p-0.5 text-[12px]">
             <button
               type="button"
-              onClick={() => setViewMode('stapel')}
-              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'stapel' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              onClick={() => setViewMode('week')}
+              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'week' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
-              {/* Heet intern 'stapel', maar voor wie plant is dit gewoon de
-                  week · er is geen andere weekweergave meer om van te
-                  onderscheiden. */}
               Week
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('tijdlijn')}
-              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'tijdlijn' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
-            >
-              Tijdlijn
             </button>
             <button
               type="button"
@@ -3082,7 +3028,7 @@ export function MontagePlanningLayout() {
 
         {/* Main view */}
         <div className="flex-1 overflow-auto">
-          {viewMode === 'maand' ? renderMonthView() : viewMode === 'tijdlijn' ? renderTijdlijnView() : renderStapelView()}
+          {viewMode === 'maand' ? renderMonthView() : renderWeekView()}
         </div>
       </div>
 
