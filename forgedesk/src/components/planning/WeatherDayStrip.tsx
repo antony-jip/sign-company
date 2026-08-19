@@ -23,10 +23,25 @@ function wmoToIcon(code: number): LucideIcon {
   return CloudSun
 }
 
+/** Welke beweging hoort bij dit weertype · zie .doen-weer-icoon in index.css */
+function wmoToBeweging(code: number): 'zon' | 'wolk' | 'regen' | 'onweer' {
+  if (code <= 1) return 'zon'
+  if (code >= 95) return 'onweer'
+  if ((code >= 51 && code <= 67) || (code >= 71 && code <= 82)) return 'regen'
+  return 'wolk'
+}
+
 /** Matte weer-icoon i.p.v. emoji · DOEN: geen emojis in UI */
 export function WeerIcon({ code, className }: { code: number; className?: string }) {
   const Icon = wmoToIcon(code)
-  return <Icon className={className} strokeWidth={1.75} aria-hidden="true" />
+  return (
+    <Icon
+      className={`doen-weer-icoon ${className ?? ''}`}
+      data-weer={wmoToBeweging(code)}
+      strokeWidth={1.75}
+      aria-hidden="true"
+    />
+  )
 }
 
 /** Hook to fetch weather data for a week · reusable by parent */

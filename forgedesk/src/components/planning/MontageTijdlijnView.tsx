@@ -21,7 +21,7 @@ const DEFAULT_START_UUR = 7
 const DEFAULT_EIND_UUR = 18
 const SNAP_MINUTEN = 15
 const NOTITIE_HOOGTE = 24
-const KOP_HOOGTE = 42
+const KOP_HOOGTE = 52
 const MIN_DUUR_MINUTEN = 15
 
 function naarMinuten(t?: string | null): number | null {
@@ -220,7 +220,7 @@ export function MontageTijdlijnView({
       <div className="flex-shrink-0 w-12 select-none" style={{ paddingTop: KOP_HOOGTE + notitieHoogte + takenBandHoogte }}>
         {uren.map((m) => (
           <div key={m} className="relative" style={{ height: uurHoogte }}>
-            <span className="absolute -top-[7px] right-2 text-[10px] font-medium tabular-nums text-muted-foreground/70">
+            <span className="absolute -top-[6px] right-2 text-[10px] font-medium tabular-nums text-muted-foreground/45">
               {naarTijd(m)}
             </span>
           </div>
@@ -246,23 +246,30 @@ export function MontageTijdlijnView({
                   weer rechts uitgelijnd, dan plakte het tegen de dagnaam van de
                   vólgende kolom en las je 22° bij de verkeerde dag. */}
               <div
-                className="relative flex items-center gap-2 border-b border-l border-border/40 px-2"
+                className={cn(
+                  'relative flex items-center gap-2.5 px-3',
+                  // Vandaag krijgt een zachte tint in plaats van nog een lijn ·
+                  // scheiding met vlak leest rustiger dan scheiding met randen.
+                  isVandaag && 'bg-petrol/[0.045] dark:bg-white/[0.045]',
+                )}
                 style={{ height: KOP_HOOGTE }}
               >
-                <span className="flex items-baseline gap-[6px]">
+                <span className="flex items-baseline gap-[7px]">
                   <span className={cn(
-                    'text-[10.5px] font-bold tracking-[0.08em]',
-                    isVandaag ? 'text-[#1A535C] dark:text-[#CFE3E6]' : 'text-muted-foreground',
+                    'text-[11px] font-medium lowercase',
+                    isVandaag ? 'text-petrol dark:text-[#CFE3E6]' : 'text-muted-foreground/70',
                   )}>
-                    {DAG_NAMEN[i]}{isVandaag && <span className="text-flame">.</span>}
+                    {DAG_NAMEN[i]}
                   </span>
 
                   {isVandaag ? (
-                    <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-petrol text-[12px] font-bold tabular-nums text-white">
+                    <span className="inline-flex h-[26px] w-[26px] items-center justify-center rounded-full bg-petrol text-[13px] font-semibold tracking-[-0.02em] tabular-nums text-white shadow-[0_1px_3px_rgba(26,83,92,0.35)]">
                       {datum.getDate()}
                     </span>
                   ) : (
-                    <span className="text-[15px] font-bold tabular-nums text-foreground">{datum.getDate()}</span>
+                    <span className="text-[17px] font-semibold tracking-[-0.02em] tabular-nums text-foreground/90">
+                      {datum.getDate()}
+                    </span>
                   )}
                 </span>
 
@@ -271,17 +278,20 @@ export function MontageTijdlijnView({
                 {dicht && <span className="truncate text-[10px] text-muted-foreground">{dicht}</span>}
 
                 {openAantal > 0 && (
-                  <span className="ml-auto text-[11px] font-medium tabular-nums text-muted-foreground/70">
+                  <span
+                    title={`${openAantal} open${afgerond > 0 ? `, ${afgerond} afgerond` : ''}`}
+                    className="ml-auto inline-flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-foreground/[0.055] px-[6px] text-[10.5px] font-semibold tabular-nums text-muted-foreground"
+                  >
                     {openAantal}
                   </span>
                 )}
 
-                {/* Voortgang als balkje met een spoor eronder · zonder dat spoor
-                    leest een volle dag als een dikke onderstreping. */}
+                {/* Voortgang als haarcapsule onderin · ingesprongen en zacht,
+                    zodat een afgeronde dag geen streep onder de kop trekt. */}
                 {afspraken.length > 0 && (
-                  <span aria-hidden className="absolute inset-x-2 bottom-[3px] h-[2px] overflow-hidden rounded-full bg-border/50">
+                  <span aria-hidden className="absolute inset-x-3 bottom-[7px] h-[3px] overflow-hidden rounded-full bg-foreground/[0.06]">
                     <span
-                      className="block h-full rounded-full bg-petrol/45 transition-[width] duration-500"
+                      className="block h-full rounded-full bg-petrol/40 transition-[width] duration-500"
                       style={{ width: `${voortgang * 100}%` }}
                     />
                   </span>
@@ -341,7 +351,7 @@ export function MontageTijdlijnView({
                 {uren.map((m, index) => (
                   <div
                     key={m}
-                    className="absolute inset-x-0 border-t border-border/30 pointer-events-none"
+                    className="absolute inset-x-0 border-t border-border/25 pointer-events-none"
                     style={{ top: index * uurHoogte }}
                   />
                 ))}

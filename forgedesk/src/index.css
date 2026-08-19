@@ -4863,3 +4863,34 @@ button.doen-panel:hover {
   --kaart-bg: rgba(159, 197, 204, 0.14);
   box-shadow: inset 2px 0 0 #9FC5CC;
 }
+
+/* ── Planning · weer in de dagkop ──────────────────────────────────────────
+   Het weer is de enige informatie in de kop die niet van jou komt, en dat mag
+   je zien. Heel kleine bewegingen: alles onder een pixel of een graad of twee,
+   traag genoeg om niet in je ooghoek te trekken terwijl je zit te plannen. */
+@keyframes doen-weer-zon {
+  to { transform: rotate(360deg); }
+}
+@keyframes doen-weer-druppel {
+  0%, 100% { transform: translateY(0); }
+  45%      { transform: translateY(1.1px); }
+}
+@keyframes doen-weer-drift {
+  0%, 100% { transform: translateX(-0.6px); }
+  50%      { transform: translateX(0.6px); }
+}
+@keyframes doen-weer-flits {
+  0%, 92%, 100% { opacity: 1; }
+  94%           { opacity: 0.35; }
+  96%           { opacity: 1; }
+}
+
+.doen-weer-icoon { transform-origin: center; will-change: transform; }
+.doen-weer-icoon[data-weer="zon"]    { animation: doen-weer-zon 34s linear infinite; }
+.doen-weer-icoon[data-weer="regen"]  { animation: doen-weer-druppel 2.6s ease-in-out infinite; }
+.doen-weer-icoon[data-weer="wolk"]   { animation: doen-weer-drift 7s ease-in-out infinite; }
+.doen-weer-icoon[data-weer="onweer"] { animation: doen-weer-flits 6s steps(1, end) infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .doen-weer-icoon { animation: none !important; }
+}
