@@ -37,6 +37,22 @@ export default function OverContent() {
               en klantcommunicatie. Dat moet anders.
             </p>
           </div>
+
+          {/* De kop gaat over administreren in plaats van maken; dit beeld laat
+              zien hoe dat er op een gewone ochtend uitziet. */}
+          <div
+            className="hero-fade mt-12 md:mt-20 relative aspect-[16/7] w-full overflow-hidden rounded-[10px] bg-petrol-deep/5"
+            style={{ animationDelay: '0.5s' }}
+          >
+            <Image
+              src="/images/fotos/ondernemer-aan-de-telefoon.webp"
+              alt="Ondernemer aan de telefoon achter een bureau vol papieren en ordners, uitzicht op een Nederlandse straat"
+              fill
+              priority
+              sizes="(max-width: 1280px) 100vw, 1200px"
+              className="object-cover"
+            />
+          </div>
         </div>
       </section>
 

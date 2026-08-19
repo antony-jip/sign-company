@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import {
   ArrowLeft, CalendarClock, Check, CheckCircle2, CloudRain, Download, Send, Sparkles, Sun,
 } from 'lucide-react'
@@ -45,6 +46,22 @@ function Hero() {
           hieronder komt uit de app.
         </p>
         <EigenGebruikRegel className="hero-fade mt-4 max-w-xl" />
+
+        {/* Waar de zeven stappen beginnen: de bus in, de dag uit. De schermen
+            hieronder komen uit de app, dit beeld zet ze in de werkelijkheid. */}
+        <div
+          className="hero-fade mt-10 md:mt-16 relative aspect-[16/7] w-full overflow-hidden rounded-[10px] bg-petrol-deep/5"
+          style={{ animationDelay: '0.45s' }}
+        >
+          <Image
+            src="/images/fotos/bus-inladen.webp"
+            alt="Twee monteurs laden aluminium profielen in de bestelbus bij het eerste daglicht"
+            fill
+            priority
+            sizes="(max-width: 1280px) 100vw, 1200px"
+            className="object-cover"
+          />
+        </div>
       </div>
     </section>
   )

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import type { Vertical } from '@/data/verticals'
@@ -60,6 +61,19 @@ export default function VerticalContent({ vertical }: { vertical: Vertical }) {
               30 dagen gratis · geen creditcard · maandelijks opzegbaar
             </p>
             <EigenGebruikRegel className="hero-fade mt-3 max-w-xl" />
+          </div>
+
+          {/* Sfeerbeeld onder de hero: het werk waar deze pagina over gaat,
+              breed uitgesneden zodat het de kop draagt en niet overneemt. */}
+          <div className="hero-fade mt-12 md:mt-20 relative aspect-[16/7] w-full overflow-hidden rounded-[10px] bg-petrol-deep/5" style={{ animationDelay: '0.65s' }}>
+            <Image
+              src={vertical.beeld.src}
+              alt={vertical.beeld.alt}
+              fill
+              priority
+              sizes="(max-width: 1280px) 100vw, 1200px"
+              className="object-cover"
+            />
           </div>
         </div>
       </section>

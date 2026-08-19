@@ -9,6 +9,8 @@ export type Vertical = {
   h1Lead: string
   h1Accent: string
   intro: string
+  /** Sfeerbeeld in de hero. Pad onder public/, alt in het Nederlands. */
+  beeld: { src: string; alt: string }
   pains: { title: string; body: string }[]
   highlights: { href: string; blurb: string }[]
 }
@@ -24,6 +26,10 @@ export const verticals: Vertical[] = [
     h1Accent: 'Van aanvraag tot montage',
     intro:
       'Gevelreclame, belettering, bewegwijzering: elk project loopt van offerte tot montage door je hele bedrijf heen. doen. houdt het bij elkaar: één systeem van eerste klantvraag tot betaalde factuur.',
+    beeld: {
+      src: '/images/fotos/hoogwerker-aan-de-gevel-breed.webp',
+      alt: 'Monteur bevestigt vanaf een hoogwerker een beugel aan een bakstenen gevel, collega kijkt mee vanaf de stoep',
+    },
     pains: [
       {
         title: 'Elke klus is anders',
@@ -55,6 +61,10 @@ export const verticals: Vertical[] = [
     h1Accent: 'en carwrapping',
     intro:
       'Veel klussen, korte doorlooptijden en een klant die zijn bus morgen terug wil. doen. houdt het tempo bij: offerte eruit, akkoord binnen, ingepland, gewrapt, gefactureerd.',
+    beeld: {
+      src: '/images/fotos/folie-op-de-bus.webp',
+      alt: 'Twee mensen brengen folie aan op de zijkant van een bestelbus in de werkplaats',
+    },
     pains: [
       {
         title: 'Tien kleine klussen per week',
@@ -86,6 +96,10 @@ export const verticals: Vertical[] = [
     h1Accent: 'grootformaat print',
     intro:
       'Doeken, banieren, bouwhekzeil, raamfolie: de marge zit in de vierkante meter en in de doorloop. doen. rekent mee en bewaakt de deadline, van aanvraag tot oplevering.',
+    beeld: {
+      src: '/images/fotos/overleg-aan-de-werkbank.webp',
+      alt: 'Twee collega\'s kijken samen naar een laptop op de werkbank, tussen rollen folie en de plotter',
+    },
     pains: [
       {
         title: 'Marge per m² is giswerk',
@@ -117,6 +131,10 @@ export const verticals: Vertical[] = [
     h1Accent: 'lichtreclamebedrijven',
     intro:
       'Een lichtbak of doosletterset is geen dagklus: tekeningen, akkoorden, productie, montage op hoogte en service daarna. doen. houdt het hele traject in één project.',
+    beeld: {
+      src: '/images/fotos/lichtbak-naar-de-winkel.webp',
+      alt: 'Twee monteurs dragen een lichtbak van de bus naar een winkelpui in een Nederlandse winkelstraat',
+    },
     pains: [
       {
         title: 'Lange trajecten, veel versies',
