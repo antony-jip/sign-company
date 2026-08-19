@@ -36,7 +36,7 @@ export default function Modules() {
                     <span className="text-flame">.</span>
                   </span>
                   {isStudio && (
-                    <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-[3px] border border-flame text-flame shrink-0">
+                    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-[3px] border border-flame/60 text-flame shrink-0">
                       Beta
                     </span>
                   )}
@@ -53,14 +53,26 @@ export default function Modules() {
               </li>
             )
           })}
-        </ul>
 
-        <p className="mt-8 text-[14px] text-muted">
-          Elke module heeft z&apos;n eigen pagina.{' '}
-          <Link href="/features" className="font-semibold text-petrol hover:text-flame transition-colors">
-            Bekijk het hele product →
-          </Link>
-        </p>
+          {/* Twaalfde cel: elf modules laten de rechterkolom anders een rij te
+              vroeg eindigen, en hier landt het oog toch al. */}
+          <li className="border-b border-petrol/10">
+            <Link href="/features" className="group flex items-baseline gap-4 py-5 md:py-6">
+              <span className="text-[14px] text-muted transition-colors duration-200 group-hover:text-ink">
+                Elke module heeft z&apos;n eigen pagina
+              </span>
+              <span className="flex-1 text-right text-[14px] font-semibold text-petrol transition-colors duration-200 group-hover:text-flame">
+                Bekijk het hele product
+              </span>
+              <span
+                aria-hidden
+                className="text-flame transition-transform duration-200 group-hover:translate-x-1"
+              >
+                →
+              </span>
+            </Link>
+          </li>
+        </ul>
       </div>
     </section>
   )

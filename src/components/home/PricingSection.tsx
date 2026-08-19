@@ -44,14 +44,12 @@ export default function PricingSection() {
                 per maand, ex btw
               </span>
             </div>
-            <p className="text-[15px] mb-2" style={{ color: 'rgba(226,240,241,0.7)' }}>
-              Geen pakketten, geen prijs per kop, geen verrassingen.
-            </p>
-            <p className="text-[13px] mb-3" style={{ color: 'rgba(226,240,241,0.55)' }}>
-              Tot 10 gebruikers. Groter team? € 199 tot 20 gebruikers, € 279 tot 35. Alle modules zitten in elke maat.
-            </p>
-            <p className="text-[13px] mb-10" style={{ color: 'rgba(226,240,241,0.55)' }}>
-              AI zit erbij: € 15 aan gebruik per maand, voor je organisatie samen, en dat groeit mee met je team. Genoeg voor normaal werk. Alleen wie veel beelden maakt in Studio komt eraan, en die koopt bij.
+            <p className="text-[15px] mb-10" style={{ color: 'rgba(226,240,241,0.7)' }}>
+              Tot 10 gebruikers. Geen pakketten, geen prijs per kop, geen verrassingen.{' '}
+              <Link href="/prijzen" className="underline underline-offset-4 decoration-white/30 hover:decoration-white transition-colors">
+                Groter team of het AI-budget
+              </Link>
+              .
             </p>
             <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
               <a
