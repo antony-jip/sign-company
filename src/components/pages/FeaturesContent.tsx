@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
+import StudioProef from '@/components/StudioProef'
 import Link from 'next/link'
 import CTASection from '@/components/home/CTASection'
 import AppShowcase, { type View as AppView } from '@/components/home/AppShowcase'
@@ -1082,6 +1083,10 @@ const MODULE_FOTO: Record<string, { src: string; alt: string }> = {
           </div>
         </div>
       </section>
+
+      {/* Op de Studio-pagina mag de bezoeker het zelf doen voordat we het
+          uitleggen. Elders bestaat dat moment niet, dus daar niets. */}
+      {detail.slug === 'visualizer' && <StudioProef />}
 
       {/* Echte UX uit de app: video kijken of zelf klikken */}
       <ModuleDemo slug={detail.slug} />
