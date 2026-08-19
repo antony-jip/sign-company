@@ -11,7 +11,8 @@ interface PortalEmailParams {
   ctaUrl?: string
   bedrijfsnaam?: string
   quote?: string
-  /** URL van bedrijfslogo (wordt bovenaan email getoond) */
+  /** Niet meer gebruikt in de mailkop · de bedrijfsnaam gaat als tekst mee.
+   *  Blijft geaccepteerd zodat de vijftien aanroepers niet hoeven te wijzigen. */
   logoUrl?: string
   /** Primaire merkkleur, bijv. '#1A535C'. Fallback: petrol */
   primaireKleur?: string
@@ -34,7 +35,6 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     ctaUrl,
     bedrijfsnaam,
     quote,
-    logoUrl,
     primaireKleur,
   } = params
 
@@ -97,12 +97,13 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
       <tr><td style="padding: 0 0 24px 0; text-align: center;">
-        ${logoUrl
-          ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
-          : bedrijfsnaam
-          ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;">
-              <strong>${escapeHtml(bedrijfsnaam)}</strong>
-            </span>`
+        <!-- Bedrijfsnaam als tekst, bewust geen logo. Een logobestand draagt
+             zijn eigen achtergrond mee en die landt zelden goed op het doek van
+             een mail · een donker logo op een gekleurd vlak in een lichte mail.
+             Tekst schaalt bovendien mee met de leesinstellingen van de
+             ontvanger en laadt altijd, ook als afbeeldingen geblokkeerd zijn. -->
+        ${bedrijfsnaam
+          ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: 700; color: ${textDark}; letter-spacing: -0.5px;">${escapeHtml(bedrijfsnaam)}</span>`
           : ''
         }
       </td></tr>

@@ -138,12 +138,12 @@ export function getBaseTemplate(data: EmailTemplateData): {
   const bedrijf = data.bedrijfsnaam || DEFAULT_BEDRIJFSNAAM
 
   const wrap = (bodyHtml: string, afmeldUrl?: string): string => {
-    // Logo wint van de bedrijfsnaam in de header. Dat is ook wat het
-    // instellingenscherm belooft bij het uploaden van een logo.
-    const hasLogo = !!(data.logoUrl && data.logoUrl.trim())
-    const headerHtml = hasLogo
-      ? `<img src="${escapeHtml(data.logoUrl!)}" alt="${escapeHtml(bedrijf)}" style="max-height: 44px; max-width: 220px; display: inline-block;" />`
-      : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">${escapeHtml(bedrijf)}</span>`
+    // Bedrijfsnaam als tekst, bewust geen logo. Het logo stond op een vlak in
+    // de huisstijlkleur en droeg zijn eigen achtergrond mee: een donker logo op
+    // een gekleurde balk leest slecht en er valt niets aan af te stemmen. Tekst
+    // erft de kleur van de balk en laadt altijd, ook bij een client die
+    // afbeeldingen blokkeert.
+    const headerHtml = `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; color: #ffffff;">${escapeHtml(bedrijf)}</span>`
 
     const sigImg = handtekeningAfbeeldingHtml({
       url: data.handtekeningAfbeelding,

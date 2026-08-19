@@ -129,9 +129,10 @@ function buildClientEmailHtml(p: ClientEmailParams): string {
     .replace(/\s+/g, ' ').trim()
   if (!heading) heading = 'Er is een update voor u.'
 
-  const logoHtml = p.logoUrl
-    ? `<img src="${escapeHtml(p.logoUrl)}" alt="${escapeHtml(p.bedrijfsnaam)}" style="max-height: 44px; max-width: 180px; object-fit: contain;" />`
-    : `<span style="font-family: ${font}; font-size: 20px; font-weight: 700; color: #1A1A1A;">${escapeHtml(p.bedrijfsnaam)}</span>`
+  // Bedrijfsnaam als tekst, bewust geen logo: een logobestand draagt zijn eigen
+  // achtergrond mee en die botst met het gekleurde vlak eronder. Tekst laadt
+  // bovendien altijd, ook bij een client die afbeeldingen blokkeert.
+  const logoHtml = `<span style="font-family: ${font}; font-size: 20px; font-weight: 700; color: #1A1A1A;">${escapeHtml(p.bedrijfsnaam)}</span>`
 
   const itemBlock = p.itemTitel ? `
     <tr><td style="padding: 16px 0;">

@@ -21,7 +21,8 @@ interface PortalEmailParams {
   bedrijfsnaam?: string
   /** Optional extra line below description (e.g. customer reaction quote) */
   quote?: string
-  /** URL van bedrijfslogo (wordt bovenaan email getoond) */
+  /** Niet meer gebruikt in de mailkop · de bedrijfsnaam gaat als tekst mee.
+   *  Blijft geaccepteerd zodat de bestaande aanroepers niet hoeven te wijzigen. */
   logoUrl?: string
   /** Primaire merkkleur, bijv. '#1A535C'. Fallback: petrol */
   primaireKleur?: string
@@ -37,7 +38,6 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     ctaUrl,
     bedrijfsnaam,
     quote,
-    logoUrl,
     primaireKleur,
   } = params
 
@@ -122,15 +122,17 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
 <body style="margin: 0; padding: 0; background-color: ${bgOuter}; -webkit-font-smoothing: antialiased;">
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: ${bgOuter}; padding: 40px 0;">
   <tr><td align="center">
-    <!-- Logo -->
+    <!-- Afzender -->
     <table width="580" cellpadding="0" cellspacing="0" border="0" style="max-width: 580px; width: 100%;">
       <tr><td style="padding: 0 0 28px 0; text-align: center;">
-        ${logoUrl
-          ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 44px; max-width: 180px; object-fit: contain;" />`
-          : (bedrijfsnaam
-            ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; letter-spacing: -0.5px;">${escapeHtml(bedrijfsnaam)}</span>`
-            : ''
-          )
+        <!-- Bedrijfsnaam als tekst, bewust geen logo. Een logobestand draagt
+             zijn eigen achtergrond mee en die landt zelden goed op het doek van
+             een mail · een donker logo op een gekleurd vlak in een lichte mail.
+             Tekst schaalt bovendien mee met de leesinstellingen van de
+             ontvanger en laadt altijd, ook als afbeeldingen geblokkeerd zijn. -->
+        ${bedrijfsnaam
+          ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; letter-spacing: -0.5px;">${escapeHtml(bedrijfsnaam)}</span>`
+          : ''
         }
       </td></tr>
     </table>
