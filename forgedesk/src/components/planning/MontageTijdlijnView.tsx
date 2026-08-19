@@ -242,45 +242,49 @@ export function MontageTijdlijnView({
 
           return (
             <div key={sleutel} className="group flex-1 min-w-[118px]">
-              {/* Zelfde dagkop als de stapel in Taken · dagnaam, datum, aantal
-                  open, en een voortgangsbalk die meegroeit met wat af is. */}
+              {/* Alles van één dag hoort links bij elkaar te staan. Stond het
+                  weer rechts uitgelijnd, dan plakte het tegen de dagnaam van de
+                  vólgende kolom en las je 22° bij de verkeerde dag. */}
               <div
-                className="relative flex items-baseline gap-[7px] border-b border-border/60 px-1"
+                className="relative flex items-center gap-2 border-b border-l border-border/40 px-2"
                 style={{ height: KOP_HOOGTE }}
               >
-                <span className={cn(
-                  'text-[10.5px] font-bold tracking-[0.08em]',
-                  isVandaag ? 'text-[#1A535C] dark:text-[#CFE3E6]' : 'text-muted-foreground',
-                )}>
-                  {DAG_NAMEN[i]}{isVandaag && <span className="text-flame">.</span>}
-                </span>
-
-                {isVandaag ? (
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-petrol text-[12.5px] font-bold tabular-nums text-white">
-                    {datum.getDate()}
+                <span className="flex items-baseline gap-[6px]">
+                  <span className={cn(
+                    'text-[10.5px] font-bold tracking-[0.08em]',
+                    isVandaag ? 'text-[#1A535C] dark:text-[#CFE3E6]' : 'text-muted-foreground',
+                  )}>
+                    {DAG_NAMEN[i]}{isVandaag && <span className="text-flame">.</span>}
                   </span>
-                ) : (
-                  <span className="text-[15px] font-bold tabular-nums text-foreground">{datum.getDate()}</span>
-                )}
 
-                {dicht && <span className="truncate text-[10px] text-muted-foreground">{dicht}</span>}
-
-                <span className="ml-auto flex items-baseline gap-2">
-                  {renderDagWeer?.(sleutel)}
-                  {openAantal > 0 && (
-                    <span className="text-[11px] tabular-nums text-muted-foreground">{openAantal}</span>
+                  {isVandaag ? (
+                    <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-petrol text-[12px] font-bold tabular-nums text-white">
+                      {datum.getDate()}
+                    </span>
+                  ) : (
+                    <span className="text-[15px] font-bold tabular-nums text-foreground">{datum.getDate()}</span>
                   )}
                 </span>
 
-                {voortgang > 0 && (
-                  <span
-                    aria-hidden
-                    className="absolute -bottom-px left-1 h-[2px] rounded-full"
-                    style={{
-                      width: `calc((100% - 8px) * ${voortgang})`,
-                      background: 'linear-gradient(90deg, color-mix(in srgb, #1A535C 55%, transparent), #1A535C)',
-                    }}
-                  />
+                {renderDagWeer?.(sleutel)}
+
+                {dicht && <span className="truncate text-[10px] text-muted-foreground">{dicht}</span>}
+
+                {openAantal > 0 && (
+                  <span className="ml-auto text-[11px] font-medium tabular-nums text-muted-foreground/70">
+                    {openAantal}
+                  </span>
+                )}
+
+                {/* Voortgang als balkje met een spoor eronder · zonder dat spoor
+                    leest een volle dag als een dikke onderstreping. */}
+                {afspraken.length > 0 && (
+                  <span aria-hidden className="absolute inset-x-2 bottom-[3px] h-[2px] overflow-hidden rounded-full bg-border/50">
+                    <span
+                      className="block h-full rounded-full bg-petrol/45 transition-[width] duration-500"
+                      style={{ width: `${voortgang * 100}%` }}
+                    />
+                  </span>
                 )}
               </div>
 

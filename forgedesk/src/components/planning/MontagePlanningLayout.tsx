@@ -1773,18 +1773,24 @@ export function MontagePlanningLayout() {
   }
 
   // ── Weather cell for a day ──
-  // Regenkans alleen boven de 30% · daaronder is het ruis waar niemand een
-  // montage op verzet.
+  // Het weer staat naast de datum, niet als los cijfer in de kop. Regenkans
+  // pas vanaf 50%: in Nederland staat er anders elke dag een percentage, en
+  // dan kijkt niemand er meer naar. Flame is voor de dag die je écht wilt
+  // verzetten, dus niet bij elke bui.
   function renderWeatherCell(w: DayWeather | undefined) {
     if (!w) return null;
+    const nat = w.precipitationProb >= 50;
     return (
-      <span className="inline-flex items-center gap-1 align-baseline" title={`${w.maxTemp}° · ${w.precipitationProb}% kans op neerslag`}>
-        <WeerIcon code={w.code} className="w-3.5 h-3.5 text-muted-foreground" />
-        <span className="text-[10px] text-muted-foreground tabular-nums">{w.maxTemp}°</span>
-        {w.precipitationProb > 30 && (
+      <span
+        className="inline-flex items-center gap-[3px] rounded-full bg-muted/50 px-1.5 py-[2px]"
+        title={`${w.maxTemp}° · ${w.precipitationProb}% kans op neerslag`}
+      >
+        <WeerIcon code={w.code} className={cn('w-3 h-3', nat ? 'text-[#5B7C99]' : 'text-muted-foreground/70')} />
+        <span className="text-[10px] tabular-nums text-muted-foreground">{w.maxTemp}°</span>
+        {nat && (
           <span className={cn(
             'text-[10px] tabular-nums',
-            w.precipitationProb >= 70 ? 'text-flame/80' : 'text-muted-foreground',
+            w.precipitationProb >= 80 ? 'text-flame/75' : 'text-[#5B7C99]',
           )}>
             {w.precipitationProb}%
           </span>
