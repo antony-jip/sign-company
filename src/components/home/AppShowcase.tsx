@@ -11,7 +11,7 @@ import {
   Pencil, Camera, Inbox, Archive, Paperclip, Pin, Clock, FileEdit, Trash2,
   CalendarClock, ArrowLeft, MoreHorizontal, Copy, ChevronDown, ChevronsRight,
   RefreshCw, Tag, Reply, ReplyAll, Forward, ChevronUp, Ruler,
-  Hammer, Building2, Wand2, Banknote, TrendingUp, ListChecks, MessageSquare,
+  Hammer, Building2, Wand2, Banknote, TrendingUp, ListChecks, MessageSquare, Check,
   Globe, SlidersHorizontal, MapPin, Flame, CalendarOff, StickyNote, ChevronLeft, Moon,
   type LucideIcon,
 } from 'lucide-react'
@@ -1836,181 +1836,158 @@ const planDays = [
 const HOURS = ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00']
 
 const tePlannen = [
-  { naam: 'Reclamezuil parkeerterrein', klant: 'Jansen Bouw', prio: true },
-  { naam: 'Koekoeken', klant: 'Café De Zon' },
+  { naam: 'Zuil of bord, festivallocatie', klant: 'Evenementenhal', dagen: '27d' },
+  { naam: 'Toiletaanduiding', klant: 'Hotel De Linde', dagen: '64d' },
+  { naam: 'Behang of textielframe kantoor', klant: 'Van Meer & Co', dagen: '75d' },
+  { naam: "Gevellogo's", klant: 'Sporthal De Veluwe', dagen: '140d' },
+  { naam: 'Nieuwe signing', klant: 'Basisschool De Wilg', dagen: '140d' },
+  { naam: 'Nieuwe borden', klant: 'Basisschool De Piramide', dagen: '140d' },
+  { naam: 'Signing locatie Kloosterpoort', klant: 'Basisschool De Wilg', dagen: '140d' },
+]
+
+type PlanItem = { van: string; tot: string; titel: string; klant: string }
+type PlanDag = { d: string; n: number; today?: boolean; teller?: string; leeg?: string; afgerond?: number; items?: PlanItem[] }
+
+const planWeek: PlanDag[] = [
+  { d: 'MA', n: 17, leeg: 'Klaar.', afgerond: 6 },
+  { d: 'DI', n: 18, leeg: 'Klaar.', afgerond: 6 },
+  { d: 'WO', n: 19, today: true, leeg: 'Vrij.' },
+  {
+    d: 'DO', n: 20, teller: '6',
+    items: [
+      { van: '06:30', tot: '07:30', titel: 'Montage: bestelbus', klant: 'Garage Brinkman' },
+      { van: '08:30', tot: '08:45', titel: 'Offerte en tekeningen', klant: 'Bouwbedrijf Veld' },
+      { van: '09:00', tot: '10:00', titel: 'Opzet en offerte', klant: 'Schildersbedrijf Kok' },
+      { van: '10:00', tot: '10:30', titel: 'Offerte aanvullen', klant: 'Van Meer & Co' },
+      { van: '11:15', tot: '12:15', titel: 'Prijzen maken', klant: 'Kwekerij Van Loon' },
+      { van: '13:00', tot: '13:30', titel: 'Offerte: bootbelettering', klant: 'Watersport De Kom' },
+    ],
+  },
+  {
+    d: 'VR', n: 21, teller: '5',
+    items: [
+      { van: '06:30', tot: '07:30', titel: 'Beurssticker', klant: 'Watersport De Kom' },
+      { van: '08:00', tot: '09:00', titel: 'Offerte: gevelbord', klant: 'Taxicentrale Noord' },
+      { van: '10:15', tot: '10:45', titel: 'Montage: bestelauto wrappen', klant: 'Helpende Hand' },
+      { van: '11:30', tot: '12:30', titel: 'Montage: zuiltjes aanpassen', klant: 'Dirk de Wit Mode' },
+      { van: '13:15', tot: '14:15', titel: 'Montage: ruimtenummering', klant: 'Van Meer & Co' },
+    ],
+  },
 ]
 
 function PlanningView() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr]" style={{ minHeight: 620 }}>
-      {/* "Te plannen"-zijpaneel — projecten die je de week in sleept */}
-      <aside className="hidden md:flex flex-col p-4 md:p-5" style={{ borderRight: `1px solid ${LINE}`, backgroundColor: CARD }}>
-        <h1 className="font-heading text-[20px] font-bold tracking-tight leading-none mb-1 inline-flex items-baseline gap-2" style={{ color: INK }}>
-          Planning<span style={{ color: FLAME }}>.</span>
-          <span className="font-mono text-[12px] font-semibold" style={{ color: MUTED }}>22</span>
-        </h1>
-        <div className="flex items-center justify-between mt-5 mb-2">
-          <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: FLAME }}>Te plannen</p>
-          <span className="rounded-full inline-flex items-center justify-center font-mono text-[10px] font-bold text-white" style={{ backgroundColor: FLAME, width: 18, height: 18 }}>2</span>
+      {/* Links: wat nog een dag moet krijgen, met hoe lang het al wacht */}
+      <aside className="hidden md:flex flex-col" style={{ borderRight: `1px solid ${LINE}`, backgroundColor: CARD }}>
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: MUTED }}>Deze week 25</p>
+          <ChevronLeft className="w-3.5 h-3.5" style={{ color: '#C8C8C0' }} strokeWidth={2} />
         </div>
-        <div className="space-y-2">
+        <div className="flex items-center justify-between px-4 pb-2">
+          <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: FLAME }}>Te plannen</p>
+          <span className="rounded-full inline-flex items-center justify-center font-mono text-[10px] font-bold" style={{ backgroundColor: 'rgba(241,80,37,0.12)', color: FLAME, width: 20, height: 18 }}>
+            {tePlannen.length}
+          </span>
+        </div>
+        <div>
           {tePlannen.map((p) => (
-            <div
-              key={p.naam}
-              className="rounded-[8px] px-2.5 py-2 cursor-grab"
-              style={{
-                border: `1px solid ${LINE}`,
-                borderLeft: p.prio ? `3px solid ${FLAME}` : `1px solid ${LINE}`,
-                backgroundColor: p.prio ? 'rgba(241,80,37,0.05)' : BG,
-              }}
-            >
-              <div className="flex items-start justify-between gap-1.5">
-                <p className="text-[12px] font-semibold leading-snug" style={{ color: INK }}>{p.naam}</p>
-                <Flame className="w-3 h-3 shrink-0 mt-0.5" style={{ color: p.prio ? FLAME : '#C8C8C0' }} strokeWidth={2.2} />
+            <div key={p.naam} className="px-4 py-2.5 cursor-grab" style={{ borderTop: `1px solid ${LINE}` }}>
+              <p className="text-[12px] font-semibold leading-snug" style={{ color: INK }}>{p.naam}</p>
+              <div className="flex items-baseline justify-between gap-2 mt-0.5">
+                <p className="text-[10.5px] truncate" style={{ color: MUTED }}>{p.klant}</p>
+                <span className="font-mono text-[10px] tabular-nums shrink-0" style={{ color: FLAME }}>{p.dagen}</span>
               </div>
-              <p className="text-[10.5px] mt-0.5" style={{ color: MUTED }}>{p.klant}</p>
             </div>
           ))}
         </div>
-        <div className="mt-auto pt-4 space-y-1" style={{ borderTop: `1px solid ${LINE}` }}>
-          <p className="font-mono text-[11px] tabular-nums" style={{ color: MUTED }}>22 montages<span style={{ color: FLAME }}>.</span></p>
-          <p className="font-mono text-[11px] tabular-nums" style={{ color: MUTED }}>2 beschikbaar<span style={{ color: FLAME }}>.</span></p>
+        <div className="mt-auto px-4 py-3 space-y-0.5" style={{ borderTop: `1px solid ${LINE}` }}>
+          <p className="font-mono text-[11px] tabular-nums" style={{ color: MUTED }}>25 montages<span style={{ color: FLAME }}>.</span></p>
+          <p className="font-mono text-[11px] tabular-nums" style={{ color: MUTED }}>3 beschikbaar<span style={{ color: FLAME }}>.</span></p>
         </div>
       </aside>
 
-      {/* Main planning */}
+      {/* Rechts: de week */}
       <div className="flex flex-col">
-        {/* Toolbar: scope-dropdown · ‹ Week n › · Week/Maand · afwezigheid · Nieuw · meer */}
         <div className="flex items-center justify-between gap-3 px-4 md:px-5 py-3 flex-wrap" style={{ borderBottom: `1px solid ${LINE}`, backgroundColor: CARD }}>
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-semibold" style={{ color: INK, border: `1px solid ${LINE}` }}>
-              <Users className="w-3.5 h-3.5" strokeWidth={2} /> Mark Visser
-              <ChevronDown className="w-3 h-3" style={{ color: MUTED }} strokeWidth={2} />
+            <h1 className="font-heading text-[20px] font-bold tracking-tight leading-none" style={{ color: INK }}>
+              Planning<span style={{ color: FLAME }}>.</span>
+            </h1>
+            <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: INK }}>
+              Yvonne Albers <ChevronDown className="w-3 h-3" style={{ color: MUTED }} strokeWidth={2} />
             </span>
             <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: INK }}>
               <ChevronLeft className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
-              Week <span className="font-mono text-[13px]">21</span>
+              <span style={{ color: MUTED }}>wk 34</span> 17 – 21 aug
               <ChevronRight className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex items-baseline gap-1 text-[11px]" style={{ color: MUTED }}>
+              <span>A</span><span className="text-[13px]" style={{ color: INK, fontWeight: 700 }}>A</span>
+            </span>
             <div className="inline-flex p-0.5 rounded-md" style={{ backgroundColor: BG, border: `1px solid ${LINE}` }}>
               <span className="px-3 h-7 inline-flex items-center text-[12px] font-bold rounded-[6px]" style={{ backgroundColor: CARD, color: INK, boxShadow: '0 1px 2px rgba(20,40,40,0.08)' }}>Week</span>
               <span className="px-3 h-7 inline-flex items-center text-[12px] font-bold" style={{ color: MUTED }}>Maand</span>
             </div>
-            <span className="inline-flex items-center justify-center h-8 w-8 rounded-md" title="Afwezigheid / vrije dagen" style={{ border: `1px solid ${LINE}` }}>
-              <CalendarOff className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
+            <CalendarOff className="w-4 h-4" style={{ color: MUTED }} strokeWidth={2} />
+            <span className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: FLAME }}>
+              <Plus className="w-3.5 h-3.5" strokeWidth={2.6} /> Nieuw
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: FLAME }}>
-              <Plus className="w-3.5 h-3.5" strokeWidth={2.5} /> Nieuw
-            </span>
-            <span className="inline-flex items-center justify-center h-8 w-8 rounded-md" style={{ border: `1px solid ${LINE}` }}>
-              <MoreHorizontal className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
-            </span>
+            <MoreHorizontal className="w-4 h-4" style={{ color: MUTED }} strokeWidth={2} />
           </div>
         </div>
 
-        {/* Weekly grid */}
-        <div className="overflow-x-auto">
-          <div className="grid" style={{ gridTemplateColumns: '60px repeat(5, minmax(160px, 1fr))', minWidth: 860 }}>
-            {/* Dag-headers: dagnaam + datum + afgerond-teller, met weer en dagnotitie */}
-            <div className="px-2 py-3 font-mono text-[10px] tracking-[0.15em] uppercase" style={{ borderBottom: `1px solid ${LINE}`, color: MUTED }}>
-              Tijd
-            </div>
-            {planDays.map((day, i) => {
-              const Icon = day.weather === 'rain' ? CloudRain : Sun
-              return (
-                <div
-                  key={i}
-                  className="px-3 py-2.5"
-                  style={{
-                    borderBottom: `1px solid ${LINE}`,
-                    borderTop: day.today ? `2px solid ${FLAME}` : '2px solid transparent',
-                    backgroundColor: day.today ? 'rgba(26,83,92,0.03)' : 'transparent',
-                  }}
-                >
-                  <p className="text-[13px] font-bold inline-flex items-baseline gap-1.5" style={{ color: day.today ? PETROL : INK }}>
-                    {day.d}
-                    <span className="font-mono text-[11px] font-normal" style={{ color: MUTED }}>{day.date}</span>
-                    <span className="inline-flex items-center gap-0.5 font-mono text-[10px] font-normal" style={{ color: '#9B9B95' }}>
-                      <CheckCircle2 className="w-2.5 h-2.5" strokeWidth={2} />{day.teller}
+        <div className="overflow-x-auto flex-1">
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(5, minmax(200px, 1fr))', minWidth: 1000 }}>
+            {planWeek.map((dag, di) => (
+              <div key={dag.d} style={{ borderLeft: di === 0 ? 'none' : `1px solid ${LINE}` }}>
+                <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: `1px solid ${dag.today ? PETROL : LINE}` }}>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: MUTED }}>
+                      {dag.d}{dag.today && <span style={{ color: INK }}>.</span>}
                     </span>
-                  </p>
-                  <p className="mt-1 inline-flex items-center gap-1.5 text-[10.5px]" style={{ color: MUTED }}>
-                    <Icon className="w-3 h-3" strokeWidth={1.8} />
-                    <span className="font-mono">{day.temp}</span>
-                    {day.perc && <span className="font-mono text-[10px]" style={{ color: '#9B9B95' }}>{day.perc}</span>}
-                  </p>
-                  {day.notitie && (
-                    <p className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[5px] text-[10px] font-semibold truncate max-w-full" style={{ backgroundColor: 'rgba(241,80,37,0.08)', color: '#C03A18' }}>
-                      <StickyNote className="w-2.5 h-2.5 shrink-0" strokeWidth={2} /> {day.notitie}
-                    </p>
-                  )}
-                </div>
-              )
-            })}
-
-            {/* Time slots — 10 hours */}
-            {HOURS.map((h) => (
-              <FragmentRow key={h}>
-                <div className="px-2 py-4 font-mono text-[10px] tabular-nums" style={{ color: '#9B9B95', borderBottom: `1px dashed ${LINE}` }}>
-                  {h}
-                </div>
-                {planDays.map((day, dayIdx) => {
-                  // Find events that start in this hour
-                  const evts = planEvents.filter((e) => e.day === dayIdx && parseInt(e.from) === parseInt(h))
-                  return (
-                    <div
-                      key={dayIdx}
-                      className="relative"
+                    <span
+                      className="inline-flex items-center justify-center font-heading text-[15px] font-bold rounded-full"
                       style={{
-                        borderBottom: `1px dashed ${LINE}`,
-                        borderLeft: dayIdx === 0 ? `1px solid ${LINE}` : 'none',
-                        borderRight: `1px solid ${LINE}`,
-                        minHeight: 56,
-                        backgroundColor: day.today ? 'rgba(26,83,92,0.015)' : 'transparent',
+                        width: 24, height: 24,
+                        backgroundColor: dag.today ? PETROL : 'transparent',
+                        color: dag.today ? '#FFFFFF' : INK,
                       }}
                     >
-                      {evts.map((e, i) => {
-                        const fromH = parseInt(e.from)
-                        const toH = parseInt(e.to)
-                        const fromMin = parseInt(e.from.split(':')[1] || '0')
-                        const toMin = parseInt(e.to.split(':')[1] || '0')
-                        const durationH = toH + toMin / 60 - (fromH + fromMin / 60)
-                        const sm = planStatusMeta[e.status]
-                        const afgerond = e.status === 'afgerond'
-                        return (
-                          <div
-                            key={i}
-                            className="absolute left-1 right-1 top-1 rounded-[6px] px-2 py-1.5 overflow-hidden"
-                            style={{
-                              height: `${durationH * 56 - 4}px`,
-                              backgroundColor: sm.bg,
-                              borderLeft: `3px solid ${e.prio ? FLAME : sm.stripe}`,
-                            }}
-                          >
-                            <div className="flex items-start justify-between gap-1">
-                              <p className="text-[11.5px] font-bold leading-tight truncate" style={{ color: afgerond ? '#9B9B95' : PETROL, textDecoration: afgerond ? 'line-through' : 'none' }}>
-                                {e.titel}
-                              </p>
-                              <span className="inline-flex items-center gap-1 shrink-0">
-                                {e.prio && <Flame className="w-2.5 h-2.5" style={{ color: FLAME }} strokeWidth={2.4} />}
-                                <CheckCircle2 className="w-3 h-3" style={{ color: afgerond ? '#4AA366' : '#C8C8C0' }} strokeWidth={2} />
-                              </span>
-                            </div>
-                            <p className="text-[10.5px] truncate" style={{ color: MUTED }}>{e.klant}</p>
-                            <p className="font-mono text-[10px] mt-1 inline-flex items-center gap-1.5 flex-wrap" style={{ color: sm.tekst }}>
-                              <span className="inline-flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{e.from} – {e.to}</span>
-                              {e.ref && <span className="inline-flex items-center gap-0.5"><FileText className="w-2.5 h-2.5" />{e.ref}</span>}
-                              {e.plaats && <span className="inline-flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{e.plaats}</span>}
-                            </p>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )
-                })}
-              </FragmentRow>
+                      {dag.n}
+                    </span>
+                  </span>
+                  {dag.teller && <span className="font-mono text-[11px] tabular-nums" style={{ color: MUTED }}>{dag.teller}</span>}
+                </div>
+
+                {dag.leeg && (
+                  <div className="px-3 py-3">
+                    <p className="text-[13px] font-semibold" style={{ color: MUTED }}>{dag.leeg}</p>
+                    {dag.afgerond && (
+                      <p className="mt-3 text-[11.5px] inline-flex items-center gap-1.5" style={{ color: MUTED }}>
+                        <ChevronRight className="w-3 h-3" strokeWidth={2} /> {dag.afgerond} afgerond
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {dag.items?.map((it) => (
+                  <div key={`${dag.d}-${it.van}`} className="flex items-start gap-2.5 px-3 py-2.5" style={{ borderBottom: `1px solid ${LINE}`, backgroundColor: CARD }}>
+                    <span className="font-mono text-[10.5px] tabular-nums leading-tight shrink-0" style={{ width: 34 }}>
+                      <span className="block" style={{ color: INK }}>{it.van}</span>
+                      <span className="block" style={{ color: '#C8C8C0' }}>{it.tot}</span>
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[12.5px] font-bold leading-snug" style={{ color: PETROL }}>{it.titel}</span>
+                      <span className="flex items-center gap-1 text-[11px] mt-0.5" style={{ color: MUTED }}>
+                        <MapPin className="w-2.5 h-2.5 shrink-0" strokeWidth={2} /> {it.klant}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
             ))}
           </div>
         </div>
@@ -2513,95 +2490,109 @@ function InkoopView() {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   TAKEN VIEW — Team-weergave (swimlane per medewerker), zoals
-   forgedesk/src/components/planning/TasksLayout.tsx (viewMode
-   'swimlane'). Prioriteiten: kritiek = flame, rest = petrol.
+   TAKEN VIEW — stapelweergave, zoals de app hem sinds de laatste
+   ronde toont: vijf dagkolommen, een bakje boven voor wat nog geen
+   dag heeft, en onderin de balk met wat er af is. Demodata, geen
+   echte klanten.
    ────────────────────────────────────────────────────────────── */
 
-type Taak = { id: number; day: number; tijd: string; titel: string; project?: string; done?: boolean; kritiek?: boolean }
-type TaakLane = { initialen: string; naam: string; avBg: string; onbekend?: boolean; taken: Taak[] }
+type StapelTaak = { id: number; titel: string; klant: string; project?: string; uren?: string }
+type StapelDag = {
+  d: string
+  n: number
+  today?: boolean
+  teller: string
+  uren?: string
+  taken: StapelTaak[]
+  afgerond?: number
+}
 
-const taakLanes: TaakLane[] = [
+const takenWeek: StapelDag[] = [
   {
-    initialen: 'JV', naam: 'Jan Visser', avBg: '#7BB89A',
+    d: 'MA', n: 17, teller: '2',
     taken: [
-      { id: 1,  day: 0, tijd: '09:00', titel: 'Drukproef goedkeuren', project: 'Van Meer & Co' },
-      { id: 2,  day: 0, tijd: '11:30', titel: 'Offerte opvolgen', project: 'Jansen Bouw', kritiek: true },
-      { id: 3,  day: 1, tijd: '09:00', titel: 'Design bestanden maken', project: 'Plafond signing' },
-      { id: 4,  day: 2, tijd: '14:00', titel: 'Klant bellen', project: 'Doek voor hek', done: true },
-      { id: 5,  day: 4, tijd: '10:00', titel: 'Factuur versturen', project: 'Bakkerij Steeg' },
+      { id: 1, titel: 'Bellen', klant: 'Garage Brinkman', project: "Logo's op de pui" },
+      { id: 2, titel: 'Opzet maken', klant: 'Sporthal De Veluwe', project: 'Gevelreclame + diversen' },
     ],
   },
   {
-    initialen: 'MV', naam: 'Mark Visser', avBg: '#3A6B8C',
+    d: 'DI', n: 18, teller: '1', uren: '2,5u',
     taken: [
-      { id: 6,  day: 0, tijd: '08:30', titel: 'Vinyl bestellen', project: 'Gevelreclame', done: true },
-      { id: 7,  day: 1, tijd: '13:00', titel: 'Werkbon voorbereiden', project: 'Boottekst' },
-      { id: 8,  day: 3, tijd: '09:00', titel: 'Materialen ophalen', project: 'Sign Supply' },
+      { id: 3, titel: 'Designs klaar maken', klant: 'Hotel De Linde', project: 'Textielframes 3x', uren: '2,5u' },
     ],
   },
   {
-    initialen: 'SH', naam: 'Sven Hendriks', avBg: '#9A5A48',
+    d: 'WO', n: 19, today: true, teller: '2', afgerond: 6,
     taken: [
-      { id: 9,  day: 1, tijd: '10:30', titel: 'Bordjes bestellen met EPS logo' },
-      { id: 10, day: 2, tijd: '09:00', titel: 'Eindcheck montage', project: 'Lichtreclame', done: true },
-      { id: 11, day: 4, tijd: '15:00', titel: 'Situatiefoto’s maken', project: 'Atelier 9' },
+      { id: 4, titel: 'Prijzen maken', klant: 'Van Meer & Co', project: 'Kennismaking + proef offerte' },
+      { id: 5, titel: 'Prijzen maken', klant: 'Bouwbedrijf Veld', project: 'Bewegwijzering + binnenzijde pand' },
     ],
   },
   {
-    initialen: '?', naam: 'Niet toegewezen', avBg: FLAME, onbekend: true,
+    d: 'DO', n: 20, teller: '7', afgerond: 1,
     taken: [
-      { id: 12, day: 2, tijd: '12:00', titel: 'Offerte maken', project: 'Logo Bakkerij Steeg', kritiek: true },
+      { id: 6,  titel: 'Zuil bestellen', klant: 'Van Meer & Co', project: 'Zuil entree' },
+      { id: 7,  titel: 'Opzet + prijs', klant: 'Sporthal De Veluwe', project: 'Gevelreclame + vlaggen' },
+      { id: 8,  titel: 'Opzet maken', klant: 'Sign Supply', project: 'Rolmaten' },
+      { id: 9,  titel: 'Voorbeeld en offerte', klant: 'Tandartspraktijk Noord', project: 'Belettering vergaderruimte' },
+      { id: 10, titel: 'Bibliotheek opzet', klant: 'Evenementenhal', project: 'Signing diverse locaties' },
+      { id: 11, titel: 'Klimop regenpijp', klant: 'Basisschool De Wilg', project: 'Nieuwe signing' },
+      { id: 12, titel: 'Prijs maken voor dibond', klant: 'Makelaardij Vos', project: 'Geveltekst' },
+    ],
+  },
+  {
+    d: 'VR', n: 21, teller: '1',
+    taken: [
+      { id: 13, titel: 'Offerte maken', klant: 'Bakkerij Steeg', project: 'Borden vervangen' },
     ],
   },
 ]
 
-const taakDagen = [
-  { d: 'MA', n: 18, today: true },
-  { d: 'DI', n: 19 },
-  { d: 'WO', n: 20 },
-  { d: 'DO', n: 21 },
-  { d: 'VR', n: 22 },
+const takenGedaan = [
+  { titel: 'Opzet maken', klant: 'Jansen Bouw' },
+  { titel: 'Offerte maken', klant: 'Garage Brinkman' },
+  { titel: 'Bestanden', klant: 'Sign Supply' },
+  { titel: 'Bus belettering', klant: 'Bouwbedrijf Veld' },
+  { titel: 'Offerte en voorbeeld', klant: 'Van Meer & Co' },
+  { titel: 'Offerte maken', klant: 'Evenementenhal' },
+  { titel: 'Tekeningen + offerte', klant: 'Hotel De Linde' },
 ]
 
 function TakenView() {
-  const [overrides, setOverrides] = useState<Record<number, boolean>>({})
-  const toggle = (id: number, current: boolean) =>
-    setOverrides((o) => ({ ...o, [id]: !(id in o ? o[id] : current) }))
+  const [afgevinkt, setAfgevinkt] = useState<Record<number, boolean>>({})
+  const toggle = (id: number) => setAfgevinkt((o) => ({ ...o, [id]: !o[id] }))
+  const klaar = Object.values(afgevinkt).filter(Boolean).length
 
   return (
     <div className="flex flex-col" style={{ minHeight: 620 }}>
-      {/* Toolbar — zelfde opbouw als TasksLayout: titel+teller, filter-pills,
-          mijn-taken avatar, medewerker-filter, view-toggle, weeknavigatie, zoom */}
-      <div className="flex items-center justify-between gap-3 px-4 md:px-6 py-3.5 flex-wrap" style={{ borderBottom: `1px solid ${LINE}`, backgroundColor: CARD }}>
+      {/* Toolbar: titel met teller, filters, wie, weergave, week, zoom */}
+      <div className="flex items-center justify-between gap-3 px-4 md:px-6 py-3 flex-wrap" style={{ borderBottom: `1px solid ${LINE}`, backgroundColor: CARD }}>
         <div className="flex items-center gap-4 flex-wrap">
-          <h1 className="font-heading text-[22px] font-bold tracking-tight leading-none inline-flex items-baseline gap-2" style={{ color: INK }}>
+          <h1 className="font-heading text-[20px] font-bold tracking-tight leading-none" style={{ color: INK }}>
             Taken<span style={{ color: FLAME }}>.</span>
-            <span className="font-mono text-[12px] font-semibold" style={{ color: MUTED }}>4/12</span>
           </h1>
+          <span className="font-mono text-[12px] tabular-nums" style={{ color: MUTED }}>{99 + klaar}/167</span>
           <div className="flex items-center gap-3 text-[12px]" style={{ color: MUTED }}>
             <span style={{ color: INK, fontWeight: 700 }}>Alle</span>
             <span>Project</span>
             <span>Los</span>
-            <span style={{ color: '#D8D6D0' }}>|</span>
             <span className="inline-flex items-center gap-1.5">
               <Wrench className="w-3 h-3" /> Montage
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="w-8 h-8 rounded-full inline-flex items-center justify-center font-mono text-[10px] font-bold" title="Mijn taken" style={{ backgroundColor: '#E2F0F0', color: PETROL, border: `1px solid ${LINE}` }}>JV</span>
-          <span className="inline-flex items-center gap-2 h-8 px-3 rounded-md text-[12px] font-semibold" style={{ color: INK, border: `1px solid ${LINE}` }}>
-            Alle medewerkers <ChevronDown className="w-3 h-3" style={{ color: MUTED }} />
+          <span className="inline-flex items-center gap-2 h-8 px-2.5 rounded-md text-[12px] font-semibold" style={{ color: INK, border: `1px solid ${LINE}` }}>
+            <span className="w-5 h-5 rounded-full inline-flex items-center justify-center font-mono text-[9px] font-bold" style={{ backgroundColor: '#E2F0F0', color: PETROL }}>AB</span>
+            Anne Bakker
+            <ChevronDown className="w-3 h-3" style={{ color: MUTED }} strokeWidth={2} />
           </span>
-          <div className="flex items-center gap-3 text-[12px]" style={{ color: MUTED }}>
-            <span>Week</span>
-            <span>Maand</span>
-            <span style={{ color: INK, fontWeight: 700 }}>Team</span>
-          </div>
+          <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-[12px] font-bold" style={{ color: INK, border: `1px solid ${LINE}` }}>
+            Stapel <ChevronDown className="w-3 h-3" style={{ color: MUTED }} strokeWidth={2} />
+          </span>
           <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: INK }}>
             <ChevronLeft className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
-            18 – 22 mei
+            <span style={{ color: MUTED }}>wk 34</span> 17 – 21 aug
             <ChevronRight className="w-3.5 h-3.5" style={{ color: MUTED }} strokeWidth={2} />
           </span>
           <span className="inline-flex items-baseline gap-1 text-[11px]" style={{ color: MUTED }}>
@@ -2610,106 +2601,103 @@ function TakenView() {
         </div>
       </div>
 
-      {/* Team-grid: kolom Medewerker + 5 dagkolommen */}
-      <div className="overflow-x-auto flex-1">
-        <div className="grid" style={{ gridTemplateColumns: '176px repeat(5, minmax(140px, 1fr))', minWidth: 880 }}>
-          {/* Kop-rij */}
-          <div className="px-4 py-3 font-mono text-[10px] font-bold tracking-[0.15em] uppercase" style={{ borderBottom: `1px solid ${LINE}`, color: MUTED }}>
-            Medewerker
-          </div>
-          {taakDagen.map((d, i) => (
-            <div key={i} className="px-3 py-2.5 text-center" style={{ borderBottom: `1px solid ${LINE}`, borderLeft: `1px solid ${LINE}` }}>
-              <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: MUTED }}>
-                {d.d}{d.today && <span style={{ color: FLAME }}>.</span>}
-              </p>
-              <p
-                className="inline-flex items-center justify-center font-heading text-[15px] font-bold rounded-full mt-0.5"
-                style={{
-                  width: 26, height: 26,
-                  backgroundColor: d.today ? PETROL : 'transparent',
-                  color: d.today ? '#FFFFFF' : INK,
-                }}
-              >
-                {d.n}
-              </p>
-            </div>
-          ))}
+      {/* Bakje: wat nog geen dag heeft */}
+      <div className="flex items-center gap-4 px-4 md:px-6 py-2.5 text-[12px]" style={{ borderBottom: `1px solid ${LINE}`, backgroundColor: CARD }}>
+        <span className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: MUTED }}>Bakje 0</span>
+        <span style={{ color: INK }}>Niet vergeten...</span>
+        <span style={{ color: '#C8C8C0' }}>Sleep hier wat je nog niet wilt plannen</span>
+      </div>
 
-          {/* Lanes — rij per medewerker */}
-          {taakLanes.map((lane, li) => (
-            <FragmentRow key={lane.naam}>
-              <div className="flex items-center gap-2 px-3 py-3" style={{ borderBottom: `1px solid ${LINE}`, backgroundColor: li % 2 === 1 ? '#FAFAF9' : 'transparent' }}>
-                <ChevronDown className="w-3 h-3 shrink-0" style={{ color: '#C8C8C0' }} strokeWidth={2} />
-                <span
-                  className="w-6 h-6 rounded-full inline-flex items-center justify-center font-mono text-[9px] font-bold text-white shrink-0"
-                  style={{ backgroundColor: lane.onbekend ? 'rgba(241,80,37,0.15)' : lane.avBg, color: lane.onbekend ? '#C03A18' : '#FFFFFF' }}
-                >
-                  {lane.initialen}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-bold truncate" style={{ color: lane.onbekend ? '#C03A18' : INK }}>{lane.naam}</p>
-                  <p className="font-mono text-[10px]" style={{ color: '#9B9B95' }}>{lane.taken.length} {lane.taken.length === 1 ? 'taak' : 'taken'}</p>
-                </div>
-              </div>
-              {taakDagen.map((dag, di) => {
-                const cel = lane.taken.filter((t) => t.day === di)
-                return (
-                  <div
-                    key={di}
-                    className="p-1.5 space-y-1.5"
+      {/* Vijf dagen naast elkaar */}
+      <div className="overflow-x-auto flex-1">
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(5, minmax(210px, 1fr))', minWidth: 1050 }}>
+          {takenWeek.map((dag, di) => (
+            <div key={dag.d} style={{ borderLeft: di === 0 ? 'none' : `1px solid ${LINE}` }}>
+              {/* Dagkop */}
+              <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: `1px solid ${dag.today ? PETROL : LINE}` }}>
+                <span className="inline-flex items-center gap-2">
+                  <span className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: MUTED }}>
+                    {dag.d}{dag.today && <span style={{ color: INK }}>.</span>}
+                  </span>
+                  <span
+                    className="inline-flex items-center justify-center font-heading text-[15px] font-bold rounded-full"
                     style={{
-                      borderBottom: `1px solid ${LINE}`,
-                      borderLeft: `1px solid ${LINE}`,
-                      minHeight: 84,
-                      backgroundColor: dag.today ? 'rgba(26,83,92,0.02)' : li % 2 === 1 ? '#FAFAF9' : 'transparent',
+                      width: 24, height: 24,
+                      backgroundColor: dag.today ? PETROL : 'transparent',
+                      color: dag.today ? '#FFFFFF' : INK,
                     }}
                   >
-                    {cel.map((t) => {
-                      const done = t.id in overrides ? overrides[t.id] : Boolean(t.done)
-                      const prioKleur = t.kritiek ? '#C03A18' : PETROL
-                      return (
-                        <div
-                          key={t.id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => toggle(t.id, Boolean(t.done))}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(t.id, Boolean(t.done)) } }}
-                          className="rounded-[6px] px-2 py-1.5 cursor-pointer transition-colors hover:brightness-[0.98]"
-                          style={{
-                            backgroundColor: done ? '#E8F0F0' : t.kritiek ? 'rgba(241,80,37,0.09)' : 'rgba(26,83,92,0.07)',
-                            borderLeft: `2px solid ${done ? '#CBC9C4' : t.kritiek ? FLAME : PETROL}`,
-                          }}
+                    {dag.n}
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-2 font-mono text-[11px] tabular-nums" style={{ color: MUTED }}>
+                  {dag.uren && <span>{dag.teller} · {dag.uren}</span>}
+                  {!dag.uren && <span>{dag.teller}</span>}
+                  <Plus className="w-3 h-3" style={{ color: '#C8C8C0' }} strokeWidth={2.4} />
+                </span>
+              </div>
+
+              {/* Kaarten */}
+              <div>
+                {dag.taken.map((t) => {
+                  const uit = afgevinkt[t.id]
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => toggle(t.id)}
+                      className="w-full text-left flex items-start gap-2.5 px-3 py-2.5 transition-colors"
+                      style={{ borderBottom: `1px solid ${LINE}`, backgroundColor: CARD }}
+                      title={uit ? 'Klik om terug te zetten' : 'Klik om af te ronden'}
+                    >
+                      <span
+                        className="mt-0.5 w-3.5 h-3.5 rounded-full shrink-0 inline-flex items-center justify-center"
+                        style={{ border: `1.5px solid ${uit ? '#3A7D52' : '#C8C8C0'}`, backgroundColor: uit ? '#3A7D52' : 'transparent' }}
+                      >
+                        {uit && <Check className="w-2 h-2 text-white" strokeWidth={3.5} />}
+                      </span>
+                      <span className="min-w-0">
+                        <span
+                          className="block text-[13px] font-bold leading-snug"
+                          style={{ color: uit ? MUTED : PETROL, textDecoration: uit ? 'line-through' : 'none' }}
                         >
-                          <div className="flex items-start gap-1.5">
-                            <span className="w-3.5 h-3.5 rounded-full mt-[1px] flex-shrink-0 inline-flex items-center justify-center transition-colors" style={{ backgroundColor: done ? PETROL : 'transparent', border: done ? 'none' : `1.5px solid ${prioKleur}` }}>
-                              {done
-                                ? <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                : <span className="w-1 h-1 rounded-full" style={{ backgroundColor: prioKleur }} />}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[11.5px] font-semibold leading-snug truncate" style={{
-                                color: done ? '#9B9B95' : prioKleur,
-                                textDecoration: done ? 'line-through' : 'none',
-                              }}>
-                                {t.kritiek && !done && <Flame className="w-2.5 h-2.5 inline-block mr-0.5 -mt-0.5" style={{ color: FLAME }} strokeWidth={2.4} />}
-                                {t.titel}
-                              </p>
-                              <p className="font-mono text-[9.5px] mt-0.5 truncate" style={{ color: '#9B9B95' }}>
-                                {t.tijd}{t.project && <span className="ml-1.5">{t.project}</span>}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              })}
-            </FragmentRow>
+                          {t.titel}
+                        </span>
+                        <span className="block text-[11.5px] leading-snug mt-0.5" style={{ color: MUTED }}>
+                          {t.klant}{t.project && <> · {t.project}</>}{t.uren && <>  {t.uren}</>}
+                        </span>
+                      </span>
+                    </button>
+                  )
+                })}
+
+                {dag.afgerond && (
+                  <p className="px-3 py-2.5 text-[11.5px] inline-flex items-center gap-1.5" style={{ color: MUTED }}>
+                    <ChevronRight className="w-3 h-3" strokeWidth={2} /> {dag.afgerond} afgerond
+                  </p>
+                )}
+              </div>
+            </div>
           ))}
         </div>
+      </div>
 
-        {/* Lege staat onder de lanes, zoals 'Geen taken voor deze week.' bij lege lane */}
+      {/* Wat er vandaag al af is */}
+      <div className="flex items-center gap-2 px-4 md:px-6 py-2.5 overflow-x-auto" style={{ borderTop: `1px solid ${LINE}`, backgroundColor: BG }}>
+        <span className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase shrink-0" style={{ color: MUTED }}>
+          Gedaan {takenGedaan.length + klaar}
+        </span>
+        {takenGedaan.map((g) => (
+          <span
+            key={`${g.titel}-${g.klant}`}
+            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] shrink-0"
+            style={{ backgroundColor: CARD, border: `1px solid ${LINE}` }}
+          >
+            <Check className="w-3 h-3" style={{ color: '#3A7D52' }} strokeWidth={3} />
+            <span style={{ color: MUTED, textDecoration: 'line-through' }}>{g.titel}</span>
+            <span style={{ color: '#C8C8C0' }}>{g.klant}</span>
+          </span>
+        ))}
       </div>
     </div>
   )
