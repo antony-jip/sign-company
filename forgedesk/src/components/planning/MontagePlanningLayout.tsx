@@ -76,6 +76,7 @@ import { getDagNotities, upsertDagNotitie, deleteDagNotitie, getVrijPatronen, cr
 import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie, VrijPatroon, Afwezigheid, AfwezigheidType } from "@/types";
 import { buildAfwezigheidIndex, resolveAfwezig } from "@/utils/afwezigheid";
 import { MontageStapelView } from '@/components/planning/MontageStapelView';
+import { MontageTijdlijnView } from '@/components/planning/MontageTijdlijnView';
 import { ModuleToolbar } from '@/components/layouts/ModuleToolbar';
 import { ProjectCombobox } from '@/components/shared/ProjectCombobox';
 import { AfwezigheidPopover } from "./AfwezigheidPopover";
@@ -112,7 +113,7 @@ const PLANNING_SCOPE_KEY = 'doen_planning_scope_v1';
 const PLANNING_VIEWMODE_KEY = 'doen_planning_viewmode_v1';
 const PLANNING_ZOOM_KEY = 'doen_planning_zoom_v1';
 
-type ViewMode = 'stapel' | 'maand';
+type ViewMode = 'stapel' | 'tijdlijn' | 'maand';
 const FASES_BLOKKEREN_AFRONDEN: Array<Project['status']> = ['te-factureren', 'gefactureerd', 'afgerond'];
 
 type ScopeMode = 'alle' | 'mijn' | 'medewerker';
@@ -455,6 +456,7 @@ export function MontagePlanningLayout() {
     try {
       const raw = localStorage.getItem(PLANNING_VIEWMODE_KEY);
       if (raw === 'maand') return 'maand';
+      if (raw === 'tijdlijn') return 'tijdlijn';
       return 'stapel';
     } catch {
       return 'stapel';
@@ -1120,10 +1122,19 @@ export function MontagePlanningLayout() {
     }
   }
 
-  function openNewDialog(datum?: string, prefillMonteurId?: string | null) {
+  function openNewDialog(datum?: string, prefillMonteurId?: string | null, prefillStart?: string) {
     setEditingAfspraak(null);
+    // Klik je in de tijdlijn op 14:00, dan hoort daar 14:00 te staan. De duur
+    // van het lege formulier blijft intact, die schuift gewoon mee.
+    const tijden = prefillStart
+      ? {
+          start_tijd: prefillStart,
+          eind_tijd: minutesToTime(timeToMinutes(prefillStart) + (timeToMinutes(EMPTY_FORM.eind_tijd) - timeToMinutes(EMPTY_FORM.start_tijd))),
+        }
+      : {};
     setFormData({
       ...EMPTY_FORM,
+      ...tijden,
       datum: datum || todayStr,
       // Wie een montage aanmaakt staat er zelf bijna altijd op · dat hoef je
       // niet elke keer aan te klikken. Een andere keuze haal je er zo weer af.
@@ -1755,6 +1766,58 @@ export function MontagePlanningLayout() {
         /* Alleen de uitzondering krijgt kleur. Met een streep per status werd
            de kolom een kleurenstaal en viel niets meer op · 'gepland' is de
            normale toestand en hoeft niets te zeggen. */
+        accentKleur={(a) => a.prioriteit
+          ? '#F15025'
+          : (a.status === 'gepland' || a.status === 'afgerond')
+            ? 'transparent'
+            : (STATUS_CONFIG[a.status]?.dot ?? 'transparent')}
+        toonMonteurs={selectedMonteur === 'alle'}
+        monteurLabel={(a) => a.monteurs
+          .map((id) => monteurMap[id]?.naam)
+          .filter(Boolean)
+          .join(', ')}
+        gesloten={(datum) => isFeestdag(datum, feestdagen)?.naam ?? null}
+      />
+    );
+  }
+
+  async function handleDuurWijzigen(afspraak: MontageAfspraak, eindTijd: string) {
+    if (eindTijd === afspraak.eind_tijd) return;
+    const vorige = afspraak.eind_tijd;
+    setAfspraken((prev) => prev.map((a) => a.id === afspraak.id ? { ...a, eind_tijd: eindTijd } : a));
+    try {
+      await updateMontageAfspraak(afspraak.id, { eind_tijd: eindTijd });
+      toast.success(`Duur aangepast tot ${eindTijd}`);
+    } catch {
+      setAfspraken((prev) => prev.map((a) => a.id === afspraak.id ? { ...a, eind_tijd: vorige } : a));
+      toast.error('Kon duur niet aanpassen');
+    }
+  }
+
+  function renderTijdlijnView() {
+    return (
+      <MontageTijdlijnView
+        zoom={stapelZoom}
+        weekDates={weekDates}
+        datumSleutel={formatDate}
+        afsprakenPerDag={afsprakenPerDag}
+        takenPerDag={takenPerDag}
+        vandaagSleutel={formatDate(new Date())}
+        conflictIds={conflictAfspraakIds}
+        sleepId={draggingAfspraakId}
+        onSleepStart={setDraggingAfspraakId}
+        onSleepEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
+        onDropOpTijd={(id, datum, startTijd) => {
+          const feestdagInfo = isFeestdag(datum, feestdagen);
+          if (feestdagInfo) {
+            toast.error(`Kan niet inplannen op ${feestdagInfo.naam}`);
+            return;
+          }
+          handleDragDrop(id, datum, undefined, startTijd);
+        }}
+        onDuurWijzigen={handleDuurWijzigen}
+        onOpen={openEditDialog}
+        onNieuwOpTijd={(datum, startTijd) => openNewDialog(datum, undefined, startTijd)}
         accentKleur={(a) => a.prioriteit
           ? '#F15025'
           : (a.status === 'gepland' || a.status === 'afgerond')
@@ -2929,6 +2992,13 @@ export function MontagePlanningLayout() {
             </button>
             <button
               type="button"
+              onClick={() => setViewMode('tijdlijn')}
+              className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'tijdlijn' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            >
+              Tijdlijn
+            </button>
+            <button
+              type="button"
               onClick={() => setViewMode('maand')}
               className={cn("px-2.5 py-1 rounded-md font-medium transition-colors", viewMode === 'maand' ? "bg-white dark:bg-white/[0.12] text-petrol dark:text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
@@ -3012,7 +3082,7 @@ export function MontagePlanningLayout() {
 
         {/* Main view */}
         <div className="flex-1 overflow-auto">
-          {viewMode === 'maand' ? renderMonthView() : renderStapelView()}
+          {viewMode === 'maand' ? renderMonthView() : viewMode === 'tijdlijn' ? renderTijdlijnView() : renderStapelView()}
         </div>
       </div>
 
