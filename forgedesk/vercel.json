@@ -61,6 +61,10 @@
     {
       "path": "/api/cron-mailsync-werker",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron-tijd-sessies-opruimen",
+      "schedule": "30 3 * * *"
     }
   ]
 }
