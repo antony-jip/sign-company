@@ -228,7 +228,10 @@ export function MontageTijdlijnView({
   }
 
   return (
-    <div className="planning-tijdlijn flex overflow-x-auto">
+    /* Geen eigen overflow hier: de scroller is de wrapper in
+       MontagePlanningLayout. Een tweede scrollbox eromheen laat position:sticky
+       aan een doos plakken die verticaal niet beweegt, en dan plakt er niets. */
+    <div className="planning-tijdlijn flex">
       {/* Urenkolom */}
       <div className="flex-shrink-0 w-12 select-none" style={{ paddingTop: KOP_HOOGTE + notitieHoogte + takenBandHoogte }}>
         <div className="relative" style={{ height: rasterHoogte }}>
@@ -276,15 +279,18 @@ export function MontageTijdlijnView({
                   weer rechts uitgelijnd, dan plakte het tegen de dagnaam van de
                   vólgende kolom en las je 22° bij de verkeerde dag. */}
               <div
-                className={cn(
-                  'relative flex items-center gap-2.5 px-3',
-                  // Vandaag krijgt een zachte tint in plaats van nog een lijn ·
-                  // scheiding met vlak leest rustiger dan scheiding met randen.
-                  isVandaag && 'bg-petrol/[0.045] dark:bg-white/[0.045]',
-                )}
+                className="sticky top-0 z-40 flex items-center gap-2.5 bg-background px-3"
                 style={{ height: KOP_HOOGTE }}
               >
-                <span className="flex items-baseline gap-[7px]">
+                {/* Vandaag krijgt een zachte tint in plaats van nog een lijn ·
+                    scheiding met vlak leest rustiger dan scheiding met randen.
+                    Als laag erover, want de kop moet zelf dekkend blijven zodra
+                    er blokken onderdoor scrollen. */}
+                {isVandaag && (
+                  <span aria-hidden className="pointer-events-none absolute inset-0 bg-petrol/[0.045] dark:bg-white/[0.045]" />
+                )}
+                <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 border-b border-border/40" />
+                <span className="relative flex items-baseline gap-[7px]">
                   <span className={cn(
                     'text-[11px] font-medium lowercase',
                     isVandaag ? 'text-petrol dark:text-[#CFE3E6]' : 'text-muted-foreground/70',
@@ -303,14 +309,14 @@ export function MontageTijdlijnView({
                   )}
                 </span>
 
-                {renderDagWeer?.(sleutel)}
+                <span className="relative flex items-center">{renderDagWeer?.(sleutel)}</span>
 
-                {dicht && <span className="truncate text-[10px] text-muted-foreground">{dicht}</span>}
+                {dicht && <span className="relative truncate text-[10px] text-muted-foreground">{dicht}</span>}
 
                 {openAantal > 0 && (
                   <span
                     title={`${openAantal} open${afgerond > 0 ? `, ${afgerond} afgerond` : ''}`}
-                    className="ml-auto inline-flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-foreground/[0.055] px-[6px] text-[10.5px] font-semibold tabular-nums text-muted-foreground"
+                    className="relative ml-auto inline-flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-foreground/[0.055] px-[6px] text-[10.5px] font-semibold tabular-nums text-muted-foreground"
                   >
                     {openAantal}
                   </span>
