@@ -532,7 +532,6 @@ export function MontagePlanningLayout() {
     return () => clearInterval(id);
   }, []);
   const [afrondenMenuOpen, setAfrondenMenuOpen] = useState(false);
-  const [resizingId, setResizingId] = useState<string | null>(null);
   const resizeStartY = useRef(0);
   const resizeStartMinutes = useRef(0);
   const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? []);
@@ -664,7 +663,7 @@ export function MontagePlanningLayout() {
     verversen: loadData,
     magVerversen: () =>
       !draggingAfspraakId && !draggingTaakId && !draggingProjectId && !dragOverDate &&
-      !resizingId && !dialogOpen && !werkbonDialogOpen && !afrondenMenuOpen,
+      !dialogOpen && !werkbonDialogOpen && !afrondenMenuOpen,
   });
 
   const eigenMedewerker = useMemo(() => {
@@ -1606,53 +1605,6 @@ export function MontagePlanningLayout() {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
   }
 
-  function handleResizeStart(e: React.MouseEvent, afspraak: MontageAfspraak) {
-    e.stopPropagation();
-    e.preventDefault();
-    setResizingId(afspraak.id);
-    resizeStartY.current = e.clientY;
-    resizeStartMinutes.current = timeToMinutes(afspraak.eind_tijd);
-
-    const onMove = (ev: MouseEvent) => {
-      const deltaY = ev.clientY - resizeStartY.current;
-      const deltaMinutes = Math.round(deltaY / 2) * 15;
-      const startMins = timeToMinutes(afspraak.start_tijd);
-      const newEnd = Math.max(startMins + 15, resizeStartMinutes.current + deltaMinutes);
-      const newTime = minutesToTime(newEnd);
-
-      setAfspraken((prev) =>
-        prev.map((a) => a.id === afspraak.id ? { ...a, eind_tijd: newTime } : a)
-      );
-    };
-
-    const onUp = async (ev: MouseEvent) => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      setResizingId(null);
-
-      const deltaY = ev.clientY - resizeStartY.current;
-      const deltaMinutes = Math.round(deltaY / 2) * 15;
-      const startMins = timeToMinutes(afspraak.start_tijd);
-      const newEnd = Math.max(startMins + 15, resizeStartMinutes.current + deltaMinutes);
-      const finalEnd = minutesToTime(newEnd);
-
-      if (finalEnd === afspraak.eind_tijd) return;
-
-      try {
-        await updateMontageAfspraak(afspraak.id, { eind_tijd: finalEnd });
-        toast.success(`Duur aangepast tot ${finalEnd}`);
-      } catch {
-        setAfspraken((prev) =>
-          prev.map((a) => a.id === afspraak.id ? { ...a, eind_tijd: afspraak.eind_tijd } : a)
-        );
-        toast.error("Kon duur niet aanpassen");
-      }
-    };
-
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }
-
   function getNextStatusActions(
     status: MontageAfspraak["status"]
   ): { status: MontageAfspraak["status"]; label: string; icon: React.ReactNode }[] {
@@ -1709,28 +1661,6 @@ export function MontagePlanningLayout() {
       default:
         return [];
     }
-  }
-
-  function renderMonteurAvatars(monteurIds: string[], size: "sm" | "md" = "sm") {
-    const sizeClasses = size === "sm" ? "h-5 w-5 text-[9px]" : "h-6 w-6 text-[10px]";
-    return (
-      <div className="flex -space-x-1.5">
-        {monteurIds.map((id, idx) => {
-          const monteur = monteurMap[id];
-          const naam = monteur?.naam || "Onbekend";
-          return (
-            <div
-              key={id}
-              className={cn(sizeClasses, "rounded-lg flex items-center justify-center font-bold ring-2 ring-white")}
-              style={getAvatarStyle(id)}
-              title={naam}
-            >
-              {getInitials(naam)}
-            </div>
-          );
-        })}
-      </div>
-    );
   }
 
   function renderStatusBadge(status: MontageAfspraak["status"]) {
@@ -1839,200 +1769,6 @@ export function MontagePlanningLayout() {
           );
         }}
       />
-    );
-  }
-
-  // ── Card with colored left border · DOEN style ──
-  function renderMontageCard(afspraak: MontageAfspraak, opts?: { variant?: 'personal' | 'timegrid' }) {
-    const hasConflict = conflictAfspraakIds.has(afspraak.id);
-    const cfg = STATUS_CONFIG[afspraak.status];
-    const isAfgerond = afspraak.status === 'afgerond';
-    const isFadingOut = isAfgerond && recentlyAfgerond.has(afspraak.id);
-    const isPrio = !!afspraak.prioriteit && !isAfgerond;
-    const isPersonal = opts?.variant === 'personal';
-    const isTimegrid = opts?.variant === 'timegrid';
-    const isCompact = isPersonal || isTimegrid;
-    const tijdspanne = formatTijdspanne(afspraak.start_tijd, afspraak.eind_tijd);
-
-    // Zelfde box-look als /taken: uniform lichte petrol-vulling + petrol accent-stripe.
-    // Prioriteit: flame accent-stripe + lichte flame-vulling zodat het opvalt.
-    // Achtergrond via classes (STATUS_CARD_BG) zodat dark mode meeschakelt.
-    const cardStyle: React.CSSProperties = { borderLeftColor: isAfgerond ? '#CBC9C4' : isPrio ? '#F15025' : (cfg?.dot ?? '#1A535C') };
-    if (isPersonal) cardStyle.minHeight = `${getCardMinHeight(afspraak.start_tijd, afspraak.eind_tijd)}px`;
-    const cardBgClass = isAfgerond
-      ? null
-      : isPrio
-        ? PRIO_CARD_BG_CLASS
-        : (STATUS_CARD_BG[afspraak.status] || FALLBACK_CARD_BG_CLASS);
-
-    return (
-      <div
-        key={afspraak.id}
-        draggable
-        onDragStart={(e) => {
-          setDraggingAfspraakId(afspraak.id);
-          e.dataTransfer.effectAllowed = "move";
-          e.dataTransfer.setData("text/plain", afspraak.id);
-          // Custom drag image for smooth feel
-          const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
-          ghost.style.width = `${e.currentTarget.offsetWidth}px`;
-          ghost.style.background = document.documentElement.classList.contains('dark') ? 'hsl(190 32% 12%)' : '#fff';
-          ghost.style.borderRadius = '12px';
-          ghost.style.boxShadow = '0 12px 32px rgba(0,0,0,0.18)';
-          ghost.style.opacity = '0.92';
-          ghost.style.transform = 'rotate(2deg)';
-          ghost.style.position = 'absolute';
-          ghost.style.top = '-1000px';
-          document.body.appendChild(ghost);
-          e.dataTransfer.setDragImage(ghost, 30, 20);
-          requestAnimationFrame(() => document.body.removeChild(ghost));
-        }}
-        onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
-        className={cn(
-          "border border-border/40 border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_4px_14px_rgba(20,62,71,0.10)] dark:hover:shadow-[0_4px_14px_rgba(0,0,0,0.40)] group/card relative",
-          isTimegrid ? "h-full overflow-hidden rounded-none" : "rounded-none mb-1.5 hover:-translate-y-[1px]",
-          isAfgerond && "bg-[hsl(40,10%,96.5%)] dark:bg-[hsl(190,20%,9%)]",
-          cardBgClass,
-          hasConflict && "ring-1 ring-[#F0C8BC] dark:ring-[#E04A28]/40",
-          draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-petrol/30 dark:ring-[#5FB5C0]/40"
-        )}
-        style={cardStyle}
-        onClick={() => openEditDialog(afspraak)}
-      >
-        {isAfgerond ? (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); toggleAfgerond(afspraak); }}
-            title="Markeer als gepland"
-            aria-label="Markeer als gepland"
-            className="absolute top-1 right-1 rounded-full p-0.5 transition-opacity z-10 opacity-100 text-muted-foreground/70 hover:bg-muted"
-          >
-            <CheckCircle2 className="h-3.5 w-3.5 fill-[#B4BEB9] text-white" />
-          </button>
-        ) : (() => {
-          const project = afspraak.project_id ? projecten.find((p) => p.id === afspraak.project_id) : null;
-          const projectBlocking = project ? FASES_BLOKKEREN_AFRONDEN.includes(project.status) : false;
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Markeer als afgerond"
-                  aria-label="Markeer als afgerond"
-                  className="absolute top-1 right-1 rounded-full p-0.5 transition-opacity z-10 opacity-0 group-hover/card:opacity-100 data-[state=open]:opacity-100 text-muted-foreground hover:text-[#2A8A8A] hover:bg-[#2A8A8A]/10"
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]" onClick={(e) => e.stopPropagation()}>
-                <DropdownMenuItem
-                  onClick={(e) => { e.stopPropagation(); afrondenAfspraak(afspraak, false); }}
-                  className="flex flex-col items-start gap-0.5 py-1.5 data-[highlighted]:bg-background data-[highlighted]:text-foreground"
-                >
-                  <span className="text-[12px] font-medium">Alleen afronden</span>
-                  <span className="text-[10px] opacity-60">Project blijft in huidige fase</span>
-                </DropdownMenuItem>
-                {!projectBlocking && afspraak.project_id && (
-                  <DropdownMenuItem
-                    onClick={(e) => { e.stopPropagation(); afrondenAfspraak(afspraak, true); }}
-                    className="flex flex-col items-start gap-0.5 py-1.5 data-[highlighted]:bg-background data-[highlighted]:text-foreground"
-                  >
-                    <span className="text-[12px] font-medium">
-                      Afronden &amp; factureren<span className="text-flame">.</span>
-                    </span>
-                    <span className="text-[10px] opacity-60">Project naar 'Te factureren'</span>
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        })()}
-        {!isAfgerond && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); toggleAfspraakPrio(afspraak); }}
-            title={isPrio ? 'Prioriteit weghalen' : 'Prioriteit geven'}
-            aria-label={isPrio ? 'Prioriteit weghalen' : 'Prioriteit geven'}
-            className={cn(
-              "absolute top-1 right-7 rounded-full p-0.5 transition-all z-10",
-              isPrio ? "opacity-100 text-flame" : "opacity-0 group-hover/card:opacity-100 text-muted-foreground/70 hover:text-flame"
-            )}
-          >
-            <Flame className={cn("h-3.5 w-3.5", isPrio && "fill-flame")} />
-          </button>
-        )}
-        <div className={cn("min-w-0", isAfgerond && "opacity-60")}>
-          <div className={cn("flex items-start justify-between gap-1", isAfgerond ? "pr-5" : "pr-12")}>
-            <div className={cn(
-              "text-[12px] font-semibold text-petrol dark:text-foreground leading-tight truncate",
-              isAfgerond && "line-through"
-            )}>{afspraak.titel}</div>
-          </div>
-          {afspraak.klant_naam && (
-            <div className="text-[11px] text-muted-foreground truncate">{afspraak.klant_naam}</div>
-          )}
-          {/* Time + Werkbon + Location inline (top-row, altijd zichtbaar) */}
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            {tijdspanne && (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums",
-                  hasConflict
-                    ? "rounded px-1 py-px ring-1 ring-[#F0C8BC] text-[#C03A18] bg-[#FDE8E2] dark:bg-[rgba(224,74,40,0.18)] dark:text-[#FF8866] dark:ring-[#E04A28]/40"
-                    : "text-muted-foreground"
-                )}
-                title={hasConflict ? 'Overlap met andere afspraak' : undefined}
-              >
-                {hasConflict ? <AlertTriangle className="h-2 w-2" /> : <Clock className="h-2 w-2" />}
-                {tijdspanne}
-              </span>
-            )}
-            {afspraak.werkbon_id && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(`/werkbonnen/${afspraak.werkbon_id}`, "_blank");
-                }}
-                className="inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums text-foreground/70 hover:text-petrol dark:hover:text-foreground transition-colors"
-                title={`Open werkbon ${afspraak.werkbon_nummer || ''}`}
-              >
-                <FileText className="h-2.5 w-2.5 opacity-70" />
-                {afspraak.werkbon_nummer || "WB"}
-              </button>
-            )}
-            {!isCompact && afspraak.locatie && (
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-0.5 text-[10px] text-petrol dark:text-[#5AABB5] hover:underline truncate max-w-[120px]"
-              >
-                <MapPin className="h-2 w-2 shrink-0" />
-                <span className="truncate">{afspraak.locatie}</span>
-              </a>
-            )}
-          </div>
-          {/* Monteur avatars (alleen in multi-monteur view, werkbon zit nu in top-row) */}
-          {!isCompact && afspraak.monteurs.length > 0 && (
-            <div className="flex items-center gap-1.5 mt-1">
-              {renderMonteurAvatars(afspraak.monteurs)}
-            </div>
-          )}
-        </div>
-        {/* Resize handle */}
-        <div
-          className={cn(
-            "h-1.5 cursor-ns-resize flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity -mb-1",
-            resizingId === afspraak.id && "opacity-100"
-          )}
-          onMouseDown={(e) => handleResizeStart(e, afspraak)}
-        >
-          <div className="w-8 h-[3px] rounded-full bg-[#C0BDB8]" />
-        </div>
-      </div>
     );
   }
 
