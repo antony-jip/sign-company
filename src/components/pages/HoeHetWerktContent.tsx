@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import {
-  ArrowLeft, CalendarClock, Check, CheckCircle2, CloudRain, Download, Send, Sparkles, Sun,
+  ArrowLeft, CalendarClock, Check, CheckCircle2, Download, Send, Sparkles,
 } from 'lucide-react'
 import CTASection from '@/components/home/CTASection'
 import Journey from '@/components/home/Journey'
@@ -482,63 +482,63 @@ function MockupPortaal() {
 /* 04 · Weekplanning: dagkoppen met weer, blokken met statusstreep. */
 function MockupPlanning() {
   const dagen = [
-    { d: 'Ma', datum: '18/5', temp: '15°', regen: true, vandaag: true },
-    { d: 'Di', datum: '19/5', temp: '15°', regen: true },
-    { d: 'Wo', datum: '20/5', temp: '14°', regen: true },
-    { d: 'Do', datum: '21/5', temp: '16°', regen: false },
-    { d: 'Vr', datum: '22/5', temp: '18°', regen: false },
+    { d: 'MA', n: 17, leeg: true },
+    { d: 'DI', n: 18, leeg: true },
+    { d: 'WO', n: 19, vandaag: true, leeg: true },
+    { d: 'DO', n: 20, teller: '6' },
+    { d: 'VR', n: 21, teller: '5' },
   ]
   return (
     <Panel>
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${LINE}` }}>
         <p className="font-heading text-[15px] font-bold leading-none inline-flex items-baseline gap-2" style={{ color: INK }}>
           Planning<span style={{ color: FLAME }}>.</span>
-          <span className="text-[11px] font-semibold" style={{ color: MUTED }}>week 21</span>
+          <span className="text-[11px] font-semibold" style={{ color: MUTED }}>wk 34 · 17 – 21 aug</span>
         </p>
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: FLAME }}>
-          <span className="rounded-full inline-flex items-center justify-center text-[9px] font-bold text-white" style={{ backgroundColor: FLAME, width: 15, height: 15 }}>2</span>
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold" style={{ color: FLAME }}>
+          <span className="rounded-full inline-flex items-center justify-center text-[9px] font-bold text-white" style={{ backgroundColor: FLAME, width: 15, height: 15 }}>7</span>
           Te plannen
         </span>
       </div>
 
       <div className="grid grid-cols-5" style={{ borderBottom: `1px solid ${LINE}` }}>
         {dagen.map((d) => (
-          <div
-            key={d.d}
-            className="px-1.5 py-2 text-center"
-            style={{ backgroundColor: d.vandaag ? 'rgba(26,83,92,0.05)' : 'transparent' }}
-          >
-            <p className="text-[10px] font-bold" style={{ color: d.vandaag ? PETROL : INK }}>{d.d}</p>
-            <p className="text-[9px] tabular-nums" style={{ color: MUTED }}>{d.datum}</p>
-            <p className="inline-flex items-center justify-center gap-0.5 mt-1 text-[9px] tabular-nums" style={{ color: MUTED }}>
-              {d.regen ? <CloudRain className="w-2.5 h-2.5" strokeWidth={2} /> : <Sun className="w-2.5 h-2.5" strokeWidth={2} />}
-              {d.temp}
+          <div key={d.d} className="px-1.5 py-2 text-center">
+            <p className="text-[9px] font-bold tracking-[0.14em]" style={{ color: MUTED }}>{d.d}</p>
+            <p
+              className="inline-flex items-center justify-center text-[12px] font-bold rounded-full mt-0.5"
+              style={{
+                width: 20, height: 20,
+                backgroundColor: d.vandaag ? PETROL : 'transparent',
+                color: d.vandaag ? '#FFFFFF' : INK,
+              }}
+            >
+              {d.n}
+            </p>
+            <p className="text-[9px] tabular-nums mt-0.5" style={{ color: MUTED }}>
+              {d.teller ?? (d.vandaag ? 'vrij' : 'klaar')}
             </p>
           </div>
         ))}
       </div>
 
-      <div className="p-3 space-y-2" style={{ backgroundColor: BG }}>
-        <PlanBlok
-          tijd="08:00 – 12:00"
-          titel="Montage gevelreclame"
-          klant="Jansen Bouw · Beemster"
-          bonnummer="WB-2026-039"
-          stripe="#4A7AC7"
-          bg="#E8EEF9"
-          tekst={STATUS.actief}
-          status="Gepland"
-          crew="Mark + Sophie"
-        />
-        <PlanBlok
-          tijd="13:00 – 15:00"
-          titel="Inmeten reclamezuil"
-          klant="Café De Zon"
-          stripe="#CBC9C4"
-          bg="#F3F2EF"
-          tekst="#9B9B95"
-          status="Afgerond"
-        />
+      <div style={{ backgroundColor: BG }}>
+        {[
+          { van: '06:30', tot: '07:30', titel: 'Montage: bestelbus', klant: 'Garage Brinkman' },
+          { van: '08:30', tot: '08:45', titel: 'Offerte en tekeningen', klant: 'Bouwbedrijf Veld' },
+          { van: '10:15', tot: '10:45', titel: 'Montage: bestelauto wrappen', klant: 'Helpende Hand' },
+        ].map((it) => (
+          <div key={it.van} className="flex items-start gap-2.5 px-4 py-2.5" style={{ borderBottom: `1px solid ${LINE}` }}>
+            <span className="text-[9.5px] tabular-nums leading-tight shrink-0" style={{ width: 30 }}>
+              <span className="block" style={{ color: INK }}>{it.van}</span>
+              <span className="block" style={{ color: '#C8C8C0' }}>{it.tot}</span>
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[11.5px] font-bold leading-snug" style={{ color: PETROL }}>{it.titel}</span>
+              <span className="block text-[10px] mt-0.5" style={{ color: MUTED }}>{it.klant}</span>
+            </span>
+          </div>
+        ))}
       </div>
     </Panel>
   )
