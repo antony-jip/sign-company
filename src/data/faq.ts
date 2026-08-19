@@ -13,6 +13,21 @@ export type CategoryId = typeof categories[number]['id']
 
 export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
+    category: 'product',
+    q: 'Ziet mijn monteur straks alles, ook mijn marges?',
+    a: 'Ja, en dat is een bewuste keuze. Binnen jouw bedrijf ziet iedereen dezelfde projecten, klanten en planning. **Niemand hoeft te bellen om te weten hoe iets ervoor staat**, en er is geen rechtenbeheer dat je moet bijhouden. Je monteur die op de bok staat weet zelf welke klus erna komt en wat er is afgesproken. Externe partijen zoals een freelancer krijgen die toegang niet.',
+  },
+  {
+    category: 'technisch',
+    q: 'Werkt doen. zonder bereik op de bouwplaats?',
+    a: 'Nog niet. doen. draait in de browser en heeft **een internetverbinding nodig**. Verschillende schermen hebben wel een aparte mobiele weergave, zoals planning, taken, e-mail en de monteursweergave van de werkbon. Volledig offline werken staat op de rol maar is er nog niet, en dat zeggen we liever eerlijk dan achteraf.',
+  },
+  {
+    category: 'technisch',
+    q: 'Kan ik e-facturen versturen?',
+    a: 'Je haalt van elke factuur een **UBL-bestand volgens de Nederlandse NLCIUS-standaard** op, met het Peppol BIS-profiel erin. Dat is het bestand waar je boekhouding of je Peppol-aansluiting om vraagt. Versturen over het Peppol-netwerk doet doen. zelf niet; je levert het bestand aan bij de partij die dat voor je doet.',
+  },
+  {
     category: 'prijs',
     q: 'Kan ik doen. eerst gratis proberen?',
     a: 'Natuurlijk. De **eerste 30 dagen zijn gratis**, geen creditcard nodig, geen verplichtingen. Je hebt **direct toegang tot alle modules** — niks uitgegrijsd of achter een muur.',
