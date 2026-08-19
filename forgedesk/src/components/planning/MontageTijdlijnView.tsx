@@ -144,6 +144,9 @@ export function MontageTijdlijnView({
     return nu.getHours() * 60 + nu.getMinutes()
   })
   const rekRef = useRef<{ afspraak: MontageAfspraak; startY: number; origEind: number; startMin: number } | null>(null)
+  const zweefTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (zweefTimerRef.current) clearTimeout(zweefTimerRef.current) }, [])
 
   useEffect(() => {
     const tik = setInterval(() => {
@@ -369,9 +372,16 @@ export function MontageTijdlijnView({
                 onMouseMove={(e) => {
                   if (dicht || sleepId || rekken) return
                   const minuten = minutenUitPositie(e.currentTarget, e.clientY)
-                  setZweef((h) => (h?.datum === sleutel && h.minuten === minuten ? h : { datum: sleutel, minuten }))
+                  // Pas tonen als je ergens blijft hangen. Meebewegen met elke
+                  // muisbeweging maakt van een hulpje een vlieg voor je scherm.
+                  if (zweefTimerRef.current) clearTimeout(zweefTimerRef.current)
+                  setZweef(null)
+                  zweefTimerRef.current = setTimeout(() => setZweef({ datum: sleutel, minuten }), 320)
                 }}
-                onMouseLeave={() => setZweef((h) => (h?.datum === sleutel ? null : h))}
+                onMouseLeave={() => {
+                  if (zweefTimerRef.current) clearTimeout(zweefTimerRef.current)
+                  setZweef(null)
+                }}
                 onDragLeave={(e) => {
                   if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
                   setLanding((huidig) => (huidig?.datum === sleutel ? null : huidig))
@@ -428,14 +438,12 @@ export function MontageTijdlijnView({
                 )}
 
                 {zweef?.datum === sleutel && !landing && (
-                  <div
-                    className="pointer-events-none absolute inset-x-0 z-10 border-t border-dashed border-petrol/35"
-                    style={{ top: ((zweef.minuten - vensterStart) / 60) * uurHoogte }}
+                  <span
+                    className="pointer-events-none absolute left-1.5 z-10 rounded bg-petrol/[0.07] px-1.5 py-[1px] text-[10px] font-medium tabular-nums text-petrol/60 dark:bg-white/[0.08] dark:text-[#CFE3E6]/70"
+                    style={{ top: ((zweef.minuten - vensterStart) / 60) * uurHoogte - 8 }}
                   >
-                    <span className="absolute -top-[8px] left-1.5 text-[10px] font-medium tabular-nums text-petrol/55">
-                      + {naarTijd(zweef.minuten)}
-                    </span>
-                  </div>
+                    + {naarTijd(zweef.minuten)}
+                  </span>
                 )}
 
                 {landing?.datum === sleutel && (
@@ -474,6 +482,7 @@ export function MontageTijdlijnView({
                         e.dataTransfer.setData('text/plain', a.id)
                       }}
                       onDragEnd={onSleepEnd}
+                      onMouseMove={(e) => e.stopPropagation()}
                       onClick={(e) => { e.stopPropagation(); onOpen(a) }}
                       title={[`${naarTijd(span.start)}–${naarTijd(eind)}`, a.titel, context].filter(Boolean).join(' · ')}
                       className={cn(
