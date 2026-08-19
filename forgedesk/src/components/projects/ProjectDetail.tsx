@@ -153,6 +153,7 @@ import { PortaalCompactBlock } from './cockpit/PortaalCompactBlock'
 import { ActiviteitCard } from './cockpit/ActiviteitCard'
 import { KlantCard } from './cockpit/KlantCard'
 import { TeamCard } from './cockpit/TeamCard'
+import { TijdCard } from './cockpit/TijdCard'
 import { ProjectMailComposer, type ProjectMailComposerHandle } from './ProjectMailComposer'
 import { ActiesCard } from './cockpit/ActiesCard'
 import { confirm } from '@/components/shared/ConfirmDialog'
@@ -618,6 +619,14 @@ export function ProjectDetail() {
 
   // Budget tracking state
   const [projectTijdregistraties, setProjectTijdregistraties] = useState<Tijdregistratie[]>([])
+  const herlaadTijdregistraties = useCallback(async () => {
+    if (!id) return
+    try {
+      setProjectTijdregistraties(await getTijdregistratiesByProject(id))
+    } catch (err) {
+      logger.error('Kon tijdregistraties niet herladen:', err)
+    }
+  }, [id])
 
   // Project rechten state
   const [alleMedewerkers, setAlleMedewerkers] = useState<Medewerker[]>([])
@@ -1960,6 +1969,15 @@ export function ProjectDetail() {
 
         {/* ── Right column (sidebar, 35%) ── */}
         <div className="w-full lg:w-[300px] xl:w-[320px] flex-shrink-0 space-y-4 lg:self-start lg:sticky lg:top-20">
+
+          <TijdCard
+            projectId={id!}
+            projectNaam={project.naam || ''}
+            eigenMedewerker={eigenMedewerker}
+            medewerkers={alleMedewerkers}
+            tijdregistraties={projectTijdregistraties}
+            onGeboekt={herlaadTijdregistraties}
+          />
 
           {klant && (
             <KlantCard
