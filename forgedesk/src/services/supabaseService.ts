@@ -174,6 +174,12 @@ export {
 } from './tijdregistratieService'
 
 export {
+  getTijdSessies, getTijdSessiesByProject, getEigenTijdSessie,
+  startTijdSessie, stopTijdSessie, verwijderTijdSessie,
+  sessieSeconden, isVerlopen, MAX_SESSIE_UREN,
+} from './tijdSessieService'
+
+export {
   getOpvolgSchemas, getDefaultOpvolgSchema, createOpvolgSchema, updateOpvolgSchema, deleteOpvolgSchema,
   upsertOpvolgStap, deleteOpvolgStap, ensureDefaultOpvolgSchema,
 } from './opvolgingService'

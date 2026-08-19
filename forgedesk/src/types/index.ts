@@ -1200,6 +1200,23 @@ export interface Tijdregistratie {
   updated_at: string;
 }
 
+// Een lopende inklok-sessie. Bestaat alleen zolang iemand ingeklokt staat;
+// bij uitklokken wordt hij een Tijdregistratie en verdwijnt de sessie.
+export interface TijdSessie {
+  id: string;
+  user_id: string;
+  organisatie_id?: string;
+  medewerker_id?: string;
+  medewerker_naam?: string;
+  project_id: string;
+  project_naam?: string;
+  taak_id?: string;
+  omschrijving?: string;
+  gestart_op: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // ============ MEDEWERKERS ============
 
 export interface Medewerker {
