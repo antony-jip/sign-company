@@ -1019,7 +1019,7 @@ function ModuleDetailPage({ detail }: { detail: ModuleDetail }) {
 const MODULE_FOTO: Record<string, { src: string; alt: string }> = {
   planning: {
     src: '/images/fotos/planning-op-het-bord.webp',
-    alt: 'Planner zet de week uit op een magneetbord, met de werkplaats en de bus achter zich',
+    alt: 'Twee collega\'s zetten de week uit op het planbord, met de werkplaats en de bus achter zich',
   },
   werkbonnen: {
     src: '/images/fotos/werkbon-op-de-telefoon.webp',
@@ -1042,8 +1042,7 @@ const MODULE_FOTO: Record<string, { src: string; alt: string }> = {
       <section className="bg-bg">
         <div className="container-site pt-24 md:pt-36 pb-10 md:pb-20">
           <ModuleSwitcher actief={detail.slug} />
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-10 lg:gap-16 items-end">
-            <div>
+          <div>
           {detail.slug === 'visualizer' && (
             <div className="hero-fade mb-5" style={{ animationDelay: '0.05s' }}>
               <StudioBadges />
@@ -1066,22 +1065,26 @@ const MODULE_FOTO: Record<string, { src: string; alt: string }> = {
           >
             {detail.sub}
           </p>
-            </div>
-
-            {MODULE_FOTO[detail.slug] && (
-              <div className="hero-fade relative hidden lg:block aspect-[3/4] w-full overflow-hidden rounded-[10px] bg-petrol-deep/5" style={{ animationDelay: '0.4s' }}>
-                <Image
-                  src={MODULE_FOTO[detail.slug].src}
-                  alt={MODULE_FOTO[detail.slug].alt}
-                  fill
-                  priority
-                  sizes="380px"
-                  className="object-cover"
-                />
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Het echte moment waar deze module over gaat, als band tussen de
+            belofte en het scherm. Naast de kop zwierf hij los in de hoek; hier
+            hoort hij bij wat eronder komt. */}
+        {MODULE_FOTO[detail.slug] && (
+          <div className="container-site mt-10 md:mt-16">
+            <div className="hero-fade relative aspect-[21/9] w-full overflow-hidden rounded-[10px] bg-petrol-deep/5" style={{ animationDelay: '0.4s' }}>
+              <Image
+                src={MODULE_FOTO[detail.slug].src}
+                alt={MODULE_FOTO[detail.slug].alt}
+                fill
+                priority
+                sizes="(max-width: 1280px) 100vw, 1200px"
+                className="object-cover object-center"
+              />
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Op de Studio-pagina mag de bezoeker het zelf doen voordat we het
