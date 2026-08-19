@@ -112,6 +112,8 @@ export interface TijdlijnProps {
   /** Dagnotitie onder de dagkop · de popover leeft in de layout, wij geven hem
    *  alleen een vaste plek met een vaste hoogte. */
   renderDagNotitie?: (datum: string) => ReactNode
+  /** Weer in de dagkop · voor gevelwerk is dat de reden om een dag te verzetten. */
+  renderDagWeer?: (datum: string) => ReactNode
   zoom?: number
 }
 
@@ -119,7 +121,7 @@ export function MontageTijdlijnView({
   weekDates, datumSleutel, afsprakenPerDag, takenPerDag, vandaagSleutel,
   accentKleur, conflictIds, sleepId, onSleepStart, onSleepEnd,
   onDropOpTijd, onDuurWijzigen, onOpen, onNieuwOpTijd,
-  monteurLabel, toonMonteurs, gesloten, renderDagNotitie, zoom = 100,
+  monteurLabel, toonMonteurs, gesloten, renderDagNotitie, renderDagWeer, zoom = 100,
 }: TijdlijnProps) {
   const uurHoogte = BASIS_UUR_HOOGTE * (zoom / 100)
   const [rekken, setRekken] = useState<{ id: string; eindMinuten: number } | null>(null)
@@ -263,9 +265,12 @@ export function MontageTijdlijnView({
 
                 {dicht && <span className="truncate text-[10px] text-muted-foreground">{dicht}</span>}
 
-                {openAantal > 0 && (
-                  <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">{openAantal}</span>
-                )}
+                <span className="ml-auto flex items-baseline gap-2">
+                  {renderDagWeer?.(sleutel)}
+                  {openAantal > 0 && (
+                    <span className="text-[11px] tabular-nums text-muted-foreground">{openAantal}</span>
+                  )}
+                </span>
 
                 {voortgang > 0 && (
                   <span

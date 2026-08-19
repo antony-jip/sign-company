@@ -1499,6 +1499,28 @@ export function MontagePlanningLayout() {
     toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`);
   }
 
+  /** Monteurs die op dit tijdvak al ergens anders staan · zelfde overlaptoets
+   *  als de conflictdetectie hierboven, maar dan voor een verplaatsing die nog
+   *  moet gebeuren. */
+  function dubbelGeboekteMonteurs(
+    afspraak: MontageAfspraak,
+    datum: string,
+    start: string,
+    eind: string,
+  ): string[] {
+    const botsend = new Set<string>();
+    for (const ander of afspraken) {
+      if (ander.id === afspraak.id) continue;
+      if (ander.datum !== datum) continue;
+      if (ander.status === 'afgerond' || ander.status === 'uitgesteld') continue;
+      if (!(start < ander.eind_tijd && ander.start_tijd < eind)) continue;
+      for (const m of afspraak.monteurs) {
+        if (ander.monteurs.includes(m)) botsend.add(monteurMap[m]?.naam || 'Onbekend');
+      }
+    }
+    return [...botsend];
+  }
+
   async function handleDragDrop(
     dragId: string,
     newDate: string,
@@ -1559,6 +1581,18 @@ export function MontagePlanningLayout() {
     const dateObj = new Date(newDate + "T00:00:00");
     const timePart = newStartTime ? ` om ${newStart}` : '';
     toast.success(`Verplaatst naar ${formatDateDutch(dateObj)}${timePart}`);
+
+    // Een rode ring op het blok zegt dát er iets botst, niet wie. Verplaatsen
+    // is toegestaan · een planner weet soms dat twee klussen naast elkaar kunnen
+    // · maar hij hoort het wel te hóren op het moment dat hij het doet.
+    const dubbel = dubbelGeboekteMonteurs(afspraak, newDate, newStart, newEndTime);
+    if (dubbel.length > 0) {
+      toast.warning(
+        dubbel.length === 1
+          ? `${dubbel[0]} staat dan dubbel geboekt`
+          : `${dubbel.join(' en ')} staan dan dubbel geboekt`
+      );
+    }
   }
 
   function timeToMinutes(t: string): number {
@@ -1791,6 +1825,7 @@ export function MontagePlanningLayout() {
           .filter(Boolean)
           .join(', ')}
         gesloten={(datum) => isFeestdag(datum, feestdagen)?.naam ?? null}
+        renderDagWeer={(datum) => renderWeatherCell(getWeatherForDate(weather, new Date(datum + "T00:00:00")))}
         renderDagNotitie={(datum) => {
           if (isFeestdag(datum, feestdagen)) return null;
           const d = new Date(datum + "T00:00:00");
@@ -2002,18 +2037,23 @@ export function MontagePlanningLayout() {
   }
 
   // ── Weather cell for a day ──
+  // Regenkans alleen boven de 30% · daaronder is het ruis waar niemand een
+  // montage op verzet.
   function renderWeatherCell(w: DayWeather | undefined) {
     if (!w) return null;
     return (
-      <div className="flex items-center justify-center gap-1.5 py-1.5 px-2">
-        <WeerIcon code={w.code} className="w-4 h-4 text-muted-foreground" />
+      <span className="inline-flex items-center gap-1 align-baseline" title={`${w.maxTemp}° · ${w.precipitationProb}% kans op neerslag`}>
+        <WeerIcon code={w.code} className="w-3.5 h-3.5 text-muted-foreground" />
         <span className="text-[10px] text-muted-foreground tabular-nums">{w.maxTemp}°</span>
         {w.precipitationProb > 30 && (
-          <span className="text-[10px] tabular-nums text-muted-foreground">
+          <span className={cn(
+            'text-[10px] tabular-nums',
+            w.precipitationProb >= 70 ? 'text-flame/80' : 'text-muted-foreground',
+          )}>
             {w.precipitationProb}%
           </span>
         )}
-      </div>
+      </span>
     );
   }
 
