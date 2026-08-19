@@ -84,6 +84,7 @@ import {
   formatCurrency,
   formatDate,
 } from '@/lib/utils'
+import { exBtw, betaaldExBtw, openstaandExBtw } from '@/utils/btwWeergave'
 import {
   getProject,
   updateProject,
@@ -563,11 +564,12 @@ export function ProjectDetail() {
   // Inline prijs-edit van een concept-offerte vanuit de cockpit. WYSIWYG op het
   // getoonde (incl. btw) bedrag; ex-btw + 21% wordt eruit afgeleid. Alleen voor
   // simpele 1-regel offertes · meerdere regels gaan naar de volledige editor.
-  const handleUpdateOffertePrice = async (offerte: Offerte, bedragInclBtw: number) => {
+  const handleUpdateOffertePrice = async (offerte: Offerte, bedragExclBtw: number) => {
     if (!id) return
-    const totaal = Math.round(bedragInclBtw * 100) / 100
-    const subtotaal = Math.round((totaal / 1.21) * 100) / 100
-    const btw = Math.round((totaal - subtotaal) * 100) / 100
+    // Je typt de prijs ex btw, net als bij het snel aanmaken hierboven.
+    const subtotaal = Math.round(bedragExclBtw * 100) / 100
+    const btw = Math.round(subtotaal * 0.21 * 100) / 100
+    const totaal = Math.round((subtotaal + btw) * 100) / 100
     try {
       const items = await getOfferteItems(offerte.id).catch(() => [])
       if (items.length > 1) {
@@ -1407,7 +1409,7 @@ export function ProjectDetail() {
     }
   }
 
-  const totaalBedrag = projectOffertes.reduce((sum, o) => sum + (o.totaal || 0), 0)
+  const totaalBedrag = projectOffertes.reduce((sum, o) => sum + exBtw(o), 0)
   const fase = getFase(project.status)
 
   return (
@@ -2187,10 +2189,10 @@ export function ProjectDetail() {
         {/* Totalen overzicht */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Geoffreerd', bedrag: projectOffertes.reduce((s, o) => s + o.totaal, 0), accent: '#1A535C' },
-            { label: 'Gefactureerd', bedrag: projectFacturen.reduce((s, f) => s + f.totaal, 0), accent: '#3A5A9A' },
-            { label: 'Betaald', bedrag: projectFacturen.reduce((s, f) => s + (f.betaald_bedrag || 0), 0), accent: '#2D6B48' },
-            { label: 'Openstaand', bedrag: projectFacturen.reduce((s, f) => s + f.totaal - (f.betaald_bedrag || 0), 0), accent: '#C0451A' },
+            { label: 'Geoffreerd', bedrag: projectOffertes.reduce((s, o) => s + exBtw(o), 0), accent: '#1A535C' },
+            { label: 'Gefactureerd', bedrag: projectFacturen.reduce((s, f) => s + exBtw(f), 0), accent: '#3A5A9A' },
+            { label: 'Betaald', bedrag: projectFacturen.reduce((s, f) => s + betaaldExBtw(f), 0), accent: '#2D6B48' },
+            { label: 'Openstaand', bedrag: projectFacturen.reduce((s, f) => s + openstaandExBtw(f), 0), accent: '#C0451A' },
           ].map((item) => (
             <div key={item.label} className="bg-card rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
               <div className="h-1" style={{ backgroundColor: item.accent }} />
@@ -2199,6 +2201,7 @@ export function ProjectDetail() {
                 <p className="text-xl font-bold font-mono text-foreground">
                   {formatCurrency(item.bedrag)}
                 </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">ex btw</p>
               </div>
             </div>
           ))}
@@ -2251,7 +2254,7 @@ export function ProjectDetail() {
                           <p className="text-xs font-mono text-muted-foreground mt-0.5">{offerte.nummer}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(offerte.totaal)}</p>
+                          <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(exBtw(offerte))}</p>
                           <span className="text-xs" style={{ color: accentColor }}>
                             {offerteStatusLabel}<span className="text-flame">.</span>
                           </span>
@@ -2339,7 +2342,7 @@ export function ProjectDetail() {
                           <span className="text-[#EBEBEB]">·</span>
                           <span>{linkedFactuur.status}<span className="text-flame">.</span></span>
                           <span className="text-[#EBEBEB]">·</span>
-                          <span className="font-mono">{formatCurrency(linkedFactuur.totaal)}</span>
+                          <span className="font-mono">{formatCurrency(exBtw(linkedFactuur))}</span>
                           <button
                             onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}`, { state: { from: location.pathname } })}
                             className="text-petrol font-medium hover:underline ml-auto"
@@ -2376,7 +2379,7 @@ export function ProjectDetail() {
                         <p className="text-xs text-muted-foreground font-mono mt-0.5">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL')}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(factuur.totaal)}</p>
+                        <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(exBtw(factuur))}</p>
                         <span className="text-xs" style={{ color: accentColor }}>
                           {factuurStatusLabel}<span className="text-flame">.</span>
                         </span>
@@ -3111,7 +3114,7 @@ export function ProjectDetail() {
                   <option value="">Geen offerte bijvoegen</option>
                   {projectOffertes.map(o => (
                     <option key={o.id} value={o.id}>
-                      {o.nummer} - {o.titel} ({formatCurrency(o.totaal)})
+                      {o.nummer} - {o.titel} ({formatCurrency(exBtw(o))})
                     </option>
                   ))}
                 </select>

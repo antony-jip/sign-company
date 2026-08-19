@@ -138,6 +138,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
 import { OntvangerInput } from '@/components/shared/OntvangerVeld'
 import { factuurVerzendTemplate, factuurHerinneringTemplate } from '@/services/emailTemplateService'
+import { exBtw } from '@/utils/btwWeergave'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
 import { vierEenmalig, isMijlpaalGehaald, MIJLPAAL_COPY } from '@/lib/mijlpaal'
@@ -3514,7 +3515,7 @@ export function FactuurEditor() {
                           {offerte.klant_naam || 'Klant'} · {offerte.titel}
                         </div>
                         <div className="text-xs font-medium text-muted-foreground">
-                          <span className="font-mono">{formatCurrency(offerte.totaal)}</span>
+                          <span className="font-mono">{formatCurrency(exBtw(offerte))}</span>
                         </div>
                       </div>
                       {!isHuidige && (

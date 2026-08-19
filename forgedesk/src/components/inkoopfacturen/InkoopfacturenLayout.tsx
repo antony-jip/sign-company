@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { exBtw } from '@/utils/btwWeergave'
 import { avatarTint } from '@/utils/avatarTint'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -218,7 +219,7 @@ export function InkoopfacturenLayout() {
       return d.getMonth() === nu.getMonth() && d.getFullYear() === nu.getFullYear()
     })
     return {
-      totaalDezeMaand: dezeMaand.reduce((sum, f) => sum + f.totaal, 0),
+      totaalDezeMaand: dezeMaand.reduce((sum, f) => sum + exBtw(f), 0),
       aantalDezeMaand: dezeMaand.length,
     }
   }, [facturen])
@@ -507,7 +508,7 @@ export function InkoopfacturenLayout() {
     const nieuwCount = facturen.filter(f => f.status === 'nieuw' || f.status === 'verwerkt').length
     const totaalOpen = facturen
       .filter(f => !['goedgekeurd', 'afgewezen'].includes(f.status))
-      .reduce((sum, f) => sum + f.totaal, 0)
+      .reduce((sum, f) => sum + exBtw(f), 0)
     const goedgekeurdCount = facturen.filter(f => f.status === 'goedgekeurd').length
     return { nieuwCount, totaalOpen, goedgekeurdCount }
   }, [facturen])
@@ -831,7 +832,7 @@ export function InkoopfacturenLayout() {
                       </td>
                       <td className="py-3.5 pr-4 text-right">
                         <span className="font-mono tabular-nums text-sm text-muted-foreground">
-                          {formatCurrency(factuur.totaal)}
+                          {formatCurrency(exBtw(factuur))}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4">
@@ -925,7 +926,7 @@ export function InkoopfacturenLayout() {
                 </div>
                 <div className="flex justify-between mt-3 pt-3 border-t border-border">
                   <span className="text-[15px] font-semibold text-foreground">Totaal</span>
-                  <span className="text-[17px] font-bold font-mono text-foreground">{formatCurrency(lightbox.factuur.totaal)}</span>
+                  <span className="text-[17px] font-bold font-mono text-foreground">{formatCurrency(exBtw(lightbox.factuur))}</span>
                 </div>
               </div>
 

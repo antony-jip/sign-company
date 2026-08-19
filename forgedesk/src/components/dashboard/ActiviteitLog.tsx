@@ -4,6 +4,7 @@ import { Send, Eye, CheckCircle2, AlertCircle, Receipt } from 'lucide-react'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { useScrollFade } from '@/hooks/useScrollFade'
 import { formatCurrency, formatTijdKort } from '@/lib/utils'
+import { exBtw } from '@/utils/btwWeergave'
 
 type EventType = 'offerte_verstuurd' | 'offerte_bekeken' | 'akkoord' | 'wijziging' | 'factuur_betaald'
 
@@ -84,7 +85,7 @@ export function ActiviteitLog() {
           id: `bt-${f.id}`,
           type: 'factuur_betaald',
           klant: f.klant_naam || 'Onbekend',
-          detail: formatCurrency(f.totaal || 0),
+          detail: formatCurrency(exBtw(f)),
           date: new Date(f.betaaldatum),
           href: `/facturen/${f.id}`,
         })

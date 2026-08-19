@@ -73,6 +73,7 @@ import {
   formatCurrency,
   formatDateTime,
 } from '@/lib/utils'
+import { exBtw } from '@/utils/btwWeergave'
 import { exportCSV, exportExcel } from '@/lib/export'
 import {
   getKlant,
@@ -1218,7 +1219,7 @@ export function ClientProfile() {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span className="text-sm font-semibold font-mono text-foreground">
-                              {formatCurrency(offerte.totaal)}
+                              {formatCurrency(exBtw(offerte))}
                             </span>
                           </td>
                           <td className="py-3 px-4 hidden md:table-cell">
@@ -1314,7 +1315,7 @@ export function ClientProfile() {
                           <td className="py-3 px-4">
                             <StatusBadge status={factuur.status} className="capitalize" />
                           </td>
-                          <td className="py-3 px-4 text-right text-sm font-semibold font-mono">{formatCurrency(factuur.totaal)}</td>
+                          <td className="py-3 px-4 text-right text-sm font-semibold font-mono">{formatCurrency(exBtw(factuur))}</td>
                           <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground font-mono">{formatDate(factuur.factuurdatum)}</td>
                         </tr>
                       ))}

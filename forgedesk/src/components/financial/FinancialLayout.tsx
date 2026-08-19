@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { exBtw, openstaandExBtw } from '@/utils/btwWeergave'
 import { cn } from '@/lib/utils'
 import {
   PiggyBank,
@@ -83,21 +84,21 @@ export function FinancialLayout() {
   const totaleOmzet = useMemo(
     () => facturen
       .filter((f) => f.status === 'betaald')
-      .reduce((sum, f) => sum + (f.totaal || 0), 0),
+      .reduce((sum, f) => sum + exBtw(f), 0),
     [facturen]
   )
 
   const gefactureerd = useMemo(
     () => facturen
       .filter((f) => f.status === 'verzonden' || f.status === 'betaald')
-      .reduce((sum, f) => sum + (f.totaal || 0), 0),
+      .reduce((sum, f) => sum + exBtw(f), 0),
     [facturen]
   )
 
   const openstaandBedrag = useMemo(
     () => facturen
       .filter((f) => f.status === 'verzonden' || f.status === 'vervallen')
-      .reduce((sum, f) => sum + (f.totaal || 0) - (f.betaald_bedrag || 0), 0),
+      .reduce((sum, f) => sum + openstaandExBtw(f), 0),
     [facturen]
   )
 
@@ -114,7 +115,7 @@ export function FinancialLayout() {
   )
 
   const offerteWaarde = useMemo(
-    () => openstaandeOffertes.reduce((sum, o) => sum + (o.totaal || 0), 0),
+    () => openstaandeOffertes.reduce((sum, o) => sum + exBtw(o), 0),
     [openstaandeOffertes]
   )
 
@@ -125,14 +126,14 @@ export function FinancialLayout() {
   )
 
   const totaleInkoopkosten = useMemo(
-    () => inkoopGoedgekeurd.reduce((sum, f) => sum + (f.totaal || 0), 0),
+    () => inkoopGoedgekeurd.reduce((sum, f) => sum + exBtw(f), 0),
     [inkoopGoedgekeurd]
   )
 
   const inkoopOpenstaand = useMemo(
     () => inkoopfacturen
       .filter(f => f.status === 'nieuw' || f.status === 'verwerkt')
-      .reduce((sum, f) => sum + (f.totaal || 0), 0),
+      .reduce((sum, f) => sum + exBtw(f), 0),
     [inkoopfacturen]
   )
 
@@ -152,26 +153,26 @@ export function FinancialLayout() {
       })
       const omzet = maandFacturen
         .filter((f) => f.status === 'betaald')
-        .reduce((sum, f) => sum + (f.totaal || 0), 0)
+        .reduce((sum, f) => sum + exBtw(f), 0)
       const gefactureerd = maandFacturen
         .filter((f) => f.status !== 'concept' && f.status !== 'gecrediteerd')
-        .reduce((sum, f) => sum + (f.totaal || 0), 0)
+        .reduce((sum, f) => sum + exBtw(f), 0)
       const inkoop = inkoopfacturen
         .filter(f => f.status === 'goedgekeurd' && f.factuur_datum)
         .filter(f => {
           const d = new Date(f.factuur_datum!)
           return d.getFullYear() === currentYear && d.getMonth() === i
         })
-        .reduce((sum, f) => sum + (f.totaal || 0), 0)
+        .reduce((sum, f) => sum + exBtw(f), 0)
       return { maand, omzet: Math.round(omzet), gefactureerd: Math.round(gefactureerd), inkoop: Math.round(inkoop) }
     })
   }, [facturen, inkoopfacturen, currentYear])
 
   const pieData = useMemo(() => {
-    const betaald = facturen.filter((f) => f.status === 'betaald').reduce((s, f) => s + (f.totaal || 0), 0)
-    const openstaand = facturen.filter((f) => f.status === 'verzonden').reduce((s, f) => s + (f.totaal || 0) - (f.betaald_bedrag || 0), 0)
-    const vervallen = facturen.filter((f) => f.status === 'vervallen').reduce((s, f) => s + (f.totaal || 0) - (f.betaald_bedrag || 0), 0)
-    const concept = facturen.filter((f) => f.status === 'concept').reduce((s, f) => s + (f.totaal || 0), 0)
+    const betaald = facturen.filter((f) => f.status === 'betaald').reduce((s, f) => s + exBtw(f), 0)
+    const openstaand = facturen.filter((f) => f.status === 'verzonden').reduce((s, f) => s + openstaandExBtw(f), 0)
+    const vervallen = facturen.filter((f) => f.status === 'vervallen').reduce((s, f) => s + openstaandExBtw(f), 0)
+    const concept = facturen.filter((f) => f.status === 'concept').reduce((s, f) => s + exBtw(f), 0)
     return [
       { name: 'Betaald', value: betaald },
       { name: 'Openstaand', value: openstaand },
@@ -184,14 +185,14 @@ export function FinancialLayout() {
     {
       label: 'Gefactureerd',
       value: formatCurrency(gefactureerd),
-      sub: `${facturen.filter((f) => f.status !== 'concept' && f.status !== 'gecrediteerd').length} facturen`,
+      sub: `${facturen.filter((f) => f.status !== 'concept' && f.status !== 'gecrediteerd').length} facturen, ex btw`,
       dot: '#1A535C',
       pulse: false,
     },
     {
       label: 'Ontvangen',
       value: formatCurrency(totaleOmzet),
-      sub: `${facturen.filter((f) => f.status === 'betaald').length} betaald`,
+      sub: `${facturen.filter((f) => f.status === 'betaald').length} betaald, ex btw`,
       dot: '#2D6B48',
       pulse: false,
     },
@@ -199,8 +200,8 @@ export function FinancialLayout() {
       label: 'Openstaand',
       value: formatCurrency(openstaandBedrag),
       sub: vervallenFacturen.length > 0
-        ? `${vervallenFacturen.length} vervallen`
-        : `${facturen.filter((f) => f.status === 'verzonden').length} wachtend`,
+        ? `${vervallenFacturen.length} vervallen, ex btw`
+        : `${facturen.filter((f) => f.status === 'verzonden').length} wachtend, ex btw`,
       dot: vervallenFacturen.length > 0 ? '#F15025' : '#8A7A4A',
       pulse: vervallenFacturen.length > 0,
     },
@@ -214,7 +215,7 @@ export function FinancialLayout() {
     {
       label: 'Netto resultaat',
       value: formatCurrency(nettoResultaat),
-      sub: 'wat er overblijft',
+      sub: 'wat er overblijft, ex btw',
       dot: nettoResultaat >= 0 ? '#2D6B48' : '#C03A18',
       pulse: false,
     },
@@ -469,7 +470,7 @@ export function FinancialLayout() {
                             />
                           </td>
                           <td className="py-3 px-4 text-right font-semibold font-mono text-[13px] text-foreground">
-                            {formatCurrency(offerte.totaal)}
+                            {formatCurrency(exBtw(offerte))}
                           </td>
                           <td className="py-3 px-4 text-muted-foreground text-[13px]">
                             {offerte.geldig_tot ? new Date(offerte.geldig_tot).toLocaleDateString('nl-NL') : '—'}

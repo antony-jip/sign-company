@@ -10,6 +10,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
+import { exBtw } from '@/utils/btwWeergave'
 import { round2 } from '@/utils/budgetUtils'
 import { getFacturen, getDeals } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
@@ -66,7 +67,7 @@ export function ForecastLayout() {
     const betaaldeFacturen = facturen.filter((f) => f.status === 'betaald')
     const omzetDezeMaand = betaaldeFacturen
       .filter((f) => f.betaaldatum && getMonthKey(new Date(f.betaaldatum)) === thisMonth)
-      .reduce((s, f) => s + f.totaal, 0)
+      .reduce((s, f) => s + exBtw(f), 0)
 
     const gewonnenDezeMaand = deals
       .filter((d) => d.status === 'gewonnen' && d.gewonnen_op && getMonthKey(new Date(d.gewonnen_op)) === thisMonth)
@@ -101,7 +102,7 @@ export function ForecastLayout() {
     for (const f of facturen.filter((f) => f.status === 'betaald' && f.betaaldatum)) {
       const key = getMonthKey(new Date(f.betaaldatum!))
       if (key in historisch) {
-        historisch[key] = round2((historisch[key] || 0) + f.totaal)
+        historisch[key] = round2((historisch[key] || 0) + exBtw(f))
       }
     }
 

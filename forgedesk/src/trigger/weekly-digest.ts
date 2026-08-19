@@ -91,7 +91,7 @@ async function fetchUserStats(
     // Offertes with status akkoord (created this week)
     supabase
       .from("offertes")
-      .select("totaal")
+      .select("subtotaal, btw_bedrag, totaal")
       .eq("user_id", userId)
       .eq("status", "akkoord")
       .gte("created_at", from)
@@ -132,8 +132,13 @@ async function fetchUserStats(
   ]);
 
   const akkoordRows = offertesAkkoord.data ?? [];
+  // Ex btw, gelijk aan de rest van de app: btw is geen omzet.
   const revenueAkkoord = akkoordRows.reduce(
-    (sum, row) => sum + (Number(row.totaal) || 0),
+    (sum, row) =>
+      sum +
+      (Number(row.subtotaal) ||
+        Number(row.totaal) - Number(row.btw_bedrag || 0) ||
+        0),
     0
   );
 
@@ -222,7 +227,7 @@ function buildDigestHtml(stats: WeeklyStats, dateRange: string): string {
                   <table width="100%" cellpadding="0" cellspacing="0">
                     ${statRow("Aangemaakt", stats.offertesCreated)}
                     ${statRow("Akkoord", stats.offertesAkkoord, "#1A535C")}
-                    ${statRow("Omzet akkoord", formatCurrency(stats.revenueAkkoord), "#1A535C")}
+                    ${statRow("Omzet akkoord (ex btw)", formatCurrency(stats.revenueAkkoord), "#1A535C")}
                   </table>
                 </td></tr>
 

@@ -22,6 +22,7 @@ import {
 } from '@/services/supabaseService'
 import { getCached, setCached, fetchQuery } from '@/lib/queryCache'
 import { round2 } from '@/utils/budgetUtils'
+import { exBtw } from '@/utils/btwWeergave'
 import { getRowAccentClass } from '@/utils/statusColors'
 
 // ============ TYPES ============
@@ -78,7 +79,7 @@ export function BestelbonnenLayout() {
             const regels = await getBestelbonRegels(bst.id)
             bedragenMap[bst.id] = round2(regels.reduce((sum, r) => sum + round2(r.aantal * r.prijs_per_eenheid), 0))
           } catch (err) {
-            bedragenMap[bst.id] = bst.totaal || 0
+            bedragenMap[bst.id] = exBtw(bst)
           }
         }
         if (cancelled) return

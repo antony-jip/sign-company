@@ -1,6 +1,14 @@
 import { schedules, logger } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "./utils/supabase";
 
+/** Bedragen in de briefing zijn ex btw, gelijk aan de rest van de app. */
+function exBtwRij(rij: { subtotaal?: unknown; btw_bedrag?: unknown; totaal?: unknown }): number {
+  const sub = Number(rij.subtotaal) || 0;
+  if (sub) return sub;
+  const totaal = Number(rij.totaal) || 0;
+  return totaal - (Number(rij.btw_bedrag) || 0);
+}
+
 /**
  * Daan-nachtploeg — elke nacht om 05:00 CET.
  *
@@ -420,7 +428,7 @@ export const daanNachtploegCron = schedules.task({
         const [offertes, wachtMails, facturen, projecten, klanten] = await Promise.all([
           supabase
             .from("offertes")
-            .select("nummer, klant_naam, totaal, verstuurd_op")
+            .select("nummer, klant_naam, subtotaal, btw_bedrag, totaal, verstuurd_op")
             .eq("organisatie_id", orgId)
             .in("status", ["verzonden", "bekeken"])
             .not("verstuurd_op", "is", null)
@@ -429,7 +437,7 @@ export const daanNachtploegCron = schedules.task({
           wachtMailQuery,
           supabase
             .from("facturen")
-            .select("nummer, klant_naam, totaal, vervaldatum")
+            .select("nummer, klant_naam, subtotaal, btw_bedrag, totaal, vervaldatum")
             .eq("organisatie_id", orgId)
             // Het Factuur-enum kent 'verzonden', niet 'verstuurd'; 'vervallen'
             // telt ook mee want dat is precies waar dit signaal over gaat.
@@ -531,10 +539,10 @@ export const daanNachtploegCron = schedules.task({
         const signalen: Array<Record<string, unknown>> = [
           ...onbeantwoord,
           ...(offertes.data ?? [])
-            .map((o) => ({ soort: "offerte", href: "/offertes", nummer: o.nummer, klant: o.klant_naam, bedrag: o.totaal, dagen_open: dagen(o.verstuurd_op as string) }))
+            .map((o) => ({ soort: "offerte", href: "/offertes", nummer: o.nummer, klant: o.klant_naam, bedrag: exBtwRij(o), dagen_open: dagen(o.verstuurd_op as string) }))
             .filter((o) => (o.dagen_open as number) >= 7),
           ...(wachtMails.data ?? []).map((m) => ({ soort: "mail", href: "/email", onderwerp: (m.onderwerp || "").slice(0, 120), aan: m.aan, dagen_stil: dagen(m.datum as string) })),
-          ...(facturen.data ?? []).map((f) => ({ soort: "factuur", href: "/facturen", nummer: f.nummer, klant: f.klant_naam, bedrag: f.totaal, vervallen_op: f.vervaldatum })),
+          ...(facturen.data ?? []).map((f) => ({ soort: "factuur", href: "/facturen", nummer: f.nummer, klant: f.klant_naam, bedrag: exBtwRij(f), vervallen_op: f.vervaldatum })),
           ...(projecten.data ?? []).map((p) => ({ soort: "project", href: "/projecten", naam: p.naam, klant: p.klant_naam, eind_datum: p.eind_datum, status: p.status })),
         ];
         if (signalen.length === 0) continue;

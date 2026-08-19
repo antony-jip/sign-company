@@ -102,6 +102,7 @@ import { vierEenmalig, MIJLPAAL_COPY } from '@/lib/mijlpaal'
 import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate, Project } from '@/types'
 import { getFactuurBijlageCounts } from '@/services/factuurBijlagenService'
 import { Checkbox } from '@/components/ui/checkbox'
+import { exBtw, betaaldExBtw, openstaandExBtw } from '@/utils/btwWeergave'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { avatarTint } from '@/utils/avatarTint'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -596,11 +597,11 @@ export function FacturenLayout() {
                 getOffertesByProject(project.id).catch(() => []),
                 getFacturenByProject(project.id).catch(() => []),
               ])
-              const offerteBedrag = round2(projectOffertes.reduce((sum, o) => sum + o.totaal, 0))
+              const offerteBedrag = round2(projectOffertes.reduce((sum, o) => sum + exBtw(o), 0))
               const alGefactureerd = round2(
                 projectFacturen
                   .filter((f) => f.status !== 'gecrediteerd')
-                  .reduce((sum, f) => sum + f.totaal, 0)
+                  .reduce((sum, f) => sum + exBtw(f), 0)
               )
               return { ...project, offerteBedrag, alGefactureerd }
             })
@@ -695,11 +696,11 @@ export function FacturenLayout() {
   const statistics = useMemo(() => {
     const openStatuses: FactuurStatus[] = ['verzonden', 'vervallen']
     const openFacturen = eigenFacturen.filter((f) => openStatuses.includes(f.status))
-    const totaalOpenstaand = round2(openFacturen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0))
+    const totaalOpenstaand = round2(openFacturen.reduce((sum, f) => sum + openstaandExBtw(f), 0))
 
     const betaaldDezeMaand = round2(eigenFacturen
       .filter((f) => f.status === 'betaald' && f.betaaldatum && isThisMonth(f.betaaldatum))
-      .reduce((sum, f) => sum + f.betaald_bedrag, 0))
+      .reduce((sum, f) => sum + betaaldExBtw(f), 0))
 
     const vervallenCount = eigenFacturen.filter((f) => f.status === 'vervallen').length
 
@@ -758,7 +759,7 @@ export function FacturenLayout() {
           cmp = new Date(a.factuurdatum).getTime() - new Date(b.factuurdatum).getTime()
           break
         case 'bedrag':
-          cmp = a.totaal - b.totaal
+          cmp = exBtw(a) - exBtw(b)
           break
         case 'klantnaam':
           cmp = (a.klant_naam || '').localeCompare(b.klant_naam || '', 'nl')
@@ -2003,7 +2004,7 @@ export function FacturenLayout() {
     const vandaag = getTodayString()
     return round2(facturen
       .filter((f) => isAchterstallig(f, vandaag))
-      .reduce((sum, f) => sum + f.totaal, 0))
+      .reduce((sum, f) => sum + exBtw(f), 0))
   }, [facturen])
 
   // ============ RENDER ============
@@ -2098,9 +2099,9 @@ export function FacturenLayout() {
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
             { key: 'verlopen' as FilterStatus,      label: 'Vervallen',        sub: 'te laat betaald',         count: verlopenCount,                              isMoney: false, dot: '#F15025', pulse: true },
-            { key: 'verzonden' as FilterStatus,     label: 'Openstaand',       sub: 'wacht op betaling',     count: statistics.totaalOpenstaand,                isMoney: true,  dot: '#3A5A9A', pulse: false },
+            { key: 'verzonden' as FilterStatus,     label: 'Openstaand',       sub: 'wacht op betaling, ex btw',     count: statistics.totaalOpenstaand,                isMoney: true,  dot: '#3A5A9A', pulse: false },
             { key: 'te_factureren' as FilterStatus, label: 'Te factureren',    sub: 'projecten zijn af',       count: teFacturerenProjecten.length,               isMoney: false, dot: '#8A7A4A', pulse: false },
-            { key: 'betaald' as FilterStatus,       label: 'Betaald',          sub: 'deze maand',            count: statistics.betaaldDezeMaand,                isMoney: true,  dot: '#2D6B48', pulse: false },
+            { key: 'betaald' as FilterStatus,       label: 'Betaald',          sub: 'deze maand, ex btw',            count: statistics.betaaldDezeMaand,                isMoney: true,  dot: '#2D6B48', pulse: false },
           ]).map((tile) => {
             const isActive = filterStatus === tile.key
             const display = tile.isMoney ? formatCurrency(tile.count) : tile.count
@@ -2422,7 +2423,7 @@ export function FacturenLayout() {
         {paginatedFacturen.map((factuur) => {
           const config = STATUS_CONFIG[factuur.status]
           const isOverdue = factuur.status === 'verzonden' && isOverVervaldatum(factuur)
-          const openstaand = factuur.totaal - factuur.betaald_bedrag
+          const openstaand = openstaandExBtw(factuur)
           const mobileDagenOpen = (factuur.status === 'verzonden' || factuur.status === 'vervallen')
             ? berekenDagenOpen(factuur.factuurdatum)
             : 0
@@ -2482,13 +2483,13 @@ export function FacturenLayout() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {openstaand > 0 && openstaand < factuur.totaal && (
+                  {openstaand > 0 && openstaand < exBtw(factuur) && (
                     <span className="text-[10px] text-muted-foreground/70">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
                   )}
                   <span className={cn(
                     'font-mono tabular-nums text-[13px]',
-                    factuur.totaal >= 10000 ? 'font-semibold text-[#1A4A52] dark:text-foreground' : 'text-foreground/70'
-                  )}>{formatCurrency(factuur.totaal)}</span>
+                    exBtw(factuur) >= 10000 ? 'font-semibold text-[#1A4A52] dark:text-foreground' : 'text-foreground/70'
+                  )}>{formatCurrency(exBtw(factuur))}</span>
                 </div>
               </div>
             </div>
@@ -2532,7 +2533,7 @@ export function FacturenLayout() {
                   <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Vervaldatum</span>
                 </th>
                 <th className="text-right py-3.5 pr-4 w-[110px]">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Bedrag</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Bedrag ex btw</span>
                 </th>
                 <th className="text-left py-3.5 pr-4 w-[150px]">
                   <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Status</span>
@@ -2704,15 +2705,15 @@ export function FacturenLayout() {
                     </td>
                     <td className="py-3.5 pr-4 text-right">
                       {(() => {
-                        if (factuur.totaal <= 0) return <span className="text-xs text-muted-foreground/70">&mdash;</span>
+                        if (exBtw(factuur) <= 0) return <span className="text-xs text-muted-foreground/70">&mdash;</span>
                         return (
                           <span className={cn(
                             'font-mono tabular-nums text-[13px]',
-                            factuur.totaal >= 10000
+                            exBtw(factuur) >= 10000
                               ? 'font-semibold text-[#1A4A52] dark:text-foreground'
                               : 'text-foreground/70'
                           )}>
-                            {formatCurrency(factuur.totaal)}
+                            {formatCurrency(exBtw(factuur))}
                           </span>
                         )
                       })()}

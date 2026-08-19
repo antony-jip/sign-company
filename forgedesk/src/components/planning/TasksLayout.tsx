@@ -57,6 +57,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { flushSync } from 'react-dom'
 import { cn } from '@/lib/utils'
+import { exBtw } from '@/utils/btwWeergave'
 // DOEN design · ModuleHeader verwijderd
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage, getMedewerkers } from '@/services/supabaseService'
@@ -3044,7 +3045,7 @@ function DayColumn({
               taak={taak}
               projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
               klantNaam={(taak.klant_id ? klantMap[taak.klant_id] : undefined) || (taak.project_id ? projectKlantMap[taak.project_id] : undefined)}
-              offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: offerteMap[taak.offerte_id].totaal, status: offerteMap[taak.offerte_id].status } : undefined}
+              offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: exBtw(offerteMap[taak.offerte_id]), status: offerteMap[taak.offerte_id].status } : undefined}
               isPast={isPast}
               scheduled
               heightPx={heightPx !== null ? heightPx : undefined}
@@ -3129,7 +3130,7 @@ function DayColumn({
               taak={taak}
               projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
               klantNaam={(taak.klant_id ? klantMap[taak.klant_id] : undefined) || (taak.project_id ? projectKlantMap[taak.project_id] : undefined)}
-              offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: offerteMap[taak.offerte_id].totaal, status: offerteMap[taak.offerte_id].status } : undefined}
+              offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: exBtw(offerteMap[taak.offerte_id]), status: offerteMap[taak.offerte_id].status } : undefined}
               isPast={isPast}
               onDragStart={() => onDragStart(taak.id)}
               onDragEnd={onDragEnd}

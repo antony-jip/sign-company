@@ -46,6 +46,7 @@ import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import type { Project, Offerte, OfferteItem, Tijdregistratie, Factuur, Uitgave } from '@/types'
 import { cn, formatCurrency } from '@/lib/utils'
+import { exBtw } from '@/utils/btwWeergave'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { toast } from 'sonner'
@@ -121,7 +122,9 @@ export function NacalculatieLayout() {
   const nacalculatieData = useMemo<NacalculatieRegel[]>(() => {
     return projecten.map((project) => {
       const projectOfferte = offertes.find((o) => o.project_id === project.id)
-      const offerteTotaal = projectOfferte?.totaal ?? project.budget
+      // Ex btw, want de kosten eronder zijn dat ook; anders lijkt de marge
+      // 21% ruimer dan hij is.
+      const offerteTotaal = projectOfferte ? exBtw(projectOfferte) : project.budget
       const offerteId = projectOfferte?.id ?? ''
       const items = alleOfferteItems[offerteId] ?? []
 

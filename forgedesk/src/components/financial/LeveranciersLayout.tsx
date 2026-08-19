@@ -106,7 +106,8 @@ export function LeveranciersLayout() {
             if (cancelled) return
             counts[lev.id] = {
               count: uitgaven.length,
-              totaal: round2(uitgaven.reduce((s, u) => s + u.bedrag_incl_btw, 0)),
+              // Uitgaven ex btw, gelijk aan de rest van de app.
+              totaal: round2(uitgaven.reduce((s, u) => s + (u.bedrag_excl_btw ?? u.bedrag_incl_btw), 0)),
             }
           } catch (err) {
             logger.error('Fout bij laden uitgaven voor leverancier:', err)

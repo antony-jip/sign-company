@@ -5,6 +5,7 @@ import {
   ClipboardCheck, File, Mail, Wrench, ChevronRight, Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { exBtw } from '@/utils/btwWeergave'
 import {
   zoekKlanten,
   zoekProjecten,
@@ -151,7 +152,7 @@ function searchData(
     .filter((f) =>
       (f.nummer || '').toLowerCase().includes(q) ||
       (f.klant_naam || '').toLowerCase().includes(q) ||
-      String(f.totaal || '').includes(q)
+      String(exBtw(f) || '').includes(q)
     )
   if (factuurResults.length > 0) {
     categories.push({

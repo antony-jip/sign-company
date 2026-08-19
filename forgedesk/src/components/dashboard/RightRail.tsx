@@ -6,6 +6,7 @@ import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
 import { isAdminUser } from '@/utils/authHelpers'
 import { formatCurrency, formatTijdKort, cn } from '@/lib/utils'
+import { exBtw } from '@/utils/btwWeergave'
 import { getISOWeek } from 'date-fns'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ActiviteitLog } from './ActiviteitLog'
@@ -496,7 +497,7 @@ function TeamCard() {
           fallbackBg: '#E8F2EC',
           fallbackColor: '#3A7D52',
           label: 'Factuur betaald',
-          detail: formatCurrency(f.totaal || 0),
+          detail: formatCurrency(exBtw(f)),
           sortDate: new Date(f.betaaldatum!),
           href: `/facturen/${f.id}`,
         })

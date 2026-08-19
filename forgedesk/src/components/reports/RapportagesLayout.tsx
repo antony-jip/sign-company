@@ -52,6 +52,7 @@ import type {
   Medewerker,
   VoorraadArtikel,
 } from '@/types';
+import { exBtw, openstaandExBtw } from '@/utils/btwWeergave'
 import { cn, formatCurrency } from '@/lib/utils';
 import { round2 } from '@/utils/budgetUtils';
 import { berekenMarkupPercentage } from '@/utils/margeBerekening';
@@ -200,12 +201,12 @@ export function RapportagesLayout() {
   // ---------------------------------------------------------------------------
 
   const totaleOmzet = useMemo(
-    () => gefilterdeFacturen.reduce((sum, f) => sum + f.totaal, 0),
+    () => gefilterdeFacturen.reduce((sum, f) => sum + exBtw(f), 0),
     [gefilterdeFacturen],
   );
 
   const totaleWinst = useMemo(() => {
-    const kosten = round2(gefilterdeFacturen.reduce((sum, f) => sum + f.totaal * 0.35, 0));
+    const kosten = round2(gefilterdeFacturen.reduce((sum, f) => sum + exBtw(f) * 0.35, 0));
     return round2(totaleOmzet - kosten);
   }, [gefilterdeFacturen, totaleOmzet]);
 
@@ -239,7 +240,7 @@ export function RapportagesLayout() {
     facturen.filter(teltAlsOmzet).forEach((f) => {
       const d = new Date(f.factuurdatum);
       if (d.getFullYear() === jaar) {
-        data[d.getMonth()].waarde += f.totaal;
+        data[d.getMonth()].waarde += exBtw(f);
       }
     });
     return data;
@@ -278,9 +279,9 @@ export function RapportagesLayout() {
         });
       }
       const entry = map.get(naam)!;
-      entry.totaalGefactureerd += f.totaal;
+      entry.totaalGefactureerd += exBtw(f);
       if (f.status === 'verzonden' || f.status === 'vervallen') {
-        entry.openstaand += f.totaal - f.betaald_bedrag;
+        entry.openstaand += openstaandExBtw(f);
       }
       if (f.factuurdatum > entry.laatsteFactuur) {
         entry.laatsteFactuur = f.factuurdatum;
@@ -426,7 +427,7 @@ export function RapportagesLayout() {
       Titel: o.titel,
       Klant: o.klant_naam || o.klant_id,
       Status: o.status,
-      Totaal: o.totaal,
+      'Totaal ex btw': exBtw(o),
       Datum: o.created_at.split('T')[0],
     }));
     if (type === 'csv') {
@@ -612,13 +613,13 @@ export function RapportagesLayout() {
               kop: 'Offertes overzicht',
               inhoud: 'Onderstaande tabel toont alle offertes voor de geselecteerde periode.',
               tabel: {
-                headers: ['Nummer', 'Titel', 'Klant', 'Status', 'Totaal', 'Datum'],
+                headers: ['Nummer', 'Titel', 'Klant', 'Status', 'Totaal ex btw', 'Datum'],
                 rijen: gefilterdeOffertes.map((o) => [
                   o.nummer,
                   o.titel,
                   o.klant_naam || o.klant_id,
                   o.status,
-                  formatCurrency(o.totaal),
+                  formatCurrency(exBtw(o)),
                   o.created_at.split('T')[0],
                 ]),
               },

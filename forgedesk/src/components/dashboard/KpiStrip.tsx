@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { formatCurrency } from '@/lib/utils'
+import { exBtw } from '@/utils/btwWeergave'
 
 interface Kpi {
   label: string
@@ -237,7 +238,7 @@ export function KpiStrip() {
       const d = new Date(f.factuurdatum || f.created_at)
       return d >= weekStart && d < weekEnd
     })
-    const weekBedrag = facturenWeek.reduce((s, f) => s + (f.totaal || 0), 0)
+    const weekBedrag = facturenWeek.reduce((s, f) => s + exBtw(f), 0)
 
     // Trend over de laatste 7 weken (oud → nieuw) voor de sparklines.
     const bucketStarts = Array.from({ length: 7 }, (_, i) => {
@@ -262,14 +263,14 @@ export function KpiStrip() {
     const weekTrend = Array(7).fill(0)
     facturen.forEach(f => {
       const i = bucketIdx(f.factuurdatum || f.created_at)
-      if (i >= 0) weekTrend[i] += f.totaal || 0
+      if (i >= 0) weekTrend[i] += exBtw(f)
     })
 
     return [
       {
         label: 'In pijplijn',
         bedrag: pijplijnBedrag,
-        sub: `${pijplijn.length} ${pijplijn.length === 1 ? 'offerte' : 'offertes'}`,
+        sub: `${pijplijn.length} ${pijplijn.length === 1 ? 'offerte' : 'offertes'}, ex btw`,
         icon: FileText,
         accent: '#1A535C',
         bg: 'rgba(26,83,92,0.08)',
@@ -282,7 +283,7 @@ export function KpiStrip() {
       {
         label: 'Deze week',
         bedrag: weekBedrag,
-        sub: 'gefactureerd',
+        sub: 'gefactureerd, ex btw',
         icon: CheckCircle2,
         accent: '#3A7D52',
         bg: '#E8F2EC',

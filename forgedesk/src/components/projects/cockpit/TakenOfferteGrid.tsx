@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ListChecks, Receipt, Plus, Trash2, Wrench, CalendarDays, MapPin } from 'lucide-react'
 import { formatAmount, getInitials } from '@/lib/utils'
+import { exBtw } from '@/utils/btwWeergave'
 import { getStatusPillClass, getStatusPillTone, getStatusLabel, type PillTone } from '@/utils/statusColors'
 import { TaskChecklistView } from './TaskChecklistView'
 import type { Taak, Offerte, Medewerker, MontageAfspraak } from '@/types'
@@ -59,7 +60,7 @@ interface TakenOfferteGridProps {
   onOpdrachtbevestiging?: (offerte: Offerte) => void
   onOfferteDelete?: (offerte: Offerte) => Promise<void> | void
   onQuickOfferte?: (bedrag: number) => Promise<void>
-  onUpdateOffertePrice?: (offerte: Offerte, bedragInclBtw: number) => Promise<void>
+  onUpdateOffertePrice?: (offerte: Offerte, bedragExclBtw: number) => Promise<void>
 }
 
 export function TakenOfferteGrid({
@@ -105,14 +106,15 @@ export function TakenOfferteGrid({
   }
 
   function startEditPrice(offerte: Offerte) {
-    setPriceInput(offerte.totaal ? offerte.totaal.toFixed(2).replace('.', ',') : '')
+    // Prijzen gaan hier ex btw in en uit, gelijk aan het snelveld eronder.
+    setPriceInput(exBtw(offerte) ? exBtw(offerte).toFixed(2).replace('.', ',') : '')
     setEditingPriceId(offerte.id)
   }
 
   async function submitEditPrice(offerte: Offerte) {
     if (!onUpdateOffertePrice) { setEditingPriceId(null); return }
     const bedrag = parseBedrag(priceInput)
-    if (bedrag <= 0 || bedrag === offerte.totaal) { setEditingPriceId(null); return }
+    if (bedrag <= 0 || bedrag === exBtw(offerte)) { setEditingPriceId(null); return }
     setSavingPrice(true)
     try {
       await onUpdateOffertePrice(offerte, bedrag)
@@ -341,13 +343,13 @@ export function TakenOfferteGrid({
                           className="font-mono text-[15px] tabular-nums flex-shrink-0 mt-0.5 rounded-md px-1 -mr-1 hover:bg-[rgba(241,80,37,0.08)] transition-colors"
                         >
                           <span className="text-muted-foreground">€</span>
-                          <span className="text-foreground font-bold ml-0.5 border-b border-dashed border-flame/30">{formatAmount(offerte.totaal)}</span>
+                          <span className="text-foreground font-bold ml-0.5 border-b border-dashed border-flame/30">{formatAmount(exBtw(offerte))}</span>
                         </button>
                       )
                     ) : (
                       <span className="font-mono text-[15px] tabular-nums flex-shrink-0 mt-0.5">
                         <span className="text-muted-foreground">€</span>
-                        <span className="text-foreground font-bold ml-0.5">{formatAmount(offerte.totaal)}</span>
+                        <span className="text-foreground font-bold ml-0.5">{formatAmount(exBtw(offerte))}</span>
                       </span>
                     )}
                     {onOfferteDelete && !offerte.geconverteerd_naar_factuur_id && (

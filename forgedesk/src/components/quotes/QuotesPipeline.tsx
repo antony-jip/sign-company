@@ -52,6 +52,7 @@ import type { Offerte, OfferteItem, Klant, Project, Medewerker } from '@/types'
 import { SendOfferteDialog } from './SendOfferteDialog'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { isFollowUpNodig } from '@/utils/offerteFollowUp'
+import { exBtw } from '@/utils/btwWeergave'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import {
   DropdownMenu,
@@ -353,7 +354,7 @@ export function QuotesPipeline() {
     switch (sortOption) {
       case 'newest': result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()); break
       case 'oldest': result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()); break
-      case 'highest': result.sort((a, b) => b.totaal - a.totaal); break
+      case 'highest': result.sort((a, b) => exBtw(b) - exBtw(a)); break
       case 'expiring': result.sort((a, b) => new Date(a.geldig_tot).getTime() - new Date(b.geldig_tot).getTime()); break
     }
     return result
@@ -369,10 +370,10 @@ export function QuotesPipeline() {
 
   const salesSummary = useMemo(() => {
     const pipelineStatuses = ['concept', 'verzonden', 'bekeken']
-    const pipelineValue = round2(eigenOffertes.filter(o => pipelineStatuses.includes(o.status)).reduce((sum, o) => sum + o.totaal, 0))
-    const verstuurdValue = round2(eigenOffertes.filter(o => o.status === 'verzonden').reduce((sum, o) => sum + o.totaal, 0))
+    const pipelineValue = round2(eigenOffertes.filter(o => pipelineStatuses.includes(o.status)).reduce((sum, o) => sum + exBtw(o), 0))
+    const verstuurdValue = round2(eigenOffertes.filter(o => o.status === 'verzonden').reduce((sum, o) => sum + exBtw(o), 0))
     const akkoordThisMonth = eigenOffertes.filter(o => o.status === 'goedgekeurd' && isThisMonth(o.akkoord_op || o.updated_at))
-    const akkoordValue = round2(akkoordThisMonth.reduce((sum, o) => sum + o.totaal, 0))
+    const akkoordValue = round2(akkoordThisMonth.reduce((sum, o) => sum + exBtw(o), 0))
     return { pipelineValue, verstuurdValue, akkoordValue }
   }, [eigenOffertes])
 
@@ -383,9 +384,9 @@ export function QuotesPipeline() {
     for (const o of eigenOffertes) {
       if (!statusTotals[o.status]) statusTotals[o.status] = { count: 0, totaal: 0 }
       statusTotals[o.status].count += 1
-      statusTotals[o.status].totaal = round2(statusTotals[o.status].totaal + o.totaal)
+      statusTotals[o.status].totaal = round2(statusTotals[o.status].totaal + exBtw(o))
     }
-    const pipelineTotaal = round2(eigenOffertes.filter(o => o.status !== 'afgewezen' && o.status !== 'gefactureerd').reduce((sum, o) => sum + o.totaal, 0))
+    const pipelineTotaal = round2(eigenOffertes.filter(o => o.status !== 'afgewezen' && o.status !== 'gefactureerd').reduce((sum, o) => sum + exBtw(o), 0))
     const verwachteOmzet = round2(statusTotals['goedgekeurd']?.totaal || 0)
     return { statusTotals, pipelineTotaal, verwachteOmzet }
   }, [eigenOffertes])
@@ -394,12 +395,12 @@ export function QuotesPipeline() {
     const openStatuses = ['verzonden', 'bekeken']
     const openOffertes = eigenOffertes.filter(o => openStatuses.includes(o.status))
     const openCount = openOffertes.length
-    const openValue = round2(openOffertes.reduce((sum, o) => sum + o.totaal, 0))
+    const openValue = round2(openOffertes.reduce((sum, o) => sum + exBtw(o), 0))
     const sentStatuses = ['verzonden', 'bekeken', 'goedgekeurd', 'afgewezen']
     const sentOffertes = eigenOffertes.filter(o => sentStatuses.includes(o.status))
     const approved = eigenOffertes.filter(o => o.status === 'goedgekeurd').length
     const conversionRate = sentOffertes.length > 0 ? round2((approved / sentOffertes.length) * 100) : 0
-    const allValues = eigenOffertes.map(o => o.totaal)
+    const allValues = eigenOffertes.map(o => exBtw(o))
     const avgValue = allValues.length > 0 ? round2(allValues.reduce((s, v) => s + v, 0) / allValues.length) : 0
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -746,7 +747,7 @@ export function QuotesPipeline() {
         case 'nummer': return a.nummer.localeCompare(b.nummer) * dir
         case 'klant_naam': return (a.klant_naam || '').localeCompare(b.klant_naam || '') * dir
         case 'titel': return a.titel.localeCompare(b.titel) * dir
-        case 'totaal': return (a.totaal - b.totaal) * dir
+        case 'totaal': return (exBtw(a) - exBtw(b)) * dir
         case 'status': return a.status.localeCompare(b.status) * dir
         case 'days_open': return (getDaysOpen(a.created_at) - getDaysOpen(b.created_at)) * dir
         case 'geldig_tot': return (new Date(a.geldig_tot).getTime() - new Date(b.geldig_tot).getTime()) * dir
@@ -1001,10 +1002,10 @@ export function QuotesPipeline() {
                 <div className="hidden sm:flex items-center gap-1 ml-auto">
                   <button
                     onClick={() => {
-                      const headers = ['Nummer', 'Klant', 'Titel', 'Status', 'Bedrag', 'Aangemaakt', 'Geldig tot']
+                      const headers = ['Nummer', 'Klant', 'Titel', 'Status', 'Bedrag ex btw', 'Aangemaakt', 'Geldig tot']
                       const rows = filteredOffertes.map(o => ({
                         Nummer: o.nummer, Klant: o.klant_naam || 'Onbekend', Titel: o.titel,
-                        Status: STATUS_LABELS[o.status] || o.status, Bedrag: formatCurrency(o.totaal),
+                        Status: STATUS_LABELS[o.status] || o.status, 'Bedrag ex btw': formatCurrency(exBtw(o)),
                         Aangemaakt: formatDate(o.created_at), 'Geldig tot': formatDate(o.geldig_tot),
                       }))
                       exportCSV(`offertes-${new Date().toISOString().split('T')[0]}`, headers, rows)
@@ -1016,10 +1017,10 @@ export function QuotesPipeline() {
                   </button>
                   <button
                     onClick={() => {
-                      const headers = ['Nummer', 'Klant', 'Titel', 'Status', 'Bedrag', 'Aangemaakt', 'Geldig tot']
+                      const headers = ['Nummer', 'Klant', 'Titel', 'Status', 'Bedrag ex btw', 'Aangemaakt', 'Geldig tot']
                       const rows = filteredOffertes.map(o => ({
                         Nummer: o.nummer, Klant: o.klant_naam || 'Onbekend', Titel: o.titel,
-                        Status: STATUS_LABELS[o.status] || o.status, Bedrag: o.totaal,
+                        Status: STATUS_LABELS[o.status] || o.status, 'Bedrag ex btw': exBtw(o),
                         Aangemaakt: formatDate(o.created_at), 'Geldig tot': formatDate(o.geldig_tot),
                       }))
                       exportExcel(`offertes-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Offertes')
@@ -1123,7 +1124,7 @@ export function QuotesPipeline() {
               <div className={cn('grid grid-cols-1 md:grid-cols-3 gap-4 min-h-[480px]', STATUS_COLUMNS.length <= 5 ? 'lg:grid-cols-5' : `lg:grid-cols-${Math.min(STATUS_COLUMNS.length, 7)}`)}>
                 {STATUS_COLUMNS.map(col => {
                   const colOffertes = offertesByStatus[col.key] || []
-                  const colTotal = round2(colOffertes.reduce((sum, o) => sum + o.totaal, 0))
+                  const colTotal = round2(colOffertes.reduce((sum, o) => sum + exBtw(o), 0))
                   const isDragOver = dragOverColumn === col.key
                   return (
                     <div
@@ -1266,7 +1267,7 @@ export function QuotesPipeline() {
                                 })()}
                                 {/* Amount + date */}
                                 <div className="flex items-center justify-between pt-2 border-t border-border">
-                                  <span className="text-[14px] font-bold font-mono tabular-nums text-foreground">{formatEur(offerte.totaal)}</span>
+                                  <span className="text-[14px] font-bold font-mono tabular-nums text-foreground">{formatEur(exBtw(offerte))}</span>
                                   <div className="flex items-center gap-1.5">
                                     {OPEN_STATUSES.includes(offerte.status) && (
                                       <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-md font-mono tabular-nums', getDaysColor(daysOpen))}>{daysOpen}d</span>
@@ -1398,7 +1399,7 @@ export function QuotesPipeline() {
                         >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-[14px] font-semibold text-foreground truncate">{offerte.titel || offerte.nummer}</span>
-                            <span className="text-[14px] font-bold font-mono tabular-nums text-foreground">{formatEur(offerte.totaal)}</span>
+                            <span className="text-[14px] font-bold font-mono tabular-nums text-foreground">{formatEur(exBtw(offerte))}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-[12px] text-foreground/70">{offerte.klant_naam || 'Onbekend'}</span>
@@ -1436,7 +1437,7 @@ export function QuotesPipeline() {
                             <th className="text-left py-3.5 pr-4"><SortHeader column="nummer" label="Offerte" /></th>
                             <th className="text-left py-3.5 pr-4 w-[160px] hidden lg:table-cell"><SortHeader column="klant_naam" label="Klant" /></th>
                             <th className="text-left py-3.5 pr-4 w-[150px]"><span className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Status</span></th>
-                            <th className="text-right py-3.5 pr-4 w-[110px] hidden xl:table-cell"><SortHeader column="totaal" label="Bedrag" align="right" /></th>
+                            <th className="text-right py-3.5 pr-4 w-[110px] hidden xl:table-cell"><SortHeader column="totaal" label="Bedrag ex btw" align="right" /></th>
                             <th className="text-right py-3.5 pr-4 w-[80px] hidden md:table-cell"><SortHeader column="created_at" label="Datum" align="right" /></th>
                             <th className="text-right py-3.5 pr-4 w-[70px] hidden lg:table-cell"><SortHeader column="days_open" label="Dagen" align="right" /></th>
                             <th className="text-right py-3.5 pr-4 hidden md:table-cell"><SortHeader column="geldig_tot" label="Geldig tot" align="right" /></th>
@@ -1531,15 +1532,15 @@ export function QuotesPipeline() {
                                 {/* Bedrag */}
                                 <td className="py-3.5 pr-4 text-right hidden xl:table-cell">
                                   {(() => {
-                                    if (offerte.totaal <= 0) return <span className="text-xs text-muted-foreground/70">&mdash;</span>
+                                    if (exBtw(offerte) <= 0) return <span className="text-xs text-muted-foreground/70">&mdash;</span>
                                     return (
                                       <span className={cn(
                                         'font-mono tabular-nums text-[13px]',
-                                        offerte.totaal >= 10000
+                                        exBtw(offerte) >= 10000
                                           ? 'font-semibold text-foreground'
                                           : 'text-foreground/70'
                                       )}>
-                                        {formatEur(offerte.totaal)}
+                                        {formatEur(exBtw(offerte))}
                                       </span>
                                     )
                                   })()}
@@ -1601,7 +1602,7 @@ export function QuotesPipeline() {
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={e => {
                                           e.stopPropagation()
-                                          const csv = ['Nummer;' + offerte.nummer, 'Klant;' + (offerte.klant_naam || 'Onbekend'), 'Titel;' + offerte.titel, 'Status;' + (STATUS_LABELS[offerte.status] || offerte.status), 'Bedrag;' + formatCurrency(offerte.totaal), 'Aangemaakt;' + formatDate(offerte.created_at)].join('\n')
+                                          const csv = ['Nummer;' + offerte.nummer, 'Klant;' + (offerte.klant_naam || 'Onbekend'), 'Titel;' + offerte.titel, 'Status;' + (STATUS_LABELS[offerte.status] || offerte.status), 'Bedrag ex btw;' + formatCurrency(exBtw(offerte)), 'Aangemaakt;' + formatDate(offerte.created_at)].join('\n')
                                           const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
                                           const url = URL.createObjectURL(blob)
                                           const a = document.createElement('a'); a.href = url; a.download = `${offerte.nummer}.csv`; a.click()
