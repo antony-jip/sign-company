@@ -123,6 +123,9 @@ export function MontageTijdlijnView({
 }: TijdlijnProps) {
   const uurHoogte = BASIS_UUR_HOOGTE * (zoom / 100)
   const [rekken, setRekken] = useState<{ id: string; eindMinuten: number } | null>(null)
+  // Waar het blok landt als je nu loslaat. Zonder deze lijn sleep je blind:
+  // je ziet pas na het loslaten op welk tijdstip het terechtkwam.
+  const [landing, setLanding] = useState<{ datum: string; minuten: number } | null>(null)
   const [nuMinuten, setNuMinuten] = useState(() => {
     const nu = new Date()
     return nu.getHours() * 60 + nu.getMinutes()
@@ -299,12 +302,22 @@ export function MontageTijdlijnView({
                 className={cn(
                   'relative border-l border-border/40',
                   dicht && 'bg-muted/40',
+                  dicht && sleepId && 'cursor-not-allowed opacity-60',
                   isVandaag && 'bg-flame/[0.02]',
                 )}
                 style={{ height: rasterHoogte }}
-                onDragOver={(e) => { if (!dicht) e.preventDefault() }}
+                onDragOver={(e) => {
+                  if (dicht) return
+                  e.preventDefault()
+                  setLanding({ datum: sleutel, minuten: minutenUitPositie(e.currentTarget, e.clientY) })
+                }}
+                onDragLeave={(e) => {
+                  if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+                  setLanding((huidig) => (huidig?.datum === sleutel ? null : huidig))
+                }}
                 onDrop={(e) => {
                   e.preventDefault()
+                  setLanding(null)
                   if (dicht) return
                   const id = e.dataTransfer.getData('text/plain') || sleepId
                   if (!id) return
@@ -330,6 +343,17 @@ export function MontageTijdlijnView({
                     style={{ top: ((nuMinuten - vensterStart) / 60) * uurHoogte }}
                   >
                     <span className="absolute -left-1 -top-[3px] w-[7px] h-[7px] rounded-full bg-flame" />
+                  </div>
+                )}
+
+                {landing?.datum === sleutel && (
+                  <div
+                    className="pointer-events-none absolute inset-x-0 z-30 border-t-2 border-dashed border-flame"
+                    style={{ top: ((landing.minuten - vensterStart) / 60) * uurHoogte }}
+                  >
+                    <span className="absolute -top-[9px] left-1 rounded bg-flame px-1 py-[1px] text-[10px] font-semibold tabular-nums text-white">
+                      {naarTijd(landing.minuten)}
+                    </span>
                   </div>
                 )}
 
@@ -426,13 +450,26 @@ export function MontageTijdlijnView({
                       </div>
 
                       {/* Rekken verzet alleen de eindtijd · naar boven trekken zou
-                          de starttijd verzetten en dat botst met slepen. */}
+                          de starttijd verzetten en dat botst met slepen. De greep
+                          is onzichtbaar tot je het blok aanwijst; zonder dat
+                          streepje vindt niemand hem. */}
                       <div
                         onPointerDown={(e) => startRekken(e, a)}
                         onClick={(e) => e.stopPropagation()}
                         title="Sleep om de eindtijd te verzetten"
-                        className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize hover:bg-petrol/15"
-                      />
+                        className="absolute inset-x-0 bottom-0 flex h-2.5 cursor-ns-resize items-center justify-center"
+                      >
+                        <span className={cn(
+                          'h-[3px] w-7 rounded-full bg-[#C0BDB8] transition-opacity',
+                          rekken?.id === a.id ? 'opacity-100' : 'opacity-0 group-hover/blok:opacity-100',
+                        )} />
+                      </div>
+
+                      {rekken?.id === a.id && (
+                        <span className="pointer-events-none absolute bottom-1 right-1 rounded bg-petrol px-1 py-[1px] text-[10px] font-semibold tabular-nums text-white">
+                          {naarTijd(rekken.eindMinuten)}
+                        </span>
+                      )}
                     </div>
                   )
                 })}

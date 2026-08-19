@@ -1143,13 +1143,19 @@ export function MontagePlanningLayout() {
     setDialogOpen(true);
   }
 
-  function openNewDialogFromProject(project: Project, datum?: string, prefillMonteurId?: string | null) {
+  function openNewDialogFromProject(project: Project, datum?: string, prefillMonteurId?: string | null, prefillStart?: string) {
     setEditingAfspraak(null);
     // Auto-fill locatie vanuit klant adres
     const klant = klanten.find((k) => k.id === project.klant_id);
     const locatie = klant ? [klant.adres, klant.postcode, klant.stad].filter(Boolean).join(", ") : "";
     setFormData({
       ...EMPTY_FORM,
+      ...(prefillStart
+        ? {
+            start_tijd: prefillStart,
+            eind_tijd: minutesToTime(timeToMinutes(prefillStart) + (timeToMinutes(EMPTY_FORM.eind_tijd) - timeToMinutes(EMPTY_FORM.start_tijd))),
+          }
+        : {}),
       project_id: project.id,
       klant_id: project.klant_id,
       klant_naam: project.klant_naam || "",
@@ -1508,7 +1514,7 @@ export function MontagePlanningLayout() {
         ?? (scopeMode === 'mijn' ? eigenMedewerker?.id ?? null
           : scopeMode === 'medewerker' && selectedMonteur !== 'alle' ? selectedMonteur
           : null);
-      openNewDialogFromProject(project, newDate, prefillMonteur);
+      openNewDialogFromProject(project, newDate, prefillMonteur, newStartTime);
       return;
     }
 
@@ -2758,8 +2764,8 @@ export function MontagePlanningLayout() {
           <div className="px-3 py-2.5 flex items-center justify-between border-l-2 border-l-petrol shrink-0">
             <h2 className="text-[11px] font-bold text-flame uppercase tracking-wider">Te plannen</h2>
             <span
-              className="text-[11px] font-bold flex items-center justify-center rounded-none bg-[#FDE8E2] text-flame dark:bg-[rgba(241,80,37,0.20)] dark:text-[#FF8866]"
-              style={{ minWidth: '24px', height: '24px', padding: '0 6px' }}
+              className="text-[11px] font-bold flex items-center justify-center rounded-full bg-[#FDE8E2] text-flame dark:bg-[rgba(241,80,37,0.20)] dark:text-[#FF8866]"
+              style={{ minWidth: '22px', height: '22px', padding: '0 7px' }}
             >
               {tePlannenProjecten.length}
             </span>
@@ -2807,11 +2813,18 @@ export function MontagePlanningLayout() {
                     {/* De naam kapte af op de plek waar hij onderscheidend werd:
                         "Nieuwe signing - De ..." en "Nieuwe signing locati..."
                         waren niet uit elkaar te houden. Hij mag nu afbreken. */}
-                    <div className="pr-5">
-                      <div className="text-[13px] font-medium leading-snug text-foreground [text-wrap:pretty]">{project.naam}</div>
-                      <div className="flex items-baseline gap-1.5 mt-0.5">
+                    <div className="pr-5 grid grid-cols-[14px_minmax(0,1fr)] gap-x-[9px] items-start">
+                      {/* Zelfde cirkel als op een blok in de tijdlijn en op een
+                          kaart in Taken · een project dat straks een blok wordt
+                          hoort er nu al uit te zien als een blok. */}
+                      <span className="mt-[3px] flex h-[14px] w-[14px] items-center justify-center rounded-full border-[1.5px] border-[rgba(26,83,92,0.4)] dark:border-white/30 text-muted-foreground">
+                        <span className={cn('h-[3px] w-[3px] rounded-full', isPrio ? 'bg-flame opacity-100' : 'bg-current opacity-55')} />
+                      </span>
+                      <div className="min-w-0">
+                      <div className="text-[12.5px] font-semibold leading-[1.3] text-[#1A535C] dark:text-[#CFE3E6] [text-wrap:pretty]">{project.naam}</div>
+                      <div className="flex items-baseline gap-1.5 mt-[1px]">
                         {project.klant_naam && (
-                          <span className="text-[11px] text-muted-foreground truncate">{project.klant_naam}</span>
+                          <span className="text-[11px] leading-[1.35] text-[#1A535C]/60 dark:text-[#CFE3E6]/60 truncate">{project.klant_naam}</span>
                         )}
                         {/* Hoe lang het al wacht · daar plan je op, niet op
                             de volgorde waarin het toevallig binnenkwam. */}
@@ -2830,6 +2843,7 @@ export function MontagePlanningLayout() {
                             </span>
                           )
                         })()}
+                      </div>
                       </div>
                     </div>
                     <button
