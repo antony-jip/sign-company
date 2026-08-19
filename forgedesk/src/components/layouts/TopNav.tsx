@@ -18,6 +18,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
+import { IngeklokteChip } from '@/components/shared/IngeklokteChip'
 import { DarkModeToggle } from '@/components/shared/DarkModeToggle'
 import {
   DASHBOARD_ITEM, SUPPORT_ITEM, ALLE_MODULES,
@@ -347,6 +348,8 @@ export function TopNav() {
           >
             <Search className="w-3.5 h-3.5" />
           </button>
+
+          <IngeklokteChip />
 
           <div className="order-3 md:order-none">
             <NotificatieCenter />

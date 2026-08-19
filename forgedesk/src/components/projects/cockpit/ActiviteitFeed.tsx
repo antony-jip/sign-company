@@ -2,16 +2,16 @@ import { useState, useMemo } from 'react'
 import {
   Send, FileText, Receipt, CreditCard, ClipboardCheck, Camera,
   CheckCircle2, Wrench, Eye, MessageCircle, FolderPlus, User,
-  Filter
+  Filter, Timer
 } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
-import type { Project, Offerte, MontageAfspraak, Werkbon, Factuur, Taak, Medewerker, ProjectFoto, AuditLogEntry } from '@/types'
+import type { Project, Offerte, MontageAfspraak, Werkbon, Factuur, Taak, Medewerker, ProjectFoto, AuditLogEntry, Tijdregistratie } from '@/types'
 
 export interface ActivityEvent {
   id: string
   tekst: string
   datum: string
-  type: 'project' | 'offerte' | 'montage' | 'werkbon' | 'factuur' | 'taak' | 'foto' | 'portaal'
+  type: 'project' | 'offerte' | 'montage' | 'werkbon' | 'factuur' | 'taak' | 'foto' | 'portaal' | 'tijd'
   medewerker?: string
   bron?: 'audit' | 'derived'
 }
@@ -25,6 +25,7 @@ const typeConfig: Record<ActivityEvent['type'], { icon: typeof Send; color: stri
   taak:     { icon: CheckCircle2,  color: 'text-mod-klanten-text',   bg: 'bg-mod-klanten-light' },
   foto:     { icon: Camera,        color: 'text-flame-text',  bg: 'bg-flame-light' },
   portaal:  { icon: Send,          color: 'text-mod-projecten-text',   bg: 'bg-mod-projecten-light' },
+  tijd:     { icon: Timer,         color: 'text-flame-text',  bg: 'bg-flame-light' },
 }
 
 const filterLabels: Record<string, string> = {
@@ -34,6 +35,7 @@ const filterLabels: Record<string, string> = {
   factuur: 'Facturen',
   montage: 'Montage',
   werkbon: 'Werkbonnen',
+  tijd: 'Uren',
 }
 
 function formatDate(dateStr: string) {
@@ -222,6 +224,7 @@ export function buildActivityFeed(
   fotos: ProjectFoto[],
   auditEntries: AuditLogEntry[] = [],
   medewerkers: Medewerker[] = [],
+  tijdregistraties: Tijdregistratie[] = [],
 ): ActivityEvent[] {
   const events: ActivityEvent[] = []
   // Resolveer monteur-ids → naam zodat Activiteit-feed niet UUIDs toont
@@ -366,6 +369,23 @@ export function buildActivityFeed(
       tekst: f.omschrijving ? `Foto toegevoegd: ${f.omschrijving}` : 'Situatiefoto toegevoegd',
       datum: f.created_at,
       type: 'foto',
+    })
+  }
+
+  // Geboekte uren
+  for (const t of tijdregistraties) {
+    const minuten = t.duur_minuten || 0
+    if (minuten <= 0) continue
+    const uren = Math.floor(minuten / 60)
+    const rest = minuten % 60
+    const duur = uren === 0 ? `${rest}m` : rest === 0 ? `${uren}u` : `${uren}u ${rest}m`
+    const naam = t.medewerker_naam || (t.medewerker_id ? medewerkerIdToNaam.get(t.medewerker_id) : undefined)
+    events.push({
+      id: `tijd-${t.id}`,
+      tekst: `${duur} geboekt`,
+      datum: t.created_at || t.datum,
+      type: 'tijd',
+      medewerker: naam,
     })
   }
 

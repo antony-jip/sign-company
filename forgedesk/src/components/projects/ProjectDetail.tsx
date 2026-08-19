@@ -1355,7 +1355,7 @@ export function ProjectDetail() {
   }
 
   const recenteActiviteiten = useMemo(
-    () => project ? buildActivityFeed(project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos, auditEntries, alleMedewerkers) : [],
+    () => project ? buildActivityFeed(project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos, auditEntries, alleMedewerkers, projectTijdregistraties) : [],
     [project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos, auditEntries, alleMedewerkers]
   )
 

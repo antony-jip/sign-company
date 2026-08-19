@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   ChevronDown, ChevronRight,
   Send, Receipt, CreditCard, ClipboardList, Camera,
-  CheckCircle, Wrench, FolderPlus, Activity,
+  CheckCircle, Wrench, FolderPlus, Activity, Timer,
   type LucideIcon,
 } from 'lucide-react'
 import type { ActivityEvent } from './ActiviteitFeed'
@@ -18,6 +18,7 @@ const typeIcon: Record<ActivityEvent['type'], LucideIcon> = {
   taak:     CheckCircle,
   foto:     Camera,
   portaal:  Send,
+  tijd:     Timer,
 }
 
 const typeColor: Record<ActivityEvent['type'], string> = {
@@ -29,6 +30,7 @@ const typeColor: Record<ActivityEvent['type'], string> = {
   taak:     '#5A5A55',
   foto:     '#9A5A48',
   portaal:  'var(--m-portaal)',
+  tijd:     '#F15025',
 }
 
 function formatRelativeTime(dateStr: string): string {

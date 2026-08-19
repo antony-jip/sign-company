@@ -31,6 +31,7 @@ export function useTijdSessies({ projectId, projectNaam, medewerker }: Opties) {
   const [bezig, setBezig] = useState(false)
   const [nuMs, setNuMs] = useState(() => Date.now())
   const gemountRef = useRef(true)
+  const kanaalIdRef = useRef(Math.random().toString(36).slice(2))
 
   const uurtarief = medewerker?.uurtarief || settings.standaard_uurtarief || 0
 
@@ -53,8 +54,10 @@ export function useTijdSessies({ projectId, projectNaam, medewerker }: Opties) {
 
   useEffect(() => {
     if (!isSupabaseConfigured() || !supabase) return
+    // Unieke kanaalnaam: de hook draait tegelijk in de projectkaart en in de
+    // bovenbalk, en twee abonnementen op dezelfde naam verdragen elkaar niet.
     const kanaal = supabase
-      .channel('tijd-sessies')
+      .channel(`tijd-sessies-${kanaalIdRef.current}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tijd_sessies' }, () => herlaad())
       .subscribe()
 
