@@ -17,8 +17,16 @@ import type { MontageAfspraak, Taak } from '@/types'
 
 const DAG_NAMEN = ['MA', 'DI', 'WO', 'DO', 'VR', 'ZA', 'ZO']
 const BASIS_UUR_HOOGTE = 56
+// Het raster loopt door tot in de avond: er wordt 's avonds gewerkt, en je kunt
+// niet slepen naar een uur dat niet getekend is. De prijs is een langere kolom,
+// en die betalen we met de band hieronder in plaats van met minder uren.
 const DEFAULT_START_UUR = 7
-const DEFAULT_EIND_UUR = 18
+const DEFAULT_EIND_UUR = 22
+// Binnen deze uren is het gewone werkdag; daarbuiten tint de kolom licht bij,
+// zodat een klus die de avond in loopt zichzelf aanwijst zonder dat de avond
+// onbruikbaar wordt.
+const WERKDAG_START = 8 * 60
+const WERKDAG_EIND = 18 * 60
 const SNAP_MINUTEN = 15
 const NOTITIE_HOOGTE = 24
 const KOP_HOOGTE = 52
@@ -128,6 +136,9 @@ export function MontageTijdlijnView({
   // Waar het blok landt als je nu loslaat. Zonder deze lijn sleep je blind:
   // je ziet pas na het loslaten op welk tijdstip het terechtkwam.
   const [landing, setLanding] = useState<{ datum: string; minuten: number } | null>(null)
+  // Waar je muis staat in het raster · zonder deze schaduw is niet te zien dat
+  // je op een leeg plekje kunt klikken om daar een montage te beginnen.
+  const [zweef, setZweef] = useState<{ datum: string; minuten: number } | null>(null)
   const [nuMinuten, setNuMinuten] = useState(() => {
     const nu = new Date()
     return nu.getHours() * 60 + nu.getMinutes()
@@ -165,6 +176,8 @@ export function MontageTijdlijnView({
   }, [vensterStart, vensterEind])
 
   const rasterHoogte = ((vensterEind - vensterStart) / 60) * uurHoogte
+  const toontNu = nuMinuten >= vensterStart && nuMinuten <= vensterEind
+    && weekDates.some((d) => datumSleutel(d) === vandaagSleutel)
 
   // Taken hebben geen tijdstip en staan in een strook boven het raster. Die
   // strook is in élke kolom even hoog, ook de lege: anders zakt een kolom met
@@ -218,13 +231,30 @@ export function MontageTijdlijnView({
     <div className="planning-tijdlijn flex overflow-x-auto">
       {/* Urenkolom */}
       <div className="flex-shrink-0 w-12 select-none" style={{ paddingTop: KOP_HOOGTE + notitieHoogte + takenBandHoogte }}>
-        {uren.map((m) => (
-          <div key={m} className="relative" style={{ height: uurHoogte }}>
-            <span className="absolute -top-[6px] right-2 text-[10px] font-medium tabular-nums text-muted-foreground/45">
+        <div className="relative" style={{ height: rasterHoogte }}>
+          {uren.map((m, index) => (
+            <span
+              key={m}
+              className={cn(
+                'absolute right-2 text-[10px] font-medium tabular-nums',
+                // Het uur waar je nu in zit wijkt voor de klok zelf · twee
+                // getallen boven elkaar leest als een fout.
+                toontNu && Math.abs(nuMinuten - m) < 30 ? 'opacity-0' : 'text-muted-foreground/45',
+              )}
+              style={{ top: index * uurHoogte - 6 }}
+            >
               {naarTijd(m)}
             </span>
-          </div>
-        ))}
+          ))}
+          {toontNu && (
+            <span
+              className="absolute right-1.5 rounded bg-flame px-1 py-[1px] text-[9.5px] font-semibold tabular-nums text-white"
+              style={{ top: ((nuMinuten - vensterStart) / 60) * uurHoogte - 8 }}
+            >
+              {naarTijd(nuMinuten)}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Dagkolommen */}
@@ -322,7 +352,7 @@ export function MontageTijdlijnView({
                   'relative border-l border-border/40',
                   dicht && 'bg-muted/40',
                   dicht && sleepId && 'cursor-not-allowed opacity-60',
-                  isVandaag && 'bg-flame/[0.02]',
+                  isVandaag && 'bg-petrol/[0.022] dark:bg-white/[0.022]',
                 )}
                 style={{ height: rasterHoogte }}
                 onDragOver={(e) => {
@@ -330,6 +360,12 @@ export function MontageTijdlijnView({
                   e.preventDefault()
                   setLanding({ datum: sleutel, minuten: minutenUitPositie(e.currentTarget, e.clientY) })
                 }}
+                onMouseMove={(e) => {
+                  if (dicht || sleepId || rekken) return
+                  const minuten = minutenUitPositie(e.currentTarget, e.clientY)
+                  setZweef((h) => (h?.datum === sleutel && h.minuten === minuten ? h : { datum: sleutel, minuten }))
+                }}
+                onMouseLeave={() => setZweef((h) => (h?.datum === sleutel ? null : h))}
                 onDragLeave={(e) => {
                   if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
                   setLanding((huidig) => (huidig?.datum === sleutel ? null : huidig))
@@ -348,20 +384,51 @@ export function MontageTijdlijnView({
                   onNieuwOpTijd(sleutel, naarTijd(minutenUitPositie(e.currentTarget, e.clientY)))
                 }}
               >
-                {uren.map((m, index) => (
+                {vensterStart < WERKDAG_START && (
                   <div
-                    key={m}
-                    className="absolute inset-x-0 border-t border-border/25 pointer-events-none"
-                    style={{ top: index * uurHoogte }}
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 top-0 bg-foreground/[0.022]"
+                    style={{ height: ((WERKDAG_START - vensterStart) / 60) * uurHoogte }}
                   />
+                )}
+                {vensterEind > WERKDAG_EIND && (
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 bottom-0 bg-foreground/[0.022]"
+                    style={{ height: ((vensterEind - WERKDAG_EIND) / 60) * uurHoogte }}
+                  />
+                )}
+
+                {uren.map((m, index) => (
+                  <div key={m} className="pointer-events-none">
+                    <div
+                      className="absolute inset-x-0 border-t border-border/30"
+                      style={{ top: index * uurHoogte }}
+                    />
+                    {/* Halfuurlijn · geeft het raster ritme en maakt mikken op
+                        half twee net zo makkelijk als op twee uur. */}
+                    <div
+                      className="absolute inset-x-0 border-t border-border/[0.12]"
+                      style={{ top: index * uurHoogte + uurHoogte / 2 }}
+                    />
+                  </div>
                 ))}
 
-                {isVandaag && nuMinuten >= vensterStart && nuMinuten <= vensterEind && (
+                {isVandaag && toontNu && (
                   <div
-                    className="absolute inset-x-0 h-px bg-flame pointer-events-none z-20"
+                    className="pointer-events-none absolute inset-x-0 z-20 h-px bg-flame/70"
                     style={{ top: ((nuMinuten - vensterStart) / 60) * uurHoogte }}
+                  />
+                )}
+
+                {zweef?.datum === sleutel && !landing && (
+                  <div
+                    className="pointer-events-none absolute inset-x-0 z-10 border-t border-dashed border-petrol/35"
+                    style={{ top: ((zweef.minuten - vensterStart) / 60) * uurHoogte }}
                   >
-                    <span className="absolute -left-1 -top-[3px] w-[7px] h-[7px] rounded-full bg-flame" />
+                    <span className="absolute -top-[8px] left-1.5 text-[10px] font-medium tabular-nums text-petrol/55">
+                      + {naarTijd(zweef.minuten)}
+                    </span>
                   </div>
                 )}
 
