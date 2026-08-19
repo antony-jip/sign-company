@@ -474,6 +474,15 @@ async function exactFetchMetRetry(url: string, init: RequestInit): Promise<Respo
   }
 }
 
+// OData-stringliteral voor in een $filter. Twee stappen die allebei nodig zijn:
+// een enkele quote verdubbelen (anders sluit de literal te vroeg) en daarna
+// URL-encoden, want de filter zit in de query string. Zonder die encoding kapte
+// een `&` in een klantnaam ("Groot&Groot Peonies") de URL af en gaf Exact
+// "Unterminated string literal".
+function odataString(value: string): string {
+  return `'${encodeURIComponent(value.replace(/'/g, "''"))}'`
+}
+
 async function exactGet(token: string, division: string, endpoint: string): Promise<unknown> {
   const url = `${EXACT_API_BASE}/${division}/${endpoint}`
   const response = await exactFetchMetRetry(url, {
@@ -558,7 +567,7 @@ async function getGrootboekGuid(token: string, division: string, rekeningNummer:
   const data = await exactGet(
     token,
     division,
-    `financial/GLAccounts?$filter=Code eq '${rekeningNummer}'&$select=ID`
+    `financial/GLAccounts?$filter=Code eq ${odataString(rekeningNummer)}&$select=ID`
   ) as { d?: { results?: Array<{ ID: string }> } }
 
   const guid = data?.d?.results?.[0]?.ID
@@ -618,12 +627,11 @@ async function findOrCreateKlant(
   // een spellingswijziging ("Jansen BV" -> "Jansen B.V.").
   let codeHitAfgewezen = false
   if (debiteurennummer) {
-    const escaped = debiteurennummer.replace(/'/g, "''")
-    const padded = escaped.padStart(18, ' ')
+    const padded = debiteurennummer.padStart(18, ' ')
     const codeData = await exactGet(
       token,
       division,
-      `crm/Accounts?$filter=(Code eq '${padded}' or Code eq '${escaped}') and Status eq 'C'&$select=ID,Name`
+      `crm/Accounts?$filter=(Code eq ${odataString(padded)} or Code eq ${odataString(debiteurennummer)}) and Status eq 'C'&$select=ID,Name`
     ) as { d?: { results?: Array<{ ID: string; Name?: string }> } }
     const hit = codeData?.d?.results?.[0]
     if (hit?.ID) {
@@ -642,11 +650,10 @@ async function findOrCreateKlant(
 
   // Zoek alleen onder customer accounts (Status 'C') zodat we geen
   // leveranciers of prospects matchen die toevallig dezelfde naam hebben.
-  const encodedName = klant.naam.replace(/'/g, "''")
   const searchData = await exactGet(
     token,
     division,
-    `crm/Accounts?$filter=Name eq '${encodedName}' and Status eq 'C'&$select=ID`
+    `crm/Accounts?$filter=Name eq ${odataString(klant.naam)} and Status eq 'C'&$select=ID`
   ) as { d?: { results?: Array<{ ID: string }> } }
 
   const existingId = searchData?.d?.results?.[0]?.ID
