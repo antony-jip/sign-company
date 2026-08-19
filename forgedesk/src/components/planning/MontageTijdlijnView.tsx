@@ -305,12 +305,16 @@ export function MontageTijdlijnView({
                   const span = spanVan(a)!
                   const eind = rekken?.id === a.id ? rekken.eindMinuten : span.eind
                   const top = ((span.start - vensterStart) / 60) * uurHoogte
-                  const hoogte = Math.max(20, ((eind - span.start) / 60) * uurHoogte)
+                  // Ondergrens is de kaart zelf: titelregel plus padding. Lager
+                  // knipt de titel weg en dan zegt het blok niets meer.
+                  const hoogte = Math.max(32, ((eind - span.start) / 60) * uurHoogte)
                   const plek = banen.get(a.id) || { baan: 0, banen: 1 }
                   const breedte = 100 / plek.banen
                   const isAfgerond = a.status === 'afgerond'
                   const conflict = conflictIds.has(a.id)
-                  const kort = hoogte < 38
+                  const ruimteVoorSub = hoogte >= 46
+                  const prio = !!a.prioriteit && !isAfgerond
+                  const context = [a.klant_naam, a.locatie].filter(Boolean).join(' · ')
 
                   return (
                     <div
@@ -323,38 +327,71 @@ export function MontageTijdlijnView({
                       }}
                       onDragEnd={onSleepEnd}
                       onClick={(e) => { e.stopPropagation(); onOpen(a) }}
-                      title={`${naarTijd(span.start)}–${naarTijd(eind)} · ${a.titel}${a.locatie ? ` · ${a.locatie}` : ''}`}
+                      title={[`${naarTijd(span.start)}–${naarTijd(eind)}`, a.titel, context].filter(Boolean).join(' · ')}
                       className={cn(
-                        'absolute rounded-lg border-l-[3px] px-1.5 py-1 cursor-pointer overflow-hidden',
-                        'bg-card shadow-[0_1px_3px_rgba(0,0,0,0.07)] transition-shadow hover:shadow-[0_3px_10px_rgba(0,0,0,0.12)]',
-                        isAfgerond && 'opacity-55',
+                        'group/blok absolute overflow-hidden rounded-[10px] cursor-pointer',
+                        'bg-card border border-[rgba(26,83,92,0.10)] dark:border-white/[0.10]',
+                        'shadow-[0_1px_2px_rgba(130,100,60,0.06)] hover:shadow-[0_2px_8px_rgba(130,100,60,0.14)]',
+                        'transition-shadow',
+                        isAfgerond && 'opacity-60',
                         conflict && 'ring-1 ring-[#C03A18]',
-                        sleepId === a.id && 'opacity-40',
+                        sleepId === a.id && 'opacity-35',
                       )}
                       style={{
                         top,
                         height: hoogte,
                         left: `calc(${plek.baan * breedte}% + 2px)`,
                         width: `calc(${breedte}% - 4px)`,
-                        borderLeftColor: accentKleur(a) === 'transparent' ? '#1A535C' : accentKleur(a),
+                        // Alleen de uitzondering krijgt kleur · met een streep per
+                        // status wordt de week een kleurenstaal en valt niets meer op.
+                        borderLeft: prio
+                          ? '2px solid #F15025'
+                          : accentKleur(a) === 'transparent'
+                            ? undefined
+                            : `2px solid ${accentKleur(a)}`,
                       }}
                     >
-                      <div className={cn('text-[11px] font-semibold leading-tight truncate', isAfgerond && 'line-through')}>
-                        {a.titel}
-                      </div>
-                      {!kort && (
-                        <>
-                          <div className="text-[10px] tabular-nums text-muted-foreground">
-                            {naarTijd(span.start)}–{naarTijd(eind)}
+                      <div className="flex gap-[9px] px-2.5 py-2">
+                        <span
+                          className={cn(
+                            'mt-[1px] flex h-[14px] w-[14px] flex-shrink-0 items-center justify-center rounded-full border-[1.5px]',
+                            isAfgerond
+                              ? 'border-petrol bg-petrol text-white'
+                              : 'border-[rgba(26,83,92,0.4)] dark:border-white/30 text-muted-foreground',
+                          )}
+                        >
+                          <span className={cn(
+                            'h-[3px] w-[3px] rounded-full',
+                            prio ? 'bg-flame opacity-100' : 'bg-current opacity-55',
+                          )} />
+                        </span>
+
+                        <div className="min-w-0 flex-1">
+                          <div className={cn(
+                            'truncate text-[12.5px] font-semibold leading-[1.3] text-[#1A535C] dark:text-[#CFE3E6]',
+                            isAfgerond && 'line-through',
+                          )}>
+                            {a.titel}
                           </div>
-                          {a.klant_naam && (
-                            <div className="text-[10px] text-muted-foreground truncate">{a.klant_naam}</div>
+                          {ruimteVoorSub && (
+                            <div className="mt-[1px] flex items-baseline gap-2">
+                              <span className="min-w-0 flex-1 truncate text-[11px] leading-[1.35] text-[#1A535C]/60 dark:text-[#CFE3E6]/60">
+                                {context || `${naarTijd(span.start)}–${naarTijd(eind)}`}
+                              </span>
+                              {context && (
+                                <span className="flex-shrink-0 text-[11px] tabular-nums leading-[1.35] text-[#1A535C]/45 dark:text-[#CFE3E6]/45">
+                                  {naarTijd(span.start)}
+                                </span>
+                              )}
+                            </div>
                           )}
-                          {toonMonteurs && monteurLabel(a) && (
-                            <div className="text-[10px] text-muted-foreground/80 truncate">{monteurLabel(a)}</div>
+                          {ruimteVoorSub && toonMonteurs && monteurLabel(a) && hoogte >= 64 && (
+                            <div className="mt-[1px] truncate text-[11px] leading-[1.35] text-[#1A535C]/45 dark:text-[#CFE3E6]/45">
+                              {monteurLabel(a)}
+                            </div>
                           )}
-                        </>
-                      )}
+                        </div>
+                      </div>
 
                       {/* Rekken verzet alleen de eindtijd · naar boven trekken zou
                           de starttijd verzetten en dat botst met slepen. */}
