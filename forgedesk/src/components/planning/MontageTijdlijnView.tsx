@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from 'react'
+import { useState, useRef, useMemo, useEffect, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import type { MontageAfspraak, Taak } from '@/types'
 
@@ -20,6 +20,7 @@ const BASIS_UUR_HOOGTE = 56
 const DEFAULT_START_UUR = 7
 const DEFAULT_EIND_UUR = 18
 const SNAP_MINUTEN = 15
+const NOTITIE_HOOGTE = 24
 const MIN_DUUR_MINUTEN = 15
 
 function naarMinuten(t?: string | null): number | null {
@@ -107,6 +108,9 @@ export interface TijdlijnProps {
   monteurLabel: (a: MontageAfspraak) => string
   toonMonteurs: boolean
   gesloten?: (datum: string) => string | null
+  /** Dagnotitie onder de dagkop · de popover leeft in de layout, wij geven hem
+   *  alleen een vaste plek met een vaste hoogte. */
+  renderDagNotitie?: (datum: string) => ReactNode
   zoom?: number
 }
 
@@ -114,7 +118,7 @@ export function MontageTijdlijnView({
   weekDates, datumSleutel, afsprakenPerDag, takenPerDag, vandaagSleutel,
   accentKleur, conflictIds, sleepId, onSleepStart, onSleepEnd,
   onDropOpTijd, onDuurWijzigen, onOpen, onNieuwOpTijd,
-  monteurLabel, toonMonteurs, gesloten, zoom = 100,
+  monteurLabel, toonMonteurs, gesloten, renderDagNotitie, zoom = 100,
 }: TijdlijnProps) {
   const uurHoogte = BASIS_UUR_HOOGTE * (zoom / 100)
   const [rekken, setRekken] = useState<{ id: string; eindMinuten: number } | null>(null)
@@ -159,6 +163,7 @@ export function MontageTijdlijnView({
   // Taken hebben geen tijdstip en staan in een strook boven het raster. Die
   // strook is in élke kolom even hoog, ook de lege: anders zakt een kolom met
   // taken weg ten opzichte van de uren-as ernaast en klopt geen enkele lijn.
+  const notitieHoogte = renderDagNotitie ? NOTITIE_HOOGTE : 0
   const takenBandHoogte = useMemo(() => {
     const meeste = Math.max(0, ...weekDates.map((d) => (takenPerDag[datumSleutel(d)] || []).length))
     return meeste === 0 ? 0 : meeste * 18 + 8
@@ -206,7 +211,7 @@ export function MontageTijdlijnView({
   return (
     <div className="planning-tijdlijn flex overflow-x-auto">
       {/* Urenkolom */}
-      <div className="flex-shrink-0 w-12 select-none" style={{ paddingTop: 32 + takenBandHoogte }}>
+      <div className="flex-shrink-0 w-12 select-none" style={{ paddingTop: 32 + notitieHoogte + takenBandHoogte }}>
         {uren.map((m) => (
           <div key={m} className="relative" style={{ height: uurHoogte }}>
             <span className="absolute -top-[7px] right-2 text-[10px] font-medium tabular-nums text-muted-foreground/70">
@@ -227,7 +232,7 @@ export function MontageTijdlijnView({
           const banen = verdeelInBanen(afspraken)
 
           return (
-            <div key={sleutel} className="flex-1 min-w-[118px]">
+            <div key={sleutel} className="group flex-1 min-w-[118px]">
               <div className={cn(
                 'h-8 flex items-baseline gap-1.5 px-2 border-b border-border/60',
                 isVandaag && 'text-flame',
@@ -238,6 +243,12 @@ export function MontageTijdlijnView({
                 </span>
                 {dicht && <span className="text-[10px] text-muted-foreground truncate">{dicht}</span>}
               </div>
+
+              {renderDagNotitie && (
+                <div className="flex items-start justify-center overflow-hidden" style={{ height: notitieHoogte }}>
+                  {renderDagNotitie(sleutel)}
+                </div>
+              )}
 
               {takenBandHoogte > 0 && (
                 <div

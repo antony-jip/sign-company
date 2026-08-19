@@ -1785,6 +1785,18 @@ export function MontagePlanningLayout() {
           .filter(Boolean)
           .join(', ')}
         gesloten={(datum) => isFeestdag(datum, feestdagen)?.naam ?? null}
+        renderDagNotitie={(datum) => {
+          if (isFeestdag(datum, feestdagen)) return null;
+          const d = new Date(datum + "T00:00:00");
+          return (
+            <DagNotitiePopover
+              datum={datum}
+              notitie={dagNotitieMap[datum] ?? ""}
+              label={`${DAG_NAMEN_LANG[(d.getDay() + 6) % 7]} ${d.getDate()} ${d.toLocaleDateString("nl-NL", { month: "short" })}`}
+              onSave={handleSaveDagNotitie}
+            />
+          );
+        }}
       />
     );
   }
