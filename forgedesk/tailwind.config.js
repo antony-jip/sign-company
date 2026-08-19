@@ -16,7 +16,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Inter"', '"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        heading: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['"Instrument Sans"', 'system-ui', 'sans-serif'],
         mono: ['Inter', 'ui-monospace', 'monospace'],
         cijfer: ['Inter', 'system-ui', 'sans-serif'],
       },
