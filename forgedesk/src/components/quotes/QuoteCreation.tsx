@@ -70,6 +70,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur, OfferteItem } from '@/types'
+import { berekenRegelInkoop } from '@/utils/calculatieBerekening'
 import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { berekenOfferteTotalen } from '@/utils/offerteTotalen'
@@ -518,13 +519,17 @@ export function QuoteCreation() {
 
   // Inkoop = sum of all calculatie_regels inkoop_prijs * aantal (verplichte items only)
   const totaalInkoop = useMemo(() => {
-    return round2(verplichtePrijsItems.reduce((sum, item) => {
-      const data = getActivePriceData(item)
-      if (data.calculatie_regels && data.calculatie_regels.length > 0) {
-        return sum + data.calculatie_regels.reduce((s, r) => s + round2(r.inkoop_prijs * r.aantal), 0)
-      }
-      return sum
-    }, 0))
+    // De inkoop telde de calculatieregels één keer op, ongeacht het aantal op
+    // de offerteregel. De verkoopkant rekent wél aantal × eenheidsprijs, dus
+    // bij aantal 5 groeide de omzet mee en de kostprijs niet · het overzicht
+    // liet dan een winst zien die er niet was.
+    return round2(verplichtePrijsItems.reduce(
+      (sum, item) => {
+        const data = getActivePriceData(item)
+        return sum + berekenRegelInkoop(data.calculatie_regels, data.aantal)
+      },
+      0,
+    ))
   }, [verplichtePrijsItems])
 
   const winstExBtw = round2(subtotaal - totaalInkoop)

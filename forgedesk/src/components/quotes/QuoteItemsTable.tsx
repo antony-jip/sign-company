@@ -1,3 +1,4 @@
+import { berekenRegelInkoop, berekenRegelVerkoopUitCalculatie } from '@/utils/calculatieBerekening'
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -171,10 +172,13 @@ function genId(): string {
   return `dr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
-function calculateItemMargin(regels?: CalculatieRegel[]): { inkoop: number; verkoop: number; marge: number; percentage: number } | null {
+// De calculatie beschrijft één stuk · het bedrag in de marge-badge moet dus met
+// het aantal van de regel meeschalen. Het percentage niet: dat verandert niet
+// als je inkoop én verkoop met hetzelfde getal vermenigvuldigt.
+function calculateItemMargin(regels?: CalculatieRegel[], aantal = 1): { inkoop: number; verkoop: number; marge: number; percentage: number } | null {
   if (!regels || regels.length === 0) return null
-  const inkoop = round2(regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0))
-  const verkoop = round2(regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0))
+  const inkoop = berekenRegelInkoop(regels, aantal)
+  const verkoop = berekenRegelVerkoopUitCalculatie(regels, aantal)
   const marge = round2(verkoop - inkoop)
   const percentage = Math.round(berekenMarkupPercentage(inkoop, verkoop) * 10) / 10
   return { inkoop, verkoop, marge, percentage }
@@ -1460,7 +1464,7 @@ export function QuoteItemsTable({
 
                           {/* FIX 8: Marge indicator per item */}
                           {(() => {
-                            const margeData = calculateItemMargin(item.calculatie_regels)
+                            const margeData = calculateItemMargin(item.calculatie_regels, item.aantal)
                             if (!margeData) return null
                             const colors = getMargeColor(margeData.percentage)
                             return (
@@ -1650,7 +1654,7 @@ export function QuoteItemsTable({
 
                                 {/* FIX 8: Marge indicator per variant */}
                                 {(() => {
-                                  const margeData = calculateItemMargin(variant.calculatie_regels)
+                                  const margeData = calculateItemMargin(variant.calculatie_regels, variant.aantal)
                                   if (!margeData) return null
                                   const colors = getMargeColor(margeData.percentage)
                                   return (

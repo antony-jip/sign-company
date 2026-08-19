@@ -45,3 +45,31 @@ export function berekenCalculatieTotalen(regels: CalculatieRegel[]): CalculatieT
     margePercentage,
   }
 }
+
+/**
+ * Inkoop van één offerteregel, inclusief het aantal van die regel.
+ *
+ * De calculatie beschrijft één stuk: haar totaalVerkoop landt in de
+ * `eenheidsprijs` van de offerteregel, en de regel rekent daarna zelf
+ * `aantal × eenheidsprijs`. De inkoop hoort dus met datzelfde aantal mee te
+ * schalen. Deed hij niet — bij aantal 5 groeide de verkoop wel en de inkoop
+ * niet, en dan liet het overzicht een winst zien die er niet was.
+ */
+export function berekenRegelInkoop(
+  regels: CalculatieRegel[] | undefined,
+  aantal: number,
+): number {
+  if (!regels || regels.length === 0) return 0
+  const perStuk = regels.reduce((som, r) => som + round2(r.inkoop_prijs * r.aantal), 0)
+  return round2(perStuk * (aantal || 0))
+}
+
+/** Verkoop van één offerteregel volgens de calculatie · zelfde schaling. */
+export function berekenRegelVerkoopUitCalculatie(
+  regels: CalculatieRegel[] | undefined,
+  aantal: number,
+): number {
+  if (!regels || regels.length === 0) return 0
+  const perStuk = regels.reduce((som, r) => som + round2(r.verkoop_prijs * r.aantal), 0)
+  return round2(perStuk * (aantal || 0))
+}
