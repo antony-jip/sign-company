@@ -18,7 +18,9 @@ const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
 
 type Pillar = {
   title: string
-  /** Uitsnede uit de echte app-mockup (AppCrop). Geen crop = alleen hairline. */
+  /** Foto uit de serie in public/images/fotos (scripts/beeld-genereer.py). */
+  foto?: { src: string; alt: string }
+  /** Uitsnede uit de echte app-mockup (AppCrop); tussenstand als er nog geen foto is. */
   crop?: Crop
   description: string
 }
@@ -43,18 +45,21 @@ const details: ModuleDetail[] = [
     pillars: [
       {
         title: 'Eén klik, de juiste actie',
+        foto: { src: '/images/fotos/p-projecten-actie.webp', alt: 'Ondernemer tikt één keer op de tablet aan de werkbank, een afgewerkt bord leunt tegen de muur' },
         crop: { view: 'detail', scale: 1.0, x: 910, y: 330 },
         description:
           'Offerte maken, werkbon aanmaken, montage inplannen, factuur versturen. Alles start vanuit het project, je hoeft niet te zoeken waar je gebleven was.',
       },
       {
         title: 'Je klant kijkt mee',
+        foto: { src: '/images/fotos/p-projecten-klant.webp', alt: 'Winkelier kijkt in haar deuropening op haar telefoon, het nieuwe bord hangt net' },
         crop: { view: 'detail', scale: 0.8, x: 483, y: 702 },
         description:
           'Eén link, geen inlog. Je klant keurt goed, bekijkt tekeningen en stelt vragen. Geen reactie na drie dagen? doen. stuurt een herinnering.',
       },
       {
         title: 'De status staat er al',
+        foto: { src: '/images/fotos/p-projecten-status.webp', alt: 'Twee monteurs kijken bij de open busdeur samen op een tablet, klus klaar' },
         crop: { view: 'detail', scale: 0.9, x: 248, y: 199 },
         description:
           'Verstuurd, akkoord, ingepland, gefactureerd. Elke stap staat in de timeline, niemand hoeft meer te vragen hoe het ervoor staat.',
@@ -71,18 +76,21 @@ const details: ModuleDetail[] = [
     pillars: [
       {
         title: 'Inkoop, marge, verkoopprijs',
+        foto: { src: '/images/fotos/p-offertes-calculatie.webp', alt: 'Ondernemer meet een winkelpui op met een laserafstandsmeter' },
         crop: { view: 'offerte', scale: 1.0, x: 910, y: 730 },
         description:
           'Bouw één keer je producten en templates. Voer inkoop in, stel je marge in, doen. rekent de verkoopprijs uit. Geen Excel meer.',
       },
       {
         title: 'Grip op uren en marge',
+        foto: { src: '/images/fotos/p-offertes-marge.webp', alt: 'Handen leggen aluminium- en acrylaatmonsters op een tekening van de pui' },
         crop: { view: 'offerte', scale: 1.0, x: 910, y: 538 },
         description:
           'Ook bij tien offerteregels zie je in één oogopslag wat het kost en wat het oplevert. Totalen, marge en uren per medewerker.',
       },
       {
         title: 'Leveranciersprijzen bij de hand',
+        foto: { src: '/images/fotos/p-offertes-leverancier.webp', alt: 'Monteur pakt een levering folierollen uit in de werkplaats' },
         crop: { view: 'inkoop', scale: 0.85, x: 505, y: 232 },
         description:
           'Upload de PDF van je leverancier, doen. leest hem uit. Inkoopprijzen zitten direct in je marge, overtypen hoeft niet meer.',
@@ -99,18 +107,21 @@ const details: ModuleDetail[] = [
     pillars: [
       {
         title: 'Goedkeuren in één klik',
+        foto: { src: '/images/fotos/p-portaal-akkoord.webp', alt: 'Klant en signmaker schudden elkaar de hand op de stoep voor het nieuwe bord' },
         crop: { view: 'detail', scale: 0.8, x: 571, y: 768 },
         description:
           'Offerte akkoord, tekening goedgekeurd, opdrachtbevestiging digitaal getekend. Alles vanuit dezelfde link, jij ziet direct de status.',
       },
       {
         title: 'Alles wat je klant moet zien',
+        foto: { src: '/images/fotos/p-portaal-zien.webp', alt: 'Monteur houdt een geprinte proef tegen de gevel, de klant kijkt mee' },
         crop: { view: 'detail', scale: 0.85, x: 910, y: 598 },
         description:
           'Tekeningen, offertes, montagefoto’s en facturen in chronologische volgorde. Reageren kan direct, niks raakt kwijt in een mailbox.',
       },
       {
         title: 'doen. volgt op',
+        foto: { src: '/images/fotos/p-portaal-opvolgen.webp', alt: 'Ondernemer leunt met koffie tegen de bus en kijkt even op zijn telefoon' },
         crop: { view: 'dashboard', scale: 1.0, x: 554, y: 522 },
         description:
           'Geen reactie na drie dagen? Er gaat automatisch een herinnering uit met jouw tekst. Open factuur? Ook daar gaat een herinnering achteraan.',
@@ -127,18 +138,21 @@ const details: ModuleDetail[] = [
     pillars: [
       {
         title: 'Je week in één overzicht',
+        foto: { src: '/images/fotos/p-planning-week.webp', alt: 'Drie monteurs bij de werkplaatsdeur in de ochtend, een wijst op een tablet' },
         crop: { view: 'planning', scale: 0.6, x: 470, y: 110 },
         description:
           'Weekweergave per monteur of per ploeg. Slepen is plannen, verplaatsen is net zo makkelijk. Geen gedeelde Google Calendar meer.',
       },
       {
         title: 'Ingepland is klaar voor de monteur',
+        foto: { src: '/images/fotos/p-planning-monteur.webp', alt: 'Monteur bekijkt achter het stuur de klus van vandaag op zijn telefoon' },
         crop: { view: 'planning', scale: 1.0, x: 1000, y: 205 },
         description:
           'Bij het inplannen wordt de werkbon aangemaakt met alle offerteregels. Je monteur opent zijn telefoon en gaat direct aan de slag.',
       },
       {
         title: 'Weer, conflicten, beschikbaarheid',
+        foto: { src: '/images/fotos/p-planning-weer.webp', alt: 'Monteur op de hoogwerker kijkt omhoog naar een opklarende lucht' },
         crop: { view: 'dashboard', scale: 0.65, x: 248, y: 111 },
         description:
           'Buiten-montage gepland? Het weerbericht staat erbij. Monteur al bezet? doen. waarschuwt je voordat het misgaat.',
@@ -155,18 +169,21 @@ const details: ModuleDetail[] = [
     pillars: [
       {
         title: 'Maken is één klik',
+        foto: { src: '/images/fotos/p-werkbonnen-maken.webp', alt: 'Ondernemer scheurt een klus van de rol geprinte folie, werkbon op de telefoon ernaast' },
         crop: { view: 'detail', scale: 1.3, x: 926, y: 330 },
         description:
           'Plan je een montage in of keur je klant de offerte goed? De werkbon maakt zichzelf, met omschrijving, aantallen en instructiefoto’s. Geen overtypen, geen vergeten regels.',
       },
       {
         title: 'Uren en foto’s op locatie',
+        foto: { src: '/images/fotos/p-werkbonnen-locatie.webp', alt: 'Monteur fotografeert met zijn telefoon de net gemonteerde letters' },
         crop: { view: 'detail', scale: 0.95, x: 910, y: 658 },
         description:
           'Uren tikken, foto’s van het resultaat, opmerkingen per regel. Alles komt direct terug in het project, zonder dat jij hoeft te bellen.',
       },
       {
         title: 'Klant tekent, jij factureert',
+        foto: { src: '/images/fotos/p-werkbonnen-tekenen.webp', alt: 'Klant zet met een vinger een handtekening op de telefoon van de monteur' },
         crop: { view: 'factuur', scale: 0.8, x: 560, y: 110 },
         description:
           'De klant tekent digitaal op de telefoon van je monteur. Werkbon afgerond, jij ziet het direct en de factuur staat klaar.',
@@ -183,18 +200,21 @@ const details: ModuleDetail[] = [
     pillars: [
       {
         title: 'Van offerte naar factuur in één klik',
+        foto: { src: '/images/fotos/p-facturen-eenklik.webp', alt: 'Ondernemer klapt aan het eind van de dag de laptop dicht, werkplaats achter glas' },
         crop: { view: 'factuur', scale: 0.95, x: 248, y: 615 },
         description:
           'Factuur direct uit de offerte, Mollie-betaallink erbij (iDEAL of creditcard). Niet betaald? doen. stuurt zelf de herinnering.',
       },
       {
         title: 'Daan leest je inkoopfacturen uit',
+        foto: { src: '/images/fotos/p-facturen-inkoop.webp', alt: 'Stapel pakbonnen op de werkbank naast een telefoon, handen bladeren erdoor' },
         crop: { view: 'inkoop', scale: 0.75, x: 724, y: 516 },
         description:
           'Je leverancier mailt zijn PDF naar de inkoop-inbox. Daan haalt leverancier, factuurnummer, datum en regels eruit. Jij controleert en keurt goed.',
       },
       {
         title: 'Door naar Exact Online',
+        foto: { src: '/images/fotos/p-facturen-exact.webp', alt: 'Ondernemer en boekhouder aan één tafel met één laptop' },
         crop: { view: 'factuur', scale: 1.1, x: 720, y: 112 },
         description:
           'Goedgekeurde facturen gaan automatisch door naar Exact voor je boekhouding. Geen dubbel invoerwerk, geen losse exports.',
@@ -211,16 +231,19 @@ const details: ModuleDetail[] = [
     pillars: [
       {
         title: 'Daan verbetert je input',
+        foto: { src: '/images/fotos/p-studio-input.webp', alt: 'Signmaker fotografeert vanaf de overkant een lege winkelpui met zijn telefoon' },
         description:
           'Je typt in gewone taal wat je wilt zien. Daan maakt er de juiste opdracht van en kiest de stijl die bij het werk past.',
       },
       {
         title: 'Gekoppeld aan je project',
+        foto: { src: '/images/fotos/p-studio-project.webp', alt: 'Tablet met gevelfoto op de werkbank naast een echte monsterletter' },
         description:
           'Elke visualisatie hangt aan een project of offerte. Deel hem via het portaal en laat het beeld het verkoopwerk doen.',
       },
       {
         title: 'Betalen per beeld',
+        foto: { src: '/images/fotos/p-studio-credits.webp', alt: 'Ontwerper laat een collega een gevelvisualisatie op het scherm zien' },
         description:
           '10 credits inbegrepen, bijkopen wanneer je wilt. Je betaalt alleen voor wat je genereert, geen extra abonnement.',
       },
@@ -236,18 +259,21 @@ const details: ModuleDetail[] = [
     pillars: [
       {
         title: 'Kent je cijfers',
+        foto: { src: '/images/fotos/p-ai-cijfers.webp', alt: 'Ondernemer op de werkvloer kijkt tussen twee klussen door op een tablet' },
         crop: { view: 'dashboard', scale: 0.8, x: 472, y: 336 },
         description:
           'Hoeveel staat er open? Wie is je grootste klant? Daan haalt het antwoord direct uit je eigen data, zonder rapporten te bouwen.',
       },
       {
         title: 'Schrijft en verbetert',
+        foto: { src: '/images/fotos/p-ai-schrijft.webp', alt: 'Ondernemer typt een kort bericht op zijn telefoon in de cabine van de bus' },
         crop: { view: 'email', scale: 0.9, x: 658, y: 111 },
         description:
           'Selecteer een tekst en Daan herschrijft hem in jouw toon. Offerteteksten, mails, productomschrijvingen.',
       },
       {
         title: 'Rekent voor je',
+        foto: { src: '/images/fotos/p-ai-rekent.webp', alt: 'Handen met een duimstok op een groot spandoek op de snijtafel' },
         crop: { view: 'dashboard', scale: 1.2, x: 245, y: 345 },
         description:
           'Vierkante meters, marges, nacalculatie. Vraag het en Daan rekent het uit, met je projectdata erbij.',
@@ -264,18 +290,21 @@ const details: ModuleDetail[] = [
     pillars: [
       {
         title: 'Je eigen mailbox',
+        foto: { src: '/images/fotos/p-email-mailbox.webp', alt: 'Ondernemer aan het bureau met één scherm en een mok, rustige ochtend' },
         crop: { view: 'email', scale: 0.7, x: 286, y: 111 },
         description:
           'Koppel je zakelijke adres via IMAP/SMTP. Je inbox blijft van jou, alleen mail die bij een klant of project hoort is zichtbaar voor het team.',
       },
       {
         title: 'Automatisch gekoppeld',
+        foto: { src: '/images/fotos/p-email-gekoppeld.webp', alt: 'Monteur geeft een pakbon aan de ondernemer in de werkplaats' },
         crop: { view: 'detail', scale: 1.0, x: 248, y: 199 },
         description:
           'Inkomende en verzonden mails hangen vanzelf aan de juiste klant en het juiste project. Het hele dossier op één plek.',
       },
       {
         title: 'Daan leest mee',
+        foto: { src: '/images/fotos/p-email-daan.webp', alt: 'Ondernemer leest zijn telefoon bij de roldeur met koffie' },
         crop: { view: 'email', scale: 0.9, x: 700, y: 110 },
         description:
           'Lange mail binnen? Daan vat hem samen en zet een antwoord klaar in jouw toon. Jij hoeft alleen te versturen.',
@@ -292,18 +321,21 @@ const details: ModuleDetail[] = [
     pillars: [
       {
         title: 'Gekoppeld aan je werk',
+        foto: { src: '/images/fotos/p-taken-werk.webp', alt: 'Whiteboard met briefjes maakt plaats voor een tablet in de hand van de ondernemer' },
         crop: { view: 'taken', scale: 0.9, x: 658, y: 204 },
         description:
           'Elke taak hangt aan een project of klant. Je ziet meteen waar hij bij hoort en wat er speelt.',
       },
       {
         title: 'Toegewezen met deadline',
+        foto: { src: '/images/fotos/p-taken-deadline.webp', alt: 'Twee collega’s aan de snijtafel, een wijst een datum aan op de tablet' },
         crop: { view: 'taken', scale: 1.0, x: 801, y: 111 },
         description:
           'Wijs een taak toe aan een collega en zet er een datum op. Iedereen weet wat van hem is en wanneer het klaar moet zijn.',
       },
       {
         title: 'Niks valt tussen wal en schip',
+        foto: { src: '/images/fotos/p-taken-niks.webp', alt: 'Einde van de dag: monteur veegt de werkplaats, alle bussen terug' },
         crop: { view: 'taken', scale: 1.0, x: 248, y: 111 },
         description:
           'Notificaties bij wijzigingen en vervaldatums. Opvolgen gebeurt, ook als de werkplaats vol staat.',
@@ -1066,7 +1098,11 @@ const MODULE_FOTO: Record<string, { src: string; alt: string }> = {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-10 md:gap-y-12">
             {detail.pillars.map((p, i) => (
               <Reveal key={p.title} delay={i * 0.08}>
-                {p.crop ? (
+                {p.foto ? (
+                  <div className="relative rounded-[10px] overflow-hidden mb-6 h-[260px] bg-petrol-deep/5">
+                    <Image src={p.foto.src} alt={p.foto.alt} fill sizes="(max-width: 768px) 100vw, 400px" className="object-cover" />
+                  </div>
+                ) : p.crop ? (
                   <AppCrop crop={p.crop} className="rounded-[10px] border border-petrol/10 bg-bg mb-6 h-[260px]" />
                 ) : (
                   <div className="border-t border-petrol/10 pt-6 mb-0" />
