@@ -316,9 +316,12 @@ export async function createInkoopRegel(data: Omit<InkoopRegel, 'id' | 'created_
     totaal: round2(data.totaal),
   }
   if (isSupabaseConfigured() && supabase) {
+    // organisatie_id moet mee: de RLS-policy sinds migratie 095 toetst daarop,
+    // en zonder die kolom weigert de insert.
+    const _orgId = await getOrgId()
     const { data: row, error } = await supabase
       .from('inkoop_regels')
-      .insert(await withUserId(regelData))
+      .insert({ ...await withUserId(regelData), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
