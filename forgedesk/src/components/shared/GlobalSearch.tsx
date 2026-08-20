@@ -441,7 +441,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
       {/* Search input */}
       <div
         className={cn(
-          'flex items-center w-full border transition-all duration-200',
+          'flex items-center w-full min-w-0 overflow-hidden border transition-all duration-200',
           'rounded-lg',
           focused
             ? 'border-petrol/20 bg-card shadow-[0_0_0_2.5px_rgba(26,83,92,0.07)] dark:border-white/15'
@@ -464,8 +464,13 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
           }}
           onBlur={() => setFocused(false)}
           onKeyDown={handleKeyDown}
+          size={1}
           className={cn(
-            'flex-1 bg-transparent border-none outline-none text-foreground placeholder-muted-foreground',
+            // min-w-0 + size=1: zonder dat houdt een input zijn eigen
+            // minimumbreedte (±20 tekens) aan, krimpt hij niet mee in het
+            // smalle zoekveld en werd de ⌘K-badge het veld uit geduwd,
+            // pal over de bel en de avatar heen.
+            'min-w-0 flex-1 bg-transparent border-none outline-none text-foreground placeholder-muted-foreground',
             compact ? 'text-xs px-2 py-1.5' : 'text-[13px] px-2.5 py-1.5'
           )}
         />
