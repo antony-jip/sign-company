@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Paperclip, Send, X, FileText, Image as ImageIcon, File, Bold, Italic, Underline, List, Link as LinkIcon, Loader2, Receipt, CreditCard, Wrench, Check, Plus, ChevronDown, Clock } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -16,6 +17,7 @@ import { getSigningVisualisatiesByProject } from '@/services/visualizerService'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF, generateFactuurPDF } from '@/services/pdfService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { getEmailsVoorProject, koppelEmailAanProject, type ProjectMail } from '@/services/emailProjectService'
+import { getEmailTemplates, type EmailTemplate } from '@/services/emailService'
 import { uploadEmailAttachment, deleteFile } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem, SigningVisualisatie } from '@/types'
@@ -63,6 +65,20 @@ interface DraftPayload {
 export interface ProjectMailComposerHandle {
   open: () => void
   scrollIntoView: () => void
+}
+
+/**
+ * Templates die in het e-mailscherm zijn opgeslagen bevatten HTML; het
+ * bericht hier is platte tekst. Regeleindes behouden, de rest strippen,
+ * anders leest de klant straks een <div> mee.
+ */
+function templateNaarPlattetekst(body: string): string {
+  const metRegels = body
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li)>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '- ')
+  const doc = new DOMParser().parseFromString(metRegels, 'text/html')
+  return (doc.body.textContent || '').replace(/\n{3,}/g, '\n\n').trim()
 }
 
 async function fileToBase64(file: File): Promise<string> {
@@ -304,6 +320,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
 ) {
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, profile, primaireKleur } = useAppSettings()
   const documentStyle = useDocumentStyle()
+  const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -341,6 +358,10 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const [projectVisualisaties, setProjectVisualisaties] = useState<SigningVisualisatie[]>([])
   const [bezigItemId, setBezigItemId] = useState<string | null>(null)
   const pickerRef = useRef<HTMLDivElement>(null)
+
+  const [templates, setTemplates] = useState<EmailTemplate[]>([])
+  const [templateOpen, setTemplateOpen] = useState(false)
+  const templateRef = useRef<HTMLDivElement>(null)
 
   const [threadMails, setThreadMails] = useState<ProjectMail[]>([])
   const [threadId, setThreadId] = useState<string | null>(null)
@@ -473,6 +494,41 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [pickerOpen])
+
+  // Alleen eigen templates: de systeem-templates horen bij de automatische
+  // mails en dragen {{...}}-variabelen die alleen de trigger-tasks invullen.
+  useEffect(() => {
+    if (!open) return
+    getEmailTemplates()
+      .then((rijen) => setTemplates(rijen.filter((t) => !t.is_systeem)))
+      .catch(() => {})
+  }, [open])
+
+  useEffect(() => {
+    if (!templateOpen) return
+    const handler = (e: MouseEvent) => {
+      if (templateRef.current && !templateRef.current.contains(e.target as Node)) setTemplateOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [templateOpen])
+
+  // Alleen de velden die vanuit het project vaststaan. [datum], [bedrag] en
+  // [omschrijving] blijven staan: die moet de afzender zelf invullen, en een
+  // gegokte datum in een herinnering is erger dan een zichtbaar gat.
+  const vulProjectvelden = useCallback((tekst: string) => tekst
+    .replace(/\[naam\]/gi, voornaam || defaultNaam || '[naam]')
+    .replace(/\[bedrijf\]/gi, klant?.bedrijfsnaam || '[bedrijf]')
+    .replace(/\[projectnaam\]/gi, project.naam || '[projectnaam]'),
+  [voornaam, defaultNaam, klant?.bedrijfsnaam, project.naam])
+
+  const pasTemplateToe = useCallback((tmpl: EmailTemplate) => {
+    if (tmpl.onderwerp.trim()) setSubject(vulProjectvelden(tmpl.onderwerp))
+    const tekst = vulProjectvelden(templateNaarPlattetekst(tmpl.body))
+    setBody(`${tekst}${signatuurBlok}`)
+    setTemplateOpen(false)
+    toast.success(<>Template toegepast<span style={{ color: '#F15025' }}>.</span></>)
+  }, [vulProjectvelden, signatuurBlok])
 
   // Inplan-popover sluiten bij klik buiten
   useEffect(() => {
@@ -1246,6 +1302,60 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
           <button type="button" onClick={() => fileInputRef.current?.click()} title="Eigen bestand toevoegen" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
             <Paperclip className="h-3.5 w-3.5" />
           </button>
+        </div>
+
+        <div className="relative" ref={templateRef}>
+          <button
+            type="button"
+            onClick={() => setTemplateOpen((v) => !v)}
+            title="Begin met een template"
+            className={cn(
+              "flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-lg text-[11px] font-semibold border transition-all",
+              templateOpen
+                ? "bg-petrol text-white border-petrol shadow-[0_2px_8px_rgba(26,83,92,0.25)]"
+                : "bg-white text-petrol border-petrol/30 hover:border-petrol/60 hover:bg-petrol/[0.04]",
+            )}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span className="whitespace-nowrap">Template</span>
+            <ChevronDown className={cn("h-3 w-3 transition-transform", templateOpen && "rotate-180")} />
+          </button>
+
+          {templateOpen && (
+            <div className="absolute bottom-full mb-2 left-0 z-50 w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-border bg-white shadow-[0_12px_40px_rgba(0,0,0,0.16)] overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-150">
+              <div className="px-3 py-2 border-b border-border/60 bg-gradient-to-b from-petrol/[0.05] to-transparent">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-petrol">Begin met een template</span>
+              </div>
+              <div className="max-h-[300px] overflow-y-auto py-1">
+                {templates.length > 0 ? (
+                  templates.map((tmpl) => (
+                    <button
+                      key={tmpl.id}
+                      type="button"
+                      onClick={() => pasTemplateToe(tmpl)}
+                      className="w-full flex flex-col gap-0.5 px-3 py-2 text-left hover:bg-petrol/[0.05] transition-colors"
+                    >
+                      <span className="text-[12px] font-medium text-foreground truncate">{tmpl.naam}</span>
+                      {tmpl.onderwerp.trim() && (
+                        <span className="text-[11px] text-muted-foreground truncate">{tmpl.onderwerp}</span>
+                      )}
+                    </button>
+                  ))
+                ) : (
+                  <p className="px-3 py-3 text-[11px] text-muted-foreground">
+                    Nog geen templates. Maak ze aan in Instellingen.
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => { setTemplateOpen(false); navigate('/instellingen?tab=email&sub=templates') }}
+                className="w-full px-3 py-2 text-left text-[11px] text-muted-foreground hover:text-foreground hover:bg-petrol/[0.05] transition-colors border-t border-border/60"
+              >
+                Templates beheren
+              </button>
+            </div>
+          )}
         </div>
 
         {pickerLoaded && cats.length > 0 && (

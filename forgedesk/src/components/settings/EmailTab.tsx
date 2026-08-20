@@ -89,8 +89,12 @@ function EmailTemplatesBeheerTab() {
   useEffect(() => {
     async function load() {
       try {
-        let dbTemplates = await getEmailTemplates()
-        // Seed standaard templates als de tabel nog leeg is
+        // Systeem-templates horen bij de automatische mails en worden op hun
+        // eigen plek beheerd (Communicatie > Templates). Stonden ze hier ook,
+        // dan telde de seed-check ze mee en kwamen de standaard-templates bij
+        // een bestaande organisatie nooit meer binnen.
+        let dbTemplates = (await getEmailTemplates()).filter((t) => !t.is_systeem)
+        // Seed standaard templates als de gebruiker er nog geen heeft
         if (dbTemplates.length === 0) {
           const seeded: EmailTemplate[] = []
           for (const tmpl of STANDAARD_TEMPLATES) {

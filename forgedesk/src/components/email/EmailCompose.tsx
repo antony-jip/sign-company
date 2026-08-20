@@ -444,8 +444,16 @@ export function EmailCompose({
   }, [])
 
   // Adressen laadt OntvangerInput zelf, bij focus op een adresveld.
+  // Alleen eigen templates. De systeem-templates horen bij de automatische
+  // mails (opvolging, herinnering, onboarding) en dragen {{...}}-variabelen
+  // die alleen door de trigger-tasks worden ingevuld; koos je die hier, dan
+  // ging er letterlijk {{offerte_nummer}} naar de klant.
   useEffect(() => {
-    if (open) getEmailTemplates().then(setDbTemplates).catch(() => {})
+    if (open) {
+      getEmailTemplates()
+        .then((templates) => setDbTemplates(templates.filter((t) => !t.is_systeem)))
+        .catch(() => {})
+    }
   }, [open])
 
   const handleTemplateSelect = useCallback((key: string) => {
