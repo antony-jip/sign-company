@@ -9,6 +9,7 @@ import { modules } from '@/data/modules'
 
 const navLinks = [
   { href: '/features', label: 'Product' },
+  { href: '/demo', label: 'Demo' },
   { href: '/hoe-het-werkt', label: 'Hoe het werkt' },
   { href: '/prijzen', label: 'Prijzen' },
   { href: '/over', label: 'Verhaal' },

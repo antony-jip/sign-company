@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import Link from 'next/link'
 import AppShowcase from '@/components/home/AppShowcase'
 
 /* De demo is de pitch. Desktop: de klikbare app. Mobiel: een video-loop,
@@ -29,10 +30,22 @@ export default function Demo() {
             Dit is doen<span className="text-flame">.</span>{' '}
             <span className="hidden md:inline">Klik maar door.</span>
           </h2>
-          <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
-            <span className="md:hidden">Geen mockup, de echte app. Op desktop klik je er zelf doorheen.</span>
-            <span className="hidden md:inline">Negen schermen, geen video en geen mockup. Zo ziet je werkdag eruit.</span>
-          </p>
+          <div className="max-w-sm">
+            <p className="text-[15px] md:text-[16px] text-muted leading-[1.55]">
+              <span className="md:hidden">Geen mockup, de echte app. Op desktop klik je er zelf doorheen.</span>
+              <span className="hidden md:inline">Negen schermen, geen video en geen mockup. Zo ziet je werkdag eruit.</span>
+            </p>
+            <Link
+              href="/demo"
+              className="group inline-flex items-center gap-2 mt-3 text-[15px] font-semibold text-petrol"
+            >
+              <span className="relative">
+                Liever kijken? Bekijk de demo
+                <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-petrol/30" />
+              </span>
+              <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </Link>
+          </div>
         </div>
 
         {/* Mobiel: video-loop van de project-cockpit */}
