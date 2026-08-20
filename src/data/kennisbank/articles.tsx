@@ -101,6 +101,8 @@ export const articles: Article[] = [
             </P>
             <P>
               Geen haast? doen. werkt direct. Je kunt altijd later terugkomen om dingen aan te scherpen.
+              Liever niet alleen? De basisinrichting doen we gratis met je mee in een onboarding-sessie
+              van ongeveer een uur.
             </P>
           </>
         ),
@@ -165,8 +167,12 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Vastgelopen? Stuur een mailtje naar <B>info@signcompany.nl</B>. We reageren meestal binnen een paar uur op
-              werkdagen. Voor complexe vragen plannen we een scherm-deling-sessie.
+              Vastgelopen? Stuur een bericht via{' '}
+              <a href="/contact" style={{ color: '#1A535C', textDecoration: 'underline' }}>
+                het contactformulier
+              </a>
+              . We reageren meestal binnen een paar uur op werkdagen. Voor complexe vragen plannen we
+              een scherm-deling-sessie.
             </P>
           </>
         ),
@@ -1262,7 +1268,9 @@ export const articles: Article[] = [
             <P>
               Wij geloven in één simpele som: <B>€129 per maand ex. btw</B>, flat, tot 10
               gebruikers. Geen opzetkosten, geen add-ons, alle modules en de AI-assistent
-              inbegrepen. Maandelijks opzegbaar.
+              inbegrepen. De onboarding waarin wij het systeem met je inrichten zit erbij.
+              Maandelijks opzegbaar. Wil je dat we op locatie komen, dan is dat eenmalig
+              <B> €250 ex. btw plus reiskosten</B>, en dat is een keuze en geen opstartkost.
             </P>
             <P>
               De volledige opbouw staat op de{' '}

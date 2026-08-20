@@ -41,7 +41,9 @@ function buildFaqPageSchema(items: { q: string; a: string }[]) {
       name: faq.q,
       acceptedAnswer: {
         '@type': 'Answer',
-        text: faq.a.replace(/\*\*/g, ''),
+        // Markdown eruit: **vet** en [tekst](/pad) horen niet in een rich
+        // result. Van een link houden we het label over, het pad vervalt.
+        text: faq.a.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\*\*/g, ''),
       },
     })),
   }

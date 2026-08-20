@@ -8,6 +8,7 @@ import {
 import CTASection from '@/components/home/CTASection'
 import Journey from '@/components/home/Journey'
 import { EigenGebruikRegel } from '@/components/EigenGebruik'
+import { OnboardingRegel } from '@/components/Onboarding'
 import {
   spaceGrotesk, PETROL, PETROL_DEEP, FLAME, INK, MUTED, LINE, BG, CARD,
   HAIRLINE, PANEL_SHADOW, STATUS, SERIF_ITALIC,
@@ -445,7 +446,7 @@ function MockupPortaal() {
           </div>
           <p className="inline-flex items-center gap-1.5 text-[10px] shrink-0" style={{ color: 'rgba(255,255,255,0.5)' }}>
             <CalendarClock className="w-3 h-3" strokeWidth={2} />
-            <span className="tabular-nums">Geldig tot 16 juni 2026</span>
+            <span className="tabular-nums">Geldig tot 16 december 2026</span>
           </p>
         </div>
       </div>
@@ -821,6 +822,11 @@ export default function HoeHetWerktContent() {
       <Journey className="bg-bg" padding="pt-2 pb-6 md:pt-4 md:pb-8" />
       <Stappen />
       <Uitkomst />
+      <section className="bg-bg">
+        <div className="container-site py-10 md:py-14">
+          <OnboardingRegel className="max-w-2xl" />
+        </div>
+      </section>
       <CTASection />
     </>
   )

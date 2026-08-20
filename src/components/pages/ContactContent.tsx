@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
+import { ONBOARDING_OP_LOCATIE_PRIJS } from '@/data/onboarding'
 
 const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
 
@@ -62,7 +63,9 @@ export default function ContactContent() {
               </h1>
               <p className="hero-fade text-[16px] md:text-[17px] leading-[1.6] text-ink max-w-md mb-6 md:mb-10" style={{ animationDelay: '0.3s' }}>
                 Nieuwsgierig, een idee, of wil je weten of doen. bij je past?
-                Vertel wat je bezighoudt. We reageren binnen één werkdag.
+                Vertel wat je bezighoudt. We reageren binnen één werkdag. Wil je dat
+                we je bedrijf inrichten, zeg het erbij: online doen we dat gratis, en
+                langskomen kan ook.
               </p>
             </div>
 
@@ -72,7 +75,7 @@ export default function ContactContent() {
                   <dt className="text-[14px] text-muted shrink-0">Reactietijd</dt>
                   <dd className="text-[15px] font-semibold text-petrol">Binnen één werkdag</dd>
                 </div>
-                <div className="flex items-baseline justify-between gap-4 py-4 border-t border-b border-petrol/10">
+                <div className="flex items-baseline justify-between gap-4 py-4 border-t border-petrol/10">
                   <dt className="text-[14px] text-muted shrink-0">Demo plannen</dt>
                   <dd>
                     <a
@@ -81,6 +84,16 @@ export default function ContactContent() {
                     >
                       Gebruik het formulier, we plannen direct iets in
                     </a>
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-4 py-4 border-t border-petrol/10">
+                  <dt className="text-[14px] text-muted shrink-0">Onboarding online</dt>
+                  <dd className="text-[15px] font-semibold text-petrol">Gratis, ongeveer een uur</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-4 py-4 border-t border-b border-petrol/10">
+                  <dt className="text-[14px] text-muted shrink-0">Wij komen langs</dt>
+                  <dd className="text-[15px] font-semibold text-petrol">
+                    € {ONBOARDING_OP_LOCATIE_PRIJS} ex btw, plus reiskosten
                   </dd>
                 </div>
               </dl>

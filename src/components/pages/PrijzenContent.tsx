@@ -9,6 +9,8 @@ import { PRICE_PER_MONTH } from '@/data/pricing'
 import { prijzenFaqs } from '@/data/faq'
 import { prijzenFaqPageSchema } from '@/lib/structured-data'
 import { EigenGebruikBand } from '@/components/EigenGebruik'
+import FaqAnswer from '@/components/FaqAnswer'
+import { OnboardingSectie } from '@/components/Onboarding'
 
 /* Gangbare branchesoftware: richtprijs per maand voor een vergelijkbaar
    pakket. De besparing rekent zichzelf uit vanaf PRICE_PER_MONTH. */
@@ -23,6 +25,7 @@ const INBEGREPEN = [
   'AI-assistent Daan',
   'Koppeling Exact Online en Mollie',
   '€ 15 AI-gebruik per maand, bijkopen kan altijd',
+  'Gratis onboarding, online met ons samen',
   'Nederlandse support',
   'Updates inbegrepen',
 ]
@@ -31,6 +34,7 @@ export default function PrijzenContent() {
   return (
     <div className="bg-bg">
       <PriceHero />
+      <OnboardingSectie />
       <PrijzenFaq />
       <EigenGebruikBand />
       <CTASection />
@@ -54,8 +58,9 @@ function PriceHero() {
           </h1>
           <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
             Alles wat je bedrijf nodig hebt voor €{PRICE_PER_MONTH} per maand, ex btw.
-            Geen pakketten, geen prijs per kop, geen opzetkosten. Groeit je team,
-            dan schuif je een maat op: € 199 tot 20 gebruikers, € 279 tot 35.
+            Geen pakketten, geen prijs per kop, geen opzetkosten. Het inrichten
+            doen we gratis met je mee. Groeit je team, dan schuif je een maat op:
+            € 199 tot 20 gebruikers, € 279 tot 35.
           </p>
         </div>
 
@@ -184,12 +189,13 @@ function PriceHero() {
   )
 }
 
-/* Zelfde accordion-grammatica als de home-FAQ: hairlines, plus-icoon flame. */
+/* Zelfde accordion-grammatica als de home-FAQ: hairlines, plus-icoon flame.
+   Op bg in plaats van wit, want de onboarding-sectie erboven is al wit. */
 function PrijzenFaq() {
   const [open, setOpen] = useState<number | null>(0)
 
   return (
-    <section className="bg-white">
+    <section className="bg-bg">
       <div className="container-site py-16 md:py-32">
         <JsonLd data={prijzenFaqPageSchema} />
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-12 lg:gap-20">
@@ -235,7 +241,7 @@ function PrijzenFaq() {
                     style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
                   >
                     <div className="overflow-hidden">
-                      <p className="text-[15px] leading-[1.65] text-muted max-w-2xl pb-6">{faq.a}</p>
+                      <FaqAnswer text={faq.a} />
                     </div>
                   </div>
                 </div>

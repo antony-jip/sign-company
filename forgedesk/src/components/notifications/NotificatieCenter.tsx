@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useId } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/utils/logger";
@@ -212,46 +213,46 @@ function NotificatieToast({
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  return (
-    <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 fade-in duration-300">
-      <button
-        onClick={onClick}
-        className="flex items-start gap-3 w-96 p-4 text-left transition-colors hover:bg-muted"
-        style={{
-          background: 'hsl(var(--background))',
-          border: '0.5px solid hsl(var(--border))',
-          borderRadius: '10px',
-          boxShadow: '0 4px 16px rgba(120,90,50,0.10)',
-        }}
+  // In een portal, want de toast hangt in de header en die staat in een eigen
+  // stapelcontext (relative z-10). Alles op de pagina met een hogere z-index
+  // schoof er anders overheen.
+  return createPortal(
+    <div className="fixed top-4 right-4 z-[9600] animate-in slide-in-from-top-2 fade-in duration-300">
+      <div
+        className="flex w-96 max-w-[calc(100vw-32px)] items-start gap-3 rounded-xl bg-card p-4 shadow-[0_12px_32px_rgba(120,90,50,0.12),0_2px_6px_rgba(0,0,0,0.04)]"
+        style={{ border: '0.5px solid hsl(var(--border))' }}
       >
-        <div
-          className={cn(
-            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-            config.bgClass
-          )}
-        >
-          <Icon className={cn("h-4 w-4", config.colorClass)} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-medium truncate" style={{ color: 'hsl(var(--foreground))' }}>
-            {notificatie.titel}
-          </p>
-          <p className="text-[12px] line-clamp-2 mt-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
-            {notificatie.bericht}
-          </p>
-        </div>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          className="shrink-0 hover:opacity-70"
-          style={{ color: '#A0A098' }}
+          onClick={onClick}
+          className="flex flex-1 min-w-0 items-start gap-3 text-left"
+        >
+          <div
+            className={cn(
+              "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+              config.bgClass
+            )}
+          >
+            <Icon className={cn("h-4 w-4", config.colorClass)} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold leading-snug text-foreground">
+              {notificatie.titel}
+            </p>
+            <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-muted-foreground">
+              {notificatie.bericht}
+            </p>
+          </div>
+        </button>
+        <button
+          onClick={onClose}
+          aria-label="Melding sluiten"
+          className="shrink-0 rounded-md p-0.5 text-muted-foreground/70 transition-colors hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </button>
-      </button>
-    </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -267,6 +268,8 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
   const [laden, setLaden] = useState(false);
   const [toast, setToast] = useState<Notificatie | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const paneelRef = useRef<HTMLDivElement>(null);
+  const [paneelStijl, setPaneelStijl] = useState<React.CSSProperties | null>(null);
   const navigate = useNavigate();
 
   const aantalOngelezen = notificaties.filter((n) => !n.gelezen).length;
@@ -366,10 +369,10 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
 
   useEffect(() => {
     function handleBuitenKlik(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      const doel = event.target as Node;
+      // Het paneel hangt in een portal, dus het zit níét in dropdownRef.
+      if (paneelRef.current?.contains(doel)) return;
+      if (dropdownRef.current && !dropdownRef.current.contains(doel)) {
         setOpen(false);
       }
     }
@@ -377,6 +380,49 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
     document.addEventListener("mousedown", handleBuitenKlik);
     return () => document.removeEventListener("mousedown", handleBuitenKlik);
   }, []);
+
+  // Het paneel wordt naar de body geportaald: de header staat in een eigen
+  // stapelcontext (relative z-10), dus een z-index op het paneel zelf hielp
+  // niet. Pagina-onderdelen met z-20 of hoger schoven er gewoon overheen.
+  // Daarom meten we de knop en zetten we het paneel er met fixed onder.
+  useEffect(() => {
+    if (!open) return;
+
+    function meet() {
+      const knop = dropdownRef.current;
+      if (!knop) return;
+      const rect = knop.getBoundingClientRect();
+      if (window.innerWidth < 768) {
+        setPaneelStijl({ position: 'fixed', left: 8, right: 8, top: 60 });
+        return;
+      }
+      setPaneelStijl({
+        position: 'fixed',
+        top: Math.round(rect.bottom + 8),
+        right: Math.max(8, Math.round(window.innerWidth - rect.right)),
+        width: 380,
+        maxWidth: 'calc(100vw - 16px)',
+      });
+    }
+
+    meet();
+    window.addEventListener('resize', meet);
+    // capture, zodat ook scrollende panelen binnen de pagina meetellen
+    window.addEventListener('scroll', meet, true);
+    return () => {
+      window.removeEventListener('resize', meet);
+      window.removeEventListener('scroll', meet, true);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [open]);
 
   async function handleNotificatieKlik(notificatie: Notificatie) {
     if (!notificatie.gelezen) {
@@ -458,10 +504,12 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
         </button>
       )}
 
-      {open && (
+      {open && paneelStijl && createPortal(
         <div
-          className="fixed left-2 right-2 top-[60px] md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-[380px] md:max-w-[calc(100vw-24px)] z-[200] overflow-hidden bg-card rounded-xl"
+          ref={paneelRef}
+          className="z-[9500] overflow-hidden bg-card rounded-xl animate-in fade-in-0 slide-in-from-top-1 duration-150"
           style={{
+            ...paneelStijl,
             border: '0.5px solid hsl(var(--border))',
             boxShadow: '0 12px 32px rgba(120,90,50,0.12), 0 2px 6px rgba(0,0,0,0.04)',
           }}
@@ -517,42 +565,42 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
                     <button
                       key={notificatie.id}
                       onClick={() => handleNotificatieKlik(notificatie)}
-                      className={cn(
-                        'group flex w-full items-start gap-3 px-5 py-3.5 text-left transition-colors border-l-2',
-                        isUnread
-                          ? 'bg-flame/[0.05] hover:bg-flame/[0.08] border-flame'
-                          : 'hover:bg-background border-transparent',
-                      )}
+                      className="group flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-background"
                     >
                       <div className={cn(
-                        "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                        "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                         config.bgClass
                       )}>
-                        <Icon className={cn("h-4 w-4", config.colorClass)} />
+                        <Icon className={cn("h-[15px] w-[15px]", config.colorClass)} />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-start justify-between gap-2">
+                          {/* Gelezen zakt terug in gewicht en kleur · dat leest
+                              rustiger dan een oranje balk naast elke regel. */}
                           <span className={cn(
-                            'truncate flex-1 min-w-0 text-[13px] text-foreground',
-                            isUnread ? 'font-semibold' : 'font-medium'
+                            'line-clamp-2 min-w-0 flex-1 text-[13px] leading-snug',
+                            isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/65'
                           )}>
                             {notificatie.titel}
+                            {isUnread && !/[.!?:]$/.test(notificatie.titel.trim()) && (
+                              <span className="text-flame">.</span>
+                            )}
                           </span>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <div className="flex flex-shrink-0 items-center gap-1.5 pt-px">
                             <span className={cn(
                               'whitespace-nowrap text-[11px] tabular-nums',
-                              isUnread ? 'text-foreground/70' : 'text-muted-foreground/80',
+                              isUnread ? 'text-muted-foreground' : 'text-muted-foreground/70',
                             )}>
                               {formatTijdGeleden(notificatie.created_at)}
                             </span>
                             {isUnread && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-flame" />
+                              <span className="h-1.5 w-1.5 rounded-full bg-flame" />
                             )}
                           </div>
                         </div>
                         <p className={cn(
                           'line-clamp-2 text-[12px] leading-snug',
-                          isUnread ? 'text-[#4A4A45]' : 'text-foreground/70'
+                          isUnread ? 'text-muted-foreground' : 'text-muted-foreground/70'
                         )}>
                           {notificatie.bericht}
                         </p>
@@ -576,7 +624,8 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
             Alle meldingen bekijken
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

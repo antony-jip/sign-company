@@ -57,6 +57,6 @@ Op petrol-deep mag maximaal één zachte radial-lichtval (`petrol-light`, opacit
 ## Copy
 
 - Nederlands, actief, vaktaal (werkbon, montage, nacalculatie). Geen em-dashes in UI-copy; gebruik punten/komma's, middle dot als separator.
-- Eén boodschap staat op precies één plek: modules uitleggen doet /features, rekenen doet /prijzen, de flow van aanvraag tot factuur staat op /hoe-het-werkt, het verhaal op /over. De pijn ("dat doe je er nu naast") staat alleen in `Statement.tsx` op de homepage, nergens anders uitgerekt.
-- Officieel e-mailadres: hello@doen.team.
+- Eén boodschap staat op precies één plek: modules uitleggen doet /features, rekenen doet /prijzen, de flow van aanvraag tot factuur staat op /hoe-het-werkt, het verhaal op /over, en de onboarding staat op /prijzen#onboarding. Elders alleen de losse regel (`OnboardingRegel`), zoals `EigenGebruikRegel` dat ook doet. De pijn ("dat doe je er nu naast") staat alleen in `Statement.tsx` op de homepage, nergens anders uitgerekt.
+- Officieel e-mailadres: antony@signcompany.nl. `hello@doen.team` bestaat niet meer, zet dat nergens op de site.
 - Pay-off: "Slim gedaan." Labels actief formuleren.

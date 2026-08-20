@@ -7,7 +7,8 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import DemoVideo from '@/components/DemoVideo'
 import AppShowcase from '@/components/home/AppShowcase'
-import { EigenGebruikBand, EigenGebruikNotitie } from '@/components/EigenGebruik'
+import { EigenGebruikBand, EigenGebruikNotitie, EIGEN_GEBRUIK_DUUR } from '@/components/EigenGebruik'
+import { OnboardingRegel } from '@/components/Onboarding'
 import JsonLd from '@/components/JsonLd'
 import { softwareApplicationSchema } from '@/lib/structured-data'
 
@@ -24,10 +25,10 @@ const GEZIEN = [
   { title: 'Drukproef met versies', note: 'je weet altijd wat er ligt' },
   { title: 'Klantportaal', note: 'de klant keurt zelf goed, geen mailtjes heen en weer' },
   { title: 'Montageplanning', note: 'sleep de klus in de week, de monteur ziet het' },
-  { title: 'Factuur uit de offerte', note: 'gesynct met Exact, Moneybird of e-Boekhouden' },
+  { title: 'Factuur uit de offerte', note: 'met Mollie-betaallink, gegevens door naar Exact Online' },
 ]
 
-const ZEKERHEDEN = ['30 dagen gratis', 'geen contract', 'in 10 minuten live']
+const ZEKERHEDEN = ['30 dagen gratis', 'geen contract', 'gratis onboarding']
 
 export default function DemoPage() {
   return (
@@ -115,6 +116,7 @@ export default function DemoPage() {
                   Vul je e-mailadres in, kies in de app een wachtwoord en je staat live.
                   Geen creditcard nodig.
                 </p>
+                <OnboardingRegel className="mt-4 max-w-md" />
                 <ul className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
                   {ZEKERHEDEN.map((punt) => (
                     <li key={punt} className="flex items-center gap-2.5 text-[15px] md:text-[16px] font-semibold text-petrol">
@@ -291,7 +293,7 @@ export default function DemoPage() {
               </div>
               <p className="mt-8 text-[14px]" style={{ color: 'rgba(255,255,255,0.72)' }}>
                 Account aanmaken duurt 5 minuten · maandelijks opzegbaar · wij draaien er zelf
-                een half jaar op
+                {' '}{EIGEN_GEBRUIK_DUUR} op
               </p>
             </div>
           </div>

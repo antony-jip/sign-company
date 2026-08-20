@@ -50,7 +50,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'prijs',
     q: 'Kan ik doen. eerst gratis proberen?',
-    a: 'Natuurlijk. De **eerste 30 dagen zijn gratis**, geen creditcard nodig, geen verplichtingen. Je hebt **direct toegang tot alle modules** — niks uitgegrijsd of achter een muur.',
+    a: 'Natuurlijk. De **eerste 30 dagen zijn gratis**, geen creditcard nodig, geen verplichtingen. Je hebt **direct toegang tot alle modules**, niks uitgegrijsd of achter een muur.',
   },
   {
     category: 'prijs',
@@ -65,7 +65,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'prijs',
     q: 'Zijn er opzetkosten of verborgen kosten?',
-    a: 'Nee. **Alles zit in het abonnement**, inclusief toekomstige updates. Geen opzetkosten, geen premium-tiers, geen "pakket uitbreiden om feature X te gebruiken".',
+    a: 'Nee. **Alles zit in het abonnement**, inclusief toekomstige updates en de **onboarding-sessie waarin we doen. samen inrichten**. Geen premium-tiers, geen "pakket uitbreiden om feature X te gebruiken". Het enige dat los kan: wil je dat we **bij je op de zaak langskomen**, dan kost dat € 250 ex. btw plus reiskosten. Dat is een keuze, geen opstartkost.',
   },
   {
     category: 'prijs',
@@ -76,7 +76,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'product',
     q: 'Zit AI echt overal in?',
-    a: 'Ja, overal waar het helpt. **Daan** is onze AI-assistent (draait op het nieuwste **Claude**-model van Anthropic). Hij kent je bedrijfsdata, schrijft offerteteksten, vat binnengekomen mails samen, leest inkoopfacturen uit. **Geen extra kosten** — onderdeel van het abonnement.',
+    a: 'Ja, overal waar het helpt. **Daan** is onze AI-assistent (draait op het nieuwste **Claude**-model van Anthropic). Hij kent je bedrijfsdata, schrijft offerteteksten, vat binnengekomen mails samen, leest inkoopfacturen uit. **Geen extra kosten**, het zit in het abonnement.',
   },
   {
     category: 'product',
@@ -91,7 +91,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'product',
     q: 'Kan mijn monteur alles vanaf zijn telefoon?',
-    a: 'Ja. **Planning, werkbonnen, taken en email** hebben dedicated mobiele weergaven. Werkbon openen, uren tikken, foto\'s erbij, klant laten tekenen — allemaal op een telefoon. Geen aparte app om te installeren.',
+    a: 'Ja. **Planning, werkbonnen, taken en email** hebben dedicated mobiele weergaven. Werkbon openen, uren tikken, foto\'s erbij, klant laten tekenen, allemaal op een telefoon. Geen aparte app om te installeren.',
   },
   {
     category: 'product',
@@ -127,7 +127,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'security',
     q: 'Wat gebeurt er met mijn data als ik opzeg?',
-    a: 'Tijdens je opzegperiode **exporteer je al je data** (CSV, PDF) wanneer je wilt. Na afloop bewaren we je data nog **30 dagen** — voor het geval je terug wilt. Daarna wordt alles **definitief verwijderd**.',
+    a: 'Tijdens je opzegperiode **exporteer je al je data** (CSV, PDF) wanneer je wilt. Na afloop bewaren we je data nog **30 dagen**, voor het geval je terug wilt. Daarna wordt alles **definitief verwijderd**.',
   },
 
   {
@@ -138,7 +138,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'support',
     q: 'Hoe lang duurt de implementatie?',
-    a: 'De meeste bedrijven zijn **binnen een week live**. Wij helpen met de basisinrichting: producten, templates, team, eerste klanten importeren.',
+    a: 'Je account staat in **vijf minuten**. De basisinrichting, dus je producten, templates, team en klanten, kost ongeveer **een halve dag**, en die doen we in de onboarding-sessie samen met je. De meeste bedrijven draaien **binnen een week** hun echte werk in doen.',
   },
   {
     category: 'support',
@@ -148,7 +148,13 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'support',
     q: 'Krijg ik uitleg of training?',
-    a: 'Zeker. Elke nieuwe klant krijgt een **live onboarding-sessie van ~1 uur** waarin we het systeem doorlopen.',
+    a: 'Zeker, en dat kost je niets. Elke nieuwe klant krijgt een **gratis onboarding-sessie van ongeveer een uur** via scherm-deling. We zetten samen je bedrijfsgegevens, producten en templates klaar en versturen je eerste offerte. Wil je liever iemand aan tafel, [dan komen we langs](/prijzen#onboarding).',
+  },
+
+  {
+    category: 'support',
+    q: 'Kunnen jullie langskomen om het in te richten?',
+    a: 'Ja. Je hele bedrijf in één keer meegenomen, bij je op de zaak: **€ 250 ex. btw plus reiskosten**, eenmalig. We richten doen. dan in op jouw manier van werken en lopen je lopende klussen door met werkvoorbereiding en monteurs erbij. Online kan het ook, en dat is gratis. [Bekijk beide routes](/prijzen#onboarding) of [vraag het aan](/contact).',
   },
 
   {
@@ -169,7 +175,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'technisch',
     q: 'Op welke apparaten werkt doen.?',
-    a: 'doen. draait **in de browser**. Werkt op **desktop, laptop, tablet en telefoon**. Geen installatie, geen updates. Chrome, Safari, Firefox, Edge — allemaal prima.',
+    a: 'doen. draait **in de browser**. Werkt op **desktop, laptop, tablet en telefoon**. Geen installatie, geen updates. Chrome, Safari, Firefox, Edge, allemaal prima.',
   },
 ]
 
@@ -177,6 +183,7 @@ export const prijzenFaqs: { q: string; a: string }[] = [
   { q: 'Kan ik het eerst proberen?', a: 'Eerste 30 dagen gratis. Geen creditcard nodig. Geen verplichtingen.' },
   { q: 'Moet ik extra betalen voor AI of het klantportaal?', a: 'Nee. Alles zit erin, geen feature-gates of premium-tiers. Voor AI heb je **€ 15 gebruik per maand** voor je hele organisatie. Dat is ruim voor mails samenvatten, teksten schrijven en inkoopfacturen uitlezen. Maak je veel beelden in **Studio**, dan gaat dat er sneller doorheen en koop je bij.' },
   { q: 'Welke koppelingen zitten erbij?', a: 'Mollie, Exact Online, email (IMAP/SMTP) en AI. Alles standaard, geen extra kosten.' },
+  { q: 'Helpen jullie met het inrichten?', a: 'Ja, en dat is gratis. In een onboarding-sessie van ongeveer een uur zetten we samen je bedrijfsgegevens, producten en templates klaar. Wil je dat we langskomen op de zaak, dan kost dat **€ 250 ex. btw plus reiskosten**, eenmalig.' },
   { q: 'Kan ik mijn data exporteren?', a: 'Altijd. CSV, PDF, wat je nodig hebt. Jouw data is van jou.' },
   { q: 'Moet ik een contract tekenen?', a: 'Nee. Maandelijks opzegbaar. Je blijft omdat het werkt.' },
   { q: 'Hoe verschilt doen. van andere software?', a: 'Gebouwd door vakmensen uit de branche. Alles in één systeem. Klantportaal, AI en planning zitten standaard in je abonnement.' },

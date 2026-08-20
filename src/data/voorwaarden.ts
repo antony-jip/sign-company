@@ -156,9 +156,10 @@ export const hoofdstukken: Hoofdstuk[] = [
         nr: '11',
         titel: 'Prijs',
         leden: [
-          'Het abonnement kost € 129 per maand, exclusief btw, voor maximaal tien gebruikers. Alle onderdelen zitten erbij. Er zijn geen opstartkosten.',
+          'Het abonnement kost € 129 per maand, exclusief btw, voor maximaal tien gebruikers. Alle onderdelen zitten erbij, net als de onboarding waarin wij doen. samen met jou inrichten. Er zijn geen opstartkosten.',
           'Heb je meer gebruikers nodig, dan geldt een staffel: € 199 per maand tot twintig gebruikers en € 279 per maand tot vijfendertig, allebei exclusief btw. De staffel telt het aantal gebruikersplekken dat je afneemt, niet het aantal mensen dat in een bepaalde maand inlogt. Wij rekenen niet per gebruiker af en alle onderdelen zitten in elke staffel.',
           'Het AI-budget zit bij de prijs in en schaalt mee met de staffel: € 15 per maand tot tien gebruikers, € 30 tot twintig en € 50 tot vijfendertig. Het budget geldt voor je organisatie samen. Extra budget koop je los bij tegen het tarief dat op dat moment in de app staat. Bijgekocht budget is niet inwisselbaar voor geld.',
+          'Kom je liever niet online maar wil je dat wij bij jou op locatie komen inrichten, dan rekenen wij daarvoor eenmalig € 250, exclusief btw, plus reiskosten. Dat spreken wij vooraf af en het staat los van het abonnement.',
           'Wij mogen de prijs aanpassen. Een verhoging kondigen wij minimaal 30 dagen van tevoren per e-mail aan. Ben je het er niet mee eens, dan mag je opzeggen tegen de datum waarop de nieuwe prijs ingaat.',
         ],
       },
@@ -167,7 +168,7 @@ export const hoofdstukken: Hoofdstuk[] = [
         titel: 'Betaling',
         leden: [
           'Betaling gaat vooraf, per maand, via automatische incasso of kaartbetaling. Wij gebruiken daarvoor een betaaldienstverlener. Je betaalgegevens komen bij die partij terecht en niet bij ons.',
-          'De factuur ontvang je per e-mail. Betalen wij niet kunnen incasseren, dan proberen wij het opnieuw en sturen wij je bericht.',
+          'De factuur ontvang je per e-mail. Kunnen wij niet incasseren, dan proberen wij het opnieuw en sturen wij je bericht.',
           'Blijft betaling uit, dan mogen wij na een herinnering de toegang opschorten. Je gegevens blijven in die periode bewaard. Betaal je alsnog, dan zetten wij de toegang direct weer open.',
           'Bij verzuim ben je de wettelijke handelsrente en redelijke incassokosten verschuldigd.',
         ],

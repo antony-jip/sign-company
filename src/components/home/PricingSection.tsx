@@ -8,6 +8,7 @@ const INCLUDED = [
   'Klantportaal zonder inlog',
   'AI-assistent Daan',
   'Koppeling Exact Online en Mollie',
+  'Gratis onboarding, wij leggen alles uit',
   'Updates en support',
 ]
 
@@ -45,7 +46,8 @@ export default function PricingSection() {
               </span>
             </div>
             <p className="text-[15px] mb-10" style={{ color: 'rgba(226,240,241,0.7)' }}>
-              Tot 10 gebruikers. Geen pakketten, geen prijs per kop, geen verrassingen.{' '}
+              Tot 10 gebruikers. Geen pakketten, geen prijs per kop, geen verrassingen. De
+              onboarding waarin we doen. met je doorlopen zit erbij.{' '}
               <Link href="/prijzen" className="underline underline-offset-4 decoration-white/30 hover:decoration-white transition-colors">
                 Groter team of het AI-budget
               </Link>
